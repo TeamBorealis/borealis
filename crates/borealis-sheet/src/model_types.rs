@@ -401,6 +401,22 @@ pub struct CasterData {
 }
 
 impl CasterData {
+    /// Slots of one spell level (1..=9) for a per-level heading: the class table, plus the Pact
+    /// Magic slots at their level (a separate pool, never in `slots`); 0 for any other level.
+    #[must_use]
+    pub fn level_slots(&self, level: usize) -> i32 {
+        let table = level
+            .checked_sub(1)
+            .and_then(|i| self.slots.get(i))
+            .copied()
+            .unwrap_or(0);
+        let pact = self
+            .pact
+            .filter(|p| usize::try_from(p.level).ok() == Some(level))
+            .map_or(0, |p| p.count);
+        table + pact
+    }
+
     /// Leveled spells to print: all of them, or only prepared / always-prepared / non-preparing
     /// casters' spells when `include_unprepared` is false.
     #[must_use]

@@ -961,3 +961,34 @@ fn b1_paladin3_sorcerer3_rounds_half_caster_up() {
     assert_eq!(sc(&snap, "Sorcerer").prepare_limit, Some(6));
     assert_eq!(sc(&snap, "Sorcerer").slots[..2], [4, 2]);
 }
+
+/// Vector B1-6 (SRD 5.2.1 Pact Magic and multiclassing): Warlock 3 / Wizard 2.
+///
+/// * Warlock table row 3: 2 pact slots of level 2, a separate pool (no ordinary Warlock slots).
+/// * Pact Magic is not a multiclass slot source: one Spellcasting class (Wizard 2) keeps its own
+///   table, 3 level 1 slots, and there is no pooled table.
+#[test]
+fn b1_warlock3_wizard2_pact_slots_stay_separate() {
+    let mut h = caster("ID_2024_CLASS_WARLOCK", "Warlock", "Wisdom +1, Charisma +2");
+    h.scores(AbilityMethod::Manual, [8, 14, 12, 13, 10, 15]);
+    h.level_to(3);
+    h.s = commands::level_up_new_multiclass(engine(), &h.s, None)
+        .expect("new multiclass level")
+        .state;
+    let start = h.s.level();
+    h.pick(
+        &format!("ID_LEVEL_{start}"),
+        &format!("Multiclass (Level {start})"),
+        1,
+        "ID_2024_MULTICLASS_WIZARD",
+    );
+    h.s = commands::level_up_multiclass(engine(), &h.s, start, None)
+        .expect("multiclass level")
+        .state;
+    let snap = h.snap();
+    assert_eq!(snap.level, 5);
+    let w = sc(&snap, "Warlock");
+    assert_eq!((w.pact, w.slots), (Some((2, 2)), [0; 9]));
+    assert_eq!(sc(&snap, "Wizard").slots[..2], [3, 0]);
+    assert!(snap.multiclass_slots.is_none(), "pact magic does not pool");
+}

@@ -3,8 +3,8 @@
 
 use crate::dto::{
     Attack, Attunement, CharacterDetails, CharacterOptions, ClassSpellcasting, Coins,
-    InventoryItem, InventoryState, OptionDef, SpellEntry, SpellSlotRow, SpellcastingState,
-    WeaponInfo,
+    InventoryItem, InventoryState, OptionDef, PactSlotRow, SpellEntry, SpellSlotRow,
+    SpellcastingState, WeaponInfo,
 };
 use crate::elements::plain_text;
 use crate::gear_info;
@@ -253,6 +253,10 @@ fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> Clas
         (true, true) => "prepared",
         (true, false) => "spellbook",
     };
+    let pact = c.pact.map(|(total, level)| PactSlotRow {
+        level: u32::try_from(level).unwrap_or(0),
+        total,
+    });
     ClassSpellcasting {
         class_slot_id: encode_class_slot(&slot),
         class_name: c.name.clone(),
@@ -268,7 +272,9 @@ fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> Clas
             .slots
             .iter()
             .rposition(|n| *n > 0)
-            .map_or(0, |i| u32::try_from(i + 1).unwrap_or(0)),
+            .map_or(0, |i| u32::try_from(i + 1).unwrap_or(0))
+            .max(pact.map_or(0, |p| p.level)),
+        pact,
         spells,
     }
 }
@@ -276,7 +282,17 @@ fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> Clas
 /// Spellcasting section.
 #[must_use]
 pub fn spellcasting(input: &MapInput<'_>, snap: &Engine) -> SpellcastingState {
-    let single = snap.spellcasting.first().map(|c| slot_rows(&c.slots));
+    // Without a pooled table at most one class has ordinary slots (Pact Magic is never in
+    // `slots`), so the sum is that class's table.
+    let single = (!snap.spellcasting.is_empty()).then(|| {
+        let mut sum = [0; 9];
+        for c in &snap.spellcasting {
+            for (t, n) in sum.iter_mut().zip(c.slots) {
+                *t += n;
+            }
+        }
+        slot_rows(&sum)
+    });
     let multi = snap.multiclass_slots.as_ref().map(|m| slot_rows(&m.slots));
     SpellcastingState {
         classes: snap

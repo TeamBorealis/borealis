@@ -3185,6 +3185,13 @@
       "k": "prim"
      }
     },
+    "pact": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "PactSlotRow"
+     }
+    },
     "preparedCount": {
      "opt": false,
      "t": {
@@ -5545,6 +5552,23 @@
        "k": "ref",
        "name": "PackageItem"
       }
+     }
+    }
+   }
+  },
+  "PactSlotRow": {
+   "k": "object",
+   "props": {
+    "level": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
      }
     }
    }

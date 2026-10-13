@@ -180,8 +180,9 @@ fn tv10_warlock_3_wizard_3_pact_magic_is_separate() {
         );
         let (wl, wz) = (s.caster("Warlock").unwrap(), s.caster("Wizard").unwrap());
         assert_eq!(
-            (wl.dc, wl.attack, wl.slots[1], wl.slots[0], wl.pact),
-            (13, 5, 2, 0, Some((2, 2)))
+            (wl.dc, wl.attack, wl.slots, wl.pact),
+            (13, 5, [0; 9], Some((2, 2))),
+            "pact slots are a separate pool, never ordinary slots"
         );
         assert_eq!(
             (wz.dc, wz.attack, wz.slots[0], wz.slots[1], wz.prepare_limit),

@@ -275,9 +275,10 @@ pub struct SpellcastingSnapshot {
     pub dc: i32,
     /// Spell attack bonus (proficiency + ability + misc, counted once).
     pub attack: i32,
-    /// Slots by spell level 1..=9 (class table).
+    /// Slots by spell level 1..=9 (class table). Never holds Pact Magic slots.
     pub slots: [i32; 9],
-    /// Pact magic: (slot count, slot level).
+    /// Pact Magic: (slot count, slot level). A separate pool: every slot is of that level, they
+    /// recover on a short or long rest, and they never join the multiclass slot pool.
     pub pact: Option<(i32, i32)>,
     /// Prepared limit (clamped to at least 1), when the class prepares.
     pub prepare_limit: Option<i32>,

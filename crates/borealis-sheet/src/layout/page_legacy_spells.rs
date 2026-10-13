@@ -142,7 +142,7 @@ fn page(
             }
             let level = seg.level;
             let slots =
-                (level > 0 && !caster.slots_pooled && !seg.cont).then(|| caster.slots[level - 1]);
+                (level > 0 && !caster.slots_pooled && !seg.cont).then(|| caster.level_slots(level));
             level_header(&mut c, (x, cy, colw), seg, slots);
             cy += LEVEL_H;
             for i in seg.first..seg.first + seg.count {

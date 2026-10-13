@@ -39,7 +39,7 @@ Clean-room note: sample data in the mock is original and SRD-generic.
 | `abilities` (`AbilityState`) | method, base scores, bonuses with source labels, final/modifier/save, cap and `overCap`, `pointBuy` (budget/spent/remaining/costs/min/max) or `standardArray` (values/assigned/unassigned) or roll history |
 | `stats` | proficiency bonus, AC, initiative, speed, max HP, passive Perception, 18 skills (+ proficiency level), languages, proficiencies, selected features |
 | `slots` + `progress` | every selection slot (section 2.1) and `{ total, remaining, nextSlotId, byTab }` |
-| `spellcasting` | per spellcasting class: ability, DC, attack, model (`spellbook`/`prepared`/`known`), cantrip and prepared limits, spell list with prepared flags; plus slot rows and `multiclassSlots` (non-null when 2+ casting classes) |
+| `spellcasting` | per spellcasting class: ability, DC, attack, model (`spellbook`/`prepared`/`known`), cantrip and prepared limits, spell list with prepared flags; plus slot rows and `multiclassSlots` (non-null when 2+ casting classes); a class's Pact Magic slots are its own `pact` row (short or long rest recovery), never in the slot rows |
 | `inventory` | items, coins, total gp, carried weight / capacity (STR x 15), attunement `used/max`, storage names, **transient `warnings`** |
 | `details` | the Manage text fields (name excluded: use `update_character_meta`) |
 | `attacks` | manual and automatic attacks; automatic ones carry the computed `attackBonus` and `damage` (spell attack counted once everywhere) |

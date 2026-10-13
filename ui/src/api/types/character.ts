@@ -240,7 +240,15 @@ export interface ClassSpellcasting {
   preparedCount: number;
   /** Highest spell level the class can cast at this level. */
   maxSpellLevel: number;
+  /** Pact Magic slots: a separate pool recovered on a short or long rest (never in `SpellcastingState.slots`). */
+  pact: PactSlotRow | null;
   spells: SpellEntry[];
+}
+
+/** Pact Magic slots: all of one level. */
+export interface PactSlotRow {
+  level: number;
+  total: number;
 }
 
 export interface SpellSlotRow {

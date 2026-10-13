@@ -65,6 +65,10 @@ pub fn stat_table(snap: &CharacterSnapshot) -> BTreeMap<String, i64> {
                 );
             }
         }
+        if let Some((count, level)) = c.pact {
+            t.insert(format!("{} pact magic slots", c.name), i64::from(count));
+            t.insert(format!("{} pact slot level", c.name), i64::from(level));
+        }
     }
     if let Some(m) = &snap.multiclass_slots {
         for (i, n) in m.slots.iter().enumerate() {

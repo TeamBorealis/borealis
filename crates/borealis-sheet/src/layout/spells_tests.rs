@@ -364,3 +364,14 @@ fn write_samples() {
         }
     }
 }
+
+#[test]
+fn level_slots_put_pact_slots_at_their_level() {
+    let d = warlock();
+    let c = &d.spellcasting.casters[0];
+    assert_eq!(c.level_slots(3), 2);
+    assert_eq!(
+        (c.level_slots(1), c.level_slots(0), c.level_slots(10)),
+        (0, 0, 0)
+    );
+}

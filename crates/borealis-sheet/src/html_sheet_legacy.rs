@@ -57,11 +57,11 @@ pub(super) fn body(o: &HtmlOptions, n: usize, c: &CasterData) -> String {
         for &seg in levels {
             let level = seg.level;
             let title = legacy_level_title(seg);
-            let slots = match c.slots.get(level.wrapping_sub(1)) {
-                Some(&k) if level > 0 && !c.slots_pooled && !seg.cont && k > 0 => {
-                    format!("<span>{k} {}</span>", if k == 1 { "slot" } else { "slots" })
-                }
-                _ => String::new(),
+            let k = c.level_slots(level);
+            let slots = if level > 0 && !c.slots_pooled && !seg.cont && k > 0 {
+                format!("<span>{k} {}</span>", if k == 1 { "slot" } else { "slots" })
+            } else {
+                String::new()
             };
             let _ = write!(out, "<h3>{title}{slots}</h3>");
             for i in seg.first..seg.first + seg.count {

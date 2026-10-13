@@ -413,7 +413,17 @@ pub struct ClassSpellcasting {
     pub prepared_max: u32,
     pub prepared_count: u32,
     pub max_spell_level: u32,
+    /// Pact Magic slots of this class: a separate pool that recovers on a short or long rest
+    /// (never part of `SpellcastingState.slots`).
+    pub pact: Option<PactSlotRow>,
     pub spells: Vec<SpellEntry>,
+}
+
+/// Pact Magic slots: all of one level, recovered on a short or long rest.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct PactSlotRow {
+    pub level: u32,
+    pub total: i32,
 }
 
 /// Slots per spell level.

@@ -237,10 +237,6 @@ pub fn spellcasting_snapshots(
         } else {
             None
         };
-        if table_pact.is_some() {
-            // pact slots are a separate pool: they never appear as ordinary slots
-            slots = [0; 9];
-        }
         let pact = table_pact.or_else(|| {
             stats
                 .exists(&format!("{lc}:spellcasting:slots:count"))
@@ -252,6 +248,12 @@ pub fn spellcasting_snapshots(
                 })
                 .filter(|p| p.0 > 0)
         });
+        if pact.is_some() {
+            // Pact Magic slots are a separate pool (2014 and 2024): they recover on a short or
+            // long rest and never appear as ordinary slots, even when the content also writes
+            // them to the per-level slot groups (`engine.md` 10.5).
+            slots = [0; 9];
+        }
         let mut spells: Vec<SpellEntry> = Vec::new();
         // spells picked in this class's selection slots (Spellbook (Wizard n), Evocation Savant)
         // are written in the spellbook; always-prepared picks and cantrips are not

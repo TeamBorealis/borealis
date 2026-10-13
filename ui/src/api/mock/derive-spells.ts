@@ -58,7 +58,7 @@ export function deriveSpellcasting(c: MockCharacter, ab: AbilityState): Spellcas
       classSlotId: cs.slotId, className: titleCase(cls.id), ability: abil, saveDc: 8 + prof + m, attackBonus: prof + m,
       model: cls.caster.model === "spellbook" ? "spellbook" : "prepared", cantripsMax: cantripsAt(cls.id, lvl),
       cantripsKnown: spells.filter((s) => s.level === 0).length, preparedMax: preparedLimit(m, lvl), preparedCount: counted,
-      maxSpellLevel: casterMaxSpellLevel(lvl), spells,
+      maxSpellLevel: casterMaxSpellLevel(lvl), pact: null, spells,
     });
   }
   const row = (SLOT_TABLE[Math.min(20, casterLevel)] ?? []).map((total, i) => ({ level: i + 1, total }));

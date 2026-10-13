@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import type { ClassSpellcasting, SelectionSlot, SpellSlotRow } from "../../api/contract";
+import type { ClassSpellcasting, PactSlotRow, SelectionSlot, SpellSlotRow } from "../../api/contract";
 import { TabPanel, Tabs, signed } from "../../components";
 import { RequireCharacter } from "../../components/RequireCharacter";
 import { ABILITY_LABEL } from "../../lib/format";
@@ -15,17 +15,24 @@ import "./magic.css";
 
 const OVERVIEW = "overview";
 
-function SlotTiles({ rows }: { rows: SpellSlotRow[] }) {
-  if (rows.length === 0) return null;
+function SlotTile({ label, total, aria }: { label: string; total: number; aria: string }) {
+  return (
+    <div className="mg-slot" role="group" aria-label={aria}>
+      <span className="k">{label}</span>
+      <span className="pips" aria-hidden="true">{Array.from({ length: total }, (_, i) => <i key={i} />)}</span>
+      <span className="n">{total}</span>
+    </div>
+  );
+}
+
+/** Spell slot tiles, then the class's Pact Magic slots (a separate pool that recovers on a short rest). */
+function SlotTiles({ rows, pact }: { rows: SpellSlotRow[]; pact?: PactSlotRow | null }) {
+  if (rows.length === 0 && !pact) return null;
   return (
     <div className="mg-slots" aria-label="Spell slots">
-      {rows.map((r) => (
-        <div key={r.level} className="mg-slot" role="group" aria-label={`Level ${r.level}: ${r.total} slots`}>
-          <span className="k">Level {r.level}</span>
-          <span className="pips" aria-hidden="true">{Array.from({ length: r.total }, (_, i) => <i key={i} />)}</span>
-          <span className="n">{r.total}</span>
-        </div>
-      ))}
+      {rows.map((r) => <SlotTile key={r.level} label={`Level ${r.level}`} total={r.total} aria={`Level ${r.level}: ${r.total} slots`} />)}
+      {pact && <SlotTile label={`Pact level ${pact.level} (short rest)`} total={pact.total}
+        aria={`Pact slots (short rest), level ${pact.level}: ${pact.total} slots`} />}
     </div>
   );
 }
@@ -44,7 +51,7 @@ function ClassBlock({ cls, shownCls = cls, slotRows, focused, picked, onPick, fu
       <span className={`sp-bar ${focused ? "on" : ""}`} aria-hidden="true" />
       <div className="sp-col">
         <div className="sp-main-wrap">
-          <Band title={cls.className} stats={classStats(cls)}><SlotTiles rows={slotRows} /></Band>
+          <Band title={cls.className} stats={classStats(cls)}><SlotTiles rows={slotRows} pact={cls.pact} /></Band>
           {catalogue ?? <SpellGrid cls={shownCls} picked={picked} onPick={onPick} />}
         </div>
         {full && <KnownSpells cls={cls} picked={picked} onPick={onPick} />}
