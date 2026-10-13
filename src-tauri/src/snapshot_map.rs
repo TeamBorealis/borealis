@@ -75,7 +75,7 @@ pub fn build_snapshot(input: &MapInput<'_>) -> CharacterSnapshot {
         inventory: extras::inventory(input, &engine_snap),
         details: extras::details(input.character),
         attacks: extras::attacks(input.character, &engine_snap),
-        companion: extras::companion(input.character, &engine_snap),
+        companion: crate::companion::companion(input, &engine_snap),
         options: extras::options(input, &engine_snap),
         available_options: extras::available_options(input),
         source_restrictions: extras::source_restrictions(input),

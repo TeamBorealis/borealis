@@ -39,6 +39,9 @@ impl<'u> Graph<'u> {
                 }
             }
         }
+        if rule.ty == "Companion" {
+            out = prefer_companions(out, current);
+        }
         let keep_order = rule.ty == "Alignment"
             || (rule.name.contains("Ability Score")
                 && matches!(
@@ -62,6 +65,24 @@ impl<'u> Graph<'u> {
     pub fn spell_dynamics(&self, owner: NodeId, rule_index: usize) -> SpellDynamics<'_, 'u> {
         SpellDynamics::new(self, owner, rule_index)
     }
+}
+
+/// A `Companion` select offers content companions first: a typed `Monster` stat block is
+/// dropped when a `Companion` (or an earlier monster) of the same name is offered, unless it is
+/// the slot's current choice.
+fn prefer_companions<'u>(out: Vec<&'u UElem>, current: Option<&str>) -> Vec<&'u UElem> {
+    let mut seen: std::collections::HashSet<String> = out
+        .iter()
+        .filter(|c| c.el.ty != "Monster")
+        .map(|c| c.el.name.to_lowercase())
+        .collect();
+    out.into_iter()
+        .filter(|c| {
+            c.el.ty != "Monster"
+                || current == Some(c.el.id.as_str())
+                || seen.insert(c.el.name.to_lowercase())
+        })
+        .collect()
 }
 
 fn cmp_names(a: &str, b: &str) -> Ordering {

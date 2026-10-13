@@ -35,6 +35,7 @@ pub mod commands_pick;
 pub mod commands_play;
 pub mod commands_settings;
 pub mod commands_system;
+pub mod companion;
 pub mod compendium;
 pub mod content_auto;
 pub mod content_dto;

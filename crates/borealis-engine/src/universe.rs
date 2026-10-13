@@ -335,12 +335,14 @@ fn parse_rule(rule: &Rule, owner_id: &str, owner_name: &str) -> URule {
     }
 }
 
-/// Element types that fill the same select slot: the 2024 `Species` type is the `Race` slot
-///.
+/// Element types that fill the same select slot: the 2024 `Species` type is the `Race` slot;
+/// typed `Monster` stat blocks (the bundled SRD beasts) also fill `Companion` selects, filtered
+/// by the select's supports like Aurora's own companions.
 #[must_use]
 pub fn type_family(ty: &str) -> &'static [&'static str] {
     match ty {
         "Race" | "Species" => &["Race", "Species"],
+        "Companion" => &["Companion", "Monster"],
         _ => &[],
     }
 }
@@ -470,9 +472,49 @@ fn spell_implicit_supports(el: &Element) -> Vec<String> {
     out
 }
 
+/// `Companion` stat blocks are tagged with their `type`, `size` and `challenge` setters
+/// (`content-format.md` 6.12), so `Beast,(Tiny||Small),(1/4||0)` filters them.
+fn companion_implicit_supports(el: &Element) -> Vec<String> {
+    ["type", "size", "challenge"]
+        .into_iter()
+        .filter_map(|n| el.setter_value(n))
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+        .collect()
+}
+
+fn title_case(word: &str) -> String {
+    let mut c = word.chars();
+    c.next().map_or_else(String::new, |f| {
+        f.to_uppercase()
+            .chain(c.flat_map(char::to_lowercase))
+            .collect()
+    })
+}
+
+/// Typed `Monster` stat blocks carry the same tags as an Aurora `Companion` (`Beast`, `Tiny`,
+/// `1/4`) so companion selects can offer them; lower-case type and size are added too.
+fn monster_implicit_supports(el: &Element) -> Vec<String> {
+    let Ok(m) = borealis_content::MonsterData::from_element(el) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    let ty = m.creature_type.as_str();
+    out.push(title_case(ty));
+    out.push(ty.to_string());
+    for size in &m.size {
+        out.push(title_case(size.as_str()));
+        out.push(size.as_str().to_string());
+    }
+    out.push(m.cr.as_text());
+    out
+}
+
 fn implicit_supports(el: &Element) -> Vec<String> {
     match el.ty.as_str() {
         "Spell" => spell_implicit_supports(el),
+        "Companion" => companion_implicit_supports(el),
+        "Monster" => monster_implicit_supports(el),
         "Armor" | "Weapon" => vec![el.name.clone(), el.name.to_lowercase()],
         "Language" => ["Standard", "Exotic", "Secret", "Monster", "Character"]
             .into_iter()

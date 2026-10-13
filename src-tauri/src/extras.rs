@@ -19,7 +19,6 @@ use borealis_engine::state::EquipSlot;
 use borealis_engine::ClassSlot;
 use serde::{Deserialize, Serialize};
 
-const DEFAULT_ABILITY: i32 = 10;
 const UI_KEY: &str = "ui";
 const COPPER_PER_GOLD: f64 = 100.0;
 const BUILT_IN_OPTIONS: [&str; 3] = [
@@ -463,43 +462,6 @@ pub fn details(c: &Character) -> CharacterDetails {
         treasure: ui.treasure,
         quest_items: ui.quest_items,
     }
-}
-
-/// The companion, when a companion creature is chosen or the user named/pictured one.
-#[must_use]
-pub fn companion(c: &Character, snap: &Engine) -> Option<crate::content_dto::CompanionState> {
-    let creature = snap
-        .slots
-        .iter()
-        .filter(|s| s.ty == "Companion")
-        .find_map(|s| s.chosen.as_ref())
-        .map(|e| crate::dto::ElementRef {
-            id: e.id.clone(),
-            name: e.name.clone(),
-            ty: crate::ids::ui_type(&e.ty).to_string(),
-            source: e.source.clone(),
-        });
-    let portrait = ui_extras(c).companion_portrait;
-    let name = c.details.companion_name.clone();
-    if creature.is_none() && portrait.is_none() && name.is_empty() {
-        return None;
-    }
-    Some(crate::content_dto::CompanionState {
-        name: if name.is_empty() {
-            creature
-                .as_ref()
-                .map(|e| e.name.clone())
-                .unwrap_or_default()
-        } else {
-            name
-        },
-        creature,
-        portrait,
-        armor_class: 0,
-        hp: 0,
-        speed: 0,
-        abilities: crate::dto::AbilityRecord::from_fn(|_| DEFAULT_ABILITY),
-    })
 }
 
 /// Automatic and manual attacks.
