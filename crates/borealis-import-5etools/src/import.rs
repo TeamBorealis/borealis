@@ -496,6 +496,18 @@ fn convert_all(sh: &Shared, e: &Ents, st: &mut State, prog: &mut Progress<'_, '_
     run_group("background", &e.backgrounds, st, prog, |st, ent| {
         background::convert(sh, st, ent)
     });
+    st.prereq = convert::prereq_index::PrereqIndex::build(
+        sh,
+        st,
+        convert::prereq_index::Inputs {
+            races: &e.races,
+            subraces: &e.subraces,
+            subclasses: &e.subclasses,
+            feats: &e.feats,
+            optfeatures: &e.optfeatures,
+            spells: &e.spells,
+        },
+    );
     run_group("feat", &e.feats, st, prog, |st, ent| {
         feat::convert(sh, st, ent)
     });

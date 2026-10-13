@@ -10,6 +10,8 @@ pub mod item;
 pub mod mech;
 pub mod misc;
 pub mod optfeat;
+pub mod prereq;
+pub mod prereq_index;
 pub mod race;
 pub mod spell;
 pub mod spell_blocks;
@@ -248,6 +250,8 @@ pub struct State {
     pub done_features: std::collections::BTreeSet<String>,
     /// Ids of every element emitted so far (duplicates are dropped).
     pub emitted: std::collections::BTreeSet<String>,
+    /// Lookups for prerequisites (built before feats and optional features).
+    pub prereq: prereq_index::PrereqIndex,
 }
 
 impl State {

@@ -159,7 +159,7 @@ pub fn feature_id(st: &mut State, r: &FeatureRef, sub: bool) -> String {
     }
 }
 
-fn ref_of(f: &Feature, sub: bool) -> FeatureRef {
+pub(crate) fn ref_of(f: &Feature, sub: bool) -> FeatureRef {
     FeatureRef {
         name: f.name.clone(),
         class: f.class_name.clone(),
@@ -280,6 +280,25 @@ fn feature_text(sh: &Shared, sc: &Subclass) -> String {
         .join(" ")
 }
 
+/// Allocate the id of a subclass (stable: the allocator returns the same id for the same key).
+pub fn subclass_id(st: &mut State, sc: &Subclass, source: &str) -> String {
+    let class_key = format!(
+        "{}|{}",
+        sc.class_name.to_lowercase(),
+        sc.class_source.to_uppercase()
+    );
+    st.ids.id(
+        IdKind::Subclass,
+        source,
+        &[&sc.class_name, &sc.short_name],
+        &format!(
+            "{class_key}|{}|{}",
+            sc.short_name.to_lowercase(),
+            source.to_uppercase()
+        ),
+    )
+}
+
 /// Convert a subclass (an `Archetype`).
 pub fn convert_subclass(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     let sc: Subclass = match model::parse(&ent.raw) {
@@ -307,16 +326,7 @@ pub fn convert_subclass(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
             crate::util::id_fragment(&sc.class_name)
         )
     });
-    let id = st.ids.id(
-        IdKind::Subclass,
-        &ent.source,
-        &[&sc.class_name, &sc.short_name],
-        &format!(
-            "{class_key}|{}|{}",
-            sc.short_name.to_lowercase(),
-            ent.source.to_uppercase()
-        ),
-    );
+    let id = subclass_id(st, &sc, &ent.source);
     let resolver = |k: RefKind, n: &str, s: &str| sh.link(k, n, s);
     let mut renderer = Renderer::new(&resolver);
     let mut el = new_element(

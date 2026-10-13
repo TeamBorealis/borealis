@@ -2,203 +2,19 @@
 
 use super::mech::{feat_category_label, AbilitySource, Mech};
 use super::optfeat::optional_feature_selects;
+use super::prereq::apply_prerequisites;
 use super::spell_blocks::{self, Carrier};
 use super::spells_extra;
 use super::{
     append_fluff, drain_renderer, new_element, note_unmapped, sheet_text, short_text, Conv, Ent,
     Shared, State,
 };
-use crate::core_ids;
 use crate::ids::IdKind;
 use crate::model::{self, Feat};
 use crate::srd::SrdKind;
 use crate::text::{RefKind, Renderer};
 use borealis_content::{Rule, Setter};
 use serde_json::Value;
-
-/// A converted prerequisite.
-#[derive(Debug, Default, PartialEq, Eq)]
-pub struct Prereq {
-    /// Display text.
-    pub text: String,
-    /// Requirements expression (empty when nothing can be enforced).
-    pub requirements: String,
-    /// Prerequisites that are shown but not enforced.
-    pub unmapped: Vec<String>,
-}
-
-fn level_alt(v: &Value) -> Option<(String, String)> {
-    match v {
-        Value::Number(n) => {
-            let n = n.as_u64()?;
-            Some((format!("[character:{n}]"), format!("Level {n}+")))
-        }
-        Value::Object(_) => {
-            let n = v.get("level").and_then(Value::as_u64)?;
-            match v
-                .get("class")
-                .and_then(|c| c.get("name"))
-                .and_then(Value::as_str)
-            {
-                Some(class) => Some((
-                    format!("[{}:{n}]", class.to_lowercase()),
-                    format!("{class} level {n}+"),
-                )),
-                None => Some((format!("[character:{n}]"), format!("Level {n}+"))),
-            }
-        }
-        _ => None,
-    }
-}
-
-fn describe(key: &str, value: &Value) -> String {
-    let flat = match value {
-        Value::Bool(true) => String::new(),
-        Value::String(s) => crate::text::strip_tags(s),
-        Value::Array(a) => a
-            .iter()
-            .map(|x| match x {
-                Value::String(s) => crate::text::strip_tags(s),
-                Value::Object(o) => o
-                    .get("displayEntry")
-                    .or_else(|| o.get("name"))
-                    .or_else(|| o.get("entry"))
-                    .and_then(Value::as_str)
-                    .map_or_else(|| x.to_string(), crate::text::strip_tags),
-                other => other.to_string(),
-            })
-            .collect::<Vec<_>>()
-            .join(", "),
-        other => other.to_string(),
-    };
-    let label = match key {
-        "spellcasting" | "spellcasting2020" | "spellcastingFeature" | "spellcastingPrepared" => {
-            "Spellcasting".to_string()
-        }
-        "other" | "otherSummary" => return flat,
-        k => crate::util::title_case(k),
-    };
-    if flat.is_empty() {
-        label
-    } else {
-        format!("{label}: {flat}")
-    }
-}
-
-/// Convert a `prerequisite` array (alternatives, each an AND of keys).
-#[must_use]
-pub fn prerequisites(items: &[Value]) -> Prereq {
-    let mut texts = Vec::new();
-    let mut exprs: Vec<Option<String>> = Vec::new();
-    let mut unmapped = Vec::new();
-    for item in items {
-        let Some(map) = item.as_object() else {
-            continue;
-        };
-        let mut parts: Vec<String> = Vec::new();
-        let mut alt_text: Vec<String> = Vec::new();
-        for (k, v) in map {
-            match k.as_str() {
-                "level" => {
-                    if let Some((expr, text)) = level_alt(v) {
-                        parts.push(expr);
-                        alt_text.push(text);
-                    }
-                }
-                "ability" => {
-                    let alts: Vec<(String, String)> = v
-                        .as_array()
-                        .map(|a| {
-                            a.iter()
-                                .filter_map(|o| {
-                                    let m = o.as_object()?;
-                                    let pairs: Vec<(String, i64, &str)> = m
-                                        .iter()
-                                        .filter_map(|(ab, n)| {
-                                            Some((
-                                                ab.clone(),
-                                                n.as_i64()?,
-                                                core_ids::ability_name(ab)?,
-                                            ))
-                                        })
-                                        .collect();
-                                    if pairs.is_empty() {
-                                        return None;
-                                    }
-                                    let joined = pairs
-                                        .iter()
-                                        .map(|(a, n, _)| format!("[{a}:{n}]"))
-                                        .collect::<Vec<_>>()
-                                        .join("&&");
-                                    let expr = if pairs.len() > 1 {
-                                        format!("({joined})")
-                                    } else {
-                                        joined
-                                    };
-                                    let text = pairs
-                                        .iter()
-                                        .map(|(_, n, name)| format!("{name} {n} or higher"))
-                                        .collect::<Vec<_>>()
-                                        .join(" and ");
-                                    Some((expr, text))
-                                })
-                                .collect()
-                        })
-                        .unwrap_or_default();
-                    if !alts.is_empty() {
-                        let joined = alts
-                            .iter()
-                            .map(|(e, _)| e.clone())
-                            .collect::<Vec<_>>()
-                            .join("||");
-                        parts.push(if alts.len() > 1 {
-                            format!("({joined})")
-                        } else {
-                            joined
-                        });
-                        alt_text.push(
-                            alts.iter()
-                                .map(|(_, t)| t.clone())
-                                .collect::<Vec<_>>()
-                                .join(" or "),
-                        );
-                    }
-                }
-                other => {
-                    let text = describe(other, v);
-                    if !text.is_empty() {
-                        alt_text.push(text.clone());
-                        unmapped.push(text);
-                    }
-                }
-            }
-        }
-        if !alt_text.is_empty() {
-            texts.push(alt_text.join(", "));
-        }
-        exprs.push((!parts.is_empty()).then(|| parts.join("&&")));
-    }
-    let requirements = if exprs.is_empty() || exprs.iter().any(Option::is_none) {
-        String::new()
-    } else {
-        let list: Vec<String> = exprs.into_iter().flatten().collect();
-        if list.len() == 1 {
-            list[0].clone()
-        } else {
-            list.iter()
-                .map(|e| format!("({e})"))
-                .collect::<Vec<_>>()
-                .join("||")
-        }
-    };
-    unmapped.sort();
-    unmapped.dedup();
-    Prereq {
-        text: texts.join(" or "),
-        requirements,
-        unmapped,
-    }
-}
 
 /// Convert one feat.
 pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
@@ -231,17 +47,7 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         el.data
             .insert("category".into(), Value::String(cat.clone()));
     }
-    let Prereq {
-        text,
-        requirements,
-        unmapped,
-    } = prerequisites(&feat.prerequisite);
-    el.prerequisite = text;
-    el.requirements = requirements;
-    for u in &unmapped {
-        partial.push(format!("prerequisite not enforced: {u}"));
-        note_unmapped(&mut el, "prerequisite", u);
-    }
+    apply_prerequisites(sh, st, &feat.prerequisite, &mut el, &mut partial);
 
     let mut mech = Mech::new(sh, &feat.name);
     mech.ability(&feat.ability, AbilitySource::Feat);
@@ -380,41 +186,6 @@ mod tests {
     }
 
     #[test]
-    fn prerequisite_mapping() {
-        let p = prerequisites(&[json!({"level": 4, "ability": [{"str": 13}, {"dex": 13}]})]);
-        assert_eq!(p.requirements, "([str:13]||[dex:13])&&[character:4]");
-        assert_eq!(
-            p.text,
-            "Strength 13 or higher or Dexterity 13 or higher, Level 4+"
-        );
-        assert!(p.unmapped.is_empty());
-        let p = prerequisites(&[
-            json!({"level": 4, "ability": [{"str": 13}]}),
-            json!({"level": 4, "ability": [{"dex": 13}]}),
-        ]);
-        assert_eq!(
-            p.requirements,
-            "([str:13]&&[character:4])||([dex:13]&&[character:4])"
-        );
-        let p = prerequisites(&[
-            json!({"spellcasting2020": true, "level": {"level": 5, "class": {"name": "Cleric"}}}),
-        ]);
-        assert_eq!(p.requirements, "[cleric:5]");
-        assert_eq!(p.unmapped, vec!["Spellcasting"]);
-        let p = prerequisites(&[
-            json!({"race": [{"name": "elf", "displayEntry": "Elf"}]}),
-            json!({"level": 3}),
-        ]);
-        assert_eq!(p.requirements, "");
-        assert_eq!(p.text, "Race: Elf or Level 3+");
-        let p = prerequisites(&[json!({"other": "Ability to speak {@b Draconic}"})]);
-        assert_eq!(p.text, "Ability to speak Draconic");
-        assert_eq!(prerequisites(&[]), Prereq::default());
-        let p = prerequisites(&[json!({"feature": ["Fighting Style"]})]);
-        assert_eq!(p.text, "Feature: Fighting Style");
-    }
-
-    #[test]
     fn half_feat_with_ability_choice_and_repeatable() {
         let sh = Shared::default();
         let mut st = State::default();
@@ -504,7 +275,8 @@ mod tests {
         );
         let conv = convert(&sh, &mut st, &e);
         assert_eq!(conv.partial.len(), 1);
-        assert!(conv.partial[0].contains("Race: elf"));
+        assert!(conv.partial[0].contains("Race: Elf"));
+        assert!(conv.elements[0].prerequisite.ends_with("(not checked)"));
         let bad = ent(json!({"name": "Bad", "source": "ZZZ", "entries": "text"}));
         assert!(convert(&sh, &mut st, &bad).elements.is_empty());
     }

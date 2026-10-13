@@ -29,6 +29,9 @@ const MAX_SKIPPED: usize = 260;
 /// Highest acceptable number of partial-conversion notes (412 on the 2026-10 corpus before
 /// additional spells were mapped, 324 after).
 const MAX_PARTIAL: usize = 340;
+/// Highest acceptable number of unenforced prerequisites (220 on the 2026-10 corpus before
+/// prerequisites were mapped, 5 after: 4 house renown tiers and 1 unknown race at most).
+const MAX_UNENFORCED_PREREQS: usize = 8;
 /// Lower bounds on what a full folder must produce (92 packs, 12443 elements in 2026-10).
 const MIN_PACKS: usize = 85;
 const MIN_ELEMENTS: usize = 12_000;
@@ -197,6 +200,16 @@ fn five_etools_corpus() {
         r.partial.len() <= MAX_PARTIAL,
         "partial notes {}",
         r.partial.len()
+    );
+    let prereq_notes = r
+        .partial
+        .iter()
+        .filter(|n| n.reason.starts_with("prerequisite not enforced"))
+        .count();
+    println!("unenforced prerequisite notes: {prereq_notes}");
+    assert!(
+        prereq_notes <= MAX_UNENFORCED_PREREQS,
+        "unenforced prerequisites {prereq_notes}"
     );
     let spell_notes: Vec<&str> = r
         .partial

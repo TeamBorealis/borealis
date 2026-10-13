@@ -168,6 +168,10 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     let mut el = new_element(&id, &bg.name, "Background", &source_display, ent.ruleset);
     let mut mech = Mech::new(sh, &bg.name);
     let mut partial = Vec::new();
+    // campaign settings only in the corpus: shown, not enforced (no partial note)
+    if let Some(items) = ent.raw.get("prerequisite").and_then(Value::as_array) {
+        super::prereq::apply_prerequisites(sh, st, items, &mut el, &mut partial);
+    }
 
     mech.ability(&bg.ability, AbilitySource::Background);
     mech.feats(&bg.feats);

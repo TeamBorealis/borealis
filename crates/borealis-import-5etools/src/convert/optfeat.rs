@@ -2,13 +2,12 @@
 //! selects shared with classes and feats, and prerequisite conversion.
 
 use super::build::{select, set_level};
-use super::feat::{prerequisites, Prereq};
 use super::mech::feat_category_label;
+use super::prereq::apply_prerequisites;
 use super::spell_blocks;
 use super::spells_extra;
 use super::{
-    append_fluff, drain_renderer, new_element, note_unmapped, sheet_text, short_text, Conv, Ent,
-    Shared, State,
+    append_fluff, drain_renderer, new_element, sheet_text, short_text, Conv, Ent, Shared, State,
 };
 use crate::ids::IdKind;
 use crate::model::{self, OptionalFeature};
@@ -194,18 +193,8 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         supports.push(type_tag(code));
     }
     el.supports = supports;
-    let Prereq {
-        text,
-        requirements,
-        unmapped,
-    } = prerequisites(&of.prerequisite);
-    el.prerequisite = text;
-    el.requirements = requirements;
     let mut partial = Vec::new();
-    for u in &unmapped {
-        partial.push(format!("prerequisite not enforced: {u}"));
-        note_unmapped(&mut el, "prerequisite", u);
-    }
+    apply_prerequisites(sh, st, &of.prerequisite, &mut el, &mut partial);
     let mut description = renderer.entries(&of.entries);
     append_fluff(sh, "optionalfeature", ent, &mut description, &mut renderer);
     el.description = description;

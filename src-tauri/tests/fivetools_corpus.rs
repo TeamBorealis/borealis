@@ -368,7 +368,8 @@ fn run(data: &Path) {
         let picked = hosts[rs].iter().find_map(|h| sw.pick(h, &el.id));
         match picked {
             None => {
-                let why = if !el.requirements.is_empty() {
+                // `data.prerequisite` is the structured feature check (Spellcasting, ...)
+                let why = if !el.requirements.is_empty() || el.data.contains_key("prerequisite") {
                     "has requirements the test fighter does not meet"
                 } else {
                     "no requirements"
