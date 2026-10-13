@@ -162,7 +162,7 @@ export class ContentService {
   addIndex(url: string): ContentIndex[] {
     if (!/^https?:\/\/.+\.index$/i.test(url)) throw apiError("invalid_argument", "An index URL must start with http(s) and end with .index.");
     if (/\/user\.index$/i.test(url)) throw apiError("invalid_argument", 'The name "user" is reserved for your personal content folder.');
-    this.indexes = [...this.indexes.filter((i) => i.url !== url), { url, name: url.split("/").pop()!.replace(".index", ""), lastChecked: null, fileCount: 3, updatesAvailable: 3, requiresNewerApp: false, verified: false }];
+    this.indexes = [...this.indexes.filter((i) => i.url !== url), { url, name: url.split("/").pop()!.replace(".index", ""), lastChecked: null, fileCount: 3, updatesAvailable: 3, requiresNewerApp: false, verified: false, problem: null }];
     return this.indexes;
   }
 
@@ -179,7 +179,7 @@ export class ContentService {
     this.emit({ phase: "reloading", done: total, total, message: "Reloading content" });
     this.reloaded();
     this.emit({ phase: "done", done: total, total, message: "Content is up to date" });
-    return { updated: total, failed: [], reloaded: true };
+    return { updated: total, failed: [], reloaded: true, changed: [], newHosts: [] };
   }
 
   scan5etools(path: string): FiveToolsScan {

@@ -99,12 +99,18 @@ export interface ContentIndex {
   requiresNewerApp: boolean;
   /** Signed by the pinned key; false shows an "unverified" badge. */
   verified: boolean;
+  /** Why the last check failed or was incomplete (e.g. "the server answered 404 Not Found for 3 files"). */
+  problem: string | null;
 }
 
 export interface UpdateIndexesResult {
   updated: number;
   failed: string[];
   reloaded: boolean;
+  /** Aurora index files whose content changed since their first download (applied, reported). */
+  changed: string[];
+  /** Hosts an index downloaded from for the first time. */
+  newHosts: string[];
 }
 
 export interface ContentProgress {

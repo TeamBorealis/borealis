@@ -103,14 +103,21 @@ pub struct ContentIndex {
     pub requires_newer_app: bool,
     /// Signed by the pinned key; `false` shows an "unverified" badge.
     pub verified: bool,
+    /// Why the last check failed or was incomplete (e.g. "the server answered 404 Not Found for 3 files").
+    pub problem: Option<String>,
 }
 
 /// `update_indexes` result.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdateIndexesResult {
     pub updated: usize,
     pub failed: Vec<String>,
     pub reloaded: bool,
+    /// Aurora index files whose content changed since their first download (applied, reported).
+    pub changed: Vec<String>,
+    /// Hosts an index downloaded from for the first time.
+    pub new_hosts: Vec<String>,
 }
 
 /// Progress of a long content operation.

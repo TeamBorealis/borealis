@@ -1,9 +1,11 @@
-//! Update indexes: user-added HTTPS indexes, mandatory SHA-256 per entry,
-//! optional ed25519 index signatures (trust on first use), hot reload.
+//! Update indexes: user-added HTTPS indexes, hot reload. Borealis JSON indexes need a SHA-256 per
+//! entry and may be ed25519-signed (trust on first use); Aurora XML indexes are handled in
+//! [`crate::content_index_aurora`] (nested, unhashed, never "verified").
 //! Nothing is fetched until the user adds an index and asks for an update; no default URLs exist.
 
 use crate::content_dto::{ContentIndex, ImportPackRequest, UpdateIndexesResult};
 use crate::content_import::{slug, stem, write_pack_meta, Scratch};
+use crate::content_index_aurora::{looks_like_xml, AuroraOutcome, MAX_FILE_BYTES, MAX_INDEX_BYTES};
 use crate::content_packs::{progress, EventSink, PACK_META_FILE};
 use crate::content_prefs::IndexRecord;
 use crate::error::{ApiError, ApiResult};
@@ -16,8 +18,6 @@ use sha2::{Digest, Sha256};
 use std::path::PathBuf;
 use std::time::SystemTime;
 
-const MAX_INDEX_BYTES: usize = 2 * 1024 * 1024;
-const MAX_FILE_BYTES: usize = 64 * 1024 * 1024;
 const MAX_REDIRECTS: usize = 5;
 const FETCH_TIMEOUT_SECS: u64 = 30;
 const SHA256_ATTRIBUTE: &str = "sha256";
@@ -100,6 +100,33 @@ pub fn require_https(url: &str) -> ApiResult<()> {
     }
 }
 
+/// Why a redirect must not be followed: anything but HTTPS, or too many hops.
+#[must_use]
+pub fn redirect_refusal(scheme: &str, hops_so_far: usize) -> Option<String> {
+    if !scheme.eq_ignore_ascii_case("https") {
+        Some(format!(
+            "refused a redirect to a {scheme}: address (only https:// is allowed)"
+        ))
+    } else if hops_so_far >= MAX_REDIRECTS {
+        Some("too many redirects".into())
+    } else {
+        None
+    }
+}
+
+/// An error and its causes on one line (reqwest hides the redirect refusal in the source chain).
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+fn error_chain(e: &dyn std::error::Error) -> String {
+    let mut text = e.to_string();
+    let mut cause = e.source();
+    while let Some(c) = cause {
+        text.push_str(": ");
+        text.push_str(&c.to_string());
+        cause = c.source();
+    }
+    text
+}
+
 /// The real network client (desktop only).
 #[derive(Debug, Clone, Copy, Default)]
 pub struct HttpsFetcher;
@@ -110,10 +137,9 @@ impl Fetcher for HttpsFetcher {
         use std::io::Read;
         require_https(url).map_err(|e| e.message)?;
         let policy = reqwest::redirect::Policy::custom(|a| {
-            if a.url().scheme() == "https" && a.previous().len() < MAX_REDIRECTS {
-                a.follow()
-            } else {
-                a.stop()
+            match redirect_refusal(a.url().scheme(), a.previous().len()) {
+                None => a.follow(),
+                Some(why) => a.error(why),
             }
         });
         let client = reqwest::blocking::Client::builder()
@@ -121,7 +147,7 @@ impl Fetcher for HttpsFetcher {
             .redirect(policy)
             .build()
             .map_err(|e| e.to_string())?;
-        let response = client.get(url).send().map_err(|e| e.to_string())?;
+        let response = client.get(url).send().map_err(|e| error_chain(&e))?;
         if !response.status().is_success() {
             return Err(format!("the server answered {}", response.status()));
         }
@@ -156,7 +182,7 @@ fn version_parts(v: &str) -> Vec<u32> {
         .collect()
 }
 
-fn newer_than_app(min: &str) -> bool {
+pub(crate) fn newer_than_app(min: &str) -> bool {
     version_parts(min) > version_parts(env!("CARGO_PKG_VERSION"))
 }
 
@@ -169,6 +195,7 @@ fn dto(r: &IndexRecord) -> ContentIndex {
         updates_available: r.updates_available,
         requires_newer_app: r.requires_newer_app,
         verified: r.verified,
+        problem: r.problem.clone(),
     }
 }
 
@@ -231,25 +258,27 @@ impl AppState {
         let _guard = self.content_lock()?;
         let mut prefs = self.content_prefs();
         let total = prefs.indexes.len();
-        let mut failed = Vec::new();
+        let mut outcome = AuroraOutcome::default();
         let mut staged: Vec<(PathBuf, String)> = Vec::new();
         let mut scratches = Vec::new();
         for n in 0..total {
-            let url = prefs.indexes[n].url.clone();
-            sink.content_progress(&progress("checking", n, total, &url));
-            let known = prefs.indexes[n].public_key.clone();
+            let previous = prefs.indexes[n].clone();
+            sink.content_progress(&progress("checking", n, total, &previous.url));
             let record = self.check_index(
                 fetcher,
                 sink,
-                &url,
-                known.as_deref(),
+                &previous,
                 &mut staged,
                 &mut scratches,
-                &mut failed,
+                &mut outcome,
             );
             match record {
-                Some(r) => prefs.indexes[n] = r,
-                None => failed.push(url),
+                Ok(r) => prefs.indexes[n] = r,
+                Err(why) => {
+                    tracing::warn!("index {}: {why}", previous.url);
+                    prefs.indexes[n].problem = Some(why);
+                    outcome.failed.push(previous.url);
+                }
             }
         }
         prefs.save(&self.paths.prefs_file())?;
@@ -266,34 +295,63 @@ impl AppState {
         sink.content_progress(&progress("done", total, total, "Up to date"));
         Ok(UpdateIndexesResult {
             updated,
-            failed,
+            failed: outcome.failed,
             reloaded: updated > 0,
+            changed: outcome.changed,
+            new_hosts: outcome.new_hosts,
         })
     }
 
-    #[allow(clippy::too_many_arguments)]
+    /// Fetch one index and stage what changed; `Err` = the index itself is unusable (reason).
     fn check_index(
         &self,
         fetcher: &dyn Fetcher,
         sink: &dyn EventSink,
-        url: &str,
-        pinned_key: Option<&str>,
+        previous: &IndexRecord,
         staged: &mut Vec<(PathBuf, String)>,
         scratches: &mut Vec<Scratch>,
-        failed: &mut Vec<String>,
-    ) -> Option<IndexRecord> {
-        let bytes = fetcher.get(url, MAX_INDEX_BYTES).ok()?;
+        outcome: &mut AuroraOutcome,
+    ) -> Result<IndexRecord, String> {
+        let url = previous.url.as_str();
+        require_https(url).map_err(|e| e.message)?;
+        let bytes = fetcher.get(url, MAX_INDEX_BYTES)?;
+        if looks_like_xml(&bytes) {
+            return self.check_aurora_index(
+                fetcher, sink, url, &bytes, previous, staged, scratches, outcome,
+            );
+        }
+        let (mut record, failed) =
+            self.check_json_index(fetcher, sink, url, &bytes, previous, staged, scratches)?;
+        if !failed.is_empty() {
+            record.problem = Some(format!(
+                "{} file(s) were refused or could not be downloaded",
+                failed.len()
+            ));
+        }
+        outcome.failed.extend(failed);
+        Ok(record)
+    }
+
+    /// The signed / hashed Borealis JSON index (unchanged behaviour).
+    #[allow(clippy::too_many_arguments)]
+    fn check_json_index(
+        &self,
+        fetcher: &dyn Fetcher,
+        sink: &dyn EventSink,
+        url: &str,
+        bytes: &[u8],
+        previous: &IndexRecord,
+        staged: &mut Vec<(PathBuf, String)>,
+        scratches: &mut Vec<Scratch>,
+    ) -> Result<(IndexRecord, Vec<String>), String> {
+        let mut failed = Vec::new();
         let sig = fetcher
             .get(&format!("{url}{SIGNATURE_SUFFIX}"), MAX_SIGNATURE_BYTES)
             .ok();
-        let public_key = match check_trust(pinned_key, &bytes, sig) {
-            Ok(key) => key,
-            Err(why) => {
-                tracing::warn!("rejected index {url}: {why}");
-                return None;
-            }
-        };
-        let index = IndexFile::from_json_str(std::str::from_utf8(&bytes).ok()?).ok()?;
+        let public_key = check_trust(previous.public_key.as_deref(), bytes, sig)?;
+        let text = std::str::from_utf8(bytes).map_err(|_| "the index is not UTF-8 text")?;
+        let index = IndexFile::from_json_str(text)
+            .map_err(|e| format!("the index could not be read: {e}"))?;
         let name = index.info.name.clone().unwrap_or_else(|| url.to_string());
         let mut record = IndexRecord {
             url: url.to_string(),
@@ -312,7 +370,7 @@ impl AppState {
         record.file_count = entries.len();
         if record.requires_newer_app {
             record.updates_available = entries.len();
-            return Some(record);
+            return Ok((record, failed));
         }
         for (i, entry) in entries.iter().enumerate() {
             let pack_id = format!("dl-{}-{}", slug(&name), slug(stem(&entry.name)));
@@ -354,7 +412,7 @@ impl AppState {
                 }
             }
         }
-        Some(record)
+        Ok((record, failed))
     }
 
     /// `Ok(None)` = already current, `Err` = rejected (bad URL, hash mismatch, bad content).
