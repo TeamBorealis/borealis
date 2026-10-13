@@ -43,7 +43,11 @@ def build():
         mc, grants, 3, 'Bard', class_description(CLS, class_table(CLS, names, cols)),
         tool_selects=[select('Proficiency', 'Tool Proficiency (Bard)', supports='Musical Instrument', number=3, requirements=f'!{mc_id}')]))
 
-    els.append(spellcasting_feature(CLS, 'Charisma', spell_html(R), slots, cant, known=known,
+    # The Spells Known column counts the two Magical Secrets spells gained at 10, 14 and 18; those
+    # are picked in the Magical Secrets selects, so the Spell Known selects leave them out.
+    secrets = (10, 14, 18)
+    known_picks = {l: v - 2 * sum(1 for m in secrets if l >= m) for l, v in known.items()}
+    els.append(spellcasting_feature(CLS, 'Charisma', spell_html(R), slots, cant, known=known_picks,
         focus_id='ID_INTERNAL_PROFICIENCY_SPELLFOCUS_GROUP_MUSICAL_INSTRUMENT',
         sheet_text='Charisma is your spellcasting ability; you can use a musical instrument as a spellcasting focus.', id_=SPELL))
     els.append(class_feature(CLS, 'Bardic Inspiration', html=H('Bardic Inspiration'),

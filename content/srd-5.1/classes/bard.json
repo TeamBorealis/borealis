@@ -454,15 +454,6 @@
           "kind": "select",
           "type": "Spell",
           "name": "Spell Known (Bard)",
-          "number": 2,
-          "level": 10,
-          "supports": "$(spellcasting:list), $(spellcasting:slots)",
-          "spellcasting": "Bard"
-        },
-        {
-          "kind": "select",
-          "type": "Spell",
-          "name": "Spell Known (Bard)",
           "number": 1,
           "level": 11,
           "supports": "$(spellcasting:list), $(spellcasting:slots)",
@@ -481,15 +472,6 @@
           "kind": "select",
           "type": "Spell",
           "name": "Spell Known (Bard)",
-          "number": 2,
-          "level": 14,
-          "supports": "$(spellcasting:list), $(spellcasting:slots)",
-          "spellcasting": "Bard"
-        },
-        {
-          "kind": "select",
-          "type": "Spell",
-          "name": "Spell Known (Bard)",
           "number": 1,
           "level": 15,
           "supports": "$(spellcasting:list), $(spellcasting:slots)",
@@ -501,15 +483,6 @@
           "name": "Spell Known (Bard)",
           "number": 1,
           "level": 17,
-          "supports": "$(spellcasting:list), $(spellcasting:slots)",
-          "spellcasting": "Bard"
-        },
-        {
-          "kind": "select",
-          "type": "Spell",
-          "name": "Spell Known (Bard)",
-          "number": 2,
-          "level": 18,
           "supports": "$(spellcasting:list), $(spellcasting:slots)",
           "spellcasting": "Bard"
         }
