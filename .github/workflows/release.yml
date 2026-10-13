@@ -40,18 +40,30 @@ jobs:
       # Releases only ship commits that CI has already tested: the release itself builds but
       # does not run the test suite. Wait for CI to finish on main before pushing the tag.
       - name: require a successful CI run on this commit
+        # Waits (up to 3 h) while CI for this commit is still queued or running, so a release
+        # can be started right after the push. Fails if CI failed or never ran for the commit.
+        timeout-minutes: 180
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          passed=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$SHA&status=success" --jq '.total_count')
-          if [ "$passed" -lt 1 ]; then
-            echo "::error::no successful CI run for $SHA; push it to main, wait for CI to pass, then tag it"
-            exit 1
-          fi
-          echo "CI passed for $SHA"
+          while :; do
+            runs="repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$SHA"
+            passed=$(gh api "$runs&status=success" --jq '.total_count')
+            if [ "$passed" -ge 1 ]; then
+              echo "CI passed for $SHA"
+              break
+            fi
+            active=$(gh api "$runs" --jq '[.workflow_runs[] | select(.status != "completed")] | length')
+            if [ "$active" -lt 1 ]; then
+              echo "::error::no successful CI run for $SHA; push it to main and let CI pass first"
+              exit 1
+            fi
+            echo "CI still running for $SHA; checking again in 60 s"
+            sleep 60
+          done
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - id: v
         env:
