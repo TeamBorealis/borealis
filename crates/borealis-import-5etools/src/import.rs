@@ -335,6 +335,11 @@ fn register_links(sh: &mut Shared, st: &mut State, e: &Ents) {
             sh.subclass_titles
                 .insert(class_key.clone(), title.to_string());
         }
+        if ent.raw.get("casterProgression").is_some()
+            || ent.raw.get("spellcastingAbility").is_some()
+        {
+            sh.caster_classes.insert(ent.name.to_lowercase());
+        }
         sh.class_ids.insert(class_key, id);
     }
     let simple = [

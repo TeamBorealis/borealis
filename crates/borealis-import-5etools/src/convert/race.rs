@@ -2,6 +2,7 @@
 
 use super::build::{grant, select, setter_with};
 use super::mech::{AbilitySource, Mech};
+use super::spell_blocks::{self, Carrier};
 use super::spells_extra;
 use super::{
     append_fluff, drain_renderer, new_element, note_unmapped, sheet_text, short_text, Conv, Ent,
@@ -270,14 +271,34 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent, is_subrace: bool) -> Conv
     mech.feats(&race.feats);
 
     // Additional spells: unnamed groups apply directly, named groups become options.
-    let spells = spells_extra::convert(sh, &display_name, &race.additional_spells);
-    mech.set_gate(gate_for(&["additionalSpells"]).as_deref());
-    for r in spells.direct {
+    let spells = spells_extra::convert_inheriting(
+        sh,
+        &display_name,
+        &race.additional_spells,
+        true,
+        &spells_extra::inherited_abilities(&race.ability),
+    );
+    let spell_gate = gate_for(&["additionalSpells"]);
+    let placed = spell_blocks::place(
+        &Carrier {
+            id: &id,
+            name: &display_name,
+            source: &source_display,
+            ruleset: ent.ruleset,
+            free: spell_gate.is_none(),
+        },
+        &spells.casting,
+        &spells.direct,
+        true,
+    );
+    mech.set_gate(spell_gate.as_deref());
+    for r in spells.direct.into_iter().chain(placed.rules) {
         mech.push(r);
     }
     mech.set_gate(None);
+    el.spellcasting = placed.spellcasting;
     partial.extend(spells.partial);
-    let mut extra_elements: Vec<Element> = Vec::new();
+    let mut extra_elements: Vec<Element> = placed.elements;
     if !spells.options.is_empty() {
         let option_ty = if is_2024 {
             "Species Trait Option"
@@ -304,12 +325,13 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent, is_subrace: bool) -> Conv
                 "<p>{select_label} option of {}.</p>",
                 crate::text::tags::esc(&display_name)
             );
-            oe.rules = opt.rules;
             oe.sheet = Some(borealis_content::Sheet {
                 display: Some(false),
                 ..borealis_content::Sheet::default()
             });
+            let helpers = spell_blocks::fill(&mut oe, opt.rules, &opt.casting, true);
             extra_elements.push(oe);
+            extra_elements.extend(helpers);
         }
         let name = format!("{display_name} {select_label}");
         mech.push(Rule::Select(select(select_ty, &name, Some(&owner_id), 1)));

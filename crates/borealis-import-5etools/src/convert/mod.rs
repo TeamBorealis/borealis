@@ -12,6 +12,7 @@ pub mod misc;
 pub mod optfeat;
 pub mod race;
 pub mod spell;
+pub mod spell_blocks;
 pub mod spells_extra;
 
 use crate::ids::IdAlloc;
@@ -95,9 +96,31 @@ pub struct Shared {
     pub subclass_feature_keys: BTreeMap<String, usize>,
     /// Subclass choice titles by class `name|source`.
     pub subclass_titles: BTreeMap<String, String>,
+    /// Lower-case names of the imported classes that cast spells.
+    pub caster_classes: std::collections::BTreeSet<String>,
 }
 
+/// Spellcasting classes of the core rules (used when the class itself is not imported).
+const CORE_CASTERS: [&str; 9] = [
+    "artificer",
+    "bard",
+    "cleric",
+    "druid",
+    "paladin",
+    "ranger",
+    "sorcerer",
+    "warlock",
+    "wizard",
+];
+
 impl Shared {
+    /// Does the class (by name) have its own spellcasting?
+    #[must_use]
+    pub fn is_caster_class(&self, name: &str) -> bool {
+        let lc = name.to_lowercase();
+        self.caster_classes.contains(&lc) || CORE_CASTERS.contains(&lc.as_str())
+    }
+
     /// Element id for a link target.
     #[must_use]
     pub fn link(&self, kind: RefKind, name: &str, source: &str) -> Option<String> {

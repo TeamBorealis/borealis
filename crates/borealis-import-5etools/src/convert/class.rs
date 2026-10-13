@@ -371,11 +371,11 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     }
 
     // Class level additional spells (Artificer's expanded lists and similar).
-    let spells = spells_extra_class(sh, &class);
-    for r in spells.0 {
+    let (spell_rules, spell_partial, spell_helpers) = spells_extra_class(sh, &class, &el);
+    for r in spell_rules {
         mech.push(r);
     }
-    partial.extend(spells.1);
+    partial.extend(spell_partial);
 
     // Multiclass node.
     let (requirements, prerequisite) = multiclass_requirements(&class);
@@ -465,22 +465,38 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     drain_renderer(st, &renderer, &ent.file, &class.name);
     partial.sort();
     partial.dedup();
-    Conv {
-        elements: vec![el],
-        partial,
-    }
+    let mut elements = vec![el];
+    elements.extend(spell_helpers);
+    Conv { elements, partial }
 }
 
-fn spells_extra_class(sh: &Shared, class: &Class) -> (Vec<Rule>, Vec<String>) {
+/// Class-level additional spells (Magical Secrets, always-prepared signature spells, expanded
+/// lists): class spells, so they use the class's own block; extensions go on helpers.
+fn spells_extra_class(
+    sh: &Shared,
+    class: &Class,
+    el: &borealis_content::Element,
+) -> (Vec<Rule>, Vec<String>, Vec<borealis_content::Element>) {
     if class.additional_spells.is_empty() {
-        return (Vec::new(), Vec::new());
+        return (Vec::new(), Vec::new(), Vec::new());
     }
-    let r = super::spells_extra::convert(sh, &class.name, &class.additional_spells);
+    let own_block = el.spellcasting.is_none();
+    let r = super::spells_extra::convert(sh, &class.name, &class.additional_spells, own_block);
     let mut partial = r.partial;
     if !r.options.is_empty() {
-        partial.push("named additional spell groups of a class were not converted".into());
+        partial.push("alternative additional spell groups of a class were not converted".into());
     }
-    (r.direct, partial)
+    let carrier = super::spell_blocks::Carrier {
+        id: &el.id,
+        name: &el.name,
+        source: &el.source,
+        ruleset: el.ruleset.unwrap_or(borealis_content::Ruleset::Dnd2014),
+        free: false,
+    };
+    let placed = super::spell_blocks::place(&carrier, &r.casting, &r.direct, own_block);
+    let mut rules = r.direct;
+    rules.extend(placed.rules);
+    (rules, partial, placed.elements)
 }
 
 fn short_summary(class: &Class, faces: u32) -> String {

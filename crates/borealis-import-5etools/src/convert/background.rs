@@ -3,6 +3,7 @@
 
 use super::build::{grant, select};
 use super::mech::{AbilitySource, Mech};
+use super::spell_blocks::{self, Carrier};
 use super::spells_extra;
 use super::{
     append_fluff, drain_renderer, new_element, note_unmapped, sheet_text, short_text, Conv, Ent,
@@ -176,13 +177,34 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     mech.weapons(&bg.weapon_proficiencies);
     mech.armor(&bg.armor_proficiencies);
     mech.skill_tool_language(&bg.skill_tool_language_proficiencies);
-    let spells = spells_extra::convert(sh, &bg.name, &bg.additional_spells);
-    for r in spells.direct {
+    let spells = spells_extra::convert_inheriting(
+        sh,
+        &bg.name,
+        &bg.additional_spells,
+        true,
+        &spells_extra::inherited_abilities(&bg.ability),
+    );
+    let placed = spell_blocks::place(
+        &Carrier {
+            id: &id,
+            name: &bg.name,
+            source: &source_display,
+            ruleset: ent.ruleset,
+            free: true,
+        },
+        &spells.casting,
+        &spells.direct,
+        true,
+    );
+    for r in spells.direct.into_iter().chain(placed.rules) {
         mech.push(r);
     }
+    el.spellcasting = placed.spellcasting;
+    let spell_helpers = placed.elements;
     partial.extend(spells.partial);
     if !spells.options.is_empty() {
-        partial.push("named additional spell groups of a background were not converted".into());
+        partial
+            .push("alternative additional spell groups of a background were not converted".into());
     }
 
     // "Feature: X" sections become Background Feature elements.
@@ -259,6 +281,7 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     partial.dedup();
     let mut elements = vec![el];
     elements.extend(features);
+    elements.extend(spell_helpers);
     Conv { elements, partial }
 }
 
@@ -380,7 +403,14 @@ mod tests {
         let e = ent(json!({"name": "Mage", "source": "ZZZ",
             "additionalSpells": [{"name": "A", "known": {"1": ["light"]}}], "entries": []}));
         let conv = convert(&sh, &mut st, &e);
-        assert_eq!(conv.partial.len(), 1);
+        // a single group applies directly, whatever its name
+        assert!(conv.partial.is_empty());
+        let el = &conv.elements[0];
+        assert_eq!(
+            el.spellcasting.as_ref().and_then(|b| b.name.as_deref()),
+            Some("Mage")
+        );
+        assert!(el.rules.iter().any(|r| matches!(r, Rule::Grant(g) if g.id == "ID_5ET_PHB_SPELL_LIGHT" && g.spellcasting.as_deref() == Some("Mage"))));
         let bad = ent(json!({"name": "Bad", "source": "ZZZ", "feats": "alert"}));
         assert!(convert(&sh, &mut st, &bad).elements.is_empty());
     }

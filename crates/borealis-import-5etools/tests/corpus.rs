@@ -7,7 +7,7 @@
 //! dangling references are the documented `external_references`; two runs are byte-identical;
 //! single-source PHB / XPHB imports work. Thresholds were set from a full 2026-10 5etools
 //! checkout with a little headroom: at least 97% of entries converted, at most 260 skipped and
-//! 440 partial, at least 85 packs and 12,000 elements (see the constants below).
+//! 340 partial (none about additional spells), at least 85 packs and 12,000 elements (see the constants below).
 
 mod support;
 
@@ -26,8 +26,9 @@ const MIN_CONVERTED_PERCENT: usize = 97;
 /// Highest acceptable number of skipped entries for the whole folder (243 on the 2026-10
 /// corpus, nearly all catalog entries and languages the core pack already defines).
 const MAX_SKIPPED: usize = 260;
-/// Highest acceptable number of partial-conversion notes (412 on the 2026-10 corpus).
-const MAX_PARTIAL: usize = 440;
+/// Highest acceptable number of partial-conversion notes (412 on the 2026-10 corpus before
+/// additional spells were mapped, 324 after).
+const MAX_PARTIAL: usize = 340;
 /// Lower bounds on what a full folder must produce (92 packs, 12443 elements in 2026-10).
 const MIN_PACKS: usize = 85;
 const MIN_ELEMENTS: usize = 12_000;
@@ -196,6 +197,22 @@ fn five_etools_corpus() {
         r.partial.len() <= MAX_PARTIAL,
         "partial notes {}",
         r.partial.len()
+    );
+    let spell_notes: Vec<&str> = r
+        .partial
+        .iter()
+        .map(|n| n.reason.as_str())
+        .filter(|n| {
+            !n.starts_with("prerequisite")
+                && !n.starts_with("spell choice filter")
+                && (n.contains("spell") || n.contains("keyed"))
+        })
+        .collect();
+    // additional spells (expanded lists, innate/limited spells, alternative groups) convert
+    // completely; spell choice filters on fields without tags are a separate gap
+    assert!(
+        spell_notes.is_empty(),
+        "additional spell notes: {spell_notes:?}"
     );
     // a full folder defines everything it links to
     assert!(

@@ -541,6 +541,9 @@ pub struct OptionalFeature {
     pub feature_type: Vec<String>,
     /// Prerequisites.
     pub prerequisite: Vec<Value>,
+    /// Innate and known spells.
+    #[serde(rename = "additionalSpells")]
+    pub additional_spells: Vec<Value>,
     /// Rich text.
     pub entries: Vec<Value>,
     /// Everything else.

@@ -4,6 +4,8 @@
 use super::build::{select, set_level};
 use super::feat::{prerequisites, Prereq};
 use super::mech::feat_category_label;
+use super::spell_blocks;
+use super::spells_extra;
 use super::{
     append_fluff, drain_renderer, new_element, note_unmapped, sheet_text, short_text, Conv, Ent,
     Shared, State,
@@ -210,10 +212,40 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     el.sheet = Some(sheet_text(&short_text(&Renderer::plain(&of.entries), 300)));
     el.data
         .insert("feature_types".into(), serde_json::json!(of.feature_type));
+    let (label, own_block) = spell_label(sh, &of.feature_type);
+    let spells = spells_extra::convert(sh, &label, &of.additional_spells, own_block);
+    partial.extend(spells.partial);
+    if !spells.options.is_empty() {
+        partial.push(
+            "alternative additional spell groups of an optional feature were not converted".into(),
+        );
+    }
+    let helpers = spell_blocks::fill(&mut el, spells.direct, &spells.casting, own_block);
     drain_renderer(st, &renderer, &ent.file, &of.name);
-    Conv {
-        elements: vec![el],
-        partial,
+    let mut elements = vec![el];
+    elements.extend(helpers);
+    Conv { elements, partial }
+}
+
+/// The class whose spells an optional feature grants (invocations are Warlock spells), or the
+/// feature type as a spell source of its own (Elemental Disciplines).
+fn spell_label(sh: &Shared, codes: &[String]) -> (String, bool) {
+    let class = codes.iter().find_map(|c| match c.as_str() {
+        "EI" | "PB" => Some("Warlock"),
+        "FS:P" => Some("Paladin"),
+        "FS:R" => Some("Ranger"),
+        "MM" => Some("Sorcerer"),
+        "AI" => Some("Artificer"),
+        _ => None,
+    });
+    match class {
+        Some(c) if sh.is_caster_class(c) => (c.to_string(), false),
+        _ => (
+            codes
+                .first()
+                .map_or_else(|| "Optional Feature".into(), |c| type_label(c)),
+            true,
+        ),
     }
 }
 

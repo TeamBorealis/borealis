@@ -2,6 +2,7 @@
 
 use super::mech::{feat_category_label, AbilitySource, Mech};
 use super::optfeat::optional_feature_selects;
+use super::spell_blocks::{self, Carrier};
 use super::spells_extra;
 use super::{
     append_fluff, drain_renderer, new_element, note_unmapped, sheet_text, short_text, Conv, Ent,
@@ -269,12 +270,32 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
             }
         }
     }
-    let spells = spells_extra::convert(sh, &feat.name, &feat.additional_spells);
-    for r in spells.direct {
+    let spells = spells_extra::convert_inheriting(
+        sh,
+        &feat.name,
+        &feat.additional_spells,
+        true,
+        &spells_extra::inherited_abilities(&feat.ability),
+    );
+    let source_display = sh.source_display(&ent.source);
+    let placed = spell_blocks::place(
+        &Carrier {
+            id: &id,
+            name: &feat.name,
+            source: &source_display,
+            ruleset: ent.ruleset,
+            free: true,
+        },
+        &spells.casting,
+        &spells.direct,
+        true,
+    );
+    for r in spells.direct.into_iter().chain(placed.rules) {
         mech.push(r);
     }
+    el.spellcasting = placed.spellcasting;
+    let mut elements_extra = placed.elements;
     partial.extend(spells.partial);
-    let mut elements_extra = Vec::new();
     if !spells.options.is_empty() {
         for opt in spells.options {
             let oid = st.ids.id(
@@ -287,17 +308,18 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
                 &oid,
                 &opt.name,
                 "Feat Feature",
-                &sh.source_display(&ent.source),
+                &source_display,
                 ent.ruleset,
             );
             oe.supports = vec![id.clone()];
             oe.description = format!("<p>Option of {}.</p>", crate::text::tags::esc(&feat.name));
-            oe.rules = opt.rules;
             oe.sheet = Some(borealis_content::Sheet {
                 display: Some(false),
                 ..borealis_content::Sheet::default()
             });
+            let helpers = spell_blocks::fill(&mut oe, opt.rules, &opt.casting, true);
             elements_extra.push(oe);
+            elements_extra.extend(helpers);
         }
         mech.push(Rule::Select(super::build::select(
             "Feat Feature",
@@ -442,13 +464,33 @@ mod tests {
         );
         let conv = convert(&sh, &mut st, &e);
         let el = &conv.elements[0];
-        assert_eq!(conv.elements.len(), 3);
+        // feat, option 1 + one spellcasting helper per ability, option 2 (block on itself)
+        assert_eq!(conv.elements.len(), 6);
         assert!(el
             .rules
             .iter()
             .any(|r| matches!(r, Rule::Select(s) if s.ty == "Feat Feature")));
-        assert_eq!(conv.elements[1].ty, "Feat Feature");
-        assert_eq!(conv.elements[1].supports, vec![el.id.clone()]);
+        let cleric = &conv.elements[1];
+        assert_eq!(cleric.ty, "Feat Feature");
+        assert_eq!(cleric.supports, vec![el.id.clone()]);
+        assert!(cleric.spellcasting.is_none());
+        assert!(cleric.rules.iter().any(|r| matches!(r, Rule::Select(s) if s.ty == "Grants" && s.name == "Spellcasting Ability (Dabbler: Cleric Spells)")));
+        assert!(cleric
+            .rules
+            .iter()
+            .any(|r| matches!(r, Rule::Custom(c) if c.kind == "spell_free_cast")));
+        let wis = &conv.elements[3];
+        assert_eq!(wis.ty, "Grants");
+        let block = wis.spellcasting.as_ref().unwrap();
+        assert_eq!(
+            (block.name.as_deref(), block.ability.as_deref()),
+            (Some("Dabbler: Cleric Spells"), Some("Wisdom"))
+        );
+        let wizard = &conv.elements[5];
+        assert_eq!(
+            wizard.spellcasting.as_ref().and_then(|b| b.name.as_deref()),
+            Some("Dabbler: Wizard Spells")
+        );
         assert_eq!(el.ruleset, Some(Ruleset::Dnd2024));
         assert_eq!(el.supports, vec!["Origin"]);
     }

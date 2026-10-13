@@ -79,6 +79,18 @@ pub fn gate(rule: &mut Rule, requirements: &str) {
         Rule::Grant(r) => &mut r.requirements,
         Rule::Select(r) => &mut r.requirements,
         Rule::Stat(r) => &mut r.requirements,
+        // the engine reads `requirements` of the custom spell grant
+        Rule::Custom(c) if c.kind == "grant_spell" => {
+            let joined = match c.fields.get("requirements").and_then(|v| v.as_str()) {
+                Some(existing) if !existing.is_empty() => {
+                    format!("({existing})&&{requirements}")
+                }
+                _ => requirements.to_string(),
+            };
+            c.fields
+                .insert("requirements".into(), serde_json::Value::String(joined));
+            return;
+        }
         Rule::Unknown(_) | Rule::Custom(_) => return,
     };
     match slot {
@@ -148,5 +160,10 @@ mod tests {
         gate(&mut c2, "x");
         set_level(&mut c2, 2);
         assert_eq!(c2, c);
+        let mut gs = custom("grant_spell", json!({"spell": "ID_S"}));
+        gate(&mut gs, "!ID_A");
+        gate(&mut gs, "ID_B");
+        let Rule::Custom(g) = &gs else { unreachable!() };
+        assert_eq!(g.fields["requirements"], "(!ID_A)&&ID_B");
     }
 }

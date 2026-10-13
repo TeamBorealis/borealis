@@ -4,6 +4,7 @@ use super::build::{grant_at, select, set_level};
 use super::caster::{caster, class_table, CasterInput};
 use super::mech::Mech;
 use super::optfeat::{feat_selects, optional_feature_selects};
+use super::spell_blocks;
 use super::spells_extra;
 use super::{
     append_fluff, drain_renderer, new_element, note_unmapped, sheet_text, short_text, Conv, Ent,
@@ -14,7 +15,7 @@ use crate::model::{self, Feature, Subclass};
 use crate::srd::SrdKind;
 use crate::text::{RefKind, Renderer};
 use crate::util::supports_token;
-use borealis_content::{Rule, Spellcasting, SpellcastingList};
+use borealis_content::{Rule, Spellcasting};
 use serde_json::Value;
 
 /// A parsed feature reference (`name|class|classSource|level|source`, or the subclass form).
@@ -357,27 +358,54 @@ pub fn convert_subclass(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         mech.push(grant_at(&fid, "Archetype Feature", r.level));
     }
 
-    // Domain / expanded spells.
-    let spells = spells_extra::convert(sh, &sc.class_name, &sc.additional_spells);
-    for r in spells.direct {
-        mech.push(r);
+    // Domain / expanded / innate spells. Spells of a casting class (or of a casting subclass)
+    // join its block; a non-casting class's subclass gets a block named after the subclass.
+    let caster_sub = sc.caster_progression.is_some();
+    let class_casts = caster_sub || sh.is_caster_class(&sc.class_name);
+    let label = if class_casts && !caster_sub {
+        sc.class_name.clone()
+    } else {
+        sc.name.clone()
+    };
+    let own_block = !class_casts;
+    let spells = spells_extra::convert(sh, &label, &sc.additional_spells, own_block);
+    for r in &spells.direct {
+        mech.push(r.clone());
     }
     partial.extend(spells.partial);
     let mut spellcasting: Option<Spellcasting> = None;
-    if !spells.expanded.is_empty() {
-        spellcasting = Some(Spellcasting {
-            name: Some(sc.class_name.clone()),
-            extend: Some(true),
-            extends: spells
-                .expanded
-                .iter()
-                .map(|s| SpellcastingList::new(s.clone()))
-                .collect(),
-            ..Spellcasting::default()
-        });
-    }
+    let mut extra_elements = Vec::new();
     if !spells.options.is_empty() {
-        partial.push("named additional spell groups of a subclass were not converted".into());
+        let tag = format!("SPELL_OPTION_OF_{}", id.trim_start_matches("ID_"));
+        for opt in spells.options {
+            let mut oe = new_element(
+                &format!("{id}_{}", crate::util::id_fragment(&opt.name)),
+                &opt.name,
+                "Archetype Feature",
+                &el.source,
+                ent.ruleset,
+            );
+            oe.supports = vec![tag.clone()];
+            oe.description = format!(
+                "<p>Spell option of {}.</p>",
+                crate::text::tags::esc(&sc.name)
+            );
+            oe.sheet = Some(borealis_content::Sheet {
+                display: Some(false),
+                ..borealis_content::Sheet::default()
+            });
+            oe.data
+                .insert("class".into(), Value::String(sc.class_name.clone()));
+            let helpers = spell_blocks::fill(&mut oe, opt.rules, &opt.casting, own_block);
+            extra_elements.push(oe);
+            extra_elements.extend(helpers);
+        }
+        mech.push(Rule::Select(super::build::select(
+            "Archetype Feature",
+            &format!("{} Spells", sc.name),
+            Some(&tag),
+            1,
+        )));
     }
 
     // Subclass casters (Eldritch Knight and similar).
@@ -402,6 +430,25 @@ pub fn convert_subclass(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     if c.spellcasting.is_some() {
         spellcasting = c.spellcasting;
     }
+    let placed = spell_blocks::place(
+        &spell_blocks::Carrier {
+            id: &id,
+            name: &sc.name,
+            source: &el.source,
+            ruleset: ent.ruleset,
+            free: spellcasting.is_none(),
+        },
+        &spells.casting,
+        &spells.direct,
+        own_block,
+    );
+    for r in placed.rules {
+        mech.push(r);
+    }
+    if placed.spellcasting.is_some() {
+        spellcasting = placed.spellcasting;
+    }
+    extra_elements.extend(placed.elements);
     let table = class_table(&sc.name, groups);
     if sc.caster_progression.is_none() {
         for r in table.rules {
@@ -454,10 +501,9 @@ pub fn convert_subclass(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     drain_renderer(st, &renderer, &ent.file, &sc.name);
     partial.sort();
     partial.dedup();
-    Conv {
-        elements: vec![el],
-        partial,
-    }
+    let mut elements = vec![el];
+    elements.extend(extra_elements);
+    Conv { elements, partial }
 }
 
 #[cfg(test)]
