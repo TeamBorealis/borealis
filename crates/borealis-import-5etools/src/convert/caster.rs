@@ -1,6 +1,7 @@
 //! Spellcasting progression and class tables.
 
 use super::build::{grant, stat_at};
+use super::spell_choices::{spell_choices, ChoiceInput, SchoolRule};
 use crate::core_ids;
 use crate::text::strip_tags;
 use borealis_content::{Rule, Spellcasting, SpellcastingList};
@@ -31,6 +32,14 @@ pub struct CasterInput<'a> {
     pub prepared_formula: Option<&'a str>,
     /// Prepared spells per level (cumulative).
     pub prepared_progression: &'a [i64],
+    /// Spellbook spells may be of any level with slots.
+    pub book_allow_lower: bool,
+    /// Spells of a fixed level learned at class levels (Mystic Arcanum).
+    pub by_level: Option<&'a Value>,
+    /// When prepared spells change (`level`, `restLong`).
+    pub prepared_change: Option<&'a str>,
+    /// School restriction of learned spells (2014 Eldritch Knight).
+    pub schools: Option<&'a SchoolRule>,
     /// 2024 rules.
     pub is_2024: bool,
 }
@@ -232,8 +241,14 @@ pub fn caster(input: &CasterInput<'_>) -> CasterOut {
     let owner = input.owner.to_lowercase();
     let class_lower = input.class_name.to_lowercase();
 
+    let mut max_slot_level = 0u32;
     match slot_matrix(input.groups, Some(progression)) {
         Some(matrix) => {
+            for (j, level) in (1..=9u32).enumerate() {
+                if matrix.iter().any(|row| row[j] > 0) {
+                    max_slot_level = level;
+                }
+            }
             for j in 0..9usize {
                 let name = format!("{owner}:spellcasting:slots:{}", j + 1);
                 let series: Vec<i64> = matrix.iter().map(|row| row[j]).collect();
@@ -305,6 +320,25 @@ pub fn caster(input: &CasterInput<'_>) -> CasterOut {
 
     let prepares = input.prepared_formula.is_some() || !prepared_series.is_empty();
     let spellbook = !input.known_fixed.is_empty();
+    let choices = spell_choices(&ChoiceInput {
+        owner: input.owner,
+        cantrips: &cantrips,
+        known: &known,
+        book: input.known_fixed,
+        book_allow_lower: input.book_allow_lower,
+        by_level: input.by_level,
+        max_slot_level,
+        prepares,
+        progression,
+        prepared_change: input.prepared_change,
+        schools: input.schools,
+        is_2024: input.is_2024,
+    });
+    out.rules.extend(choices.rules);
+    out.partial.extend(choices.partial);
+    // learned spells may be swapped on level up: 2014 known casters, every 2024 caster (as the
+    // bundled classes)
+    let allow_replace = input.is_2024 || !known.is_empty();
     out.spellcasting = Some(Spellcasting {
         name: Some(input.owner.to_string()),
         ability: input
@@ -312,6 +346,7 @@ pub fn caster(input: &CasterInput<'_>) -> CasterOut {
             .and_then(core_ids::ability_name)
             .map(str::to_string),
         prepare: Some(prepares),
+        allow_replace: allow_replace.then_some(true),
         list: Some(SpellcastingList {
             supports: input.list_tag.to_string(),
             known: (prepares && !spellbook && known.is_empty()).then_some(true),
@@ -427,9 +462,21 @@ mod tests {
             groups: &groups,
             cantrips: &[3, 3, 3, 4, 4],
             known_fixed: &[6, 2, 2, 2, 2],
+            book_allow_lower: true,
             prepared_formula: Some("<$level$> + <$int_mod$>"),
             ..CasterInput::default()
         });
+        let picks: Vec<(String, u32)> = out
+            .rules
+            .iter()
+            .filter_map(|r| match r {
+                Rule::Select(s) if s.ty == "Spell" => Some((s.name.clone(), s.number.unwrap_or(1))),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(picks[0], ("Cantrip (Wizard 1)".into(), 3));
+        assert_eq!(picks[2], ("Spellbook (Wizard 1)".into(), 6));
+        assert_eq!(picks.len(), 2 + 5, "{picks:?}");
         let s = stats(&out.rules);
         assert!(s.contains(&("wizard:spellcasting:slots:1".into(), "2".into(), 1)));
         assert!(s.contains(&("wizard:spellcasting:slots:1".into(), "1".into(), 2)));
@@ -517,7 +564,30 @@ mod tests {
             .rules
             .iter()
             .any(|r| matches!(r, Rule::Grant(g) if g.id.ends_with("SLOTS_SOLO"))));
-        assert_eq!(warlock.spellcasting.as_ref().unwrap().prepare, Some(false));
+        let sc = warlock.spellcasting.as_ref().unwrap();
+        assert_eq!(sc.prepare, Some(false));
+        assert_eq!(
+            sc.allow_replace,
+            Some(true),
+            "known casters swap on level up"
+        );
+        let names: Vec<&str> = warlock
+            .rules
+            .iter()
+            .filter_map(|r| match r {
+                Rule::Select(s) => Some(s.name.as_str()),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            names,
+            [
+                "Cantrip (Warlock 1)",
+                "Spell (Warlock 1)",
+                "Spell (Warlock 2)",
+                "Spell (Warlock 3)"
+            ]
+        );
 
         let half2014 = caster(&CasterInput {
             owner: "Paladin",

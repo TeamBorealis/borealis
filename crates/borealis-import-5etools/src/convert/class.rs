@@ -5,6 +5,7 @@ use super::caster::{caster, class_table, CasterInput};
 use super::feature::{class_feature_key, feature_id, parse_class_feature_uid};
 use super::mech::Mech;
 use super::optfeat::{feat_selects, optional_feature_selects};
+use super::spell_choices::known_without_extra_choices;
 use super::{append_fluff, drain_renderer, new_element, note_unmapped, Conv, Ent, Shared, State};
 use crate::core_ids;
 use crate::ids::IdKind;
@@ -343,6 +344,8 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     }
 
     // Spellcasting and the class table.
+    let known =
+        known_without_extra_choices(&class.spells_known_progression, &class.additional_spells);
     let c = caster(&CasterInput {
         owner: &class.name,
         class_name: &class.name,
@@ -351,10 +354,16 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         progression: class.caster_progression.as_deref(),
         groups: &class.class_table_groups,
         cantrips: &class.cantrip_progression,
-        known: &class.spells_known_progression,
+        known: &known,
         known_fixed: &class.spells_known_progression_fixed,
         prepared_formula: class.prepared_spells.as_deref(),
         prepared_progression: &class.prepared_spells_progression,
+        book_allow_lower: class
+            .spells_known_progression_fixed_allow_lower_level
+            .unwrap_or(false),
+        by_level: class.spells_known_progression_fixed_by_level.as_ref(),
+        prepared_change: class.prepared_spells_change.as_deref(),
+        schools: None,
         is_2024,
     });
     for r in c.rules {
@@ -719,6 +728,7 @@ mod tests {
             "name": "Wizard", "source": "XPHB", "edition": "one", "hd": {"number": 1, "faces": 6}, "proficiency": ["int", "wis"],
             "primaryAbility": [{"int": true}], "casterProgression": "full", "spellcastingAbility": "int",
             "cantripProgression": [3, 3], "preparedSpellsProgression": [4, 5], "spellsKnownProgressionFixed": [6, 2],
+            "spellsKnownProgressionFixedAllowLowerLevel": true, "preparedSpellsChange": "restLong",
             "featProgression": [{"name": "Epic Boon", "category": ["EB"], "progression": {"19": 1}}],
             "classTableGroups": [{"colLabels": ["Cantrips", "Prepared Spells"], "rows": [[3, 4], [3, 5]]},
                 {"title": "Spell Slots per Spell Level", "colLabels": ["1st"], "rowsSpellProgression": [[2,0,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0]]}],
@@ -741,6 +751,12 @@ mod tests {
             .any(|r| matches!(r, Rule::Grant(g) if g.id.ends_with("SLOTS_FULL"))));
         assert!(el.data.contains_key("class_table"));
         assert_eq!(el.data["primary_ability"], json!([{"int": true}]));
+        // spell choices: cantrips and spellbook pages as the bundled 2024 Wizard
+        assert!(el.rules.iter().any(|r| matches!(r, Rule::Select(s) if s.name == "Cantrip (Wizard 1)" && s.number == Some(3) && s.allow_replace == Some(true))));
+        assert!(el.rules.iter().any(|r| matches!(r, Rule::Select(s) if s.name == "Spellbook (Wizard 2)" && s.number == Some(2) && s.level == Some(2))));
+        assert!(el.rules.iter().any(|r| matches!(r, Rule::Custom(c) if c.kind == "spellbook" && c.fields["initial_spells"] == 6)));
+        assert!(el.rules.iter().any(|r| matches!(r, Rule::Custom(c) if c.kind == "prepared_spell_change" && c.fields["count"] == "any")));
+        assert_eq!(sc.allow_replace, Some(true));
     }
 
     #[test]

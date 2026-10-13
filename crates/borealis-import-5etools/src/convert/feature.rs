@@ -5,6 +5,7 @@ use super::caster::{caster, class_table, CasterInput};
 use super::mech::Mech;
 use super::optfeat::{feat_selects, optional_feature_selects};
 use super::spell_blocks;
+use super::spell_choices::school_rule;
 use super::spells_extra;
 use super::{
     append_fluff, drain_renderer, new_element, note_unmapped, sheet_text, short_text, Conv, Ent,
@@ -262,6 +263,23 @@ fn subclass_feature_refs(sc: &Subclass) -> Vec<FeatureRef> {
         .collect()
 }
 
+/// Text of every feature of a subclass, nested ones included (school restrictions live in
+/// prose only; 5etools nests "Spellcasting" under the introductory feature).
+fn feature_text(sh: &Shared, sc: &Subclass) -> String {
+    let field = |e: &Value, k: &str| e.get(k).and_then(Value::as_str).unwrap_or("").to_string();
+    sh.subclass_features
+        .iter()
+        .filter(|f| {
+            field(&f.raw, "className") == sc.class_name
+                && field(&f.raw, "subclassShortName") == sc.short_name
+                && field(&f.raw, "subclassSource") == sc.source
+        })
+        .filter_map(|f| f.raw.get("entries"))
+        .map(|e| crate::text::strip_tags(&e.to_string()))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 /// Convert a subclass (an `Archetype`).
 pub fn convert_subclass(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     let sc: Subclass = match model::parse(&ent.raw) {
@@ -410,6 +428,11 @@ pub fn convert_subclass(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
 
     // Subclass casters (Eldritch Knight and similar).
     let groups: &[Value] = &sc.subclass_table_groups;
+    let schools = sc
+        .caster_progression
+        .is_some()
+        .then(|| school_rule(&feature_text(sh, &sc)))
+        .flatten();
     let c = caster(&CasterInput {
         owner: &sc.name,
         class_name: &sc.class_name,
@@ -419,9 +442,16 @@ pub fn convert_subclass(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         groups,
         cantrips: &sc.cantrip_progression,
         known: &sc.spells_known_progression,
+        known_fixed: &sc.spells_known_progression_fixed,
         prepared_formula: sc.prepared_spells.as_deref(),
+        prepared_progression: &sc.prepared_spells_progression,
+        book_allow_lower: sc
+            .spells_known_progression_fixed_allow_lower_level
+            .unwrap_or(false),
+        by_level: sc.spells_known_progression_fixed_by_level.as_ref(),
+        prepared_change: sc.prepared_spells_change.as_deref(),
+        schools: schools.as_ref(),
         is_2024,
-        ..CasterInput::default()
     });
     for r in c.rules {
         mech.push(r);
@@ -749,5 +779,62 @@ mod tests {
             "f.json",
         );
         assert!(convert_subclass(&sh, &mut st, &bad).elements.is_empty());
+    }
+
+    #[test]
+    fn subclass_caster_school_restriction_from_feature_text() {
+        let mut sh = Shared::default();
+        sh.subclass_features.push(ent(
+            json!({"name": "Hedge Magic", "source": "ZZZ", "className": "Fighter", "classSource": "ZZZ",
+            "subclassShortName": "Hedge Knight", "subclassSource": "ZZZ", "level": 3,
+            "entries": ["You learn three spells, two of which you must choose from the conjuration and divination spells of that list.",
+                "Spells you learn at 9th and 15th level can come from any school."]}),
+            "f.json",
+        ));
+        let mut st = State::default();
+        let known: Vec<i64> = vec![0, 0, 3, 3, 3, 3, 3, 3, 4];
+        let sub = ent(
+            json!({"name": "Hedge Knight", "shortName": "Hedge Knight", "source": "ZZZ", "className": "Fighter", "classSource": "ZZZ",
+            "subclassFeatures": [], "casterProgression": "1/3", "spellcastingAbility": "int",
+            "cantripProgression": [0, 0, 2], "spellsKnownProgression": known,
+            "subclassTableGroups": [{"title": "Spell Slots per Spell Level", "colLabels": ["1st"], "rowsSpellProgression": [[0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0],[2,0,0,0,0,0,0,0,0]]}]}),
+            "f.json",
+        );
+        let el = &convert_subclass(&sh, &mut st, &sub).elements[0];
+        let picks: Vec<(&str, &str, u32)> = el
+            .rules
+            .iter()
+            .filter_map(|r| match r {
+                Rule::Select(s) if s.ty == "Spell" => Some((
+                    s.name.as_str(),
+                    s.supports.as_deref().unwrap_or(""),
+                    s.number.unwrap_or(1),
+                )),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            picks,
+            [
+                ("Cantrip (Hedge Knight 3)", "$(spellcasting:list), 0", 2),
+                (
+                    "Spell (Hedge Knight 3)",
+                    "$(spellcasting:list), $(spellcasting:slots), (Conjuration||Divination)",
+                    2
+                ),
+                (
+                    "Spell of Any School (Hedge Knight 3)",
+                    "$(spellcasting:list), $(spellcasting:slots)",
+                    1
+                ),
+                (
+                    "Spell of Any School (Hedge Knight 9)",
+                    "$(spellcasting:list), $(spellcasting:slots)",
+                    1
+                ),
+            ]
+        );
+        let sc = el.spellcasting.as_ref().unwrap();
+        assert_eq!(sc.allow_replace, Some(true));
     }
 }

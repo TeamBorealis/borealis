@@ -13,6 +13,7 @@ pub mod optfeat;
 pub mod race;
 pub mod spell;
 pub mod spell_blocks;
+pub mod spell_choices;
 pub mod spells_extra;
 
 use crate::ids::IdAlloc;

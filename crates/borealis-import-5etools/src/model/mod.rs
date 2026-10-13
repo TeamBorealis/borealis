@@ -139,6 +139,15 @@ pub struct Class {
     /// Spellbook spells gained per level (20 entries).
     #[serde(rename = "spellsKnownProgressionFixed")]
     pub spells_known_progression_fixed: Vec<i64>,
+    /// Spells of a fixed spell level learned at class levels (`{"11": {"6": 1}}`, Mystic Arcanum).
+    #[serde(rename = "spellsKnownProgressionFixedByLevel")]
+    pub spells_known_progression_fixed_by_level: Option<Value>,
+    /// Spellbook spells may be of any level the caster has slots for (not only the highest).
+    #[serde(rename = "spellsKnownProgressionFixedAllowLowerLevel")]
+    pub spells_known_progression_fixed_allow_lower_level: Option<bool>,
+    /// When prepared spells change: `level` (on level up) or `restLong`.
+    #[serde(rename = "preparedSpellsChange")]
+    pub prepared_spells_change: Option<String>,
     /// Optional feature picks per level.
     #[serde(rename = "optionalfeatureProgression")]
     pub optionalfeature_progression: Vec<Value>,
@@ -214,6 +223,21 @@ pub struct Subclass {
     /// Prepared spell formula.
     #[serde(rename = "preparedSpells")]
     pub prepared_spells: Option<String>,
+    /// Prepared spells per level (2024).
+    #[serde(rename = "preparedSpellsProgression")]
+    pub prepared_spells_progression: Vec<i64>,
+    /// Spellbook spells gained per level.
+    #[serde(rename = "spellsKnownProgressionFixed")]
+    pub spells_known_progression_fixed: Vec<i64>,
+    /// Spells of a fixed spell level learned at class levels (`{"11": {"6": 1}}`, Mystic Arcanum).
+    #[serde(rename = "spellsKnownProgressionFixedByLevel")]
+    pub spells_known_progression_fixed_by_level: Option<Value>,
+    /// Spellbook spells may be of any level the caster has slots for (not only the highest).
+    #[serde(rename = "spellsKnownProgressionFixedAllowLowerLevel")]
+    pub spells_known_progression_fixed_allow_lower_level: Option<bool>,
+    /// When prepared spells change: `level` (on level up) or `restLong`.
+    #[serde(rename = "preparedSpellsChange")]
+    pub prepared_spells_change: Option<String>,
     /// Table groups.
     #[serde(rename = "subclassTableGroups")]
     pub subclass_table_groups: Vec<Value>,
