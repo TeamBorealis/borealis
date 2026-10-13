@@ -98,6 +98,19 @@ Borealis runs on iPhone and Android as well as macOS, Windows and Linux. Track h
 
 You choose the edition per character, and it follows that character to level 20.
 
+### Importing your own 5etools data
+
+If you keep a local copy of 5etools data that you are entitled to use, Borealis can convert it on your device.
+
+1. Open **Start → Additional content** and find **5etools import**.
+2. Choose **Scan folder…** and pick the `data/` folder of your local copy.
+3. Tick the source books you own. **Include fluff** adds descriptions and lore text.
+4. Choose **Import N book(s)**. Borealis shows a report of anything it converted only partly or skipped.
+
+The imported books are then installed next to the bundled SRD content, ready to use when you build a character.
+
+Only import content you own or are licensed to use. Borealis reads the files from disk and converts them locally; it downloads nothing, ships no 5etools data and does not tell you where to get it. Converted packs are for your personal use: do not share or redistribute them. Borealis is not affiliated with 5etools.
+
 ### Yours, and only yours
 
 - **No account.** No sign-up, no cloud save, no ads. Characters are files you can copy, back up and share.
