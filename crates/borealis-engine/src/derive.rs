@@ -218,6 +218,13 @@ impl<'u> Evaluation<'u> {
                 && new_limit == limit
                 && (!graph.stat_used.get() || sums == stat_sums);
             if stable || iter + 1 == MAX_OUTER {
+                // Option filters run after expansion: give them this pass's statistic sums. The
+                // expansion itself did not depend on them (stable: either it read no statistic
+                // or the sums are unchanged).
+                if graph.stat_sums != sums {
+                    graph.stat_sums = sums;
+                    graph.version += 1;
+                }
                 for d in graph.diags.items() {
                     diags.push(d.clone());
                 }

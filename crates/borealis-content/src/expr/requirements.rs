@@ -9,9 +9,11 @@ use std::fmt;
 pub enum TestValue {
     /// An integer threshold (`[str:13]`): the test means `>=`.
     Number(i64),
-    /// Any other text (`[type:spell]`, `[ranger:archetype:swarmkeeper]`, `[level:]`), trimmed.
-    /// Only `type` gives text a meaning (`engine.md` 5.1); every other key with a text value
-    /// never holds.
+    /// Any other text (`[type:spell]`, `[feature:Fighting Style]`,
+    /// `[ranger:archetype:swarmkeeper]`, `[level:]`), trimmed. Only `type` (`engine.md` 5.1) and
+    /// the Borealis `feature` key (a live element with that name) give text a meaning; every
+    /// other key with a text value never holds. The Borealis `[spellcasting:N]` term is numeric
+    /// (a class spell slot of level `N` or higher).
     Text(String),
 }
 

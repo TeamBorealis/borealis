@@ -68,6 +68,35 @@ pub struct ReqEnv<'a> {
     pub stat_used: Option<&'a Cell<bool>>,
     /// Lower-cased element types of the live character (for `[type:spell]`); `None` = none.
     pub types: Option<&'a IdCounts>,
+    /// Element names of the live character as [`feature_name_key`] (for `[feature:<name>]`);
+    /// `None` = none.
+    pub names: Option<&'a IdCounts>,
+    /// Some live element has a spellcasting block (`[feature:spellcasting]`).
+    pub spell_blocks: bool,
+}
+
+/// Requirement key of the by-name feature term (`[feature:<name>]`).
+const FEATURE_KEY: &str = "feature";
+/// Requirement key of the strict spell-slot term (`[spellcasting:N]`).
+const SPELLCASTING_KEY: &str = "spellcasting";
+
+/// The key of an element name in [`ReqEnv::names`]: lower-cased, with every `:`-separated
+/// part trimmed (the requirement parser trims around the last `:` of `[feature:A: B]`).
+#[must_use]
+pub fn feature_name_key(name: &str) -> String {
+    name.split(':')
+        .map(str::trim)
+        .collect::<Vec<_>>()
+        .join(":")
+        .to_lowercase()
+}
+
+/// Spell level of a slot statistic group: `<name>:spellcasting:slots:N` or
+/// `spellcasting:slots:N` with `N` in 1..=9 (`engine.md` 10.5).
+fn slot_group_level(group: &str) -> Option<i32> {
+    let (head, n) = group.rsplit_once(':')?;
+    let n: i32 = n.parse().ok().filter(|n| (1..=9).contains(n))?;
+    (head == "spellcasting:slots" || head.ends_with(":spellcasting:slots")).then_some(n)
 }
 
 impl ReqEnv<'_> {
@@ -79,10 +108,54 @@ impl ReqEnv<'_> {
         n > ex
     }
 
-    /// `[type:x]`: some live element has that type (case-insensitive); any other key with a
-    /// text value never holds (`engine.md` 5.1).
+    /// `[feature:<name>]` (Borealis extension; also the structured
+    /// `data.prerequisite.requires_feature` check): some live element of the character is named
+    /// `<name>` (case-insensitive, trimmed; any element type, as Aurora class and racial features
+    /// are plain elements). `[feature:spellcasting]` also holds when any live element has a
+    /// spellcasting block (lenient: a feat or species spellcasting block counts, and a class
+    /// block counts before its first spell slot). Use `[spellcasting:1]` for the strict
+    /// "Spellcasting or Pact Magic feature" rule. Like `[type:x]` it reads the live character,
+    /// not the owner-excluded id set (`engine.md` 3.6).
+    #[must_use]
+    pub fn has_feature(&self, name: &str) -> bool {
+        let name = name.trim();
+        self.names
+            .is_some_and(|n| n.count(&feature_name_key(name)) > 0)
+            || (self.spell_blocks && name.eq_ignore_ascii_case("spellcasting"))
+    }
+
+    /// `[spellcasting:N]` (Borealis extension, strict): the character has at least one spell
+    /// slot of level `N` or higher from a class Spellcasting or Pact Magic feature, read from
+    /// the slot statistic groups `<class>:spellcasting:slots:<level>` (pact slots included,
+    /// `engine.md` 10.5) of the previous statistic pass, like other statistic terms. This is
+    /// the 2024 "Spellcasting or Pact Magic feature" prerequisite: a feat or species
+    /// spellcasting block grants no slots and does not count, nor does a 2014 half caster
+    /// before its first slot. `N` below 1 means 1.
+    fn has_spell_slots(&self, min_level: i64) -> bool {
+        if let Some(c) = self.stat_used {
+            c.set(true);
+        }
+        let min = i32::try_from(min_level.max(1)).unwrap_or(i32::MAX);
+        self.stats
+            .iter()
+            .any(|(k, v)| *v > 0 && slot_group_level(k).is_some_and(|l| l >= min))
+    }
+
+    /// Text-valued terms: `[type:x]` (some live element has that type, case-insensitive) and
+    /// `[feature:<name>]`; any other key with a text value never holds (`engine.md` 5.1).
     fn text_test(&self, key: &str, value: &str) -> bool {
-        key.trim().eq_ignore_ascii_case("type")
+        let key = key.trim();
+        if key.eq_ignore_ascii_case(FEATURE_KEY) {
+            return self.has_feature(value);
+        }
+        // `[feature:Name: Part]` splits at the last `:`; the name is everything after `feature:`.
+        if let Some(head) = key
+            .get(..FEATURE_KEY.len() + 1)
+            .filter(|h| h.eq_ignore_ascii_case("feature:"))
+        {
+            return self.has_feature(&format!("{}:{value}", &key[head.len()..]));
+        }
+        key.eq_ignore_ascii_case("type")
             && self
                 .types
                 .is_some_and(|t| t.count(&value.trim().to_lowercase()) > 0)
@@ -90,10 +163,16 @@ impl ReqEnv<'_> {
 
     fn test(&self, key: &str, value: &TestValue) -> bool {
         let value = match value {
+            TestValue::Number(n) if key.trim().eq_ignore_ascii_case(FEATURE_KEY) => {
+                return self.has_feature(&n.to_string());
+            }
             TestValue::Number(n) => *n,
             TestValue::Text(t) => return self.text_test(key, t),
         };
         let key = key.trim().to_lowercase();
+        if key == SPELLCASTING_KEY {
+            return self.has_spell_slots(value);
+        }
         let value = i32::try_from(value).unwrap_or(i32::MAX);
         if let Some(i) = ids::ability_index(&key) {
             return self.abilities[i] >= value;
@@ -322,6 +401,8 @@ mod tests {
             rule_class_level: None,
             stat_used: None,
             types: None,
+            names: None,
+            spell_blocks: false,
         };
         let t = |s: &str| req(s, &env);
         assert!(t("ID_AA&&ID_BB") && t("ID_AA&ID_BB") && t("ID_AA,ID_BB"));
@@ -354,6 +435,8 @@ mod tests {
             rule_class_level: None,
             stat_used: None,
             types: Some(&types),
+            names: None,
+            spell_blocks: false,
         };
         assert!(req("[type:spell]", &env) && req("[type:Spell]", &env));
         assert!(req("[TYPE:class]", &env) && !req("[type:feat]", &env));
@@ -366,6 +449,92 @@ mod tests {
         assert!(req("![armor:none]", &env));
         env.types = None;
         assert!(!req("[type:spell]", &env));
+    }
+
+    #[test]
+    fn feature_terms_match_live_names_anywhere_in_an_expression() {
+        let ids = ids_of(&["ID_AA"]);
+        let names = ids_of(&["fighting style", "eldritch invocations", "foo:bar", "2"]);
+        let cl = HashMap::new();
+        let st = HashMap::new();
+        let mut env = ReqEnv {
+            ids: &ids,
+            exclude: None,
+            abilities: [10; 6],
+            total_level: 1,
+            class_levels: &cl,
+            stats: &st,
+            rule_class_level: None,
+            stat_used: None,
+            types: None,
+            names: Some(&names),
+            spell_blocks: false,
+        };
+        assert!(req("[feature:Fighting Style]", &env) && req("[FEATURE: fighting style ]", &env));
+        assert!(!req("[feature:Pact Magic]", &env) && req("![feature:Pact Magic]", &env));
+        assert!(req(
+            "[feature:Pact Magic]||[feature:Eldritch Invocations]",
+            &env
+        ));
+        assert!(req("ID_ZZ|([feature:Fighting Style],ID_AA)", &env));
+        assert!(!req("ID_ZZ|([feature:Fighting Style],ID_BB)", &env));
+        assert!(req("[feature:Foo: Bar]", &env), "names may contain a colon");
+        assert!(req("[feature:2]", &env), "numeric-looking names are names");
+        assert!(!req("[feature:spellcasting]", &env));
+        env.spell_blocks = true;
+        assert!(
+            req("[feature:Spellcasting]", &env),
+            "any spellcasting block (lenient)"
+        );
+        assert!(env.has_feature("fighting style") && !env.has_feature("style"));
+        env.names = None;
+        assert!(!req("[feature:Fighting Style]", &env));
+    }
+
+    #[test]
+    fn spellcasting_term_needs_class_spell_slots() {
+        let ids = IdCounts::default();
+        let cl = HashMap::new();
+        let mut st = HashMap::new();
+        st.insert("wizard:spellcasting:dc".to_string(), 13);
+        st.insert("paladin:spellcasting:slots:1".to_string(), 0);
+        let used = Cell::new(false);
+        let mut env = ReqEnv {
+            ids: &ids,
+            exclude: None,
+            abilities: [10; 6],
+            total_level: 1,
+            class_levels: &cl,
+            stats: &st,
+            rule_class_level: None,
+            stat_used: Some(&used),
+            types: None,
+            names: None,
+            spell_blocks: true,
+        };
+        assert!(
+            !req("[spellcasting:1]", &env),
+            "a spellcasting block without slots"
+        );
+        assert!(
+            used.get(),
+            "reads statistics, so the derive loop converges on it"
+        );
+        let mut pact = st.clone();
+        pact.insert("warlock:spellcasting:slots:3".to_string(), 2);
+        env.stats = &pact;
+        assert!(req("[spellcasting:1]", &env) && req("[Spellcasting:3]", &env));
+        assert!(!req("[spellcasting:4]", &env) && req("[spellcasting:0]", &env));
+        assert!(req("ID_ZZ||[spellcasting:1]", &env));
+        let mut pool = st.clone();
+        pool.insert("spellcasting:slots:9".to_string(), 1);
+        pool.insert("spellcasting:slots:10".to_string(), 1);
+        pool.insert("slots:5".to_string(), 1);
+        env.stats = &pool;
+        assert!(req("[spellcasting:9]", &env));
+        assert_eq!(slot_group_level("spellcasting:slots:10"), None);
+        assert_eq!(slot_group_level("myspellcasting:slots:2"), None);
+        assert_eq!(slot_group_level("multiclass:spellcasting:slots:2"), Some(2));
     }
 
     #[test]
@@ -383,6 +552,8 @@ mod tests {
             rule_class_level: Some(3),
             stat_used: None,
             types: None,
+            names: None,
+            spell_blocks: false,
         };
         assert!(
             !req("[level:4]", &env),
@@ -407,6 +578,8 @@ mod tests {
             rule_class_level: None,
             stat_used: None,
             types: None,
+            names: None,
+            spell_blocks: false,
         };
         assert!(req("ID_AB_CD", &env));
         assert!(!req("ID_AB_C", &env), "Token exact matching");
@@ -429,6 +602,8 @@ mod tests {
             rule_class_level: None,
             stat_used: None,
             types: None,
+            names: None,
+            spell_blocks: false,
         };
         assert!(req("ID_AA", &env), "second copy still visible");
         env.exclude = None;

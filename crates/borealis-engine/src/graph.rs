@@ -123,6 +123,10 @@ pub struct Graph<'u> {
     pub(crate) ids: IdCounts,
     /// Lower-cased types of the live elements (`[type:spell]` requirement terms).
     pub(crate) types: IdCounts,
+    /// Names of the live elements as `eval::feature_name_key` (`[feature:<name>]` terms).
+    pub(crate) names: IdCounts,
+    /// Live elements with a spellcasting block (`[feature:spellcasting]`).
+    pub(crate) spell_blocks: usize,
     pub(crate) class_levels: HashMap<String, i32>,
     pub(crate) mgr_levels: HashMap<Mgr, u32>,
     /// Converged ability hint used by requirements.
@@ -175,6 +179,8 @@ impl<'u> Graph<'u> {
             roots: Vec::new(),
             ids: IdCounts::default(),
             types: IdCounts::default(),
+            names: IdCounts::default(),
+            spell_blocks: 0,
             class_levels: HashMap::new(),
             mgr_levels,
             abilities: inputs.abilities,
@@ -288,6 +294,8 @@ impl<'u> Graph<'u> {
             rule_class_level: None,
             stat_used: Some(&self.stat_used),
             types: Some(&self.types),
+            names: Some(&self.names),
+            spell_blocks: self.spell_blocks > 0,
         }
     }
 
@@ -335,6 +343,8 @@ impl<'u> Graph<'u> {
         });
         self.ids.add(&e.el.id);
         self.types.add(&e.el.ty.to_lowercase());
+        self.names.add(&crate::eval::feature_name_key(&e.el.name));
+        self.spell_blocks += usize::from(e.el.spellcasting.is_some());
         self.version += 1;
         if matches!(e.el.ty.as_str(), "Class" | "Multiclass") {
             self.refresh_class_levels();
@@ -354,6 +364,9 @@ impl<'u> Graph<'u> {
             let eid = self.nodes[n].e.el.id.clone();
             self.ids.remove(&eid);
             self.types.remove(&self.nodes[n].e.el.ty.to_lowercase());
+            let el = &self.nodes[n].e.el;
+            self.names.remove(&crate::eval::feature_name_key(&el.name));
+            self.spell_blocks -= usize::from(el.spellcasting.is_some());
             touched_class |= matches!(self.nodes[n].e.el.ty.as_str(), "Class" | "Multiclass");
             stack.extend(self.nodes[n].children.clone());
         }
@@ -535,12 +548,10 @@ impl<'u> Graph<'u> {
         })
     }
 
-    /// Does a live element carry this feature name (`Fighting Style`, `Spellcasting`)?
+    /// Does a live element carry this feature name (`Fighting Style`, `Spellcasting`)? The same
+    /// check as the `[feature:<name>]` requirement term.
     fn has_feature_named(&self, name: &str) -> bool {
-        self.nodes
-            .iter()
-            .any(|n| n.alive && n.e.el.name.eq_ignore_ascii_case(name))
-            || (name.eq_ignore_ascii_case("spellcasting") && !self.spell_infos().is_empty())
+        self.env().has_feature(name)
     }
 
     /// Structured feat prerequisites (`data.prerequisite`) of a candidate.
