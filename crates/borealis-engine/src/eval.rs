@@ -5,7 +5,7 @@ use crate::ids;
 use crate::universe::{Cond, UElem};
 use borealis_content::expr::{
     BoolExpr, Dynamic, EquippedExpr, EquippedTest, RequirementLeaf, RequirementsExpr, SupportsExpr,
-    SupportsLeaf,
+    SupportsLeaf, TestValue,
 };
 use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
@@ -66,6 +66,8 @@ pub struct ReqEnv<'a> {
     pub rule_class_level: Option<i32>,
     /// Set when a test fell back to a statistic group lookup.
     pub stat_used: Option<&'a Cell<bool>>,
+    /// Lower-cased element types of the live character (for `[type:spell]`); `None` = none.
+    pub types: Option<&'a IdCounts>,
 }
 
 impl ReqEnv<'_> {
@@ -77,7 +79,20 @@ impl ReqEnv<'_> {
         n > ex
     }
 
-    fn test(&self, key: &str, value: i64) -> bool {
+    /// `[type:x]`: some live element has that type (case-insensitive); any other key with a
+    /// text value never holds (`engine.md` 5.1).
+    fn text_test(&self, key: &str, value: &str) -> bool {
+        key.trim().eq_ignore_ascii_case("type")
+            && self
+                .types
+                .is_some_and(|t| t.count(&value.trim().to_lowercase()) > 0)
+    }
+
+    fn test(&self, key: &str, value: &TestValue) -> bool {
+        let value = match value {
+            TestValue::Number(n) => *n,
+            TestValue::Text(t) => return self.text_test(key, t),
+        };
         let key = key.trim().to_lowercase();
         let value = i32::try_from(value).unwrap_or(i32::MAX);
         if let Some(i) = ids::ability_index(&key) {
@@ -107,7 +122,7 @@ pub fn requirement_holds(cond: &Cond<RequirementsExpr>, env: &ReqEnv) -> bool {
         Cond::Invalid => false,
         Cond::Expr(e) => eval_bool(e.root(), &|leaf| match leaf {
             RequirementLeaf::Id(id) => env.has_id(id),
-            RequirementLeaf::Test(t) => env.test(&t.key, t.value),
+            RequirementLeaf::Test(t) => env.test(&t.key, &t.value),
         }),
     }
 }
@@ -306,6 +321,7 @@ mod tests {
             stats: &st,
             rule_class_level: None,
             stat_used: None,
+            types: None,
         };
         let t = |s: &str| req(s, &env);
         assert!(t("ID_AA&&ID_BB") && t("ID_AA&ID_BB") && t("ID_AA,ID_BB"));
@@ -322,6 +338,37 @@ mod tests {
     }
 
     #[test]
+    fn type_terms_and_text_values() {
+        let ids = ids_of(&["ID_AA"]);
+        let types = ids_of(&["spell", "class"]);
+        let cl = HashMap::new();
+        let mut st = HashMap::new();
+        st.insert("ranger:archetype".to_string(), 3);
+        let mut env = ReqEnv {
+            ids: &ids,
+            exclude: None,
+            abilities: [10; 6],
+            total_level: 1,
+            class_levels: &cl,
+            stats: &st,
+            rule_class_level: None,
+            stat_used: None,
+            types: Some(&types),
+        };
+        assert!(req("[type:spell]", &env) && req("[type:Spell]", &env));
+        assert!(req("[TYPE:class]", &env) && !req("[type:feat]", &env));
+        assert!(req("ID_AA,[type:spell]", &env) && req("![type:feat]", &env));
+        assert!(
+            !req("[ranger:archetype:swarmkeeper]", &env),
+            "Text on a non-type key is false even when the group exists"
+        );
+        assert!(!req("[shield:any]", &env) && !req("[level:]", &env));
+        assert!(req("![armor:none]", &env));
+        env.types = None;
+        assert!(!req("[type:spell]", &env));
+    }
+
+    #[test]
     fn rule_class_level_overrides_level_key() {
         let ids = IdCounts::default();
         let cl = HashMap::new();
@@ -335,6 +382,7 @@ mod tests {
             stats: &st,
             rule_class_level: Some(3),
             stat_used: None,
+            types: None,
         };
         assert!(
             !req("[level:4]", &env),
@@ -358,6 +406,7 @@ mod tests {
             stats: &st,
             rule_class_level: None,
             stat_used: None,
+            types: None,
         };
         assert!(req("ID_AB_CD", &env));
         assert!(!req("ID_AB_C", &env), "Token exact matching");
@@ -379,6 +428,7 @@ mod tests {
             stats: &st,
             rule_class_level: None,
             stat_used: None,
+            types: None,
         };
         assert!(req("ID_AA", &env), "second copy still visible");
         env.exclude = None;

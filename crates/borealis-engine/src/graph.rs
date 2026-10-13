@@ -121,6 +121,8 @@ pub struct Graph<'u> {
     /// Top-level nodes in order.
     pub roots: Vec<NodeId>,
     pub(crate) ids: IdCounts,
+    /// Lower-cased types of the live elements (`[type:spell]` requirement terms).
+    pub(crate) types: IdCounts,
     pub(crate) class_levels: HashMap<String, i32>,
     pub(crate) mgr_levels: HashMap<Mgr, u32>,
     /// Converged ability hint used by requirements.
@@ -172,6 +174,7 @@ impl<'u> Graph<'u> {
             nodes: Vec::new(),
             roots: Vec::new(),
             ids: IdCounts::default(),
+            types: IdCounts::default(),
             class_levels: HashMap::new(),
             mgr_levels,
             abilities: inputs.abilities,
@@ -284,6 +287,7 @@ impl<'u> Graph<'u> {
             stats: &self.stat_sums,
             rule_class_level: None,
             stat_used: Some(&self.stat_used),
+            types: Some(&self.types),
         }
     }
 
@@ -330,6 +334,7 @@ impl<'u> Graph<'u> {
             instance: None,
         });
         self.ids.add(&e.el.id);
+        self.types.add(&e.el.ty.to_lowercase());
         self.version += 1;
         if matches!(e.el.ty.as_str(), "Class" | "Multiclass") {
             self.refresh_class_levels();
@@ -348,6 +353,7 @@ impl<'u> Graph<'u> {
             self.nodes[n].alive = false;
             let eid = self.nodes[n].e.el.id.clone();
             self.ids.remove(&eid);
+            self.types.remove(&self.nodes[n].e.el.ty.to_lowercase());
             touched_class |= matches!(self.nodes[n].e.el.ty.as_str(), "Class" | "Multiclass");
             stack.extend(self.nodes[n].children.clone());
         }

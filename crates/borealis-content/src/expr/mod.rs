@@ -16,7 +16,7 @@ pub mod template;
 
 pub use bool_expr::BoolExpr;
 pub use equipped::{EquippedExpr, EquippedTest};
-pub use requirements::{RequirementLeaf, RequirementsExpr, StatTest};
+pub use requirements::{RequirementLeaf, RequirementsExpr, StatTest, TestValue};
 pub use sanitize::sanitize;
 pub use supports::{Dynamic, SupportsExpr, SupportsLeaf};
 pub use template::{Placeholder, PlaceholderSyntax, Template, TemplatePart};
