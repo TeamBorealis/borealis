@@ -3459,6 +3459,12 @@
       "k": "prim"
      }
     },
+    "problem": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "requiresNewerApp": {
      "opt": false,
      "t": {
@@ -7842,7 +7848,25 @@
   "UpdateIndexesResult": {
    "k": "object",
    "props": {
+    "changed": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
     "failed": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "newHosts": {
      "opt": false,
      "t": {
       "k": "array",

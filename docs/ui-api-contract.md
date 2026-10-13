@@ -397,11 +397,20 @@ without the host: the host commands answer `invalid_argument` / `supported: fals
   `borealis://content-progress` (`converting`, `reloading`, `done`).
 - `import_5etools` runs on a background thread, emits `borealis://import_5etools_progress` (`converting` per element
   group, then `reloading`, `done`), installs `5etools-<abbr>` packs with `kind: "local-import"`, `redistributable: false`.
-- Indexes: none ship by default; `add_index` accepts `https://` URLs only and does no network access.
-  An index is an `borealis-index/1` JSON file (legacy `aurora-index/1` still read); each non-obsolete file entry may carry `extra.attributes.sha256`. `update_indexes`
-  fetches over HTTPS only (redirects stay on HTTPS), downloads files whose hash differs from the installed one, rejects any
-  file whose SHA-256 does not match (listed in `failed`, never installed) and installs the rest as `kind: "downloaded"`
-  packs `dl-<index>-<file>`. Phases: `checking`, `downloading`, `reloading`, `done`.
+- Indexes: none ship by default; `add_index` accepts `https://` URLs only and does no network access (the UI asks
+  for consent first: the source is not verified by Borealis). Two kinds of index are read:
+  - Borealis JSON (`borealis-index/1`, legacy `aurora-index/1`): every file entry needs `extra.attributes.sha256`; an
+    optional ed25519 `<url>.sig` is pinned on first use (`verified: true`). Changed files are downloaded, SHA-256
+    checked and installed as `kind: "downloaded"` packs `dl-<index>-<file>`.
+  - Aurora XML `.index` (what Aurora users paste): nested indexes followed (depth <= 8, cycle guard, <= 2 000 files),
+    `<obsolete>` skipped, no per-file hash needed, never `verified`. Every file is fetched over HTTPS only; all files of
+    one top-level index are converted together (the folder-drop path) into one `downloaded` pack `dl-<stem>-<hash8>`
+    named after the index. Each file's SHA-256 is recorded on first download; later changes are applied but listed
+    in `UpdateIndexesResult.changed`, and hosts not seen before are listed in `newHosts`. A partial download never
+    replaces an installed pack with less content.
+  Redirects must stay on HTTPS. Unusable entries and indexes are listed in `failed`; `ContentIndex.problem` gives the
+  reason per index (e.g. `the server answered 404 Not Found for 3 files`). Phases: `checking`, `downloading`,
+  `converting`, `reloading`, `done`.
 
 ### Equipment and Magic columns (UI v3)
 

@@ -5,6 +5,12 @@ import { useApi } from "../../state/ApiContext";
 import { errorMessage, useAsync } from "../../state/useAsync";
 import { Section } from "./Section";
 
+/** First-fetch consent: shown before an index is added (nothing is verified until it is fetched). */
+export const sourceConsentText = (host: string) =>
+  `This source is not verified by Borealis. Content will be downloaded from ${host} and converted on this device. Only add sources you trust and content you are entitled to use.`;
+
+const hostOf = (url: string): string | null => { try { return new URL(url).host || null; } catch { return null; } };
+
 const checkedText = (iso: string) => `Last checked at ${new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
 
 export function IndexesTab() {
@@ -17,7 +23,14 @@ export function IndexesTab() {
   const [progress, setProgress] = useState<ContentProgress | null>(null);
   useEffect(() => api.subscribe("content:progress", setProgress), [api]);
   const add = async () => {
-    try { await api.addIndex({ url: url.trim() }); setUrl(""); setError(null); indexes.reload(); }
+    const target = url.trim();
+    const host = hostOf(target);
+    const known = (indexes.data ?? []).some((i) => i.url === target);
+    if (host && !known) {
+      const r = await confirm({ title: "Add content source", body: sourceConsentText(host), confirmLabel: "Add source" });
+      if (r !== "confirm") return;
+    }
+    try { await api.addIndex({ url: target }); setUrl(""); setError(null); indexes.reload(); }
     catch (e) { setError(errorMessage(e)); }
   };
   const [status, setStatus] = useState(() => "");
@@ -30,8 +43,15 @@ export function IndexesTab() {
     try {
       const r = await api.updateIndexes();
       setPending((n) => n + r.updated);
-      setStatus(r.updated ? "Content files have been updated, restart the application to load them." : checkedText(new Date().toISOString()));
+      const notes = [
+        r.changed.length ? `${r.changed.length} file(s) changed since they were first downloaded.` : "",
+        r.newHosts.length ? `New download source(s): ${r.newHosts.join(", ")}.` : "",
+        r.failed.length ? `${r.failed.length} could not be updated.` : "",
+      ].filter(Boolean).join(" ");
+      const base = r.updated ? "Content files have been updated, restart the application to load them." : checkedText(new Date().toISOString());
+      setStatus(notes ? `${base} ${notes}` : base);
       toast.push(r.updated ? `${r.updated} file(s) updated. Content reloaded.` : "Everything is up to date.");
+      if (r.changed.length || r.newHosts.length) toast.push(notes, "warning");
       indexes.reload();
     } catch (e) { setStatus(errorMessage(e)); toast.push(errorMessage(e), "error"); }
   };
@@ -56,7 +76,7 @@ export function IndexesTab() {
         <ul className="list" aria-label="Indexes">
           {(indexes.data ?? []).map((i) => (
             <li key={i.url}><div className="inv-row" style={{ padding: "var(--sp-3)" }}>
-              <span style={{ flex: 1 }}><strong>{i.name}</strong>{!i.verified && <UnverifiedBadge />}<span className="muted small" style={{ display: "block" }}>{i.url} · {i.fileCount} files · {i.updatesAvailable} update(s)</span></span>
+              <span style={{ flex: 1 }}><strong>{i.name}</strong>{!i.verified && <UnverifiedBadge />}<span className="muted small" style={{ display: "block" }}>{i.url} · {i.fileCount} files · {i.updatesAvailable} update(s)</span>{i.problem && <span className="v4-index-problem small" role="note">{i.problem}</span>}</span>
               {i.requiresNewerApp && <span className="chip warning">Needs a newer app</span>}
               <Button small variant="danger" onClick={() => void api.removeIndex({ url: i.url }).then(indexes.reload)}>Remove</Button>
             </div></li>
@@ -83,5 +103,5 @@ export function IndexesTab() {
 
 /** Small badge for an index file that is not signed by the pinned key. */
 export function UnverifiedBadge() {
-  return <span className="v4-unverified" title="This index file is not signed by a trusted key.">unverified</span>;
+  return <span className="v4-unverified" title="This source is not verified by Borealis: it is not signed by a trusted key.">unverified</span>;
 }

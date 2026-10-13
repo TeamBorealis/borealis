@@ -24,6 +24,7 @@
 .btn.v4-dl:hover:not(:disabled) { background: #3f8546; border-color: #3f8546; }
 .v4-urlerr { display: block; margin-top: 4px; color: var(--aur-danger, #e57373); font-size: var(--fs-sm); }
 .v4-unverified { margin-left: 8px; padding: 0 5px; font-size: 9px; font-weight: 600; text-transform: uppercase; color: #cf6e39; background: #242425; vertical-align: middle; }
+.v4-index-problem { display: block; color: #cf6e39; }
 .v4-csec .list { margin-top: 10px; }
 
 /* START > SOURCES: DataGrid */

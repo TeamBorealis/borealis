@@ -40,6 +40,7 @@ pub mod content_auto;
 pub mod content_dto;
 pub mod content_import;
 pub mod content_index;
+pub mod content_index_aurora;
 pub mod content_packs;
 pub mod content_prefs;
 pub mod content_preview;

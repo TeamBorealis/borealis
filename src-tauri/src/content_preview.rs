@@ -328,8 +328,8 @@ impl AppState {
 }
 
 /// The outcome of converting one input set.
-struct Converted {
-    converted: usize,
+pub(crate) struct Converted {
+    pub(crate) converted: usize,
     skipped: usize,
     format: String,
     counts: BTreeMap<String, usize>,
@@ -350,9 +350,32 @@ fn decode_files(files: &[ImportFileInput]) -> ApiResult<Vec<(String, Vec<u8>)>> 
                     "That file is empty or too large to import.",
                 ));
             }
-            Ok((base_name(&f.file_name).to_string(), bytes))
+            Ok((relative_name(&f.file_name), bytes))
         })
         .collect()
+}
+
+/// A dropped file's path inside the dropped folder, without empty, `.`, `..` or drive segments
+/// (a folder drop keeps its layout so nested indexes and same-named files stay apart).
+fn relative_name(name: &str) -> String {
+    let parts: Vec<&str> = name
+        .split(['/', '\\'])
+        .filter(|p| !p.is_empty() && *p != "." && *p != ".." && !p.contains(':'))
+        .collect();
+    if parts.is_empty() {
+        base_name(name).to_string()
+    } else {
+        parts.join("/")
+    }
+}
+
+/// The folder every entry sits in, when they were all dropped from one folder.
+fn common_folder(entries: &[(String, Vec<u8>)]) -> Option<&str> {
+    let first = entries.first()?.0.split_once('/')?.0;
+    entries
+        .iter()
+        .all(|(n, _)| n.split_once('/').is_some_and(|(top, _)| top == first))
+        .then_some(first)
 }
 
 fn count_files(dir: &Path) -> usize {
@@ -379,7 +402,10 @@ fn stage_files(
     files: Vec<(String, Vec<u8>)>,
     format: Option<&str>,
 ) -> ApiResult<(String, String, String, usize, Converted)> {
-    let first = files.first().map(|f| f.0.clone()).unwrap_or_default();
+    let first = files
+        .first()
+        .map(|f| base_name(&f.0).to_string())
+        .unwrap_or_default();
     let lower_first = first.to_lowercase();
     if files.len() == 1 && !lower_first.ends_with(".zip") && !lower_first.ends_with(".index") {
         let bytes = &files[0].1;
@@ -434,6 +460,9 @@ fn set_name(entries: &[(String, Vec<u8>)], zips: &[String]) -> String {
     if let [zip] = zips {
         return stem(zip).to_string();
     }
+    if let Some(folder) = common_folder(entries) {
+        return folder.to_string();
+    }
     let lower = |n: &str| n.to_lowercase();
     if let Some((n, _)) = entries.iter().find(|(n, _)| lower(n).ends_with(".index")) {
         return stem(base_name(n)).to_string();
@@ -482,7 +511,13 @@ fn lay_out(dir: &Path, entries: &[(String, Vec<u8>)]) -> ApiResult<()> {
     Ok(())
 }
 
-fn convert_set(input: &Path, out_dir: &Path, id: &str, name: &str) -> ApiResult<Converted> {
+/// Convert a file or a folder as one set (the folder-drop path; Aurora indexes reuse it).
+pub(crate) fn convert_set(
+    input: &Path,
+    out_dir: &Path,
+    id: &str,
+    name: &str,
+) -> ApiResult<Converted> {
     let opts = MigrateOptions {
         pack_id: Some(id.to_string()),
         pack_name: Some(name.to_string()),

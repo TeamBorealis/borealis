@@ -2,7 +2,7 @@
 
 use crate::error::{ApiError, ApiResult};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 /// A user-added update index (no defaults are ever shipped).
@@ -25,6 +25,13 @@ pub struct IndexRecord {
     pub public_key: Option<String>,
     /// The last fetched index carried a valid signature from the pinned key.
     pub verified: bool,
+    /// Aurora XML indexes: SHA-256 of every file at its first download (trust on first use);
+    /// a later change is applied but reported.
+    pub file_hashes: BTreeMap<String, String>,
+    /// Hosts the index tree downloaded from at the last check.
+    pub hosts: Vec<String>,
+    /// Why the last check failed or was incomplete, for the Indexes list.
+    pub problem: Option<String>,
 }
 
 /// Everything the Content screen persists besides the packs themselves.
