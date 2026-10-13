@@ -1,0 +1,1762 @@
+{
+  "format": "borealis-content/1",
+  "ruleset": "dnd2014",
+  "info": {
+    "name": "SRD 5.1 Warlock"
+  },
+  "elements": [
+    {
+      "id": "ID_WOTC_PHB_CLASS_WARLOCK",
+      "name": "Warlock",
+      "type": "Class",
+      "source": "SRD 5.1",
+      "description": "<p>As a warlock, you gain the following class features.</p><h5>HIT POINTS</h5><p><strong>Hit Dice:</strong> 1d8 per warlock level</p><p><strong>Hit Points at 1st Level:</strong> 8 + your Constitution modifier</p><p><strong>Hit Points at Higher Levels:</strong> 1d8 (or 5) + your Constitution modifier per warlock level after 1st</p><h5>PROFICIENCIES</h5><p><strong>Armor:</strong> Light armor</p><h5>EQUIPMENT</h5><p>You start with the following equipment, in addition to the equipment granted by your background:</p><ul><li><em>(a)</em> a light crossbow and 20 bolts or (<em>b</em>) any simple weapon</li><li><em>(a)</em> a component pouch or (<em>b</em>) an arcane focus</li><li><em>(a)</em> a scholar’s pack or (<em>b</em>) a dungeoneer’s pack</li><li>Leather armor, any simple weapon, and two daggers</li></ul><h5 class=\"caption\">THE WARLOCK</h5><table class=\"class-features\"><thead><tr><th>Level</th><th>Proficiency Bonus</th><th>Features</th><th>Cantrips Known</th><th>Spells Known</th><th>Spell Slots</th><th>Slot Level</th><th>Invocations Known</th></tr></thead><tbody><tr><td>1st</td><td>+2</td><td>Otherworldly Patron, Pact Magic</td><td>2</td><td>2</td><td>1</td><td>1st</td><td>—</td></tr><tr><td>2nd</td><td>+2</td><td>Eldritch Invocations</td><td>2</td><td>3</td><td>2</td><td>1st</td><td>2</td></tr><tr><td>3rd</td><td>+2</td><td>Pact Boon</td><td>2</td><td>4</td><td>2</td><td>2nd</td><td>2</td></tr><tr><td>4th</td><td>+2</td><td>Ability Score Improvement</td><td>3</td><td>5</td><td>2</td><td>2nd</td><td>2</td></tr><tr><td>5th</td><td>+3</td><td>—</td><td>3</td><td>6</td><td>2</td><td>3rd</td><td>3</td></tr><tr><td>6th</td><td>+3</td><td>Otherworldly Patron feature</td><td>3</td><td>7</td><td>2</td><td>3rd</td><td>3</td></tr><tr><td>7th</td><td>+3</td><td>—</td><td>3</td><td>8</td><td>2</td><td>4th</td><td>4</td></tr><tr><td>8th</td><td>+3</td><td>Ability Score Improvement</td><td>3</td><td>9</td><td>2</td><td>4th</td><td>4</td></tr><tr><td>9th</td><td>+4</td><td>—</td><td>3</td><td>10</td><td>2</td><td>5th</td><td>5</td></tr><tr><td>10th</td><td>+4</td><td>Otherworldly Patron feature</td><td>4</td><td>10</td><td>2</td><td>5th</td><td>5</td></tr><tr><td>11th</td><td>+4</td><td>Mystic Arcanum (6th level)</td><td>4</td><td>11</td><td>3</td><td>5th</td><td>5</td></tr><tr><td>12th</td><td>+4</td><td>Ability Score Improvement</td><td>4</td><td>11</td><td>3</td><td>5th</td><td>6</td></tr><tr><td>13th</td><td>+5</td><td>Mystic Arcanum (7th level)</td><td>4</td><td>12</td><td>3</td><td>5th</td><td>6</td></tr><tr><td>14th</td><td>+5</td><td>Otherworldly Patron feature</td><td>4</td><td>12</td><td>3</td><td>5th</td><td>6</td></tr><tr><td>15th</td><td>+5</td><td>Mystic Arcanum (8th level)</td><td>4</td><td>13</td><td>3</td><td>5th</td><td>7</td></tr><tr><td>16th</td><td>+5</td><td>Ability Score Improvement</td><td>4</td><td>13</td><td>3</td><td>5th</td><td>7</td></tr><tr><td>17th</td><td>+6</td><td>Mystic Arcanum (9th level)</td><td>4</td><td>14</td><td>4</td><td>5th</td><td>7</td></tr><tr><td>18th</td><td>+6</td><td>—</td><td>4</td><td>14</td><td>4</td><td>5th</td><td>8</td></tr><tr><td>19th</td><td>+6</td><td>Ability Score Improvement</td><td>4</td><td>15</td><td>4</td><td>5th</td><td>8</td></tr><tr><td>20th</td><td>+6</td><td>Eldritch Master</td><td>4</td><td>15</td><td>4</td><td>5th</td><td>8</td></tr></tbody></table>",
+      "sheet": {
+        "display": false,
+        "descriptions": [
+          {
+            "text": "A wielder of magic that is derived from a bargain with an extraplanar entity."
+          }
+        ]
+      },
+      "setters": [
+        {
+          "name": "short",
+          "value": "A wielder of magic that is derived from a bargain with an extraplanar entity."
+        },
+        {
+          "name": "hd",
+          "value": "d8"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_WARLOCK"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_WARLOCK"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_WISDOM",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_WARLOCK"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_CHARISMA",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_WARLOCK"
+        },
+        {
+          "kind": "select",
+          "type": "Proficiency",
+          "name": "Skill Proficiency (Warlock)",
+          "number": 2,
+          "supports": "Skill,Warlock",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_WARLOCK"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_OTHERWORLDLY_PATRON",
+          "type": "Class Feature",
+          "level": 1
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_SPELLCASTING_WARLOCK_PACT_MAGIC",
+          "type": "Class Feature",
+          "level": 1
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_ELDRITCH_INVOCATIONS",
+          "type": "Class Feature",
+          "level": 2
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_PACT_BOON",
+          "type": "Class Feature",
+          "level": 3
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_ABILITY_SCORE_IMPROVEMENT_WARLOCK",
+          "type": "Class Feature",
+          "level": 4
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_MYSTIC_ARCANUM",
+          "type": "Class Feature",
+          "level": 11
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_ELDRITCH_MASTER",
+          "type": "Class Feature",
+          "level": 20
+        }
+      ],
+      "multiclass": {
+        "id": "ID_WOTC_PHB_MULTICLASS_WARLOCK",
+        "prerequisite": "Charisma 13",
+        "requirements": "[cha:13]",
+        "setters": [
+          {
+            "name": "multiclass proficiencies",
+            "value": "Light armor, simple weapons"
+          }
+        ],
+        "rules": [
+          {
+            "kind": "grant",
+            "id": "ID_INTERNAL_GRANT_MULTICLASS",
+            "type": "Grants"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+            "type": "Proficiency"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+            "type": "Proficiency"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_SOLO",
+            "type": "Grants"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_OTHERWORLDLY_PATRON",
+      "name": "Otherworldly Patron",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 1st level, you have struck a bargain with an otherworldly being of your choice: the Archfey, the Fiend, or the Great Old One, each of which is detailed at the end of the class description. Your choice grants you features at 1st level and again at 6th, 10th, and 14th level.</p><p><strong>Weapons:</strong> Simple weapons</p><p><strong>Tools:</strong> None</p><p><strong>Saving Throws:</strong> Wisdom, Charisma</p><p><strong>Skills:</strong> Choose two skills from Arcana, Deception, History, Intimidation, Investigation, Nature, and Religion</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Archetype",
+          "name": "Otherworldly Patron",
+          "level": 1,
+          "supports": "Otherworldly Patron"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_SPELLCASTING_WARLOCK_PACT_MAGIC",
+      "name": "Pact Magic",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Your arcane research and the magic bestowed on you by your patron have given you facility with spells.</p><h6>Cantrips</h6><p>You know two cantrips of your choice from the warlock spell list. You learn additional warlock cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Warlock table.</p><h6>Spell Slots</h6><p>The Warlock table shows how many spell slots you have. The table also shows what the level of those slots is; all of your spell slots are the same level. To cast one of your warlock spells of 1st level or higher, you must expend a spell slot. You regain all expended spell slots when you finish a short or long rest.</p><p>For example, when you are 5th level, you have two 3rd-level spell slots. To cast the 1st-level spell <em>thunderwave</em>, you must spend one of those slots, and you cast it as a 3rd-level spell.</p><h6>Spells Known of 1st Level and Higher</h6><p>At 1st level, you know two 1st-level spells of your choice from the warlock spell list.</p><p>The Spells Known column of the Warlock table shows when you learn more warlock spells of your choice of 1st level and higher. A spell you choose must be of a level no higher than what’s shown in the table’s Slot Level column for your level. When you reach 6th level, for example, you learn a new warlock spell, which can be 1st, 2nd, or 3rd level. Additionally, when you gain a level in this class, you can choose one of the warlock spells you know and replace it with another spell from the warlock spell list, which also must be of a level for which you have spell slots.</p><h6>Spellcasting Ability</h6><p>Charisma is your spellcasting ability for your warlock spells, so you use your Charisma whenever a spell refers to your spellcasting ability. In addition, you use your Charisma modifier when setting the saving throw DC for a warlock spell you cast and when making an attack roll with one.</p><p><strong>Spell save DC</strong> =8 + your proficiency bonus + your Charisma modifier</p><p><strong>Spell attack modifier</strong> =your proficiency bonus + your Charisma modifier</p><h6>Spellcasting Focus</h6><p>You can use an arcane focus as a spellcasting focus for your warlock spells.</p>",
+      "sheet": {
+        "display": false,
+        "descriptions": [
+          {
+            "text": "Your spellcasting ability is Charisma. You use an arcane focus for your warlock spells."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slots:count",
+          "value": "1",
+          "level": 1
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slots:count",
+          "value": "1",
+          "level": 2
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slots:count",
+          "value": "1",
+          "level": 11
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slots:count",
+          "value": "1",
+          "level": 17
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slot",
+          "value": "1",
+          "level": 1
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slot",
+          "value": "1",
+          "level": 3
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slot",
+          "value": "1",
+          "level": 5
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slot",
+          "value": "1",
+          "level": 7
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slot",
+          "value": "1",
+          "level": 9
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slots:1",
+          "value": "warlock:spellcasting:slots:count",
+          "level": 1
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slots:1",
+          "value": "-warlock:spellcasting:slots:count",
+          "level": 3
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slots:2",
+          "value": "warlock:spellcasting:slots:count",
+          "level": 3
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slots:2",
+          "value": "-warlock:spellcasting:slots:count",
+          "level": 5
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slots:3",
+          "value": "warlock:spellcasting:slots:count",
+          "level": 5
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slots:3",
+          "value": "-warlock:spellcasting:slots:count",
+          "level": 7
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slots:4",
+          "value": "warlock:spellcasting:slots:count",
+          "level": 7
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slots:4",
+          "value": "-warlock:spellcasting:slots:count",
+          "level": 9
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:slots:5",
+          "value": "warlock:spellcasting:slots:count",
+          "level": 9
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:cantrips known",
+          "value": "2",
+          "level": 1
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:cantrips known",
+          "value": "1",
+          "level": 4
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:cantrips known",
+          "value": "1",
+          "level": 10
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:spells known",
+          "value": "2",
+          "level": 1
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:spells known",
+          "value": "1",
+          "level": 2
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:spells known",
+          "value": "1",
+          "level": 3
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:spells known",
+          "value": "1",
+          "level": 4
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:spells known",
+          "value": "1",
+          "level": 5
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:spells known",
+          "value": "1",
+          "level": 6
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:spells known",
+          "value": "1",
+          "level": 7
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:spells known",
+          "value": "1",
+          "level": 8
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:spells known",
+          "value": "1",
+          "level": 9
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:spells known",
+          "value": "1",
+          "level": 11
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:spells known",
+          "value": "1",
+          "level": 13
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:spells known",
+          "value": "1",
+          "level": 15
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:spells known",
+          "value": "1",
+          "level": 17
+        },
+        {
+          "kind": "stat",
+          "name": "warlock:spellcasting:spells known",
+          "value": "1",
+          "level": 19
+        },
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_SOLO",
+          "type": "Grants",
+          "requirements": "ID_INTERNAL_GRANT_MULTICLASS"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_PROFICIENCY_SPELLFOCUS_GROUP_ARCANE_FOCUS",
+          "type": "Proficiency"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Cantrip (Warlock)",
+          "number": 2,
+          "level": 1,
+          "supports": "$(spellcasting:list),0",
+          "spellcasting": "Warlock"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Cantrip (Warlock)",
+          "number": 1,
+          "level": 4,
+          "supports": "$(spellcasting:list),0",
+          "spellcasting": "Warlock"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Cantrip (Warlock)",
+          "number": 1,
+          "level": 10,
+          "supports": "$(spellcasting:list),0",
+          "spellcasting": "Warlock"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spell (Warlock)",
+          "number": 2,
+          "level": 1,
+          "supports": "$(spellcasting:list),1",
+          "spellcasting": "Warlock",
+          "allow_replace": true
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spell (Warlock)",
+          "number": 1,
+          "level": 2,
+          "supports": "$(spellcasting:list),1",
+          "spellcasting": "Warlock",
+          "allow_replace": true
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spell (Warlock)",
+          "number": 1,
+          "level": 3,
+          "supports": "$(spellcasting:list),(1||2)",
+          "spellcasting": "Warlock",
+          "allow_replace": true
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spell (Warlock)",
+          "number": 1,
+          "level": 4,
+          "supports": "$(spellcasting:list),(1||2)",
+          "spellcasting": "Warlock",
+          "allow_replace": true
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spell (Warlock)",
+          "number": 1,
+          "level": 5,
+          "supports": "$(spellcasting:list),(1||2||3)",
+          "spellcasting": "Warlock",
+          "allow_replace": true
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spell (Warlock)",
+          "number": 1,
+          "level": 6,
+          "supports": "$(spellcasting:list),(1||2||3)",
+          "spellcasting": "Warlock",
+          "allow_replace": true
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spell (Warlock)",
+          "number": 1,
+          "level": 7,
+          "supports": "$(spellcasting:list),(1||2||3||4)",
+          "spellcasting": "Warlock",
+          "allow_replace": true
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spell (Warlock)",
+          "number": 1,
+          "level": 8,
+          "supports": "$(spellcasting:list),(1||2||3||4)",
+          "spellcasting": "Warlock",
+          "allow_replace": true
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spell (Warlock)",
+          "number": 1,
+          "level": 9,
+          "supports": "$(spellcasting:list),(1||2||3||4||5)",
+          "spellcasting": "Warlock",
+          "allow_replace": true
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spell (Warlock)",
+          "number": 1,
+          "level": 11,
+          "supports": "$(spellcasting:list),(1||2||3||4||5)",
+          "spellcasting": "Warlock",
+          "allow_replace": true
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spell (Warlock)",
+          "number": 1,
+          "level": 13,
+          "supports": "$(spellcasting:list),(1||2||3||4||5)",
+          "spellcasting": "Warlock",
+          "allow_replace": true
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spell (Warlock)",
+          "number": 1,
+          "level": 15,
+          "supports": "$(spellcasting:list),(1||2||3||4||5)",
+          "spellcasting": "Warlock",
+          "allow_replace": true
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spell (Warlock)",
+          "number": 1,
+          "level": 17,
+          "supports": "$(spellcasting:list),(1||2||3||4||5)",
+          "spellcasting": "Warlock",
+          "allow_replace": true
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spell (Warlock)",
+          "number": 1,
+          "level": 19,
+          "supports": "$(spellcasting:list),(1||2||3||4||5)",
+          "spellcasting": "Warlock",
+          "allow_replace": true
+        }
+      ],
+      "spellcasting": {
+        "name": "Warlock",
+        "ability": "Charisma",
+        "allow_replace": true,
+        "list": {
+          "supports": "Warlock"
+        }
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_ELDRITCH_INVOCATIONS",
+      "name": "Eldritch Invocations",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>In your study of occult lore, you have unearthed eldritch invocations, fragments of forbidden knowledge that imbue you with an abiding magical ability.</p><p>At 2nd level, you gain two eldritch invocations of your choice. Your invocation options are detailed at the end of the class description. When you gain certain warlock levels, you gain additional invocations of your choice, as shown in the Invocations Known column of the Warlock table. Additionally, when you gain a level in this class, you can choose one of the invocations you know and replace it with another invocation that you could learn at that level.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Eldritch Invocation (Level 2)",
+          "number": 2,
+          "level": 2,
+          "supports": "Eldritch Invocation"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Eldritch Invocation (Level 5)",
+          "number": 1,
+          "level": 5,
+          "supports": "Eldritch Invocation"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Eldritch Invocation (Level 7)",
+          "number": 1,
+          "level": 7,
+          "supports": "Eldritch Invocation"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Eldritch Invocation (Level 9)",
+          "number": 1,
+          "level": 9,
+          "supports": "Eldritch Invocation"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Eldritch Invocation (Level 12)",
+          "number": 1,
+          "level": 12,
+          "supports": "Eldritch Invocation"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Eldritch Invocation (Level 15)",
+          "number": 1,
+          "level": 15,
+          "supports": "Eldritch Invocation"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Eldritch Invocation (Level 18)",
+          "number": 1,
+          "level": 18,
+          "supports": "Eldritch Invocation"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_PACT_BOON",
+      "name": "Pact Boon",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 3rd level, your otherworldly patron bestows a gift upon you for your loyal service. You gain one of the following features of your choice.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Pact Boon",
+          "level": 3,
+          "supports": "Pact Boon"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_PACT_BOON_PACT_OF_THE_CHAIN",
+      "name": "Pact of the Chain",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Pact Boon"
+      ],
+      "description": "<p>You learn the <em>find familiar</em> spell and can cast it as a ritual. The spell doesn’t count against your number of spells known.</p><p>When you cast the spell, you can choose one of the normal forms for your familiar or one of the following special forms: imp, pseudodragon, quasit, or sprite.</p><p>Additionally, when you take the Attack action, you can forgo one of your own attacks to allow your familiar to make one attack of its own with its reaction.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You learn the find familiar spell and can cast it as a ritual. The spell doesn’t count against your number of spells known. When you cast the spell, you can choose one of the normal forms for your familiar or one of the following special forms: imp, pseudodragon, quasit, or sprite."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_FIND_FAMILIAR",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_PACT_BOON_PACT_OF_THE_BLADE",
+      "name": "Pact of the Blade",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Pact Boon"
+      ],
+      "description": "<p>You can use your action to create a pact weapon in your empty hand. You can choose the form that this melee weapon takes each time you create it. You are proficient with it while you wield it. This weapon counts as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage.</p><p>Your pact weapon disappears if it is more than 5 feet away from you for 1 minute or more. It also disappears if you use this feature again, if you dismiss the weapon (no action required), or if you die.</p><p>You can transform one magic weapon into your pact weapon by performing a special ritual while you hold the weapon. You perform the ritual over the course of 1 hour, which can be done during a short rest. You can then dismiss the weapon, shunting it into an extradimensional space, and it appears whenever you create your pact weapon thereafter. You can’t affect an artifact or a sentient weapon in this way. The weapon ceases being your pact weapon if you die, if you perform the 1-hour ritual on a different weapon, or if you use a 1-hour ritual to break your bond to it. The weapon appears at your feet if it is in the extradimensional space when the bond breaks.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You can use your action to create a pact weapon in your empty hand. You can choose the form that this melee weapon takes each time you create it. You are proficient with it while you wield it. This weapon counts as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_PACT_BOON_PACT_OF_THE_TOME",
+      "name": "Pact of the Tome",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Pact Boon"
+      ],
+      "description": "<p>Your patron gives you a grimoire called a Book of Shadows. When you gain this feature, choose three cantrips from any class’s spell list (the three needn’t be from the same list). While the book is on your person, you can cast those cantrips at will. They don’t count against your number of cantrips known. If they don’t appear on the warlock spell list, they are nonetheless warlock spells for you.</p><p>If you lose your Book of Shadows, you can perform a 1-hour ceremony to receive a replacement from your patron. This ceremony can be performed during a short or long rest, and it destroys the previous book. The book turns to ash when you die.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Your patron gives you a grimoire called a Book of Shadows. When you gain this feature, choose three cantrips from any class’s spell list (the three needn’t be from the same list). While the book is on your person, you can cast those cantrips at will. They don’t count against your number of cantrips known."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Cantrip (Pact of the Tome)",
+          "number": 3,
+          "supports": "0",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_ABILITY_SCORE_IMPROVEMENT_WARLOCK",
+      "name": "Ability Score Improvement",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.</p>",
+      "sheet": {
+        "display": false
+      },
+      "compendium": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Warlock 4)",
+          "level": 4,
+          "supports": "Improvement Option,Warlock,4"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Warlock 8)",
+          "level": 8,
+          "supports": "Improvement Option,Warlock,8"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Warlock 12)",
+          "level": 12,
+          "supports": "Improvement Option,Warlock,12"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Warlock 16)",
+          "level": 16,
+          "supports": "Improvement Option,Warlock,16"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Warlock 19)",
+          "level": 19,
+          "supports": "Improvement Option,Warlock,19"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_MYSTIC_ARCANUM",
+      "name": "Mystic Arcanum",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 11th level, your patron bestows upon you a magical secret called an arcanum. Choose one 6th- level spell from the warlock spell list as this arcanum. You can cast your arcanum spell once without expending a spell slot. You must finish a long rest before you can do so again.</p><p>At higher levels, you gain more warlock spells of your choice that can be cast in this way: one 7th- level spell at 13th level, one 8th-level spell at 15th level, and one 9th-level spell at 17th level. You regain all uses of your Mystic Arcanum when you finish a long rest.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Arcanum Spell (Mystic Arcanum)",
+          "level": 11,
+          "supports": "Warlock,6",
+          "spellcasting": "Warlock"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Arcanum Spell (Mystic Arcanum)",
+          "level": 13,
+          "supports": "Warlock,7",
+          "spellcasting": "Warlock"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Arcanum Spell (Mystic Arcanum)",
+          "level": 15,
+          "supports": "Warlock,8",
+          "spellcasting": "Warlock"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Arcanum Spell (Mystic Arcanum)",
+          "level": 17,
+          "supports": "Warlock,9",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_ELDRITCH_MASTER",
+      "name": "Eldritch Master",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 20th level, you can draw on your inner reserve of mystical power while entreating your patron to regain expended spell slots. You can spend 1 minute entreating your patron for aid to regain all your expended spell slots from your Pact Magic feature. Once you regain spell slots with this feature, you must finish a long rest before you can do so again.</p>",
+      "sheet": {
+        "usage": "1/Long Rest",
+        "action": "1 minute"
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_AGONIZING_BLAST",
+      "name": "Agonizing Blast",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "requirements": "ID_PHB_SPELL_ELDRITCH_BLAST",
+      "description": "<p><em>Prerequisite:</em> eldritch blast <em>cantrip</em></p><p>When you cast <em>eldritch blast</em>, add your Charisma modifier to the damage it deals on a hit.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: eldritch blast cantrip When you cast eldritch blast , add your Charisma modifier to the damage it deals on a hit."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "agonizing blast:damage",
+          "value": "charisma:modifier",
+          "bonus": "base"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_ARMOR_OF_SHADOWS",
+      "name": "Armor of Shadows",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "description": "<p>You can cast <em>mage armor</em> on yourself at will, without expending a spell slot or material components.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You can cast mage armor on yourself at will, without expending a spell slot or material components."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_MAGE_ARMOR",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_ASCENDANT_STEP",
+      "name": "Ascendant Step",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "requirements": "[level:9]",
+      "description": "<p><em>Prerequisite: 9th level</em></p><p>You can cast <em>levitate</em> on yourself at will, without expending a spell slot or material components.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: 9th level You can cast levitate on yourself at will, without expending a spell slot or material components."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_LEVITATE",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_BEAST_SPEECH",
+      "name": "Beast Speech",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "description": "<p>You can cast <em>speak with animals</em> at will, without expending a spell slot.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You can cast speak with animals at will, without expending a spell slot."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_SPEAK_WITH_ANIMALS",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_BEGUILING_INFLUENCE",
+      "name": "Beguiling Influence",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "description": "<p>You gain proficiency in the Deception and Persuasion skills.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You gain proficiency in the Deception and Persuasion skills."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SKILL_DECEPTION",
+          "type": "Proficiency"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SKILL_PERSUASION",
+          "type": "Proficiency"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_BEWITCHING_WHISPERS",
+      "name": "Bewitching Whispers",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "requirements": "[level:7]",
+      "description": "<p><em>Prerequisite: 7th level</em></p><p>You can cast <em>compulsion</em> once using a warlock spell slot. You can’t do so again until you finish a long rest.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: 7th level You can cast compulsion once using a warlock spell slot. You can’t do so again until you finish a long rest."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_COMPULSION",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_BOOK_OF_ANCIENT_SECRETS",
+      "name": "Book of Ancient Secrets",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation",
+        "Pact of the Tome"
+      ],
+      "requirements": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_PACT_BOON_PACT_OF_THE_TOME",
+      "description": "<p><em>Prerequisite: Pact of the Tome feature</em></p><p>You can now inscribe magical rituals in your Book of Shadows. Choose two 1st-level spells that have the ritual tag from any class’s spell list (the two needn’t be from the same list). The spells appear in the book and don’t count against the number of spells you know. With your Book of Shadows in hand, you can cast the chosen spells as rituals. You can’t cast the spells except as rituals, unless you’ve learned them by some other means. You can also cast a warlock spell you know as a ritual if it has the ritual tag. On your adventures, you can add other ritual spells to your Book of Shadows. When you find such a spell, you can add it to the book if the spell’s level is equal to or less than half your warlock level (rounded up) and if you can spare the time to transcribe the spell. For each level of the spell, the transcription process takes 2 hours and costs 50 gp for the rare inks needed to inscribe it.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: Pact of the Tome feature You can now inscribe magical rituals in your Book of Shadows. Choose two 1st-level spells that have the ritual tag from any class’s spell list (the two needn’t be from the same list). The spells appear in the book and don’t count against the number of spells you know."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Book of Ancient Secrets",
+          "number": 2,
+          "supports": "1,Ritual",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_CHAINS_OF_CARCERI",
+      "name": "Chains of Carceri",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation",
+        "Pact of the Chain"
+      ],
+      "requirements": "[level:15],ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_PACT_BOON_PACT_OF_THE_CHAIN",
+      "description": "<p><em>Prerequisite: 15th level, Pact of the Chain feature</em></p><p>You can cast <em>hold monster</em> at will—targeting a celestial, fiend, or elemental—without expending a spell slot or material components. You must finish a long rest before you can use this invocation on the same creature again.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: 15th level, Pact of the Chain feature You can cast hold monster at will—targeting a celestial, fiend, or elemental—without expending a spell slot or material components. You must finish a long rest before you can use this invocation on the same creature again."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_HOLD_MONSTER",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_DEVILS_SIGHT",
+      "name": "Devil’s Sight",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "description": "<p>You can see normally in darkness, both magical and nonmagical, to a distance of 120 feet.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You can see normally in darkness, both magical and nonmagical, to a distance of 120 feet."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_DREADFUL_WORD",
+      "name": "Dreadful Word",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "requirements": "[level:7]",
+      "description": "<p><em>Prerequisite: 7th level</em></p><p>You can cast <em>confusion</em> once using a warlock spell slot. You can’t do so again until you finish a long rest.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: 7th level You can cast confusion once using a warlock spell slot. You can’t do so again until you finish a long rest."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_CONFUSION",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_ELDRITCH_SIGHT",
+      "name": "Eldritch Sight",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "description": "<p>You can cast <em>detect magic</em> at will, without expending a spell slot.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You can cast detect magic at will, without expending a spell slot."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_DETECT_MAGIC",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_ELDRITCH_SPEAR",
+      "name": "Eldritch Spear",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "requirements": "ID_PHB_SPELL_ELDRITCH_BLAST",
+      "description": "<p><em>Prerequisite:</em> eldritch blast <em>cantrip</em></p><p>When you cast <em>eldritch blast</em>, its range is 300 feet.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: eldritch blast cantrip When you cast eldritch blast , its range is 300 feet."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_EYES_OF_THE_RUNEKEEPER",
+      "name": "Eyes of the Rune Keeper",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "description": "<p>You can read all writing.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You can read all writing."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_FIENDISH_VIGOR",
+      "name": "Fiendish Vigor",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "description": "<p>You can cast <em>false life</em> on yourself at will as a 1st-level spell, without expending a spell slot or material components.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You can cast false life on yourself at will as a 1st-level spell, without expending a spell slot or material components."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_FALSE_LIFE",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_GAZE_OF_TWO_MINDS",
+      "name": "Gaze of Two Minds",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "description": "<p>You can use your action to touch a willing humanoid and perceive through its senses until the end of your next turn. As long as the creature is on the same plane of existence as you, you can use your action on subsequent turns to maintain this connection, extending the duration until the end of your next turn. While perceiving through the other creature’s senses, you benefit from any special senses possessed by that creature, and you are blinded and deafened to your own surroundings.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You can use your action to touch a willing humanoid and perceive through its senses until the end of your next turn. As long as the creature is on the same plane of existence as you, you can use your action on subsequent turns to maintain this connection, extending the duration until the end of your next turn."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_LIFEDRINKER",
+      "name": "Lifedrinker",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation",
+        "Pact of the Blade"
+      ],
+      "requirements": "[level:12],ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_PACT_BOON_PACT_OF_THE_BLADE",
+      "description": "<p><em>Prerequisite: 12th level, Pact of the Blade feature</em></p><p>When you hit a creature with your pact weapon, the creature takes extra necrotic damage equal to your Charisma modifier (minimum 1).</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: 12th level, Pact of the Blade feature When you hit a creature with your pact weapon, the creature takes extra necrotic damage equal to your Charisma modifier (minimum 1)."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "lifedrinker:damage",
+          "value": "1",
+          "bonus": "modifier"
+        },
+        {
+          "kind": "stat",
+          "name": "lifedrinker:damage",
+          "value": "charisma:modifier",
+          "bonus": "modifier"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_MASK_OF_MANY_FACES",
+      "name": "Mask of Many Faces",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "description": "<p>You can cast <em>disguise self</em> at will, without expending a spell slot.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You can cast disguise self at will, without expending a spell slot."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_DISGUISE_SELF",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_MASTER_OF_MYRIAD_FORMS",
+      "name": "Master of Myriad Forms",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "requirements": "[level:15]",
+      "description": "<p><em>Prerequisite: 15th level</em></p><p>You can cast <em>alter self</em> at will, without expending a spell slot.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: 15th level You can cast alter self at will, without expending a spell slot."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_ALTER_SELF",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_MINIONS_OF_CHAOS",
+      "name": "Minions of Chaos",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "requirements": "[level:9]",
+      "description": "<p><em>Prerequisite: 9th level</em></p><p>You can cast <em>conjure elemental</em> once using a warlock spell slot. You can’t do so again until you finish a long rest.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: 9th level You can cast conjure elemental once using a warlock spell slot. You can’t do so again until you finish a long rest."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_CONJURE_ELEMENTAL",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_MIRE_THE_MIND",
+      "name": "Mire the Mind",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "requirements": "[level:5]",
+      "description": "<p><em>Prerequisite: 5th level</em></p><p>You can cast <em>slow</em> once using a warlock spell slot. You can’t do so again until you finish a long rest.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: 5th level You can cast slow once using a warlock spell slot. You can’t do so again until you finish a long rest."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_SLOW",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_MISTY_VISIONS",
+      "name": "Misty Visions",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "description": "<p>You can cast <em>silent image</em> at will, without expending a spell slot or material components.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You can cast silent image at will, without expending a spell slot or material components."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_SILENT_IMAGE",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_ONE_WITH_SHADOWS",
+      "name": "One with Shadows",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "requirements": "[level:5]",
+      "description": "<p><em>Prerequisite: 5th level</em></p><p>When you are in an area of dim light or darkness, you can use your action to become invisible until you move or take an action or a reaction.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: 5th level When you are in an area of dim light or darkness, you can use your action to become invisible until you move or take an action or a reaction."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_OTHERWORLDLY_LEAP",
+      "name": "Otherworldly Leap",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "requirements": "[level:9]",
+      "description": "<p><em>Prerequisite: 9th level</em></p><p>You can cast <em>jump</em> on yourself at will, without expending a spell slot or material components.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: 9th level You can cast jump on yourself at will, without expending a spell slot or material components."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_JUMP",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_REPELLING_BLAST",
+      "name": "Repelling Blast",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "description": "<p><em>Prerequisite:</em> eldritch blas<em>t cantrip</em></p><p>When you hit a creature with <em>eldritch blast</em>, you can push the creature up to 10 feet away from you in a straight line.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: eldritch blas t cantrip When you hit a creature with eldritch blast , you can push the creature up to 10 feet away from you in a straight line."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_SCULPTOR_OF_FLESH",
+      "name": "Sculptor of Flesh",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "requirements": "[level:7]",
+      "description": "<p><em>Prerequisite: 7th level</em></p><p>You can cast <em>polymorph</em> once using a warlock spell slot. You can’t do so again until you finish a long rest.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: 7th level You can cast polymorph once using a warlock spell slot. You can’t do so again until you finish a long rest."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_POLYMORPH",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_SIGN_OF_ILL_OMEN",
+      "name": "Sign of Ill Omen",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "requirements": "[level:5]",
+      "description": "<p><em>Prerequisite: 5th level</em></p><p>You can cast <em>bestow curse</em> once using a warlock spell slot. You can’t do so again until you finish a long rest.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: 5th level You can cast bestow curse once using a warlock spell slot. You can’t do so again until you finish a long rest."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_BESTOW_CURSE",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_THIEF_OF_FIVE_FATES",
+      "name": "Thief of Five Fates",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "description": "<p>You can cast <em>bane</em> once using a warlock spell slot. You can’t do so again until you finish a long rest.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You can cast bane once using a warlock spell slot. You can’t do so again until you finish a long rest."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_BANE",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_THIRSTING_BLADE",
+      "name": "Thirsting Blade",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation",
+        "Pact of the Blade"
+      ],
+      "requirements": "[level:5],ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_PACT_BOON_PACT_OF_THE_BLADE",
+      "description": "<p><em>Prerequisite: 5th level, Pact of the Blade feature</em></p><p>You can attack with your pact weapon twice, instead of once, whenever you take the Attack action on your turn.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: 5th level, Pact of the Blade feature You can attack with your pact weapon twice, instead of once, whenever you take the Attack action on your turn."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_VISIONS_OF_DISTANT_REALMS",
+      "name": "Visions of Distant Realms",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "requirements": "[level:15]",
+      "description": "<p><em>Prerequisite: 15th level</em></p><p>You can cast <em>arcane eye</em> at will, without expending a spell slot.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: 15th level You can cast arcane eye at will, without expending a spell slot."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_ARCANE_EYE",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_VOICE_OF_THE_CHAIN_MASTER",
+      "name": "Voice of the Chain Master",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation",
+        "Pact of the Chain"
+      ],
+      "requirements": "ID_WOTC_PHB_CLASS_FEATURE_WARLOCK_PACT_BOON_PACT_OF_THE_CHAIN",
+      "description": "<p><em>Prerequisite: Pact of the Chain feature</em></p><p>You can communicate telepathically with your familiar and perceive through your familiar’s senses as long as you are on the same plane of existence. Additionally, while perceiving through your familiar’s senses, you can also speak through your familiar in your own voice, even if your familiar is normally incapable of speech.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: Pact of the Chain feature You can communicate telepathically with your familiar and perceive through your familiar’s senses as long as you are on the same plane of existence."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_WHISPERS_OF_THE_GRAVE",
+      "name": "Whispers of the Grave",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "requirements": "[level:9]",
+      "description": "<p><em>Prerequisite: 9th level</em></p><p>You can cast <em>speak with dead</em> at will, without expending a spell slot.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: 9th level You can cast speak with dead at will, without expending a spell slot."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_SPEAK_WITH_DEAD",
+          "type": "Spell",
+          "spellcasting": "Warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ELDRITCH_INVOCATION_WITCH_SIGHT",
+      "name": "Witch Sight",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Eldritch Invocation"
+      ],
+      "requirements": "[level:15]",
+      "description": "<p><em>Prerequisite: 15th level</em></p><p>You can see the true form of any shapechanger or creature concealed by illusion or transmutation magic while the creature is within 30 feet of you and within line of sight.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Prerequisite: 15th level You can see the true form of any shapechanger or creature concealed by illusion or transmutation magic while the creature is within 30 feet of you and within line of sight."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_OTHERWORLDLY_PATRON_FIEND",
+      "name": "The Fiend",
+      "type": "Archetype",
+      "source": "SRD 5.1",
+      "supports": [
+        "Otherworldly Patron"
+      ],
+      "description": "<p>You have made a pact with a fiend from the lower planes of existence, a being whose aims are evil, even if you strive against those aims. Such beings desire the corruption or destruction of all things, ultimately including you. Fiends powerful enough to forge a pact include demon lords such as Demogorgon, Orcus, Fraz’Urb-luu, and Baphomet; archdevils such as Asmodeus, Dispater, Mephistopheles, and Belial; pit fiends and balors that are especially mighty; and ultroloths and other lords of the yugoloths.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_FIEND_EXPANDED_SPELL_LIST",
+          "type": "Archetype Feature",
+          "level": 1
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_FIEND_DARKONESBLESSING",
+          "type": "Archetype Feature",
+          "level": 1
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_FIEND_DARKONESOWNLUCK",
+          "type": "Archetype Feature",
+          "level": 6
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_FIEND_FIENDISH_RESILIENCE",
+          "type": "Archetype Feature",
+          "level": 10
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_FIEND_HURL_THROUGH_HELL",
+          "type": "Archetype Feature",
+          "level": 14
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_FIEND_EXPANDED_SPELL_LIST",
+      "name": "Expanded Spell List",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>The Fiend lets you choose from an expanded list of spells when you learn a warlock spell. The following spells are added to the warlock spell list for you.</p><table><thead><tr><th>Spell Level</th><th>Spells</th></tr></thead><tbody><tr><td>1st</td><td>burning hands, command</td></tr><tr><td>2nd</td><td>blindness/deafness, scorching ray</td></tr><tr><td>3rd</td><td>fireball, stinking cloud</td></tr><tr><td>4th</td><td>fire shield, wall of fire</td></tr><tr><td>5th</td><td>flame strike, hallow</td></tr></tbody></table>",
+      "sheet": {
+        "display": false
+      },
+      "spellcasting": {
+        "name": "Warlock",
+        "extend": true,
+        "extends": [
+          {
+            "supports": "ID_PHB_SPELL_BURNING_HANDS"
+          },
+          {
+            "supports": "ID_PHB_SPELL_COMMAND"
+          },
+          {
+            "supports": "ID_PHB_SPELL_BLINDNESS_DEAFNESS"
+          },
+          {
+            "supports": "ID_PHB_SPELL_SCORCHING_RAY"
+          },
+          {
+            "supports": "ID_PHB_SPELL_FIREBALL"
+          },
+          {
+            "supports": "ID_PHB_SPELL_STINKING_CLOUD"
+          },
+          {
+            "supports": "ID_PHB_SPELL_FIRE_SHIELD"
+          },
+          {
+            "supports": "ID_PHB_SPELL_WALL_OF_FIRE"
+          },
+          {
+            "supports": "ID_PHB_SPELL_FLAME_STRIKE"
+          },
+          {
+            "supports": "ID_PHB_SPELL_HALLOW"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_FIEND_DARKONESBLESSING",
+      "name": "Dark One’s Blessing",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 1st level, when you reduce a hostile creature to 0 hit points, you gain temporary hit points equal to your Charisma modifier + your warlock level (minimum of 1).</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Starting at 1st level, when you reduce a hostile creature to 0 hit points, you gain temporary hit points equal to your Charisma modifier + your warlock level (minimum of 1)."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "dark ones blessing:temp hp",
+          "value": "charisma:modifier"
+        },
+        {
+          "kind": "stat",
+          "name": "dark ones blessing:temp hp",
+          "value": "level:warlock"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_FIEND_DARKONESOWNLUCK",
+      "name": "Dark One’s Own Luck",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 6th level, you can call on your patron to alter fate in your favor. When you make an ability check or a saving throw, you can use this feature to add a d10 to your roll. You can do so after seeing the initial roll but before any of the roll’s effects occur. Once you use this feature, you can’t use it again until you finish a short or long rest.</p>",
+      "sheet": {
+        "usage": "1/Short Rest"
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_FIEND_FIENDISH_RESILIENCE",
+      "name": "Fiendish Resilience",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 10th level, you can choose one damage type when you finish a short or long rest. You gain resistance to that damage type until you choose a different one with this feature. Damage from magical weapons or silver weapons ignores this resistance.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Starting at 10th level, you can choose one damage type when you finish a short or long rest. You gain resistance to that damage type until you choose a different one with this feature. Damage from magical weapons or silver weapons ignores this resistance."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Condition",
+          "name": "Fiendish Resilience",
+          "level": 10,
+          "supports": "Resistance",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_FIEND_HURL_THROUGH_HELL",
+      "name": "Hurl Through Hell",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 14th level, when you hit a creature with an attack, you can use this feature to instantly transport the target through the lower planes. The creature disappears and hurtles through a nightmare landscape.</p><p>At the end of your next turn, the target returns to the space it previously occupied, or the nearest unoccupied space. If the target is not a fiend, it takes 10d10 psychic damage as it reels from its horrific experience.</p><p>Once you use this feature, you can’t use it again until you finish a long rest.</p>",
+      "sheet": {
+        "usage": "1/Long Rest"
+      }
+    }
+  ]
+}

@@ -1,0 +1,937 @@
+{
+  "format": "borealis-content/1",
+  "ruleset": "dnd2014",
+  "info": {
+    "name": "SRD 5.1 Paladin"
+  },
+  "elements": [
+    {
+      "id": "ID_WOTC_PHB_CLASS_PALADIN",
+      "name": "Paladin",
+      "type": "Class",
+      "source": "SRD 5.1",
+      "description": "<p>As a paladin, you gain the following class features.</p><h5>HIT POINTS</h5><p><strong>Hit Dice:</strong> 1d10 per paladin level</p><p><strong>Hit Points at 1st Level:</strong> 10 + your Constitution modifier</p><p><strong>Hit Points at Higher Levels:</strong> 1d10 (or 6) + your Constitution modifier per paladin level after 1st</p><h5>PROFICIENCIES</h5><p><strong>Armor:</strong> All armor, shields</p><p><strong>Weapons:</strong> Simple weapons, martial weapons</p><p><strong>Tools:</strong> None</p><p><strong>Saving Throws:</strong> Wisdom, Charisma</p><p><strong>Skills:</strong> Choose two from Athletics, Insight, Intimidation, Medicine, Persuasion, and Religion</p><h5>EQUIPMENT</h5><p>You start with the following equipment, in addition to the equipment granted by your background:</p><ul><li>(<em>a</em>) a martial weapon and a shield or (<em>b</em>) two martial weapons</li><li>(<em>a</em>) five javelins or (<em>b</em>) any simple melee weapon</li><li>(<em>a</em>) a priest’s pack or (<em>b</em>) an explorer’s pack</li><li>Chain mail and a holy symbol</li></ul><h5 class=\"caption\">THE PALADIN</h5><table class=\"class-features\"><thead><tr><th>Level</th><th>Proficiency Bonus</th><th>Features</th><th>1st</th><th>2nd</th><th>3rd</th><th>4th</th><th>5th</th></tr></thead><tbody><tr><td>1st</td><td>+2</td><td>Divine Sense, Lay on Hands</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>2nd</td><td>+2</td><td>Fighting Style, Spellcasting, Divine Smite</td><td>2</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>3rd</td><td>+2</td><td>Divine Health, Sacred Oath</td><td>3</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>4th</td><td>+2</td><td>Ability Score Improvement</td><td>3</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>5th</td><td>+3</td><td>Extra Attack</td><td>4</td><td>2</td><td>—</td><td>—</td><td>—</td></tr><tr><td>6th</td><td>+3</td><td>Aura of Protection</td><td>4</td><td>2</td><td>—</td><td>—</td><td>—</td></tr><tr><td>7th</td><td>+3</td><td>Sacred Oath feature</td><td>4</td><td>3</td><td>—</td><td>—</td><td>—</td></tr><tr><td>8th</td><td>+3</td><td>Ability Score Improvement</td><td>4</td><td>3</td><td>—</td><td>—</td><td>—</td></tr><tr><td>9th</td><td>+4</td><td>—</td><td>4</td><td>3</td><td>2</td><td>—</td><td>—</td></tr><tr><td>10th</td><td>+4</td><td>Aura of Courage</td><td>4</td><td>3</td><td>2</td><td>—</td><td>—</td></tr><tr><td>11th</td><td>+4</td><td>Improved Divine Smite</td><td>4</td><td>3</td><td>3</td><td>—</td><td>—</td></tr><tr><td>12th</td><td>+4</td><td>Ability Score Improvement</td><td>4</td><td>3</td><td>3</td><td>—</td><td>—</td></tr><tr><td>13th</td><td>+5</td><td>—</td><td>4</td><td>3</td><td>3</td><td>1</td><td>—</td></tr><tr><td>14th</td><td>+5</td><td>Cleansing Touch</td><td>4</td><td>3</td><td>3</td><td>1</td><td>—</td></tr><tr><td>15th</td><td>+5</td><td>Sacred Oath feature</td><td>4</td><td>3</td><td>3</td><td>2</td><td>—</td></tr><tr><td>16th</td><td>+5</td><td>Ability Score Improvement</td><td>4</td><td>3</td><td>3</td><td>2</td><td>—</td></tr><tr><td>17th</td><td>+6</td><td>—</td><td>4</td><td>3</td><td>3</td><td>3</td><td>1</td></tr><tr><td>18th</td><td>+6</td><td>Aura improvements</td><td>4</td><td>3</td><td>3</td><td>3</td><td>1</td></tr><tr><td>19th</td><td>+6</td><td>Ability Score Improvement</td><td>4</td><td>3</td><td>3</td><td>3</td><td>2</td></tr><tr><td>20th</td><td>+6</td><td>Sacred Oath feature</td><td>4</td><td>3</td><td>3</td><td>3</td><td>2</td></tr></tbody></table>",
+      "sheet": {
+        "display": false,
+        "descriptions": [
+          {
+            "text": "A holy warrior bound to a sacred oath."
+          }
+        ]
+      },
+      "setters": [
+        {
+          "name": "short",
+          "value": "A holy warrior bound to a sacred oath."
+        },
+        {
+          "name": "hd",
+          "value": "d10"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_PALADIN"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_MEDIUM_ARMOR",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_PALADIN"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_HEAVY_ARMOR",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_PALADIN"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_PALADIN"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_PALADIN"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_PALADIN"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_WISDOM",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_PALADIN"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_CHARISMA",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_PALADIN"
+        },
+        {
+          "kind": "select",
+          "type": "Proficiency",
+          "name": "Skill Proficiency (Paladin)",
+          "number": 2,
+          "supports": "Skill,Paladin",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_PALADIN"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_DIVINE_SENSE",
+          "type": "Class Feature",
+          "level": 1
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_LAY_ON_HANDS",
+          "type": "Class Feature",
+          "level": 1
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_FIGHTING_STYLE",
+          "type": "Class Feature",
+          "level": 2
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_SPELLCASTING",
+          "type": "Class Feature",
+          "level": 2
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_DIVINE_SMITE",
+          "type": "Class Feature",
+          "level": 2
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_DIVINE_HEALTH",
+          "type": "Class Feature",
+          "level": 3
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_SACRED_OATH",
+          "type": "Class Feature",
+          "level": 3
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_ASI",
+          "type": "Class Feature",
+          "level": 4
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_EXTRA_ATTACK",
+          "type": "Class Feature",
+          "level": 5
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_AURA_OF_PROTECTION",
+          "type": "Class Feature",
+          "level": 6
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_AURA_OF_COURAGE",
+          "type": "Class Feature",
+          "level": 10
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_IMPROVED_DIVINE_SMITE",
+          "type": "Class Feature",
+          "level": 11
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_CLEANSING_TOUCH",
+          "type": "Class Feature",
+          "level": 14
+        }
+      ],
+      "multiclass": {
+        "id": "ID_WOTC_PHB_MULTICLASS_PALADIN",
+        "prerequisite": "Strength 13 and Charisma 13",
+        "requirements": "([str:13],[cha:13])",
+        "setters": [
+          {
+            "name": "multiclass proficiencies",
+            "value": "Light armor, medium armor, shields, simple weapons, martial weapons"
+          }
+        ],
+        "rules": [
+          {
+            "kind": "grant",
+            "id": "ID_INTERNAL_GRANT_MULTICLASS",
+            "type": "Grants"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+            "type": "Proficiency"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_MEDIUM_ARMOR",
+            "type": "Proficiency"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+            "type": "Proficiency"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+            "type": "Proficiency"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS",
+            "type": "Proficiency"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_DIVINE_SENSE",
+      "name": "Divine Sense",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>The presence of strong evil registers on your senses like a noxious odor, and powerful good rings like heavenly music in your ears. As an action, you can open your awareness to detect such forces. Until the end of your next turn, you know the location of any celestial, fiend, or undead within 60 feet of you that is not behind total cover. You know the type (celestial, fiend, or undead) of any being whose presence you sense, but not its identity (the vampire</p><p>Count Strahd von Zarovich, for instance). Within the same radius, you also detect the presence of any place or object that has been consecrated or desecrated, as with the <em>hallow</em> spell.</p><p>You can use this feature a number of times equal to 1 + your Charisma modifier. When you finish a long rest, you regain all expended uses.</p>",
+      "sheet": {
+        "usage": "{{divine sense:count}}/Long Rest",
+        "action": "Action"
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "divine sense:count",
+          "value": "1"
+        },
+        {
+          "kind": "stat",
+          "name": "divine sense:count",
+          "value": "charisma:modifier"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_LAY_ON_HANDS",
+      "name": "Lay on Hands",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Your blessed touch can heal wounds. You have a pool of healing power that replenishes when you take a long rest. With that pool, you can restore a total number of hit points equal to your paladin level × 5.</p><p>As an action, you can touch a creature and draw power from the pool to restore a number of hit points to that creature, up to the maximum amount remaining in your pool.</p><p>Alternatively, you can expend 5 hit points from your pool of healing to cure the target of one disease or neutralize one poison affecting it. You can cure multiple diseases and neutralize multiple poisons with a single use of Lay on Hands, expending hit points separately for each one.</p><p>This feature has no effect on undead and constructs.</p>",
+      "sheet": {
+        "usage": "{{lay on hands:hp pool}} hp pool",
+        "action": "Action",
+        "descriptions": [
+          {
+            "text": "Restore hit points from your pool, or spend 5 points to cure a disease or neutralize a poison."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "lay on hands:hp pool",
+          "value": "level:paladin"
+        },
+        {
+          "kind": "stat",
+          "name": "lay on hands:hp pool",
+          "value": "level:paladin"
+        },
+        {
+          "kind": "stat",
+          "name": "lay on hands:hp pool",
+          "value": "level:paladin"
+        },
+        {
+          "kind": "stat",
+          "name": "lay on hands:hp pool",
+          "value": "level:paladin"
+        },
+        {
+          "kind": "stat",
+          "name": "lay on hands:hp pool",
+          "value": "level:paladin"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_FIGHTING_STYLE",
+      "name": "Fighting Style",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 2nd level, you adopt a style of fighting as your specialty. Choose one of the following options. You can’t take a Fighting Style option more than once, even if you later get to choose again.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Fighting Style",
+          "level": 2,
+          "supports": "Fighting Style,Paladin"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_SPELLCASTING",
+      "name": "Spellcasting",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>By 2nd level, you have learned to draw on divine magic through meditation and prayer to cast spells as a cleric does.</p><h6>Preparing and Casting Spells</h6><p>The Paladin table shows how many spell slots you have to cast your spells. To cast one of your paladin spells of 1st level or higher, you must expend a slot of the spell’s level or higher. You regain all expended spell slots when you finish a long rest.</p><p>You prepare the list of paladin spells that are available for you to cast, choosing from the paladin spell list. When you do so, choose a number of paladin spells equal to your Charisma modifier + half your paladin level, rounded down (minimum of one spell). The spells must be of a level for which you have spell slots.</p><p>For example, if you are a 5th-level paladin, you have four 1st-level and two 2nd-level spell slots. With a Charisma of 14, your list of prepared spells can include four spells of 1st or 2nd level, in any combination. If you prepare the 1st-level spell <em>cure wounds,</em> you can cast it using a 1st-level or a 2nd-level slot. Casting the spell doesn’t remove it from your list of prepared spells.</p><p>You can change your list of prepared spells when you finish a long rest. Preparing a new list of paladin spells requires time spent in prayer and meditation: at least 1 minute per spell level for each spell on your list.</p><h6>Spellcasting Ability</h6><p>Charisma is your spellcasting ability for your paladin spells, since their power derives from the strength of your convictions. You use your Charisma whenever a spell refers to your spellcasting ability. In addition, you use your Charisma modifier when setting the saving throw DC for a paladin spell you cast and when making an attack roll with one.</p><p><strong>Spell save DC</strong> =8 + your proficiency bonus + your Charisma modifier</p><p><strong>Spell attack modifier</strong> =your proficiency bonus + your Charisma modifier</p><h6>Spellcasting Focus</h6><p>You can use a holy symbol as a spellcasting focus for your paladin spells.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You prepare {{paladin:spellcasting:prepare}} paladin spells; Charisma is your spellcasting ability. You use a holy symbol as a spellcasting focus."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_HALF",
+          "type": "Grants",
+          "requirements": "ID_INTERNAL_GRANT_MULTICLASS"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_PROFICIENCY_SPELLFOCUS_GROUP_HOLY_SYMBOL",
+          "type": "Proficiency"
+        },
+        {
+          "kind": "stat",
+          "name": "paladin:spellcasting:slots:1",
+          "value": "2",
+          "level": 2
+        },
+        {
+          "kind": "stat",
+          "name": "paladin:spellcasting:slots:1",
+          "value": "1",
+          "level": 3
+        },
+        {
+          "kind": "stat",
+          "name": "paladin:spellcasting:slots:1",
+          "value": "1",
+          "level": 5
+        },
+        {
+          "kind": "stat",
+          "name": "paladin:spellcasting:slots:2",
+          "value": "2",
+          "level": 5
+        },
+        {
+          "kind": "stat",
+          "name": "paladin:spellcasting:slots:2",
+          "value": "1",
+          "level": 7
+        },
+        {
+          "kind": "stat",
+          "name": "paladin:spellcasting:slots:3",
+          "value": "2",
+          "level": 9
+        },
+        {
+          "kind": "stat",
+          "name": "paladin:spellcasting:slots:3",
+          "value": "1",
+          "level": 11
+        },
+        {
+          "kind": "stat",
+          "name": "paladin:spellcasting:slots:4",
+          "value": "1",
+          "level": 13
+        },
+        {
+          "kind": "stat",
+          "name": "paladin:spellcasting:slots:4",
+          "value": "1",
+          "level": 15
+        },
+        {
+          "kind": "stat",
+          "name": "paladin:spellcasting:slots:4",
+          "value": "1",
+          "level": 17
+        },
+        {
+          "kind": "stat",
+          "name": "paladin:spellcasting:slots:5",
+          "value": "1",
+          "level": 17
+        },
+        {
+          "kind": "stat",
+          "name": "paladin:spellcasting:slots:5",
+          "value": "1",
+          "level": 19
+        },
+        {
+          "kind": "stat",
+          "name": "paladin:spellcasting:prepare",
+          "value": "charisma:modifier"
+        },
+        {
+          "kind": "stat",
+          "name": "paladin:spellcasting:prepare",
+          "value": "level:paladin:half"
+        }
+      ],
+      "spellcasting": {
+        "name": "Paladin",
+        "ability": "Charisma",
+        "prepare": true,
+        "list": {
+          "supports": "Paladin",
+          "known": true
+        }
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_DIVINE_SMITE",
+      "name": "Divine Smite",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 2nd level, when you hit a creature with a melee weapon attack, you can expend one spell slot to deal radiant damage to the target, in addition to the weapon’s damage. The extra damage is 2d8 for a 1st-level spell slot, plus 1d8 for each spell level higher than 1st, to a maximum of 5d8. The damage increases by 1d8 if the target is an undead or a fiend.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Starting at 2nd level, when you hit a creature with a melee weapon attack, you can expend one spell slot to deal radiant damage to the target, in addition to the weapon’s damage. The extra damage is 2d8 for a 1st-level spell slot, plus 1d8 for each spell level higher than 1st, to a maximum of 5d8."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_DIVINE_HEALTH",
+      "name": "Divine Health",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>By 3rd level, the divine magic flowing through you makes you immune to disease.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "By 3rd level, the divine magic flowing through you makes you immune to disease."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_SACRED_OATH",
+      "name": "Sacred Oath",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>When you reach 3rd level, you swear the oath that binds you as a paladin forever. Up to this time you have been in a preparatory stage, committed to the path but not yet sworn to it. Now you choose an oath, such as the Oath of Devotion.</p><p>Your choice grants you features at 3rd level and again at 7th, 15th, and 20th level. Those features include oath spells and the Channel Divinity feature.</p><h6>Oath Spells</h6><p>Each oath has a list of associated spells. You gain access to these spells at the levels specified in the oath description. Once you gain access to an oath spell, you always have it prepared. Oath spells don’t count against the number of spells you can prepare each day.</p><p>If you gain an oath spell that doesn’t appear on the paladin spell list, the spell is nonetheless a paladin spell for you.</p><h6>Channel Divinity</h6><p>Your oath allows you to channel divine energy to fuel magical effects. Each Channel Divinity option provided by your oath explains how to use it.</p><p>When you use your Channel Divinity, you choose which option to use. You must then finish a short or long rest to use your Channel Divinity again.</p><p>Some Channel Divinity effects require saving throws. When you use such an effect from this class, the DC equals your paladin spell save DC.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Archetype",
+          "name": "Sacred Oath",
+          "level": 3,
+          "supports": "Sacred Oath"
+        },
+        {
+          "kind": "stat",
+          "name": "channel divinity:count",
+          "value": "1",
+          "bonus": "base",
+          "level": 3
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_ASI",
+      "name": "Ability Score Improvement",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.</p>",
+      "sheet": {
+        "display": false
+      },
+      "compendium": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Paladin 4)",
+          "level": 4,
+          "supports": "Improvement Option,Paladin,4"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Paladin 8)",
+          "level": 8,
+          "supports": "Improvement Option,Paladin,8"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Paladin 12)",
+          "level": 12,
+          "supports": "Improvement Option,Paladin,12"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Paladin 16)",
+          "level": 16,
+          "supports": "Improvement Option,Paladin,16"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Paladin 19)",
+          "level": 19,
+          "supports": "Improvement Option,Paladin,19"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_EXTRA_ATTACK",
+      "name": "Extra Attack",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning at 5th level, you can attack twice, instead of once, whenever you take the Attack action on your turn.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Beginning at 5th level, you can attack twice, instead of once, whenever you take the Attack action on your turn."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "extra attack:count",
+          "value": "2",
+          "bonus": "extra attack",
+          "level": 5
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_AURA_OF_PROTECTION",
+      "name": "Aura of Protection",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 6th level, whenever you or a friendly creature within 10 feet of you must make a saving throw, the creature gains a bonus to the saving throw equal to your Charisma modifier (with a minimum bonus of +1). You must be conscious to grant this bonus.</p><p>At 18th level, the range of this aura increases to 30 feet.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You and friendly creatures within {{aura of protection:range}} feet gain +{{aura of protection:save bonus}} to saving throws while you are conscious."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "aura of protection:range",
+          "value": "10"
+        },
+        {
+          "kind": "stat",
+          "name": "aura of protection:range",
+          "value": "20",
+          "level": 18
+        },
+        {
+          "kind": "stat",
+          "name": "aura of protection:save bonus",
+          "value": "1",
+          "bonus": "base"
+        },
+        {
+          "kind": "stat",
+          "name": "aura of protection:save bonus",
+          "value": "charisma:modifier",
+          "bonus": "base"
+        },
+        {
+          "kind": "stat",
+          "name": "strength:save:misc",
+          "value": "aura of protection:save bonus",
+          "alt": "Aura of Protection"
+        },
+        {
+          "kind": "stat",
+          "name": "dexterity:save:misc",
+          "value": "aura of protection:save bonus",
+          "alt": "Aura of Protection"
+        },
+        {
+          "kind": "stat",
+          "name": "constitution:save:misc",
+          "value": "aura of protection:save bonus",
+          "alt": "Aura of Protection"
+        },
+        {
+          "kind": "stat",
+          "name": "intelligence:save:misc",
+          "value": "aura of protection:save bonus",
+          "alt": "Aura of Protection"
+        },
+        {
+          "kind": "stat",
+          "name": "wisdom:save:misc",
+          "value": "aura of protection:save bonus",
+          "alt": "Aura of Protection"
+        },
+        {
+          "kind": "stat",
+          "name": "charisma:save:misc",
+          "value": "aura of protection:save bonus",
+          "alt": "Aura of Protection"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_AURA_OF_COURAGE",
+      "name": "Aura of Courage",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 10th level, you and friendly creatures within 10 feet of you can’t be frightened while you are conscious.</p><p>At 18th level, the range of this aura increases to 30 feet.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You and friendly creatures within {{aura of courage:range}} feet can’t be frightened while you are conscious."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "aura of courage:range",
+          "value": "10"
+        },
+        {
+          "kind": "stat",
+          "name": "aura of courage:range",
+          "value": "20",
+          "level": 18
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_IMPROVED_DIVINE_SMITE",
+      "name": "Improved Divine Smite",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>By 11th level, you are so suffused with righteous might that all your melee weapon strikes carry divine power with them. Whenever you hit a creature with a melee weapon, the creature takes an extra 1d8 radiant damage. If you also use your Divine Smite with an attack, you add this damage to the extra damage of your Divine Smite.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "By 11th level, you are so suffused with righteous might that all your melee weapon strikes carry divine power with them. Whenever you hit a creature with a melee weapon, the creature takes an extra 1d8 radiant damage."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_CLEANSING_TOUCH",
+      "name": "Cleansing Touch",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning at 14th level, you can use your action to end one spell on yourself or on one willing creature that you touch.</p><p>You can use this feature a number of times equal to your Charisma modifier (a minimum of once). You regain expended uses when you finish a long rest.</p>",
+      "sheet": {
+        "usage": "{{cleansing touch:count}}/Long Rest",
+        "action": "Action"
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "cleansing touch:count",
+          "value": "1",
+          "bonus": "base"
+        },
+        {
+          "kind": "stat",
+          "name": "cleansing touch:count",
+          "value": "charisma:modifier",
+          "bonus": "base"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_PALADIN_OATH_OF_DEVOTION",
+      "name": "Oath of Devotion",
+      "type": "Archetype",
+      "source": "SRD 5.1",
+      "supports": [
+        "Sacred Oath"
+      ],
+      "description": "<p>The Oath of Devotion binds a paladin to the loftiest ideals of justice, virtue, and order. Sometimes called cavaliers, white knights, or holy warriors, these paladins meet the ideal of the knight in shining armor, acting with honor in pursuit of justice and the greater good. They hold themselves to the highest standards of conduct, and some, for better or worse, hold the rest of the world to the same standards. Many who swear this oath are devoted to gods of law and good and use their gods’ tenets as the measure of their devotion. They hold angels—the perfect servants of good—as their ideals, and incorporate images of angelic wings into their helmets or coats of arms.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_PALADIN_TENETS_OF_DEVOTION",
+          "type": "Archetype Feature",
+          "level": 3
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_PALADIN_DEVOTION_OATH_SPELLS",
+          "type": "Archetype Feature",
+          "level": 3
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_PALADIN_DEVOTION_CHANNEL_DIVINITY",
+          "type": "Archetype Feature",
+          "level": 3
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_PALADIN_AURA_OF_DEVOTION",
+          "type": "Archetype Feature",
+          "level": 7
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_PALADIN_PURITY_OF_SPIRIT",
+          "type": "Archetype Feature",
+          "level": 15
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_PALADIN_HOLY_NIMBUS",
+          "type": "Archetype Feature",
+          "level": 20
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_PALADIN_TENETS_OF_DEVOTION",
+      "name": "Tenets of Devotion",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Though the exact words and strictures of the Oath of Devotion vary, paladins of this oath share these tenets.</p><p><strong><em>Honesty.</em></strong>Don’t lie or cheat. Let your word be your promise.</p><p><strong><em>Courage.</em></strong>Never fear to act, though caution is wise.</p><p><strong><em>Compassion.</em></strong>Aid others, protect the weak, and punish those who threaten them. Show mercy to your foes, but temper it with wisdom.</p><p><strong><em>Honor.</em></strong>Treat others with fairness, and let your honorable deeds be an example to them. Do as much good as possible while causing the least amount of harm.</p><p><strong><em>Duty.</em></strong>Be responsible for your actions and their consequences, protect those entrusted to your care, and obey those who have just authority over you.</p>",
+      "sheet": {
+        "display": false
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_PALADIN_DEVOTION_OATH_SPELLS",
+      "name": "Oath Spells",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>You gain oath spells at the paladin levels listed.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_PROTECTION_FROM_EVIL_AND_GOOD",
+          "type": "Spell",
+          "level": 3,
+          "spellcasting": "Paladin",
+          "prepared": true
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_SANCTUARY",
+          "type": "Spell",
+          "level": 3,
+          "spellcasting": "Paladin",
+          "prepared": true
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_LESSER_RESTORATION",
+          "type": "Spell",
+          "level": 5,
+          "spellcasting": "Paladin",
+          "prepared": true
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_ZONE_OF_TRUTH",
+          "type": "Spell",
+          "level": 5,
+          "spellcasting": "Paladin",
+          "prepared": true
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_BEACON_OF_HOPE",
+          "type": "Spell",
+          "level": 9,
+          "spellcasting": "Paladin",
+          "prepared": true
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_DISPEL_MAGIC",
+          "type": "Spell",
+          "level": 9,
+          "spellcasting": "Paladin",
+          "prepared": true
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_FREEDOM_OF_MOVEMENT",
+          "type": "Spell",
+          "level": 13,
+          "spellcasting": "Paladin",
+          "prepared": true
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_GUARDIAN_OF_FAITH",
+          "type": "Spell",
+          "level": 13,
+          "spellcasting": "Paladin",
+          "prepared": true
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_COMMUNE",
+          "type": "Spell",
+          "level": 17,
+          "spellcasting": "Paladin",
+          "prepared": true
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PHB_SPELL_FLAME_STRIKE",
+          "type": "Spell",
+          "level": 17,
+          "spellcasting": "Paladin",
+          "prepared": true
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_PALADIN_DEVOTION_CHANNEL_DIVINITY",
+      "name": "Channel Divinity",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>When you take this oath at 3rd level, you gain the following two Channel Divinity options.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "When you take this oath at 3rd level, you gain the following two Channel Divinity options."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_PALADIN_CHANNEL_DIVINITY_SACRED_WEAPON",
+          "type": "Archetype Feature"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_PALADIN_CHANNEL_DIVINITY_TURN_THE_UNHOLY",
+          "type": "Archetype Feature"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_PALADIN_CHANNEL_DIVINITY_SACRED_WEAPON",
+      "name": "Channel Divinity: Sacred Weapon",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>As an action, you can imbue one weapon that you are holding with positive energy, using your Channel Divinity. For 1 minute, you add your Charisma modifier to attack rolls made with that weapon (with a minimum bonus of +1). The weapon also emits bright light in a 20-foot radius and dim light 20 feet beyond that. If the weapon is not already magical, it becomes magical for the duration.</p><p>You can end this effect on your turn as part of any other action. If you are no longer holding or carrying this weapon, or if you fall unconscious, this effect ends.</p>",
+      "sheet": {
+        "usage": "Channel Divinity",
+        "action": "Action"
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_PALADIN_CHANNEL_DIVINITY_TURN_THE_UNHOLY",
+      "name": "Channel Divinity: Turn the Unholy",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>As an action, you present your holy symbol and speak a prayer censuring fiends and undead, using your Channel Divinity. Each fiend or undead that can see or hear you within 30 feet of you must make a Wisdom saving throw. If the creature fails its saving throw, it is turned for 1 minute or until it takes damage.</p><p>A turned creature must spend its turns trying to move as far away from you as it can, and it can’t willingly move to a space within 30 feet of you. It also can’t take reactions. For its action, it can use only the Dash action or try to escape from an effect that prevents it from moving. If there’s nowhere to move, the creature can use the Dodge action.</p>",
+      "sheet": {
+        "usage": "Channel Divinity",
+        "action": "Action"
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_PALADIN_AURA_OF_DEVOTION",
+      "name": "Aura of Devotion",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 7th level, you and friendly creatures within 10 feet of you can’t be charmed while you are conscious.</p><p>At 18th level, the range of this aura increases to 30 feet.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You and friendly creatures within {{aura of devotion:range}} feet can’t be charmed while you are conscious."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "aura of devotion:range",
+          "value": "10"
+        },
+        {
+          "kind": "stat",
+          "name": "aura of devotion:range",
+          "value": "20",
+          "level": 18
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_PALADIN_PURITY_OF_SPIRIT",
+      "name": "Purity of Spirit",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning at 15th level, you are always under the effects of a <em>protection from evil and good</em> spell.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Beginning at 15th level, you are always under the effects of a protection from evil and good spell."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_PALADIN_HOLY_NIMBUS",
+      "name": "Holy Nimbus",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 20th level, as an action, you can emanate an aura of sunlight. For 1 minute, bright light shines from you in a 30-foot radius, and dim light shines 30 feet beyond that.</p><p>Whenever an enemy creature starts its turn in the bright light, the creature takes 10 radiant damage. In addition, for the duration, you have advantage on saving throws against spells cast by fiends or undead.</p><p>Once you use this feature, you can’t use it again until you finish a long rest.</p>",
+      "sheet": {
+        "usage": "1/Long Rest",
+        "action": "Action"
+      }
+    }
+  ]
+}

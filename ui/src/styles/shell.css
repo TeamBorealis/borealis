@@ -1,0 +1,187 @@
+/* Classic builder shell. Rows: title 32 | profile 24 + main tabs 36 | sub-tab band 30 | content | status 26. */
+.aur-window { position: fixed; inset: 0; box-sizing: border-box; border: 1px solid var(--highlight); display: flex; flex-direction: column; background: var(--bg); color: var(--text-body); }
+.aur-window > * { flex: none; }
+.aur-window > .aur-content { flex: 1 1 auto; }
+
+/* Title bar */
+.aur-title { position: relative; height: calc(var(--title-h) - 1px); display: flex; align-items: center; background: var(--chrome); color: #fff; padding: 0 0 0 4px; }
+.aur-logo { width: 30px; height: 24px; margin: 2px 4px 0 1px; flex: none; align-self: flex-start; }
+.aur-title-text { position: absolute; left: calc(50% + 10px); transform: translateX(-50%); font-size: var(--fs-sm); font-weight: 600; color: var(--gray-5); text-transform: uppercase; pointer-events: none; white-space: nowrap; }
+.aur-title .aur-search { margin-left: auto; }
+
+/* Menu bar */
+.aur-menubar { display: flex; align-items: center; height: 100%; margin-left: 5px; }
+.aur-menu { position: relative; height: 100%; }
+.aur-menu-top { height: 100%; padding: 2px 6.75px 0; background: transparent; border: 0; color: var(--gray-5); font-size: var(--fs-sm); font-weight: 600; text-transform: uppercase; cursor: pointer; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aur-menu-top:hover, .aur-menu-top[aria-expanded="true"] { background: var(--chrome-hover); }
+.aur-menu-top.gold { color: var(--gold); }
+:root[data-theme="light"] .aur-menu-top.gold { color: #f0c15a; }
+.aur-menu-panel { position: absolute; top: 100%; left: 0; z-index: 70; min-width: 230px; padding: 2px; background: var(--menu-bg); border: 1px solid var(--accent-80); box-shadow: 2px 2px 4px rgb(0 0 0 / 0.5); }
+.aur-menu-item { display: flex; align-items: center; width: 100%; min-height: 22px; padding: 3px 10px 3px 0; background: transparent; border: 0; color: var(--text); font-size: 12px; text-align: left; cursor: pointer; }
+.aur-menu-item:hover:not(:disabled), .aur-menu-item:focus-visible { background: var(--accent-60); outline: 0; color: #fff; }
+.aur-menu-item:disabled { color: #7e7e7e; cursor: default; }
+.aur-menu-icon { width: 25px; flex: none; display: grid; place-items: center; color: var(--gold); }
+.aur-menu-icon .icon { width: 14px; height: 14px; }
+.aur-menu-label { flex: 1; white-space: nowrap; }
+.aur-menu-gesture { margin-left: 38px; margin-right: 8px; color: var(--gray-3); font-size: 11px; }
+.aur-menu-sep { height: 1px; margin: 3px 0 3px 25px; background: var(--accent-base); }
+
+/* Quick search + window commands */
+.aur-search { display: flex; align-items: center; gap: 4px; width: 225px; height: 22px; margin: 0 22px 0 20px; padding: 0 6px; background: #111113aa; color: var(--gray-3); opacity: 0.55; transition: opacity 120ms; }
+.aur-search:hover, .aur-search:focus-within { opacity: 1; }
+.aur-search .icon { width: 14px; height: 14px; }
+.aur-search input { flex: 1; min-width: 0; height: 100%; background: transparent; border: 0; padding: 0; color: #e6e6e6; font-size: var(--fs-xs); }
+.aur-search input:focus { outline: 0; }
+.aur-search:focus-within { outline: 1px solid var(--focus); }
+.aur-wincmds { display: flex; align-self: flex-start; margin-right: 0; }
+.aur-wincmds button { width: 34px; height: 30px; margin: 0 3px; display: grid; place-items: center; background: #283136; border: 0; color: #a6aaac; cursor: pointer; }
+.aur-iconbtn { width: 40px; height: 30px; margin: 0 2px; display: grid; place-items: center; background: transparent; border: 0; color: #a6aaac; cursor: pointer; }
+.aur-wincmds button:hover:not(:disabled) { background: #343f44; color: #fff; }
+.aur-iconbtn:hover { background: rgb(255 255 255 / 0.1); color: #fff; }
+.aur-wincmds button:disabled { opacity: 0.4; cursor: default; }
+.aur-wincmds .icon, .aur-iconbtn .icon { width: 16px; height: 16px; }
+.aur-wincmds .aur-tip-text { right: 0; }
+
+/* Window buttons (custom title bar; 34x30, flat, close hover red) */
+.aur-winbtns { display: flex; align-self: flex-start; margin-left: 48px; }
+.aur-winbtns button { width: 34px; height: 30px; display: grid; place-items: center; background: transparent; border: 0; color: #e6e6e6; cursor: pointer; }
+.aur-winbtns button:hover { background: rgb(255 255 255 / 0.1); color: #fff; }
+.aur-winbtns button.close:hover { background: #c42b1c; }
+.aur-title.native-controls { padding-left: 76px; }
+.aur-winstrip { height: 30px; display: flex; justify-content: flex-end; background: var(--chrome); }
+.aur-winstrip .aur-winbtns { margin-left: 0; }
+.aur-content .desc-scroll { margin-right: 5px; }
+
+/* Profile + main tab strip */
+.aur-chrome { display: flex; align-items: flex-end; height: calc(var(--profile-h) + var(--maintab-h) + 2px); background: var(--chrome); border-bottom: 2px solid var(--highlight); position: relative; }
+.tabs.main { padding-left: 29px; overflow: visible; align-self: flex-end; }
+.tabs.main .tab { height: var(--maintab-h); padding: 2px 20.5px; font-size: var(--fs-tab-main); color: #fff; opacity: 0.75; margin-bottom: -2px; }
+.tabs.main .tab:hover:not(.disabled) { background: var(--accent-60); color: #c1c1c1; opacity: 1; }
+.tabs.main .tab[aria-current="page"] { opacity: 1; color: #fff; letter-spacing: -0.1px; }
+.tabs.main .tab[aria-current="page"]::after { content: ""; position: absolute; left: 50%; bottom: 0; margin-left: -10px; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 10px solid var(--subnav-bg); }
+.tabs.main .tab.disabled { color: var(--gray-2); opacity: 1; cursor: default; }
+.tabs.main .badge-count { position: relative; top: -6px; margin-left: -2px; }
+.aur-profile { margin: 0 8px 2px auto; display: flex; align-items: flex-start; align-self: flex-start; padding-top: 7px; gap: 8px; }
+.aur-profile-text { text-align: right; max-width: 260px; margin-top: 7px; padding-right: 4px; }
+.aur-xp { height: 2px; width: 139px; margin: 0 6px 0 auto; background: #3c4347; }
+.aur-xp i { display: block; height: 100%; background: var(--gray-5); }
+.aur-profile .name { display: block; max-width: 100%; margin-left: auto; padding: 0; background: transparent; border: 0; color: var(--gray-6); font-size: 14px; font-weight: 600; text-transform: uppercase; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aur-profile .build { font-size: 11px; color: var(--gray-6); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aur-portrait-btn { padding: 0; width: 44px; height: 44px; border: 2px solid #0f0f10; box-shadow: 0 0 0 1px #293338; background: transparent; border-radius: 50%; overflow: hidden; cursor: pointer; transition: opacity 250ms; }
+.aur-portrait-btn:hover { opacity: 0.6; }
+.aur-portrait { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; background: var(--accent-base); color: #c1c1c1; font-size: 15px; font-weight: 600; aspect-ratio: 1; }
+.aur-newchar { margin: 8px 8px 0 auto; align-self: flex-start; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: #151516; border: 2px solid #0f0f10; box-shadow: 0 0 0 1px #293338; color: var(--aur-success); cursor: pointer; }
+.aur-newchar .icon { width: 30px; height: 30px; }
+.aur-newchar:hover { background: #1c1c1e; color: #4a9a52; }
+
+/* Sub-tab band (always #111 so its text colours are fixed) */
+.aur-subband { display: flex; align-items: stretch; justify-content: space-between; min-height: var(--subtab-h); height: var(--subtab-h); background: var(--subnav-bg); border-bottom: 2px solid var(--subnav-border); box-sizing: border-box; }
+.aur-subtabs { display: flex; min-width: 0; flex: 1; padding-left: 41px; }
+.aur-subtabs-host { display: flex; min-width: 0; }
+.aur-subband .tabs.sub { min-width: 0; }
+.aur-subband .tabs.sub .tab { height: 100%; color: #b3b3b3; }
+.aur-subband .tabs.sub .tab:hover:not(:disabled) { color: #d5d5d5; background: var(--accent-60); }
+.aur-subband .tabs.sub .tab[aria-selected="true"], .aur-subband .tabs.sub .tab[aria-current="page"] { color: #e6e6e6; background: transparent; }
+.aur-subband .tabs.sub .tab:disabled { color: var(--gray-5); }
+.aur-subband .tabs.sub .tab { padding: 2px 9.5px 0; }
+.aur-subband .tabs.sub .tab[aria-selected="true"], .aur-subband .tabs.sub .tab[aria-current="page"] { letter-spacing: -0.1px; }
+
+/* Quick action bar */
+.aur-quickbar { display: flex; align-items: center; padding-right: 4px; flex: none; }
+.aur-quickbar button { height: 28px; min-width: 22px; padding: 0 9px 0 8px; margin: 1px 0; display: inline-flex; align-items: center; justify-content: center; gap: 2px; background: transparent; border: 0; color: var(--text-body); font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase; cursor: pointer; }
+:root[data-theme="light"] .aur-quickbar button { color: #f9f9f9; }
+.aur-quickbar button:has(> .icon:only-child) { min-width: 20px; padding: 0 3px; }
+.aur-quickbar > :last-child button { padding-right: 0; }
+.aur-quickbar button:disabled { color: var(--gray-3); cursor: default; }
+.aur-quickbar button:hover:not(:disabled) { background: rgb(255 255 255 / 0.25); color: var(--highlight); }
+.aur-quickbar button:active:not(:disabled) { background: var(--accent-20); }
+.aur-quickbar button.gold { color: var(--gold); }
+.aur-quickbar .icon { width: 14px; height: 14px; }
+.aur-quickbar .sep, .aur-status .sep { width: 1px; height: 12px; margin: 1px 2px 0; background: currentColor; opacity: 0.45; color: var(--gray-5); }
+.aur-quickbar .aur-tip-text { right: 0; }
+
+/* Content */
+.aur-content { min-height: 0; overflow: auto; background: var(--bg); display: flex; flex-direction: column; position: relative; outline: 0; }
+.aur-content > * { flex: none; }
+.aur-content > .page { flex: 1 0 auto; }
+/* Classic builder insets the page ScrollViewer 10px top/bottom and 5px from the right edge */
+/* The 5px border moves the scrollbar left; children reclaim the width (clipped, never scrolled) */
+.aur-content { border-right: 5px solid transparent; overflow-x: hidden; }
+/* two-pane pages paint the 5 px gutter in the description-pane colour (.bp --bp-desc-bg is not inherited here). */
+.aur-content:has(.bp-right) { border-right-color: #131313; }
+:root[data-theme="light"] .aur-content:has(.bp-right), :root[data-contrast="high"] .aur-content:has(.bp-right) { border-right-color: var(--description-bg); }
+.aur-content > * { margin-right: -5px; }
+/* 10px inset: arrow buttons carry it as a transparent border, so arrows and thumb both move */
+.aur-content::-webkit-scrollbar-button:vertical:start:decrement { height: 27px; border-top: 10px solid transparent; background-clip: padding-box; box-sizing: border-box; }
+.aur-content::-webkit-scrollbar-button:vertical:end:increment { height: 27px; border-bottom: 10px solid transparent; background-clip: padding-box; box-sizing: border-box; }
+
+/* Status bar */
+.aur-status { display: flex; align-items: center; height: var(--status-h); min-height: var(--status-h); padding-left: 5px; background: var(--chrome); color: var(--gray-6); font-size: var(--fs-xs); text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+.aur-status .status-msg { margin: 0 5px; overflow: hidden; text-overflow: ellipsis; }
+.aur-status .aur-progress { margin: 0 7px 0 5px; flex: none; }
+.aur-status button, .aur-status .btn-like { height: 100%; display: inline-flex; align-items: center; gap: 4px; padding: 1px 5px; background: transparent; border: 0; color: var(--gray-5); font-size: var(--fs-xs); font-weight: 400; text-transform: uppercase; }
+.aur-status button { cursor: pointer; }
+.aur-status button:hover { background: rgb(255 255 255 / 0.05); }
+.aur-status .icon { width: 13px; height: 13px; }
+.aur-status .file { max-width: 40vw; overflow: hidden; text-overflow: ellipsis; }
+.aur-status .next, .aur-status .version { color: var(--gold); }
+.aur-status .version { padding: 0 10px 0 5px; text-transform: none; }
+.aur-status .flow-on { color: var(--aur-success); }
+.aur-status .flow-off { color: var(--aur-danger); }
+
+/* Narrow (phone / tablet portrait): hamburger title bar, band only when it has tabs, bottom tab bar */
+.aur-window.narrow { --bottom-chrome: calc(var(--status-h) + 54px + var(--safe-b)); padding-left: var(--safe-l); padding-right: var(--safe-r); }
+.aur-title.mobile { height: calc(44px + var(--safe-t)); padding: var(--safe-t) 4px 0 4px; gap: 4px; }
+.aur-title.mobile .aur-iconbtn { width: 44px; height: 44px; margin: 0; }
+.aur-title.mobile .aur-iconbtn .icon { width: 22px; height: 22px; }
+.aur-title.mobile .aur-title-text { position: static; transform: none; flex: 1; min-width: 0; font-size: 13px; text-align: center; overflow: hidden; text-overflow: ellipsis; margin-right: 34px; }
+.aur-title-text.gold { color: var(--gold); }
+.aur-window.narrow .aur-subband { overflow: hidden; }
+.aur-window.narrow .aur-subband:not(:has(.tab)) { display: none; }
+.aur-window.narrow .aur-subtabs { padding-left: 6px; overflow-x: auto; }
+.aur-window.narrow .aur-quickbar { display: none; }
+.aur-window.narrow .aur-status { padding-left: 10px; }
+
+.aur-bottombar { display: flex; height: calc(54px + var(--safe-b)); padding-bottom: var(--safe-b); background: var(--chrome); border-top: 2px solid var(--highlight); }
+.bb-item { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #fff; opacity: 0.75; text-decoration: none; font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase; }
+.bb-item .icon { width: 22px; height: 22px; }
+.bb-item .label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
+.bb-item[data-selected="true"] { opacity: 1; }
+.bb-item[data-selected="true"]::before { content: ""; position: absolute; top: 0; left: 50%; margin-left: -9px; border-left: 9px solid transparent; border-right: 9px solid transparent; border-top: 7px solid var(--subnav-bg); }
+.bb-item.disabled { color: var(--gray-2); opacity: 1; }
+.bb-item .badge-count { position: absolute; top: 4px; left: calc(50% + 6px); }
+
+/* Phone hamburger content */
+.menu-tree { padding-bottom: 20px; }
+.menu-tree-head { padding: 8px 0 4px; font-size: var(--fs-sm); font-weight: 600; text-transform: uppercase; color: var(--gray-5); border-bottom: 1px solid var(--accent-base); }
+.menu-tree-head.gold { color: var(--gold); }
+.menu-tree-item { display: flex; align-items: center; width: 100%; min-height: 44px; background: transparent; border: 0; color: var(--text); font-size: var(--fs-md); text-align: left; cursor: pointer; }
+.menu-tree-item:disabled { color: #7e7e7e; }
+.menu-tree-item:hover:not(:disabled) { background: var(--accent-60); }
+.menu-tree .aur-menu-icon { width: 25px; }
+
+/* New-character button: no longer clipped, sits above the bottom chrome, phones only (desktop has the header button) */
+
+/* Pending-import shortcut: square accent button bottom-left */
+.fab-import { position: fixed; left: max(16px, var(--safe-l)); bottom: calc(var(--bottom-chrome, var(--status-h)) + 14px); z-index: 30; width: 44px; height: 44px; display: grid; place-items: center; background: var(--accent-base); color: #fff; border: 1px solid var(--light-4); box-shadow: var(--shadow-2); text-decoration: none; }
+.fab-import:hover { background: #36454c; }
+.fab-import .icon { width: 20px; height: 20px; }
+/* The classic builder has no floating button: Import lives in the menu (File menu / hamburger). The drop target in GlobalImport still works. */
+.fab-import { display: none; }
+
+/* Narrow shells: nothing may clip at the right edge. Status text shrinks before its buttons do; tab strips scroll with edge shadows
+   (background-attachment: local cover + scroll shadow) that only show on the side that still has hidden tabs. */
+.aur-window.narrow .aur-status { padding-right: max(8px, var(--safe-r)); gap: 4px; }
+.aur-window.narrow .aur-status .status-msg { flex: 1 1 0; min-width: 0; }
+.aur-window.narrow .aur-status .spacer { display: none; }
+.aur-window.narrow .aur-status button { flex: none; white-space: nowrap; }
+.aur-window.narrow .aur-subtabs { padding-right: 0; }
+.aur-window.narrow .aur-subband .tabs.sub {
+  overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scroll-padding-inline: 24px;
+  background:
+    linear-gradient(to right, var(--subnav-bg) 30%, transparent) left center / 28px 100% no-repeat local,
+    linear-gradient(to left, var(--subnav-bg) 30%, transparent) right center / 28px 100% no-repeat local,
+    linear-gradient(to right, rgb(255 255 255 / 0.45), transparent) left center / 18px 100% no-repeat scroll,
+    linear-gradient(to left, rgb(255 255 255 / 0.45), transparent) right center / 18px 100% no-repeat scroll;
+}
+.aur-window.narrow .aur-subband .tabs.sub .tab { flex: none; white-space: nowrap; font-size: 11px; padding: 2px 8px 0; }

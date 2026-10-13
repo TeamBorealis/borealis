@@ -1,0 +1,10 @@
+# scratch extraction output (derived from the SRD PDF and legacy fixtures, never committed)
+*
+!.gitignore
+!*.py
+!*.sh
+!*.md
+!validate_rs/
+!validate_rs/Cargo.toml
+!validate_rs/src/
+!validate_rs/src/main.rs

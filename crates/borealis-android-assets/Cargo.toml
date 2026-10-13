@@ -1,0 +1,19 @@
+[package]
+name = "borealis-android-assets"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+description = "Read the APK's assets folder over JNI (the only unsafe code in the workspace)."
+
+# Deliberately not `workspace = true`: JNI needs `unsafe`, which the workspace forbids.
+[lints.rust]
+unsafe_code = "allow"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
+ndk-context = "0.1"

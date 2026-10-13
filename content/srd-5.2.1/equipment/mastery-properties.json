@@ -1,0 +1,133 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: equipment/mastery-properties",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_MASTERY_CLEAVE",
+   "name": "Cleave",
+   "type": "Mastery Property",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Mastery Property"
+   ],
+   "description": "<p>If you hit a creature with a melee attack roll using this weapon, you can make a melee attack roll with the weapon against a second creature within 5 feet of the first that is also within your reach. On a hit, the second creature takes the weapon’s damage, but don’t add your ability modifier to that damage unless that modifier is negative. You can make this extra attack only once per turn.</p>",
+   "data": {
+    "kind": "weapon_mastery",
+    "mastery": "cleave"
+   }
+  },
+  {
+   "id": "ID_2024_MASTERY_GRAZE",
+   "name": "Graze",
+   "type": "Mastery Property",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Mastery Property"
+   ],
+   "description": "<p>If your attack roll with this weapon misses a creature, you can deal damage to that creature equal to the ability modifier you used to make the attack roll. This damage is the same type dealt by the weapon, and the damage can be increased only by increasing the ability modifier.</p>",
+   "data": {
+    "kind": "weapon_mastery",
+    "mastery": "graze"
+   }
+  },
+  {
+   "id": "ID_2024_MASTERY_NICK",
+   "name": "Nick",
+   "type": "Mastery Property",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Mastery Property"
+   ],
+   "description": "<p>When you make the extra attack of the Light property, you can make it as part of the Attack action instead of as a Bonus Action. You can make this extra attack only once per turn.</p>",
+   "data": {
+    "kind": "weapon_mastery",
+    "mastery": "nick"
+   }
+  },
+  {
+   "id": "ID_2024_MASTERY_PUSH",
+   "name": "Push",
+   "type": "Mastery Property",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Mastery Property"
+   ],
+   "description": "<p>If you hit a creature with this weapon, you can push the creature up to 10 feet straight away from yourself if it is Large or smaller.</p>",
+   "data": {
+    "kind": "weapon_mastery",
+    "mastery": "push"
+   }
+  },
+  {
+   "id": "ID_2024_MASTERY_SAP",
+   "name": "Sap",
+   "type": "Mastery Property",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Mastery Property"
+   ],
+   "description": "<p>If you hit a creature with this weapon, that creature has Disadvantage on its next attack roll before the start of your next turn.</p>",
+   "data": {
+    "kind": "weapon_mastery",
+    "mastery": "sap"
+   }
+  },
+  {
+   "id": "ID_2024_MASTERY_SLOW",
+   "name": "Slow",
+   "type": "Mastery Property",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Mastery Property"
+   ],
+   "description": "<p>If you hit a creature with this weapon and deal damage to it, you can reduce its Speed by 10 feet until the start of your next turn. If the creature is hit more than once by weapons that have this property, the Speed reduction doesn’t exceed 10 feet.</p>",
+   "data": {
+    "kind": "weapon_mastery",
+    "mastery": "slow"
+   }
+  },
+  {
+   "id": "ID_2024_MASTERY_TOPPLE",
+   "name": "Topple",
+   "type": "Mastery Property",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Mastery Property"
+   ],
+   "description": "<p>If you hit a creature with this weapon, you can force the creature to make a Constitution saving throw (DC 8 plus the ability modifier used to make the attack roll and your Proficiency Bonus). On a failed save, the creature has the Prone condition.</p>",
+   "data": {
+    "kind": "weapon_mastery",
+    "mastery": "topple"
+   }
+  },
+  {
+   "id": "ID_2024_MASTERY_VEX",
+   "name": "Vex",
+   "type": "Mastery Property",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Mastery Property"
+   ],
+   "description": "<p>If you hit a creature with this weapon and deal damage to the creature, you have Advantage on your next attack roll against that creature before the end of your next turn.</p>",
+   "data": {
+    "kind": "weapon_mastery",
+    "mastery": "vex"
+   }
+  }
+ ]
+}

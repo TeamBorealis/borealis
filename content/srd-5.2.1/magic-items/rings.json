@@ -1,0 +1,909 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: magic-items/rings",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_ANIMAL_INFLUENCE",
+   "name": "Ring of Animal Influence",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This ring has 3 charges, and it regains 1d3 expended charges daily at dawn. While wearing the ring, you can expend 1 charge to cast one of the following spells (save DC 13) from it:</p>\n<ul><li>Animal Friendship</li><li>Fear (affects Beasts only)</li><li>Speak with Animals</li></ul>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": 3,
+    "raw_type_line": "Ring, Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_ANIMAL_INFLUENCE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_DJINNI_SUMMONING",
+   "name": "Ring of Djinni Summoning",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While wearing this ring, you can take a Magic action to summon a particular Djinni from the Elemental Plane of Air. The djinni appears in an unoccupied space you choose within 120 feet of yourself. It remains as long as you maintain Concentration, to a maximum of 1 hour, or until it drops to 0 Hit Points.</p>\n<p>While summoned, the djinni is Friendly to you and your allies, and it obeys your commands. If you fail to command it, the djinni defends itself against attackers but takes no other actions.</p>\n<p>After the djinni departs, it can’t be summoned again for 24 hours, and the ring becomes nonmagical if the djinni dies.</p>\n<p>Rings of Djinni Summoning are often created by the djinn they summon and given to mortals as gifts of friendship or tokens of esteem.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Legendary"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Legendary",
+    "rarities": [
+     "Legendary"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Legendary (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_DJINNI_SUMMONING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_ELEMENTAL_COMMAND",
+   "name": "Ring of Elemental Command",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Each Ring of Elemental Command is linked to one of the four Elemental Planes. The GM chooses or randomly determines the linked plane. For example, a Ring of Elemental Command (air) is linked to the Elemental Plane of Air.</p>\n<p>Every Ring of Elemental Command has the following two properties:</p>\n<p><b>Elemental Bane.</b> While wearing the ring, you have Advantage on attack rolls against Elementals and they have Disadvantage on attack rolls against you.</p>\n<p><b>Elemental Compulsion.</b> While wearing the ring, you can take a Magic action to try to compel an Elemental you see within 60 feet of yourself. The Elemental makes a DC 18 Wisdom saving throw.</p>\n<p>On a failed save, the Elemental has the Charmed condition until the start your next turn, and you determine what it does with its move and action on its next turn.</p>\n<p><b>Elemental Focus.</b> While wearing the ring, you benefit from additional properties corresponding to the ring’s linked Elemental Plane:</p>\n<p><b>Air.</b> You know Auran, you have Resistance to Lightning damage, and you have a Fly Speed equal to your Speed and can hover.</p>\n<p><b>Earth.</b> You know Terran, and you have Resistance to Acid damage. Terrain composed of rubble, rocks, or dirt isn’t Difficult Terrain for you. In addition, you can move through solid earth or rock as if those areas were Difficult Terrain without disturbing the matter through which you pass. If you end your turn in solid earth or rock, you are shunted out to the nearest unoccupied space you last occupied.</p>\n<p><b>Fire.</b> You know Ignan, and you have Immunity to Fire damage.</p>\n<p><b>Water.</b> You know Aquan, you gain a Swim Speed of 60 feet, and you can breathe underwater.</p>\n<p><b>Spellcasting.</b> The ring has 5 charges and regains 1d4 + 1 expended charges daily at dawn. While wearing the ring, you can cast a spell from it. Choose the spell from the list of available spells based on the Elemental Plane the ring is linked to, as shown in the following table. The table indicates how many charges you must expend to cast the spell, which has a save DC of 18.</p>\n<pre>Plane      Spells (Charges)\nAir        Chain Lightning (3 charges), Feather Fall (0\n           charges), Gust of Wind (2 charges), Wind\n           Wall (1 charge)\nEarth      Earthquake (5 charges), Stone Shape (2\n           charges), Stoneskin (3 charges), Wall of Stone\n           (3 charges)\nFire       Burning Hands (1 charge), Fireball (2 charges),\n           Fire Storm (4 charges), Wall of Fire (3 charges)\nWater      Create or Destroy Water (1 charge), Ice Storm\n           (2 charges), Tsunami (5 charges), Wall of Ice\n           (3 charges), Water Walk (2 charges)</pre>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Legendary"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Legendary",
+    "rarities": [
+     "Legendary"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": 5,
+    "raw_type_line": "Ring, Legendary (Requires Attunement)"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_EVASION",
+   "name": "Ring of Evasion",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This ring has 3 charges, and it regains 1d3 expended charges daily at dawn. When you fail a Dexterity saving throw while wearing the ring, you can take a Reaction to expend 1 charge to succeed on that save instead.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": 3,
+    "raw_type_line": "Ring, Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_EVASION",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_FEATHER_FALLING",
+   "name": "Ring of Feather Falling",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you fall while wearing this ring, you descend 60 feet per round and take no damage from falling.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_FEATHER_FALLING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_FREE_ACTION",
+   "name": "Ring of Free Action",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While you wear this ring, Difficult Terrain doesn’t cost you extra movement. In addition, magic can neither reduce any of your Speeds nor cause you to have the Paralyzed or Restrained condition.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_FREE_ACTION",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_INVISIBILITY",
+   "name": "Ring of Invisibility",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While wearing this ring, you can take a Magic action to give yourself the Invisible condition. You remain Invisible until the ring is removed or until you take a Bonus Action to become visible again.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Legendary"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Legendary",
+    "rarities": [
+     "Legendary"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Legendary (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_INVISIBILITY",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_JUMPING",
+   "name": "Ring of Jumping",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While wearing this ring, you can cast Jump from it, but can target only yourself when you do so.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Uncommon (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_JUMPING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_MIND_SHIELDING",
+   "name": "Ring of Mind Shielding",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While wearing this ring, you are immune to magic that allows other creatures to read your thoughts, determine whether you are lying, know your alignment, or know your creature type. Creatures can telepathically communicate with you only if you allow it.</p>\n<p>You can take a Magic action to cause the ring to become imperceptible until you take another Magic action to make it perceptible, until you remove the ring, or until you die.</p>\n<p>If you die while wearing the ring, your soul enters it, unless it already houses a soul. You can remain in the ring or depart for the afterlife. As long as your soul is in the ring, you can telepathically communicate with any creature wearing it. A wearer can’t prevent this telepathic communication.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Uncommon (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_MIND_SHIELDING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_PROTECTION",
+   "name": "Ring of Protection",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a +1 bonus to Armor Class and saving throws while wearing this ring.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_PROTECTION",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_REGENERATION",
+   "name": "Ring of Regeneration",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While wearing this ring, you regain 1d6 Hit Points every 10 minutes if you have at least 1 Hit Point. If you lose a body part, the ring causes the missing part to regrow and return to full functionality after 1d6 + 1 days if you have at least 1 Hit Point the whole time.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Very Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_REGENERATION",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_RESISTANCE",
+   "name": "Ring of Resistance",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Resistance to one damage type while wearing this ring. The gemstone in the ring indicates the type, which the GM chooses or determines randomly by rolling on the following table.</p>\n<pre> 1d10   Damage Type       Gemstone\n  1     Acid              Pearl\n  2     Cold              Tourmaline\n  3     Fire              Garnet\n  4     Force             Sapphire\n  5     Lightning         Citrine\n  6     Necrotic          Jet\n  7     Poison            Amethyst\n  8     Psychic           Jade\n  9     Radiant           Topaz\n  10    Thunder           Spinel</pre>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Rare"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_SHOOTING_STARS",
+   "name": "Ring of Shooting Stars",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can cast Dancing Lights or Light from the ring.</p>\n<p>The ring has 6 charges and regains 1d6 expended charges daily at dawn. You can expend its charges to use the properties below.</p>\n<p><b>Faerie Fire.</b> You can expend 1 charge to cast Faerie Fire from the ring.</p>\n<p><b>Lightning Spheres.</b> You can expend 2 charges as a Magic action to create up to four 3-foot-diameter spheres of lightning.</p>\n<p>Each sphere appears in an unoccupied space you can see within 120 feet of yourself. The spheres last as long as you maintain Concentration, up to 1 minute. Each sphere sheds Dim Light in a 30-foot radius.</p>\n<p>As a Bonus Action, you can move each sphere up to 30 feet, but no farther than 120 feet away from yourself. The first time the sphere comes within 5 feet of a creature other than you that isn’t behind Total Cover, the sphere discharges lightning at that creature and disappears. That creature makes a DC 15 Dexterity saving throw. On a failed save, the creature takes Lightning damage based on the number of spheres you created, as shown in the following table. On a successful save, the creature takes half as much damage.</p>\n<pre> Number of     Lightning       Number of     Lightning\n  Spheres      Damage           Spheres      Damage\n      1           4d12              3           2d6\n      2           5d4               4           2d4</pre>\n<p><b>Shooting Stars.</b> You can expend 1 to 3 charges as a Magic action. For every charge you expend, you launch a glowing mote of light from the ring at a point you can see within 60 feet of yourself. Each creature in a 15-foot Cube originating from that point is showered in sparks and makes a DC 15 Dexterity saving throw, taking 5d4 Radiant damage on a failed save or half as much damage on a successful one.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": 6,
+    "raw_type_line": "Ring, Very Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_SHOOTING_STARS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_SPELL_STORING",
+   "name": "Ring of Spell Storing",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This ring stores spells cast into it, holding them until the attuned wearer uses them. The ring can store up to 5 levels worth of spells at a time. When found, it contains 1d6 − 1 levels of stored spells chosen by the GM.</p>\n<p>Any creature can cast a spell of level 1 through 5 into the ring by touching the ring as the spell is cast. The spell has no effect other than to be stored in the ring. If the ring can’t hold the spell, the spell is expended without effect. The level of the slot used to cast the spell determines how much space it uses.</p>\n<p>While wearing this ring, you can cast any spell stored in it. The spell uses the slot level, spell save DC, spell attack bonus, and spellcasting ability of the original caster but is otherwise treated as if you cast the spell. The spell cast from the ring is no longer stored in it, freeing up space.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_SPELL_STORING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_SPELL_TURNING",
+   "name": "Ring of Spell Turning",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While wearing this ring, you have Advantage on saving throws against spells. If you succeed on the save for a spell of level 7 or lower, the spell has no effect on you. If that spell targeted only you and didn’t create an area of effect, you can take a Reaction to deflect the spell back at the spell’s caster; the caster must make a saving throw against the spell using their own spell save DC.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Legendary"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Legendary",
+    "rarities": [
+     "Legendary"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Legendary (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_SPELL_TURNING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_SWIMMING",
+   "name": "Ring of Swimming",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have a Swim Speed of 40 feet while wearing this ring.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Uncommon"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_SWIMMING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_TELEKINESIS",
+   "name": "Ring of Telekinesis",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While wearing this ring, you can cast Telekinesis from it.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Very Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_TELEKINESIS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_THE_RAM",
+   "name": "Ring of the Ram",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This ring has 3 charges and regains 1d3 expended charges daily at dawn. While wearing the ring, you can take a Magic action to expend 1 to 3 charges to make a ranged spell attack against one creature you can see within 60 feet of yourself. The ring produces a spectral ram’s head and makes its attack roll with a +7 bonus. On a hit, for each charge you spend, the target takes 2d10 Force damage and is pushed 5 feet away from you.</p>\n<p>Alternatively, you can expend 1 to 3 of the ring’s charges as a Magic action to try to break a nonmagical object you can see within 60 feet of yourself that isn’t being worn or carried. The ring makes a Strength check with a +5 bonus for each charge you spend.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": 3,
+    "raw_type_line": "Ring, Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_THE_RAM",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_THREE_WISHES",
+   "name": "Ring of Three Wishes",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While wearing this ring, you can expend 1 of its 3 charges to cast Wish from it. The ring becomes nonmagical when you use the last charge.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Legendary"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Legendary",
+    "rarities": [
+     "Legendary"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Legendary"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_THREE_WISHES",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_WARMTH",
+   "name": "Ring of Warmth",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>If you take Cold damage while wearing this ring, the ring reduces the damage you take by 2d8.</p>\n<p>In addition, while wearing this ring, you and everything you wear and carry are unharmed by temperatures of 0 degrees Fahrenheit or lower.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Uncommon (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_WARMTH",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_WATER_WALKING",
+   "name": "Ring of Water Walking",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While wearing this ring, you cast Water Walk from it, targeting only yourself.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Uncommon"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_WATER_WALKING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_RING_OF_X_RAY_VISION",
+   "name": "Ring of X-ray Vision",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While wearing this ring, you can take a Magic action to gain X-ray vision with a range of 30 feet for 1 minute. To you, solid objects within that radius appear transparent and don’t prevent light from passing through them. The vision can penetrate 1 foot of stone, 1 inch of common metal, or up to 3 feet of wood or dirt. Thicker substances or a thin sheet of lead block the vision.</p>\n<p>Whenever you use the ring again before taking a Long Rest, you must succeed on a DC 15 Constitution saving throw or gain 1 Exhaustion level.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Ring",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Ring, Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_RING_OF_XRAY_VISION",
+    "kind": "equivalent"
+   }
+  }
+ ]
+}

@@ -1,0 +1,30 @@
+[package]
+name = "borealis-import-5etools"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+description = "Runtime importer for the 5etools JSON data format (user-supplied local data only)"
+
+[lints]
+workspace = true
+
+[lib]
+name = "borealis_import_5etools"
+path = "src/lib.rs"
+
+[[bin]]
+name = "borealis-import-5etools"
+path = "src/bin/borealis-import-5etools.rs"
+
+[dependencies]
+borealis-content.workspace = true
+regex = "1"
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile = "3.27.0"

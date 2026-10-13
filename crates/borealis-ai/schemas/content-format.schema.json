@@ -1,0 +1,2205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://borealis.invalid/schemas/content-format.schema.json",
+  "title": "Borealis content pack (borealis-content/1)",
+  "description": "Lossless JSON representation of an Aurora Builder 'elements' XML file (and its index). Keys are snake_case versions of the XML attribute names. Aliases are normalised (grant name->id, statistic->stat, cap->maximum, prerequisites->prerequisite). Derived/synthesised content (multiclass siblings, ASI/feat features, spell scrolls, proxy items, support-name expansion) is NOT stored. Unknown XML attributes go to extra.attributes and unknown child nodes to extra.children. Borealis extensions over the Phase 0a schema: ruleset tags, cross-ruleset mapping fields, forward-compatible custom rule kinds, 'extra' on every nested object, level/number minimum relaxed to 0, a PackManifest definition.",
+  "type": "object",
+  "required": [
+    "format",
+    "elements"
+  ],
+  "properties": {
+    "format": {
+      "enum": ["borealis-content/1", "aurora-content/1"],
+      "description": "Schema identifier and major version. aurora-content/1 is the pre-rename id, accepted on read."
+    },
+    "info": {
+      "$ref": "#/$defs/Info"
+    },
+    "min_app_version": {
+      "type": "string",
+      "pattern": "^\\d+(\\.\\d+){0,3}$",
+      "description": "XML root attribute 'app'. A single component is read as '<n>.0'."
+    },
+    "ignore": {
+      "type": "boolean",
+      "default": false,
+      "description": "XML root attribute 'ignore': skip the whole file."
+    },
+    "elements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Element"
+      },
+      "description": "Element definitions in file order. Later duplicates of an id replace earlier ones (custom load semantics)."
+    },
+    "appends": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Append"
+      },
+      "description": "Extension records applied after all files are loaded."
+    },
+    "extra": {
+      "$ref": "#/$defs/Extra"
+    },
+    "ruleset": {
+      "$ref": "#/$defs/Ruleset"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "Extra": {
+      "type": "object",
+      "description": "Escape hatch preserving anything the XML had that the schema has no field for.",
+      "properties": {
+        "attributes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Unknown XML attributes, original names, string values."
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/UnknownNode"
+          },
+          "description": "Unknown child nodes in document order."
+        }
+      },
+      "additionalProperties": false
+    },
+    "UnknownNode": {
+      "type": "object",
+      "required": [
+        "tag"
+      ],
+      "properties": {
+        "tag": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "text": {
+          "type": "string",
+          "description": "Trimmed inner text (or inner XML when the node had child elements)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "Version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+){0,2}$",
+      "description": ".NET Version string, 2 to 4 numeric components."
+    },
+    "Info": {
+      "type": "object",
+      "description": "XML <info> block. Legacy files carry an 'update' part whenever <info> exists; here it is optional (by design).",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "author": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            },
+            "extra": {
+              "$ref": "#/$defs/Extra"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        "update": {
+          "type": "object",
+          "required": [
+            "version"
+          ],
+          "properties": {
+            "version": {
+              "$ref": "#/$defs/Version"
+            },
+            "revised": {
+              "type": "string"
+            },
+            "file": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Local file name for the saved copy."
+                },
+                "url": {
+                  "type": "string",
+                  "description": "Authoritative remote copy."
+                },
+                "extra": {
+                  "$ref": "#/$defs/Extra"
+                }
+              },
+              "required": [
+                "name",
+                "url"
+              ],
+              "additionalProperties": false
+            },
+            "extra": {
+              "$ref": "#/$defs/Extra"
+            }
+          },
+          "additionalProperties": false
+        },
+        "extra": {
+          "$ref": "#/$defs/Extra"
+        }
+      },
+      "additionalProperties": false
+    },
+    "IndexFile": {
+      "type": "object",
+      "description": "Manifest of content files (XML <index>). Stored beside this document type; not part of a content pack.",
+      "required": [
+        "format",
+        "info",
+        "files"
+      ],
+      "properties": {
+        "format": {
+          "enum": ["borealis-index/1", "aurora-index/1"]
+        },
+        "min_app_version": {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+){0,3}$"
+        },
+        "info": {
+          "$ref": "#/$defs/Info"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/IndexEntry"
+          }
+        },
+        "extra": {
+          "$ref": "#/$defs/Extra"
+        }
+      },
+      "additionalProperties": false
+    },
+    "IndexEntry": {
+      "type": "object",
+      "required": [
+        "name",
+        "url"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "File name under the index content directory. A name ending in 'index' denotes a nested index."
+        },
+        "url": {
+          "type": "string"
+        },
+        "obsolete": {
+          "type": "boolean",
+          "default": false,
+          "description": "XML <obsolete> instead of <file>: delete local copy."
+        },
+        "extra": {
+          "$ref": "#/$defs/Extra"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ElementType": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Open string, exact and case-sensitive. Known values are listed in x-known-types; unknown values are valid and handled by the default parser.",
+      "x-known-types": {
+        "dedicated_parser": [
+          "Ability Score Improvement",
+          "Archetype",
+          "Archetype Feature",
+          "Armor",
+          "Background Feature",
+          "Class",
+          "Class Feature",
+          "Companion",
+          "Deity",
+          "Dragonmark",
+          "Familiar",
+          "Familiar Action",
+          "Familiar Feature",
+          "Familiar Trait",
+          "Feat",
+          "Feat Feature",
+          "Grants",
+          "Item",
+          "Language",
+          "Language Feature",
+          "Level",
+          "Magic Item",
+          "Monster",
+          "Multiclass",
+          "Option",
+          "Proficiency",
+          "Race",
+          "Racial Trait",
+          "Source",
+          "Spell",
+          "Weapon"
+        ],
+        "default_parser": [
+          "Alignment",
+          "Armor Group",
+          "Background",
+          "Background Characteristics",
+          "Background Variant",
+          "Companion Action",
+          "Companion Feature",
+          "Companion Reaction",
+          "Companion Trait",
+          "Condition",
+          "Core",
+          "Damage Type",
+          "Ignore",
+          "Internal",
+          "Item Pack",
+          "Monster Action",
+          "Monster Trait",
+          "Property",
+          "Race Variant",
+          "Size",
+          "Skill",
+          "Spellcasting Focus Group",
+          "Sub Race",
+          "Support",
+          "Vision",
+          "Weapon Category",
+          "Weapon Group",
+          "Weapon Property"
+        ],
+        "proposed_2024": [
+          "Equipment Package",
+          "Mastery Property",
+          "Species",
+          "Species Trait Option"
+        ]
+      }
+    },
+    "Setter": {
+      "type": "object",
+      "description": "One <set name=\"..\" ...>value</set>. Lookup by name is case-insensitive and returns the first match; duplicates are allowed and preserved in order.",
+      "required": [
+        "name",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "type": "string",
+          "description": "Trimmed inner text."
+        },
+        "attributes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Every XML attribute other than 'name', e.g. currency, lb, type, modifier, addition, abbreviation, url, weightless, excludeEncumbrance, bulk, override."
+        }
+      },
+      "additionalProperties": false,
+      "x-known-setters-by-type": {
+        "*": [
+          "allow duplicate",
+          "sourceUrl",
+          "keywords",
+          "prerequisite",
+          "short"
+        ],
+        "Race": [
+          "names",
+          "names-format",
+          "height",
+          "weight"
+        ],
+        "Sub Race": [
+          "height",
+          "weight"
+        ],
+        "Class": [
+          "hd",
+          "short"
+        ],
+        "Level": [
+          "level",
+          "experience"
+        ],
+        "Deity": [
+          "alignment",
+          "domains",
+          "symbol",
+          "gender",
+          "setting"
+        ],
+        "Option": [
+          "default",
+          "locked",
+          "short"
+        ],
+        "Source": [
+          "url",
+          "abbreviation",
+          "image",
+          "errata",
+          "release",
+          "author",
+          "alternative",
+          "alt",
+          "group",
+          "official",
+          "third-party",
+          "homebrew",
+          "core",
+          "supplement",
+          "playtest",
+          "beta",
+          "adventure-league",
+          "league",
+          "legal",
+          "incomplete",
+          "wip",
+          "information"
+        ],
+        "Language": [
+          "standard",
+          "exotic",
+          "secret",
+          "monster",
+          "speakers",
+          "script"
+        ],
+        "Spell": [
+          "level",
+          "school",
+          "time",
+          "duration",
+          "range",
+          "hasVerbalComponent",
+          "hasSomaticComponent",
+          "hasMaterialComponent",
+          "materialComponent",
+          "hasRoyaltyComponent",
+          "royaltyComponent",
+          "isConcentration",
+          "isRitual"
+        ],
+        "Item|Weapon|Armor|Magic Item": [
+          "category",
+          "cost",
+          "price",
+          "weight",
+          "stackable",
+          "stash",
+          "consumable",
+          "valuable",
+          "attunement",
+          "inventory-hidden",
+          "slot",
+          "type",
+          "rarity",
+          "damage",
+          "versatile",
+          "range",
+          "armor",
+          "weapon",
+          "armorClass",
+          "strength",
+          "stealth",
+          "proficiency",
+          "enhancement",
+          "name-format",
+          "container",
+          "cursed",
+          "equippable"
+        ],
+        "Monster": [
+          "size",
+          "type",
+          "alignment",
+          "str",
+          "dex",
+          "con",
+          "int",
+          "wis",
+          "cha",
+          "ac",
+          "hp",
+          "hd",
+          "speed",
+          "speed:climb",
+          "speed:fly",
+          "speed:swim",
+          "speed:burrow"
+        ],
+        "Companion": [
+          "strength",
+          "dexterity",
+          "constitution",
+          "intelligence",
+          "wisdom",
+          "charisma",
+          "type",
+          "size",
+          "challenge",
+          "alignment",
+          "ac",
+          "hp",
+          "speed",
+          "senses",
+          "languages",
+          "saves",
+          "skills",
+          "experience",
+          "proficiency",
+          "vulnerabilities",
+          "resistances",
+          "immunities",
+          "conditionVulnerabilities",
+          "conditionResistances",
+          "conditionImmunities",
+          "traits",
+          "actions",
+          "reactions",
+          "short"
+        ]
+      }
+    },
+    "SheetEntry": {
+      "type": "object",
+      "required": [
+        "text"
+      ],
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Trimmed inner text; may contain {{stat}} or $(stat) placeholders."
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 1
+        },
+        "usage": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "extra": {
+          "$ref": "#/$defs/Extra"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Sheet": {
+      "type": "object",
+      "description": "XML <sheet>. Absent <sheet> is equivalent to {display:true} with no entries.",
+      "properties": {
+        "display": {
+          "type": "boolean",
+          "default": true
+        },
+        "alt": {
+          "type": "string"
+        },
+        "usage": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "descriptions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SheetEntry"
+          }
+        },
+        "extra": {
+          "$ref": "#/$defs/Extra"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RuleBase": {
+      "type": "object",
+      "properties": {
+        "setters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Setter"
+          },
+          "description": "Child <set> nodes of the rule, in order. Attribute shortcuts (spellcasting, prepared, allowReplace) are separate fields below, not duplicated here."
+        },
+        "extra": {
+          "$ref": "#/$defs/Extra"
+        }
+      }
+    },
+    "GrantRule": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/RuleBase"
+        }
+      ],
+      "type": "object",
+      "required": [
+        "kind",
+        "id"
+      ],
+      "properties": {
+        "kind": {
+          "const": "grant"
+        },
+        "type": {
+          "type": "string",
+          "description": "Target element type (informational; the target is resolved by id alone)."
+        },
+        "id": {
+          "type": "string",
+          "description": "Element id to grant. XML attr 'id' or legacy 'name'."
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 1
+        },
+        "requirements": {
+          "type": "string",
+          "description": "Requirements expression, see content-format.md 8.2."
+        },
+        "spellcasting": {
+          "type": "string",
+          "description": "Spellcasting class name for a granted Spell."
+        },
+        "prepared": {
+          "type": "boolean",
+          "description": "Granted spell is always prepared."
+        },
+        "setters": true,
+        "extra": true
+      },
+      "unevaluatedProperties": false
+    },
+    "ListItem": {
+      "type": "object",
+      "required": [
+        "id",
+        "text"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "text": {
+          "type": "string"
+        },
+        "extra": {
+          "$ref": "#/$defs/Extra"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SelectRule": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/RuleBase"
+        }
+      ],
+      "type": "object",
+      "required": [
+        "kind",
+        "type",
+        "name"
+      ],
+      "properties": {
+        "kind": {
+          "const": "select"
+        },
+        "type": {
+          "type": "string",
+          "description": "Candidate element type, or the special value 'List' for a text list."
+        },
+        "name": {
+          "type": "string",
+          "description": "Label and persistence key of the selection."
+        },
+        "number": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 1
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 1
+        },
+        "requirements": {
+          "type": "string"
+        },
+        "supports": {
+          "type": "string",
+          "description": "Supports expression, see content-format.md 8.1 (may contain $(spellcasting:list) / $(spellcasting:slots))."
+        },
+        "optional": {
+          "type": "boolean",
+          "default": false
+        },
+        "default": {
+          "type": "string",
+          "description": "Element id preselected."
+        },
+        "spellcasting": {
+          "type": "string"
+        },
+        "prepared": {
+          "type": "boolean"
+        },
+        "allow_replace": {
+          "type": "boolean",
+          "description": "XML attr allowReplace."
+        },
+        "default_behaviour": {
+          "type": "string",
+          "description": "XML attr default-behaviour; kept for round-trip, Borealis does not use it."
+        },
+        "existing": {
+          "type": "boolean",
+          "description": "Kept for round-trip; Borealis does not use it."
+        },
+        "stat": {
+          "type": "string",
+          "description": "XML attr stat on a select; kept for round-trip, Borealis does not use it."
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ListItem"
+          },
+          "description": "Only for type 'List'."
+        },
+        "setters": true,
+        "extra": true
+      },
+      "unevaluatedProperties": false
+    },
+    "StatRule": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/RuleBase"
+        }
+      ],
+      "type": "object",
+      "required": [
+        "kind",
+        "name",
+        "value"
+      ],
+      "properties": {
+        "kind": {
+          "const": "stat"
+        },
+        "name": {
+          "type": "string",
+          "description": "Statistic group name, lower-cased and legacy-mapped (content-format.md 7.3.1)."
+        },
+        "value": {
+          "type": "string",
+          "description": "Integer text (sign allowed, leading + removed) or a statistic group name (lower-cased, legacy-mapped, optional leading '-')."
+        },
+        "bonus": {
+          "type": "string",
+          "description": "Stacking class; the highest value per class counts, classes add."
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 1
+        },
+        "requirements": {
+          "type": "string"
+        },
+        "equipped": {
+          "type": "string",
+          "description": "Equipped expression, content-format.md 8.3."
+        },
+        "not_equipped": {
+          "type": "string",
+          "description": "XML not-equipped; parsed, unused."
+        },
+        "inline": {
+          "type": "boolean",
+          "default": false
+        },
+        "maximum": {
+          "type": "string",
+          "description": "Integer text or group name. XML attr 'maximum' or legacy 'cap'."
+        },
+        "minimum": {
+          "type": "string",
+          "description": "Parsed, unused."
+        },
+        "alt": {
+          "type": "string"
+        },
+        "merge": {
+          "type": "boolean",
+          "default": false
+        },
+        "setters": true,
+        "extra": true
+      },
+      "unevaluatedProperties": false
+    },
+    "UnknownRule": {
+      "type": "object",
+      "description": "Authoring-tool escape hatch. Unknown rule tags make a legacy element invalid; the migrator should report and drop them.",
+      "required": [
+        "kind",
+        "tag"
+      ],
+      "properties": {
+        "kind": {
+          "const": "unknown"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Rule": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/GrantRule"
+        },
+        {
+          "$ref": "#/$defs/SelectRule"
+        },
+        {
+          "$ref": "#/$defs/StatRule"
+        },
+        {
+          "$ref": "#/$defs/UnknownRule"
+        },
+        {
+          "$ref": "#/$defs/CustomRule"
+        }
+      ]
+    },
+    "SpellcastingList": {
+      "type": "object",
+      "required": [
+        "supports"
+      ],
+      "properties": {
+        "supports": {
+          "type": "string",
+          "description": "Supports expression over Spell elements, or a single spell id for <extend>."
+        },
+        "known": {
+          "type": "boolean",
+          "default": false
+        },
+        "extra": {
+          "$ref": "#/$defs/Extra"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Spellcasting": {
+      "type": "object",
+      "description": "XML <spellcasting>.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Spellcasting class name. Omitted = 'N/A' (allowed only with all=true)."
+        },
+        "ability": {
+          "type": "string",
+          "description": "Spellcasting ability name, e.g. Charisma."
+        },
+        "prepare": {
+          "type": "boolean",
+          "default": false
+        },
+        "allow_replace": {
+          "type": "boolean",
+          "default": false
+        },
+        "extend": {
+          "type": "boolean",
+          "default": false
+        },
+        "all": {
+          "type": "boolean",
+          "default": false
+        },
+        "list": {
+          "$ref": "#/$defs/SpellcastingList"
+        },
+        "extends": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SpellcastingList"
+          }
+        },
+        "extra": {
+          "$ref": "#/$defs/Extra"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Equipment": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "extra": {
+          "$ref": "#/$defs/Extra"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SourceRef": {
+      "type": "object",
+      "description": "Element-level <source> child (kept for round-trip; Borealis does not use it).",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "page": {
+          "type": "string"
+        },
+        "extra": {
+          "$ref": "#/$defs/Extra"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Multiclass": {
+      "type": "object",
+      "description": "Nested <multiclass> of a Class element. The loader synthesises the sibling Multiclass element from this (content-format.md 6.3).",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "prerequisite": {
+          "type": "string",
+          "description": "Display text."
+        },
+        "requirements": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "setters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Setter"
+          }
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Rule"
+          }
+        },
+        "extra": {
+          "$ref": "#/$defs/Extra"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Extract": {
+      "type": "object",
+      "description": "Item <extract>: contents of an equipment pack.",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "integer",
+                "minimum": 1,
+                "default": 1
+              },
+              "extra": {
+                "$ref": "#/$defs/Extra"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "extra": {
+          "$ref": "#/$defs/Extra"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Element": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "type",
+        "source"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique, case-sensitive. Convention ID_[A-Z0-9_]+."
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/ElementType"
+        },
+        "source": {
+          "type": "string",
+          "description": "Name (not id) of a Source element, or Core/Internal."
+        },
+        "supports": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true,
+          "default": [],
+          "description": "Explicit support tags in XML order (derived tags are not stored)."
+        },
+        "prerequisite": {
+          "type": "string",
+          "default": "",
+          "description": "Display-only text."
+        },
+        "requirements": {
+          "type": "string",
+          "default": "",
+          "description": "Requirements expression (content-format.md 8.2)."
+        },
+        "description": {
+          "type": "string",
+          "default": "",
+          "description": "HTML fragment (inner XML of <description>, see content-format.md 3.3.3)."
+        },
+        "sheet": {
+          "$ref": "#/$defs/Sheet"
+        },
+        "compendium": {
+          "$ref": "#/$defs/Compendium"
+        },
+        "setters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Setter"
+          },
+          "default": []
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Rule"
+          },
+          "default": []
+        },
+        "spellcasting": {
+          "$ref": "#/$defs/Spellcasting"
+        },
+        "equipment": {
+          "$ref": "#/$defs/Equipment"
+        },
+        "source_ref": {
+          "$ref": "#/$defs/SourceRef"
+        },
+        "multiclass": {
+          "$ref": "#/$defs/Multiclass"
+        },
+        "extract": {
+          "$ref": "#/$defs/Extract"
+        },
+        "extra": {
+          "$ref": "#/$defs/Extra"
+        },
+        "ruleset": {
+          "$ref": "#/$defs/Ruleset",
+          "description": "Absent = the file's ruleset."
+        },
+        "maps_to": {
+          "type": "object",
+          "properties": {
+            "dnd2014": {
+              "type": "string"
+            },
+            "dnd2024": {
+              "type": "string"
+            },
+            "kind": {
+              "enum": [
+                "equivalent",
+                "approximate",
+                "none"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "renamed_from": {
+          "type": "string"
+        },
+        "legacy_alias": {
+          "type": "string"
+        },
+        "profile_overrides": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "data": {
+          "type": "object",
+          "description": "Structured type specific data for 2024 era element types; opaque to borealis-content."
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "data"
+            ],
+            "properties": {
+              "type": {
+                "const": "Monster"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/monster"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Append": {
+      "type": "object",
+      "description": "XML <append id=.. [type=..]>. Only supports, setters, rules and spellcasting have an effect (content-format.md 9.2).",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "supports": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "setters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Setter"
+          },
+          "default": []
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Rule"
+          },
+          "default": []
+        },
+        "spellcasting": {
+          "$ref": "#/$defs/Spellcasting"
+        },
+        "extra": {
+          "$ref": "#/$defs/Extra"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Ruleset": {
+      "enum": [
+        "dnd2014",
+        "dnd2024",
+        "any"
+      ],
+      "description": "Target ruleset tag."
+    },
+    "Compendium": {
+      "type": "object",
+      "properties": {
+        "display": {
+          "type": "boolean",
+          "default": true
+        },
+        "extra": {
+          "$ref": "#/$defs/Extra"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CustomRule": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "not": {
+            "enum": [
+              "grant",
+              "select",
+              "stat",
+              "unknown"
+            ]
+          }
+        }
+      },
+      "description": "Forward-compatible rule of a kind this version does not know (for example the 2024 kinds)."
+    },
+    "PackManifest": {
+      "type": "object",
+      "required": [
+        "format",
+        "id",
+        "name",
+        "version",
+        "rulesets",
+        "files"
+      ],
+      "properties": {
+        "format": {
+          "const": "borealis-pack/1"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "core",
+            "custom"
+          ],
+          "default": "custom"
+        },
+        "rulesets": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "dnd2014",
+              "dnd2024"
+            ]
+          },
+          "minItems": 1
+        },
+        "license": {
+          "type": "string"
+        },
+        "attribution": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "kind"
+            ],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "kind": {
+                "enum": [
+                  "content",
+                  "index"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "monster": {
+      "type": "object",
+      "description": "Typed stat block carried in the `data` of a `Monster` element (borealis-content `MonsterData`; docs/monster-model.md).",
+      "required": [
+        "ruleset",
+        "size",
+        "creature_type",
+        "alignment",
+        "ac",
+        "hp",
+        "speed",
+        "abilities",
+        "senses",
+        "cr",
+        "xp",
+        "proficiency_bonus"
+      ],
+      "properties": {
+        "ruleset": {
+          "$ref": "#/$defs/Ruleset"
+        },
+        "size": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "tiny",
+              "small",
+              "medium",
+              "large",
+              "huge",
+              "gargantuan"
+            ]
+          }
+        },
+        "swarm_of": {
+          "enum": [
+            "tiny",
+            "small",
+            "medium",
+            "large",
+            "huge",
+            "gargantuan"
+          ]
+        },
+        "creature_type": {
+          "enum": [
+            "aberration",
+            "beast",
+            "celestial",
+            "construct",
+            "dragon",
+            "elemental",
+            "fey",
+            "fiend",
+            "giant",
+            "humanoid",
+            "monstrosity",
+            "ooze",
+            "plant",
+            "undead"
+          ]
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "alignment": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ac": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "value": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "source": {
+                "type": "string"
+              },
+              "condition": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "hp": {
+          "type": "object",
+          "required": [
+            "average"
+          ],
+          "properties": {
+            "average": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "formula": {
+              "type": "string",
+              "pattern": "^[0-9]+d[0-9]+([+-][0-9]+)?$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "speed": {
+          "type": "object",
+          "properties": {
+            "walk": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "burrow": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "climb": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "fly": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "swim": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "hover": {
+              "type": "boolean"
+            },
+            "note": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "initiative": {
+          "type": "object",
+          "required": [
+            "modifier",
+            "score"
+          ],
+          "properties": {
+            "modifier": {
+              "type": "integer"
+            },
+            "score": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            }
+          },
+          "additionalProperties": false
+        },
+        "abilities": {
+          "type": "object",
+          "required": [
+            "str",
+            "dex",
+            "con",
+            "int",
+            "wis",
+            "cha"
+          ],
+          "properties": {
+            "str": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30
+            },
+            "dex": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30
+            },
+            "con": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30
+            },
+            "int": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30
+            },
+            "wis": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30
+            },
+            "cha": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30
+            }
+          },
+          "additionalProperties": false
+        },
+        "saves": {
+          "type": "object",
+          "properties": {
+            "str": {
+              "type": "integer"
+            },
+            "dex": {
+              "type": "integer"
+            },
+            "con": {
+              "type": "integer"
+            },
+            "int": {
+              "type": "integer"
+            },
+            "wis": {
+              "type": "integer"
+            },
+            "cha": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        "skills": {
+          "type": "object",
+          "properties": {
+            "acrobatics": {
+              "type": "integer"
+            },
+            "animal handling": {
+              "type": "integer"
+            },
+            "arcana": {
+              "type": "integer"
+            },
+            "athletics": {
+              "type": "integer"
+            },
+            "deception": {
+              "type": "integer"
+            },
+            "history": {
+              "type": "integer"
+            },
+            "insight": {
+              "type": "integer"
+            },
+            "intimidation": {
+              "type": "integer"
+            },
+            "investigation": {
+              "type": "integer"
+            },
+            "medicine": {
+              "type": "integer"
+            },
+            "nature": {
+              "type": "integer"
+            },
+            "perception": {
+              "type": "integer"
+            },
+            "performance": {
+              "type": "integer"
+            },
+            "persuasion": {
+              "type": "integer"
+            },
+            "religion": {
+              "type": "integer"
+            },
+            "sleight of hand": {
+              "type": "integer"
+            },
+            "stealth": {
+              "type": "integer"
+            },
+            "survival": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        "skill_notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "damage_vulnerabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/monsterDamageClause"
+          }
+        },
+        "damage_resistances": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/monsterDamageClause"
+          }
+        },
+        "damage_immunities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/monsterDamageClause"
+          }
+        },
+        "condition_immunities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "gear": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "senses": {
+          "type": "object",
+          "required": [
+            "passive_perception"
+          ],
+          "properties": {
+            "blindsight": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "darkvision": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "tremorsense": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "truesight": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "deafened_range": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "blind_beyond": {
+              "type": "boolean"
+            },
+            "passive_perception": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "notes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "telepathy": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cr": {
+          "description": "Challenge rating as a string so 1/8 stays exact (integers are also accepted).",
+          "enum": [
+            "0",
+            "1/8",
+            "1/4",
+            "1/2",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23",
+            "24",
+            "25",
+            "26",
+            "27",
+            "28",
+            "29",
+            "30",
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30
+          ]
+        },
+        "xp": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "xp_lair": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "proficiency_bonus": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 9
+        },
+        "traits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/monsterFeature"
+          }
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/monsterFeature"
+          }
+        },
+        "bonus_actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/monsterFeature"
+          }
+        },
+        "reactions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/monsterFeature"
+          }
+        },
+        "legendary": {
+          "type": "object",
+          "properties": {
+            "per_round": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "lair_uses": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "preamble": {
+              "type": "string"
+            },
+            "actions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/monsterFeature"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "monsterDamageClause": {
+      "type": "object",
+      "properties": {
+        "types": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "acid",
+              "bludgeoning",
+              "cold",
+              "fire",
+              "force",
+              "lightning",
+              "necrotic",
+              "piercing",
+              "poison",
+              "psychic",
+              "radiant",
+              "slashing",
+              "thunder"
+            ]
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "monsterFeature": {
+      "type": "object",
+      "description": "A trait, action, bonus action, reaction or legendary action.",
+      "required": [
+        "name",
+        "text"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "usage": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "recharge"
+              ],
+              "properties": {
+                "recharge": {
+                  "type": "object",
+                  "required": [
+                    "min",
+                    "max"
+                  ],
+                  "properties": {
+                    "min": {
+                      "type": "integer",
+                      "minimum": 2,
+                      "maximum": 6
+                    },
+                    "max": {
+                      "type": "integer",
+                      "minimum": 2,
+                      "maximum": 6
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "per_day"
+              ],
+              "properties": {
+                "per_day": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "on_rest"
+              ],
+              "properties": {
+                "on_rest": {
+                  "enum": [
+                    "short_or_long",
+                    "long"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "per_day_in_lair"
+              ],
+              "properties": {
+                "per_day_in_lair": {
+                  "type": "object",
+                  "required": [
+                    "normal",
+                    "lair"
+                  ],
+                  "properties": {
+                    "normal": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "lair": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "cost": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "condition": {
+          "type": "string"
+        },
+        "attack": {
+          "type": "object",
+          "required": [
+            "kind",
+            "to_hit"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "melee_weapon",
+                "ranged_weapon",
+                "melee_or_ranged_weapon",
+                "melee_spell",
+                "ranged_spell",
+                "melee",
+                "ranged",
+                "melee_or_ranged"
+              ]
+            },
+            "to_hit": {
+              "type": "integer"
+            },
+            "reach": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "range": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "long_range": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "damage": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "average",
+                  "type"
+                ],
+                "properties": {
+                  "average": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "dice": {
+                    "type": "string",
+                    "pattern": "^[0-9]+d[0-9]+([+-][0-9]+)?$"
+                  },
+                  "type": {
+                    "enum": [
+                      "acid",
+                      "bludgeoning",
+                      "cold",
+                      "fire",
+                      "force",
+                      "lightning",
+                      "necrotic",
+                      "piercing",
+                      "poison",
+                      "psychic",
+                      "radiant",
+                      "slashing",
+                      "thunder"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "save": {
+          "type": "object",
+          "description": "First saving throw the text calls for.",
+          "required": [
+            "ability",
+            "dc"
+          ],
+          "properties": {
+            "ability": {
+              "enum": [
+                "str",
+                "dex",
+                "con",
+                "int",
+                "wis",
+                "cha"
+              ]
+            },
+            "dc": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "damage": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "average",
+                  "type"
+                ],
+                "properties": {
+                  "average": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "dice": {
+                    "type": "string",
+                    "pattern": "^[0-9]+d[0-9]+([+-][0-9]+)?$"
+                  },
+                  "type": {
+                    "enum": [
+                      "acid",
+                      "bludgeoning",
+                      "cold",
+                      "fire",
+                      "force",
+                      "lightning",
+                      "necrotic",
+                      "piercing",
+                      "poison",
+                      "psychic",
+                      "radiant",
+                      "slashing",
+                      "thunder"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "half_on_success": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "spellcasting": {
+          "type": "object",
+          "required": [
+            "lists"
+          ],
+          "properties": {
+            "ability": {
+              "enum": [
+                "str",
+                "dex",
+                "con",
+                "int",
+                "wis",
+                "cha"
+              ]
+            },
+            "save_dc": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "attack_bonus": {
+              "type": "integer"
+            },
+            "lists": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "frequency",
+                  "spells"
+                ],
+                "properties": {
+                  "frequency": {
+                    "oneOf": [
+                      {
+                        "const": "at_will"
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "per_day"
+                        ],
+                        "properties": {
+                          "per_day": {
+                            "type": "object",
+                            "required": [
+                              "uses",
+                              "each"
+                            ],
+                            "properties": {
+                              "uses": {
+                                "type": "integer",
+                                "minimum": 1
+                              },
+                              "each": {
+                                "type": "boolean"
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "spells": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "name"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "note": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

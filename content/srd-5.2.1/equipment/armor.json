@@ -1,0 +1,1077 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: equipment/armor",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_ARMOR_PADDED_ARMOR",
+   "name": "Padded Armor",
+   "type": "Armor",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_ARMOR_GROUP_LIGHT"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Armor"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "8 lb.",
+     "attributes": {
+      "lb": "8"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "body"
+    },
+    {
+     "name": "armor",
+     "value": "Light"
+    },
+    {
+     "name": "armorClass",
+     "value": "11 + Dex"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_ARMOR_PROFICIENCY_PADDED"
+    },
+    {
+     "name": "stealth",
+     "value": "Disadvantage"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_STEALTH_DISADVANTAGE",
+     "type": "Grants"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:armor",
+     "value": "11"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity",
+     "value": "dexterity:modifier"
+    }
+   ],
+   "data": {
+    "armor_category": "Light",
+    "base_ac": 11,
+    "dex_modifier": true,
+    "dex_cap": null,
+    "strength_requirement": null,
+    "stealth_disadvantage": true,
+    "don_doff": "1 Minute to Don or Doff"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ARMOR_LIGHT_PADDED",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ARMOR_LEATHER_ARMOR",
+   "name": "Leather Armor",
+   "type": "Armor",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_ARMOR_GROUP_LIGHT"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Armor"
+    },
+    {
+     "name": "cost",
+     "value": "10",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "10 lb.",
+     "attributes": {
+      "lb": "10"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "body"
+    },
+    {
+     "name": "armor",
+     "value": "Light"
+    },
+    {
+     "name": "armorClass",
+     "value": "11 + Dex"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LEATHER"
+    },
+    {
+     "name": "stealth",
+     "value": "—"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "ac:armored:armor",
+     "value": "11"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity",
+     "value": "dexterity:modifier"
+    }
+   ],
+   "data": {
+    "armor_category": "Light",
+    "base_ac": 11,
+    "dex_modifier": true,
+    "dex_cap": null,
+    "strength_requirement": null,
+    "stealth_disadvantage": false,
+    "don_doff": "1 Minute to Don or Doff"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ARMOR_LIGHT_LEATHER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ARMOR_STUDDED_LEATHER_ARMOR",
+   "name": "Studded Leather Armor",
+   "type": "Armor",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_ARMOR_GROUP_LIGHT"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Armor"
+    },
+    {
+     "name": "cost",
+     "value": "45",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "13 lb.",
+     "attributes": {
+      "lb": "13"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "body"
+    },
+    {
+     "name": "armor",
+     "value": "Light"
+    },
+    {
+     "name": "armorClass",
+     "value": "12 + Dex"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_ARMOR_PROFICIENCY_STUDDED_LEATHER"
+    },
+    {
+     "name": "stealth",
+     "value": "—"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "ac:armored:armor",
+     "value": "12"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity",
+     "value": "dexterity:modifier"
+    }
+   ],
+   "data": {
+    "armor_category": "Light",
+    "base_ac": 12,
+    "dex_modifier": true,
+    "dex_cap": null,
+    "strength_requirement": null,
+    "stealth_disadvantage": false,
+    "don_doff": "1 Minute to Don or Doff"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ARMOR_LIGHT_STUDDED_LEATHER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ARMOR_HIDE_ARMOR",
+   "name": "Hide Armor",
+   "type": "Armor",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_ARMOR_GROUP_MEDIUM"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Armor"
+    },
+    {
+     "name": "cost",
+     "value": "10",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "12 lb.",
+     "attributes": {
+      "lb": "12"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "body"
+    },
+    {
+     "name": "armor",
+     "value": "Medium"
+    },
+    {
+     "name": "armorClass",
+     "value": "12 + Dex (max 2)"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_ARMOR_PROFICIENCY_HIDE"
+    },
+    {
+     "name": "stealth",
+     "value": "—"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "ac:armored:armor",
+     "value": "12"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity",
+     "value": "dexterity:modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity:cap",
+     "value": "2"
+    }
+   ],
+   "data": {
+    "armor_category": "Medium",
+    "base_ac": 12,
+    "dex_modifier": true,
+    "dex_cap": 2,
+    "strength_requirement": null,
+    "stealth_disadvantage": false,
+    "don_doff": "5 Minutes to Don and 1 Minute to Doff"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ARMOR_MEDIUM_HIDE_ARMOR",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ARMOR_CHAIN_SHIRT",
+   "name": "Chain Shirt",
+   "type": "Armor",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_ARMOR_GROUP_MEDIUM"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Armor"
+    },
+    {
+     "name": "cost",
+     "value": "50",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "20 lb.",
+     "attributes": {
+      "lb": "20"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "body"
+    },
+    {
+     "name": "armor",
+     "value": "Medium"
+    },
+    {
+     "name": "armorClass",
+     "value": "13 + Dex (max 2)"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_ARMOR_PROFICIENCY_CHAIN_SHIRT"
+    },
+    {
+     "name": "stealth",
+     "value": "—"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "ac:armored:armor",
+     "value": "13"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity",
+     "value": "dexterity:modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity:cap",
+     "value": "2"
+    }
+   ],
+   "data": {
+    "armor_category": "Medium",
+    "base_ac": 13,
+    "dex_modifier": true,
+    "dex_cap": 2,
+    "strength_requirement": null,
+    "stealth_disadvantage": false,
+    "don_doff": "5 Minutes to Don and 1 Minute to Doff"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ARMOR_MEDIUM_CHAIN_SHIRT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ARMOR_SCALE_MAIL",
+   "name": "Scale Mail",
+   "type": "Armor",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_ARMOR_GROUP_MEDIUM"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Armor"
+    },
+    {
+     "name": "cost",
+     "value": "50",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "45 lb.",
+     "attributes": {
+      "lb": "45"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "body"
+    },
+    {
+     "name": "armor",
+     "value": "Medium"
+    },
+    {
+     "name": "armorClass",
+     "value": "14 + Dex (max 2)"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SCALE_MAIL"
+    },
+    {
+     "name": "stealth",
+     "value": "Disadvantage"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_STEALTH_DISADVANTAGE",
+     "type": "Grants"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:armor",
+     "value": "14"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity",
+     "value": "dexterity:modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity:cap",
+     "value": "2"
+    }
+   ],
+   "data": {
+    "armor_category": "Medium",
+    "base_ac": 14,
+    "dex_modifier": true,
+    "dex_cap": 2,
+    "strength_requirement": null,
+    "stealth_disadvantage": true,
+    "don_doff": "5 Minutes to Don and 1 Minute to Doff"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ARMOR_MEDIUM_SCALE_MAIL",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ARMOR_BREASTPLATE",
+   "name": "Breastplate",
+   "type": "Armor",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_ARMOR_GROUP_MEDIUM"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Armor"
+    },
+    {
+     "name": "cost",
+     "value": "400",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "20 lb.",
+     "attributes": {
+      "lb": "20"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "body"
+    },
+    {
+     "name": "armor",
+     "value": "Medium"
+    },
+    {
+     "name": "armorClass",
+     "value": "14 + Dex (max 2)"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_ARMOR_PROFICIENCY_BREASTPLATE"
+    },
+    {
+     "name": "stealth",
+     "value": "—"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "ac:armored:armor",
+     "value": "14"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity",
+     "value": "dexterity:modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity:cap",
+     "value": "2"
+    }
+   ],
+   "data": {
+    "armor_category": "Medium",
+    "base_ac": 14,
+    "dex_modifier": true,
+    "dex_cap": 2,
+    "strength_requirement": null,
+    "stealth_disadvantage": false,
+    "don_doff": "5 Minutes to Don and 1 Minute to Doff"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ARMOR_MEDIUM_BREASTPLATE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ARMOR_HALF_PLATE_ARMOR",
+   "name": "Half Plate Armor",
+   "type": "Armor",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_ARMOR_GROUP_MEDIUM"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Armor"
+    },
+    {
+     "name": "cost",
+     "value": "750",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "40 lb.",
+     "attributes": {
+      "lb": "40"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "body"
+    },
+    {
+     "name": "armor",
+     "value": "Medium"
+    },
+    {
+     "name": "armorClass",
+     "value": "15 + Dex (max 2)"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_ARMOR_PROFICIENCY_HALF_PLATE"
+    },
+    {
+     "name": "stealth",
+     "value": "Disadvantage"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_STEALTH_DISADVANTAGE",
+     "type": "Grants"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:armor",
+     "value": "15"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity",
+     "value": "dexterity:modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity:cap",
+     "value": "2"
+    }
+   ],
+   "data": {
+    "armor_category": "Medium",
+    "base_ac": 15,
+    "dex_modifier": true,
+    "dex_cap": 2,
+    "strength_requirement": null,
+    "stealth_disadvantage": true,
+    "don_doff": "5 Minutes to Don and 1 Minute to Doff"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ARMOR_MEDIUM_HALF_PLATE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ARMOR_RING_MAIL",
+   "name": "Ring Mail",
+   "type": "Armor",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_ARMOR_GROUP_HEAVY"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Armor"
+    },
+    {
+     "name": "cost",
+     "value": "30",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "40 lb.",
+     "attributes": {
+      "lb": "40"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "body"
+    },
+    {
+     "name": "armor",
+     "value": "Heavy"
+    },
+    {
+     "name": "armorClass",
+     "value": "14"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_ARMOR_PROFICIENCY_RING_MAIL"
+    },
+    {
+     "name": "stealth",
+     "value": "Disadvantage"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_STEALTH_DISADVANTAGE",
+     "type": "Grants"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:armor",
+     "value": "14"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity",
+     "value": "0"
+    }
+   ],
+   "data": {
+    "armor_category": "Heavy",
+    "base_ac": 14,
+    "dex_modifier": false,
+    "dex_cap": null,
+    "strength_requirement": null,
+    "stealth_disadvantage": true,
+    "don_doff": "10 Minutes to Don and 5 Minutes to Doff"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ARMOR_HEAVY_RING_MAIL",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ARMOR_CHAIN_MAIL",
+   "name": "Chain Mail",
+   "type": "Armor",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_ARMOR_GROUP_HEAVY"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Armor"
+    },
+    {
+     "name": "cost",
+     "value": "75",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "55 lb.",
+     "attributes": {
+      "lb": "55"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "body"
+    },
+    {
+     "name": "armor",
+     "value": "Heavy"
+    },
+    {
+     "name": "armorClass",
+     "value": "16"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_ARMOR_PROFICIENCY_CHAIN_MAIL"
+    },
+    {
+     "name": "strength",
+     "value": "13"
+    },
+    {
+     "name": "stealth",
+     "value": "Disadvantage"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_STEALTH_DISADVANTAGE",
+     "type": "Grants"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:armor",
+     "value": "16"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "speed",
+     "value": "-10",
+     "bonus": "armor",
+     "requirements": "![str:13]"
+    }
+   ],
+   "data": {
+    "armor_category": "Heavy",
+    "base_ac": 16,
+    "dex_modifier": false,
+    "dex_cap": null,
+    "strength_requirement": 13,
+    "stealth_disadvantage": true,
+    "don_doff": "10 Minutes to Don and 5 Minutes to Doff"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ARMOR_HEAVY_CHAIN_MAIL",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ARMOR_SPLINT_ARMOR",
+   "name": "Splint Armor",
+   "type": "Armor",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_ARMOR_GROUP_HEAVY"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Armor"
+    },
+    {
+     "name": "cost",
+     "value": "200",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "60 lb.",
+     "attributes": {
+      "lb": "60"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "body"
+    },
+    {
+     "name": "armor",
+     "value": "Heavy"
+    },
+    {
+     "name": "armorClass",
+     "value": "17"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SPLINT"
+    },
+    {
+     "name": "strength",
+     "value": "15"
+    },
+    {
+     "name": "stealth",
+     "value": "Disadvantage"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_STEALTH_DISADVANTAGE",
+     "type": "Grants"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:armor",
+     "value": "17"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "speed",
+     "value": "-10",
+     "bonus": "armor",
+     "requirements": "![str:15]"
+    }
+   ],
+   "data": {
+    "armor_category": "Heavy",
+    "base_ac": 17,
+    "dex_modifier": false,
+    "dex_cap": null,
+    "strength_requirement": 15,
+    "stealth_disadvantage": true,
+    "don_doff": "10 Minutes to Don and 5 Minutes to Doff"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ARMOR_HEAVY_SPLINT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ARMOR_PLATE_ARMOR",
+   "name": "Plate Armor",
+   "type": "Armor",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_ARMOR_GROUP_HEAVY"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Armor"
+    },
+    {
+     "name": "cost",
+     "value": "1500",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "65 lb.",
+     "attributes": {
+      "lb": "65"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "body"
+    },
+    {
+     "name": "armor",
+     "value": "Heavy"
+    },
+    {
+     "name": "armorClass",
+     "value": "18"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_ARMOR_PROFICIENCY_PLATE"
+    },
+    {
+     "name": "strength",
+     "value": "15"
+    },
+    {
+     "name": "stealth",
+     "value": "Disadvantage"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_STEALTH_DISADVANTAGE",
+     "type": "Grants"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:armor",
+     "value": "18"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "speed",
+     "value": "-10",
+     "bonus": "armor",
+     "requirements": "![str:15]"
+    }
+   ],
+   "data": {
+    "armor_category": "Heavy",
+    "base_ac": 18,
+    "dex_modifier": false,
+    "dex_cap": null,
+    "strength_requirement": 15,
+    "stealth_disadvantage": true,
+    "don_doff": "10 Minutes to Don and 5 Minutes to Doff"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ARMOR_HEAVY_PLATE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ARMOR_SHIELD",
+   "name": "Shield",
+   "type": "Armor",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_ARMOR_GROUP_SHIELD"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Armor"
+    },
+    {
+     "name": "cost",
+     "value": "10",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "6 lb.",
+     "attributes": {
+      "lb": "6"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "secondary"
+    },
+    {
+     "name": "armor",
+     "value": "Shield"
+    },
+    {
+     "name": "armorClass",
+     "value": "+2"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELD"
+    },
+    {
+     "name": "stealth",
+     "value": "—"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "ac:shield",
+     "value": "2",
+     "bonus": "shield"
+    }
+   ],
+   "data": {
+    "armor_category": "Shield",
+    "base_ac": 2,
+    "dex_modifier": false,
+    "dex_cap": null,
+    "strength_requirement": null,
+    "stealth_disadvantage": false,
+    "don_doff": "Utilize Action to Don or Doff"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_GEAR_SHIELD",
+    "kind": "equivalent"
+   }
+  }
+ ]
+}

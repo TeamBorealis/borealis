@@ -1,0 +1,8275 @@
+{
+ "commands": {
+  "add_index": {
+   "args": {
+    "url": false
+   },
+   "method": "addIndex",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "ContentIndex"
+    }
+   }
+  },
+  "add_item": {
+   "args": {
+    "baseItemId": true,
+    "buy": false,
+    "characterId": false,
+    "itemId": false,
+    "quantity": false
+   },
+   "method": "addItem",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "add_multiclass": {
+   "args": {
+    "characterId": false
+   },
+   "method": "addMulticlass",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "adjust_coins": {
+   "args": {
+    "characterId": false,
+    "coin": false,
+    "delta": false
+   },
+   "method": "adjustCoins",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "ai_add_homebrew_to_pack": {
+   "args": {
+    "json": false,
+    "packId": true
+   },
+   "method": "aiAddHomebrewToPack",
+   "response": {
+    "k": "ref",
+    "name": "ContentPack"
+   }
+  },
+  "ai_cancel_task": {
+   "args": {
+    "taskId": false
+   },
+   "method": "aiCancelTask",
+   "response": {
+    "k": "nil"
+   }
+  },
+  "ai_host_begin_pairing": {
+   "args": {},
+   "method": "aiHostBeginPairing",
+   "response": {
+    "k": "ref",
+    "name": "AiHostStatus"
+   }
+  },
+  "ai_host_disable": {
+   "args": {},
+   "method": "aiHostDisable",
+   "response": {
+    "k": "ref",
+    "name": "AiHostStatus"
+   }
+  },
+  "ai_host_enable": {
+   "args": {},
+   "method": "aiHostEnable",
+   "response": {
+    "k": "ref",
+    "name": "AiHostStatus"
+   }
+  },
+  "ai_host_revoke": {
+   "args": {
+    "deviceId": false
+   },
+   "method": "aiHostRevoke",
+   "response": {
+    "k": "ref",
+    "name": "AiHostStatus"
+   }
+  },
+  "ai_host_status": {
+   "args": {},
+   "method": "aiHostStatus",
+   "response": {
+    "k": "ref",
+    "name": "AiHostStatus"
+   }
+  },
+  "ai_setup_complete": {
+   "args": {
+    "skipped": true
+   },
+   "method": "aiSetupComplete",
+   "response": {
+    "k": "nil"
+   }
+  },
+  "ai_setup_confirm_install": {
+   "args": {
+    "provider": false
+   },
+   "method": "aiSetupConfirmInstall",
+   "response": {
+    "k": "ref",
+    "name": "AiInstallConsent"
+   }
+  },
+  "ai_setup_install": {
+   "args": {
+    "consentToken": false,
+    "provider": false
+   },
+   "method": "aiSetupInstall",
+   "response": {
+    "k": "nil"
+   }
+  },
+  "ai_setup_login": {
+   "args": {
+    "openTerminal": true,
+    "provider": false
+   },
+   "method": "aiSetupLogin",
+   "response": {
+    "k": "ref",
+    "name": "AiLoginHelp"
+   }
+  },
+  "ai_setup_status": {
+   "args": {},
+   "method": "aiSetupStatus",
+   "response": {
+    "k": "ref",
+    "name": "AiSetupStatus"
+   }
+  },
+  "ai_start_task": {
+   "args": {
+    "request": false
+   },
+   "method": "aiStartTask",
+   "response": {
+    "k": "ref",
+    "name": "AiTaskHandle"
+   }
+  },
+  "ai_status": {
+   "args": {},
+   "method": "aiStatus",
+   "response": {
+    "k": "ref",
+    "name": "AiStatus"
+   }
+  },
+  "ai_validate_homebrew": {
+   "args": {
+    "json": false
+   },
+   "method": "aiValidateHomebrew",
+   "response": {
+    "k": "ref",
+    "name": "ValidationReport"
+   }
+  },
+  "app_version": {
+   "args": {},
+   "method": "appVersion",
+   "response": {
+    "k": "prim"
+   }
+  },
+  "apply_convert_to_2024": {
+   "args": {
+    "characterId": false
+   },
+   "method": "applyConvertTo2024",
+   "response": {
+    "k": "ref",
+    "name": "ConversionApplied"
+   }
+  },
+  "apply_plan": {
+   "args": {
+    "characterId": false,
+    "plan": false,
+    "upToLevel": false
+   },
+   "method": "applyPlan",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "apply_selection": {
+   "args": {
+    "characterId": false,
+    "elementId": false,
+    "slotId": false
+   },
+   "method": "applySelection",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "assign_standard_array": {
+   "args": {
+    "ability": false,
+    "characterId": false,
+    "value": false
+   },
+   "method": "assignStandardArray",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "cancel_import_preview": {
+   "args": {
+    "previewId": false
+   },
+   "method": "cancelImportPreview",
+   "response": {
+    "k": "nil"
+   }
+  },
+  "choose_equipment_package": {
+   "args": {
+    "characterId": false,
+    "option": false,
+    "packageId": false
+   },
+   "method": "chooseEquipmentPackage",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "choose_weapon_masteries": {
+   "args": {
+    "characterId": false,
+    "weaponIds": false
+   },
+   "method": "chooseWeaponMasteries",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "clear_caches": {
+   "args": {},
+   "method": "clearCaches",
+   "response": {
+    "k": "ref",
+    "name": "ClearCachesResult"
+   }
+  },
+  "clear_downloaded_content": {
+   "args": {},
+   "method": "clearDownloadedContent",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "ContentPack"
+    }
+   }
+  },
+  "clear_selection": {
+   "args": {
+    "characterId": false,
+    "slotId": false
+   },
+   "method": "clearSelection",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "close_character": {
+   "args": {
+    "characterId": false,
+    "discard": false
+   },
+   "method": "closeCharacter",
+   "response": {
+    "k": "nil"
+   }
+  },
+  "compendium_facets": {
+   "args": {},
+   "method": "compendiumFacets",
+   "response": {
+    "k": "ref",
+    "name": "CompendiumFacets"
+   }
+  },
+  "content_update_status": {
+   "args": {},
+   "method": "contentUpdateStatus",
+   "response": {
+    "k": "ref",
+    "name": "ContentUpdateStatus"
+   }
+  },
+  "convert_coins": {
+   "args": {
+    "characterId": false,
+    "to": false
+   },
+   "method": "convertCoins",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "create_character": {
+   "args": {
+    "request": false
+   },
+   "method": "createCharacter",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "delete_character": {
+   "args": {
+    "characterId": false
+   },
+   "method": "deleteCharacter",
+   "response": {
+    "k": "nil"
+   }
+  },
+  "duplicate_character": {
+   "args": {
+    "characterId": false
+   },
+   "method": "duplicateCharacter",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSummary"
+   }
+  },
+  "encounter_evaluate": {
+   "args": {
+    "args": false
+   },
+   "method": "encounterEvaluate",
+   "response": {
+    "k": "record",
+    "t": {
+     "k": "any"
+    }
+   }
+  },
+  "encounter_suggest": {
+   "args": {
+    "args": false
+   },
+   "method": "encounterSuggest",
+   "response": {
+    "k": "record",
+    "t": {
+     "k": "any"
+    }
+   }
+  },
+  "equip_item": {
+   "args": {
+    "characterId": false,
+    "inventoryId": false,
+    "slot": false
+   },
+   "method": "equipItem",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "explain_stat": {
+   "args": {
+    "characterId": false,
+    "stat": false
+   },
+   "method": "explainStat",
+   "response": {
+    "k": "ref",
+    "name": "StatTrace"
+   }
+  },
+  "export_character": {
+   "args": {
+    "characterId": false
+   },
+   "method": "exportCharacter",
+   "response": {
+    "k": "ref",
+    "name": "ExportResult"
+   }
+  },
+  "export_sheet": {
+   "args": {
+    "characterId": false,
+    "options": true
+   },
+   "method": "exportSheet",
+   "response": {
+    "k": "ref",
+    "name": "ExportResult"
+   }
+  },
+  "extract_pack": {
+   "args": {
+    "characterId": false,
+    "inventoryId": false
+   },
+   "method": "extractPack",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "get_compatibility_report": {
+   "args": {
+    "characterId": false
+   },
+   "method": "getCompatibilityReport",
+   "response": {
+    "k": "ref",
+    "name": "CompatibilityReport"
+   }
+  },
+  "get_data_dirs": {
+   "args": {},
+   "method": "getDataDirs",
+   "response": {
+    "k": "ref",
+    "name": "DataDirs"
+   }
+  },
+  "get_element": {
+   "args": {
+    "elementId": false
+   },
+   "method": "getElement",
+   "response": {
+    "k": "ref",
+    "name": "ElementDetail"
+   }
+  },
+  "get_ruleset_profile": {
+   "args": {
+    "ruleset": false
+   },
+   "method": "getRulesetProfile",
+   "response": {
+    "k": "ref",
+    "name": "RulesetProfile"
+   }
+  },
+  "get_settings": {
+   "args": {},
+   "method": "getSettings",
+   "response": {
+    "k": "ref",
+    "name": "AppSettings"
+   }
+  },
+  "get_slot_options": {
+   "args": {
+    "characterId": false,
+    "limit": true,
+    "offset": true,
+    "query": true,
+    "slotId": false
+   },
+   "method": "getSlotOptions",
+   "response": {
+    "k": "ref",
+    "name": "Page<SlotOption>"
+   }
+  },
+  "get_snapshot": {
+   "args": {
+    "characterId": false
+   },
+   "method": "getSnapshot",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "import_5etools": {
+   "args": {
+    "request": false
+   },
+   "method": "import5etools",
+   "response": {
+    "k": "ref",
+    "name": "FiveToolsImportReport"
+   }
+  },
+  "import_character": {
+   "args": {
+    "contentBase64": false,
+    "fileName": false
+   },
+   "method": "importCharacter",
+   "response": {
+    "k": "ref",
+    "name": "ImportReport"
+   }
+  },
+  "import_choose_parent": {
+   "args": {
+    "allowUntrustedWithCodex": true,
+    "classId": false,
+    "draftId": false
+   },
+   "method": "importChooseParent",
+   "response": {
+    "k": "ref",
+    "name": "ImportDraft"
+   }
+  },
+  "import_discard": {
+   "args": {
+    "draftId": false
+   },
+   "method": "importDiscard",
+   "response": {
+    "k": "nil"
+   }
+  },
+  "import_finalize": {
+   "args": {
+    "draftId": false,
+    "packName": false,
+    "prefix": false
+   },
+   "method": "importFinalize",
+   "response": {
+    "k": "ref",
+    "name": "ContentPack"
+   }
+  },
+  "import_get_draft": {
+   "args": {
+    "draftId": false
+   },
+   "method": "importGetDraft",
+   "response": {
+    "k": "ref",
+    "name": "ImportDraft"
+   }
+  },
+  "import_pack": {
+   "args": {
+    "request": false
+   },
+   "method": "importPack",
+   "response": {
+    "k": "ref",
+    "name": "ImportPackResult"
+   }
+  },
+  "import_revise": {
+   "args": {
+    "allowUntrustedWithCodex": true,
+    "draftId": false,
+    "elementId": true,
+    "instruction": false
+   },
+   "method": "importRevise",
+   "response": {
+    "k": "nil"
+   }
+  },
+  "import_start": {
+   "args": {
+    "allowUntrustedWithCodex": true,
+    "hint": true,
+    "sources": false
+   },
+   "method": "importStart",
+   "response": {
+    "k": "object",
+    "props": {
+     "draftId": {
+      "opt": false,
+      "t": {
+       "k": "prim"
+      }
+     }
+    }
+   }
+  },
+  "import_update_element": {
+   "args": {
+    "draftId": false,
+    "elementId": false,
+    "json": false
+   },
+   "method": "importUpdateElement",
+   "response": {
+    "k": "ref",
+    "name": "ImportDraft"
+   }
+  },
+  "install_import_preview": {
+   "args": {
+    "previewId": false
+   },
+   "method": "installImportPreview",
+   "response": {
+    "k": "ref",
+    "name": "ImportPackResult"
+   }
+  },
+  "level_down": {
+   "args": {
+    "characterId": false
+   },
+   "method": "levelDown",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "level_up": {
+   "args": {
+    "characterId": false,
+    "classSlotId": false
+   },
+   "method": "levelUp",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "list_characters": {
+   "args": {},
+   "method": "listCharacters",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "CharacterSummary"
+    }
+   }
+  },
+  "list_indexes": {
+   "args": {},
+   "method": "listIndexes",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "ContentIndex"
+    }
+   }
+  },
+  "list_packs": {
+   "args": {},
+   "method": "listPacks",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "ContentPack"
+    }
+   }
+  },
+  "list_sources": {
+   "args": {},
+   "method": "listSources",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "ContentSource"
+    }
+   }
+  },
+  "load_character": {
+   "args": {
+    "characterId": false
+   },
+   "method": "loadCharacter",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "long_rest": {
+   "args": {
+    "characterId": false
+   },
+   "method": "longRest",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "move_attack": {
+   "args": {
+    "attackId": false,
+    "characterId": false,
+    "direction": false
+   },
+   "method": "moveAttack",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "move_item": {
+   "args": {
+    "characterId": false,
+    "direction": false,
+    "inventoryId": false
+   },
+   "method": "moveItem",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "open_app_folder": {
+   "args": {
+    "folder": false
+   },
+   "method": "openAppFolder",
+   "response": {
+    "k": "nil"
+   }
+  },
+  "pick_path": {
+   "args": {
+    "purpose": false,
+    "startDir": true
+   },
+   "method": "pickPath",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "PickedPath"
+    }
+   }
+  },
+  "preview_convert_to_2024": {
+   "args": {
+    "characterId": false
+   },
+   "method": "previewConvertTo2024",
+   "response": {
+    "k": "ref",
+    "name": "ConversionPreview"
+   }
+  },
+  "preview_import_pack": {
+   "args": {
+    "request": false
+   },
+   "method": "previewImportPack",
+   "response": {
+    "k": "ref",
+    "name": "ImportPreview"
+   }
+  },
+  "preview_source_restrictions": {
+   "args": {
+    "characterId": false,
+    "enabledSources": false
+   },
+   "method": "previewSourceRestrictions",
+   "response": {
+    "k": "ref",
+    "name": "RestrictionPreview"
+   }
+  },
+  "recheck_missing_content": {
+   "args": {},
+   "method": "recheckMissingContent",
+   "response": {
+    "k": "ref",
+    "name": "RecheckReport"
+   }
+  },
+  "remove_attack": {
+   "args": {
+    "attackId": false,
+    "characterId": false
+   },
+   "method": "removeAttack",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "remove_index": {
+   "args": {
+    "url": false
+   },
+   "method": "removeIndex",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "ContentIndex"
+    }
+   }
+  },
+  "remove_item": {
+   "args": {
+    "all": false,
+    "characterId": false,
+    "inventoryId": false
+   },
+   "method": "removeItem",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "remove_pack": {
+   "args": {
+    "packId": false
+   },
+   "method": "removePack",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "ContentPack"
+    }
+   }
+  },
+  "render_sheet": {
+   "args": {
+    "characterId": false,
+    "options": true
+   },
+   "method": "renderSheet",
+   "response": {
+    "k": "ref",
+    "name": "SheetPreview"
+   }
+  },
+  "replace_spell": {
+   "args": {
+    "characterId": false,
+    "slotId": false
+   },
+   "method": "replaceSpell",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "reset_abilities": {
+   "args": {
+    "characterId": false
+   },
+   "method": "resetAbilities",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "restart_app": {
+   "args": {},
+   "method": "restartApp",
+   "response": {
+    "k": "nil"
+   }
+  },
+  "restore_default_settings": {
+   "args": {},
+   "method": "restoreDefaultSettings",
+   "response": {
+    "k": "ref",
+    "name": "AppSettings"
+   }
+  },
+  "restore_resource": {
+   "args": {
+    "characterId": false,
+    "resourceId": false,
+    "uses": true
+   },
+   "method": "restoreResource",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "roll_abilities": {
+   "args": {
+    "ability": true,
+    "characterId": false
+   },
+   "method": "rollAbilities",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "save_character": {
+   "args": {
+    "characterId": false
+   },
+   "method": "saveCharacter",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "save_character_as": {
+   "args": {
+    "characterId": false,
+    "name": true
+   },
+   "method": "saveCharacterAs",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "save_settings": {
+   "args": {
+    "patch": false
+   },
+   "method": "saveSettings",
+   "response": {
+    "k": "ref",
+    "name": "AppSettings"
+   }
+  },
+  "scan_5etools_folder": {
+   "args": {
+    "folder": false
+   },
+   "method": "scan5etoolsFolder",
+   "response": {
+    "k": "ref",
+    "name": "FiveToolsScan"
+   }
+  },
+  "search_compendium": {
+   "args": {
+    "query": false
+   },
+   "method": "searchCompendium",
+   "response": {
+    "k": "ref",
+    "name": "Page<ElementSummary>"
+   }
+  },
+  "search_items": {
+   "args": {
+    "category": true,
+    "characterId": true,
+    "limit": true,
+    "offset": true,
+    "query": true,
+    "source": true
+   },
+   "method": "searchItems",
+   "response": {
+    "k": "ref",
+    "name": "Page<ItemSummary>"
+   }
+  },
+  "set_ability_method": {
+   "args": {
+    "characterId": false,
+    "method": false
+   },
+   "method": "setAbilityMethod",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "set_ai_override": {
+   "args": {
+    "token": false
+   },
+   "method": "setAiOverride",
+   "response": {
+    "k": "ref",
+    "name": "AppSettings"
+   }
+  },
+  "set_allow_cross_edition": {
+   "args": {
+    "allow": false,
+    "characterId": false
+   },
+   "method": "setAllowCrossEdition",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "set_attuned": {
+   "args": {
+    "attuned": false,
+    "characterId": false,
+    "inventoryId": false
+   },
+   "method": "setAttuned",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "set_base_score": {
+   "args": {
+    "ability": false,
+    "characterId": false,
+    "value": false
+   },
+   "method": "setBaseScore",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "set_character_options": {
+   "args": {
+    "characterId": false,
+    "options": false
+   },
+   "method": "setCharacterOptions",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "set_documents_dir": {
+   "args": {
+    "token": true
+   },
+   "method": "setDocumentsDir",
+   "response": {
+    "k": "ref",
+    "name": "DataDirs"
+   }
+  },
+  "set_exhaustion": {
+   "args": {
+    "characterId": false,
+    "level": false
+   },
+   "method": "setExhaustion",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "set_heroic_inspiration": {
+   "args": {
+    "characterId": false,
+    "has": false
+   },
+   "method": "setHeroicInspiration",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "set_hp_roll": {
+   "args": {
+    "characterId": false,
+    "classSlotId": false,
+    "level": false,
+    "value": false
+   },
+   "method": "setHpRoll",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "set_pack_enabled": {
+   "args": {
+    "enabled": false,
+    "packId": false
+   },
+   "method": "setPackEnabled",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "ContentPack"
+    }
+   }
+  },
+  "set_portrait": {
+   "args": {
+    "characterId": false,
+    "dataUrl": false
+   },
+   "method": "setPortrait",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "set_secondary_content_dir": {
+   "args": {
+    "token": false
+   },
+   "method": "setSecondaryContentDir",
+   "response": {
+    "k": "ref",
+    "name": "SecondaryContentResult"
+   }
+  },
+  "set_source_restrictions": {
+   "args": {
+    "characterId": false,
+    "enabledSources": false
+   },
+   "method": "setSourceRestrictions",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "set_spell_prepared": {
+   "args": {
+    "characterId": false,
+    "classSlotId": false,
+    "prepared": false,
+    "spellId": false
+   },
+   "method": "setSpellPrepared",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "set_storage_names": {
+   "args": {
+    "characterId": false,
+    "names": false
+   },
+   "method": "setStorageNames",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "set_toggle": {
+   "args": {
+    "characterId": false,
+    "on": false,
+    "toggleId": false
+   },
+   "method": "setToggle",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "set_wild_shape_forms": {
+   "args": {
+    "characterId": false,
+    "formIds": false
+   },
+   "method": "setWildShapeForms",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "set_xp": {
+   "args": {
+    "characterId": false,
+    "xp": false
+   },
+   "method": "setXp",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "short_rest": {
+   "args": {
+    "characterId": false
+   },
+   "method": "shortRest",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "spend_resource": {
+   "args": {
+    "characterId": false,
+    "resourceId": false,
+    "uses": true
+   },
+   "method": "spendResource",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "store_item": {
+   "args": {
+    "characterId": false,
+    "inventoryId": false,
+    "storage": false
+   },
+   "method": "storeItem",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "take_opened_files": {
+   "args": {},
+   "method": "takeOpenedFiles",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "OpenedFile"
+    }
+   }
+  },
+  "take_picked_files": {
+   "args": {
+    "purpose": false,
+    "tokens": false
+   },
+   "method": "takePickedFiles",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "OpenedFile"
+    }
+   }
+  },
+  "unequip_item": {
+   "args": {
+    "characterId": false,
+    "inventoryId": false
+   },
+   "method": "unequipItem",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "unlink_secondary_content_dir": {
+   "args": {},
+   "method": "unlinkSecondaryContentDir",
+   "response": {
+    "k": "ref",
+    "name": "SecondaryContentResult"
+   }
+  },
+  "update_character_meta": {
+   "args": {
+    "characterId": false,
+    "favorite": true,
+    "group": true,
+    "name": true
+   },
+   "method": "updateCharacterMeta",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "update_companion": {
+   "args": {
+    "characterId": false,
+    "patch": false
+   },
+   "method": "updateCompanion",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "update_details": {
+   "args": {
+    "characterId": false,
+    "patch": false
+   },
+   "method": "updateDetails",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "update_indexes": {
+   "args": {},
+   "method": "updateIndexes",
+   "response": {
+    "k": "ref",
+    "name": "UpdateIndexesResult"
+   }
+  },
+  "update_item_details": {
+   "args": {
+    "characterId": false,
+    "inventoryId": false,
+    "patch": false
+   },
+   "method": "updateItemDetails",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "upsert_attack": {
+   "args": {
+    "attack": false,
+    "characterId": false
+   },
+   "method": "upsertAttack",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  }
+ },
+ "defs": {
+  "AbilityState": {
+   "k": "object",
+   "props": {
+    "base": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "cha": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "con": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "dex": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "int": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "str": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "wis": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
+     }
+    },
+    "bonus": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "cha": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "con": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "dex": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "int": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "str": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "wis": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
+     }
+    },
+    "bonusSources": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "cha": {
+        "opt": false,
+        "t": {
+         "k": "array",
+         "t": {
+          "k": "prim"
+         }
+        }
+       },
+       "con": {
+        "opt": false,
+        "t": {
+         "k": "array",
+         "t": {
+          "k": "prim"
+         }
+        }
+       },
+       "dex": {
+        "opt": false,
+        "t": {
+         "k": "array",
+         "t": {
+          "k": "prim"
+         }
+        }
+       },
+       "int": {
+        "opt": false,
+        "t": {
+         "k": "array",
+         "t": {
+          "k": "prim"
+         }
+        }
+       },
+       "str": {
+        "opt": false,
+        "t": {
+         "k": "array",
+         "t": {
+          "k": "prim"
+         }
+        }
+       },
+       "wis": {
+        "opt": false,
+        "t": {
+         "k": "array",
+         "t": {
+          "k": "prim"
+         }
+        }
+       }
+      }
+     }
+    },
+    "cap": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "final": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "cha": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "con": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "dex": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "int": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "str": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "wis": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
+     }
+    },
+    "method": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "modifier": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "cha": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "con": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "dex": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "int": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "str": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "wis": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
+     }
+    },
+    "overCap": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "pointBuy": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "PointBuyState"
+     }
+    },
+    "rolls": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "RollRecord"
+      }
+     }
+    },
+    "save": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "cha": {
+        "opt": false,
+        "t": {
+         "k": "object",
+         "props": {
+          "bonus": {
+           "opt": false,
+           "t": {
+            "k": "prim"
+           }
+          },
+          "proficient": {
+           "opt": false,
+           "t": {
+            "k": "prim"
+           }
+          }
+         }
+        }
+       },
+       "con": {
+        "opt": false,
+        "t": {
+         "k": "object",
+         "props": {
+          "bonus": {
+           "opt": false,
+           "t": {
+            "k": "prim"
+           }
+          },
+          "proficient": {
+           "opt": false,
+           "t": {
+            "k": "prim"
+           }
+          }
+         }
+        }
+       },
+       "dex": {
+        "opt": false,
+        "t": {
+         "k": "object",
+         "props": {
+          "bonus": {
+           "opt": false,
+           "t": {
+            "k": "prim"
+           }
+          },
+          "proficient": {
+           "opt": false,
+           "t": {
+            "k": "prim"
+           }
+          }
+         }
+        }
+       },
+       "int": {
+        "opt": false,
+        "t": {
+         "k": "object",
+         "props": {
+          "bonus": {
+           "opt": false,
+           "t": {
+            "k": "prim"
+           }
+          },
+          "proficient": {
+           "opt": false,
+           "t": {
+            "k": "prim"
+           }
+          }
+         }
+        }
+       },
+       "str": {
+        "opt": false,
+        "t": {
+         "k": "object",
+         "props": {
+          "bonus": {
+           "opt": false,
+           "t": {
+            "k": "prim"
+           }
+          },
+          "proficient": {
+           "opt": false,
+           "t": {
+            "k": "prim"
+           }
+          }
+         }
+        }
+       },
+       "wis": {
+        "opt": false,
+        "t": {
+         "k": "object",
+         "props": {
+          "bonus": {
+           "opt": false,
+           "t": {
+            "k": "prim"
+           }
+          },
+          "proficient": {
+           "opt": false,
+           "t": {
+            "k": "prim"
+           }
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "standardArray": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "StandardArrayState"
+     }
+    }
+   }
+  },
+  "AiHostDevice": {
+   "k": "object",
+   "props": {
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "AiHostStatus": {
+   "k": "object",
+   "props": {
+    "address": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "devices": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "AiHostDevice"
+      }
+     }
+    },
+    "enabled": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "fingerprint": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "pairingCode": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "pairingExpiresInSecs": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "pairingUri": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "supported": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "AiInstallConsent": {
+   "k": "object",
+   "props": {
+    "command": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "token": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "AiLoginHelp": {
+   "k": "object",
+   "props": {
+    "command": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "opened": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "AiProviderInfo": {
+   "k": "object",
+   "props": {
+    "backend": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "path": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "version": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "AiSettings": {
+   "k": "object",
+   "props": {
+    "enabled": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "overridePath": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "pairedHost": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "provider": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "AiSetupProvider": {
+   "k": "object",
+   "props": {
+    "backend": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "installCommand": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "installed": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "loggedIn": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "loginCommand": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "path": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "version": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "AiSetupStatus": {
+   "k": "object",
+   "props": {
+    "completed": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "mobile": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "npmPath": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "profile": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "detail": {
+        "opt": false,
+        "t": {
+         "k": "array",
+         "t": {
+          "k": "prim"
+         }
+        }
+       },
+       "state": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
+     }
+    },
+    "providers": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "AiSetupProvider"
+      }
+     }
+    }
+   }
+  },
+  "AiStatus": {
+   "k": "object",
+   "props": {
+    "availability": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "detail": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "host": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "provider": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "providers": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "AiProviderInfo"
+      }
+     }
+    },
+    "version": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "AiTaskHandle": {
+   "k": "object",
+   "props": {
+    "taskId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "AppSettings": {
+   "k": "object",
+   "props": {
+    "abilityCapEnabled": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "abilityMaxBase": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "abilityMethod": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "abilityMinBase": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "accentColor": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "ai": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "AiSettings"
+     }
+    },
+    "autoContentUpdate": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "autosave": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "confirmEquipWeaponNotInAttacks": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "confirmRemoveLevel": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "defaultRuleset": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "density": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "documentsDir": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "highContrast": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "mobile": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "playerName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "pointBuyBudget": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "portraitSize": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "rowHeight": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "savingThrowsExpanded": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "secondaryContentDir": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "selectionFlow": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sheet": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "SheetSettings"
+     }
+    },
+    "showImportNotice": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "skillsPanelExpanded": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "theme": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "tileSize": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ArmorFacts": {
+   "k": "object",
+   "props": {
+    "acBase": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "acText": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "addsDex": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "dexCap": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "group": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "stealthDisadvantage": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "strength": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "Attack": {
+   "k": "object",
+   "props": {
+    "ability": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "attackBonus": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "auto": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "card": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "critRange": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "damage": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "description": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "dieFloor": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "mastery": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "AttackMastery"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "offhandDamage": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "range": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "showInCombat": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "AttackMastery": {
+   "k": "object",
+   "props": {
+    "mastered": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "text": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "CharacterDetails": {
+   "k": "object",
+   "props": {
+    "age": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "alignment": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "allies": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "backstory": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "bond": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "combatNotes": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "deity": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "eyes": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "features": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "flaw": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "gender": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "hair": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "height": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "ideal": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "notesLeft": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "notesRight": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "organization": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "personalityTraits": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "playerName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "questItems": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sheetAcNote": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "skin": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "treasure": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "trinket": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "weight": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "CharacterOptions": {
+   "k": "object",
+   "props": {
+    "attunementLimit": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "averageHp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "custom": {
+     "opt": false,
+     "t": {
+      "k": "record",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "feats": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "multiclassing": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "pointBuyUnrestricted": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "CharacterSnapshot": {
+   "k": "object",
+   "props": {
+    "abilities": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "AbilityState"
+     }
+    },
+    "attacks": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "Attack"
+      }
+     }
+    },
+    "availableOptions": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "OptionDef"
+      }
+     }
+    },
+    "companion": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "CompanionState"
+     }
+    },
+    "details": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "CharacterDetails"
+     }
+    },
+    "dirty": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "displayPath": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "favorite": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "group": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "inventory": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "InventoryState"
+     }
+    },
+    "level": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "LevelState"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "notices": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "options": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "CharacterOptions"
+     }
+    },
+    "play": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "PlayState"
+     }
+    },
+    "portrait": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "progress": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "SelectionProgress"
+     }
+    },
+    "ruleset": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "slots": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "SelectionSlot"
+      }
+     }
+    },
+    "sourceRestrictions": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "spellcasting": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "SpellcastingState"
+     }
+    },
+    "stats": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "CharacterStats"
+     }
+    }
+   }
+  },
+  "CharacterStats": {
+   "k": "object",
+   "props": {
+    "armorClass": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "features": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "object",
+       "props": {
+        "name": {
+         "opt": false,
+         "t": {
+          "k": "prim"
+         }
+        },
+        "source": {
+         "opt": false,
+         "t": {
+          "k": "prim"
+         }
+        }
+       }
+      }
+     }
+    },
+    "hpMax": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "initiative": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "languages": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "passivePerception": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "proficiencies": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "object",
+       "props": {
+        "label": {
+         "opt": false,
+         "t": {
+          "k": "prim"
+         }
+        },
+        "values": {
+         "opt": false,
+         "t": {
+          "k": "array",
+          "t": {
+           "k": "prim"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    "proficiencyBonus": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "skills": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "SkillEntry"
+      }
+     }
+    },
+    "speed": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "CharacterSummary": {
+   "k": "object",
+   "props": {
+    "build": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "favorite": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "group": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "level": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "missingContent": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "path": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "portrait": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "ruleset": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "updatedAt": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "CitedAnswerData": {
+   "k": "object",
+   "props": {
+    "answerMarkdown": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "citations": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "confidence": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "notCovered": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sources": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "CitedSource"
+      }
+     }
+    },
+    "strippedCitations": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "uncitedClaims": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "unverified": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "CitedSource": {
+   "k": "object",
+   "props": {
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "type": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ClassLevelInfo": {
+   "k": "object",
+   "props": {
+    "classId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "hitDie": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "hpRolls": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "isMain": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "level": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "multiclassPrerequisite": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "slotId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "subclass": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ElementRef"
+     }
+    }
+   }
+  },
+  "ClassSpellcasting": {
+   "k": "object",
+   "props": {
+    "ability": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "attackBonus": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "cantripsKnown": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "cantripsMax": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "className": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "classSlotId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "maxSpellLevel": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "model": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "preparedCount": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "preparedMax": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "saveDc": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "spells": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "SpellEntry"
+      }
+     }
+    }
+   }
+  },
+  "ClearCachesResult": {
+   "k": "object",
+   "props": {
+    "aiTempFoldersRemoved": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "indexesReset": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "tempFoldersRemoved": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "Coins": {
+   "k": "object",
+   "props": {
+    "cp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "ep": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "gp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "pp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "CompanionState": {
+   "k": "object",
+   "props": {
+    "abilities": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "cha": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "con": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "dex": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "int": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "str": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "wis": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
+     }
+    },
+    "armorClass": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "creature": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ElementRef"
+     }
+    },
+    "hp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "portrait": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "speed": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "CompatEntry": {
+   "k": "object",
+   "props": {
+    "converted": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "element": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ElementRef"
+     }
+    },
+    "from": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "notes": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    }
+   }
+  },
+  "CompatibilityReport": {
+   "k": "object",
+   "props": {
+    "entries": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "CompatEntry"
+      }
+     }
+    },
+    "strict": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "CompendiumFacets": {
+   "k": "object",
+   "props": {
+    "sources": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "Facet"
+      }
+     }
+    },
+    "types": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "Facet"
+      }
+     }
+    }
+   }
+  },
+  "ContentIndex": {
+   "k": "object",
+   "props": {
+    "fileCount": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "lastChecked": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "requiresNewerApp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "updatesAvailable": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "url": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "verified": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ContentPack": {
+   "k": "object",
+   "props": {
+    "attribution": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "elementCount": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "enabled": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "kind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "license": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "redistributable": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "rulesets": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "sourceIds": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "version": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ContentProgress": {
+   "k": "object",
+   "props": {
+    "done": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "message": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "phase": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ContentSource": {
+   "k": "object",
+   "props": {
+    "description": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "elementCount": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "group": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "packId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "playtest": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ContentUpdateStatus": {
+   "k": "object",
+   "props": {
+    "checkedAt": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "failed": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "message": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "state": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "updated": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ConversionApplied": {
+   "k": "object",
+   "props": {
+    "newCharacterId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "snapshot": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "CharacterSnapshot"
+     }
+    }
+   }
+  },
+  "ConversionItem": {
+   "k": "object",
+   "props": {
+    "category": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "crossEdition": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "fromId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "kind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "label": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "outcome": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "reason": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "toId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "what": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ConversionPreview": {
+   "k": "object",
+   "props": {
+    "after": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ConversionStats"
+     }
+    },
+    "before": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ConversionStats"
+     }
+    },
+    "characterId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "counts": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "dropped": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "kept": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "mapped": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "needsChoice": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
+     }
+    },
+    "items": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "ConversionItem"
+      }
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ConversionStats": {
+   "k": "object",
+   "props": {
+    "abilityScores": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "any"
+      }
+     }
+    },
+    "armorClass": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "hitPoints": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "initiative": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "level": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "proficiencyBonus": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "speed": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "spellSaveDc": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "DataDirs": {
+   "k": "object",
+   "props": {
+    "charactersDir": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "defaultDocumentsDir": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "documentsDir": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "isDefault": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "secondaryContentDir": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "DroppedFile": {
+   "k": "object",
+   "props": {
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "token": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ElementDetail": {
+   "k": "object",
+   "props": {
+    "armor": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "ArmorFacts"
+     }
+    },
+    "descriptionHtml": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "facts": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "ElementFact"
+      }
+     }
+    },
+    "grants": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "level": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "prerequisites": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "rulesets": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "school": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "shortDescription": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sourceName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "spell": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "SpellFacts"
+     }
+    },
+    "tags": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "type": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "weapon": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "WeaponFacts"
+     }
+    }
+   }
+  },
+  "ElementFact": {
+   "k": "object",
+   "props": {
+    "label": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "value": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ElementRef": {
+   "k": "object",
+   "props": {
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "type": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ElementSummary": {
+   "k": "object",
+   "props": {
+    "armor": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "ArmorFacts"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "level": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "prerequisites": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "rulesets": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "school": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "shortDescription": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sourceName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "spell": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "SpellFacts"
+     }
+    },
+    "tags": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "type": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "weapon": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "WeaponFacts"
+     }
+    }
+   }
+  },
+  "ExportResult": {
+   "k": "object",
+   "props": {
+    "dataBase64": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "fileName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "mime": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "path": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "Facet": {
+   "k": "object",
+   "props": {
+    "count": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "label": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "FileDrop": {
+   "k": "object",
+   "props": {
+    "files": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "DroppedFile"
+      }
+     }
+    },
+    "rejected": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    }
+   }
+  },
+  "FiveToolsImportReport": {
+   "k": "object",
+   "props": {
+    "converted": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "packs": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "ContentPack"
+      }
+     }
+    },
+    "partial": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "ImportNote"
+      }
+     }
+    },
+    "skipped": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "ImportNote"
+      }
+     }
+    }
+   }
+  },
+  "FiveToolsScan": {
+   "k": "object",
+   "props": {
+    "sources": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "FiveToolsSource"
+      }
+     }
+    }
+   }
+  },
+  "FiveToolsSource": {
+   "k": "object",
+   "props": {
+    "abbr": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "counts": {
+     "opt": false,
+     "t": {
+      "k": "record",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "ruleset": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "HomebrewDraft": {
+   "k": "object",
+   "props": {
+    "json": {
+     "opt": false,
+     "t": {
+      "k": "record",
+      "t": {
+       "k": "any"
+      }
+     }
+    },
+    "kind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ImportDetected": {
+   "k": "object",
+   "props": {
+    "confidence": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "edition": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "kinds": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "names": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    }
+   }
+  },
+  "ImportDraft": {
+   "k": "object",
+   "props": {
+    "detected": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ImportDetected"
+     }
+    },
+    "draftId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "elements": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "ImportElement"
+      }
+     }
+    },
+    "parentChoice": {
+     "opt": true,
+     "t": {
+      "k": "object",
+      "props": {
+       "candidates": {
+        "opt": false,
+        "t": {
+         "k": "array",
+         "t": {
+          "k": "ref",
+          "name": "ImportParentCandidate"
+         }
+        }
+       }
+      }
+     }
+    },
+    "parentClassId": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "stage": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "suggestedPackName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "suggestedPrefix": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sweep": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ImportSweep"
+     }
+    }
+   }
+  },
+  "ImportElement": {
+   "k": "object",
+   "props": {
+    "balanceFlags": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "json": {
+     "opt": false,
+     "t": {
+      "k": "record",
+      "t": {
+       "k": "any"
+      }
+     }
+    },
+    "level": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sourceExcerpt": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "status": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "type": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "validationIssues": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    }
+   }
+  },
+  "ImportEvent": {
+   "k": "object",
+   "props": {
+    "draftId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "element": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "ImportElement"
+     }
+    },
+    "message": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "progress": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "stage": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ImportNote": {
+   "k": "object",
+   "props": {
+    "element": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "reason": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ImportPackResult": {
+   "k": "object",
+   "props": {
+    "pack": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ContentPack"
+     }
+    },
+    "report": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "MigrationReport"
+     }
+    }
+   }
+  },
+  "ImportParentCandidate": {
+   "k": "object",
+   "props": {
+    "classId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ImportPreview": {
+   "k": "object",
+   "props": {
+    "converted": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "counts": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "TypeCount"
+      }
+     }
+    },
+    "diagnostics": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PreviewDiagnostic"
+      }
+     }
+    },
+    "diagnosticsTruncated": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "fileCount": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "packId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "packName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "previewId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "replacesExisting": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "skipped": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "summary": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "errors": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "infos": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "warnings": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
+     }
+    },
+    "unresolved": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "UnresolvedRef"
+      }
+     }
+    },
+    "unresolvedTotal": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ImportReport": {
+   "k": "object",
+   "props": {
+    "divergences": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "invalidSelections": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "missingContent": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "MissingContentItem"
+      }
+     }
+    },
+    "selectionsImported": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "summary": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "CharacterSummary"
+     }
+    },
+    "unmappedSlots": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "UnmappedSlotItem"
+      }
+     }
+    },
+    "warnings": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    }
+   }
+  },
+  "ImportSweep": {
+   "k": "object",
+   "props": {
+    "errors": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "levelsPassed": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "InventoryItem": {
+   "k": "object",
+   "props": {
+    "armor": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ArmorFacts"
+     }
+    },
+    "attuned": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "category": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "displayName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "equipped": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "isPack": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "isWeapon": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "itemId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "listInInventory": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "notes": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "packContents": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "quantity": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "requiresAttunement": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "showCard": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "storage": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "valueCp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "weapon": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "ability": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "damage": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "damageType": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "mastery": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "properties": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "range": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
+     }
+    },
+    "weight": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "InventoryState": {
+   "k": "object",
+   "props": {
+    "attunement": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "max": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "used": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
+     }
+    },
+    "capacity": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "carriedWeight": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "coins": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "Coins"
+     }
+    },
+    "items": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "InventoryItem"
+      }
+     }
+    },
+    "storageNames": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "any"
+      }
+     }
+    },
+    "totalGp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "warnings": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    }
+   }
+  },
+  "ItemSummary": {
+   "k": "object",
+   "props": {
+    "armor": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "ArmorFacts"
+     }
+    },
+    "category": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "costCp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "level": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "prerequisites": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "requiresAttunement": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "rulesets": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "school": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "shortDescription": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sourceName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "spell": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "SpellFacts"
+     }
+    },
+    "tags": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "type": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "weapon": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "WeaponFacts"
+     }
+    },
+    "weight": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "LevelState": {
+   "k": "object",
+   "props": {
+    "canLevelDown": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "canLevelUp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "canMulticlass": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "classes": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "ClassLevelInfo"
+      }
+     }
+    },
+    "currentLevelXp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "levelUpAvailable": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "multiclassBlockedReason": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "nextLevelXp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "xp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "MigrationIssue": {
+   "k": "object",
+   "props": {
+    "element": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "message": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "severity": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "MigrationReport": {
+   "k": "object",
+   "props": {
+    "converted": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "fileName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "format": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "issues": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "MigrationIssue"
+      }
+     }
+    },
+    "skipped": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "MissingContentItem": {
+   "k": "object",
+   "props": {
+    "context": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "type": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "OpenedFile": {
+   "k": "object",
+   "props": {
+    "contentBase64": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "fileName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "OptionDef": {
+   "k": "object",
+   "props": {
+    "description": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "locked": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PackageCoins": {
+   "k": "object",
+   "props": {
+    "cp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "ep": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "gp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "pp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PackageItem": {
+   "k": "object",
+   "props": {
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "note": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "qty": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PackageOption": {
+   "k": "object",
+   "props": {
+    "coins": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "PackageCoins"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "items": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PackageItem"
+      }
+     }
+    }
+   }
+  },
+  "Page<ElementSummary>": {
+   "k": "object",
+   "props": {
+    "items": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "ElementSummary"
+      }
+     }
+    },
+    "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "Page<ItemSummary>": {
+   "k": "object",
+   "props": {
+    "items": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "ItemSummary"
+      }
+     }
+    },
+    "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "Page<SlotOption>": {
+   "k": "object",
+   "props": {
+    "items": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "SlotOption"
+      }
+     }
+    },
+    "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PickedPath": {
+   "k": "object",
+   "props": {
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "path": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "token": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PlayAdvantage": {
+   "k": "object",
+   "props": {
+    "active": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "roll": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "text": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "whileToggle": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PlayCompatibility": {
+   "k": "object",
+   "props": {
+    "entries": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "record",
+       "t": {
+        "k": "any"
+       }
+      }
+     }
+    },
+    "strict": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PlayDefenseEntry": {
+   "k": "object",
+   "props": {
+    "active": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "whileToggle": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PlayDefenses": {
+   "k": "object",
+   "props": {
+    "conditionImmunities": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayDefenseEntry"
+      }
+     }
+    },
+    "immunities": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayDefenseEntry"
+      }
+     }
+    },
+    "resistances": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayDefenseEntry"
+      }
+     }
+    },
+    "vulnerabilities": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayDefenseEntry"
+      }
+     }
+    }
+   }
+  },
+  "PlayEquipmentPackage": {
+   "k": "object",
+   "props": {
+    "chosen": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "options": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PackageOption"
+      }
+     }
+    },
+    "owner": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "package": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PlayExhaustion": {
+   "k": "object",
+   "props": {
+    "d20Penalty": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "dead": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "level": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "linear": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "maxLevels": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "speedPenalty": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PlayFeature": {
+   "k": "object",
+   "props": {
+    "description": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "displayed": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "grantedBy": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "level": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sheetSummary": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "ty": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PlayInspirationSource": {
+   "k": "object",
+   "props": {
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "trigger": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PlayMartialArts": {
+   "k": "object",
+   "props": {
+    "active": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "bonusUnarmedStrike": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "die": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PlayMastery": {
+   "k": "object",
+   "props": {
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "property": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "text": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "weapon": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PlayNote": {
+   "k": "object",
+   "open": true,
+   "props": {
+    "kind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "text": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PlayResource": {
+   "k": "object",
+   "props": {
+    "current": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "longRestRegainAll": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "max": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "otherRegain": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "recharge": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "shortRestRegain": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PlayResourceCost": {
+   "k": "object",
+   "open": true,
+   "props": {
+    "cost": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "option": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "resource": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PlaySense": {
+   "k": "object",
+   "props": {
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "note": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "range": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PlayState": {
+   "k": "object",
+   "props": {
+    "advantages": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayAdvantage"
+      }
+     }
+    },
+    "carry": {
+     "opt": false,
+     "t": {
+      "k": "record",
+      "t": {
+       "k": "any"
+      }
+     }
+    },
+    "compatibility": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "PlayCompatibility"
+     }
+    },
+    "defenses": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "PlayDefenses"
+     }
+    },
+    "equipmentPackages": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayEquipmentPackage"
+      }
+     }
+    },
+    "exhaustion": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "PlayExhaustion"
+     }
+    },
+    "features": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayFeature"
+      }
+     }
+    },
+    "freeCasts": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "record",
+       "t": {
+        "k": "any"
+       }
+      }
+     }
+    },
+    "initiativeAdvantage": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "inspiration": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "inspirationSources": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayInspirationSource"
+      }
+     }
+    },
+    "martialArts": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "PlayMartialArts"
+     }
+    },
+    "masteries": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayMastery"
+      }
+     }
+    },
+    "notes": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayNote"
+      }
+     }
+    },
+    "resourceCosts": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayResourceCost"
+      }
+     }
+    },
+    "resources": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayResource"
+      }
+     }
+    },
+    "saveDcs": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "record",
+       "t": {
+        "k": "any"
+       }
+      }
+     }
+    },
+    "senses": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlaySense"
+      }
+     }
+    },
+    "speeds": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "Speeds"
+     }
+    },
+    "toggles": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayToggle"
+      }
+     }
+    },
+    "wildShape": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "PlayWildShape"
+     }
+    }
+   }
+  },
+  "PlayToggle": {
+   "k": "object",
+   "props": {
+    "activation": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "active": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "blockedBy": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "blocks": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "duration": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "effects": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "on": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PlayWildShape": {
+   "k": "object",
+   "props": {
+    "changeOn": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "druidLevel": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "durationHours": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "flyAllowed": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "invalid": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "known": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "WildShapeForm"
+      }
+     }
+    },
+    "maxCr": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "maxForms": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "options": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "WildShapeForm"
+      }
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "tempHp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PointBuyState": {
+   "k": "object",
+   "props": {
+    "budget": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "costs": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {}
+     }
+    },
+    "max": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "min": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "remaining": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "spent": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "unrestricted": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PreviewDiagnostic": {
+   "k": "object",
+   "props": {
+    "element": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "file": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "message": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "severity": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "RecheckEntry": {
+   "k": "object",
+   "props": {
+    "characterId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "resolved": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "stillMissing": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "MissingContentItem"
+      }
+     }
+    },
+    "stillUnmapped": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "UnmappedSlotItem"
+      }
+     }
+    }
+   }
+  },
+  "RecheckReport": {
+   "k": "object",
+   "props": {
+    "checked": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "outstanding": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "RecheckEntry"
+      }
+     }
+    },
+    "updated": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "RecheckEntry"
+      }
+     }
+    }
+   }
+  },
+  "ReplacedPick": {
+   "k": "object",
+   "props": {
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "level": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "RestrictionPreview": {
+   "k": "object",
+   "props": {
+    "affected": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "object",
+       "props": {
+        "element": {
+         "opt": false,
+         "t": {
+          "k": "prim"
+         }
+        },
+        "slotId": {
+         "opt": false,
+         "t": {
+          "k": "prim"
+         }
+        },
+        "slotTitle": {
+         "opt": false,
+         "t": {
+          "k": "prim"
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "RollRecord": {
+   "k": "object",
+   "props": {
+    "ability": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "dice": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "RulesetProfile": {
+   "k": "object",
+   "props": {
+    "abilityCap": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "abilityMethods": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "backgroundAsi": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "label": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "originFeats": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "pointBuyBudget": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "srdSource": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "terminology": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "armorTraining": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "inspiration": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "species": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
+     }
+    },
+    "weaponMastery": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SecondaryContentReport": {
+   "k": "object",
+   "props": {
+    "installed": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "removed": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "skipped": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "SkippedContentFile"
+      }
+     }
+    }
+   }
+  },
+  "SecondaryContentResult": {
+   "k": "object",
+   "props": {
+    "dirs": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "DataDirs"
+     }
+    },
+    "report": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "SecondaryContentReport"
+     }
+    }
+   }
+  },
+  "SelectionProgress": {
+   "k": "object",
+   "props": {
+    "byTab": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "abilities": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "background": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "class": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "companion": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "feats": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "languages": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "proficiencies": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "race": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "spells": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
+     }
+    },
+    "nextSlotId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "remaining": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SelectionSlot": {
+   "k": "object",
+   "props": {
+    "allowReplace": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "chosen": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ElementRef"
+     }
+    },
+    "classSlotId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "elementType": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "gainedOnLevel": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "groupId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "groupLabel": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "hint": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "locked": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "of": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "ordinal": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "replaced": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "ReplacedPick"
+      }
+     }
+    },
+    "required": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "requiredLevel": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "tab": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "title": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SheetPreview": {
+   "k": "object",
+   "props": {
+    "generatedAt": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "html": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "pageCount": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SheetSettings": {
+   "k": "object",
+   "props": {
+    "autoGenerate": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "cards": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "attack": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "feature": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "item": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "spell": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
+     }
+    },
+    "cardsNewPage": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "attack": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "feature": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "item": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
+     }
+    },
+    "edition": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "formFillable": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "includeNonPreparedSpells": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "legacySpellcastingPage": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "openAfterSave": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "styleFormatting": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "swapAbilityPositions": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "theme": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SkillEntry": {
+   "k": "object",
+   "props": {
+    "ability": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "bonus": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "key": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "proficiency": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SkippedContentFile": {
+   "k": "object",
+   "props": {
+    "file": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "reason": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SlotOption": {
+   "k": "object",
+   "props": {
+    "armor": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "ArmorFacts"
+     }
+    },
+    "disabledReason": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "level": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "prerequisites": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "rulesets": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "school": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "shortDescription": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sourceName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "spell": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "SpellFacts"
+     }
+    },
+    "tags": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "type": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "weapon": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "WeaponFacts"
+     }
+    }
+   }
+  },
+  "Speeds": {
+   "k": "object",
+   "props": {
+    "burrow": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "climb": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "fly": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "swim": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "walk": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SpellEntry": {
+   "k": "object",
+   "props": {
+    "alwaysPrepared": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "canReplace": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "casting": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "SpellFacts"
+     }
+    },
+    "concentration": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "level": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "origin": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "prepared": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "ritual": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "school": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "slotId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sourceName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SpellFacts": {
+   "k": "object",
+   "props": {
+    "castingTime": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "concentration": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "duration": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "material": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "materialText": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "range": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "ritual": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "somatic": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "verbal": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SpellSlotRow": {
+   "k": "object",
+   "props": {
+    "level": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SpellcastingState": {
+   "k": "object",
+   "props": {
+    "classes": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "ClassSpellcasting"
+      }
+     }
+    },
+    "multiclassSlots": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "SpellSlotRow"
+      }
+     }
+    },
+    "slots": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "SpellSlotRow"
+      }
+     }
+    }
+   }
+  },
+  "StandardArrayState": {
+   "k": "object",
+   "props": {
+    "assigned": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "cha": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "con": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "dex": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "int": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "str": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "wis": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
+     }
+    },
+    "unassigned": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "values": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    }
+   }
+  },
+  "StatTrace": {
+   "k": "object",
+   "props": {
+    "base": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "diagnostics": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "TraceDiagnostic"
+      }
+     }
+    },
+    "stat": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "steps": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "TraceStep"
+      }
+     }
+    },
+    "value": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "TraceDiagnostic": {
+   "k": "object",
+   "props": {
+    "code": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "element": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "message": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "severity": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "TraceStep": {
+   "k": "object",
+   "props": {
+    "bonus": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "condition": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "elementId": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "elementName": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "group": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "included": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "inputs": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "TraceStep"
+      }
+     }
+    },
+    "kind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "label": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "rawValue": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "reason": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "ruleKind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "value": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "TypeCount": {
+   "k": "object",
+   "props": {
+    "count": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "type": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "UnmappedSlotItem": {
+   "k": "object",
+   "props": {
+    "chosen": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "owner": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "reason": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "type": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "UnresolvedRef": {
+   "k": "object",
+   "props": {
+    "count": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "referencedBy": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "target": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "UpdateIndexesResult": {
+   "k": "object",
+   "props": {
+    "failed": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "reloaded": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "updated": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ValidationReport": {
+   "k": "object",
+   "props": {
+    "errors": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "valid": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "warnings": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    }
+   }
+  },
+  "WeaponFacts": {
+   "k": "object",
+   "props": {
+    "damage": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "damageType": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "kind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "mastery": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "proficiency": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "properties": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "range": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "WildShapeForm": {
+   "k": "object",
+   "open": true,
+   "props": {
+    "ac": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "cr": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "hp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "speed": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  }
+ },
+ "events": {
+  "ai:event": {
+   "k": "union",
+   "variants": [
+    {
+     "k": "object",
+     "props": {
+      "kind": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "mode": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "taskId": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      }
+     }
+    },
+    {
+     "k": "object",
+     "props": {
+      "kind": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "taskId": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "text": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      }
+     }
+    },
+    {
+     "k": "object",
+     "props": {
+      "kind": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "name": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "summary": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "taskId": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      }
+     }
+    },
+    {
+     "k": "object",
+     "props": {
+      "kind": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "result": {
+       "opt": false,
+       "t": {
+        "k": "union",
+        "variants": [
+         {
+          "k": "ref",
+          "name": "HomebrewDraft"
+         },
+         {
+          "k": "object",
+          "props": {
+           "data": {
+            "opt": false,
+            "t": {
+             "k": "ref",
+             "name": "CitedAnswerData"
+            }
+           },
+           "kind": {
+            "opt": false,
+            "t": {
+             "k": "prim"
+            }
+           }
+          }
+         },
+         {
+          "k": "object",
+          "props": {
+           "data": {
+            "opt": false,
+            "t": {
+             "k": "record",
+             "t": {
+              "k": "any"
+             }
+            }
+           },
+           "kind": {
+            "opt": false,
+            "t": {
+             "k": "prim"
+            }
+           }
+          }
+         }
+        ]
+       }
+      },
+      "taskId": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      }
+     }
+    },
+    {
+     "k": "object",
+     "props": {
+      "kind": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "message": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "taskId": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      }
+     }
+    },
+    {
+     "k": "object",
+     "props": {
+      "cancelled": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "kind": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "taskId": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      }
+     }
+    }
+   ]
+  },
+  "aisetup:event": {
+   "k": "union",
+   "variants": [
+    {
+     "k": "object",
+     "props": {
+      "kind": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "line": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "provider": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      }
+     }
+    },
+    {
+     "k": "object",
+     "props": {
+      "kind": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "message": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "ok": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      },
+      "provider": {
+       "opt": false,
+       "t": {
+        "k": "prim"
+       }
+      }
+     }
+    }
+   ]
+  },
+  "content:open-file": {
+   "k": "record",
+   "t": {
+    "k": "nil"
+   }
+  },
+  "content:progress": {
+   "k": "ref",
+   "name": "ContentProgress"
+  },
+  "content:reloaded": {
+   "k": "object",
+   "props": {
+    "reason": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "files:dropped": {
+   "k": "ref",
+   "name": "FileDrop"
+  },
+  "import5etools:progress": {
+   "k": "ref",
+   "name": "ContentProgress"
+  },
+  "import:event": {
+   "k": "ref",
+   "name": "ImportEvent"
+  }
+ }
+}

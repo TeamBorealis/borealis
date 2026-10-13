@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "category": "RolePlayingGame",
+    "linux": {
+      "deb": {
+        "desktopTemplate": "linux/borealis.desktop",
+        "files": { "/usr/share/mime/packages/borealis.xml": "linux/borealis-mime.xml" }
+      },
+      "rpm": {
+        "desktopTemplate": "linux/borealis.desktop",
+        "files": { "/usr/share/mime/packages/borealis.xml": "linux/borealis-mime.xml" }
+      },
+      "appimage": {
+        "files": { "/usr/share/mime/packages/borealis.xml": "linux/borealis-mime.xml" }
+      }
+    }
+  }
+}

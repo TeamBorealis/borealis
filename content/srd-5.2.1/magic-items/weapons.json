@@ -1,0 +1,1443 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: magic-items/weapons",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_MAGIC_ITEM_AMMUNITION_1_2_OR_3",
+   "name": "Ammunition, +1, +2, or +3",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have a bonus to attack rolls and damage rolls made with this piece of magic ammunition. The bonus is determined by the rarity of the ammunition. Once it hits a target, the ammunition is no longer magical.</p>\n<p>This ammunition is typically found or sold in quantities of ten or twenty pieces. Ten pieces of this ammunition are equivalent in value to a potion of the same rarity.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Any Ammunition"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon (+1), Rare (+2), or Very Rare (+3)"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Any Ammunition",
+    "rarity_text": "Uncommon (+1), Rare (+2), or Very Rare (+3)",
+    "rarities": [
+     "Uncommon",
+     "Rare",
+     "Very Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Any Ammunition), Uncommon (+1), Rare (+2), or Very Rare (+3)"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_AMMUNITION_OF_SLAYING",
+   "name": "Ammunition of Slaying",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This magic ammunition is meant to slay creatures of a particular type, which the GM chooses or determines randomly by rolling on the table below. If a creature of that type takes damage from the ammunition, the creature makes a DC 17 Constitution saving throw, taking an extra 6d10 Force damage on a failed save or half as much extra damage on a successful one.</p>\n<p>After dealing its extra damage to a creature, the ammunition becomes nonmagical.</p>\n<pre> 1d100   Creature Type       1d100   Creature Type\n 01–10 Aberrations           51–60 Fey\n 11–15   Beasts              61–70 Fiends\n 16–20 Celestials            71–75 Giants\n 21–25 Constructs           76–80 Monstrosities\n 26–35 Dragons               81–85 Oozes\n 36–45 Elementals           86–90 Plants\n 46–50 Humanoids             91–00 Undead</pre>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Any Ammunition"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Any Ammunition",
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Any Ammunition), Very Rare"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_BERSERKER_AXE",
+   "name": "Berserker Axe",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>(Requires Attunement) You gain a +1 bonus to attack rolls and damage rolls made with this magic weapon. In addition, while you are attuned to this weapon, your Hit Point maximum increases by 1 for each level you have attained.</p>\n<p><b>Curse.</b> This weapon is cursed, and becoming attuned to it extends the curse to you. As long as you remain cursed, you are unwilling to part with the weapon, keeping it within reach at all times. You also have Disadvantage on attack rolls with weapons other than this one.</p>\n<p>Whenever another creature damages you while the weapon is in your possession, you must succeed on a DC 15 Wisdom saving throw or go berserk. This berserk state ends when you start your turn and there are no creatures within 60 feet of you that you can see or hear.</p>\n<p>While berserk, you regard the creature nearest to you that you can see or hear as your enemy. If there are multiple possible creatures, choose one at random. On each of your turns, you must move as close to the creature as possible and take the Attack action, targeting the creature. If you’re unable to get close enough to the creature to attack it with the weapon, your turn ends after you’ve used up all your available movement. If the creature dies or can no longer be seen or heard by you, the next nearest creature that you can see or hear becomes your new target.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Battleaxe, Greataxe, or Halberd"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Battleaxe, Greataxe, or Halberd",
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Battleaxe, Greataxe, or Halberd), Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_BERSERKER_AXE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_DAGGER_OF_VENOM",
+   "name": "Dagger of Venom",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a +1 bonus to attack rolls and damage rolls made with this magic weapon.</p>\n<p>You can take a Bonus Action to magically coat the blade with poison. The poison remains for 1 minute or until an attack using this weapon hits a creature. That creature must succeed on a DC 15 Constitution saving throw or take 2d10 Poison damage and have the Poisoned condition for 1 minute. The weapon can’t be used this way again until the next dawn.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Dagger"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Dagger",
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Dagger), Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_DAGGER_OF_VENOM",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_DANCING_SWORD",
+   "name": "Dancing Sword",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can take a Bonus Action to toss this magic weapon into the air. When you do so, the weapon begins to hover, flies up to 30 feet, and attacks one creature of your choice within 5 feet of itself. The weapon uses your attack roll and adds your ability modifier to damage rolls.</p>\n<p>While the weapon hovers, you can take a Bonus Action to cause it to fly up to 30 feet to another spot within 30 feet of you. As part of the same Bonus Action, you can cause the weapon to attack one creature within 5 feet of the weapon.</p>\n<p>After the hovering weapon attacks for the fourth time, it flies back to you and tries to return to your hand. If you have no hand free, the weapon falls to the ground in your space. If the weapon has no unobstructed path to you, it moves as close to you as it can and then falls to the ground. It also ceases to hover if you grasp it or are more than 30 feet away from it.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Greatsword, Longsword, Rapier, Scimitar, or Shortsword"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Greatsword, Longsword, Rapier, Scimitar, or Shortsword",
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Greatsword, Longsword, Rapier, Scimitar, or Shortsword), Very Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_DANCING_SWORD",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_DEFENDER",
+   "name": "Defender",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a +3 bonus to attack rolls and damage rolls made with this magic weapon.</p>\n<p>The first time you attack with the weapon on each of your turns, you can transfer some or all of the weapon’s bonus to your Armor Class. For example, you could reduce the bonus to your attack rolls and damage rolls to +1 and gain a +2 bonus to Armor Class. The adjusted bonuses remain in effect until the start of your next turn, although you must hold the weapon to gain a bonus to AC from it.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Any Melee Weapon"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Legendary"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Any Melee Weapon",
+    "rarity_text": "Legendary",
+    "rarities": [
+     "Legendary"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Any Melee Weapon), Legendary (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_DEFENDER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_DRAGON_SLAYER",
+   "name": "Dragon Slayer",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a +1 bonus to attack rolls and damage rolls made with this magic weapon.</p>\n<p>The weapon deals an extra 3d6 damage of the weapon’s type if the target is a Dragon.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Any Simple or Martial"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Any Simple or Martial",
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Any Simple or Martial), Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_DRAGON_SLAYER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_DWARVEN_THROWER",
+   "name": "Dwarven Thrower",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a +3 bonus to attack rolls and damage rolls made with this magic weapon. It has the Thrown property with a normal range of 20 feet and a long range of 60 feet. When you hit with a ranged attack using this weapon, it deals an extra 1d8 Force damage, or an extra 2d8 Force damage if the target is a Giant. Immediately after hitting or missing, the weapon flies back to your hand.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Warhammer"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true",
+     "attributes": {
+      "addition": "a Dwarf or a Creature Attuned to a Belt of Dwarvenkind"
+     }
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Warhammer",
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": "a Dwarf or a Creature Attuned to a Belt of Dwarvenkind",
+    "charges": null,
+    "raw_type_line": "Weapon (Warhammer), Very Rare (Requires Attunement by a Dwarf or a Creature Attuned to a Belt of Dwarvenkind)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_DWARVEN_THROWER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_ENERGY_BOW",
+   "name": "Energy Bow",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a +1 bonus to attack rolls and damage rolls made with this magic weapon, which has no string. Each time you pull your arm back in a firing motion, a magical arrow made of golden energy appears nocked and ready to fire. An arrow produced by this weapon deals Force damage instead of Piercing damage on a hit, and it disappears after it hits or misses its target. Until it disappears, the arrow emits Bright Light in a 20-foot radius and Dim Light for an additional 20 feet.</p>\n<p>This weapon has the following additional properties.</p>\n<p><b>Arrow of Restraint.</b> Whenever you use this weapon to make a ranged attack against a creature, you can try to restrain the target instead of dealing damage to it. If the arrow hits, the target must succeed on a DC 15 Strength saving throw or have the Restrained condition for 1 minute. As an action, a creature Restrained by an arrow can make a DC 20 Strength (Athletics) check to try to break the restraint, ending the effect on itself on a successful check.</p>\n<p><b>Arrow of Transport.</b> As a Magic action, you can fire one energy arrow from this weapon at a target you can see within 60 feet of yourself. The target can be either a willing Medium or smaller creature or an object that isn’t being worn or carried, provided the object is small enough to fit inside a 5-foot Cube. The arrow teleports the target to an unoccupied space you can see within 10 feet of you.</p>\n<p><b>Energy Ladder.</b> As a Magic action, you can loose a flurry of energy arrows from this weapon at a wall up to 60 feet away from yourself. The arrows become glowing rungs that stick out of the wall, forming a magical ladder up to 60 feet long on the wall. This ladder lasts for 1 minute before disappearing.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Longbow or Shortbow"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Longbow or Shortbow",
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Longbow or Shortbow), Very Rare (Requires Attunement)"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_FLAME_TONGUE",
+   "name": "Flame Tongue",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While holding this magic weapon, you can take a Bonus Action and use a command word to cause flames to engulf the damage-dealing part of the weapon. These flames shed Bright Light in a 40- foot radius and Dim Light for an additional 40 feet. While the weapon is ablaze, it deals an extra 2d6 Fire damage on a hit. The flames last until you take a Bonus Action to issue the command again or until you drop, stow, or sheathe the weapon.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Any Melee Weapon"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Any Melee Weapon",
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Any Melee Weapon), Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_FLAME_TONGUE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_FROST_BRAND",
+   "name": "Frost Brand",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you hit with an attack roll using this magic weapon, the target takes an extra 1d6 Cold damage. In addition, while you hold the weapon, you have Resistance to Fire damage.</p>\n<p>In freezing temperatures, the weapon sheds Bright Light in a 10-foot radius and Dim Light for an additional 10 feet.</p>\n<p>When you draw this weapon, you can extinguish all nonmagical flames within 30 feet of yourself. Once used, this property can’t be used again for 1 hour.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Glaive, Greatsword, Longsword, Rapier, Scimitar, or Shortsword"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Glaive, Greatsword, Longsword, Rapier, Scimitar, or Shortsword",
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Glaive, Greatsword, Longsword, Rapier, Scimitar, or Shortsword), Very Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_FROST_BRAND",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_GIANT_SLAYER",
+   "name": "Giant Slayer",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a +1 bonus to attack rolls and damage rolls made with this magic weapon.</p>\n<p>When you hit a Giant with this weapon, the Giant takes an extra 2d6 damage of the weapon’s type and must succeed on a DC 15 Strength saving throw or have the Prone condition.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Any Simple or Martial"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Any Simple or Martial",
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Any Simple or Martial), Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_GIANT_SLAYER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_HAMMER_OF_THUNDERBOLTS",
+   "name": "Hammer of Thunderbolts",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a +1 bonus to attack rolls and damage rolls made with this magic weapon.</p>\n<p>The weapon has 5 charges. You can expend 1 charge and make a ranged attack with the weapon, hurling it as if it had the Thrown property with a normal range of 20 feet and a long range of 60 feet. If the attack hits, the weapon unleashes a thunderclap audible out to 300 feet. The target and every creature within 30 feet of it other than you must succeed on a DC 17 Constitution saving throw or have the Stunned condition until the end of your next turn. Immediately after hitting or missing, the weapon flies back to your hand. The weapon regains 1d4 + 1 expended charges daily at dawn.</p>\n<p><b>Giant’s Bane.</b> While you are attuned to the weapon and wearing either a Belt of Giant Strength or Gauntlets of Ogre Power to which you are also attuned, you gain the following benefits:</p>\n<p><b>Giants’ Bane.</b> When you roll a 20 on the d20 for an attack roll made with this weapon against a Giant, the creature must succeed on a DC 17 Constitution saving throw or die.</p>\n<p><b>Might of Giants.</b> The Strength score bestowed by your Belt of Giant Strength or Gauntlets of Ogre Power increases by 4, to a maximum of 30.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Maul or Warhammer"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Legendary"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Maul or Warhammer",
+    "rarity_text": "Legendary",
+    "rarities": [
+     "Legendary"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": 5,
+    "raw_type_line": "Weapon (Maul or Warhammer), Legendary (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_HAMMER_OF_THUNDERBOLTS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_HOLY_AVENGER",
+   "name": "Holy Avenger",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a +3 bonus to attack rolls and damage rolls made with this magic weapon. When you hit a Fiend or an Undead with it, that creature takes an extra 2d10 Radiant damage.</p>\n<p>While you hold the drawn weapon, it creates a 10-foot Emanation originating from you. You and all creatures Friendly to you in the Emanation have Advantage on saving throws against spells and other magical effects. If you have 17 or more levels in the Paladin class, the size of the Emanation increases to 30 feet.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Any Simple or Martial"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Legendary"
+    },
+    {
+     "name": "attunement",
+     "value": "true",
+     "attributes": {
+      "addition": "a Paladin"
+     }
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Any Simple or Martial",
+    "rarity_text": "Legendary",
+    "rarities": [
+     "Legendary"
+    ],
+    "requires_attunement": true,
+    "attunement_by": "a Paladin",
+    "charges": null,
+    "raw_type_line": "Weapon (Any Simple or Martial), Legendary (Requires Attunement by a Paladin)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_HOLY_AVENGER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_JAVELIN_OF_LIGHTNING",
+   "name": "Javelin of Lightning",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Each time you make an attack roll with this magic weapon and hit, you can have it deal Lightning damage instead of Piercing damage.</p>\n<p><b>Lightning Bolt.</b> When you throw this weapon at a target no farther than 120 feet from you, you can forgo making a ranged attack roll and instead turn the weapon into a bolt of lightning. This bolt forms a 5-foot-wide Line between you and the target. The target and each other creature in the Line (excluding you) makes a DC 13 Dexterity saving throw, taking 4d6 Lightning damage on a failed save or half as much damage on a successful one. Immediately after dealing this damage, the weapon reappears in your hand. This property can’t be used again until the next dawn.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Javelin"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Javelin",
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Javelin), Uncommon"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_JAVELIN_OF_LIGHTNING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_LUCK_BLADE",
+   "name": "Luck Blade",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a +1 bonus to attack rolls and damage rolls made with this magic weapon. While the weapon is on your person, you also gain a +1 bonus to saving throws.</p>\n<p><b>Luck.</b> If the weapon is on your person, you can call on its luck (no action required) to reroll one failed D20 Test if you don’t have the Incapacitated condition. You must use the second roll. Once used, this property can’t be used again until the next dawn.</p>\n<p><b>Wish.</b> The weapon has 1d3 charges. While holding it, you can expend 1 charge and cast Wish from it. Once used, this property can’t be used again until the next dawn. The weapon loses this property if it has no charges.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Glaive, Greatsword, Longsword, Rapier, Scimitar, Sickle, or Shortsword"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Legendary"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Glaive, Greatsword, Longsword, Rapier, Scimitar, Sickle, or Shortsword",
+    "rarity_text": "Legendary",
+    "rarities": [
+     "Legendary"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Glaive, Greatsword, Longsword, Rapier, Scimitar, Sickle, or Shortsword), Legendary (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_LUCK_BLADE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_MACE_OF_DISRUPTION",
+   "name": "Mace of Disruption",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you hit a Fiend or an Undead with this magic weapon, that creature takes an extra 2d6 Radiant damage. If the target has 25 Hit Points or fewer after taking this damage, it must succeed on a DC 15 Wisdom saving throw or be destroyed. On a successful save, the creature has the Frightened condition until the end of your next turn.</p>\n<p><b>Light.</b> While you hold this weapon, it sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Mace"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Mace",
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Mace), Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_MACE_OF_DISRUPTION",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_MACE_OF_SMITING",
+   "name": "Mace of Smiting",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a +1 bonus to attack rolls and damage rolls made with this magic weapon. The bonus increases to +3 when you use the weapon to attack a Construct.</p>\n<p>When you roll a 20 on an attack roll made with this weapon, the target takes an extra 7 Bludgeoning damage, or 14 Bludgeoning damage if it’s a Construct. If a Construct has 25 Hit Points or fewer after taking this damage, it is destroyed.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Mace"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Mace",
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Mace), Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_MACE_OF_SMITING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_MACE_OF_TERROR",
+   "name": "Mace of Terror",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This magic weapon has 3 charges and regains 1d3 expended charges daily at dawn. While holding the weapon, you can take a Magic action and expend 1 charge to release a wave of terror from it. Each creature of your choice within 30 feet of you must succeed on a DC 15 Wisdom saving throw or have the Frightened condition for 1 minute. While Frightened in this way, a creature must spend its turns trying to move as far away from you as it can, and it can’t make Opportunity Attacks. For its action, it can use only the Dash action or try to escape from an effect that prevents it from moving. If it has nowhere it can move, the creature can take the Dodge action. At the end of each of its turns, a creature repeats the save, ending the effect on itself on a success.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Mace"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Mace",
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": 3,
+    "raw_type_line": "Weapon (Mace), Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_MACE_OF_TERROR",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_NINE_LIVES_STEALER",
+   "name": "Nine Lives Stealer",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a +2 bonus to attack rolls and damage rolls made with this magic weapon.</p>\n<p><b>Life Stealing.</b> The weapon has 1d8 + 1 charges. When you attack a creature that has fewer than 100 Hit Points with this weapon and roll a 20 on the d20 for the attack roll, the creature must succeed on a DC 15 Constitution saving throw or be slain instantly as the sword tears its life force from its body. Constructs and Undead succeed on the save automatically. The weapon loses 1 charge if the creature is slain. When the weapon has no charges remaining, it loses this property.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Any Simple or Martial"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Any Simple or Martial",
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Any Simple or Martial), Very Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_NINE_LIVES_STEALER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_OATHBOW",
+   "name": "Oathbow",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you nock an arrow on this bow, it whispers in Elvish, “Swift defeat to my enemies.” When you use this weapon to make a ranged attack, you can utter or sign the following command words: “Swift death to you who have wronged me.” The target of your attack becomes your sworn enemy until it dies or until dawn 7 days later. You can have only one such sworn enemy at a time. When your sworn enemy dies, you can choose a new one after the next dawn.</p>\n<p>When you make a ranged attack roll with this weapon against your sworn enemy, you have Advantage on the roll. In addition, your target gains no benefit from Half Cover or Three-Quarters Cover, and you suffer no Disadvantage due to long range. If the attack hits, your sworn enemy takes an extra 3d6 Piercing damage.</p>\n<p>While your sworn enemy lives, you have Disadvantage on attack rolls with all other weapons.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Longbow or Shortbow"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Longbow or Shortbow",
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Longbow or Shortbow), Very Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_OATHBOW",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_QUARTERSTAFF_OF_THE_ACROBAT",
+   "name": "Quarterstaff of the Acrobat",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have a +2 bonus to attack rolls and damage rolls made with this magic weapon.</p>\n<p>While holding this weapon, you can cause it to emit green Dim Light out to 10 feet, either as a Bonus Action or after you roll Initiative, or you can extinguish the light as a Bonus Action.</p>\n<p>While holding this weapon, you can take a Bonus Action to alter its form, turning it into a 6-inch rod (for ease of storage) or a 10-foot pole, or reverting it a Quarterstaff; the weapon will elongate only as far as the surrounding space allows.</p>\n<p>In certain forms, the weapon has the following additional properties.</p>\n<p><b>Acrobatic Assist (Quarterstaff and 10-Foot Pole Forms Only).</b> While holding this weapon, you have Advantage on Dexterity (Acrobatics) checks.</p>\n<p><b>Attack Deflection (Quarterstaff Form Only).</b> When you are hit by an attack while holding the weapon, you can take a Reaction to twirl the weapon around you, gaining a +5 bonus to your Armor Class against the triggering attack, potentially causing the attack to miss you. You can’t use this property again until you finish a Short or Long Rest.</p>\n<p><b>Ranged Weapon (Quarterstaff Form Only).</b> This weapon has the Thrown property with a normal range of 30 feet and a long range of 120 feet. Immediately after you make a ranged attack with the weapon, it flies back to your hand.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Quarterstaff"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Quarterstaff",
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Quarterstaff), Very Rare (Requires Attunement)"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_SCIMITAR_OF_SPEED",
+   "name": "Scimitar of Speed",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a +2 bonus to attack rolls and damage rolls made with this magic weapon. In addition, you can make one attack with it as a Bonus Action on each of your turns.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Scimitar"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Scimitar",
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Scimitar), Very Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_SCIMITAR_OF_SPEED",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_SUN_BLADE",
+   "name": "Sun Blade",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This item appears to be a sword hilt.</p>\n<p><b>Blade of Radiance.</b> While grasping the hilt, you can take a Bonus Action to cause a blade of pure radiance to spring into existence or make the blade disappear. While the blade exists, this magic weapon functions as a Longsword with the Finesse property. If you are proficient with Longswords or Shortswords, you are proficient with the Sun Blade.</p>\n<p>You gain a +2 bonus to attack rolls and damage rolls made with this weapon, which deals Radiant damage instead of Slashing damage. When you hit an Undead with it, that target takes an extra 1d8 Radiant damage.</p>\n<p><b>Sunlight.</b> The sword’s luminous blade emits Bright Light in a 15-foot radius and Dim Light for an additional 15 feet. The light is sunlight. While the blade persists, you can take a Magic action to expand or reduce its radius of Bright Light and Dim Light by 5 feet each, to a maximum of 30 feet each or a minimum of 10 feet each.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Longsword"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Longsword",
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Longsword), Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_SUN_BLADE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_SWORD_OF_LIFE_STEALING",
+   "name": "Sword of Life Stealing",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you attack a creature with this magic weapon and roll a 20 on the d20 for the attack roll, that target takes an extra 15 Necrotic damage if it isn’t a Construct or an Undead, and you gain Temporary Hit Points equal to the amount of Necrotic damage taken.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Glaive, Greatsword, Longsword, Rapier, Scimitar, or Shortsword"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Glaive, Greatsword, Longsword, Rapier, Scimitar, or Shortsword",
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Glaive, Greatsword, Longsword, Rapier, Scimitar, or Shortsword), Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_SWORD_OF_LIFE_STEALING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_SWORD_OF_SHARPNESS",
+   "name": "Sword of Sharpness",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you attack an object with this magic weapon and hit, maximize your weapon damage dice against the target.</p>\n<p>When you attack a creature with this weapon and roll a 20 on the d20 for the attack roll, that target takes an extra 14 Slashing damage and gains 1 Exhaustion level.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Glaive, Greatsword, Longsword, or Scimitar"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Glaive, Greatsword, Longsword, or Scimitar",
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Glaive, Greatsword, Longsword, or Scimitar), Very Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_SWORD_OF_SHARPNESS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_SWORD_OF_WOUNDING",
+   "name": "Sword of Wounding",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you hit a creature with an attack using this magic weapon, the target takes an extra 2d6 Necrotic damage and must succeed on a DC 15 Constitution saving throw or be unable to regain Hit Points for 1 hour. The target repeats the save at the end of each of its turns, ending the effect on itself on a success.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Glaive, Greatsword, Longsword, Rapier, Scimitar, or Shortsword"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Glaive, Greatsword, Longsword, Rapier, Scimitar, or Shortsword",
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Glaive, Greatsword, Longsword, Rapier, Scimitar, or Shortsword), Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_SWORD_OF_WOUNDING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_THUNDEROUS_GREATCLUB",
+   "name": "Thunderous Greatclub",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While you are attuned to this magic weapon, your Strength is 20 unless your Strength is already equal to or greater than that score. The weapon deals an extra 1d8 Thunder damage to any creature it hits and an extra 3d8 Thunder damage to objects it hits that aren’t being worn or carried.</p>\n<p>The weapon has the following additional properties.</p>\n<p><b>Clap of Thunder.</b> As a Magic action, you can strike the weapon against a hard surface to create a loud clap of thunder audible out to 300 feet. You also create a 30-foot Cone of thunderous energy. Each creature in the Cone must succeed on a DC 15 Strength saving throw or have the Prone condition. Nonmagical objects in the Cone that aren’t being worn or carried take 3d8 Thunder damage.</p>\n<p><b>Earthquake.</b> As a Magic action, you can strike the weapon against the ground to create an intense seismic disturbance in a 50-foot-radius circle centered on the point of impact. Structures in contact with the ground in that area take 50 Bludgeoning damage, and each creature on the ground in that area must succeed on a DC 20 Dexterity saving throw or have the Prone condition. If that creature is also concentrating, it must succeed on a DC 20 Constitution saving throw, or its Concentration is broken. In addition, you can cause a 30-foot-deep, 10-foot-wide fissure to open up on the ground anywhere in the area. Any creature on a spot where the fissure opens must make a DC 20 Dexterity saving throw, falling into the fissure on a failed save or moving with the fissure’s edge on a successful one. Any structure on a spot where the fissure opens collapses into the fissure. Once you use this property, it can’t be used again until the next dawn.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Greatclub"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Greatclub",
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Greatclub), Very Rare (Requires Attunement)"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_TRIDENT_OF_FISH_COMMAND",
+   "name": "Trident of Fish Command",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This magic weapon has 3 charges, and it regains 1d3 expended charges daily at dawn. While you carry it, you can expend 1 charge to cast Dominate Beast (save DC 15) from it on a Beast that has a Swim Speed.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Trident"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Trident",
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": 3,
+    "raw_type_line": "Weapon (Trident), Uncommon (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_TRIDENT_OF_FISH_COMMAND",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_VICIOUS_WEAPON",
+   "name": "Vicious Weapon",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This magic weapon deals an extra 2d6 damage to any creature it hits. This extra damage is of the same type as the weapon’s normal damage.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Any Simple or Martial"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Any Simple or Martial",
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Any Simple or Martial), Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_VICIOUS_WEAPON",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_VORPAL_SWORD",
+   "name": "Vorpal Sword",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a +3 bonus to attack rolls and damage rolls made with this magic weapon. In addition, the weapon ignores Resistance to Slashing damage.</p>\n<p>When you use this weapon to attack a creature that has at least one head and roll a 20 on the d20 for the attack roll, you cut off one of the creature’s heads. The creature dies if it can’t survive without the lost head. A creature is immune to this effect if it has Immunity to Slashing damage, if it doesn’t have or need a head, or if the GM decides that the creature is too big for its head to be cut off with this weapon. Such a creature instead takes an extra 30 Slashing damage from the hit. If the creature has Legendary Resistance, it can expend one daily use of that trait to avoid losing its head, taking the extra damage instead.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Glaive, Greatsword, Longsword, or Scimitar"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Legendary"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Glaive, Greatsword, Longsword, or Scimitar",
+    "rarity_text": "Legendary",
+    "rarities": [
+     "Legendary"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Glaive, Greatsword, Longsword, or Scimitar), Legendary (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_VORPAL_SWORD",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_WEAPON_1_2_OR_3",
+   "name": "Weapon, +1, +2, or +3",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>(+2), or Very Rare (+3) You have a bonus to attack rolls and damage rolls made with this magic weapon. The bonus is determined by the weapon’s rarity.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Any Simple or Martial"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon (+1), Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Any Simple or Martial",
+    "rarity_text": "Uncommon (+1), Rare",
+    "rarities": [
+     "Uncommon",
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Any Simple or Martial), Uncommon (+1), Rare"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_WEAPON_OF_WARNING",
+   "name": "Weapon of Warning",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As long as this weapon is within your reach and you are attuned to it, you and allies within 30 feet of you gain the following benefits.</p>\n<p><b>Alarm.</b> The weapon magically awakens each subject who is sleeping naturally when combat begins. This benefit doesn’t wake a subject from magically induced sleep.</p>\n<p><b>Supernatural Readiness.</b> Each subject has Advantage on its Initiative rolls.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "Any Simple or Martial"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Weapon",
+    "item_subtype": "Any Simple or Martial",
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Weapon (Any Simple or Martial), Uncommon (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_WEAPON_OF_WARNING",
+    "kind": "equivalent"
+   }
+  }
+ ]
+}

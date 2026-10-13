@@ -1,0 +1,406 @@
+//! Update indexes: user-added HTTPS indexes, mandatory SHA-256 per entry,
+//! optional ed25519 index signatures (trust on first use), hot reload.
+//! Nothing is fetched until the user adds an index and asks for an update; no default URLs exist.
+
+use crate::content_dto::{ContentIndex, ImportPackRequest, UpdateIndexesResult};
+use crate::content_import::{slug, stem, write_pack_meta, Scratch};
+use crate::content_packs::{progress, EventSink, PACK_META_FILE};
+use crate::content_prefs::IndexRecord;
+use crate::error::{ApiError, ApiResult};
+use crate::ids::rfc3339;
+use crate::state::AppState;
+use base64::{engine::general_purpose::STANDARD, Engine as _};
+use borealis_content::IndexFile;
+use ed25519_dalek::{Signature, Verifier, VerifyingKey};
+use sha2::{Digest, Sha256};
+use std::path::PathBuf;
+use std::time::SystemTime;
+
+const MAX_INDEX_BYTES: usize = 2 * 1024 * 1024;
+const MAX_FILE_BYTES: usize = 64 * 1024 * 1024;
+const MAX_REDIRECTS: usize = 5;
+const FETCH_TIMEOUT_SECS: u64 = 30;
+const SHA256_ATTRIBUTE: &str = "sha256";
+const MAX_SIGNATURE_BYTES: usize = 4 * 1024;
+const SIGNATURE_SUFFIX: &str = ".sig";
+
+/// Detached signature document served at `<index url>.sig`: base64 key and signature over the
+/// exact index bytes.
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct SignatureFile {
+    public_key: String,
+    signature: String,
+}
+
+/// Verify `sig_bytes` against `index_bytes`; returns the base64 public key on success.
+fn verify_signature(index_bytes: &[u8], sig_bytes: &[u8]) -> Result<String, String> {
+    let file: SignatureFile =
+        serde_json::from_slice(sig_bytes).map_err(|_| "malformed signature file".to_string())?;
+    let key: [u8; 32] = STANDARD
+        .decode(file.public_key.trim())
+        .ok()
+        .and_then(|b| b.try_into().ok())
+        .ok_or("bad public key")?;
+    let sig: [u8; 64] = STANDARD
+        .decode(file.signature.trim())
+        .ok()
+        .and_then(|b| b.try_into().ok())
+        .ok_or("bad signature")?;
+    VerifyingKey::from_bytes(&key)
+        .and_then(|k| k.verify(index_bytes, &Signature::from_bytes(&sig)))
+        .map_err(|_| "signature does not match the index".to_string())?;
+    Ok(STANDARD.encode(key))
+}
+
+/// Trust-on-first-use decision. `Ok(Some(key))` = verified with that key, `Ok(None)` = unsigned
+/// index from a never-signed source.
+fn check_trust(
+    pinned: Option<&str>,
+    index_bytes: &[u8],
+    sig: Option<Vec<u8>>,
+) -> Result<Option<String>, String> {
+    match (pinned, sig) {
+        (None, None) => Ok(None),
+        (Some(_), None) => Err("the index is no longer signed".into()),
+        (pinned, Some(sig_bytes)) => {
+            let key = verify_signature(index_bytes, &sig_bytes)?;
+            if pinned.is_some_and(|p| p != key) {
+                return Err("the index signing key changed".into());
+            }
+            Ok(Some(key))
+        }
+    }
+}
+
+/// Downloads bytes over HTTPS (replaceable in tests).
+pub trait Fetcher: Send + Sync {
+    /// Fetch `url`, failing when the body exceeds `max_bytes`.
+    ///
+    /// # Errors
+    /// A user-presentable message.
+    fn get(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, String>;
+}
+
+/// Reject anything but an `https://` URL with a host.
+///
+/// # Errors
+/// `invalid_argument`.
+pub fn require_https(url: &str) -> ApiResult<()> {
+    let ok = url
+        .strip_prefix("https://")
+        .is_some_and(|rest| rest.split('/').next().is_some_and(|h| !h.is_empty()))
+        && !url.chars().any(char::is_whitespace);
+    if ok {
+        Ok(())
+    } else {
+        Err(ApiError::invalid(
+            "Index and file addresses must start with https://",
+        ))
+    }
+}
+
+/// The real network client (desktop only).
+#[derive(Debug, Clone, Copy, Default)]
+pub struct HttpsFetcher;
+
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+impl Fetcher for HttpsFetcher {
+    fn get(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, String> {
+        use std::io::Read;
+        require_https(url).map_err(|e| e.message)?;
+        let policy = reqwest::redirect::Policy::custom(|a| {
+            if a.url().scheme() == "https" && a.previous().len() < MAX_REDIRECTS {
+                a.follow()
+            } else {
+                a.stop()
+            }
+        });
+        let client = reqwest::blocking::Client::builder()
+            .timeout(std::time::Duration::from_secs(FETCH_TIMEOUT_SECS))
+            .redirect(policy)
+            .build()
+            .map_err(|e| e.to_string())?;
+        let response = client.get(url).send().map_err(|e| e.to_string())?;
+        if !response.status().is_success() {
+            return Err(format!("the server answered {}", response.status()));
+        }
+        let mut body = Vec::new();
+        response
+            .take(max_bytes as u64 + 1)
+            .read_to_end(&mut body)
+            .map_err(|e| e.to_string())?;
+        if body.len() > max_bytes {
+            return Err("the file is too large".into());
+        }
+        Ok(body)
+    }
+}
+
+#[cfg(any(target_os = "android", target_os = "ios"))]
+impl Fetcher for HttpsFetcher {
+    fn get(&self, _: &str, _: usize) -> Result<Vec<u8>, String> {
+        Err("downloads are not available on this device".into())
+    }
+}
+
+/// Lower-case hex SHA-256 of `bytes`.
+#[must_use]
+pub fn sha256_hex(bytes: &[u8]) -> String {
+    format!("{:x}", Sha256::digest(bytes))
+}
+
+fn version_parts(v: &str) -> Vec<u32> {
+    v.split('.')
+        .map(|p| p.trim().parse().unwrap_or(0))
+        .collect()
+}
+
+fn newer_than_app(min: &str) -> bool {
+    version_parts(min) > version_parts(env!("CARGO_PKG_VERSION"))
+}
+
+fn dto(r: &IndexRecord) -> ContentIndex {
+    ContentIndex {
+        url: r.url.clone(),
+        name: r.name.clone(),
+        last_checked: r.last_checked.clone(),
+        file_count: r.file_count,
+        updates_available: r.updates_available,
+        requires_newer_app: r.requires_newer_app,
+        verified: r.verified,
+    }
+}
+
+fn installed_hash(state: &AppState, pack_id: &str) -> Option<String> {
+    let text =
+        std::fs::read_to_string(state.paths.library().join(pack_id).join(PACK_META_FILE)).ok()?;
+    let v: serde_json::Value = serde_json::from_str(&text).ok()?;
+    v["sha256"].as_str().map(str::to_string)
+}
+
+impl AppState {
+    /// The user's indexes.
+    #[must_use]
+    pub fn list_indexes(&self) -> Vec<ContentIndex> {
+        self.content_prefs().indexes.iter().map(dto).collect()
+    }
+
+    /// Remember an index URL (no network access).
+    ///
+    /// # Errors
+    /// `invalid_argument` unless the URL is HTTPS.
+    pub fn add_index(&self, url: &str) -> ApiResult<Vec<ContentIndex>> {
+        let url = url.trim();
+        require_https(url)?;
+        let _guard = self.content_lock()?;
+        let mut prefs = self.content_prefs();
+        if !prefs.indexes.iter().any(|i| i.url == url) {
+            prefs.indexes.push(IndexRecord {
+                url: url.to_string(),
+                name: url.to_string(),
+                ..IndexRecord::default()
+            });
+            prefs.save(&self.paths.prefs_file())?;
+        }
+        Ok(prefs.indexes.iter().map(dto).collect())
+    }
+
+    /// Forget an index (installed packs stay).
+    ///
+    /// # Errors
+    /// `io_error`.
+    pub fn remove_index(&self, url: &str) -> ApiResult<Vec<ContentIndex>> {
+        let _guard = self.content_lock()?;
+        let mut prefs = self.content_prefs();
+        prefs.indexes.retain(|i| i.url != url.trim());
+        prefs.save(&self.paths.prefs_file())?;
+        Ok(prefs.indexes.iter().map(dto).collect())
+    }
+
+    /// Fetch every index, download changed files (SHA-256 verified; the index is refused if any entry lacks one),
+    /// install them and hot-reload.
+    ///
+    /// # Errors
+    /// `io_error` / `content_error`; per-file problems are reported in `failed`.
+    pub fn update_indexes(
+        &self,
+        fetcher: &dyn Fetcher,
+        sink: &dyn EventSink,
+    ) -> ApiResult<UpdateIndexesResult> {
+        let _guard = self.content_lock()?;
+        let mut prefs = self.content_prefs();
+        let total = prefs.indexes.len();
+        let mut failed = Vec::new();
+        let mut staged: Vec<(PathBuf, String)> = Vec::new();
+        let mut scratches = Vec::new();
+        for n in 0..total {
+            let url = prefs.indexes[n].url.clone();
+            sink.content_progress(&progress("checking", n, total, &url));
+            let known = prefs.indexes[n].public_key.clone();
+            let record = self.check_index(
+                fetcher,
+                sink,
+                &url,
+                known.as_deref(),
+                &mut staged,
+                &mut scratches,
+                &mut failed,
+            );
+            match record {
+                Some(r) => prefs.indexes[n] = r,
+                None => failed.push(url),
+            }
+        }
+        prefs.save(&self.paths.prefs_file())?;
+        let updated = staged.len();
+        if updated > 0 {
+            sink.content_progress(&progress(
+                "reloading",
+                updated,
+                updated,
+                "Reloading content",
+            ));
+            self.install_packs(&staged, sink, "indexes-updated")?;
+        }
+        sink.content_progress(&progress("done", total, total, "Up to date"));
+        Ok(UpdateIndexesResult {
+            updated,
+            failed,
+            reloaded: updated > 0,
+        })
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn check_index(
+        &self,
+        fetcher: &dyn Fetcher,
+        sink: &dyn EventSink,
+        url: &str,
+        pinned_key: Option<&str>,
+        staged: &mut Vec<(PathBuf, String)>,
+        scratches: &mut Vec<Scratch>,
+        failed: &mut Vec<String>,
+    ) -> Option<IndexRecord> {
+        let bytes = fetcher.get(url, MAX_INDEX_BYTES).ok()?;
+        let sig = fetcher
+            .get(&format!("{url}{SIGNATURE_SUFFIX}"), MAX_SIGNATURE_BYTES)
+            .ok();
+        let public_key = match check_trust(pinned_key, &bytes, sig) {
+            Ok(key) => key,
+            Err(why) => {
+                tracing::warn!("rejected index {url}: {why}");
+                return None;
+            }
+        };
+        let index = IndexFile::from_json_str(std::str::from_utf8(&bytes).ok()?).ok()?;
+        let name = index.info.name.clone().unwrap_or_else(|| url.to_string());
+        let mut record = IndexRecord {
+            url: url.to_string(),
+            name: name.clone(),
+            last_checked: Some(rfc3339(SystemTime::now())),
+            requires_newer_app: index.min_app_version.as_deref().is_some_and(newer_than_app),
+            verified: public_key.is_some(),
+            public_key,
+            ..IndexRecord::default()
+        };
+        let entries: Vec<_> = index
+            .files
+            .iter()
+            .filter(|f| !f.is_obsolete() && !f.is_nested_index())
+            .collect();
+        record.file_count = entries.len();
+        if record.requires_newer_app {
+            record.updates_available = entries.len();
+            return Some(record);
+        }
+        for (i, entry) in entries.iter().enumerate() {
+            let pack_id = format!("dl-{}-{}", slug(&name), slug(stem(&entry.name)));
+            let Some(expected) = entry
+                .extra
+                .attributes
+                .get(SHA256_ATTRIBUTE)
+                .map(|h| h.to_lowercase())
+                .filter(|h| h.len() == 64 && h.bytes().all(|b| b.is_ascii_hexdigit()))
+            else {
+                tracing::warn!("rejected {}: the index gives no valid sha256", entry.url);
+                failed.push(entry.url.clone());
+                record.updates_available += 1;
+                continue;
+            };
+            let installed = installed_hash(self, &pack_id);
+            if installed.as_deref() == Some(expected.as_str()) {
+                continue;
+            }
+            sink.content_progress(&progress("downloading", i, entries.len(), &entry.name));
+            let outcome = self.download_entry(
+                fetcher,
+                entry.url.as_str(),
+                &entry.name,
+                &pack_id,
+                &expected,
+                installed.as_deref(),
+                url,
+            );
+            match outcome {
+                Ok(Some(done)) => {
+                    staged.push((done.0.join("out"), pack_id));
+                    scratches.push(done);
+                }
+                Ok(None) => {}
+                Err(()) => {
+                    failed.push(entry.url.clone());
+                    record.updates_available += 1;
+                }
+            }
+        }
+        Some(record)
+    }
+
+    /// `Ok(None)` = already current, `Err` = rejected (bad URL, hash mismatch, bad content).
+    #[allow(clippy::too_many_arguments)]
+    fn download_entry(
+        &self,
+        fetcher: &dyn Fetcher,
+        file_url: &str,
+        file_name: &str,
+        pack_id: &str,
+        expected: &str,
+        installed: Option<&str>,
+        index_url: &str,
+    ) -> Result<Option<Scratch>, ()> {
+        require_https(file_url).map_err(|_| ())?;
+        let bytes = fetcher.get(file_url, MAX_FILE_BYTES).map_err(|_| ())?;
+        let actual = sha256_hex(&bytes);
+        if expected != actual {
+            tracing::warn!("rejected {file_url}: SHA-256 mismatch");
+            return Err(());
+        }
+        if installed == Some(actual.as_str()) {
+            return Ok(None);
+        }
+        let scratch = Scratch::new(&self.paths.data).map_err(|_| ())?;
+        let out_dir = scratch.0.join("out");
+        let request = ImportPackRequest {
+            file_name: file_name.to_string(),
+            content_base64: String::new(),
+            format: None,
+        };
+        let xml = file_name.to_lowercase().ends_with(".xml");
+        let report = if xml {
+            Self::convert_xml(&scratch.0, &out_dir, &request, pack_id, &bytes)
+        } else {
+            Self::convert_json(&out_dir, &request, pack_id, &bytes)
+        }
+        .map_err(|_| ())?;
+        if report.converted == 0 {
+            return Err(());
+        }
+        write_pack_meta(
+            &out_dir,
+            "downloaded",
+            &serde_json::json!({ "sha256": actual, "indexUrl": index_url, "fileUrl": file_url }),
+        );
+        Ok(Some(scratch))
+    }
+}

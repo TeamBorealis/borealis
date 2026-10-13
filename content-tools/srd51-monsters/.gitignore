@@ -1,0 +1,4 @@
+raw_cols.txt
+monsters.json
+__pycache__/
+*.pyc

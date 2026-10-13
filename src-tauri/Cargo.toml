@@ -1,0 +1,54 @@
+[package]
+name = "borealis"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+description = "Borealis - cross-platform D&D character builder"
+
+[lib]
+name = "borealis_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[lints]
+workspace = true
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+borealis-content.workspace = true
+borealis-engine.workspace = true
+borealis-character.workspace = true
+borealis-sheet.workspace = true
+thiserror.workspace = true
+base64 = "0.22"
+miniz_oxide = "0.9.1"
+uuid = { version = "1", features = ["v4"] }
+tauri-plugin-dialog = "2"
+sha2 = "0.10"
+borealis-migrate.workspace = true
+borealis-import-5etools = { path = "../crates/borealis-import-5etools" }
+# Base borealis-ai stays on every target: borealis-assist, borealis-mcp and the import validators build on
+# its deterministic pieces. Its CLI runner, LAN host and remote client are only reached from desktop-only modules.
+borealis-ai.workspace = true
+borealis-assist.workspace = true
+borealis-mcp = { path = "../crates/borealis-mcp" }
+borealis-encounter = { path = "../crates/borealis-encounter" }
+tokio = { workspace = true, features = ["time"] }
+ed25519-dalek = { version = "2", default-features = false, features = ["std"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+reqwest = { version = "0.13", default-features = false, features = ["blocking", "rustls"] }
+borealis-ai = { workspace = true, features = ["host"] }
+
+[target.'cfg(target_os = "android")'.dependencies]
+borealis-android-assets = { path = "../crates/borealis-android-assets" }

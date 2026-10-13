@@ -1,0 +1,27 @@
+{
+  "format": "borealis-pack/1",
+  "id": "srd-5.2.1-monsters",
+  "name": "SRD 5.2.1 Monsters",
+  "version": "1.0.0",
+  "origin": "core",
+  "rulesets": [
+    "dnd2024"
+  ],
+  "license": "CC-BY-4.0",
+  "attribution": "This work includes material from the System Reference Document 5.2.1 (\"SRD 5.2.1\") by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode. Modified: the SRD stat blocks were structured into typed JSON data (sizes, types, numbers, attacks, saving throws and spell lists were parsed from the printed text; hyphenation and line breaks were normalised).",
+  "description": "Every monster and animal stat block of the SRD 5.2.1 as typed Monster elements (ruleset dnd2024), linked to their SRD 5.1 counterparts.",
+  "files": [
+    {
+      "path": "source.json",
+      "kind": "content"
+    },
+    {
+      "path": "monsters.json",
+      "kind": "content"
+    },
+    {
+      "path": "animals.json",
+      "kind": "content"
+    }
+  ]
+}

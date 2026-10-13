@@ -1,0 +1,334 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: backgrounds/backgrounds",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_BACKGROUND_ACOLYTE",
+   "name": "Acolyte",
+   "type": "Background",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p><b>Ability Scores:</b> Intelligence, Wisdom, Charisma</p><p><b>Feat:</b> Magic Initiate (Cleric)</p><p><b>Skill Proficiencies:</b> Insight and Religion</p><p><b>Tool Proficiency:</b> Calligrapher’s Supplies</p><p><b>Equipment:</b> Choose A or B: (A) Calligrapher’s Supplies, Book (prayers), Holy Symbol, Parchment (10 sheets), Robe, 8 GP; or (B) 50 GP</p>",
+   "setters": [
+    {
+     "name": "short",
+     "value": "Insight and Religion, Calligrapher’s Supplies; Magic Initiate (Cleric)"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "ability_distribution",
+     "name": "Ability Scores (Acolyte)",
+     "pool": [
+      "intelligence",
+      "wisdom",
+      "charisma"
+     ],
+     "options": [
+      [
+       2,
+       1
+      ],
+      [
+       1,
+       1,
+       1
+      ]
+     ],
+     "cap": 20
+    },
+    {
+     "kind": "grant_feat",
+     "feat": "ID_2024_FEAT_MAGIC_INITIATE",
+     "params": {
+      "spell_list": "Cleric"
+     }
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_INSIGHT",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_RELIGION",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_CALLIGRAPHERS_SUPPLIES",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "equipment_package",
+     "ref": "ID_2024_EQUIPMENT_PACKAGE_BACKGROUND_ACOLYTE",
+     "name": "Starting Equipment (Acolyte)"
+    }
+   ],
+   "data": {
+    "ability_scores": [
+     "intelligence",
+     "wisdom",
+     "charisma"
+    ],
+    "origin_feat": "ID_2024_FEAT_MAGIC_INITIATE",
+    "origin_feat_params": {
+     "spell_list": "Cleric"
+    },
+    "skills": [
+     "Insight",
+     "Religion"
+    ],
+    "tool": "Calligrapher’s Supplies",
+    "equipment_package": "ID_2024_EQUIPMENT_PACKAGE_BACKGROUND_ACOLYTE"
+   },
+   "maps_to": {
+    "dnd2014": "ID_BACKGROUND_ACOLYTE",
+    "kind": "approximate"
+   }
+  },
+  {
+   "id": "ID_2024_BACKGROUND_CRIMINAL",
+   "name": "Criminal",
+   "type": "Background",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p><b>Ability Scores:</b> Dexterity, Constitution, Intelligence</p><p><b>Feat:</b> Alert</p><p><b>Skill Proficiencies:</b> Sleight of Hand and Stealth</p><p><b>Tool Proficiency:</b> Thieves’ Tools</p><p><b>Equipment:</b> Choose A or B: (A) 2 Daggers, Thieves’ Tools, Crowbar, 2 Pouches, Traveler’s Clothes, 16 GP; or (B) 50 GP</p>",
+   "setters": [
+    {
+     "name": "short",
+     "value": "Sleight of Hand and Stealth, Thieves’ Tools; Alert"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "ability_distribution",
+     "name": "Ability Scores (Criminal)",
+     "pool": [
+      "dexterity",
+      "constitution",
+      "intelligence"
+     ],
+     "options": [
+      [
+       2,
+       1
+      ],
+      [
+       1,
+       1,
+       1
+      ]
+     ],
+     "cap": 20
+    },
+    {
+     "kind": "grant_feat",
+     "feat": "ID_2024_FEAT_ALERT",
+     "params": {}
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_SLEIGHTOFHAND",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_STEALTH",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_THIEVES_TOOLS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "equipment_package",
+     "ref": "ID_2024_EQUIPMENT_PACKAGE_BACKGROUND_CRIMINAL",
+     "name": "Starting Equipment (Criminal)"
+    }
+   ],
+   "data": {
+    "ability_scores": [
+     "dexterity",
+     "constitution",
+     "intelligence"
+    ],
+    "origin_feat": "ID_2024_FEAT_ALERT",
+    "origin_feat_params": {},
+    "skills": [
+     "Sleight of Hand",
+     "Stealth"
+    ],
+    "tool": "Thieves’ Tools",
+    "equipment_package": "ID_2024_EQUIPMENT_PACKAGE_BACKGROUND_CRIMINAL"
+   }
+  },
+  {
+   "id": "ID_2024_BACKGROUND_SAGE",
+   "name": "Sage",
+   "type": "Background",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p><b>Ability Scores:</b> Constitution, Intelligence, Wisdom</p><p><b>Feat:</b> Magic Initiate (Wizard)</p><p><b>Skill Proficiencies:</b> Arcana and History</p><p><b>Tool Proficiency:</b> Calligrapher’s Supplies</p><p><b>Equipment:</b> Choose A or B: (A) Quarterstaff, Calligrapher’s Supplies, Book (history), Parchment (8 sheets), Robe, 8 GP; or (B) 50 GP</p>",
+   "setters": [
+    {
+     "name": "short",
+     "value": "Arcana and History, Calligrapher’s Supplies; Magic Initiate (Wizard)"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "ability_distribution",
+     "name": "Ability Scores (Sage)",
+     "pool": [
+      "constitution",
+      "intelligence",
+      "wisdom"
+     ],
+     "options": [
+      [
+       2,
+       1
+      ],
+      [
+       1,
+       1,
+       1
+      ]
+     ],
+     "cap": 20
+    },
+    {
+     "kind": "grant_feat",
+     "feat": "ID_2024_FEAT_MAGIC_INITIATE",
+     "params": {
+      "spell_list": "Wizard"
+     }
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_ARCANA",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_HISTORY",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_CALLIGRAPHERS_SUPPLIES",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "equipment_package",
+     "ref": "ID_2024_EQUIPMENT_PACKAGE_BACKGROUND_SAGE",
+     "name": "Starting Equipment (Sage)"
+    }
+   ],
+   "data": {
+    "ability_scores": [
+     "constitution",
+     "intelligence",
+     "wisdom"
+    ],
+    "origin_feat": "ID_2024_FEAT_MAGIC_INITIATE",
+    "origin_feat_params": {
+     "spell_list": "Wizard"
+    },
+    "skills": [
+     "Arcana",
+     "History"
+    ],
+    "tool": "Calligrapher’s Supplies",
+    "equipment_package": "ID_2024_EQUIPMENT_PACKAGE_BACKGROUND_SAGE"
+   }
+  },
+  {
+   "id": "ID_2024_BACKGROUND_SOLDIER",
+   "name": "Soldier",
+   "type": "Background",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p><b>Ability Scores:</b> Strength, Dexterity, Constitution</p><p><b>Feat:</b> Savage Attacker</p><p><b>Skill Proficiencies:</b> Athletics and Intimidation</p><p><b>Tool Proficiency:</b> Choose one kind of Gaming Set (see “Equipment”)</p><p><b>Equipment:</b> Choose A or B: (A) Spear, Shortbow, 20 Arrows, Gaming Set (same as above), Healer’s Kit, Quiver, Traveler’s Clothes, 14 GP; or (B) 50 GP</p>",
+   "setters": [
+    {
+     "name": "short",
+     "value": "Athletics and Intimidation, Choose one kind of Gaming Set (see “Equipment”); Savage Attacker"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "ability_distribution",
+     "name": "Ability Scores (Soldier)",
+     "pool": [
+      "strength",
+      "dexterity",
+      "constitution"
+     ],
+     "options": [
+      [
+       2,
+       1
+      ],
+      [
+       1,
+       1,
+       1
+      ]
+     ],
+     "cap": 20
+    },
+    {
+     "kind": "grant_feat",
+     "feat": "ID_2024_FEAT_SAVAGE_ATTACKER",
+     "params": {}
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_ATHLETICS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_INTIMIDATION",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "select",
+     "type": "Proficiency",
+     "name": "Tool Proficiency (Soldier)",
+     "supports": "Gaming Set"
+    },
+    {
+     "kind": "equipment_package",
+     "ref": "ID_2024_EQUIPMENT_PACKAGE_BACKGROUND_SOLDIER",
+     "name": "Starting Equipment (Soldier)"
+    }
+   ],
+   "data": {
+    "ability_scores": [
+     "strength",
+     "dexterity",
+     "constitution"
+    ],
+    "origin_feat": "ID_2024_FEAT_SAVAGE_ATTACKER",
+    "origin_feat_params": {},
+    "skills": [
+     "Athletics",
+     "Intimidation"
+    ],
+    "tool": "Choose one kind of Gaming Set (see “Equipment”)",
+    "equipment_package": "ID_2024_EQUIPMENT_PACKAGE_BACKGROUND_SOLDIER"
+   }
+  }
+ ]
+}

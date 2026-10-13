@@ -1,0 +1,13 @@
+/* Import screen: expander bands sit inside the two-pane group margins (classic builder: groups 65-898). */
+.import-page .aur-expander { margin-left: 14px; margin-right: 16px; }
+
+/* Description pane shares the Build tab's split, background and title colour (Borealis-only screen, judged on style). */
+@media (min-width: 900px) {
+  .import-page .v5-split { grid-template-columns: minmax(0, 69.33%) minmax(250px, 1fr); }
+  .import-page .v5-desc { background: #131313; }
+  .import-page .v5-desc-title { color: var(--desc-head); }
+}
+:root[data-theme="light"] .import-page .v5-desc, :root[data-contrast="high"] .import-page .v5-desc { background: var(--description-bg); }
+
+/* Section heads copy the description pane's head rule (`.desc-h`, builder.css): 16 px, 1 px underline, 23 px top margin. */
+.import-page h2 { margin: 23px 0 6px; padding-bottom: 1px; font-size: 16px; font-weight: 600; text-transform: uppercase; color: var(--desc-head); border-bottom: 1px solid #333333; }

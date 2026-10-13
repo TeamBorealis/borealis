@@ -1,0 +1,206 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/fighter-champion",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SUBCLASS_FIGHTER_CHAMPION",
+   "name": "Champion",
+   "type": "Archetype",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Fighter Subclass"
+   ],
+   "description": "<p>A Champion focuses on the development of martial prowess in a relentless pursuit of victory. Champions combine rigorous training with physical excellence to deal devastating blows, withstand peril, and garner glory. Whether in athletic contests or bloody battle, Champions strive for the crown of the victor.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_FIGHTER_CHAMPION_IMPROVED_CRITICAL",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_FIGHTER_CHAMPION_REMARKABLE_ATHLETE",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_FIGHTER_CHAMPION_ADDITIONAL_FIGHTING_STYLE",
+     "type": "Archetype Feature",
+     "level": 7
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_FIGHTER_CHAMPION_HEROIC_WARRIOR",
+     "type": "Archetype Feature",
+     "level": 10
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_FIGHTER_CHAMPION_SUPERIOR_CRITICAL",
+     "type": "Archetype Feature",
+     "level": 15
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_FIGHTER_CHAMPION_SURVIVOR",
+     "type": "Archetype Feature",
+     "level": 18
+    }
+   ],
+   "data": {
+    "class": "ID_2024_CLASS_FIGHTER",
+    "class_name": "Fighter",
+    "level_gained": 3
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ARCHETYPE_CHAMPION",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_FIGHTER_CHAMPION_IMPROVED_CRITICAL",
+   "name": "Improved Critical",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Your attack rolls with weapons and Unarmed Strikes can score a Critical Hit on a roll of 19 or 20 on the d20.</p>",
+   "rules": [
+    {
+     "kind": "critical_range",
+     "min": 19,
+     "applies_to": [
+      "weapon attacks",
+      "unarmed strikes"
+     ]
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "subclass": "Champion",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_FIGHTER_CHAMPION_REMARKABLE_ATHLETE",
+   "name": "Remarkable Athlete",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Thanks to your athleticism, you have Advantage on Initiative rolls and Strength (Athletics) checks.</p>\n<p>In addition, immediately after you score a Critical Hit, you can move up to half your Speed without provoking Opportunity Attacks.</p>",
+   "rules": [
+    {
+     "kind": "roll_advantage",
+     "roll": "initiative"
+    },
+    {
+     "kind": "roll_advantage",
+     "roll": "ability_check",
+     "skill": "athletics"
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "subclass": "Champion",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_FIGHTER_CHAMPION_ADDITIONAL_FIGHTING_STYLE",
+   "name": "Additional Fighting Style",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain another Fighting Style feat of your choice.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "name": "Additional Fighting Style",
+     "category": "Fighting Style"
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "subclass": "Champion",
+    "level": 7
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_FIGHTER_CHAMPION_HEROIC_WARRIOR",
+   "name": "Heroic Warrior",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>The thrill of battle drives you toward victory. During combat, you can give yourself Heroic Inspiration whenever you start your turn without it.</p>",
+   "rules": [
+    {
+     "kind": "heroic_inspiration",
+     "trigger": "start_of_turn_in_combat"
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "subclass": "Champion",
+    "level": 10
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_FIGHTER_CHAMPION_SUPERIOR_CRITICAL",
+   "name": "Superior Critical",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Your attack rolls with weapons and Unarmed Strikes can now score a Critical Hit on a roll of 18–20 on the d20.</p>",
+   "rules": [
+    {
+     "kind": "critical_range",
+     "min": 18,
+     "applies_to": [
+      "weapon attacks",
+      "unarmed strikes"
+     ]
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "subclass": "Champion",
+    "level": 15
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_FIGHTER_CHAMPION_SURVIVOR",
+   "name": "Survivor",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You attain the pinnacle of resilience in battle, giving you these benefits.</p>\n<p><b>Defy Death.</b> You have Advantage on Death Saving Throws. Moreover, when you roll 18–20 on a Death Saving Throw, you gain the benefit of rolling a 20 on it.</p>\n<p><b>Heroic Rally.</b> At the start of each of your turns, you regain Hit Points equal to 5 plus your Constitution modifier if you are Bloodied and have at least 1 Hit Point.</p>",
+   "rules": [
+    {
+     "kind": "death_save_rules",
+     "advantage": true,
+     "natural_20_threshold": 18
+    },
+    {
+     "kind": "regeneration",
+     "condition": "Bloodied and at least 1 HP",
+     "amount": "5+constitution:modifier",
+     "timing": "start_of_turn"
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "subclass": "Champion",
+    "level": 18
+   }
+  }
+ ]
+}

@@ -1,0 +1,1269 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/druid",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_EQUIPMENT_PACKAGE_CLASS_DRUID",
+   "name": "Starting Equipment (Druid)",
+   "type": "Equipment Package",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "data": {
+    "owner": "ID_2024_CLASS_DRUID",
+    "options": [
+     {
+      "id": "A",
+      "items": [
+       {
+        "id": "ID_2024_ARMOR_LEATHER_ARMOR"
+       },
+       {
+        "id": "ID_2024_ARMOR_SHIELD"
+       },
+       {
+        "id": "ID_2024_WEAPON_SICKLE"
+       },
+       {
+        "id": "ID_2024_ITEM_DRUIDIC_FOCUS",
+        "note": "Quarterstaff"
+       },
+       {
+        "id": "ID_2024_ITEM_EXPLORERS_PACK"
+       },
+       {
+        "id": "ID_2024_TOOL_HERBALISM_KIT"
+       }
+      ],
+      "coins": {
+       "gp": 9
+      }
+     },
+     {
+      "id": "B",
+      "items": [],
+      "coins": {
+       "gp": 50
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_DRUID",
+   "name": "Druid",
+   "type": "Class",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Class"
+   ],
+   "description": "<p>Primary ability: Wisdom. Hit Point Die: D8 per Druid level. Saving throws: Intelligence and Wisdom.</p>",
+   "setters": [
+    {
+     "name": "hd",
+     "value": "d8"
+    },
+    {
+     "name": "short",
+     "value": "Wisdom; Light armor and Shields"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SAVINGTHROW_INTELLIGENCE",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_DRUID"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SAVINGTHROW_WISDOM",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_DRUID"
+    },
+    {
+     "kind": "select",
+     "type": "Proficiency",
+     "name": "Skill Proficiency (Druid)",
+     "number": 2,
+     "supports": "ID_PROFICIENCY_SKILL_ANIMALHANDLING|ID_PROFICIENCY_SKILL_ARCANA|ID_PROFICIENCY_SKILL_INSIGHT|ID_PROFICIENCY_SKILL_MEDICINE|ID_PROFICIENCY_SKILL_NATURE|ID_PROFICIENCY_SKILL_PERCEPTION|ID_PROFICIENCY_SKILL_RELIGION|ID_PROFICIENCY_SKILL_SURVIVAL",
+     "requirements": "!ID_2024_MULTICLASS_DRUID"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_DRUID"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_DRUID"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_DRUID"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_HERBALISM_KIT",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_DRUID"
+    },
+    {
+     "kind": "equipment_package",
+     "requirements": "!ID_2024_MULTICLASS_DRUID",
+     "ref": "ID_2024_EQUIPMENT_PACKAGE_CLASS_DRUID",
+     "name": "Starting Equipment (Druid)"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_DRUID_SPELLCASTING",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_DRUID_DRUIDIC",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_DRUID_PRIMAL_ORDER",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_DRUID_WILD_SHAPE",
+     "type": "Class Feature",
+     "level": 2
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_DRUID_WILD_COMPANION",
+     "type": "Class Feature",
+     "level": 2
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_DRUID_DRUID_SUBCLASS",
+     "type": "Class Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_DRUID_ABILITY_SCORE_IMPROVEMENT",
+     "type": "Class Feature",
+     "level": 4
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_DRUID_WILD_RESURGENCE",
+     "type": "Class Feature",
+     "level": 5
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_DRUID_ELEMENTAL_FURY",
+     "type": "Class Feature",
+     "level": 7
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_DRUID_IMPROVED_ELEMENTAL_FURY",
+     "type": "Class Feature",
+     "level": 15
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_DRUID_BEAST_SPELLS",
+     "type": "Class Feature",
+     "level": 18
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_DRUID_EPIC_BOON",
+     "type": "Class Feature",
+     "level": 19
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_DRUID_ARCHDRUID",
+     "type": "Class Feature",
+     "level": 20
+    }
+   ],
+   "multiclass": {
+    "id": "ID_2024_MULTICLASS_DRUID",
+    "prerequisite": "Wisdom 13",
+    "requirements": "[wis:13]",
+    "setters": [
+     {
+      "name": "multiclass proficiencies",
+      "value": "Simple weapons, Light armor and Shields, Herbalism Kit"
+     }
+    ],
+    "rules": [
+     {
+      "kind": "grant",
+      "id": "ID_INTERNAL_GRANT_MULTICLASS",
+      "type": "Grants"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+      "type": "Proficiency"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+      "type": "Proficiency"
+     }
+    ]
+   },
+   "data": {
+    "hit_die": 8,
+    "primary_abilities": [
+     "wisdom"
+    ],
+    "primary_ability_mode": "single",
+    "saving_throws": [
+     "intelligence",
+     "wisdom"
+    ],
+    "subclass_level": 3,
+    "epic_boon_level": 19,
+    "asi_levels": [
+     4,
+     8,
+     12,
+     16
+    ],
+    "core_traits": {
+     "Primary Ability": "Wisdom",
+     "Hit Point Die": "D8 per Druid level",
+     "Saving Throw": "Intelligence and Wisdom",
+     "Skill Proficiencies": "Choose 2: Animal Handling, Arcana, Insight, Medicine, Nature, Perception, Religion, or Survival",
+     "Weapon Proficiencies": "Simple weapons",
+     "Tool Proficiencies": "Herbalism Kit",
+     "Armor Training": "Light armor and Shields",
+     "Starting Equipment": "Choose A or B: (A) Leather Armor, Shield, Sickle, Druidic Focus (Quarterstaff), Explorer’s Pack, Herbalism Kit, and 9 GP; or (B) 50 GP"
+    },
+    "progression": {
+     "proficiency_bonus": [
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      4,
+      4,
+      4,
+      4,
+      5,
+      5,
+      5,
+      5,
+      6,
+      6,
+      6,
+      6
+     ],
+     "wild_shape": [
+      0,
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      4,
+      4,
+      4,
+      4
+     ],
+     "cantrips": [
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+     ],
+     "prepared": [
+      4,
+      5,
+      6,
+      7,
+      9,
+      10,
+      11,
+      12,
+      14,
+      15,
+      16,
+      16,
+      17,
+      17,
+      18,
+      18,
+      19,
+      20,
+      21,
+      22
+     ],
+     "slot_1": [
+      2,
+      3,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+     ],
+     "slot_2": [
+      0,
+      0,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+     ],
+     "slot_3": [
+      0,
+      0,
+      0,
+      0,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+     ],
+     "slot_4": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+     ],
+     "slot_5": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3
+     ],
+     "slot_6": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      2,
+      2
+     ],
+     "slot_7": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      2
+     ],
+     "slot_8": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+     ],
+     "slot_9": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1
+     ]
+    },
+    "features_by_level": [
+     "Spellcasting, Druidic,",
+     "Wild Shape,",
+     "Druid Subclass",
+     "Ability Score Improvement",
+     "Wild Resurgence",
+     "Subclass feature",
+     "Elemental Fury",
+     "Ability Score Improvement",
+     "—",
+     "Subclass feature",
+     "—",
+     "Ability Score Improvement",
+     "—",
+     "Subclass feature",
+     "Improved Elemental Fury",
+     "Ability Score Improvement",
+     "—",
+     "Beast Spells",
+     "Epic Boon",
+     "Archdruid"
+    ],
+    "multiclass": {
+     "prerequisite": "Wisdom 13",
+     "requirements": "[wis:13]"
+    },
+    "spellcasting": {
+     "ability": "wisdom",
+     "list": "Druid",
+     "model": "prepared",
+     "replace": "long_rest",
+     "multiclass_slots_grant": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_FULL",
+     "has_cantrips": true
+    },
+    "fixed_hp_per_level": 5
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_CLASS_DRUID",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_DRUID_SPELLCASTING",
+   "name": "Spellcasting",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have learned to cast spells through studying the mystical forces of nature. See “Spells” for the rules on spellcasting. The information below details how you use those rules with Druid spells, which appear on the Druid spell list later in the class’s description.</p>\n<p><b>Cantrips.</b> You know two cantrips of your choice from the Druid spell list. Druidcraft and Produce Flame are recommended.</p>\n<p>Whenever you gain a Druid level, you can replace one of your cantrips with another cantrip of your choice from the Druid spell list.</p>\n<p>When you reach Druid levels 4 and 10, you learn another cantrip of your choice from the Druid spell list, as shown in the Cantrips column of the Druid Features table.</p>\n<p><b>Spell Slots.</b> The Druid Features table shows how many spell slots you have to cast your level 1+ spells. You regain all expended slots when you finish a Long Rest.</p>\n<p>Prepared Spells of Level 1+. You prepare the list of level 1+ spells that are available for you to cast with this feature. To start, choose four level 1 spells from the Druid spell list. Animal Friendship, Cure Wounds, Faerie Fire, and Thunderwave are recommended.</p>\n<p>The number of spells on your list increases as you gain Druid levels, as shown in the Prepared Spells column of the Druid Features table. Whenever that number increases, choose additional spells from the Druid spell list until the number of spells on your list matches the number on the table. The chosen spells must be of a level for which you have spell slots. For example, if you’re a level 3 Druid, your list of prepared spells can include six spells of levels 1 and 2 in any combination.</p>\n<p>If another Druid feature gives you spells that you always have prepared, those spells don’t count against the number of spells you can prepare with this feature, but those spells otherwise count as Druid spells for you.</p>\n<p><b>Changing Your Prepared Spells.</b> Whenever you finish a Long Rest, you can change your list of prepared spells, replacing any of the spells with other Druid spells for which you have spell slots.</p>\n<p><b>Spellcasting Ability.</b> Wisdom is your spellcasting ability for your Druid spells.</p>\n<p><b>Spellcasting Focus.</b> You can use a Druidic Focus as a Spellcasting Focus for your Druid spells.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:1",
+     "value": "2"
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:1",
+     "value": "1",
+     "level": 2
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:1",
+     "value": "1",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:2",
+     "value": "2",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:2",
+     "value": "1",
+     "level": 4
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:3",
+     "value": "2",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:3",
+     "value": "1",
+     "level": 6
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:4",
+     "value": "1",
+     "level": 7
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:4",
+     "value": "1",
+     "level": 8
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:4",
+     "value": "1",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:5",
+     "value": "1",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:5",
+     "value": "1",
+     "level": 10
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:5",
+     "value": "1",
+     "level": 18
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:6",
+     "value": "1",
+     "level": 11
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:6",
+     "value": "1",
+     "level": 19
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:7",
+     "value": "1",
+     "level": 13
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:7",
+     "value": "1",
+     "level": 20
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:8",
+     "value": "1",
+     "level": 15
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:slots:9",
+     "value": "1",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "4"
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "1",
+     "level": 2
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "1",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "1",
+     "level": 4
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "2",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "1",
+     "level": 6
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "1",
+     "level": 7
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "1",
+     "level": 8
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "2",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "1",
+     "level": 10
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "1",
+     "level": 11
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "1",
+     "level": 13
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "1",
+     "level": 15
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "1",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "1",
+     "level": 18
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "1",
+     "level": 19
+    },
+    {
+     "kind": "stat",
+     "name": "druid:spellcasting:prepare",
+     "value": "1",
+     "level": 20
+    },
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Cantrip (Druid 1)",
+     "number": 2,
+     "supports": "$(spellcasting:list), 0",
+     "spellcasting": "Druid",
+     "allow_replace": true
+    },
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Cantrip (Druid 4)",
+     "level": 4,
+     "supports": "$(spellcasting:list), 0",
+     "spellcasting": "Druid",
+     "allow_replace": true
+    },
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Cantrip (Druid 10)",
+     "level": 10,
+     "supports": "$(spellcasting:list), 0",
+     "spellcasting": "Druid",
+     "allow_replace": true
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_FULL",
+     "type": "Grants",
+     "requirements": "ID_INTERNAL_GRANT_MULTICLASS"
+    },
+    {
+     "kind": "prepared_spell_change",
+     "when": "long_rest",
+     "count": "any"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_PROFICIENCY_SPELLFOCUS_GROUP_DRUIDIC_FOCUS",
+     "type": "Proficiency"
+    }
+   ],
+   "spellcasting": {
+    "name": "Druid",
+    "ability": "Wisdom",
+    "prepare": true,
+    "allow_replace": true,
+    "list": {
+     "supports": "Druid",
+     "known": true
+    }
+   },
+   "data": {
+    "class": "Druid",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_DRUID_DRUIDIC",
+   "name": "Druidic",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You know Druidic, the secret language of Druids. While learning this ancient tongue, you also unlocked the magic of communicating with animals; you always have the Speak with Animals spell prepared.</p>\n<p>You can use Druidic to leave hidden messages. You and others who know Druidic automatically spot such a message. Others spot the message’s presence with a successful DC 15 Intelligence (Investigation) check but can’t decipher it without magic.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_LANGUAGE_DRUIDIC",
+     "type": "Language"
+    },
+    {
+     "kind": "grant_spell",
+     "spell": "ID_2024_SPELL_SPEAK_WITH_ANIMALS",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Druid"
+    }
+   ],
+   "data": {
+    "class": "Druid",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_DRUID_PRIMAL_ORDER",
+   "name": "Primal Order",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have dedicated yourself to one of the following sacred roles of your choice.</p>\n<p><b>Magician.</b> You know one extra cantrip from the Druid spell list. In addition, your mystical connection to nature gives you a bonus to your Intelligence (Arcana or Nature) checks. The bonus equals your Wisdom modifier (minimum bonus of +1).</p>\n<p><b>Warden.</b> Trained for battle, you gain proficiency with Martial weapons and training with Medium armor.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Option",
+     "name": "Primal Order",
+     "supports": "Primal Order"
+    }
+   ],
+   "data": {
+    "class": "Druid",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_DRUID_WILD_SHAPE",
+   "name": "Wild Shape",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>The power of nature allows you to assume the form of an animal. As a Bonus Action, you shape-shift into a Beast form that you have learned for this feature (see “Known Forms” below). You stay in that form for a number of hours equal to half your Druid level or until you use Wild Shape again, have the Incapacitated condition, or die. You can also leave the form early as a Bonus Action.</p>\n<p><b>Number of Uses.</b> You can use Wild Shape twice. You regain one expended use when you finish a Short Rest, and you regain all expended uses when you finish a Long Rest.</p>\n<p>You gain additional uses when you reach certain Druid levels, as shown in the Wild Shape column of the Druid Features table.</p>\n<p><b>Known Forms.</b> You know four Beast forms for this feature, chosen from among Beast stat blocks that have a maximum Challenge Rating of 1/4 and that lack a Fly Speed (see “Animals” in “Monsters” for stat block options). The Rat, Riding Horse, Spider, and Wolf are recommended. Whenever you finish a Long Rest, you can replace one of your known forms with another eligible form.</p>\n<p>When you reach certain Druid levels, your number of known forms and the maximum Challenge Rating for those forms increases, as shown in the Beast Shapes table. In addition, starting at level 8, you can adopt a form that has a Fly Speed.</p>\n<p>When choosing known forms, you may look in other sources for eligible Beasts if the Game Master permits you to do so. Beast Shapes</p>\n<pre>   Druid        Known          Max           Fly\n   Level        Forms          CR           Speed\n      2            4            1/4           No\n      4            6            1/2           No\n      8            8             1            Yes</pre>\n<p><b>Rules While Shape-Shifted.</b> While in a form, you retain your personality, memories, and ability to speak, and the following rules apply:</p>\n<p><b>Temporary Hit Points.</b> When you assume a Wild Shape form, you gain a number of Temporary Hit Points equal to your Druid level.</p>\n<p><b>Game Statistics.</b> Your game statistics are replaced by the Beast’s stat block, but you retain your creature type; Hit Points; Hit Point Dice; Intelligence, Wisdom, and Charisma scores; class features; languages; and feats. You also retain your skill and saving throw proficiencies and use your Proficiency Bonus for them, in addition to gaining the proficiencies of the creature. If a skill or saving throw modifier in the Beast’s stat block is higher than yours, use the one in the stat block.</p>\n<p><b>No Spellcasting.</b> You can’t cast spells, but shape-shifting doesn’t break your Concentration or otherwise interfere with a spell you’ve already cast.</p>\n<p><b>Objects.</b> Your ability to handle objects is determined by the form’s limbs rather than your own. In addition, you choose whether your equipment falls in your space, merges into your new form, or is worn by it. Worn equipment functions as normal, but the GM decides whether it’s practical for the new form to wear a piece of equipment based on the creature’s size and shape. Your equipment doesn’t change size or shape to match the new form, and any equipment that the new form can’t wear must either fall to the ground or merge with the form. Equipment that merges with the form has no effect while you’re in that form.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "wild shape",
+     "name": "Wild Shape",
+     "max": {
+      "type": "table",
+      "key": "wild_shape"
+     },
+     "recharge": [
+      "short_rest",
+      "long_rest"
+     ],
+     "regain": {
+      "short_rest": 1,
+      "long_rest": "all"
+     }
+    },
+    {
+     "kind": "beast_forms",
+     "known": [
+      {
+       "level": 2,
+       "forms": 4,
+       "max_cr": "1/4",
+       "fly": false
+      },
+      {
+       "level": 4,
+       "forms": 6,
+       "max_cr": "1/2",
+       "fly": false
+      },
+      {
+       "level": 8,
+       "forms": 8,
+       "max_cr": "1",
+       "fly": true
+      }
+     ],
+     "duration_hours": "druid level / 2",
+     "temp_hp": "druid level",
+     "change_on": "long_rest"
+    }
+   ],
+   "data": {
+    "class": "Druid",
+    "level": 2
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_DRUID_WILD_COMPANION",
+   "name": "Wild Companion",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can summon a nature spirit that assumes an animal form to aid you. As a Magic action, you can expend a spell slot or a use of Wild Shape to cast the Find Familiar spell without Material components.</p>\n<p>When you cast the spell in this way, the familiar is Fey and disappears when you finish a Long Rest.</p>",
+   "rules": [
+    {
+     "kind": "spell_cast_alt_cost",
+     "spell": "ID_2024_SPELL_FIND_FAMILIAR",
+     "cost": [
+      "spell slot",
+      "wild shape use"
+     ],
+     "no_material": true
+    }
+   ],
+   "data": {
+    "class": "Druid",
+    "level": 2
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_DRUID_DRUID_SUBCLASS",
+   "name": "Druid Subclass",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a Druid subclass of your choice. The Circle of the Land subclass is detailed after this class’s description. A subclass is a specialization that grants you features at certain Druid levels. For the rest of your career, you gain each of your subclass’s features that are of your Druid level or lower.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Archetype",
+     "name": "Druid Circle",
+     "supports": "Druid Subclass"
+    }
+   ],
+   "data": {
+    "class": "Druid",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_DRUID_ABILITY_SCORE_IMPROVEMENT",
+   "name": "Ability Score Improvement",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the Ability Score Improvement feat (see “Feats”) or another feat of your choice for which you qualify. You gain this feature again at Druid levels 8, 12, and 16.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "level": 4,
+     "name": "Ability Score Improvement (Druid 4)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 8,
+     "name": "Ability Score Improvement (Druid 8)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 12,
+     "name": "Ability Score Improvement (Druid 12)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 16,
+     "name": "Ability Score Improvement (Druid 16)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    }
+   ],
+   "data": {
+    "class": "Druid",
+    "level": 4
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_DRUID_WILD_RESURGENCE",
+   "name": "Wild Resurgence",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Once on each of your turns, if you have no uses of Wild Shape left, you can give yourself one use by expending a spell slot (no action required).</p>\n<p>In addition, you can expend one use of Wild Shape (no action required) to give yourself a level 1 spell slot, but you can’t do so again until you finish a Long Rest.</p>",
+   "data": {
+    "class": "Druid",
+    "level": 5
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_DRUID_ELEMENTAL_FURY",
+   "name": "Elemental Fury",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>The might of the elements flows through you. You gain one of the following options of your choice.</p>\n<p><b>Potent Spellcasting.</b> Add your Wisdom modifier to the damage you deal with any Druid cantrip.</p>\n<p><b>Primal Strike.</b> Once on each of your turns when you hit a creature with an attack roll using a weapon or a Beast form’s attack in Wild Shape, you can cause the target to take an extra 1d8 Cold, Fire, Lightning, or Thunder damage (choose when you hit).</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Option",
+     "name": "Elemental Fury",
+     "supports": "Elemental Fury"
+    }
+   ],
+   "data": {
+    "class": "Druid",
+    "level": 7
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_DRUID_IMPROVED_ELEMENTAL_FURY",
+   "name": "Improved Elemental Fury",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>The option you chose for Elemental Fury grows more powerful, as detailed below.</p>\n<p><b>Potent Spellcasting.</b> When you cast a Druid cantrip with a range of 10 feet or greater, the spell’s range increases by 300 feet.</p>\n<p><b>Primal Strike.</b> The extra damage of your Primal Strike increases to 2d8.</p>",
+   "data": {
+    "class": "Druid",
+    "level": 15
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_DRUID_BEAST_SPELLS",
+   "name": "Beast Spells",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While using Wild Shape, you can cast spells in Beast form, except for any spell that has a Material component with a cost specified or that consumes its Material component.</p>",
+   "data": {
+    "class": "Druid",
+    "level": 18
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_DRUID_EPIC_BOON",
+   "name": "Epic Boon",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain an Epic Boon feat (see “Feats”) or another feat of your choice for which you qualify. Boon of Dimensional Travel is recommended.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "level": 19,
+     "name": "Epic Boon (Druid)",
+     "category": "Epic Boon"
+    }
+   ],
+   "data": {
+    "class": "Druid",
+    "level": 19
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_DRUID_ARCHDRUID",
+   "name": "Archdruid",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>The vitality of nature constantly blooms within you, granting you the following benefits.</p>\n<p><b>Evergreen Wild Shape.</b> Whenever you roll Initiative and have no uses of Wild Shape left, you regain one expended use of it.</p>\n<p><b>Nature Magician.</b> You can convert uses of Wild Shape into a spell slot (no action required). Choose a number of your unexpended uses of Wild Shape and convert them into a single spell slot, with each use contributing 2 spell levels. For example, if you convert two uses of Wild Shape, you produce a level 4 spell slot. Once you use this benefit, you can’t do so again until you finish a Long Rest.</p>\n<p><b>Longevity.</b> The primal magic that you wield causes you to age more slowly. For every ten years that pass, your body ages only one year.</p>",
+   "data": {
+    "class": "Druid",
+    "level": 20
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_PRIMAL_ORDER_MAGICIAN",
+   "name": "Magician",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Primal Order"
+   ],
+   "description": "<p>You know one extra cantrip from the Druid spell list. In addition, your mystical connection to nature gives you a bonus to your Intelligence (Arcana or Nature) checks. The bonus equals your Wisdom modifier (minimum bonus of +1).</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Magician Extra Cantrip",
+     "supports": "$(spellcasting:list), 0",
+     "spellcasting": "Druid"
+    },
+    {
+     "kind": "skill_bonus",
+     "skills": [
+      "Arcana",
+      "Nature"
+     ],
+     "value": "wisdom:modifier",
+     "minimum": 1
+    }
+   ],
+   "data": {
+    "class_name": "Druid",
+    "group": "Primal Order",
+    "source_feature": "Primal Order",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_PRIMAL_ORDER_WARDEN",
+   "name": "Warden",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Primal Order"
+   ],
+   "description": "<p>Trained for battle, you gain proficiency with Martial weapons and training with Medium armor.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_MEDIUM_ARMOR",
+     "type": "Proficiency"
+    }
+   ],
+   "data": {
+    "class_name": "Druid",
+    "group": "Primal Order",
+    "source_feature": "Primal Order",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_ELEMENTAL_FURY_POTENT_SPELLCASTING",
+   "name": "Potent Spellcasting",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Elemental Fury"
+   ],
+   "description": "<p>Add your Wisdom modifier to the damage you deal with any Druid cantrip.</p>",
+   "rules": [
+    {
+     "kind": "cantrip_damage_bonus",
+     "spell_class": "Druid",
+     "value": "wisdom:modifier"
+    }
+   ],
+   "data": {
+    "class_name": "Druid",
+    "group": "Elemental Fury",
+    "source_feature": "Elemental Fury",
+    "level": 7
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_ELEMENTAL_FURY_PRIMAL_STRIKE",
+   "name": "Primal Strike",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Elemental Fury"
+   ],
+   "description": "<p>Once on each of your turns when you hit a creature with an attack roll using a weapon or a Beast form’s attack in Wild Shape, you can cause the target to take an extra 1d8 Cold, Fire, Lightning, or Thunder damage (choose when you hit).</p>",
+   "rules": [
+    {
+     "kind": "extra_damage",
+     "name": "Primal Strike",
+     "dice": "1d8",
+     "once_per": "turn",
+     "damage_type": "cold, fire, lightning, or thunder"
+    },
+    {
+     "kind": "extra_damage",
+     "level": 15,
+     "name": "Primal Strike (improved)",
+     "dice": "2d8",
+     "replaces": "Primal Strike"
+    }
+   ],
+   "data": {
+    "class_name": "Druid",
+    "group": "Elemental Fury",
+    "source_feature": "Elemental Fury",
+    "level": 7
+   }
+  }
+ ]
+}

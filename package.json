@@ -1,0 +1,8 @@
+{
+  "name": "borealis",
+  "private": true,
+  "scripts": {
+    "ui": "npm --prefix ui run",
+    "tauri": "node ui/node_modules/@tauri-apps/cli/tauri.js"
+  }
+}

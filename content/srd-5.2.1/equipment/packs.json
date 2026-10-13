@@ -1,0 +1,498 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: equipment/packs",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_ITEM_BURGLARS_PACK",
+   "name": "Burglar’s Pack",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Burglar’s Pack contains the following items: Backpack, Ball Bearings, Bell, 10 Candles, Crowbar, Hooded Lantern, 7 flasks of Oil, 5 days of Rations, Rope, Tinderbox, and Waterskin.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Equipment Packs"
+    },
+    {
+     "name": "cost",
+     "value": "16",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "42 lb.",
+     "attributes": {
+      "lb": "42"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ITEM_BURGLARS_PACK",
+    "kind": "equivalent"
+   },
+   "extract": {
+    "items": [
+     {
+      "id": "ID_2024_ITEM_BACKPACK"
+     },
+     {
+      "id": "ID_2024_ITEM_BALL_BEARINGS"
+     },
+     {
+      "id": "ID_2024_ITEM_BELL"
+     },
+     {
+      "id": "ID_2024_ITEM_CANDLE",
+      "amount": 10
+     },
+     {
+      "id": "ID_2024_ITEM_CROWBAR"
+     },
+     {
+      "id": "ID_2024_ITEM_LANTERN_HOODED"
+     },
+     {
+      "id": "ID_2024_ITEM_OIL",
+      "amount": 7
+     },
+     {
+      "id": "ID_2024_ITEM_RATIONS",
+      "amount": 5
+     },
+     {
+      "id": "ID_2024_ITEM_ROPE"
+     },
+     {
+      "id": "ID_2024_ITEM_TINDERBOX"
+     },
+     {
+      "id": "ID_2024_ITEM_WATERSKIN"
+     }
+    ]
+   },
+   "data": {
+    "contents_text": "Backpack, Ball Bearings, Bell, 10 Candles, Crowbar, Hooded Lantern, 7 flasks of Oil, 5 days of Rations, Rope, Tinderbox, and Waterskin"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_PRIESTS_PACK",
+   "name": "Priest’s Pack",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Priest’s Pack contains the following items: Backpack, Blanket, Holy Water, Lamp, 7 days of Rations, Robe, and Tinderbox.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Equipment Packs"
+    },
+    {
+     "name": "cost",
+     "value": "33",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "29 lb.",
+     "attributes": {
+      "lb": "29"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ITEM_PRIESTS_PACK",
+    "kind": "equivalent"
+   },
+   "extract": {
+    "items": [
+     {
+      "id": "ID_2024_ITEM_BACKPACK"
+     },
+     {
+      "id": "ID_2024_ITEM_BLANKET"
+     },
+     {
+      "id": "ID_2024_ITEM_HOLY_WATER"
+     },
+     {
+      "id": "ID_2024_ITEM_LAMP"
+     },
+     {
+      "id": "ID_2024_ITEM_RATIONS",
+      "amount": 7
+     },
+     {
+      "id": "ID_2024_ITEM_ROBE"
+     },
+     {
+      "id": "ID_2024_ITEM_TINDERBOX"
+     }
+    ]
+   },
+   "data": {
+    "contents_text": "Backpack, Blanket, Holy Water, Lamp, 7 days of Rations, Robe, and Tinderbox"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_SCHOLARS_PACK",
+   "name": "Scholar’s Pack",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Scholar’s Pack contains the following items: Backpack, Book, Ink, Ink Pen, Lamp, 10 flasks of Oil, 10 sheets of Parchment, and Tinderbox.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Equipment Packs"
+    },
+    {
+     "name": "cost",
+     "value": "40",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "22 lb.",
+     "attributes": {
+      "lb": "22"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ITEM_SCHOLARS_PACK",
+    "kind": "equivalent"
+   },
+   "extract": {
+    "items": [
+     {
+      "id": "ID_2024_ITEM_BACKPACK"
+     },
+     {
+      "id": "ID_2024_ITEM_BOOK"
+     },
+     {
+      "id": "ID_2024_ITEM_INK"
+     },
+     {
+      "id": "ID_2024_ITEM_INK_PEN"
+     },
+     {
+      "id": "ID_2024_ITEM_LAMP"
+     },
+     {
+      "id": "ID_2024_ITEM_OIL",
+      "amount": 10
+     },
+     {
+      "id": "ID_2024_ITEM_PARCHMENT",
+      "amount": 10
+     },
+     {
+      "id": "ID_2024_ITEM_TINDERBOX"
+     }
+    ]
+   },
+   "data": {
+    "contents_text": "Backpack, Book, Ink, Ink Pen, Lamp, 10 flasks of Oil, 10 sheets of Parchment, and Tinderbox"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_DIPLOMATS_PACK",
+   "name": "Diplomat’s Pack",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Diplomat’s Pack contains the following items: Chest, Fine Clothes, Ink, 5 Ink Pens, Lamp, 2 Map or Scroll Cases, 4 flasks of Oil, 5 sheets of Paper, 5 sheets of Parchment, Perfume, and Tinderbox.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Equipment Packs"
+    },
+    {
+     "name": "cost",
+     "value": "39",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "39 lb.",
+     "attributes": {
+      "lb": "39"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ITEM_DIPLOMATS_PACK",
+    "kind": "equivalent"
+   },
+   "extract": {
+    "items": [
+     {
+      "id": "ID_2024_ITEM_CHEST"
+     },
+     {
+      "id": "ID_2024_ITEM_CLOTHES_FINE"
+     },
+     {
+      "id": "ID_2024_ITEM_INK"
+     },
+     {
+      "id": "ID_2024_ITEM_INK_PEN",
+      "amount": 5
+     },
+     {
+      "id": "ID_2024_ITEM_LAMP"
+     },
+     {
+      "id": "ID_2024_ITEM_CASE_MAP_OR_SCROLL",
+      "amount": 2
+     },
+     {
+      "id": "ID_2024_ITEM_OIL",
+      "amount": 4
+     },
+     {
+      "id": "ID_2024_ITEM_PAPER",
+      "amount": 5
+     },
+     {
+      "id": "ID_2024_ITEM_PARCHMENT",
+      "amount": 5
+     },
+     {
+      "id": "ID_2024_ITEM_PERFUME"
+     },
+     {
+      "id": "ID_2024_ITEM_TINDERBOX"
+     }
+    ]
+   },
+   "data": {
+    "contents_text": "Chest, Fine Clothes, Ink, 5 Ink Pens, Lamp, 2 Map or Scroll Cases, 4 flasks of Oil, 5 sheets of Paper, 5 sheets of Parchment, Perfume, and Tinderbox"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_DUNGEONEERS_PACK",
+   "name": "Dungeoneer’s Pack",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Dungeoneer’s Pack contains the following items: Backpack, Caltrops, Crowbar, 2 flasks of Oil, 10 days of Rations, Rope, Tinderbox, 10 Torches, and Waterskin.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Equipment Packs"
+    },
+    {
+     "name": "cost",
+     "value": "12",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "55 lb.",
+     "attributes": {
+      "lb": "55"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ITEM_DUNGEONEERS_PACK",
+    "kind": "equivalent"
+   },
+   "extract": {
+    "items": [
+     {
+      "id": "ID_2024_ITEM_BACKPACK"
+     },
+     {
+      "id": "ID_2024_ITEM_CALTROPS"
+     },
+     {
+      "id": "ID_2024_ITEM_CROWBAR"
+     },
+     {
+      "id": "ID_2024_ITEM_OIL",
+      "amount": 2
+     },
+     {
+      "id": "ID_2024_ITEM_RATIONS",
+      "amount": 10
+     },
+     {
+      "id": "ID_2024_ITEM_ROPE"
+     },
+     {
+      "id": "ID_2024_ITEM_TINDERBOX"
+     },
+     {
+      "id": "ID_2024_ITEM_TORCH",
+      "amount": 10
+     },
+     {
+      "id": "ID_2024_ITEM_WATERSKIN"
+     }
+    ]
+   },
+   "data": {
+    "contents_text": "Backpack, Caltrops, Crowbar, 2 flasks of Oil, 10      days of Rations, Rope, Tinderbox, 10 Torches, and Waterskin"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_ENTERTAINERS_PACK",
+   "name": "Entertainer’s Pack",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>An Entertainer’s Pack contains the following items: Backpack, Bedroll, Bell, Bullseye Lantern, 3 Cos-tumes, Mirror, 8 flasks of Oil, 9 days of Rations, Tinderbox, and Waterskin.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Equipment Packs"
+    },
+    {
+     "name": "cost",
+     "value": "40",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "58½ lb.",
+     "attributes": {
+      "lb": "58.5"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ITEM_ENTERTAINERS_PACK",
+    "kind": "equivalent"
+   },
+   "extract": {
+    "items": [
+     {
+      "id": "ID_2024_ITEM_BACKPACK"
+     },
+     {
+      "id": "ID_2024_ITEM_BEDROLL"
+     },
+     {
+      "id": "ID_2024_ITEM_BELL"
+     },
+     {
+      "id": "ID_2024_ITEM_LANTERN_BULLSEYE"
+     },
+     {
+      "id": "ID_2024_ITEM_COSTUME",
+      "amount": 3
+     },
+     {
+      "id": "ID_2024_ITEM_MIRROR"
+     },
+     {
+      "id": "ID_2024_ITEM_OIL",
+      "amount": 8
+     },
+     {
+      "id": "ID_2024_ITEM_RATIONS",
+      "amount": 9
+     },
+     {
+      "id": "ID_2024_ITEM_TINDERBOX"
+     },
+     {
+      "id": "ID_2024_ITEM_WATERSKIN"
+     }
+    ]
+   },
+   "data": {
+    "contents_text": "Backpack, Bedroll, Bell, Bullseye Lantern, 3 Costumes, Mirror, 8 flasks of Oil, 9 days of Rations, Tinderbox, and Waterskin"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_EXPLORERS_PACK",
+   "name": "Explorer’s Pack",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>An Explorer’s Pack contains the following items: Backpack, Bedroll, 2 flasks of Oil, 10 days of Rations, Rope, Tinderbox, 10 Torches, and Waterskin.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Equipment Packs"
+    },
+    {
+     "name": "cost",
+     "value": "10",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "55 lb.",
+     "attributes": {
+      "lb": "55"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ITEM_EXPLORERS_PACK",
+    "kind": "equivalent"
+   },
+   "extract": {
+    "items": [
+     {
+      "id": "ID_2024_ITEM_BACKPACK"
+     },
+     {
+      "id": "ID_2024_ITEM_BEDROLL"
+     },
+     {
+      "id": "ID_2024_ITEM_OIL",
+      "amount": 2
+     },
+     {
+      "id": "ID_2024_ITEM_RATIONS",
+      "amount": 10
+     },
+     {
+      "id": "ID_2024_ITEM_ROPE"
+     },
+     {
+      "id": "ID_2024_ITEM_TINDERBOX"
+     },
+     {
+      "id": "ID_2024_ITEM_TORCH",
+      "amount": 10
+     },
+     {
+      "id": "ID_2024_ITEM_WATERSKIN"
+     }
+    ]
+   },
+   "data": {
+    "contents_text": "Backpack, Bedroll, 2 flasks of Oil, 10 days of Rations, Rope, Tinderbox, 10 Torches, and Waterskin"
+   }
+  }
+ ]
+}

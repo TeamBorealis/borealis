@@ -1,0 +1,49 @@
+[package]
+name = "borealis-ai"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = []
+# LAN "AI host" server (desktop only; disabled at runtime unless the user enables it).
+host = [
+    "dep:axum", "dep:futures-util", "dep:getrandom", "dep:rcgen", "dep:rustls", "dep:tokio-rustls",
+    "dep:hyper", "dep:hyper-util", "dep:tower-http", "dep:tower-service",
+]
+# HTTP client for the LAN AI host (usable from iOS/Android builds).
+remote = ["dep:reqwest", "dep:futures-util", "dep:rustls"]
+
+[dependencies]
+borealis-content.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tokio = { workspace = true, features = ["time", "fs", "net", "rt-multi-thread", "io-util", "process", "sync", "macros"] }
+jsonschema = { version = "0.33", default-features = false }
+tempfile = "3"
+axum = { version = "0.8", optional = true, default-features = false, features = ["http1", "tokio", "json"] }
+futures-util = { version = "0.3", optional = true, default-features = false, features = ["std"] }
+sha2 = "0.10"
+getrandom = { version = "0.3", optional = true }
+reqwest = { version = "0.13", optional = true, default-features = false, features = ["json", "stream", "rustls"] }
+# LAN TLS with a pinned self-signed certificate; same aws-lc-rs provider as reqwest.
+rustls = { version = "0.23", optional = true, default-features = false, features = ["aws_lc_rs", "std"] }
+tokio-rustls = { version = "0.26", optional = true, default-features = false, features = ["aws_lc_rs"] }
+rcgen = { version = "0.14", optional = true, default-features = false, features = ["aws_lc_rs"] }
+hyper = { version = "1", optional = true, default-features = false, features = ["server", "http1"] }
+hyper-util = { version = "0.1", optional = true, default-features = false, features = ["tokio"] }
+tower-http = { version = "0.6", optional = true, default-features = false, features = ["timeout"] }
+tower-service = { version = "0.3", optional = true }
+image = { version = "0.25.6", default-features = false, features = ["png", "jpeg", "webp"] }
+lopdf = { version = "0.45", default-features = false }
+base64 = "0.23.1"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["time", "fs", "net", "rt-multi-thread", "io-util", "process", "sync", "macros"] }

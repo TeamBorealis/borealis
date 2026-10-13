@@ -1,0 +1,539 @@
+{
+  "format": "borealis-content/1",
+  "ruleset": "dnd2014",
+  "info": {
+    "name": "SRD 5.1 Trade Goods",
+    "description": "SRD 5.1 equipment and magic items. Structured into JSON from the System Reference Document 5.1 (CC-BY-4.0); text condensed/reformatted."
+  },
+  "elements": [
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_WHEAT_1_LB",
+      "name": "Wheat (1 lb.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "1",
+          "attributes": {
+            "currency": "cp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_FLOUR_1_LB",
+      "name": "Flour (1 lb.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "2",
+          "attributes": {
+            "currency": "cp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_CHICKEN",
+      "name": "Chicken",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "2",
+          "attributes": {
+            "currency": "cp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_SALT_1_LB",
+      "name": "Salt (1 lb.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "cp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_IRON_1_LB",
+      "name": "Iron (1 lb.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "1",
+          "attributes": {
+            "currency": "sp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_CANVAS_1_SQ_YD",
+      "name": "Canvas (1 sq. yd.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "1",
+          "attributes": {
+            "currency": "sp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_COPPER_1_LB",
+      "name": "Copper (1 lb.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "sp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_COTTON_CLOTH_1_SQ_YD",
+      "name": "Cotton Cloth (1 sq. yd.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "sp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_GINGER_1_LB",
+      "name": "Ginger (1 lb.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "1",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_GOAT",
+      "name": "Goat",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "1",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_CINNAMON_1_LB",
+      "name": "Cinnamon (1 lb.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "2",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_PEPPER_1_LB",
+      "name": "Pepper (1 lb.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "2",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_SHEEP",
+      "name": "Sheep",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "2",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_CLOVES_1_LB",
+      "name": "Cloves (1 lb.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "3",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_PIG",
+      "name": "Pig",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "3",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_SILVER_1_LB",
+      "name": "Silver (1 lb.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_LINEN_1_SQ_YD",
+      "name": "Linen (1 sq. yd.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_SILK_1_SQ_YD",
+      "name": "Silk (1 sq. yd.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "10",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_COW",
+      "name": "Cow",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "10",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_SAFFRON_1_LB",
+      "name": "Saffron (1 lb.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "15",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_OX",
+      "name": "Ox",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "15",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_GOLD_1_LB",
+      "name": "Gold (1 lb.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "50",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TRADE_GOOD_PLATINUM_1_LB",
+      "name": "Platinum (1 lb.)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Trade Goods"
+        },
+        {
+          "name": "cost",
+          "value": "500",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "stackable",
+          "value": "true"
+        }
+      ]
+    }
+  ]
+}

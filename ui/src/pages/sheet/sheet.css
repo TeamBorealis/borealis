@@ -1,0 +1,33 @@
+/* CHARACTER SHEET tab: controls column left, dark pane with the generated sheet on white pages right. */
+.v4-sheet { display: grid; grid-template-columns: minmax(300px, 586px) minmax(0, 1fr); width: 100%; height: 100%; min-height: 0; }
+.v4-sheet-left { padding: 10px 25px 30px 50px; overflow: auto; min-width: 0; }
+.v4-sheet-left h2 { margin: 0 0 1px; font-size: var(--fs-lg); font-weight: 600; text-transform: uppercase; line-height: 1.25; color: var(--text-primary-header); }
+/* Classic builder heading ink is y 136-144; nudge the heading onto it without moving the lead text. */
+.v4-sheet-left > h2:first-child { position: relative; top: 1px; }
+.v4-sheet-left p.lead { margin: 0; font-size: 11px; font-weight: 400; color: var(--text-muted); line-height: 14.5px; }
+.v4-sheet-link { display: flex; justify-content: flex-end; margin: 12px 0 29px; }
+.v4-sheet-link a { display: inline-flex; align-items: center; gap: 6px; margin-right: 3px; font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase; color: var(--text-body); text-decoration: none; }
+.v4-sheet-link a:hover { color: var(--gold); }
+.v4-sheet-link .icon { width: 12px; height: 12px; }
+.v4-sheet-btns { display: flex; flex-wrap: wrap; gap: 11px; margin: 0 0 27px; align-items: center; }
+.sh-btn { display: inline-flex; align-items: center; gap: 6px; height: 26px; min-height: 26px; padding: 0 4px 0 4px; box-sizing: border-box; white-space: nowrap; background: #242425; border: 0; border-radius: 0; color: var(--text-body); font-size: 11px; font-weight: 600; cursor: pointer; }
+.sh-btn:hover:not(:disabled) { background: #333334; }
+.sh-btn:disabled { color: var(--gray-2); cursor: default; }
+/* Classic builder: glyph ink 57-69 and label ink 78; the 16 px box keeps the ink width, the 6 px gap places the label. */
+.sh-btn .icon { width: 16px; height: 16px; flex: none; }
+.v4-sheet-sec { margin-top: 0; }
+.v4-sheet-sec h2 { margin-top: 4px; }
+.v4-sheet-sec .mg-f { margin-top: 17px; }
+.v4-sheet-sec .mg-f .textarea { height: 42px; min-height: 42px; resize: none; }
+.v4-sheet-opts { display: grid; gap: 2px; margin: 8px 0 0; }
+.v4-sheet-opts .check { padding: 2px 0; }
+.v4-sheet-pane { background: #131313; min-width: 0; padding: 0 5px 0 10px; display: flex; flex-direction: column; border-left: 2px solid #1a1c1d; }
+.v4-sheet-pane iframe { flex: 1; width: 100%; min-height: 0; border: 0; background: #131313; margin: 10px 0 0; color-scheme: dark; }
+.v4-sheet-empty { margin: auto; max-width: 280px; text-align: center; color: var(--text-secondary); font-size: var(--fs-md); font-weight: 600; line-height: 20px; }
+.v4-sheet-empty.err { color: var(--aur-danger-bright, var(--aur-danger)); }
+@media (max-width: 899px) {
+  .v4-sheet { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .v4-sheet-left { padding: 15px 16px; overflow: visible; }
+  .v4-sheet-pane { padding: 0 8px; min-height: 70dvh; border-left: 0; }
+  .v4-sheet-pane iframe { min-height: 65dvh; }
+}

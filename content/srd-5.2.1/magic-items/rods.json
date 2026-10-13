@@ -1,0 +1,299 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: magic-items/rods",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_MAGIC_ITEM_IMMOVABLE_ROD",
+   "name": "Immovable Rod",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This iron rod has a button on one end. You can take a Utilize action to press the button, which causes the rod to become magically fixed in place. Until you or another creature takes a Utilize action to push the button again, the rod doesn’t move, even if it defies gravity. The rod can hold up to 8,000 pounds of weight. More weight causes the rod to deactivate and fall. A creature can take a Utilize action to make a DC 30 Strength (Athletics) check, moving the fixed rod up to 10 feet on a successful check.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rods"
+    },
+    {
+     "name": "type",
+     "value": "Rod"
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    }
+   ],
+   "data": {
+    "item_type": "Rod",
+    "item_subtype": null,
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Rod, Uncommon"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_IMMOVABLE_ROD",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_ROD_OF_ABSORPTION",
+   "name": "Rod of Absorption",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While holding this rod, you can take a Reaction to absorb a spell that is targeting only you and doesn’t create an area of effect. The absorbed spell’s effect is canceled, and the spell’s energy—not the spell itself—is stored in the rod. The energy has the same level as the spell when it was cast. A canceled spell dissipates with no effect, and any resources used to cast it are wasted. The rod can absorb and store up to 50 levels of energy over the course of its existence. Once the rod absorbs 50 levels of energy, it can’t absorb more. If you are targeted by a spell that the rod can’t store, the rod has no effect on that spell.</p>\n<p>When you become attuned to the rod, you know how many levels of energy the rod has absorbed over the course of its existence and how many levels of spell energy it currently has stored.</p>\n<p>If you are a spellcaster holding the rod, you can convert energy stored in it into spell slots to cast spells you have prepared or know. You can create spell slots only of a level equal to or lower than your own spell slots, up to a maximum of level 5. You use the stored levels in place of your slots but otherwise cast the spell as normal. For example, you can use 3 levels stored in the rod as a level 3 spell slot.</p>\n<p>A newly found rod typically has 1d10 levels of spell energy stored in it. A rod that can no longer absorb spell energy and has no energy remaining becomes nonmagical.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rods"
+    },
+    {
+     "name": "type",
+     "value": "Rod"
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Rod",
+    "item_subtype": null,
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Rod, Very Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_ROD_OF_ABSORPTION",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_ROD_OF_ALERTNESS",
+   "name": "Rod of Alertness",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This rod has the following properties.</p>\n<p><b>Alertness.</b> While holding the rod, you have Advantage on Wisdom (Perception) checks and on Initiative rolls.</p>\n<p><b>Spells.</b> While holding the rod, you can cast the following spells from it:</p>\n<ul><li>Detect Evil and Good</li><li>Detect Magic</li><li>Detect Poison and Disease</li><li>See Invisibility Protective Aura. As a Magic action, you can plant the haft end of the rod in the ground, whereupon the rod’s head sheds Bright Light in a 60-foot radius and Dim Light for an additional 60 feet. While in that Bright Light, you and your allies gain a +1 bonus to Armor Class and saving throws and can sense the location of any Invisible creature that is also in the Bright Light.</li></ul>\n<p>The rod’s head stops glowing and the effect ends after 10 minutes or when a creature takes a Magic action to pull the rod from the ground. Once used, this property can’t be used again until the next dawn.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rods"
+    },
+    {
+     "name": "type",
+     "value": "Rod"
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Rod",
+    "item_subtype": null,
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Rod, Very Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_ROD_OF_ALERTNESS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_ROD_OF_LORDLY_MIGHT",
+   "name": "Rod of Lordly Might",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This rod has a flanged head, and it functions as a magic Mace that grants a +3 bonus to attack rolls and damage rolls made with it. The rod has properties associated with six different buttons that are set in a row along the haft. It has three other properties as well, detailed below.</p>\n<p><b>Buttons.</b> You can press one of the following buttons as a Bonus Action; a button’s effect lasts until you push a different button or until you push the same button again, which causes the rod to revert to its normal form:</p>\n<p>Button 1. A fiery blade sprouts from the end opposite the rod’s flanged head. The flames shed Bright Light in a 40-foot radius and Dim Light for an additional 40 feet, and the blade functions as a magic Longsword or Shortsword (your choice) that deals an extra 2d6 Fire damage on a hit.</p>\n<p>Button 2. The rod’s flanged head folds down and two crescent-shaped blades spring out, transforming the rod into a magic Battleaxe that grants a +3 bonus to attack rolls and damage rolls made with it.</p>\n<p>Button 3. The rod’s flanged head folds down, a spear point springs from the rod’s tip, and the rod’s handle lengthens into a 6-foot haft, transforming the rod into a magic Spear that grants a +3 bonus to attack rolls and damage rolls made with it.</p>\n<p>Button 4. The rod transforms into a climbing pole up to 50 feet long (you specify the length), though the rod’s buttons remain within your reach. In surfaces as hard as granite, a spike at the bottom and three hooks at the top anchor the pole. Horizontal bars 3 inches long fold out from the sides, 1 foot apart, forming a ladder. The pole can bear up to 4,000 pounds. More weight or lack of solid anchoring causes the rod to revert to its normal form.</p>\n<p>Button 5. The rod transforms into a handheld battering ram and grants its user a +10 bonus to Strength (Athletics) checks made to break through doors, barricades, and other barriers.</p>\n<p>Button 6. The rod assumes or remains in its normal form and indicates magnetic north. (Nothing happens if this function of the rod is used in a location that has no magnetic north.) The rod also gives you knowledge of your approximate depth beneath the ground or your height above it.</p>\n<p><b>Drain Life.</b> When you hit a creature with a melee attack using the rod, you can force the target to make a DC 17 Constitution saving throw. On a failed save, the target takes an extra 4d6 Necrotic damage, and you regain a number of Hit Points equal to half that Necrotic damage. Once used, this property can’t be used again until the next dawn.</p>\n<p><b>Paralyze.</b> When you hit a creature with a melee attack using the rod, you can force the target to make a DC 17 Constitution saving throw. On a failed save, the target has the Paralyzed condition for 1 minute. The target repeats the save at the end of each of its turns, ending the effect on a success. Once used, this property can’t be used again until the next dawn.</p>\n<p><b>Terrify.</b> While holding the rod, you can take a Magic action to force each creature you can see within 30 feet of yourself to make a DC 17 Wisdom saving throw. On a failed save, a target has the Frightened condition for 1 minute. A Frightened target repeats the save at the end of each of its turns, ending the effect on itself on a success. Once used, this property can’t be used again until the next dawn.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rods"
+    },
+    {
+     "name": "type",
+     "value": "Rod"
+    },
+    {
+     "name": "rarity",
+     "value": "Legendary"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Rod",
+    "item_subtype": null,
+    "rarity_text": "Legendary",
+    "rarities": [
+     "Legendary"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Rod, Legendary (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_ROD_OF_LORDLY_MIGHT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_ROD_OF_RESURRECTION",
+   "name": "Rod of Resurrection",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>The rod has 5 charges. While you hold it, you can cast one of the following spells from it: Heal (expends 1 charge) or Resurrection (expends 5 charges).</p>\n<p>The rod regains 1 expended charge daily at dawn.</p>\n<p>If you expend the last charge, roll 1d20. On a 1, the rod disappears in a harmless burst of radiance.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rods"
+    },
+    {
+     "name": "type",
+     "value": "Rod"
+    },
+    {
+     "name": "rarity",
+     "value": "Legendary"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Rod",
+    "item_subtype": null,
+    "rarity_text": "Legendary",
+    "rarities": [
+     "Legendary"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": 5,
+    "raw_type_line": "Rod, Legendary (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_ROD_OF_RESURRECTION",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_ROD_OF_RULERSHIP",
+   "name": "Rod of Rulership",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can take a Magic action to present the rod and command obedience from each creature of your choice that you can see within 120 feet of yourself. Each target must succeed on a DC 15 Wisdom saving throw or have the Charmed condition for 8 hours. While Charmed in this way, the creature re-gards you as its trusted leader. If harmed by you or your allies or commanded to do something contrary to its nature, a target ceases to be Charmed in this way. Once used, this property can’t be used again until the next dawn.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rods"
+    },
+    {
+     "name": "type",
+     "value": "Rod"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Rod",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Rod, Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_ROD_OF_RULERSHIP",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_ROD_OF_SECURITY",
+   "name": "Rod of Security",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While holding this rod, you can take a Magic action to activate it. The rod then instantly transports you and up to 199 other willing creatures you can see to a demiplane. You choose the form the demiplane takes. It could be a tranquil garden, a cheery tavern, an immense palace, a tropical island, a fantastic carnival, or whatever else you can imagine. Regardless of its nature, the demiplane contains enough water and food to sustain its visitors, and the demiplane’s environment can’t harm its occupants. Everything else that can be interacted with there can exist only there. For example, a flower picked from a garden there disappears if it is taken outside the demiplane.</p>\n<p>For each hour spent in the demiplane, a visitor regains Hit Points as if it had spent 1 Hit Point Die. Also, creatures don’t age while there, although time passes normally. Visitors can remain there for up to 200 days divided by the number of creatures present (round down).</p>\n<p>When the time runs out or you take a Magic action to end the effect, all visitors reappear in the location they occupied when you activated the rod or an unoccupied space nearest that location. Once used, this property can’t be used again until 10 days have passed.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rods"
+    },
+    {
+     "name": "type",
+     "value": "Rod"
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Rod",
+    "item_subtype": null,
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Rod, Very Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_ROD_OF_SECURITY",
+    "kind": "equivalent"
+   }
+  }
+ ]
+}

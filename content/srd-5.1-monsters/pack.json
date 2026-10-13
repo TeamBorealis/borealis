@@ -1,0 +1,31 @@
+{
+  "format": "borealis-pack/1",
+  "id": "srd-5.1-monsters",
+  "name": "SRD 5.1 Monsters",
+  "version": "1.0.0",
+  "origin": "core",
+  "rulesets": [
+    "dnd2014"
+  ],
+  "license": "CC-BY-4.0",
+  "attribution": "This work includes material taken from the System Reference Document 5.1 (\"SRD 5.1\") by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode. Modified: the SRD stat blocks were structured into typed JSON data (sizes, types, numbers and attacks were parsed from the printed text; hyphenation and line breaks were normalised).",
+  "description": "Every monster and nonplayer character stat block of the SRD 5.1 as typed Monster elements (ruleset dnd2014).",
+  "files": [
+    {
+      "path": "source.json",
+      "kind": "content"
+    },
+    {
+      "path": "monsters.json",
+      "kind": "content"
+    },
+    {
+      "path": "creatures.json",
+      "kind": "content"
+    },
+    {
+      "path": "npcs.json",
+      "kind": "content"
+    }
+  ]
+}

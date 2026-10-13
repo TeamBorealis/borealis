@@ -1,0 +1,121 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: species/human",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SPECIES_HUMAN",
+   "name": "Human",
+   "type": "Species",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Creature type: Humanoid. Size: Medium (about 4–7 feet tall) or Small (about 2–4 feet tall), chosen when you select this species. Speed: 30 feet.</p>",
+   "setters": [
+    {
+     "name": "short",
+     "value": "Humanoid, Medium, Speed 30 ft."
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select_size",
+     "name": "Size",
+     "options": [
+      "Small",
+      "Medium"
+     ]
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed",
+     "value": "30",
+     "bonus": "base"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_HUMAN_RESOURCEFUL",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_HUMAN_SKILLFUL",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_HUMAN_VERSATILE",
+     "type": "Racial Trait"
+    }
+   ],
+   "data": {
+    "creature_type": "Humanoid",
+    "size": [
+     "Small",
+     "Medium"
+    ],
+    "speed": 30,
+    "traits": [
+     "ID_2024_TRAIT_HUMAN_RESOURCEFUL",
+     "ID_2024_TRAIT_HUMAN_SKILLFUL",
+     "ID_2024_TRAIT_HUMAN_VERSATILE"
+    ]
+   },
+   "maps_to": {
+    "dnd2014": "ID_RACE_HUMAN",
+    "kind": "approximate"
+   }
+  },
+  {
+   "id": "ID_2024_TRAIT_HUMAN_RESOURCEFUL",
+   "name": "Resourceful",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain Heroic Inspiration whenever you finish a Long Rest.</p>",
+   "rules": [
+    {
+     "kind": "heroic_inspiration",
+     "trigger": "long_rest"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_HUMAN_SKILLFUL",
+   "name": "Skillful",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain proficiency in one skill of your choice.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Proficiency",
+     "name": "Skillful",
+     "supports": "Skill"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_HUMAN_VERSATILE",
+   "name": "Versatile",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain an Origin feat of your choice (see “Feats”). Skilled is recommended.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "name": "Versatile",
+     "category": "Origin",
+     "default": "ID_2024_FEAT_SKILLED"
+    }
+   ]
+  }
+ ]
+}

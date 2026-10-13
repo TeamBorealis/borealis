@@ -1,0 +1,196 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: backgrounds/equipment-packages",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_EQUIPMENT_PACKAGE_BACKGROUND_ACOLYTE",
+   "name": "Starting Equipment (Acolyte)",
+   "type": "Equipment Package",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "data": {
+    "owner": "ID_2024_BACKGROUND_ACOLYTE",
+    "options": [
+     {
+      "id": "A",
+      "items": [
+       {
+        "id": "ID_2024_TOOL_CALLIGRAPHERS_SUPPLIES"
+       },
+       {
+        "id": "ID_2024_ITEM_BOOK",
+        "note": "prayers"
+       },
+       {
+        "id": "ID_2024_ITEM_HOLY_SYMBOL"
+       },
+       {
+        "id": "ID_2024_ITEM_PARCHMENT",
+        "note": "10 sheets"
+       },
+       {
+        "id": "ID_2024_ITEM_ROBE"
+       }
+      ],
+      "coins": {
+       "gp": 8
+      }
+     },
+     {
+      "id": "B",
+      "items": [],
+      "coins": {
+       "gp": 50
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "ID_2024_EQUIPMENT_PACKAGE_BACKGROUND_CRIMINAL",
+   "name": "Starting Equipment (Criminal)",
+   "type": "Equipment Package",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "data": {
+    "owner": "ID_2024_BACKGROUND_CRIMINAL",
+    "options": [
+     {
+      "id": "A",
+      "items": [
+       {
+        "qty": 2,
+        "id": "ID_2024_WEAPON_DAGGER"
+       },
+       {
+        "id": "ID_2024_TOOL_THIEVES_TOOLS"
+       },
+       {
+        "id": "ID_2024_ITEM_CROWBAR"
+       },
+       {
+        "qty": 2,
+        "id": "ID_2024_ITEM_POUCH"
+       },
+       {
+        "id": "ID_2024_ITEM_CLOTHES_TRAVELERS"
+       }
+      ],
+      "coins": {
+       "gp": 16
+      }
+     },
+     {
+      "id": "B",
+      "items": [],
+      "coins": {
+       "gp": 50
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "ID_2024_EQUIPMENT_PACKAGE_BACKGROUND_SAGE",
+   "name": "Starting Equipment (Sage)",
+   "type": "Equipment Package",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "data": {
+    "owner": "ID_2024_BACKGROUND_SAGE",
+    "options": [
+     {
+      "id": "A",
+      "items": [
+       {
+        "id": "ID_2024_WEAPON_QUARTERSTAFF"
+       },
+       {
+        "id": "ID_2024_TOOL_CALLIGRAPHERS_SUPPLIES"
+       },
+       {
+        "id": "ID_2024_ITEM_BOOK",
+        "note": "history"
+       },
+       {
+        "id": "ID_2024_ITEM_PARCHMENT",
+        "note": "8 sheets"
+       },
+       {
+        "id": "ID_2024_ITEM_ROBE"
+       }
+      ],
+      "coins": {
+       "gp": 8
+      }
+     },
+     {
+      "id": "B",
+      "items": [],
+      "coins": {
+       "gp": 50
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "ID_2024_EQUIPMENT_PACKAGE_BACKGROUND_SOLDIER",
+   "name": "Starting Equipment (Soldier)",
+   "type": "Equipment Package",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "data": {
+    "owner": "ID_2024_BACKGROUND_SOLDIER",
+    "options": [
+     {
+      "id": "A",
+      "items": [
+       {
+        "id": "ID_2024_WEAPON_SPEAR"
+       },
+       {
+        "id": "ID_2024_WEAPON_SHORTBOW"
+       },
+       {
+        "qty": 20,
+        "id": "ID_2024_ITEM_AMMUNITION_ARROWS"
+       },
+       {
+        "same_as": "background tool proficiency",
+        "id": "ID_2024_TOOL_GAMING_SET",
+        "note": "same as above"
+       },
+       {
+        "id": "ID_2024_ITEM_HEALERS_KIT"
+       },
+       {
+        "id": "ID_2024_ITEM_QUIVER"
+       },
+       {
+        "id": "ID_2024_ITEM_CLOTHES_TRAVELERS"
+       }
+      ],
+      "coins": {
+       "gp": 14
+      }
+     },
+     {
+      "id": "B",
+      "items": [],
+      "coins": {
+       "gp": 50
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

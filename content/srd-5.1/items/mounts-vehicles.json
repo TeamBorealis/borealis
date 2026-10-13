@@ -1,0 +1,708 @@
+{
+  "format": "borealis-content/1",
+  "ruleset": "dnd2014",
+  "info": {
+    "name": "SRD 5.1 Mounts, Tack and Vehicles",
+    "description": "SRD 5.1 equipment and magic items. Structured into JSON from the System Reference Document 5.1 (CC-BY-4.0); text condensed/reformatted."
+  },
+  "elements": [
+    {
+      "id": "ID_WOTC_PHB_ITEM_MOUNT_CAMEL",
+      "name": "Camel",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Mounts and Other Animals"
+        },
+        {
+          "name": "cost",
+          "value": "50",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "speed",
+          "value": "50 ft."
+        },
+        {
+          "name": "capacity",
+          "value": "480 lb."
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_MOUNT_DONKEY_OR_MULE",
+      "name": "Donkey or Mule",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Mounts and Other Animals"
+        },
+        {
+          "name": "cost",
+          "value": "8",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "speed",
+          "value": "40 ft."
+        },
+        {
+          "name": "capacity",
+          "value": "420 lb."
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_MOUNT_ELEPHANT",
+      "name": "Elephant",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Mounts and Other Animals"
+        },
+        {
+          "name": "cost",
+          "value": "200",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "speed",
+          "value": "40 ft."
+        },
+        {
+          "name": "capacity",
+          "value": "1,320 lb."
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_MOUNT_HORSE_DRAFT",
+      "name": "Horse, Draft",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Mounts and Other Animals"
+        },
+        {
+          "name": "cost",
+          "value": "50",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "speed",
+          "value": "40 ft."
+        },
+        {
+          "name": "capacity",
+          "value": "540 lb."
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_MOUNT_HORSE_RIDING",
+      "name": "Horse, Riding",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Mounts and Other Animals"
+        },
+        {
+          "name": "cost",
+          "value": "75",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "speed",
+          "value": "60 ft."
+        },
+        {
+          "name": "capacity",
+          "value": "480 lb."
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_MOUNT_MASTIFF",
+      "name": "Mastiff",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Mounts and Other Animals"
+        },
+        {
+          "name": "cost",
+          "value": "25",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "speed",
+          "value": "40 ft."
+        },
+        {
+          "name": "capacity",
+          "value": "195 lb."
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_MOUNT_PONY",
+      "name": "Pony",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Mounts and Other Animals"
+        },
+        {
+          "name": "cost",
+          "value": "30",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "speed",
+          "value": "40 ft."
+        },
+        {
+          "name": "capacity",
+          "value": "225 lb."
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_MOUNT_WARHORSE",
+      "name": "Warhorse",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Mounts and Other Animals"
+        },
+        {
+          "name": "cost",
+          "value": "400",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "speed",
+          "value": "60 ft."
+        },
+        {
+          "name": "capacity",
+          "value": "540 lb."
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TACK_BARDING",
+      "name": "Barding",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "description": "<p>Barding is armor designed to protect an animal’s head, neck, chest, and body. Any type of armor shown in the Armor table can be purchased as barding. The cost is four times the equivalent armor made for humanoids, and it weighs twice as much.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tack and Harness"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TACK_BIT_AND_BRIDLE",
+      "name": "Bit and Bridle",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tack and Harness"
+        },
+        {
+          "name": "cost",
+          "value": "2",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "1 lb.",
+          "attributes": {
+            "lb": "1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_VEHICLE_CARRIAGE",
+      "name": "Carriage",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Drawn Vehicles"
+        },
+        {
+          "name": "cost",
+          "value": "100",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "600 lb.",
+          "attributes": {
+            "lb": "600"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_VEHICLE_CART",
+      "name": "Cart",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Drawn Vehicles"
+        },
+        {
+          "name": "cost",
+          "value": "15",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "200 lb.",
+          "attributes": {
+            "lb": "200"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_VEHICLE_CHARIOT",
+      "name": "Chariot",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Drawn Vehicles"
+        },
+        {
+          "name": "cost",
+          "value": "250",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "100 lb.",
+          "attributes": {
+            "lb": "100"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TACK_FEED_PER_DAY",
+      "name": "Feed (per day)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tack and Harness"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "cp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "10 lb.",
+          "attributes": {
+            "lb": "10"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TACK_SADDLE_EXOTIC",
+      "name": "Saddle, Exotic",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tack and Harness"
+        },
+        {
+          "name": "cost",
+          "value": "60",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "40 lb.",
+          "attributes": {
+            "lb": "40"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TACK_SADDLE_MILITARY",
+      "name": "Saddle, Military",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tack and Harness"
+        },
+        {
+          "name": "cost",
+          "value": "20",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "30 lb.",
+          "attributes": {
+            "lb": "30"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TACK_SADDLE_PACK",
+      "name": "Saddle, Pack",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tack and Harness"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "15 lb.",
+          "attributes": {
+            "lb": "15"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TACK_SADDLE_RIDING",
+      "name": "Saddle, Riding",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tack and Harness"
+        },
+        {
+          "name": "cost",
+          "value": "10",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "25 lb.",
+          "attributes": {
+            "lb": "25"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TACK_SADDLEBAGS",
+      "name": "Saddlebags",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tack and Harness"
+        },
+        {
+          "name": "cost",
+          "value": "4",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "8 lb.",
+          "attributes": {
+            "lb": "8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_VEHICLE_SLED",
+      "name": "Sled",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Drawn Vehicles"
+        },
+        {
+          "name": "cost",
+          "value": "20",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "300 lb.",
+          "attributes": {
+            "lb": "300"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TACK_STABLING_PER_DAY",
+      "name": "Stabling (per day)",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tack and Harness"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "sp"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_VEHICLE_WAGON",
+      "name": "Wagon",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Drawn Vehicles"
+        },
+        {
+          "name": "cost",
+          "value": "35",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "400 lb.",
+          "attributes": {
+            "lb": "400"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_VEHICLE_GALLEY",
+      "name": "Galley",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Waterborne Vehicles"
+        },
+        {
+          "name": "cost",
+          "value": "30000",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "speed",
+          "value": "4 mph"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_VEHICLE_KEELBOAT",
+      "name": "Keelboat",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Waterborne Vehicles"
+        },
+        {
+          "name": "cost",
+          "value": "3000",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "speed",
+          "value": "1 mph"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_VEHICLE_LONGSHIP",
+      "name": "Longship",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Waterborne Vehicles"
+        },
+        {
+          "name": "cost",
+          "value": "10000",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "speed",
+          "value": "3 mph"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_VEHICLE_ROWBOAT",
+      "name": "Rowboat",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Waterborne Vehicles"
+        },
+        {
+          "name": "cost",
+          "value": "50",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "speed",
+          "value": "1½ mph"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_VEHICLE_SAILING_SHIP",
+      "name": "Sailing Ship",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Waterborne Vehicles"
+        },
+        {
+          "name": "cost",
+          "value": "10000",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "speed",
+          "value": "2 mph"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_VEHICLE_WARSHIP",
+      "name": "Warship",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Waterborne Vehicles"
+        },
+        {
+          "name": "cost",
+          "value": "25000",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "speed",
+          "value": "2½ mph"
+        }
+      ]
+    }
+  ]
+}

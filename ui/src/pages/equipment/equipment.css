@@ -1,0 +1,130 @@
+/* Equipment tab: classic builder grid rows [* | Auto | 200 (min 160) | Auto]; the inventory fills the bottom. */
+.ap-left:has(> .eq-layout) { padding-top: 18px; padding-bottom: 5px; gap: 0; }
+.eq-layout { flex: 1 1 auto; display: grid; grid-template-columns: 170px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto minmax(160px, 230px); column-gap: 11px; margin-right: -2px; min-height: 0; }
+.eq-cats { border: 1px solid var(--aur-line, #252d31); display: flex; flex-direction: column; min-height: 0; background: var(--content-bg, #161616); }
+.eq-cats .ap-band { border-width: 0; }
+.eq-cats-sub { background: #283237; color: var(--text); font-size: 9px; font-weight: 600; text-transform: uppercase; padding: 3px 5px 4px; line-height: 1; }
+.eq-cats ul { list-style: none; margin: 0; padding: 0; overflow-y: scroll; flex: 1 1 0; min-height: 0; }
+.eq-cats li button { display: block; width: 100%; text-align: left; background: transparent; border: 0; border-radius: 0; padding: 0 5px; height: 21px; min-height: 21px; font-size: var(--fs-md); color: var(--text-body); cursor: pointer; white-space: nowrap; }
+.eq-cats li button:hover { background: #20282c; }
+.eq-cats li button[aria-current="true"] { background: #272f33; color: var(--text); }
+.eq-cats-narrow { display: none; }
+.eq-items { min-width: 0; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--aur-line, #252d31); }
+.eq-items .ap-band { border-width: 0; }
+.eq-items .ap-stats { gap: 4px 6px; }
+.eq-items .ap-stats b { margin-left: 4px; }
+.eq-scroll { flex: 1 1 0; min-height: 0; border: 0; max-height: none; overflow: auto; }
+.eq-grid th { background: #283237; font-size: 9px; padding: 3px 5px 4px; text-align: center; }
+.eq-grid td { height: 21px; border-bottom: 1px solid #141414; padding: 0 5px; font-size: 12px; color: #f7f7f7; }
+.eq-grid .ap-name { font-size: 12px; font-style: normal; font-weight: 400; color: #f7f7f7; }
+.eq-grid.eq-ital .ap-name { font-style: italic; font-weight: 600; color: #f7f7f7; }
+.eq-grid th.k-price, .eq-grid td.k-price { width: 80px; }
+.eq-grid th.k-weight, .eq-grid td.k-weight { width: 90px; }
+.eq-cats .ap-band h2, .eq-items .ap-band h2, .eq-grid th, .eq-cats-sub { color: #fff; }
+.eq-cats .ap-band h2, .eq-items .ap-band h2, .eq-inv-box .ap-band h2 { font-size: 12px; }
+.eq-cats .ap-band h2 { margin-left: -3px; }
+.eq-items .ap-band h2 { margin-left: -5px; }
+.eq-inv-box .ap-band h2 { margin-left: -3px; }
+.eq-grid .al-c { text-align: center; }
+.eq-grid .al-r { text-align: right; }
+.eq-grid .al-l { text-align: left; }
+.eq-grid td.eq-name { min-width: 90px; }
+.eq-grid:not(.eq-invgrid) th:first-child { width: 255px; }
+.eq-grid:not(.eq-ital) th.k-weight, .eq-grid:not(.eq-ital) td.k-weight { padding-left: 20px; }
+.eq-grid th.k-source, .eq-grid td.k-source { padding-right: 1px; }
+.eq-grid tbody tr.sel td { background: #272f33; }
+.eq-tools { position: relative; grid-column: 1 / -1; display: flex; align-items: center; gap: 0; margin: 5px 0 21px; height: 24px; }
+.eq-cmds { display: flex; width: 170px; gap: 5px; flex: none; }
+.eq-cmd { display: flex; flex: 1 1 0; height: 24px; background: #161616; }
+.eq-cmd-btn { flex: 1 1 auto; background: #242425; border: 0; border-radius: 2px 0 0 2px; color: var(--gray-6); font-size: 10px; font-weight: 600; text-transform: uppercase; height: 24px; min-height: 24px; padding: 0; cursor: pointer; }
+.eq-cmd-btn:hover:not(:disabled) { color: #fff; background: #2d2d2e; }
+.eq-cmd-btn:disabled { color: var(--gray-3); cursor: default; }
+.eq-qtybox { width: 19px; flex: none; background: #161616; border: 1px solid #242425; border-left-width: 0; border-radius: 0; color: #fff; text-align: center; font-size: 12px; padding: 0; height: 26px; min-height: 26px; box-sizing: border-box; height: 24px; min-height: 24px; }
+.eq-filter-tile { flex: none; margin-left: 10px; width: 26px; height: 24px; min-height: 24px; padding: 0; border: 0; border-radius: 0; background: #a5a5a5; color: #262626; display: inline-grid; place-content: center; cursor: pointer; }
+.eq-filter-tile[aria-pressed="false"] { background: #3a3a3a; color: #909090; }
+.eq-filter { flex: 1 1 auto; margin-left: 5px; height: 24px; display: flex; align-items: center; background: #161616; border: 1px solid #242424; }
+.eq-filter input { flex: 1; min-width: 0; height: 22px; min-height: 0; border: 0; background: transparent; padding: 0 6px; color: var(--text); font-size: var(--fs-md); }
+.eq-filter input:focus { outline: none; }
+.eq-filter button { background: transparent; border: 0; width: 22px; height: 22px; min-height: 0; padding: 0; color: #8a8a8a; cursor: pointer; display: grid; place-content: center; }
+.eq-filter button:hover { color: #fff; }
+.eq-source { flex: none; width: 149px; margin-left: 11px; }
+.eq-tools .eq-source select, .eq-tools .eq-source .aur-combo select { color: #f9f9f9; height: 24px; min-height: 24px; }
+.eq-tools .eq-coins { height: 24px; min-height: 24px; }
+.eq-coins { flex: none; margin-left: 11px; width: 155px; height: 24px; white-space: nowrap; min-height: 24px; padding: 0 6px; background: #242425; border: 0; border-radius: 2px; font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--gray-6); }
+.eq-glyph { width: 14px; height: 14px; fill: currentColor; flex: none; }
+.eq-inv { grid-column: 1 / -1; display: flex; flex-direction: column; min-height: 0; }
+.eq-inv-box { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--aur-line, #252d31); }
+.eq-inv-box .ap-band { border-width: 0; }
+.eq-inv-scroll { flex: 1 1 0; min-height: 0; border: 0; max-height: none; overflow: auto; }
+.eq-stat-rest { color: var(--gray-6); margin-left: 4px; text-transform: none; }
+.eq-invgrid th.eq-ic, .eq-invgrid td.eq-ic { width: 20px; padding: 0 2px; text-align: center; }
+.eq-invgrid th.gold { color: var(--gold); }
+.eq-invgrid th.gold .eq-glyph { width: 12px; height: 12px; vertical-align: middle; }
+.eq-invgrid th.eq-ic + th.eq-ic, .eq-invgrid td.eq-ic + td.eq-ic { width: 22px; padding: 0 2px 0 4px; }
+.eq-invgrid th:nth-child(3) { padding-left: 7px; }
+.eq-invgrid th.eq-loc { text-align: center; width: 160px; padding-right: 31px; }
+.eq-invgrid td.eq-slot { padding-right: 31px; }
+.eq-invgrid th.eq-loc .eq-glyph { width: 11px; height: 11px; vertical-align: -1px; margin-right: 0; }
+.eq-invgrid td.eq-slot { text-align: center; font-weight: 600; font-style: italic; color: var(--text); }
+.eq-invgrid td.eq-invname { width: 100%; white-space: normal; }
+.eq-invgrid td.eq-invname .ap-name { font-style: normal; font-weight: 400; color: #f7f7f7; margin-left: 2px; }
+.eq-invgrid tr.on td.eq-invname .ap-name { font-weight: 700; color: var(--text); }
+.eq-invgrid tbody tr.sel td { background: #22282b; }
+.eq-invgrid tbody tr:hover td { background: #1c2124; }
+.eq-eqbtn { background: transparent; border: 0; padding: 0; min-height: 0; height: 20px; width: 16px; color: transparent; cursor: pointer; display: inline-grid; place-content: center; border-radius: 0; }
+.eq-eqbtn.on { color: #6d6d6d; }
+.eq-eqbtn.eq-link.on { color: var(--gold); }
+.eq-invgrid tr:hover .eq-eqbtn:not(.on) { color: #3a3a3a; }
+.eq-invgrid .eq-eqbtn .eq-glyph { width: 13px; height: 13px; }
+.eq-inv-actions { display: flex; align-items: center; height: 30px; padding-left: 4px; flex: none; }
+.eq-inv-actions button { background: transparent; border: 0; border-radius: 0; color: #6d6d6d; font-size: 10px; font-weight: 600; text-transform: uppercase; display: inline-flex; align-items: center; gap: 5px; padding: 0 10px; height: 16px; min-height: 16px; cursor: pointer; }
+.eq-inv-actions button + button { border-left: 1px solid #3a3a3a; }
+.eq-inv-actions button:hover:not(:disabled) { color: #fff; }
+.eq-inv-actions button:disabled { color: #4a4a4a; cursor: default; }
+.eq-stored { font-weight: 400; color: var(--text-muted); font-size: var(--fs-sm); margin-left: 6px; }
+@media (max-width: 899px) {
+  .eq-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .eq-cats { display: none; }
+  .eq-cats-narrow { display: block; }
+  .eq-items { min-height: 260px; }
+  .eq-inv { min-height: 230px; }
+  .eq-tools { flex-wrap: wrap; height: auto; gap: 6px; }
+  .eq-cmds, .eq-source { width: auto; margin-left: 0; }
+  .eq-filter-tile, .eq-coins { margin-left: 0; }
+}
+.eq-treasure { display: flex; flex-direction: column; gap: 14px; max-width: 70rem; }
+.eq-tlabel { display: block; font-size: var(--fs-2xs, 11px); font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+.eq-ttext { display: block; width: 100%; min-height: 150px; resize: vertical; background: #1b1b1b; border: 1px solid #3c3c3c; border-radius: 0; color: var(--text); padding: 6px 8px; font-size: var(--fs-md); }
+.eq-load { display: flex; flex-direction: column; gap: 10px; }
+.eq-load .aur-expander { margin-bottom: 0; }
+.eq-load .aur-expander-body { padding-top: 8px; }
+.eq-coins-flyout .coin-row { display: flex; align-items: center; gap: 8px; min-height: 30px; }
+.eq-page { padding: 15px 20px 25px 51px; max-width: 70rem; }
+@media (max-width: 899px) { .eq-page { padding: 15px max(15px, var(--safe-l)) 25px max(15px, var(--safe-r)); } }
+.tab-panel:has(> .eq-page) { padding-top: 0; }
+/* catalog Name header/cell start 2 px left (classic builder 236); the Armor grid is WPF Auto-sized (widest content + 5 px each side) and scrolls sideways. */
+.eq-grid:not(.eq-invgrid) th:first-child, .eq-grid:not(.eq-invgrid) td:first-child { padding-left: 3px; }
+.eq-grid.eq-armor { width: max-content; min-width: 100%; }
+.eq-grid.eq-armor th, .eq-grid.eq-armor td { white-space: nowrap; width: auto; padding-left: 5px; padding-right: 5px; }
+.eq-grid.eq-armor th:first-child, .eq-grid.eq-armor td:first-child { padding-left: 3px; }
+.eq-grid.eq-armor:not(.eq-invgrid) th:first-child { width: auto; }
+/* Classic builder ref column floors (measured from column centres): Name 101, Weight 56, Stealth 96, Group 104 px. Armor class is 140 (its text is clipped at 1 px padding). */
+.eq-grid.eq-armor th:first-child, .eq-grid.eq-armor th.k-weight, .eq-grid.eq-armor th.k-stealth, .eq-grid.eq-armor th.k-group { box-sizing: border-box; }
+.eq-grid.eq-armor th:first-child { min-width: 101px; }
+.eq-grid.eq-armor th.k-weight { min-width: 56px; }
+.eq-grid.eq-armor th.k-stealth { min-width: 96px; }
+.eq-grid.eq-armor th.k-group { min-width: 104px; }
+.eq-grid.eq-armor th.k-ac, .eq-grid.eq-armor td.k-ac { padding-left: 1px; padding-right: 1px; }
+/* 2 px #1A1C1D splitter band between the tools row and the inventory; header cells centred. */
+.eq-tools::after { content: ""; position: absolute; left: 0; right: 0; bottom: -19px; height: 2px; background: #1a1c1d; }
+.eq-grid th.al-l, .eq-grid th.al-r, .eq-grid th.al-c { text-align: center; }
+/* NAME headers are left-aligned (classic builder ink x 237); catalogue/armor first column and inventory Name column. */
+.eq-grid:not(.eq-invgrid) thead th:first-child, .eq-invgrid thead th:nth-child(3) { text-align: left; }
+.eq-grid.eq-armor th.k-source { min-width: 176px; }
+.ap-page:has(.eq-layout) { grid-template-columns: minmax(0, 1fr) minmax(250px, 30.68%); }
+@media (max-width: 899px) { .ap-page:has(.eq-layout) { grid-template-columns: minmax(0, 1fr); } }
+.eq-grid tbody tr:first-child td { height: 20px; }
+.eq-invgrid td { line-height: 20px; vertical-align: middle; } .eq-invgrid .eq-eqbtn { vertical-align: top; }
+.eq-invgrid td .ap-name { line-height: 18px; display: inline-block; vertical-align: top; }
+.eq-invgrid tbody tr:first-child td { height: 19.5px; }
+.eq-invgrid th { padding-bottom: 3px; }

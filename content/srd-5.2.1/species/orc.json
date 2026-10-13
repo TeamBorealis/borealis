@@ -1,0 +1,137 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: species/orc",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SPECIES_ORC",
+   "name": "Orc",
+   "type": "Species",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Creature type: Humanoid. Size: Medium (about 6–7 feet tall). Speed: 30 feet.</p>",
+   "setters": [
+    {
+     "name": "short",
+     "value": "Humanoid, Medium, Speed 30 ft."
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_SIZE_MEDIUM",
+     "type": "Size"
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed",
+     "value": "30",
+     "bonus": "base"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_ORC_ADRENALINE_RUSH",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_ORC_DARKVISION",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_ORC_RELENTLESS_ENDURANCE",
+     "type": "Racial Trait"
+    }
+   ],
+   "data": {
+    "creature_type": "Humanoid",
+    "size": [
+     "Medium"
+    ],
+    "speed": 30,
+    "traits": [
+     "ID_2024_TRAIT_ORC_ADRENALINE_RUSH",
+     "ID_2024_TRAIT_ORC_DARKVISION",
+     "ID_2024_TRAIT_ORC_RELENTLESS_ENDURANCE"
+    ]
+   },
+   "maps_to": {
+    "dnd2014": "ID_RACE_HALFORC",
+    "kind": "approximate"
+   }
+  },
+  {
+   "id": "ID_2024_TRAIT_ORC_ADRENALINE_RUSH",
+   "name": "Adrenaline Rush",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can take the Dash action as a Bonus Action. When you do so, you gain a number of Temporary Hit Points equal to your Proficiency Bonus.</p>\n<p>You can use this trait a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Short or Long Rest.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "adrenaline rush",
+     "name": "Adrenaline Rush",
+     "max": {
+      "type": "stat",
+      "stat": "proficiency"
+     },
+     "recharge": [
+      "short_rest",
+      "long_rest"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_ORC_DARKVISION",
+   "name": "Darkvision",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Darkvision with a range of 120 feet.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_VISION_DARKVISION",
+     "type": "Vision"
+    },
+    {
+     "kind": "stat",
+     "name": "darkvision:range",
+     "value": "120",
+     "bonus": "base"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_ORC_RELENTLESS_ENDURANCE",
+   "name": "Relentless Endurance",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you are reduced to 0 Hit Points but not killed outright, you can drop to 1 Hit Point instead. Once you use this trait, you can’t do so again until you finish a Long Rest.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "relentless endurance",
+     "name": "Relentless Endurance",
+     "max": {
+      "type": "fixed",
+      "value": 1
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    }
+   ]
+  }
+ ]
+}

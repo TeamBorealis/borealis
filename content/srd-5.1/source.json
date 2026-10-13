@@ -1,0 +1,50 @@
+{
+  "format": "borealis-content/1",
+  "ruleset": "dnd2014",
+  "info": {
+    "name": "SRD 5.1 Source",
+    "description": "Source record and CC-BY-4.0 attribution for the SRD 5.1 pack."
+  },
+  "elements": [
+    {
+      "id": "ID_SRD51_SOURCE",
+      "name": "SRD 5.1",
+      "type": "Source",
+      "source": "Core",
+      "description": "<p><strong>System Reference Document 5.1</strong> (2014 rules), released by Wizards of the Coast LLC under the Creative Commons Attribution 4.0 International License.</p><p>This work includes material taken from the System Reference Document 5.1 (\"SRD 5.1\") by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode.</p><p>Modified: the SRD text was structured into JSON content elements (rules, setters and HTML fragments); text was reformatted and, in places, condensed for the character sheet summaries.</p>",
+      "setters": [
+        {
+          "name": "abbreviation",
+          "value": "SRD"
+        },
+        {
+          "name": "url",
+          "value": "https://dnd.wizards.com/resources/systems-reference-document"
+        },
+        {
+          "name": "author",
+          "value": "Wizards of the Coast LLC",
+          "attributes": {
+            "abbreviation": "WOTC",
+            "url": "https://dnd.wizards.com"
+          }
+        },
+        {
+          "name": "official",
+          "value": "true"
+        },
+        {
+          "name": "release",
+          "value": "20230119"
+        },
+        {
+          "name": "information",
+          "value": "Content of the System Reference Document 5.1 only (CC-BY-4.0).",
+          "attributes": {
+            "url": "https://creativecommons.org/licenses/by/4.0/legalcode"
+          }
+        }
+      ]
+    }
+  ]
+}

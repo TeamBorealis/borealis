@@ -1,0 +1,58 @@
+/* Manage > Character / Attacks classic-layout parity (kept out of manage.css, which owns). */
+.mg-page .mg-f .aur-textbox input, .mg-page .mg-f .aur-combo input, .mg-page .mg-f .aur-combo-value { padding-left: 5px; }
+.mg-f .mg-xp { height: 28px; box-sizing: border-box; border-color: #a59f93; }
+.mg-attacks .mg-tool.wide { height: 26px; min-height: 26px; box-sizing: border-box; padding: 0 8px 0 5px; gap: 4px; }
+.mg-attacks .mg-tool.wide { width: 88px; justify-content: flex-start; padding: 0 0 0 5px; gap: 6px; font-size: 11px; }
+.mg-attacks .mg-tool.wide .icon { width: 16px; height: 16px; }
+.mg-sec > h2 { color: var(--text-primary-header); }
+.mg-attacks .mg-sec > .mg-sub.mg-sub-after { margin-top: 8px; }
+.mg-tool { color: var(--text-body); }
+/* section titles 2 px lower on Character (CHARACTER DETAILS 134 -> 136, APPEARANCE 345 -> 349); Attacks keeps y 131. */
+.mg-sec > h2 { margin-top: 2px; }
+.mg-attacks .mg-sec > h2 { margin-top: 0; }
+/* Second Attacks intro paragraph: ink y 214 -> 220 (+6). */
+.mg-attacks .mg-sec > .mg-sub.mg-sub-after { margin-top: 14px; }
+.mg-attacks .mg-toolbar { margin-top: -6px; }
+/* Attack card: title #D5D5D5 and 3 px lower, row icons #C4C4C4. */
+.atk h3 { color: var(--text-primary-header); padding-top: 3px; }
+.atk .btns button { color: var(--text-body); }
+
+/* Character: first field row 2 px up (label-to-box gap 6 -> 4), APPEARANCE 3 px up. */
+.mg-char-first .mg-grid > .mg-f:nth-child(-n+3) { gap: 0; }
+.mg-sec.mg-gap { margin-top: 21px; }
+/* Attacks: heading 2 px lower, intro line pitch 14.67 (classic builder 152/166/181/196). */
+.mg-attacks .mg-sec > h2 { margin-top: 2px; }
+.mg-attacks .mg-sec > .mg-sub { margin-top: -1px; line-height: 14.67px; }
+/* Toolbar: Add 16x14 glyph, move buttons 26 wide on a 36 px pitch with the 17 px boxed arrows. */
+.mg-attacks .mg-tool.wide { padding: 0 0 0 3px; gap: 7px; }
+.mg-attacks .mg-tool.wide .icon { width: 21px; height: 21px; }
+.mg-attacks .mg-tool:not(.wide) { width: 26px; min-width: 26px; padding: 0; }
+.mg-attacks .mg-tool:not(.wide) .icon { width: 17px; height: 17px; }
+/* Card icons: list 17 wide, pencil 13x12, minus 13x3 bar in #C4C4C4, on the 30 px pitch. */
+.atk .btns button:nth-child(1) .icon { width: 23px; height: 23px; }
+.atk .btns button:nth-child(2) .icon { width: 17px; height: 17px; }
+.atk .btns button:nth-child(3) .icon { width: 24px; height: 24px; }
+/* Edition: ATTUNEMENT LIMIT as an XpField-style box, value #C4C4C4 (also on CURRENT EXPERIENCE). */
+.v4-ed-field .mg-xp { display: flex; align-items: center; width: 100%; height: 26px; box-sizing: border-box; border: 1px solid var(--input-border); background: var(--bg); }
+.v4-ed-field .mg-xp:hover { border-color: var(--input-border-hover); }
+.v4-ed-field .mg-xp:focus-within { border-color: var(--input-border-focus); outline: 1px solid var(--input-border-focus); }
+.v4-ed-field .mg-xp input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; text-align: right; padding: 0 4px; font: inherit; font-size: var(--fs-sm); }
+.mg-xp input { color: var(--text-body); }
+.v4-ed-field .mg-xp-btn:last-child { margin-right: 3px; }
+/* Toolbar and card rows 4 px up (second paragraph ink 224 -> 220). */
+.mg-attacks .mg-sec > .mg-sub.mg-sub-after { margin-top: 10px; }
+.atk .btns button:nth-child(2) .icon { transform: translateY(1px); }
+.atk .btns button:nth-child(3) .icon { transform: translateY(-2px); }
+/* Add Attack label ink y 253 -> 255 (glyph stays); card title 1 px up; boxed arrows 1 px down. */
+.mg-attacks .mg-tool.wide { padding-top: 4px; }
+.mg-attacks .mg-tool.wide .icon { margin-top: -4px; }
+.mg-attacks .mg-tool:not(.wide) .icon { transform: translateY(1px); }
+.atk h3 { padding-top: 2px; }
+
+/* Appearance fields 26 px tall (top section stays 28); APPEARANCE 1 px up, description 1 px up with it, first row 2 px up. */
+.mg-char-appearance > h2 { margin-top: 1px; }
+.mg-char-appearance > .mg-sub { margin-bottom: 18px; }
+.mg-char-appearance .mg-f .aur-textbox, .mg-char-appearance .mg-f .aur-combo { height: 26px; min-height: 26px; }
+/* the bordered input/select is the 26 px box (the wrapper rule above only sized the wrapper). */
+.mg-char-appearance .mg-f .aur-textbox input, .mg-char-appearance .mg-f .aur-combo select { height: 26px; min-height: 26px; }
+.mg-char-appearance .mg-grid { row-gap: 4.5px; }

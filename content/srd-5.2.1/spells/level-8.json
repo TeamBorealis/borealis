@@ -1,0 +1,1314 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: spells/level-8",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SPELL_ANIMAL_SHAPES",
+   "name": "Animal Shapes",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid"
+   ],
+   "description": "<p>Choose any number of willing creatures that you can see within range. Each target shape-shifts into a Large or smaller Beast of your choice that has a Challenge Rating of 4 or lower. You can choose a different form for each target. On later turns, you can take a Magic action to transform the targets again.</p>\n<p>A target’s game statistics are replaced by the chosen Beast’s statistics, but the target retains its creature type; Hit Points; Hit Point Dice; alignment; ability to communicate; and Intelligence, Wisdom, and Charisma scores. The target’s actions are limited by the Beast form’s anatomy, and it can’t cast spells. The target’s equipment melds into the new form, and the target can’t use any of that equipment while in that form.</p>\n<p>The target gains a number of Temporary Hit Points equal to the Hit Points of the first form into which it shape-shifts. These Temporary Hit Points vanish if any remain when the spell ends. The transformation lasts for the duration or until the target ends it as a Bonus Action.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Transmutation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "24 hours"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Transmutation",
+    "classes": [
+     "Druid"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_ANIMAL_SHAPES",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_ANTIMAGIC_FIELD",
+   "name": "Antimagic Field",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric",
+    "Wizard"
+   ],
+   "description": "<p>An aura of antimagic surrounds you in 10-foot Emanation. No one can cast spells, take Magic actions, or create other magical effects inside the aura, and those things can’t target or otherwise affect anything inside it. Magical properties of magic items don’t work inside the aura or on anything inside it.</p>\n<p>Areas of effect created by spells or other magic can’t extend into the aura, and no one can teleport into or out of it or use planar travel there. Portals close temporarily while in the aura.</p>\n<p>Ongoing spells, except those cast by an Artifact or a deity, are suppressed in the area. While an effect is suppressed, it doesn’t function, but the time it spends suppressed counts against its duration.</p>\n<p>Dispel Magic has no effect on the aura, and the auras created by different Antimagic Field spells don’t nullify each other.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Abjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 hour"
+    },
+    {
+     "name": "range",
+     "value": "Self"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "iron filings"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Abjuration",
+    "classes": [
+     "Cleric",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_ANTIMAGIC_FIELD",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_ANTIPATHY_SYMPATHY",
+   "name": "Antipathy/Sympathy",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Druid",
+    "Wizard"
+   ],
+   "description": "<p>As you cast the spell, choose whether it creates antipathy or sympathy, and target one creature or object that is Huge or smaller. Then specify a kind of creature, such as red dragons, goblins, or vampires. A creature of the chosen kind makes a Wisdom saving throw when it comes within 120 feet of the target. Your choice of antipathy or sympathy determines what happens to a creature when it fails that save:</p>\n<p><b>Antipathy.</b> The creature has the Frightened condition. The Frightened creature must use its movement on its turns to get as far away as possible from the target, moving by the safest route.</p>\n<p><b>Sympathy.</b> The creature has the Charmed condition. The Charmed creature must use its movement on its turns to get as close as possible to the target, moving by the safest route. If the creature is within 5 feet of the target, the creature can’t willingly move away. If the target damages the Charmed creature, that creature can make a Wisdom saving throw to end the effect, as described below.</p>\n<p><b>Ending the Effect.</b> If the Frightened or Charmed creature ends its turn more than 120 feet away from the target, the creature makes a Wisdom saving throw. On a successful save, the creature is no longer affected by the target. A creature that successfully saves against this effect is immune to it for 1 minute, after which it can be affected again.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Enchantment"
+    },
+    {
+     "name": "time",
+     "value": "1 hour"
+    },
+    {
+     "name": "duration",
+     "value": "10 days"
+    },
+    {
+     "name": "range",
+     "value": "60 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a mix of vinegar and honey"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Enchantment",
+    "classes": [
+     "Bard",
+     "Druid",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_ANTIPATHY_SYMPATHY",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_BEFUDDLEMENT",
+   "name": "Befuddlement",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Druid",
+    "Warlock",
+    "Wizard"
+   ],
+   "description": "<p>You blast the mind of a creature that you can see within range. The target makes an Intelligence saving throw.</p>\n<p>On a failed save, the target takes 10d12 Psychic damage and can’t cast spells or take the Magic action. At the end of every 30 days, the target repeats the save, ending the effect on a success. The effect can also be ended by the Greater Restoration, Heal, or Wish spell.</p>\n<p>On a successful save, the target takes half as much damage only.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Enchantment"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "150 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a key ring with no keys"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Enchantment",
+    "classes": [
+     "Bard",
+     "Druid",
+     "Warlock",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "renamed_from": "ID_PHB_SPELL_FEEBLEMIND",
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_FEEBLEMIND",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_CLONE",
+   "name": "Clone",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Wizard"
+   ],
+   "description": "<p>You touch a creature or at least 1 cubic inch of its flesh. An inert duplicate of that creature forms inside the vessel used in the spell’s casting and finishes growing after 120 days; you choose whether the finished clone is the same age as the creature or younger. The clone remains inert and endures indefinitely while its vessel remains undisturbed.</p>\n<p>If the original creature dies after the clone finishes forming, the creature’s soul transfers to the clone if the soul is free and willing to return. The clone is physically identical to the original and has the same personality, memories, and abilities, but none of the original’s equipment. The creature’s original remains, if any, become inert and can’t be revived, since the creature’s soul is elsewhere.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Necromancy"
+    },
+    {
+     "name": "time",
+     "value": "1 hour"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "Touch"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a diamond worth 1,000+ GP, which the spell consumes, and a sealable vessel worth 2,000+ GP that is large enough to hold the creature being cloned"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Necromancy",
+    "classes": [
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false,
+    "material_cost": {
+     "amount": 1000,
+     "currency": "gp",
+     "consumed": true
+    }
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_CLONE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_CONTROL_WEATHER",
+   "name": "Control Weather",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric",
+    "Druid",
+    "Wizard"
+   ],
+   "description": "<p>You take control of the weather within 5 miles of you for the duration. You must be outdoors to cast this spell, and it ends early if you go indoors.</p>\n<p>When you cast the spell, you change the current weather conditions, which are determined by the GM. You can change precipitation, temperature, and wind. It takes 1d4 × 10 minutes for the new conditions to take effect. Once they do so, you can change the conditions again. When the spell ends, the weather gradually returns to normal.</p>\n<p>When you change the weather conditions, find a current condition on the following tables and change its stage by one, up or down. When changing the wind, you can change its direction. Precipitation</p>\n<pre> Stage   Condition\n   1     Clear\n   2     Light clouds\n   3     Overcast or ground fog\n   4     Rain, hail, or snow\n   5     Torrential rain, driving hail, or blizzard</pre>\n<pre>Temperature                    Wind\n Stage   Condition              Stage    Condition\n   1     Heat wave                 1     Calm\n   2     Hot                       2     Moderate wind\n   3     Warm                      3     Strong wind\n   4     Cool                      4     Gale\n   5     Cold                      5     Storm\n   6     Freezing</pre>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Transmutation"
+    },
+    {
+     "name": "time",
+     "value": "10 minutes"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 8 hours"
+    },
+    {
+     "name": "range",
+     "value": "Self"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "burning incense"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Transmutation",
+    "classes": [
+     "Cleric",
+     "Druid",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_CONTROL_WEATHER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_DEMIPLANE",
+   "name": "Demiplane",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Sorcerer",
+    "Warlock",
+    "Wizard"
+   ],
+   "description": "<p>You create a shadowy Medium door on a flat solid surface that you can see within range. This door can be opened and closed, and it leads to a demiplane that is an empty room 30 feet in each dimension, made of wood or stone (your choice).</p>\n<p>When the spell ends, the door vanishes, and any objects inside the demiplane remain there. Any creatures inside also remain unless they opt to be shunted through the door as it vanishes, landing with the Prone condition in the unoccupied spaces closest to the door’s former space.</p>\n<p>Each time you cast this spell, you can create a new demiplane or connect the shadowy door to a demiplane you created with a previous casting of this spell. Additionally, if you know the nature and contents of a demiplane created by a casting of this spell by another creature, you can connect the shadowy door to that demiplane instead.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Conjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "1 hour"
+    },
+    {
+     "name": "range",
+     "value": "60 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "false"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Conjuration",
+    "classes": [
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "components": {
+     "v": false,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_DEMIPLANE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_DOMINATE_MONSTER",
+   "name": "Dominate Monster",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Sorcerer",
+    "Warlock",
+    "Wizard"
+   ],
+   "description": "<p>One creature you can see within range must succeed on a Wisdom saving throw or have the Charmed condition for the duration. The target has Advantage on the save if you or your allies are fighting it. Whenever the target takes damage, it repeats the save, ending the spell on itself on a success.</p>\n<p>You have a telepathic link with the Charmed target while the two of you are on the same plane of existence. On your turn, you can use this link to issue commands to the target (no action required), such as “Attack that creature,” “Move over there,” or “Fetch that object.” The target does its best to obey on its turn. If it completes an order and doesn’t receive further direction from you, it acts and moves as it likes, focusing on protecting itself.</p>\n<p>You can command the target to take a Reaction but must take your own Reaction to do so.</p>\n<p><b>Using a Higher-Level Spell Slot.</b> Your Concentration can last longer with a level 9 spell slot (up to 8 hours).</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Enchantment"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 hour"
+    },
+    {
+     "name": "range",
+     "value": "60 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Enchantment",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": true,
+    "higher_level": "Using a Higher-Level Spell Slot. Your Concentration can last longer with a level 9 spell slot (up to 8 hours)."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_DOMINATE_MONSTER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_EARTHQUAKE",
+   "name": "Earthquake",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric",
+    "Druid",
+    "Sorcerer"
+   ],
+   "description": "<p>Choose a point on the ground that you can see within range. For the duration, an intense tremor rips through the ground in a 100-foot-radius circle centered on that point. The ground there is Difficult Terrain.</p>\n<p>When you cast this spell and at the end of each of your turns for the duration, each creature on the ground in the area makes a Dexterity saving throw. On a failed save, a creature has the Prone condition, and its Concentration is broken.</p>\n<p>You can also cause the effects below.</p>\n<p><b>Fissures.</b> A total of 1d6 fissures open in the spell’s area at the end of the turn you cast it. You choose the fissures’ locations, which can’t be under structures. Each fissure is 1d10 × 10 feet deep and 10 feet wide, and it extends from one edge of the spell’s area to another edge. A creature in the same space as a fissure must succeed on a Dexterity saving throw or fall in. A creature that successfully saves moves with the fissure’s edge as it opens.</p>\n<p><b>Structures.</b> The tremor deals 50 Bludgeoning damage to any structure in contact with the ground in the area when you cast the spell and at the end of each of your turns until the spell ends. If a structure drops to 0 Hit Points, it collapses.</p>\n<p>A creature within a distance from a collapsing structure equal to half the structure’s height makes a Dexterity saving throw. On a failed save, the creature takes 12d6 Bludgeoning damage, has the Prone condition, and is buried in the rubble, requiring a DC 20 Strength (Athletics) check as an action to escape. On a successful save, the creature takes half as much damage only.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Transmutation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 minute"
+    },
+    {
+     "name": "range",
+     "value": "500 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a fractured rock"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Transmutation",
+    "classes": [
+     "Cleric",
+     "Druid",
+     "Sorcerer"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_EARTHQUAKE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_GLIBNESS",
+   "name": "Glibness",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Warlock"
+   ],
+   "description": "<p>Until the spell ends, when you make a Charisma check, you can replace the number you roll with a 15. Additionally, no matter what you say, magic that would determine if you are telling the truth indicates that you are being truthful.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Enchantment"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "1 hour"
+    },
+    {
+     "name": "range",
+     "value": "Self"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "false"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Enchantment",
+    "classes": [
+     "Bard",
+     "Warlock"
+    ],
+    "components": {
+     "v": true,
+     "s": false,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_GLIBNESS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_HOLY_AURA",
+   "name": "Holy Aura",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric"
+   ],
+   "description": "<p>For the duration, you emit an aura in a 30-foot Emanation. While in the aura, creatures of your choice have Advantage on all saving throws, and other creatures have Disadvantage on attack rolls against them. In addition, when a Fiend or an Undead hits an affected creature with a melee attack roll, the attacker must succeed on a Constitution saving throw or have the Blinded condition until the end of its next turn.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Abjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 minute"
+    },
+    {
+     "name": "range",
+     "value": "Self"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a reliquary worth 1,000+ GP"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Abjuration",
+    "classes": [
+     "Cleric"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": true,
+    "material_cost": {
+     "amount": 1000,
+     "currency": "gp",
+     "consumed": false
+    }
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_HOLY_AURA",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_INCENDIARY_CLOUD",
+   "name": "Incendiary Cloud",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid",
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>A swirling cloud of embers and smoke fills a 20-foot-radius Sphere centered on a point within range. The cloud’s area is Heavily Obscured. It lasts for the duration or until a strong wind (like that created by Gust of Wind) disperses it.</p>\n<p>When the cloud appears, each creature in it makes a Dexterity saving throw, taking 10d8 Fire damage on a failed save or half as much damage on a successful one. A creature must also make this save when the Sphere moves into its space and when it enters the Sphere or ends its turn there. A creature makes this save only once per turn.</p>\n<p>The cloud moves 10 feet away from you in a direction you choose at the start of each of your turns.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Conjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 minute"
+    },
+    {
+     "name": "range",
+     "value": "150 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Conjuration",
+    "classes": [
+     "Druid",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_INCENDIARY_CLOUD",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_MAZE",
+   "name": "Maze",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Wizard"
+   ],
+   "description": "<p>You banish a creature that you can see within range into a labyrinthine demiplane. The target remains there for the duration or until it escapes the maze.</p>\n<p>The target can take a Study action to try to escape. When it does so, it makes a DC 20 Intelligence (Investigation) check. If it succeeds, it escapes, and the spell ends.</p>\n<p>When the spell ends, the target reappears in the space it left or, if that space is occupied, in the nearest unoccupied space.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Conjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 10 minutes"
+    },
+    {
+     "name": "range",
+     "value": "60 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Conjuration",
+    "classes": [
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_MAZE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_MIND_BLANK",
+   "name": "Mind Blank",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Wizard"
+   ],
+   "description": "<p>Until the spell ends, one willing creature you touch has Immunity to Psychic damage and the Charmed condition. The target is also unaffected by anything that would sense its emotions or alignment, read its thoughts, or magically detect its location, and no spell—not even Wish—can gather information about the target, observe it remotely, or control its mind.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Abjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "24 hours"
+    },
+    {
+     "name": "range",
+     "value": "Touch"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Abjuration",
+    "classes": [
+     "Bard",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_MIND_BLANK",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_POWER_WORD_STUN",
+   "name": "Power Word Stun",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Sorcerer",
+    "Warlock",
+    "Wizard"
+   ],
+   "description": "<p>You overwhelm the mind of one creature you can see within range. If the target has 150 Hit Points or fewer, it has the Stunned condition. Otherwise, its Speed is 0 until the start of your next turn.</p>\n<p>The Stunned target makes a Constitution saving throw at the end of each of its turns, ending the condition on itself on a success.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Enchantment"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "60 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "false"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Enchantment",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": false,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_POWER_WORD_STUN",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_SUNBURST",
+   "name": "Sunburst",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric",
+    "Druid",
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>Brilliant sunlight flashes in a 60-foot-radius Sphere centered on a point you choose within range. Each creature in the Sphere makes a Constitution saving throw. On a failed save, a creature takes 12d6 Radiant damage and has the Blinded condition for 1 minute. On a successful save, it takes half as much damage only.</p>\n<p>A creature Blinded by this spell makes another Constitution saving throw at the end of each of its turns, ending the effect on itself on a success.</p>\n<p>This spell dispels Darkness in its area that was created by any spell.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Evocation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "150 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a piece of sunstone"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Evocation",
+    "classes": [
+     "Cleric",
+     "Druid",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_SUNBURST",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_TSUNAMI",
+   "name": "Tsunami",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid"
+   ],
+   "description": "<p>A wall of water springs into existence at a point you choose within range. You can make the wall up to 300 feet long, 300 feet high, and 50 feet thick. The wall lasts for the duration.</p>\n<p>When the wall appears, each creature in its area makes a Strength saving throw, taking 6d10 Bludgeoning damage on a failed save or half as much damage on a successful one.</p>\n<p>At the start of each of your turns after the wall appears, the wall, along with any creatures in it, moves 50 feet away from you. Any Huge or smaller creature inside the wall or whose space the wall enters when it moves must succeed on a Strength saving throw or take 5d10 Bludgeoning damage. A creature can take this damage only once per round. At the end of the turn, the wall’s height is reduced by 50 feet, and the damage the wall deals on later rounds is reduced by 1d10. When the wall reaches 0 feet in height, the spell ends.</p>\n<p>A creature caught in the wall can move by swimming. Because of the wave’s force, though, the creature must succeed on a Strength (Athletics) check against your spell save DC to move at all. If it fails the check, it can’t move. A creature that moves out of the wall falls to the ground.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "8"
+    },
+    {
+     "name": "school",
+     "value": "Conjuration"
+    },
+    {
+     "name": "time",
+     "value": "1 minute"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 6 rounds"
+    },
+    {
+     "name": "range",
+     "value": "1 mile"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 8,
+    "school": "Conjuration",
+    "classes": [
+     "Druid"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_TSUNAMI",
+    "kind": "equivalent"
+   }
+  }
+ ]
+}

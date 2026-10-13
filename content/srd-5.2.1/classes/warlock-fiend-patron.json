@@ -1,0 +1,266 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/warlock-fiend-patron",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SUBCLASS_WARLOCK_FIEND_PATRON",
+   "name": "Fiend Patron",
+   "type": "Archetype",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Warlock Subclass"
+   ],
+   "description": "<p>Your pact draws on the Lower Planes, the realms of perdition. You might forge a bargain with a demon lord, an archdevil, or another fiend that is especially mighty. That patron’s aims are evil—the corruption or destruction of all things, ultimately including you—and your path is defined by the extent to which you strive against those aims.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_WARLOCK_FIEND_PATRON_DARK_ONES_BLESSING",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_WARLOCK_FIEND_PATRON_FIEND_SPELLS",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_WARLOCK_FIEND_PATRON_DARK_ONES_OWN_LUCK",
+     "type": "Archetype Feature",
+     "level": 6
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_WARLOCK_FIEND_PATRON_FIENDISH_RESILIENCE",
+     "type": "Archetype Feature",
+     "level": 10
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_WARLOCK_FIEND_PATRON_HURL_THROUGH_HELL",
+     "type": "Archetype Feature",
+     "level": 14
+    }
+   ],
+   "data": {
+    "class": "ID_2024_CLASS_WARLOCK",
+    "class_name": "Warlock",
+    "level_gained": 3
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ARCHETYPE_OTHERWORLDLY_PATRON_FIEND",
+    "kind": "approximate"
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_WARLOCK_FIEND_PATRON_DARK_ONES_BLESSING",
+   "name": "Dark One’s Blessing",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you reduce an enemy to 0 Hit Points, you gain Temporary Hit Points equal to your Charisma modifier plus your Warlock level (minimum of 1 Temporary Hit Point). You also gain this benefit if someone else reduces an enemy within 10 feet of you to 0 Hit Points.</p>",
+   "data": {
+    "class": "Warlock",
+    "subclass": "Fiend Patron",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_WARLOCK_FIEND_PATRON_FIEND_SPELLS",
+   "name": "Fiend Spells",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>The magic of your patron ensures you always have certain spells ready; when you reach a Warlock level specified in the Fiend Spells table, you thereafter always have the listed spells prepared. Fiend Spells Warlock Level Spells</p>\n<pre>       3         Burning Hands, Command,\n                 Scorching Ray, Suggestion\n       5         Fireball, Stinking Cloud\n       7         Fire Shield, Wall of Fire\n       9         Geas, Insect Plague</pre>",
+   "rules": [
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_BURNING_HANDS",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Warlock"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_COMMAND",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Warlock"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_SCORCHING_RAY",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Warlock"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_SUGGESTION",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Warlock"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 5,
+     "spell": "ID_2024_SPELL_FIREBALL",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Warlock"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 5,
+     "spell": "ID_2024_SPELL_STINKING_CLOUD",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Warlock"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 7,
+     "spell": "ID_2024_SPELL_FIRE_SHIELD",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Warlock"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 7,
+     "spell": "ID_2024_SPELL_WALL_OF_FIRE",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Warlock"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 9,
+     "spell": "ID_2024_SPELL_GEAS",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Warlock"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 9,
+     "spell": "ID_2024_SPELL_INSECT_PLAGUE",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Warlock"
+    }
+   ],
+   "data": {
+    "class": "Warlock",
+    "subclass": "Fiend Patron",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_WARLOCK_FIEND_PATRON_DARK_ONES_OWN_LUCK",
+   "name": "Dark One’s Own Luck",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can call on your fiendish patron to alter fate in your favor. When you make an ability check or a saving throw, you can use this feature to add 1d10 to your roll. You can do so after seeing the roll but before any of the roll’s effects occur.</p>\n<p>You can use this feature a number of times equal to your Charisma modifier (minimum of once), but you can use it no more than once per roll. You regain all expended uses when you finish a Long Rest.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "dark ones own luck",
+     "name": "Dark One’s Own Luck",
+     "max": {
+      "type": "formula",
+      "expr": "max(1, charisma:modifier)"
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    }
+   ],
+   "data": {
+    "class": "Warlock",
+    "subclass": "Fiend Patron",
+    "level": 6
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_WARLOCK_FIEND_PATRON_FIENDISH_RESILIENCE",
+   "name": "Fiendish Resilience",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Choose one damage type, other than Force, whenever you finish a Short or Long Rest. You have Resistance to that damage type until you choose a different one with this feature.</p>",
+   "rules": [
+    {
+     "kind": "select_param",
+     "name": "Fiendish Resilience Damage Type",
+     "options": [
+      "Acid",
+      "Bludgeoning",
+      "Cold",
+      "Fire",
+      "Lightning",
+      "Necrotic",
+      "Piercing",
+      "Poison",
+      "Psychic",
+      "Radiant",
+      "Slashing",
+      "Thunder"
+     ],
+     "reselect_on": [
+      "short_rest",
+      "long_rest"
+     ],
+     "grants_resistance": true
+    }
+   ],
+   "data": {
+    "class": "Warlock",
+    "subclass": "Fiend Patron",
+    "level": 10
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_WARLOCK_FIEND_PATRON_HURL_THROUGH_HELL",
+   "name": "Hurl Through Hell",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Once per turn when you hit a creature with an attack roll, you can try to instantly transport the target through the Lower Planes. The target must succeed on a Charisma saving throw against your spell save DC, or the target disappears and hurtles through a nightmare landscape. The target takes 8d10 Psychic damage if it isn’t a Fiend, and it has the Incapacitated condition until the end of your next turn, when it returns to the space it previously occupied or the nearest unoccupied space.</p>\n<p>Once you use this feature, you can’t use it again until you finish a Long Rest unless you expend a Pact Magic spell slot (no action required) to restore your use of it.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "hurl through hell",
+     "name": "Hurl Through Hell",
+     "max": {
+      "type": "fixed",
+      "value": 1
+     },
+     "recharge": [
+      "long_rest"
+     ],
+     "alt_regain": "expend a Pact Magic spell slot"
+    }
+   ],
+   "data": {
+    "class": "Warlock",
+    "subclass": "Fiend Patron",
+    "level": 14
+   }
+  }
+ ]
+}

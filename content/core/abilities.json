@@ -1,0 +1,474 @@
+{
+ "format": "borealis-content/1",
+ "ruleset": "any",
+ "elements": [
+  {
+   "id": "ID_INTERNAL_ASI_STRENGTH",
+   "name": "Strength",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Class",
+    "Strength"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Strength."
+  },
+  {
+   "id": "ID_INTERNAL_ASI_DEXTERITY",
+   "name": "Dexterity",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Class",
+    "Dexterity"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Dexterity."
+  },
+  {
+   "id": "ID_INTERNAL_ASI_CONSTITUTION",
+   "name": "Constitution",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Class",
+    "Constitution"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "constitution",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Constitution."
+  },
+  {
+   "id": "ID_INTERNAL_ASI_INTELLIGENCE",
+   "name": "Intelligence",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Class",
+    "Intelligence"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "intelligence",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Intelligence."
+  },
+  {
+   "id": "ID_INTERNAL_ASI_WISDOM",
+   "name": "Wisdom",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Class",
+    "Wisdom"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "wisdom",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Wisdom."
+  },
+  {
+   "id": "ID_INTERNAL_ASI_CHARISMA",
+   "name": "Charisma",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Class",
+    "Charisma"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "charisma",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Charisma."
+  },
+  {
+   "id": "ID_INTERNAL_COMPANION_ASI_STRENGTH",
+   "name": "Strength",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Companion",
+    "Strength"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "companion:strength",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Strength."
+  },
+  {
+   "id": "ID_INTERNAL_COMPANION_ASI_DEXTERITY",
+   "name": "Dexterity",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Companion",
+    "Dexterity"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "companion:dexterity",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Dexterity."
+  },
+  {
+   "id": "ID_INTERNAL_COMPANION_ASI_CONSTITUTION",
+   "name": "Constitution",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Companion",
+    "Constitution"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "companion:constitution",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Constitution."
+  },
+  {
+   "id": "ID_INTERNAL_COMPANION_ASI_INTELLIGENCE",
+   "name": "Intelligence",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Companion",
+    "Intelligence"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "companion:intelligence",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Intelligence."
+  },
+  {
+   "id": "ID_INTERNAL_COMPANION_ASI_WISDOM",
+   "name": "Wisdom",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Companion",
+    "Wisdom"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "companion:wisdom",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Wisdom."
+  },
+  {
+   "id": "ID_INTERNAL_COMPANION_ASI_CHARISMA",
+   "name": "Charisma",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Companion",
+    "Charisma"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "companion:charisma",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Charisma."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_ASI_STRENGTH",
+   "name": "Strength",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Race",
+    "Strength"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Strength."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_ASI_DEXTERITY",
+   "name": "Dexterity",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Race",
+    "Dexterity"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Dexterity."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_ASI_CONSTITUTION",
+   "name": "Constitution",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Race",
+    "Constitution"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "constitution",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Constitution."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_ASI_INTELLIGENCE",
+   "name": "Intelligence",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Race",
+    "Intelligence"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "intelligence",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Intelligence."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_ASI_WISDOM",
+   "name": "Wisdom",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Race",
+    "Wisdom"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "wisdom",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Wisdom."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_ASI_CHARISMA",
+   "name": "Charisma",
+   "type": "Ability Score Improvement",
+   "source": "Core",
+   "supports": [
+    "Ability Score Improvement",
+    "Race",
+    "Charisma"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "charisma",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Charisma."
+  }
+ ]
+}

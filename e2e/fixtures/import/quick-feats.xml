@@ -1,0 +1,6 @@
+<elements>
+  <element name="Sample Alpha" type="Feat" source="Sample Pack" id="ID_SAMPLE_FEAT_ALPHA"><rules/></element>
+  <element name="Sample Beta" type="Feat" source="Sample Pack" id="ID_SAMPLE_FEAT_BETA">
+    <rules><grant type="Feat" id="ID_SAMPLE_FEAT_ALPHA"/><grant type="Feat" id="ID_SAMPLE_FEAT_GONE"/></rules>
+  </element>
+</elements>

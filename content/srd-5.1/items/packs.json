@@ -1,0 +1,367 @@
+{
+  "format": "borealis-content/1",
+  "ruleset": "dnd2014",
+  "info": {
+    "name": "SRD 5.1 Equipment Packs",
+    "description": "SRD 5.1 equipment and magic items. Structured into JSON from the System Reference Document 5.1 (CC-BY-4.0); text condensed/reformatted."
+  },
+  "elements": [
+    {
+      "id": "ID_WOTC_ITEM_BURGLARS_PACK",
+      "name": "Burglar’s Pack",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "description": "<p>Includes a backpack, a bag of 1,000 ball bearings, 10 feet of string, a bell, 5 candles, a crowbar, a hammer, 10 pitons, a hooded lantern, 2 flasks of oil, 5 days rations, a tinderbox, and a waterskin. The pack also has 50 feet of hempen rope strapped to the side of it.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Equipment Packs"
+        },
+        {
+          "name": "cost",
+          "value": "16",
+          "attributes": {
+            "currency": "gp"
+          }
+        }
+      ],
+      "extract": {
+        "items": [
+          {
+            "id": "ID_WOTC_PHB_ITEM_BACKPACK"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_BALLBEARINGS"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_BELL"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_CANDLE",
+            "amount": 5
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_CROWBAR"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_HAMMER"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_PITON",
+            "amount": 10
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_LANTERN_HOODED"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_OIL_FLASK",
+            "amount": 2
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_RATIONS_1DAY",
+            "amount": 5
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_TINDERBOX"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_WATERSKIN"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_ROPE_HEMPEN_50FEET"
+          }
+        ],
+        "description": "<p>Includes a backpack, a bag of 1,000 ball bearings, 10 feet of string, a bell, 5 candles, a crowbar, a hammer, 10 pitons, a hooded lantern, 2 flasks of oil, 5 days rations, a tinderbox, and a waterskin. The pack also has 50 feet of hempen rope strapped to the side of it.</p>"
+      }
+    },
+    {
+      "id": "ID_WOTC_ITEM_DIPLOMATS_PACK",
+      "name": "Diplomat’s Pack",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "description": "<p>Includes a chest, 2 cases for maps and scrolls, a set of fine clothes, a bottle of ink, an ink pen, a lamp, 2 flasks of oil, 5 sheets of paper, a vial of perfume, sealing wax, and soap.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Equipment Packs"
+        },
+        {
+          "name": "cost",
+          "value": "39",
+          "attributes": {
+            "currency": "gp"
+          }
+        }
+      ],
+      "extract": {
+        "items": [
+          {
+            "id": "ID_WOTC_PHB_ITEM_CHEST"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_CASE_MAPORSCROLL",
+            "amount": 2
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_CLOTHES_FINE"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_INK_1OUNCEBOTTLE"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_INKPEN"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_LAMP"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_OIL_FLASK",
+            "amount": 2
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_PAPER_ONESHEET",
+            "amount": 5
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_PERFUME_VIAL"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_SEALINGWAX"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_SOAP"
+          }
+        ],
+        "description": "<p>Includes a chest, 2 cases for maps and scrolls, a set of fine clothes, a bottle of ink, an ink pen, a lamp, 2 flasks of oil, 5 sheets of paper, a vial of perfume, sealing wax, and soap.</p>"
+      }
+    },
+    {
+      "id": "ID_WOTC_ITEM_DUNGEONEERS_PACK",
+      "name": "Dungeoneer’s Pack",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "description": "<p>Includes a backpack, a crowbar, a hammer, 10 pitons, 10 torches, a tinderbox, 10 days of rations, and a waterskin. The pack also has 50 feet of hempen rope strapped to the side of it.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Equipment Packs"
+        },
+        {
+          "name": "cost",
+          "value": "12",
+          "attributes": {
+            "currency": "gp"
+          }
+        }
+      ],
+      "extract": {
+        "items": [
+          {
+            "id": "ID_WOTC_PHB_ITEM_BACKPACK"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_CROWBAR"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_HAMMER"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_PITON",
+            "amount": 10
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_TORCH",
+            "amount": 10
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_TINDERBOX"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_RATIONS_1DAY",
+            "amount": 10
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_WATERSKIN"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_ROPE_HEMPEN_50FEET"
+          }
+        ],
+        "description": "<p>Includes a backpack, a crowbar, a hammer, 10 pitons, 10 torches, a tinderbox, 10 days of rations, and a waterskin. The pack also has 50 feet of hempen rope strapped to the side of it.</p>"
+      }
+    },
+    {
+      "id": "ID_WOTC_ITEM_ENTERTAINERS_PACK",
+      "name": "Entertainer’s Pack",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "description": "<p>Includes a backpack, a bedroll, 2 costumes, 5 candles, 5 days of rations, a waterskin, and a disguise kit.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Equipment Packs"
+        },
+        {
+          "name": "cost",
+          "value": "40",
+          "attributes": {
+            "currency": "gp"
+          }
+        }
+      ],
+      "extract": {
+        "items": [
+          {
+            "id": "ID_WOTC_PHB_ITEM_BACKPACK"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_BEDROLL"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_CLOTHES_COSTUME",
+            "amount": 2
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_CANDLE",
+            "amount": 5
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_RATIONS_1DAY",
+            "amount": 5
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_WATERSKIN"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_TOOL_DISGUISE_KIT"
+          }
+        ],
+        "description": "<p>Includes a backpack, a bedroll, 2 costumes, 5 candles, 5 days of rations, a waterskin, and a disguise kit.</p>"
+      }
+    },
+    {
+      "id": "ID_WOTC_ITEM_EXPLORERS_PACK",
+      "name": "Explorer’s Pack",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "description": "<p>Includes a backpack, a bedroll, a mess kit, a tinderbox, 10 torches, 10 days of rations, and a waterskin. The pack also has 50 feet of hempen rope strapped to the side of it.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Equipment Packs"
+        },
+        {
+          "name": "cost",
+          "value": "10",
+          "attributes": {
+            "currency": "gp"
+          }
+        }
+      ],
+      "extract": {
+        "items": [
+          {
+            "id": "ID_WOTC_PHB_ITEM_BACKPACK"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_BEDROLL"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_MESSKIT"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_TINDERBOX"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_TORCH",
+            "amount": 10
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_RATIONS_1DAY",
+            "amount": 10
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_WATERSKIN"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_ROPE_HEMPEN_50FEET"
+          }
+        ],
+        "description": "<p>Includes a backpack, a bedroll, a mess kit, a tinderbox, 10 torches, 10 days of rations, and a waterskin. The pack also has 50 feet of hempen rope strapped to the side of it.</p>"
+      }
+    },
+    {
+      "id": "ID_WOTC_ITEM_PRIESTS_PACK",
+      "name": "Priest’s Pack",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "description": "<p>Includes a backpack, a blanket, 10 candles, a tinderbox, an alms box, 2 blocks of incense, a censer, vestments, 2 days of rations, and a waterskin.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Equipment Packs"
+        },
+        {
+          "name": "cost",
+          "value": "19",
+          "attributes": {
+            "currency": "gp"
+          }
+        }
+      ],
+      "extract": {
+        "items": [
+          {
+            "id": "ID_WOTC_PHB_ITEM_BACKPACK"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_BLANKET"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_CANDLE",
+            "amount": 10
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_TINDERBOX"
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_RATIONS_1DAY",
+            "amount": 2
+          },
+          {
+            "id": "ID_WOTC_PHB_ITEM_WATERSKIN"
+          }
+        ],
+        "description": "<p>Includes a backpack, a blanket, 10 candles, a tinderbox, an alms box, 2 blocks of incense, a censer, vestments, 2 days of rations, and a waterskin.</p>"
+      }
+    },
+    {
+      "id": "ID_WOTC_ITEM_SCHOLARS_PACK",
+      "name": "Scholar’s Pack",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "description": "<p>Includes a backpack, a book of lore, a bottle of ink, an ink pen, 10 sheets of parchment, a little bag of sand, and a small knife.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Equipment Packs"
+        },
+        {
+          "name": "cost",
+          "value": "40",
+          "attributes": {
+            "currency": "gp"
+          }
+        }
+      ],
+      "extract": {
+        "items": [
+          {
+            "id": "ID_WOTC_PHB_ITEM_BACKPACK"
+          }
+        ],
+        "description": "<p>Includes a backpack, a book of lore, a bottle of ink, an ink pen, 10 sheets of parchment, a little bag of sand, and a small knife.</p>"
+      }
+    }
+  ]
+}

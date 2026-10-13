@@ -1,0 +1,28 @@
+Borealis UI third-party notices
+
+Selawik font (src/assets/fonts/)
+  Copyright 2015 Microsoft Corporation, SIL Open Font License 1.1 (Selawik-LICENSE.txt). Bundled unmodified (woff2).
+
+Material Design Icons via @mdi/js
+  Pictogrammers, Apache License 2.0. Icons are role-mapped in src/components/Icon.tsx.
+
+MahApps.Metro.IconPacks (Modern pack glyphs)
+  ListAddBelow, ListReorderUp, ListReorderDown and PageFilePdfTag path data in src/components/controls/openIcons.ts.
+  Modern UI Icons by Austin Andrews (Templarian), https://github.com/Templarian/WindowsIcons
+  Licensed CC BY-ND 3.0 (https://creativecommons.org/licenses/by-nd/3.0/). The glyph path data is used
+  verbatim, without modification. License text:
+  licenses/ModernUIIcons-LICENSE.txt. Path data via MahApps.Metro.IconPacks (packaging MIT,
+  Copyright (c) MahApps, Jan Karger, https://github.com/MahApps/MahApps.Metro.IconPacks).
+
+Font Awesome Free 5.15.4
+  level-up-alt, level-down-alt and heartbeat (splash status glyph) path data in src/components/controls/openIcons.ts.
+  Icons: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), Copyright Font Awesome, https://fontawesome.com/license/free
+  https://github.com/FortAwesome/Font-Awesome
+
+MahApps.Metro
+  Control styling in src/styles/components.css and shell.css (flat buttons, toggle switch, tab/flyout/menu
+  behaviour, scrollbar proportions) is a CSS recreation of MahApps.Metro 1.x visual metrics.
+  MahApps.Metro is Copyright (c) .NET Foundation and Contributors, MIT License.
+  https://github.com/MahApps/MahApps.Metro
+
+Borealis is not affiliated with Aurora Builder. The Borealis mark (src/components/shell/BrandMark.tsx) is original artwork.

@@ -1,0 +1,2968 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: equipment/weapons",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_WEAPON_CLUB",
+   "name": "Club",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+    "ID_INTERNAL_WEAPON_GROUP_CLUBS",
+    "ID_2024_MASTERY_SLOW"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "sp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d4",
+     "attributes": {
+      "type": "bludgeoning"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CLUB"
+    },
+    {
+     "name": "mastery",
+     "value": "slow"
+    }
+   ],
+   "data": {
+    "weapon_category": "Simple Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d4",
+     "type": "bludgeoning"
+    },
+    "properties": [
+     "Light"
+    ],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "slow",
+    "mastery_id": "ID_2024_MASTERY_SLOW",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_CLUB",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_DAGGER",
+   "name": "Dagger",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+    "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+    "ID_INTERNAL_WEAPON_PROPERTY_THROWN",
+    "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+    "ID_2024_MASTERY_NICK"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d4",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "range",
+     "value": "20/60"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_DAGGER"
+    },
+    {
+     "name": "mastery",
+     "value": "nick"
+    }
+   ],
+   "data": {
+    "weapon_category": "Simple Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d4",
+     "type": "piercing"
+    },
+    "properties": [
+     "Finesse",
+     "Light",
+     "Thrown"
+    ],
+    "versatile_damage": null,
+    "range": "20/60",
+    "ammunition_type": null,
+    "mastery": "nick",
+    "mastery_id": "ID_2024_MASTERY_NICK",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_DAGGER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_GREATCLUB",
+   "name": "Greatclub",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_GROUP_CLUBS",
+    "ID_2024_MASTERY_PUSH"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "sp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "10 lb.",
+     "attributes": {
+      "lb": "10"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "twohand"
+    },
+    {
+     "name": "damage",
+     "value": "1d8",
+     "attributes": {
+      "type": "bludgeoning"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GREATCLUB"
+    },
+    {
+     "name": "mastery",
+     "value": "push"
+    }
+   ],
+   "data": {
+    "weapon_category": "Simple Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d8",
+     "type": "bludgeoning"
+    },
+    "properties": [
+     "Two-Handed"
+    ],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "push",
+    "mastery_id": "ID_2024_MASTERY_PUSH",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_GREATCLUB",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_HANDAXE",
+   "name": "Handaxe",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+    "ID_INTERNAL_WEAPON_PROPERTY_THROWN",
+    "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+    "ID_INTERNAL_WEAPON_GROUP_AXES",
+    "ID_2024_MASTERY_VEX"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d6",
+     "attributes": {
+      "type": "slashing"
+     }
+    },
+    {
+     "name": "range",
+     "value": "20/60"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_HANDAXE"
+    },
+    {
+     "name": "mastery",
+     "value": "vex"
+    }
+   ],
+   "data": {
+    "weapon_category": "Simple Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d6",
+     "type": "slashing"
+    },
+    "properties": [
+     "Light",
+     "Thrown"
+    ],
+    "versatile_damage": null,
+    "range": "20/60",
+    "ammunition_type": null,
+    "mastery": "vex",
+    "mastery_id": "ID_2024_MASTERY_VEX",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_HANDAXE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_JAVELIN",
+   "name": "Javelin",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_THROWN",
+    "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+    "ID_INTERNAL_WEAPON_GROUP_SPEARS",
+    "ID_2024_MASTERY_SLOW"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "sp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d6",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "range",
+     "value": "30/120"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_JAVELIN"
+    },
+    {
+     "name": "mastery",
+     "value": "slow"
+    }
+   ],
+   "data": {
+    "weapon_category": "Simple Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d6",
+     "type": "piercing"
+    },
+    "properties": [
+     "Thrown"
+    ],
+    "versatile_damage": null,
+    "range": "30/120",
+    "ammunition_type": null,
+    "mastery": "slow",
+    "mastery_id": "ID_2024_MASTERY_SLOW",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_JAVELIN",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_LIGHT_HAMMER",
+   "name": "Light Hammer",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+    "ID_INTERNAL_WEAPON_PROPERTY_THROWN",
+    "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+    "ID_INTERNAL_WEAPON_GROUP_HAMMERS",
+    "ID_2024_MASTERY_NICK"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d4",
+     "attributes": {
+      "type": "bludgeoning"
+     }
+    },
+    {
+     "name": "range",
+     "value": "20/60"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LIGHT_HAMMER"
+    },
+    {
+     "name": "mastery",
+     "value": "nick"
+    }
+   ],
+   "data": {
+    "weapon_category": "Simple Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d4",
+     "type": "bludgeoning"
+    },
+    "properties": [
+     "Light",
+     "Thrown"
+    ],
+    "versatile_damage": null,
+    "range": "20/60",
+    "ammunition_type": null,
+    "mastery": "nick",
+    "mastery_id": "ID_2024_MASTERY_NICK",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_LIGHTHAMMER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_MACE",
+   "name": "Mace",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_GROUP_MACES",
+    "ID_2024_MASTERY_SAP"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "4 lb.",
+     "attributes": {
+      "lb": "4"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d6",
+     "attributes": {
+      "type": "bludgeoning"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MACE"
+    },
+    {
+     "name": "mastery",
+     "value": "sap"
+    }
+   ],
+   "data": {
+    "weapon_category": "Simple Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d6",
+     "type": "bludgeoning"
+    },
+    "properties": [],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "sap",
+    "mastery_id": "ID_2024_MASTERY_SAP",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_MACE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_QUARTERSTAFF",
+   "name": "Quarterstaff",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE",
+    "ID_2024_MASTERY_TOPPLE"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "sp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "4 lb.",
+     "attributes": {
+      "lb": "4"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d6",
+     "attributes": {
+      "type": "bludgeoning"
+     }
+    },
+    {
+     "name": "versatile",
+     "value": "1d8"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_QUARTERSTAFF"
+    },
+    {
+     "name": "mastery",
+     "value": "topple"
+    }
+   ],
+   "data": {
+    "weapon_category": "Simple Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d6",
+     "type": "bludgeoning"
+    },
+    "properties": [
+     "Versatile"
+    ],
+    "versatile_damage": "1d8",
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "topple",
+    "mastery_id": "ID_2024_MASTERY_TOPPLE",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_QUARTERSTAFF",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_SICKLE",
+   "name": "Sickle",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+    "ID_2024_MASTERY_NICK"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d4",
+     "attributes": {
+      "type": "slashing"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SICKLE"
+    },
+    {
+     "name": "mastery",
+     "value": "nick"
+    }
+   ],
+   "data": {
+    "weapon_category": "Simple Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d4",
+     "type": "slashing"
+    },
+    "properties": [
+     "Light"
+    ],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "nick",
+    "mastery_id": "ID_2024_MASTERY_NICK",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_SICKLE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_SPEAR",
+   "name": "Spear",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_THROWN",
+    "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE",
+    "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+    "ID_INTERNAL_WEAPON_GROUP_SPEARS",
+    "ID_2024_MASTERY_SAP"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "3 lb.",
+     "attributes": {
+      "lb": "3"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d6",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "range",
+     "value": "20/60"
+    },
+    {
+     "name": "versatile",
+     "value": "1d8"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SPEAR"
+    },
+    {
+     "name": "mastery",
+     "value": "sap"
+    }
+   ],
+   "data": {
+    "weapon_category": "Simple Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d6",
+     "type": "piercing"
+    },
+    "properties": [
+     "Thrown",
+     "Versatile"
+    ],
+    "versatile_damage": "1d8",
+    "range": "20/60",
+    "ammunition_type": null,
+    "mastery": "sap",
+    "mastery_id": "ID_2024_MASTERY_SAP",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_SPEAR",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_DART",
+   "name": "Dart",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+    "ID_INTERNAL_WEAPON_PROPERTY_THROWN",
+    "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+    "ID_2024_MASTERY_VEX"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "cp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1/4 lb.",
+     "attributes": {
+      "lb": "0.25"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d4",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "range",
+     "value": "20/60"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_DART"
+    },
+    {
+     "name": "mastery",
+     "value": "vex"
+    }
+   ],
+   "data": {
+    "weapon_category": "Simple Ranged",
+    "melee": false,
+    "damage": {
+     "dice": "1d4",
+     "type": "piercing"
+    },
+    "properties": [
+     "Finesse",
+     "Thrown"
+    ],
+    "versatile_damage": null,
+    "range": "20/60",
+    "ammunition_type": null,
+    "mastery": "vex",
+    "mastery_id": "ID_2024_MASTERY_VEX",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_DART",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_LIGHT_CROSSBOW",
+   "name": "Light Crossbow",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+    "ID_INTERNAL_WEAPON_PROPERTY_LOADING",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+    "ID_INTERNAL_WEAPON_GROUP_CROSSBOWS",
+    "ID_2024_MASTERY_SLOW"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "25",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "5 lb.",
+     "attributes": {
+      "lb": "5"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "twohand"
+    },
+    {
+     "name": "damage",
+     "value": "1d8",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "range",
+     "value": "80/320"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_LIGHT"
+    },
+    {
+     "name": "mastery",
+     "value": "slow"
+    }
+   ],
+   "data": {
+    "weapon_category": "Simple Ranged",
+    "melee": false,
+    "damage": {
+     "dice": "1d8",
+     "type": "piercing"
+    },
+    "properties": [
+     "Ammunition",
+     "Loading",
+     "Two-Handed"
+    ],
+    "versatile_damage": null,
+    "range": "80/320",
+    "ammunition_type": "Bolt",
+    "mastery": "slow",
+    "mastery_id": "ID_2024_MASTERY_SLOW",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_CROSSBOW_LIGHT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_SHORTBOW",
+   "name": "Shortbow",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+    "ID_INTERNAL_WEAPON_GROUP_BOWS",
+    "ID_2024_MASTERY_VEX"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "25",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "twohand"
+    },
+    {
+     "name": "damage",
+     "value": "1d6",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "range",
+     "value": "80/320"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SHORTBOW"
+    },
+    {
+     "name": "mastery",
+     "value": "vex"
+    }
+   ],
+   "data": {
+    "weapon_category": "Simple Ranged",
+    "melee": false,
+    "damage": {
+     "dice": "1d6",
+     "type": "piercing"
+    },
+    "properties": [
+     "Ammunition",
+     "Two-Handed"
+    ],
+    "versatile_damage": null,
+    "range": "80/320",
+    "ammunition_type": "Arrow",
+    "mastery": "vex",
+    "mastery_id": "ID_2024_MASTERY_VEX",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_SHORTBOW",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_SLING",
+   "name": "Sling",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+    "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+    "ID_2024_MASTERY_SLOW"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "sp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "—"
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d4",
+     "attributes": {
+      "type": "bludgeoning"
+     }
+    },
+    {
+     "name": "range",
+     "value": "30/120"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SLING"
+    },
+    {
+     "name": "mastery",
+     "value": "slow"
+    }
+   ],
+   "data": {
+    "weapon_category": "Simple Ranged",
+    "melee": false,
+    "damage": {
+     "dice": "1d4",
+     "type": "bludgeoning"
+    },
+    "properties": [
+     "Ammunition"
+    ],
+    "versatile_damage": null,
+    "range": "30/120",
+    "ammunition_type": "Bullet",
+    "mastery": "slow",
+    "mastery_id": "ID_2024_MASTERY_SLOW",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_SLING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_BATTLEAXE",
+   "name": "Battleaxe",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE",
+    "ID_INTERNAL_WEAPON_GROUP_AXES",
+    "ID_2024_MASTERY_TOPPLE"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "10",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "4 lb.",
+     "attributes": {
+      "lb": "4"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d8",
+     "attributes": {
+      "type": "slashing"
+     }
+    },
+    {
+     "name": "versatile",
+     "value": "1d10"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_BATTLEAXE"
+    },
+    {
+     "name": "mastery",
+     "value": "topple"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d8",
+     "type": "slashing"
+    },
+    "properties": [
+     "Versatile"
+    ],
+    "versatile_damage": "1d10",
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "topple",
+    "mastery_id": "ID_2024_MASTERY_TOPPLE",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_BATTLEAXE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_FLAIL",
+   "name": "Flail",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_GROUP_MACES",
+    "ID_2024_MASTERY_SAP"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "10",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d8",
+     "attributes": {
+      "type": "bludgeoning"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_FLAIL"
+    },
+    {
+     "name": "mastery",
+     "value": "sap"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d8",
+     "type": "bludgeoning"
+    },
+    "properties": [],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "sap",
+    "mastery_id": "ID_2024_MASTERY_SAP",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_FLAIL",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_GLAIVE",
+   "name": "Glaive",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_REACH",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_2024_MASTERY_GRAZE"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "20",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "6 lb.",
+     "attributes": {
+      "lb": "6"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "twohand"
+    },
+    {
+     "name": "damage",
+     "value": "1d10",
+     "attributes": {
+      "type": "slashing"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GLAIVE"
+    },
+    {
+     "name": "mastery",
+     "value": "graze"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d10",
+     "type": "slashing"
+    },
+    "properties": [
+     "Heavy",
+     "Reach",
+     "Two-Handed"
+    ],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "graze",
+    "mastery_id": "ID_2024_MASTERY_GRAZE",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_GLAIVE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_GREATAXE",
+   "name": "Greataxe",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_GROUP_AXES",
+    "ID_2024_MASTERY_CLEAVE"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "30",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "7 lb.",
+     "attributes": {
+      "lb": "7"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "twohand"
+    },
+    {
+     "name": "damage",
+     "value": "1d12",
+     "attributes": {
+      "type": "slashing"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GREATAXE"
+    },
+    {
+     "name": "mastery",
+     "value": "cleave"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d12",
+     "type": "slashing"
+    },
+    "properties": [
+     "Heavy",
+     "Two-Handed"
+    ],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "cleave",
+    "mastery_id": "ID_2024_MASTERY_CLEAVE",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_GREATAXE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_GREATSWORD",
+   "name": "Greatsword",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_GROUP_SWORDS",
+    "ID_2024_MASTERY_GRAZE"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "50",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "6 lb.",
+     "attributes": {
+      "lb": "6"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "twohand"
+    },
+    {
+     "name": "damage",
+     "value": "2d6",
+     "attributes": {
+      "type": "slashing"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GREATSWORD"
+    },
+    {
+     "name": "mastery",
+     "value": "graze"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "2d6",
+     "type": "slashing"
+    },
+    "properties": [
+     "Heavy",
+     "Two-Handed"
+    ],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "graze",
+    "mastery_id": "ID_2024_MASTERY_GRAZE",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_GREATSWORD",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_HALBERD",
+   "name": "Halberd",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_REACH",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_2024_MASTERY_CLEAVE"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "20",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "6 lb.",
+     "attributes": {
+      "lb": "6"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "twohand"
+    },
+    {
+     "name": "damage",
+     "value": "1d10",
+     "attributes": {
+      "type": "slashing"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_HALBERD"
+    },
+    {
+     "name": "mastery",
+     "value": "cleave"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d10",
+     "type": "slashing"
+    },
+    "properties": [
+     "Heavy",
+     "Reach",
+     "Two-Handed"
+    ],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "cleave",
+    "mastery_id": "ID_2024_MASTERY_CLEAVE",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_HALBERD",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_LANCE",
+   "name": "Lance",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_REACH",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_2024_MASTERY_TOPPLE"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "10",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "6 lb.",
+     "attributes": {
+      "lb": "6"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "twohand"
+    },
+    {
+     "name": "damage",
+     "value": "1d10",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LANCE"
+    },
+    {
+     "name": "mastery",
+     "value": "topple"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d10",
+     "type": "piercing"
+    },
+    "properties": [
+     "Heavy",
+     "Reach",
+     "Two-Handed"
+    ],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "topple",
+    "mastery_id": "ID_2024_MASTERY_TOPPLE",
+    "two_handed_unless_mounted": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_LANCE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_LONGSWORD",
+   "name": "Longsword",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE",
+    "ID_INTERNAL_WEAPON_GROUP_SWORDS",
+    "ID_2024_MASTERY_SAP"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "15",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "3 lb.",
+     "attributes": {
+      "lb": "3"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d8",
+     "attributes": {
+      "type": "slashing"
+     }
+    },
+    {
+     "name": "versatile",
+     "value": "1d10"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LONGSWORD"
+    },
+    {
+     "name": "mastery",
+     "value": "sap"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d8",
+     "type": "slashing"
+    },
+    "properties": [
+     "Versatile"
+    ],
+    "versatile_damage": "1d10",
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "sap",
+    "mastery_id": "ID_2024_MASTERY_SAP",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_LONGSWORD",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_MAUL",
+   "name": "Maul",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_GROUP_MAULS",
+    "ID_2024_MASTERY_TOPPLE"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "10",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "10 lb.",
+     "attributes": {
+      "lb": "10"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "twohand"
+    },
+    {
+     "name": "damage",
+     "value": "2d6",
+     "attributes": {
+      "type": "bludgeoning"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MAUL"
+    },
+    {
+     "name": "mastery",
+     "value": "topple"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "2d6",
+     "type": "bludgeoning"
+    },
+    "properties": [
+     "Heavy",
+     "Two-Handed"
+    ],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "topple",
+    "mastery_id": "ID_2024_MASTERY_TOPPLE",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_MAUL",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_MORNINGSTAR",
+   "name": "Morningstar",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_GROUP_MACES",
+    "ID_2024_MASTERY_SAP"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "15",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "4 lb.",
+     "attributes": {
+      "lb": "4"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d8",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MORNINGSTAR"
+    },
+    {
+     "name": "mastery",
+     "value": "sap"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d8",
+     "type": "piercing"
+    },
+    "properties": [],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "sap",
+    "mastery_id": "ID_2024_MASTERY_SAP",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_MORNINGSTAR",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_PIKE",
+   "name": "Pike",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_REACH",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_2024_MASTERY_PUSH"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "18 lb.",
+     "attributes": {
+      "lb": "18"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "twohand"
+    },
+    {
+     "name": "damage",
+     "value": "1d10",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_PIKE"
+    },
+    {
+     "name": "mastery",
+     "value": "push"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d10",
+     "type": "piercing"
+    },
+    "properties": [
+     "Heavy",
+     "Reach",
+     "Two-Handed"
+    ],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "push",
+    "mastery_id": "ID_2024_MASTERY_PUSH",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_PIKE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_RAPIER",
+   "name": "Rapier",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+    "ID_INTERNAL_WEAPON_GROUP_SWORDS",
+    "ID_2024_MASTERY_VEX"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "25",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d8",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_RAPIER"
+    },
+    {
+     "name": "mastery",
+     "value": "vex"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d8",
+     "type": "piercing"
+    },
+    "properties": [
+     "Finesse"
+    ],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "vex",
+    "mastery_id": "ID_2024_MASTERY_VEX",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_RAPIER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_SCIMITAR",
+   "name": "Scimitar",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+    "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+    "ID_INTERNAL_WEAPON_GROUP_SWORDS",
+    "ID_2024_MASTERY_NICK"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "25",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "3 lb.",
+     "attributes": {
+      "lb": "3"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d6",
+     "attributes": {
+      "type": "slashing"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SCIMITAR"
+    },
+    {
+     "name": "mastery",
+     "value": "nick"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d6",
+     "type": "slashing"
+    },
+    "properties": [
+     "Finesse",
+     "Light"
+    ],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "nick",
+    "mastery_id": "ID_2024_MASTERY_NICK",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_SCIMITAR",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_SHORTSWORD",
+   "name": "Shortsword",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+    "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+    "ID_INTERNAL_WEAPON_GROUP_SWORDS",
+    "ID_2024_MASTERY_VEX"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "10",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d6",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SHORTSWORD"
+    },
+    {
+     "name": "mastery",
+     "value": "vex"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d6",
+     "type": "piercing"
+    },
+    "properties": [
+     "Finesse",
+     "Light"
+    ],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "vex",
+    "mastery_id": "ID_2024_MASTERY_VEX",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_SHORTSWORD",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_TRIDENT",
+   "name": "Trident",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_THROWN",
+    "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE",
+    "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+    "ID_2024_MASTERY_TOPPLE"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "4 lb.",
+     "attributes": {
+      "lb": "4"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d8",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "range",
+     "value": "20/60"
+    },
+    {
+     "name": "versatile",
+     "value": "1d10"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_TRIDENT"
+    },
+    {
+     "name": "mastery",
+     "value": "topple"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d8",
+     "type": "piercing"
+    },
+    "properties": [
+     "Thrown",
+     "Versatile"
+    ],
+    "versatile_damage": "1d10",
+    "range": "20/60",
+    "ammunition_type": null,
+    "mastery": "topple",
+    "mastery_id": "ID_2024_MASTERY_TOPPLE",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_TRIDENT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_WARHAMMER",
+   "name": "Warhammer",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE",
+    "ID_INTERNAL_WEAPON_GROUP_HAMMERS",
+    "ID_2024_MASTERY_PUSH"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "15",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "5 lb.",
+     "attributes": {
+      "lb": "5"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d8",
+     "attributes": {
+      "type": "bludgeoning"
+     }
+    },
+    {
+     "name": "versatile",
+     "value": "1d10"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_WARHAMMER"
+    },
+    {
+     "name": "mastery",
+     "value": "push"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d8",
+     "type": "bludgeoning"
+    },
+    "properties": [
+     "Versatile"
+    ],
+    "versatile_damage": "1d10",
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "push",
+    "mastery_id": "ID_2024_MASTERY_PUSH",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_WARHAMMER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_WAR_PICK",
+   "name": "War Pick",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE",
+    "ID_2024_MASTERY_SAP"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d8",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "versatile",
+     "value": "1d10"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_WAR_PICK"
+    },
+    {
+     "name": "mastery",
+     "value": "sap"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d8",
+     "type": "piercing"
+    },
+    "properties": [
+     "Versatile"
+    ],
+    "versatile_damage": "1d10",
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "sap",
+    "mastery_id": "ID_2024_MASTERY_SAP",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_WAR_PICK",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_WHIP",
+   "name": "Whip",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+    "ID_INTERNAL_WEAPON_PROPERTY_REACH",
+    "ID_2024_MASTERY_SLOW"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "3 lb.",
+     "attributes": {
+      "lb": "3"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d4",
+     "attributes": {
+      "type": "slashing"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_WHIP"
+    },
+    {
+     "name": "mastery",
+     "value": "slow"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Melee",
+    "melee": true,
+    "damage": {
+     "dice": "1d4",
+     "type": "slashing"
+    },
+    "properties": [
+     "Finesse",
+     "Reach"
+    ],
+    "versatile_damage": null,
+    "range": null,
+    "ammunition_type": null,
+    "mastery": "slow",
+    "mastery_id": "ID_2024_MASTERY_SLOW",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_WHIP",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_BLOWGUN",
+   "name": "Blowgun",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+    "ID_INTERNAL_WEAPON_PROPERTY_LOADING",
+    "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+    "ID_2024_MASTERY_VEX"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "10",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "range",
+     "value": "25/100"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_BLOWGUN"
+    },
+    {
+     "name": "mastery",
+     "value": "vex"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Ranged",
+    "melee": false,
+    "damage": {
+     "dice": "1",
+     "type": "piercing"
+    },
+    "properties": [
+     "Ammunition",
+     "Loading"
+    ],
+    "versatile_damage": null,
+    "range": "25/100",
+    "ammunition_type": "Needle",
+    "mastery": "vex",
+    "mastery_id": "ID_2024_MASTERY_VEX",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_BLOWGUN",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_HAND_CROSSBOW",
+   "name": "Hand Crossbow",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+    "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+    "ID_INTERNAL_WEAPON_PROPERTY_LOADING",
+    "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+    "ID_INTERNAL_WEAPON_GROUP_CROSSBOWS",
+    "ID_2024_MASTERY_VEX"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "75",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "3 lb.",
+     "attributes": {
+      "lb": "3"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d6",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "range",
+     "value": "30/120"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_HAND"
+    },
+    {
+     "name": "mastery",
+     "value": "vex"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Ranged",
+    "melee": false,
+    "damage": {
+     "dice": "1d6",
+     "type": "piercing"
+    },
+    "properties": [
+     "Ammunition",
+     "Light",
+     "Loading"
+    ],
+    "versatile_damage": null,
+    "range": "30/120",
+    "ammunition_type": "Bolt",
+    "mastery": "vex",
+    "mastery_id": "ID_2024_MASTERY_VEX",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_CROSSBOW_HAND",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_HEAVY_CROSSBOW",
+   "name": "Heavy Crossbow",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_LOADING",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+    "ID_INTERNAL_WEAPON_GROUP_CROSSBOWS",
+    "ID_2024_MASTERY_PUSH"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "50",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "18 lb.",
+     "attributes": {
+      "lb": "18"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "twohand"
+    },
+    {
+     "name": "damage",
+     "value": "1d10",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "range",
+     "value": "100/400"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_HEAVY"
+    },
+    {
+     "name": "mastery",
+     "value": "push"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Ranged",
+    "melee": false,
+    "damage": {
+     "dice": "1d10",
+     "type": "piercing"
+    },
+    "properties": [
+     "Ammunition",
+     "Heavy",
+     "Loading",
+     "Two-Handed"
+    ],
+    "versatile_damage": null,
+    "range": "100/400",
+    "ammunition_type": "Bolt",
+    "mastery": "push",
+    "mastery_id": "ID_2024_MASTERY_PUSH",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_CROSSBOW_HEAVY",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_LONGBOW",
+   "name": "Longbow",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+    "ID_INTERNAL_WEAPON_GROUP_BOWS",
+    "ID_2024_MASTERY_SLOW"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "50",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "twohand"
+    },
+    {
+     "name": "damage",
+     "value": "1d8",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "range",
+     "value": "150/600"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LONGBOW"
+    },
+    {
+     "name": "mastery",
+     "value": "slow"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Ranged",
+    "melee": false,
+    "damage": {
+     "dice": "1d8",
+     "type": "piercing"
+    },
+    "properties": [
+     "Ammunition",
+     "Heavy",
+     "Two-Handed"
+    ],
+    "versatile_damage": null,
+    "range": "150/600",
+    "ammunition_type": "Arrow",
+    "mastery": "slow",
+    "mastery_id": "ID_2024_MASTERY_SLOW",
+    "two_handed_unless_mounted": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_WEAPON_LONGBOW",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_MUSKET",
+   "name": "Musket",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+    "ID_INTERNAL_WEAPON_PROPERTY_LOADING",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+    "ID_2024_MASTERY_SLOW"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "500",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "10 lb.",
+     "attributes": {
+      "lb": "10"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "twohand"
+    },
+    {
+     "name": "damage",
+     "value": "1d12",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "range",
+     "value": "40/120"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS"
+    },
+    {
+     "name": "mastery",
+     "value": "slow"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Ranged",
+    "melee": false,
+    "damage": {
+     "dice": "1d12",
+     "type": "piercing"
+    },
+    "properties": [
+     "Ammunition",
+     "Loading",
+     "Two-Handed"
+    ],
+    "versatile_damage": null,
+    "range": "40/120",
+    "ammunition_type": "Bullet",
+    "mastery": "slow",
+    "mastery_id": "ID_2024_MASTERY_SLOW",
+    "two_handed_unless_mounted": false
+   }
+  },
+  {
+   "id": "ID_2024_WEAPON_PISTOL",
+   "name": "Pistol",
+   "type": "Weapon",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+    "ID_INTERNAL_WEAPON_PROPERTY_LOADING",
+    "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+    "ID_2024_MASTERY_VEX"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "250",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "3 lb.",
+     "attributes": {
+      "lb": "3"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d10",
+     "attributes": {
+      "type": "piercing"
+     }
+    },
+    {
+     "name": "range",
+     "value": "30/90"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS"
+    },
+    {
+     "name": "mastery",
+     "value": "vex"
+    }
+   ],
+   "data": {
+    "weapon_category": "Martial Ranged",
+    "melee": false,
+    "damage": {
+     "dice": "1d10",
+     "type": "piercing"
+    },
+    "properties": [
+     "Ammunition",
+     "Loading"
+    ],
+    "versatile_damage": null,
+    "range": "30/90",
+    "ammunition_type": "Bullet",
+    "mastery": "vex",
+    "mastery_id": "ID_2024_MASTERY_VEX",
+    "two_handed_unless_mounted": false
+   }
+  }
+ ]
+}

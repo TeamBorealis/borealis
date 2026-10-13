@@ -1,0 +1,1291 @@
+{
+  "format": "borealis-content/1",
+  "ruleset": "dnd2014",
+  "info": {
+    "name": "SRD 5.1 Tools, Gaming Sets and Musical Instruments",
+    "description": "SRD 5.1 equipment and magic items. Structured into JSON from the System Reference Document 5.1 (CC-BY-4.0); text condensed/reformatted."
+  },
+  "elements": [
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_ALCHEMISTS_SUPPLIES",
+      "name": "Alchemist’s Supplies",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "50",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "8 lb.",
+          "attributes": {
+            "lb": "8"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_ALCHEMISTS_SUPPLIES"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_BREWERS_SUPPLIES",
+      "name": "Brewer’s Supplies",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "20",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "9 lb.",
+          "attributes": {
+            "lb": "9"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_BREWERS_SUPPLIES"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_CALLIGRAPHERS_SUPPLIES",
+      "name": "Calligrapher’s Supplies",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "10",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "5 lb.",
+          "attributes": {
+            "lb": "5"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_CALLIGRAPHERS_SUPPLIES"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_CARPENTERS_TOOLS",
+      "name": "Carpenter’s Tools",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "8",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "6 lb.",
+          "attributes": {
+            "lb": "6"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_CARPENTERS_TOOLS"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_CARTOGRAPHERS_TOOLS",
+      "name": "Cartographer’s Tools",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "15",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "6 lb.",
+          "attributes": {
+            "lb": "6"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_CARTOGRAPHERS_TOOLS"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_COBBLERS_TOOLS",
+      "name": "Cobbler’s Tools",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "5 lb.",
+          "attributes": {
+            "lb": "5"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_COBBLERS_TOOLS"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_COOKS_UTENSILS",
+      "name": "Cook’s Utensils",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "1",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "8 lb.",
+          "attributes": {
+            "lb": "8"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_COOKS_UTENSILS"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_GLASSBLOWERS_TOOLS",
+      "name": "Glassblower’s Tools",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "30",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "5 lb.",
+          "attributes": {
+            "lb": "5"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_GLASSBLOWERS_TOOLS"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_JEWELERS_TOOLS",
+      "name": "Jeweler’s Tools",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "25",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_JEWELERS_TOOLS"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_LEATHERWORKERS_TOOLS",
+      "name": "Leatherworker’s Tools",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "5 lb.",
+          "attributes": {
+            "lb": "5"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_LEATHERWORKERS_TOOLS"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_MASONS_TOOLS",
+      "name": "Mason’s Tools",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "10",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "8 lb.",
+          "attributes": {
+            "lb": "8"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_MASONS_TOOLS"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_PAINTERS_SUPPLIES",
+      "name": "Painter’s Supplies",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "10",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "5 lb.",
+          "attributes": {
+            "lb": "5"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_PAINTERS_SUPPLIES"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_POTTERS_TOOLS",
+      "name": "Potter’s Tools",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "10",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "3 lb.",
+          "attributes": {
+            "lb": "3"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_POTTERS_TOOLS"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_SMITHS_TOOLS",
+      "name": "Smith’s Tools",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "20",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "8 lb.",
+          "attributes": {
+            "lb": "8"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_SMITHS_TOOLS"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_TINKERS_TOOLS",
+      "name": "Tinker’s Tools",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "50",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "10 lb.",
+          "attributes": {
+            "lb": "10"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_TINKERS_TOOLS"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_WEAVERS_TOOLS",
+      "name": "Weaver’s Tools",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "1",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "5 lb.",
+          "attributes": {
+            "lb": "5"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_WEAVERS_TOOLS"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_WOODCARVERS_TOOLS",
+      "name": "Woodcarver’s Tools",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "1",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "5 lb.",
+          "attributes": {
+            "lb": "5"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_WOODCARVERS_TOOLS"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_DISGUISE_KIT",
+      "name": "Disguise Kit",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "25",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "3 lb.",
+          "attributes": {
+            "lb": "3"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_DISGUISE_KIT"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_FORGERY_KIT",
+      "name": "Forgery Kit",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "15",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "5 lb.",
+          "attributes": {
+            "lb": "5"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_FORGERY_KIT"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_DICE_SET",
+      "name": "Dice Set",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Gaming Sets"
+        },
+        {
+          "name": "cost",
+          "value": "1",
+          "attributes": {
+            "currency": "sp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "—",
+          "attributes": {
+            "lb": "0"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_GAMING_SET_PROFICIENCY_DICE_SET"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_PLAYING_CARD_SET",
+      "name": "Playing Card Set",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Gaming Sets"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "sp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "—",
+          "attributes": {
+            "lb": "0"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_GAMING_SET_PROFICIENCY_PLAYING_CARD_SET"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_HERBALISM_KIT",
+      "name": "Herbalism Kit",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Tools"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "3 lb.",
+          "attributes": {
+            "lb": "3"
+          }
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_HERBALISM_KIT"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_SRD_INSTRUMENT_BAGPIPES",
+      "name": "Bagpipes",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_TOOL_MUSICAL_INSTRUMENT"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Musical Instruments"
+        },
+        {
+          "name": "cost",
+          "value": "30",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "6 lb.",
+          "attributes": {
+            "lb": "6"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_BAGPIPES"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_SRD_INSTRUMENT_DRUM",
+      "name": "Drum",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_TOOL_MUSICAL_INSTRUMENT"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Musical Instruments"
+        },
+        {
+          "name": "cost",
+          "value": "6",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "3 lb.",
+          "attributes": {
+            "lb": "3"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_DRUM"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_SRD_INSTRUMENT_DULCIMER",
+      "name": "Dulcimer",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_TOOL_MUSICAL_INSTRUMENT"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Musical Instruments"
+        },
+        {
+          "name": "cost",
+          "value": "25",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "10 lb.",
+          "attributes": {
+            "lb": "10"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_DULCIMER"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_SRD_INSTRUMENT_FLUTE",
+      "name": "Flute",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_TOOL_MUSICAL_INSTRUMENT"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Musical Instruments"
+        },
+        {
+          "name": "cost",
+          "value": "2",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "1 lb.",
+          "attributes": {
+            "lb": "1"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_FLUTE"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_SRD_INSTRUMENT_LUTE",
+      "name": "Lute",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_TOOL_MUSICAL_INSTRUMENT"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Musical Instruments"
+        },
+        {
+          "name": "cost",
+          "value": "35",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_LUTE"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_SRD_INSTRUMENT_LYRE",
+      "name": "Lyre",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_TOOL_MUSICAL_INSTRUMENT"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Musical Instruments"
+        },
+        {
+          "name": "cost",
+          "value": "30",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_LYRE"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_SRD_INSTRUMENT_HORN",
+      "name": "Horn",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_TOOL_MUSICAL_INSTRUMENT"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Musical Instruments"
+        },
+        {
+          "name": "cost",
+          "value": "3",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_HORN"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_SRD_INSTRUMENT_PANFLUTE",
+      "name": "Pan Flute",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_TOOL_MUSICAL_INSTRUMENT"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Musical Instruments"
+        },
+        {
+          "name": "cost",
+          "value": "12",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_PAN_FLUTE"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_SRD_INSTRUMENT_SHAWM",
+      "name": "Shawm",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_TOOL_MUSICAL_INSTRUMENT"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Musical Instruments"
+        },
+        {
+          "name": "cost",
+          "value": "2",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "1 lb.",
+          "attributes": {
+            "lb": "1"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_SHAWM"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_SRD_INSTRUMENT_VIOL",
+      "name": "Viol",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_TOOL_MUSICAL_INSTRUMENT"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Musical Instruments"
+        },
+        {
+          "name": "cost",
+          "value": "30",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "1 lb.",
+          "attributes": {
+            "lb": "1"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_VIOL"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_NAVIGATORS_TOOLS",
+      "name": "Navigator’s Tools",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_TOOL_MUSICAL_INSTRUMENT"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Musical Instruments"
+        },
+        {
+          "name": "cost",
+          "value": "25",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_NAVIGATORS_TOOLS"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_POISONERS_KIT",
+      "name": "Poisoner’s Kit",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_TOOL_MUSICAL_INSTRUMENT"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Musical Instruments"
+        },
+        {
+          "name": "cost",
+          "value": "50",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_POISONERS_KIT"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ITEM_TOOL_THIEVES_TOOLS",
+      "name": "Thieves’ Tools",
+      "type": "Item",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_TOOL_MUSICAL_INSTRUMENT"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Musical Instruments"
+        },
+        {
+          "name": "cost",
+          "value": "25",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "1 lb.",
+          "attributes": {
+            "lb": "1"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "type",
+          "value": "Tool"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_TOOL_PROFICIENCY_THIEVES_TOOLS"
+        }
+      ]
+    }
+  ]
+}

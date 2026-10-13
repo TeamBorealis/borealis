@@ -1,0 +1,56 @@
+Borealis third-party notices
+
+Borealis's own code is licensed under MIT OR Apache-2.0 (see LICENSE-MIT and LICENSE-APACHE). The bundled
+material below keeps its own licence. Borealis is an independent project. It is not affiliated with or endorsed by Wizards of the Coast or by the
+authors of Aurora Builder.
+
+1. System Reference Document 5.1 (content/srd-5.1, content/srd-5.1-monsters)
+
+   This work includes material taken from the System Reference Document 5.1 ("SRD 5.1") by Wizards of the
+   Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is
+   licensed under the Creative Commons Attribution 4.0 International License available at
+   https://creativecommons.org/licenses/by/4.0/legalcode.
+
+   The text was modified (structured into JSON content elements, reformatted, rules added). See
+   content/srd-5.1/ATTRIBUTION.md and content/srd-5.1-monsters/ATTRIBUTION.md.
+
+2. System Reference Document 5.2.1 (content/srd-5.2.1, content/srd-5.2.1-monsters)
+
+   This work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by Wizards of the
+   Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative
+   Commons Attribution 4.0 International License, available at
+   https://creativecommons.org/licenses/by/4.0/legalcode.
+
+   The text was modified (structured into JSON content elements, reflowed, rules added). See
+   content/srd-5.2.1/ATTRIBUTION.md and content/srd-5.2.1-monsters/ATTRIBUTION.md.
+
+   This content is compatible with fifth edition.
+
+3. Fonts
+
+   - Noto Sans (Regular/Bold/Italic), Noto Serif (Regular/Bold/Italic), Noto Sans Hebrew (Regular/Bold)
+     (Copyright 2022 The Noto Project Authors), SIL Open Font License 1.1, in crates/borealis-sheet/fonts/
+     (licence texts OFL-*.txt there). Unmodified.
+   - Selawik (Copyright 2015 Microsoft Corporation, Reserved Font Name "Selawik"), SIL Open Font License 1.1,
+     in ui/src/assets/fonts/ (Selawik-LICENSE.txt). Unmodified woff2.
+
+4. Icon sets (details and path data origins in ui/NOTICE; licence texts in ui/licenses/)
+
+   - Material Design Icons (Pictogrammers) via @mdi/js: Apache License 2.0.
+   - Font Awesome Free 5.15.4 (Copyright Font Awesome): icons under CC BY 4.0,
+     https://fontawesome.com/license/free.
+   - Modern UI Icons by Austin Andrews (Templarian): CC BY-ND 3.0. The glyph path data is used verbatim,
+     without modification.
+
+5. UI styling
+
+   Control styling recreates MahApps.Metro 1.x visual metrics (MahApps.Metro, Copyright .NET Foundation and
+   Contributors, MIT License). See ui/NOTICE.
+
+6. Sheet art geometry (tools/sheet-art/geom.mjs)
+
+   Derived from anidoodle (canvas-core/core.ts), Copyright 2026 Alex Greenshpun, Apache License 2.0
+   (tools/sheet-art/LICENSE-anidoodle). Modified: ported from TypeScript to JavaScript and reduced to the
+   helpers the sheet art generator needs. The generated art (crates/borealis-sheet/src/art.rs) is Borealis's own.
+
+Dependencies installed through Cargo and npm are covered by their own licences; see their package metadata.

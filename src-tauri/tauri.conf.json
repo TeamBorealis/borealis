@@ -1,0 +1,90 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Borealis",
+  "version": "1.0.0",
+  "identifier": "app.borealis",
+  "build": {
+    "beforeDevCommand": "npm --prefix ui run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm --prefix ui run build",
+    "frontendDist": "../ui/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Borealis",
+        "visible": false,
+        "width": 1200,
+        "height": 800,
+        "minWidth": 360,
+        "minHeight": 480,
+        "decorations": false,
+        "backgroundColor": "#161616"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../content/core": "content/core",
+      "../content/srd-5.1": "content/srd-5.1",
+      "../content/srd-5.2.1": "content/srd-5.2.1",
+      "../content/srd-5.1-monsters": "content/srd-5.1-monsters",
+      "../content/srd-5.2.1-monsters": "content/srd-5.2.1-monsters",
+      "../crates/borealis-ai/profile-assets": "ai-profile"
+    },
+    "fileAssociations": [
+      {
+        "ext": [
+          "dnd5e"
+        ],
+        "name": "Character file",
+        "description": "5e character",
+        "role": "Editor",
+        "rank": "Owner",
+        "mimeType": "application/x-dnd5e"
+      },
+      {
+        "ext": [
+          "index"
+        ],
+        "name": "Content index",
+        "description": "Content index",
+        "role": "Viewer",
+        "rank": "Owner"
+      },
+      {
+        "ext": [
+          "xml"
+        ],
+        "name": "Content file",
+        "description": "Content XML",
+        "role": "Viewer",
+        "rank": "Alternate",
+        "mimeType": "text/xml"
+      },
+      {
+        "ext": [
+          "zip"
+        ],
+        "name": "Content archive",
+        "description": "Zipped content",
+        "role": "Viewer",
+        "rank": "Alternate",
+        "mimeType": "application/zip"
+      }
+    ]
+  }
+}

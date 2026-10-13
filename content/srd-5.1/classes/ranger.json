@@ -1,0 +1,966 @@
+{
+  "format": "borealis-content/1",
+  "ruleset": "dnd2014",
+  "info": {
+    "name": "SRD 5.1 Ranger"
+  },
+  "elements": [
+    {
+      "id": "ID_WOTC_PHB_CLASS_RANGER",
+      "name": "Ranger",
+      "type": "Class",
+      "source": "SRD 5.1",
+      "description": "<p>As a ranger, you gain the following class features.</p><h5>HIT POINTS</h5><p><strong>Hit Dice:</strong> 1d10 per ranger level</p><p><strong>Hit Points at 1st Level:</strong> 10 + your Constitution modifier</p><p><strong>Hit Points at Higher Levels:</strong> 1d10 (or 6) + your Constitution modifier per ranger level after 1st</p><h5>PROFICIENCIES</h5><p><strong>Armor:</strong> Light armor, medium armor, shields</p><p><strong>Weapons:</strong> Simple weapons, martial weapons</p><p><strong>Tools:</strong> None</p><p><strong>Saving Throws:</strong> Strength, Dexterity</p><p><strong>Skills:</strong> Choose three from Animal Handling, Athletics, Insight, Investigation, Nature, Perception, Stealth, and Survival</p><h5>EQUIPMENT</h5><p>You start with the following equipment, in addition to the equipment granted by your background:</p><ul><li>(<em>a</em>) scale mail or (<em>b</em>) leather armor</li><li>(<em>a</em>) two shortswords or (<em>b</em>) two simple melee weapons</li><li>(<em>a</em>) a dungeoneer’s pack or (<em>b</em>) an explorer’s pack</li><li>A longbow and a quiver of 20 arrows</li></ul><h5 class=\"caption\">THE RANGER</h5><table class=\"class-features\"><thead><tr><th>Level</th><th>Proficiency Bonus</th><th>Features</th><th>Spells Known</th><th>1st</th><th>2nd</th><th>3rd</th><th>4th</th><th>5th</th></tr></thead><tbody><tr><td>1st</td><td>+2</td><td>Favored Enemy, Natural Explorer</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>2nd</td><td>+2</td><td>Fighting Style, Spellcasting</td><td>2</td><td>2</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>3rd</td><td>+2</td><td>Ranger Archetype, Primeval Awareness</td><td>3</td><td>3</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>4th</td><td>+2</td><td>Ability Score Improvement</td><td>3</td><td>3</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>5th</td><td>+3</td><td>Extra Attack</td><td>4</td><td>4</td><td>2</td><td>—</td><td>—</td><td>—</td></tr><tr><td>6th</td><td>+3</td><td>Favored Enemy and Natural Explorer improvements</td><td>4</td><td>4</td><td>2</td><td>—</td><td>—</td><td>—</td></tr><tr><td>7th</td><td>+3</td><td>Ranger Archetype feature</td><td>5</td><td>4</td><td>3</td><td>—</td><td>—</td><td>—</td></tr><tr><td>8th</td><td>+3</td><td>Ability Score Improvement, Land’s Stride</td><td>5</td><td>4</td><td>3</td><td>—</td><td>—</td><td>—</td></tr><tr><td>9th</td><td>+4</td><td>—</td><td>6</td><td>4</td><td>3</td><td>2</td><td>—</td><td>—</td></tr><tr><td>10th</td><td>+4</td><td>Natural Explorer improvement, Hide in Plain Sight</td><td>6</td><td>4</td><td>3</td><td>2</td><td>—</td><td>—</td></tr><tr><td>11th</td><td>+4</td><td>Ranger Archetype feature</td><td>7</td><td>4</td><td>3</td><td>3</td><td>—</td><td>—</td></tr><tr><td>12th</td><td>+4</td><td>Ability Score Improvement</td><td>7</td><td>4</td><td>3</td><td>3</td><td>—</td><td>—</td></tr><tr><td>13th</td><td>+5</td><td>—</td><td>8</td><td>4</td><td>3</td><td>3</td><td>1</td><td>—</td></tr><tr><td>14th</td><td>+5</td><td>Favored Enemy improvement, Vanish</td><td>8</td><td>4</td><td>3</td><td>3</td><td>1</td><td>—</td></tr><tr><td>15th</td><td>+5</td><td>Ranger Archetype feature</td><td>9</td><td>4</td><td>3</td><td>3</td><td>2</td><td>—</td></tr><tr><td>16th</td><td>+5</td><td>Ability Score Improvement</td><td>9</td><td>4</td><td>3</td><td>3</td><td>2</td><td>—</td></tr><tr><td>17th</td><td>+6</td><td>—</td><td>10</td><td>4</td><td>3</td><td>3</td><td>3</td><td>1</td></tr><tr><td>18th</td><td>+6</td><td>Feral Senses</td><td>10</td><td>4</td><td>3</td><td>3</td><td>3</td><td>1</td></tr><tr><td>19th</td><td>+6</td><td>Ability Score Improvement</td><td>11</td><td>4</td><td>3</td><td>3</td><td>3</td><td>2</td></tr><tr><td>20th</td><td>+6</td><td>Foe Slayer</td><td>11</td><td>4</td><td>3</td><td>3</td><td>3</td><td>2</td></tr></tbody></table>",
+      "sheet": {
+        "display": false,
+        "descriptions": [
+          {
+            "text": "A warrior who uses martial prowess and nature magic to combat threats on the edges of civilization."
+          }
+        ]
+      },
+      "setters": [
+        {
+          "name": "short",
+          "value": "A warrior who uses martial prowess and nature magic to combat threats on the edges of civilization."
+        },
+        {
+          "name": "hd",
+          "value": "d10"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_RANGER"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_MEDIUM_ARMOR",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_RANGER"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_RANGER"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_RANGER"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_RANGER"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_STRENGTH",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_RANGER"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_DEXTERITY",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_RANGER"
+        },
+        {
+          "kind": "select",
+          "type": "Proficiency",
+          "name": "Skill Proficiency (Ranger)",
+          "number": 3,
+          "supports": "Skill,Ranger",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_RANGER"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_CLASSFEATURE_RANGER_FAVORED_ENEMY",
+          "type": "Class Feature",
+          "level": 1
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_CLASSFEATURE_RANGER_NATURAL_EXPLORER",
+          "type": "Class Feature",
+          "level": 1
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_CLASSFEATURE_RANGER_FIGHTING_STYLE",
+          "type": "Class Feature",
+          "level": 2
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_CLASSFEATURE_RANGER_SPELLCASTING",
+          "type": "Class Feature",
+          "level": 2
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_CLASSFEATURE_RANGER_RANGER_ARCHETYPE",
+          "type": "Class Feature",
+          "level": 3
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_CLASSFEATURE_RANGER_PRIMEVAL_AWARENESS",
+          "type": "Class Feature",
+          "level": 3
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_CLASSFEATURE_RANGER_ASI",
+          "type": "Class Feature",
+          "level": 4
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_CLASSFEATURE_RANGER_EXTRA_ATTACK",
+          "type": "Class Feature",
+          "level": 5
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_CLASSFEATURE_RANGER_LANDS_STRIDE",
+          "type": "Class Feature",
+          "level": 8
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_CLASSFEATURE_RANGER_HIDE_IN_PLAIN_SIGHT",
+          "type": "Class Feature",
+          "level": 10
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_CLASSFEATURE_RANGER_VANISH",
+          "type": "Class Feature",
+          "level": 14
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_CLASSFEATURE_RANGER_FERAL_SENSES",
+          "type": "Class Feature",
+          "level": 18
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_CLASSFEATURE_RANGER_FOE_SLAYER",
+          "type": "Class Feature",
+          "level": 20
+        }
+      ],
+      "multiclass": {
+        "id": "ID_WOTC_PHB_MULTICLASS_RANGER",
+        "prerequisite": "Dexterity 13 and Wisdom 13",
+        "requirements": "([dex:13],[wis:13])",
+        "setters": [
+          {
+            "name": "multiclass proficiencies",
+            "value": "Light armor, medium armor, shields, simple weapons, martial weapons"
+          }
+        ],
+        "rules": [
+          {
+            "kind": "grant",
+            "id": "ID_INTERNAL_GRANT_MULTICLASS",
+            "type": "Grants"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+            "type": "Proficiency"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_MEDIUM_ARMOR",
+            "type": "Proficiency"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+            "type": "Proficiency"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+            "type": "Proficiency"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS",
+            "type": "Proficiency"
+          },
+          {
+            "kind": "select",
+            "type": "Proficiency",
+            "name": "Skill Proficiency (Ranger)",
+            "number": 1,
+            "supports": "Skill,Ranger"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FAVORED_ENEMY",
+      "name": "Favored Enemy",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning at 1st level, you have significant experience studying, tracking, hunting, and even talking to a certain type of enemy.</p><p>Choose a type of favored enemy: aberrations, beasts, celestials, constructs, dragons, elementals, fey, fiends, giants, monstrosities, oozes, plants, or undead. Alternatively, you can select two races of humanoid (such as gnolls and orcs) as favored enemies.</p><p>You have advantage on Wisdom (Survival) checks to track your favored enemies, as well as on Intelligence checks to recall information about them. When you gain this feature, you also learn one language of your choice that is spoken by your favored enemies, if they speak one at all.</p><p>You choose one additional favored enemy, as well as an associated language, at 6th and 14th level. As you gain levels, your choices should reflect the types of monsters you have encountered on your adventures.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemies: {{favored enemy:count}}. Advantage on Survival checks to track them and Intelligence checks to recall information about them."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "favored enemy:count",
+          "value": "1"
+        },
+        {
+          "kind": "stat",
+          "name": "favored enemy:count",
+          "value": "1",
+          "level": 6
+        },
+        {
+          "kind": "stat",
+          "name": "favored enemy:count",
+          "value": "1",
+          "level": 14
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_NATURAL_EXPLORER",
+      "name": "Natural Explorer",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>You are particularly familiar with one type of natural environment and are adept at traveling and surviving in such regions. Choose one type of favored terrain: arctic, coast, desert, forest, grassland, mountain, or swamp. When you make an Intelligence or Wisdom check related to your favored terrain, your proficiency bonus is doubled if you are using a skill that you’re proficient in.</p><p>While traveling for an hour or more in your favored terrain, you gain the following benefits:</p><ul><li>Difficult terrain doesn’t slow your group’s travel.</li><li>Your group can’t become lost except by magical means.</li><li>Even when you are engaged in another activity while traveling (such as foraging, navigating, or tracking), you remain alert to danger.</li><li>If you are traveling alone, you can move stealthily at a normal pace.</li><li>When you forage, you find twice as much food as you normally would.</li><li>While tracking other creatures, you also learn their exact number, their sizes, and how long ago they passed through the area.</li></ul><p>You choose additional favored terrain types at 6th and 10th level.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored terrains: {{natural explorer:count}}."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "natural explorer:count",
+          "value": "1"
+        },
+        {
+          "kind": "stat",
+          "name": "natural explorer:count",
+          "value": "1",
+          "level": 6
+        },
+        {
+          "kind": "stat",
+          "name": "natural explorer:count",
+          "value": "1",
+          "level": 10
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FIGHTING_STYLE",
+      "name": "Fighting Style",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 2nd level, you adopt a particular style of fighting as your specialty. Choose one of the following options. You can’t take a Fighting Style option more than once, even if you later get to choose again.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Fighting Style",
+          "level": 2,
+          "supports": "Fighting Style,Ranger"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_SPELLCASTING",
+      "name": "Spellcasting",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>By the time you reach 2nd level, you have learned to use the magical essence of nature to cast spells, much as a druid does.</p><h6>Spell Slots</h6><p>The Ranger table shows how many spell slots you have to cast your spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell’s level or higher. You regain all expended spell slots when you finish a long rest.</p><p>For example, if you know the 1st-level spell <em>animal friendship</em> and have a 1st-level and a 2nd-level spell slot available, you can cast <em>animal friendship</em> using either slot.</p><h6>Spells Known of 1st Level and Higher</h6><p>You know two 1st-level spells of your choice from the ranger spell list.</p><p>The Spells Known column of the Ranger table shows when you learn more ranger spells of your choice. Each of these spells must be of a level for which you have spell slots. For instance, when you reach 5th level in this class, you can learn one new spell of 1st or 2nd level.</p><p>Additionally, when you gain a level in this class, you can choose one of the ranger spells you know and replace it with another spell from the ranger spell list, which also must be of a level for which you have spell slots.</p><h6>Spellcasting Ability</h6><p>Wisdom is your spellcasting ability for your ranger spells, since your magic draws on your attunement to nature. You use your Wisdom whenever a spell refers to your spellcasting ability. In addition, you use your Wisdom modifier when setting the saving throw DC for a ranger spell you cast and when making an attack roll with one.</p><p><strong>Spell save DC</strong> =8 + your proficiency bonus + your Wisdom modifier</p><p><strong>Spell attack modifier</strong> =your proficiency bonus + your Wisdom modifier</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Wisdom is your spellcasting ability for your ranger spells."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_HALF",
+          "type": "Grants",
+          "requirements": "ID_INTERNAL_GRANT_MULTICLASS"
+        },
+        {
+          "kind": "stat",
+          "name": "ranger:spellcasting:slots:1",
+          "value": "2",
+          "level": 2
+        },
+        {
+          "kind": "stat",
+          "name": "ranger:spellcasting:slots:1",
+          "value": "1",
+          "level": 3
+        },
+        {
+          "kind": "stat",
+          "name": "ranger:spellcasting:slots:1",
+          "value": "1",
+          "level": 5
+        },
+        {
+          "kind": "stat",
+          "name": "ranger:spellcasting:slots:2",
+          "value": "2",
+          "level": 5
+        },
+        {
+          "kind": "stat",
+          "name": "ranger:spellcasting:slots:2",
+          "value": "1",
+          "level": 7
+        },
+        {
+          "kind": "stat",
+          "name": "ranger:spellcasting:slots:3",
+          "value": "2",
+          "level": 9
+        },
+        {
+          "kind": "stat",
+          "name": "ranger:spellcasting:slots:3",
+          "value": "1",
+          "level": 11
+        },
+        {
+          "kind": "stat",
+          "name": "ranger:spellcasting:slots:4",
+          "value": "1",
+          "level": 13
+        },
+        {
+          "kind": "stat",
+          "name": "ranger:spellcasting:slots:4",
+          "value": "1",
+          "level": 15
+        },
+        {
+          "kind": "stat",
+          "name": "ranger:spellcasting:slots:4",
+          "value": "1",
+          "level": 17
+        },
+        {
+          "kind": "stat",
+          "name": "ranger:spellcasting:slots:5",
+          "value": "1",
+          "level": 17
+        },
+        {
+          "kind": "stat",
+          "name": "ranger:spellcasting:slots:5",
+          "value": "1",
+          "level": 19
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spells Known (Ranger)",
+          "number": 2,
+          "level": 2,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Ranger"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spells Known (Ranger)",
+          "number": 1,
+          "level": 3,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Ranger"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spells Known (Ranger)",
+          "number": 1,
+          "level": 5,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Ranger"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spells Known (Ranger)",
+          "number": 1,
+          "level": 7,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Ranger"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spells Known (Ranger)",
+          "number": 1,
+          "level": 9,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Ranger"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spells Known (Ranger)",
+          "number": 1,
+          "level": 11,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Ranger"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spells Known (Ranger)",
+          "number": 1,
+          "level": 13,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Ranger"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spells Known (Ranger)",
+          "number": 1,
+          "level": 15,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Ranger"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spells Known (Ranger)",
+          "number": 1,
+          "level": 17,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Ranger"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spells Known (Ranger)",
+          "number": 1,
+          "level": 19,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Ranger"
+        }
+      ],
+      "spellcasting": {
+        "name": "Ranger",
+        "ability": "Wisdom",
+        "allow_replace": true,
+        "list": {
+          "supports": "Ranger"
+        }
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_RANGER_ARCHETYPE",
+      "name": "Ranger Archetype",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 3rd level, you choose an archetype that you strive to emulate, such as the Hunter. Your choice grants you features at 3rd level and again at 7th, 11th, and 15th level.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Archetype",
+          "name": "Ranger Archetype",
+          "level": 3,
+          "supports": "Ranger Archetype"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_PRIMEVAL_AWARENESS",
+      "name": "Primeval Awareness",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning at 3rd level, you can use your action and expend one ranger spell slot to focus your awareness on the region around you. For 1 minute per level of the spell slot you expend, you can sense whether the following types of creatures are present within 1 mile of you (or within up to 6 miles if you are in your favored terrain): aberrations, celestials, dragons, elementals, fey, fiends, and undead. This feature doesn’t reveal the creatures’ location or number.</p>",
+      "sheet": {
+        "usage": "1 spell slot",
+        "action": "Action"
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_ASI",
+      "name": "Ability Score Improvement",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.</p>",
+      "sheet": {
+        "display": false
+      },
+      "compendium": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Ranger 4)",
+          "level": 4,
+          "supports": "Improvement Option,Ranger,4"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Ranger 8)",
+          "level": 8,
+          "supports": "Improvement Option,Ranger,8"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Ranger 12)",
+          "level": 12,
+          "supports": "Improvement Option,Ranger,12"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Ranger 16)",
+          "level": 16,
+          "supports": "Improvement Option,Ranger,16"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Ranger 19)",
+          "level": 19,
+          "supports": "Improvement Option,Ranger,19"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_EXTRA_ATTACK",
+      "name": "Extra Attack",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning at 5th level, you can attack twice, instead of once, whenever you take the Attack action on your turn.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Beginning at 5th level, you can attack twice, instead of once, whenever you take the Attack action on your turn."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "extra attack:count",
+          "value": "2",
+          "bonus": "extra attack",
+          "level": 5
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_LANDS_STRIDE",
+      "name": "Land’s Stride",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 8th level, moving through nonmagical difficult terrain costs you no extra movement. You can also pass through nonmagical plants without being slowed by them and without taking damage from them if they have thorns, spines, or a similar hazard.</p><p>In addition, you have advantage on saving throws against plants that are magically created or manipulated to impede movement, such those created by the <em>entangle</em> spell.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Starting at 8th level, moving through nonmagical difficult terrain costs you no extra movement. You can also pass through nonmagical plants without being slowed by them and without taking damage from them if they have thorns, spines, or a similar hazard."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_HIDE_IN_PLAIN_SIGHT",
+      "name": "Hide in Plain Sight",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 10th level, you can spend 1 minute creating camouflage for yourself. You must have access to fresh mud, dirt, plants, soot, and other naturally occurring materials with which to create your camouflage.</p><p>Once you are camouflaged in this way, you can try to hide by pressing yourself up against a solid surface, such as a tree or wall, that is at least as tall and wide as you are. You gain a +10 bonus to Dexterity (Stealth) checks as long as you remain there without moving or taking actions. Once you move or take an action or a reaction, you must camouflage yourself again to gain this benefit.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Starting at 10th level, you can spend 1 minute creating camouflage for yourself. You must have access to fresh mud, dirt, plants, soot, and other naturally occurring materials with which to create your camouflage."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_VANISH",
+      "name": "Vanish",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 14th level, you can use the Hide action as a bonus action on your turn. Also, you can’t be tracked by nonmagical means, unless you choose to leave a trail.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Starting at 14th level, you can use the Hide action as a bonus action on your turn. Also, you can’t be tracked by nonmagical means, unless you choose to leave a trail."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FERAL_SENSES",
+      "name": "Feral Senses",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 18th level, you gain preternatural senses that help you fight creatures you can’t see. When you attack a creature you can’t see, your inability to see it doesn’t impose disadvantage on your attack rolls against it. You are also aware of the location of any invisible creature within 30 feet of you, provided that the creature isn’t hidden from you and you aren’t blinded or deafened.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "At 18th level, you gain preternatural senses that help you fight creatures you can’t see. When you attack a creature you can’t see, your inability to see it doesn’t impose disadvantage on your attack rolls against it."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FOE_SLAYER",
+      "name": "Foe Slayer",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 20th level, you become an unparalleled hunter of your enemies. Once on each of your turns, you can add your Wisdom modifier to the attack roll or the damage roll of an attack you make against one of your favored enemies. You can choose to use this feature before or after the roll, but before any effects of the roll are applied.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "At 20th level, you become an unparalleled hunter of your enemies. Once on each of your turns, you can add your Wisdom modifier to the attack roll or the damage roll of an attack you make against one of your favored enemies."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_ARCHETYPE_RANGER_HUNTER",
+      "name": "Hunter",
+      "type": "Archetype",
+      "source": "SRD 5.1",
+      "supports": [
+        "Ranger Archetype"
+      ],
+      "description": "<p>Emulating the Hunter archetype means accepting your place as a bulwark between civilization and the terrors of the wilderness. As you walk the Hunter’s path, you learn specialized techniques for fighting the threats you face, from rampaging ogres and hordes of orcs to towering giants and terrifying dragons.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_ARCHETYPEFEATURE_RANGER_HUNTERS_PREY",
+          "type": "Archetype Feature",
+          "level": 3
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_ARCHETYPEFEATURE_RANGER_DEFENSIVE_TACTICS",
+          "type": "Archetype Feature",
+          "level": 7
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_ARCHETYPEFEATURE_RANGER_MULTIATTACK",
+          "type": "Archetype Feature",
+          "level": 11
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_ARCHETYPEFEATURE_RANGER_SUPERIOR_HUNTERS_DEFENSE",
+          "type": "Archetype Feature",
+          "level": 15
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_ARCHETYPEFEATURE_RANGER_HUNTERS_PREY",
+      "name": "Hunter’s Prey",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 3rd level, you gain one of the following features of your choice.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Archetype Feature",
+          "name": "Hunter’s Prey",
+          "level": 3,
+          "supports": "Hunter Prey"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_RANGER_HUNTER_COLOSSUS_SLAYER",
+      "name": "Colossus Slayer",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Hunter Prey"
+      ],
+      "description": "<p>Your tenacity can wear down the most potent foes. When you hit a creature with a weapon attack, the creature takes an extra 1d8 damage if it’s below its hit point maximum. You can deal this extra damage only once per turn.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Your tenacity can wear down the most potent foes. When you hit a creature with a weapon attack, the creature takes an extra 1d8 damage if it’s below its hit point maximum. You can deal this extra damage only once per turn."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_RANGER_HUNTER_GIANT_KILLER",
+      "name": "Giant Killer",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Hunter Prey"
+      ],
+      "description": "<p>When a Large or larger creature within 5 feet of you hits or misses you with an attack, you can use your reaction to attack that creature immediately after its attack, provided that you can see the creature.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "When a Large or larger creature within 5 feet of you hits or misses you with an attack, you can use your reaction to attack that creature immediately after its attack, provided that you can see the creature."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_RANGER_HUNTER_HORDE_BREAKER",
+      "name": "Horde Breaker",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Hunter Prey"
+      ],
+      "description": "<p>Once on each of your turns when you make a weapon attack, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target and within range of your weapon.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Once on each of your turns when you make a weapon attack, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target and within range of your weapon."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_ARCHETYPEFEATURE_RANGER_DEFENSIVE_TACTICS",
+      "name": "Defensive Tactics",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 7th level, you gain one of the following features of your choice.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Archetype Feature",
+          "name": "Defensive Tactics",
+          "level": 7,
+          "supports": "Hunter Defensive Tactics"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_RANGER_HUNTER_ESCAPE_THE_HORDE",
+      "name": "Escape the Horde",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Hunter Defensive Tactics"
+      ],
+      "description": "<p>Opportunity attacks against you are made with disadvantage.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Opportunity attacks against you are made with disadvantage."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_RANGER_HUNTER_MULTIATTACK_DEFENSE",
+      "name": "Multiattack Defense",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Hunter Defensive Tactics"
+      ],
+      "description": "<p>When a creature hits you with an attack, you gain a +4 bonus to AC against all subsequent attacks made by that creature for the rest of the turn.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "When a creature hits you with an attack, you gain a +4 bonus to AC against all subsequent attacks made by that creature for the rest of the turn."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_RANGER_HUNTER_STEEL_WILL",
+      "name": "Steel Will",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Hunter Defensive Tactics"
+      ],
+      "description": "<p>You have advantage on saving throws against being frightened.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You have advantage on saving throws against being frightened."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_ARCHETYPEFEATURE_RANGER_MULTIATTACK",
+      "name": "Multiattack",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 11th level, you gain one of the following features of your choice.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Archetype Feature",
+          "name": "Multiattack",
+          "level": 11,
+          "supports": "Hunter Multiattack"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_RANGER_HUNTER_VOLLEY",
+      "name": "Volley",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Hunter Multiattack"
+      ],
+      "description": "<p>You can use your action to make a ranged attack against any number of creatures within 10 feet of a point you can see within your weapon’s range. You must have ammunition for each target, as normal, and you make a separate attack roll for each target.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You can use your action to make a ranged attack against any number of creatures within 10 feet of a point you can see within your weapon’s range. You must have ammunition for each target, as normal, and you make a separate attack roll for each target."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_RANGER_HUNTER_WHIRLWIND_ATTACK",
+      "name": "Whirlwind Attack",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Hunter Multiattack"
+      ],
+      "description": "<p>You can use your action to make a melee attack against any number of creatures within 5 feet of you, with a separate attack roll for each target.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You can use your action to make a melee attack against any number of creatures within 5 feet of you, with a separate attack roll for each target."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_ARCHETYPEFEATURE_RANGER_SUPERIOR_HUNTERS_DEFENSE",
+      "name": "Superior Hunter’s Defense",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 15th level, you gain one of the following features of your choice.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Archetype Feature",
+          "name": "Superior Hunter’s Defense",
+          "level": 15,
+          "supports": "Hunter Superior Defense"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_RANGER_HUNTER_EVASION",
+      "name": "Evasion",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Hunter Superior Defense"
+      ],
+      "description": "<p>When you are subjected to an effect, such as a red dragon’s fiery breath or a <em>lightning bolt</em> spell, that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "When you are subjected to an effect, such as a red dragon’s fiery breath or a lightning bolt spell, that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_RANGER_HUNTER_STAND_AGAINST_THE_TIDE",
+      "name": "Stand Against the Tide",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Hunter Superior Defense"
+      ],
+      "description": "<p>When a hostile creature misses you with a melee attack, you can use your reaction to force that creature to repeat the same attack against another creature (other than itself) of your choice.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "When a hostile creature misses you with a melee attack, you can use your reaction to force that creature to repeat the same attack against another creature (other than itself) of your choice."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_RANGER_HUNTER_UNCANNY_DODGE",
+      "name": "Uncanny Dodge",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Hunter Superior Defense"
+      ],
+      "description": "<p>When an attacker that you can see hits you with an attack, you can use your reaction to halve the attack’s damage against you.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "When an attacker that you can see hits you with an attack, you can use your reaction to halve the attack’s damage against you."
+          }
+        ]
+      }
+    }
+  ]
+}

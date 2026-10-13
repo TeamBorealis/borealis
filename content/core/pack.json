@@ -1,0 +1,59 @@
+{
+ "format": "borealis-pack/1",
+ "id": "core",
+ "name": "Borealis Core Rules",
+ "version": "1.0.0",
+ "origin": "core",
+ "rulesets": [
+  "dnd2014",
+  "dnd2024"
+ ],
+ "description": "Base mechanics: abilities, skills, levels, multiclass tables, proficiencies and catalogues.",
+ "license": "MIT",
+ "files": [
+  {
+   "path": "core-levels.json",
+   "kind": "content"
+  },
+  {
+   "path": "multiclass.json",
+   "kind": "content"
+  },
+  {
+   "path": "internal.json",
+   "kind": "content"
+  },
+  {
+   "path": "abilities.json",
+   "kind": "content"
+  },
+  {
+   "path": "saving-throws.json",
+   "kind": "content"
+  },
+  {
+   "path": "skills.json",
+   "kind": "content"
+  },
+  {
+   "path": "skill-helpers.json",
+   "kind": "content"
+  },
+  {
+   "path": "expertise.json",
+   "kind": "content"
+  },
+  {
+   "path": "catalogues.json",
+   "kind": "content"
+  },
+  {
+   "path": "proficiencies.json",
+   "kind": "content"
+  },
+  {
+   "path": "properties.json",
+   "kind": "content"
+  }
+ ]
+}

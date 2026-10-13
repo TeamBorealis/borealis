@@ -1,0 +1,1878 @@
+{
+  "format": "borealis-content/1",
+  "ruleset": "dnd2014",
+  "info": {
+    "name": "SRD 5.1 Magic Items: Magic Armor",
+    "description": "SRD 5.1 equipment and magic items. Structured into JSON from the System Reference Document 5.1 (CC-BY-4.0); text condensed/reformatted."
+  },
+  "elements": [
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ADAMANTINE_ARMOR",
+      "name": "Adamantine Armor",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>This suit of armor is reinforced with adamantine, one of the hardest substances in existence. While you’re wearing it, any critical hit against you becomes a normal hit.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "medium or heavy, but not hide"
+          }
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        },
+        {
+          "name": "armor",
+          "value": "(ID_INTERNAL_ARMOR_GROUP_MEDIUM||ID_INTERNAL_ARMOR_GROUP_HEAVY),!Hide"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ANIMATED_SHIELD",
+      "name": "Animated Shield",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>While holding this shield, you can speak its command word as a bonus action to cause it to animate. The shield leaps into the air and hovers in your space to protect you as if you were wielding it, leaving your hands free. The shield remains animated for 1 minute, until you use a bonus action to end this effect, or until you are incapacitated or die, at which point the shield falls to the ground or into your hand if you have one free.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "shield"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_SHIELD"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_1",
+      "name": "Armor, +1",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>You have a bonus to AC while wearing this armor. The bonus is determined by its rarity.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "light, medium, or heavy"
+          }
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "enhancement",
+          "value": "1"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_LIGHT|ID_INTERNAL_ARMOR_GROUP_MEDIUM|ID_INTERNAL_ARMOR_GROUP_HEAVY"
+        },
+        {
+          "name": "name-format",
+          "value": "{{parent}} +{{enhancement}}"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "1",
+          "bonus": "enhancement"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_2",
+      "name": "Armor, +2",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>You have a bonus to AC while wearing this armor. The bonus is determined by its rarity.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "light, medium, or heavy"
+          }
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        },
+        {
+          "name": "enhancement",
+          "value": "2"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_LIGHT|ID_INTERNAL_ARMOR_GROUP_MEDIUM|ID_INTERNAL_ARMOR_GROUP_HEAVY"
+        },
+        {
+          "name": "name-format",
+          "value": "{{parent}} +{{enhancement}}"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "2",
+          "bonus": "enhancement"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_3",
+      "name": "Armor, +3",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>You have a bonus to AC while wearing this armor. The bonus is determined by its rarity.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "light, medium, or heavy"
+          }
+        },
+        {
+          "name": "rarity",
+          "value": "Legendary"
+        },
+        {
+          "name": "enhancement",
+          "value": "3"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_LIGHT|ID_INTERNAL_ARMOR_GROUP_MEDIUM|ID_INTERNAL_ARMOR_GROUP_HEAVY"
+        },
+        {
+          "name": "name-format",
+          "value": "{{parent}} +{{enhancement}}"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "3",
+          "bonus": "enhancement"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_OF_INVULNERABILITY",
+      "name": "Armor of Invulnerability",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>You have resistance to nonmagical damage while you wear this armor. Additionally, you can use an action to make yourself immune to nonmagical damage for 10 minutes or until you are no longer wearing the armor. Once this special action is used, it can’t be used again until the next dawn.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "plate"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Legendary"
+        },
+        {
+          "name": "armor",
+          "value": "Plate"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_OF_RESISTANCE_ACID",
+      "name": "Armor of Resistance, Acid",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Acid.</em></p><p>You have resistance to one type of damage while you wear this armor. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "light, medium, or heavy"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_LIGHT|ID_INTERNAL_ARMOR_GROUP_MEDIUM|ID_INTERNAL_ARMOR_GROUP_HEAVY"
+        },
+        {
+          "name": "name-format",
+          "value": "{{parent}} of Acid Resistance"
+        },
+        {
+          "name": "keywords",
+          "value": "acid"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_ACID",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_OF_RESISTANCE_COLD",
+      "name": "Armor of Resistance, Cold",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Cold.</em></p><p>You have resistance to one type of damage while you wear this armor. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "light, medium, or heavy"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_LIGHT|ID_INTERNAL_ARMOR_GROUP_MEDIUM|ID_INTERNAL_ARMOR_GROUP_HEAVY"
+        },
+        {
+          "name": "name-format",
+          "value": "{{parent}} of Cold Resistance"
+        },
+        {
+          "name": "keywords",
+          "value": "cold"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_COLD",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_OF_RESISTANCE_FIRE",
+      "name": "Armor of Resistance, Fire",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Fire.</em></p><p>You have resistance to one type of damage while you wear this armor. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "light, medium, or heavy"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_LIGHT|ID_INTERNAL_ARMOR_GROUP_MEDIUM|ID_INTERNAL_ARMOR_GROUP_HEAVY"
+        },
+        {
+          "name": "name-format",
+          "value": "{{parent}} of Fire Resistance"
+        },
+        {
+          "name": "keywords",
+          "value": "fire"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FIRE",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_OF_RESISTANCE_FORCE",
+      "name": "Armor of Resistance, Force",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Force.</em></p><p>You have resistance to one type of damage while you wear this armor. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "light, medium, or heavy"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_LIGHT|ID_INTERNAL_ARMOR_GROUP_MEDIUM|ID_INTERNAL_ARMOR_GROUP_HEAVY"
+        },
+        {
+          "name": "name-format",
+          "value": "{{parent}} of Force Resistance"
+        },
+        {
+          "name": "keywords",
+          "value": "force"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FORCE",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_OF_RESISTANCE_LIGHTNING",
+      "name": "Armor of Resistance, Lightning",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Lightning.</em></p><p>You have resistance to one type of damage while you wear this armor. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "light, medium, or heavy"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_LIGHT|ID_INTERNAL_ARMOR_GROUP_MEDIUM|ID_INTERNAL_ARMOR_GROUP_HEAVY"
+        },
+        {
+          "name": "name-format",
+          "value": "{{parent}} of Lightning Resistance"
+        },
+        {
+          "name": "keywords",
+          "value": "lightning"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_LIGHTNING",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_OF_RESISTANCE_NECROTIC",
+      "name": "Armor of Resistance, Necrotic",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Necrotic.</em></p><p>You have resistance to one type of damage while you wear this armor. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "light, medium, or heavy"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_LIGHT|ID_INTERNAL_ARMOR_GROUP_MEDIUM|ID_INTERNAL_ARMOR_GROUP_HEAVY"
+        },
+        {
+          "name": "name-format",
+          "value": "{{parent}} of Necrotic Resistance"
+        },
+        {
+          "name": "keywords",
+          "value": "necrotic"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_NECROTIC",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_OF_RESISTANCE_POISON",
+      "name": "Armor of Resistance, Poison",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Poison.</em></p><p>You have resistance to one type of damage while you wear this armor. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "light, medium, or heavy"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_LIGHT|ID_INTERNAL_ARMOR_GROUP_MEDIUM|ID_INTERNAL_ARMOR_GROUP_HEAVY"
+        },
+        {
+          "name": "name-format",
+          "value": "{{parent}} of Poison Resistance"
+        },
+        {
+          "name": "keywords",
+          "value": "poison"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_POISON",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_OF_RESISTANCE_PSYCHIC",
+      "name": "Armor of Resistance, Psychic",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Psychic.</em></p><p>You have resistance to one type of damage while you wear this armor. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "light, medium, or heavy"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_LIGHT|ID_INTERNAL_ARMOR_GROUP_MEDIUM|ID_INTERNAL_ARMOR_GROUP_HEAVY"
+        },
+        {
+          "name": "name-format",
+          "value": "{{parent}} of Psychic Resistance"
+        },
+        {
+          "name": "keywords",
+          "value": "psychic"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_PSYCHIC",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_OF_RESISTANCE_RADIANT",
+      "name": "Armor of Resistance, Radiant",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Radiant.</em></p><p>You have resistance to one type of damage while you wear this armor. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "light, medium, or heavy"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_LIGHT|ID_INTERNAL_ARMOR_GROUP_MEDIUM|ID_INTERNAL_ARMOR_GROUP_HEAVY"
+        },
+        {
+          "name": "name-format",
+          "value": "{{parent}} of Radiant Resistance"
+        },
+        {
+          "name": "keywords",
+          "value": "radiant"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_RADIANT",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_OF_RESISTANCE_THUNDER",
+      "name": "Armor of Resistance, Thunder",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Thunder.</em></p><p>You have resistance to one type of damage while you wear this armor. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "light, medium, or heavy"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_LIGHT|ID_INTERNAL_ARMOR_GROUP_MEDIUM|ID_INTERNAL_ARMOR_GROUP_HEAVY"
+        },
+        {
+          "name": "name-format",
+          "value": "{{parent}} of Thunder Resistance"
+        },
+        {
+          "name": "keywords",
+          "value": "thunder"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_THUNDER",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_OF_VULNERABILITY",
+      "name": "Armor of Vulnerability",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>While wearing this armor, you have resistance to one of the following damage types: bludgeoning, piercing, or slashing. The GM chooses the type or determines it randomly.</p><p><strong><em>Curse.</em></strong> This armor is cursed, a fact that is revealed only when an <em>identify</em> spell is cast on the armor or you attune to it. Attuning to the armor curses you until you are targeted by the <em>remove curse</em> spell or similar magic; removing the armor fails to end the curse. While cursed, you have vulnerability to two of the three damage types associated with the armor (not the one to which it grants resistance).</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "plate"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "armor",
+          "value": "Plate"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ARROWCATCHING_SHIELD",
+      "name": "Arrow-Catching Shield",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>You gain a +2 bonus to AC against ranged attacks while you wield this shield. This bonus is in addition to the shield’s normal bonus to AC. In addition, whenever an attacker makes a ranged attack against a target within 5 feet of you, you can use your reaction to become the target of the attack instead.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "shield"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_SHIELD"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "2",
+          "bonus": "enhancement:shield"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_DEMON_ARMOR",
+      "name": "Demon Armor",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>While wearing this armor, you gain a +1 bonus to AC, and you can understand and speak Abyssal. In addition, the armor’s clawed gauntlets turn unarmed strikes with your hands into magic weapons that deal slashing damage, with a +1 bonus to attack rolls and damage rolls and a damage die of 1d8.</p><p><strong><em>Curse.</em></strong> Once you don this cursed armor, you can’t doff it unless you are targeted by the <em>remove curse</em> spell or similar magic. While wearing the armor, you have disadvantage on attack rolls against demons and on saving throws against their spells and special abilities.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "plate"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        },
+        {
+          "name": "armor",
+          "value": "Plate"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "1",
+          "bonus": "enhancement"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_DRAGON_SCALE_MAIL_BLACK",
+      "name": "Dragon Scale Mail, Black",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Black dragon scale mail: resistance to acid damage.</em></p><p>Dragon scale mail is made of the scales of one kind of dragon. Sometimes dragons collect their cast-off scales and gift them to humanoids. Other times, hunters carefully skin and preserve the hide of a dead dragon. In either case, dragon scale mail is highly valued.</p><p>While wearing this armor, you gain a +1 bonus to AC, you have advantage on saving throws against the Frightful Presence and breath weapons of dragons, and you have resistance to one damage type that is determined by the kind of dragon that provided the scales (see the table).</p><p>Additionally, you can focus your senses as an action to magically discern the distance and direction to the closest dragon within 30 miles of you that is of the same type as the armor. This special action can’t be used again until the next dawn.</p><p class=\"table-text\">Dragon Resistance Dragon Resistance<br />Black Acid Gold Fire<br />Blue Lightning Green Poison<br />Brass Fire Red Fire<br />Bronze Lightning Silver Cold<br />Copper Acid White Cold</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "scale mail"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        },
+        {
+          "name": "armor",
+          "value": "Scale Mail"
+        },
+        {
+          "name": "enhancement",
+          "value": "1"
+        },
+        {
+          "name": "name-format",
+          "value": "Dragon Scale Mail (Black)"
+        },
+        {
+          "name": "keywords",
+          "value": "acid"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "1",
+          "bonus": "enhancement"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_ACID",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_DRAGON_SCALE_MAIL_BLUE",
+      "name": "Dragon Scale Mail, Blue",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Blue dragon scale mail: resistance to lightning damage.</em></p><p>Dragon scale mail is made of the scales of one kind of dragon. Sometimes dragons collect their cast-off scales and gift them to humanoids. Other times, hunters carefully skin and preserve the hide of a dead dragon. In either case, dragon scale mail is highly valued.</p><p>While wearing this armor, you gain a +1 bonus to AC, you have advantage on saving throws against the Frightful Presence and breath weapons of dragons, and you have resistance to one damage type that is determined by the kind of dragon that provided the scales (see the table).</p><p>Additionally, you can focus your senses as an action to magically discern the distance and direction to the closest dragon within 30 miles of you that is of the same type as the armor. This special action can’t be used again until the next dawn.</p><p class=\"table-text\">Dragon Resistance Dragon Resistance<br />Black Acid Gold Fire<br />Blue Lightning Green Poison<br />Brass Fire Red Fire<br />Bronze Lightning Silver Cold<br />Copper Acid White Cold</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "scale mail"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        },
+        {
+          "name": "armor",
+          "value": "Scale Mail"
+        },
+        {
+          "name": "enhancement",
+          "value": "1"
+        },
+        {
+          "name": "name-format",
+          "value": "Dragon Scale Mail (Blue)"
+        },
+        {
+          "name": "keywords",
+          "value": "lightning"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "1",
+          "bonus": "enhancement"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_LIGHTNING",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_DRAGON_SCALE_MAIL_BRASS",
+      "name": "Dragon Scale Mail, Brass",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Brass dragon scale mail: resistance to fire damage.</em></p><p>Dragon scale mail is made of the scales of one kind of dragon. Sometimes dragons collect their cast-off scales and gift them to humanoids. Other times, hunters carefully skin and preserve the hide of a dead dragon. In either case, dragon scale mail is highly valued.</p><p>While wearing this armor, you gain a +1 bonus to AC, you have advantage on saving throws against the Frightful Presence and breath weapons of dragons, and you have resistance to one damage type that is determined by the kind of dragon that provided the scales (see the table).</p><p>Additionally, you can focus your senses as an action to magically discern the distance and direction to the closest dragon within 30 miles of you that is of the same type as the armor. This special action can’t be used again until the next dawn.</p><p class=\"table-text\">Dragon Resistance Dragon Resistance<br />Black Acid Gold Fire<br />Blue Lightning Green Poison<br />Brass Fire Red Fire<br />Bronze Lightning Silver Cold<br />Copper Acid White Cold</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "scale mail"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        },
+        {
+          "name": "armor",
+          "value": "Scale Mail"
+        },
+        {
+          "name": "enhancement",
+          "value": "1"
+        },
+        {
+          "name": "name-format",
+          "value": "Dragon Scale Mail (Brass)"
+        },
+        {
+          "name": "keywords",
+          "value": "fire"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "1",
+          "bonus": "enhancement"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FIRE",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_DRAGON_SCALE_MAIL_BRONZE",
+      "name": "Dragon Scale Mail, Bronze",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Bronze dragon scale mail: resistance to lightning damage.</em></p><p>Dragon scale mail is made of the scales of one kind of dragon. Sometimes dragons collect their cast-off scales and gift them to humanoids. Other times, hunters carefully skin and preserve the hide of a dead dragon. In either case, dragon scale mail is highly valued.</p><p>While wearing this armor, you gain a +1 bonus to AC, you have advantage on saving throws against the Frightful Presence and breath weapons of dragons, and you have resistance to one damage type that is determined by the kind of dragon that provided the scales (see the table).</p><p>Additionally, you can focus your senses as an action to magically discern the distance and direction to the closest dragon within 30 miles of you that is of the same type as the armor. This special action can’t be used again until the next dawn.</p><p class=\"table-text\">Dragon Resistance Dragon Resistance<br />Black Acid Gold Fire<br />Blue Lightning Green Poison<br />Brass Fire Red Fire<br />Bronze Lightning Silver Cold<br />Copper Acid White Cold</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "scale mail"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        },
+        {
+          "name": "armor",
+          "value": "Scale Mail"
+        },
+        {
+          "name": "enhancement",
+          "value": "1"
+        },
+        {
+          "name": "name-format",
+          "value": "Dragon Scale Mail (Bronze)"
+        },
+        {
+          "name": "keywords",
+          "value": "lightning"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "1",
+          "bonus": "enhancement"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_LIGHTNING",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_DRAGON_SCALE_MAIL_COPPER",
+      "name": "Dragon Scale Mail, Copper",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Copper dragon scale mail: resistance to acid damage.</em></p><p>Dragon scale mail is made of the scales of one kind of dragon. Sometimes dragons collect their cast-off scales and gift them to humanoids. Other times, hunters carefully skin and preserve the hide of a dead dragon. In either case, dragon scale mail is highly valued.</p><p>While wearing this armor, you gain a +1 bonus to AC, you have advantage on saving throws against the Frightful Presence and breath weapons of dragons, and you have resistance to one damage type that is determined by the kind of dragon that provided the scales (see the table).</p><p>Additionally, you can focus your senses as an action to magically discern the distance and direction to the closest dragon within 30 miles of you that is of the same type as the armor. This special action can’t be used again until the next dawn.</p><p class=\"table-text\">Dragon Resistance Dragon Resistance<br />Black Acid Gold Fire<br />Blue Lightning Green Poison<br />Brass Fire Red Fire<br />Bronze Lightning Silver Cold<br />Copper Acid White Cold</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "scale mail"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        },
+        {
+          "name": "armor",
+          "value": "Scale Mail"
+        },
+        {
+          "name": "enhancement",
+          "value": "1"
+        },
+        {
+          "name": "name-format",
+          "value": "Dragon Scale Mail (Copper)"
+        },
+        {
+          "name": "keywords",
+          "value": "acid"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "1",
+          "bonus": "enhancement"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_ACID",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_DRAGON_SCALE_MAIL_GOLD",
+      "name": "Dragon Scale Mail, Gold",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Gold dragon scale mail: resistance to fire damage.</em></p><p>Dragon scale mail is made of the scales of one kind of dragon. Sometimes dragons collect their cast-off scales and gift them to humanoids. Other times, hunters carefully skin and preserve the hide of a dead dragon. In either case, dragon scale mail is highly valued.</p><p>While wearing this armor, you gain a +1 bonus to AC, you have advantage on saving throws against the Frightful Presence and breath weapons of dragons, and you have resistance to one damage type that is determined by the kind of dragon that provided the scales (see the table).</p><p>Additionally, you can focus your senses as an action to magically discern the distance and direction to the closest dragon within 30 miles of you that is of the same type as the armor. This special action can’t be used again until the next dawn.</p><p class=\"table-text\">Dragon Resistance Dragon Resistance<br />Black Acid Gold Fire<br />Blue Lightning Green Poison<br />Brass Fire Red Fire<br />Bronze Lightning Silver Cold<br />Copper Acid White Cold</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "scale mail"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        },
+        {
+          "name": "armor",
+          "value": "Scale Mail"
+        },
+        {
+          "name": "enhancement",
+          "value": "1"
+        },
+        {
+          "name": "name-format",
+          "value": "Dragon Scale Mail (Gold)"
+        },
+        {
+          "name": "keywords",
+          "value": "fire"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "1",
+          "bonus": "enhancement"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FIRE",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_DRAGON_SCALE_MAIL_GREEN",
+      "name": "Dragon Scale Mail, Green",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Green dragon scale mail: resistance to poison damage.</em></p><p>Dragon scale mail is made of the scales of one kind of dragon. Sometimes dragons collect their cast-off scales and gift them to humanoids. Other times, hunters carefully skin and preserve the hide of a dead dragon. In either case, dragon scale mail is highly valued.</p><p>While wearing this armor, you gain a +1 bonus to AC, you have advantage on saving throws against the Frightful Presence and breath weapons of dragons, and you have resistance to one damage type that is determined by the kind of dragon that provided the scales (see the table).</p><p>Additionally, you can focus your senses as an action to magically discern the distance and direction to the closest dragon within 30 miles of you that is of the same type as the armor. This special action can’t be used again until the next dawn.</p><p class=\"table-text\">Dragon Resistance Dragon Resistance<br />Black Acid Gold Fire<br />Blue Lightning Green Poison<br />Brass Fire Red Fire<br />Bronze Lightning Silver Cold<br />Copper Acid White Cold</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "scale mail"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        },
+        {
+          "name": "armor",
+          "value": "Scale Mail"
+        },
+        {
+          "name": "enhancement",
+          "value": "1"
+        },
+        {
+          "name": "name-format",
+          "value": "Dragon Scale Mail (Green)"
+        },
+        {
+          "name": "keywords",
+          "value": "poison"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "1",
+          "bonus": "enhancement"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_POISON",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_DRAGON_SCALE_MAIL_RED",
+      "name": "Dragon Scale Mail, Red",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Red dragon scale mail: resistance to fire damage.</em></p><p>Dragon scale mail is made of the scales of one kind of dragon. Sometimes dragons collect their cast-off scales and gift them to humanoids. Other times, hunters carefully skin and preserve the hide of a dead dragon. In either case, dragon scale mail is highly valued.</p><p>While wearing this armor, you gain a +1 bonus to AC, you have advantage on saving throws against the Frightful Presence and breath weapons of dragons, and you have resistance to one damage type that is determined by the kind of dragon that provided the scales (see the table).</p><p>Additionally, you can focus your senses as an action to magically discern the distance and direction to the closest dragon within 30 miles of you that is of the same type as the armor. This special action can’t be used again until the next dawn.</p><p class=\"table-text\">Dragon Resistance Dragon Resistance<br />Black Acid Gold Fire<br />Blue Lightning Green Poison<br />Brass Fire Red Fire<br />Bronze Lightning Silver Cold<br />Copper Acid White Cold</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "scale mail"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        },
+        {
+          "name": "armor",
+          "value": "Scale Mail"
+        },
+        {
+          "name": "enhancement",
+          "value": "1"
+        },
+        {
+          "name": "name-format",
+          "value": "Dragon Scale Mail (Red)"
+        },
+        {
+          "name": "keywords",
+          "value": "fire"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "1",
+          "bonus": "enhancement"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FIRE",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_DRAGON_SCALE_MAIL_SILVER",
+      "name": "Dragon Scale Mail, Silver",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Silver dragon scale mail: resistance to cold damage.</em></p><p>Dragon scale mail is made of the scales of one kind of dragon. Sometimes dragons collect their cast-off scales and gift them to humanoids. Other times, hunters carefully skin and preserve the hide of a dead dragon. In either case, dragon scale mail is highly valued.</p><p>While wearing this armor, you gain a +1 bonus to AC, you have advantage on saving throws against the Frightful Presence and breath weapons of dragons, and you have resistance to one damage type that is determined by the kind of dragon that provided the scales (see the table).</p><p>Additionally, you can focus your senses as an action to magically discern the distance and direction to the closest dragon within 30 miles of you that is of the same type as the armor. This special action can’t be used again until the next dawn.</p><p class=\"table-text\">Dragon Resistance Dragon Resistance<br />Black Acid Gold Fire<br />Blue Lightning Green Poison<br />Brass Fire Red Fire<br />Bronze Lightning Silver Cold<br />Copper Acid White Cold</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "scale mail"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        },
+        {
+          "name": "armor",
+          "value": "Scale Mail"
+        },
+        {
+          "name": "enhancement",
+          "value": "1"
+        },
+        {
+          "name": "name-format",
+          "value": "Dragon Scale Mail (Silver)"
+        },
+        {
+          "name": "keywords",
+          "value": "cold"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "1",
+          "bonus": "enhancement"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_COLD",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_DRAGON_SCALE_MAIL_WHITE",
+      "name": "Dragon Scale Mail, White",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>White dragon scale mail: resistance to cold damage.</em></p><p>Dragon scale mail is made of the scales of one kind of dragon. Sometimes dragons collect their cast-off scales and gift them to humanoids. Other times, hunters carefully skin and preserve the hide of a dead dragon. In either case, dragon scale mail is highly valued.</p><p>While wearing this armor, you gain a +1 bonus to AC, you have advantage on saving throws against the Frightful Presence and breath weapons of dragons, and you have resistance to one damage type that is determined by the kind of dragon that provided the scales (see the table).</p><p>Additionally, you can focus your senses as an action to magically discern the distance and direction to the closest dragon within 30 miles of you that is of the same type as the armor. This special action can’t be used again until the next dawn.</p><p class=\"table-text\">Dragon Resistance Dragon Resistance<br />Black Acid Gold Fire<br />Blue Lightning Green Poison<br />Brass Fire Red Fire<br />Bronze Lightning Silver Cold<br />Copper Acid White Cold</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "scale mail"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        },
+        {
+          "name": "armor",
+          "value": "Scale Mail"
+        },
+        {
+          "name": "enhancement",
+          "value": "1"
+        },
+        {
+          "name": "name-format",
+          "value": "Dragon Scale Mail (White)"
+        },
+        {
+          "name": "keywords",
+          "value": "cold"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "1",
+          "bonus": "enhancement"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_COLD",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_DWARVEN_PLATE",
+      "name": "Dwarven Plate",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>While wearing this armor, you gain a +2 bonus to AC. In addition, if an effect moves you against your will along the ground, you can use your reaction to reduce the distance you are moved by up to 10 feet.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "plate"
+          }
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        },
+        {
+          "name": "armor",
+          "value": "Plate"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "2",
+          "bonus": "enhancement"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_ELVEN_CHAIN",
+      "name": "Elven Chain",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>You gain a +1 bonus to AC while you wear this armor. You are considered proficient with this armor even if you lack proficiency with medium armor.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "chain shirt"
+          }
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "armor",
+          "value": "Chain Shirt"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "1",
+          "bonus": "enhancement"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_GLAMOURED_STUDDED_LEATHER",
+      "name": "Glamoured Studded Leather",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>While wearing this armor, you gain a +1 bonus to AC. You can also use a bonus action to speak the armor’s command word and cause the armor to assume the appearance of a normal set of clothing or some other kind of armor. You decide what it looks like, including color, style, and accessories, but the armor retains its normal bulk and weight. The illusory appearance lasts until you use this property again or remove the armor.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "studded leather"
+          }
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "armor",
+          "value": "Studded Leather"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "1",
+          "bonus": "enhancement"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_MITHRAL_ARMOR",
+      "name": "Mithral Armor",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>Mithral is a light, flexible metal. A mithral chain shirt or breastplate can be worn under normal clothes. If the armor normally imposes disadvantage on Dexterity (Stealth) checks or has a Strength requirement, the mithral version of the armor doesn’t.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "medium or heavy, but not hide"
+          }
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        },
+        {
+          "name": "armor",
+          "value": "(ID_INTERNAL_ARMOR_GROUP_MEDIUM||ID_INTERNAL_ARMOR_GROUP_HEAVY),!Hide"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_PLATE_ARMOR_OF_ETHEREALNESS",
+      "name": "Plate Armor of Etherealness",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>While you’re wearing this armor, you can speak its command word as an action to gain the effect of the <em>etherealness</em> spell, which last for 10 minutes or until you remove the armor or use an action to speak the command word again. This property of the armor can’t be used again until the next dawn.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "slot",
+          "value": "body"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "plate"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Legendary"
+        },
+        {
+          "name": "armor",
+          "value": "Plate"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_SHIELD_1",
+      "name": "Shield, +1",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>While holding this shield, you have a bonus to AC determined by the shield’s rarity. This bonus is in addition to the shield’s normal bonus to AC.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "shield"
+          }
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        },
+        {
+          "name": "enhancement",
+          "value": "1"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_SHIELD"
+        },
+        {
+          "name": "name-format",
+          "value": "{{parent}} +{{enhancement}}"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "1",
+          "bonus": "enhancement:shield"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_SHIELD_2",
+      "name": "Shield, +2",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>While holding this shield, you have a bonus to AC determined by the shield’s rarity. This bonus is in addition to the shield’s normal bonus to AC.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "shield"
+          }
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "enhancement",
+          "value": "2"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_SHIELD"
+        },
+        {
+          "name": "name-format",
+          "value": "{{parent}} +{{enhancement}}"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "2",
+          "bonus": "enhancement:shield"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_SHIELD_3",
+      "name": "Shield, +3",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>While holding this shield, you have a bonus to AC determined by the shield’s rarity. This bonus is in addition to the shield’s normal bonus to AC.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "shield"
+          }
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        },
+        {
+          "name": "enhancement",
+          "value": "3"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_SHIELD"
+        },
+        {
+          "name": "name-format",
+          "value": "{{parent}} +{{enhancement}}"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:armored:enhancement",
+          "value": "3",
+          "bonus": "enhancement:shield"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_SHIELD_OF_MISSILE_ATTRACTION",
+      "name": "Shield of Missile Attraction",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>While holding this shield, you have resistance to damage from ranged weapon attacks.</p><p><strong><em>Curse.</em></strong> This shield is cursed. Attuning to it curses you until you are targeted by the <em>remove curse</em> spell or similar magic. Removing the shield fails to end the curse on you. Whenever a ranged weapon attack is made against a target within 10 feet of you, the curse causes you to become the target instead.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "shield"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_SHIELD"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_SPELLGUARD_SHIELD",
+      "name": "Spellguard Shield",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>While holding this shield, you have advantage on saving throws against spells and other magical effects, and spell attacks have disadvantage against you.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Magic Armor"
+        },
+        {
+          "name": "type",
+          "value": "Armor",
+          "attributes": {
+            "addition": "shield"
+          }
+        },
+        {
+          "name": "attunement",
+          "value": "true"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        },
+        {
+          "name": "armor",
+          "value": "ID_INTERNAL_ARMOR_GROUP_SHIELD"
+        }
+      ]
+    }
+  ]
+}

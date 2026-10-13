@@ -1,0 +1,1337 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/sorcerer",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_EQUIPMENT_PACKAGE_CLASS_SORCERER",
+   "name": "Starting Equipment (Sorcerer)",
+   "type": "Equipment Package",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "data": {
+    "owner": "ID_2024_CLASS_SORCERER",
+    "options": [
+     {
+      "id": "A",
+      "items": [
+       {
+        "id": "ID_2024_WEAPON_SPEAR"
+       },
+       {
+        "qty": 2,
+        "id": "ID_2024_WEAPON_DAGGER"
+       },
+       {
+        "id": "ID_2024_ITEM_ARCANE_FOCUS",
+        "note": "crystal"
+       },
+       {
+        "id": "ID_2024_ITEM_DUNGEONEERS_PACK"
+       }
+      ],
+      "coins": {
+       "gp": 28
+      }
+     },
+     {
+      "id": "B",
+      "items": [],
+      "coins": {
+       "gp": 50
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_SORCERER",
+   "name": "Sorcerer",
+   "type": "Class",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Class"
+   ],
+   "description": "<p>Primary ability: Charisma. Hit Point Die: D6 per Sorcerer level. Saving throws: Constitution and Charisma.</p>",
+   "setters": [
+    {
+     "name": "hd",
+     "value": "d6"
+    },
+    {
+     "name": "short",
+     "value": "Charisma; None"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SAVINGTHROW_CONSTITUTION",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_SORCERER"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SAVINGTHROW_CHARISMA",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_SORCERER"
+    },
+    {
+     "kind": "select",
+     "type": "Proficiency",
+     "name": "Skill Proficiency (Sorcerer)",
+     "number": 2,
+     "supports": "ID_PROFICIENCY_SKILL_ARCANA|ID_PROFICIENCY_SKILL_DECEPTION|ID_PROFICIENCY_SKILL_INSIGHT|ID_PROFICIENCY_SKILL_INTIMIDATION|ID_PROFICIENCY_SKILL_PERSUASION|ID_PROFICIENCY_SKILL_RELIGION",
+     "requirements": "!ID_2024_MULTICLASS_SORCERER"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_SORCERER"
+    },
+    {
+     "kind": "equipment_package",
+     "requirements": "!ID_2024_MULTICLASS_SORCERER",
+     "ref": "ID_2024_EQUIPMENT_PACKAGE_CLASS_SORCERER",
+     "name": "Starting Equipment (Sorcerer)"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_SORCERER_SPELLCASTING",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_SORCERER_INNATE_SORCERY",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_SORCERER_FONT_OF_MAGIC",
+     "type": "Class Feature",
+     "level": 2
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_SORCERER_METAMAGIC",
+     "type": "Class Feature",
+     "level": 2
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_SORCERER_SORCERER_SUBCLASS",
+     "type": "Class Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_SORCERER_ABILITY_SCORE_IMPROVEMENT",
+     "type": "Class Feature",
+     "level": 4
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_SORCERER_SORCEROUS_RESTORATION",
+     "type": "Class Feature",
+     "level": 5
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_SORCERER_SORCERY_INCARNATE",
+     "type": "Class Feature",
+     "level": 7
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_SORCERER_EPIC_BOON",
+     "type": "Class Feature",
+     "level": 19
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_SORCERER_ARCANE_APOTHEOSIS",
+     "type": "Class Feature",
+     "level": 20
+    }
+   ],
+   "multiclass": {
+    "id": "ID_2024_MULTICLASS_SORCERER",
+    "prerequisite": "Charisma 13",
+    "requirements": "[cha:13]",
+    "setters": [
+     {
+      "name": "multiclass proficiencies",
+      "value": "Simple weapons, None"
+     }
+    ],
+    "rules": [
+     {
+      "kind": "grant",
+      "id": "ID_INTERNAL_GRANT_MULTICLASS",
+      "type": "Grants"
+     }
+    ]
+   },
+   "data": {
+    "hit_die": 6,
+    "primary_abilities": [
+     "charisma"
+    ],
+    "primary_ability_mode": "single",
+    "saving_throws": [
+     "constitution",
+     "charisma"
+    ],
+    "subclass_level": 3,
+    "epic_boon_level": 19,
+    "asi_levels": [
+     4,
+     8,
+     12,
+     16
+    ],
+    "core_traits": {
+     "Primary Ability": "Charisma",
+     "Hit Point Die": "D6 per Sorcerer level",
+     "Saving Throw": "Constitution and Charisma",
+     "Skill Proficiencies": "Choose 2: Arcana, Deception, Insight, Intimidation, Persuasion, or Religion",
+     "Weapon Proficiencies": "Simple weapons",
+     "Armor Training": "None",
+     "Starting Equipment": "Choose A or B: (A) Spear, 2 Daggers, Arcane Focus (crystal), Dungeoneer’s Pack, and 28 GP; or (B) 50 GP"
+    },
+    "progression": {
+     "proficiency_bonus": [
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      4,
+      4,
+      4,
+      4,
+      5,
+      5,
+      5,
+      5,
+      6,
+      6,
+      6,
+      6
+     ],
+     "sorcery_points": [
+      0,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+     ],
+     "cantrips": [
+      4,
+      4,
+      4,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6
+     ],
+     "prepared": [
+      2,
+      4,
+      6,
+      7,
+      9,
+      10,
+      11,
+      12,
+      14,
+      15,
+      16,
+      16,
+      17,
+      17,
+      18,
+      18,
+      19,
+      20,
+      21,
+      22
+     ],
+     "slot_1": [
+      2,
+      3,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+     ],
+     "slot_2": [
+      0,
+      0,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+     ],
+     "slot_3": [
+      0,
+      0,
+      0,
+      0,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+     ],
+     "slot_4": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+     ],
+     "slot_5": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3
+     ],
+     "slot_6": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      2,
+      2
+     ],
+     "slot_7": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      2
+     ],
+     "slot_8": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+     ],
+     "slot_9": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1
+     ]
+    },
+    "features_by_level": [
+     "Spellcasting,",
+     "Font of Magic,",
+     "Sorcerer Subclass",
+     "Ability Score",
+     "Sorcerous",
+     "Subclass feature",
+     "Sorcery Incarnate",
+     "Ability Score",
+     "—",
+     "Metamagic",
+     "—",
+     "Ability Score",
+     "—",
+     "Subclass feature",
+     "—",
+     "Ability Score",
+     "Metamagic",
+     "Subclass feature",
+     "Epic Boon",
+     "Arcane Apotheosis"
+    ],
+    "multiclass": {
+     "prerequisite": "Charisma 13",
+     "requirements": "[cha:13]"
+    },
+    "spellcasting": {
+     "ability": "charisma",
+     "list": "Sorcerer",
+     "model": "prepared",
+     "replace": "level",
+     "multiclass_slots_grant": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_FULL",
+     "has_cantrips": true
+    },
+    "fixed_hp_per_level": 4
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_CLASS_SORCERER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_SORCERER_SPELLCASTING",
+   "name": "Spellcasting",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Drawing from your innate magic, you can cast spells. See “Spells” for the rules on spellcasting. The information below details how you use those rules with Sorcerer spells, which appear in the Sorcerer spell list later in the class’s description.</p>\n<p><b>Cantrips.</b> You know four Sorcerer cantrips of your choice. Light, Prestidigitation, Shocking Grasp, and Sorcerous Burst are recommended. Whenever you gain a Sorcerer level, you can replace one of your cantrips from this feature with another Sorcerer cantrip of your choice.</p>\n<p>When you reach Sorcerer levels 4 and 10, you learn another Sorcerer cantrip of your choice, as shown in the Cantrips column of the Sorcerer Features table.</p>\n<p><b>Spell Slots.</b> The Sorcerer Features table shows how many spell slots you have to cast your level 1+ spells. You regain all expended slots when you finish a Long Rest.</p>\n<p>Prepared Spells of Level 1+. You prepare the list of level 1+ spells that are available for you to cast with this feature. To start, choose two level 1 Sorcerer spells. Burning Hands and Detect Magic are recommended.</p>\n<p>The number of spells on your list increases as you gain Sorcerer levels, as shown in the Prepared Spells column of the Sorcerer Features table. Whenever that number increases, choose additional Sorcerer spells until the number of spells on your list matches the number in the Sorcerer Features table. The chosen spells must be of a level for which you have spell slots. For example, if you’re a level 3 Sorcerer, your list of prepared spells can include six Sorcerer spells of level 1 or 2 in any combination.</p>\n<p>If another Sorcerer feature gives you spells that you always have prepared, those spells don’t count against the number of spells you can prepare with this feature, but those spells otherwise count as Sorcerer spells for you.</p>\n<p><b>Changing Your Prepared Spells.</b> Whenever you gain a Sorcerer level, you can replace one spell on your list with another Sorcerer spell for which you have spell slots.</p>\n<p><b>Spellcasting Ability.</b> Charisma is your spellcasting ability for your Sorcerer spells.</p>\n<p><b>Spellcasting Focus.</b> You can use an Arcane Focus as a Spellcasting Focus for your Sorcerer spells.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:1",
+     "value": "2"
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:1",
+     "value": "1",
+     "level": 2
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:1",
+     "value": "1",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:2",
+     "value": "2",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:2",
+     "value": "1",
+     "level": 4
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:3",
+     "value": "2",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:3",
+     "value": "1",
+     "level": 6
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:4",
+     "value": "1",
+     "level": 7
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:4",
+     "value": "1",
+     "level": 8
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:4",
+     "value": "1",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:5",
+     "value": "1",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:5",
+     "value": "1",
+     "level": 10
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:5",
+     "value": "1",
+     "level": 18
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:6",
+     "value": "1",
+     "level": 11
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:6",
+     "value": "1",
+     "level": 19
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:7",
+     "value": "1",
+     "level": 13
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:7",
+     "value": "1",
+     "level": 20
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:8",
+     "value": "1",
+     "level": 15
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:slots:9",
+     "value": "1",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "2"
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "2",
+     "level": 2
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "2",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "1",
+     "level": 4
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "2",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "1",
+     "level": 6
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "1",
+     "level": 7
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "1",
+     "level": 8
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "2",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "1",
+     "level": 10
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "1",
+     "level": 11
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "1",
+     "level": 13
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "1",
+     "level": 15
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "1",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "1",
+     "level": 18
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "1",
+     "level": 19
+    },
+    {
+     "kind": "stat",
+     "name": "sorcerer:spellcasting:prepare",
+     "value": "1",
+     "level": 20
+    },
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Cantrip (Sorcerer 1)",
+     "number": 4,
+     "supports": "$(spellcasting:list), 0",
+     "spellcasting": "Sorcerer",
+     "allow_replace": true
+    },
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Cantrip (Sorcerer 4)",
+     "level": 4,
+     "supports": "$(spellcasting:list), 0",
+     "spellcasting": "Sorcerer",
+     "allow_replace": true
+    },
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Cantrip (Sorcerer 10)",
+     "level": 10,
+     "supports": "$(spellcasting:list), 0",
+     "spellcasting": "Sorcerer",
+     "allow_replace": true
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_FULL",
+     "type": "Grants",
+     "requirements": "ID_INTERNAL_GRANT_MULTICLASS"
+    },
+    {
+     "kind": "prepared_spell_change",
+     "when": "gain_level",
+     "count": "one"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_PROFICIENCY_SPELLFOCUS_GROUP_ARCANE_FOCUS",
+     "type": "Proficiency"
+    }
+   ],
+   "spellcasting": {
+    "name": "Sorcerer",
+    "ability": "Charisma",
+    "prepare": true,
+    "allow_replace": true,
+    "list": {
+     "supports": "Sorcerer",
+     "known": true
+    }
+   },
+   "data": {
+    "class": "Sorcerer",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_SORCERER_INNATE_SORCERY",
+   "name": "Innate Sorcery",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>An event in your past left an indelible mark on you, infusing you with simmering magic. As a Bonus Action, you can unleash that magic for 1 minute, during which you gain the following benefits:</p>\n<ul><li>The spell save DC of your Sorcerer spells increases by 1.</li><li>You have Advantage on the attack rolls of Sorcerer spells you cast.</li></ul>\n<p>You can use this feature twice, and you regain all expended uses of it when you finish a Long Rest.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "innate sorcery",
+     "name": "Innate Sorcery",
+     "max": {
+      "type": "fixed",
+      "value": 2
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    },
+    {
+     "kind": "toggle",
+     "id": "innate sorcery",
+     "name": "Innate Sorcery",
+     "activation": "bonus_action",
+     "duration": "1 minute",
+     "effects": [
+      {
+       "kind": "stat",
+       "name": "spell save dc:sorcerer",
+       "value": "1",
+       "bonus": "innate sorcery"
+      },
+      {
+       "kind": "roll_advantage",
+       "roll": "spell_attack",
+       "spell_class": "Sorcerer"
+      }
+     ]
+    }
+   ],
+   "data": {
+    "class": "Sorcerer",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_SORCERER_FONT_OF_MAGIC",
+   "name": "Font of Magic",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can tap into the wellspring of magic within yourself. This wellspring is represented by Sorcery Points, which allow you to create a variety of magical effects.</p>\n<p>You have 2 Sorcery Points, and you gain more as you reach higher levels, as shown in the Sorcery Points column of the Sorcerer Features table. You can’t have more Sorcery Points than the number shown in the table for your level. You regain all expended Sorcery Points when you finish a Long Rest.</p>\n<p>You can use your Sorcery Points to fuel the options below, along with other features, such as Metamagic, that use those points.</p>\n<p><b>Converting Spell Slots to Sorcery Points.</b> You can expend a spell slot to gain a number of Sorcery Points equal to the slot’s level (no action required).</p>\n<p><b>Creating Spell Slots.</b> As a Bonus Action, you can transform unexpended Sorcery Points into one spell slot. The Creating Spell Slots table shows the cost of creating a spell slot of a given level, and it lists the minimum Sorcerer level you must be to create a slot. You can create a spell slot no higher than level 5.</p>\n<p>Any spell slot you create with this feature vanishes when you finish a Long Rest. Creating Spell Slots</p>\n<pre>    Spell Slot      Sorcery Point      Min. Sorcerer\n      Level             Cost               Level\n        1                 2                  2\n        2                 3                  3\n        3                 5                  5\n        4                 6                  7\n        5                 7                  9</pre>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "sorcery points",
+     "name": "Sorcery Points",
+     "max": {
+      "type": "table",
+      "key": "sorcery_points"
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    },
+    {
+     "kind": "convert",
+     "from": "spell slot",
+     "to": "sorcery points",
+     "amount": "slot level",
+     "action": "none"
+    },
+    {
+     "kind": "convert",
+     "from": "sorcery points",
+     "to": "spell slot",
+     "table": [
+      {
+       "slot": 1,
+       "cost": 2,
+       "min_level": 2
+      },
+      {
+       "slot": 2,
+       "cost": 3,
+       "min_level": 3
+      },
+      {
+       "slot": 3,
+       "cost": 5,
+       "min_level": 5
+      },
+      {
+       "slot": 4,
+       "cost": 6,
+       "min_level": 7
+      },
+      {
+       "slot": 5,
+       "cost": 7,
+       "min_level": 9
+      }
+     ],
+     "action": "bonus_action",
+     "expires": "long_rest"
+    }
+   ],
+   "data": {
+    "class": "Sorcerer",
+    "level": 2
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_SORCERER_METAMAGIC",
+   "name": "Metamagic",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Because your magic flows from within, you can alter your spells to suit your needs; you gain two Metamagic options of your choice from “Meta­magic Options” later in this class’s description. You use the chosen options to temporarily modify spells you cast. To use an option, you must spend the number of Sorcery Points that it costs.</p>\n<p>You can use only one Metamagic option on a spell when you cast it unless otherwise noted in one of those options.</p>\n<p>Whenever you gain a Sorcerer level, you can replace one of your Metamagic options with one you don’t know. You gain two more options at Sorcerer level 10 and two more at Sorcerer level 17.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Option",
+     "name": "Metamagic (Sorcerer 2)",
+     "number": 2,
+     "level": 2,
+     "supports": "Metamagic"
+    },
+    {
+     "kind": "select",
+     "type": "Option",
+     "name": "Metamagic (Sorcerer 10)",
+     "number": 2,
+     "level": 10,
+     "supports": "Metamagic"
+    },
+    {
+     "kind": "select",
+     "type": "Option",
+     "name": "Metamagic (Sorcerer 17)",
+     "number": 2,
+     "level": 17,
+     "supports": "Metamagic"
+    },
+    {
+     "kind": "replace_on_level",
+     "scope": "metamagic",
+     "count": 1
+    }
+   ],
+   "data": {
+    "class": "Sorcerer",
+    "level": 2
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_SORCERER_SORCERER_SUBCLASS",
+   "name": "Sorcerer Subclass",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a Sorcerer subclass of your choice. The Draconic Sorcery subclass is detailed after this class’s description. A subclass is a specialization that grants you features at certain Sorcerer levels. For the rest of your career, you gain each of your subclass’s features that are of your Sorcerer level or lower.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Archetype",
+     "name": "Sorcerous Origin",
+     "supports": "Sorcerer Subclass"
+    }
+   ],
+   "data": {
+    "class": "Sorcerer",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_SORCERER_ABILITY_SCORE_IMPROVEMENT",
+   "name": "Ability Score Improvement",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the Ability Score Improvement feat (see “Feats”) or another feat of your choice for which you qualify. You gain this feature again at Sorcerer levels 8, 12, and 16.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "level": 4,
+     "name": "Ability Score Improvement (Sorcerer 4)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 8,
+     "name": "Ability Score Improvement (Sorcerer 8)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 12,
+     "name": "Ability Score Improvement (Sorcerer 12)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 16,
+     "name": "Ability Score Improvement (Sorcerer 16)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    }
+   ],
+   "data": {
+    "class": "Sorcerer",
+    "level": 4
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_SORCERER_SORCEROUS_RESTORATION",
+   "name": "Sorcerous Restoration",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you finish a Short Rest, you can regain expended Sorcery Points, but no more than a number equal to half your Sorcerer level (round down). Once you use this feature, you can’t do so again until you finish a Long Rest.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "sorcerous restoration",
+     "name": "Sorcerous Restoration",
+     "max": {
+      "type": "fixed",
+      "value": 1
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    },
+    {
+     "kind": "resource_regain",
+     "resource": "sorcery points",
+     "amount": "floor(sorcerer level / 2)",
+     "on": [
+      "short_rest"
+     ]
+    }
+   ],
+   "data": {
+    "class": "Sorcerer",
+    "level": 5
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_SORCERER_SORCERY_INCARNATE",
+   "name": "Sorcery Incarnate",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>If you have no uses of Innate Sorcery left, you can use it if you spend 2 Sorcery Points when you take the Bonus Action to activate it.</p>\n<p>In addition, while your Innate Sorcery feature is active, you can use up to two of your Metamagic options on each spell you cast.</p>",
+   "data": {
+    "class": "Sorcerer",
+    "level": 7
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_SORCERER_EPIC_BOON",
+   "name": "Epic Boon",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain an Epic Boon feat (see “Feats”) or another feat of your choice for which you qualify. Boon of Dimensional Travel is recommended.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "level": 19,
+     "name": "Epic Boon (Sorcerer)",
+     "category": "Epic Boon"
+    }
+   ],
+   "data": {
+    "class": "Sorcerer",
+    "level": 19
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_SORCERER_ARCANE_APOTHEOSIS",
+   "name": "Arcane Apotheosis",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While your Innate Sorcery feature is active, you can use one Metamagic option on each of your turns without spending Sorcery Points on it.</p>",
+   "data": {
+    "class": "Sorcerer",
+    "level": 20
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_METAMAGIC_CAREFUL_SPELL",
+   "name": "Careful Spell",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Metamagic"
+   ],
+   "description": "<p><b>Cost:</b> 1 Sorcery Point</p>\n<p>When you cast a spell that forces other creatures to make a saving throw, you can protect some of those creatures from the spell’s full force. To do so, spend 1 Sorcery Point and choose a number of those creatures up to your Charisma modifier (minimum of one creature). A chosen creature automatically succeeds on its saving throw against the spell, and it takes no damage if it would normally take half damage on a successful save.</p>",
+   "rules": [
+    {
+     "kind": "resource_cost",
+     "resource": "sorcery points",
+     "cost": 1
+    }
+   ],
+   "data": {
+    "cost": 1,
+    "class_name": "Sorcerer"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_METAMAGIC_DISTANT_SPELL",
+   "name": "Distant Spell",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Metamagic"
+   ],
+   "description": "<p><b>Cost:</b> 1 Sorcery Point</p>\n<p>When you cast a spell that has a range of at least 5 feet, you can spend 1 Sorcery Point to double the spell’s range. Or when you cast a spell that has a range of Touch, you can spend 1 Sorcery Point to make the spell’s range 30 feet.</p>",
+   "rules": [
+    {
+     "kind": "resource_cost",
+     "resource": "sorcery points",
+     "cost": 1
+    }
+   ],
+   "data": {
+    "cost": 1,
+    "class_name": "Sorcerer"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_METAMAGIC_EMPOWERED_SPELL",
+   "name": "Empowered Spell",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Metamagic"
+   ],
+   "description": "<p><b>Cost:</b> 1 Sorcery Point</p>\n<p>When you roll damage for a spell, you can spend 1 Sorcery Point to reroll a number of the damage dice up to your Charisma modifier (minimum of one), and you must use the new rolls.</p>\n<p>You can use Empowered Spell even if you’ve already used a different Metamagic option during the casting of the spell.</p>",
+   "rules": [
+    {
+     "kind": "resource_cost",
+     "resource": "sorcery points",
+     "cost": 1
+    }
+   ],
+   "data": {
+    "cost": 1,
+    "class_name": "Sorcerer"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_METAMAGIC_EXTENDED_SPELL",
+   "name": "Extended Spell",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Metamagic"
+   ],
+   "description": "<p><b>Cost:</b> 1 Sorcery Point</p>\n<p>When you cast a spell that has a duration of 1 minute or longer, you can spend 1 Sorcery Point to double its duration to a maximum duration of 24 hours.</p>\n<p>If the affected spell requires Concentration, you have Advantage on any saving throw you make to maintain that Concentration.</p>",
+   "rules": [
+    {
+     "kind": "resource_cost",
+     "resource": "sorcery points",
+     "cost": 1
+    }
+   ],
+   "data": {
+    "cost": 1,
+    "class_name": "Sorcerer"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_METAMAGIC_HEIGHTENED_SPELL",
+   "name": "Heightened Spell",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Metamagic"
+   ],
+   "description": "<p><b>Cost:</b> 2 Sorcery Points</p>\n<p>When you cast a spell that forces a creature to make a saving throw, you can spend 2 Sorcery Points to give one target of the spell Disadvantage on saves against the spell.</p>",
+   "rules": [
+    {
+     "kind": "resource_cost",
+     "resource": "sorcery points",
+     "cost": 2
+    }
+   ],
+   "data": {
+    "cost": 2,
+    "class_name": "Sorcerer"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_METAMAGIC_QUICKENED_SPELL",
+   "name": "Quickened Spell",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Metamagic"
+   ],
+   "description": "<p><b>Cost:</b> 2 Sorcery Points</p>\n<p>When you cast a spell that has a casting time of an action, you can spend 2 Sorcery Points to change the casting time to a Bonus Action for this casting. You can’t modify a spell in this way if you’ve already cast a level 1+ spell on the current turn, nor can you cast a level 1+ spell on this turn after modifying a spell in this way.</p>",
+   "rules": [
+    {
+     "kind": "resource_cost",
+     "resource": "sorcery points",
+     "cost": 2
+    }
+   ],
+   "data": {
+    "cost": 2,
+    "class_name": "Sorcerer"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_METAMAGIC_SEEKING_SPELL",
+   "name": "Seeking Spell",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Metamagic"
+   ],
+   "description": "<p><b>Cost:</b> 1 Sorcery Point</p>\n<p>If you make an attack roll for a spell and miss, you can spend 1 Sorcery Point to reroll the d20, and you must use the new roll.</p>\n<p>You can use Seeking Spell even if you’ve already used a different Metamagic option during the casting of the spell.</p>",
+   "rules": [
+    {
+     "kind": "resource_cost",
+     "resource": "sorcery points",
+     "cost": 1
+    }
+   ],
+   "data": {
+    "cost": 1,
+    "class_name": "Sorcerer"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_METAMAGIC_SUBTLE_SPELL",
+   "name": "Subtle Spell",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Metamagic"
+   ],
+   "description": "<p><b>Cost:</b> 1 Sorcery Point</p>\n<p>When you cast a spell, you can spend 1 Sorcery Point to cast it without any Verbal, Somatic, or Material components, except Material components that are consumed by the spell or that have a cost specified in the spell.</p>",
+   "rules": [
+    {
+     "kind": "resource_cost",
+     "resource": "sorcery points",
+     "cost": 1
+    }
+   ],
+   "data": {
+    "cost": 1,
+    "class_name": "Sorcerer"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_METAMAGIC_TRANSMUTED_SPELL",
+   "name": "Transmuted Spell",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Metamagic"
+   ],
+   "description": "<p><b>Cost:</b> 1 Sorcery Point</p>\n<p>When you cast a spell that deals a type of damage from the following list, you can spend 1 Sorcery Point to change that damage type to one of the other listed types: Acid, Cold, Fire, Lightning, Poison, Thunder.</p>",
+   "rules": [
+    {
+     "kind": "resource_cost",
+     "resource": "sorcery points",
+     "cost": 1
+    }
+   ],
+   "data": {
+    "cost": 1,
+    "class_name": "Sorcerer"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_METAMAGIC_TWINNED_SPELL",
+   "name": "Twinned Spell",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Metamagic"
+   ],
+   "description": "<p><b>Cost:</b> 1 Sorcery Point</p>\n<p>When you cast a spell, such as Charm Person, that can be cast with a higher-level spell slot to target an additional creature, you can spend 1 Sorcery Point to increase the spell’s effective level by 1.</p>",
+   "rules": [
+    {
+     "kind": "resource_cost",
+     "resource": "sorcery points",
+     "cost": 1
+    }
+   ],
+   "data": {
+    "cost": 1,
+    "class_name": "Sorcerer"
+   }
+  }
+ ]
+}

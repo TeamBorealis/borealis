@@ -1,0 +1,490 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: base/profile-tables",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_PROFILE_TABLES",
+   "name": "SRD 5.2.1 Rules Tables",
+   "type": "Core",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Profile Tables"
+   ],
+   "description": "<p>Experience, proficiency bonus, point buy, standard arrays, fixed hit points and multiclass spell slot tables from SRD 5.2.1.</p>",
+   "data": {
+    "experience_points": [
+     0,
+     300,
+     900,
+     2700,
+     6500,
+     14000,
+     23000,
+     34000,
+     48000,
+     64000,
+     85000,
+     100000,
+     120000,
+     140000,
+     165000,
+     195000,
+     225000,
+     265000,
+     305000,
+     355000
+    ],
+    "proficiency_bonus": [
+     2,
+     2,
+     2,
+     2,
+     3,
+     3,
+     3,
+     3,
+     4,
+     4,
+     4,
+     4,
+     5,
+     5,
+     5,
+     5,
+     6,
+     6,
+     6,
+     6
+    ],
+    "point_buy": {
+     "budget": 27,
+     "min_score": 8,
+     "max_score": 15,
+     "costs": {
+      "8": 0,
+      "9": 1,
+      "10": 2,
+      "11": 3,
+      "12": 4,
+      "13": 5,
+      "14": 7,
+      "15": 9
+     }
+    },
+    "standard_array": [
+     15,
+     14,
+     13,
+     12,
+     10,
+     8
+    ],
+    "standard_array_by_class": {
+     "Barbarian": {
+      "strength": 15,
+      "dexterity": 13,
+      "constitution": 14,
+      "intelligence": 10,
+      "wisdom": 12,
+      "charisma": 8
+     },
+     "Bard": {
+      "strength": 8,
+      "dexterity": 14,
+      "constitution": 12,
+      "intelligence": 13,
+      "wisdom": 10,
+      "charisma": 15
+     },
+     "Cleric": {
+      "strength": 14,
+      "dexterity": 8,
+      "constitution": 13,
+      "intelligence": 10,
+      "wisdom": 15,
+      "charisma": 12
+     },
+     "Druid": {
+      "strength": 8,
+      "dexterity": 12,
+      "constitution": 14,
+      "intelligence": 13,
+      "wisdom": 15,
+      "charisma": 10
+     },
+     "Fighter": {
+      "strength": 15,
+      "dexterity": 14,
+      "constitution": 13,
+      "intelligence": 8,
+      "wisdom": 10,
+      "charisma": 12
+     },
+     "Monk": {
+      "strength": 12,
+      "dexterity": 15,
+      "constitution": 13,
+      "intelligence": 10,
+      "wisdom": 14,
+      "charisma": 8
+     },
+     "Paladin": {
+      "strength": 15,
+      "dexterity": 10,
+      "constitution": 13,
+      "intelligence": 8,
+      "wisdom": 12,
+      "charisma": 14
+     },
+     "Ranger": {
+      "strength": 12,
+      "dexterity": 15,
+      "constitution": 13,
+      "intelligence": 8,
+      "wisdom": 14,
+      "charisma": 10
+     },
+     "Rogue": {
+      "strength": 12,
+      "dexterity": 15,
+      "constitution": 13,
+      "intelligence": 14,
+      "wisdom": 10,
+      "charisma": 8
+     },
+     "Sorcerer": {
+      "strength": 10,
+      "dexterity": 13,
+      "constitution": 14,
+      "intelligence": 8,
+      "wisdom": 12,
+      "charisma": 15
+     },
+     "Warlock": {
+      "strength": 8,
+      "dexterity": 14,
+      "constitution": 13,
+      "intelligence": 12,
+      "wisdom": 10,
+      "charisma": 15
+     },
+     "Wizard": {
+      "strength": 8,
+      "dexterity": 12,
+      "constitution": 13,
+      "intelligence": 15,
+      "wisdom": 14,
+      "charisma": 10
+     }
+    },
+    "fixed_hit_points_per_level": {
+     "Barbarian": 7,
+     "Fighter": 6,
+     "Paladin": 6,
+     "Ranger": 6,
+     "Bard": 5,
+     "Cleric": 5,
+     "Druid": 5,
+     "Monk": 5,
+     "Rogue": 5,
+     "Warlock": 5,
+     "Sorcerer": 4,
+     "Wizard": 4
+    },
+    "multiclass_spell_slots": [
+     [
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      4,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      4,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      4,
+      3,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      4,
+      3,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      4,
+      3,
+      3,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      4,
+      3,
+      3,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      4,
+      3,
+      3,
+      3,
+      1,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      4,
+      3,
+      3,
+      3,
+      2,
+      0,
+      0,
+      0,
+      0
+     ],
+     [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      0,
+      0,
+      0
+     ],
+     [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      0,
+      0,
+      0
+     ],
+     [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      0,
+      0
+     ],
+     [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      0,
+      0
+     ],
+     [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      1,
+      0
+     ],
+     [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      1,
+      0
+     ],
+     [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      4,
+      3,
+      3,
+      3,
+      3,
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      4,
+      3,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      1
+     ],
+     [
+      4,
+      3,
+      3,
+      3,
+      3,
+      2,
+      2,
+      1,
+      1
+     ]
+    ],
+    "multiclass_caster_levels": {
+     "full": [
+      "Bard",
+      "Cleric",
+      "Druid",
+      "Sorcerer",
+      "Wizard"
+     ],
+     "half_round_up": [
+      "Paladin",
+      "Ranger"
+     ],
+     "pact": [
+      "Warlock"
+     ]
+    },
+    "ability_modifier": "floor((score - 10) / 2)",
+    "ability_score_cap": 20,
+    "epic_boon_ability_cap": 30,
+    "languages": {
+     "standard": [
+      "Common",
+      "Common Sign Language",
+      "Draconic",
+      "Dwarvish",
+      "Elvish",
+      "Giant",
+      "Gnomish",
+      "Goblin",
+      "Halfling",
+      "Orc"
+     ],
+     "rare": [
+      "Abyssal",
+      "Celestial",
+      "Deep Speech",
+      "Druidic",
+      "Infernal",
+      "Primordial",
+      "Sylvan",
+      "Thieves’ Cant",
+      "Undercommon"
+     ]
+    },
+    "coin_values_gp": {
+     "cp": "1/100",
+     "sp": "1/10",
+     "ep": "1/2",
+     "gp": 1,
+     "pp": 10
+    },
+    "character_creation_steps": [
+     "class",
+     "origin",
+     "ability_scores",
+     "alignment",
+     "details"
+    ],
+    "exhaustion": {
+     "levels": 6,
+     "d20_penalty_per_level": 2,
+     "speed_penalty_ft_per_level": 5
+    }
+   }
+  }
+ ]
+}

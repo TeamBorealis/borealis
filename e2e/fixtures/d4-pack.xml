@@ -1,0 +1,6 @@
+<elements>
+  <element name="Lantern Ward" type="Feat" source="Moonfen Pack" id="ID_MOONFEN_FEAT_LANTERN_WARD"><rules/></element>
+  <element name="Marsh Stride" type="Feat" source="Moonfen Pack" id="ID_MOONFEN_FEAT_MARSH_STRIDE">
+    <rules><grant type="Feat" id="ID_MOONFEN_FEAT_LANTERN_WARD"/><grant type="Feat" id="ID_MOONFEN_FEAT_MISSING"/></rules>
+  </element>
+</elements>

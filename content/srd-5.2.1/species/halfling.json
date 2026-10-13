@@ -1,0 +1,116 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: species/halfling",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SPECIES_HALFLING",
+   "name": "Halfling",
+   "type": "Species",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Creature type: Humanoid. Size: Small (about 2–3 feet tall). Speed: 30 feet.</p>",
+   "setters": [
+    {
+     "name": "short",
+     "value": "Humanoid, Small, Speed 30 ft."
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_SIZE_SMALL",
+     "type": "Size"
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed",
+     "value": "30",
+     "bonus": "base"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_HALFLING_BRAVE",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_HALFLING_HALFLING_NIMBLENESS",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_HALFLING_LUCK",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_HALFLING_NATURALLY_STEALTHY",
+     "type": "Racial Trait"
+    }
+   ],
+   "data": {
+    "creature_type": "Humanoid",
+    "size": [
+     "Small"
+    ],
+    "speed": 30,
+    "traits": [
+     "ID_2024_TRAIT_HALFLING_BRAVE",
+     "ID_2024_TRAIT_HALFLING_HALFLING_NIMBLENESS",
+     "ID_2024_TRAIT_HALFLING_LUCK",
+     "ID_2024_TRAIT_HALFLING_NATURALLY_STEALTHY"
+    ]
+   },
+   "maps_to": {
+    "dnd2014": "ID_RACE_HALFLING",
+    "kind": "approximate"
+   }
+  },
+  {
+   "id": "ID_2024_TRAIT_HALFLING_BRAVE",
+   "name": "Brave",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Advantage on saving throws you make to avoid or end the Frightened condition.</p>",
+   "rules": [
+    {
+     "kind": "save_advantage",
+     "against_condition": "frightened",
+     "scope": "avoid_or_end"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_HALFLING_HALFLING_NIMBLENESS",
+   "name": "Halfling Nimbleness",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can move through the space of any creature that is a size larger than you, but you can’t stop in the same space.</p>"
+  },
+  {
+   "id": "ID_2024_TRAIT_HALFLING_LUCK",
+   "name": "Luck",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you roll a 1 on the d20 of a D20 Test, you can reroll the die, and you must use the new roll.</p>"
+  },
+  {
+   "id": "ID_2024_TRAIT_HALFLING_NATURALLY_STEALTHY",
+   "name": "Naturally Stealthy",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can take the Hide action even when you are obscured only by a creature that is at least one size larger than you.</p>"
+  }
+ ]
+}

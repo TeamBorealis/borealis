@@ -1,0 +1,483 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: species/dragonborn",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SPECIES_DRAGONBORN",
+   "name": "Dragonborn",
+   "type": "Species",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Creature type: Humanoid. Size: Medium (about 5–7 feet tall). Speed: 30 feet.</p>",
+   "setters": [
+    {
+     "name": "short",
+     "value": "Humanoid, Medium, Speed 30 ft."
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_SIZE_MEDIUM",
+     "type": "Size"
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed",
+     "value": "30",
+     "bonus": "base"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_DRAGONBORN_DRACONIC_ANCESTRY",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_DRAGONBORN_BREATH_WEAPON",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_DRAGONBORN_DAMAGE_RESISTANCE",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_DRAGONBORN_DARKVISION",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_DRAGONBORN_DRACONIC_FLIGHT",
+     "type": "Racial Trait"
+    }
+   ],
+   "data": {
+    "creature_type": "Humanoid",
+    "size": [
+     "Medium"
+    ],
+    "speed": 30,
+    "traits": [
+     "ID_2024_TRAIT_DRAGONBORN_DRACONIC_ANCESTRY",
+     "ID_2024_TRAIT_DRAGONBORN_BREATH_WEAPON",
+     "ID_2024_TRAIT_DRAGONBORN_DAMAGE_RESISTANCE",
+     "ID_2024_TRAIT_DRAGONBORN_DARKVISION",
+     "ID_2024_TRAIT_DRAGONBORN_DRACONIC_FLIGHT"
+    ]
+   },
+   "maps_to": {
+    "dnd2014": "ID_RACE_DRAGONBORN",
+    "kind": "approximate"
+   }
+  },
+  {
+   "id": "ID_2024_TRAIT_DRAGONBORN_DRACONIC_ANCESTRY",
+   "name": "Draconic Ancestry",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Your lineage stems from a dragon progenitor. Choose the kind of dragon from the Draconic Ancestors table. Your choice affects your Breath Weapon and Damage Resistance traits as well as your appearance. Draconic Ancestors</p>\n<pre> Dragon Damage Type            Dragon Damage Type\nBlack     Acid                 Gold      Fire\nBlue      Lightning            Green     Poison\nBrass     Fire                 Red       Fire\nBronze    Lightning            Silver    Cold\nCopper Acid                    White     Cold</pre><table><tr><th>Dragon</th><th>Damage Type</th></tr><tr><td>Black</td><td>Acid</td></tr><tr><td>Blue</td><td>Lightning</td></tr><tr><td>Brass</td><td>Fire</td></tr><tr><td>Bronze</td><td>Lightning</td></tr><tr><td>Copper</td><td>Acid</td></tr><tr><td>Gold</td><td>Fire</td></tr><tr><td>Green</td><td>Poison</td></tr><tr><td>Red</td><td>Fire</td></tr><tr><td>Silver</td><td>Cold</td></tr><tr><td>White</td><td>Cold</td></tr></table>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Species Trait Option",
+     "name": "Draconic Ancestry",
+     "supports": "Draconic Ancestry"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_DRAGONBORN_BREATH_WEAPON",
+   "name": "Breath Weapon",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you take the Attack action on your turn, you can replace one of your attacks with an exhalation of magical energy in either a 15-foot Cone or a 30-foot Line that is 5 feet wide (choose the shape each time). Each creature in that area must make a Dexterity saving throw (DC 8 plus your Constitution modifier and Proficiency Bonus). On a failed save, a creature takes 1d10 damage of the type determined by your Draconic Ancestry trait. On a successful save, a creature takes half as much damage. This damage increases by 1d10 when you reach character levels 5 (2d10), 11 (3d10), and 17 (4d10).</p>\n<p>You can use this Breath Weapon a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "breath weapon",
+     "name": "Breath Weapon",
+     "max": {
+      "type": "stat",
+      "stat": "proficiency"
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    },
+    {
+     "kind": "damage_scaling",
+     "name": "Breath Weapon",
+     "dice": "1d10",
+     "levels": {
+      "1": "1d10",
+      "5": "2d10",
+      "11": "3d10",
+      "17": "4d10"
+     },
+     "scale": "character_level",
+     "type_from": "draconic ancestry damage type"
+    }
+   ],
+   "data": {
+    "save": "dexterity",
+    "dc": "8+constitution+proficiency",
+    "area": [
+     "15-foot Cone",
+     "30-foot Line (5 feet wide)"
+    ]
+   }
+  },
+  {
+   "id": "ID_2024_TRAIT_DRAGONBORN_DAMAGE_RESISTANCE",
+   "name": "Damage Resistance",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Resistance to the damage type determined by your Draconic Ancestry trait.</p>"
+  },
+  {
+   "id": "ID_2024_TRAIT_DRAGONBORN_DARKVISION",
+   "name": "Darkvision",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Darkvision with a range of 60 feet.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_VISION_DARKVISION",
+     "type": "Vision"
+    },
+    {
+     "kind": "stat",
+     "name": "darkvision:range",
+     "value": "60",
+     "bonus": "base"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_DRAGONBORN_DRACONIC_FLIGHT",
+   "name": "Draconic Flight",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you reach character level 5, you can channel draconic magic to give yourself temporary flight. As a Bonus Action, you sprout spectral wings on your back that last for 10 minutes or until you retract the wings (no action required) or have the Incapacitated condition. During that time, you have a Fly Speed equal to your Speed. Your wings appear to be made of the same energy as your Breath Weapon. Once you use this trait, you can’t use it again until you finish a Long Rest.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "level": 5,
+     "id": "draconic flight",
+     "name": "Draconic Flight",
+     "max": {
+      "type": "fixed",
+      "value": 1
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    },
+    {
+     "kind": "movement_mode",
+     "level": 5,
+     "mode": "fly",
+     "speed": "speed",
+     "duration": "10 minutes",
+     "action": "bonus_action",
+     "requires_resource": "draconic flight"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_OPTION_DRACONIC_ANCESTRY_BLACK",
+   "name": "Black Dragon",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Draconic Ancestry"
+   ],
+   "description": "<p>Draconic ancestry: Black dragon. Your Breath Weapon and Damage Resistance use Acid damage.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_ACID",
+     "type": "Condition"
+    },
+    {
+     "kind": "stat",
+     "name": "draconic ancestry damage type",
+     "value": "Acid",
+     "inline": true
+    }
+   ],
+   "data": {
+    "dragon": "Black",
+    "damage_type": "acid"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DRACONIC_ANCESTRY_BLUE",
+   "name": "Blue Dragon",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Draconic Ancestry"
+   ],
+   "description": "<p>Draconic ancestry: Blue dragon. Your Breath Weapon and Damage Resistance use Lightning damage.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_LIGHTNING",
+     "type": "Condition"
+    },
+    {
+     "kind": "stat",
+     "name": "draconic ancestry damage type",
+     "value": "Lightning",
+     "inline": true
+    }
+   ],
+   "data": {
+    "dragon": "Blue",
+    "damage_type": "lightning"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DRACONIC_ANCESTRY_BRASS",
+   "name": "Brass Dragon",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Draconic Ancestry"
+   ],
+   "description": "<p>Draconic ancestry: Brass dragon. Your Breath Weapon and Damage Resistance use Fire damage.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FIRE",
+     "type": "Condition"
+    },
+    {
+     "kind": "stat",
+     "name": "draconic ancestry damage type",
+     "value": "Fire",
+     "inline": true
+    }
+   ],
+   "data": {
+    "dragon": "Brass",
+    "damage_type": "fire"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DRACONIC_ANCESTRY_BRONZE",
+   "name": "Bronze Dragon",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Draconic Ancestry"
+   ],
+   "description": "<p>Draconic ancestry: Bronze dragon. Your Breath Weapon and Damage Resistance use Lightning damage.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_LIGHTNING",
+     "type": "Condition"
+    },
+    {
+     "kind": "stat",
+     "name": "draconic ancestry damage type",
+     "value": "Lightning",
+     "inline": true
+    }
+   ],
+   "data": {
+    "dragon": "Bronze",
+    "damage_type": "lightning"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DRACONIC_ANCESTRY_COPPER",
+   "name": "Copper Dragon",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Draconic Ancestry"
+   ],
+   "description": "<p>Draconic ancestry: Copper dragon. Your Breath Weapon and Damage Resistance use Acid damage.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_ACID",
+     "type": "Condition"
+    },
+    {
+     "kind": "stat",
+     "name": "draconic ancestry damage type",
+     "value": "Acid",
+     "inline": true
+    }
+   ],
+   "data": {
+    "dragon": "Copper",
+    "damage_type": "acid"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DRACONIC_ANCESTRY_GOLD",
+   "name": "Gold Dragon",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Draconic Ancestry"
+   ],
+   "description": "<p>Draconic ancestry: Gold dragon. Your Breath Weapon and Damage Resistance use Fire damage.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FIRE",
+     "type": "Condition"
+    },
+    {
+     "kind": "stat",
+     "name": "draconic ancestry damage type",
+     "value": "Fire",
+     "inline": true
+    }
+   ],
+   "data": {
+    "dragon": "Gold",
+    "damage_type": "fire"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DRACONIC_ANCESTRY_GREEN",
+   "name": "Green Dragon",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Draconic Ancestry"
+   ],
+   "description": "<p>Draconic ancestry: Green dragon. Your Breath Weapon and Damage Resistance use Poison damage.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_POISON",
+     "type": "Condition"
+    },
+    {
+     "kind": "stat",
+     "name": "draconic ancestry damage type",
+     "value": "Poison",
+     "inline": true
+    }
+   ],
+   "data": {
+    "dragon": "Green",
+    "damage_type": "poison"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DRACONIC_ANCESTRY_RED",
+   "name": "Red Dragon",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Draconic Ancestry"
+   ],
+   "description": "<p>Draconic ancestry: Red dragon. Your Breath Weapon and Damage Resistance use Fire damage.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FIRE",
+     "type": "Condition"
+    },
+    {
+     "kind": "stat",
+     "name": "draconic ancestry damage type",
+     "value": "Fire",
+     "inline": true
+    }
+   ],
+   "data": {
+    "dragon": "Red",
+    "damage_type": "fire"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DRACONIC_ANCESTRY_SILVER",
+   "name": "Silver Dragon",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Draconic Ancestry"
+   ],
+   "description": "<p>Draconic ancestry: Silver dragon. Your Breath Weapon and Damage Resistance use Cold damage.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_COLD",
+     "type": "Condition"
+    },
+    {
+     "kind": "stat",
+     "name": "draconic ancestry damage type",
+     "value": "Cold",
+     "inline": true
+    }
+   ],
+   "data": {
+    "dragon": "Silver",
+    "damage_type": "cold"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DRACONIC_ANCESTRY_WHITE",
+   "name": "White Dragon",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Draconic Ancestry"
+   ],
+   "description": "<p>Draconic ancestry: White dragon. Your Breath Weapon and Damage Resistance use Cold damage.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_COLD",
+     "type": "Condition"
+    },
+    {
+     "kind": "stat",
+     "name": "draconic ancestry damage type",
+     "value": "Cold",
+     "inline": true
+    }
+   ],
+   "data": {
+    "dragon": "White",
+    "damage_type": "cold"
+   }
+  }
+ ]
+}

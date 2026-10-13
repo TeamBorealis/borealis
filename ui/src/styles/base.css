@@ -1,0 +1,45 @@
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  line-height: 1.45;
+  color: var(--text-body);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden; /* the shell content area scrolls, not the window */
+}
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 600; line-height: 1.2; margin: 0 0 var(--sp-3); text-transform: uppercase; color: var(--text-primary-header); }
+h1 { font-size: var(--fs-xl); color: var(--text); }
+h2 { font-size: var(--fs-lg); }
+h3 { font-size: var(--fs-md); }
+h4 { font-size: var(--fs-sm); }
+p { margin: 0 0 var(--sp-3); }
+a { color: var(--link); }
+small, .small { font-size: var(--fs-xs); }
+.muted { color: var(--text-muted); }
+.mono { font-family: var(--font-mono); }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip-link { position: absolute; left: -999px; top: 0; z-index: 100; background: var(--accent-base); color: #fff; padding: var(--sp-2) var(--sp-3); }
+.skip-link:focus { left: var(--sp-2); top: var(--sp-2); }
+
+:focus-visible { outline: var(--focus-w) solid var(--focus); outline-offset: 1px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+::selection { background: var(--accent-60); color: #fff; }
+hr { border: 0; border-top: 1px solid var(--border); margin: var(--sp-4) 0; }
+ul.plain { list-style: none; padding: 0; margin: 0; }
+
+.stack { display: flex; flex-direction: column; gap: var(--sp-3); }
+.stack-lg { display: flex; flex-direction: column; gap: var(--sp-5); }
+.row { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.row.nowrap { flex-wrap: nowrap; }
+.spacer { flex: 1 1 auto; }
+.grid { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--col, 220px)), 1fr)); }
+
+/* Touch devices: iOS WebKit zooms the whole page when a field with a font under 16px gets focus and never zooms back, which clips the
+   right and bottom edges of every screen afterwards. 16px fields never trigger it. Specificity is raised on purpose (page CSS sets field sizes). */
+@media (pointer: coarse) {
+  html:root input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), html:root select, html:root textarea { font-size: 16px; }
+}

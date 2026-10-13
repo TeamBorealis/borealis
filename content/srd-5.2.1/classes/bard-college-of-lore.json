@@ -1,0 +1,132 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/bard-college-of-lore",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SUBCLASS_BARD_COLLEGE_OF_LORE",
+   "name": "College of Lore",
+   "type": "Archetype",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard Subclass"
+   ],
+   "description": "<p>Plumb the Depths of Magical Knowledge Bards of the College of Lore collect spells and secrets from diverse sources, such as scholarly tomes, mystical rites, and peasant tales. The college’s members gather in libraries and universities to share their lore with one another. They also meet at festi-vals or affairs of state, where they can expose corruption, unravel lies, and poke fun at self-important figures of authority.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_BARD_COLLEGE_OF_LORE_BONUS_PROFICIENCIES",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_BARD_COLLEGE_OF_LORE_CUTTING_WORDS",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_BARD_COLLEGE_OF_LORE_MAGICAL_DISCOVERIES",
+     "type": "Archetype Feature",
+     "level": 6
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_BARD_COLLEGE_OF_LORE_PEERLESS_SKILL",
+     "type": "Archetype Feature",
+     "level": 14
+    }
+   ],
+   "data": {
+    "class": "ID_2024_CLASS_BARD",
+    "class_name": "Bard",
+    "level_gained": 3
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ARCHETYPE_COLLEGE_OF_LORE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_BARD_COLLEGE_OF_LORE_BONUS_PROFICIENCIES",
+   "name": "Bonus Proficiencies",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain proficiency with three skills of your choice.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Proficiency",
+     "name": "Bonus Proficiencies (College of Lore)",
+     "number": 3,
+     "supports": "ID_PROFICIENCY_SKILL_ACROBATICS|ID_PROFICIENCY_SKILL_ANIMALHANDLING|ID_PROFICIENCY_SKILL_ARCANA|ID_PROFICIENCY_SKILL_ATHLETICS|ID_PROFICIENCY_SKILL_DECEPTION|ID_PROFICIENCY_SKILL_HISTORY|ID_PROFICIENCY_SKILL_INSIGHT|ID_PROFICIENCY_SKILL_INTIMIDATION|ID_PROFICIENCY_SKILL_INVESTIGATION|ID_PROFICIENCY_SKILL_MEDICINE|ID_PROFICIENCY_SKILL_NATURE|ID_PROFICIENCY_SKILL_PERCEPTION|ID_PROFICIENCY_SKILL_PERFORMANCE|ID_PROFICIENCY_SKILL_PERSUASION|ID_PROFICIENCY_SKILL_RELIGION|ID_PROFICIENCY_SKILL_SLEIGHTOFHAND|ID_PROFICIENCY_SKILL_STEALTH|ID_PROFICIENCY_SKILL_SURVIVAL"
+    }
+   ],
+   "data": {
+    "class": "Bard",
+    "subclass": "College of Lore",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_BARD_COLLEGE_OF_LORE_CUTTING_WORDS",
+   "name": "Cutting Words",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You learn to use your wit to supernaturally distract, confuse, and otherwise sap the confidence and competence of others. When a creature that you can see within 60 feet of yourself makes a damage roll or succeeds on an ability check or attack roll, you can take a Reaction to expend one use of your Bardic Inspiration; roll your Bardic Inspiration die, and subtract the number rolled from the creature’s roll, reducing the damage or potentially turning the success into a failure.</p>",
+   "data": {
+    "class": "Bard",
+    "subclass": "College of Lore",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_BARD_COLLEGE_OF_LORE_MAGICAL_DISCOVERIES",
+   "name": "Magical Discoveries",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You learn two spells of your choice. These spells can come from the Cleric, Druid, or Wizard spell list or any combination thereof (see a class’s section for its spell list). A spell you choose must be a cantrip or a spell for which you have spell slots, as shown in the Bard Features table.</p>\n<p>You always have the chosen spells prepared, and whenever you gain a Bard level, you can replace one of the spells with another spell that meets these requirements.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Magical Discoveries",
+     "number": 2,
+     "supports": "(Cleric||Druid||Wizard), $(spellcasting:slots)||0",
+     "spellcasting": "Bard",
+     "prepared": true,
+     "allow_replace": true
+    }
+   ],
+   "data": {
+    "class": "Bard",
+    "subclass": "College of Lore",
+    "level": 6
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_BARD_COLLEGE_OF_LORE_PEERLESS_SKILL",
+   "name": "Peerless Skill",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you make an ability check or attack roll and fail, you can expend one use of Bardic Inspiration; roll the Bardic Inspiration die, and add the number rolled to the d20, potentially turning a failure into a success. On a failure, the Bardic Inspiration isn’t expended.</p>",
+   "data": {
+    "class": "Bard",
+    "subclass": "College of Lore",
+    "level": 14
+   }
+  }
+ ]
+}

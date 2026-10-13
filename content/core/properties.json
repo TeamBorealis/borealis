@@ -1,0 +1,300 @@
+{
+ "format": "borealis-content/1",
+ "ruleset": "any",
+ "elements": [
+  {
+   "id": "ID_INTERNAL_ARMOR_GROUP_LIGHT",
+   "name": "Light",
+   "type": "Armor Group",
+   "source": "Internal",
+   "description": "Light (Armor Group)."
+  },
+  {
+   "id": "ID_INTERNAL_ARMOR_GROUP_MEDIUM",
+   "name": "Medium",
+   "type": "Armor Group",
+   "source": "Internal",
+   "description": "Medium (Armor Group)."
+  },
+  {
+   "id": "ID_INTERNAL_ARMOR_GROUP_HEAVY",
+   "name": "Heavy",
+   "type": "Armor Group",
+   "source": "Internal",
+   "description": "Heavy (Armor Group)."
+  },
+  {
+   "id": "ID_INTERNAL_ARMOR_GROUP_SHIELD",
+   "name": "Shield",
+   "type": "Armor Group",
+   "source": "Internal",
+   "description": "Shield (Armor Group)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_FIREARM_AMMUNITION",
+   "name": "Ammunition",
+   "type": "Weapon Property",
+   "source": "Core",
+   "description": "Ammunition (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_FIREARM_BURST_FIRE",
+   "name": "Burst Fire",
+   "type": "Weapon Property",
+   "source": "Core",
+   "description": "Burst Fire (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_FIREARM_RELOAD",
+   "name": "Reload",
+   "type": "Weapon Property",
+   "source": "Core",
+   "description": "Reload (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+   "name": "Ammunition",
+   "type": "Weapon Property",
+   "source": "Internal",
+   "description": "Ammunition (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+   "name": "Finesse",
+   "type": "Weapon Property",
+   "source": "Internal",
+   "description": "Finesse (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+   "name": "Heavy",
+   "type": "Weapon Property",
+   "source": "Internal",
+   "description": "Heavy (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+   "name": "Light",
+   "type": "Weapon Property",
+   "source": "Internal",
+   "description": "Light (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_LOADING",
+   "name": "Loading",
+   "type": "Weapon Property",
+   "source": "Internal",
+   "description": "Loading (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_RANGE",
+   "name": "Range",
+   "type": "Weapon Property",
+   "source": "Internal",
+   "description": "Range (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_REACH",
+   "name": "Reach",
+   "type": "Weapon Property",
+   "source": "Internal",
+   "description": "Reach (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_THROWN",
+   "name": "Thrown",
+   "type": "Weapon Property",
+   "source": "Internal",
+   "description": "Thrown (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+   "name": "Two-Handed",
+   "type": "Weapon Property",
+   "source": "Internal",
+   "description": "Two-Handed (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE",
+   "name": "Versatile",
+   "type": "Weapon Property",
+   "source": "Internal",
+   "description": "Versatile (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_IMPROVISED",
+   "name": "Improvised",
+   "type": "Weapon Property",
+   "source": "Internal",
+   "description": "Improvised (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_SILVERED",
+   "name": "Silvered",
+   "type": "Weapon Property",
+   "source": "Internal",
+   "description": "Silvered (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_SPECIAL",
+   "name": "Special",
+   "type": "Weapon Property",
+   "source": "Internal",
+   "description": "Special (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_SPECIAL_LANCE",
+   "name": "Special (Lance)",
+   "type": "Weapon Property",
+   "source": "Internal",
+   "description": "Special (Lance) (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_PROPERTY_SPECIAL_NET",
+   "name": "Special (Net)",
+   "type": "Weapon Property",
+   "source": "Internal",
+   "description": "Special (Net) (Weapon Property)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+   "name": "Simple Melee",
+   "type": "Weapon Category",
+   "source": "Internal",
+   "description": "Simple Melee (Weapon Category)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_RANGED",
+   "name": "Simple Ranged",
+   "type": "Weapon Category",
+   "source": "Internal",
+   "description": "Simple Ranged (Weapon Category)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+   "name": "Martial Melee",
+   "type": "Weapon Category",
+   "source": "Internal",
+   "description": "Martial Melee (Weapon Category)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+   "name": "Martial Ranged",
+   "type": "Weapon Category",
+   "source": "Internal",
+   "description": "Martial Ranged (Weapon Category)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_CATEGORY_FIREARM",
+   "name": "Firearm",
+   "type": "Weapon Category",
+   "source": "Internal",
+   "description": "Firearm (Weapon Category)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_GROUP_SWORDS",
+   "name": "Weapon Group (Swords)",
+   "type": "Weapon Group",
+   "source": "Internal",
+   "description": "Weapon Group (Swords) (Weapon Group)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_GROUP_AXES",
+   "name": "Weapon Group (Axes)",
+   "type": "Weapon Group",
+   "source": "Internal",
+   "description": "Weapon Group (Axes) (Weapon Group)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_GROUP_MACES",
+   "name": "Weapon Group (Maces)",
+   "type": "Weapon Group",
+   "source": "Internal",
+   "description": "Weapon Group (Maces) (Weapon Group)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_GROUP_HAMMERS",
+   "name": "Weapon Group (Hammers)",
+   "type": "Weapon Group",
+   "source": "Internal",
+   "description": "Weapon Group (Hammers) (Weapon Group)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_GROUP_MAULS",
+   "name": "Weapon Group (Mauls)",
+   "type": "Weapon Group",
+   "source": "Internal",
+   "description": "Weapon Group (Mauls) (Weapon Group)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_GROUP_BOWS",
+   "name": "Weapon Group (Bows)",
+   "type": "Weapon Group",
+   "source": "Internal",
+   "description": "Weapon Group (Bows) (Weapon Group)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_GROUP_CROSSBOWS",
+   "name": "Weapon Group (Crossbows)",
+   "type": "Weapon Group",
+   "source": "Internal",
+   "description": "Weapon Group (Crossbows) (Weapon Group)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_GROUP_SPEARS",
+   "name": "Weapon Group (Spears)",
+   "type": "Weapon Group",
+   "source": "Internal",
+   "description": "Weapon Group (Spears) (Weapon Group)."
+  },
+  {
+   "id": "ID_INTERNAL_WEAPON_GROUP_CLUBS",
+   "name": "Weapon Group (Clubs)",
+   "type": "Weapon Group",
+   "source": "Internal",
+   "description": "Weapon Group (Clubs) (Weapon Group)."
+  },
+  {
+   "id": "ID_INTERNAL_TOOL_PROPERTY_ARTISAN",
+   "name": "Artisan",
+   "type": "Property",
+   "source": "Internal",
+   "description": "Artisan (Property)."
+  },
+  {
+   "id": "ID_INTERNAL_TOOL_PROPERTY_VEHILCE",
+   "name": "Vehicle",
+   "type": "Property",
+   "source": "Internal",
+   "description": "Vehicle (Property)."
+  },
+  {
+   "id": "ID_INTERNAL_TOOL_PROPERTY_GAMING_SET",
+   "name": "Gaming Set",
+   "type": "Property",
+   "source": "Internal",
+   "description": "Gaming Set (Property)."
+  },
+  {
+   "id": "ID_INTERNAL_TOOL_PROPERTY_KIT",
+   "name": "Kit",
+   "type": "Property",
+   "source": "Internal",
+   "description": "Kit (Property)."
+  },
+  {
+   "id": "ID_INTERNAL_TOOL_PROPERTY_THIEVES_TOOLS",
+   "name": "Thieves Tools",
+   "type": "Property",
+   "source": "Internal",
+   "description": "Thieves Tools (Property)."
+  },
+  {
+   "id": "ID_INTERNAL_TOOL_PROPERTY_MUSICAL_INSTRUMENT",
+   "name": "Musical Instrument",
+   "type": "Property",
+   "source": "Internal",
+   "description": "Musical Instrument (Property)."
+  }
+ ]
+}

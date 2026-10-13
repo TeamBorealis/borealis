@@ -1,0 +1,1171 @@
+{
+ "format": "borealis-content/1",
+ "ruleset": "any",
+ "elements": [
+  {
+   "id": "ID_SIZE_TINY",
+   "name": "Tiny",
+   "type": "Size",
+   "source": "Core",
+   "description": "Tiny (Size)."
+  },
+  {
+   "id": "ID_SIZE_SMALL",
+   "name": "Small",
+   "type": "Size",
+   "source": "Core",
+   "description": "Small (Size)."
+  },
+  {
+   "id": "ID_SIZE_MEDIUM",
+   "name": "Medium",
+   "type": "Size",
+   "source": "Core",
+   "description": "Medium (Size)."
+  },
+  {
+   "id": "ID_SIZE_LARGE",
+   "name": "Large",
+   "type": "Size",
+   "source": "Core",
+   "description": "Large (Size)."
+  },
+  {
+   "id": "ID_SIZE_HUGE",
+   "name": "Huge",
+   "type": "Size",
+   "source": "Core",
+   "description": "Huge (Size)."
+  },
+  {
+   "id": "ID_SIZE_GARGANTUAN",
+   "name": "Gargantuan",
+   "type": "Size",
+   "source": "Core",
+   "description": "Gargantuan (Size)."
+  },
+  {
+   "id": "ID_SIZE_COLOSSAL",
+   "name": "Colossal",
+   "type": "Size",
+   "source": "Core",
+   "description": "Colossal (Size)."
+  },
+  {
+   "id": "ID_VISION_DARKVISION",
+   "name": "Darkvision",
+   "type": "Vision",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "darkvision:range",
+     "value": "60",
+     "bonus": "base"
+    }
+   ],
+   "source": "Core",
+   "description": "Darkvision (Vision)."
+  },
+  {
+   "id": "ID_VISION_SUPERIORDARKVISION",
+   "name": "Superior Darkvision",
+   "type": "Vision",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "superior darkvision:range",
+     "value": "120",
+     "bonus": "base"
+    }
+   ],
+   "source": "Core",
+   "description": "Superior Darkvision (Vision)."
+  },
+  {
+   "id": "ID_VISION_BLINDSIGHT",
+   "name": "Blindsight",
+   "type": "Vision",
+   "source": "Core",
+   "description": "Blindsight (Vision)."
+  },
+  {
+   "id": "ID_VISION_TRUESIGHT",
+   "name": "Truesight",
+   "type": "Vision",
+   "source": "Core",
+   "description": "Truesight (Vision)."
+  },
+  {
+   "id": "ID_ALIGNMENT_LAWFUL_GOOD",
+   "name": "Lawful Good",
+   "type": "Alignment",
+   "setters": [
+    {
+     "name": "Abbreviation",
+     "value": "LG"
+    }
+   ],
+   "source": "Core",
+   "description": "Lawful Good (Alignment)."
+  },
+  {
+   "id": "ID_ALIGNMENT_NEUTRAL_GOOD",
+   "name": "Neutral Good",
+   "type": "Alignment",
+   "setters": [
+    {
+     "name": "Abbreviation",
+     "value": "NG"
+    }
+   ],
+   "source": "Core",
+   "description": "Neutral Good (Alignment)."
+  },
+  {
+   "id": "ID_ALIGNMENT_CHAOTIC_GOOD",
+   "name": "Chaotic Good",
+   "type": "Alignment",
+   "setters": [
+    {
+     "name": "Abbreviation",
+     "value": "CG"
+    }
+   ],
+   "source": "Core",
+   "description": "Chaotic Good (Alignment)."
+  },
+  {
+   "id": "ID_ALIGNMENT_LAWFUL_NEUTRAL",
+   "name": "Lawful Neutral",
+   "type": "Alignment",
+   "setters": [
+    {
+     "name": "Abbreviation",
+     "value": "LW"
+    }
+   ],
+   "source": "Core",
+   "description": "Lawful Neutral (Alignment)."
+  },
+  {
+   "id": "ID_ALIGNMENT_NEUTRAL",
+   "name": "Neutral",
+   "type": "Alignment",
+   "setters": [
+    {
+     "name": "Abbreviation",
+     "value": "N"
+    }
+   ],
+   "source": "Core",
+   "description": "Neutral (Alignment)."
+  },
+  {
+   "id": "ID_ALIGNMENT_CHAOTIC_NEUTRAL",
+   "name": "Chaotic Neutral",
+   "type": "Alignment",
+   "setters": [
+    {
+     "name": "Abbreviation",
+     "value": "CN"
+    }
+   ],
+   "source": "Core",
+   "description": "Chaotic Neutral (Alignment)."
+  },
+  {
+   "id": "ID_ALIGNMENT_LAWFUL_EVIL",
+   "name": "Lawful Evil",
+   "type": "Alignment",
+   "setters": [
+    {
+     "name": "Abbreviation",
+     "value": "LE"
+    }
+   ],
+   "source": "Core",
+   "description": "Lawful Evil (Alignment)."
+  },
+  {
+   "id": "ID_ALIGNMENT_NEUTRAL_EVIL",
+   "name": "Neutral Evil",
+   "type": "Alignment",
+   "setters": [
+    {
+     "name": "Abbreviation",
+     "value": "NE"
+    }
+   ],
+   "source": "Core",
+   "description": "Neutral Evil (Alignment)."
+  },
+  {
+   "id": "ID_ALIGNMENT_CHAOTIC_EVIL",
+   "name": "Chaotic Evil",
+   "type": "Alignment",
+   "setters": [
+    {
+     "name": "Abbreviation",
+     "value": "CE"
+    }
+   ],
+   "source": "Core",
+   "description": "Chaotic Evil (Alignment)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_LANGUAGE_STARTING",
+   "name": "Starting Language",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Starting Language (Support)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_LANGUAGE_EXOTIC",
+   "name": "Exotic Language",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Exotic Language (Support)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_LANGUAGE_SECRET",
+   "name": "Secret Language",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Secret Language (Support)."
+  },
+  {
+   "id": "ID_LANGUAGE_ABYSSAL",
+   "name": "Abyssal",
+   "type": "Language",
+   "supports": [
+    "ID_INTERNAL_SUPPORT_LANGUAGE_EXOTIC"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Demons"
+    },
+    {
+     "name": "Script",
+     "value": "Infernal"
+    },
+    {
+     "name": "Exotic",
+     "value": "true"
+    }
+   ],
+   "source": "Core",
+   "description": "Abyssal (Language)."
+  },
+  {
+   "id": "ID_LANGUAGE_CELESTIAL",
+   "name": "Celestial",
+   "type": "Language",
+   "supports": [
+    "ID_INTERNAL_SUPPORT_LANGUAGE_EXOTIC"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Celestials"
+    },
+    {
+     "name": "Script",
+     "value": "Celestial"
+    },
+    {
+     "name": "Exotic",
+     "value": "true"
+    }
+   ],
+   "source": "Core",
+   "description": "Celestial (Language)."
+  },
+  {
+   "id": "ID_LANGUAGE_COMMON",
+   "name": "Common",
+   "type": "Language",
+   "supports": [
+    "Standard",
+    "Starting",
+    "ID_INTERNAL_SUPPORT_LANGUAGE_STARTING"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Humans"
+    },
+    {
+     "name": "Script",
+     "value": "Common"
+    },
+    {
+     "name": "Exotic",
+     "value": "false"
+    }
+   ],
+   "source": "Core",
+   "description": "Common (Language)."
+  },
+  {
+   "id": "ID_LANGUAGE_DEEP_SPEECH",
+   "name": "Deep Speech",
+   "type": "Language",
+   "supports": [
+    "ID_INTERNAL_SUPPORT_LANGUAGE_EXOTIC"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Mind flayers, beholders"
+    },
+    {
+     "name": "Script",
+     "value": "---"
+    },
+    {
+     "name": "Exotic",
+     "value": "true"
+    }
+   ],
+   "source": "Core",
+   "description": "Deep Speech (Language)."
+  },
+  {
+   "id": "ID_LANGUAGE_DRACONIC",
+   "name": "Draconic",
+   "type": "Language",
+   "supports": [
+    "ID_INTERNAL_SUPPORT_LANGUAGE_EXOTIC"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Dragons, dragonborn"
+    },
+    {
+     "name": "Script",
+     "value": "Draconic"
+    },
+    {
+     "name": "Exotic",
+     "value": "true"
+    }
+   ],
+   "source": "Core",
+   "description": "Draconic (Language)."
+  },
+  {
+   "id": "ID_LANGUAGE_DWARVISH",
+   "name": "Dwarvish",
+   "type": "Language",
+   "supports": [
+    "Standard",
+    "Starting",
+    "ID_INTERNAL_SUPPORT_LANGUAGE_STARTING"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Dwarves"
+    },
+    {
+     "name": "Script",
+     "value": "Dwarvish"
+    },
+    {
+     "name": "Exotic",
+     "value": "false"
+    }
+   ],
+   "source": "Core",
+   "description": "Dwarvish (Language)."
+  },
+  {
+   "id": "ID_LANGUAGE_ELVISH",
+   "name": "Elvish",
+   "type": "Language",
+   "supports": [
+    "Standard",
+    "Starting",
+    "ID_INTERNAL_SUPPORT_LANGUAGE_STARTING"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Elves"
+    },
+    {
+     "name": "Script",
+     "value": "Elvish"
+    },
+    {
+     "name": "Exotic",
+     "value": "false"
+    }
+   ],
+   "source": "Core",
+   "description": "Elvish (Language)."
+  },
+  {
+   "id": "ID_LANGUAGE_GIANT",
+   "name": "Giant",
+   "type": "Language",
+   "supports": [
+    "Standard",
+    "Starting",
+    "ID_INTERNAL_SUPPORT_LANGUAGE_STARTING"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Ogres, giants"
+    },
+    {
+     "name": "Script",
+     "value": "Dwarvish"
+    },
+    {
+     "name": "Exotic",
+     "value": "false"
+    }
+   ],
+   "source": "Core",
+   "description": "Giant (Language)."
+  },
+  {
+   "id": "ID_LANGUAGE_GNOMISH",
+   "name": "Gnomish",
+   "type": "Language",
+   "supports": [
+    "Standard",
+    "Starting",
+    "ID_INTERNAL_SUPPORT_LANGUAGE_STARTING"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Gnomes"
+    },
+    {
+     "name": "Script",
+     "value": "Dwarvish"
+    },
+    {
+     "name": "Exotic",
+     "value": "false"
+    }
+   ],
+   "source": "Core",
+   "description": "Gnomish (Language)."
+  },
+  {
+   "id": "ID_LANGUAGE_GOBLIN",
+   "name": "Goblin",
+   "type": "Language",
+   "supports": [
+    "Standard",
+    "Starting",
+    "ID_INTERNAL_SUPPORT_LANGUAGE_STARTING"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Goblinoids"
+    },
+    {
+     "name": "Script",
+     "value": "Dwarvish"
+    },
+    {
+     "name": "Exotic",
+     "value": "false"
+    }
+   ],
+   "source": "Core",
+   "description": "Goblin (Language)."
+  },
+  {
+   "id": "ID_LANGUAGE_HALFLING",
+   "name": "Halfling",
+   "type": "Language",
+   "supports": [
+    "Standard",
+    "Starting",
+    "ID_INTERNAL_SUPPORT_LANGUAGE_STARTING"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Halflings"
+    },
+    {
+     "name": "Script",
+     "value": "Common"
+    },
+    {
+     "name": "Exotic",
+     "value": "false"
+    }
+   ],
+   "source": "Core",
+   "description": "Halfling (Language)."
+  },
+  {
+   "id": "ID_LANGUAGE_INFERNAL",
+   "name": "Infernal",
+   "type": "Language",
+   "supports": [
+    "ID_INTERNAL_SUPPORT_LANGUAGE_EXOTIC"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Devils"
+    },
+    {
+     "name": "Script",
+     "value": "Infernal"
+    },
+    {
+     "name": "Exotic",
+     "value": "true"
+    }
+   ],
+   "source": "Core",
+   "description": "Infernal (Language)."
+  },
+  {
+   "id": "ID_LANGUAGE_ORC",
+   "name": "Orc",
+   "type": "Language",
+   "supports": [
+    "Standard",
+    "Starting",
+    "ID_INTERNAL_SUPPORT_LANGUAGE_STARTING"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Orcs"
+    },
+    {
+     "name": "Script",
+     "value": "Dwarvish"
+    },
+    {
+     "name": "Exotic",
+     "value": "false"
+    }
+   ],
+   "source": "Core",
+   "description": "Orc (Language)."
+  },
+  {
+   "id": "ID_LANGUAGE_PRIMORDIAL",
+   "name": "Primordial",
+   "type": "Language",
+   "supports": [
+    "ID_INTERNAL_SUPPORT_LANGUAGE_EXOTIC"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Elementals"
+    },
+    {
+     "name": "Script",
+     "value": "Dwarvish"
+    },
+    {
+     "name": "Exotic",
+     "value": "true"
+    }
+   ],
+   "source": "Core",
+   "description": "Primordial (Language)."
+  },
+  {
+   "id": "ID_LANGUAGE_SYLVAN",
+   "name": "Sylvan",
+   "type": "Language",
+   "supports": [
+    "ID_INTERNAL_SUPPORT_LANGUAGE_EXOTIC"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Fey creatures"
+    },
+    {
+     "name": "Script",
+     "value": "Elvish"
+    },
+    {
+     "name": "Exotic",
+     "value": "true"
+    }
+   ],
+   "source": "Core",
+   "description": "Sylvan (Language)."
+  },
+  {
+   "id": "ID_LANGUAGE_UNDERCOMMON",
+   "name": "Undercommon",
+   "type": "Language",
+   "supports": [
+    "ID_INTERNAL_SUPPORT_LANGUAGE_EXOTIC"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Underdark traders"
+    },
+    {
+     "name": "Script",
+     "value": "Elvish"
+    },
+    {
+     "name": "Exotic",
+     "value": "true"
+    }
+   ],
+   "source": "Core",
+   "description": "Undercommon (Language)."
+  },
+  {
+   "id": "ID_LANGUAGE_DRUIDIC",
+   "name": "Druidic",
+   "type": "Language",
+   "supports": [
+    "Druid",
+    "ID_INTERNAL_SUPPORT_LANGUAGE_SECRET",
+    "Secret"
+   ],
+   "setters": [
+    {
+     "name": "Speakers",
+     "value": "Druids"
+    },
+    {
+     "name": "Script",
+     "value": "Elvish"
+    },
+    {
+     "name": "Exotic",
+     "value": "true"
+    }
+   ],
+   "source": "Core",
+   "description": "Druidic (Language)."
+  },
+  {
+   "id": "ID_WOTC_PHB_LANGUAGE_THIEVES_CANT",
+   "name": "Thieves’ Cant",
+   "type": "Language",
+   "supports": [
+    "Secret"
+   ],
+   "setters": [
+    {
+     "name": "secret",
+     "value": "true"
+    },
+    {
+     "name": "speakers",
+     "value": "Rogues"
+    }
+   ],
+   "source": "Core",
+   "description": "Thieves’ Cant (Language)."
+  },
+  {
+   "id": "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+   "name": "Bludgeoning",
+   "type": "Damage Type",
+   "source": "Internal",
+   "description": "Bludgeoning (Damage Type)."
+  },
+  {
+   "id": "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+   "name": "Piercing",
+   "type": "Damage Type",
+   "source": "Internal",
+   "description": "Piercing (Damage Type)."
+  },
+  {
+   "id": "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+   "name": "Slashing",
+   "type": "Damage Type",
+   "source": "Internal",
+   "description": "Slashing (Damage Type)."
+  },
+  {
+   "id": "ID_INTERNAL_DAMAGE_TYPE_ACID",
+   "name": "Acid",
+   "type": "Damage Type",
+   "source": "Internal",
+   "description": "Acid (Damage Type)."
+  },
+  {
+   "id": "ID_INTERNAL_DAMAGE_TYPE_COLD",
+   "name": "Cold",
+   "type": "Damage Type",
+   "source": "Internal",
+   "description": "Cold (Damage Type)."
+  },
+  {
+   "id": "ID_INTERNAL_DAMAGE_TYPE_FIRE",
+   "name": "Fire",
+   "type": "Damage Type",
+   "source": "Internal",
+   "description": "Fire (Damage Type)."
+  },
+  {
+   "id": "ID_INTERNAL_DAMAGE_TYPE_FORCE",
+   "name": "Force",
+   "type": "Damage Type",
+   "source": "Internal",
+   "description": "Force (Damage Type)."
+  },
+  {
+   "id": "ID_INTERNAL_DAMAGE_TYPE_LIGHTNING",
+   "name": "Lightning",
+   "type": "Damage Type",
+   "source": "Internal",
+   "description": "Lightning (Damage Type)."
+  },
+  {
+   "id": "ID_INTERNAL_DAMAGE_TYPE_NECROTIC",
+   "name": "Necrotic",
+   "type": "Damage Type",
+   "source": "Internal",
+   "description": "Necrotic (Damage Type)."
+  },
+  {
+   "id": "ID_INTERNAL_DAMAGE_TYPE_POISON",
+   "name": "Poison",
+   "type": "Damage Type",
+   "source": "Internal",
+   "description": "Poison (Damage Type)."
+  },
+  {
+   "id": "ID_INTERNAL_DAMAGE_TYPE_PSYCHIC",
+   "name": "Psychic",
+   "type": "Damage Type",
+   "source": "Internal",
+   "description": "Psychic (Damage Type)."
+  },
+  {
+   "id": "ID_INTERNAL_DAMAGE_TYPE_RADIANT",
+   "name": "Radiant",
+   "type": "Damage Type",
+   "source": "Internal",
+   "description": "Radiant (Damage Type)."
+  },
+  {
+   "id": "ID_INTERNAL_DAMAGE_TYPE_THUNDER",
+   "name": "Thunder",
+   "type": "Damage Type",
+   "source": "Internal",
+   "description": "Thunder (Damage Type)."
+  },
+  {
+   "id": "ID_INTERNAL_DAMAGE_TYPE_SILVER",
+   "name": "Silver",
+   "type": "Damage Type",
+   "source": "Internal",
+   "description": "Silver (Damage Type)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_BLUDGEONING",
+   "name": "Resistance (Bludgeoning)",
+   "type": "Condition",
+   "supports": [
+    "Resistance"
+   ],
+   "source": "Internal",
+   "description": "Resistance (Bludgeoning) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_PIERCING",
+   "name": "Resistance (Piercing)",
+   "type": "Condition",
+   "supports": [
+    "Resistance"
+   ],
+   "source": "Internal",
+   "description": "Resistance (Piercing) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_SLASHING",
+   "name": "Resistance (Slashing)",
+   "type": "Condition",
+   "supports": [
+    "Resistance"
+   ],
+   "source": "Internal",
+   "description": "Resistance (Slashing) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_ACID",
+   "name": "Resistance (Acid)",
+   "type": "Condition",
+   "supports": [
+    "Resistance"
+   ],
+   "source": "Internal",
+   "description": "Resistance (Acid) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_COLD",
+   "name": "Resistance (Cold)",
+   "type": "Condition",
+   "supports": [
+    "Resistance"
+   ],
+   "source": "Internal",
+   "description": "Resistance (Cold) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FIRE",
+   "name": "Resistance (Fire)",
+   "type": "Condition",
+   "supports": [
+    "Resistance"
+   ],
+   "source": "Internal",
+   "description": "Resistance (Fire) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FORCE",
+   "name": "Resistance (Force)",
+   "type": "Condition",
+   "supports": [
+    "Resistance"
+   ],
+   "source": "Internal",
+   "description": "Resistance (Force) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_LIGHTNING",
+   "name": "Resistance (Lightning)",
+   "type": "Condition",
+   "supports": [
+    "Resistance"
+   ],
+   "source": "Internal",
+   "description": "Resistance (Lightning) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_NECROTIC",
+   "name": "Resistance (Necrotic)",
+   "type": "Condition",
+   "supports": [
+    "Resistance"
+   ],
+   "source": "Internal",
+   "description": "Resistance (Necrotic) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_POISON",
+   "name": "Resistance (Poison)",
+   "type": "Condition",
+   "supports": [
+    "Resistance"
+   ],
+   "source": "Internal",
+   "description": "Resistance (Poison) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_PSYCHIC",
+   "name": "Resistance (Psychic)",
+   "type": "Condition",
+   "supports": [
+    "Resistance"
+   ],
+   "source": "Internal",
+   "description": "Resistance (Psychic) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_RADIANT",
+   "name": "Resistance (Radiant)",
+   "type": "Condition",
+   "supports": [
+    "Resistance"
+   ],
+   "source": "Internal",
+   "description": "Resistance (Radiant) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_THUNDER",
+   "name": "Resistance (Thunder)",
+   "type": "Condition",
+   "supports": [
+    "Resistance"
+   ],
+   "source": "Internal",
+   "description": "Resistance (Thunder) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_IMMUNITY_BLUDGEONING",
+   "name": "Immunity (Bludgeoning)",
+   "type": "Condition",
+   "supports": [
+    "Immunity"
+   ],
+   "source": "Internal",
+   "description": "Immunity (Bludgeoning) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_IMMUNITY_PIERCING",
+   "name": "Immunity (Piercing)",
+   "type": "Condition",
+   "supports": [
+    "Immunity"
+   ],
+   "source": "Internal",
+   "description": "Immunity (Piercing) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_IMMUNITY_SLASHING",
+   "name": "Immunity (Slashing)",
+   "type": "Condition",
+   "supports": [
+    "Immunity"
+   ],
+   "source": "Internal",
+   "description": "Immunity (Slashing) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_IMMUNITY_ACID",
+   "name": "Immunity (Acid)",
+   "type": "Condition",
+   "supports": [
+    "Immunity"
+   ],
+   "source": "Internal",
+   "description": "Immunity (Acid) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_IMMUNITY_COLD",
+   "name": "Immunity (Cold)",
+   "type": "Condition",
+   "supports": [
+    "Immunity"
+   ],
+   "source": "Internal",
+   "description": "Immunity (Cold) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_IMMUNITY_FIRE",
+   "name": "Immunity (Fire)",
+   "type": "Condition",
+   "supports": [
+    "Immunity"
+   ],
+   "source": "Internal",
+   "description": "Immunity (Fire) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_IMMUNITY_FORCE",
+   "name": "Immunity (Force)",
+   "type": "Condition",
+   "supports": [
+    "Immunity"
+   ],
+   "source": "Internal",
+   "description": "Immunity (Force) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_IMMUNITY_LIGHTNING",
+   "name": "Immunity (Lightning)",
+   "type": "Condition",
+   "supports": [
+    "Immunity"
+   ],
+   "source": "Internal",
+   "description": "Immunity (Lightning) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_IMMUNITY_NECROTIC",
+   "name": "Immunity (Necrotic)",
+   "type": "Condition",
+   "supports": [
+    "Immunity"
+   ],
+   "source": "Internal",
+   "description": "Immunity (Necrotic) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_IMMUNITY_POISON",
+   "name": "Immunity (Poison)",
+   "type": "Condition",
+   "supports": [
+    "Immunity"
+   ],
+   "source": "Internal",
+   "description": "Immunity (Poison) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_IMMUNITY_PSYCHIC",
+   "name": "Immunity (Psychic)",
+   "type": "Condition",
+   "supports": [
+    "Immunity"
+   ],
+   "source": "Internal",
+   "description": "Immunity (Psychic) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_IMMUNITY_RADIANT",
+   "name": "Immunity (Radiant)",
+   "type": "Condition",
+   "supports": [
+    "Immunity"
+   ],
+   "source": "Internal",
+   "description": "Immunity (Radiant) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_IMMUNITY_THUNDER",
+   "name": "Immunity (Thunder)",
+   "type": "Condition",
+   "supports": [
+    "Immunity"
+   ],
+   "source": "Internal",
+   "description": "Immunity (Thunder) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_VULNERABILITY_BLUDGEONING",
+   "name": "Vulnerability (Bludgeoning)",
+   "type": "Condition",
+   "supports": [
+    "Vulnerability"
+   ],
+   "source": "Internal",
+   "description": "Vulnerability (Bludgeoning) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_VULNERABILITY_PIERCING",
+   "name": "Vulnerability (Piercing)",
+   "type": "Condition",
+   "supports": [
+    "Vulnerability"
+   ],
+   "source": "Internal",
+   "description": "Vulnerability (Piercing) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_VULNERABILITY_SLASHING",
+   "name": "Vulnerability (Slashing)",
+   "type": "Condition",
+   "supports": [
+    "Vulnerability"
+   ],
+   "source": "Internal",
+   "description": "Vulnerability (Slashing) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_VULNERABILITY_ACID",
+   "name": "Vulnerability (Acid)",
+   "type": "Condition",
+   "supports": [
+    "Vulnerability"
+   ],
+   "source": "Internal",
+   "description": "Vulnerability (Acid) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_VULNERABILITY_COLD",
+   "name": "Vulnerability (Cold)",
+   "type": "Condition",
+   "supports": [
+    "Vulnerability"
+   ],
+   "source": "Internal",
+   "description": "Vulnerability (Cold) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_VULNERABILITY_FIRE",
+   "name": "Vulnerability (Fire)",
+   "type": "Condition",
+   "supports": [
+    "Vulnerability"
+   ],
+   "source": "Internal",
+   "description": "Vulnerability (Fire) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_VULNERABILITY_FORCE",
+   "name": "Vulnerability (Force)",
+   "type": "Condition",
+   "supports": [
+    "Vulnerability"
+   ],
+   "source": "Internal",
+   "description": "Vulnerability (Force) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_VULNERABILITY_LIGHTNING",
+   "name": "Vulnerability (Lightning)",
+   "type": "Condition",
+   "supports": [
+    "Vulnerability"
+   ],
+   "source": "Internal",
+   "description": "Vulnerability (Lightning) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_VULNERABILITY_NECROTIC",
+   "name": "Vulnerability (Necrotic)",
+   "type": "Condition",
+   "supports": [
+    "Vulnerability"
+   ],
+   "source": "Internal",
+   "description": "Vulnerability (Necrotic) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_VULNERABILITY_POISON",
+   "name": "Vulnerability (Poison)",
+   "type": "Condition",
+   "supports": [
+    "Vulnerability"
+   ],
+   "source": "Internal",
+   "description": "Vulnerability (Poison) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_VULNERABILITY_PSYCHIC",
+   "name": "Vulnerability (Psychic)",
+   "type": "Condition",
+   "supports": [
+    "Vulnerability"
+   ],
+   "source": "Internal",
+   "description": "Vulnerability (Psychic) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_VULNERABILITY_RADIANT",
+   "name": "Vulnerability (Radiant)",
+   "type": "Condition",
+   "supports": [
+    "Vulnerability"
+   ],
+   "source": "Internal",
+   "description": "Vulnerability (Radiant) (Condition)."
+  },
+  {
+   "id": "ID_INTERNAL_CONDITION_DAMAGE_VULNERABILITY_THUNDER",
+   "name": "Vulnerability (Thunder)",
+   "type": "Condition",
+   "supports": [
+    "Vulnerability"
+   ],
+   "source": "Internal",
+   "description": "Vulnerability (Thunder) (Condition)."
+  }
+ ]
+}

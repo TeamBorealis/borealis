@@ -1,0 +1,2328 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: equipment/gear",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_ITEM_INK_PEN",
+   "name": "Ink Pen",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Using Ink, an Ink Pen is used to write or draw.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "cp"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_INKPEN",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_ACID",
+   "name": "Acid",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you take the Attack action, you can replace one of your attacks with throwing a vial of Acid. Target one creature or object you can see within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or take 2d6 Acid damage.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "25",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_JUG",
+   "name": "Jug",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Jug holds up to 1 gallon.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "cp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "4 lb.",
+     "attributes": {
+      "lb": "4"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_ALCHEMISTS_FIRE",
+   "name": "Alchemist’s Fire",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you take the Attack action, you can replace one of your attacks with throwing a flask of Alchemist’s Fire. Target one creature or object you can see within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or take 1d4 Fire damage and start burning (see “Rules Glossary”).</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "50",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_LADDER",
+   "name": "Ladder",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Ladder is 10 feet tall. You must climb to move up or down it.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "sp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "25 lb.",
+     "attributes": {
+      "lb": "25"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_AMMUNITION",
+   "name": "Ammunition",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Ammunition is required by a weapon that has the Ammunition property. A weapon’s description specifies the type of ammunition used by the weapon. The Ammunition table lists the different types and the amount you get when you buy them. The table also lists the item that is typically used to store each type; storage must be bought separately. Adventuring Gear</p>\n<pre>Item                        Weight        Cost\nAcid                              1 lb.   25 GP\nAlchemist’s Fire                  1 lb.   50 GP\nAmmunition                   Varies       Varies\nAntitoxin                           —     50 GP\nArcane Focus                 Varies       Varies\nBackpack                          5 lb.    2 GP\nBall Bearings                     2 lb.    1 GP\nBarrel                        70 lb.       2 GP\nBasket                            2 lb.    4 SP\nBedroll                           7 lb.    1 GP\nBell                                —      1 GP\nBlanket                           3 lb.    5 SP\nBlock and Tackle                  5 lb.    1 GP\nBook                              5 lb.   25 GP\nBottle, Glass                     2 lb.    2 GP\nBucket                            2 lb.    5 CP\nBurglar’s Pack                42 lb.      16 GP\nCaltrops                          2 lb.    1 GP\nCandle                              —      1 CP\nCase, Crossbow Bolt               1 lb.    1 GP\nCase, Map or Scroll               1 lb.    1 GP\nChain                         10 lb.       5 GP\nChest                         25 lb.       5 GP\nClimber’s Kit                 12 lb.      25 GP\nClothes, Fine                     6 lb.   15 GP\nClothes, Traveler’s               4 lb.    2 GP\nComponent Pouch                   2 lb.   25 GP\nCostume                           4 lb.    5 GP\nCrowbar                           5 lb.    2 GP\nDiplomat’s Pack               39 lb.      39 GP\nDruidic Focus                Varies       Varies\nDungeoneer’s Pack             55 lb.      12 GP\nEntertainer’s Pack          58½ lb.       40 GP\nExplorer’s Pack               55 lb.      10 GP\nFlask                             1 lb.    2 CP\nGrappling Hook                    4 lb.    2 GP\nHealer’s Kit                      3 lb.    5 GP\nHoly Symbol                  Varies       Varies\nHoly Water                        1 lb.   25 GP\nHunting Trap                  25 lb.       5 GP\nInk                                 —     10 GP</pre>\n<pre>Item                       Weight          Cost\nInk Pen                          —         2 CP\nJug                            4 lb.       2 CP\nLadder                        25 lb.        1 SP\nLamp                           1 lb.        5 SP\nLantern, Bullseye              2 lb.      10 GP\nLantern, Hooded                2 lb.       5 GP\nLock                           1 lb.      10 GP\nMagnifying Glass                 —       100 GP\nManacles                       6 lb.       2 GP\nMap                              —         1 GP\nMirror                       1/2 lb.       5 GP\nNet                            3 lb.       1 GP\nOil                            1 lb.        1 SP\nPaper                            —          2 SP\nParchment                        —          1 SP\nPerfume                          —         5 GP\nPoison, Basic                    —       100 GP\nPole                           7 lb.       5 CP\nPot, Iron                     10 lb.       2 GP\nPotion of Healing            1/2 lb.      50 GP\nPouch                          1 lb.        5 SP\nPriest’s Pack                 29 lb.      33 GP\nQuiver                         1 lb.       1 GP\nRam, Portable                 35 lb.       4 GP\nRations                        2 lb.        5 SP\nRobe                           4 lb.       1 GP\nRope                           5 lb.       1 GP\nSack                         1/2 lb.       1 CP\nScholar’s Pack                22 lb.      40 GP\nShovel                         5 lb.       2 GP\nSignal Whistle                   —         5 CP\nSpell Scroll (Cantrip)           —        30 GP\nSpell Scroll (Level 1)           —        50 GP\nSpikes, Iron                   5 lb.       1 GP\nSpyglass                       1 lb.    1,000 GP\nString                           —          1 SP\nTent                          20 lb.       2 GP\nTinderbox                      1 lb.        5 SP\nTorch                          1 lb.       1 CP\nVial                             —         1 GP\nWaterskin                5 lb. (full)       2 SP</pre>\n<p>Ammunition</p>\n<pre>Type               Amount Storage        Weight         Cost\nArrows                20      Quiver            1 lb.   1 GP\nBolts                 20      Case        1½ lb.        1 GP\nBullets, Firearm      10      Pouch             2 lb.   3 GP\nBullets, Sling        20      Pouch       1½ lb.         4 CP\nNeedles               50      Pouch             1 lb.   1 GP</pre>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "weight",
+     "value": "Varies"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_LAMP",
+   "name": "Lamp",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Lamp burns Oil as fuel to cast Bright Light in a 15- foot radius and Dim Light for an additional 30 feet.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "sp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_LAMP",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_ANTITOXIN",
+   "name": "Antitoxin",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Bonus Action, you can drink a vial of Antitoxin to gain Advantage on saving throws to avoid or end the Poisoned condition for 1 hour.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "50",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_LANTERN_BULLSEYE",
+   "name": "Lantern, Bullseye",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Bullseye Lantern burns Oil as fuel to cast Bright Light in a 60-foot Cone and Dim Light for an additional 60 feet.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "10",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_LANTERN_BULLSEYE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_ARCANE_FOCUS",
+   "name": "Arcane Focus",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>An Arcane Focus takes one of the forms in the Arcane Focuses table and is bejeweled or carved to channel arcane magic. A Sorcerer, Warlock, or Wizard can use such an item as a Spellcasting Focus. Arcane Focuses</p>\n<pre>Focus                                 Weight            Cost\nCrystal                                 1 lb.           10 GP\nOrb                                     3 lb.           20 GP\nRod                                     2 lb.           10 GP\nStaff (also a Quarterstaff)             4 lb.            5 GP\nWand                                    1 lb.           10 GP</pre>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Spellcasting Focus"
+    },
+    {
+     "name": "weight",
+     "value": "Varies"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_LANTERN_HOODED",
+   "name": "Lantern, Hooded",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Hooded Lantern burns Oil as fuel to cast Bright Light in a 30-foot radius and Dim Light for an additional 30 feet. As a Bonus Action, you can lower the hood, reducing the light to Dim Light in a 5-foot radius, or raise it again.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_LANTERN_HOODED",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_BACKPACK",
+   "name": "Backpack",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Backpack holds up to 30 pounds within 1 cubic foot. It can also serve as a saddlebag.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "5 lb.",
+     "attributes": {
+      "lb": "5"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_BACKPACK",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_LOCK",
+   "name": "Lock",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Lock comes with a key. Without the key, a creature can use Thieves’ Tools to pick this Lock with a successful DC 15 Dexterity (Sleight of Hand) check.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "10",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_LOCK",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_BALL_BEARINGS",
+   "name": "Ball Bearings",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Utilize action, you can spill Ball Bearings from their pouch. They spread to cover a level, 10-foot-square area within 10 feet of yourself. A creature that enters this area for the first time on a turn must succeed on a DC 10 Dexterity saving throw or have the Prone condition. It takes 10 minutes to recover the Ball Bearings.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_MAGNIFYING_GLASS",
+   "name": "Magnifying Glass",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Magnifying Glass grants Advantage on any ability check made to appraise or inspect a highly detailed item. Lighting a fire with a Magnifying Glass requires light as bright as sunlight to focus, tinder to ignite, and about 5 minutes for the fire to ignite.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "100",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_MAGNIFYINGGLASS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_BARREL",
+   "name": "Barrel",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Barrel holds up to 40 gallons of liquid or up to 4 cubic feet of dry goods.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "70 lb.",
+     "attributes": {
+      "lb": "70"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_BARREL",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_MANACLES",
+   "name": "Manacles",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Utilize action, you can use Manacles to bind an unwilling Small or Medium creature within 5 feet of yourself that has the Grappled, Incapacitated, or Restrained condition if you succeed on a DC 13 Dexterity (Sleight of Hand) check. While bound, a creature has Disadvantage on attack rolls, and the creature is Restrained if the Manacles are attached to a chain or hook that is fixed in place. Escaping the Manacles requires a successful DC 20 Dexterity (Sleight of Hand) check as an action. Bursting them requires a successful DC 25 Strength (Athletics) check as an action.</p>\n<p>Each set of Manacles comes with a key. Without the key, a creature can use Thieves’ Tools to pick the Manacles’ lock with a successful DC 15 Dexterity (Sleight of Hand) check.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "6 lb.",
+     "attributes": {
+      "lb": "6"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_MANACLES",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_BASKET",
+   "name": "Basket",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Basket holds up to 40 pounds within 2 cubic feet.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "4",
+     "attributes": {
+      "currency": "sp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_BASKET",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_MAP",
+   "name": "Map",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>If you consult an accurate Map, you gain a +5 bonus to Wisdom (Survival) checks you make to find your way in the place represented on it.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_BEDROLL",
+   "name": "Bedroll",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Bedroll sleeps one Small or Medium creature. While in a Bedroll, you automatically succeed on saving throws against extreme cold (see “Gameplay Toolbox”).</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "7 lb.",
+     "attributes": {
+      "lb": "7"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_BEDROLL",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_MIRROR",
+   "name": "Mirror",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A handheld steel Mirror is useful for personal cos-metics but also for peeking around corners and reflecting light as a signal.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1/2 lb.",
+     "attributes": {
+      "lb": "0.5"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_BELL",
+   "name": "Bell",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When rung as a Utilize action, a Bell produces a sound that can be heard up to 60 feet away.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_BELL",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_NET",
+   "name": "Net",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you take the Attack action, you can replace one of your attacks with throwing a Net. Target a creature you can see within 15 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or have the Restrained condition until it escapes. The target succeeds automatically if it is Huge or larger.</p>\n<p>To escape, the target or a creature within 5 feet of it must take an action to make a DC 10 Strength (Athletics) check, freeing the Restrained creature on a success. Destroying the Net (AC 10; 5 HP; Immunity to Bludgeoning, Poison, and Psychic damage) also frees the target, ending the effect.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "3 lb.",
+     "attributes": {
+      "lb": "3"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_BLANKET",
+   "name": "Blanket",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While wrapped in a blanket, you have Advantage on saving throws against extreme cold (see “Gameplay Toolbox”).</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "sp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "3 lb.",
+     "attributes": {
+      "lb": "3"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_BLANKET",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_OIL",
+   "name": "Oil",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can douse a creature, object, or space with Oil or use it as fuel, as detailed below.</p>\n<p><b>Dousing a Creature or an Object.</b> When you take the Attack action, you can replace one of your attacks with throwing an Oil flask. Target one creature or object within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or be covered in oil. If the target takes Fire damage before the oil dries (after 1 minute), the target takes an extra 5 Fire damage from burning oil.</p>\n<p><b>Dousing a Space.</b> You can take the Utilize action to pour an Oil flask on level ground to cover a 5-foot-square area within 5 feet of yourself. If lit, the oil burns until the end of the turn 2 rounds from when the oil was lit (or 12 seconds) and deals 5 Fire damage to any creature that enters the area or ends its turn there. A creature can take this damage only once per turn.</p>\n<p><b>Fuel.</b> Oil serves as fuel for Lamps and Lanterns. Once lit, a flask of Oil burns for 6 hours in a Lamp or Lantern. That duration doesn’t need to be consecutive; you can extinguish the burning Oil (as a Utilize action) and rekindle it again until it has burned for a total of 6 hours.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "sp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_BLOCK_AND_TACKLE",
+   "name": "Block and Tackle",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Block and Tackle allows you to hoist up to four times the weight you can normally lift.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "5 lb.",
+     "attributes": {
+      "lb": "5"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_BLOCKANDTACKLE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_PAPER",
+   "name": "Paper",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>One sheet of Paper can hold about 250 handwritten words.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "sp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_BOOK",
+   "name": "Book",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Book contains fiction or nonfiction. If you consult an accurate nonfiction Book about its topic, you gain a +5 bonus to Intelligence (Arcana, History, Nature, or Religion) checks you make about that topic.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "25",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "5 lb.",
+     "attributes": {
+      "lb": "5"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_BOOK",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_PARCHMENT",
+   "name": "Parchment",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>One sheet of Parchment can hold about 250 handwritten words.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "sp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_BOTTLE_GLASS",
+   "name": "Bottle, Glass",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Glass Bottle holds up to 11/2 pints.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_BOTTLE_GLASS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_PERFUME",
+   "name": "Perfume",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Perfume comes in a 4-ounce vial. For 1 hour after applying Perfume to yourself, you have Advantage on Charisma (Persuasion) checks made to influence an Indifferent Humanoid within 5 feet of yourself.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_BUCKET",
+   "name": "Bucket",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Bucket holds up to half a cubic foot of contents.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "cp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_BUCKET",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_POISON_BASIC",
+   "name": "Poison, Basic",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Bonus Action, you can use a vial of Basic Poison to coat one weapon or up to three pieces of ammunition. A creature that takes Piercing or Slashing damage from the poisoned weapon or ammunition takes an extra 1d4 Poison damage. Once applied, the poison retains potency for 1 minute or until its damage is dealt, whichever comes first.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "100",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_POLE",
+   "name": "Pole",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Pole is 10 feet long. You can use it to touch something up to 10 feet away. If you must make a Strength (Athletics) check as part of a High or Long Jump, you can use the Pole to vault, giving yourself Advantage on the check.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "cp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "7 lb.",
+     "attributes": {
+      "lb": "7"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_CALTROPS",
+   "name": "Caltrops",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Utilize action, you can spread Caltrops from their bag to cover a 5-foot-square area within 5 feet of yourself. A creature that enters this area for the first time on a turn must succeed on a DC 15 Dexterity saving throw or take 1 Piercing damage and have its Speed reduced to 0 until the start of its next turn. It takes 10 minutes to recover the Caltrops.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_POT_IRON",
+   "name": "Pot, Iron",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>An Iron Pot holds up to 1 gallon.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "10 lb.",
+     "attributes": {
+      "lb": "10"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_POT_IRON",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_CANDLE",
+   "name": "Candle",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>For 1 hour, a lit Candle sheds Bright Light in a 5-foot radius and Dim Light for an additional 5 feet.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "cp"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_CANDLE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_POTION_OF_HEALING",
+   "name": "Potion of Healing",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This potion is a magic item. As a Bonus Action, you can drink it or administer it to another creature within 5 feet of yourself. The creature that drinks the magical red fluid in this vial regains 2d4 + 2 Hit Points.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "50",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1/2 lb.",
+     "attributes": {
+      "lb": "0.5"
+     }
+    }
+   ],
+   "data": {
+    "healing": "2d4+2",
+    "crafting": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_POTIONOFHEALING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_CASE_CROSSBOW_BOLT",
+   "name": "Case, Crossbow Bolt",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Crossbow Bolt Case holds up to 20 Bolts.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_CASE_CROSSBOWBOLT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_POUCH",
+   "name": "Pouch",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Pouch holds up to 6 pounds within one-fifth of a cubic foot.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "sp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_POUCH",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_CASE_MAP_OR_SCROLL",
+   "name": "Case, Map or Scroll",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Map or Scroll Case holds up to 10 sheets of paper or 5 sheets of parchment.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_CASE_MAPORSCROLL",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_CHAIN",
+   "name": "Chain",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Utilize action, you can wrap a Chain around an unwilling creature within 5 feet of yourself that has the Grappled, Incapacitated, or Restrained condition if you succeed on a DC 13 Strength (Athletics) check. If the creature’s legs are bound, the creature has the Restrained condition until it escapes. Escaping the Chain requires the creature to make a successful DC 18 Dexterity (Acrobatics) check as an action. Bursting the Chain requires a successful DC 20 Strength (Athletics) check as an action.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "10 lb.",
+     "attributes": {
+      "lb": "10"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_QUIVER",
+   "name": "Quiver",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Quiver holds up to 20 Arrows.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_QUIVER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_CHEST",
+   "name": "Chest",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Chest holds up to 12 cubic feet of contents.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "25 lb.",
+     "attributes": {
+      "lb": "25"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_CHEST",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_RAM_PORTABLE",
+   "name": "Ram, Portable",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can use a Portable Ram to break down doors. When doing so, you gain a +4 bonus to the Strength check. One other character can help you use the ram, giving you Advantage on this check.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "4",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "35 lb.",
+     "attributes": {
+      "lb": "35"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_RAM_PORTABLE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_CLIMBERS_KIT",
+   "name": "Climber’s Kit",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Climber’s Kit includes boot tips, gloves, pitons, and a harness. As a Utilize action, you can use the Climber’s Kit to anchor yourself; when you do, you can’t fall more than 25 feet from the anchor point, and you can’t move more than 25 feet from there without undoing the anchor as a Bonus Action.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "25",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "12 lb.",
+     "attributes": {
+      "lb": "12"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_CLIMBERSKIT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_RATIONS",
+   "name": "Rations",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Rations consist of travel-ready food, including jerky, dried fruit, hardtack, and nuts. See “Malnutrition” in “Rules Glossary” for the risks of not eating.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "sp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_CLOTHES_FINE",
+   "name": "Clothes, Fine",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Fine Clothes are made of expensive fabrics and adorned with expertly crafted details. Some events and locations admit only people wearing these clothes.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "15",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "6 lb.",
+     "attributes": {
+      "lb": "6"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_CLOTHES_FINE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_ROBE",
+   "name": "Robe",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Robe has vocational or ceremonial significance. Some events and locations admit only people wearing a Robe bearing certain colors or symbols.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "4 lb.",
+     "attributes": {
+      "lb": "4"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_CLOTHES_TRAVELERS",
+   "name": "Clothes, Traveler’s",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Traveler’s Clothes are resilient garments designed for travel in various environments.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "4 lb.",
+     "attributes": {
+      "lb": "4"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_CLOTHES_TRAVELERS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_ROPE",
+   "name": "Rope",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Utilize action, you can tie a knot with Rope if you succeed on a DC 10 Dexterity (Sleight of Hand) check. The Rope can be burst with a successful DC 20 Strength (Athletics) check.</p>\n<p>You can bind an unwilling creature with the Rope only if the creature has the Grappled, Incapacitated, or Restrained condition. If the creature’s legs are bound, the creature has the Restrained condition until it escapes. Escaping the Rope requires the creature to make a successful DC 15 Dexterity (Acrobatics) check as an action.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "5 lb.",
+     "attributes": {
+      "lb": "5"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_COMPONENT_POUCH",
+   "name": "Component Pouch",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Component Pouch is watertight and filled with compartments that hold all the free Material components of your spells.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "25",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_COMPONENTPOUCH",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_SACK",
+   "name": "Sack",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Sack holds up to 30 pounds within 1 cubic foot.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "cp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1/2 lb.",
+     "attributes": {
+      "lb": "0.5"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_SACK",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_COSTUME",
+   "name": "Costume",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While wearing a Costume, you have Advantage on any ability check you make to impersonate the person or type of person it represents.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "4 lb.",
+     "attributes": {
+      "lb": "4"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_CROWBAR",
+   "name": "Crowbar",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Using a Crowbar gives you Advantage on Strength checks where the Crowbar’s leverage can be applied.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "5 lb.",
+     "attributes": {
+      "lb": "5"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_CROWBAR",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_SHOVEL",
+   "name": "Shovel",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Working for 1 hour, you can use a Shovel to dig a hole that is 5 feet on each side in soil or similar material.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "5 lb.",
+     "attributes": {
+      "lb": "5"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_SHOVEL",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_SIGNAL_WHISTLE",
+   "name": "Signal Whistle",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When blown as a Utilize action, a Signal Whistle produces a sound that can be heard up to 600 feet away.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "cp"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_SIGNALWHISTLE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_DRUIDIC_FOCUS",
+   "name": "Druidic Focus",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Druidic Focus takes one of the forms in the Druidic Focuses table and is carved, tied with ribbon, or painted to channel primal magic. A Druid or Ranger can use such an object as a Spellcasting Focus. Druidic Focuses</p>\n<pre>Focus                                   Weight     Cost\nSprig of mistletoe                           —     1 GP\nWooden staff (also a Quarterstaff)         4 lb.   5 GP\nYew wand                                   1 lb.   10 GP</pre>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Spellcasting Focus"
+    },
+    {
+     "name": "weight",
+     "value": "Varies"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_SPELL_SCROLL_CANTRIP",
+   "name": "Spell Scroll (Cantrip)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Spell Scroll (Cantrip) or Spell Scroll (Level 1) is a magic item that bears the words of a cantrip or level 1 spell, respectively, determined by the scroll’s creator. If the spell is on your class’s spell list, you can read the scroll and cast the spell using its normal casting time and without providing any Material components.</p>\n<p>If the spell requires a saving throw or an attack roll, the spell save DC is 13, and the attack bonus is +5. The scroll disintegrates when the casting is completed.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "30",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_SPELL_SCROLL_LEVEL_1",
+   "name": "Spell Scroll (Level 1)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Spell Scroll (Cantrip) or Spell Scroll (Level 1) is a magic item that bears the words of a cantrip or level 1 spell, respectively, determined by the scroll’s creator. If the spell is on your class’s spell list, you can read the scroll and cast the spell using its normal casting time and without providing any Material components.</p>\n<p>If the spell requires a saving throw or an attack roll, the spell save DC is 13, and the attack bonus is +5. The scroll disintegrates when the casting is completed.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "50",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_SPIKES_IRON",
+   "name": "Spikes, Iron",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Iron Spikes come in bundles of ten. As a Utilize action, you can use a blunt object, such as a Light Hammer, to hammer a spike into wood, earth, or a similar material. You can do so to jam a door shut or to then tie a Rope or Chain to the Spike.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "5 lb.",
+     "attributes": {
+      "lb": "5"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_SPYGLASS",
+   "name": "Spyglass",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Objects viewed through a Spyglass are magnified to twice their size.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1000",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_SPYGLASS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_FLASK",
+   "name": "Flask",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Flask holds up to 1 pint.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "cp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_STRING",
+   "name": "String",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>String is 10 feet long. You can tie a knot in it as a Utilize action.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "sp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_GRAPPLING_HOOK",
+   "name": "Grappling Hook",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Utilize action, you can throw the Grappling Hook at a railing, a ledge, or another catch within 50 feet of yourself, and the hook catches on if you succeed on a DC 13 Dexterity (Acrobatics) check. If you tied a Rope to the hook, you can then climb it.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "4 lb.",
+     "attributes": {
+      "lb": "4"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_GRAPPLINGHOOK",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_TENT",
+   "name": "Tent",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Tent sleeps up to two Small or Medium creatures.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "20 lb.",
+     "attributes": {
+      "lb": "20"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_HEALERS_KIT",
+   "name": "Healer’s Kit",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Healer’s Kit has ten uses. As a Utilize action, you can expend one of its uses to stabilize an Unconscious creature that has 0 Hit Points without needing to make a Wisdom (Medicine) check.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "3 lb.",
+     "attributes": {
+      "lb": "3"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_HEALERSKIT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_TINDERBOX",
+   "name": "Tinderbox",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Tinderbox is a small container holding flint, fire steel, and tinder (usually dry cloth soaked in light oil) used to kindle a fire. Using it to light a Candle, Lamp, Lantern, or Torch—or anything else with exposed fuel—takes a Bonus Action. Lighting any other fire takes 1 minute.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "sp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_TINDERBOX",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_HOLY_SYMBOL",
+   "name": "Holy Symbol",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Holy Symbol takes one of the forms in the Holy Symbol table and is bejeweled or painted to channel divine magic. A Cleric or Paladin can use a Holy Symbol as a Spellcasting Focus.</p>\n<p>The table indicates whether a Holy Symbol needs to be held, worn, or borne on fabric (such as a tabard or banner) or a Shield. Holy Symbols</p>\n<pre>Symbol                                 Weight      Cost\nAmulet (worn or held)                      1 lb.   5 GP\nEmblem (borne on fabric or a Shield)         —     5 GP\nReliquary (held)                           2 lb.   5 GP</pre>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Spellcasting Focus"
+    },
+    {
+     "name": "weight",
+     "value": "Varies"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_TORCH",
+   "name": "Torch",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Torch burns for 1 hour, casting Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. When you take the Attack action, you can attack with the Torch, using it as a Simple Melee weapon. On a hit, the target takes 1 Fire damage.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "cp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_TORCH",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_HOLY_WATER",
+   "name": "Holy Water",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you take the Attack action, you can replace one of your attacks with throwing a flask of Holy Water. Target one creature you can see within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or take 2d8 Radiant damage if it is a Fiend or an Undead.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "25",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_VIAL",
+   "name": "Vial",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Vial holds up to 4 ounces.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_VIAL",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_HUNTING_TRAP",
+   "name": "Hunting Trap",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Utilize action, you can set a Hunting Trap, which is a sawtooth steel ring that snaps shut when a creature steps on a pressure plate in the center. The trap is affixed by a heavy chain to an immobile object, such as a tree or a spike driven into the ground. A creature that steps on the plate must succeed on a DC 13 Dexterity saving throw or take 1d4 Piercing damage and have its Speed reduced to 0 until the start of its next turn. Thereafter, until the creature breaks free of the trap, its movement is limited by the length of the chain (typically 3 feet). A creature can use its action to make a DC 13 Strength (Athletics) check, freeing itself or another creature within its reach on a success. Each failed check deals 1 Piercing damage to the trapped creature.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "25 lb.",
+     "attributes": {
+      "lb": "25"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_HUNTINGTRAP",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_WATERSKIN",
+   "name": "Waterskin",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>A Waterskin holds up to 4 pints. If you don’t drink sufficient water, you risk dehydration (see “Rules Glossary”).</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "sp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "5 (full) lb.",
+     "attributes": {
+      "lb": "5"
+     }
+    }
+   ],
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ITEM_WATERSKIN",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_INK",
+   "name": "Ink",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Ink comes in a 1-ounce bottle, which provides enough ink to write about 500 pages.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Adventuring Gear"
+    },
+    {
+     "name": "cost",
+     "value": "10",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_AMMUNITION_ARROWS",
+   "name": "Arrows",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Comes in a bundle of 20; stored in a Quiver.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Ammunition"
+    },
+    {
+     "name": "type",
+     "value": "Ammunition"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    }
+   ],
+   "data": {
+    "ammunition": true,
+    "amount": 20,
+    "storage": "Quiver",
+    "bundle_weight": "1 lb.",
+    "bundle_cost": "1 GP"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_AMMUNITION_BOLTS",
+   "name": "Bolts",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Comes in a bundle of 20; stored in a Case.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Ammunition"
+    },
+    {
+     "name": "type",
+     "value": "Ammunition"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1½ lb.",
+     "attributes": {
+      "lb": "1.5"
+     }
+    }
+   ],
+   "data": {
+    "ammunition": true,
+    "amount": 20,
+    "storage": "Case",
+    "bundle_weight": "1½ lb.",
+    "bundle_cost": "1 GP"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_AMMUNITION_BULLETS_FIREARM",
+   "name": "Bullets, Firearm",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Comes in a bundle of 10; stored in a Pouch.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Ammunition"
+    },
+    {
+     "name": "type",
+     "value": "Ammunition"
+    },
+    {
+     "name": "cost",
+     "value": "3",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "2 lb.",
+     "attributes": {
+      "lb": "2"
+     }
+    }
+   ],
+   "data": {
+    "ammunition": true,
+    "amount": 10,
+    "storage": "Pouch",
+    "bundle_weight": "2 lb.",
+    "bundle_cost": "3 GP"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_AMMUNITION_BULLETS_SLING",
+   "name": "Bullets, Sling",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Comes in a bundle of 20; stored in a Pouch.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Ammunition"
+    },
+    {
+     "name": "type",
+     "value": "Ammunition"
+    },
+    {
+     "name": "cost",
+     "value": "4",
+     "attributes": {
+      "currency": "cp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1½ lb.",
+     "attributes": {
+      "lb": "1.5"
+     }
+    }
+   ],
+   "data": {
+    "ammunition": true,
+    "amount": 20,
+    "storage": "Pouch",
+    "bundle_weight": "1½ lb.",
+    "bundle_cost": "4 CP"
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_AMMUNITION_NEEDLES",
+   "name": "Needles",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Comes in a bundle of 50; stored in a Pouch.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Ammunition"
+    },
+    {
+     "name": "type",
+     "value": "Ammunition"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "1 lb.",
+     "attributes": {
+      "lb": "1"
+     }
+    }
+   ],
+   "data": {
+    "ammunition": true,
+    "amount": 50,
+    "storage": "Pouch",
+    "bundle_weight": "1 lb.",
+    "bundle_cost": "1 GP"
+   }
+  }
+ ]
+}

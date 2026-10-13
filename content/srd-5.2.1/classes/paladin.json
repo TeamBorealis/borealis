@@ -1,0 +1,1132 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/paladin",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_EQUIPMENT_PACKAGE_CLASS_PALADIN",
+   "name": "Starting Equipment (Paladin)",
+   "type": "Equipment Package",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "data": {
+    "owner": "ID_2024_CLASS_PALADIN",
+    "options": [
+     {
+      "id": "A",
+      "items": [
+       {
+        "id": "ID_2024_ARMOR_CHAIN_MAIL"
+       },
+       {
+        "id": "ID_2024_ARMOR_SHIELD"
+       },
+       {
+        "id": "ID_2024_WEAPON_LONGSWORD"
+       },
+       {
+        "qty": 6,
+        "id": "ID_2024_WEAPON_JAVELIN"
+       },
+       {
+        "id": "ID_2024_ITEM_HOLY_SYMBOL"
+       },
+       {
+        "id": "ID_2024_ITEM_PRIESTS_PACK"
+       }
+      ],
+      "coins": {
+       "gp": 9
+      }
+     },
+     {
+      "id": "B",
+      "items": [],
+      "coins": {
+       "gp": 150
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_PALADIN",
+   "name": "Paladin",
+   "type": "Class",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Class"
+   ],
+   "description": "<p>Primary ability: Strength and Charisma. Hit Point Die: D10 per Paladin level. Saving throws: Wisdom and Charisma.</p>",
+   "setters": [
+    {
+     "name": "hd",
+     "value": "d10"
+    },
+    {
+     "name": "short",
+     "value": "Strength and Charisma; Light, Medium, and Heavy armor and Shields"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SAVINGTHROW_WISDOM",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_PALADIN"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SAVINGTHROW_CHARISMA",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_PALADIN"
+    },
+    {
+     "kind": "select",
+     "type": "Proficiency",
+     "name": "Skill Proficiency (Paladin)",
+     "number": 2,
+     "supports": "ID_PROFICIENCY_SKILL_ATHLETICS|ID_PROFICIENCY_SKILL_INSIGHT|ID_PROFICIENCY_SKILL_INTIMIDATION|ID_PROFICIENCY_SKILL_MEDICINE|ID_PROFICIENCY_SKILL_PERSUASION|ID_PROFICIENCY_SKILL_RELIGION",
+     "requirements": "!ID_2024_MULTICLASS_PALADIN"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_PALADIN"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_PALADIN"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_PALADIN"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_MEDIUM_ARMOR",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_PALADIN"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_HEAVY_ARMOR",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_PALADIN"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_PALADIN"
+    },
+    {
+     "kind": "equipment_package",
+     "requirements": "!ID_2024_MULTICLASS_PALADIN",
+     "ref": "ID_2024_EQUIPMENT_PACKAGE_CLASS_PALADIN",
+     "name": "Starting Equipment (Paladin)"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_LAY_ON_HANDS",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_SPELLCASTING",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_WEAPON_MASTERY",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_FIGHTING_STYLE",
+     "type": "Class Feature",
+     "level": 2
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_PALADINS_SMITE",
+     "type": "Class Feature",
+     "level": 2
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_CHANNEL_DIVINITY",
+     "type": "Class Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_PALADIN_SUBCLASS",
+     "type": "Class Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_ABILITY_SCORE_IMPROVEMENT",
+     "type": "Class Feature",
+     "level": 4
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_EXTRA_ATTACK",
+     "type": "Class Feature",
+     "level": 5
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_FAITHFUL_STEED",
+     "type": "Class Feature",
+     "level": 5
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_AURA_OF_PROTECTION",
+     "type": "Class Feature",
+     "level": 6
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_ABJURE_FOES",
+     "type": "Class Feature",
+     "level": 9
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_AURA_OF_COURAGE",
+     "type": "Class Feature",
+     "level": 10
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_RADIANT_STRIKES",
+     "type": "Class Feature",
+     "level": 11
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_RESTORING_TOUCH",
+     "type": "Class Feature",
+     "level": 14
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_AURA_EXPANSION",
+     "type": "Class Feature",
+     "level": 18
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_PALADIN_EPIC_BOON",
+     "type": "Class Feature",
+     "level": 19
+    }
+   ],
+   "multiclass": {
+    "id": "ID_2024_MULTICLASS_PALADIN",
+    "prerequisite": "Strength 13 and Charisma 13",
+    "requirements": "([str:13]&&[cha:13])",
+    "setters": [
+     {
+      "name": "multiclass proficiencies",
+      "value": "Simple and Martial weapons, Light, Medium, and Heavy armor and Shields"
+     }
+    ],
+    "rules": [
+     {
+      "kind": "grant",
+      "id": "ID_INTERNAL_GRANT_MULTICLASS",
+      "type": "Grants"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS",
+      "type": "Proficiency"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+      "type": "Proficiency"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_MEDIUM_ARMOR",
+      "type": "Proficiency"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+      "type": "Proficiency"
+     }
+    ]
+   },
+   "data": {
+    "hit_die": 10,
+    "primary_abilities": [
+     "strength",
+     "charisma"
+    ],
+    "primary_ability_mode": "all",
+    "saving_throws": [
+     "wisdom",
+     "charisma"
+    ],
+    "subclass_level": 3,
+    "epic_boon_level": 19,
+    "asi_levels": [
+     4,
+     8,
+     12,
+     16
+    ],
+    "core_traits": {
+     "Primary Ability": "Strength and Charisma",
+     "Hit Point Die": "D10 per Paladin level",
+     "Saving Throw": "Wisdom and Charisma",
+     "Skill Proficiencies": "Choose 2: Athletics, Insight, Intimidation, Medicine, Persuasion, or Religion",
+     "Weapon Proficiencies": "Simple and Martial weapons",
+     "Armor Training": "Light, Medium, and Heavy armor and Shields",
+     "Starting Equipment": "Choose A or B: (A) Chain Mail, Shield, Longsword, 6 Javelins, Holy Symbol, Priest’s Pack, and 9 GP; or (B) 150 GP"
+    },
+    "progression": {
+     "proficiency_bonus": [
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      4,
+      4,
+      4,
+      4,
+      5,
+      5,
+      5,
+      5,
+      6,
+      6,
+      6,
+      6
+     ],
+     "channel_divinity": [
+      0,
+      0,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+     ],
+     "prepared": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      6,
+      7,
+      7,
+      9,
+      9,
+      10,
+      10,
+      11,
+      11,
+      12,
+      12,
+      14,
+      14,
+      15,
+      15
+     ],
+     "slot_1": [
+      2,
+      2,
+      3,
+      3,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+     ],
+     "slot_2": [
+      0,
+      0,
+      0,
+      0,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+     ],
+     "slot_3": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+     ],
+     "slot_4": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3
+     ],
+     "slot_5": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      2,
+      2
+     ]
+    },
+    "features_by_level": [
+     "Lay On Hands, Spellcasting,",
+     "Fighting Style, Paladin’s Smite",
+     "Channel Divinity, Paladin Subclass",
+     "Ability Score Improvement",
+     "Extra Attack, Faithful Steed",
+     "Aura of Protection",
+     "Subclass feature",
+     "Ability Score Improvement",
+     "Abjure Foes",
+     "Aura of Courage",
+     "Radiant Strikes",
+     "Ability Score Improvement",
+     "—",
+     "Restoring Touch",
+     "Subclass feature",
+     "Ability Score Improvement",
+     "—",
+     "Aura Expansion",
+     "Epic Boon",
+     "Subclass feature"
+    ],
+    "multiclass": {
+     "prerequisite": "Strength 13 and Charisma 13",
+     "requirements": "([str:13]&&[cha:13])"
+    },
+    "spellcasting": {
+     "ability": "charisma",
+     "list": "Paladin",
+     "model": "prepared",
+     "replace": "long_rest",
+     "multiclass_slots_grant": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_HALF_UP",
+     "has_cantrips": false
+    },
+    "fixed_hp_per_level": 6
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_CLASS_PALADIN",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_LAY_ON_HANDS",
+   "name": "Lay On Hands",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Your blessed touch can heal wounds. You have a pool of healing power that replenishes when you finish a Long Rest. With that pool, you can restore a total number of Hit Points equal to five times your Paladin level.</p>\n<p>As a Bonus Action, you can touch a creature (which could be yourself) and draw power from the pool of healing to restore a number of Hit Points to that creature, up to the maximum amount remaining in the pool.</p>\n<p>You can also expend 5 Hit Points from the pool of healing power to remove the Poisoned condition from the creature; those points don’t also restore Hit Points to the creature.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "lay on hands",
+     "name": "Lay On Hands",
+     "max": {
+      "type": "formula",
+      "expr": "5 * paladin level"
+     },
+     "recharge": [
+      "long_rest"
+     ],
+     "pool": true,
+     "cure_poison_cost": 5
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_SPELLCASTING",
+   "name": "Spellcasting",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have learned to cast spells through prayer and meditation. See “Spells” for the rules on spellcasting. The information below details how you use those rules with Paladin spells, which appear in the Paladin spell list later in the class’s description.</p>\n<p><b>Spell Slots.</b> The Paladin Features table shows how many spell slots you have to cast your level 1+ spells. You regain all expended slots when you finish a Long Rest.</p>\n<p>Prepared Spells of Level 1+. You prepare the list of level 1+ spells that are available for you to cast with this feature. To start, choose two level 1 Paladin spells. Heroism and Searing Smite are recommended.</p>\n<p>The number of spells on your list increases as you gain Paladin levels, as shown in the Prepared Spells column of the Paladin Features table. Whenever that number increases, choose additional Paladin spells until the number of spells on your list matches the number in the Paladin Features table. The chosen spells must be of a level for which you have spell slots. For example, if you’re a level 5 Paladin, your list of prepared spells can include six Paladin spells of level 1 or 2 in any combination.</p>\n<p>If another Paladin feature gives you spells that you always have prepared, those spells don’t count against the number of spells you can prepare with this feature, but those spells otherwise count as Paladin spells for you.</p>\n<p><b>Changing Your Prepared Spells.</b> Whenever you finish a Long Rest, you can replace one spell on your list with another Paladin spell for which you have spell slots.</p>\n<p><b>Spellcasting Ability.</b> Charisma is your spellcasting ability for your Paladin spells.</p>\n<p><b>Spellcasting Focus.</b> You can use a Holy Symbol as a Spellcasting Focus for your Paladin spells.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:slots:1",
+     "value": "2"
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:slots:1",
+     "value": "1",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:slots:1",
+     "value": "1",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:slots:2",
+     "value": "2",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:slots:2",
+     "value": "1",
+     "level": 7
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:slots:3",
+     "value": "2",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:slots:3",
+     "value": "1",
+     "level": 11
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:slots:4",
+     "value": "1",
+     "level": 13
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:slots:4",
+     "value": "1",
+     "level": 15
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:slots:4",
+     "value": "1",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:slots:5",
+     "value": "1",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:slots:5",
+     "value": "1",
+     "level": 19
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:prepare",
+     "value": "2"
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:prepare",
+     "value": "1",
+     "level": 2
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:prepare",
+     "value": "1",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:prepare",
+     "value": "1",
+     "level": 4
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:prepare",
+     "value": "1",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:prepare",
+     "value": "1",
+     "level": 7
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:prepare",
+     "value": "2",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:prepare",
+     "value": "1",
+     "level": 11
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:prepare",
+     "value": "1",
+     "level": 13
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:prepare",
+     "value": "1",
+     "level": 15
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:prepare",
+     "value": "2",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "paladin:spellcasting:prepare",
+     "value": "1",
+     "level": 19
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_HALF_UP",
+     "type": "Grants",
+     "requirements": "ID_INTERNAL_GRANT_MULTICLASS"
+    },
+    {
+     "kind": "prepared_spell_change",
+     "when": "long_rest",
+     "count": "one"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_PROFICIENCY_SPELLFOCUS_GROUP_HOLY_SYMBOL",
+     "type": "Proficiency"
+    }
+   ],
+   "spellcasting": {
+    "name": "Paladin",
+    "ability": "Charisma",
+    "prepare": true,
+    "allow_replace": true,
+    "list": {
+     "supports": "Paladin",
+     "known": true
+    }
+   },
+   "data": {
+    "class": "Paladin",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_WEAPON_MASTERY",
+   "name": "Weapon Mastery",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Your training with weapons allows you to use the mastery properties of two kinds of weapons of your choice with which you have proficiency, such as Longswords and Javelins.</p>\n<p>Whenever you finish a Long Rest, you can change the kinds of weapons you chose. For example, you could switch to using the mastery properties of Hal-berds and Flails.</p>",
+   "rules": [
+    {
+     "kind": "weapon_mastery",
+     "name": "Weapon Mastery",
+     "count": {
+      "type": "fixed",
+      "value": 2
+     },
+     "filter": {
+      "weapon_kind": "any",
+      "proficient": true
+     },
+     "change_on": "long_rest"
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_FIGHTING_STYLE",
+   "name": "Fighting Style",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a Fighting Style feat of your choice (see “Feats” for feats). Instead of choosing one of those feats, you can choose the option below.</p>\n<p><b>Blessed Warrior.</b> You learn two Cleric cantrips of your choice (see the Cleric class’s section for a list of Cleric spells). Guidance and Sacred Flame are recommended. The chosen cantrips count as Paladin spells for you, and Charisma is your spellcasting ability for them. Whenever you gain a Paladin level, you can replace one of these cantrips with another Cleric cantrip.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "name": "Fighting Style (Paladin)",
+     "category": "Fighting Style",
+     "alternatives": [
+      "ID_2024_OPTION_FIGHTING_STYLE_BLESSED_WARRIOR"
+     ],
+     "replace_on": "level_up"
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "level": 2
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_PALADINS_SMITE",
+   "name": "Paladin’s Smite",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You always have the Divine Smite spell prepared. In addition, you can cast it without expending a spell slot, but you must finish a Long Rest before you can cast it in this way again.</p>",
+   "rules": [
+    {
+     "kind": "grant_spell",
+     "spell": "ID_2024_SPELL_DIVINE_SMITE",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Paladin",
+     "free_cast": {
+      "uses": 1,
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "level": 2
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_CHANNEL_DIVINITY",
+   "name": "Channel Divinity",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can channel divine energy directly from the Outer Planes, using it to fuel magical effects. You start with one such effect: Divine Sense, which is described below. Other Paladin features give additional Channel Divinity effect options. Each time you use this class’s Channel Divinity, you choose which effect from this class to create.</p>\n<p>You can use this class’s Channel Divinity twice. You regain one of its expended uses when you finish a Short Rest, and you regain all expended uses when you finish a Long Rest. You gain an additional use when you reach Paladin level 11.</p>\n<p>Breaking Your Oath A Paladin tries to hold to the highest standards of conduct, but even the most dedicated are fallible.</p>\n<p>Sometimes a Paladin transgresses their oath.</p>\n<p>A Paladin who has broken a vow typically seeks absolution, spending an all-night vigil as a sign of penitence or undertaking a fast. After a rite of forgiveness, the Paladin starts fresh.</p>\n<p>If your Paladin unrepentantly violates their oath, talk to your GM. Your Paladin should probably take a more appropriate subclass or even abandon the class and adopt another one.</p>\n<p>If a Channel Divinity effect requires a saving throw, the DC equals the spell save DC from this class’s Spellcasting feature.</p>\n<p><b>Divine Sense.</b> As a Bonus Action, you can open your awareness to detect Celestials, Fiends, and Undead. For the next 10 minutes or until you have the Incapacitated condition, you know the location of any creature of those types within 60 feet of yourself, and you know its creature type. Within the same radius, you also detect the presence of any place or object that has been consecrated or desecrated, as with the Hallow spell.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "channel divinity paladin",
+     "name": "Channel Divinity",
+     "max": {
+      "type": "table",
+      "key": "channel_divinity"
+     },
+     "recharge": [
+      "short_rest",
+      "long_rest"
+     ],
+     "regain": {
+      "short_rest": 1,
+      "long_rest": "all"
+     }
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_OPTION_PALADIN_CHANNEL_DIVINITY_DIVINE_SENSE",
+     "type": "Option"
+    },
+    {
+     "kind": "save_dc",
+     "id": "channel divinity",
+     "formula": "spell save DC (Paladin)"
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_PALADIN_SUBCLASS",
+   "name": "Paladin Subclass",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a Paladin subclass of your choice. The Oath of Devotion subclass is detailed after this class’s description. A subclass is a specialization that grants you features at certain Paladin levels. For the rest of your career, you gain each of your subclass’s features that are of your Paladin level or lower.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Archetype",
+     "name": "Sacred Oath",
+     "supports": "Paladin Subclass"
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_ABILITY_SCORE_IMPROVEMENT",
+   "name": "Ability Score Improvement",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the Ability Score Improvement feat (see “Feats”) or another feat of your choice for which you qualify. You gain this feature again at Paladin levels 8, 12, and 16.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "level": 4,
+     "name": "Ability Score Improvement (Paladin 4)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 8,
+     "name": "Ability Score Improvement (Paladin 8)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 12,
+     "name": "Ability Score Improvement (Paladin 12)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 16,
+     "name": "Ability Score Improvement (Paladin 16)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "level": 4
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_EXTRA_ATTACK",
+   "name": "Extra Attack",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can attack twice instead of once whenever you take the Attack action on your turn.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "attacks:extra",
+     "value": "1",
+     "bonus": "extra attack"
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "level": 5
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_FAITHFUL_STEED",
+   "name": "Faithful Steed",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can call on the aid of an otherworldly steed. You always have the Find Steed spell prepared.</p>\n<p>You can also cast the spell once without expending a spell slot, and you regain the ability to do so when you finish a Long Rest.</p>",
+   "rules": [
+    {
+     "kind": "grant_spell",
+     "spell": "ID_2024_SPELL_FIND_STEED",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Paladin",
+     "free_cast": {
+      "uses": 1,
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "level": 5
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_AURA_OF_PROTECTION",
+   "name": "Aura of Protection",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You radiate a protective, unseeable aura in a 10-foot Emanation that originates from you. The aura is inactive while you have the Incapacitated condition.</p>\n<p>You and your allies in the aura gain a bonus to saving throws equal to your Charisma modifier (minimum bonus of +1).</p>\n<p>If another Paladin is present, a creature can benefit from only one Aura of Protection at a time; the creature chooses which aura while in them.</p>",
+   "rules": [
+    {
+     "kind": "aura",
+     "id": "aura of protection",
+     "radius_feet": 10,
+     "bonus_saving_throws": {
+      "formula": "max(1, charisma:modifier)"
+     },
+     "radius_by_level": {
+      "6": 10,
+      "18": 30
+     }
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "level": 6
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_ABJURE_FOES",
+   "name": "Abjure Foes",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Magic action, you can expend one use of this class’s Channel Divinity to overwhelm foes with awe. As you present your Holy Symbol or weapon, you can target a number of creatures equal to your Charisma modifier (minimum of one creature) that you can see within 60 feet of yourself. Each target must succeed on a Wisdom saving throw or have the Frightened condition for 1 minute or until it takes any damage. While Frightened in this way, a target can do only one of the following on its turns: move, take an action, or take a Bonus Action.</p>",
+   "data": {
+    "class": "Paladin",
+    "level": 9
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_AURA_OF_COURAGE",
+   "name": "Aura of Courage",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You and your allies have Immunity to the Frightened condition while in your Aura of Protection. If a Frightened ally enters the aura, that condition has no effect on that ally while there.</p>",
+   "rules": [
+    {
+     "kind": "aura_immunity",
+     "aura": "aura of protection",
+     "conditions": [
+      "frightened"
+     ]
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "level": 10
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_RADIANT_STRIKES",
+   "name": "Radiant Strikes",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Your strikes now carry supernatural power. When you hit a target with an attack roll using a Melee weapon or an Unarmed Strike, the target takes an extra 1d8 Radiant damage.</p>",
+   "rules": [
+    {
+     "kind": "extra_damage",
+     "name": "Radiant Strikes",
+     "dice": "1d8",
+     "trigger": "melee weapon or unarmed strike hit",
+     "damage_type": "radiant"
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "level": 11
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_RESTORING_TOUCH",
+   "name": "Restoring Touch",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you use Lay On Hands on a creature, you can also remove one or more of the following conditions from the creature: Blinded, Charmed, Deafened, Frightened, Paralyzed, or Stunned. You must expend 5 Hit Points from the healing pool of Lay On Hands for each of these conditions you remove; those points don’t also restore Hit Points to the creature.</p>",
+   "data": {
+    "class": "Paladin",
+    "level": 14
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_AURA_EXPANSION",
+   "name": "Aura Expansion",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Your Aura of Protection is now a 30-foot Emanation.</p>",
+   "data": {
+    "class": "Paladin",
+    "level": 18
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_PALADIN_EPIC_BOON",
+   "name": "Epic Boon",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain an Epic Boon feat (see “Feats”) or another feat of your choice for which you qualify. Boon of Truesight is recommended.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "level": 19,
+     "name": "Epic Boon (Paladin)",
+     "category": "Epic Boon"
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "level": 19
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_PALADIN_CHANNEL_DIVINITY_DIVINE_SENSE",
+   "name": "Divine Sense",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Paladin Channel Divinity"
+   ],
+   "description": "<p>As a Bonus Action, you can open your awareness to detect Celestials, Fiends, and Undead. For the next 10 minutes or until you have the Incapacitated condition, you know the location of any creature of those types within 60 feet of yourself, and you know its creature type. Within the same radius, you also detect the presence of any place or object that has been consecrated or desecrated, as with the Hallow spell.</p>",
+   "data": {
+    "class_name": "Paladin",
+    "group": "Paladin Channel Divinity",
+    "source_feature": "Channel Divinity",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_FIGHTING_STYLE_BLESSED_WARRIOR",
+   "name": "Blessed Warrior",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Fighting Style"
+   ],
+   "description": "<p>You learn two Cleric cantrips of your choice (see the Cleric class’s section for a list of Cleric spells). Guidance and Sacred Flame are recommended. The chosen cantrips count as Paladin spells for you, and Charisma is your spellcasting ability for them. Whenever you gain a Paladin level, you can replace one of these cantrips with another Cleric cantrip.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Blessed Warrior Cantrips",
+     "number": 2,
+     "supports": "Cleric, 0",
+     "spellcasting": "Paladin",
+     "prepared": true,
+     "allow_replace": true
+    }
+   ],
+   "data": {
+    "class_name": "Paladin",
+    "group": "Fighting Style",
+    "source_feature": "Fighting Style",
+    "level": 2
+   }
+  }
+ ]
+}

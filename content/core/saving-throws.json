@@ -1,0 +1,114 @@
+{
+ "format": "borealis-content/1",
+ "ruleset": "any",
+ "elements": [
+  {
+   "id": "ID_PROFICIENCY_SAVINGTHROW_STRENGTH",
+   "name": "Saving Throw Proficiency (Strength)",
+   "type": "Proficiency",
+   "source": "Core",
+   "supports": [
+    "Saving Throw"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength:save:proficiency",
+     "value": "proficiency",
+     "bonus": "proficiency",
+     "alt": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_PROFICIENCY_SAVINGTHROW_DEXTERITY",
+   "name": "Saving Throw Proficiency (Dexterity)",
+   "type": "Proficiency",
+   "source": "Core",
+   "supports": [
+    "Saving Throw"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "dexterity:save:proficiency",
+     "value": "proficiency",
+     "bonus": "proficiency",
+     "alt": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_PROFICIENCY_SAVINGTHROW_CONSTITUTION",
+   "name": "Saving Throw Proficiency (Constitution)",
+   "type": "Proficiency",
+   "source": "Core",
+   "supports": [
+    "Saving Throw"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "constitution:save:proficiency",
+     "value": "proficiency",
+     "bonus": "proficiency",
+     "alt": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_PROFICIENCY_SAVINGTHROW_INTELLIGENCE",
+   "name": "Saving Throw Proficiency (Intelligence)",
+   "type": "Proficiency",
+   "source": "Core",
+   "supports": [
+    "Saving Throw"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "intelligence:save:proficiency",
+     "value": "proficiency",
+     "bonus": "proficiency",
+     "alt": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_PROFICIENCY_SAVINGTHROW_WISDOM",
+   "name": "Saving Throw Proficiency (Wisdom)",
+   "type": "Proficiency",
+   "source": "Core",
+   "supports": [
+    "Saving Throw"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "wisdom:save:proficiency",
+     "value": "proficiency",
+     "bonus": "proficiency",
+     "alt": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_PROFICIENCY_SAVINGTHROW_CHARISMA",
+   "name": "Saving Throw Proficiency (Charisma)",
+   "type": "Proficiency",
+   "source": "Core",
+   "supports": [
+    "Saving Throw"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "charisma:save:proficiency",
+     "value": "proficiency",
+     "bonus": "proficiency",
+     "alt": "Proficiency"
+    }
+   ]
+  }
+ ]
+}

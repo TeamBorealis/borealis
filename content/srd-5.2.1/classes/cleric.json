@@ -1,0 +1,1247 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/cleric",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_EQUIPMENT_PACKAGE_CLASS_CLERIC",
+   "name": "Starting Equipment (Cleric)",
+   "type": "Equipment Package",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "data": {
+    "owner": "ID_2024_CLASS_CLERIC",
+    "options": [
+     {
+      "id": "A",
+      "items": [
+       {
+        "id": "ID_2024_ARMOR_CHAIN_SHIRT"
+       },
+       {
+        "id": "ID_2024_ARMOR_SHIELD"
+       },
+       {
+        "id": "ID_2024_WEAPON_MACE"
+       },
+       {
+        "id": "ID_2024_ITEM_HOLY_SYMBOL"
+       },
+       {
+        "id": "ID_2024_ITEM_PRIESTS_PACK"
+       }
+      ],
+      "coins": {
+       "gp": 7
+      }
+     },
+     {
+      "id": "B",
+      "items": [],
+      "coins": {
+       "gp": 110
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_CLERIC",
+   "name": "Cleric",
+   "type": "Class",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Class"
+   ],
+   "description": "<p>Primary ability: Wisdom. Hit Point Die: D8 per Cleric level. Saving throws: Wisdom and Charisma.</p>",
+   "setters": [
+    {
+     "name": "hd",
+     "value": "d8"
+    },
+    {
+     "name": "short",
+     "value": "Wisdom; Light and Medium armor and Shields"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SAVINGTHROW_WISDOM",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_CLERIC"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SAVINGTHROW_CHARISMA",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_CLERIC"
+    },
+    {
+     "kind": "select",
+     "type": "Proficiency",
+     "name": "Skill Proficiency (Cleric)",
+     "number": 2,
+     "supports": "ID_PROFICIENCY_SKILL_HISTORY|ID_PROFICIENCY_SKILL_INSIGHT|ID_PROFICIENCY_SKILL_MEDICINE|ID_PROFICIENCY_SKILL_PERSUASION|ID_PROFICIENCY_SKILL_RELIGION",
+     "requirements": "!ID_2024_MULTICLASS_CLERIC"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_CLERIC"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_CLERIC"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_MEDIUM_ARMOR",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_CLERIC"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_CLERIC"
+    },
+    {
+     "kind": "equipment_package",
+     "requirements": "!ID_2024_MULTICLASS_CLERIC",
+     "ref": "ID_2024_EQUIPMENT_PACKAGE_CLASS_CLERIC",
+     "name": "Starting Equipment (Cleric)"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_CLERIC_SPELLCASTING",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_CLERIC_DIVINE_ORDER",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_CLERIC_CHANNEL_DIVINITY",
+     "type": "Class Feature",
+     "level": 2
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_CLERIC_CLERIC_SUBCLASS",
+     "type": "Class Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_CLERIC_ABILITY_SCORE_IMPROVEMENT",
+     "type": "Class Feature",
+     "level": 4
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_CLERIC_SEAR_UNDEAD",
+     "type": "Class Feature",
+     "level": 5
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_CLERIC_BLESSED_STRIKES",
+     "type": "Class Feature",
+     "level": 7
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_CLERIC_DIVINE_INTERVENTION",
+     "type": "Class Feature",
+     "level": 10
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_CLERIC_IMPROVED_BLESSED_STRIKES",
+     "type": "Class Feature",
+     "level": 14
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_CLERIC_EPIC_BOON",
+     "type": "Class Feature",
+     "level": 19
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_CLERIC_GREATER_DIVINE_INTERVENTION",
+     "type": "Class Feature",
+     "level": 20
+    }
+   ],
+   "multiclass": {
+    "id": "ID_2024_MULTICLASS_CLERIC",
+    "prerequisite": "Wisdom 13",
+    "requirements": "[wis:13]",
+    "setters": [
+     {
+      "name": "multiclass proficiencies",
+      "value": "Simple weapons, Light and Medium armor and Shields"
+     }
+    ],
+    "rules": [
+     {
+      "kind": "grant",
+      "id": "ID_INTERNAL_GRANT_MULTICLASS",
+      "type": "Grants"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+      "type": "Proficiency"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_MEDIUM_ARMOR",
+      "type": "Proficiency"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+      "type": "Proficiency"
+     }
+    ]
+   },
+   "data": {
+    "hit_die": 8,
+    "primary_abilities": [
+     "wisdom"
+    ],
+    "primary_ability_mode": "single",
+    "saving_throws": [
+     "wisdom",
+     "charisma"
+    ],
+    "subclass_level": 3,
+    "epic_boon_level": 19,
+    "asi_levels": [
+     4,
+     8,
+     12,
+     16
+    ],
+    "core_traits": {
+     "Primary Ability": "Wisdom",
+     "Hit Point Die": "D8 per Cleric level",
+     "Saving Throw": "Wisdom and Charisma",
+     "Skill Proficiencies": "Choose 2: History, Insight, Medicine, Persuasion, or Religion",
+     "Weapon Proficiencies": "Simple weapons",
+     "Armor Training": "Light and Medium armor and Shields",
+     "Starting Equipment": "Choose A or B: (A) Chain Shirt, Shield, Mace, Holy Symbol, Priest’s Pack, and 7 GP; or (B) 110 GP"
+    },
+    "progression": {
+     "proficiency_bonus": [
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      4,
+      4,
+      4,
+      4,
+      5,
+      5,
+      5,
+      5,
+      6,
+      6,
+      6,
+      6
+     ],
+     "channel_divinity": [
+      0,
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      4,
+      4,
+      4
+     ],
+     "cantrips": [
+      3,
+      3,
+      3,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5
+     ],
+     "prepared": [
+      4,
+      5,
+      6,
+      7,
+      9,
+      10,
+      11,
+      12,
+      14,
+      15,
+      16,
+      16,
+      17,
+      17,
+      18,
+      18,
+      19,
+      20,
+      21,
+      22
+     ],
+     "slot_1": [
+      2,
+      3,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+     ],
+     "slot_2": [
+      0,
+      0,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+     ],
+     "slot_3": [
+      0,
+      0,
+      0,
+      0,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+     ],
+     "slot_4": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+     ],
+     "slot_5": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3
+     ],
+     "slot_6": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      2,
+      2
+     ],
+     "slot_7": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      2
+     ],
+     "slot_8": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+     ],
+     "slot_9": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1
+     ]
+    },
+    "features_by_level": [
+     "Spellcasting, Divine Order",
+     "Channel Divinity",
+     "Cleric Subclass",
+     "Ability Score Improvement",
+     "Sear Undead",
+     "Subclass feature",
+     "Blessed Strikes",
+     "Ability Score Improvement",
+     "—",
+     "Divine Intervention",
+     "—",
+     "Ability Score Improvement",
+     "—",
+     "Improved Blessed Strikes",
+     "—",
+     "Ability Score Improvement",
+     "Subclass feature",
+     "—",
+     "Epic Boon",
+     "Greater Divine Intervention"
+    ],
+    "multiclass": {
+     "prerequisite": "Wisdom 13",
+     "requirements": "[wis:13]"
+    },
+    "spellcasting": {
+     "ability": "wisdom",
+     "list": "Cleric",
+     "model": "prepared",
+     "replace": "long_rest",
+     "multiclass_slots_grant": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_FULL",
+     "has_cantrips": true
+    },
+    "fixed_hp_per_level": 5
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_CLASS_CLERIC",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_CLERIC_SPELLCASTING",
+   "name": "Spellcasting",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have learned to cast spells through prayer and meditation. See “Spells” for the rules on spellcasting. The information below details how you use those rules with Cleric spells, which appear on the Cleric spell list later in the class’s description.</p>\n<p><b>Cantrips.</b> You know three cantrips of your choice from the Cleric spell list. Guidance, Sacred Flame, and Thaumaturgy are recommended.</p>\n<p>Whenever you gain a Cleric level, you can replace one of your cantrips with another cantrip of your choice from the Cleric spell list.</p>\n<p>When you reach Cleric levels 4 and 10, you learn another cantrip of your choice from the Cleric spell list, as shown in the Cantrips column of the Cleric Features table.</p>\n<p><b>Spell Slots.</b> The Cleric Features table shows how many spell slots you have to cast your level 1+ spells. You regain all expended slots when you finish a Long Rest.</p>\n<p>Prepared Spells of Level 1+. You prepare the list of level 1+ spells that are available for you to cast with this feature. To start, choose four level 1 spells from the Cleric spell list. Bless, Cure Wounds, Guiding Bolt, and Shield of Faith are recommended.</p>\n<p>The number of spells on your list increases as you gain Cleric levels, as shown in the Prepared Spells column of the Cleric Features table. Whenever that number increases, choose additional spells from the Cleric spell list until the number of spells on your list matches the number on the table. The chosen spells must be of a level for which you have spell slots. For example, if you’re a level 3 Cleric, your list of prepared spells can include six spells of levels 1 and 2 in any combination.</p>\n<p>If another Cleric feature gives you spells that you always have prepared, those spells don’t count against the number of spells you can prepare with this feature, but those spells otherwise count as Cleric spells for you.</p>\n<p><b>Changing Your Prepared Spells.</b> Whenever you finish a Long Rest, you can change your list of prepared spells, replacing any of the spells there with other Cleric spells for which you have spell slots.</p>\n<p><b>Spellcasting Ability.</b> Wisdom is your spellcasting ability for your Cleric spells.</p>\n<p><b>Spellcasting Focus.</b> You can use a Holy Symbol as a Spellcasting Focus for your Cleric spells.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:1",
+     "value": "2"
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:1",
+     "value": "1",
+     "level": 2
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:1",
+     "value": "1",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:2",
+     "value": "2",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:2",
+     "value": "1",
+     "level": 4
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:3",
+     "value": "2",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:3",
+     "value": "1",
+     "level": 6
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:4",
+     "value": "1",
+     "level": 7
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:4",
+     "value": "1",
+     "level": 8
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:4",
+     "value": "1",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:5",
+     "value": "1",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:5",
+     "value": "1",
+     "level": 10
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:5",
+     "value": "1",
+     "level": 18
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:6",
+     "value": "1",
+     "level": 11
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:6",
+     "value": "1",
+     "level": 19
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:7",
+     "value": "1",
+     "level": 13
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:7",
+     "value": "1",
+     "level": 20
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:8",
+     "value": "1",
+     "level": 15
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:slots:9",
+     "value": "1",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "4"
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "1",
+     "level": 2
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "1",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "1",
+     "level": 4
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "2",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "1",
+     "level": 6
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "1",
+     "level": 7
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "1",
+     "level": 8
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "2",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "1",
+     "level": 10
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "1",
+     "level": 11
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "1",
+     "level": 13
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "1",
+     "level": 15
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "1",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "1",
+     "level": 18
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "1",
+     "level": 19
+    },
+    {
+     "kind": "stat",
+     "name": "cleric:spellcasting:prepare",
+     "value": "1",
+     "level": 20
+    },
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Cantrip (Cleric 1)",
+     "number": 3,
+     "supports": "$(spellcasting:list), 0",
+     "spellcasting": "Cleric",
+     "allow_replace": true
+    },
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Cantrip (Cleric 4)",
+     "level": 4,
+     "supports": "$(spellcasting:list), 0",
+     "spellcasting": "Cleric",
+     "allow_replace": true
+    },
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Cantrip (Cleric 10)",
+     "level": 10,
+     "supports": "$(spellcasting:list), 0",
+     "spellcasting": "Cleric",
+     "allow_replace": true
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_FULL",
+     "type": "Grants",
+     "requirements": "ID_INTERNAL_GRANT_MULTICLASS"
+    },
+    {
+     "kind": "prepared_spell_change",
+     "when": "long_rest",
+     "count": "any"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_PROFICIENCY_SPELLFOCUS_GROUP_HOLY_SYMBOL",
+     "type": "Proficiency"
+    }
+   ],
+   "spellcasting": {
+    "name": "Cleric",
+    "ability": "Wisdom",
+    "prepare": true,
+    "allow_replace": true,
+    "list": {
+     "supports": "Cleric",
+     "known": true
+    }
+   },
+   "data": {
+    "class": "Cleric",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_CLERIC_DIVINE_ORDER",
+   "name": "Divine Order",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have dedicated yourself to one of the following sacred roles of your choice.</p>\n<p><b>Protector.</b> Trained for battle, you gain proficiency with Martial weapons and training with Heavy armor.</p>\n<p><b>Thaumaturge.</b> You know one extra cantrip from the Cleric spell list. In addition, your mystical connection to the divine gives you a bonus to your Intelligence (Arcana or Religion) checks. The bonus equals your Wisdom modifier (minimum of +1).</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Option",
+     "name": "Divine Order",
+     "supports": "Divine Order"
+    }
+   ],
+   "data": {
+    "class": "Cleric",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_CLERIC_CHANNEL_DIVINITY",
+   "name": "Channel Divinity",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can channel divine energy directly from the Outer Planes to fuel magical effects. You start with two such effects: Divine Spark and Turn Undead, each of which is described below. Each time you use this class’s Channel Divinity, choose which Channel Divinity effect from this class to create. You gain additional effect options at higher Cleric levels.</p>\n<p>You can use this class’s Channel Divinity twice. You regain one of its expended uses when you finish a Short Rest, and you regain all expended uses when you finish a Long Rest. You gain additional uses when you reach certain Cleric levels, as shown in the Channel Divinity column of the Cleric Features table.</p>\n<p>If a Channel Divinity effect requires a saving throw, the DC equals the spell save DC from this class’s Spellcasting feature.</p>\n<p><b>Divine Spark.</b> As a Magic action, you point your Holy Symbol at another creature you can see within 30 feet of yourself and focus divine energy at it.</p>\n<p>Roll 1d8 and add your Wisdom modifier. You either restore Hit Points to the creature equal to that total or force the creature to make a Constitution saving throw. On a failed save, the creature takes Necrotic or Radiant damage (your choice) equal to that total. On a successful save, the creature takes half as much damage (round down).</p>\n<p>You roll an additional d8 when you reach Cleric levels 7 (2d8), 13 (3d8), and 18 (4d8).</p>\n<p><b>Turn Undead.</b> As a Magic action, you present your Holy Symbol and censure Undead creatures. Each Undead of your choice within 30 feet of you must make a Wisdom saving throw. If the creature fails its save, it has the Frightened and Incapacitated conditions for 1 minute. For that duration, it tries to move as far from you as it can on its turns. This effect ends early on the creature if it takes any damage, if you have the Incapacitated condition, or if you die.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "channel divinity cleric",
+     "name": "Channel Divinity",
+     "max": {
+      "type": "table",
+      "key": "channel_divinity"
+     },
+     "recharge": [
+      "short_rest",
+      "long_rest"
+     ],
+     "regain": {
+      "short_rest": 1,
+      "long_rest": "all"
+     }
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_OPTION_CLERIC_CHANNEL_DIVINITY_DIVINE_SPARK",
+     "type": "Option"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_OPTION_CLERIC_CHANNEL_DIVINITY_TURN_UNDEAD",
+     "type": "Option"
+    },
+    {
+     "kind": "save_dc",
+     "id": "channel divinity",
+     "formula": "spell save DC (Cleric)"
+    }
+   ],
+   "data": {
+    "class": "Cleric",
+    "level": 2
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_CLERIC_CLERIC_SUBCLASS",
+   "name": "Cleric Subclass",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a Cleric subclass of your choice. The Life Domain subclass is detailed after this class’s description. A subclass is a specialization that grants you features at certain Cleric levels. For the rest of your career, you gain each of your subclass’s features that are of your Cleric level or lower.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Archetype",
+     "name": "Divine Domain",
+     "supports": "Cleric Subclass"
+    }
+   ],
+   "data": {
+    "class": "Cleric",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_CLERIC_ABILITY_SCORE_IMPROVEMENT",
+   "name": "Ability Score Improvement",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the Ability Score Improvement feat (see “Feats”) or another feat of your choice for which you qualify. You gain this feature again at Cleric levels 8, 12, and 16.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "level": 4,
+     "name": "Ability Score Improvement (Cleric 4)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 8,
+     "name": "Ability Score Improvement (Cleric 8)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 12,
+     "name": "Ability Score Improvement (Cleric 12)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 16,
+     "name": "Ability Score Improvement (Cleric 16)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    }
+   ],
+   "data": {
+    "class": "Cleric",
+    "level": 4
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_CLERIC_SEAR_UNDEAD",
+   "name": "Sear Undead",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Whenever you use Turn Undead, you can roll a number of d8s equal to your Wisdom modifier (minimum of 1d8) and add the rolls together. Each Undead that fails its saving throw against that use of Turn Undead takes Radiant damage equal to the roll’s total. This damage doesn’t end the turn effect.</p>",
+   "data": {
+    "class": "Cleric",
+    "level": 5
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_CLERIC_BLESSED_STRIKES",
+   "name": "Blessed Strikes",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Divine power infuses you in battle. You gain one of the following options of your choice (if you get either option from a Cleric subclass in an older book, use only the option you choose for this feature).</p>\n<p><b>Divine Strike.</b> Once on each of your turns when you hit a creature with an attack roll using a weapon, you can cause the target to take an extra 1d8 Necrotic or Radiant damage (your choice).</p>\n<p><b>Potent Spellcasting.</b> Add your Wisdom modifier to the damage you deal with any Cleric cantrip.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Option",
+     "name": "Blessed Strikes",
+     "supports": "Blessed Strikes"
+    }
+   ],
+   "data": {
+    "class": "Cleric",
+    "level": 7
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_CLERIC_DIVINE_INTERVENTION",
+   "name": "Divine Intervention",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can call on your deity or pantheon to intervene on your behalf. As a Magic action, choose any Cleric spell of level 5 or lower that doesn’t require a Reaction to cast. As part of the same action, you cast that spell without expending a spell slot or needing Material components. You can’t use this feature again until you finish a Long Rest.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "divine intervention",
+     "name": "Divine Intervention",
+     "max": {
+      "type": "fixed",
+      "value": 1
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    }
+   ],
+   "data": {
+    "class": "Cleric",
+    "level": 10
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_CLERIC_IMPROVED_BLESSED_STRIKES",
+   "name": "Improved Blessed Strikes",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>The option you chose for Blessed Strikes grows more powerful.</p>\n<p><b>Divine Strike.</b> The extra damage of your Divine Strike increases to 2d8.</p>\n<p><b>Potent Spellcasting.</b> When you cast a Cleric cantrip and deal damage to a creature with it, you can give vitality to yourself or another creature within 60 feet of yourself, granting a number of Temporary Hit Points equal to twice your Wisdom modifier.</p>",
+   "data": {
+    "class": "Cleric",
+    "level": 14
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_CLERIC_EPIC_BOON",
+   "name": "Epic Boon",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain an Epic Boon feat (see “Feats”) or another feat of your choice for which you qualify. Boon of Fate is recommended.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "level": 19,
+     "name": "Epic Boon (Cleric)",
+     "category": "Epic Boon"
+    }
+   ],
+   "data": {
+    "class": "Cleric",
+    "level": 19
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_CLERIC_GREATER_DIVINE_INTERVENTION",
+   "name": "Greater Divine Intervention",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can call on even more powerful divine intervention. When you use your Divine Intervention feature, you can choose Wish when you select a spell. If you do so, you can’t use Divine Intervention again until you finish 2d4 Long Rests.</p>",
+   "data": {
+    "class": "Cleric",
+    "level": 20
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DIVINE_ORDER_PROTECTOR",
+   "name": "Protector",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Divine Order"
+   ],
+   "description": "<p>Trained for battle, you gain proficiency with Martial weapons and training with Heavy armor.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_HEAVY_ARMOR",
+     "type": "Proficiency"
+    }
+   ],
+   "data": {
+    "class_name": "Cleric",
+    "group": "Divine Order",
+    "source_feature": "Divine Order",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DIVINE_ORDER_THAUMATURGE",
+   "name": "Thaumaturge",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Divine Order"
+   ],
+   "description": "<p>You know one extra cantrip from the Cleric spell list. In addition, your mystical connection to the divine gives you a bonus to your Intelligence (Arcana or Religion) checks. The bonus equals your Wisdom modifier (minimum of +1).</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Thaumaturge Extra Cantrip",
+     "supports": "$(spellcasting:list), 0",
+     "spellcasting": "Cleric"
+    },
+    {
+     "kind": "skill_bonus",
+     "skills": [
+      "Arcana",
+      "Religion"
+     ],
+     "value": "wisdom:modifier",
+     "minimum": 1
+    }
+   ],
+   "data": {
+    "class_name": "Cleric",
+    "group": "Divine Order",
+    "source_feature": "Divine Order",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_CLERIC_CHANNEL_DIVINITY_DIVINE_SPARK",
+   "name": "Divine Spark",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric Channel Divinity"
+   ],
+   "description": "<p>As a Magic action, you point your Holy Symbol at another creature you can see within 30 feet of yourself and focus divine energy at it.</p>\n<p>Roll 1d8 and add your Wisdom modifier. You either restore Hit Points to the creature equal to that total or force the creature to make a Constitution saving throw. On a failed save, the creature takes Necrotic or Radiant damage (your choice) equal to that total. On a successful save, the creature takes half as much damage (round down).</p>\n<p>You roll an additional d8 when you reach Cleric levels 7 (2d8), 13 (3d8), and 18 (4d8).</p>",
+   "data": {
+    "class_name": "Cleric",
+    "group": "Cleric Channel Divinity",
+    "source_feature": "Channel Divinity",
+    "level": 2
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_CLERIC_CHANNEL_DIVINITY_TURN_UNDEAD",
+   "name": "Turn Undead",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric Channel Divinity"
+   ],
+   "description": "<p>As a Magic action, you present your Holy Symbol and censure Undead creatures. Each Undead of your choice within 30 feet of you must make a Wisdom saving throw. If the creature fails its save, it has the Frightened and Incapacitated conditions for 1 minute. For that duration, it tries to move as far from you as it can on its turns. This effect ends early on the creature if it takes any damage, if you have the Incapacitated condition, or if you die.</p>",
+   "data": {
+    "class_name": "Cleric",
+    "group": "Cleric Channel Divinity",
+    "source_feature": "Channel Divinity",
+    "level": 2
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_BLESSED_STRIKES_DIVINE_STRIKE",
+   "name": "Divine Strike",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Blessed Strikes"
+   ],
+   "description": "<p>Once on each of your turns when you hit a creature with an attack roll using a weapon, you can cause the target to take an extra 1d8 Necrotic or Radiant damage (your choice).</p>",
+   "rules": [
+    {
+     "kind": "extra_damage",
+     "name": "Divine Strike",
+     "dice": "1d8",
+     "trigger": "hit with a weapon attack",
+     "once_per": "turn",
+     "damage_type": "necrotic or radiant"
+    },
+    {
+     "kind": "extra_damage",
+     "level": 14,
+     "name": "Divine Strike (improved)",
+     "dice": "2d8",
+     "replaces": "Divine Strike"
+    }
+   ],
+   "data": {
+    "class_name": "Cleric",
+    "group": "Blessed Strikes",
+    "source_feature": "Blessed Strikes",
+    "level": 7
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_BLESSED_STRIKES_POTENT_SPELLCASTING",
+   "name": "Potent Spellcasting",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Blessed Strikes"
+   ],
+   "description": "<p>Add your Wisdom modifier to the damage you deal with any Cleric cantrip.</p>",
+   "rules": [
+    {
+     "kind": "cantrip_damage_bonus",
+     "spell_class": "Cleric",
+     "value": "wisdom:modifier"
+    }
+   ],
+   "data": {
+    "class_name": "Cleric",
+    "group": "Blessed Strikes",
+    "source_feature": "Blessed Strikes",
+    "level": 7
+   }
+  }
+ ]
+}

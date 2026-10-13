@@ -1,0 +1,140 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/wizard-evoker",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SUBCLASS_WIZARD_EVOKER",
+   "name": "Evoker",
+   "type": "Archetype",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Wizard Subclass"
+   ],
+   "description": "<p>Your studies focus on magic that creates powerful elemental effects such as bitter cold, searing flame, rolling thunder, crackling lightning, and burning acid. Some Evokers find employment in military forces, serving as artillery to blast armies from afar. Others use their power to protect others, while some seek their own gain.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_WIZARD_EVOKER_EVOCATION_SAVANT",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_WIZARD_EVOKER_POTENT_CANTRIP",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_WIZARD_EVOKER_SCULPT_SPELLS",
+     "type": "Archetype Feature",
+     "level": 6
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_WIZARD_EVOKER_EMPOWERED_EVOCATION",
+     "type": "Archetype Feature",
+     "level": 10
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_WIZARD_EVOKER_OVERCHANNEL",
+     "type": "Archetype Feature",
+     "level": 14
+    }
+   ],
+   "data": {
+    "class": "ID_2024_CLASS_WIZARD",
+    "class_name": "Wizard",
+    "level_gained": 3
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ARCHETYPE_WIZARD_SCHOOL_OF_EVOCATION",
+    "kind": "approximate"
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_WIZARD_EVOKER_EVOCATION_SAVANT",
+   "name": "Evocation Savant",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Choose two Wizard spells from the Evocation school, each of which must be no higher than level 2, and add them to your spellbook for free.</p>\n<p>In addition, whenever you gain access to a new level of spell slots in this class, you can add one Wizard spell from the Evocation school to your spellbook for free. The chosen spell must be of a level for which you have spell slots.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Evocation Savant",
+     "number": 2,
+     "supports": "Wizard, Evocation, (0||1||2)",
+     "spellcasting": "Wizard"
+    }
+   ],
+   "data": {
+    "class": "Wizard",
+    "subclass": "Evoker",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_WIZARD_EVOKER_POTENT_CANTRIP",
+   "name": "Potent Cantrip",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Your damaging cantrips affect even creatures that avoid the brunt of the effect. When you cast a cantrip at a creature and you miss with the attack roll or the target succeeds on a saving throw against the cantrip, the target takes half the cantrip’s damage (if any) but suffers no additional effect from the cantrip.</p>",
+   "data": {
+    "class": "Wizard",
+    "subclass": "Evoker",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_WIZARD_EVOKER_SCULPT_SPELLS",
+   "name": "Sculpt Spells",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can create pockets of relative safety within the effects of your evocations. When you cast an Evocation spell that affects other creatures that you can see, you can choose a number of them equal to 1 plus the spell’s level. The chosen creatures automatically succeed on their saving throws against the spell, and they take no damage if they would normally take half damage on a successful save.</p>",
+   "data": {
+    "class": "Wizard",
+    "subclass": "Evoker",
+    "level": 6
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_WIZARD_EVOKER_EMPOWERED_EVOCATION",
+   "name": "Empowered Evocation",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Whenever you cast a Wizard spell from the Evocation school, you can add your Intelligence modifier to one damage roll of that spell.</p>",
+   "data": {
+    "class": "Wizard",
+    "subclass": "Evoker",
+    "level": 10
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_WIZARD_EVOKER_OVERCHANNEL",
+   "name": "Overchannel",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can increase the power of your spells. When you cast a Wizard spell with a spell slot of levels 1–5 that deals damage, you can deal maximum damage with that spell on the turn you cast it.</p>\n<p>The first time you do so, you suffer no adverse effect. If you use this feature again before you finish a Long Rest, you take 2d12 Necrotic damage for each level of the spell slot immediately after you cast it. This damage ignores Resistance and Immunity.</p>\n<p>Each time you use this feature again before finishing a Long Rest, the Necrotic damage per spell level increases by 1d12.</p>",
+   "data": {
+    "class": "Wizard",
+    "subclass": "Evoker",
+    "level": 14
+   }
+  }
+ ]
+}

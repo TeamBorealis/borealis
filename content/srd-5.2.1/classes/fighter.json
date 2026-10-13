@@ -1,0 +1,815 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/fighter",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_EQUIPMENT_PACKAGE_CLASS_FIGHTER",
+   "name": "Starting Equipment (Fighter)",
+   "type": "Equipment Package",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "data": {
+    "owner": "ID_2024_CLASS_FIGHTER",
+    "options": [
+     {
+      "id": "A",
+      "items": [
+       {
+        "id": "ID_2024_ARMOR_CHAIN_MAIL"
+       },
+       {
+        "id": "ID_2024_WEAPON_GREATSWORD"
+       },
+       {
+        "id": "ID_2024_WEAPON_FLAIL"
+       },
+       {
+        "qty": 8,
+        "id": "ID_2024_WEAPON_JAVELIN"
+       },
+       {
+        "id": "ID_2024_ITEM_DUNGEONEERS_PACK"
+       }
+      ],
+      "coins": {
+       "gp": 4
+      }
+     },
+     {
+      "id": "B",
+      "items": [
+       {
+        "id": "ID_2024_ARMOR_STUDDED_LEATHER_ARMOR"
+       },
+       {
+        "id": "ID_2024_WEAPON_SCIMITAR"
+       },
+       {
+        "id": "ID_2024_WEAPON_SHORTSWORD"
+       },
+       {
+        "id": "ID_2024_WEAPON_LONGBOW"
+       },
+       {
+        "qty": 20,
+        "id": "ID_2024_ITEM_AMMUNITION_ARROWS"
+       },
+       {
+        "id": "ID_2024_ITEM_QUIVER"
+       },
+       {
+        "id": "ID_2024_ITEM_DUNGEONEERS_PACK"
+       }
+      ],
+      "coins": {
+       "gp": 11
+      }
+     },
+     {
+      "id": "C",
+      "items": [],
+      "coins": {
+       "gp": 155
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FIGHTER",
+   "name": "Fighter",
+   "type": "Class",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Class"
+   ],
+   "description": "<p>Primary ability: Strength or Dexterity. Hit Point Die: D10 per Fighter level. Saving throws: Strength and Constitution.</p>",
+   "setters": [
+    {
+     "name": "hd",
+     "value": "d10"
+    },
+    {
+     "name": "short",
+     "value": "Strength or Dexterity; Light, Medium, and Heavy armor and Shields"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SAVINGTHROW_STRENGTH",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_FIGHTER"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SAVINGTHROW_CONSTITUTION",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_FIGHTER"
+    },
+    {
+     "kind": "select",
+     "type": "Proficiency",
+     "name": "Skill Proficiency (Fighter)",
+     "number": 2,
+     "supports": "ID_PROFICIENCY_SKILL_ACROBATICS|ID_PROFICIENCY_SKILL_ANIMALHANDLING|ID_PROFICIENCY_SKILL_ATHLETICS|ID_PROFICIENCY_SKILL_HISTORY|ID_PROFICIENCY_SKILL_INSIGHT|ID_PROFICIENCY_SKILL_INTIMIDATION|ID_PROFICIENCY_SKILL_PERSUASION|ID_PROFICIENCY_SKILL_PERCEPTION|ID_PROFICIENCY_SKILL_SURVIVAL",
+     "requirements": "!ID_2024_MULTICLASS_FIGHTER"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_FIGHTER"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_FIGHTER"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_FIGHTER"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_MEDIUM_ARMOR",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_FIGHTER"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_HEAVY_ARMOR",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_FIGHTER"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_FIGHTER"
+    },
+    {
+     "kind": "equipment_package",
+     "requirements": "!ID_2024_MULTICLASS_FIGHTER",
+     "ref": "ID_2024_EQUIPMENT_PACKAGE_CLASS_FIGHTER",
+     "name": "Starting Equipment (Fighter)"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_FIGHTER_FIGHTING_STYLE",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_FIGHTER_SECOND_WIND",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_FIGHTER_WEAPON_MASTERY",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_FIGHTER_ACTION_SURGE",
+     "type": "Class Feature",
+     "level": 2
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_FIGHTER_TACTICAL_MIND",
+     "type": "Class Feature",
+     "level": 2
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_FIGHTER_FIGHTER_SUBCLASS",
+     "type": "Class Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_FIGHTER_ABILITY_SCORE_IMPROVEMENT",
+     "type": "Class Feature",
+     "level": 4
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_FIGHTER_EXTRA_ATTACK",
+     "type": "Class Feature",
+     "level": 5
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_FIGHTER_TACTICAL_SHIFT",
+     "type": "Class Feature",
+     "level": 5
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_FIGHTER_INDOMITABLE",
+     "type": "Class Feature",
+     "level": 9
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_FIGHTER_TACTICAL_MASTER",
+     "type": "Class Feature",
+     "level": 9
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_FIGHTER_TWO_EXTRA_ATTACKS",
+     "type": "Class Feature",
+     "level": 11
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_FIGHTER_STUDIED_ATTACKS",
+     "type": "Class Feature",
+     "level": 13
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_FIGHTER_EPIC_BOON",
+     "type": "Class Feature",
+     "level": 19
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_FIGHTER_THREE_EXTRA_ATTACKS",
+     "type": "Class Feature",
+     "level": 20
+    }
+   ],
+   "multiclass": {
+    "id": "ID_2024_MULTICLASS_FIGHTER",
+    "prerequisite": "Strength 13 or Dexterity 13",
+    "requirements": "([str:13]||[dex:13])",
+    "setters": [
+     {
+      "name": "multiclass proficiencies",
+      "value": "Simple and Martial weapons, Light, Medium, and Heavy armor and Shields"
+     }
+    ],
+    "rules": [
+     {
+      "kind": "grant",
+      "id": "ID_INTERNAL_GRANT_MULTICLASS",
+      "type": "Grants"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS",
+      "type": "Proficiency"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+      "type": "Proficiency"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_MEDIUM_ARMOR",
+      "type": "Proficiency"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+      "type": "Proficiency"
+     }
+    ]
+   },
+   "data": {
+    "hit_die": 10,
+    "primary_abilities": [
+     "strength",
+     "dexterity"
+    ],
+    "primary_ability_mode": "any",
+    "saving_throws": [
+     "strength",
+     "constitution"
+    ],
+    "subclass_level": 3,
+    "epic_boon_level": 19,
+    "asi_levels": [
+     4,
+     6,
+     8,
+     12,
+     14,
+     16
+    ],
+    "core_traits": {
+     "Primary Ability": "Strength or Dexterity",
+     "Hit Point Die": "D10 per Fighter level",
+     "Saving Throw": "Strength and Constitution",
+     "Skill Proficiencies": "Choose 2: Acrobatics, Animal Handling, Athletics, History, Insight, Intimidation, Persuasion, Perception, or Survival",
+     "Weapon Proficiencies": "Simple and Martial weapons",
+     "Armor Training": "Light, Medium, and Heavy armor and Shields",
+     "Starting Equipment": "Choose A, B, or C: (A) Chain Mail, Greatsword, Flail, 8 Javelins, Dungeoneer’s Pack, and 4 GP; (B) Studded Leather Armor, Scimitar, Short­sword, Longbow, 20 Arrows, Quiver, Dungeoneer’s Pack, and 11 GP; or (C) 155 GP"
+    },
+    "progression": {
+     "proficiency_bonus": [
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      4,
+      4,
+      4,
+      4,
+      5,
+      5,
+      5,
+      5,
+      6,
+      6,
+      6,
+      6
+     ],
+     "second_wind": [
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+     ],
+     "weapon_mastery": [
+      3,
+      3,
+      3,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      5,
+      5,
+      5,
+      5,
+      5,
+      5,
+      6,
+      6,
+      6,
+      6,
+      6
+     ]
+    },
+    "features_by_level": [
+     "Fighting Style, Second Wind, Weapon Mastery",
+     "Action Surge (one use), Tactical Mind",
+     "Fighter Subclass",
+     "Ability Score Improvement",
+     "Extra Attack, Tactical Shift",
+     "Ability Score Improvement",
+     "Subclass feature",
+     "Ability Score Improvement",
+     "Indomitable (one use), Tactical Master",
+     "Subclass feature",
+     "Two Extra Attacks",
+     "Ability Score Improvement",
+     "Indomitable (two uses), Studied Attacks",
+     "Ability Score Improvement",
+     "Subclass feature",
+     "Ability Score Improvement",
+     "Action Surge (two uses), Indomitable (three uses)",
+     "Subclass feature",
+     "Epic Boon",
+     "Three Extra Attacks"
+    ],
+    "multiclass": {
+     "prerequisite": "Strength 13 or Dexterity 13",
+     "requirements": "([str:13]||[dex:13])"
+    },
+    "spellcasting": null,
+    "fixed_hp_per_level": 6
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_CLASS_FIGHTER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_FIGHTER_FIGHTING_STYLE",
+   "name": "Fighting Style",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have honed your martial prowess and gain a Fighting Style feat of your choice (see “Feats”). Defense is recommended.</p>\n<p>Whenever you gain a Fighter level, you can replace the feat you chose with a different Fighting Style feat.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "name": "Fighting Style (Fighter)",
+     "category": "Fighting Style",
+     "replace_on": "level_up"
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_FIGHTER_SECOND_WIND",
+   "name": "Second Wind",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have a limited well of physical and mental stamina that you can draw on. As a Bonus Action, you can use it to regain Hit Points equal to 1d10 plus your Fighter level.</p>\n<p>You can use this feature twice. You regain one expended use when you finish a Short Rest, and you regain all expended uses when you finish a Long Rest.</p>\n<p>When you reach certain Fighter levels, you gain more uses of this feature, as shown in the Second Wind column of the Fighter Features table.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "second wind",
+     "name": "Second Wind",
+     "max": {
+      "type": "table",
+      "key": "second_wind"
+     },
+     "recharge": [
+      "short_rest",
+      "long_rest"
+     ],
+     "regain": {
+      "short_rest": 1,
+      "long_rest": "all"
+     }
+    },
+    {
+     "kind": "healing",
+     "name": "Second Wind",
+     "dice": "1d10",
+     "plus": "fighter level",
+     "action": "bonus_action"
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_FIGHTER_WEAPON_MASTERY",
+   "name": "Weapon Mastery",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Your training with weapons allows you to use the mastery properties of three kinds of Simple or Martial weapons of your choice. Whenever you finish a Long Rest, you can practice weapon drills and change one of those weapon choices.</p>\n<p>When you reach certain Fighter levels, you gain the ability to use the mastery properties of more kinds of weapons, as shown in the Weapon Mastery column of the Fighter Features table.</p>",
+   "rules": [
+    {
+     "kind": "weapon_mastery",
+     "name": "Weapon Mastery",
+     "count": {
+      "type": "table",
+      "key": "weapon_mastery"
+     },
+     "filter": {
+      "weapon_kind": "any",
+      "categories": [
+       "Simple",
+       "Martial"
+      ]
+     },
+     "change_on": "long_rest"
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_FIGHTER_ACTION_SURGE",
+   "name": "Action Surge",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can push yourself beyond your normal limits for a moment. On your turn, you can take one additional action, except the Magic action.</p>\n<p>Once you use this feature, you can’t do so again until you finish a Short or Long Rest. Starting at level 17, you can use it twice before a rest but only once on a turn.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "action surge",
+     "name": "Action Surge",
+     "max": {
+      "type": "fixed",
+      "value": 1
+     },
+     "recharge": [
+      "short_rest",
+      "long_rest"
+     ]
+    },
+    {
+     "kind": "resource",
+     "level": 17,
+     "id": "action surge",
+     "name": "Action Surge (second use)",
+     "max": {
+      "type": "fixed",
+      "value": 2
+     },
+     "recharge": [
+      "short_rest",
+      "long_rest"
+     ],
+     "replaces": "action surge"
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "level": 2
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_FIGHTER_TACTICAL_MIND",
+   "name": "Tactical Mind",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have a mind for tactics on and off the battlefield. When you fail an ability check, you can expend a use of your Second Wind to push yourself toward success. Rather than regaining Hit Points, you roll 1d10 and add the number rolled to the ability check, potentially turning it into a success. If the check still fails, this use of Second Wind isn’t expended.</p>",
+   "data": {
+    "class": "Fighter",
+    "level": 2
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_FIGHTER_FIGHTER_SUBCLASS",
+   "name": "Fighter Subclass",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a Fighter subclass of your choice. The Champion subclass is detailed after this class’s description. A subclass is a specialization that grants you features at certain Fighter levels. For the rest of your career, you gain each of your subclass’s features that are of your Fighter level or lower.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Archetype",
+     "name": "Martial Archetype",
+     "supports": "Fighter Subclass"
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_FIGHTER_ABILITY_SCORE_IMPROVEMENT",
+   "name": "Ability Score Improvement",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the Ability Score Improvement feat (see “Feats”) or another feat of your choice for which you qualify. You gain this feature again at Fighter levels 6, 8, 12, 14, and 16.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "level": 4,
+     "name": "Ability Score Improvement (Fighter 4)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 6,
+     "name": "Ability Score Improvement (Fighter 6)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 8,
+     "name": "Ability Score Improvement (Fighter 8)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 12,
+     "name": "Ability Score Improvement (Fighter 12)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 14,
+     "name": "Ability Score Improvement (Fighter 14)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 16,
+     "name": "Ability Score Improvement (Fighter 16)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "level": 4
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_FIGHTER_EXTRA_ATTACK",
+   "name": "Extra Attack",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can attack twice instead of once whenever you take the Attack action on your turn.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "attacks:extra",
+     "value": "1",
+     "bonus": "extra attack"
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "level": 5
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_FIGHTER_TACTICAL_SHIFT",
+   "name": "Tactical Shift",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Whenever you activate your Second Wind with a Bonus Action, you can move up to half your Speed without provoking Opportunity Attacks.</p>",
+   "data": {
+    "class": "Fighter",
+    "level": 5
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_FIGHTER_INDOMITABLE",
+   "name": "Indomitable",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>If you fail a saving throw, you can reroll it with a bonus equal to your Fighter level. You must use the new roll, and you can’t use this feature again until you finish a Long Rest.</p>\n<p>You can use this feature twice before a Long Rest starting at level 13 and three times before a Long Rest starting at level 17.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "indomitable",
+     "name": "Indomitable",
+     "max": {
+      "type": "fixed",
+      "value": 1
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    },
+    {
+     "kind": "resource",
+     "level": 13,
+     "id": "indomitable",
+     "name": "Indomitable (two uses)",
+     "max": {
+      "type": "fixed",
+      "value": 2
+     },
+     "recharge": [
+      "long_rest"
+     ],
+     "replaces": "indomitable"
+    },
+    {
+     "kind": "resource",
+     "level": 17,
+     "id": "indomitable",
+     "name": "Indomitable (three uses)",
+     "max": {
+      "type": "fixed",
+      "value": 3
+     },
+     "recharge": [
+      "long_rest"
+     ],
+     "replaces": "indomitable"
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "level": 9
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_FIGHTER_TACTICAL_MASTER",
+   "name": "Tactical Master",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you attack with a weapon whose mastery property you can use, you can replace that property with the Push, Sap, or Slow property for that attack.</p>",
+   "data": {
+    "class": "Fighter",
+    "level": 9
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_FIGHTER_TWO_EXTRA_ATTACKS",
+   "name": "Two Extra Attacks",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can attack three times instead of once whenever you take the Attack action on your turn.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "attacks:extra",
+     "value": "2",
+     "bonus": "extra attack"
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "level": 11
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_FIGHTER_STUDIED_ATTACKS",
+   "name": "Studied Attacks",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You study your opponents and learn from each attack you make. If you make an attack roll against a creature and miss, you have Advantage on your next attack roll against that creature before the end of your next turn.</p>",
+   "data": {
+    "class": "Fighter",
+    "level": 13
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_FIGHTER_EPIC_BOON",
+   "name": "Epic Boon",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain an Epic Boon feat (see “Feats”) or another feat of your choice for which you qualify. Boon of Combat Prowess is recommended.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "level": 19,
+     "name": "Epic Boon (Fighter)",
+     "category": "Epic Boon"
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "level": 19
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_FIGHTER_THREE_EXTRA_ATTACKS",
+   "name": "Three Extra Attacks",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can attack four times instead of once whenever you take the Attack action on your turn.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "attacks:extra",
+     "value": "3",
+     "bonus": "extra attack"
+    }
+   ],
+   "data": {
+    "class": "Fighter",
+    "level": 20
+   }
+  }
+ ]
+}

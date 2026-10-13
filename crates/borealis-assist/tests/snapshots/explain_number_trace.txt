@@ -1,0 +1,8 @@
+stat: ac
+base: 10
+final value: 18
+steps (value | status | label):
++10 | counted | Base
++6 | counted | Chain Mail
++2 | counted | Shield
++3 | NOT counted: armor is equipped | Unarmored Defense

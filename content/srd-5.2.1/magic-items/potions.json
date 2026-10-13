@@ -1,0 +1,913 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: magic-items/potions",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_MAGIC_ITEM_ELIXIR_OF_HEALTH",
+   "name": "Elixir of Health",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you drink this potion, you are cured of all magical contagions. In addition, the following conditions end on you: Blinded, Deafened, Paralyzed, and Poisoned.</p>\n<p>The clear, red liquid has tiny bubbles of light in it.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_ELIXIR_OF_HEALTH",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_OIL_OF_ETHEREALNESS",
+   "name": "Oil of Etherealness",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>One vial of this oil can cover one Medium or smaller creature, along with the equipment it’s wearing and carrying (one additional vial is required for each size category above Medium). Applying the oil takes 10 minutes. The affected creature then gains the effect of the Etherealness spell for 1 hour.</p>\n<p>Beads of this cloudy, gray oil form on the outside of its container and quickly evaporate.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_OIL_OF_ETHEREALNESS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_OIL_OF_SHARPNESS",
+   "name": "Oil of Sharpness",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>One vial of this oil can coat one Melee weapon or twenty pieces of ammunition, but only ammunition and Melee weapons that are nonmagical and deal Slashing or Piercing damage are affected. Applying the oil takes 1 minute, after which the oil magically seeps into whatever it coats, turning the coated weapon into a +3 Weapon or the coated ammunition into +3 Ammunition.</p>\n<p>This clear, gelatinous oil sparkles with tiny, ultrathin silver shards.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Very Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_OIL_OF_SHARPNESS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_OIL_OF_SLIPPERINESS",
+   "name": "Oil of Slipperiness",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>One vial of this oil can cover one Medium or smaller creature, along with the equipment it’s wearing and carrying (one additional vial is required for each size category above Medium). Applying the oil takes 10 minutes. The affected creature then gains the effect of the Freedom of Movement spell for 8 hours.</p>\n<p>Alternatively, the oil can be poured on the ground as a Magic action, where it covers a 10-foot square, duplicating the effect of the Grease spell in that area for 8 hours.</p>\n<p>This sticky, black unguent is thick and heavy, but it flows quickly when poured.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Uncommon"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_OIL_OF_SLIPPERINESS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_PHILTER_OF_LOVE",
+   "name": "Philter of Love",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>The next time you see a creature within 10 minutes after drinking this philter, you are charmed by that creature and have the Charmed condition for 1 hour.</p>\n<p>This rose-hued, effervescent liquid contains one easy-to-miss bubble shaped like a heart.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Uncommon"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_PHILTER_OF_LOVE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_ANIMAL_FRIENDSHIP",
+   "name": "Potion of Animal Friendship",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you drink this potion, you can cast the level 3 version of the Animal Friendship spell (save DC 13).</p>\n<p>Agitating this potion’s muddy liquid brings little bits into view: a fish scale, a hummingbird feather, a cat claw, or a squirrel hair.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Uncommon"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_ANIMAL_FRIENDSHIP",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_CLAIRVOYANCE",
+   "name": "Potion of Clairvoyance",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you drink this potion, you gain the effect of the Clairvoyance spell (no Concentration required).</p>\n<p>An eyeball bobs in this potion’s yellowish liquid but vanishes when the potion is opened.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_CLAIRVOYANCE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_CLIMBING",
+   "name": "Potion of Climbing",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you drink this potion, you gain a Climb Speed equal to your Speed for 1 hour. During this time, you have Advantage on Strength (Athletics) checks to climb.</p>\n<p>This potion is separated into brown, silver, and gray layers resembling bands of stone. Shaking the bottle fails to mix the colors.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Common"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Common",
+    "rarities": [
+     "Common"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Common"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_CLIMBING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_DIMINUTION",
+   "name": "Potion of Diminution",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you drink this potion, you gain the “reduce” effect of the Enlarge/Reduce spell for 1d4 hours (no Concentration required).</p>\n<p>The red in the potion’s liquid continuously contracts to a tiny bead and then expands to color the clear liquid around it. Shaking the bottle fails to interrupt this process.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_DIMINUTION",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_FLYING",
+   "name": "Potion of Flying",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you drink this potion, you gain a Fly Speed equal to your Speed for 1 hour and can hover. If you’re in the air when the potion wears off, you fall unless you have some other means of staying aloft.</p>\n<p>This potion’s clear liquid floats at the top of its container and has cloudy white impurities drifting in it.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Very Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_FLYING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_GASEOUS_FORM",
+   "name": "Potion of Gaseous Form",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you drink this potion, you gain the effect of the Gaseous Form spell for 1 hour (no Concentration required) or until you end the effect as a Bonus Action.</p>\n<p>This potion’s container seems to hold fog that moves and pours like water.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_GASEOUS_FORM",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_GIANT_STRENGTH",
+   "name": "Potion of Giant Strength",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you drink this potion, your Strength score changes for 1 hour. The type of giant determines the score (see the table below). The potion has no effect on you if your Strength is equal to or greater than that score.</p>\n<p>This potion’s transparent liquid has floating in it a sliver of light resembling a giant’s fingernail.</p>\n<pre>Potion                               Str.   Rarity\nPotion of Giant Strength (hill)      21     Uncommon\nPotion of Giant Strength (frost or   23     Rare</pre>\n<p>stone)</p>\n<pre>Potion of Giant Strength (fire)      25     Rare\nPotion of Giant Strength (cloud)     27     Very Rare\nPotion of Giant Strength (storm)     29     Legendary</pre>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Rarity Varies"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Rarity Varies",
+    "rarities": [],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Rarity Varies"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_GROWTH",
+   "name": "Potion of Growth",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you drink this potion, you gain the “enlarge” effect of the Enlarge/Reduce spell for 10 minutes (no Concentration required).</p>\n<p>The red in the potion’s liquid continuously expands from a tiny bead to color the clear liquid around it and then contracts. Shaking the bottle fails to interrupt this process.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Uncommon"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_GROWTH",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_HEALING",
+   "name": "Potion of Healing",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You regain Hit Points when you drink this potion. The number of Hit Points depends on the potion’s rarity, as shown in the table below.</p>\n<p>Whatever its potency, the potion’s red liquid glim-mers when agitated.</p>\n<pre>Potion                  HP Regained    Rarity\nPotion of Healing         2d4 + 2      Common\nPotion of Healing         4d4 + 4      Uncommon</pre>\n<p>(greater)</p>\n<pre>Potion of Healing         8d4 + 8      Rare</pre>\n<p>(superior)</p>\n<pre>Potion of Healing        10d4 + 20     Very Rare</pre>\n<p>(supreme)</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Rarity Varies"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Rarity Varies",
+    "rarities": [],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Rarity Varies"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_HEALING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_HEROISM",
+   "name": "Potion of Heroism",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you drink this potion, you gain 10 Temporary Hit Points that last for 1 hour. For the same duration, you are under the effect of the Bless spell (no Concentration required).</p>\n<p>This potion’s blue liquid bubbles and steams as if boiling.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_HEROISM",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_INVISIBILITY",
+   "name": "Potion of Invisibility",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This potion’s container looks empty but feels as though it holds liquid. When you drink the potion, you have the Invisible condition for 1 hour. The effect ends early if you make an attack roll, deal damage, or cast a spell.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_INVISIBILITY",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_INVULNERABILITY",
+   "name": "Potion of Invulnerability",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>For 1 minute after you drink this potion, you have Resistance to all damage.</p>\n<p>This potion’s syrupy liquid looks like liquefied iron.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_INVULNERABILITY",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_LONGEVITY",
+   "name": "Potion of Longevity",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you drink this potion, your physical age is reduced by 1d6 + 6 years, to a minimum of 13 years. Each time you subsequently drink a Potion of Longevity, there is 10 percent cumulative chance that you instead age by 1d6 + 6 years.</p>\n<p>Suspended in this amber liquid is a tiny heart that, against all reason, is still beating. These ingredients vanish when the potion is opened.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Very Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_LONGEVITY",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_MIND_READING",
+   "name": "Potion of Mind Reading",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you drink this potion, you gain the effect of the Detect Thoughts spell (save DC 13) for 10 minutes (no Concentration required).</p>\n<p>This potion’s dense, purple liquid has an ovoid cloud of pink floating in it.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_MIND_READING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_POISON",
+   "name": "Potion of Poison",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This concoction looks, smells, and tastes like a Potion of Healing or another beneficial potion. However, it is actually poison masked by illusion magic. Identify reveals its true nature.</p>\n<p>If you drink this potion, you take 4d6 Poison damage and must succeed on a DC 13 Constitution saving throw or have the Poisoned condition for 1 hour.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Uncommon"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_POISON",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_RESISTANCE",
+   "name": "Potion of Resistance",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you drink this potion, you have Resistance to one type of damage for 1 hour. The GM chooses the type or determines it randomly by rolling on the following table.</p>\n<pre> 1d10   Damage Type         1d10   Damage Type\n   1    Acid                  6    Necrotic\n   2    Cold                  7    Poison\n   3    Fire                  8    Psychic\n   4    Force                 9    Radiant\n   5    Lightning             10   Thunder</pre>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Uncommon"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_SPEED",
+   "name": "Potion of Speed",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you drink this potion, you gain the effect of the Haste spell for 1 minute (no Concentration required) without suffering the wave of lethargy that typically occurs when the effect ends.</p>\n<p>This potion’s yellow fluid is streaked with black and swirls on its own.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Very Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_SPEED",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_VITALITY",
+   "name": "Potion of Vitality",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you drink this potion, it removes any Exhaustion levels you have and ends the Poisoned condition on you. For the next 24 hours, you regain the maximum number of Hit Points for any Hit Point Die you spend.</p>\n<p>This potion’s crimson liquid regularly pulses with dull light, calling to mind a heartbeat.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Very Rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_VITALITY",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_POTION_OF_WATER_BREATHING",
+   "name": "Potion of Water Breathing",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can breathe underwater for 24 hours after drinking this potion.</p>\n<p>This potion’s cloudy green fluid smells of the sea and has a jellyfish-like bubble floating in it.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Potions"
+    },
+    {
+     "name": "type",
+     "value": "Potion"
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    }
+   ],
+   "data": {
+    "item_type": "Potion",
+    "item_subtype": null,
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": false,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Potion, Uncommon"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_WATER_BREATHING",
+    "kind": "equivalent"
+   }
+  }
+ ]
+}

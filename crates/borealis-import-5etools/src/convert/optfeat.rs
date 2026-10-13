@@ -1,0 +1,327 @@
+//! Optional features (invocations, metamagic, fighting styles, maneuvers, ...), progression
+//! selects shared with classes and feats, and prerequisite conversion.
+
+use super::build::{select, set_level};
+use super::feat::{prerequisites, Prereq};
+use super::mech::feat_category_label;
+use super::{
+    append_fluff, drain_renderer, new_element, note_unmapped, sheet_text, short_text, Conv, Ent,
+    Shared, State,
+};
+use crate::ids::IdKind;
+use crate::model::{self, OptionalFeature};
+use crate::text::{RefKind, Renderer};
+use borealis_content::Rule;
+use serde_json::Value;
+
+/// Display label of an optional feature type code.
+#[must_use]
+pub fn type_label(code: &str) -> String {
+    match code {
+        "ED" => "Elemental Discipline",
+        "EI" => "Eldritch Invocation",
+        "MM" => "Metamagic",
+        "MV" | "MV:B" => "Maneuver",
+        "MV:C2-UA" => "Maneuver (UA)",
+        "FS:F" | "FS:B" | "FS:P" | "FS:R" => "Fighting Style",
+        "AS" | "AS:V1-UA" | "AS:V2-UA" => "Arcane Shot",
+        "PB" => "Pact Boon",
+        "AI" => "Artificer Infusion",
+        "OR" => "Onomancy Resonant",
+        "RN" => "Rune",
+        "TT" => "Trick",
+        "AF" => "Alchemical Formula",
+        "RP" => "Replicate Magic Item",
+        "OTH" => "Other",
+        other => other,
+    }
+    .to_string()
+}
+
+/// Support tag that identifies one optional feature type (colons are not allowed in tags).
+#[must_use]
+pub fn type_tag(code: &str) -> String {
+    format!("OF_{}", code.replace(':', "-"))
+}
+
+fn progression_levels(progression: &Value, partial: &mut Vec<String>) -> Vec<(u32, u32)> {
+    match progression {
+        Value::Array(a) => {
+            let mut prev = 0i64;
+            let mut out = Vec::new();
+            for (i, v) in a.iter().enumerate() {
+                let n = v.as_i64().unwrap_or(prev);
+                if n > prev {
+                    if let (Ok(delta), Ok(level)) = (u32::try_from(n - prev), u32::try_from(i + 1))
+                    {
+                        out.push((level, delta));
+                    }
+                }
+                prev = n;
+            }
+            out
+        }
+        // `{"3": 2, "7": 3}`: like the array form, the values are running totals ("2 known at
+        // level 3, 3 known at level 7"), so each level adds the difference.
+        Value::Object(m) => {
+            let mut totals = Vec::new();
+            for (k, v) in m {
+                let Some(n) = v.as_u64().and_then(|n| u32::try_from(n).ok()) else {
+                    continue;
+                };
+                match k.parse::<u32>() {
+                    Ok(level) => totals.push((level, n)),
+                    Err(_) => {
+                        partial.push(format!("progression key {k:?} was applied at level 1"));
+                        totals.push((1, n));
+                    }
+                }
+            }
+            totals.sort_unstable();
+            let mut prev = 0;
+            let mut out = Vec::new();
+            for (level, n) in totals {
+                if n > prev {
+                    out.push((level, n - prev));
+                    prev = n;
+                }
+            }
+            out
+        }
+        _ => Vec::new(),
+    }
+}
+
+/// Selects for `optionalfeatureProgression` entries.
+#[must_use]
+pub fn optional_feature_selects(progs: &[Value], partial: &mut Vec<String>) -> Vec<Rule> {
+    let mut rules = Vec::new();
+    for p in progs {
+        let name = p
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or("Optional Feature");
+        let codes: Vec<String> = p
+            .get("featureType")
+            .and_then(Value::as_array)
+            .map(|a| {
+                a.iter()
+                    .filter_map(|x| x.as_str().map(str::to_string))
+                    .collect()
+            })
+            .unwrap_or_default();
+        if codes.is_empty() {
+            continue;
+        }
+        let supports = codes
+            .iter()
+            .map(|c| type_tag(c))
+            .collect::<Vec<_>>()
+            .join("||");
+        for (level, count) in
+            progression_levels(p.get("progression").unwrap_or(&Value::Null), partial)
+        {
+            let mut rule = Rule::Select(select("Class Feature", name, Some(&supports), count));
+            set_level(&mut rule, level);
+            rules.push(rule);
+        }
+    }
+    rules
+}
+
+/// Selects for `featProgression` entries.
+#[must_use]
+pub fn feat_selects(progs: &[Value], partial: &mut Vec<String>) -> Vec<Rule> {
+    let mut rules = Vec::new();
+    for p in progs {
+        let name = p.get("name").and_then(Value::as_str).unwrap_or("Feat");
+        let cats: Vec<String> = p
+            .get("category")
+            .and_then(Value::as_array)
+            .map(|a| {
+                a.iter()
+                    .filter_map(|x| x.as_str().map(|c| feat_category_label(c).to_string()))
+                    .collect()
+            })
+            .unwrap_or_default();
+        if cats.is_empty() {
+            continue;
+        }
+        let supports = cats.join("||");
+        for (level, count) in
+            progression_levels(p.get("progression").unwrap_or(&Value::Null), partial)
+        {
+            let mut rule = Rule::Select(select("Feat", name, Some(&supports), count));
+            set_level(&mut rule, level);
+            rules.push(rule);
+        }
+    }
+    rules
+}
+
+/// Convert one optional feature.
+pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
+    let of: OptionalFeature = match model::parse(&ent.raw) {
+        Ok(o) => o,
+        Err(e) => {
+            st.report.skipped(
+                &ent.file,
+                "optionalfeature",
+                &ent.label(),
+                &format!("invalid shape: {e}"),
+            );
+            return Conv::default();
+        }
+    };
+    let resolver = |k: RefKind, n: &str, s: &str| sh.link(k, n, s);
+    let mut renderer = Renderer::new(&resolver);
+    let id = st.ids.named(IdKind::OptionalFeature, &ent.source, &of.name);
+    let mut el = new_element(
+        &id,
+        &of.name,
+        "Class Feature",
+        &sh.source_display(&ent.source),
+        ent.ruleset,
+    );
+    let mut supports: Vec<String> = Vec::new();
+    for code in &of.feature_type {
+        let label = type_label(code);
+        if !supports.contains(&label) {
+            supports.push(label);
+        }
+        supports.push(type_tag(code));
+    }
+    el.supports = supports;
+    let Prereq {
+        text,
+        requirements,
+        unmapped,
+    } = prerequisites(&of.prerequisite);
+    el.prerequisite = text;
+    el.requirements = requirements;
+    let mut partial = Vec::new();
+    for u in &unmapped {
+        partial.push(format!("prerequisite not enforced: {u}"));
+        note_unmapped(&mut el, "prerequisite", u);
+    }
+    let mut description = renderer.entries(&of.entries);
+    append_fluff(sh, "optionalfeature", ent, &mut description, &mut renderer);
+    el.description = description;
+    el.sheet = Some(sheet_text(&short_text(&Renderer::plain(&of.entries), 300)));
+    el.data
+        .insert("feature_types".into(), serde_json::json!(of.feature_type));
+    drain_renderer(st, &renderer, &ent.file, &of.name);
+    Conv {
+        elements: vec![el],
+        partial,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn labels_and_tags() {
+        assert_eq!(type_label("FS:F"), "Fighting Style");
+        assert_eq!(type_label("EI"), "Eldritch Invocation");
+        assert_eq!(type_label("ZZ"), "ZZ");
+        assert_eq!(type_tag("FS:F"), "OF_FS-F");
+        assert_eq!(type_tag("MV:C2-UA"), "OF_MV-C2-UA");
+    }
+
+    #[test]
+    fn progression_selects_for_arrays_objects_and_wildcards() {
+        let mut partial = Vec::new();
+        let rules = optional_feature_selects(
+            &[
+                json!({"name": "Eldritch Invocations", "featureType": ["EI"],
+                       "progression": [0, 2, 2, 2, 3, 3, 4, 4, 5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8]}),
+                json!({"name": "Fighting Style", "featureType": ["FS:F", "FS:P"], "progression": {"1": 1, "10": 2}}),
+                json!({"name": "Maneuvers", "featureType": ["MV:B"], "progression": {"3": 3, "7": 5, "10": 7, "15": 9}}),
+                json!({"name": "Odd", "featureType": ["OTH"], "progression": {"*": 1}}),
+                json!({"name": "None", "featureType": [], "progression": {"1": 1}}),
+            ],
+            &mut partial,
+        );
+        let sel: Vec<_> = rules
+            .iter()
+            .map(|r| match r {
+                Rule::Select(s) => (
+                    s.name.clone(),
+                    s.level.unwrap_or(1),
+                    s.number.unwrap_or(1),
+                    s.supports.clone().unwrap(),
+                ),
+                _ => panic!(),
+            })
+            .collect();
+        assert_eq!(
+            sel[0],
+            ("Eldritch Invocations".into(), 2, 2, "OF_EI".into())
+        );
+        assert_eq!(
+            sel[1],
+            ("Eldritch Invocations".into(), 5, 1, "OF_EI".into())
+        );
+        assert_eq!(sel[2].1, 7);
+        assert!(sel.contains(&("Fighting Style".into(), 1, 1, "OF_FS-F||OF_FS-P".into())));
+        assert!(sel.contains(&("Fighting Style".into(), 10, 1, "OF_FS-F||OF_FS-P".into())));
+        assert!(sel.contains(&("Odd".into(), 1, 1, "OF_OTH".into())));
+        // object values are running totals: 3 maneuvers at 3, then 2 more at 7, 10 and 15
+        let maneuvers: Vec<(u32, u32)> = sel
+            .iter()
+            .filter(|s| s.0 == "Maneuvers")
+            .map(|s| (s.1, s.2))
+            .collect();
+        assert_eq!(maneuvers, vec![(3, 3), (7, 2), (10, 2), (15, 2)]);
+        assert_eq!(partial.len(), 1);
+        assert!(!sel.iter().any(|s| s.0 == "None"));
+    }
+
+    #[test]
+    fn feat_progression_selects() {
+        let mut partial = Vec::new();
+        let rules = feat_selects(
+            &[
+                json!({"name": "Fighting Style", "category": ["FS"], "progression": {"1": 1}}),
+                json!({"name": "Epic Boon", "category": ["EB"], "progression": {"19": 1}}),
+            ],
+            &mut partial,
+        );
+        assert_eq!(rules.len(), 2);
+        let Rule::Select(s) = &rules[1] else { panic!() };
+        assert_eq!(
+            (s.ty.as_str(), s.level, s.supports.as_deref()),
+            ("Feat", Some(19), Some("Epic Boon"))
+        );
+    }
+
+    #[test]
+    fn converts_an_invocation_with_prerequisites() {
+        let sh = Shared::default();
+        let mut st = State::default();
+        let raw = json!({"name": "Spiky Gaze", "source": "ZZZ", "featureType": ["EI"],
+            "prerequisite": [{"level": {"level": 5, "class": {"name": "Warlock"}}, "pact": "Chain"}],
+            "entries": ["Your gaze deals {@damage 1d6} damage."]});
+        let ent = Ent {
+            name: "Spiky Gaze".into(),
+            source: "ZZZ".into(),
+            ruleset: borealis_content::Ruleset::Dnd2014,
+            is_srd: false,
+            file: "optionalfeatures.json".into(),
+            raw,
+        };
+        let conv = convert(&sh, &mut st, &ent);
+        let el = &conv.elements[0];
+        assert_eq!(el.id, "ID_5ET_ZZZ_OPTFEATURE_SPIKY_GAZE");
+        assert_eq!(el.ty, "Class Feature");
+        assert_eq!(el.supports, vec!["Eldritch Invocation", "OF_EI"]);
+        assert_eq!(el.requirements, "[warlock:5]");
+        assert!(el.prerequisite.contains("Warlock"));
+        assert_eq!(conv.partial.len(), 1);
+        assert!(el.description.contains("1d6"));
+        assert!(el.extra.attributes.contains_key("5et:prerequisite"));
+    }
+}

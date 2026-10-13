@@ -1,0 +1,1830 @@
+{
+  "format": "borealis-content/1",
+  "ruleset": "dnd2014",
+  "info": {
+    "name": "SRD 5.1 Weapons",
+    "description": "SRD 5.1 equipment and magic items. Structured into JSON from the System Reference Document 5.1 (CC-BY-4.0); text condensed/reformatted."
+  },
+  "elements": [
+    {
+      "id": "ID_WOTC_PHB_WEAPON_CLUB",
+      "name": "Club",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+        "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+        "ID_INTERNAL_WEAPON_GROUP_CLUBS"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "1",
+          "attributes": {
+            "currency": "sp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "damage",
+          "value": "1d4",
+          "attributes": {
+            "type": "bludgeoning"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CLUB"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_DAGGER",
+      "name": "Dagger",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+        "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+        "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+        "ID_INTERNAL_WEAPON_PROPERTY_THROWN"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "2",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "1 lb.",
+          "attributes": {
+            "lb": "1"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "range",
+          "value": "20/60"
+        },
+        {
+          "name": "damage",
+          "value": "1d4",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_DAGGER"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_GREATCLUB",
+      "name": "Greatclub",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+        "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+        "ID_INTERNAL_WEAPON_GROUP_CLUBS"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "2",
+          "attributes": {
+            "currency": "sp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "10 lb.",
+          "attributes": {
+            "lb": "10"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "twohand"
+        },
+        {
+          "name": "damage",
+          "value": "1d8",
+          "attributes": {
+            "type": "bludgeoning"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GREATCLUB"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_HANDAXE",
+      "name": "Handaxe",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+        "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+        "ID_INTERNAL_WEAPON_PROPERTY_THROWN",
+        "ID_INTERNAL_WEAPON_GROUP_AXES"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "range",
+          "value": "20/60"
+        },
+        {
+          "name": "damage",
+          "value": "1d6",
+          "attributes": {
+            "type": "slashing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_HANDAXE"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_JAVELIN",
+      "name": "Javelin",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+        "ID_INTERNAL_WEAPON_PROPERTY_THROWN"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "sp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "range",
+          "value": "30/120"
+        },
+        {
+          "name": "damage",
+          "value": "1d6",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_JAVELIN"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_LIGHTHAMMER",
+      "name": "Light Hammer",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+        "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+        "ID_INTERNAL_WEAPON_PROPERTY_THROWN",
+        "ID_INTERNAL_WEAPON_GROUP_HAMMERS"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "2",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "range",
+          "value": "20/60"
+        },
+        {
+          "name": "damage",
+          "value": "1d4",
+          "attributes": {
+            "type": "bludgeoning"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LIGHT_HAMMER"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_MACE",
+      "name": "Mace",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+        "ID_INTERNAL_WEAPON_GROUP_MACES"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "4 lb.",
+          "attributes": {
+            "lb": "4"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "damage",
+          "value": "1d6",
+          "attributes": {
+            "type": "bludgeoning"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MACE"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_QUARTERSTAFF",
+      "name": "Quarterstaff",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+        "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "2",
+          "attributes": {
+            "currency": "sp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "4 lb.",
+          "attributes": {
+            "lb": "4"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "damage",
+          "value": "1d6",
+          "attributes": {
+            "type": "bludgeoning"
+          }
+        },
+        {
+          "name": "versatile",
+          "value": "1d8"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_QUARTERSTAFF"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_SICKLE",
+      "name": "Sickle",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+        "ID_INTERNAL_WEAPON_PROPERTY_LIGHT"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "1",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "damage",
+          "value": "1d4",
+          "attributes": {
+            "type": "slashing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SICKLE"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_SPEAR",
+      "name": "Spear",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+        "ID_INTERNAL_WEAPON_PROPERTY_THROWN",
+        "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE",
+        "ID_INTERNAL_WEAPON_GROUP_SPEARS"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "1",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "3 lb.",
+          "attributes": {
+            "lb": "3"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "range",
+          "value": "20/60"
+        },
+        {
+          "name": "damage",
+          "value": "1d6",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SPEAR"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_CROSSBOW_LIGHT",
+      "name": "Crossbow, Light",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_RANGED",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+        "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+        "ID_INTERNAL_WEAPON_PROPERTY_LOADING",
+        "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+        "ID_INTERNAL_WEAPON_GROUP_CROSSBOWS"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "25",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "5 lb.",
+          "attributes": {
+            "lb": "5"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "twohand"
+        },
+        {
+          "name": "range",
+          "value": "80/320"
+        },
+        {
+          "name": "damage",
+          "value": "1d8",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_LIGHT"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_DART",
+      "name": "Dart",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_RANGED",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+        "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+        "ID_INTERNAL_WEAPON_PROPERTY_THROWN"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "cp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "1/4 lb.",
+          "attributes": {
+            "lb": "0.25"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "range",
+          "value": "20/60"
+        },
+        {
+          "name": "damage",
+          "value": "1d4",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_DART"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_SHORTBOW",
+      "name": "Shortbow",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_RANGED",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+        "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+        "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+        "ID_INTERNAL_WEAPON_GROUP_BOWS"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "25",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "twohand"
+        },
+        {
+          "name": "range",
+          "value": "80/320"
+        },
+        {
+          "name": "damage",
+          "value": "1d6",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SHORTBOW"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_SLING",
+      "name": "Sling",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_RANGED",
+        "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+        "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "1",
+          "attributes": {
+            "currency": "sp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "—",
+          "attributes": {
+            "lb": "0"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "range",
+          "value": "30/120"
+        },
+        {
+          "name": "damage",
+          "value": "1d4",
+          "attributes": {
+            "type": "bludgeoning"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SLING"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_BATTLEAXE",
+      "name": "Battleaxe",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+        "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE",
+        "ID_INTERNAL_WEAPON_GROUP_AXES"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "10",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "4 lb.",
+          "attributes": {
+            "lb": "4"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "damage",
+          "value": "1d8",
+          "attributes": {
+            "type": "slashing"
+          }
+        },
+        {
+          "name": "versatile",
+          "value": "1d10"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_BATTLEAXE"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_FLAIL",
+      "name": "Flail",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "10",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "damage",
+          "value": "1d8",
+          "attributes": {
+            "type": "bludgeoning"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_FLAIL"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_GLAIVE",
+      "name": "Glaive",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+        "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+        "ID_INTERNAL_WEAPON_PROPERTY_REACH",
+        "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "20",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "6 lb.",
+          "attributes": {
+            "lb": "6"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "twohand"
+        },
+        {
+          "name": "damage",
+          "value": "1d10",
+          "attributes": {
+            "type": "slashing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GLAIVE"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_GREATAXE",
+      "name": "Greataxe",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+        "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+        "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+        "ID_INTERNAL_WEAPON_GROUP_AXES"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "30",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "7 lb.",
+          "attributes": {
+            "lb": "7"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "twohand"
+        },
+        {
+          "name": "damage",
+          "value": "1d12",
+          "attributes": {
+            "type": "slashing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GREATAXE"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_GREATSWORD",
+      "name": "Greatsword",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+        "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+        "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+        "ID_INTERNAL_WEAPON_GROUP_SWORDS"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "50",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "6 lb.",
+          "attributes": {
+            "lb": "6"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "twohand"
+        },
+        {
+          "name": "damage",
+          "value": "2d6",
+          "attributes": {
+            "type": "slashing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GREATSWORD"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_HALBERD",
+      "name": "Halberd",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+        "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+        "ID_INTERNAL_WEAPON_PROPERTY_REACH",
+        "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "20",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "6 lb.",
+          "attributes": {
+            "lb": "6"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "twohand"
+        },
+        {
+          "name": "damage",
+          "value": "1d10",
+          "attributes": {
+            "type": "slashing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_HALBERD"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_LANCE",
+      "name": "Lance",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+        "ID_INTERNAL_WEAPON_PROPERTY_REACH",
+        "ID_INTERNAL_WEAPON_PROPERTY_SPECIAL",
+        "ID_INTERNAL_WEAPON_PROPERTY_SPECIAL_LANCE"
+      ],
+      "description": "<p>You have disadvantage when you use a lance to attack a target within 5 feet of you. Also, a lance requires two hands to wield when you aren’t mounted.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "10",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "6 lb.",
+          "attributes": {
+            "lb": "6"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "damage",
+          "value": "1d12",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LANCE"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_LONGSWORD",
+      "name": "Longsword",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+        "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE",
+        "ID_INTERNAL_WEAPON_GROUP_SWORDS"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "15",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "3 lb.",
+          "attributes": {
+            "lb": "3"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "damage",
+          "value": "1d8",
+          "attributes": {
+            "type": "slashing"
+          }
+        },
+        {
+          "name": "versatile",
+          "value": "1d10"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LONGSWORD"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_MAUL",
+      "name": "Maul",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+        "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+        "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+        "ID_INTERNAL_WEAPON_GROUP_MAULS"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "10",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "10 lb.",
+          "attributes": {
+            "lb": "10"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "twohand"
+        },
+        {
+          "name": "damage",
+          "value": "2d6",
+          "attributes": {
+            "type": "bludgeoning"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MAUL"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_MORNINGSTAR",
+      "name": "Morningstar",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "15",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "4 lb.",
+          "attributes": {
+            "lb": "4"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "damage",
+          "value": "1d8",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MORNINGSTAR"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_PIKE",
+      "name": "Pike",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+        "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+        "ID_INTERNAL_WEAPON_PROPERTY_REACH",
+        "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "18 lb.",
+          "attributes": {
+            "lb": "18"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "twohand"
+        },
+        {
+          "name": "damage",
+          "value": "1d10",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_PIKE"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_RAPIER",
+      "name": "Rapier",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+        "ID_INTERNAL_WEAPON_PROPERTY_FINESSE"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "25",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "damage",
+          "value": "1d8",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_RAPIER"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_SCIMITAR",
+      "name": "Scimitar",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+        "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+        "ID_INTERNAL_WEAPON_PROPERTY_LIGHT"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "25",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "3 lb.",
+          "attributes": {
+            "lb": "3"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "damage",
+          "value": "1d6",
+          "attributes": {
+            "type": "slashing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SCIMITAR"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_SHORTSWORD",
+      "name": "Shortsword",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+        "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+        "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+        "ID_INTERNAL_WEAPON_GROUP_SWORDS"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "10",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "damage",
+          "value": "1d6",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SHORTSWORD"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_TRIDENT",
+      "name": "Trident",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+        "ID_INTERNAL_WEAPON_PROPERTY_THROWN",
+        "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "4 lb.",
+          "attributes": {
+            "lb": "4"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "range",
+          "value": "20/60"
+        },
+        {
+          "name": "damage",
+          "value": "1d6",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_TRIDENT"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_WAR_PICK",
+      "name": "War Pick",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "5",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "damage",
+          "value": "1d8",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_WAR_PICK"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_WARHAMMER",
+      "name": "Warhammer",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+        "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE",
+        "ID_INTERNAL_WEAPON_GROUP_HAMMERS"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "15",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "damage",
+          "value": "1d8",
+          "attributes": {
+            "type": "bludgeoning"
+          }
+        },
+        {
+          "name": "versatile",
+          "value": "1d10"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_WARHAMMER"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_WHIP",
+      "name": "Whip",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+        "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+        "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+        "ID_INTERNAL_WEAPON_PROPERTY_REACH"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "2",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "3 lb.",
+          "attributes": {
+            "lb": "3"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "damage",
+          "value": "1d4",
+          "attributes": {
+            "type": "slashing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_WHIP"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_BLOWGUN",
+      "name": "Blowgun",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+        "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+        "ID_INTERNAL_WEAPON_PROPERTY_LOADING"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "10",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "1 lb.",
+          "attributes": {
+            "lb": "1"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "range",
+          "value": "25/100"
+        },
+        {
+          "name": "damage",
+          "value": "1",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_BLOWGUN"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_CROSSBOW_HAND",
+      "name": "Crossbow, Hand",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+        "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+        "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+        "ID_INTERNAL_WEAPON_PROPERTY_LOADING",
+        "ID_INTERNAL_WEAPON_GROUP_CROSSBOWS"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "75",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "3 lb.",
+          "attributes": {
+            "lb": "3"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "range",
+          "value": "30/120"
+        },
+        {
+          "name": "damage",
+          "value": "1d6",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_HAND"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_CROSSBOW_HEAVY",
+      "name": "Crossbow, Heavy",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+        "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+        "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+        "ID_INTERNAL_WEAPON_PROPERTY_LOADING",
+        "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+        "ID_INTERNAL_WEAPON_GROUP_CROSSBOWS"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "50",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "18 lb.",
+          "attributes": {
+            "lb": "18"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "twohand"
+        },
+        {
+          "name": "range",
+          "value": "100/400"
+        },
+        {
+          "name": "damage",
+          "value": "1d10",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_HEAVY"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_LONGBOW",
+      "name": "Longbow",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+        "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+        "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+        "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+        "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+        "ID_INTERNAL_WEAPON_GROUP_BOWS"
+      ],
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "50",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "2 lb.",
+          "attributes": {
+            "lb": "2"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "twohand"
+        },
+        {
+          "name": "range",
+          "value": "150/600"
+        },
+        {
+          "name": "damage",
+          "value": "1d8",
+          "attributes": {
+            "type": "piercing"
+          }
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LONGBOW"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_WEAPON_NET",
+      "name": "Net",
+      "type": "Weapon",
+      "source": "SRD 5.1",
+      "supports": [
+        "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+        "ID_INTERNAL_WEAPON_PROPERTY_SPECIAL",
+        "ID_INTERNAL_WEAPON_PROPERTY_SPECIAL_NET",
+        "ID_INTERNAL_WEAPON_PROPERTY_THROWN"
+      ],
+      "description": "<p>A Large or smaller creature hit by a net is restrained until it is freed. A net has no effect on creatures that are formless, or creatures that are Huge or larger. A creature can use its action to make a DC 10 Strength check, freeing itself or another creature within its reach on a success. Dealing 5 slashing damage to the net (AC 10) also frees the creature without harming it, ending the effect and destroying the net.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Weapons"
+        },
+        {
+          "name": "cost",
+          "value": "1",
+          "attributes": {
+            "currency": "gp"
+          }
+        },
+        {
+          "name": "weight",
+          "value": "3 lb.",
+          "attributes": {
+            "lb": "3"
+          }
+        },
+        {
+          "name": "slot",
+          "value": "onehand"
+        },
+        {
+          "name": "range",
+          "value": "5/15"
+        },
+        {
+          "name": "proficiency",
+          "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_NET"
+        }
+      ]
+    }
+  ]
+}

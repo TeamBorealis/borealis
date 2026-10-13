@@ -1,0 +1,659 @@
+{
+  "format": "borealis-content/1",
+  "ruleset": "dnd2014",
+  "info": {
+    "name": "SRD 5.1 Magic Items: Potions and Oils",
+    "description": "SRD 5.1 equipment and magic items. Structured into JSON from the System Reference Document 5.1 (CC-BY-4.0); text condensed/reformatted."
+  },
+  "elements": [
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_OIL_OF_ETHEREALNESS",
+      "name": "Oil of Etherealness",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>Beads of this cloudy gray oil form on the outside of its container and quickly evaporate. The oil can cover a Medium or smaller creature, along with the equipment it’s wearing and carrying (one additional vial is required for each size category above Medium). Applying the oil takes 10 minutes. The affected creature then gains the effect of the <em>etherealness</em> spell for 1 hour.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_OIL_OF_SHARPNESS",
+      "name": "Oil of Sharpness",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>This clear, gelatinous oil sparkles with tiny, ultrathin silver shards. The oil can coat one slashing or piercing weapon or up to 5 pieces of slashing or piercing ammunition. Applying the oil takes 1 minute. For 1 hour, the coated item is magical and has a +3 bonus to attack and damage rolls.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_OIL_OF_SLIPPERINESS",
+      "name": "Oil of Slipperiness",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>This sticky black unguent is thick and heavy in the container, but it flows quickly when poured. The oil can cover a Medium or smaller creature, along with the equipment it’s wearing and carrying (one additional vial is required for each size category above Medium). Applying the oil takes 10 minutes. The affected creature then gains the effect of a <em>freedom of movement</em> spell for 8 hours.</p><p>Alternatively, the oil can be poured on the ground as an action, where it covers a 10-foot square, duplicating the effect of the <em>grease</em> spell in that area for 8 hours.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_PHILTER_OF_LOVE",
+      "name": "Philter of Love",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>The next time you see a creature within 10 minutes after drinking this philter, you become charmed by that creature for 1 hour. If the creature is of a species and gender you are normally attracted to, you regard it as your true love while you are charmed. This potion’s rose-hued, effervescent liquid contains one easy-to-miss bubble shaped like a heart.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_ANIMAL_FRIENDSHIP",
+      "name": "Potion of Animal Friendship",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>When you drink this potion, you can cast the <em>animal friendship</em> spell (save DC 13) for 1 hour at will. Agitating this muddy liquid brings little bits into view: a fish scale, a hummingbird tongue, a cat claw, or a squirrel hair.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_CLAIRVOYANCE",
+      "name": "Potion of Clairvoyance",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>When you drink this potion, you gain the effect of the <em>clairvoyance</em> spell. An eyeball bobs in this yellowish liquid but vanishes when the potion is opened.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_CLIMBING",
+      "name": "Potion of Climbing",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>When you drink this potion, you gain a climbing speed equal to your walking speed for 1 hour.</p><p>During this time, you have advantage on Strength (Athletics) checks you make to climb. The potion is separated into brown, silver, and gray layers resembling bands of stone. Shaking the bottle fails to mix the colors.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Common"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_DIMINUTION",
+      "name": "Potion of Diminution",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>When you drink this potion, you gain the “reduce” effect of the <em>enlarge/reduce</em> spell for 1d4 hours (no concentration required). The red in the potion’s liquid continuously contracts to a tiny bead and then expands to color the clear liquid around it. Shaking the bottle fails to interrupt this process.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_FLYING",
+      "name": "Potion of Flying",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>When you drink this potion, you gain a flying speed equal to your walking speed for 1 hour and can hover. If you’re in the air when the potion wears off, you fall unless you have some other means of staying aloft. This potion’s clear liquid floats at the top of its container and has cloudy white impurities drifting in it.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_GASEOUS_FORM",
+      "name": "Potion of Gaseous Form",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>When you drink this potion, you gain the effect of the <em>gaseous form</em> spell for 1 hour (no concentration required) or until you end the effect as a bonus action. This potion’s container seems to hold fog that moves and pours like water.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_GIANT_STRENGTH",
+      "name": "Potion of Giant Strength",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>When you drink this potion, your Strength score changes for 1 hour. The type of giant determines the score (see the table below). The potion has no effect on you if your Strength is equal to or greater than that score.</p><p>This potion’s transparent liquid has floating in it a sliver of fingernail from a giant of the appropriate type. The <em>potion of frost giant strength</em> and the <em>potion of stone giant strength</em> have the same effect.</p><p class=\"table-text\">Type of Giant Strength Rarity<br />Hill giant 21 Uncommon<br />Frost/stone giant 23 Rare<br />Fire giant 25 Rare<br />Cloud giant 27 Very rare<br />Storm giant 29 Legendary</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Varies"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_GROWTH",
+      "name": "Potion of Growth",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>When you drink this potion, you gain the “enlarge” effect of the <em>enlarge/reduce</em> spell for 1d4 hours (no concentration required). The red in the potion’s liquid continuously expands from a tiny bead to color the clear liquid around it and then contracts. Shaking the bottle fails to interrupt this process.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_HEALING",
+      "name": "Potion of Healing",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>You regain hit points when you drink this potion. The number of hit points depends on the potion’s rarity, as shown in the Potions of Healing table.</p><p>Whatever its potency, the potion’s red liquid glimmers when agitated.</p><p class=\"table-text\">Potions of Healing<br />Potion of … Rarity HP Regained<br />Healing Common 2d4 + 2<br />Greater healing Uncommon 4d4 + 4<br />Superior healing Rare 8d4 + 8<br />Supreme healing Very rare 10d4 + 20</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Varies"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_HEROISM",
+      "name": "Potion of Heroism",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>For 1 hour after drinking it, you gain 10 temporary hit points that last for 1 hour. For the same duration, you are under the effect of the <em>bless</em> spell (no concentration required). This blue potion bubbles and steams as if boiling.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_INVISIBILITY",
+      "name": "Potion of Invisibility",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>This potion’s container looks empty but feels as though it holds liquid. When you drink it, you become invisible for 1 hour. Anything you wear or carry is invisible with you. The effect ends early if you attack or cast a spell.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_MIND_READING",
+      "name": "Potion of Mind Reading",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>When you drink this potion, you gain the effect of the <em>detect thoughts</em> spell (save DC 13). The potion’s dense, purple liquid has an ovoid cloud of pink floating in it.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Rare"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_POISON",
+      "name": "Potion of Poison",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>This concoction looks, smells, and tastes like a <em>potion of healing</em> or other beneficial potion. However, it is actually poison masked by illusion magic. An <em>identify</em> spell reveals its true nature.</p><p>If you drink it, you take 3d6 poison damage, and you must succeed on a DC 13 Constitution saving throw or be poisoned. At the start of each of your turns while you are poisoned in this way, you take 3d6 poison damage. At the end of each of your turns, you can repeat the saving throw. On a successful save, the poison damage you take on your subsequent turns decreases by 1d6. The poison ends when the damage decreases to 0.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_RESISTANCE_ACID",
+      "name": "Potion of Resistance, Acid",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Acid.</em></p><p>When you drink this potion, you gain resistance to one type of damage for 1 hour. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        },
+        {
+          "name": "keywords",
+          "value": "acid"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_RESISTANCE_COLD",
+      "name": "Potion of Resistance, Cold",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Cold.</em></p><p>When you drink this potion, you gain resistance to one type of damage for 1 hour. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        },
+        {
+          "name": "keywords",
+          "value": "cold"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_RESISTANCE_FIRE",
+      "name": "Potion of Resistance, Fire",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Fire.</em></p><p>When you drink this potion, you gain resistance to one type of damage for 1 hour. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        },
+        {
+          "name": "keywords",
+          "value": "fire"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_RESISTANCE_FORCE",
+      "name": "Potion of Resistance, Force",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Force.</em></p><p>When you drink this potion, you gain resistance to one type of damage for 1 hour. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        },
+        {
+          "name": "keywords",
+          "value": "force"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_RESISTANCE_LIGHTNING",
+      "name": "Potion of Resistance, Lightning",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Lightning.</em></p><p>When you drink this potion, you gain resistance to one type of damage for 1 hour. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        },
+        {
+          "name": "keywords",
+          "value": "lightning"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_RESISTANCE_NECROTIC",
+      "name": "Potion of Resistance, Necrotic",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Necrotic.</em></p><p>When you drink this potion, you gain resistance to one type of damage for 1 hour. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        },
+        {
+          "name": "keywords",
+          "value": "necrotic"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_RESISTANCE_POISON",
+      "name": "Potion of Resistance, Poison",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Poison.</em></p><p>When you drink this potion, you gain resistance to one type of damage for 1 hour. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        },
+        {
+          "name": "keywords",
+          "value": "poison"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_RESISTANCE_PSYCHIC",
+      "name": "Potion of Resistance, Psychic",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Psychic.</em></p><p>When you drink this potion, you gain resistance to one type of damage for 1 hour. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        },
+        {
+          "name": "keywords",
+          "value": "psychic"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_RESISTANCE_RADIANT",
+      "name": "Potion of Resistance, Radiant",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Radiant.</em></p><p>When you drink this potion, you gain resistance to one type of damage for 1 hour. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        },
+        {
+          "name": "keywords",
+          "value": "radiant"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_RESISTANCE_THUNDER",
+      "name": "Potion of Resistance, Thunder",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p><em>Resistance type: Thunder.</em></p><p>When you drink this potion, you gain resistance to one type of damage for 1 hour. The GM chooses the type or determines it randomly from the options below.</p><p class=\"table-text\">d10 Damage Type d10 Damage Type<br />1 Acid 6 Necrotic<br />2 Cold 7 Poison<br />3 Fire 8 Psychic<br />4 Force 9 Radiant<br />5 Lightning 10 Thunder</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        },
+        {
+          "name": "keywords",
+          "value": "thunder"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_SPEED",
+      "name": "Potion of Speed",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>When you drink this potion, you gain the effect of the <em>haste</em> spell for 1 minute (no concentration required). The potion’s yellow fluid is streaked with black and swirls on its own.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Very Rare"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_DMG_MAGIC_ITEM_POTION_OF_WATER_BREATHING",
+      "name": "Potion of Water Breathing",
+      "type": "Magic Item",
+      "source": "SRD 5.1",
+      "description": "<p>You can breathe underwater for 1 hour after drinking this potion. Its cloudy green fluid smells of the sea and has a jellyfish-like bubble floating in it.</p>",
+      "setters": [
+        {
+          "name": "category",
+          "value": "Potions"
+        },
+        {
+          "name": "type",
+          "value": "Potion"
+        },
+        {
+          "name": "rarity",
+          "value": "Uncommon"
+        }
+      ]
+    }
+  ]
+}

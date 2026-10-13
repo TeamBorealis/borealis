@@ -1,0 +1,679 @@
+{
+  "format": "borealis-content/1",
+  "ruleset": "dnd2014",
+  "info": {
+    "name": "SRD 5.1 Fighter"
+  },
+  "elements": [
+    {
+      "id": "ID_WOTC_PHB_CLASS_FIGHTER",
+      "name": "Fighter",
+      "type": "Class",
+      "source": "SRD 5.1",
+      "description": "<p>As a fighter, you gain the following class features.</p><h5>HIT POINTS</h5><p><strong>Hit Dice:</strong> 1d10 per fighter level</p><p><strong>Hit Points at 1st Level:</strong> 10 + your Constitution modifier</p><p><strong>Hit Points at Higher Levels:</strong> 1d10 (or 6) + your Constitution modifier per fighter level after 1st</p><h5>PROFICIENCIES</h5><p><strong>Armor:</strong> All armor, shields</p><p><strong>Weapons:</strong> Simple weapons, martial weapons</p><p><strong>Tools:</strong> None</p><p><strong>Saving Throws:</strong> Strength, Constitution</p><p><strong>Skills:</strong> Choose two skills from Acrobatics, Animal Handling, Athletics, History, Insight, Intimidation, Perception, and Survival</p><h5>EQUIPMENT</h5><p>You start with the following equipment, in addition to the equipment granted by your background:</p><ul><li>(<em>a</em>) chain mail or (<em>b</em>) leather armor, longbow, and 20 arrows</li><li>(<em>a</em>) a martial weapon and a shield or (<em>b</em>) two martial weapons</li><li>(<em>a</em>) a light crossbow and 20 bolts or (<em>b</em>) two handaxes</li><li>(<em>a</em>) a dungeoneer’s pack or (<em>b</em>) an explorer’s pack</li></ul><h5 class=\"caption\">THE FIGHTER</h5><table class=\"class-features\"><thead><tr><th>Level</th><th>Proficiency Bonus</th><th>Features</th></tr></thead><tbody><tr><td>1st</td><td>+2</td><td>Fighting Style, Second Wind</td></tr><tr><td>2nd</td><td>+2</td><td>Action Surge (one use)</td></tr><tr><td>3rd</td><td>+2</td><td>Martial Archetype</td></tr><tr><td>4th</td><td>+2</td><td>Ability Score Improvement</td></tr><tr><td>5th</td><td>+3</td><td>Extra Attack</td></tr><tr><td>6th</td><td>+3</td><td>Ability Score Improvement</td></tr><tr><td>7th</td><td>+3</td><td>Martial Archetype feature</td></tr><tr><td>8th</td><td>+3</td><td>Ability Score Improvement</td></tr><tr><td>9th</td><td>+4</td><td>Indomitable (one use)</td></tr><tr><td>10th</td><td>+4</td><td>Martial Archetype feature</td></tr><tr><td>11th</td><td>+4</td><td>Extra Attack (2)</td></tr><tr><td>12th</td><td>+4</td><td>Ability Score Improvement</td></tr><tr><td>13th</td><td>+5</td><td>Indomitable (two uses)</td></tr><tr><td>14th</td><td>+5</td><td>Ability Score Improvement</td></tr><tr><td>15th</td><td>+5</td><td>Martial Archetype feature</td></tr><tr><td>16th</td><td>+5</td><td>Ability Score Improvement</td></tr><tr><td>17th</td><td>+6</td><td>Action Surge (two uses), Indomitable (three uses)</td></tr><tr><td>18th</td><td>+6</td><td>Martial Archetype feature</td></tr><tr><td>19th</td><td>+6</td><td>Ability Score Improvement</td></tr><tr><td>20th</td><td>+6</td><td>Extra Attack (3)</td></tr></tbody></table>",
+      "sheet": {
+        "display": false,
+        "descriptions": [
+          {
+            "text": "A master of martial combat, skilled with a variety of weapons and armor."
+          }
+        ]
+      },
+      "setters": [
+        {
+          "name": "short",
+          "value": "A master of martial combat, skilled with a variety of weapons and armor."
+        },
+        {
+          "name": "hd",
+          "value": "d10"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_FIGHTER"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_MEDIUM_ARMOR",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_FIGHTER"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_HEAVY_ARMOR",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_FIGHTER"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_FIGHTER"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_FIGHTER"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_FIGHTER"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_STRENGTH",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_FIGHTER"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_CONSTITUTION",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_FIGHTER"
+        },
+        {
+          "kind": "select",
+          "type": "Proficiency",
+          "name": "Skill Proficiency (Fighter)",
+          "number": 2,
+          "supports": "Skill,Fighter",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_FIGHTER"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_FIGHTINGSTYLE",
+          "type": "Class Feature",
+          "level": 1
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_SECONDWIND",
+          "type": "Class Feature",
+          "level": 1
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_ACTIONSURGE",
+          "type": "Class Feature",
+          "level": 2
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MARTIALARCHETYPE",
+          "type": "Class Feature",
+          "level": 3
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_ABILITYSCOREIMPROVEMENT_FIGHTER",
+          "type": "Class Feature",
+          "level": 4
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_EXTRAATTACK",
+          "type": "Class Feature",
+          "level": 5
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_INDOMITABLE",
+          "type": "Class Feature",
+          "level": 9
+        }
+      ],
+      "multiclass": {
+        "id": "ID_WOTC_PHB_MULTICLASS_FIGHTER",
+        "prerequisite": "Strength 13 or Dexterity 13",
+        "requirements": "([str:13]||[dex:13])",
+        "setters": [
+          {
+            "name": "multiclass proficiencies",
+            "value": "Light armor, medium armor, shields, simple weapons, martial weapons"
+          }
+        ],
+        "rules": [
+          {
+            "kind": "grant",
+            "id": "ID_INTERNAL_GRANT_MULTICLASS",
+            "type": "Grants"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+            "type": "Proficiency"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_MEDIUM_ARMOR",
+            "type": "Proficiency"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+            "type": "Proficiency"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+            "type": "Proficiency"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS",
+            "type": "Proficiency"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_FIGHTINGSTYLE",
+      "name": "Fighting Style",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>You adopt a particular style of fighting as your specialty. Choose one of the following options. You can’t take a Fighting Style option more than once, even if you later get to choose again.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Fighting Style",
+          "level": 1,
+          "supports": "Fighting Style,Fighter"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_FIGHTINGSTYLE_ARCHERY",
+      "name": "Archery",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Fighting Style",
+        "Fighter",
+        "Ranger"
+      ],
+      "description": "<p>You gain a +2 bonus to attack rolls you make with ranged weapons.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You gain a +2 bonus to attack rolls you make with ranged weapons."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ranged:attack",
+          "value": "2"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_FIGHTINGSTYLE_DEFENSE",
+      "name": "Defense",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Fighting Style",
+        "Fighter",
+        "Paladin",
+        "Ranger"
+      ],
+      "description": "<p>While you are wearing armor, you gain a +1 bonus to AC.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "While you are wearing armor, you gain a +1 bonus to AC."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:misc",
+          "value": "1",
+          "bonus": "fighting style",
+          "equipped": "[armor:any]",
+          "alt": "Defense (Fighting Style)"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_FIGHTINGSTYLE_DUELING",
+      "name": "Dueling",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Fighting Style",
+        "Fighter",
+        "Paladin",
+        "Ranger"
+      ],
+      "description": "<p>When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "melee:damage",
+          "value": "2",
+          "bonus": "fighting style",
+          "equipped": "[main:weapon],([offhand:none]||[shield:any])",
+          "alt": "Dueling (Fighting Style)"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_FIGHTINGSTYLE_GREAT_WEAPON_FIGHTING",
+      "name": "Great Weapon Fighting",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Fighting Style",
+        "Fighter",
+        "Paladin"
+      ],
+      "description": "<p>When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll, even if the new roll is a 1 or a 2. The weapon must have the two-handed or versatile property for you to gain this benefit.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "When you roll a 1 or 2 on a damage die for an attack you make with a melee weapon that you are wielding with two hands, you can reroll the die and must use the new roll, even if the new roll is a 1 or a 2. The weapon must have the two-handed or versatile property for you to gain this benefit."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_FIGHTINGSTYLE_PROTECTION",
+      "name": "Protection",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Fighting Style",
+        "Fighter",
+        "Paladin"
+      ],
+      "description": "<p>When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "When a creature you can see attacks a target other than you that is within 5 feet of you, you can use your reaction to impose disadvantage on the attack roll. You must be wielding a shield."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_FIGHTINGSTYLE_TWO_WEAPON_FIGHTING",
+      "name": "Two-Weapon Fighting",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Fighting Style",
+        "Fighter",
+        "Ranger"
+      ],
+      "description": "<p>When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "When you engage in two-weapon fighting, you can add your ability modifier to the damage of the second attack."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_SECONDWIND",
+      "name": "Second Wind",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>You have a limited well of stamina that you can draw on to protect yourself from harm. On your turn, you can use a bonus action to regain hit points equal to 1d10 + your fighter level. Once you use this feature, you must finish a short or long rest before you can use it again.</p>",
+      "sheet": {
+        "usage": "1/Short Rest",
+        "action": "Bonus Action",
+        "descriptions": [
+          {
+            "text": "You regain 1d10+{{level:fighter}} hit points."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ACTIONSURGE",
+      "name": "Action Surge",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 2nd level, you can push yourself beyond your normal limits for a moment. On your turn, you can take one additional action on top of your regular action and a possible bonus action.</p><p>Once you use this feature, you must finish a short or long rest before you can use it again. Starting at 17th level, you can use it twice before a rest, but only once on the same turn.</p>",
+      "sheet": {
+        "usage": "1/Short Rest",
+        "descriptions": [
+          {
+            "text": "On your turn, you can take one additional action on top of your regular action and a possible bonus action."
+          },
+          {
+            "text": "On your turn, you can take one additional action on top of your regular action and a possible bonus action.",
+            "usage": "2/Short Rest",
+            "level": 17
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MARTIALARCHETYPE",
+      "name": "Martial Archetype",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 3rd level, you choose an archetype that you strive to emulate in your combat styles and techniques, such as Champion. The archetype you choose grants you features at 3rd level and again at 7th, 10th, 15th, and 18th level.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Archetype",
+          "name": "Martial Archetype",
+          "level": 3,
+          "supports": "Martial Archetype"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_ABILITYSCOREIMPROVEMENT_FIGHTER",
+      "name": "Ability Score Improvement",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>When you reach 4th level, and again at 6th, 8th, 12th, 14th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.</p>",
+      "sheet": {
+        "display": false
+      },
+      "compendium": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Fighter 4)",
+          "level": 4,
+          "supports": "Improvement Option,Fighter,4"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Fighter 6)",
+          "level": 6,
+          "supports": "Improvement Option,Fighter,6"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Fighter 8)",
+          "level": 8,
+          "supports": "Improvement Option,Fighter,8"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Fighter 12)",
+          "level": 12,
+          "supports": "Improvement Option,Fighter,12"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Fighter 14)",
+          "level": 14,
+          "supports": "Improvement Option,Fighter,14"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Fighter 16)",
+          "level": 16,
+          "supports": "Improvement Option,Fighter,16"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Fighter 19)",
+          "level": 19,
+          "supports": "Improvement Option,Fighter,19"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_EXTRAATTACK",
+      "name": "Extra Attack",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning at 5th level, you can attack twice, instead of once, whenever you take the Attack action on your turn.</p><p>The number of attacks increases to three when you reach 11th level in this class and to four when you reach 20th level in this class.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "You can attack twice, instead of once, whenever you take the Attack action on your turn.",
+            "level": 5
+          },
+          {
+            "text": "You can attack three times whenever you take the Attack action on your turn.",
+            "level": 11
+          },
+          {
+            "text": "You can attack four times whenever you take the Attack action on your turn.",
+            "level": 20
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "extra attack:count",
+          "value": "2",
+          "bonus": "extra attack",
+          "level": 5
+        },
+        {
+          "kind": "stat",
+          "name": "extra attack:count",
+          "value": "3",
+          "bonus": "extra attack",
+          "level": 11
+        },
+        {
+          "kind": "stat",
+          "name": "extra attack:count",
+          "value": "4",
+          "bonus": "extra attack",
+          "level": 20
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_INDOMITABLE",
+      "name": "Indomitable",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning at 9th level, you can reroll a saving throw that you fail. If you do so, you must use the new roll, and you can’t use this feature again until you finish a long rest.</p><p>You can use this feature twice between long rests starting at 13th level and three times between long rests starting at 17th level.</p>",
+      "sheet": {
+        "usage": "{{indomitable:usage}}/Long Rest",
+        "descriptions": [
+          {
+            "text": "You can reroll a saving throw that you fail. If you do so, you must use the new roll."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "indomitable:usage",
+          "value": "1",
+          "level": 9
+        },
+        {
+          "kind": "stat",
+          "name": "indomitable:usage",
+          "value": "1",
+          "level": 13
+        },
+        {
+          "kind": "stat",
+          "name": "indomitable:usage",
+          "value": "1",
+          "level": 17
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_CHAMPION",
+      "name": "Champion",
+      "type": "Archetype",
+      "source": "SRD 5.1",
+      "supports": [
+        "Martial Archetype"
+      ],
+      "description": "<p>The archetypal Champion focuses on the development of raw physical power honed to deadly perfection. Those who model themselves on this archetype combine rigorous training with physical excellence to deal devastating blows.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_IMPROVEDCRITICAL",
+          "type": "Archetype Feature",
+          "level": 3
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_REMARKABLEATHLETE",
+          "type": "Archetype Feature",
+          "level": 7
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_ADDITIONALFIGHTINGSTYLE",
+          "type": "Archetype Feature",
+          "level": 10
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_SUPERIORCRITICAL",
+          "type": "Archetype Feature",
+          "level": 15
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_SURVIVOR",
+          "type": "Archetype Feature",
+          "level": 18
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_IMPROVEDCRITICAL",
+      "name": "Improved Critical",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning when you choose this archetype at 3rd level, your weapon attacks score a critical hit on a roll of 19 or 20.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Beginning when you choose this archetype at 3rd level, your weapon attacks score a critical hit on a roll of 19 or 20."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "critical hit:range",
+          "value": "19",
+          "bonus": "critical range"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_REMARKABLEATHLETE",
+      "name": "Remarkable Athlete",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 7th level, you can add half your proficiency bonus (round up) to any Strength, Dexterity, or Constitution check you make that doesn’t already use your proficiency bonus.</p><p>In addition, when you make a running long jump, the distance you can cover increases by a number of feet equal to your Strength modifier.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Starting at 7th level, you can add half your proficiency bonus (round up) to any Strength, Dexterity, or Constitution check you make that doesn’t already use your proficiency bonus. In addition, when you make a running long jump, the distance you can cover increases by a number of feet equal to your Strength modifier."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_ADDITIONALFIGHTINGSTYLE",
+      "name": "Additional Fighting Style",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 10th level, you can choose a second option from the Fighting Style class feature.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "At 10th level, you can choose a second option from the Fighting Style class feature."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Additional Fighting Style (Champion)",
+          "level": 10,
+          "supports": "Fighting Style,Fighter"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_SUPERIORCRITICAL",
+      "name": "Superior Critical",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 15th level, your weapon attacks score a critical hit on a roll of 18–20.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Starting at 15th level, your weapon attacks score a critical hit on a roll of 18–20."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "critical hit:range",
+          "value": "18",
+          "bonus": "critical range"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_SURVIVOR",
+      "name": "Survivor",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 18th level, you attain the pinnacle of resilience in battle. At the start of each of your turns, you regain hit points equal to 5 + your Constitution modifier if you have no more than half of your hit points left. You don’t gain this benefit if you have 0 hit points.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "At 18th level, you attain the pinnacle of resilience in battle. At the start of each of your turns, you regain hit points equal to 5 + your Constitution modifier if you have no more than half of your hit points left. You don’t gain this benefit if you have 0 hit points."
+          }
+        ]
+      }
+    }
+  ]
+}

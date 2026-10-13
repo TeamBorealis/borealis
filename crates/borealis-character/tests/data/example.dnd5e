@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Synthetic test character built from the format specification; not a real user file. -->
+<character version="1.19.309" preview="false">
+	<information>
+		<group>Example Group</group>
+		<generationOption>3</generationOption>
+	</information>
+	<display-properties favorite="true">
+		<name>Test Hero</name>
+		<race>Human</race>
+		<class>Fighter (2) / Wizard (1)</class>
+		<archetype></archetype>
+		<background>Acolyte</background>
+		<level>3</level>
+		<portrait>
+			<companion></companion>
+			<local>C:\Users\someone\Documents\portraits\Hero.PNG</local>
+			<base64><![CDATA[iVBORw0KGgo=]]></base64>
+		</portrait>
+	</display-properties>
+	<build>
+		<input>
+			<name>Test Hero</name>
+			<gender>Female</gender>
+			<player-name>Player One</player-name>
+			<experience>900</experience>
+			<attacks>
+				<description><![CDATA[Free-text attack notes.]]></description>
+				<attack identifier="3F2B8C1E-0000-4000-8000-000000000001" name="Dagger" range="20/60" attack="+4" damage="1d4+2 piercing" displayed="true" ability="Dexterity">
+					<description><![CDATA[]]></description>
+				</attack>
+			</attacks>
+			<backstory><![CDATA[Grew up near the docks.
+Learned to fight.]]></backstory>
+			<background-trinket>A lucky coin.</background-trinket>
+			<background-traits>I always have a plan.</background-traits>
+			<background-ideals>Tradition.</background-ideals>
+			<background-bonds>I owe my mentor.</background-bonds>
+			<background-flaws>I trust too easily.</background-flaws>
+			<background>
+				<feature name="Shelter of the Faithful">
+					<description><![CDATA[Feature text override.]]></description>
+				</feature>
+			</background>
+			<organization><name></name><symbol></symbol><allies><![CDATA[]]></allies></organization>
+			<additional-features><![CDATA[]]></additional-features>
+			<currency>
+				<copper>0</copper><silver>5</silver><electrum>0</electrum><gold>37</gold><platinum>0</platinum>
+				<equipment><![CDATA[Rope, torches]]></equipment>
+				<treasure><![CDATA[]]></treasure>
+			</currency>
+			<notes>
+				<note column="left">Session 1 notes.</note>
+				<note column="right"></note>
+			</notes>
+			<quest></quest>
+		</input>
+		<appearance>
+			<portrait>C:\Users\someone\Documents\portraits\default-portrait.png</portrait>
+			<age>24</age><height>5'8"</height><weight>160 lb</weight>
+			<eyes>Green</eyes><skin>Tan</skin><hair>Black</hair>
+		</appearance>
+		<abilities available-points="0">
+			<strength>15</strength>
+			<dexterity>14</dexterity>
+			<constitution>13</constitution>
+			<intelligence>12</intelligence>
+			<wisdom>10</wisdom>
+			<charisma>8</charisma>
+		</abilities>
+		<elements level-count="3" registered-count="21">
+			<element type="Option" name="Feats" id="ID_INTERNAL_OPTION_ALLOW_FEATS" />
+			<element type="Option" name="Multiclassing" id="ID_INTERNAL_OPTION_ALLOW_MULTICLASSING" />
+			<element type="Option" name="Removed Homebrew Option" id="ID_HOMEBREW_OPTION_GONE" />
+			<element type="Level" name="1" id="ID_LEVEL_1" rndhp="10,6,5,7,4,6,5,7,4,6,5,7,4,6,5,7,4,6,5,7">
+				<element type="Race" name="Race" requiredLevel="1" checksum="1597ef76" registered="ID_RACE_HUMAN" />
+				<element type="Class" name="Class" requiredLevel="1" checksum="33a7b15b" registered="ID_WOTC_PHB_CLASS_FIGHTER">
+					<element type="Proficiency" name="Skill Proficiency (Fighter)" requiredLevel="1" number="1" checksum="5f3c7a8a" registered="ID_PROFICIENCY_SKILL_ACROBATICS" />
+					<element type="Proficiency" name="Skill Proficiency (Fighter)" requiredLevel="1" number="2" checksum="c6352b30" registered="ID_PROFICIENCY_SKILL_ATHLETICS" />
+					<element type="Class Feature" name="Fighting Style" id="ID_WOTC_PHB_CLASS_FEATURE_FIGHTINGSTYLE">
+						<element type="Class Feature" name="Fighting Style" requiredLevel="1" checksum="25bf9bd9" registered="ID_WOTC_PHB_CLASS_FEATURE_FIGHTINGSTYLE_DEFENSE" />
+					</element>
+					<element type="Class Feature" name="Second Wind" id="ID_WOTC_PHB_CLASS_FEATURE_SECONDWIND" />
+				</element>
+				<element type="Background" name="Background" requiredLevel="1" checksum="6a621392" registered="ID_BACKGROUND_ACOLYTE" />
+				<element type="Alignment" name="Alignment" requiredLevel="1" checksum="c9ac49d5" registered="ID_ALIGNMENT_NEUTRAL_GOOD" />
+				<element type="Deity" name="Deity" requiredLevel="1" checksum="989cce4c" registered="" />
+			</element>
+			<element type="Level" name="2" id="ID_LEVEL_2" />
+			<element type="Level" name="3" id="ID_LEVEL_3" multiclass="true" starting="true" class="ID_WOTC_PHB_MULTICLASS_WIZARD" rndhp="6,4,3,5,2,4,3,5,2,4,3,5,2,4,3,5,2,4,3,5">
+				<element type="Multiclass" name="Multiclass (Level 3)" requiredLevel="3" checksum="3c1b6721" registered="ID_WOTC_PHB_MULTICLASS_WIZARD">
+					<element type="Class Feature" name="Spellcasting" id="ID_WOTC_PHB_CLASS_FEATURE_WIZARD_SPELLCASTING_WIZARD">
+						<element type="Spell" name="Cantrip (Wizard)" requiredLevel="1" number="1" registered="ID_PHB_SPELL_ACID_SPLASH" />
+						<element type="Spell" name="Cantrip (Wizard)" requiredLevel="1" number="2" registered="ID_UNKNOWN_CANTRIP_FROM_A_BOOK_I_LACK" />
+					</element>
+				</element>
+			</element>
+		</elements>
+		<defenses><conditional>+1 AC while wielding a shield</conditional></defenses>
+		<companion name=""><attributes><strength>0</strength></attributes><saves /><skills /><portrait location="local"></portrait></companion>
+		<equipment>
+			<storage name="Saddlebags" />
+			<item identifier="3F2B8C1E-0000-4000-8000-000000000001" name="Dagger" id="ID_WOTC_PHB_WEAPON_DAGGER" aquired="Class Starting Equipment">
+				<equipped location="Primary Hand">true</equipped>
+				<items />
+				<details card="false"><name></name><notes></notes></details>
+			</item>
+			<item identifier="3F2B8C1E-0000-4000-8000-000000000002" name="Chain Mail" id="ID_WOTC_ARMOR_HEAVY_CHAIN_MAIL">
+				<equipped location="Armor">true</equipped>
+				<items />
+				<details card="false"><name></name><notes></notes></details>
+			</item>
+			<item identifier="3F2B8C1E-0000-4000-8000-000000000003" name="Torch" id="ID_WOTC_ITEM_TORCH" amount="3" sidebar="true">
+				<items />
+				<details card="false"><name></name><notes>Gift from the temple</notes></details>
+				<storage><location>Saddlebags</location></storage>
+			</item>
+			<item identifier="3F2B8C1E-0000-4000-8000-000000000004" name="Mystery" id="ID_SOME_HOMEBREW_THING">
+				<items />
+				<details card="false"><name></name><notes></notes></details>
+			</item>
+		</equipment>
+		<sum element-count="9">
+			<element type="Option" id="ID_INTERNAL_OPTION_ALLOW_FEATS" />
+			<element type="Level" id="ID_LEVEL_1" />
+			<element type="Race" id="ID_RACE_HUMAN" />
+			<element type="Class" id="ID_WOTC_PHB_CLASS_FIGHTER" />
+			<element type="Background" id="ID_BACKGROUND_ACOLYTE" />
+			<element type="Multiclass" id="ID_WOTC_PHB_MULTICLASS_WIZARD" />
+			<element type="Spell" id="ID_PHB_SPELL_ACID_SPLASH" />
+			<element type="Racial Trait" id="ID_BOOK_I_DO_NOT_HAVE" name="Mystery Trait" />
+		</sum>
+		<magic multiclass="true" level="1">
+			<spellcasting name="Wizard" ability="Intelligence" attack="3" dc="11" source="ID_WOTC_PHB_CLASS_FEATURE_WIZARD_SPELLCASTING_WIZARD">
+				<slots s1="2" s2="0" s3="0" s4="0" s5="0" s6="0" s7="0" s8="0" s9="0" />
+				<cantrips><spell name="Acid Splash" level="0" id="ID_PHB_SPELL_ACID_SPLASH" known="true" /></cantrips>
+				<spells><spell name="Alarm" level="1" id="ID_PHB_SPELL_ALARM" prepared="true" /></spells>
+			</spellcasting>
+		</magic>
+	</build>
+	<sources>
+		<restricted>
+			<source id="ID_EXAMPLE_SOURCE_HOMEBREW_PACK">Example Homebrew Pack</source>
+		</restricted>
+	</sources>
+</character>

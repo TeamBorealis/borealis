@@ -1,0 +1,888 @@
+{
+ "format": "borealis-content/1",
+ "ruleset": "any",
+ "elements": [
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_ACROBATICS",
+   "name": "Acrobatics Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ACROBATICS",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_ACROBATICS"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ACROBATICS_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_ACROBATICS"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ACROBATICS",
+   "name": "Acrobatics Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_ACROBATICS",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ACROBATICS_DOUBLE",
+   "name": "Acrobatics Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "acrobatics:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ACROBATICS",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_ANIMALHANDLING",
+   "name": "Animal Handling Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ANIMALHANDLING",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_ANIMALHANDLING"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ANIMALHANDLING_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_ANIMALHANDLING"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ANIMALHANDLING",
+   "name": "Animal Handling Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_ANIMALHANDLING",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ANIMALHANDLING_DOUBLE",
+   "name": "Animal Handling Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "animal handling:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ANIMALHANDLING",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_ARCANA",
+   "name": "Arcana Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ARCANA",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_ARCANA"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ARCANA_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_ARCANA"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ARCANA",
+   "name": "Arcana Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_ARCANA",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ARCANA_DOUBLE",
+   "name": "Arcana Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "arcana:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ARCANA",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_ATHLETICS",
+   "name": "Athletics Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ATHLETICS",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_ATHLETICS"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ATHLETICS_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_ATHLETICS"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ATHLETICS",
+   "name": "Athletics Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_ATHLETICS",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ATHLETICS_DOUBLE",
+   "name": "Athletics Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "athletics:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_ATHLETICS",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_DECEPTION",
+   "name": "Deception Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_DECEPTION",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_DECEPTION"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_DECEPTION_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_DECEPTION"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_DECEPTION",
+   "name": "Deception Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_DECEPTION",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_DECEPTION_DOUBLE",
+   "name": "Deception Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "deception:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_DECEPTION",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_HISTORY",
+   "name": "History Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_HISTORY",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_HISTORY"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_HISTORY_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_HISTORY"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_HISTORY",
+   "name": "History Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_HISTORY",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_HISTORY_DOUBLE",
+   "name": "History Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "history:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_HISTORY",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_INSIGHT",
+   "name": "Insight Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_INSIGHT",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_INSIGHT"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_INSIGHT_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_INSIGHT"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_INSIGHT",
+   "name": "Insight Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_INSIGHT",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_INSIGHT_DOUBLE",
+   "name": "Insight Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "insight:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_INSIGHT",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_INTIMIDATION",
+   "name": "Intimidation Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_INTIMIDATION",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_INTIMIDATION"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_INTIMIDATION_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_INTIMIDATION"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_INTIMIDATION",
+   "name": "Intimidation Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_INTIMIDATION",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_INTIMIDATION_DOUBLE",
+   "name": "Intimidation Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "intimidation:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_INTIMIDATION",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_INVESTIGATION",
+   "name": "Investigation Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_INVESTIGATION",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_INVESTIGATION"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_INVESTIGATION_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_INVESTIGATION"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_INVESTIGATION",
+   "name": "Investigation Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_INVESTIGATION",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_INVESTIGATION_DOUBLE",
+   "name": "Investigation Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "investigation:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_INVESTIGATION",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_MEDICINE",
+   "name": "Medicine Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_MEDICINE",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_MEDICINE"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_MEDICINE_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_MEDICINE"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_MEDICINE",
+   "name": "Medicine Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_MEDICINE",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_MEDICINE_DOUBLE",
+   "name": "Medicine Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "medicine:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_MEDICINE",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_NATURE",
+   "name": "Nature Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_NATURE",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_NATURE"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_NATURE_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_NATURE"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_NATURE",
+   "name": "Nature Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_NATURE",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_NATURE_DOUBLE",
+   "name": "Nature Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "nature:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_NATURE",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_PERCEPTION",
+   "name": "Perception Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_PERCEPTION",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_PERCEPTION"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_PERCEPTION_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_PERCEPTION"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_PERCEPTION",
+   "name": "Perception Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_PERCEPTION",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_PERCEPTION_DOUBLE",
+   "name": "Perception Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "perception:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_PERCEPTION",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_PERFORMANCE",
+   "name": "Performance Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_PERFORMANCE",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_PERFORMANCE"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_PERFORMANCE_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_PERFORMANCE"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_PERFORMANCE",
+   "name": "Performance Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_PERFORMANCE",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_PERFORMANCE_DOUBLE",
+   "name": "Performance Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "performance:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_PERFORMANCE",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_PERSUASION",
+   "name": "Persuasion Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_PERSUASION",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_PERSUASION"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_PERSUASION_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_PERSUASION"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_PERSUASION",
+   "name": "Persuasion Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_PERSUASION",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_PERSUASION_DOUBLE",
+   "name": "Persuasion Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "persuasion:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_PERSUASION",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_RELIGION",
+   "name": "Religion Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_RELIGION",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_RELIGION"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_RELIGION_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_RELIGION"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_RELIGION",
+   "name": "Religion Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_RELIGION",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_RELIGION_DOUBLE",
+   "name": "Religion Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "religion:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_RELIGION",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_SLEIGHTOFHAND",
+   "name": "Sleight of Hand Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_SLEIGHTOFHAND",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_SLEIGHTOFHAND"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_SLEIGHTOFHAND_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_SLEIGHTOFHAND"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_SLEIGHTOFHAND",
+   "name": "Sleight of Hand Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_SLEIGHTOFHAND",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_SLEIGHTOFHAND_DOUBLE",
+   "name": "Sleight of Hand Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "sleight of hand:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_SLEIGHTOFHAND",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_STEALTH",
+   "name": "Stealth Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_STEALTH",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_STEALTH"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_STEALTH_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_STEALTH"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_STEALTH",
+   "name": "Stealth Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_STEALTH",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_STEALTH_DOUBLE",
+   "name": "Stealth Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "stealth:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_STEALTH",
+     "alt": "Double Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_SURVIVAL",
+   "name": "Survival Proficiency or Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_SURVIVAL",
+     "type": "Grants",
+     "requirements": "!ID_PROFICIENCY_SKILL_SURVIVAL"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_SURVIVAL_DOUBLE",
+     "type": "Grants",
+     "requirements": "ID_PROFICIENCY_SKILL_SURVIVAL"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_SURVIVAL",
+   "name": "Survival Proficiency",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_SURVIVAL",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_SURVIVAL_DOUBLE",
+   "name": "Survival Proficiency Double",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "survival:proficiency",
+     "value": "proficiency",
+     "bonus": "double",
+     "requirements": "!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_SURVIVAL",
+     "alt": "Double Proficiency"
+    }
+   ]
+  }
+ ]
+}

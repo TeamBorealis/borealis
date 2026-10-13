@@ -1,0 +1,1114 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/ranger",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_EQUIPMENT_PACKAGE_CLASS_RANGER",
+   "name": "Starting Equipment (Ranger)",
+   "type": "Equipment Package",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "data": {
+    "owner": "ID_2024_CLASS_RANGER",
+    "options": [
+     {
+      "id": "A",
+      "items": [
+       {
+        "id": "ID_2024_ARMOR_STUDDED_LEATHER_ARMOR"
+       },
+       {
+        "id": "ID_2024_WEAPON_SCIMITAR"
+       },
+       {
+        "id": "ID_2024_WEAPON_SHORTSWORD"
+       },
+       {
+        "id": "ID_2024_WEAPON_LONGBOW"
+       },
+       {
+        "qty": 20,
+        "id": "ID_2024_ITEM_AMMUNITION_ARROWS"
+       },
+       {
+        "id": "ID_2024_ITEM_QUIVER"
+       },
+       {
+        "id": "ID_2024_ITEM_DRUIDIC_FOCUS",
+        "note": "sprig of mistletoe"
+       },
+       {
+        "id": "ID_2024_ITEM_EXPLORERS_PACK"
+       }
+      ],
+      "coins": {
+       "gp": 7
+      }
+     },
+     {
+      "id": "B",
+      "items": [],
+      "coins": {
+       "gp": 150
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_RANGER",
+   "name": "Ranger",
+   "type": "Class",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Class"
+   ],
+   "description": "<p>Primary ability: Dexterity and Wisdom. Hit Point Die: D10 per Ranger level. Saving throws: Strength and Dexterity.</p>",
+   "setters": [
+    {
+     "name": "hd",
+     "value": "d10"
+    },
+    {
+     "name": "short",
+     "value": "Dexterity and Wisdom; Light and Medium armor and Shields"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SAVINGTHROW_STRENGTH",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_RANGER"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SAVINGTHROW_DEXTERITY",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_RANGER"
+    },
+    {
+     "kind": "select",
+     "type": "Proficiency",
+     "name": "Skill Proficiency (Ranger)",
+     "number": 3,
+     "supports": "ID_PROFICIENCY_SKILL_ANIMALHANDLING|ID_PROFICIENCY_SKILL_ATHLETICS|ID_PROFICIENCY_SKILL_INSIGHT|ID_PROFICIENCY_SKILL_INVESTIGATION|ID_PROFICIENCY_SKILL_NATURE|ID_PROFICIENCY_SKILL_PERCEPTION|ID_PROFICIENCY_SKILL_STEALTH|ID_PROFICIENCY_SKILL_SURVIVAL",
+     "requirements": "!ID_2024_MULTICLASS_RANGER"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_RANGER"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_RANGER"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_RANGER"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_MEDIUM_ARMOR",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_RANGER"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+     "type": "Proficiency",
+     "requirements": "!ID_2024_MULTICLASS_RANGER"
+    },
+    {
+     "kind": "equipment_package",
+     "requirements": "!ID_2024_MULTICLASS_RANGER",
+     "ref": "ID_2024_EQUIPMENT_PACKAGE_CLASS_RANGER",
+     "name": "Starting Equipment (Ranger)"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_SPELLCASTING",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_FAVORED_ENEMY",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_WEAPON_MASTERY",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_DEFT_EXPLORER",
+     "type": "Class Feature",
+     "level": 2
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_FIGHTING_STYLE",
+     "type": "Class Feature",
+     "level": 2
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_RANGER_SUBCLASS",
+     "type": "Class Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_ABILITY_SCORE_IMPROVEMENT",
+     "type": "Class Feature",
+     "level": 4
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_EXTRA_ATTACK",
+     "type": "Class Feature",
+     "level": 5
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_ROVING",
+     "type": "Class Feature",
+     "level": 6
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_EXPERTISE",
+     "type": "Class Feature",
+     "level": 9
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_TIRELESS",
+     "type": "Class Feature",
+     "level": 10
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_RELENTLESS_HUNTER",
+     "type": "Class Feature",
+     "level": 13
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_NATURES_VEIL",
+     "type": "Class Feature",
+     "level": 14
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_PRECISE_HUNTER",
+     "type": "Class Feature",
+     "level": 17
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_FERAL_SENSES",
+     "type": "Class Feature",
+     "level": 18
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_EPIC_BOON",
+     "type": "Class Feature",
+     "level": 19
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_CLASS_FEATURE_RANGER_FOE_SLAYER",
+     "type": "Class Feature",
+     "level": 20
+    }
+   ],
+   "multiclass": {
+    "id": "ID_2024_MULTICLASS_RANGER",
+    "prerequisite": "Dexterity 13 and Wisdom 13",
+    "requirements": "([dex:13]&&[wis:13])",
+    "setters": [
+     {
+      "name": "multiclass proficiencies",
+      "value": "Simple and Martial weapons, Light and Medium armor and Shields"
+     }
+    ],
+    "rules": [
+     {
+      "kind": "grant",
+      "id": "ID_INTERNAL_GRANT_MULTICLASS",
+      "type": "Grants"
+     },
+     {
+      "kind": "select",
+      "type": "Proficiency",
+      "name": "Skill Proficiency (Ranger Multiclass)",
+      "supports": "ID_PROFICIENCY_SKILL_ANIMALHANDLING|ID_PROFICIENCY_SKILL_ATHLETICS|ID_PROFICIENCY_SKILL_INSIGHT|ID_PROFICIENCY_SKILL_INVESTIGATION|ID_PROFICIENCY_SKILL_NATURE|ID_PROFICIENCY_SKILL_PERCEPTION|ID_PROFICIENCY_SKILL_STEALTH|ID_PROFICIENCY_SKILL_SURVIVAL"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS",
+      "type": "Proficiency"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+      "type": "Proficiency"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_MEDIUM_ARMOR",
+      "type": "Proficiency"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+      "type": "Proficiency"
+     }
+    ]
+   },
+   "data": {
+    "hit_die": 10,
+    "primary_abilities": [
+     "dexterity",
+     "wisdom"
+    ],
+    "primary_ability_mode": "all",
+    "saving_throws": [
+     "strength",
+     "dexterity"
+    ],
+    "subclass_level": 3,
+    "epic_boon_level": 19,
+    "asi_levels": [
+     4,
+     8,
+     12,
+     16
+    ],
+    "core_traits": {
+     "Primary Ability": "Dexterity and Wisdom",
+     "Hit Point Die": "D10 per Ranger level",
+     "Saving Throw": "Strength and Dexterity",
+     "Skill Proficiencies": "Choose 3: Animal Handling, Athletics, Insight, Investigation, Nature, Perception, Stealth, or Survival",
+     "Weapon Proficiencies": "Simple and Martial weapons",
+     "Armor Training": "Light and Medium armor and Shields",
+     "Starting Equipment": "Choose A or B: (A) Studded Leather Armor, Scimitar, Shortsword, Longbow, 20 Arrows, Quiver, Druidic Focus (sprig of mistletoe), Explorer’s Pack, and 7 GP; or (B) 150 GP"
+    },
+    "progression": {
+     "proficiency_bonus": [
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      4,
+      4,
+      4,
+      4,
+      5,
+      5,
+      5,
+      5,
+      6,
+      6,
+      6,
+      6
+     ],
+     "favored_enemy": [
+      2,
+      2,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      4,
+      4,
+      4,
+      4,
+      5,
+      5,
+      5,
+      5,
+      6,
+      6,
+      6,
+      6
+     ],
+     "prepared": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      6,
+      7,
+      7,
+      9,
+      9,
+      10,
+      10,
+      11,
+      11,
+      12,
+      12,
+      14,
+      14,
+      15,
+      15
+     ],
+     "slot_1": [
+      2,
+      2,
+      3,
+      3,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4,
+      4
+     ],
+     "slot_2": [
+      0,
+      0,
+      0,
+      0,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+     ],
+     "slot_3": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3,
+      3
+     ],
+     "slot_4": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      2,
+      2,
+      3,
+      3,
+      3,
+      3
+     ],
+     "slot_5": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      2,
+      2
+     ]
+    },
+    "features_by_level": [
+     "Spellcasting, Favored Enemy,",
+     "Deft Explorer, Fighting Style",
+     "Ranger Subclass",
+     "Ability Score Improvement",
+     "Extra Attack",
+     "Roving",
+     "Subclass feature",
+     "Ability Score Improvement",
+     "Expertise",
+     "Tireless",
+     "Subclass feature",
+     "Ability Score Improvement",
+     "Relentless Hunter",
+     "Nature’s Veil",
+     "Subclass feature",
+     "Ability Score Improvement",
+     "Precise Hunter",
+     "Feral Senses",
+     "Epic Boon",
+     "Foe Slayer"
+    ],
+    "multiclass": {
+     "prerequisite": "Dexterity 13 and Wisdom 13",
+     "requirements": "([dex:13]&&[wis:13])"
+    },
+    "spellcasting": {
+     "ability": "wisdom",
+     "list": "Ranger",
+     "model": "prepared",
+     "replace": "long_rest",
+     "multiclass_slots_grant": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_HALF_UP",
+     "has_cantrips": false
+    },
+    "fixed_hp_per_level": 6
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_CLASS_RANGER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_SPELLCASTING",
+   "name": "Spellcasting",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have learned to channel the magical essence of nature to cast spells. See “Spells” for the rules on spellcasting. The information below details how you use those rules with Ranger spells, which appear in the Ranger spell list later in the class’s description.</p>\n<p><b>Spell Slots.</b> The Ranger Features table shows how many spell slots you have to cast your level 1+ spells. You regain all expended slots when you finish a Long Rest.</p>\n<p>Prepared Spells of Level 1+. You prepare the list of level 1+ spells that are available for you to cast with this feature. To start, choose two level 1 Ranger spells. Cure Wounds and Ensnaring Strike are recommended.</p>\n<p>The number of spells on your list increases as you gain Ranger levels, as shown in the Prepared Spells column of the Ranger Features table. Whenever that number increases, choose additional Ranger spells until the number of spells on your list matches the number in the Ranger Features table. The chosen spells must be of a level for which you have spell slots. For example, if you’re a level 5 Ranger, your list of prepared spells can include six Ranger spells of level 1 or 2 in any combination.</p>\n<p>If another Ranger feature gives you spells that you always have prepared, those spells don’t count against the number of spells you can prepare with this feature, but those spells otherwise count as Ranger spells for you.</p>\n<p><b>Changing Your Prepared Spells.</b> Whenever you finish a Long Rest, you can replace one spell on your list with another Ranger spell for which you have spell slots.</p>\n<p><b>Spellcasting Ability.</b> Wisdom is your spellcasting ability for your Ranger spells.</p>\n<p><b>Spellcasting Focus.</b> You can use a Druidic Focus as a Spellcasting Focus for your Ranger spells.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:slots:1",
+     "value": "2"
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:slots:1",
+     "value": "1",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:slots:1",
+     "value": "1",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:slots:2",
+     "value": "2",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:slots:2",
+     "value": "1",
+     "level": 7
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:slots:3",
+     "value": "2",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:slots:3",
+     "value": "1",
+     "level": 11
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:slots:4",
+     "value": "1",
+     "level": 13
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:slots:4",
+     "value": "1",
+     "level": 15
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:slots:4",
+     "value": "1",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:slots:5",
+     "value": "1",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:slots:5",
+     "value": "1",
+     "level": 19
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:prepare",
+     "value": "2"
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:prepare",
+     "value": "1",
+     "level": 2
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:prepare",
+     "value": "1",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:prepare",
+     "value": "1",
+     "level": 4
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:prepare",
+     "value": "1",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:prepare",
+     "value": "1",
+     "level": 7
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:prepare",
+     "value": "2",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:prepare",
+     "value": "1",
+     "level": 11
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:prepare",
+     "value": "1",
+     "level": 13
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:prepare",
+     "value": "1",
+     "level": 15
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:prepare",
+     "value": "2",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "ranger:spellcasting:prepare",
+     "value": "1",
+     "level": 19
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_HALF_UP",
+     "type": "Grants",
+     "requirements": "ID_INTERNAL_GRANT_MULTICLASS"
+    },
+    {
+     "kind": "prepared_spell_change",
+     "when": "long_rest",
+     "count": "one"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_PROFICIENCY_SPELLFOCUS_GROUP_DRUIDIC_FOCUS",
+     "type": "Proficiency"
+    }
+   ],
+   "spellcasting": {
+    "name": "Ranger",
+    "ability": "Wisdom",
+    "prepare": true,
+    "allow_replace": true,
+    "list": {
+     "supports": "Ranger",
+     "known": true
+    }
+   },
+   "data": {
+    "class": "Ranger",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_FAVORED_ENEMY",
+   "name": "Favored Enemy",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You always have the Hunter’s Mark spell prepared. You can cast it twice without expending a spell slot, and you regain all expended uses of this ability when you finish a Long Rest.</p>\n<p>The number of times you can cast the spell without a spell slot increases when you reach certain Ranger levels, as shown in the Favored Enemy column of the Ranger Features table.</p>",
+   "rules": [
+    {
+     "kind": "grant_spell",
+     "spell": "ID_2024_SPELL_HUNTERS_MARK",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Ranger",
+     "free_cast": {
+      "uses": {
+       "type": "table",
+       "key": "favored_enemy"
+      },
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true
+    }
+   ],
+   "data": {
+    "class": "Ranger",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_WEAPON_MASTERY",
+   "name": "Weapon Mastery",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Your training with weapons allows you to use the mastery properties of two kinds of weapons of your choice with which you have proficiency, such as Longbows and Shortswords.</p>\n<p>Whenever you finish a Long Rest, you can change the kinds of weapons you chose. For example, you could switch to using the mastery properties of Scimitars and Longswords.</p>",
+   "rules": [
+    {
+     "kind": "weapon_mastery",
+     "name": "Weapon Mastery",
+     "count": {
+      "type": "fixed",
+      "value": 2
+     },
+     "filter": {
+      "weapon_kind": "any",
+      "proficient": true
+     },
+     "change_on": "long_rest"
+    }
+   ],
+   "data": {
+    "class": "Ranger",
+    "level": 1
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_DEFT_EXPLORER",
+   "name": "Deft Explorer",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Thanks to your travels, you gain the following benefits.</p>\n<p><b>Expertise.</b> Choose one of your skill proficiencies with which you lack Expertise. You gain Expertise in that skill.</p>\n<p><b>Languages.</b> You know two languages of your choice from the language tables in “Character Creation.”</p>",
+   "rules": [
+    {
+     "kind": "expertise",
+     "count": 1,
+     "from": "proficient skills without Expertise"
+    },
+    {
+     "kind": "select",
+     "type": "Language",
+     "name": "Deft Explorer Languages",
+     "number": 2,
+     "supports": "Standard||Rare"
+    }
+   ],
+   "data": {
+    "class": "Ranger",
+    "level": 2
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_FIGHTING_STYLE",
+   "name": "Fighting Style",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a Fighting Style feat of your choice (see “Feats”). Instead of choosing one of those feats, you can choose the option below.</p>\n<p><b>Druidic Warrior.</b> You learn two Druid cantrips of your choice (see the Druid class’s section for a list of Druid spells). Guidance and Starry Wisp are recommended. The chosen cantrips count as Ranger spells for you, and Wisdom is your spellcasting ability for them. Whenever you gain a Ranger level, you can replace one of these cantrips with another Druid cantrip.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "name": "Fighting Style (Ranger)",
+     "category": "Fighting Style",
+     "alternatives": [
+      "ID_2024_OPTION_FIGHTING_STYLE_DRUIDIC_WARRIOR"
+     ],
+     "replace_on": "level_up"
+    }
+   ],
+   "data": {
+    "class": "Ranger",
+    "level": 2
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_RANGER_SUBCLASS",
+   "name": "Ranger Subclass",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a Ranger subclass of your choice. The Hunter subclass is detailed after this class’s description. A subclass is a specialization that grants you features at certain Ranger levels. For the rest of your career, you gain each of your subclass’s features that are of your Ranger level or lower.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Archetype",
+     "name": "Ranger Conclave",
+     "supports": "Ranger Subclass"
+    }
+   ],
+   "data": {
+    "class": "Ranger",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_ABILITY_SCORE_IMPROVEMENT",
+   "name": "Ability Score Improvement",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the Ability Score Improvement feat (see “Feats”) or another feat of your choice for which you qualify. You gain this feature again at Ranger levels 8, 12, and 16.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "level": 4,
+     "name": "Ability Score Improvement (Ranger 4)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 8,
+     "name": "Ability Score Improvement (Ranger 8)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 12,
+     "name": "Ability Score Improvement (Ranger 12)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    },
+    {
+     "kind": "select_feat",
+     "level": 16,
+     "name": "Ability Score Improvement (Ranger 16)",
+     "category": "General",
+     "default": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+    }
+   ],
+   "data": {
+    "class": "Ranger",
+    "level": 4
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_EXTRA_ATTACK",
+   "name": "Extra Attack",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can attack twice instead of once whenever you take the Attack action on your turn.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "attacks:extra",
+     "value": "1",
+     "bonus": "extra attack"
+    }
+   ],
+   "data": {
+    "class": "Ranger",
+    "level": 5
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_ROVING",
+   "name": "Roving",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Your Speed increases by 10 feet while you aren’t wearing Heavy armor. You also have a Climb Speed and a Swim Speed equal to your Speed.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "speed",
+     "value": "10",
+     "equipped": "![armor:heavy]",
+     "alt": "Roving"
+    },
+    {
+     "kind": "stat",
+     "name": "speed:climb",
+     "value": "speed"
+    },
+    {
+     "kind": "stat",
+     "name": "speed:swim",
+     "value": "speed"
+    }
+   ],
+   "data": {
+    "class": "Ranger",
+    "level": 6
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_EXPERTISE",
+   "name": "Expertise",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Choose two of your skill proficiencies with which you lack Expertise. You gain Expertise in those skills.</p>",
+   "rules": [
+    {
+     "kind": "expertise",
+     "count": 2
+    }
+   ],
+   "data": {
+    "class": "Ranger",
+    "level": 9
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_TIRELESS",
+   "name": "Tireless",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Primal forces now help fuel you on your journeys, granting you the following benefits.</p>\n<p><b>Temporary Hit Points.</b> As a Magic action, you can give yourself a number of Temporary Hit Points equal to 1d8 plus your Wisdom modifier (minimum of 1). You can use this action a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a Long Rest.</p>\n<p><b>Decrease Exhaustion.</b> Whenever you finish a Short Rest, your Exhaustion level, if any, decreases by 1.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "tireless",
+     "name": "Tireless",
+     "max": {
+      "type": "formula",
+      "expr": "max(1, wisdom:modifier)"
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    }
+   ],
+   "data": {
+    "class": "Ranger",
+    "level": 10
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_RELENTLESS_HUNTER",
+   "name": "Relentless Hunter",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Taking damage can’t break your Concentration on Hunter’s Mark.</p>",
+   "data": {
+    "class": "Ranger",
+    "level": 13
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_NATURES_VEIL",
+   "name": "Nature’s Veil",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You invoke spirits of nature to magically hide yourself. As a Bonus Action, you can give yourself the Invisible condition until the end of your next turn.</p>\n<p>You can use this feature a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a Long Rest.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "natures veil",
+     "name": "Nature’s Veil",
+     "max": {
+      "type": "formula",
+      "expr": "max(1, wisdom:modifier)"
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    }
+   ],
+   "data": {
+    "class": "Ranger",
+    "level": 14
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_PRECISE_HUNTER",
+   "name": "Precise Hunter",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Advantage on attack rolls against the creature currently marked by your Hunter’s Mark.</p>",
+   "data": {
+    "class": "Ranger",
+    "level": 17
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_FERAL_SENSES",
+   "name": "Feral Senses",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Your connection to the forces of nature grants you Blindsight with a range of 30 feet.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_VISION_BLINDSIGHT",
+     "type": "Vision"
+    },
+    {
+     "kind": "stat",
+     "name": "blindsight:range",
+     "value": "30",
+     "bonus": "base"
+    }
+   ],
+   "data": {
+    "class": "Ranger",
+    "level": 18
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_EPIC_BOON",
+   "name": "Epic Boon",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain an Epic Boon feat (see “Feats”) or another feat of your choice for which you qualify. Boon of Dimensional Travel is recommended.</p>",
+   "rules": [
+    {
+     "kind": "select_feat",
+     "level": 19,
+     "name": "Epic Boon (Ranger)",
+     "category": "Epic Boon"
+    }
+   ],
+   "data": {
+    "class": "Ranger",
+    "level": 19
+   }
+  },
+  {
+   "id": "ID_2024_CLASS_FEATURE_RANGER_FOE_SLAYER",
+   "name": "Foe Slayer",
+   "type": "Class Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>The damage die of your Hunter’s Mark is a d10 rather than a d6.</p>",
+   "data": {
+    "class": "Ranger",
+    "level": 20
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_FIGHTING_STYLE_DRUIDIC_WARRIOR",
+   "name": "Druidic Warrior",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Fighting Style"
+   ],
+   "description": "<p>You learn two Druid cantrips of your choice (see the Druid class’s section for a list of Druid spells). Guidance and Starry Wisp are recommended. The chosen cantrips count as Ranger spells for you, and Wisdom is your spellcasting ability for them. Whenever you gain a Ranger level, you can replace one of these cantrips with another Druid cantrip.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Druidic Warrior Cantrips",
+     "number": 2,
+     "supports": "Druid, 0",
+     "spellcasting": "Ranger",
+     "prepared": true,
+     "allow_replace": true
+    }
+   ],
+   "data": {
+    "class_name": "Ranger",
+    "group": "Fighting Style",
+    "source_feature": "Fighting Style",
+    "level": 2
+   }
+  }
+ ]
+}

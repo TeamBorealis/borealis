@@ -1,0 +1,211 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: species/gnome",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SPECIES_GNOME",
+   "name": "Gnome",
+   "type": "Species",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Creature type: Humanoid. Size: Small (about 3–4 feet tall). Speed: 30 feet.</p>",
+   "setters": [
+    {
+     "name": "short",
+     "value": "Humanoid, Small, Speed 30 ft."
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_SIZE_SMALL",
+     "type": "Size"
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed",
+     "value": "30",
+     "bonus": "base"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_GNOME_DARKVISION",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_GNOME_GNOMISH_CUNNING",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_GNOME_GNOMISH_LINEAGE",
+     "type": "Racial Trait"
+    }
+   ],
+   "data": {
+    "creature_type": "Humanoid",
+    "size": [
+     "Small"
+    ],
+    "speed": 30,
+    "traits": [
+     "ID_2024_TRAIT_GNOME_DARKVISION",
+     "ID_2024_TRAIT_GNOME_GNOMISH_CUNNING",
+     "ID_2024_TRAIT_GNOME_GNOMISH_LINEAGE"
+    ]
+   },
+   "maps_to": {
+    "dnd2014": "ID_RACE_GNOME",
+    "kind": "approximate"
+   }
+  },
+  {
+   "id": "ID_2024_TRAIT_GNOME_DARKVISION",
+   "name": "Darkvision",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Darkvision with a range of 60 feet.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_VISION_DARKVISION",
+     "type": "Vision"
+    },
+    {
+     "kind": "stat",
+     "name": "darkvision:range",
+     "value": "60",
+     "bonus": "base"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_GNOME_GNOMISH_CUNNING",
+   "name": "Gnomish Cunning",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Advantage on Intelligence, Wisdom, and Charisma saving throws.</p>",
+   "rules": [
+    {
+     "kind": "save_advantage",
+     "against_ability": [
+      "intelligence",
+      "wisdom",
+      "charisma"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_GNOME_GNOMISH_LINEAGE",
+   "name": "Gnomish Lineage",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You are part of a lineage that grants you supernatural abilities. Choose one of the following options; whichever one you choose, Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the lineage):</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Species Trait Option",
+     "name": "Gnomish Lineage",
+     "supports": "Gnomish Lineage"
+    },
+    {
+     "kind": "select_param",
+     "name": "Lineage Spellcasting Ability",
+     "options": [
+      "Intelligence",
+      "Wisdom",
+      "Charisma"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_OPTION_GNOMISH_LINEAGE_FOREST_GNOME",
+   "name": "Forest Gnome",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Gnomish Lineage"
+   ],
+   "description": "<p>You know the Minor Illusion cantrip.</p>\n<p>You also always have the Speak with Animals spell prepared. You can cast it without a spell slot a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest. You can also use any spell slots you have to cast the spell.</p>",
+   "rules": [
+    {
+     "kind": "grant_spell",
+     "spell": "ID_2024_SPELL_MINOR_ILLUSION",
+     "mode": "known_cantrip",
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    },
+    {
+     "kind": "grant_spell",
+     "spell": "ID_2024_SPELL_SPEAK_WITH_ANIMALS",
+     "mode": "always_prepared",
+     "free_cast": {
+      "uses": "proficiency",
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true,
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_OPTION_GNOMISH_LINEAGE_ROCK_GNOME",
+   "name": "Rock Gnome",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Gnomish Lineage"
+   ],
+   "description": "<p>You know the Mending and Prestidigitation cantrips. In addition, you can spend 10 minutes casting Prestidigitation to create a Tiny clockwork device (AC 5, 1 HP), such as a toy, fire starter, or music box. When you create the device, you determine its function by choosing one effect from Prestidigitation; the device produces that</p>\n<pre>             Level 3               Level 5\n0 feet. ​         Faerie Fire           Darkness</pre>\n<pre>er you finish    Detect Magic          Misty Step</pre>\n<p>h a different</p>\n<pre>ow the            Longstrider           Pass without Trace</pre>\n<p>effect whenever you or another creature takes a Bonus Action to activate it with a touch. If the chosen effect has options within it, you choose one of those options for the device when you create it.</p>\n<p>For example, if you choose the spell’s ignite-extinguish effect, you determine whether the device ignites or extinguishes fire; the device doesn’t do both. You can have three such devices in existence at a time, and each falls apart 8 hours after its creation or when you dismantle it with a touch as a Utilize action.</p>",
+   "rules": [
+    {
+     "kind": "grant_spell",
+     "spell": "ID_2024_SPELL_MENDING",
+     "mode": "known_cantrip",
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    },
+    {
+     "kind": "grant_spell",
+     "spell": "ID_2024_SPELL_PRESTIDIGITATION",
+     "mode": "known_cantrip",
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    },
+    {
+     "kind": "resource",
+     "id": "clockwork device",
+     "name": "Clockwork Device",
+     "max": {
+      "type": "fixed",
+      "value": 3
+     },
+     "recharge": [
+      "none"
+     ],
+     "kind_note": "devices in existence at a time"
+    }
+   ]
+  }
+ ]
+}

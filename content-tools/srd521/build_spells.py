@@ -1,0 +1,105 @@
+import sys;sys.path.insert(0,'.')
+from lib import *
+import pickle
+sp=pickle.load(open('spell_blocks.pkl','rb'))
+RENAMES={'Acid Arrow':'Melf’s Acid Arrow','Arcane Hand':'Bigby’s Hand','Arcane Sword':'Mordenkainen’s Sword',
+'Arcanist’s Magic Aura':'Nystul’s Magic Aura','Befuddlement':'Feeblemind','Black Tentacles':'Evard’s Black Tentacles',
+'Faithful Hound':'Mordenkainen’s Faithful Hound','Floating Disk':'Tenser’s Floating Disk','Freezing Sphere':'Otiluke’s Freezing Sphere',
+'Hideous Laughter':'Tasha’s Hideous Laughter','Instant Summons':'Drawmij’s Instant Summons','Irresistible Dance':'Otto’s Irresistible Dance',
+'Magnificent Mansion':'Mordenkainen’s Magnificent Mansion','Private Sanctum':'Mordenkainen’s Private Sanctum','Resilient Sphere':'Otiluke’s Resilient Sphere',
+'Secret Chest':'Leomund’s Secret Chest','Telepathic Bond':'Rary’s Telepathic Bond','Tiny Hut':'Leomund’s Tiny Hut'}
+n14={}
+for k,(n,t) in IDS2014.items():
+    if t=='Spell': n14.setdefault(norm_name(n),k)
+CLASSES=['Bard','Cleric','Druid','Paladin','Ranger','Sorcerer','Warlock','Wizard']
+SCHOOLS=['Abjuration','Conjuration','Divination','Enchantment','Evocation','Illusion','Necromancy','Transmutation']
+def sentence_ok(t): return t
+out=[]
+for name,b in sp:
+    # header may wrap
+    h=b[0]; k=1
+    while h.count('(')>h.count(')'):
+        h+=' '+b[k].strip(); k+=1
+    m=re.match(r'^(?:Level (\d) ([A-Z][a-z]+)|([A-Z][a-z]+) Cantrip)\s*\(([^)]*)\)',h)
+    if m:
+        lvl=int(m.group(1)) if m.group(1) else 0
+        school=m.group(2) or m.group(3)
+        classes=[c.strip() for c in m.group(4).replace('\n',' ').split(',')]
+    else:  # no class list
+        m=re.match(r'^(?:Level (\d) ([A-Z][a-z]+)|([A-Z][a-z]+) Cantrip)',h)
+        lvl=int(m.group(1)) if m.group(1) else 0
+        school=m.group(2) or m.group(3); classes=[]
+    rest=b[k:]
+    # fields
+    fields={};i=0;cur=None
+    keys=['Casting Time','Range','Components','Duration']
+    while i<len(rest):
+        ln=rest[i]
+        if not ln.strip() and len(fields)<4: i+=1; continue
+        mm=re.match(r'^(Casting Time|Range|Components?|Duration): ?(.*)$',ln)
+        if mm:
+            cur=mm.group(1).replace("Components","Components").rstrip(); cur="Components" if cur.startswith("Component") else cur;fields[cur]=mm.group(2).strip();i+=1;continue
+        if cur and cur!='Duration' and ln.strip() and len(fields)<4:
+            fields[cur]=join_lines([fields[cur],ln]);i+=1;continue
+        break
+    assert len(fields)==4,(name,fields)
+    body=rest[i:]
+    comp=fields['Components']
+    cm=re.match(r'^((?:V|S|M)(?:, ?(?:V|S|M))*)\s*(?:\((.*)\))?$',comp)
+    assert cm,(name,comp)
+    cs=[c.strip() for c in cm.group(1).split(',')]
+    material=cm.group(2)
+    cost=None;consumed=False
+    if material:
+        mc=re.search(r'([\d,]+)\+? ?(GP|SP|CP|EP|PP)',material)
+        if mc: cost=(int(mc.group(1).replace(',','')),mc.group(2).lower())
+        consumed='consume' in material
+    ct=fields['Casting Time']
+    ritual='Ritual' in ct
+    dur=fields['Duration']
+    conc=dur.startswith('Concentration')
+    html=chunk_html2(body)
+    # higher level
+    hl=None
+    for hm in re.finditer(r'<p><b>(?:Using a Higher-Level Spell Slot|Cantrip Upgrade)\.</b>([^<]*)</p>',html):
+        hl=re.sub(r'<[^>]+>','',hm.group(0))
+    sid='ID_2024_SPELL_'+slug(name)
+    el={'id':sid,'name':name,'type':'Spell','source':'SRD 5.2.1','ruleset':'dnd2024',
+        'supports':classes,
+        'description':html,
+        'setters':[
+            {'name':'level','value':str(lvl)},
+            {'name':'school','value':school,**({'attributes':{'addition':'ritual'}} if ritual else {})},
+            {'name':'time','value':ct},
+            {'name':'duration','value':dur},
+            {'name':'range','value':fields['Range']},
+            {'name':'hasVerbalComponent','value':str('V' in cs).lower()},
+            {'name':'hasSomaticComponent','value':str('S' in cs).lower()},
+            {'name':'hasMaterialComponent','value':str('M' in cs).lower()},
+            {'name':'isConcentration','value':str(conc).lower()},
+            {'name':'isRitual','value':str(ritual).lower()}]}
+    if material: el['setters'].append({'name':'materialComponent','value':material})
+    data={'level':lvl,'school':school,'classes':classes,'components':{'v':'V' in cs,'s':'S' in cs,'m':'M' in cs},
+          'ritual':ritual,'concentration':conc}
+    if cost: data['material_cost']={'amount':cost[0],'currency':cost[1],'consumed':consumed}
+    elif consumed: data['material_cost']={'consumed':True}
+    if 'which you take' in ct:
+        data['reaction_trigger']=ct.split('which you take',1)[1].strip()
+    if hl:
+        data['higher_level']=hl
+    el['data']=data
+    # mapping
+    n=norm_name(name)
+    old=RENAMES.get(name)
+    if old and norm_name(old) in n14:
+        el['renamed_from']=n14[norm_name(old)]
+        el['maps_to']={'dnd2014':n14[norm_name(old)],'kind':'equivalent'}
+    elif n in n14:
+        el['maps_to']={'dnd2014':n14[n],'kind':'equivalent'}
+    out.append(el)
+pickle.dump(out,open('spells_out.pkl','wb'))
+from collections import Counter
+print(len(out),Counter(e['data']['level'] for e in out))
+print(Counter(c for e in out for c in e['supports']))
+print(sum('maps_to' in e for e in out),sum('renamed_from' in e for e in out))
+print(Counter(e['data']['school'] for e in out if e['data']['level']>0))

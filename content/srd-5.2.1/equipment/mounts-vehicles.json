@@ -1,0 +1,663 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: equipment/mounts-vehicles",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_MOUNT_CAMEL",
+   "name": "Camel",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Mounts and Other Animals"
+    },
+    {
+     "name": "cost",
+     "value": "50",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "carrying_capacity": "450 lb."
+   }
+  },
+  {
+   "id": "ID_2024_MOUNT_ELEPHANT",
+   "name": "Elephant",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Mounts and Other Animals"
+    },
+    {
+     "name": "cost",
+     "value": "200",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "carrying_capacity": "1,320 lb."
+   }
+  },
+  {
+   "id": "ID_2024_MOUNT_HORSE_DRAFT",
+   "name": "Horse, Draft",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Mounts and Other Animals"
+    },
+    {
+     "name": "cost",
+     "value": "50",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "carrying_capacity": "540 lb."
+   }
+  },
+  {
+   "id": "ID_2024_MOUNT_HORSE_RIDING",
+   "name": "Horse, Riding",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Mounts and Other Animals"
+    },
+    {
+     "name": "cost",
+     "value": "75",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "carrying_capacity": "480 lb."
+   }
+  },
+  {
+   "id": "ID_2024_MOUNT_MASTIFF",
+   "name": "Mastiff",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Mounts and Other Animals"
+    },
+    {
+     "name": "cost",
+     "value": "25",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "carrying_capacity": "195 lb."
+   }
+  },
+  {
+   "id": "ID_2024_MOUNT_MULE",
+   "name": "Mule",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Mounts and Other Animals"
+    },
+    {
+     "name": "cost",
+     "value": "8",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "carrying_capacity": "420 lb."
+   }
+  },
+  {
+   "id": "ID_2024_MOUNT_PONY",
+   "name": "Pony",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Mounts and Other Animals"
+    },
+    {
+     "name": "cost",
+     "value": "30",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "carrying_capacity": "225 lb."
+   }
+  },
+  {
+   "id": "ID_2024_MOUNT_WARHORSE",
+   "name": "Warhorse",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Mounts and Other Animals"
+    },
+    {
+     "name": "cost",
+     "value": "400",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "carrying_capacity": "540 lb."
+   }
+  },
+  {
+   "id": "ID_2024_ITEM_CARRIAGE",
+   "name": "Carriage",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Tack, Harness, and Drawn Vehicles"
+    },
+    {
+     "name": "cost",
+     "value": "100",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "600 lb.",
+     "attributes": {
+      "lb": "600"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_CART",
+   "name": "Cart",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Tack, Harness, and Drawn Vehicles"
+    },
+    {
+     "name": "cost",
+     "value": "15",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "200 lb.",
+     "attributes": {
+      "lb": "200"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_CHARIOT",
+   "name": "Chariot",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Tack, Harness, and Drawn Vehicles"
+    },
+    {
+     "name": "cost",
+     "value": "250",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "100 lb.",
+     "attributes": {
+      "lb": "100"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_FEED_PER_DAY",
+   "name": "Feed per day",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Tack, Harness, and Drawn Vehicles"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "cp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "10 lb.",
+     "attributes": {
+      "lb": "10"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_SLED",
+   "name": "Sled",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Tack, Harness, and Drawn Vehicles"
+    },
+    {
+     "name": "cost",
+     "value": "20",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "300 lb.",
+     "attributes": {
+      "lb": "300"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_WAGON",
+   "name": "Wagon",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Tack, Harness, and Drawn Vehicles"
+    },
+    {
+     "name": "cost",
+     "value": "35",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "400 lb.",
+     "attributes": {
+      "lb": "400"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_EXOTIC_SADDLE",
+   "name": "Exotic Saddle",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Tack, Harness, and Drawn Vehicles"
+    },
+    {
+     "name": "cost",
+     "value": "60",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "40 lb.",
+     "attributes": {
+      "lb": "40"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_MILITARY_SADDLE",
+   "name": "Military Saddle",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Tack, Harness, and Drawn Vehicles"
+    },
+    {
+     "name": "cost",
+     "value": "20",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "30 lb.",
+     "attributes": {
+      "lb": "30"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_RIDING_SADDLE",
+   "name": "Riding Saddle",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Tack, Harness, and Drawn Vehicles"
+    },
+    {
+     "name": "cost",
+     "value": "10",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "25 lb.",
+     "attributes": {
+      "lb": "25"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_ITEM_STABLING_PER_DAY",
+   "name": "Stabling per day",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Services"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "sp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_VEHICLE_AIRSHIP",
+   "name": "Airship",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Airborne and Waterborne Vehicles"
+    },
+    {
+     "name": "cost",
+     "value": "40000",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "speed": "8 mph",
+    "crew": "10",
+    "passengers": "20",
+    "cargo_tons": "1",
+    "ac": 13,
+    "hp": 300,
+    "damage_threshold": "—"
+   }
+  },
+  {
+   "id": "ID_2024_VEHICLE_GALLEY",
+   "name": "Galley",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Airborne and Waterborne Vehicles"
+    },
+    {
+     "name": "cost",
+     "value": "30000",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "speed": "4 mph",
+    "crew": "80",
+    "passengers": "—",
+    "cargo_tons": "150",
+    "ac": 15,
+    "hp": 500,
+    "damage_threshold": "20"
+   }
+  },
+  {
+   "id": "ID_2024_VEHICLE_KEELBOAT",
+   "name": "Keelboat",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Airborne and Waterborne Vehicles"
+    },
+    {
+     "name": "cost",
+     "value": "3000",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "speed": "1 mph",
+    "crew": "1",
+    "passengers": "6",
+    "cargo_tons": "1/2",
+    "ac": 15,
+    "hp": 100,
+    "damage_threshold": "10"
+   }
+  },
+  {
+   "id": "ID_2024_VEHICLE_LONGSHIP",
+   "name": "Longship",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Airborne and Waterborne Vehicles"
+    },
+    {
+     "name": "cost",
+     "value": "10000",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "speed": "3 mph",
+    "crew": "40",
+    "passengers": "150",
+    "cargo_tons": "10",
+    "ac": 15,
+    "hp": 300,
+    "damage_threshold": "15"
+   }
+  },
+  {
+   "id": "ID_2024_VEHICLE_ROWBOAT",
+   "name": "Rowboat",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Airborne and Waterborne Vehicles"
+    },
+    {
+     "name": "cost",
+     "value": "50",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "speed": "1½ mph",
+    "crew": "1",
+    "passengers": "3",
+    "cargo_tons": "—",
+    "ac": 11,
+    "hp": 50,
+    "damage_threshold": "—"
+   }
+  },
+  {
+   "id": "ID_2024_VEHICLE_SAILING_SHIP",
+   "name": "Sailing Ship",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Airborne and Waterborne Vehicles"
+    },
+    {
+     "name": "cost",
+     "value": "10000",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "speed": "2 mph",
+    "crew": "20",
+    "passengers": "20",
+    "cargo_tons": "100",
+    "ac": 15,
+    "hp": 300,
+    "damage_threshold": "15"
+   }
+  },
+  {
+   "id": "ID_2024_VEHICLE_WARSHIP",
+   "name": "Warship",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Airborne and Waterborne Vehicles"
+    },
+    {
+     "name": "cost",
+     "value": "25000",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "speed": "2½ mph",
+    "crew": "60",
+    "passengers": "60",
+    "cargo_tons": "200",
+    "ac": 15,
+    "hp": 500,
+    "damage_threshold": "20"
+   }
+  }
+ ]
+}

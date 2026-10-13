@@ -1,0 +1,380 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: species/elf",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SPECIES_ELF",
+   "name": "Elf",
+   "type": "Species",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Creature type: Humanoid. Size: Medium (about 5–6 feet tall). Speed: 30 feet.</p>",
+   "setters": [
+    {
+     "name": "short",
+     "value": "Humanoid, Medium, Speed 30 ft."
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_SIZE_MEDIUM",
+     "type": "Size"
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed",
+     "value": "30",
+     "bonus": "base"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_ELF_DARKVISION",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_ELF_ELVEN_LINEAGE",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_ELF_FEY_ANCESTRY",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_ELF_KEEN_SENSES",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_ELF_TRANCE",
+     "type": "Racial Trait"
+    }
+   ],
+   "data": {
+    "creature_type": "Humanoid",
+    "size": [
+     "Medium"
+    ],
+    "speed": 30,
+    "traits": [
+     "ID_2024_TRAIT_ELF_DARKVISION",
+     "ID_2024_TRAIT_ELF_ELVEN_LINEAGE",
+     "ID_2024_TRAIT_ELF_FEY_ANCESTRY",
+     "ID_2024_TRAIT_ELF_KEEN_SENSES",
+     "ID_2024_TRAIT_ELF_TRANCE"
+    ]
+   },
+   "maps_to": {
+    "dnd2014": "ID_RACE_ELF",
+    "kind": "approximate"
+   }
+  },
+  {
+   "id": "ID_2024_TRAIT_ELF_DARKVISION",
+   "name": "Darkvision",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Darkvision with a range of 60 feet.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_VISION_DARKVISION",
+     "type": "Vision"
+    },
+    {
+     "kind": "stat",
+     "name": "darkvision:range",
+     "value": "60",
+     "bonus": "base"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_ELF_ELVEN_LINEAGE",
+   "name": "Elven Lineage",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You are part of a lineage that grants you supernatural abilities. Choose a lineage from the Elven Lineages table. You gain the level 1 benefit of that lineage.</p>\n<p>When you reach character levels 3 and 5, you learn a higher-level spell, as shown on the table.</p>\n<p>You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level. Elven Lineages</p>\n<pre> Lineage     Level 1\nDrow         The range of your Darkvision increases to 120\n             You also know the Dancing Lights cantrip.\nHigh Elf     You know the Prestidigitation cantrip. Wheneve\n             a Long Rest, you can replace that cantrip with\n             cantrip from the Wizard spell list.\nWood Elf     Your Speed increases to 35 feet. You also kno\n             Druidcraft cantrip.</pre>\n<p>Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the lineage).</p><table><tr><th>Lineage</th><th>Level 1</th><th>Level 3</th><th>Level 5</th></tr><tr><td>Drow</td><td>The range of your Darkvision increases to 120 feet. You also know the Dancing Lights cantrip.</td><td>Faerie Fire</td><td>Darkness</td></tr><tr><td>High Elf</td><td>You know the Prestidigitation cantrip. Whenever you finish a Long Rest, you can replace that cantrip with a different cantrip from the Wizard spell list.</td><td>Detect Magic</td><td>Misty Step</td></tr><tr><td>Wood Elf</td><td>Your Speed increases to 35 feet. You also know the Druidcraft cantrip.</td><td>Longstrider</td><td>Pass without Trace</td></tr></table>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Species Trait Option",
+     "name": "Elven Lineage",
+     "supports": "Elven Lineage"
+    },
+    {
+     "kind": "select_param",
+     "name": "Lineage Spellcasting Ability",
+     "options": [
+      "Intelligence",
+      "Wisdom",
+      "Charisma"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_ELF_FEY_ANCESTRY",
+   "name": "Fey Ancestry",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Advantage on saving throws you make to avoid or end the Charmed condition.</p>",
+   "rules": [
+    {
+     "kind": "save_advantage",
+     "against_condition": "charmed",
+     "scope": "avoid_or_end"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_ELF_KEEN_SENSES",
+   "name": "Keen Senses",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have proficiency in the Insight, Perception, or Survival skill.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Proficiency",
+     "name": "Keen Senses",
+     "supports": "ID_PROFICIENCY_SKILL_INSIGHT|ID_PROFICIENCY_SKILL_PERCEPTION|ID_PROFICIENCY_SKILL_SURVIVAL"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_ELF_TRANCE",
+   "name": "Trance",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You don’t need to sleep, and magic can’t put you to sleep. You can finish a Long Rest in 4 hours if you spend those hours in a trancelike meditation, during which you retain consciousness.</p>"
+  },
+  {
+   "id": "ID_2024_OPTION_ELVEN_LINEAGE_DROW",
+   "name": "Drow",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Elven Lineage"
+   ],
+   "description": "<p>The range of your Darkvision increases to 120 feet. You also know the Dancing Lights cantrip. Level 3 spell: Faerie Fire. Level 5 spell: Darkness.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_VISION_DARKVISION",
+     "type": "Vision"
+    },
+    {
+     "kind": "stat",
+     "name": "darkvision:range",
+     "value": "120",
+     "bonus": "base"
+    },
+    {
+     "kind": "grant_spell",
+     "spell": "ID_2024_SPELL_DANCING_LIGHTS",
+     "mode": "known_cantrip",
+     "ability": {
+      "choice": [
+       "intelligence",
+       "wisdom",
+       "charisma"
+      ],
+      "param": "Lineage Spellcasting Ability"
+     }
+    },
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_FAERIE_FIRE",
+     "mode": "always_prepared",
+     "free_cast": {
+      "uses": 1,
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true,
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    },
+    {
+     "kind": "grant_spell",
+     "level": 5,
+     "spell": "ID_2024_SPELL_DARKNESS",
+     "mode": "always_prepared",
+     "free_cast": {
+      "uses": 1,
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true,
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    }
+   ],
+   "data": {
+    "lineage": "Drow",
+    "level_1_text": "The range of your Darkvision increases to 120 feet. You also know the Dancing Lights cantrip.",
+    "level_3_spell": "Faerie Fire",
+    "level_5_spell": "Darkness",
+    "level_1_cantrips": [
+     "Dancing Lights"
+    ]
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_ELVEN_LINEAGE_HIGH_ELF",
+   "name": "High Elf",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Elven Lineage"
+   ],
+   "description": "<p>You know the Prestidigitation cantrip. Whenever you finish a Long Rest, you can replace that cantrip with a different cantrip from the Wizard spell list. Level 3 spell: Detect Magic. Level 5 spell: Misty Step.</p>",
+   "rules": [
+    {
+     "kind": "cantrip_swap",
+     "spell_list": "Wizard",
+     "swap_on": "long_rest",
+     "replaces": "Prestidigitation"
+    },
+    {
+     "kind": "grant_spell",
+     "spell": "ID_2024_SPELL_PRESTIDIGITATION",
+     "mode": "known_cantrip",
+     "ability": {
+      "choice": [
+       "intelligence",
+       "wisdom",
+       "charisma"
+      ],
+      "param": "Lineage Spellcasting Ability"
+     }
+    },
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_DETECT_MAGIC",
+     "mode": "always_prepared",
+     "free_cast": {
+      "uses": 1,
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true,
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    },
+    {
+     "kind": "grant_spell",
+     "level": 5,
+     "spell": "ID_2024_SPELL_MISTY_STEP",
+     "mode": "always_prepared",
+     "free_cast": {
+      "uses": 1,
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true,
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    }
+   ],
+   "data": {
+    "lineage": "High Elf",
+    "level_1_text": "You know the Prestidigitation cantrip. Whenever you finish a Long Rest, you can replace that cantrip with a different cantrip from the Wizard spell list.",
+    "level_3_spell": "Detect Magic",
+    "level_5_spell": "Misty Step",
+    "level_1_cantrips": [
+     "Prestidigitation"
+    ]
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_ELVEN_LINEAGE_WOOD_ELF",
+   "name": "Wood Elf",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Elven Lineage"
+   ],
+   "description": "<p>Your Speed increases to 35 feet. You also know the Druidcraft cantrip. Level 3 spell: Longstrider. Level 5 spell: Pass without Trace.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "innate speed",
+     "value": "35",
+     "bonus": "base"
+    },
+    {
+     "kind": "grant_spell",
+     "spell": "ID_2024_SPELL_DRUIDCRAFT",
+     "mode": "known_cantrip",
+     "ability": {
+      "choice": [
+       "intelligence",
+       "wisdom",
+       "charisma"
+      ],
+      "param": "Lineage Spellcasting Ability"
+     }
+    },
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_LONGSTRIDER",
+     "mode": "always_prepared",
+     "free_cast": {
+      "uses": 1,
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true,
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    },
+    {
+     "kind": "grant_spell",
+     "level": 5,
+     "spell": "ID_2024_SPELL_PASS_WITHOUT_TRACE",
+     "mode": "always_prepared",
+     "free_cast": {
+      "uses": 1,
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true,
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    }
+   ],
+   "data": {
+    "lineage": "Wood Elf",
+    "level_1_text": "Your Speed increases to 35 feet. You also know the Druidcraft cantrip.",
+    "level_3_spell": "Longstrider",
+    "level_5_spell": "Pass without Trace",
+    "level_1_cantrips": [
+     "Druidcraft"
+    ]
+   }
+  }
+ ]
+}

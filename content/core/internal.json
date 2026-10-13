@@ -1,0 +1,342 @@
+{
+ "format": "borealis-content/1",
+ "ruleset": "any",
+ "elements": [
+  {
+   "id": "ID_INTERNAL_OPTION_ALLOW_FEATS",
+   "name": "Feats",
+   "type": "Option",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "default",
+     "value": "true"
+    },
+    {
+     "name": "short",
+     "value": "Feats may replace ability score improvements."
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_OPTION_ALLOW_AVERAGE_HP",
+   "name": "Average Hit Points",
+   "type": "Option",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "default",
+     "value": "false"
+    },
+    {
+     "name": "short",
+     "value": "Hit points use the fixed average value per level."
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_TEMPLATE_CLASS_FEATURE_ABILITY_4",
+   "name": "Ability Score Improvement",
+   "type": "Class Feature",
+   "source": "Core",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Ability Score Increase (Level 4)",
+     "number": 2,
+     "supports": "Ability Score Improvement&&Class"
+    }
+   ],
+   "description": "Template copied for each class and improvement level."
+  },
+  {
+   "id": "ID_INTERNAL_TEMPLATE_CLASS_FEATURE_FEAT_4",
+   "name": "Feat",
+   "type": "Class Feature",
+   "source": "Core",
+   "requirements": "ID_INTERNAL_OPTION_ALLOW_FEATS",
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Feat",
+     "name": "Feat (Level 4)"
+    }
+   ],
+   "description": "Template for taking a feat instead of an ability score improvement."
+  },
+  {
+   "id": "ID_INTERNAL_RITUAL_CASTING",
+   "name": "Ritual Casting",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Ritual Casting (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RITUAL_CASTING",
+   "name": "Ritual Casting",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Ritual Casting (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_MULTICLASS",
+   "name": "Multiclass",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Multiclass (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_COUNTS_AS_EQUIPPED_ARMOR",
+   "name": "Counts As Equipped Armor",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Counts As Equipped Armor (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_COUNTS_AS_EQUIPPED_LIGHT_ARMOR",
+   "name": "Counts As Equipped Light Armor",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Counts As Equipped Light Armor (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_COUNTS_AS_EQUIPPED_MEDIUM_ARMOR",
+   "name": "Counts As Equipped Medium Armor",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Counts As Equipped Medium Armor (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_COUNTS_AS_EQUIPPED_HEAVY_ARMOR",
+   "name": "Counts As Equipped Heavy Armor",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Counts As Equipped Heavy Armor (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_OPTIONAL_BACKGROUND_FEATURE",
+   "name": "Optional Background Feature",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Optional Background Feature (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_OPTIONAL_BACKGROUND_VARIANT",
+   "name": "Optional Background Variant",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Optional Background Variant (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_STEALTH_DISADVANTAGE",
+   "name": "Stealth Disadvantage",
+   "type": "Grants",
+   "requirements": "!ID_INTERNAL_GRANTS_IGNORE_STEALTH_DISADVANTAGE",
+   "source": "Internal",
+   "description": "Stealth Disadvantage (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_IGNORE_STEALTH_DISADVANTAGE",
+   "name": "Ignore Stealth Disadvantage",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Ignore Stealth Disadvantage (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_INITIATIVE_ADVANTAGE",
+   "name": "Initiative Advantage",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Initiative Advantage (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_IGNORE_COMPANION_MULTIATTACK",
+   "name": "Ignore Companion Multiattack",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Ignore Companion Multiattack (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_DRAGONMARK",
+   "name": "Dragonmark",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Dragonmark (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_WEIGHT_CAPACITY_HALVED",
+   "name": "Capacity Halved",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Capacity Halved (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_WEIGHT_CAPACITY_DOUBLED",
+   "name": "Capacity Doubled",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Capacity Doubled (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_WEIGHT_CAPACITY_COUNTS_AS_LARGER",
+   "name": "Capacity Count As Larger Size",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Capacity Count As Larger Size (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_ACTION",
+   "name": "Action",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Action (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_BONUS_ACTION",
+   "name": "Bonus Action",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Bonus Action (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_REACTION",
+   "name": "Reaction",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Reaction (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_VERBAL",
+   "name": "Verbal",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Verbal (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_SOMATIC",
+   "name": "Somatic",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Somatic (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_MATERIAL",
+   "name": "Material",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Material (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_CONCENTRATION",
+   "name": "Concentration",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Concentration (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_RITUAL",
+   "name": "Ritual",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Ritual (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_EXPERTISE",
+   "name": "Expertise",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Expertise (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_ABILITY_STRENGTH",
+   "name": "Strength",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Strength (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_ABILITY_DEXTERITY",
+   "name": "Dexterity",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Dexterity (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_ABILITY_CONSTITUTION",
+   "name": "Constitution",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Constitution (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_ABILITY_INTELLIGENCE",
+   "name": "Intelligence",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Intelligence (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_ABILITY_WISDOM",
+   "name": "Wisdom",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Wisdom (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_ABILITY_CHARISMA",
+   "name": "Charisma",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Charisma (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_PROFICIENCY_ARTISAN",
+   "name": "Artisan",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Artisan (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_PROFICIENCY_TOOL",
+   "name": "Tool",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Tool (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_PROFICIENCY_INSTRUMENT",
+   "name": "Musical Instrument",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Musical Instrument (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_PROFICIENCY_KIT",
+   "name": "Kit",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Kit (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_PROFICIENCY_VEHICLE",
+   "name": "Vehicle",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Vehicle (internal marker)."
+  },
+  {
+   "id": "ID_INTERNAL_SUPPORT_PROFICIENCY_GAMING_SET",
+   "name": "Gaming Set",
+   "type": "Support",
+   "source": "Internal",
+   "description": "Gaming Set (internal marker)."
+  }
+ ]
+}

@@ -1,0 +1,1184 @@
+//! The instance graph: elements registered on a character, expanded from the stored inputs by
+//! applying grant and select rules to a fixpoint (with per-instance acquisition,
+//! slot keys and the owner environment).
+
+use crate::diag::{code, DiagSink, Diagnostic, Severity};
+use crate::eval::{
+    requirement_holds, supports_cond_match, DynamicSupports, EquipState, IdCounts, ReqEnv,
+};
+use crate::ids;
+use crate::state::{CharacterState, Choice, ClassSlot, SlotKey};
+use crate::universe::{Cond, UElem, URule, UStat, Universe};
+use borealis_content::expr::Dynamic;
+use borealis_content::{Rule, SourceRestriction};
+use std::cell::RefCell;
+use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
+
+/// Index of a node.
+pub type NodeId = usize;
+
+/// Which progression a node belongs to (decides which level gates its rules).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Mgr {
+    /// Character level.
+    Main,
+    /// Levels of the main class.
+    MainClass,
+    /// Levels of the multiclass started at this character level.
+    Multi(u32),
+}
+
+/// How a node entered the graph.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Origin {
+    /// Top-level registration (option, level, equipped item).
+    Root,
+    /// Attached by the engine itself (multiclass level markers).
+    Manual,
+    /// Granted by rule index `rule` of the parent.
+    Granted(usize),
+    /// Chosen in slot `slot` of the parent.
+    Selected(usize),
+}
+
+/// A select slot of a node.
+#[derive(Debug, Clone)]
+pub struct SlotNode {
+    /// Stable key.
+    pub key: SlotKey,
+    /// Rule index in the owner.
+    pub rule: usize,
+    /// 1-based ordinal.
+    pub ordinal: u32,
+    /// Node chosen in this slot.
+    pub chosen: Option<NodeId>,
+    /// Choice of a `List` select.
+    pub list_choice: Option<i64>,
+    /// A stored choice that is currently not allowed.
+    pub rejected: Option<Choice>,
+}
+
+/// A registered element instance.
+#[derive(Debug, Clone)]
+pub struct Node<'u> {
+    /// The element.
+    pub e: &'u UElem,
+    /// Parent instance.
+    pub parent: Option<NodeId>,
+    /// Acquisition.
+    pub origin: Origin,
+    /// Progression manager.
+    pub mgr: Mgr,
+    /// Children (granted and selected) in insertion order.
+    pub children: Vec<NodeId>,
+    /// Open select slots.
+    pub slots: Vec<SlotNode>,
+    /// False once removed.
+    pub alive: bool,
+    /// Spellcasting class a spell was acquired for.
+    pub spell_class: Option<String>,
+    /// Always-prepared acquisition.
+    pub always_prepared: bool,
+    /// Inventory item uid for item roots.
+    pub item_uid: Option<String>,
+    /// Item attuned flag for item roots.
+    pub attuned: bool,
+    /// Preset feat parameters (`grant_feat`), keyed by normalised parameter name.
+    pub params: std::collections::BTreeMap<String, String>,
+    /// Instance tag of a repeatable element, so each take has its own slot keys.
+    pub instance: Option<String>,
+}
+
+/// An item that takes part in the graph as a root.
+#[derive(Debug, Clone)]
+pub struct ItemRoot<'u> {
+    /// Element (base item or adorner).
+    pub e: &'u UElem,
+    /// Inventory uid.
+    pub uid: String,
+    /// Attuned.
+    pub attuned: bool,
+}
+
+/// Static inputs of an expansion run.
+pub struct GraphInputs<'u> {
+    /// Ability hint for requirements.
+    pub abilities: [i32; 6],
+    /// Statistic sums of the previous iteration.
+    pub stat_sums: HashMap<String, i32>,
+    /// Roots for equipped items.
+    pub items: Vec<ItemRoot<'u>>,
+    /// Equipment facts for equipped conditions.
+    pub equip: EquipState,
+}
+
+/// The graph.
+pub struct Graph<'u> {
+    pub(crate) uni: &'u Universe,
+    /// Nodes (removed ones stay with `alive == false`).
+    pub nodes: Vec<Node<'u>>,
+    /// Top-level nodes in order.
+    pub roots: Vec<NodeId>,
+    pub(crate) ids: IdCounts,
+    pub(crate) class_levels: HashMap<String, i32>,
+    pub(crate) mgr_levels: HashMap<Mgr, u32>,
+    /// Converged ability hint used by requirements.
+    pub abilities: [i32; 6],
+    /// Statistic sums of the previous iteration.
+    pub stat_sums: HashMap<String, i32>,
+    pub(crate) selections: HashMap<SlotKey, (Choice, Option<u32>)>,
+    /// Slots whose pick was replaced at least once (they offer current-level options).
+    pub(crate) retrained: HashSet<SlotKey>,
+    pub(crate) restricted: SourceRestriction,
+    pub(crate) equip: EquipState,
+    pub(crate) version: u64,
+    /// Set when any requirement read a statistic group.
+    pub stat_used: std::cell::Cell<bool>,
+    pub(crate) slot_cache: RefCell<SlotCache>,
+    /// Diagnostics collected while expanding.
+    pub diags: DiagSink,
+    pub(crate) ruleset_hooks: &'static dyn crate::profile::RulesetProfile,
+    /// Foreign-edition content may be offered for new picks (resolved from state and profile).
+    pub(crate) allow_cross_edition: bool,
+    /// Play-time state (toggles, exhaustion).
+    pub(crate) runtime: crate::runtime::Runtime,
+}
+
+const MAX_PASSES: usize = 60;
+
+type SlotCache = HashMap<(u64, u32), Rc<HashSet<String>>>;
+
+impl<'u> Graph<'u> {
+    /// Build and expand the graph for a state.
+    #[must_use]
+    pub fn build(uni: &'u Universe, state: &CharacterState, inputs: GraphInputs<'u>) -> Self {
+        let mut mgr_levels = HashMap::new();
+        let total = state.level();
+        mgr_levels.insert(Mgr::Main, total);
+        mgr_levels.insert(Mgr::MainClass, state.class_level(&ClassSlot::Main));
+        for l in &state.levels {
+            if let ClassSlot::Multi { starting_level } = l {
+                mgr_levels.insert(Mgr::Multi(*starting_level), state.class_level(l));
+            }
+        }
+        let selections = state
+            .selections
+            .iter()
+            .map(|s| (s.slot.clone(), (s.choice.clone(), s.replace_level)))
+            .collect();
+        let mut g = Self {
+            uni,
+            nodes: Vec::new(),
+            roots: Vec::new(),
+            ids: IdCounts::default(),
+            class_levels: HashMap::new(),
+            mgr_levels,
+            abilities: inputs.abilities,
+            stat_sums: inputs.stat_sums,
+            selections,
+            retrained: state
+                .slot_history
+                .iter()
+                .filter(|h| !h.replaced.is_empty())
+                .map(|h| h.slot.clone())
+                .collect(),
+            restricted: SourceRestriction::excluding(state.restricted_sources.iter().cloned()),
+            equip: inputs.equip,
+            version: 0,
+            stat_used: std::cell::Cell::new(false),
+            slot_cache: RefCell::new(HashMap::new()),
+            diags: DiagSink::default(),
+            ruleset_hooks: crate::profile::profile_for(state.ruleset),
+            allow_cross_edition: state.allow_cross_edition.unwrap_or_else(|| {
+                crate::profile::profile_for(state.ruleset).default_allow_cross_edition()
+            }),
+            runtime: crate::runtime::Runtime::from_state(state),
+        };
+        for opt in &state.options {
+            match uni.get(opt) {
+                Some(e) => {
+                    g.add_root(e, None);
+                }
+                None => g.diags.push(
+                    Diagnostic::new(
+                        code::SELECTION_MISSING_CONTENT,
+                        Severity::Warning,
+                        format!("option {opt} is not installed"),
+                    )
+                    .at(opt.clone()),
+                ),
+            }
+        }
+        for root in uni.creation_roots() {
+            if let Some(e) = uni.get(root) {
+                g.add_root(e, None);
+            }
+        }
+        for n in 1..=total {
+            let id = ids::level_id(n);
+            let Some(e) = uni.get(&id) else {
+                g.diags.push(
+                    Diagnostic::new(
+                        code::CONTENT_MISSING_ELEMENT,
+                        Severity::Error,
+                        format!("level element {id} is missing"),
+                    )
+                    .at(id),
+                );
+                continue;
+            };
+            let node = g.add_root(e, None);
+            let is_start = matches!(state.levels.get((n - 1) as usize), Some(ClassSlot::Multi { starting_level }) if *starting_level == n);
+            if is_start {
+                if let Some(m) = uni.get(&format!("{}{n}", ids::MULTICLASS_LEVEL_PREFIX)) {
+                    g.add_child(node, m, Origin::Manual, Mgr::Main);
+                }
+            }
+        }
+        for it in inputs.items {
+            g.add_root(it.e, Some((it.uid, it.attuned)));
+        }
+        g.run();
+        g
+    }
+
+    /// A slot whose pick was replaced (or carries an imported retrain level).
+    pub(crate) fn is_retrained(&self, key: &SlotKey) -> bool {
+        self.retrained.contains(key) || self.selections.get(key).and_then(|s| s.1).is_some()
+    }
+
+    /// Manager level (class level for class managers, character level for `Main`).
+    #[must_use]
+    pub fn mgr_level(&self, m: Mgr) -> u32 {
+        self.mgr_levels.get(&m).copied().unwrap_or(0)
+    }
+
+    /// Content-supplied profile tables of the universe.
+    #[must_use]
+    pub fn tables(&self) -> &crate::tables::ProfileTables {
+        self.uni.tables()
+    }
+
+    /// Total character level.
+    #[must_use]
+    pub fn total_level(&self) -> u32 {
+        self.mgr_level(Mgr::Main)
+    }
+
+    /// Count of a live element id.
+    #[must_use]
+    pub fn count_id(&self, id: &str) -> usize {
+        self.ids.count(id)
+    }
+
+    /// Requirement environment over all live ids.
+    #[must_use]
+    pub fn env(&self) -> ReqEnv<'_> {
+        ReqEnv {
+            ids: &self.ids,
+            exclude: None,
+            abilities: self.abilities,
+            total_level: i32::try_from(self.total_level()).unwrap_or(i32::MAX),
+            class_levels: &self.class_levels,
+            stats: &self.stat_sums,
+            rule_class_level: None,
+            stat_used: Some(&self.stat_used),
+        }
+    }
+
+    fn add_root(&mut self, e: &'u UElem, item: Option<(String, bool)>) -> NodeId {
+        let id = self.push_node(e, None, Origin::Root, Mgr::Main);
+        if let Some((uid, attuned)) = item {
+            self.nodes[id].item_uid = Some(uid);
+            self.nodes[id].attuned = attuned;
+        }
+        self.roots.push(id);
+        id
+    }
+
+    fn add_child(&mut self, parent: NodeId, e: &'u UElem, origin: Origin, mgr: Mgr) -> NodeId {
+        let id = self.push_node(e, Some(parent), origin, mgr);
+        self.nodes[parent].children.push(id);
+        if e.repeatable {
+            self.nodes[id].instance = Some(self.instance_tag(parent, origin));
+        }
+        id
+    }
+
+    fn push_node(
+        &mut self,
+        e: &'u UElem,
+        parent: Option<NodeId>,
+        origin: Origin,
+        mgr: Mgr,
+    ) -> NodeId {
+        let id = self.nodes.len();
+        self.nodes.push(Node {
+            e,
+            parent,
+            origin,
+            mgr,
+            children: Vec::new(),
+            slots: Vec::new(),
+            alive: true,
+            spell_class: None,
+            always_prepared: false,
+            item_uid: None,
+            attuned: false,
+            params: std::collections::BTreeMap::new(),
+            instance: None,
+        });
+        self.ids.add(&e.el.id);
+        self.version += 1;
+        if matches!(e.el.ty.as_str(), "Class" | "Multiclass") {
+            self.refresh_class_levels();
+        }
+        id
+    }
+
+    /// Remove a node and everything below it.
+    fn remove_subtree(&mut self, id: NodeId) {
+        let mut stack = vec![id];
+        let mut touched_class = false;
+        while let Some(n) = stack.pop() {
+            if !self.nodes[n].alive {
+                continue;
+            }
+            self.nodes[n].alive = false;
+            let eid = self.nodes[n].e.el.id.clone();
+            self.ids.remove(&eid);
+            touched_class |= matches!(self.nodes[n].e.el.ty.as_str(), "Class" | "Multiclass");
+            stack.extend(self.nodes[n].children.clone());
+        }
+        if let Some(p) = self.nodes[id].parent {
+            self.nodes[p].children.retain(|c| *c != id);
+            for s in &mut self.nodes[p].slots {
+                if s.chosen == Some(id) {
+                    s.chosen = None;
+                }
+            }
+        }
+        self.version += 1;
+        if touched_class {
+            self.refresh_class_levels();
+        }
+    }
+
+    fn refresh_class_levels(&mut self) {
+        self.class_levels.clear();
+        for n in &self.nodes {
+            if n.alive && matches!(n.e.el.ty.as_str(), "Class" | "Multiclass") {
+                let lvl = i32::try_from(self.mgr_level(n.mgr)).unwrap_or(0);
+                self.class_levels
+                    .insert(n.e.el.name.trim().to_lowercase(), lvl);
+            }
+        }
+    }
+
+    /// Re-run expansion after the hints changed.
+    pub fn run(&mut self) {
+        for pass in 0..MAX_PASSES {
+            let mut changed = false;
+            for r in self.roots.clone() {
+                changed |= self.process_node(r);
+            }
+            if !changed {
+                return;
+            }
+            if pass + 1 == MAX_PASSES {
+                self.diags.push(Diagnostic::new(
+                    code::EVAL_NOT_CONVERGED,
+                    Severity::Error,
+                    "grant and selection expansion did not reach a fixpoint",
+                ));
+            }
+        }
+    }
+
+    fn granted_subtree_counts(&self, owner: NodeId) -> IdCounts {
+        let mut c = IdCounts::default();
+        let mut stack: Vec<NodeId> = self.nodes[owner]
+            .children
+            .iter()
+            .copied()
+            .filter(|ch| matches!(self.nodes[*ch].origin, Origin::Granted(_)))
+            .collect();
+        while let Some(n) = stack.pop() {
+            if !self.nodes[n].alive {
+                continue;
+            }
+            c.add(&self.nodes[n].e.el.id);
+            stack.extend(self.nodes[n].children.iter().copied());
+        }
+        c
+    }
+
+    fn mgr_for_selected(&self, parent: NodeId, target: &UElem) -> Mgr {
+        let p = &self.nodes[parent];
+        match target.el.ty.as_str() {
+            "Class" => Mgr::MainClass,
+            "Multiclass" => Mgr::Multi(p.e.level_number().unwrap_or(1)),
+            "Class Feature" | "Archetype" | "Archetype Feature" if p.mgr != Mgr::Main => p.mgr,
+            _ => Mgr::Main,
+        }
+    }
+
+    fn process_node(&mut self, id: NodeId) -> bool {
+        if !self.nodes[id].alive {
+            return false;
+        }
+        let e = self.nodes[id].e;
+        let level = self.mgr_level(self.nodes[id].mgr);
+        let mut changed = self.process_select_rules(id, e, level);
+        changed |= self.process_grants(id, e, level);
+        changed |= self.process_slots(id, e);
+        for c in self.nodes[id].children.clone() {
+            changed |= self.process_node(c);
+        }
+        changed
+    }
+
+    fn slot_key(&self, id: NodeId, rule: usize, ordinal: u32) -> SlotKey {
+        let n = &self.nodes[id];
+        SlotKey {
+            owner: n.e.el.id.clone(),
+            rule: u32::try_from(rule).unwrap_or(u32::MAX),
+            ordinal,
+            instance: n.item_uid.clone().or_else(|| n.instance.clone()),
+        }
+    }
+
+    /// Where a repeatable element came from: the granting rule or the filled slot of its parent.
+    fn instance_tag(&self, parent: NodeId, origin: Origin) -> String {
+        let p = &self.nodes[parent];
+        let base = match origin {
+            Origin::Selected(si) => p.slots.get(si).map_or_else(
+                || format!("{}:s{si}", p.e.el.id),
+                |s| format!("{}:{}:{}", s.key.owner, s.key.rule, s.key.ordinal),
+            ),
+            Origin::Granted(ri) => format!("{}:g{ri}", p.e.el.id),
+            Origin::Root | Origin::Manual => p.e.el.id.clone(),
+        };
+        match &p.instance {
+            Some(i) => format!("{base}@{i}"),
+            None => base,
+        }
+    }
+
+    /// Value of a named parameter of an element instance: preset by `grant_feat` or chosen in
+    /// its `select_param` slot.
+    #[must_use]
+    pub fn param_value(&self, node: NodeId, key: &str) -> Option<String> {
+        let n = &self.nodes[node];
+        if let Some(v) = n.params.get(key) {
+            return Some(v.clone());
+        }
+        n.slots.iter().find_map(|sl| {
+            let Rule::Select(r) = &n.e.el.rules[sl.rule] else {
+                return None;
+            };
+            let is_param = crate::custom_rules::kind_of(r) == Some("param")
+                && r.extra
+                    .attributes
+                    .get(crate::custom_rules::X_KEY)
+                    .map(String::as_str)
+                    == Some(key);
+            let choice = sl.list_choice.filter(|_| is_param)?;
+            r.items
+                .iter()
+                .find(|i| i.id == choice)
+                .map(|i| i.text.clone())
+        })
+    }
+
+    fn preset_param(&self, node: NodeId, rule: &borealis_content::SelectRule) -> bool {
+        crate::custom_rules::kind_of(rule) == Some("param")
+            && rule
+                .extra
+                .attributes
+                .get(crate::custom_rules::X_KEY)
+                .is_some_and(|k| self.nodes[node].params.contains_key(k))
+    }
+
+    /// May list entry `item` be chosen in a rewritten `select_param` slot? With
+    /// `distinct_per_instance` another instance of the same element may not hold it.
+    pub(crate) fn list_item_allowed(&self, owner: NodeId, rule_index: usize, item: i64) -> bool {
+        let n = &self.nodes[owner];
+        let Rule::Select(r) = &n.e.el.rules[rule_index] else {
+            return false;
+        };
+        let Some(entry) = r.items.iter().find(|i| i.id == item) else {
+            return false;
+        };
+        let distinct = crate::custom_rules::kind_of(r) == Some("param")
+            && r.extra
+                .attributes
+                .contains_key(crate::custom_rules::X_DISTINCT);
+        if !distinct {
+            return true;
+        }
+        let Some(key) = r.extra.attributes.get(crate::custom_rules::X_KEY) else {
+            return true;
+        };
+        !self.nodes.iter().enumerate().any(|(i, o)| {
+            i != owner
+                && o.alive
+                && o.e.el.id == n.e.el.id
+                && self.param_value(i, key).as_deref() == Some(entry.text.as_str())
+        })
+    }
+
+    /// Does a live element carry this feature name (`Fighting Style`, `Spellcasting`)?
+    fn has_feature_named(&self, name: &str) -> bool {
+        self.nodes
+            .iter()
+            .any(|n| n.alive && n.e.el.name.eq_ignore_ascii_case(name))
+            || (name.eq_ignore_ascii_case("spellcasting") && !self.spell_infos().is_empty())
+    }
+
+    /// Structured feat prerequisites (`data.prerequisite`) of a candidate.
+    pub(crate) fn prereq_holds(&self, cand: &UElem) -> bool {
+        let p = &cand.prereq;
+        if p.level_min.is_some_and(|l| self.total_level() < l) {
+            return false;
+        }
+        if !p.abilities_any.is_empty()
+            && !p
+                .abilities_any
+                .iter()
+                .any(|(i, min)| self.abilities[*i] >= *min)
+        {
+            return false;
+        }
+        match p.requires_feature.as_deref() {
+            Some(f) => self.has_feature_named(f),
+            None => true,
+        }
+    }
+
+    /// Stat rules produced by the chosen entries of rewritten `ability_*` list selects.
+    fn list_effect_rules(&self, node: NodeId) -> Vec<&'u UStat> {
+        let n = &self.nodes[node];
+        let mut out = Vec::new();
+        for (ri, entries) in &n.e.list_effects {
+            let chosen = n
+                .slots
+                .iter()
+                .find(|s| s.rule == *ri)
+                .and_then(|s| s.list_choice);
+            if let Some((_, stats)) = chosen.and_then(|c| entries.iter().find(|(id, _)| *id == c)) {
+                out.extend(stats.iter());
+            }
+        }
+        out
+    }
+
+    fn process_select_rules(&mut self, id: NodeId, e: &'u UElem, level: u32) -> bool {
+        let mut changed = false;
+        for (ri, rule) in e.el.rules.iter().enumerate() {
+            let Rule::Select(s) = rule else { continue };
+            let URule::Select { req, .. } = &e.rules[ri] else {
+                continue;
+            };
+            let active = s.level.unwrap_or(1) <= level
+                && requirement_holds(req, &self.env())
+                && !self.preset_param(id, s);
+            let has = self.nodes[id].slots.iter().any(|sl| sl.rule == ri);
+            if active && crate::custom_rules::kind_of(s) == Some("mastery") {
+                changed |= self.resize_mastery_slots(id, ri, s);
+                continue;
+            }
+            if active && !has {
+                for ord in 1..=s.number.unwrap_or(1).max(1) {
+                    let key = self.slot_key(id, ri, ord);
+                    self.nodes[id].slots.push(SlotNode {
+                        key,
+                        rule: ri,
+                        ordinal: ord,
+                        chosen: None,
+                        list_choice: None,
+                        rejected: None,
+                    });
+                }
+                changed = true;
+            } else if !active && has {
+                let chosen: Vec<NodeId> = self.nodes[id]
+                    .slots
+                    .iter()
+                    .filter(|sl| sl.rule == ri)
+                    .filter_map(|sl| sl.chosen)
+                    .collect();
+                self.nodes[id].slots.retain(|sl| sl.rule != ri);
+                for c in chosen {
+                    self.remove_subtree(c);
+                }
+                changed = true;
+            }
+        }
+        changed
+    }
+
+    /// Grow or shrink the Weapon Mastery slots of a rewritten `weapon_mastery` select to the
+    /// class table value at the current class level.
+    fn resize_mastery_slots(
+        &mut self,
+        id: NodeId,
+        ri: usize,
+        s: &borealis_content::rules::SelectRule,
+    ) -> bool {
+        let want = crate::play_rules::mastery_slot_count(self, id, s).max(1);
+        let have = u32::try_from(
+            self.nodes[id]
+                .slots
+                .iter()
+                .filter(|sl| sl.rule == ri)
+                .count(),
+        )
+        .unwrap_or(0);
+        if have == want {
+            return false;
+        }
+        if have < want {
+            for ord in have + 1..=want {
+                let key = self.slot_key(id, ri, ord);
+                self.nodes[id].slots.push(SlotNode {
+                    key,
+                    rule: ri,
+                    ordinal: ord,
+                    chosen: None,
+                    list_choice: None,
+                    rejected: None,
+                });
+            }
+            return true;
+        }
+        let dropped: Vec<NodeId> = self.nodes[id]
+            .slots
+            .iter()
+            .filter(|sl| sl.rule == ri && sl.ordinal > want)
+            .filter_map(|sl| sl.chosen)
+            .collect();
+        self.nodes[id]
+            .slots
+            .retain(|sl| !(sl.rule == ri && sl.ordinal > want));
+        for c in dropped {
+            self.remove_subtree(c);
+        }
+        true
+    }
+
+    /// `requirements_param` of a `grant_spell`: every named parameter of the owner has the value.
+    fn param_gate_holds(&self, id: NodeId, e: &UElem, ri: usize) -> bool {
+        let Rule::Grant(g) = &e.el.rules[ri] else {
+            return true;
+        };
+        let Some(text) = g.extra.attributes.get(crate::custom_rules::X_REQ_PARAM) else {
+            return true;
+        };
+        let Ok(serde_json::Value::Object(map)) = serde_json::from_str::<serde_json::Value>(text)
+        else {
+            return false;
+        };
+        map.iter().all(|(k, v)| {
+            let key = crate::custom_rules::param_key(k);
+            self.param_value(id, &key)
+                .zip(v.as_str())
+                .is_some_and(|(have, want)| have.eq_ignore_ascii_case(want))
+        })
+    }
+
+    fn grant_rule_holds(&self, id: NodeId, e: &UElem, ri: usize) -> bool {
+        let URule::Grant { req } = &e.rules[ri] else {
+            return false;
+        };
+        if !self.param_gate_holds(id, e, ri) {
+            return false;
+        }
+        if matches!(req, Cond::None) {
+            return true;
+        }
+        if ri < e.copied_rules {
+            return requirement_holds(req, &self.env());
+        }
+        let ex = self.granted_subtree_counts(id);
+        let mut env = self.env();
+        env.exclude = Some(&ex);
+        requirement_holds(req, &env)
+    }
+
+    fn process_grants(&mut self, id: NodeId, e: &'u UElem, level: u32) -> bool {
+        let mut changed = false;
+        // Pass A: revalidate existing grants
+        for c in self.nodes[id].children.clone() {
+            let Origin::Granted(ri) = self.nodes[c].origin else {
+                continue;
+            };
+            if !self.nodes[c].alive {
+                continue;
+            }
+            let Rule::Grant(g) = &e.el.rules[ri] else {
+                continue;
+            };
+            let ok = g.level.unwrap_or(1) <= level
+                && self.grant_rule_holds(id, e, ri)
+                && requirement_holds(&self.nodes[c].e.req, &self.env());
+            if !ok {
+                self.remove_subtree(c);
+                changed = true;
+            }
+        }
+        // Pass B: new grants
+        for (ri, rule) in e.el.rules.iter().enumerate() {
+            let Rule::Grant(g) = rule else { continue };
+            if g.level.unwrap_or(1) > level || !self.grant_rule_holds(id, e, ri) {
+                continue;
+            }
+            let Some(target) = self.uni.get(&g.id) else {
+                self.diags.push(
+                    Diagnostic::new(
+                        code::CONTENT_MISSING_ELEMENT,
+                        Severity::Warning,
+                        format!("{} grants unknown element {}", e.el.id, g.id),
+                    )
+                    .at(e.el.id.clone()),
+                );
+                continue;
+            };
+            if !requirement_holds(&target.req, &self.env()) {
+                continue;
+            }
+            let already = self.nodes[id].children.iter().any(|c| {
+                self.nodes[*c].alive
+                    && matches!(self.nodes[*c].origin, Origin::Granted(_))
+                    && self.nodes[*c].e.el.id == target.el.id
+            });
+            if already {
+                continue;
+            }
+            let mgr = self.nodes[id].mgr;
+            let c = self.add_child(id, target, Origin::Granted(ri), mgr);
+            self.nodes[c].params = crate::custom_rules::preset_params(g);
+            self.nodes[c].spell_class = g.spellcasting.clone();
+            self.nodes[c].always_prepared = g.prepared.unwrap_or(false);
+            changed = true;
+        }
+        changed
+    }
+
+    fn process_slots(&mut self, id: NodeId, e: &'u UElem) -> bool {
+        let mut changed = false;
+        for si in 0..self.nodes[id].slots.len() {
+            let (key, ri, chosen) = {
+                let s = &self.nodes[id].slots[si];
+                (s.key.clone(), s.rule, s.chosen)
+            };
+            let Rule::Select(rule) = &e.el.rules[ri] else {
+                continue;
+            };
+            let stored = self.selections.get(&key).cloned();
+            if rule.is_list() {
+                let item = match stored {
+                    Some((Choice::ListItem(i), _)) if self.list_item_allowed(id, ri, i) => Some(i),
+                    _ => None,
+                };
+                self.nodes[id].slots[si].list_choice = item;
+                continue;
+            }
+            let wanted = match &stored {
+                Some((Choice::Element(eid), _)) => Some(eid.clone()),
+                _ => None,
+            };
+            if let Some(c) = chosen {
+                let cur = self.nodes[c].e.el.id.clone();
+                let keep = wanted.as_deref() == Some(cur.as_str())
+                    && self.choice_allowed(id, ri, self.nodes[c].e, true);
+                if !keep {
+                    if wanted.as_deref() == Some(cur.as_str()) {
+                        self.nodes[id].slots[si].rejected = Some(Choice::Element(cur));
+                    }
+                    self.remove_subtree(c);
+                    changed = true;
+                }
+                if keep {
+                    continue;
+                }
+            }
+            let Some(wanted) = wanted else {
+                self.nodes[id].slots[si].rejected = None;
+                continue;
+            };
+            let Some(target) = self.uni.get(&wanted) else {
+                self.nodes[id].slots[si].rejected = Some(Choice::Element(wanted.clone()));
+                self.diags.push(
+                    Diagnostic::new(
+                        code::SELECTION_MISSING_CONTENT,
+                        Severity::Warning,
+                        format!("chosen element {wanted} is not installed"),
+                    )
+                    .at(wanted),
+                );
+                continue;
+            };
+            if self.choice_allowed(id, ri, target, true) {
+                let mgr = self.mgr_for_selected(id, target);
+                let c = self.add_child(id, target, Origin::Selected(si), mgr);
+                self.nodes[c].spell_class = rule.spellcasting.clone();
+                self.nodes[c].always_prepared = rule.prepared.unwrap_or(false);
+                self.nodes[id].slots[si].chosen = Some(c);
+                self.nodes[id].slots[si].rejected = None;
+                changed = true;
+            } else {
+                self.nodes[id].slots[si].rejected = Some(Choice::Element(wanted));
+            }
+        }
+        changed
+    }
+
+    /// May `cand` be offered for a NEW pick? Strict mode hides foreign-edition content; stored
+    /// choices are replayed and only need the profile to accept the element.
+    pub(crate) fn offers_edition(&self, cand: &UElem) -> bool {
+        cand.edition.is_accepted()
+            && !cand.superseded
+            && (self.allow_cross_edition || !cand.edition.is_foreign())
+    }
+
+    /// Does the candidate pass the slot's option filter (`engine.md` 6.2)? `existing` skips the
+    /// source restriction and duplicate removal: stored choices are replayed as they are (a
+    /// restricted source or a duplicate granted elsewhere never unregisters a choice, only the
+    /// type, supports, ruleset and requirement checks do).
+    pub(crate) fn choice_allowed(
+        &self,
+        owner: NodeId,
+        rule_index: usize,
+        cand: &UElem,
+        existing: bool,
+    ) -> bool {
+        let n = &self.nodes[owner];
+        let (Rule::Select(s), URule::Select { supports, .. }) =
+            (&n.e.el.rules[rule_index], &n.e.rules[rule_index])
+        else {
+            return false;
+        };
+        let alternative = crate::custom_rules::alternatives_of(s).contains(&cand.el.id.as_str());
+        if !(alternative || crate::universe::type_fits(&s.ty, &cand.el.ty))
+            || !cand.edition.is_accepted()
+        {
+            return false;
+        }
+        if !existing {
+            if !self.offers_edition(cand) {
+                return false;
+            }
+            if self.restricted.is_restricted(&cand.el.source) {
+                return false;
+            }
+            let mastery = crate::custom_rules::kind_of(s) == Some("mastery");
+            if !mastery && !cand.allow_duplicate && self.ids.count(&cand.el.id) > 0 {
+                return false;
+            }
+        }
+        if crate::custom_rules::kind_of(s) == Some("mastery")
+            && !crate::play_rules::mastery_allows(self, s, cand)
+        {
+            return false;
+        }
+        let dyns = SpellDynamics::new(self, owner, rule_index);
+        if !alternative && !supports_cond_match(supports, cand, &dyns) {
+            return false;
+        }
+        if !self.prereq_holds(cand) {
+            return false;
+        }
+        let mut env = self.env();
+        env.rule_class_level =
+            (n.mgr != Mgr::Main).then(|| i32::try_from(self.mgr_level(n.mgr)).unwrap_or(0));
+        requirement_holds(&cand.req, &env)
+    }
+
+    /// Nodes in pre-order (roots in order, children in insertion order), live only.
+    #[must_use]
+    pub fn preorder(&self) -> Vec<NodeId> {
+        let mut out = Vec::new();
+        let mut stack: Vec<NodeId> = self.roots.iter().rev().copied().collect();
+        while let Some(n) = stack.pop() {
+            if !self.nodes[n].alive {
+                continue;
+            }
+            out.push(n);
+            stack.extend(self.nodes[n].children.iter().rev().copied());
+        }
+        out
+    }
+
+    /// Equipment state with counts-as grants filled from the live ids.
+    #[must_use]
+    pub fn equip_state(&self) -> EquipState {
+        let mut e = self.equip.clone();
+        e.counts_any = self.ids.count(ids::COUNTS_AS_ARMOR) > 0;
+        e.counts_kind = [
+            self.ids.count(ids::COUNTS_AS_LIGHT) > 0,
+            self.ids.count(ids::COUNTS_AS_MEDIUM) > 0,
+            self.ids.count(ids::COUNTS_AS_HEAVY) > 0,
+        ];
+        e
+    }
+
+    /// Active stat rules in pre-order. `at_level` replaces every manager level (used for
+    /// multiclass and spell level lookups).
+    #[must_use]
+    pub fn active_stat_rules(&self, at_level: Option<u32>) -> Vec<&'u UStat> {
+        self.stat_rules(at_level, None)
+    }
+
+    /// Active stat rules plus the considered-but-inactive ones with the reason (provenance).
+    #[must_use]
+    pub fn stat_rules_with_skipped(
+        &self,
+        at_level: Option<u32>,
+    ) -> (Vec<&'u UStat>, Vec<(&'u UStat, String)>) {
+        let mut skipped = Vec::new();
+        let active = self.stat_rules(at_level, Some(&mut skipped));
+        (active, skipped)
+    }
+
+    fn stat_rules(
+        &self,
+        at_level: Option<u32>,
+        mut skipped: Option<&mut Vec<(&'u UStat, String)>>,
+    ) -> Vec<&'u UStat> {
+        let eq = self.equip_state();
+        let env = self.env();
+        let table = matches!(
+            self.ruleset_hooks.proficiency_source(),
+            crate::profile::ProficiencySource::Table(_)
+        );
+        let mut out = Vec::new();
+        for id in self.preorder() {
+            let n = &self.nodes[id];
+            let lvl = at_level.unwrap_or_else(|| self.mgr_level(n.mgr));
+            let own = n.e.rules.iter().filter_map(|r| match r {
+                URule::Stat(st) => Some(&**st),
+                _ => None,
+            });
+            let toggled = crate::play_rules::active_toggle_stats(self, id);
+            for st in own.chain(self.list_effect_rules(id)).chain(toggled) {
+                if st.inline {
+                    continue;
+                }
+                let why = if st.level > lvl {
+                    Some(format!("needs level {}, level here is {lvl}", st.level))
+                } else if table && st.name == "proficiency" && n.e.el.ty == "Level" {
+                    Some("replaced by the ruleset's proficiency table".to_string())
+                } else if !crate::eval::equipped_holds(&st.equipped, &eq) {
+                    Some("equipped condition is false".to_string())
+                } else if !requirement_holds(&st.req, &env) {
+                    Some("requirements are not met".to_string())
+                } else {
+                    None
+                };
+                match (why, skipped.as_deref_mut()) {
+                    (None, _) => out.push(st),
+                    (Some(w), Some(sink)) => sink.push((st, w)),
+                    (Some(_), None) => {}
+                }
+            }
+        }
+        out.extend(crate::play_rules::exhaustion_stats(self));
+        out
+    }
+
+    /// Names of stat groups with an active rule at a character-wide level (cached).
+    #[must_use]
+    pub fn groups_at_level(&self, level: u32) -> Rc<HashSet<String>> {
+        let key = (self.version, level);
+        if let Some(hit) = self.slot_cache.borrow().get(&key) {
+            return Rc::clone(hit);
+        }
+        let names: HashSet<String> = self
+            .active_stat_rules(Some(level))
+            .iter()
+            .map(|r| r.name.clone())
+            .collect();
+        let rc = Rc::new(names);
+        let mut cache = self.slot_cache.borrow_mut();
+        cache.retain(|k, _| k.0 == self.version);
+        cache.insert(key, Rc::clone(&rc));
+        rc
+    }
+
+    /// Highest spell level with a slot group at `level` for a spellcasting name (0 = none).
+    #[must_use]
+    pub fn highest_slot_level(&self, class: &str, level: u32) -> u32 {
+        let names = self.groups_at_level(level);
+        let lc = class.to_lowercase();
+        (1..=9)
+            .rev()
+            .find(|n| names.contains(&format!("{lc}:spellcasting:slots:{n}")))
+            .unwrap_or(0)
+    }
+
+    /// Live nodes of an element type.
+    pub fn nodes_of_type<'a>(
+        &'a self,
+        ty: &'a str,
+    ) -> impl Iterator<Item = (NodeId, &'a Node<'u>)> + 'a {
+        self.nodes
+            .iter()
+            .enumerate()
+            .filter(move |(_, n)| n.alive && n.e.el.ty == ty)
+    }
+
+    /// Does any live node carry this element id?
+    #[must_use]
+    pub fn has(&self, id: &str) -> bool {
+        self.ids.count(id) > 0
+    }
+}
+
+/// Spellcasting block of a live node.
+#[derive(Debug, Clone)]
+pub struct SpellInfo<'u> {
+    /// Owning node.
+    pub node: NodeId,
+    /// The block.
+    pub sc: &'u borealis_content::Spellcasting,
+    /// Spellcasting name.
+    pub name: String,
+}
+
+impl<'u> Graph<'u> {
+    /// All spellcasting blocks of live nodes.
+    #[must_use]
+    pub fn spell_infos(&self) -> Vec<SpellInfo<'u>> {
+        self.preorder()
+            .into_iter()
+            .filter_map(|id| {
+                let sc = self.nodes[id].e.el.spellcasting.as_ref()?;
+                Some(SpellInfo {
+                    node: id,
+                    sc,
+                    name: sc.name.clone().unwrap_or_default(),
+                })
+            })
+            .collect()
+    }
+}
+
+/// Dynamic `$(spellcasting:...)` tokens for one select rule.
+pub struct SpellDynamics<'g, 'u> {
+    graph: &'g Graph<'u>,
+    class: Option<String>,
+    level: u32,
+    owner: Option<NodeId>,
+}
+
+impl<'g, 'u> SpellDynamics<'g, 'u> {
+    /// Context for rule `rule_index` of `owner`.
+    #[must_use]
+    pub fn new(graph: &'g Graph<'u>, owner: NodeId, rule_index: usize) -> Self {
+        let n = &graph.nodes[owner];
+        let (class, rule_level) = match &n.e.el.rules[rule_index] {
+            Rule::Select(s) => (s.spellcasting.clone(), s.level.unwrap_or(1)),
+            _ => (None, 1),
+        };
+        // a retrained slot uses the current class level (spell swap)
+        let retrained = n
+            .slots
+            .iter()
+            .filter(|s| s.rule == rule_index)
+            .any(|s| graph.is_retrained(&s.key));
+        let level = if retrained {
+            graph.mgr_level(n.mgr).max(rule_level)
+        } else {
+            rule_level
+        };
+        Self {
+            graph,
+            class,
+            level,
+            owner: Some(owner),
+        }
+    }
+
+    /// Context with explicit class and level.
+    #[must_use]
+    pub fn with(graph: &'g Graph<'u>, class: Option<String>, level: u32) -> Self {
+        Self {
+            graph,
+            class,
+            level,
+            owner: None,
+        }
+    }
+
+    fn list_matches(&self, element: &UElem) -> bool {
+        let Some(class) = &self.class else {
+            return false;
+        };
+        let infos = self.graph.spell_infos();
+        let allowed = self.graph.highest_slot_level(class, self.level);
+        let spell_level = element.spell_level().unwrap_or(0);
+        for info in infos.iter().filter(|i| {
+            i.sc.extend != Some(true) && &i.name == class
+                || i.sc.extend == Some(true)
+                    && (i.sc.all == Some(true) || i.name.eq_ignore_ascii_case(class))
+        }) {
+            let lists = info.sc.list.iter().chain(info.sc.extends.iter());
+            for l in lists {
+                if l.is_spell_id() {
+                    if l.supports.trim() == element.el.id
+                        && spell_level <= allowed.max(1)
+                        && spell_level != 0
+                    {
+                        return true;
+                    }
+                    continue;
+                }
+                if let Ok(Some(expr)) = l.expr() {
+                    if crate::eval::supports_match(&expr, element, &crate::eval::NoDynamics) {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    }
+}
+
+impl DynamicSupports for SpellDynamics<'_, '_> {
+    fn matches(&self, d: &Dynamic, element: &UElem) -> bool {
+        match d {
+            Dynamic::SpellcastingList => self.list_matches(element),
+            Dynamic::SpellcastingSlots => {
+                let Some(class) = &self.class else {
+                    return false;
+                };
+                let h = self.graph.highest_slot_level(class, self.level);
+                element.spell_level().is_some_and(|l| (1..=h).contains(&l))
+            }
+            Dynamic::Other(token) => {
+                // `$(param:<Name>)`: the value chosen by a `select_param` of the same instance
+                // is a support tag of the candidate (a spell list name)
+                let Some(name) = token.trim().strip_prefix("param:") else {
+                    return false;
+                };
+                let key = crate::custom_rules::param_key(name);
+                self.owner
+                    .and_then(|o| self.graph.param_value(o, &key))
+                    .is_some_and(|v| element.supports.contains(&v))
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn mgr_equality() {
+        assert_ne!(Mgr::Multi(3), Mgr::Multi(4));
+        assert_eq!(Mgr::Main, Mgr::Main);
+    }
+}

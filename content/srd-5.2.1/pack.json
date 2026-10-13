@@ -1,0 +1,291 @@
+{
+ "format": "borealis-pack/1",
+ "id": "srd-5.2.1",
+ "name": "SRD 5.2.1 (2024 rules)",
+ "version": "1.0.0",
+ "origin": "core",
+ "rulesets": [
+  "dnd2024"
+ ],
+ "license": "CC-BY-4.0",
+ "attribution": "This work includes material from the System Reference Document 5.2.1 (\"SRD 5.2.1\") by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode. Modified: the SRD text was restructured into Borealis JSON content files (element records, rules, setters and tables); descriptions were reflowed and converted to HTML fragments, and game rules were encoded as rules. No other attribution to Wizards of the Coast or its parent or affiliates is made.",
+ "description": "Borealis bundled content pack for the 2024 (\"5.5\") rules: species, backgrounds, feats, 12 classes with SRD subclasses, 339 spells, equipment and magic items from SRD 5.2.1. Compatible with fifth edition.",
+ "files": [
+  {
+   "path": "base/languages.json",
+   "kind": "content"
+  },
+  {
+   "path": "base/profile-tables.json",
+   "kind": "content"
+  },
+  {
+   "path": "base/source.json",
+   "kind": "content"
+  },
+  {
+   "path": "species/dragonborn.json",
+   "kind": "content"
+  },
+  {
+   "path": "species/dwarf.json",
+   "kind": "content"
+  },
+  {
+   "path": "species/elf.json",
+   "kind": "content"
+  },
+  {
+   "path": "species/gnome.json",
+   "kind": "content"
+  },
+  {
+   "path": "species/goliath.json",
+   "kind": "content"
+  },
+  {
+   "path": "species/halfling.json",
+   "kind": "content"
+  },
+  {
+   "path": "species/human.json",
+   "kind": "content"
+  },
+  {
+   "path": "species/orc.json",
+   "kind": "content"
+  },
+  {
+   "path": "species/tiefling.json",
+   "kind": "content"
+  },
+  {
+   "path": "backgrounds/backgrounds.json",
+   "kind": "content"
+  },
+  {
+   "path": "backgrounds/equipment-packages.json",
+   "kind": "content"
+  },
+  {
+   "path": "feats/feats.json",
+   "kind": "content"
+  },
+  {
+   "path": "equipment/armor.json",
+   "kind": "content"
+  },
+  {
+   "path": "equipment/gear.json",
+   "kind": "content"
+  },
+  {
+   "path": "equipment/mastery-properties.json",
+   "kind": "content"
+  },
+  {
+   "path": "equipment/mounts-vehicles.json",
+   "kind": "content"
+  },
+  {
+   "path": "equipment/packs.json",
+   "kind": "content"
+  },
+  {
+   "path": "equipment/services.json",
+   "kind": "content"
+  },
+  {
+   "path": "equipment/tools.json",
+   "kind": "content"
+  },
+  {
+   "path": "equipment/weapon-properties.json",
+   "kind": "content"
+  },
+  {
+   "path": "equipment/weapons.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/barbarian-path-of-the-berserker.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/barbarian.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/bard-college-of-lore.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/bard.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/cleric-life-domain.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/cleric.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/druid-circle-of-the-land.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/druid.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/fighter-champion.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/fighter.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/monk-warrior-of-the-open-hand.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/monk.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/paladin-oath-of-devotion.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/paladin.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/ranger-hunter.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/ranger.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/rogue-thief.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/rogue.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/sorcerer-draconic-sorcery.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/sorcerer.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/warlock-fiend-patron.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/warlock.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/wizard-evoker.json",
+   "kind": "content"
+  },
+  {
+   "path": "classes/wizard.json",
+   "kind": "content"
+  },
+  {
+   "path": "spells/level-0.json",
+   "kind": "content"
+  },
+  {
+   "path": "spells/level-1.json",
+   "kind": "content"
+  },
+  {
+   "path": "spells/level-2.json",
+   "kind": "content"
+  },
+  {
+   "path": "spells/level-3.json",
+   "kind": "content"
+  },
+  {
+   "path": "spells/level-4.json",
+   "kind": "content"
+  },
+  {
+   "path": "spells/level-5.json",
+   "kind": "content"
+  },
+  {
+   "path": "spells/level-6.json",
+   "kind": "content"
+  },
+  {
+   "path": "spells/level-7.json",
+   "kind": "content"
+  },
+  {
+   "path": "spells/level-8.json",
+   "kind": "content"
+  },
+  {
+   "path": "spells/level-9.json",
+   "kind": "content"
+  },
+  {
+   "path": "magic-items/armor.json",
+   "kind": "content"
+  },
+  {
+   "path": "magic-items/potions.json",
+   "kind": "content"
+  },
+  {
+   "path": "magic-items/rings.json",
+   "kind": "content"
+  },
+  {
+   "path": "magic-items/rods.json",
+   "kind": "content"
+  },
+  {
+   "path": "magic-items/scrolls.json",
+   "kind": "content"
+  },
+  {
+   "path": "magic-items/staffs.json",
+   "kind": "content"
+  },
+  {
+   "path": "magic-items/wands.json",
+   "kind": "content"
+  },
+  {
+   "path": "magic-items/weapons.json",
+   "kind": "content"
+  },
+  {
+   "path": "magic-items/wondrous-items.json",
+   "kind": "content"
+  },
+  {
+   "path": "rules/conditions.json",
+   "kind": "content"
+  },
+  {
+   "path": "rules/glossary.json",
+   "kind": "content"
+  }
+ ]
+}

@@ -1,0 +1,6 @@
+<index>
+  <files>
+    <file name="listed.xml" url="https://example.invalid/listed.xml"/>
+    <file name="elsewhere.xml" url="https://example.invalid/elsewhere.xml"/>
+  </files>
+</index>

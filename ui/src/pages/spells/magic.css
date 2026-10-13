@@ -1,0 +1,67 @@
+.mg-slots { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0 2px; }
+.mg-slot { min-width: 74px; padding: 4px 8px 5px; background: var(--accent-20); border: 1px solid var(--accent-60); display: flex; flex-direction: column; gap: 3px; }
+.mg-slot span.k { font-size: 9px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); }
+.mg-slot .pips { display: flex; flex-wrap: wrap; gap: 3px; min-height: 12px; }
+.mg-slot .pips i { width: 10px; height: 10px; border: 1px solid var(--gold); background: transparent; }
+.mg-slot .n { font-size: var(--fs-lg); font-weight: 600; color: var(--gold); line-height: 1; }
+.mg-band-btn { background: transparent; border: 0; padding: 0; min-height: 0; height: auto; color: #fff; font: inherit; text-transform: inherit; font-weight: 600; cursor: pointer; text-align: left; }
+.mg-band-btn:hover { color: var(--highlight-text, #d5d5d5); text-decoration: underline; }
+.mg-note { margin: 0; font-size: var(--fs-md); color: var(--text-muted); }
+/* Classic builder SpellcastingExpanderContent: 4px focus bar (margin-right 10), header band, spell grid, known-spells list (max 190). */
+.sp-page { display: flex; flex-direction: column; gap: 10px; flex: 1 1 auto; min-height: 0; }
+.sp-slotsec { margin-left: 14px; }
+.sp-block { display: flex; gap: 10px; }
+.sp-bar { width: 4px; flex: none; background: transparent; }
+.sp-bar.on { background: #3a474d; }
+.sp-col { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.sp-main-wrap { border: 1px solid var(--aur-line, #252d31); }
+.sp-main-wrap .ap-band { border-width: 0; }
+.sp-main { border: 0; max-height: 420px; overflow: auto; }
+.sp-grid .sp-name { min-width: 200px; }
+.sp-grid .sp-lvl { min-width: 200px; }
+.sp-grid .sp-vsm { width: 75px; min-width: 75px; }
+.sp-grid .sp-src { min-width: 180px; width: 100%; }
+.sp-grid th.sp-ck, .sp-grid td.sp-ck { width: 24px; text-align: center; padding: 0 4px; }
+.sp-grid th.sp-ck { color: var(--gold); }
+.sp-grid th.sp-ck .eq-glyph { width: 12px; height: 12px; vertical-align: middle; }
+.sp-mark { display: inline-grid; place-content: center; color: var(--gold); cursor: help; }
+.sp-mark .eq-glyph { width: 13px; height: 13px; }
+.sp-known { border: 1px solid var(--aur-line, #252d31); max-height: 190px; display: flex; flex-direction: column; min-height: 0; }
+.sp-known-h { margin: 0; background: #283237; font-size: 9px; font-weight: 600; text-transform: uppercase; color: var(--text); padding: 4px 8px 5px; line-height: 1; }
+.sp-known ul { list-style: none; margin: 0; padding: 0; overflow: auto; }
+.sp-known li button { display: flex; gap: 12px; align-items: baseline; width: 100%; text-align: left; background: transparent; border: 0; border-radius: 0; height: 21px; min-height: 21px; padding: 0 8px; color: var(--text-body); font-size: var(--fs-md); cursor: pointer; }
+.sp-known li button b { font-style: italic; font-weight: 600; color: var(--text); }
+.sp-known li button span { color: var(--text-muted); font-size: var(--fs-sm); }
+.sp-known li button:hover { background: #20282c; }
+.sp-known li.sel button { background: #272f33; }
+.sp-known-empty { padding: 3px 8px; color: var(--text-muted); font-size: var(--fs-md); }
+.sp-empty { margin: auto; width: 500px; max-width: 100%; text-align: center; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--text-muted); }
+.ap-left:has(> .sp-page) { padding-top: 18px; }
+/* Slots live in the class band (right-hand stats) */
+.ap-band .mg-slots { padding: 0; gap: 4px; margin-left: 12px; }
+.ap-band .mg-slot { min-width: 0; padding: 1px 6px 2px; flex-direction: row; align-items: center; gap: 5px; }
+.ap-band .mg-slot .pips { display: none; }
+.ap-band .mg-slot span.k { font-size: 9px; color: var(--gray-6); }
+.ap-band .mg-slot .n { font-size: var(--fs-md); }
+/* SPELLCASTING filter bar */
+.sp-filter { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; min-height: 26px; }
+.sp-pin { flex: none; width: 26px; height: 26px; min-height: 26px; padding: 0; border: 0; border-radius: 0; background: #3a3a3a; color: #909090; display: inline-grid; place-content: center; cursor: pointer; }
+.sp-pin[aria-pressed="true"] { background: #a5a5a5; color: #262626; }
+.sp-filter .sp-text { flex: 1 1 150px; margin-left: 0; max-width: 200px; }
+.sp-combo { min-width: 90px; }
+.sp-levels { display: inline-flex; gap: 1px; }
+.sp-tog { min-width: 22px; height: 26px; min-height: 26px; padding: 0 5px; border: 0; border-radius: 0; background: #2a2a2a; color: #909090; font-size: var(--fs-sm); font-weight: 600; text-transform: uppercase; cursor: pointer; }
+.sp-tog.sp-wide { padding: 0 8px; font-size: 9px; }
+.sp-tog[aria-pressed="true"] { background: #a5a5a5; color: #262626; }
+.sp-badge { margin-left: auto; font-size: var(--fs-sm); color: var(--text-muted); }
+.sp-slots-sec .ap-band { border-bottom-width: 0; }
+.sp-slots-scroll { max-height: 190px; }
+.sp-open { color: var(--text-muted); font-style: italic; }
+/* Replace spell: band command button, replaced marker */
+.sp-slots-sec .ap-band .sp-replace { margin-left: 4px; }
+.sp-slots-sec tbody tr { cursor: default; }
+.sp-replaced { color: var(--text-muted); font-style: italic; cursor: help; }
+/* Per-class tab: hint + Prepare/Unprepare/Refresh row and the info box */
+.sp-prep-bar { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-bottom: 1px solid var(--aur-line, #252d31); }
+.sp-hint { flex: 1 1 auto; font-size: var(--fs-md); color: var(--text-muted); }
+.sp-info { margin: 0; padding: 6px 10px; font-size: var(--fs-md); color: var(--text-body); background: var(--accent-20); border-bottom: 1px solid var(--accent-60); }

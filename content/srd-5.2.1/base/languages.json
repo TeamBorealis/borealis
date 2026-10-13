@@ -1,0 +1,469 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: base/languages",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_LANGUAGE_COMMON",
+   "name": "Common",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Standard"
+   ],
+   "description": "<p>Common language (standard).</p>",
+   "setters": [
+    {
+     "name": "standard",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "standard"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_COMMON",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_COMMON_SIGN_LANGUAGE",
+   "name": "Common Sign Language",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Standard"
+   ],
+   "description": "<p>Common Sign Language language (standard).</p>",
+   "setters": [
+    {
+     "name": "standard",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "standard"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_DRACONIC",
+   "name": "Draconic",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Standard"
+   ],
+   "description": "<p>Draconic language (standard).</p>",
+   "setters": [
+    {
+     "name": "standard",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "standard"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_DRACONIC",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_DWARVISH",
+   "name": "Dwarvish",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Standard"
+   ],
+   "description": "<p>Dwarvish language (standard).</p>",
+   "setters": [
+    {
+     "name": "standard",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "standard"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_DWARVISH",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_ELVISH",
+   "name": "Elvish",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Standard"
+   ],
+   "description": "<p>Elvish language (standard).</p>",
+   "setters": [
+    {
+     "name": "standard",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "standard"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_ELVISH",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_GIANT",
+   "name": "Giant",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Standard"
+   ],
+   "description": "<p>Giant language (standard).</p>",
+   "setters": [
+    {
+     "name": "standard",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "standard"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_GIANT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_GNOMISH",
+   "name": "Gnomish",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Standard"
+   ],
+   "description": "<p>Gnomish language (standard).</p>",
+   "setters": [
+    {
+     "name": "standard",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "standard"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_GNOMISH",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_GOBLIN",
+   "name": "Goblin",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Standard"
+   ],
+   "description": "<p>Goblin language (standard).</p>",
+   "setters": [
+    {
+     "name": "standard",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "standard"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_GOBLIN",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_HALFLING",
+   "name": "Halfling",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Standard"
+   ],
+   "description": "<p>Halfling language (standard).</p>",
+   "setters": [
+    {
+     "name": "standard",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "standard"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_HALFLING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_ORC",
+   "name": "Orc",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Standard"
+   ],
+   "description": "<p>Orc language (standard).</p>",
+   "setters": [
+    {
+     "name": "standard",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "standard"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_ORC",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_ABYSSAL",
+   "name": "Abyssal",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Rare"
+   ],
+   "description": "<p>Abyssal language (rare).</p>",
+   "setters": [
+    {
+     "name": "exotic",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_ABYSSAL",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_CELESTIAL",
+   "name": "Celestial",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Rare"
+   ],
+   "description": "<p>Celestial language (rare).</p>",
+   "setters": [
+    {
+     "name": "exotic",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_CELESTIAL",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_DEEP_SPEECH",
+   "name": "Deep Speech",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Rare"
+   ],
+   "description": "<p>Deep Speech language (rare).</p>",
+   "setters": [
+    {
+     "name": "exotic",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_DEEP_SPEECH",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_DRUIDIC",
+   "name": "Druidic",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Rare"
+   ],
+   "description": "<p>Druidic language (rare).</p>",
+   "setters": [
+    {
+     "name": "exotic",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_DRUIDIC",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_INFERNAL",
+   "name": "Infernal",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Rare"
+   ],
+   "description": "<p>Infernal language (rare).</p>",
+   "setters": [
+    {
+     "name": "exotic",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_INFERNAL",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_PRIMORDIAL",
+   "name": "Primordial",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Rare"
+   ],
+   "description": "<p>Primordial language (rare).  Primordial includes the Aquan, Auran, Ignan, and Terran dialects.</p>",
+   "setters": [
+    {
+     "name": "exotic",
+     "value": "true"
+    },
+    {
+     "name": "script",
+     "value": "Dwarvish"
+    }
+   ],
+   "data": {
+    "rarity": "rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_PRIMORDIAL",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_SYLVAN",
+   "name": "Sylvan",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Rare"
+   ],
+   "description": "<p>Sylvan language (rare).</p>",
+   "setters": [
+    {
+     "name": "exotic",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_SYLVAN",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_THIEVES_CANT",
+   "name": "Thieves’ Cant",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Rare"
+   ],
+   "description": "<p>Thieves’ Cant language (rare).</p>",
+   "setters": [
+    {
+     "name": "exotic",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_LANGUAGE_THIEVES_CANT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_LANGUAGE_UNDERCOMMON",
+   "name": "Undercommon",
+   "type": "Language",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Rare"
+   ],
+   "description": "<p>Undercommon language (rare).</p>",
+   "setters": [
+    {
+     "name": "exotic",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "rarity": "rare"
+   },
+   "maps_to": {
+    "dnd2014": "ID_LANGUAGE_UNDERCOMMON",
+    "kind": "equivalent"
+   }
+  }
+ ]
+}

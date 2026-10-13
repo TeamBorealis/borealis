@@ -1,0 +1,322 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: species/tiefling",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SPECIES_TIEFLING",
+   "name": "Tiefling",
+   "type": "Species",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Creature type: Humanoid. Size: Medium (about 4–7 feet tall) or Small (about 3–4 feet tall), chosen when you select this species. Speed: 30 feet.</p>",
+   "setters": [
+    {
+     "name": "short",
+     "value": "Humanoid, Medium, Speed 30 ft."
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select_size",
+     "name": "Size",
+     "options": [
+      "Small",
+      "Medium"
+     ]
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed",
+     "value": "30",
+     "bonus": "base"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_TIEFLING_DARKVISION",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_TIEFLING_FIENDISH_LEGACY",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_TIEFLING_OTHERWORLDLY_PRESENCE",
+     "type": "Racial Trait"
+    }
+   ],
+   "data": {
+    "creature_type": "Humanoid",
+    "size": [
+     "Small",
+     "Medium"
+    ],
+    "speed": 30,
+    "traits": [
+     "ID_2024_TRAIT_TIEFLING_DARKVISION",
+     "ID_2024_TRAIT_TIEFLING_FIENDISH_LEGACY",
+     "ID_2024_TRAIT_TIEFLING_OTHERWORLDLY_PRESENCE"
+    ]
+   },
+   "maps_to": {
+    "dnd2014": "ID_RACE_TIEFLING",
+    "kind": "approximate"
+   }
+  },
+  {
+   "id": "ID_2024_TRAIT_TIEFLING_DARKVISION",
+   "name": "Darkvision",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Darkvision with a range of 60 feet.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_VISION_DARKVISION",
+     "type": "Vision"
+    },
+    {
+     "kind": "stat",
+     "name": "darkvision:range",
+     "value": "60",
+     "bonus": "base"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_TIEFLING_FIENDISH_LEGACY",
+   "name": "Fiendish Legacy",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You are the recipient of a legacy that grants you supernatural abilities. Choose a legacy from the Fiendish Legacies table. You gain the level 1 benefit of the chosen legacy.</p>\n<p>When you reach character levels 3 and 5, you learn a higher-level spell, as shown on the table.</p>\n<p>You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level.</p>\n<p>Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the legacy).</p><table><tr><th>Legacy</th><th>Level 1</th><th>Level 3</th><th>Level 5</th></tr><tr><td>Abyssal</td><td>Resistance to Poison damage; Poison Spray cantrip</td><td>Ray of Sickness</td><td>Hold Person</td></tr><tr><td>Chthonic</td><td>Resistance to Necrotic damage; Chill Touch cantrip</td><td>False Life</td><td>Ray of Enfeeblement</td></tr><tr><td>Infernal</td><td>Resistance to Fire damage; Fire Bolt cantrip</td><td>Hellish Rebuke</td><td>Darkness</td></tr></table>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Species Trait Option",
+     "name": "Fiendish Legacy",
+     "supports": "Fiendish Legacy"
+    },
+    {
+     "kind": "select_param",
+     "name": "Lineage Spellcasting Ability",
+     "options": [
+      "Intelligence",
+      "Wisdom",
+      "Charisma"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_TIEFLING_OTHERWORLDLY_PRESENCE",
+   "name": "Otherworldly Presence",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You know the Thaumaturgy cantrip. When you cast it with this trait, the spell uses the same spellcasting ability you use for your Fiendish Legacy trait.</p>\n<pre>   Level 3                    Level 5\n   Ray of Sickness            Hold Person</pre>\n<pre>   False Life                 Ray of Enfeeblement</pre>\n<pre>   Hellish Rebuke             Darkness</pre>",
+   "rules": [
+    {
+     "kind": "grant_spell",
+     "spell": "ID_2024_SPELL_THAUMATURGY",
+     "mode": "known_cantrip",
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_OPTION_FIENDISH_LEGACY_ABYSSAL",
+   "name": "Abyssal",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Fiendish Legacy"
+   ],
+   "description": "<p>You have Resistance to Poison damage. You also know the Poison Spray cantrip. Level 3 spell: Ray of Sickness. Level 5 spell: Hold Person.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_POISON",
+     "type": "Condition"
+    },
+    {
+     "kind": "grant_spell",
+     "spell": "ID_2024_SPELL_POISON_SPRAY",
+     "mode": "known_cantrip",
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    },
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_RAY_OF_SICKNESS",
+     "mode": "always_prepared",
+     "free_cast": {
+      "uses": 1,
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true,
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    },
+    {
+     "kind": "grant_spell",
+     "level": 5,
+     "spell": "ID_2024_SPELL_HOLD_PERSON",
+     "mode": "always_prepared",
+     "free_cast": {
+      "uses": 1,
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true,
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    }
+   ],
+   "data": {
+    "legacy": "Abyssal",
+    "resistance": "poison",
+    "cantrip": "Poison Spray",
+    "level_3_spell": "Ray of Sickness",
+    "level_5_spell": "Hold Person"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_FIENDISH_LEGACY_CHTHONIC",
+   "name": "Chthonic",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Fiendish Legacy"
+   ],
+   "description": "<p>You have Resistance to Necrotic damage. You also know the Chill Touch cantrip. Level 3 spell: False Life. Level 5 spell: Ray of Enfeeblement.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_NECROTIC",
+     "type": "Condition"
+    },
+    {
+     "kind": "grant_spell",
+     "spell": "ID_2024_SPELL_CHILL_TOUCH",
+     "mode": "known_cantrip",
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    },
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_FALSE_LIFE",
+     "mode": "always_prepared",
+     "free_cast": {
+      "uses": 1,
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true,
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    },
+    {
+     "kind": "grant_spell",
+     "level": 5,
+     "spell": "ID_2024_SPELL_RAY_OF_ENFEEBLEMENT",
+     "mode": "always_prepared",
+     "free_cast": {
+      "uses": 1,
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true,
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    }
+   ],
+   "data": {
+    "legacy": "Chthonic",
+    "resistance": "necrotic",
+    "cantrip": "Chill Touch",
+    "level_3_spell": "False Life",
+    "level_5_spell": "Ray of Enfeeblement"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_FIENDISH_LEGACY_INFERNAL",
+   "name": "Infernal",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Fiendish Legacy"
+   ],
+   "description": "<p>You have Resistance to Fire damage. You also know the Fire Bolt cantrip. Level 3 spell: Hellish Rebuke. Level 5 spell: Darkness.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FIRE",
+     "type": "Condition"
+    },
+    {
+     "kind": "grant_spell",
+     "spell": "ID_2024_SPELL_FIRE_BOLT",
+     "mode": "known_cantrip",
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    },
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_HELLISH_REBUKE",
+     "mode": "always_prepared",
+     "free_cast": {
+      "uses": 1,
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true,
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    },
+    {
+     "kind": "grant_spell",
+     "level": 5,
+     "spell": "ID_2024_SPELL_DARKNESS",
+     "mode": "always_prepared",
+     "free_cast": {
+      "uses": 1,
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true,
+     "ability": {
+      "param": "Lineage Spellcasting Ability"
+     }
+    }
+   ],
+   "data": {
+    "legacy": "Infernal",
+    "resistance": "fire",
+    "cantrip": "Fire Bolt",
+    "level_3_spell": "Hellish Rebuke",
+    "level_5_spell": "Darkness"
+   }
+  }
+ ]
+}

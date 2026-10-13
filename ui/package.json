@@ -1,0 +1,44 @@
+{
+  "name": "borealis-ui",
+  "private": true,
+  "license": "MIT OR Apache-2.0",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "gen:contract": "node scripts/gen-contract.mjs",
+    "build": "node scripts/gen-contract.mjs && tsc --noEmit && vite build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "tauri": "tauri",
+    "lint": "eslint src",
+    "check": "npm run typecheck && npm run lint && npm test && vite build"
+  },
+  "dependencies": {
+    "@mdi/js": "^7.4.47",
+    "@tauri-apps/api": "^2",
+    "qrcode-generator": "2.0.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@tauri-apps/cli": "^2",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/node": "^22.20.5",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "jsdom": "^25.0.0",
+    "playwright": "^1.64.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.71.1",
+    "vite": "^5.4.0",
+    "vitest": "^2.1.0"
+  }
+}

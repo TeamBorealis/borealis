@@ -1,0 +1,1400 @@
+{
+ "format": "borealis-content/1",
+ "ruleset": "any",
+ "elements": [
+  {
+   "id": "ID_LEVEL_1",
+   "name": "1",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "1"
+    },
+    {
+     "name": "Experience",
+     "value": "0"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "proficiency",
+     "value": "2",
+     "alt": "Level 1"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_CHARACTER_BASE",
+     "type": "Grants"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_SPELLCASTING_BASE",
+     "type": "Grants"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_ARMOR_CLASS_BASE",
+     "type": "Grants"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_ARMOR_CLASS_DEXTERITY_MODIFIER",
+     "type": "Grants"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_HP_CONSTITUTION_MODIFIER",
+     "type": "Grants"
+    },
+    {
+     "kind": "select",
+     "type": "Race",
+     "name": "Race"
+    },
+    {
+     "kind": "select",
+     "type": "Class",
+     "name": "Class"
+    },
+    {
+     "kind": "select",
+     "type": "Background",
+     "name": "Background"
+    },
+    {
+     "kind": "select",
+     "type": "Alignment",
+     "name": "Alignment"
+    },
+    {
+     "kind": "select",
+     "type": "Deity",
+     "name": "Deity",
+     "optional": true
+    }
+   ],
+   "description": "Character level 1."
+  },
+  {
+   "id": "ID_LEVEL_2",
+   "name": "2",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "2"
+    },
+    {
+     "name": "Experience",
+     "value": "300"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 2)",
+     "level": 2,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_2"
+    }
+   ],
+   "description": "Character level 2."
+  },
+  {
+   "id": "ID_LEVEL_3",
+   "name": "3",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "3"
+    },
+    {
+     "name": "Experience",
+     "value": "900"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 3)",
+     "level": 3,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_3"
+    }
+   ],
+   "description": "Character level 3."
+  },
+  {
+   "id": "ID_LEVEL_4",
+   "name": "4",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "4"
+    },
+    {
+     "name": "Experience",
+     "value": "2700"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 4)",
+     "level": 4,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_4"
+    }
+   ],
+   "description": "Character level 4."
+  },
+  {
+   "id": "ID_LEVEL_5",
+   "name": "5",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "5"
+    },
+    {
+     "name": "Experience",
+     "value": "6500"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "proficiency",
+     "value": "1",
+     "alt": "Level 5"
+    },
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 5)",
+     "level": 5,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_5"
+    }
+   ],
+   "description": "Character level 5."
+  },
+  {
+   "id": "ID_LEVEL_6",
+   "name": "6",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "6"
+    },
+    {
+     "name": "Experience",
+     "value": "14000"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 6)",
+     "level": 6,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_6"
+    }
+   ],
+   "description": "Character level 6."
+  },
+  {
+   "id": "ID_LEVEL_7",
+   "name": "7",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "7"
+    },
+    {
+     "name": "Experience",
+     "value": "23000"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 7)",
+     "level": 7,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_7"
+    }
+   ],
+   "description": "Character level 7."
+  },
+  {
+   "id": "ID_LEVEL_8",
+   "name": "8",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "8"
+    },
+    {
+     "name": "Experience",
+     "value": "34000"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 8)",
+     "level": 8,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_8"
+    }
+   ],
+   "description": "Character level 8."
+  },
+  {
+   "id": "ID_LEVEL_9",
+   "name": "9",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "9"
+    },
+    {
+     "name": "Experience",
+     "value": "48000"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "proficiency",
+     "value": "1",
+     "alt": "Level 9"
+    },
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 9)",
+     "level": 9,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_9"
+    }
+   ],
+   "description": "Character level 9."
+  },
+  {
+   "id": "ID_LEVEL_10",
+   "name": "10",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "10"
+    },
+    {
+     "name": "Experience",
+     "value": "64000"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 10)",
+     "level": 10,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_10"
+    }
+   ],
+   "description": "Character level 10."
+  },
+  {
+   "id": "ID_LEVEL_11",
+   "name": "11",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "11"
+    },
+    {
+     "name": "Experience",
+     "value": "85000"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 11)",
+     "level": 11,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_11"
+    }
+   ],
+   "description": "Character level 11."
+  },
+  {
+   "id": "ID_LEVEL_12",
+   "name": "12",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "12"
+    },
+    {
+     "name": "Experience",
+     "value": "100000"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 12)",
+     "level": 12,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_12"
+    }
+   ],
+   "description": "Character level 12."
+  },
+  {
+   "id": "ID_LEVEL_13",
+   "name": "13",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "13"
+    },
+    {
+     "name": "Experience",
+     "value": "120000"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "proficiency",
+     "value": "1",
+     "alt": "Level 13"
+    },
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 13)",
+     "level": 13,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_13"
+    }
+   ],
+   "description": "Character level 13."
+  },
+  {
+   "id": "ID_LEVEL_14",
+   "name": "14",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "14"
+    },
+    {
+     "name": "Experience",
+     "value": "140000"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 14)",
+     "level": 14,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_14"
+    }
+   ],
+   "description": "Character level 14."
+  },
+  {
+   "id": "ID_LEVEL_15",
+   "name": "15",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "15"
+    },
+    {
+     "name": "Experience",
+     "value": "165000"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 15)",
+     "level": 15,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_15"
+    }
+   ],
+   "description": "Character level 15."
+  },
+  {
+   "id": "ID_LEVEL_16",
+   "name": "16",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "16"
+    },
+    {
+     "name": "Experience",
+     "value": "195000"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 16)",
+     "level": 16,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_16"
+    }
+   ],
+   "description": "Character level 16."
+  },
+  {
+   "id": "ID_LEVEL_17",
+   "name": "17",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "17"
+    },
+    {
+     "name": "Experience",
+     "value": "225000"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "proficiency",
+     "value": "1",
+     "alt": "Level 17"
+    },
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 17)",
+     "level": 17,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_17"
+    }
+   ],
+   "description": "Character level 17."
+  },
+  {
+   "id": "ID_LEVEL_18",
+   "name": "18",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "18"
+    },
+    {
+     "name": "Experience",
+     "value": "265000"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 18)",
+     "level": 18,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_18"
+    }
+   ],
+   "description": "Character level 18."
+  },
+  {
+   "id": "ID_LEVEL_19",
+   "name": "19",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "19"
+    },
+    {
+     "name": "Experience",
+     "value": "305000"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 19)",
+     "level": 19,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_19"
+    }
+   ],
+   "description": "Character level 19."
+  },
+  {
+   "id": "ID_LEVEL_20",
+   "name": "20",
+   "type": "Level",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "Level",
+     "value": "20"
+    },
+    {
+     "name": "Experience",
+     "value": "355000"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Multiclass",
+     "name": "Multiclass (Level 20)",
+     "level": 20,
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_20"
+    }
+   ],
+   "description": "Character level 20."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_CHARACTER_BASE",
+   "name": "Base",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength:max",
+     "value": "20"
+    },
+    {
+     "kind": "stat",
+     "name": "dexterity:max",
+     "value": "20"
+    },
+    {
+     "kind": "stat",
+     "name": "constitution:max",
+     "value": "20"
+    },
+    {
+     "kind": "stat",
+     "name": "intelligence:max",
+     "value": "20"
+    },
+    {
+     "kind": "stat",
+     "name": "wisdom:max",
+     "value": "20"
+    },
+    {
+     "kind": "stat",
+     "name": "charisma:max",
+     "value": "20"
+    },
+    {
+     "kind": "stat",
+     "name": "attunement:max",
+     "value": "3",
+     "bonus": "base"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:unarmored:base",
+     "value": "10",
+     "alt": "Base"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:unarmored:dexterity",
+     "value": "dexterity:modifier",
+     "alt": "Dexterity Modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:unarmored",
+     "value": "ac:unarmored:base",
+     "alt": "Initial"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:unarmored",
+     "value": "ac:unarmored:dexterity",
+     "alt": "Dexterity Modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:calculation",
+     "value": "ac:unarmored",
+     "bonus": "calculation",
+     "equipped": "[armor:none]",
+     "alt": "Unarmored",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity:cap",
+     "value": "2",
+     "bonus": "base"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:misc",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:enhancement",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity",
+     "value": "dexterity:modifier",
+     "bonus": "modifier",
+     "equipped": "[armor:light]"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity",
+     "value": "dexterity:modifier",
+     "bonus": "modifier",
+     "equipped": "[armor:medium]",
+     "maximum": "ac:armored:dexterity:cap"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored:dexterity",
+     "value": "0",
+     "bonus": "modifier",
+     "equipped": "[armor:heavy]"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored",
+     "value": "ac:armored:armor",
+     "equipped": "[armor:any]"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored",
+     "value": "ac:armored:dexterity",
+     "equipped": "[armor:any]"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored",
+     "value": "ac:armored:enhancement",
+     "equipped": "[armor:any]"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:armored",
+     "value": "ac:armored:misc",
+     "equipped": "[armor:any]"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:calculation",
+     "value": "ac:armored",
+     "bonus": "calculation",
+     "equipped": "[armor:any]",
+     "alt": "Armored",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "ac:dexterity",
+     "value": "dexterity:modifier",
+     "bonus": "base:modifier",
+     "equipped": "[armor:none]"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:dexterity",
+     "value": "dexterity:modifier",
+     "bonus": "base:modifier",
+     "equipped": "[armor:light]"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:dexterity",
+     "value": "dexterity:modifier",
+     "bonus": "base:modifier",
+     "equipped": "[armor:medium]",
+     "maximum": "ac:armored:dexterity:cap"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:dexterity",
+     "value": "0",
+     "bonus": "base:modifier",
+     "equipped": "[armor:heavy]"
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed:calculation",
+     "value": "innate speed",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed:calculation",
+     "value": "innate speed:misc",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed:climb:calculation",
+     "value": "innate speed:climb",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed:climb:calculation",
+     "value": "innate speed:climb:misc",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed:fly:calculation",
+     "value": "innate speed:fly",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed:fly:calculation",
+     "value": "innate speed:fly:misc",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed:swim:calculation",
+     "value": "innate speed:swim",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed:swim:calculation",
+     "value": "innate speed:swim:misc",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed:burrow:calculation",
+     "value": "innate speed:burrow",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed:burrow:calculation",
+     "value": "innate speed:burrow:misc",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "speed",
+     "value": "innate speed:calculation",
+     "bonus": "base",
+     "alt": "Innate",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "speed",
+     "value": "speed:misc",
+     "alt": "Misc",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "speed:climb",
+     "value": "innate speed:climb:calculation",
+     "bonus": "base",
+     "alt": "Innate",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "speed:climb",
+     "value": "speed:climb:misc",
+     "alt": "Misc",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "speed:fly",
+     "value": "innate speed:fly:calculation",
+     "bonus": "base",
+     "alt": "Innate",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "speed:fly",
+     "value": "speed:fly:misc",
+     "alt": "Misc",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "speed:swim",
+     "value": "innate speed:swim:calculation",
+     "bonus": "base",
+     "alt": "Innate",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "speed:swim",
+     "value": "speed:swim:misc",
+     "alt": "Misc",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "speed:burrow",
+     "value": "innate speed:burrow:calculation",
+     "bonus": "base",
+     "alt": "Innate",
+     "merge": true
+    },
+    {
+     "kind": "stat",
+     "name": "speed:burrow",
+     "value": "speed:burrow:misc",
+     "alt": "Misc",
+     "merge": true
+    }
+   ],
+   "description": "Baseline statistics every character has: ability caps, armor class plumbing, speeds, attunement limit."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_ARMOR_CLASS_BASE",
+   "name": "Base Armor Class",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Placeholder for armor class additions."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_SPELLCASTING_BASE",
+   "name": "Spellcasting Base",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:proficiency",
+     "value": "proficiency",
+     "bonus": "proficiency"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:base",
+     "value": "8",
+     "bonus": "base"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:proficiency",
+     "value": "proficiency",
+     "bonus": "proficiency"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack",
+     "value": "spellcasting:attack:proficiency",
+     "alt": "Proficiency"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc",
+     "value": "spellcasting:dc:base",
+     "alt": "Base"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc",
+     "value": "spellcasting:dc:proficiency",
+     "alt": "Proficiency"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:misc",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:misc",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack",
+     "value": "spellcasting:attack:misc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc",
+     "value": "spellcasting:dc:misc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:str:misc",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:dex:misc",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:con:misc",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:int:misc",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:wis:misc",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:cha:misc",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:str",
+     "value": "spellcasting:attack"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:str",
+     "value": "strength:modifier",
+     "bonus": "ability",
+     "alt": "Ability Modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:str",
+     "value": "spellcasting:attack:str:misc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:dex",
+     "value": "spellcasting:attack"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:dex",
+     "value": "dexterity:modifier",
+     "bonus": "ability",
+     "alt": "Ability Modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:dex",
+     "value": "spellcasting:attack:dex:misc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:con",
+     "value": "spellcasting:attack"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:con",
+     "value": "constitution:modifier",
+     "bonus": "ability",
+     "alt": "Ability Modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:con",
+     "value": "spellcasting:attack:con:misc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:int",
+     "value": "spellcasting:attack"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:int",
+     "value": "intelligence:modifier",
+     "bonus": "ability",
+     "alt": "Ability Modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:int",
+     "value": "spellcasting:attack:int:misc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:wis",
+     "value": "spellcasting:attack"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:wis",
+     "value": "wisdom:modifier",
+     "bonus": "ability",
+     "alt": "Ability Modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:wis",
+     "value": "spellcasting:attack:wis:misc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:cha",
+     "value": "spellcasting:attack"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:cha",
+     "value": "charisma:modifier",
+     "bonus": "ability",
+     "alt": "Ability Modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:attack:cha",
+     "value": "spellcasting:attack:cha:misc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:str:misc",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:dex:misc",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:con:misc",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:int:misc",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:wis:misc",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:cha:misc",
+     "value": "0"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:str",
+     "value": "spellcasting:dc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:str",
+     "value": "strength:modifier",
+     "bonus": "ability",
+     "alt": "Ability Modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:str",
+     "value": "spellcasting:dc:str:misc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:dex",
+     "value": "spellcasting:dc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:dex",
+     "value": "dexterity:modifier",
+     "bonus": "ability",
+     "alt": "Ability Modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:dex",
+     "value": "spellcasting:dc:dex:misc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:con",
+     "value": "spellcasting:dc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:con",
+     "value": "constitution:modifier",
+     "bonus": "ability",
+     "alt": "Ability Modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:con",
+     "value": "spellcasting:dc:con:misc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:int",
+     "value": "spellcasting:dc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:int",
+     "value": "intelligence:modifier",
+     "bonus": "ability",
+     "alt": "Ability Modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:int",
+     "value": "spellcasting:dc:int:misc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:wis",
+     "value": "spellcasting:dc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:wis",
+     "value": "wisdom:modifier",
+     "bonus": "ability",
+     "alt": "Ability Modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:wis",
+     "value": "spellcasting:dc:wis:misc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:cha",
+     "value": "spellcasting:dc"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:cha",
+     "value": "charisma:modifier",
+     "bonus": "ability",
+     "alt": "Ability Modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "spellcasting:dc:cha",
+     "value": "spellcasting:dc:cha:misc"
+    }
+   ],
+   "description": "Generic spell save DC and spell attack statistics."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_ARMOR_CLASS_DEXTERITY_MODIFIER",
+   "name": "Dexterity Modifier",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "initiative",
+     "value": "dexterity:modifier",
+     "bonus": "ability"
+    }
+   ],
+   "description": "Initiative uses the Dexterity modifier."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_HP_CONSTITUTION_MODIFIER",
+   "name": "Constitution Modifier",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 1
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 2
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 4
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 6
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 7
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 8
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 10
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 11
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 12
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 13
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 14
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 15
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 16
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 18
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 19
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "constitution:modifier",
+     "level": 20
+    }
+   ],
+   "description": "Constitution modifier is added to hit points once per character level."
+  },
+  {
+   "id": "ID_INTERNAL_IGNORE_AC_DEXTERITY_MODIFIER",
+   "name": "Ignore ac:dexterity",
+   "type": "Ignore",
+   "source": "Internal",
+   "description": "Marker kept for content compatibility."
+  }
+ ]
+}

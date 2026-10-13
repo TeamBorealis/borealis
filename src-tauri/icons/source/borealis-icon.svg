@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Borealis app icon: original mark (twin peaks under an aurora ribbon) on app-token dark chrome. -->
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="38%" r="62%">
+      <stop offset="0" stop-color="#6fd0b5" stop-opacity="0.22"/>
+      <stop offset="0.55" stop-color="#305754" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#131313" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#293338"/>
+      <stop offset="1" stop-color="#131313"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="228" fill="url(#bg)"/>
+  <rect width="1024" height="1024" rx="228" fill="url(#glow)"/>
+  <g transform="translate(512 520) scale(23) translate(-15 -12)">
+    <path d="M0 22 L9 8 L14 15 L19 5 L30 22 Z" fill="#3f7a74"/>
+    <path d="M2 11 C8 2 12 12 17 6 S25 1 29 6" fill="none" stroke="#6fd0b5" stroke-width="2.8" stroke-linecap="round"/>
+    <path d="M5 22 L10 14 L14 20 L19 11 L25 22 Z" fill="#1f3a37"/>
+  </g>
+</svg>

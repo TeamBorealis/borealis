@@ -1,0 +1,27 @@
+[package]
+name = "borealis-mcp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+description = "Read-only stdio MCP server exposing Borealis content, validation and encounter tools."
+
+[lints]
+workspace = true
+
+[lib]
+name = "borealis_mcp"
+path = "src/lib.rs"
+
+[[bin]]
+name = "borealis-mcp"
+path = "src/main.rs"
+
+[dependencies]
+borealis-content.workspace = true
+borealis-engine.workspace = true
+borealis-ai.workspace = true
+borealis-encounter = { path = "../borealis-encounter" }
+serde.workspace = true
+serde_json.workspace = true

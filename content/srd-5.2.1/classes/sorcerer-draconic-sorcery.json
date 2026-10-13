@@ -1,0 +1,533 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/sorcerer-draconic-sorcery",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SUBCLASS_SORCERER_DRACONIC_SORCERY",
+   "name": "Draconic Sorcery",
+   "type": "Archetype",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Sorcerer Subclass"
+   ],
+   "description": "<p>Breathe the Magic of Dragons Your innate magic comes from the gift of a dragon. Perhaps an ancient dragon facing death bequeathed some of its magical power to you or your ancestor. You might have absorbed magic from a site infused with dragons’ power. Or perhaps you handled a treasure taken from a dragon’s hoard that was steeped in draconic power. Or you might have a dragon for an ancestor.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_SORCERER_DRACONIC_SORCERY_DRACONIC_RESILIENCE",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_SORCERER_DRACONIC_SORCERY_DRACONIC_SPELLS",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_SORCERER_DRACONIC_SORCERY_ELEMENTAL_AFFINITY",
+     "type": "Archetype Feature",
+     "level": 6
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_SORCERER_DRACONIC_SORCERY_DRAGON_WINGS",
+     "type": "Archetype Feature",
+     "level": 14
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_SORCERER_DRACONIC_SORCERY_DRAGON_COMPANION",
+     "type": "Archetype Feature",
+     "level": 18
+    }
+   ],
+   "data": {
+    "class": "ID_2024_CLASS_SORCERER",
+    "class_name": "Sorcerer",
+    "level_gained": 3
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ARCHETYPE_DRACONIC_BLOODLINE",
+    "kind": "approximate"
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_SORCERER_DRACONIC_SORCERY_DRACONIC_RESILIENCE",
+   "name": "Draconic Resilience",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>The magic in your body manifests physical traits of your draconic gift. Your Hit Point maximum increases by 3, and it increases by 1 whenever you gain another Sorcerer level.</p>\n<p>Parts of you are also covered by dragon-like scales. While you aren’t wearing armor, your base Armor Class equals 10 plus your Dexterity and Charisma modifiers.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "3",
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 4,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 5,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 6,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 7,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 8,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 9,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 10,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 11,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 12,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 13,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 14,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 15,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 16,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 17,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 18,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 19,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 20,
+     "alt": "Draconic Resilience"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:draconic resilience:base",
+     "value": "10"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:draconic resilience:dexterity",
+     "value": "dexterity:modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:draconic resilience:charisma",
+     "value": "charisma:modifier"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:draconic resilience",
+     "value": "ac:draconic resilience:base"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:draconic resilience",
+     "value": "ac:draconic resilience:dexterity"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:draconic resilience",
+     "value": "ac:draconic resilience:charisma"
+    },
+    {
+     "kind": "stat",
+     "name": "ac:calculation",
+     "value": "ac:draconic resilience",
+     "bonus": "calculation",
+     "equipped": "[armor:none]",
+     "alt": "Draconic Resilience"
+    }
+   ],
+   "data": {
+    "class": "Sorcerer",
+    "subclass": "Draconic Sorcery",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_SORCERER_DRACONIC_SORCERY_DRACONIC_SPELLS",
+   "name": "Draconic Spells",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you reach a Sorcerer level specified in the Draconic Spells table, you thereafter always have the listed spells prepared. Draconic Spells Sorcerer</p>\n<pre>    Level        Spells\n       3         Alter Self, Chromatic Orb, Command,\n                 Dragon’s Breath\n       5         Fear, Fly\n       7         Arcane Eye, Charm Monster\n       9         Legend Lore, Summon Dragon</pre>",
+   "rules": [
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_ALTER_SELF",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Sorcerer"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_CHROMATIC_ORB",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Sorcerer"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_COMMAND",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Sorcerer"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_DRAGONS_BREATH",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Sorcerer"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 5,
+     "spell": "ID_2024_SPELL_FEAR",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Sorcerer"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 5,
+     "spell": "ID_2024_SPELL_FLY",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Sorcerer"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 7,
+     "spell": "ID_2024_SPELL_ARCANE_EYE",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Sorcerer"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 7,
+     "spell": "ID_2024_SPELL_CHARM_MONSTER",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Sorcerer"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 9,
+     "spell": "ID_2024_SPELL_LEGEND_LORE",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Sorcerer"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 9,
+     "spell": "ID_2024_SPELL_SUMMON_DRAGON",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Sorcerer"
+    }
+   ],
+   "data": {
+    "class": "Sorcerer",
+    "subclass": "Draconic Sorcery",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_SORCERER_DRACONIC_SORCERY_ELEMENTAL_AFFINITY",
+   "name": "Elemental Affinity",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Your draconic magic has an affinity with a damage type associated with dragons. Choose one of those types: Acid, Cold, Fire, Lightning, or Poison.</p>\n<p>You have Resistance to that damage type, and when you cast a spell that deals damage of that type, you can add your Charisma modifier to one damage roll of that spell.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Option",
+     "name": "Elemental Affinity Damage Type",
+     "supports": "Dragon Damage Type"
+    },
+    {
+     "kind": "damage_bonus_spell",
+     "value": "charisma:modifier",
+     "once_per": "spell",
+     "damage_type_param": "Elemental Affinity Damage Type"
+    }
+   ],
+   "data": {
+    "class": "Sorcerer",
+    "subclass": "Draconic Sorcery",
+    "level": 6
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_SORCERER_DRACONIC_SORCERY_DRAGON_WINGS",
+   "name": "Dragon Wings",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Bonus Action, you can cause draconic wings to appear on your back. The wings last for 1 hour or until you dismiss them (no action required). For the duration, you have a Fly Speed of 60 feet.</p>\n<p>Once you use this feature, you can’t use it again until you finish a Long Rest unless you spend 3 Sorcery Points (no action required) to restore your use of it.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "dragon wings",
+     "name": "Dragon Wings",
+     "max": {
+      "type": "fixed",
+      "value": 1
+     },
+     "recharge": [
+      "long_rest"
+     ],
+     "alt_regain": "spend 3 Sorcery Points"
+    },
+    {
+     "kind": "movement_mode",
+     "mode": "fly",
+     "speed": 60,
+     "duration": "1 hour",
+     "action": "bonus_action"
+    }
+   ],
+   "data": {
+    "class": "Sorcerer",
+    "subclass": "Draconic Sorcery",
+    "level": 14
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_SORCERER_DRACONIC_SORCERY_DRAGON_COMPANION",
+   "name": "Dragon Companion",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can cast Summon Dragon without a Material component. You can also cast it once without a spell slot, and you regain the ability to cast it in this way when you finish a Long Rest.</p>\n<p>Whenever you start casting the spell, you can modify it so that it doesn’t require Concentration. If you do so, the spell’s duration becomes 1 minute for that casting.</p>",
+   "rules": [
+    {
+     "kind": "grant_spell",
+     "spell": "ID_2024_SPELL_SUMMON_DRAGON",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Sorcerer",
+     "free_cast": {
+      "uses": 1,
+      "recharge": "long_rest"
+     },
+     "also_with_slots": true,
+     "no_material": true
+    }
+   ],
+   "data": {
+    "class": "Sorcerer",
+    "subclass": "Draconic Sorcery",
+    "level": 18
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DRAGON_DAMAGE_TYPE_ACID",
+   "name": "Acid",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Dragon Damage Type"
+   ],
+   "description": "<p>Elemental Affinity damage type: Acid. You have Resistance to Acid damage.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_ACID",
+     "type": "Condition"
+    }
+   ],
+   "data": {
+    "damage_type": "acid"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DRAGON_DAMAGE_TYPE_COLD",
+   "name": "Cold",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Dragon Damage Type"
+   ],
+   "description": "<p>Elemental Affinity damage type: Cold. You have Resistance to Cold damage.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_COLD",
+     "type": "Condition"
+    }
+   ],
+   "data": {
+    "damage_type": "cold"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DRAGON_DAMAGE_TYPE_FIRE",
+   "name": "Fire",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Dragon Damage Type"
+   ],
+   "description": "<p>Elemental Affinity damage type: Fire. You have Resistance to Fire damage.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FIRE",
+     "type": "Condition"
+    }
+   ],
+   "data": {
+    "damage_type": "fire"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DRAGON_DAMAGE_TYPE_LIGHTNING",
+   "name": "Lightning",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Dragon Damage Type"
+   ],
+   "description": "<p>Elemental Affinity damage type: Lightning. You have Resistance to Lightning damage.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_LIGHTNING",
+     "type": "Condition"
+    }
+   ],
+   "data": {
+    "damage_type": "lightning"
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DRAGON_DAMAGE_TYPE_POISON",
+   "name": "Poison",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Dragon Damage Type"
+   ],
+   "description": "<p>Elemental Affinity damage type: Poison. You have Resistance to Poison damage.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_POISON",
+     "type": "Condition"
+    }
+   ],
+   "data": {
+    "damage_type": "poison"
+   }
+  }
+ ]
+}

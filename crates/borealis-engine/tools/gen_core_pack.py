@@ -1,0 +1,287 @@
+#!/usr/bin/env python3
+"""Generate app/content/core/*.json (the Borealis CORE rules pack).
+
+Usage: python3 -I gen_core_pack.py <migrated-fixture-dir> <out-dir>
+
+<migrated-fixture-dir> is the output of `borealis-migrate` over the (never committed)
+legacy id fixtures (maintainer-local, not included). It is read ONLY for identifiers, names, tag lists and catalogue metadata
+(ids must match so imported characters resolve). All rules of the "engine-semantic" families
+(levels, base grants, multiclass tables, skills, saves, expertise, ASI, templates, options)
+are generated here from the engine rules; descriptions are our own text.
+"""
+import glob, json, os, sys
+
+SRC, OUT = sys.argv[1], sys.argv[2]
+FMT = "borealis-content/1"
+ABIL = ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]
+ABBR = ["str", "dex", "con", "int", "wis", "cha"]
+SKILLS = [("ACROBATICS", "Acrobatics", "dexterity"), ("ANIMALHANDLING", "Animal Handling", "wisdom"),
+          ("ARCANA", "Arcana", "intelligence"), ("ATHLETICS", "Athletics", "strength"),
+          ("DECEPTION", "Deception", "charisma"), ("HISTORY", "History", "intelligence"),
+          ("INSIGHT", "Insight", "wisdom"), ("INTIMIDATION", "Intimidation", "charisma"),
+          ("INVESTIGATION", "Investigation", "intelligence"), ("MEDICINE", "Medicine", "wisdom"),
+          ("NATURE", "Nature", "intelligence"), ("PERCEPTION", "Perception", "wisdom"),
+          ("PERFORMANCE", "Performance", "charisma"), ("PERSUASION", "Persuasion", "charisma"),
+          ("RELIGION", "Religion", "intelligence"), ("SLEIGHTOFHAND", "Sleight of Hand", "dexterity"),
+          ("STEALTH", "Stealth", "dexterity"), ("SURVIVAL", "Survival", "wisdom")]
+XP = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000,
+      140000, 165000, 195000, 225000, 265000, 305000, 355000]
+# Multiclass caster-level -> spell slots (standard multiclass table; cumulative rules derived below).
+SLOTS = {1: [2], 2: [3], 3: [4, 2], 4: [4, 3], 5: [4, 3, 2], 6: [4, 3, 3], 7: [4, 3, 3, 1],
+         8: [4, 3, 3, 2], 9: [4, 3, 3, 3, 1], 10: [4, 3, 3, 3, 2], 11: [4, 3, 3, 3, 2, 1],
+         12: [4, 3, 3, 3, 2, 1], 13: [4, 3, 3, 3, 2, 1, 1], 14: [4, 3, 3, 3, 2, 1, 1],
+         15: [4, 3, 3, 3, 2, 1, 1, 1], 16: [4, 3, 3, 3, 2, 1, 1, 1],
+         17: [4, 3, 3, 3, 2, 1, 1, 1, 1], 18: [4, 3, 3, 3, 3, 1, 1, 1, 1],
+         19: [4, 3, 3, 3, 3, 2, 1, 1, 1], 20: [4, 3, 3, 3, 3, 2, 2, 1, 1]}
+
+
+def load(name):
+    p = glob.glob(os.path.join(SRC, "*core." + name + ".json"))
+    assert len(p) == 1, name
+    return json.load(open(p[0]))["elements"]
+
+
+def el(id_, name, ty, source="Core", **kw):
+    e = {"id": id_, "name": name, "type": ty, "source": source}
+    e.update({k: v for k, v in kw.items() if v not in (None, [], "")})
+    return e
+
+
+def stat(name, value, **kw):
+    r = {"kind": "stat", "name": name, "value": str(value)}
+    r.update({k: v for k, v in kw.items() if v is not None})
+    return r
+
+
+def grant(id_, ty="Grants", **kw):
+    r = {"kind": "grant", "id": id_, "type": ty}
+    r.update(kw)
+    return r
+
+
+def clean(e, source=None):
+    """Copy catalogue metadata, dropping prose and book-specific fields."""
+    out = {k: v for k, v in e.items() if k in ("id", "name", "type", "supports", "setters", "rules", "requirements", "spellcasting")}
+    out["source"] = source or ("Internal" if e["source"] == "Internal" else "Core")
+    if "setters" in out:
+        out["setters"] = [s for s in out["setters"] if s["name"] not in ("short",)]
+        if not out["setters"]:
+            del out["setters"]
+    return out
+
+
+files = {}
+
+# ---- levels and base grants -------------------------------------------------------------------
+levels = []
+for n in range(1, 21):
+    rules = []
+    if n in (1, 5, 9, 13, 17):
+        rules.append(stat("proficiency", 2 if n == 1 else 1, alt=f"Level {n}"))
+    if n == 1:
+        rules += [grant(i) for i in ("ID_INTERNAL_GRANTS_CHARACTER_BASE", "ID_INTERNAL_GRANTS_SPELLCASTING_BASE",
+                                     "ID_INTERNAL_GRANTS_ARMOR_CLASS_BASE", "ID_INTERNAL_GRANTS_ARMOR_CLASS_DEXTERITY_MODIFIER",
+                                     "ID_INTERNAL_GRANTS_HP_CONSTITUTION_MODIFIER")]
+        rules += [{"kind": "select", "type": t, "name": t} for t in ("Race", "Class", "Background", "Alignment")]
+        rules.append({"kind": "select", "type": "Deity", "name": "Deity", "optional": True})
+    else:
+        rules.append({"kind": "select", "type": "Multiclass", "name": f"Multiclass (Level {n})", "level": n,
+                      "requirements": f"ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE&&ID_INTERNAL_MULTICLASS_LEVEL_{n}"})
+    levels.append(el(f"ID_LEVEL_{n}", str(n), "Level", "Internal",
+                     setters=[{"name": "Level", "value": str(n)}, {"name": "Experience", "value": str(XP[n - 1])}],
+                     rules=rules, description=f"Character level {n}."))
+base = []
+for a in ABIL:
+    base.append(stat(f"{a}:max", 20))
+base += [stat("attunement:max", 3, bonus="base"),
+         stat("ac:unarmored:base", 10, alt="Base"),
+         stat("ac:unarmored:dexterity", "dexterity:modifier", alt="Dexterity Modifier"),
+         stat("ac:unarmored", "ac:unarmored:base", alt="Initial"),
+         stat("ac:unarmored", "ac:unarmored:dexterity", alt="Dexterity Modifier"),
+         stat("ac:calculation", "ac:unarmored", bonus="calculation", equipped="[armor:none]", alt="Unarmored", merge=True),
+         stat("ac:armored:dexterity:cap", 2, bonus="base"),
+         stat("ac:armored:misc", 0), stat("ac:armored:enhancement", 0),
+         stat("ac:armored:dexterity", "dexterity:modifier", bonus="modifier", equipped="[armor:light]"),
+         stat("ac:armored:dexterity", "dexterity:modifier", bonus="modifier", equipped="[armor:medium]", maximum="ac:armored:dexterity:cap"),
+         stat("ac:armored:dexterity", 0, bonus="modifier", equipped="[armor:heavy]")]
+for part in ("armor", "dexterity", "enhancement", "misc"):
+    base.append(stat("ac:armored", f"ac:armored:{part}", equipped="[armor:any]"))
+base += [stat("ac:calculation", "ac:armored", bonus="calculation", equipped="[armor:any]", alt="Armored", merge=True),
+         stat("ac:dexterity", "dexterity:modifier", bonus="base:modifier", equipped="[armor:none]"),
+         stat("ac:dexterity", "dexterity:modifier", bonus="base:modifier", equipped="[armor:light]"),
+         stat("ac:dexterity", "dexterity:modifier", bonus="base:modifier", equipped="[armor:medium]", maximum="ac:armored:dexterity:cap"),
+         stat("ac:dexterity", 0, bonus="base:modifier", equipped="[armor:heavy]")]
+for mv in ("", ":climb", ":fly", ":swim", ":burrow"):
+    base += [stat(f"innate speed{mv}:calculation", f"innate speed{mv}", merge=True),
+             stat(f"innate speed{mv}:calculation", f"innate speed{mv}:misc", merge=True)]
+for mv in ("", ":climb", ":fly", ":swim", ":burrow"):
+    base += [stat(f"speed{mv}", f"innate speed{mv}:calculation", bonus="base", alt="Innate", merge=True),
+             stat(f"speed{mv}", f"speed{mv}:misc", alt="Misc", merge=True)]
+spell = [stat("spellcasting:attack:proficiency", "proficiency", bonus="proficiency"),
+         stat("spellcasting:dc:base", 8, bonus="base"),
+         stat("spellcasting:dc:proficiency", "proficiency", bonus="proficiency"),
+         stat("spellcasting:attack", "spellcasting:attack:proficiency", alt="Proficiency"),
+         stat("spellcasting:dc", "spellcasting:dc:base", alt="Base"),
+         stat("spellcasting:dc", "spellcasting:dc:proficiency", alt="Proficiency"),
+         stat("spellcasting:attack:misc", 0), stat("spellcasting:dc:misc", 0),
+         stat("spellcasting:attack", "spellcasting:attack:misc"), stat("spellcasting:dc", "spellcasting:dc:misc")]
+for kind in ("attack", "dc"):
+    for ab in ABBR:
+        spell.append(stat(f"spellcasting:{kind}:{ab}:misc", 0))
+    for ab, full in zip(ABBR, ABIL):
+        spell += [stat(f"spellcasting:{kind}:{ab}", f"spellcasting:{kind}"),
+                  stat(f"spellcasting:{kind}:{ab}", f"{full}:modifier", bonus="ability", alt="Ability Modifier"),
+                  stat(f"spellcasting:{kind}:{ab}", f"spellcasting:{kind}:{ab}:misc")]
+# the attack block lists all misc stats first, then dc; regroup to keep one block per kind
+grants_core = [
+    el("ID_INTERNAL_GRANTS_CHARACTER_BASE", "Base", "Grants", "Internal", rules=base, description="Baseline statistics every character has: ability caps, armor class plumbing, speeds, attunement limit."),
+    el("ID_INTERNAL_GRANTS_ARMOR_CLASS_BASE", "Base Armor Class", "Grants", "Internal", description="Placeholder for armor class additions."),
+    el("ID_INTERNAL_GRANTS_SPELLCASTING_BASE", "Spellcasting Base", "Grants", "Internal", rules=spell, description="Generic spell save DC and spell attack statistics."),
+    el("ID_INTERNAL_GRANTS_ARMOR_CLASS_DEXTERITY_MODIFIER", "Dexterity Modifier", "Grants", "Internal",
+       rules=[stat("initiative", "dexterity:modifier", bonus="ability")], description="Initiative uses the Dexterity modifier."),
+    el("ID_INTERNAL_GRANTS_HP_CONSTITUTION_MODIFIER", "Constitution Modifier", "Grants", "Internal",
+       rules=[stat("hp", "constitution:modifier", level=n) for n in range(1, 21)],
+       description="Constitution modifier is added to hit points once per character level."),
+    el("ID_INTERNAL_IGNORE_AC_DEXTERITY_MODIFIER", "Ignore ac:dexterity", "Ignore", "Internal", description="Marker kept for content compatibility."),
+]
+files["core-levels.json"] = levels + grants_core
+
+# ---- multiclassing -----------------------------------------------------------------------------
+mc = [el("ID_INTERNAL_OPTION_ALLOW_MULTICLASSING", "Multiclassing", "Option", "Internal",
+         setters=[{"name": "default", "value": "true"}, {"name": "locked", "value": "true"},
+                  {"name": "short", "value": "Allows gaining levels in more than one class."}],
+         rules=[grant("ID_INTERNAL_GRANTS_MULTICLASS_SPELLCASTING", requirements="ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE")]),
+      el("ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE", "Multiclassing Prerequisite", "Grants", "Internal",
+         setters=[{"name": "allow duplicate", "value": "false"}], description="Granted when the main class allows taking a second class.")]
+for n in range(2, 21):
+    mc.append(el(f"ID_INTERNAL_MULTICLASS_LEVEL_{n}", f"Multiclassing (Level {n})", "Grants", "Internal",
+                 setters=[{"name": "level", "value": "2"}] if n == 2 else None))
+tbl = []
+prev = [0] * 9
+for cl in range(1, 21):
+    row = SLOTS[cl] + [0] * (9 - len(SLOTS[cl]))
+    for i in range(9):
+        d = row[i] - prev[i]
+        if d > 0:
+            tbl.append(stat(f"multiclass:spellcasting:slot:{i + 1}", d, level=cl))
+    prev = row
+mc.append(el("ID_INTERNAL_GRANTS_MULTICLASS_SPELLCASTING", "Multiclass Spellcasting", "Grants", "Internal", rules=tbl,
+             description="Spell slots by combined caster level (cumulative rules)."))
+mc.append(el("ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_SOLO", "Multiclass Spellcasting Slots Solo", "Grants", "Internal"))
+
+
+def caster_levels(kind):
+    out = []
+    for L in range(1, 21):
+        c = {"FULL": True, "HALF": L % 2 == 0, "HALF_UP": L % 2 == 1, "THIRD": L % 3 == 0, "THIRD_UP": L % 3 == 2 and L >= 2,
+             "FOURTH": L % 4 == 0, "FOURTH_UP": L % 4 == 2, "FIFTH": L % 5 == 0}[kind]
+        if c:
+            out.append(L)
+    return out
+
+
+for kind in ("FULL", "HALF", "THIRD", "FOURTH", "FIFTH", "HALF_UP", "THIRD_UP", "FOURTH_UP"):
+    mc.append(el(f"ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_{kind}",
+                 "Multiclass Spellcasting Slots " + kind.title().replace("_", " "), "Grants", "Internal",
+                 rules=[stat("multiclass:spellcasting:level", 1, level=L) for L in caster_levels(kind)]))
+files["multiclass.json"] = mc
+
+# ---- internal options, supports, templates, marker grants ------------------------------------
+internal = [
+    el("ID_INTERNAL_OPTION_ALLOW_FEATS", "Feats", "Option", "Internal", setters=[{"name": "default", "value": "true"}, {"name": "short", "value": "Feats may replace ability score improvements."}]),
+    el("ID_INTERNAL_OPTION_ALLOW_AVERAGE_HP", "Average Hit Points", "Option", "Internal", setters=[{"name": "default", "value": "false"}, {"name": "short", "value": "Hit points use the fixed average value per level."}]),
+    el("ID_INTERNAL_TEMPLATE_CLASS_FEATURE_ABILITY_4", "Ability Score Improvement", "Class Feature",
+       rules=[{"kind": "select", "type": "Ability Score Improvement", "name": "Ability Score Increase (Level 4)", "number": 2, "supports": "Ability Score Improvement&&Class"}],
+       description="Template copied for each class and improvement level."),
+    el("ID_INTERNAL_TEMPLATE_CLASS_FEATURE_FEAT_4", "Feat", "Class Feature", requirements="ID_INTERNAL_OPTION_ALLOW_FEATS",
+       setters=[{"name": "allow duplicate", "value": "true"}], rules=[{"kind": "select", "type": "Feat", "name": "Feat (Level 4)"}],
+       description="Template for taking a feat instead of an ability score improvement."),
+]
+for e in load("internal.core-internal-grants") + load("internal.internal-supports"):
+    internal.append(clean(e) | {"description": f"{e['name']} (internal marker)."})
+files["internal.json"] = internal
+
+# ---- abilities: ASI elements, saves, skills, expertise, workarounds -----------------------------
+asi = []
+for prefix, tag, stat_prefix in (("ID_INTERNAL_ASI_", "Class", ""), ("ID_INTERNAL_COMPANION_ASI_", "Companion", "companion:"),
+                                 ("ID_INTERNAL_RACIAL_ASI_", "Race", "")):
+    for a in ABIL:
+        asi.append(el(prefix + a.upper(), a.title(), "Ability Score Improvement", supports=["Ability Score Improvement", tag, a.title()],
+                      setters=[{"name": "allow duplicate", "value": "true"}],
+                      rules=[stat(stat_prefix + a, 1, alt="Ability Score Increase")], description=f"+1 {a.title()}."))
+files["abilities.json"] = asi
+
+fx_skills = {e["id"]: e for e in load("proficiency.proficiency-skills")}
+skills = [clean(fx_skills["ID_INTERNAL_SUPPORT_PROFICIENCY_SKILL"]) | {"description": "Skill proficiency tag."}]
+for sid, name, ab in SKILLS:
+    src = fx_skills["ID_PROFICIENCY_SKILL_" + sid]
+    skills.append(el("ID_PROFICIENCY_SKILL_" + sid, name, "Proficiency", supports=src.get("supports"),
+                     rules=[stat(f"{name.lower()}:proficiency", "proficiency", bonus="proficiency")], description=f"Proficiency in {name}."))
+for sid, name, ab in SKILLS:
+    skills.append(el("ID_INTERNAL_GRANTS_ADVANTAGE_SKILL_" + sid, f"Advantage ({name})", "Grants", "Internal"))
+files["skills.json"] = skills
+
+saves = []
+for a in ABIL:
+    saves.append(el("ID_PROFICIENCY_SAVINGTHROW_" + a.upper(), f"Saving Throw Proficiency ({a.title()})", "Proficiency", supports=["Saving Throw"],
+                    rules=[stat(f"{a}:save:proficiency", "proficiency", bonus="proficiency", alt="Proficiency")]))
+files["saving-throws.json"] = saves
+
+expertise = []
+fx_exp = {e["id"]: e for e in load("proficiency.expertise-skills")}
+for sid, name, ab in SKILLS:
+    expertise.append(el("ID_EXPERTISE_SKILL_" + sid, f"Skill Expertise ({name})", "Class Feature", supports=["Expertise", "Skill", "ID_INTERNAL_SUPPORT_EXPERTISE"],
+                        requirements="ID_PROFICIENCY_SKILL_" + sid, rules=[stat(f"{name.lower()}:proficiency", "proficiency", bonus="double")],
+                        description=f"Double proficiency bonus for {name}."))
+t = fx_exp["ID_EXPERTISE_TOOL_THIEVES_TOOLS"]
+expertise.append(clean(t) | {"description": "Double proficiency bonus with thieves' tools."})
+files["expertise.json"] = expertise
+
+work = []
+for sid, name, ab in SKILLS:
+    k = name.lower()
+    work += [el(f"ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_OR_DOUBLE_{sid}", f"{name} Proficiency or Double", "Grants", "Internal",
+                rules=[grant(f"ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_{sid}", requirements=f"!ID_PROFICIENCY_SKILL_{sid}"),
+                       grant(f"ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_{sid}_DOUBLE", requirements=f"ID_PROFICIENCY_SKILL_{sid}")]),
+             el(f"ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_{sid}", f"{name} Proficiency", "Grants", "Internal", rules=[grant(f"ID_PROFICIENCY_SKILL_{sid}", "Proficiency")]),
+             el(f"ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_{sid}_DOUBLE", f"{name} Proficiency Double", "Grants", "Internal",
+                rules=[stat(f"{k}:proficiency", "proficiency", bonus="double", requirements=f"!ID_INTERNAL_GRANTS_PROFICIENCY_SKILL_{sid}", alt="Double Proficiency")])]
+files["skill-helpers.json"] = work
+
+# ---- catalogues copied as metadata only ----------------------------------------------------------
+def catalogue(fname, names, desc):
+    out = []
+    for n in names:
+        for e in load(n):
+            if e["id"].startswith("ID_WOTC_SOURCE_"):
+                continue
+            out.append(clean(e) | {"description": desc(e)})
+    files[fname] = out
+
+
+catalogue("catalogues.json", ["core-size", "core-vision", "core-alignments", "core-languages", "damage-type", "conditions"],
+          lambda e: f"{e['name']} ({e['type']}).")
+catalogue("proficiencies.json", ["proficiencies.proficiency-armor", "proficiencies.proficiency-weapons", "proficiency.proficiency-tools-artisans",
+                                "proficiency.proficiency-tools-gamingsets", "proficiency.proficiency-tools-kits", "proficiency.proficiency-tools-misc",
+                                "proficiency.proficiency-tools-musical-instruments", "proficiency.items-spellcasting-focus"],
+          lambda e: f"Proficiency: {e['name']}.")
+catalogue("properties.json", ["properties.properties-armor", "properties.properties-firearms", "properties.properties-weapons", "support.properties-tools"],
+          lambda e: f"{e['name']} ({e['type']}).")
+
+# ---- write -------------------------------------------------------------------------------------
+os.makedirs(OUT, exist_ok=True)
+order = ["core-levels.json", "multiclass.json", "internal.json", "abilities.json", "saving-throws.json", "skills.json",
+         "skill-helpers.json", "expertise.json", "catalogues.json", "proficiencies.json", "properties.json"]
+for f in order:
+    els = files[f]
+    for e in els:
+        if "description" in e and not e["description"]:
+            del e["description"]
+    with open(os.path.join(OUT, f), "w") as fh:
+        json.dump({"format": FMT, "ruleset": "any", "elements": els}, fh, indent=1, ensure_ascii=False)
+        fh.write("\n")
+manifest = {"format": "borealis-pack/1", "id": "core", "name": "Borealis Core Rules", "version": "1.0.0", "origin": "core",
+            "rulesets": ["dnd2014", "dnd2024"], "description": "Base mechanics: abilities, skills, levels, multiclass tables, proficiencies and catalogues.",
+            "license": "MIT", "files": [{"path": f, "kind": "content"} for f in order]}
+json.dump(manifest, open(os.path.join(OUT, "pack.json"), "w"), indent=1)
+print("wrote", sum(len(files[f]) for f in order), "elements")

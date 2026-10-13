@@ -1,0 +1,4 @@
+node_modules/
+# keep the replay cache, ignore all other run output
+.e2e/*
+!.e2e/cache/

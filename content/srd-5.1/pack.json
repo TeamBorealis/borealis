@@ -1,0 +1,175 @@
+{
+  "format": "borealis-pack/1",
+  "id": "srd-5.1",
+  "name": "System Reference Document 5.1",
+  "version": "1.0.0",
+  "origin": "core",
+  "rulesets": [
+    "dnd2014"
+  ],
+  "license": "CC-BY-4.0",
+  "attribution": "This work includes material taken from the System Reference Document 5.1 (\"SRD 5.1\") by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode. Modified: the SRD text was structured into JSON content elements (rules, setters and HTML fragments); text was reformatted and, in places, condensed for the character sheet summaries.",
+  "description": "Bundled 2014-rules content (fifth edition) from the SRD 5.1: races, classes with one subclass each, the Acolyte background, the Grappler feat, spells, equipment and magic items.",
+  "files": [
+    {
+      "path": "source.json",
+      "kind": "content"
+    },
+    {
+      "path": "races.json",
+      "kind": "content"
+    },
+    {
+      "path": "backgrounds.json",
+      "kind": "content"
+    },
+    {
+      "path": "feats.json",
+      "kind": "content"
+    },
+    {
+      "path": "rules/conditions.json",
+      "kind": "content"
+    },
+    {
+      "path": "classes/barbarian.json",
+      "kind": "content"
+    },
+    {
+      "path": "classes/bard.json",
+      "kind": "content"
+    },
+    {
+      "path": "classes/cleric.json",
+      "kind": "content"
+    },
+    {
+      "path": "classes/druid.json",
+      "kind": "content"
+    },
+    {
+      "path": "classes/fighter.json",
+      "kind": "content"
+    },
+    {
+      "path": "classes/monk.json",
+      "kind": "content"
+    },
+    {
+      "path": "classes/paladin.json",
+      "kind": "content"
+    },
+    {
+      "path": "classes/ranger.json",
+      "kind": "content"
+    },
+    {
+      "path": "classes/rogue.json",
+      "kind": "content"
+    },
+    {
+      "path": "classes/sorcerer.json",
+      "kind": "content"
+    },
+    {
+      "path": "classes/warlock.json",
+      "kind": "content"
+    },
+    {
+      "path": "classes/wizard.json",
+      "kind": "content"
+    },
+    {
+      "path": "spells/spells-0.json",
+      "kind": "content"
+    },
+    {
+      "path": "spells/spells-1.json",
+      "kind": "content"
+    },
+    {
+      "path": "spells/spells-2.json",
+      "kind": "content"
+    },
+    {
+      "path": "spells/spells-3.json",
+      "kind": "content"
+    },
+    {
+      "path": "spells/spells-4.json",
+      "kind": "content"
+    },
+    {
+      "path": "spells/spells-5.json",
+      "kind": "content"
+    },
+    {
+      "path": "spells/spells-6.json",
+      "kind": "content"
+    },
+    {
+      "path": "spells/spells-7.json",
+      "kind": "content"
+    },
+    {
+      "path": "spells/spells-8.json",
+      "kind": "content"
+    },
+    {
+      "path": "spells/spells-9.json",
+      "kind": "content"
+    },
+    {
+      "path": "items/armor.json",
+      "kind": "content"
+    },
+    {
+      "path": "items/gear.json",
+      "kind": "content"
+    },
+    {
+      "path": "items/mounts-vehicles.json",
+      "kind": "content"
+    },
+    {
+      "path": "items/packs.json",
+      "kind": "content"
+    },
+    {
+      "path": "items/tools.json",
+      "kind": "content"
+    },
+    {
+      "path": "items/trade-goods.json",
+      "kind": "content"
+    },
+    {
+      "path": "items/weapons.json",
+      "kind": "content"
+    },
+    {
+      "path": "items/magic/armor.json",
+      "kind": "content"
+    },
+    {
+      "path": "items/magic/potions.json",
+      "kind": "content"
+    },
+    {
+      "path": "items/magic/rings.json",
+      "kind": "content"
+    },
+    {
+      "path": "items/magic/rods-staffs-wands.json",
+      "kind": "content"
+    },
+    {
+      "path": "items/magic/weapons.json",
+      "kind": "content"
+    },
+    {
+      "path": "items/magic/wondrous.json",
+      "kind": "content"
+    }
+  ]
+}

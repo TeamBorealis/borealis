@@ -1,0 +1,211 @@
+//! Embedded OFL fonts (Noto Sans, Noto Serif, Noto Sans Hebrew): glyph lookup with per-style
+//! fallback, and advance metrics used by both layout and the PDF writer.
+
+use std::sync::OnceLock;
+use ttf_parser::Face as Parsed;
+
+/// A concrete font file.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum Face {
+    Sans,
+    SansBold,
+    SansItalic,
+    SerifBold,
+    Hebrew,
+    HebrewBold,
+    // Appended so the resource names of the older faces (F1..F6) stay stable.
+    Serif,
+    SerifItalic,
+}
+
+/// A text style: what layout and form fields ask for.
+#[allow(dead_code)]
+// the regular serif styles are only exercised by tests so far Each style resolves to a chain of faces.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) enum Style {
+    Sans,
+    SansBold,
+    SansItalic,
+    Serif,
+    SerifBold,
+    SerifItalic,
+}
+
+impl Style {
+    /// The first face of the chain (its cap height places single-line field values).
+    pub fn primary(self) -> Face {
+        chain(self)[0]
+    }
+}
+
+impl Face {
+    pub const ALL: [Face; 8] = [
+        Face::Sans,
+        Face::SansBold,
+        Face::SansItalic,
+        Face::SerifBold,
+        Face::Hebrew,
+        Face::HebrewBold,
+        Face::Serif,
+        Face::SerifItalic,
+    ];
+
+    pub fn index(self) -> usize {
+        self as usize
+    }
+
+    /// Page resource name (`/F1`...).
+    pub fn resource(self) -> String {
+        format!("F{}", self.index() + 1)
+    }
+
+    /// PostScript name.
+    pub fn ps_name(self) -> &'static str {
+        match self {
+            Face::Sans => "NotoSans-Regular",
+            Face::SansBold => "NotoSans-Bold",
+            Face::SansItalic => "NotoSans-Italic",
+            Face::SerifBold => "NotoSerif-Bold",
+            Face::Hebrew => "NotoSansHebrew-Regular",
+            Face::HebrewBold => "NotoSansHebrew-Bold",
+            Face::Serif => "NotoSerif-Regular",
+            Face::SerifItalic => "NotoSerif-Italic",
+        }
+    }
+
+    pub fn data(self) -> &'static [u8] {
+        match self {
+            Face::Sans => include_bytes!("../fonts/NotoSans-Regular.ttf"),
+            Face::SansBold => include_bytes!("../fonts/NotoSans-Bold.ttf"),
+            Face::SansItalic => include_bytes!("../fonts/NotoSans-Italic.ttf"),
+            Face::SerifBold => include_bytes!("../fonts/NotoSerif-Bold.ttf"),
+            Face::Hebrew => include_bytes!("../fonts/NotoSansHebrew-Regular.ttf"),
+            Face::HebrewBold => include_bytes!("../fonts/NotoSansHebrew-Bold.ttf"),
+            Face::Serif => include_bytes!("../fonts/NotoSerif-Regular.ttf"),
+            Face::SerifItalic => include_bytes!("../fonts/NotoSerif-Italic.ttf"),
+        }
+    }
+
+    pub fn parsed(self) -> &'static Parsed<'static> {
+        static FACES: OnceLock<Vec<Parsed<'static>>> = OnceLock::new();
+        let faces = FACES.get_or_init(|| {
+            Face::ALL
+                .iter()
+                // The files are compiled in and covered by a unit test, so a parse failure is a
+                // build-time invariant violation, not a runtime condition.
+                .map(|f| Parsed::parse(f.data(), 0).expect("embedded font parses"))
+                .collect()
+        });
+        &faces[self.index()]
+    }
+
+    /// Design units per em.
+    pub fn units_per_em(self) -> f32 {
+        f32::from(self.parsed().units_per_em())
+    }
+}
+
+/// Faces tried in order for a style: the Latin/Cyrillic/Greek face, its sans counterpart (serif
+/// styles only), then Hebrew.
+fn chain(style: Style) -> &'static [Face] {
+    match style {
+        Style::Sans => &[Face::Sans, Face::Hebrew],
+        Style::SansBold => &[Face::SansBold, Face::HebrewBold],
+        Style::SansItalic => &[Face::SansItalic, Face::Hebrew],
+        Style::Serif => &[Face::Serif, Face::Sans, Face::Hebrew],
+        Style::SerifBold => &[Face::SerifBold, Face::SansBold, Face::HebrewBold],
+        Style::SerifItalic => &[Face::SerifItalic, Face::SansItalic, Face::Hebrew],
+    }
+}
+
+/// A resolved glyph.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Glyph {
+    pub face: Face,
+    /// Glyph id in the original font (0 = `.notdef`).
+    pub gid: u16,
+    /// Advance in 1/1000 em.
+    pub advance: f32,
+}
+
+/// Characters that are not drawn at all (controls, bidi marks, joiners).
+fn is_invisible(c: char) -> bool {
+    c.is_control() && c != '\t'
+        || matches!(c, '\u{200B}'..='\u{200F}' | '\u{202A}'..='\u{202E}' | '\u{2060}' | '\u{FEFF}')
+}
+
+/// Resolve `c` for a style. `None` for characters that draw nothing.
+pub(crate) fn glyph(style: impl Into<Style>, c: char) -> Option<Glyph> {
+    let c = if c == '\t' { ' ' } else { c };
+    if is_invisible(c) {
+        return None;
+    }
+    let faces = chain(style.into());
+    for &face in faces {
+        if let Some(id) = face.parsed().glyph_index(c) {
+            return Some(resolved(face, id.0));
+        }
+    }
+    Some(resolved(faces[0], 0))
+}
+
+fn resolved(face: Face, gid: u16) -> Glyph {
+    let units = face
+        .parsed()
+        .glyph_hor_advance(ttf_parser::GlyphId(gid))
+        .unwrap_or(0);
+    Glyph {
+        face,
+        gid,
+        advance: f32::from(units) * 1000.0 / face.units_per_em(),
+    }
+}
+
+/// Width of `text` in points at `size`.
+pub(crate) fn text_width(style: impl Into<Style>, text: &str, size: f32) -> f32 {
+    let style = style.into();
+    text.chars()
+        .filter_map(|c| glyph(style, c))
+        .map(|g| g.advance)
+        .sum::<f32>()
+        * size
+        / 1000.0
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn embedded_fonts_parse_and_cover_scripts() {
+        for f in Face::ALL {
+            assert!(f.parsed().number_of_glyphs() > 10, "{f:?}");
+        }
+        for c in ['A', 'é', 'Š', 'Æ', 'Ж', 'α', 'א'] {
+            let g = glyph(Style::Sans, c).unwrap();
+            assert_ne!(g.gid, 0, "{c} has a glyph");
+        }
+        assert_eq!(glyph(Style::Sans, 'א').unwrap().face, Face::Hebrew);
+        assert_eq!(glyph(Style::SansBold, 'א').unwrap().face, Face::HebrewBold);
+        assert_eq!(
+            glyph(Style::Sans, '日').unwrap().gid,
+            0,
+            "CJK is not covered"
+        );
+        assert!(glyph(Style::Sans, '\u{200F}').is_none());
+        for style in [Style::Serif, Style::SerifItalic] {
+            for c in ['A', 'é', 'Ж', 'α', '\u{2212}'] {
+                let g = glyph(style, c).unwrap();
+                assert_eq!((g.face, g.gid != 0), (style.primary(), true), "{c}");
+            }
+            assert_eq!(glyph(style, 'א').unwrap().face, Face::Hebrew);
+        }
+    }
+
+    #[test]
+    fn widths_are_proportional() {
+        let w = text_width(Style::Sans, "AAAA", 10.0);
+        assert!(w > 20.0 && w < 40.0, "{w}");
+        assert!(text_width(Style::SansBold, "AAAA", 10.0) > w);
+    }
+}

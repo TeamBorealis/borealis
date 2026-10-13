@@ -1,0 +1,2648 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: spells/level-4",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SPELL_ARCANE_EYE",
+   "name": "Arcane Eye",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Wizard"
+   ],
+   "description": "<p>You create an Invisible, invulnerable eye within range that hovers for the duration. You mentally receive visual information from the eye, which can see in every direction. It also has Darkvision with a range of 30 feet.</p>\n<p>As a Bonus Action, you can move the eye up to 30 feet in any direction. A solid barrier blocks the eye’s movement, but the eye can pass through an opening as small as 1 inch in diameter.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Divination"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 hour"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a bit of bat fur"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Divination",
+    "classes": [
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_ARCANE_EYE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_AURA_OF_LIFE",
+   "name": "Aura of Life",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric",
+    "Paladin"
+   ],
+   "description": "<p>An aura radiates from you in a 30-foot Emanation for the duration. While in the aura, you and your allies have Resistance to Necrotic damage, and your Hit Point maximums can’t be reduced. If an ally with 0 Hit Points starts its turn in the aura, that ally regains 1 Hit Point.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Abjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 10 minutes"
+    },
+    {
+     "name": "range",
+     "value": "Self"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "false"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Abjuration",
+    "classes": [
+     "Cleric",
+     "Paladin"
+    ],
+    "components": {
+     "v": true,
+     "s": false,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_AURA_OF_LIFE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_BANISHMENT",
+   "name": "Banishment",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric",
+    "Paladin",
+    "Sorcerer",
+    "Warlock",
+    "Wizard"
+   ],
+   "description": "<p>One creature that you can see within range must succeed on a Charisma saving throw or be transported to a harmless demiplane for the duration. While there, the target has the Incapacitated condition. When the spell ends, the target reappears in the space it left or in the nearest unoccupied space if that space is occupied.</p>\n<p>If the target is an Aberration, a Celestial, an Elemental, a Fey, or a Fiend, the target doesn’t return if the spell lasts for 1 minute. The target is instead transported to a random location on a plane (GM’s choice) associated with its creature type.</p>\n<p><b>Using a Higher-Level Spell Slot.</b> You can target one additional creature for each spell slot level above 4.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Abjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 minute"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a pentacle"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Abjuration",
+    "classes": [
+     "Cleric",
+     "Paladin",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": true,
+    "higher_level": "Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 4."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_BANISHMENT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_BLACK_TENTACLES",
+   "name": "Black Tentacles",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Wizard"
+   ],
+   "description": "<p>Squirming, ebony tentacles fill a 20-foot square on ground that you can see within range. For the duration, these tentacles turn the ground in that area into Difficult Terrain.</p>\n<p>Each creature in that area makes a Strength saving throw. On a failed save, it takes 3d6 Bludgeoning damage, and it has the Restrained condition until the spell ends. A creature also makes that save if it enters the area or ends it turn there. A creature makes that save only once per turn.</p>\n<p>A Restrained creature can take an action to make a Strength (Athletics) check against your spell save DC, ending the condition on itself on a success.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Conjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 minute"
+    },
+    {
+     "name": "range",
+     "value": "90 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a tentacle"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Conjuration",
+    "classes": [
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "renamed_from": "ID_PHB_SPELL_EVARDS_BLACK_TENTACLES",
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_EVARDS_BLACK_TENTACLES",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_BLIGHT",
+   "name": "Blight",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid",
+    "Sorcerer",
+    "Warlock",
+    "Wizard"
+   ],
+   "description": "<p>A creature that you can see within range makes a Constitution saving throw, taking 8d8 Necrotic damage on a failed save or half as much damage on a successful one. A Plant creature automatically fails the save.</p>\n<p>Alternatively, target a nonmagical plant that isn’t a creature, such as a tree or shrub. It doesn’t make a save; it simply withers and dies.</p>\n<p><b>Using a Higher-Level Spell Slot.</b> The damage increases by 1d8 for each spell slot level above 4.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Necromancy"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Necromancy",
+    "classes": [
+     "Druid",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 4."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_BLIGHT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_CHARM_MONSTER",
+   "name": "Charm Monster",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Druid",
+    "Sorcerer",
+    "Warlock",
+    "Wizard"
+   ],
+   "description": "<p>One creature you can see within range makes a Wisdom saving throw. It does so with Advantage if you or your allies are fighting it. On a failed save, the target has the Charmed condition until the spell ends or until you or your allies damage it. The Charmed creature is Friendly to you. When the spell ends, the target knows it was Charmed by you.</p>\n<p><b>Using a Higher-Level Spell Slot.</b> You can target one additional creature for each spell slot level above 4.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Enchantment"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "1 hour"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Enchantment",
+    "classes": [
+     "Bard",
+     "Druid",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 4."
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_COMPULSION",
+   "name": "Compulsion",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard"
+   ],
+   "description": "<p>Each creature of your choice that you can see within range must succeed on a Wisdom saving throw or have the Charmed condition until the spell ends.</p>\n<p>For the duration, you can take a Bonus Action to designate a direction that is horizontal to you. Each Charmed target must use as much of its movement as possible to move in that direction on its next turn, taking the safest route. After moving in this way, a target repeats the save, ending the spell on itself on a success.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Enchantment"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 minute"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Enchantment",
+    "classes": [
+     "Bard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_COMPULSION",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_CONFUSION",
+   "name": "Confusion",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Druid",
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>Each creature in a 10-foot-radius Sphere centered on a point you choose within range must succeed on a Wisdom saving throw, or that target can’t take Bonus Actions or Reactions and must roll 1d10 at the start of each of its turns to determine its behavior for that turn, consulting the table below.</p>\n<p>1d10 Behavior for the Turn</p>\n<pre>  1    The target doesn’t take an action, and it uses all\n       its movement to move. Roll 1d4 for the direc-\n       tion: 1, north; 2, east; 3, south; or 4, west.\n 2–6   The target doesn’t move or take actions.\n 7–8   The target doesn’t move, and it takes the At-\n       tack action to make one melee attack against\n       a random creature within reach. If none are\n       within reach, the target takes no action.\n 9–10 The target chooses its behavior.</pre>\n<p>At the end of each of its turns, an affected target repeats the save, ending the spell on itself on a success.</p>\n<p><b>Using a Higher-Level Spell Slot.</b> The Sphere’s radius increases by 5 feet for each spell slot level above 4.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Enchantment"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 minute"
+    },
+    {
+     "name": "range",
+     "value": "90 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "three nut shells"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Enchantment",
+    "classes": [
+     "Bard",
+     "Druid",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": true,
+    "higher_level": "Using a Higher-Level Spell Slot. The Sphere’s radius increases by 5 feet for each spell slot level above 4."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_CONFUSION",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_CONJURE_MINOR_ELEMENTALS",
+   "name": "Conjure Minor Elementals",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid",
+    "Wizard"
+   ],
+   "description": "<p>You conjure spirits from the Elemental Planes that flit around you in a 15-foot Emanation for the duration. Until the spell ends, any attack you make deals an extra 2d8 damage when you hit a creature in the Emanation. This damage is Acid, Cold, Fire, or Lightning (your choice when you make the attack).</p>\n<p>In addition, the ground in the Emanation is Difficult Terrain for your enemies.</p>\n<p><b>Using a Higher-Level Spell Slot.</b> The damage increases by 1d8 for each spell slot level above 4.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Conjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 10 minutes"
+    },
+    {
+     "name": "range",
+     "value": "Self"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Conjuration",
+    "classes": [
+     "Druid",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": true,
+    "higher_level": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 4."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_CONJURE_MINOR_ELEMENTALS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_CONJURE_WOODLAND_BEINGS",
+   "name": "Conjure Woodland Beings",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid",
+    "Ranger"
+   ],
+   "description": "<p>You conjure nature spirits that flit around you in a 10-foot Emanation for the duration. Whenever the Emanation enters the space of a creature you can see and whenever a creature you can see enters the Emanation or ends its turn there, you can force that creature to make a Wisdom saving throw. The creature takes 5d8 Force damage on a failed save or half as much damage on a successful one. A creature makes this save only once per turn.</p>\n<p>In addition, you can take the Disengage action as a Bonus Action for the spell’s duration.</p>\n<p><b>Using a Higher-Level Spell Slot.</b> The damage increases by 1d8 for each spell slot level above 4.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Conjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 10 minutes"
+    },
+    {
+     "name": "range",
+     "value": "Self"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Conjuration",
+    "classes": [
+     "Druid",
+     "Ranger"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": true,
+    "higher_level": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 4."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_CONJURE_WOODLAND_BEINGS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_CONTROL_WATER",
+   "name": "Control Water",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric",
+    "Druid",
+    "Wizard"
+   ],
+   "description": "<p>Until the spell ends, you control any water inside an area you choose that is a Cube up to 100 feet on a side, using one of the following effects. As a Magic action on your later turns, you can repeat the same effect or choose a different one.</p>\n<p><b>Flood.</b> You cause the water level of all standing water in the area to rise by as much as 20 feet. If you choose an area in a large body of water, you instead create a 20-foot tall wave that travels from one side of the area to the other and then crashes. Any Huge or smaller vehicles in the wave’s path are carried with it to the other side. Any Huge or smaller vehicles struck by the wave have a 25 percent chance of capsizing.</p>\n<p>The water level remains elevated until the spell ends or you choose a different effect. If this effect produced a wave, the wave repeats on the start of your next turn while the flood effect lasts.</p>\n<p><b>Part Water.</b> You part water in the area and create a trench. The trench extends across the spell’s area, and the separated water forms a wall to either side. The trench remains until the spell ends or you choose a different effect. The water then slowly fills in the trench over the course of the next round until the normal water level is restored.</p>\n<p><b>Redirect Flow.</b> You cause flowing water in the area to move in a direction you choose, even if the water has to flow over obstacles, up walls, or in other unlikely directions. The water in the area moves as you direct it, but once it moves beyond the spell’s area, it resumes its flow based on the terrain. The water continues to move in the direction you chose until the spell ends or you choose a different effect.</p>\n<p><b>Whirlpool.</b> You cause a whirlpool to form in the center of the area, which must be at least 50 feet square and 25 feet deep. The whirlpool lasts until you choose a different effect or the spell ends. The whirlpool is 5 feet wide at the base, up to 50 feet wide at the top, and 25 feet tall. Any creature in the water and within 25 feet of the whirlpool is pulled 10 feet toward it. When a creature enters the whirlpool for the first time on a turn or ends its turn there, it makes a Strength saving throw. On a failed save, the creature takes 2d8 Bludgeoning damage. On a successful save, the creature takes half as much damage. A creature can swim away from the whirlpool only if it first takes an action to pull away and succeeds on a Strength (Athletics) check against your spell save DC.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Transmutation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 10 minutes"
+    },
+    {
+     "name": "range",
+     "value": "300 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a mixture of water and dust"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Transmutation",
+    "classes": [
+     "Cleric",
+     "Druid",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_CONTROL_WATER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_DEATH_WARD",
+   "name": "Death Ward",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric",
+    "Paladin"
+   ],
+   "description": "<p>You touch a creature and grant it a measure of protection from death. The first time the target would drop to 0 Hit Points before the spell ends, the target instead drops to 1 Hit Point, and the spell ends.</p>\n<p>If the spell is still in effect when the target is subjected to an effect that would kill it instantly without dealing damage, that effect is negated against the target, and the spell ends.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Abjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "8 hours"
+    },
+    {
+     "name": "range",
+     "value": "Touch"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Abjuration",
+    "classes": [
+     "Cleric",
+     "Paladin"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_DEATH_WARD",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_DIMENSION_DOOR",
+   "name": "Dimension Door",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Sorcerer",
+    "Warlock",
+    "Wizard"
+   ],
+   "description": "<p>You teleport to a location within range. You arrive at exactly the spot desired. It can be a place you can see, one you can visualize, or one you can describe by stating distance and direction, such as “200 feet straight downward” or “300 feet upward to the northwest at a 45-degree angle.”</p>\n<p>You can also teleport one willing creature. The creature must be within 5 feet of you when you teleport, and it teleports to a space within 5 feet of your destination space.</p>\n<p>If you, the other creature, or both would arrive in a space occupied by a creature or completely filled by one or more objects, you and any creature traveling with you each take 4d6 Force damage, and the teleportation fails.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Conjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "500 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "false"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Conjuration",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": false,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_DIMENSION_DOOR",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_DIVINATION",
+   "name": "Divination",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric",
+    "Druid",
+    "Wizard"
+   ],
+   "description": "<p>This spell puts you in contact with a god or a god’s servants. You ask one question about a specific goal, event, or activity to occur within 7 days. The GM offers a truthful reply, which might be a short phrase or cryptic rhyme. The spell doesn’t account for circumstances that might change the answer, such as the casting of other spells.</p>\n<p>If you cast the spell more than once before finishing a Long Rest, there is a cumulative 25 percent chance for each casting after the first that you get no answer.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Divination",
+     "attributes": {
+      "addition": "ritual"
+     }
+    },
+    {
+     "name": "time",
+     "value": "Action or Ritual"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "Self"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "true"
+    },
+    {
+     "name": "materialComponent",
+     "value": "incense worth 25+ GP, which the spell consumes"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Divination",
+    "classes": [
+     "Cleric",
+     "Druid",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": true,
+    "concentration": false,
+    "material_cost": {
+     "amount": 25,
+     "currency": "gp",
+     "consumed": true
+    }
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_DIVINATION",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_DOMINATE_BEAST",
+   "name": "Dominate Beast",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid",
+    "Ranger",
+    "Sorcerer"
+   ],
+   "description": "<p>One Beast you can see within range must succeed on a Wisdom saving throw or have the Charmed condition for the duration. The target has Advantage on the save if you or your allies are fighting it. Whenever the target takes damage, it repeats the save, ending the spell on itself on a success.</p>\n<p>You have a telepathic link with the Charmed target while the two of you are on the same plane of existence. On your turn, you can use this link to issue commands to the target (no action required), such as “Attack that creature,” “Move over there,” or “Fetch that object.” The target does its best to obey on its turn. If it completes an order and doesn’t receive further direction from you, it acts and moves as it likes, focusing on protecting itself.</p>\n<p>You can command the target to take a Reaction but must take your own Reaction to do so.</p>\n<p><b>Using a Higher-Level Spell Slot.</b> Your Concentration can last longer with a spell slot of level 5 (up to 10 minutes), 6 (up to 1 hour), or 7+ (up to 8 hours).</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Enchantment"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 minute"
+    },
+    {
+     "name": "range",
+     "value": "60 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Enchantment",
+    "classes": [
+     "Druid",
+     "Ranger",
+     "Sorcerer"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": true,
+    "higher_level": "Using a Higher-Level Spell Slot. Your Concentration can last longer with a spell slot of level 5 (up to 10 minutes), 6 (up to 1 hour), or 7+ (up to 8 hours)."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_DOMINATE_BEAST",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_FABRICATE",
+   "name": "Fabricate",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Wizard"
+   ],
+   "description": "<p>You convert raw materials into products of the same material. For example, you can fabricate a wooden bridge from a clump of trees, a rope from a patch of hemp, or clothes from flax or wool.</p>\n<p>Choose raw materials that you can see within range. You can fabricate a Large or smaller object (contained within a 10-foot Cube or eight connected 5-foot Cubes) given a sufficient quantity of material. If you’re working with metal, stone, or another mineral substance, however, the fabricated object can be no larger than Medium (contained within a 5-foot Cube). The quality of any fabricated objects is based on the quality of the raw materials.</p>\n<p>Creatures and magic items can’t be created by this spell. You also can’t use it to create items that require a high degree of skill—such as weapons and armor—unless you have proficiency with the type of Artisan’s Tools used to craft such objects.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Transmutation"
+    },
+    {
+     "name": "time",
+     "value": "10 minutes"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "120 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Transmutation",
+    "classes": [
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_FABRICATE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_FAITHFUL_HOUND",
+   "name": "Faithful Hound",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Wizard"
+   ],
+   "description": "<p>You conjure a phantom watchdog in an unoccupied space that you can see within range. The hound remains for the duration or until the two of you are more than 300 feet apart from each other.</p>\n<p>No one but you can see the hound, and it is intangible and invulnerable. When a Small or larger creature comes within 30 feet of it without first speaking the password that you specify when you cast this spell, the hound starts barking loudly. The hound has Truesight with a range of 30 feet.</p>\n<p>At the start of each of your turns, the hound attempts to bite one enemy within 5 feet of it. That enemy must succeed on a Dexterity saving throw or take 4d8 Force damage.</p>\n<p>On your later turns, you can take a Magic action to move the hound up to 30 feet.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Conjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "8 hours"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a silver whistle"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Conjuration",
+    "classes": [
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "renamed_from": "ID_PHB_SPELL_MORDENKAINENS_FAITHFUL_HOUND",
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_MORDENKAINENS_FAITHFUL_HOUND",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_FIRE_SHIELD",
+   "name": "Fire Shield",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid",
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>Wispy flames wreathe your body for the duration, shedding Bright Light in a 10-foot radius and Dim Light for an additional 10 feet.</p>\n<p>The flames provide you with a warm shield or a chill shield, as you choose. The warm shield grants you Resistance to Cold damage, and the chill shield grants you Resistance to Fire damage.</p>\n<p>In addition, whenever a creature within 5 feet of you hits you with a melee attack roll, the shield erupts with flame. The attacker takes 2d8 Fire damage from a warm shield or 2d8 Cold damage from a chill shield.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Evocation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "10 minutes"
+    },
+    {
+     "name": "range",
+     "value": "Self"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a bit of phosphorus or a firefly"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Evocation",
+    "classes": [
+     "Druid",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_FIRE_SHIELD",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_FREEDOM_OF_MOVEMENT",
+   "name": "Freedom of Movement",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Cleric",
+    "Druid",
+    "Ranger"
+   ],
+   "description": "<p>You touch a willing creature. For the duration, the target’s movement is unaffected by Difficult Terrain, and spells and other magical effects can neither reduce the target’s Speed nor cause the target to have the Paralyzed or Restrained conditions. The target also has a Swim Speed equal to its Speed.</p>\n<p>In addition, the target can spend 5 feet of movement to automatically escape from nonmagical restraints, such as manacles or a creature imposing the Grappled condition on it.</p>\n<p><b>Using a Higher-Level Spell Slot.</b> You can target one additional creature for each spell slot level above 4.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Abjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "1 hour"
+    },
+    {
+     "name": "range",
+     "value": "Touch"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a leather strap"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Abjuration",
+    "classes": [
+     "Bard",
+     "Cleric",
+     "Druid",
+     "Ranger"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 4."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_FREEDOM_OF_MOVEMENT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_GIANT_INSECT",
+   "name": "Giant Insect",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid"
+   ],
+   "description": "<p>You summon a giant centipede, spider, or wasp (chosen when you cast the spell). It manifests in an unoccupied space you can see within range and uses the Giant Insect stat block. The form you choose determines certain details in its stat block. The creature disappears when it drops to 0 Hit Points or when the spell ends.</p>\n<p>The creature is an ally to you and your allies. In combat, the creature shares your Initiative count, but it takes its turn immediately after yours. It obeys your verbal commands (no action required by you). If you don’t issue any, it takes the Dodge action and uses its movement to avoid danger.</p>\n<p><b>Using a Higher-Level Spell Slot.</b> Use the spell slot’s level for the spell’s level in the stat block. Giant Insect Large Beast, Unaligned AC 11 + the spell’s level HP 30 + 10 for each spell level above 4 Speed 40 ft., Climb 40 ft., Fly 40 ft. (Wasp only)</p>\n<pre>          MOD SAVE             MOD SAVE              MOD SAVE\nStr 17 +3 +3         Dex 13 +1 +1         Con 15 +2 +2\nInt 4 −3 −3          Wis 14 +2 +2         Cha 3 −4 −4</pre>\n<p>Senses Darkvision 60 ft.; Passive Perception 12 Languages Understands the languages you know CR None (XP 0; PB equals your Proficiency Bonus) Traits Spider Climb. The insect can climb difficult surfaces, including along ceilings, without needing to make an ability check. Actions Multiattack. The insect makes a number of attacks equal to half this spell’s level (round down).</p>\n<p><b>Poison Jab.</b> Melee Attack Roll: Bonus equals your spell attack modifier, reach 10 ft. Hit: 1d6 + 3 plus the spell’s level Piercing damage plus 1d4 Poison damage.</p>\n<p><b>Web Bolt (Spider Only).</b> Ranged Attack Roll: Bonus equals your spell attack modifier, range 60 ft. Hit: 1d10 + 3 plus the spell’s level Bludgeoning damage, and the target’s Speed is reduced to 0 until the start of the insect’s next turn. Bonus Actions Venomous Spew (Centipede Only). Constitution Saving Throw: Your spell save DC, one creature the insect can see within 10 feet. Failure: The target has the Poisoned condition until the start of the insect’s next turn.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Conjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 10 minutes"
+    },
+    {
+     "name": "range",
+     "value": "60 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Conjuration",
+    "classes": [
+     "Druid"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": true,
+    "higher_level": "Using a Higher-Level Spell Slot. Use the spell slot’s level for the spell’s level in the stat block. Giant Insect Large Beast, Unaligned AC 11 + the spell’s level HP 30 + 10 for each spell level above 4 Speed 40 ft., Climb 40 ft., Fly 40 ft. (Wasp only)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_GIANT_INSECT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_GREATER_INVISIBILITY",
+   "name": "Greater Invisibility",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>A creature you touch has the Invisible condition until the spell ends.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Illusion"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 minute"
+    },
+    {
+     "name": "range",
+     "value": "Touch"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Illusion",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_GREATER_INVISIBILITY",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_GUARDIAN_OF_FAITH",
+   "name": "Guardian of Faith",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric"
+   ],
+   "description": "<p>A Large spectral guardian appears and hovers for the duration in an unoccupied space that you can see within range. The guardian occupies that space and is invulnerable, and it appears in a form appropriate for your deity or pantheon.</p>\n<p>Any enemy that moves to a space within 10 feet of the guardian for the first time on a turn or starts its turn there makes a Dexterity saving throw, taking 20 Radiant damage on a failed save or half as much damage on a successful one. The guardian vanishes when it has dealt a total of 60 damage.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Conjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "8 hours"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "false"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Conjuration",
+    "classes": [
+     "Cleric"
+    ],
+    "components": {
+     "v": true,
+     "s": false,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_GUARDIAN_OF_FAITH",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_HALLUCINATORY_TERRAIN",
+   "name": "Hallucinatory Terrain",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Druid",
+    "Warlock",
+    "Wizard"
+   ],
+   "description": "<p>You make natural terrain in a 150-foot Cube in range look, sound, and smell like another sort of natural terrain. Thus, open fields or a road can be made to resemble a swamp, hill, crevasse, or some other difficult or impassable terrain. A pond can be made to seem like a grassy meadow, a precipice like a gentle slope, or a rock-strewn gully like a wide and smooth road. Manufactured structures, equipment, and creatures within the area aren’t changed.</p>\n<p>The tactile characteristics of the terrain are unchanged, so creatures entering the area are likely to notice the illusion. If the difference isn’t obvious by touch, a creature examining the illusion can take the Study action to make an Intelligence (Investigation) check against your spell save DC to disbelieve it. If a creature discerns that the terrain is illusory, the creature sees a vague image superimposed on the real terrain.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Illusion"
+    },
+    {
+     "name": "time",
+     "value": "10 minutes"
+    },
+    {
+     "name": "duration",
+     "value": "24 hours"
+    },
+    {
+     "name": "range",
+     "value": "300 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a mushroom"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Illusion",
+    "classes": [
+     "Bard",
+     "Druid",
+     "Warlock",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_HALLUCINATORY_TERRAIN",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_ICE_STORM",
+   "name": "Ice Storm",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid",
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>Hail falls in a 20-foot-radius, 40-foot-high Cylinder centered on a point within range. Each creature in the Cylinder makes a Dexterity saving throw. A creature takes 2d10 Bludgeoning damage and 4d6 Cold damage on a failed save or half as much damage on a successful one.</p>\n<p>Hailstones turn ground in the Cylinder into Difficult Terrain until the end of your next turn.</p>\n<p><b>Using a Higher-Level Spell Slot.</b> The Bludgeoning damage increases by 1d10 for each spell slot level above 4.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Evocation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "300 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a mitten"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Evocation",
+    "classes": [
+     "Druid",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Using a Higher-Level Spell Slot. The Bludgeoning damage increases by 1d10 for each spell slot level above 4."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_ICE_STORM",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_LOCATE_CREATURE",
+   "name": "Locate Creature",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Cleric",
+    "Druid",
+    "Paladin",
+    "Ranger",
+    "Wizard"
+   ],
+   "description": "<p>Describe or name a creature that is familiar to you. You sense the direction to the creature’s location if that creature is within 1,000 feet of you. If the creature is moving, you know the direction of its movement.</p>\n<p>The spell can locate a specific creature known to you or the nearest creature of a specific kind (such as a human or a unicorn) if you have seen such a creature up close—within 30 feet—at least once. If the creature you described or named is in a different form, such as under the effects of a Flesh to Stone or Polymorph spell, this spell doesn’t locate the creature.</p>\n<p>This spell can’t locate a creature if any thickness of lead blocks a direct path between you and the creature.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Divination"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 hour"
+    },
+    {
+     "name": "range",
+     "value": "Self"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "fur from a bloodhound"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Divination",
+    "classes": [
+     "Bard",
+     "Cleric",
+     "Druid",
+     "Paladin",
+     "Ranger",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_LOCATE_CREATURE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_PHANTASMAL_KILLER",
+   "name": "Phantasmal Killer",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Wizard"
+   ],
+   "description": "<p>You tap into the nightmares of a creature you can see within range and create an illusion of its deep-est fears, visible only to that creature. The target makes a Wisdom saving throw. On a failed save, the target takes 4d10 Psychic damage and has Disadvantage on ability checks and attack rolls for the duration. On a successful save, the target takes half as much damage, and the spell ends.</p>\n<p>For the duration, the target makes a Wisdom saving throw at the end of each of its turns. On a failed save, it takes the Psychic damage again. On a successful save, the spell ends.</p>\n<p><b>Using a Higher-Level Spell Slot.</b> The damage increases by 1d10 for each spell slot level above 4.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Illusion"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 minute"
+    },
+    {
+     "name": "range",
+     "value": "120 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Illusion",
+    "classes": [
+     "Bard",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": true,
+    "higher_level": "Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 4."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_PHANTASMAL_KILLER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_POLYMORPH",
+   "name": "Polymorph",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Druid",
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>You attempt to transform a creature that you can see within range into a Beast. The target must succeed on a Wisdom saving throw or shape-shift into a Beast form for the duration. That form can be any Beast you choose that has a Challenge Rating equal to or less than the target’s (or the target’s level if it doesn’t have a Challenge Rating). The target’s game statistics are replaced by the stat block of the chosen Beast, but the target retains its alignment, personality, creature type, Hit Points, and Hit Point Dice. See the “Animals” section of “Monsters” for a sample of Beast stat blocks.</p>\n<p>The target gains a number of Temporary Hit Points equal to the Hit Points of the Beast form. These Temporary Hit Points vanish if any remain when the spell ends. The spell ends early on the target if it has no Temporary Hit Points left.</p>\n<p>The target is limited in the actions it can perform by the anatomy of its new form, and it can’t speak or cast spells.</p>\n<p>The target’s gear melds into the new form. The creature can’t use or otherwise benefit from any of that equipment.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Transmutation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 hour"
+    },
+    {
+     "name": "range",
+     "value": "60 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a caterpillar cocoon"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Transmutation",
+    "classes": [
+     "Bard",
+     "Druid",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_POLYMORPH",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_PRIVATE_SANCTUM",
+   "name": "Private Sanctum",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Wizard"
+   ],
+   "description": "<p>You make an area within range magically secure. The area is a Cube that can be as small as 5 feet to as large as 100 feet on each side. The spell lasts for the duration.</p>\n<p>When you cast the spell, you decide what sort of security the spell provides, choosing any of the following properties:</p>\n<ul><li>Sound can’t pass through the barrier at the edge of the warded area.</li><li>The barrier of the warded area appears dark and foggy, preventing vision (including Darkvision)</li></ul>\n<p>through it.</p>\n<ul><li>Sensors created by Divination spells can’t appear inside the protected area or pass through the barrier at its perimeter.</li><li>Creatures in the area can’t be targeted by Divination spells.</li><li>Nothing can teleport into or out of the warded area.</li><li>Planar travel is blocked within the warded area.</li></ul>\n<p>Casting this spell on the same spot every day for 365 days makes the spell last until dispelled.</p>\n<p><b>Using a Higher-Level Spell Slot.</b> You can increase the size of the Cube by 100 feet for each spell slot level above 4.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Abjuration"
+    },
+    {
+     "name": "time",
+     "value": "10 minutes"
+    },
+    {
+     "name": "duration",
+     "value": "24 hours"
+    },
+    {
+     "name": "range",
+     "value": "120 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a thin sheet of lead"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Abjuration",
+    "classes": [
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Using a Higher-Level Spell Slot. You can increase the size of the Cube by 100 feet for each spell slot level above 4."
+   },
+   "renamed_from": "ID_PHB_SPELL_MORDENKAINENS_PRIVATE_SANCTUM",
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_MORDENKAINENS_PRIVATE_SANCTUM",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_RESILIENT_SPHERE",
+   "name": "Resilient Sphere",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Wizard"
+   ],
+   "description": "<p>A shimmering sphere encloses a Large or smaller creature or object within range. An unwilling creature must succeed on a Dexterity saving throw or be enclosed for the duration.</p>\n<p>Nothing—not physical objects, energy, or other spell effects—can pass through the barrier, in or out, though a creature in the sphere can breathe there. The sphere is immune to all damage, and a creature or object inside can’t be damaged by attacks or effects originating from outside, nor can a creature inside the sphere damage anything outside it.</p>\n<p>The sphere is weightless and just large enough to contain the creature or object inside. An enclosed creature can take an action to push against the sphere’s walls and thus roll the sphere at up to half the creature’s Speed. Similarly, the globe can be picked up and moved by other creatures.</p>\n<p>A Disintegrate spell targeting the globe destroys it without harming anything inside.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Abjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 minute"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a glass sphere"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Abjuration",
+    "classes": [
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "renamed_from": "ID_PHB_SPELL_OTILUKES_RESILIENT_SPHERE",
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_OTILUKES_RESILIENT_SPHERE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_SECRET_CHEST",
+   "name": "Secret Chest",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Wizard"
+   ],
+   "description": "<p>You hide a chest and all its contents on the Ethereal Plane. You must touch the chest and the miniature replica that serve as Material components for the spell. The chest can contain up to 12 cubic feet of nonliving material (3 feet by 2 feet by 2 feet).</p>\n<p>While the chest remains on the Ethereal Plane, you can take a Magic action and touch the replica to recall the chest. It appears in an unoccupied space on the ground within 5 feet of you. You can send the chest back to the Ethereal Plane by taking a Magic action to touch the chest and the replica.</p>\n<p>After 60 days, there is a cumulative 5 percent chance at the end of each day that the spell ends. The spell also ends if you cast this spell again or if the Tiny replica chest is destroyed. If the spell ends and the larger chest is on the Ethereal Plane, the chest remains there for you or someone else to find.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Conjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Until dispelled"
+    },
+    {
+     "name": "range",
+     "value": "Touch"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a chest, 3 feet by 2 feet by 2 feet, constructed from rare materials worth 5,000+ GP, and a Tiny replica of the chest made from the same materials worth 50+ GP"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Conjuration",
+    "classes": [
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false,
+    "material_cost": {
+     "amount": 5000,
+     "currency": "gp",
+     "consumed": false
+    }
+   },
+   "renamed_from": "ID_PHB_SPELL_LEOMUNDS_SECRET_CHEST",
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_LEOMUNDS_SECRET_CHEST",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_STONE_SHAPE",
+   "name": "Stone Shape",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric",
+    "Druid",
+    "Wizard"
+   ],
+   "description": "<p>You touch a stone object of Medium size or smaller or a section of stone no more than 5 feet in any dimension and form it into any shape you like. For example, you could shape a large rock into a weapon, statue, or coffer, or you could make a small passage through a wall that is 5 feet thick. You could also shape a stone door or its frame to seal the door shut. The object you create can have up to two hinges and a latch, but finer mechanical detail isn’t possible.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Transmutation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "Touch"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "soft clay"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Transmutation",
+    "classes": [
+     "Cleric",
+     "Druid",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_STONE_SHAPE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_STONESKIN",
+   "name": "Stoneskin",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid",
+    "Ranger",
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>Until the spell ends, one willing creature you touch has Resistance to Bludgeoning, Piercing, and Slashing damage.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Transmutation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 hour"
+    },
+    {
+     "name": "range",
+     "value": "Touch"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "diamond dust worth 100+ GP, which the spell consumes"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Transmutation",
+    "classes": [
+     "Druid",
+     "Ranger",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": true,
+    "material_cost": {
+     "amount": 100,
+     "currency": "gp",
+     "consumed": true
+    }
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_STONESKIN",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_VITRIOLIC_SPHERE",
+   "name": "Vitriolic Sphere",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>You point at a location within range, and a glowing, 1-foot-diameter ball of acid streaks there and explodes in a 20-foot-radius Sphere. Each creature in that area makes a Dexterity saving throw. On a failed save, a creature takes 10d4 Acid damage and another 5d4 Acid damage at the end of its next turn. On a successful save, a creature takes half the initial damage only.</p>\n<p><b>Using a Higher-Level Spell Slot.</b> The initial damage increases by 2d4 for each spell slot level above 4.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Evocation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "150 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a drop of bile"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Evocation",
+    "classes": [
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Using a Higher-Level Spell Slot. The initial damage increases by 2d4 for each spell slot level above 4."
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_WALL_OF_FIRE",
+   "name": "Wall of Fire",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid",
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>You create a wall of fire on a solid surface within range. You can make the wall up to 60 feet long, 20 feet high, and 1 foot thick, or a ringed wall up to 20 feet in diameter, 20 feet high, and 1 foot thick. The wall is opaque and lasts for the duration.</p>\n<p>When the wall appears, each creature in its area makes a Dexterity saving throw, taking 5d8 Fire damage on a failed save or half as much damage on a successful one.</p>\n<p>One side of the wall, selected by you when you cast this spell, deals 5d8 Fire damage to each creature that ends its turn within 10 feet of that side or inside the wall. A creature takes the same damage when it enters the wall for the first time on a turn or ends its turn there. The other side of the wall deals no damage.</p>\n<p><b>Using a Higher-Level Spell Slot.</b> The damage increases by 1d8 for each spell slot level above 4.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "4"
+    },
+    {
+     "name": "school",
+     "value": "Evocation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 minute"
+    },
+    {
+     "name": "range",
+     "value": "120 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a piece of charcoal"
+    }
+   ],
+   "data": {
+    "level": 4,
+    "school": "Evocation",
+    "classes": [
+     "Druid",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": true,
+    "higher_level": "Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 4."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_WALL_OF_FIRE",
+    "kind": "equivalent"
+   }
+  }
+ ]
+}

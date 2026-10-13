@@ -1,0 +1,405 @@
+{
+ "format": "borealis-content/1",
+ "ruleset": "any",
+ "elements": [
+  {
+   "id": "ID_EXPERTISE_SKILL_ACROBATICS",
+   "name": "Skill Expertise (Acrobatics)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_ACROBATICS",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "acrobatics:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Acrobatics."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_ANIMALHANDLING",
+   "name": "Skill Expertise (Animal Handling)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_ANIMALHANDLING",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "animal handling:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Animal Handling."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_ARCANA",
+   "name": "Skill Expertise (Arcana)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_ARCANA",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "arcana:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Arcana."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_ATHLETICS",
+   "name": "Skill Expertise (Athletics)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_ATHLETICS",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "athletics:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Athletics."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_DECEPTION",
+   "name": "Skill Expertise (Deception)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_DECEPTION",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "deception:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Deception."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_HISTORY",
+   "name": "Skill Expertise (History)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_HISTORY",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "history:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for History."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_INSIGHT",
+   "name": "Skill Expertise (Insight)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_INSIGHT",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "insight:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Insight."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_INTIMIDATION",
+   "name": "Skill Expertise (Intimidation)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_INTIMIDATION",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "intimidation:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Intimidation."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_INVESTIGATION",
+   "name": "Skill Expertise (Investigation)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_INVESTIGATION",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "investigation:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Investigation."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_MEDICINE",
+   "name": "Skill Expertise (Medicine)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_MEDICINE",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "medicine:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Medicine."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_NATURE",
+   "name": "Skill Expertise (Nature)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_NATURE",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "nature:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Nature."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_PERCEPTION",
+   "name": "Skill Expertise (Perception)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_PERCEPTION",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "perception:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Perception."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_PERFORMANCE",
+   "name": "Skill Expertise (Performance)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_PERFORMANCE",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "performance:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Performance."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_PERSUASION",
+   "name": "Skill Expertise (Persuasion)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_PERSUASION",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "persuasion:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Persuasion."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_RELIGION",
+   "name": "Skill Expertise (Religion)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_RELIGION",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "religion:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Religion."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_SLEIGHTOFHAND",
+   "name": "Skill Expertise (Sleight of Hand)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_SLEIGHTOFHAND",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "sleight of hand:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Sleight of Hand."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_STEALTH",
+   "name": "Skill Expertise (Stealth)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_STEALTH",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "stealth:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Stealth."
+  },
+  {
+   "id": "ID_EXPERTISE_SKILL_SURVIVAL",
+   "name": "Skill Expertise (Survival)",
+   "type": "Class Feature",
+   "source": "Core",
+   "supports": [
+    "Expertise",
+    "Skill",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_SKILL_SURVIVAL",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "survival:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Survival."
+  },
+  {
+   "id": "ID_EXPERTISE_TOOL_THIEVES_TOOLS",
+   "name": "Tool Expertise (Thieves’ Tools)",
+   "type": "Class Feature",
+   "supports": [
+    "Expertise",
+    "Tool",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "requirements": "ID_PROFICIENCY_TOOL_PROFICIENCY_THIEVES_TOOLS",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "thieves tools:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "source": "Core",
+   "description": "Double proficiency bonus with thieves' tools."
+  }
+ ]
+}

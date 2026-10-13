@@ -1,0 +1,5 @@
+{"type":"thread.started","thread_id":"01a11a41-4b04-78c2-bb61-3a1220811d5d"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"ID","type":"error","message":"Skill descriptions were shortened to fit the 2% skills context budget. Codex can still see every skill, but some descriptions are shorter. Disable unused skills or plugins to leave more room for the rest."}}
+{"type":"error","message":"Your access token could not be refreshed because your refresh token was revoked. Please log out and sign in again."}
+{"type":"turn.failed","error":{"message":"Your access token could not be refreshed because your refresh token was revoked. Please log out and sign in again."}}

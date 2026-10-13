@@ -1,0 +1,761 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: equipment/services",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_LIFESTYLE_WRETCHED",
+   "name": "Wretched Lifestyle",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You survive via chance and charity. You’re often exposed to natural dangers as a result of sleeping outside. (Tons)      AC     HP    Damage Threshold            Cost 1            13     300           —               40,000 GP</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Lifestyle Expenses"
+    }
+   ],
+   "data": {
+    "cost_text": "Free"
+   }
+  },
+  {
+   "id": "ID_2024_LIFESTYLE_SQUALID",
+   "name": "Squalid Lifestyle",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You spend the bare minimum for your necessities. You might be exposed to unhealthy conditions and opportunistic criminals.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Lifestyle Expenses"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "sp"
+     }
+    }
+   ],
+   "data": {
+    "cost_text": "1 SP per Day"
+   }
+  },
+  {
+   "id": "ID_2024_LIFESTYLE_POOR",
+   "name": "Poor Lifestyle",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You spend frugally for your necessities.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Lifestyle Expenses"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "sp"
+     }
+    }
+   ],
+   "data": {
+    "cost_text": "2 SP per Day"
+   }
+  },
+  {
+   "id": "ID_2024_LIFESTYLE_MODEST",
+   "name": "Modest Lifestyle",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You support yourself at an average level.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Lifestyle Expenses"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "cost_text": "1 GP per Day"
+   }
+  },
+  {
+   "id": "ID_2024_LIFESTYLE_COMFORTABLE",
+   "name": "Comfortable Lifestyle",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You spend modestly for your necessities and enjoy a few luxuries.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Lifestyle Expenses"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "cost_text": "2 GP per Day"
+   }
+  },
+  {
+   "id": "ID_2024_LIFESTYLE_WEALTHY",
+   "name": "Wealthy Lifestyle",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You’re accustomed to the finer things in life and might have servants.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Lifestyle Expenses"
+    },
+    {
+     "name": "cost",
+     "value": "4",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "cost_text": "4 GP per Day"
+   }
+  },
+  {
+   "id": "ID_2024_LIFESTYLE_ARISTOCRATIC",
+   "name": "Aristocratic Lifestyle",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You pay for the best and might have a staff that supports your lifestyle. Others notice your wealth and might encourage you to share it, either legally or otherwise.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Lifestyle Expenses"
+    },
+    {
+     "name": "cost",
+     "value": "10",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "cost_text": "10 GP per Day"
+   }
+  },
+  {
+   "id": "ID_2024_HIRELING_SKILLED_HIRELING",
+   "name": "Skilled hireling",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Hirelings"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "gp",
+      "per": "day"
+     }
+    }
+   ],
+   "data": {
+    "cost_text": "2 GP per day"
+   }
+  },
+  {
+   "id": "ID_2024_HIRELING_UNTRAINED_HIRELING",
+   "name": "Untrained hireling",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Hirelings"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "sp",
+      "per": "day"
+     }
+    }
+   ],
+   "data": {
+    "cost_text": "2 SP per day"
+   }
+  },
+  {
+   "id": "ID_2024_HIRELING_MESSENGER",
+   "name": "Messenger",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Hirelings"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "cp",
+      "per": "mile"
+     }
+    }
+   ],
+   "data": {
+    "cost_text": "2 CP per mile"
+   }
+  },
+  {
+   "id": "ID_2024_SERVICE_SPELLCASTING_CANTRIP",
+   "name": "Spellcasting Service (Cantrip)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Availability: Village, town, or city.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Spellcasting Services"
+    },
+    {
+     "name": "cost",
+     "value": "30",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "availability": "Village, town, or city",
+    "spell_level": "Cantrip"
+   }
+  },
+  {
+   "id": "ID_2024_SERVICE_SPELLCASTING_1",
+   "name": "Spellcasting Service (Level 1)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Availability: Village, town, or city.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Spellcasting Services"
+    },
+    {
+     "name": "cost",
+     "value": "50",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "availability": "Village, town, or city",
+    "spell_level": "1"
+   }
+  },
+  {
+   "id": "ID_2024_SERVICE_SPELLCASTING_2",
+   "name": "Spellcasting Service (Level 2)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Availability: Village, town, or city.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Spellcasting Services"
+    },
+    {
+     "name": "cost",
+     "value": "200",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "availability": "Village, town, or city",
+    "spell_level": "2"
+   }
+  },
+  {
+   "id": "ID_2024_SERVICE_SPELLCASTING_3",
+   "name": "Spellcasting Service (Level 3)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Availability: Town or city only.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Spellcasting Services"
+    },
+    {
+     "name": "cost",
+     "value": "300",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "availability": "Town or city only",
+    "spell_level": "3"
+   }
+  },
+  {
+   "id": "ID_2024_SERVICE_SPELLCASTING_4_5",
+   "name": "Spellcasting Service (Level 4–5)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Availability: Town or city only.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Spellcasting Services"
+    },
+    {
+     "name": "cost",
+     "value": "2000",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "availability": "Town or city only",
+    "spell_level": "4–5"
+   }
+  },
+  {
+   "id": "ID_2024_SERVICE_SPELLCASTING_6_8",
+   "name": "Spellcasting Service (Level 6–8)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Availability: City only.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Spellcasting Services"
+    },
+    {
+     "name": "cost",
+     "value": "20000",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "availability": "City only",
+    "spell_level": "6–8"
+   }
+  },
+  {
+   "id": "ID_2024_SERVICE_SPELLCASTING_9",
+   "name": "Spellcasting Service (Level 9)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Availability: City only.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Spellcasting Services"
+    },
+    {
+     "name": "cost",
+     "value": "100000",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ],
+   "data": {
+    "availability": "City only",
+    "spell_level": "9"
+   }
+  },
+  {
+   "id": "ID_2024_FOOD_ALE_MUG",
+   "name": "Ale (mug)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "4",
+     "attributes": {
+      "currency": "cp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_FOOD_BREAD_LOAF",
+   "name": "Bread (loaf)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "cp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_FOOD_CHEESE_WEDGE",
+   "name": "Cheese (wedge)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "sp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_FOOD_WINE_COMMON_BOTTLE",
+   "name": "Wine, Common (bottle)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "sp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_FOOD_WINE_FINE_BOTTLE",
+   "name": "Wine, Fine (bottle)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "10",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_LODGING_INN_STAY_SQUALID",
+   "name": "Inn Stay per Day (Squalid)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "7",
+     "attributes": {
+      "currency": "cp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_MEAL_SQUALID",
+   "name": "Meal (Squalid)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "cp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_LODGING_INN_STAY_POOR",
+   "name": "Inn Stay per Day (Poor)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "sp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_MEAL_POOR",
+   "name": "Meal (Poor)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "cp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_LODGING_INN_STAY_MODEST",
+   "name": "Inn Stay per Day (Modest)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "5",
+     "attributes": {
+      "currency": "sp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_MEAL_MODEST",
+   "name": "Meal (Modest)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "1",
+     "attributes": {
+      "currency": "sp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_LODGING_INN_STAY_COMFORTABLE",
+   "name": "Inn Stay per Day (Comfortable)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "8",
+     "attributes": {
+      "currency": "sp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_MEAL_COMFORTABLE",
+   "name": "Meal (Comfortable)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "sp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_LODGING_INN_STAY_WEALTHY",
+   "name": "Inn Stay per Day (Wealthy)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "2",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_MEAL_WEALTHY",
+   "name": "Meal (Wealthy)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "3",
+     "attributes": {
+      "currency": "sp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_LODGING_INN_STAY_ARISTOCRATIC",
+   "name": "Inn Stay per Day (Aristocratic)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "4",
+     "attributes": {
+      "currency": "gp"
+     }
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_MEAL_ARISTOCRATIC",
+   "name": "Meal (Aristocratic)",
+   "type": "Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Food, Drink, and Lodging"
+    },
+    {
+     "name": "cost",
+     "value": "6",
+     "attributes": {
+      "currency": "sp"
+     }
+    }
+   ]
+  }
+ ]
+}

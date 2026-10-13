@@ -1,0 +1,2017 @@
+{
+ "format": "borealis-content/1",
+ "ruleset": "any",
+ "elements": [
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+   "name": "Armor Proficiency (Light Armor)",
+   "type": "Proficiency",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_PADDED",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LEATHER",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_STUDDED_LEATHER",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Light Armor)."
+  },
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_MEDIUM_ARMOR",
+   "name": "Armor Proficiency (Medium Armor)",
+   "type": "Proficiency",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_HIDE",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_CHAIN_SHIRT",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SCALE_MAIL",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_BREASTPLATE",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_HALF_PLATE",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Medium Armor)."
+  },
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_HEAVY_ARMOR",
+   "name": "Armor Proficiency (Heavy Armor)",
+   "type": "Proficiency",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_RING_MAIL",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_CHAIN_MAIL",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SPLINT",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_PLATE",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Heavy Armor)."
+  },
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS",
+   "name": "Armor Proficiency (Shields)",
+   "type": "Proficiency",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELD",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Shields)."
+  },
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_PADDED",
+   "name": "Armor Proficiency (Padded)",
+   "type": "Proficiency",
+   "supports": [
+    "Light Armor",
+    "ID_INTERNAL_ARMOR_GROUP_LIGHT"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Padded)."
+  },
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LEATHER",
+   "name": "Armor Proficiency (Leather)",
+   "type": "Proficiency",
+   "supports": [
+    "Light Armor",
+    "ID_INTERNAL_ARMOR_GROUP_LIGHT"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Leather)."
+  },
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_STUDDED_LEATHER",
+   "name": "Armor Proficiency (Studded Leather)",
+   "type": "Proficiency",
+   "supports": [
+    "Light Armor",
+    "ID_INTERNAL_ARMOR_GROUP_LIGHT"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Studded Leather)."
+  },
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_HIDE",
+   "name": "Armor Proficiency (Hide)",
+   "type": "Proficiency",
+   "supports": [
+    "Medium Armor",
+    "ID_INTERNAL_ARMOR_GROUP_MEDIUM"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Hide)."
+  },
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_CHAIN_SHIRT",
+   "name": "Armor Proficiency (Chain Shirt)",
+   "type": "Proficiency",
+   "supports": [
+    "Medium Armor",
+    "ID_INTERNAL_ARMOR_GROUP_MEDIUM"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Chain Shirt)."
+  },
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SCALE_MAIL",
+   "name": "Armor Proficiency (Scale Mail)",
+   "type": "Proficiency",
+   "supports": [
+    "Medium Armor",
+    "ID_INTERNAL_ARMOR_GROUP_MEDIUM"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Scale Mail)."
+  },
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_BREASTPLATE",
+   "name": "Armor Proficiency (Breastplate)",
+   "type": "Proficiency",
+   "supports": [
+    "Medium Armor",
+    "ID_INTERNAL_ARMOR_GROUP_MEDIUM"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Breastplate)."
+  },
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_HALF_PLATE",
+   "name": "Armor Proficiency (Half Plate)",
+   "type": "Proficiency",
+   "supports": [
+    "Medium Armor",
+    "ID_INTERNAL_ARMOR_GROUP_MEDIUM"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Half Plate)."
+  },
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_RING_MAIL",
+   "name": "Armor Proficiency (Ring Mail)",
+   "type": "Proficiency",
+   "supports": [
+    "Heavy Armor",
+    "ID_INTERNAL_ARMOR_GROUP_HEAVY"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Ring Mail)."
+  },
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_CHAIN_MAIL",
+   "name": "Armor Proficiency (Chain Mail)",
+   "type": "Proficiency",
+   "supports": [
+    "Heavy Armor",
+    "ID_INTERNAL_ARMOR_GROUP_HEAVY"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Chain Mail)."
+  },
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SPLINT",
+   "name": "Armor Proficiency (Splint)",
+   "type": "Proficiency",
+   "supports": [
+    "Heavy Armor",
+    "ID_INTERNAL_ARMOR_GROUP_HEAVY"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Splint)."
+  },
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_PLATE",
+   "name": "Armor Proficiency (Plate)",
+   "type": "Proficiency",
+   "supports": [
+    "Heavy Armor",
+    "ID_INTERNAL_ARMOR_GROUP_HEAVY"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Plate)."
+  },
+  {
+   "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELD",
+   "name": "Armor Proficiency (Shield)",
+   "type": "Proficiency",
+   "supports": [
+    "Shield",
+    "ID_INTERNAL_ARMOR_GROUP_SHIELD"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Armor Proficiency (Shield)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+   "name": "Weapon Proficiency (Simple Weapons)",
+   "type": "Proficiency",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_MELEE_WEAPONS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_RANGED_WEAPONS",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Simple Weapons)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_MELEE_WEAPONS",
+   "name": "Weapon Proficiency (Simple Melee Weapons)",
+   "type": "Proficiency",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CLUB",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_DAGGER",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GREATCLUB",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_HANDAXE",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_JAVELIN",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LIGHT_HAMMER",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MACE",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_QUARTERSTAFF",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SICKLE",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SPEAR",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_UNARMED_STRIKE",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Simple Melee Weapons)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_RANGED_WEAPONS",
+   "name": "Weapon Proficiency (Simple Ranged Weapons)",
+   "type": "Proficiency",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_LIGHT",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_DART",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SHORTBOW",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SLING",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Simple Ranged Weapons)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_WEAPONS",
+   "name": "Weapon Proficiency (Martial Weapons)",
+   "type": "Proficiency",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_MELEE_WEAPONS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_RANGED_WEAPONS",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Martial Weapons)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_MELEE_WEAPONS",
+   "name": "Weapon Proficiency (Martial Melee Weapons)",
+   "type": "Proficiency",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_BATTLEAXE",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_FLAIL",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GLAIVE",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GREATAXE",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GREATSWORD",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_HALBERD",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LANCE",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LONGSWORD",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MAUL",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MORNINGSTAR",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_PIKE",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_RAPIER",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SCIMITAR",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SHORTSWORD",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_TRIDENT",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_WAR_PICK",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_WARHAMMER",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_WHIP",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Martial Melee Weapons)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_RANGED_WEAPONS",
+   "name": "Weapon Proficiency (Martial Ranged Weapons)",
+   "type": "Proficiency",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_BLOWGUN",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_HAND",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_HEAVY",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LONGBOW",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_NET",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Martial Ranged Weapons)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CLUB",
+   "name": "Weapon Proficiency (Club)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Simple",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+    "ID_INTERNAL_WEAPON_GROUP_CLUBS"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Club)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_DAGGER",
+   "name": "Weapon Proficiency (Dagger)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Simple",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+    "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+    "ID_INTERNAL_WEAPON_PROPERTY_THROWN"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Dagger)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GREATCLUB",
+   "name": "Weapon Proficiency (Greatclub)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Simple",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_GROUP_CLUBS"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Greatclub)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_HANDAXE",
+   "name": "Weapon Proficiency (Handaxe)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Simple",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+    "ID_INTERNAL_WEAPON_PROPERTY_THROWN",
+    "ID_INTERNAL_WEAPON_GROUP_AXES"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Handaxe)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_JAVELIN",
+   "name": "Weapon Proficiency (Javelin)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Simple",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_THROWN"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Javelin)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LIGHT_HAMMER",
+   "name": "Weapon Proficiency (Light Hammer)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Simple",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+    "ID_INTERNAL_WEAPON_PROPERTY_THROWN",
+    "ID_INTERNAL_WEAPON_GROUP_HAMMERS"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Light Hammer)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MACE",
+   "name": "Weapon Proficiency (Mace)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Simple",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_GROUP_MACES"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Mace)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_QUARTERSTAFF",
+   "name": "Weapon Proficiency (Quarterstaff)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Simple",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Quarterstaff)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SICKLE",
+   "name": "Weapon Proficiency (Sickle)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Simple",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_LIGHT"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Sickle)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SPEAR",
+   "name": "Weapon Proficiency (Spear)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Simple",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_THROWN",
+    "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE",
+    "ID_INTERNAL_WEAPON_GROUP_SPEARS"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Spear)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_UNARMED_STRIKE",
+   "name": "Weapon Proficiency (Unarmed Strike)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Simple",
+    "Melee"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Unarmed Strike)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_LIGHT",
+   "name": "Weapon Proficiency (Crossbow, Light)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Simple",
+    "Ranged",
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+    "ID_INTERNAL_WEAPON_PROPERTY_LOADING",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_GROUP_CROSSBOWS"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Crossbow, Light)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_DART",
+   "name": "Weapon Proficiency (Dart)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Simple",
+    "Ranged",
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+    "ID_INTERNAL_WEAPON_PROPERTY_THROWN"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Dart)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SHORTBOW",
+   "name": "Weapon Proficiency (Shortbow)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Simple",
+    "Ranged",
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_GROUP_BOWS"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Shortbow)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SLING",
+   "name": "Weapon Proficiency (Sling)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Simple",
+    "Ranged",
+    "ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Sling)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_BATTLEAXE",
+   "name": "Weapon Proficiency (Battleaxe)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE",
+    "ID_INTERNAL_WEAPON_GROUP_AXES"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Battleaxe)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_FLAIL",
+   "name": "Weapon Proficiency (Flail)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Flail)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GLAIVE",
+   "name": "Weapon Proficiency (Glaive)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_REACH",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Glaive)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GREATAXE",
+   "name": "Weapon Proficiency (Greataxe)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_GROUP_AXES"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Greataxe)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GREATSWORD",
+   "name": "Weapon Proficiency (Greatsword)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_GROUP_SWORDS"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Greatsword)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_HALBERD",
+   "name": "Weapon Proficiency (Halberd)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_REACH",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Halberd)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LANCE",
+   "name": "Weapon Proficiency (Lance)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_REACH",
+    "ID_INTERNAL_WEAPON_PROPERTY_SPECIAL",
+    "ID_INTERNAL_WEAPON_PROPERTY_SPECIAL_LANCE"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Lance)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LONGSWORD",
+   "name": "Weapon Proficiency (Longsword)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE",
+    "ID_INTERNAL_WEAPON_GROUP_SWORDS"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Longsword)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MAUL",
+   "name": "Weapon Proficiency (Maul)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_GROUP_MAULS"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Maul)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MORNINGSTAR",
+   "name": "Weapon Proficiency (Morningstar)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Morningstar)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_PIKE",
+   "name": "Weapon Proficiency (Pike)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_REACH",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Pike)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_RAPIER",
+   "name": "Weapon Proficiency (Rapier)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_FINESSE"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Rapier)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SCIMITAR",
+   "name": "Weapon Proficiency (Scimitar)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+    "ID_INTERNAL_WEAPON_PROPERTY_LIGHT"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Scimitar)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SHORTSWORD",
+   "name": "Weapon Proficiency (Shortsword)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+    "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+    "ID_INTERNAL_WEAPON_GROUP_SWORDS"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Shortsword)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_TRIDENT",
+   "name": "Weapon Proficiency (Trident)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_THROWN",
+    "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Trident)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_WAR_PICK",
+   "name": "Weapon Proficiency (War Pick)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (War Pick)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_WARHAMMER",
+   "name": "Weapon Proficiency (Warhammer)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE",
+    "ID_INTERNAL_WEAPON_GROUP_HAMMERS"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Warhammer)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_WHIP",
+   "name": "Weapon Proficiency (Whip)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_SLASHING",
+    "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
+    "ID_INTERNAL_WEAPON_PROPERTY_REACH"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Whip)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_BLOWGUN",
+   "name": "Weapon Proficiency (Blowgun)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Ranged",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+    "ID_INTERNAL_WEAPON_PROPERTY_LOADING"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Blowgun)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_HAND",
+   "name": "Weapon Proficiency (Crossbow, Hand)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Ranged",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+    "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
+    "ID_INTERNAL_WEAPON_PROPERTY_LOADING",
+    "ID_INTERNAL_WEAPON_GROUP_CROSSBOWS"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Crossbow, Hand)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_HEAVY",
+   "name": "Weapon Proficiency (Crossbow, Heavy)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Ranged",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_LOADING",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_GROUP_CROSSBOWS"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Crossbow, Heavy)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LONGBOW",
+   "name": "Weapon Proficiency (Longbow)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Ranged",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+    "ID_INTERNAL_DAMAGE_TYPE_PIERCING",
+    "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+    "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
+    "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED",
+    "ID_INTERNAL_WEAPON_GROUP_BOWS"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Longbow)."
+  },
+  {
+   "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_NET",
+   "name": "Weapon Proficiency (Net)",
+   "type": "Proficiency",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Ranged",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED",
+    "ID_INTERNAL_WEAPON_PROPERTY_SPECIAL",
+    "ID_INTERNAL_WEAPON_PROPERTY_SPECIAL_NET",
+    "ID_INTERNAL_WEAPON_PROPERTY_THROWN"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Net)."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_GROUP_SWORDS",
+   "name": "Weapon Proficiency (Swords)",
+   "type": "Proficiency",
+   "supports": [
+    "ID_INTERNAL_PROFICIENCY_WEAPON",
+    "ID_INTERNAL_PROFICIENCY_GROUP"
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GREATSWORD",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LONGSWORD",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SHORTSWORD",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Swords)."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_GROUP_AXES",
+   "name": "Weapon Proficiency (Axes)",
+   "type": "Proficiency",
+   "supports": [
+    "ID_INTERNAL_PROFICIENCY_WEAPON",
+    "ID_INTERNAL_PROFICIENCY_GROUP"
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_HANDAXE",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_BATTLEAXE",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GREATAXE",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Axes)."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_GROUP_MACES",
+   "name": "Weapon Proficiency (Maces)",
+   "type": "Proficiency",
+   "supports": [
+    "ID_INTERNAL_PROFICIENCY_WEAPON",
+    "ID_INTERNAL_PROFICIENCY_GROUP"
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MACE",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Maces)."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_GROUP_HAMMERS",
+   "name": "Weapon Proficiency (Hammers)",
+   "type": "Proficiency",
+   "supports": [
+    "ID_INTERNAL_PROFICIENCY_WEAPON",
+    "ID_INTERNAL_PROFICIENCY_GROUP"
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LIGHT_HAMMER",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_WARHAMMER",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Hammers)."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_GROUP_MAULS",
+   "name": "Weapon Proficiency (Mauls)",
+   "type": "Proficiency",
+   "supports": [
+    "ID_INTERNAL_PROFICIENCY_WEAPON",
+    "ID_INTERNAL_PROFICIENCY_GROUP"
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_MAUL",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Mauls)."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_GROUP_BOWS",
+   "name": "Weapon Proficiency (Bows)",
+   "type": "Proficiency",
+   "supports": [
+    "ID_INTERNAL_PROFICIENCY_WEAPON",
+    "ID_INTERNAL_PROFICIENCY_GROUP"
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SHORTBOW",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_LONGBOW",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Bows)."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_GROUP_CROSSBOWS",
+   "name": "Weapon Proficiency (Crossbows)",
+   "type": "Proficiency",
+   "supports": [
+    "ID_INTERNAL_PROFICIENCY_WEAPON",
+    "ID_INTERNAL_PROFICIENCY_GROUP"
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_LIGHT",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_HAND",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_HEAVY",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Crossbows)."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_GROUP_SPEARS",
+   "name": "Weapon Proficiency (Spears)",
+   "type": "Proficiency",
+   "supports": [
+    "ID_INTERNAL_PROFICIENCY_WEAPON",
+    "ID_INTERNAL_PROFICIENCY_GROUP"
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SPEAR",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Spears)."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_GROUP_CLUBS",
+   "name": "Weapon Proficiency (Clubs)",
+   "type": "Proficiency",
+   "supports": [
+    "ID_INTERNAL_PROFICIENCY_WEAPON",
+    "ID_INTERNAL_PROFICIENCY_GROUP"
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CLUB",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_GREATCLUB",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Weapon Proficiency (Clubs)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_ARTISANS_TOOLS",
+   "name": "Tool Proficiency (Artisan’s tools)",
+   "type": "Proficiency",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_ALCHEMISTS_SUPPLIES",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_BREWERS_SUPPLIES",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_CALLIGRAPHERS_SUPPLIES",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_CARPENTERS_TOOLS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_CARTOGRAPHERS_TOOLS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_COBBLERS_TOOLS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_COOKS_UTENSILS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_GLASSBLOWERS_TOOLS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_JEWELERS_TOOLS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_LEATHERWORKERS_TOOLS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_MASONS_TOOLS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_PAINTERS_SUPPLIES",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_POTTERS_TOOLS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_SMITHS_TOOLS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_TINKERS_TOOLS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_WEAVERS_TOOLS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_WOODCARVERS_TOOLS",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_DISGUISE_KIT",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_FORGERY_KIT",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Artisan’s tools)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_ALCHEMISTS_SUPPLIES",
+   "name": "Tool Proficiency (Alchemist’s supplies)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Alchemist’s supplies)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_BREWERS_SUPPLIES",
+   "name": "Tool Proficiency (Brewer’s supplies)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Brewer’s supplies)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_CALLIGRAPHERS_SUPPLIES",
+   "name": "Tool Proficiency (Calligrapher's supplies)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Calligrapher's supplies)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_CARPENTERS_TOOLS",
+   "name": "Tool Proficiency (Carpenter’s tools)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Carpenter’s tools)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_CARTOGRAPHERS_TOOLS",
+   "name": "Tool Proficiency (Cartographer’s tools)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Cartographer’s tools)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_COBBLERS_TOOLS",
+   "name": "Tool Proficiency (Cobbler’s tools)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Cobbler’s tools)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_COOKS_UTENSILS",
+   "name": "Tool Proficiency (Cook’s utensils)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Cook’s utensils)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_GLASSBLOWERS_TOOLS",
+   "name": "Tool Proficiency (Glassblower’s tools)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Glassblower’s tools)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_JEWELERS_TOOLS",
+   "name": "Tool Proficiency (Jeweler’s tools)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Jeweler’s tools)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_LEATHERWORKERS_TOOLS",
+   "name": "Tool Proficiency (Leatherworker’s tools)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Leatherworker’s tools)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_MASONS_TOOLS",
+   "name": "Tool Proficiency (Mason’s tools)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Mason’s tools)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_PAINTERS_SUPPLIES",
+   "name": "Tool Proficiency (Painter’s supplies)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Painter’s supplies)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_POTTERS_TOOLS",
+   "name": "Tool Proficiency (Potter’s tools)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Potter’s tools)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_SMITHS_TOOLS",
+   "name": "Tool Proficiency (Smith’s tools)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Smith’s tools)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_TINKERS_TOOLS",
+   "name": "Tool Proficiency (Tinker’s tools)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Tinker’s tools)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_WEAVERS_TOOLS",
+   "name": "Tool Proficiency (Weaver’s tools)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Weaver’s tools)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_WOODCARVERS_TOOLS",
+   "name": "Tool Proficiency (Woodcarver’s tools)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Artisan tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Woodcarver’s tools)."
+  },
+  {
+   "id": "ID_PROFICIENCY_GAMING_SET_PROFICIENCY_GAMING_SET",
+   "name": "Tool Proficiency (Gaming set)",
+   "type": "Proficiency",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_GAMING_SET_PROFICIENCY_DICE_SET",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_GAMING_SET_PROFICIENCY_DRAGONCHESS_SET",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_GAMING_SET_PROFICIENCY_PLAYING_CARD_SET",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_GAMING_SET_PROFICIENCY_THREE_DRAGON_ANTE_SET",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Gaming set)."
+  },
+  {
+   "id": "ID_PROFICIENCY_GAMING_SET_PROFICIENCY_DICE_SET",
+   "name": "Tool Proficiency (Dice set)",
+   "type": "Proficiency",
+   "supports": [
+    "Gaming Set"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Dice set)."
+  },
+  {
+   "id": "ID_PROFICIENCY_GAMING_SET_PROFICIENCY_DRAGONCHESS_SET",
+   "name": "Tool Proficiency (Dragonchess set)",
+   "type": "Proficiency",
+   "supports": [
+    "Gaming Set"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Dragonchess set)."
+  },
+  {
+   "id": "ID_PROFICIENCY_GAMING_SET_PROFICIENCY_PLAYING_CARD_SET",
+   "name": "Tool Proficiency (Playing card set)",
+   "type": "Proficiency",
+   "supports": [
+    "Gaming Set"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Playing card set)."
+  },
+  {
+   "id": "ID_PROFICIENCY_GAMING_SET_PROFICIENCY_THREE_DRAGON_ANTE_SET",
+   "name": "Tool Proficiency (Three-Dragon Ante set)",
+   "type": "Proficiency",
+   "supports": [
+    "Gaming Set"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Three-Dragon Ante set)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_DISGUISE_KIT",
+   "name": "Tool Proficiency (Disguise kit)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Kit"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Disguise kit)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_FORGERY_KIT",
+   "name": "Tool Proficiency (Forgery kit)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Kit"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Forgery kit)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_HERBALISM_KIT",
+   "name": "Tool Proficiency (Herbalism kit)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Kit"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Herbalism kit)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_POISONERS_KIT",
+   "name": "Tool Proficiency (Poisoner’s kit)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Kit"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Poisoner’s kit)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_NAVIGATORS_TOOLS",
+   "name": "Tool Proficiency (Navigator’s tools)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Navigator’s tools)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_THIEVES_TOOLS",
+   "name": "Tool Proficiency (Thieves’ tools)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Thieves tools"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Thieves’ tools)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_VEHICLES_LAND",
+   "name": "Tool Proficiency (Vehicles (land))",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Vehicles"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Vehicles (land))."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_VEHICLES_WATER",
+   "name": "Tool Proficiency (Vehicles (water))",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "Vehicles"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Vehicles (water))."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_MUSICAL_INSTRUMENT",
+   "name": "Tool Proficiency (Musical instrument)",
+   "type": "Proficiency",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_BAGPIPES",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_DRUM",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_DULCIMER",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_FLUTE",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_LUTE",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_LYRE",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_HORN",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_PAN_FLUTE",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_SHAWM",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_VIOL",
+     "type": "Proficiency"
+    }
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Musical instrument)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_BAGPIPES",
+   "name": "Tool Proficiency (Bagpipes)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "ID_PROFICIENCY_MUSICAL_INSTRUMENT",
+    "Musical Instrument"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Bagpipes)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_DRUM",
+   "name": "Tool Proficiency (Drum)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "ID_PROFICIENCY_MUSICAL_INSTRUMENT",
+    "Musical Instrument"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Drum)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_DULCIMER",
+   "name": "Tool Proficiency (Dulcimer)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "ID_PROFICIENCY_MUSICAL_INSTRUMENT",
+    "Musical Instrument"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Dulcimer)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_FLUTE",
+   "name": "Tool Proficiency (Flute)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "ID_PROFICIENCY_MUSICAL_INSTRUMENT",
+    "Musical Instrument"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Flute)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_LUTE",
+   "name": "Tool Proficiency (Lute)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "ID_PROFICIENCY_MUSICAL_INSTRUMENT",
+    "Musical Instrument"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Lute)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_LYRE",
+   "name": "Tool Proficiency (Lyre)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "ID_PROFICIENCY_MUSICAL_INSTRUMENT",
+    "Musical Instrument"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Lyre)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_HORN",
+   "name": "Tool Proficiency (Horn)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "ID_PROFICIENCY_MUSICAL_INSTRUMENT",
+    "Musical Instrument"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Horn)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_PAN_FLUTE",
+   "name": "Tool Proficiency (Pan flute)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "ID_PROFICIENCY_MUSICAL_INSTRUMENT",
+    "Musical Instrument"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Pan flute)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_SHAWM",
+   "name": "Tool Proficiency (Shawm)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "ID_PROFICIENCY_MUSICAL_INSTRUMENT",
+    "Musical Instrument"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Shawm)."
+  },
+  {
+   "id": "ID_PROFICIENCY_TOOL_PROFICIENCY_VIOL",
+   "name": "Tool Proficiency (Viol)",
+   "type": "Proficiency",
+   "supports": [
+    "Tool",
+    "ID_PROFICIENCY_MUSICAL_INSTRUMENT",
+    "Musical Instrument"
+   ],
+   "source": "Core",
+   "description": "Proficiency: Tool Proficiency (Viol)."
+  },
+  {
+   "id": "ID_INTERNAL_SPELLFOCUS_GROUP_ARCANE_FOCUS",
+   "name": "Arcane Focus",
+   "type": "Spellcasting Focus Group",
+   "source": "Core",
+   "description": "Proficiency: Arcane Focus."
+  },
+  {
+   "id": "ID_INTERNAL_SPELLFOCUS_GROUP_DRUIDIC_FOCUS",
+   "name": "Druidic Focus",
+   "type": "Spellcasting Focus Group",
+   "source": "Core",
+   "description": "Proficiency: Druidic Focus."
+  },
+  {
+   "id": "ID_INTERNAL_SPELLFOCUS_GROUP_HOLY_SYMBOL",
+   "name": "Holy Symbol",
+   "type": "Spellcasting Focus Group",
+   "source": "Core",
+   "description": "Proficiency: Holy Symbol."
+  },
+  {
+   "id": "ID_INTERNAL_SPELLFOCUS_GROUP_MUSICAL_INSTRUMENT",
+   "name": "Musical Instrument",
+   "type": "Spellcasting Focus Group",
+   "source": "Core",
+   "description": "Proficiency: Musical Instrument."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SPELLFOCUS_GROUP_ARCANE_FOCUS",
+   "name": "Spellcasting Focus Group (Arcane Focus)",
+   "type": "Proficiency",
+   "source": "Core",
+   "description": "Proficiency: Spellcasting Focus Group (Arcane Focus)."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SPELLFOCUS_GROUP_DRUIDIC_FOCUS",
+   "name": "Spellcasting Focus Group (Druidic Focus)",
+   "type": "Proficiency",
+   "source": "Core",
+   "description": "Proficiency: Spellcasting Focus Group (Druidic Focus)."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SPELLFOCUS_GROUP_HOLY_SYMBOL",
+   "name": "Spellcasting Focus Group (Holy Symbol)",
+   "type": "Proficiency",
+   "source": "Core",
+   "description": "Proficiency: Spellcasting Focus Group (Holy Symbol)."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SPELLFOCUS_GROUP_MUSICAL_INSTRUMENT",
+   "name": "Spellcasting Focus Group (Musical Instrument)",
+   "type": "Proficiency",
+   "source": "Core",
+   "description": "Proficiency: Spellcasting Focus Group (Musical Instrument)."
+  }
+ ]
+}

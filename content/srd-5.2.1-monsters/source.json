@@ -1,0 +1,46 @@
+{
+  "format": "borealis-content/1",
+  "ruleset": "dnd2024",
+  "info": {
+    "name": "SRD 5.2.1 Monsters Source",
+    "description": "Source record and CC-BY-4.0 attribution for the SRD 5.2.1 monster pack."
+  },
+  "elements": [
+    {
+      "id": "ID_SRD521_MONSTERS_SOURCE",
+      "name": "SRD 5.2.1 Monsters",
+      "type": "Source",
+      "source": "Core",
+      "description": "<p><strong>System Reference Document 5.2.1</strong> monsters and animals, released by Wizards of the Coast LLC under the Creative Commons Attribution 4.0 International License.</p><p>This work includes material from the System Reference Document 5.2.1 (\"SRD 5.2.1\") by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode. Modified: the SRD stat blocks were structured into typed JSON data (sizes, types, numbers, attacks, saving throws and spell lists were parsed from the printed text; hyphenation and line breaks were normalised).</p>",
+      "setters": [
+        {
+          "name": "abbreviation",
+          "value": "SRD"
+        },
+        {
+          "name": "url",
+          "value": "https://www.dndbeyond.com/srd"
+        },
+        {
+          "name": "author",
+          "value": "Wizards of the Coast LLC",
+          "attributes": {
+            "abbreviation": "WOTC",
+            "url": "https://dnd.wizards.com"
+          }
+        },
+        {
+          "name": "official",
+          "value": "true"
+        },
+        {
+          "name": "information",
+          "value": "Content of the System Reference Document 5.2.1 only (CC-BY-4.0).",
+          "attributes": {
+            "url": "https://creativecommons.org/licenses/by/4.0/legalcode"
+          }
+        }
+      ]
+    }
+  ]
+}

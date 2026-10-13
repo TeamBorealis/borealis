@@ -1,0 +1,214 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/ranger-hunter",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SUBCLASS_RANGER_HUNTER",
+   "name": "Hunter",
+   "type": "Archetype",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Ranger Subclass"
+   ],
+   "description": "<p>You stalk prey in the wilds and elsewhere, using your abilities as a Hunter to protect nature and people everywhere from forces that would destroy them.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_RANGER_HUNTER_HUNTERS_LORE",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_RANGER_HUNTER_HUNTERS_PREY",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_RANGER_HUNTER_DEFENSIVE_TACTICS",
+     "type": "Archetype Feature",
+     "level": 7
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_RANGER_HUNTER_SUPERIOR_HUNTERS_PREY",
+     "type": "Archetype Feature",
+     "level": 11
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_RANGER_HUNTER_SUPERIOR_HUNTERS_DEFENSE",
+     "type": "Archetype Feature",
+     "level": 15
+    }
+   ],
+   "data": {
+    "class": "ID_2024_CLASS_RANGER",
+    "class_name": "Ranger",
+    "level_gained": 3
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_ARCHETYPE_RANGER_HUNTER",
+    "kind": "approximate"
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_RANGER_HUNTER_HUNTERS_LORE",
+   "name": "Hunter’s Lore",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You can call on the forces of nature to reveal certain strengths and weaknesses of your prey. While a creature is marked by your Hunter’s Mark, you know whether that creature has any Immunities, Resistances, or Vulnerabilities, and if the creature has any, you know what they are.</p>",
+   "data": {
+    "class": "Ranger",
+    "subclass": "Hunter",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_RANGER_HUNTER_HUNTERS_PREY",
+   "name": "Hunter’s Prey",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain one of the following feature options of your choice. Whenever you finish a Short or Long Rest, you can replace the chosen option with the other one.</p>\n<p><b>Colossus Slayer.</b> Your tenacity can wear down even the most resilient foes. When you hit a creature with a weapon, the weapon deals an extra 1d8 damage to the target if it’s missing any of its Hit Points. You can deal this extra damage only once per turn.</p>\n<p><b>Horde Breaker.</b> Once on each of your turns when you make an attack with a weapon, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target, that is within the weapon’s range, and that you haven’t attacked this turn.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Option",
+     "name": "Hunter’s Prey",
+     "supports": "Hunters Prey"
+    }
+   ],
+   "data": {
+    "class": "Ranger",
+    "subclass": "Hunter",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_RANGER_HUNTER_DEFENSIVE_TACTICS",
+   "name": "Defensive Tactics",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain one of the following feature options of your choice. Whenever you finish a Short or Long Rest, you can replace the chosen option with the other one.</p>\n<p><b>Escape the Horde.</b> Opportunity Attacks have Disadvantage against you.</p>\n<p><b>Multiattack Defense.</b> When a creature hits you with an attack roll, that creature has Disadvantage on all other attack rolls against you this turn.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Option",
+     "name": "Defensive Tactics",
+     "supports": "Defensive Tactics"
+    }
+   ],
+   "data": {
+    "class": "Ranger",
+    "subclass": "Hunter",
+    "level": 7
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_RANGER_HUNTER_SUPERIOR_HUNTERS_PREY",
+   "name": "Superior Hunter’s Prey",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Once per turn when you deal damage to a creature marked by your Hunter’s Mark, you can also deal that spell’s extra damage to a different creature that you can see within 30 feet of the first creature.</p>",
+   "data": {
+    "class": "Ranger",
+    "subclass": "Hunter",
+    "level": 11
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_RANGER_HUNTER_SUPERIOR_HUNTERS_DEFENSE",
+   "name": "Superior Hunter’s Defense",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you take damage, you can take a Reaction to give yourself Resistance to that damage and any other damage of the same type until the end of the current turn.</p>",
+   "data": {
+    "class": "Ranger",
+    "subclass": "Hunter",
+    "level": 15
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_HUNTERS_PREY_COLOSSUS_SLAYER",
+   "name": "Colossus Slayer",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Hunters Prey"
+   ],
+   "description": "<p>Your tenacity can wear down even the most resilient foes. When you hit a creature with a weapon, the weapon deals an extra 1d8 damage to the target if it’s missing any of its Hit Points. You can deal this extra damage only once per turn.</p>",
+   "data": {
+    "class_name": "Ranger",
+    "group": "Hunters Prey",
+    "source_feature": "Hunter’s Prey",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_HUNTERS_PREY_HORDE_BREAKER",
+   "name": "Horde Breaker",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Hunters Prey"
+   ],
+   "description": "<p>Once on each of your turns when you make an attack with a weapon, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target, that is within the weapon’s range, and that you haven’t attacked this turn.</p>",
+   "data": {
+    "class_name": "Ranger",
+    "group": "Hunters Prey",
+    "source_feature": "Hunter’s Prey",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DEFENSIVE_TACTICS_ESCAPE_THE_HORDE",
+   "name": "Escape the Horde",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Defensive Tactics"
+   ],
+   "description": "<p>Opportunity Attacks have Disadvantage against you.</p>",
+   "data": {
+    "class_name": "Ranger",
+    "group": "Defensive Tactics",
+    "source_feature": "Defensive Tactics",
+    "level": 7
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_DEFENSIVE_TACTICS_MULTIATTACK_DEFENSE",
+   "name": "Multiattack Defense",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Defensive Tactics"
+   ],
+   "description": "<p>When a creature hits you with an attack roll, that creature has Disadvantage on all other attack rolls against you this turn.</p>",
+   "data": {
+    "class_name": "Ranger",
+    "group": "Defensive Tactics",
+    "source_feature": "Defensive Tactics",
+    "level": 7
+   }
+  }
+ ]
+}

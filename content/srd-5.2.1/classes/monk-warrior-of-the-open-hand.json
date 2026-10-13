@@ -1,0 +1,176 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/monk-warrior-of-the-open-hand",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SUBCLASS_MONK_WARRIOR_OF_THE_OPEN_HAND",
+   "name": "Warrior of the Open Hand",
+   "type": "Archetype",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Monk Subclass"
+   ],
+   "description": "<p>Master Unarmed Combat Techniques Warriors of the Open Hand are masters of unarmed combat. They learn techniques to push and trip their opponents and manipulate their own energy to protect themselves from harm.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_MONK_WARRIOR_OF_THE_OPEN_HAND_OPEN_HAND_TECHNIQUE",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_MONK_WARRIOR_OF_THE_OPEN_HAND_WHOLENESS_OF_BODY",
+     "type": "Archetype Feature",
+     "level": 6
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_MONK_WARRIOR_OF_THE_OPEN_HAND_FLEET_STEP",
+     "type": "Archetype Feature",
+     "level": 11
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_MONK_WARRIOR_OF_THE_OPEN_HAND_QUIVERING_PALM",
+     "type": "Archetype Feature",
+     "level": 17
+    }
+   ],
+   "data": {
+    "class": "ID_2024_CLASS_MONK",
+    "class_name": "Monk",
+    "level_gained": 3
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ARCHETYPE_WAY_OF_THE_OPEN_HAND",
+    "kind": "approximate"
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_MONK_WARRIOR_OF_THE_OPEN_HAND_OPEN_HAND_TECHNIQUE",
+   "name": "Open Hand Technique",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Whenever you hit a creature with an attack granted by your Flurry of Blows, you can impose one of the following effects on that target.</p>\n<p><b>Addle.</b> The target can’t make Opportunity Attacks until the start of its next turn.</p>\n<p><b>Push.</b> The target must succeed on a Strength saving throw or be pushed up to 15 feet away from you.</p>\n<p><b>Topple.</b> The target must succeed on a Dexterity saving throw or have the Prone condition.</p>",
+   "data": {
+    "class": "Monk",
+    "subclass": "Warrior of the Open Hand",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_MONK_WARRIOR_OF_THE_OPEN_HAND_WHOLENESS_OF_BODY",
+   "name": "Wholeness of Body",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the ability to heal yourself. As a Bonus Action, you can roll your Martial Arts die. You regain a number of Hit Points equal to the number rolled plus your Wisdom modifier (minimum of 1 Hit Point regained).</p>\n<p>You can use this feature a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a Long Rest.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "wholeness of body",
+     "name": "Wholeness of Body",
+     "max": {
+      "type": "formula",
+      "expr": "max(1, wisdom:modifier)"
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    }
+   ],
+   "data": {
+    "class": "Monk",
+    "subclass": "Warrior of the Open Hand",
+    "level": 6
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_MONK_WARRIOR_OF_THE_OPEN_HAND_FLEET_STEP",
+   "name": "Fleet Step",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you take a Bonus Action other than Step of the Wind, you can also use Step of the Wind immediately after that Bonus Action.</p>",
+   "data": {
+    "class": "Monk",
+    "subclass": "Warrior of the Open Hand",
+    "level": 11
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_MONK_WARRIOR_OF_THE_OPEN_HAND_QUIVERING_PALM",
+   "name": "Quivering Palm",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the ability to set up lethal vibrations in someone’s body. When you hit a creature with an Unarmed Strike, you can expend 4 Focus Points to start these imperceptible vibrations, which last for a number of days equal to your Monk level. The vibrations are harmless unless you take an action to end them. Alternatively, when you take the Attack action on your turn, you can forgo one of the attacks to end the vibrations. To end them, you and the target must be on the same plane of existence. When you end them, the target must make a Constitution saving throw, taking 10d12 Force damage on a failed save or half as much damage on a successful one.</p>\n<p>You can have only one creature under the effect of this feature at a time. You can end the vibrations harmlessly (no action required).</p>",
+   "data": {
+    "class": "Monk",
+    "subclass": "Warrior of the Open Hand",
+    "level": 17
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_OPEN_HAND_TECHNIQUE_ADDLE",
+   "name": "Addle",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Open Hand Technique"
+   ],
+   "description": "<p>The target can’t make Opportunity Attacks until the start of its next turn.</p>",
+   "data": {
+    "class_name": "Monk",
+    "group": "Open Hand Technique",
+    "source_feature": "Open Hand Technique",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_OPEN_HAND_TECHNIQUE_PUSH",
+   "name": "Push",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Open Hand Technique"
+   ],
+   "description": "<p>The target must succeed on a Strength saving throw or be pushed up to 15 feet away from you.</p>",
+   "data": {
+    "class_name": "Monk",
+    "group": "Open Hand Technique",
+    "source_feature": "Open Hand Technique",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_OPEN_HAND_TECHNIQUE_TOPPLE",
+   "name": "Topple",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Open Hand Technique"
+   ],
+   "description": "<p>The target must succeed on a Dexterity saving throw or have the Prone condition.</p>",
+   "data": {
+    "class_name": "Monk",
+    "group": "Open Hand Technique",
+    "source_feature": "Open Hand Technique",
+    "level": 3
+   }
+  }
+ ]
+}

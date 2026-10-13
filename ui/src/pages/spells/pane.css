@@ -1,0 +1,46 @@
+/* Classic builder two-pane page (11* : 5*), band headers and item grids. Shared by Magic and Equipment. */
+.ap-page { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 30.63%); flex: 1 0 auto; min-height: 100%; width: 100%; }
+.ap-right { min-width: 0; display: flex; flex-direction: column; background: #131313; border-left: 2px solid #1a1c1d; }
+.ap-right .desc-scroll { overflow-y: scroll; }
+.ap-left { min-width: 0; padding: 15px 20px 20px 50px; display: flex; flex-direction: column; gap: 10px; }
+
+.ap-band { display: flex; align-items: center; gap: 10px; min-height: 26px; padding: 2px 8px; background: var(--highlight); border: 1px solid var(--accent-80); color: #fff; flex-wrap: wrap; }
+.ap-band h2, .ap-band h3 { margin: 0; font-size: var(--fs-md); font-weight: 600; text-transform: uppercase; color: #fff; }
+.ap-band .ap-stats { margin-left: auto; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--fs-2xs); text-transform: uppercase; color: var(--gray-6); font-weight: 600; }
+.ap-band .ap-stats b { color: var(--gold); font-weight: 600; margin-left: 3px; }
+:root[data-theme="light"] .ap-band .ap-stats b { color: #ffd566; }
+
+.ap-scroll { overflow: auto; border: 1px solid var(--accent-60); border-top: 0; max-height: var(--ap-max, none); }
+.ap-grid { width: 100%; border-collapse: collapse; font-size: var(--fs-md); }
+.ap-grid th { position: sticky; top: 0; z-index: 1; background: var(--highlight); text-align: left; font-size: 9px; line-height: 1; font-weight: 600; text-transform: uppercase; color: var(--text); padding: 4px 5px 5px; white-space: nowrap; }
+.ap-grid td { padding: 1px 5px; height: 21px; white-space: nowrap; color: var(--text-body); }
+.ap-grid .num { text-align: right; }
+.ap-grid .ctr { text-align: center; }
+.ap-grid tbody tr:hover td { background: var(--accent-20); }
+.ap-grid tbody tr.sel td { background: var(--accent-80); color: var(--text); }
+.ap-grid .ap-name { background: none; border: 0; padding: 0; margin: 0; font: inherit; font-style: italic; font-weight: 600; color: var(--text); text-align: left; cursor: pointer; min-height: 0; height: auto; }
+.ap-grid .ap-name:focus-visible { outline: 1px solid var(--focus); outline-offset: 2px; }
+.ap-grid td.grow { width: 100%; white-space: normal; }
+.ap-empty-row td { color: var(--text-muted); padding: 10px 5px; }
+.ap-gold { color: var(--gold); }
+.ap-check { appearance: none; -webkit-appearance: none; width: 14px; height: 14px; margin: 0; border: 1px solid var(--gray-3); background: transparent; display: inline-grid; place-content: center; cursor: pointer; vertical-align: middle; }
+.ap-check:checked { border-color: var(--gold); }
+.ap-check:checked::after { content: ""; width: 8px; height: 4px; border-left: 2px solid var(--gold); border-bottom: 2px solid var(--gold); transform: rotate(-45deg) translate(1px, -1px); }
+.ap-check:disabled { opacity: 0.4; cursor: default; }
+.ap-check:focus-visible { outline: 1px solid var(--focus); outline-offset: 2px; }
+
+.ap-tags { display: inline-flex; gap: 4px; }
+.ap-tag { font-size: 9px; font-weight: 600; text-transform: uppercase; padding: 0 4px; border: 1px solid var(--accent-80); color: var(--gray-6); }
+.ap-tag.warn { color: var(--aur-warning-bright, #cf6e39); border-color: currentColor; }
+
+@media (max-width: 899px) {
+  .ap-page { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .ap-left { padding: 15px max(15px, var(--safe-l)) 15px max(15px, var(--safe-r)); }
+  .ap-right { border-left: 0; border-top: 2px solid var(--highlight); }
+  .ap-right.ap-none { display: none; }
+  .ap-grid .hide-narrow { display: none; }
+}
+.tab-panel:has(> .ap-page) { flex: 1 0 auto; display: flex; flex-direction: column; }
+.tab-panel:has(> .ap-page) > .ap-page { flex: 1 0 auto; }
+.tab-panel:has(> .ap-page) { padding-top: 0; }
+

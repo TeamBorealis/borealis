@@ -1,0 +1,292 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: species/dwarf",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SPECIES_DWARF",
+   "name": "Dwarf",
+   "type": "Species",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Creature type: Humanoid. Size: Medium (about 4–5 feet tall). Speed: 30 feet.</p>",
+   "setters": [
+    {
+     "name": "short",
+     "value": "Humanoid, Medium, Speed 30 ft."
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_SIZE_MEDIUM",
+     "type": "Size"
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed",
+     "value": "30",
+     "bonus": "base"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_DWARF_DARKVISION",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_DWARF_DWARVEN_RESILIENCE",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_DWARF_DWARVEN_TOUGHNESS",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_DWARF_STONECUNNING",
+     "type": "Racial Trait"
+    }
+   ],
+   "data": {
+    "creature_type": "Humanoid",
+    "size": [
+     "Medium"
+    ],
+    "speed": 30,
+    "traits": [
+     "ID_2024_TRAIT_DWARF_DARKVISION",
+     "ID_2024_TRAIT_DWARF_DWARVEN_RESILIENCE",
+     "ID_2024_TRAIT_DWARF_DWARVEN_TOUGHNESS",
+     "ID_2024_TRAIT_DWARF_STONECUNNING"
+    ]
+   },
+   "maps_to": {
+    "dnd2014": "ID_SRD_RACE_DWARF",
+    "kind": "approximate"
+   }
+  },
+  {
+   "id": "ID_2024_TRAIT_DWARF_DARKVISION",
+   "name": "Darkvision",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Darkvision with a range of 120 feet.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_VISION_DARKVISION",
+     "type": "Vision"
+    },
+    {
+     "kind": "stat",
+     "name": "darkvision:range",
+     "value": "120",
+     "bonus": "base"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_DWARF_DWARVEN_RESILIENCE",
+   "name": "Dwarven Resilience",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Resistance to Poison damage. You also have Advantage on saving throws you make to avoid or end the Poisoned condition.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_POISON",
+     "type": "Condition"
+    },
+    {
+     "kind": "save_advantage",
+     "against_condition": "poisoned",
+     "scope": "avoid_or_end"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_DWARF_DWARVEN_TOUGHNESS",
+   "name": "Dwarven Toughness",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Your Hit Point maximum increases by 1, and it increases by 1 again whenever you gain a level.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 2,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 3,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 4,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 5,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 6,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 7,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 8,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 9,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 10,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 11,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 12,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 13,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 14,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 15,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 16,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 17,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 18,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 19,
+     "alt": "Dwarven Toughness"
+    },
+    {
+     "kind": "stat",
+     "name": "hp",
+     "value": "1",
+     "level": 20,
+     "alt": "Dwarven Toughness"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_DWARF_STONECUNNING",
+   "name": "Stonecunning",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Bonus Action, you gain Tremorsense with a range of 60 feet for 10 minutes. You must be on a stone surface or touching a stone surface to use this Tremorsense. The stone can be natural or worked.</p>\n<p>You can use this Bonus Action a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "stonecunning",
+     "name": "Stonecunning",
+     "max": {
+      "type": "stat",
+      "stat": "proficiency"
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    }
+   ],
+   "data": {
+    "sense": "tremorsense 60 ft. for 10 minutes"
+   }
+  }
+ ]
+}

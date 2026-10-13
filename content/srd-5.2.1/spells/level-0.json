@@ -1,0 +1,2044 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: spells/level-0",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SPELL_ACID_SPLASH",
+   "name": "Acid Splash",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>You create an acidic bubble at a point within range, where it explodes in a 5-foot-radius Sphere. Each creature in that Sphere must succeed on a Dexterity saving throw or take 1d6 Acid damage.</p>\n<p><b>Cantrip Upgrade.</b> The damage increases by 1d6 when you reach levels 5 (2d6), 11 (3d6), and 17 (4d6).</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Evocation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "60 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Evocation",
+    "classes": [
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Cantrip Upgrade. The damage increases by 1d6 when you reach levels 5 (2d6), 11 (3d6), and 17 (4d6)."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_ACID_SPLASH",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_CHILL_TOUCH",
+   "name": "Chill Touch",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Sorcerer",
+    "Warlock",
+    "Wizard"
+   ],
+   "description": "<p>Channeling the chill of the grave, make a melee spell attack against a target within reach. On a hit, the target takes 1d10 Necrotic damage, and it can’t regain Hit Points until the end of your next turn.</p>\n<p><b>Cantrip Upgrade.</b> The damage increases by 1d10 when you reach levels 5 (2d10), 11 (3d10), and 17 (4d10).</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Necromancy"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "Touch"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Necromancy",
+    "classes": [
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Cantrip Upgrade. The damage increases by 1d10 when you reach levels 5 (2d10), 11 (3d10), and 17 (4d10)."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_CHILL_TOUCH",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_DANCING_LIGHTS",
+   "name": "Dancing Lights",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>You create up to four torch-size lights within range, making them appear as torches, lanterns, or glowing orbs that hover for the duration. Alternatively, you combine the four lights into one glowing Medium form that is vaguely humanlike. Whichever form you choose, each light sheds Dim Light in a 10- foot radius.</p>\n<p>As a Bonus Action, you can move the lights up to 60 feet to a space within range. A light must be within 20 feet of another light created by this spell, and a light vanishes if it exceeds the spell’s range.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Illusion"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 minute"
+    },
+    {
+     "name": "range",
+     "value": "120 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a bit of phosphorus"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Illusion",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_DANCING_LIGHTS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_DRUIDCRAFT",
+   "name": "Druidcraft",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid"
+   ],
+   "description": "<p>Whispering to the spirits of nature, you create one of the following effects within range.</p>\n<p><b>Weather Sensor.</b> You create a Tiny, harmless sensory effect that predicts what the weather will be at your location for the next 24 hours. The effect might manifest as a golden orb for clear skies, a cloud for rain, falling snowflakes for snow, and so on. This effect persists for 1 round.</p>\n<p><b>Bloom.</b> You instantly make a flower blossom, a seed pod open, or a leaf bud bloom.</p>\n<p><b>Sensory Effect.</b> You create a harmless sensory effect, such as falling leaves, spectral dancing fairies, a gentle breeze, the sound of an animal, or the faint odor of skunk. The effect must fit in a 5-foot Cube.</p>\n<p><b>Fire Play.</b> You light or snuff out a candle, a torch, or a campfire.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Transmutation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Transmutation",
+    "classes": [
+     "Druid"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_DRUIDCRAFT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_ELDRITCH_BLAST",
+   "name": "Eldritch Blast",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Warlock"
+   ],
+   "description": "<p>You hurl a beam of crackling energy. Make a ranged spell attack against one creature or object in range. On a hit, the target takes 1d10 Force damage.</p>\n<p><b>Cantrip Upgrade.</b> The spell creates two beams at level 5, three beams at level 11, and four beams at level 17. You can direct the beams at the same target or at different ones. Make a separate attack roll for each beam.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Evocation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "120 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Evocation",
+    "classes": [
+     "Warlock"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Cantrip Upgrade. The spell creates two beams at level 5, three beams at level 11, and four beams at level 17. You can direct the beams at the same target or at different ones. Make a separate attack roll for each beam."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_ELDRITCH_BLAST",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_ELEMENTALISM",
+   "name": "Elementalism",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid",
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>You exert control over the elements, creating one of the following effects within range.</p>\n<p><b>Beckon Air.</b> You create a breeze strong enough to ripple cloth, stir dust, rustle leaves, and close open doors and shutters, all in a 5-foot Cube. Doors and shutters being held open by someone or something aren’t affected.</p>\n<p><b>Beckon Earth.</b> You create a thin shroud of dust or sand that covers surfaces in a 5-foot-square area, or you cause a single word to appear in your handwriting in a patch of dirt or sand.</p>\n<p><b>Beckon Fire.</b> You create a thin cloud of harmless embers and colored, scented smoke in a 5-foot Cube. You choose the color and scent, and the embers can light candles, torches, or lamps in that area. The smoke’s scent lingers for 1 minute.</p>\n<p><b>Beckon Water.</b> You create a spray of cool mist that lightly dampens creatures and objects in a 5-foot Cube. Alternatively, you create 1 cup of clean water either in an open container or on a surface, and the water evaporates in 1 minute.</p>\n<p><b>Sculpt Element.</b> You cause dirt, sand, fire, smoke, mist, or water that can fit in a 1-foot Cube to assume a crude shape (such as that of a creature) for 1 hour.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Transmutation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Transmutation",
+    "classes": [
+     "Druid",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_FIRE_BOLT",
+   "name": "Fire Bolt",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>You hurl a mote of fire at a creature or an object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 Fire damage. A flammable object hit by this spell starts burning if it isn’t being worn or carried.</p>\n<p><b>Cantrip Upgrade.</b> The damage increases by 1d10 when you reach levels 5 (2d10), 11 (3d10), and 17 (4d10).</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Evocation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "120 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Evocation",
+    "classes": [
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Cantrip Upgrade. The damage increases by 1d10 when you reach levels 5 (2d10), 11 (3d10), and 17 (4d10)."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_FIRE_BOLT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_GUIDANCE",
+   "name": "Guidance",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric",
+    "Druid"
+   ],
+   "description": "<p>You touch a willing creature and choose a skill. Until the spell ends, the creature adds 1d4 to any ability check using the chosen skill.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Divination"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 minute"
+    },
+    {
+     "name": "range",
+     "value": "Touch"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Divination",
+    "classes": [
+     "Cleric",
+     "Druid"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_GUIDANCE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_LIGHT",
+   "name": "Light",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Cleric",
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>You touch one Large or smaller object that isn’t being worn or carried by someone else. Until the spell ends, the object sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. The light can be colored as you like.</p>\n<p>Covering the object with something opaque blocks the light. The spell ends if you cast it again.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Evocation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "1 hour"
+    },
+    {
+     "name": "range",
+     "value": "Touch"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "false"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a firefly or phosphorescent moss"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Evocation",
+    "classes": [
+     "Bard",
+     "Cleric",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": false,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_LIGHT",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_MAGE_HAND",
+   "name": "Mage Hand",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Sorcerer",
+    "Warlock",
+    "Wizard"
+   ],
+   "description": "<p>A spectral, floating hand appears at a point you choose within range. The hand lasts for the duration. The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again.</p>\n<p>When you cast the spell, you can use the hand to manipulate an object, open an unlocked door or container, stow or retrieve an item from an open container, or pour the contents out of a vial.</p>\n<p>As a Magic action on your later turns, you can control the hand thus again. As part of that action, you can move the hand up to 30 feet.</p>\n<p>The hand can’t attack, activate magic items, or carry more than 10 pounds.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Conjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "1 minute"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Conjuration",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_MAGE_HAND",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_MENDING",
+   "name": "Mending",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Cleric",
+    "Druid",
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>This spell repairs a single break or tear in an object you touch, such as a broken chain link, two halves of a broken key, a torn cloak, or a leaking wineskin. As long as the break or tear is no larger than 1 foot in any dimension, you mend it, leaving no trace of the former damage.</p>\n<p>This spell can physically repair a magic item, but it can’t restore magic to such an object.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Transmutation"
+    },
+    {
+     "name": "time",
+     "value": "1 minute"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "Touch"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "two lodestones"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Transmutation",
+    "classes": [
+     "Bard",
+     "Cleric",
+     "Druid",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_MENDING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_MESSAGE",
+   "name": "Message",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Druid",
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>You point toward a creature within range and whisper a message. The target (and only the target) hears the message and can reply in a whisper that only you can hear.</p>\n<p>You can cast this spell through solid objects if you are familiar with the target and know it is beyond the barrier. Magical silence; 1 foot of stone, metal, or wood; or a thin sheet of lead blocks the spell.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Transmutation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "1 round"
+    },
+    {
+     "name": "range",
+     "value": "120 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "false"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a copper wire"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Transmutation",
+    "classes": [
+     "Bard",
+     "Druid",
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": false,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_MESSAGE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_MINOR_ILLUSION",
+   "name": "Minor Illusion",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Sorcerer",
+    "Warlock",
+    "Wizard"
+   ],
+   "description": "<p>You create a sound or an image of an object within range that lasts for the duration. See the descriptions below for the effects of each. The illusion ends if you cast this spell again.</p>\n<p>If a creature takes a Study action to examine the sound or image, the creature can determine that it is an illusion with a successful Intelligence (Investigation) check against your spell save DC. If a creature discerns the illusion for what it is, the illusion becomes faint to the creature.</p>\n<p><b>Sound.</b> If you create a sound, its volume can range from a whisper to a scream. It can be your voice, someone else’s voice, a lion’s roar, a beating of drums, or any other sound you choose. The sound continues unabated throughout the duration, or you can make discrete sounds at different times before the spell ends.</p>\n<p><b>Image.</b> If you create an image of an object—such as a chair, muddy footprints, or a small chest—it must be no larger than a 5-foot Cube. The image can’t create sound, light, smell, or any other sensory effect. Physical interaction with the image reveals it to be an illusion, since things can pass through it.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Illusion"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "1 minute"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "false"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a bit of fleece"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Illusion",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "components": {
+     "v": false,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_MINOR_ILLUSION",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_POISON_SPRAY",
+   "name": "Poison Spray",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid",
+    "Sorcerer",
+    "Warlock",
+    "Wizard"
+   ],
+   "description": "<p>You spray toxic mist at a creature within range.</p>\n<p>Make a ranged spell attack against the target. On a hit, the target takes 1d12 Poison damage.</p>\n<p><b>Cantrip Upgrade.</b> The damage increases by 1d12 when you reach levels 5 (2d12), 11 (3d12), and 17 (4d12).</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Necromancy"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Necromancy",
+    "classes": [
+     "Druid",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Cantrip Upgrade. The damage increases by 1d12 when you reach levels 5 (2d12), 11 (3d12), and 17 (4d12)."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_POISON_SPRAY",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_PRESTIDIGITATION",
+   "name": "Prestidigitation",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Sorcerer",
+    "Warlock",
+    "Wizard"
+   ],
+   "description": "<p>You create a magical effect within range. Choose the effect from the options below. If you cast this spell multiple times, you can have up to three of its non-instantaneous effects active at a time.</p>\n<p><b>Sensory Effect.</b> You create an instantaneous, harmless sensory effect, such as a shower of sparks, a puff of wind, faint musical notes, or an odd odor.</p>\n<p><b>Fire Play.</b> You instantaneously light or snuff out a candle, a torch, or a small campfire.</p>\n<p><b>Clean or Soil.</b> You instantaneously clean or soil an object no larger than 1 cubic foot.</p>\n<p><b>Minor Sensation.</b> You chill, warm, or flavor up to 1 cubic foot of nonliving material for 1 hour.</p>\n<p><b>Magic Mark.</b> You make a color, a small mark, or a symbol appear on an object or a surface for 1 hour.</p>\n<p><b>Minor Creation.</b> You create a nonmagical trinket or an illusory image that can fit in your hand. It lasts until the end of your next turn. A trinket can deal no damage and has no monetary worth.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Transmutation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Up to 1 hour"
+    },
+    {
+     "name": "range",
+     "value": "10 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Transmutation",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_PRESTIDIGITATION",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_PRODUCE_FLAME",
+   "name": "Produce Flame",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid"
+   ],
+   "description": "<p>A flickering flame appears in your hand and remains there for the duration. While there, the flame emits no heat and ignites nothing, and it sheds Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. The spell ends if you cast it again.</p>\n<p>Until the spell ends, you can take a Magic action to hurl fire at a creature or an object within 60 feet of you. Make a ranged spell attack. On a hit, the target takes 1d8 Fire damage.</p>\n<p><b>Cantrip Upgrade.</b> The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Conjuration"
+    },
+    {
+     "name": "time",
+     "value": "Bonus Action"
+    },
+    {
+     "name": "duration",
+     "value": "10 minutes"
+    },
+    {
+     "name": "range",
+     "value": "Self"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Conjuration",
+    "classes": [
+     "Druid"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8)."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_PRODUCE_FLAME",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_RAY_OF_FROST",
+   "name": "Ray of Frost",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>A frigid beam of blue-white light streaks toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 1d8 Cold damage, and its Speed is reduced by 10 feet until the start of your next turn.</p>\n<p><b>Cantrip Upgrade.</b> The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Evocation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "60 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Evocation",
+    "classes": [
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8)."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_RAY_OF_FROST",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_RESISTANCE",
+   "name": "Resistance",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric",
+    "Druid"
+   ],
+   "description": "<p>You touch a willing creature and choose a damage type: Acid, Bludgeoning, Cold, Fire, Lightning, Necrotic, Piercing, Poison, Radiant, Slashing, or Thunder. When the creature takes damage of the chosen type before the spell ends, the creature reduces the total damage taken by 1d4. A creature can benefit from this spell only once per turn.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Abjuration"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Concentration, up to 1 minute"
+    },
+    {
+     "name": "range",
+     "value": "Touch"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "true"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Abjuration",
+    "classes": [
+     "Cleric",
+     "Druid"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": true
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_RESISTANCE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_SACRED_FLAME",
+   "name": "Sacred Flame",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric"
+   ],
+   "description": "<p>Flame-like radiance descends on a creature that you can see within range. The target must succeed on a Dexterity saving throw or take 1d8 Radiant damage. The target gains no benefit from Half Cover or Three-Quarters Cover for this save.</p>\n<p><b>Cantrip Upgrade.</b> The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Evocation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "60 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Evocation",
+    "classes": [
+     "Cleric"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8)."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_SACRED_FLAME",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_SHILLELAGH",
+   "name": "Shillelagh",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Druid"
+   ],
+   "description": "<p>A Club or Quarterstaff you are holding is imbued with nature’s power. For the duration, you can use your spellcasting ability instead of Strength for the attack and damage rolls of melee attacks using that weapon, and the weapon’s damage die becomes a d8. If the attack deals damage, it can be Force damage or the weapon’s normal damage type (your choice).</p>\n<p>The spell ends early if you cast it again or if you let go of the weapon.</p>\n<p><b>Cantrip Upgrade.</b> The damage die changes when you reach levels 5 (d10), 11 (d12), and 17 (2d6).</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Transmutation"
+    },
+    {
+     "name": "time",
+     "value": "Bonus Action"
+    },
+    {
+     "name": "duration",
+     "value": "1 minute"
+    },
+    {
+     "name": "range",
+     "value": "Self"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "mistletoe"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Transmutation",
+    "classes": [
+     "Druid"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Cantrip Upgrade. The damage die changes when you reach levels 5 (d10), 11 (d12), and 17 (2d6)."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_SHILLELAGH",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_SHOCKING_GRASP",
+   "name": "Shocking Grasp",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Sorcerer",
+    "Wizard"
+   ],
+   "description": "<p>Lightning springs from you to a creature that you try to touch. Make a melee spell attack against the target. On a hit, the target takes 1d8 Lightning damage, and it can’t make Opportunity Attacks until the start of its next turn.</p>\n<p><b>Cantrip Upgrade.</b> The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Evocation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "Touch"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Evocation",
+    "classes": [
+     "Sorcerer",
+     "Wizard"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8)."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_SHOCKING_GRASP",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_SORCEROUS_BURST",
+   "name": "Sorcerous Burst",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Sorcerer"
+   ],
+   "description": "<p>You cast sorcerous energy at one creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d8 damage of a type you choose: Acid, Cold, Fire, Lightning, Poison, Psychic, or Thunder.</p>\n<p>If you roll an 8 on a d8 for this spell, you can roll another d8, and add it to the damage. When you cast this spell, the maximum number of these d8s you can add to the spell’s damage equals your spellcasting ability modifier.</p>\n<p><b>Cantrip Upgrade.</b> The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Evocation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "120 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Evocation",
+    "classes": [
+     "Sorcerer"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8)."
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_SPARE_THE_DYING",
+   "name": "Spare the Dying",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric",
+    "Druid"
+   ],
+   "description": "<p>Choose a creature within range that has 0 Hit Points and isn’t dead. The creature becomes Stable.</p>\n<p><b>Cantrip Upgrade.</b> The range doubles when you reach levels 5 (30 feet), 11 (60 feet), and 17 (120 feet).</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Necromancy"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "15 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Necromancy",
+    "classes": [
+     "Cleric",
+     "Druid"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Cantrip Upgrade. The range doubles when you reach levels 5 (30 feet), 11 (60 feet), and 17 (120 feet)."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_SPARE_THE_DYING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_STARRY_WISP",
+   "name": "Starry Wisp",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Druid"
+   ],
+   "description": "<p>You launch a mote of light at one creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d8 Radiant damage, and until the end of your next turn, it emits Dim Light in a 10-foot radius and can’t benefit from the Invisible condition.</p>\n<p><b>Cantrip Upgrade.</b> The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Evocation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "60 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Evocation",
+    "classes": [
+     "Bard",
+     "Druid"
+    ],
+    "components": {
+     "v": true,
+     "s": true,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Cantrip Upgrade. The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8)."
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_THAUMATURGY",
+   "name": "Thaumaturgy",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric"
+   ],
+   "description": "<p>You manifest a minor wonder within range. You create one of the effects below within range. If you cast this spell multiple times, you can have up to three of its 1-minute effects active at a time.</p>\n<p><b>Altered Eyes.</b> You alter the appearance of your eyes for 1 minute.</p>\n<p><b>Booming Voice.</b> Your voice booms up to three times as loud as normal for 1 minute. For the duration, you have Advantage on Charisma (Intimidation) checks.</p>\n<p><b>Fire Play.</b> You cause flames to flicker, brighten, dim, or change color for 1 minute.</p>\n<p><b>Invisible Hand.</b> You instantaneously cause an unlocked door or window to fly open or slam shut.</p>\n<p><b>Phantom Sound.</b> You create an instantaneous sound that originates from a point of your choice within range, such as a rumble of thunder, the cry of a raven, or ominous whispers.</p>\n<p><b>Tremors.</b> You cause harmless tremors in the ground for 1 minute.</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Transmutation"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Up to 1 minute"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "false"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Transmutation",
+    "classes": [
+     "Cleric"
+    ],
+    "components": {
+     "v": true,
+     "s": false,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_THAUMATURGY",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_TRUE_STRIKE",
+   "name": "True Strike",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard",
+    "Sorcerer",
+    "Warlock",
+    "Wizard"
+   ],
+   "description": "<p>Guided by a flash of magical insight, you make one attack with the weapon used in the spell’s casting. The attack uses your spellcasting ability for the attack and damage rolls instead of using Strength or Dexterity. If the attack deals damage, it can be Radiant damage or the weapon’s normal damage type (your choice).</p>\n<p><b>Cantrip Upgrade.</b> Whether you deal Radiant damage or the weapon’s normal damage type, the attack deals extra Radiant damage when you reach levels 5 (1d6), 11 (2d6), and 17 (3d6).</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Divination"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "Self"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "false"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "true"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    },
+    {
+     "name": "materialComponent",
+     "value": "a weapon with which you have proficiency and that is worth 1+ CP"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Divination",
+    "classes": [
+     "Bard",
+     "Sorcerer",
+     "Warlock",
+     "Wizard"
+    ],
+    "components": {
+     "v": false,
+     "s": true,
+     "m": true
+    },
+    "ritual": false,
+    "concentration": false,
+    "material_cost": {
+     "amount": 1,
+     "currency": "cp",
+     "consumed": false
+    },
+    "higher_level": "Cantrip Upgrade. Whether you deal Radiant damage or the weapon’s normal damage type, the attack deals extra Radiant damage when you reach levels 5 (1d6), 11 (2d6), and 17 (3d6)."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_TRUE_STRIKE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SPELL_VICIOUS_MOCKERY",
+   "name": "Vicious Mockery",
+   "type": "Spell",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Bard"
+   ],
+   "description": "<p>You unleash a string of insults laced with subtle enchantments at one creature you can see or hear within range. The target must succeed on a Wisdom saving throw or take 1d6 Psychic damage and have Disadvantage on the next attack roll it makes before the end of its next turn.</p>\n<p><b>Cantrip Upgrade.</b> The damage increases by 1d6 when you reach levels 5 (2d6), 11 (3d6), and 17 (4d6).</p>",
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Enchantment"
+    },
+    {
+     "name": "time",
+     "value": "Action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "60 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "false"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ],
+   "data": {
+    "level": 0,
+    "school": "Enchantment",
+    "classes": [
+     "Bard"
+    ],
+    "components": {
+     "v": true,
+     "s": false,
+     "m": false
+    },
+    "ritual": false,
+    "concentration": false,
+    "higher_level": "Cantrip Upgrade. The damage increases by 1d6 when you reach levels 5 (2d6), 11 (3d6), and 17 (4d6)."
+   },
+   "maps_to": {
+    "dnd2014": "ID_PHB_SPELL_VICIOUS_MOCKERY",
+    "kind": "equivalent"
+   }
+  }
+ ]
+}

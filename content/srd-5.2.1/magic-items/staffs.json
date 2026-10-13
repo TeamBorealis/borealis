@@ -1,0 +1,541 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: magic-items/staffs",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_MAGIC_ITEM_STAFF_OF_CHARMING",
+   "name": "Staff of Charming",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This staff has 10 charges. While holding the staff, you can use any of its properties:</p>\n<p><b>Cast Spell.</b> You can expend 1 of the staff’s charges to cast Charm Person, Command, or Comprehend Languages from it using your spell save DC.</p>\n<p><b>Reflect Enchantment.</b> If you succeed on a saving throw against an Enchantment spell that targets only you, you can take a Reaction to expend 1 charge from the staff and turn the spell back on its caster as if you had cast the spell.</p>\n<p><b>Resist Enchantment.</b> If you fail a saving throw against an Enchantment spell that targets only you, you can turn your failed save into a successful one. You can’t use this property of the staff again until the next dawn.</p>\n<p><b>Regaining Charges.</b> The staff regains 1d8 + 2 expended charges daily at dawn. If you expend the last charge, roll 1d20. On a 1, the staff crumbles to dust and is destroyed.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Staffs"
+    },
+    {
+     "name": "type",
+     "value": "Staff"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true",
+     "attributes": {
+      "addition": "a Bard, Cleric, Druid, Sorcerer, Warlock, or Wizard"
+     }
+    }
+   ],
+   "data": {
+    "item_type": "Staff",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": "a Bard, Cleric, Druid, Sorcerer, Warlock, or Wizard",
+    "charges": 10,
+    "raw_type_line": "Staff, Rare (Requires Attunement by a Bard, Cleric, Druid, Sorcerer, Warlock, or Wizard)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_STAFF_OF_CHARMING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_STAFF_OF_FIRE",
+   "name": "Staff of Fire",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Resistance to Fire damage while you hold this staff.</p>\n<p><b>Spells.</b> The staff has 10 charges. While holding the staff, you can cast one of the spells on the following table from it, using your spell save DC. The table indicates how many charges you must expend to cast the spell.</p>\n<pre>                    Charge                    Charge\nSpell                Cost      Spell           Cost\nBurning Hands         1        Wall of Fire      4\nFireball              3</pre>\n<p><b>Regaining Charges.</b> The staff regains 1d6 + 4 expended charges daily at dawn. If you expend the last charge, roll 1d20. On a 1, the staff crumbles into cinders and is destroyed.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Staffs"
+    },
+    {
+     "name": "type",
+     "value": "Staff"
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true",
+     "attributes": {
+      "addition": "a Druid, Sorcerer, Warlock, or Wizard"
+     }
+    }
+   ],
+   "data": {
+    "item_type": "Staff",
+    "item_subtype": null,
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": "a Druid, Sorcerer, Warlock, or Wizard",
+    "charges": 10,
+    "raw_type_line": "Staff, Very Rare (Requires Attunement by a Druid, Sorcerer, Warlock, or Wizard)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_STAFF_OF_FIRE",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_STAFF_OF_FROST",
+   "name": "Staff of Frost",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Resistance to Cold damage while you hold this staff.</p>\n<p><b>Spells.</b> The staff has 10 charges. While holding the staff, you can cast one of the spells on the following table from it, using your spell save DC. The table indicates how many charges you must expend to cast the spell.</p>\n<pre>                     Charge                        Charge\nSpell                 Cost        Spell             Cost\nCone of Cold           5          Ice Storm            4\nFog Cloud              1          Wall of Ice          4</pre>\n<p><b>Regaining Charges.</b> The staff regains 1d6 + 4 expended charges daily at dawn. If you expend the last charge, roll 1d20. On a 1, the staff turns to water and is destroyed.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Staffs"
+    },
+    {
+     "name": "type",
+     "value": "Staff"
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true",
+     "attributes": {
+      "addition": "a Druid, Sorcerer, Warlock, or Wizard"
+     }
+    }
+   ],
+   "data": {
+    "item_type": "Staff",
+    "item_subtype": null,
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": "a Druid, Sorcerer, Warlock, or Wizard",
+    "charges": 10,
+    "raw_type_line": "Staff, Very Rare (Requires Attunement by a Druid, Sorcerer, Warlock, or Wizard)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_STAFF_OF_FROST",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_STAFF_OF_HEALING",
+   "name": "Staff of Healing",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This staff has 10 charges. While holding the staff, you can cast one of the spells on the following table from it, using your spellcasting ability modifier. The table indicates how many charges you must expend to cast the spell.</p>\n<pre>Spell                           Charge Cost\nCure Wounds                 1 charge per spell level\n                           (maximum 4 for a level 4\n                                    spell)\nLesser Restoration                    2\nMass Cure Wounds                      5</pre>\n<p><b>Regaining Charges.</b> The staff regains 1d6 + 4 expended charges daily at dawn. If you expend the last charge, roll 1d20. On a 1, the staff vanishes in a flash of light, lost forever.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Staffs"
+    },
+    {
+     "name": "type",
+     "value": "Staff"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true",
+     "attributes": {
+      "addition": "a Bard, Cleric, or Druid"
+     }
+    }
+   ],
+   "data": {
+    "item_type": "Staff",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": "a Bard, Cleric, or Druid",
+    "charges": 10,
+    "raw_type_line": "Staff, Rare (Requires Attunement by a Bard, Cleric, or Druid)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_STAFF_OF_HEALING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_STAFF_OF_POWER",
+   "name": "Staff of Power",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This staff has 20 charges and can be wielded as a magic Quarterstaff that grants a +2 bonus to attack rolls and damage rolls made with it. While holding it, you gain a +2 bonus to Armor Class, saving throws, and spell attack rolls.</p>\n<p><b>Spells.</b> While holding the staff, you can cast one of the spells on the following table from it, using your spell save DC. The table indicates how many charges you must expend to cast the spell. Charge</p>\n<pre>Spell                                Cost\nCone of Cold                           5\nFireball (level 5 version)             5\nGlobe of Invulnerability               6\nHold Monster                           5\nLevitate                               2\nLightning Bolt (level 5 version)       5\nMagic Missile                          1\nRay of Enfeeblement                    1\nWall of Force                          5</pre>\n<p><b>Regaining Charges.</b> The staff regains 2d8 + 4 expended charges daily at dawn. If you expend the last charge, roll 1d20. On a 1, the staff retains its +2 bonus to attack rolls and damage rolls but loses all other properties. On a 20, the staff regains 1d8 + 2 charges.</p>\n<p><b>Retributive Strike.</b> You can take a Magic action to break the staff over your knee or against a solid surface. The staff is destroyed and releases its magic in an explosion that fills a 30-foot Emanation originating from itself. You have a 50 percent chance to instantly travel to a random plane of existence, avoiding the explosion. If you fail to avoid the effect, you take Force damage equal to 16 times the number of charges in the staff. Each other creature in the area makes a DC 17 Dexterity saving throw. On a failed save, a creature takes Force damage equal to 4 times the number of charges in the staff. On a successful save, a creature takes half as much damage.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Staffs"
+    },
+    {
+     "name": "type",
+     "value": "Staff"
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true",
+     "attributes": {
+      "addition": "a Sorcerer, Warlock, or Wizard"
+     }
+    }
+   ],
+   "data": {
+    "item_type": "Staff",
+    "item_subtype": null,
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": "a Sorcerer, Warlock, or Wizard",
+    "charges": 20,
+    "raw_type_line": "Staff, Very Rare (Requires Attunement by a Sorcerer, Warlock, or Wizard)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_STAFF_OF_POWER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_STAFF_OF_STRIKING",
+   "name": "Staff of Striking",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This staff can be wielded as a magic Quarterstaff that grants a +3 bonus to attack rolls and damage rolls made with it.</p>\n<p>The staff has 10 charges. When you hit with a melee attack using it, you can expend up to 3 charges. For each charge you expend, the target takes an extra 1d6 Force damage.</p>\n<p><b>Regaining Charges.</b> The staff regains 1d6 + 4 expended charges daily at dawn. If you expend the last charge, roll 1d20. On a 1, the staff becomes a nonmagical Quarterstaff.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Staffs"
+    },
+    {
+     "name": "type",
+     "value": "Staff"
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Staff",
+    "item_subtype": null,
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": 10,
+    "raw_type_line": "Staff, Very Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_STAFF_OF_STRIKING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_STAFF_OF_SWARMING_INSECTS",
+   "name": "Staff of Swarming Insects",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This staff has 10 charges.</p>\n<p><b>Insect Cloud.</b> While holding the staff, you can take a Magic action and expend 1 charge to cause a swarm of harmless flying insects to fill a 30- foot Emanation originating from you. The insects remain for 10 minutes, making the area Heavily Obscured for creatures other than you. A strong wind (like that created by Gust of Wind) disperses the swarm and ends the effect.</p>\n<p><b>Spells.</b> While holding the staff, you can cast one of the spells on the following table from it, using your spell save DC and spell attack modifier. The table indicates how many charges you must expend to cast the spell.</p>\n<pre>Spell                 Charge\n                       Cost\nGiant Insect             4\nInsect Plague            5</pre>\n<p><b>Regaining Charges.</b> The staff regains 1d6 + 4 expended charges daily at dawn. If you expend the last charge, roll 1d20. On a 1, a swarm of insects consumes and destroys the staff, then disperses.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Staffs"
+    },
+    {
+     "name": "type",
+     "value": "Staff"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true",
+     "attributes": {
+      "addition": "a Bard, Cleric, Druid, Sorcerer, Warlock, or Wizard"
+     }
+    }
+   ],
+   "data": {
+    "item_type": "Staff",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": "a Bard, Cleric, Druid, Sorcerer, Warlock, or Wizard",
+    "charges": 10,
+    "raw_type_line": "Staff, Rare (Requires Attunement by a Bard, Cleric, Druid, Sorcerer, Warlock, or Wizard)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_STAFF_OF_SWARMING_INSECTS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_STAFF_OF_THE_MAGI",
+   "name": "Staff of the Magi",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This staff has 50 charges and can be wielded as a magic Quarterstaff that grants a +2 bonus to attack rolls and damage rolls made with it. While you hold it, you gain a +2 bonus to spell attack rolls.</p>\n<p><b>Spell Absorption.</b> While holding the staff, you have Advantage on saving throws against spells. In addition, you can take a Reaction when another creature casts a spell that targets only you. If you do, the staff absorbs the magic of the spell, cancel-ing its effect and gaining a number of charges equal to the absorbed spell’s level. However, if doing so brings the staff’s total number of charges above 50, the staff explodes as if you activated its Retributive Strike (see below).</p>\n<p><b>Spells.</b> While holding the staff, you can cast one of the spells on the following table from it, using your spell save DC. The table indicates how many charges you must expend to cast the spell. Charge</p>\n<pre>Spell                               Cost\nArcane Lock                           0\nConjure Elemental                     7\nDetect Magic                          0\nDispel Magic                          3\nEnlarge/Reduce                        0\nFireball (level 7 version)            7\nFlaming Sphere                        2\nIce Storm                             4\nInvisibility                          2\nKnock                                 2\nLight                                 0\nLightning Bolt (level 7 version)      7</pre>\n<p>Charge</p>\n<pre>Spell                                Cost\nMage Hand                              0\nPasswall                               5\nPlane Shift                            7\nProtection from Evil and Good          0\nTelekinesis                            5\nWall of Fire                           4\nWeb                                    2</pre>\n<p><b>Regaining Charges.</b> The staff regains 4d6 + 2 expended charges daily at dawn. If you expend the last charge, roll 1d20. On a 20, the staff regains 1d12 + 1 charges.</p>\n<p><b>Retributive Strike.</b> You can take a Magic action to break the staff over your knee or against a solid surface. The staff is destroyed and releases its magic in an explosion that fills a 30-foot Emanation originating from itself. You have a 50 percent chance to instantly travel to a random plane of existence, avoiding the explosion. If you fail to avoid the effect, you take Force damage equal to 16 times the number of charges in the staff. Each other creature in the area makes a DC 17 Dexterity saving throw. On a failed save, a creature takes Force damage equal to 6 times the number of charges in the staff. On a successful save, a creature takes half as much damage.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Staffs"
+    },
+    {
+     "name": "type",
+     "value": "Staff"
+    },
+    {
+     "name": "rarity",
+     "value": "Legendary"
+    },
+    {
+     "name": "attunement",
+     "value": "true",
+     "attributes": {
+      "addition": "a Sorcerer, Warlock, or Wizard"
+     }
+    }
+   ],
+   "data": {
+    "item_type": "Staff",
+    "item_subtype": null,
+    "rarity_text": "Legendary",
+    "rarities": [
+     "Legendary"
+    ],
+    "requires_attunement": true,
+    "attunement_by": "a Sorcerer, Warlock, or Wizard",
+    "charges": 50,
+    "raw_type_line": "Staff, Legendary (Requires Attunement by a Sorcerer, Warlock, or Wizard)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_STAFF_OF_THE_MAGI",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_STAFF_OF_THE_PYTHON",
+   "name": "Staff of the Python",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Magic action, you can throw this staff so that it lands in an unoccupied space within 10 feet of you, causing the staff to become a Giant Constrictor Snake in that space. The snake is under your control and shares your Initiative count, taking its turn immediately after yours.</p>\n<p>On your turn, you can mentally command the snake (no action required) if it is within 60 feet of you and you don’t have the Incapacitated condition. You decide what action the snake takes and where it moves during its turn, or you can issue it a general command, such as to attack your enemies or guard a location. Absent commands from you, the snake defends itself.</p>\n<p>As a Bonus Action, you can command the snake to revert to staff form in its current space, and you can’t use the staff’s property again for 1 hour. If the snake is reduced to 0 Hit Points, it dies and reverts to its staff form; the staff then shatters and is destroyed. If the snake reverts to staff form before losing all its Hit Points, it regains all of them.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Staffs"
+    },
+    {
+     "name": "type",
+     "value": "Staff"
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Staff",
+    "item_subtype": null,
+    "rarity_text": "Uncommon",
+    "rarities": [
+     "Uncommon"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Staff, Uncommon (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_STAFF_OF_THE_PYTHON",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_STAFF_OF_THE_WOODLANDS",
+   "name": "Staff of the Woodlands",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This staff has 6 charges and can be wielded as a magic Quarterstaff that grants a +2 bonus to attack rolls and damage rolls made with it. While holding it, you have a +2 bonus to spell attack rolls.</p>\n<p><b>Spells.</b> While holding the staff, you can cast one of the spells on the following table from it, using your spell save DC. The table indicates how many charges you must expend to cast the spell.</p>\n<pre>Spell                          Charge\n                                Cost\nAnimal Friendship                 1\nAwaken                            5\nBarkskin                          2\nLocate Animals or Plants          2\nPass without Trace                2\nSpeak with Animals                1\nSpeak with Plants                 3\nWall of Thorns                    6</pre>\n<p><b>Tree Form.</b> You can take a Magic action to plant one end of the staff in earth in an unoccupied space and expend 1 charge to transform the staff into a healthy tree. The tree is 60 feet tall and has a 5-foot-diameter trunk, and its branches at the top spread out in a 20-foot radius. The tree appears ordinary but radiates a faint aura of Transmutation magic that can be discerned with the Detect Magic spell. While touching the tree and using a Magic action, you return the staff to its normal form. Any creature in the tree falls when the tree reverts to a staff.</p>\n<p><b>Regaining Charges.</b> The staff regains 1d6 expended charges daily at dawn. If you expend the last charge, roll 1d20. On a 1, the staff loses its properties and becomes a nonmagical Quarterstaff.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Staffs"
+    },
+    {
+     "name": "type",
+     "value": "Staff"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true",
+     "attributes": {
+      "addition": "a Druid"
+     }
+    }
+   ],
+   "data": {
+    "item_type": "Staff",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": "a Druid",
+    "charges": 6,
+    "raw_type_line": "Staff, Rare (Requires Attunement by a Druid)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_STAFF_OF_THE_WOODLANDS",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_STAFF_OF_THUNDER_AND_LIGHTNING",
+   "name": "Staff of Thunder and Lightning",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This staff can be wielded as a magic Quarterstaff that grants a +2 bonus to attack rolls and damage rolls made with it. It also has the following additional properties. Once one of these properties is used, it can’t be used again until the next dawn.</p>\n<p><b>Lightning.</b> When you hit with a melee attack using the staff, you can cause the target to take an extra 2d6 Lightning damage (no action required).</p>\n<p><b>Thunder.</b> When you hit with a melee attack using the staff, you can cause the staff to emit a crack of thunder audible out to 300 feet (no action required). The target you hit must succeed on a DC 17 Constitution saving throw or have the Stunned condition until the end of your next turn.</p>\n<p><b>Thunder and Lightning.</b> Immediately after you hit with a melee attack using the staff, you can take a Bonus Action to use the Lightning and Thunder properties (see above) at the same time. Doing so doesn’t expend the daily use of those properties, only the use of this one.</p>\n<p><b>Lightning Strike.</b> You can take a Magic action to cause a bolt of lightning to leap from the staff’s tip in a Line that is 5 feet wide and 120 feet long. Each creature in that Line makes a DC 17 Dexterity saving throw, taking 9d6 Lightning damage on a failed save or half as much damage on a successful one.</p>\n<p><b>Thunderclap.</b> You can take a Magic action to cause the staff to produce a thunderclap audible out to 600 feet. Every creature within a 60-foot Emanation originating from you makes a DC 17 Constitution saving throw. On a failed save, a creature takes 2d6 Thunder damage and has the Deafened condition for 1 minute. On a successful save, a creature takes half as much damage only.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Staffs"
+    },
+    {
+     "name": "type",
+     "value": "Staff"
+    },
+    {
+     "name": "rarity",
+     "value": "Very Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Staff",
+    "item_subtype": null,
+    "rarity_text": "Very Rare",
+    "rarities": [
+     "Very Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": null,
+    "raw_type_line": "Staff, Very Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_STAFF_OF_THUNDER_AND_LIGHTNING",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_MAGIC_ITEM_STAFF_OF_WITHERING",
+   "name": "Staff of Withering",
+   "type": "Magic Item",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>This staff has 3 charges and regains 1d3 expended charges daily at dawn.</p>\n<p>The staff can be wielded as a magic Quarterstaff. On a hit, it deals damage as a normal Quarterstaff, and you can expend 1 charge to deal an extra 2d10 Necrotic damage to the target and force it to make a DC 15 Constitution saving throw. On a failed save, the target has Disadvantage for 1 hour on any ability check or saving throw that uses Strength or Constitution.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Staffs"
+    },
+    {
+     "name": "type",
+     "value": "Staff"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    }
+   ],
+   "data": {
+    "item_type": "Staff",
+    "item_subtype": null,
+    "rarity_text": "Rare",
+    "rarities": [
+     "Rare"
+    ],
+    "requires_attunement": true,
+    "attunement_by": null,
+    "charges": 3,
+    "raw_type_line": "Staff, Rare (Requires Attunement)"
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_DMG_MAGIC_ITEM_STAFF_OF_WITHERING",
+    "kind": "equivalent"
+   }
+  }
+ ]
+}

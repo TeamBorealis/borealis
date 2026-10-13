@@ -1,0 +1,765 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: feats/feats",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_FEAT_ALERT",
+   "name": "Alert",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the following benefits.</p>\n<p><b>Initiative Proficiency.</b> When you roll Initiative, you can add your Proficiency Bonus to the roll.</p>\n<p><b>Initiative Swap.</b> Immediately after you roll Initiative, you can swap your Initiative with the Initiative of one willing ally in the same combat. You can’t make this swap if you or the ally has the Incapacitated condition.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Origin"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "initiative",
+     "value": "proficiency",
+     "alt": "Alert (Initiative Proficiency)"
+    },
+    {
+     "kind": "initiative_swap",
+     "with_ally": true
+    }
+   ],
+   "data": {
+    "category": "Origin",
+    "prerequisite": {},
+    "repeatable": {
+     "allowed": false
+    }
+   },
+   "supports": [
+    "Origin Feat",
+    "Feat"
+   ]
+  },
+  {
+   "id": "ID_2024_FEAT_MAGIC_INITIATE",
+   "name": "Magic Initiate",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the following benefits.</p>\n<p><b>Two Cantrips.</b> You learn two cantrips of your choice from the Cleric, Druid, or Wizard spell list. Intelligence, Wisdom, or Charisma is your spellcasting ability for this feat’s spells (choose when you select this feat).</p>\n<p>Level 1 Spell. Choose a level 1 spell from the same list you selected for this feat’s cantrips. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have.</p>\n<p><b>Spell Change.</b> Whenever you gain a new level, you can replace one of the spells you chose for this feat with a different spell of the same level from the chosen spell list.</p>\n<p><b>Repeatable.</b> You can take this feat more than once, but you must choose a different spell list each time.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Origin"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select_param",
+     "name": "Spell List",
+     "options": [
+      "Cleric",
+      "Druid",
+      "Wizard"
+     ],
+     "distinct_per_instance": true
+    },
+    {
+     "kind": "select_param",
+     "name": "Spellcasting Ability",
+     "options": [
+      "Intelligence",
+      "Wisdom",
+      "Charisma"
+     ]
+    },
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Magic Initiate Cantrips",
+     "number": 2,
+     "supports": "$(param:Spell List), 0",
+     "spellcasting": "Magic Initiate"
+    },
+    {
+     "kind": "select",
+     "type": "Spell",
+     "name": "Magic Initiate Level 1 Spell",
+     "supports": "$(param:Spell List), 1",
+     "spellcasting": "Magic Initiate",
+     "prepared": true
+    },
+    {
+     "kind": "spell_free_cast",
+     "select": "Magic Initiate Level 1 Spell",
+     "uses": 1,
+     "recharge": "long_rest",
+     "also_with_slots": true,
+     "ability": {
+      "param": "Spellcasting Ability"
+     }
+    },
+    {
+     "kind": "spell_replace_on_level",
+     "scope": "feat spells",
+     "same_level": true
+    }
+   ],
+   "data": {
+    "category": "Origin",
+    "prerequisite": {},
+    "repeatable": {
+     "allowed": true,
+     "distinct_param": "spell_list"
+    }
+   },
+   "supports": [
+    "Origin Feat",
+    "Feat"
+   ]
+  },
+  {
+   "id": "ID_2024_FEAT_SAVAGE_ATTACKER",
+   "name": "Savage Attacker",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You’ve trained to deal particularly damaging strikes. Once per turn when you hit a target with a weapon, you can roll the weapon’s damage dice twice and use either roll against the target.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Origin"
+    }
+   ],
+   "data": {
+    "category": "Origin",
+    "prerequisite": {},
+    "repeatable": {
+     "allowed": false
+    }
+   },
+   "supports": [
+    "Origin Feat",
+    "Feat"
+   ]
+  },
+  {
+   "id": "ID_2024_FEAT_SKILLED",
+   "name": "Skilled",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain proficiency in any combination of three skills or tools of your choice.</p>\n<p><b>Repeatable.</b> You can take this feat more than once.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Origin"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Proficiency",
+     "name": "Skilled",
+     "number": 3,
+     "supports": "Skill||Tool||Gaming Set"
+    }
+   ],
+   "data": {
+    "category": "Origin",
+    "prerequisite": {},
+    "repeatable": {
+     "allowed": true
+    }
+   },
+   "supports": [
+    "Origin Feat",
+    "Feat"
+   ]
+  },
+  {
+   "id": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT",
+   "name": "Ability Score Improvement",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Increase one ability score of your choice by 2, or increase two ability scores of your choice by 1. This feat can’t increase an ability score above 20.</p>\n<p><b>Repeatable.</b> You can take this feat more than once.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "General"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "ability_increase",
+     "options": [
+      {
+       "abilities": 1,
+       "amount": 2
+      },
+      {
+       "abilities": 2,
+       "amount": 1
+      }
+     ],
+     "cap": 20
+    }
+   ],
+   "data": {
+    "category": "General",
+    "prerequisite": {
+     "level_min": 4
+    },
+    "repeatable": {
+     "allowed": true
+    }
+   },
+   "prerequisite": "Level 4+",
+   "requirements": "[character:4]",
+   "supports": [
+    "General Feat",
+    "Feat"
+   ]
+  },
+  {
+   "id": "ID_2024_FEAT_GRAPPLER",
+   "name": "Grappler",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the following benefits.</p>\n<p><b>Ability Score Increase.</b> Increase your Strength or Dexterity score by 1, to a maximum of 20.</p>\n<p><b>Punch and Grab.</b> When you hit a creature with an Unarmed Strike as part of the Attack action on your turn, you can use both the Damage and the Grapple option. You can use this benefit only once per turn.</p>\n<p><b>Attack Advantage.</b> You have Advantage on attack rolls against a creature Grappled by you.</p>\n<p><b>Fast Wrestler.</b> You don’t have to spend extra movement to move a creature Grappled by you if the creature is your size or smaller.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "General"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "ability_increase",
+     "options": [
+      {
+       "abilities": [
+        "strength",
+        "dexterity"
+       ],
+       "pick": 1,
+       "amount": 1
+      }
+     ],
+     "cap": 20
+    }
+   ],
+   "data": {
+    "category": "General",
+    "prerequisite": {
+     "level_min": 4,
+     "abilities_any": [
+      {
+       "strength": 13
+      },
+      {
+       "dexterity": 13
+      }
+     ]
+    },
+    "repeatable": {
+     "allowed": false
+    }
+   },
+   "prerequisite": "Level 4+, Strength or Dexterity 13+",
+   "requirements": "[character:4]&&([str:13]||[dex:13])",
+   "maps_to": {
+    "dnd2014": "ID_PHB_FEAT_GRAPPLER",
+    "kind": "approximate"
+   },
+   "supports": [
+    "General Feat",
+    "Feat"
+   ]
+  },
+  {
+   "id": "ID_2024_FEAT_ARCHERY",
+   "name": "Archery",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain a +2 bonus to attack rolls you make with Ranged weapons.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Fighting Style"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "attack_bonus",
+     "weapon": "ranged",
+     "value": 2
+    }
+   ],
+   "data": {
+    "category": "Fighting Style",
+    "prerequisite": {
+     "requires_feature": "Fighting Style"
+    },
+    "repeatable": {
+     "allowed": false
+    }
+   },
+   "prerequisite": "Fighting Style Feature",
+   "supports": [
+    "Fighting Style Feat",
+    "Feat"
+   ]
+  },
+  {
+   "id": "ID_2024_FEAT_DEFENSE",
+   "name": "Defense",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>While you’re wearing Light, Medium, or Heavy armor, you gain a +1 bonus to Armor Class.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Fighting Style"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "ac:misc",
+     "value": "1",
+     "bonus": "fighting style",
+     "equipped": "[armor:any]",
+     "alt": "Defense (Fighting Style)"
+    }
+   ],
+   "data": {
+    "category": "Fighting Style",
+    "prerequisite": {
+     "requires_feature": "Fighting Style"
+    },
+    "repeatable": {
+     "allowed": false
+    }
+   },
+   "prerequisite": "Fighting Style Feature",
+   "supports": [
+    "Fighting Style Feat",
+    "Feat"
+   ]
+  },
+  {
+   "id": "ID_2024_FEAT_GREAT_WEAPON_FIGHTING",
+   "name": "Great Weapon Fighting",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you roll damage for an attack you make with a Melee weapon that you are holding with two hands, you can treat any 1 or 2 on a damage die as a 3. The weapon must have the Two-Handed or Versatile property to gain this benefit.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Fighting Style"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "damage_die_floor",
+     "floor": 3,
+     "weapon": "melee two-handed or versatile held in two hands"
+    }
+   ],
+   "data": {
+    "category": "Fighting Style",
+    "prerequisite": {
+     "requires_feature": "Fighting Style"
+    },
+    "repeatable": {
+     "allowed": false
+    }
+   },
+   "prerequisite": "Fighting Style Feature",
+   "supports": [
+    "Fighting Style Feat",
+    "Feat"
+   ]
+  },
+  {
+   "id": "ID_2024_FEAT_TWO_WEAPON_FIGHTING",
+   "name": "Two-Weapon Fighting",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you make an extra attack as a result of using a weapon that has the Light property, you can add your ability modifier to the damage of that attack if you aren’t already adding it to the damage.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Fighting Style"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "extra_attack_damage_modifier",
+     "property": "Light"
+    }
+   ],
+   "data": {
+    "category": "Fighting Style",
+    "prerequisite": {
+     "requires_feature": "Fighting Style"
+    },
+    "repeatable": {
+     "allowed": false
+    }
+   },
+   "prerequisite": "Fighting Style Feature",
+   "supports": [
+    "Fighting Style Feat",
+    "Feat"
+   ]
+  },
+  {
+   "id": "ID_2024_FEAT_BOON_OF_COMBAT_PROWESS",
+   "name": "Boon of Combat Prowess",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the following benefits.</p>\n<p><b>Ability Score Increase.</b> Increase one ability score of your choice by 1, to a maximum of 30.</p>\n<p><b>Peerless Aim.</b> When you miss with an attack roll, you can hit instead. Once you use this benefit, you can’t use it again until the start of your next turn.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Epic Boon"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "ability_increase",
+     "options": [
+      {
+       "abilities": 1,
+       "amount": 1
+      }
+     ],
+     "cap": 30
+    },
+    {
+     "kind": "resource",
+     "id": "peerless aim",
+     "name": "Peerless Aim",
+     "max": {
+      "type": "fixed",
+      "value": 1
+     },
+     "recharge": [
+      "turn_start"
+     ]
+    }
+   ],
+   "data": {
+    "category": "Epic Boon",
+    "prerequisite": {
+     "level_min": 19
+    },
+    "repeatable": {
+     "allowed": false
+    }
+   },
+   "prerequisite": "Level 19+",
+   "requirements": "[character:19]",
+   "supports": [
+    "Epic Boon Feat",
+    "Feat"
+   ]
+  },
+  {
+   "id": "ID_2024_FEAT_BOON_OF_DIMENSIONAL_TRAVEL",
+   "name": "Boon of Dimensional Travel",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the following benefits.</p>\n<p><b>Ability Score Increase.</b> Increase one ability score of your choice by 1, to a maximum of 30.</p>\n<p><b>Blink Steps.</b> Immediately after you take the Attack action or the Magic action, you can teleport up to 30 feet to an unoccupied space you can see.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Epic Boon"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "ability_increase",
+     "options": [
+      {
+       "abilities": 1,
+       "amount": 1
+      }
+     ],
+     "cap": 30
+    }
+   ],
+   "data": {
+    "category": "Epic Boon",
+    "prerequisite": {
+     "level_min": 19
+    },
+    "repeatable": {
+     "allowed": false
+    }
+   },
+   "prerequisite": "Level 19+",
+   "requirements": "[character:19]",
+   "supports": [
+    "Epic Boon Feat",
+    "Feat"
+   ]
+  },
+  {
+   "id": "ID_2024_FEAT_BOON_OF_FATE",
+   "name": "Boon of Fate",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the following benefits.</p>\n<p><b>Ability Score Increase.</b> Increase one ability score of your choice by 1, to a maximum of 30.</p>\n<p><b>Improve Fate.</b> When you or another creature within 60 feet of you succeeds on or fails a D20 Test, you can roll 2d4 and apply the total rolled as a bonus or penalty to the d20 roll. Once you use this benefit, you can’t use it again until you roll Initiative or finish a Short or Long Rest.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Epic Boon"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "ability_increase",
+     "options": [
+      {
+       "abilities": 1,
+       "amount": 1
+      }
+     ],
+     "cap": 30
+    },
+    {
+     "kind": "resource",
+     "id": "improve fate",
+     "name": "Improve Fate",
+     "max": {
+      "type": "fixed",
+      "value": 1
+     },
+     "recharge": [
+      "initiative",
+      "short_rest",
+      "long_rest"
+     ]
+    }
+   ],
+   "data": {
+    "category": "Epic Boon",
+    "prerequisite": {
+     "level_min": 19
+    },
+    "repeatable": {
+     "allowed": false
+    }
+   },
+   "prerequisite": "Level 19+",
+   "requirements": "[character:19]",
+   "supports": [
+    "Epic Boon Feat",
+    "Feat"
+   ]
+  },
+  {
+   "id": "ID_2024_FEAT_BOON_OF_IRRESISTIBLE_OFFENSE",
+   "name": "Boon of Irresistible Offense",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the following benefits.</p>\n<p><b>Ability Score Increase.</b> Increase your Strength or Dexterity score by 1, to a maximum of 30.</p>\n<p><b>Overcome Defenses.</b> The Bludgeoning, Piercing, and Slashing damage you deal always ignores Resistance.</p>\n<p><b>Overwhelming Strike.</b> When you roll a 20 on the d20 for an attack roll, you can deal extra damage to the target equal to the ability score increased by this feat. The extra damage’s type is the same as the attack’s type.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Epic Boon"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "ability_increase",
+     "options": [
+      {
+       "abilities": [
+        "strength",
+        "dexterity"
+       ],
+       "pick": 1,
+       "amount": 1
+      }
+     ],
+     "cap": 30
+    }
+   ],
+   "data": {
+    "category": "Epic Boon",
+    "prerequisite": {
+     "level_min": 19
+    },
+    "repeatable": {
+     "allowed": false
+    }
+   },
+   "prerequisite": "Level 19+",
+   "requirements": "[character:19]",
+   "supports": [
+    "Epic Boon Feat",
+    "Feat"
+   ]
+  },
+  {
+   "id": "ID_2024_FEAT_BOON_OF_SPELL_RECALL",
+   "name": "Boon of Spell Recall",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the following benefits.</p>\n<p><b>Ability Score Increase.</b> Increase your Intelligence, Wisdom, or Charisma score by 1, to a maximum of 30.</p>\n<p><b>Free Casting.</b> Whenever you cast a spell with a level 1–4 spell slot, roll 1d4. If the number you roll is the same as the slot’s level, the slot isn’t expended.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Epic Boon"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "ability_increase",
+     "options": [
+      {
+       "abilities": [
+        "intelligence",
+        "wisdom",
+        "charisma"
+       ],
+       "pick": 1,
+       "amount": 1
+      }
+     ],
+     "cap": 30
+    }
+   ],
+   "data": {
+    "category": "Epic Boon",
+    "prerequisite": {
+     "level_min": 19,
+     "requires_feature": "Spellcasting"
+    },
+    "repeatable": {
+     "allowed": false
+    }
+   },
+   "prerequisite": "Level 19+, Spellcasting Feature",
+   "requirements": "[character:19]",
+   "supports": [
+    "Epic Boon Feat",
+    "Feat"
+   ]
+  },
+  {
+   "id": "ID_2024_FEAT_BOON_OF_THE_NIGHT_SPIRIT",
+   "name": "Boon of the Night Spirit",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the following benefits.</p>\n<p><b>Ability Score Increase.</b> Increase one ability score of your choice by 1, to a maximum of 30.</p>\n<p><b>Merge with Shadows.</b> While within Dim Light or Darkness, you can give yourself the Invisible condition as a Bonus Action. The condition ends on you immediately after you take an action, a Bonus Action, or a Reaction.</p>\n<p><b>Shadowy Form.</b> While within Dim Light or Darkness, you have Resistance to all damage except Psychic and Radiant.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Epic Boon"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "ability_increase",
+     "options": [
+      {
+       "abilities": 1,
+       "amount": 1
+      }
+     ],
+     "cap": 30
+    }
+   ],
+   "data": {
+    "category": "Epic Boon",
+    "prerequisite": {
+     "level_min": 19
+    },
+    "repeatable": {
+     "allowed": false
+    }
+   },
+   "prerequisite": "Level 19+",
+   "requirements": "[character:19]",
+   "supports": [
+    "Epic Boon Feat",
+    "Feat"
+   ]
+  },
+  {
+   "id": "ID_2024_FEAT_BOON_OF_TRUESIGHT",
+   "name": "Boon of Truesight",
+   "type": "Feat",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the following benefits.</p>\n<p><b>Ability Score Increase.</b> Increase one ability score of your choice by 1, to a maximum of 30.</p>\n<p><b>Truesight.</b> You have Truesight with a range of 60 feet.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Epic Boon"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "ability_increase",
+     "options": [
+      {
+       "abilities": 1,
+       "amount": 1
+      }
+     ],
+     "cap": 30
+    },
+    {
+     "kind": "grant",
+     "id": "ID_VISION_TRUESIGHT",
+     "type": "Vision"
+    },
+    {
+     "kind": "stat",
+     "name": "truesight:range",
+     "value": "60",
+     "bonus": "base"
+    }
+   ],
+   "data": {
+    "category": "Epic Boon",
+    "prerequisite": {
+     "level_min": 19
+    },
+    "repeatable": {
+     "allowed": false
+    }
+   },
+   "prerequisite": "Level 19+",
+   "requirements": "[character:19]",
+   "supports": [
+    "Epic Boon Feat",
+    "Feat"
+   ]
+  }
+ ]
+}

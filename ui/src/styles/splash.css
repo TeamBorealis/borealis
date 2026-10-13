@@ -1,0 +1,48 @@
+/* Startup splash (desktop window): 650 x 350 window on desktop, full-screen overlay on mobile. Original art. */
+html.splash-doc, html.splash-doc body { overflow: hidden; background: var(--window-bg); }
+.splash { position: relative; overflow: hidden; box-sizing: border-box; background: var(--window-bg); color: var(--text-body); font-family: var(--font-body); user-select: none; -webkit-user-select: none; cursor: default; }
+.splash--window { width: 100vw; height: 100vh; min-height: 350px; border: 1px solid var(--highlight); }
+.splash--full { position: fixed; inset: 0; z-index: 9000; padding: var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l); transition: opacity 0.35s var(--ease); }
+.splash--full.splash--leaving { opacity: 0; pointer-events: none; }
+.splash-ribbons { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.splash-rib { transform-box: fill-box; transform-origin: center; animation: splash-drift 14s ease-in-out infinite alternate; }
+.splash-rib-2 { animation-duration: 18s; animation-direction: alternate-reverse; }
+.splash-rib-3 { animation-duration: 22s; }
+@keyframes splash-drift { from { transform: translate3d(-14px, 4px, 0) scaleY(0.94); } to { transform: translate3d(14px, -6px, 0) scaleY(1.06); } }
+.splash::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(16, 16, 16, 0.75) 100%); }
+
+/* The mark sits on the centre line, like the native launch screen, so the hand-off does not jump. */
+.splash-brand { position: absolute; z-index: 1; left: 0; right: 0; top: 50%; display: flex; flex-direction: column; align-items: center; transform: translateY(-50%); }
+.splash--window .splash-brand { top: 42%; }
+.splash--full .splash-brand { transform: translateY(-39px); } /* mark centre on the screen centre, as on the native launch screen */
+.splash .splash-mark { width: 96px; height: 77px; filter: drop-shadow(0 0 18px rgba(111, 208, 181, 0.35)); }
+.splash-wordmark { margin-top: 14px; font-size: 32px; font-weight: 300; letter-spacing: 0.46em; padding-left: 0.46em; text-transform: uppercase; color: var(--text); line-height: 1; }
+.splash-tagline { margin-top: 10px; font-size: var(--fs-md); font-weight: 350; letter-spacing: 0.08em; color: var(--text-secondary); text-align: center; padding: 0 20px; }
+
+.splash-status { position: absolute; z-index: 1; left: 25px; right: 25px; bottom: 22px; }
+.splash--full .splash-status { bottom: max(22px, var(--safe-b)); }
+.splash-line { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--text-body); margin-bottom: 7px; min-height: 16px; }
+.splash-heart { flex: none; color: var(--aur-success-bright); animation: splash-beat 1.2s ease-in-out infinite; }
+@keyframes splash-beat { 0%, 100% { transform: scale(1); opacity: 0.75; } 15% { transform: scale(1.22); opacity: 1; } 30% { transform: scale(1); opacity: 0.85; } 45% { transform: scale(1.14); opacity: 1; } }
+.splash-message { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.splash-percent { flex: none; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.splash-bar { height: 4px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+.splash-bar-fill { height: 100%; background: #37753d; transition: width 0.25s var(--ease); }
+.splash-version { font-size: var(--fs-2xs); color: var(--text-secondary); letter-spacing: 0.06em; }
+.splash-status > .splash-version { display: block; margin-top: 8px; text-align: right; }
+
+.splash-error { position: absolute; z-index: 1; left: 25px; right: 25px; bottom: 18px; max-height: 52%; display: flex; flex-direction: column; background: rgba(16, 16, 16, 0.92); border: 1px solid var(--aur-danger); padding: 10px 15px; overflow: hidden; user-select: text; -webkit-user-select: text; }
+.splash-error-title { margin: 0 0 4px; font-size: var(--fs-md); font-weight: 600; color: var(--aur-danger-bright); text-transform: uppercase; letter-spacing: 0.06em; }
+.splash-error-what { margin: 0; font-size: var(--fs-sm); color: var(--text); }
+.splash-error-details { margin-top: 6px; min-height: 0; overflow: auto; font-size: var(--fs-xs); color: var(--text-secondary); }
+.splash-error-details summary { cursor: pointer; }
+.splash-error-details pre { margin: 4px 0 0; white-space: pre-wrap; word-break: break-word; font-family: var(--font-mono); }
+.splash-error-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+.splash-quit { min-width: 80px; height: var(--target); border: 1px solid var(--highlight); background: transparent; color: var(--text); border-radius: var(--radius); cursor: pointer; }
+.splash-quit:hover { background: rgba(255, 255, 255, 0.08); }
+.splash-quit:focus-visible { outline: var(--focus-w) solid var(--link); outline-offset: 1px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-rib, .splash-heart { animation: none; }
+  .splash-bar-fill, .splash--full { transition: none; }
+}

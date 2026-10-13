@@ -1,0 +1,274 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: species/goliath",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SPECIES_GOLIATH",
+   "name": "Goliath",
+   "type": "Species",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Creature type: Humanoid. Size: Medium (about 7–8 feet tall). Speed: 35 feet.</p>",
+   "setters": [
+    {
+     "name": "short",
+     "value": "Humanoid, Medium, Speed 35 ft."
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_SIZE_MEDIUM",
+     "type": "Size"
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed",
+     "value": "35",
+     "bonus": "base"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_GOLIATH_GIANT_ANCESTRY",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_GOLIATH_LARGE_FORM",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_TRAIT_GOLIATH_POWERFUL_BUILD",
+     "type": "Racial Trait"
+    }
+   ],
+   "data": {
+    "creature_type": "Humanoid",
+    "size": [
+     "Medium"
+    ],
+    "speed": 35,
+    "traits": [
+     "ID_2024_TRAIT_GOLIATH_GIANT_ANCESTRY",
+     "ID_2024_TRAIT_GOLIATH_LARGE_FORM",
+     "ID_2024_TRAIT_GOLIATH_POWERFUL_BUILD"
+    ]
+   }
+  },
+  {
+   "id": "ID_2024_TRAIT_GOLIATH_GIANT_ANCESTRY",
+   "name": "Giant Ancestry",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You are descended from Giants. Choose one of the following benefits—a supernatural boon from your ancestry; you can use the chosen benefit a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest:</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Species Trait Option",
+     "name": "Giant Ancestry",
+     "supports": "Giant Ancestry"
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_GOLIATH_LARGE_FORM",
+   "name": "Large Form",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Starting at character level 5, you can change your size to Large as a Bonus Action if you’re in a big enough space. This transformation lasts for 10 minutes or until you end it (no action required). For that duration, you have Advantage on Strength checks, and your Speed increases by 10 feet. Once you use this trait, you can’t use it again until you finish a Long Rest.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "level": 5,
+     "id": "large form",
+     "name": "Large Form",
+     "max": {
+      "type": "fixed",
+      "value": 1
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_TRAIT_GOLIATH_POWERFUL_BUILD",
+   "name": "Powerful Build",
+   "type": "Racial Trait",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Advantage on any ability check you make to end the Grappled condition. You also count as one size larger when determining your carrying capacity.</p>",
+   "rules": [
+    {
+     "kind": "save_advantage_check",
+     "context": "end Grappled condition"
+    },
+    {
+     "kind": "carry_capacity_size_bonus",
+     "steps": 1
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_OPTION_GIANT_ANCESTRY_CLOUDS_JAUNT",
+   "name": "Cloud’s Jaunt (Cloud Giant)",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Giant Ancestry"
+   ],
+   "description": "<p>As a Bonus Action, you magically teleport up to 30 feet to an unoccupied space you can see.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "giant ancestry",
+     "name": "Cloud’s Jaunt",
+     "max": {
+      "type": "stat",
+      "stat": "proficiency"
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_OPTION_GIANT_ANCESTRY_FIRES_BURN",
+   "name": "Fire’s Burn (Fire Giant)",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Giant Ancestry"
+   ],
+   "description": "<p>When you hit a target with an attack roll and deal damage to it, you can also deal 1d10 Fire damage to that target.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "giant ancestry",
+     "name": "Fire’s Burn",
+     "max": {
+      "type": "stat",
+      "stat": "proficiency"
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_OPTION_GIANT_ANCESTRY_FROSTS_CHILL",
+   "name": "Frost’s Chill (Frost Giant)",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Giant Ancestry"
+   ],
+   "description": "<p>When you hit a target with an attack roll and deal damage to it, you can also deal 1d6 Cold damage to that target and reduce its Speed by 10 feet until the start of your next turn.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "giant ancestry",
+     "name": "Frost’s Chill",
+     "max": {
+      "type": "stat",
+      "stat": "proficiency"
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_OPTION_GIANT_ANCESTRY_HILLS_TUMBLE",
+   "name": "Hill’s Tumble (Hill Giant)",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Giant Ancestry"
+   ],
+   "description": "<p>When you hit a Large or smaller creature with an attack roll and deal damage to it, you can give that target the Prone condition.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "giant ancestry",
+     "name": "Hill’s Tumble",
+     "max": {
+      "type": "stat",
+      "stat": "proficiency"
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_OPTION_GIANT_ANCESTRY_STONES_ENDURANCE",
+   "name": "Stone’s Endurance (Stone Giant)",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Giant Ancestry"
+   ],
+   "description": "<p>When you take damage, you can take a Reaction to roll 1d12. Add your Constitution modifier to the number rolled and reduce the damage by that total.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "giant ancestry",
+     "name": "Stone’s Endurance",
+     "max": {
+      "type": "stat",
+      "stat": "proficiency"
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ID_2024_OPTION_GIANT_ANCESTRY_STORMS_THUNDER",
+   "name": "Storm’s Thunder (Storm Giant)",
+   "type": "Species Trait Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Giant Ancestry"
+   ],
+   "description": "<p>When you take damage from a creature within 60 feet of you, you can take a Reaction to deal 1d8 Thunder damage to that creature.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "giant ancestry",
+     "name": "Storm’s Thunder",
+     "max": {
+      "type": "stat",
+      "stat": "proficiency"
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    }
+   ]
+  }
+ ]
+}

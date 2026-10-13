@@ -1,0 +1,781 @@
+{
+  "format": "borealis-content/1",
+  "ruleset": "dnd2014",
+  "info": {
+    "name": "SRD 5.1 Wizard"
+  },
+  "elements": [
+    {
+      "id": "ID_WOTC_PHB_CLASS_WIZARD",
+      "name": "Wizard",
+      "type": "Class",
+      "source": "SRD 5.1",
+      "description": "<p>As a wizard, you gain the following class features.</p><h5>HIT POINTS</h5><p><strong>Hit Dice:</strong> 1d6 per wizard level</p><p><strong>Hit Points at 1st Level:</strong> 6 + your Constitution modifier</p><p><strong>Hit Points at Higher Levels:</strong> 1d6 (or 4) + your Constitution modifier per wizard level after 1st</p><h5>PROFICIENCIES</h5><p><strong>Armor:</strong> None</p><h5>EQUIPMENT</h5><p>You start with the following equipment, in addition to the equipment granted by your background:</p><ul><li><em>(a)</em> a quarterstaff or (<em>b</em>) a dagger</li><li><em>(a)</em> a component pouch or (<em>b</em>) an arcane focus</li><li><em>(a)</em> a scholar’s pack or (<em>b</em>) an explorer’s pack</li><li>A spellbook</li></ul><p>shown in the Cantrips Known column of the Wizard table.</p><h5 class=\"caption\">THE WIZARD</h5><table class=\"class-features\"><thead><tr><th>Level</th><th>Proficiency Bonus</th><th>Features</th><th>Cantrips Known</th><th>1st</th><th>2nd</th><th>3rd</th><th>4th</th><th>5th</th><th>6th</th><th>7th</th><th>8th</th><th>9th</th></tr></thead><tbody><tr><td>1st</td><td>+2</td><td>Spellcasting, Arcane Recovery</td><td>3</td><td>2</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>2nd</td><td>+2</td><td>Arcane Tradition</td><td>3</td><td>3</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>3rd</td><td>+2</td><td>—</td><td>3</td><td>4</td><td>2</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>4th</td><td>+2</td><td>Ability Score Improvement</td><td>4</td><td>4</td><td>3</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>5th</td><td>+3</td><td>—</td><td>4</td><td>4</td><td>3</td><td>2</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>6th</td><td>+3</td><td>Arcane Tradition feature</td><td>4</td><td>4</td><td>3</td><td>3</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>7th</td><td>+3</td><td>—</td><td>4</td><td>4</td><td>3</td><td>3</td><td>1</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>8th</td><td>+3</td><td>Ability Score Improvement</td><td>4</td><td>4</td><td>3</td><td>3</td><td>2</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>9th</td><td>+4</td><td>—</td><td>4</td><td>4</td><td>3</td><td>3</td><td>3</td><td>1</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>10th</td><td>+4</td><td>Arcane Tradition feature</td><td>5</td><td>4</td><td>3</td><td>3</td><td>3</td><td>2</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>11th</td><td>+4</td><td>—</td><td>5</td><td>4</td><td>3</td><td>3</td><td>3</td><td>2</td><td>1</td><td>—</td><td>—</td><td>—</td></tr><tr><td>12th</td><td>+4</td><td>Ability Score Improvement</td><td>5</td><td>4</td><td>3</td><td>3</td><td>3</td><td>2</td><td>1</td><td>—</td><td>—</td><td>—</td></tr><tr><td>13th</td><td>+5</td><td>—</td><td>5</td><td>4</td><td>3</td><td>3</td><td>3</td><td>2</td><td>1</td><td>1</td><td>—</td><td>—</td></tr><tr><td>14th</td><td>+5</td><td>Arcane Tradition feature</td><td>5</td><td>4</td><td>3</td><td>3</td><td>3</td><td>2</td><td>1</td><td>1</td><td>—</td><td>—</td></tr><tr><td>15th</td><td>+5</td><td>—</td><td>5</td><td>4</td><td>3</td><td>3</td><td>3</td><td>2</td><td>1</td><td>1</td><td>1</td><td>—</td></tr><tr><td>16th</td><td>+5</td><td>Ability Score Improvement</td><td>5</td><td>4</td><td>3</td><td>3</td><td>3</td><td>2</td><td>1</td><td>1</td><td>1</td><td>—</td></tr><tr><td>17th</td><td>+6</td><td>—</td><td>5</td><td>4</td><td>3</td><td>3</td><td>3</td><td>2</td><td>1</td><td>1</td><td>1</td><td>1</td></tr><tr><td>18th</td><td>+6</td><td>Spell Mastery</td><td>5</td><td>4</td><td>3</td><td>3</td><td>3</td><td>3</td><td>1</td><td>1</td><td>1</td><td>1</td></tr><tr><td>19th</td><td>+6</td><td>Ability Score Improvement</td><td>5</td><td>4</td><td>3</td><td>3</td><td>3</td><td>3</td><td>2</td><td>1</td><td>1</td><td>1</td></tr><tr><td>20th</td><td>+6</td><td>Signature Spells</td><td>5</td><td>4</td><td>3</td><td>3</td><td>3</td><td>3</td><td>2</td><td>2</td><td>1</td><td>1</td></tr></tbody></table>",
+      "sheet": {
+        "display": false,
+        "descriptions": [
+          {
+            "text": "A scholarly magic-user capable of manipulating the structures of reality."
+          }
+        ]
+      },
+      "setters": [
+        {
+          "name": "short",
+          "value": "A scholarly magic-user capable of manipulating the structures of reality."
+        },
+        {
+          "name": "hd",
+          "value": "d6"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_DAGGER",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_WIZARD"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_DART",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_WIZARD"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SLING",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_WIZARD"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_QUARTERSTAFF",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_WIZARD"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_LIGHT",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_WIZARD"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_INTELLIGENCE",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_WIZARD"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_WISDOM",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_WIZARD"
+        },
+        {
+          "kind": "select",
+          "type": "Proficiency",
+          "name": "Skill Proficiency (Wizard)",
+          "number": 2,
+          "supports": "Skill,Wizard",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_WIZARD"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_WIZARD_SPELLCASTING_WIZARD",
+          "type": "Class Feature",
+          "level": 1
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_WIZARD_ARCANE_RECOVERY",
+          "type": "Class Feature",
+          "level": 1
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_WIZARD_ARCANE_TRADITION",
+          "type": "Class Feature",
+          "level": 2
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_WIZARD_ABILITYSCOREIMPROVEMENT_WIZARD",
+          "type": "Class Feature",
+          "level": 4
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_WIZARD_SPELL_MASTERY",
+          "type": "Class Feature",
+          "level": 18
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_WIZARD_SIGNATURE_SPELLS",
+          "type": "Class Feature",
+          "level": 20
+        }
+      ],
+      "multiclass": {
+        "id": "ID_WOTC_PHB_MULTICLASS_WIZARD",
+        "prerequisite": "Intelligence 13",
+        "requirements": "[int:13]",
+        "setters": [
+          {
+            "name": "multiclass proficiencies",
+            "value": "None"
+          }
+        ],
+        "rules": [
+          {
+            "kind": "grant",
+            "id": "ID_INTERNAL_GRANT_MULTICLASS",
+            "type": "Grants"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_WIZARD_SPELLCASTING_WIZARD",
+      "name": "Spellcasting",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>As a student of arcane magic, you have a spellbook containing spells that show the first glimmerings of your true power.</p><h6>Cantrips</h6><p>At 1st level, you know three cantrips of your choice from the wizard spell list. You learn additional wizard cantrips of your choice at higher levels, as</p><p><strong>Weapons:</strong> Daggers, darts, slings, quarterstaffs, light crossbows</p><p><strong>Tools:</strong> None</p><p><strong>Saving Throws:</strong> Intelligence, Wisdom</p><p><strong>Skills:</strong> Choose two from Arcana, History, Insight, Investigation, Medicine, and Religion</p><h6>Equipment</h6><p>You start with the following equipment, in addition to the equipment granted by your background:</p><ul><li><em>(a)</em> a quarterstaff or (<em>b</em>) a dagger</li><li><em>(a)</em> a component pouch or (<em>b</em>) an arcane focus</li><li><em>(a)</em> a scholar’s pack or (<em>b</em>) an explorer’s pack</li><li>A spellbook</li></ul><p>shown in the Cantrips Known column of the Wizard table.</p><h6>Spellbook</h6><p>At 1st level, you have a spellbook containing six 1st- level wizard spells of your choice. Your spellbook is the repository of the wizard spells you know, except your cantrips, which are fixed in your mind.</p><h6>Preparing and Casting Spells</h6><p>The Wizard table shows how many spell slots you have to cast your spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell’s level or higher. You regain all expended spell slots when you finish a long rest.</p><p>You prepare the list of wizard spells that are available for you to cast. To do so, choose a number of wizard spells from your spellbook equal to your Intelligence modifier + your wizard level (minimum of one spell). The spells must be of a level for which you have spell slots.</p><p>For example, if you’re a 3rd-level wizard, you have four 1st-level and two 2nd-level spell slots. With an Intelligence of 16, your list of prepared spells can include six spells of 1st or 2nd level, in any combination, chosen from your spellbook. If you prepare the 1st-level spell <em>magic missile,</em> you can cast it using a 1st-level or a 2nd-level slot. Casting the spell doesn’t remove it from your list of prepared spells.</p><p>You can change your list of prepared spells when you finish a long rest. Preparing a new list of wizard spells requires time spent studying your spellbook and memorizing the incantations and gestures you must make to cast the spell: at least 1 minute per spell level for each spell on your list.</p><h6>Spellcasting Ability</h6><p>Intelligence is your spellcasting ability for your wizard spells, since you learn your spells through dedicated study and memorization. You use your Intelligence whenever a spell refers to your spellcasting ability. In addition, you use your Intelligence modifier when setting the saving throw DC for a wizard spell you cast and when making an attack roll with one.</p><p><strong>Spell save DC</strong> =8 + your proficiency bonus + your Intelligence modifier</p><p><strong>Spell attack modifier</strong> =your proficiency bonus + your Intelligence modifier</p><h6>Ritual Casting</h6><p>You can cast a wizard spell as a ritual if that spell has the ritual tag and you have the spell in your spellbook. You don’t need to have the spell prepared.</p><h6>Spellcasting Focus</h6><p>You can use an arcane focus as a spellcasting focus for your wizard spells.</p><h6>Learning Spells of 1st Level and Higher</h6><p>Each time you gain a wizard level, you can add two wizard spells of your choice to your spellbook for free. Each of these spells must be of a level for which you have spell slots, as shown on the Wizard table. On your adventures, you might find other spells that you can add to your spellbook (see the “Your Spellbook” sidebar).</p>",
+      "sheet": {
+        "display": false,
+        "descriptions": [
+          {
+            "text": "You can prepare {{wizard:spellcasting:prepare}} spells from your spellbook. You use an arcane focus to cast spells and can cast wizard spells as rituals."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_FULL",
+          "type": "Grants",
+          "requirements": "ID_INTERNAL_GRANT_MULTICLASS"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_RITUAL_CASTING",
+          "type": "Grants"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_PROFICIENCY_SPELLFOCUS_GROUP_ARCANE_FOCUS",
+          "type": "Proficiency"
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:1",
+          "value": "2",
+          "level": 1
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:1",
+          "value": "1",
+          "level": 2
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:1",
+          "value": "1",
+          "level": 3
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:2",
+          "value": "2",
+          "level": 3
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:2",
+          "value": "1",
+          "level": 4
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:3",
+          "value": "2",
+          "level": 5
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:3",
+          "value": "1",
+          "level": 6
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:4",
+          "value": "1",
+          "level": 7
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:4",
+          "value": "1",
+          "level": 8
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:4",
+          "value": "1",
+          "level": 9
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:5",
+          "value": "1",
+          "level": 9
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:5",
+          "value": "1",
+          "level": 10
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:5",
+          "value": "1",
+          "level": 18
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:6",
+          "value": "1",
+          "level": 11
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:6",
+          "value": "1",
+          "level": 19
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:7",
+          "value": "1",
+          "level": 13
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:7",
+          "value": "1",
+          "level": 20
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:8",
+          "value": "1",
+          "level": 15
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:slots:9",
+          "value": "1",
+          "level": 17
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:prepare",
+          "value": "intelligence:modifier"
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:prepare",
+          "value": "level:wizard"
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:cantrips known",
+          "value": "3",
+          "level": 1
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:cantrips known",
+          "value": "1",
+          "level": 4
+        },
+        {
+          "kind": "stat",
+          "name": "wizard:spellcasting:cantrips known",
+          "value": "1",
+          "level": 10
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Cantrip (Wizard)",
+          "number": 3,
+          "level": 1,
+          "supports": "$(spellcasting:list),0",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Cantrip (Wizard)",
+          "number": 1,
+          "level": 4,
+          "supports": "$(spellcasting:list),0",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Cantrip (Wizard)",
+          "number": 1,
+          "level": 10,
+          "supports": "$(spellcasting:list),0",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 6,
+          "level": 1,
+          "supports": "$(spellcasting:list),1",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 2,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 3,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 4,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 5,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 6,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 7,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 8,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 9,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 10,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 11,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 12,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 13,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 14,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 15,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 16,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 17,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 18,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 19,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spellbook (Wizard)",
+          "number": 2,
+          "level": 20,
+          "supports": "$(spellcasting:list),$(spellcasting:slots)",
+          "spellcasting": "Wizard"
+        }
+      ],
+      "spellcasting": {
+        "name": "Wizard",
+        "ability": "Intelligence",
+        "prepare": true,
+        "list": {
+          "supports": "Wizard"
+        }
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_WIZARD_ARCANE_RECOVERY",
+      "name": "Arcane Recovery",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>You have learned to regain some of your magical energy by studying your spellbook. Once per day when you finish a short rest, you can choose expended spell slots to recover. The spell slots can have a combined level that is equal to or less than half your wizard level (rounded up), and none of the slots can be 6th level or higher.</p><p>For example, if you’re a 4th-level wizard, you can recover up to two levels worth of spell slots. You can recover either a 2nd-level spell slot or two 1st-level spell slots.</p>",
+      "sheet": {
+        "usage": "1/Day",
+        "descriptions": [
+          {
+            "text": "Once per day when you finish a short rest, recover expended spell slots with a combined level equal to or less than half your wizard level (rounded up); none can be 6th level or higher."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_WIZARD_ARCANE_TRADITION",
+      "name": "Arcane Tradition",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>When you reach 2nd level, you choose an arcane tradition, shaping your practice of magic through one of eight schools, such as Evocation.</p><p>Your choice grants you features at 2nd level and again at 6th, 10th, and 14th level.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Archetype",
+          "name": "Arcane Tradition",
+          "level": 2,
+          "supports": "Arcane Tradition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_WIZARD_ABILITYSCOREIMPROVEMENT_WIZARD",
+      "name": "Ability Score Improvement",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.</p>",
+      "sheet": {
+        "display": false
+      },
+      "compendium": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Wizard 4)",
+          "level": 4,
+          "supports": "Improvement Option,Wizard,4"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Wizard 8)",
+          "level": 8,
+          "supports": "Improvement Option,Wizard,8"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Wizard 12)",
+          "level": 12,
+          "supports": "Improvement Option,Wizard,12"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Wizard 16)",
+          "level": 16,
+          "supports": "Improvement Option,Wizard,16"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Wizard 19)",
+          "level": 19,
+          "supports": "Improvement Option,Wizard,19"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_WIZARD_SPELL_MASTERY",
+      "name": "Spell Mastery",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 18th level, you have achieved such mastery over certain spells that you can cast them at will. Choose a 1st-level wizard spell and a 2nd-level wizard spell that are in your spellbook. You can cast those spells at their lowest level without expending a spell slot when you have them prepared. If you want to cast either spell at a higher level, you must expend a spell slot as normal.</p><p>By spending 8 hours in study, you can exchange one or both of the spells you chose for different spells of the same levels.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "At 18th level, you have achieved such mastery over certain spells that you can cast them at will. Choose a 1st-level wizard spell and a 2nd-level wizard spell that are in your spellbook. You can cast those spells at their lowest level without expending a spell slot when you have them prepared."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spell Mastery (1st Level)",
+          "level": 18,
+          "supports": "$(spellcasting:list),1",
+          "spellcasting": "Wizard",
+          "prepared": true
+        },
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Spell Mastery (2nd Level)",
+          "level": 18,
+          "supports": "$(spellcasting:list),2",
+          "spellcasting": "Wizard",
+          "prepared": true
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_WIZARD_SIGNATURE_SPELLS",
+      "name": "Signature Spells",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>When you reach 20th level, you gain mastery over two powerful spells and can cast them with little effort. Choose two 3rd-level wizard spells in your spellbook as your signature spells. You always have these spells prepared, they don’t count against the number of spells you have prepared, and you can cast each of them once at 3rd level without expending a spell slot. When you do so, you can’t do so again until you finish a short or long rest.</p><p>If you want to cast either spell at a higher level, you must expend a spell slot as normal.</p>",
+      "sheet": {
+        "usage": "1/Short Rest"
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Spell",
+          "name": "Signature Spell",
+          "number": 2,
+          "level": 20,
+          "supports": "$(spellcasting:list),3",
+          "spellcasting": "Wizard",
+          "prepared": true
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_WIZARD_SCHOOL_OF_EVOCATION",
+      "name": "School of Evocation",
+      "type": "Archetype",
+      "source": "SRD 5.1",
+      "supports": [
+        "Arcane Tradition"
+      ],
+      "description": "<p>You focus your study on magic that creates powerful elemental effects such as bitter cold, searing flame, rolling thunder, crackling lightning, and burning acid. Some evokers find employment in military forces, serving as artillery to blast enemy armies from afar. Others use their spectacular power to protect the weak, while some seek their own gain as bandits, adventurers, or aspiring tyrants.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WIZARD_EVOCATION_EVOCATION_SAVANT",
+          "type": "Archetype Feature",
+          "level": 2
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WIZARD_EVOCATION_SCULPT_SPELLS",
+          "type": "Archetype Feature",
+          "level": 2
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WIZARD_EVOCATION_POTENT_CANTRIP",
+          "type": "Archetype Feature",
+          "level": 6
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WIZARD_EVOCATION_EMPOWERED_EVOCATION",
+          "type": "Archetype Feature",
+          "level": 10
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WIZARD_EVOCATION_OVERCHANNEL",
+          "type": "Archetype Feature",
+          "level": 14
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WIZARD_EVOCATION_EVOCATION_SAVANT",
+      "name": "Evocation Savant",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning when you select this school at 2nd level, the gold and time you must spend to copy an evocation spell into your spellbook is halved.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Beginning when you select this school at 2nd level, the gold and time you must spend to copy an evocation spell into your spellbook is halved."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WIZARD_EVOCATION_SCULPT_SPELLS",
+      "name": "Sculpt Spells",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning at 2nd level, you can create pockets of relative safety within the effects of your evocation spells. When you cast an evocation spell that affects other creatures that you can see, you can choose a number of them equal to 1 + the spell’s level. The chosen creatures automatically succeed on their saving throws against the spell, and they take no damage if they would normally take half damage on a successful save.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Beginning at 2nd level, you can create pockets of relative safety within the effects of your evocation spells. When you cast an evocation spell that affects other creatures that you can see, you can choose a number of them equal to 1 + the spell’s level."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WIZARD_EVOCATION_POTENT_CANTRIP",
+      "name": "Potent Cantrip",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 6th level, your damaging cantrips affect even creatures that avoid the brunt of the effect. When a creature succeeds on a saving throw against your cantrip, the creature takes half the cantrip’s damage (if any) but suffers no additional effect from the cantrip.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Starting at 6th level, your damaging cantrips affect even creatures that avoid the brunt of the effect. When a creature succeeds on a saving throw against your cantrip, the creature takes half the cantrip’s damage (if any) but suffers no additional effect from the cantrip."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WIZARD_EVOCATION_EMPOWERED_EVOCATION",
+      "name": "Empowered Evocation",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning at 10th level, you can add your Intelligence modifier to one damage roll of any wizard evocation spell you cast.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Beginning at 10th level, you can add your Intelligence modifier to one damage roll of any wizard evocation spell you cast."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WIZARD_EVOCATION_OVERCHANNEL",
+      "name": "Overchannel",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 14th level, you can increase the power of your simpler spells. When you cast a wizard spell of 1st through 5th level that deals damage, you can deal maximum damage with that spell.</p><p>The first time you do so, you suffer no adverse effect. If you use this feature again before you finish a long rest, you take 2d12 necrotic damage for each level of the spell, immediately after you cast it. Each time you use this feature again before finishing a long rest, the necrotic damage per spell level increases by 1d12. This damage ignores resistance and immunity.</p>",
+      "sheet": {
+        "usage": "1/Long Rest"
+      }
+    }
+  ]
+}

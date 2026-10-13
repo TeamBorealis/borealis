@@ -1,0 +1,150 @@
+/* Manage screens: plain forms in a scrolling column (classic builder c.7). */
+.mg-page { padding: 10px 21px 25px 50px; width: 100%; display: flex; flex-direction: column; gap: 25px; }
+.tab-panel:has(> .mg-page) { padding-top: 0; }
+/* The classic builder keeps the scroll gutter visible even when nothing overflows */
+.aur-content:has(.mg-page) { overflow-y: scroll; }
+.mg-sec { min-width: 0; }
+.mg-sec > h2 { margin: 0; font-size: var(--fs-lg); font-weight: 600; text-transform: uppercase; color: var(--text); letter-spacing: 0; line-height: 1.25; }
+.mg-sec > .mg-sub { margin: 1px 0 19px; font-size: 11px; color: var(--text-muted); line-height: 14px; }
+.mg-sec.mg-gap { margin-top: 23px; }
+.mg-sec.mg-gap-s { margin-top: 9px; }
+.mg-sec > .mg-sub.mg-sub-after { margin-top: 10px; }
+.mg-sec > .mg-sub:has(+ .mg-sub-after) { margin-bottom: 0; }
+.mg-page:has(.mg-attacks) { padding-right: 4px; }
+.mg-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 20px; }
+.mg-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mg-grid .span2 { grid-column: span 2; }
+.mg-grid .span3 { grid-column: 1 / -1; }
+.mg-f { display: flex; flex-direction: column; gap: 2px; min-width: 0; margin-bottom: 4px; }
+.mg-f > label, .mg-f > .mg-label { font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase; color: var(--text-muted); }
+.mg-f .aur-textbox, .mg-f .aur-combo, .mg-f .textarea { width: 100%; }
+.mg-f .textarea { min-height: 100px; resize: none; }
+.mg-f .textarea.tall { min-height: 220px; }
+.mg-ok { display: inline-grid; vertical-align: -2px; margin-left: 6px; color: var(--aur-success-bright, var(--aur-success)); }
+.mg-ok .icon { width: 12px; height: 12px; }
+.mg-name { position: relative; display: flex; }
+.mg-name .aur-textbox input { padding-right: 30px; }
+.mg-name-dice { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; min-height: 0; padding: 0; display: grid; place-items: center; background: transparent; border: 0; color: var(--gray-3); cursor: pointer; border-radius: 0; }
+.mg-name-dice:hover { color: var(--text); }
+.mg-name-dice .icon { width: 16px; height: 16px; }
+.mg-f .mg-xp { display: flex; align-items: center; width: 100%; height: var(--target); border: 1px solid var(--input-border); background: var(--bg); }
+.mg-f .mg-xp:hover { border-color: var(--input-border-hover); }
+.mg-f .mg-xp:focus-within { border-color: var(--input-border-focus); outline: 1px solid var(--input-border-focus); }
+.mg-f .mg-xp input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; color: var(--text); text-align: right; padding: 0 4px; font: inherit; font-size: var(--fs-sm); }
+.mg-xp-btn { width: 20px; min-width: 20px; height: 22px; min-height: 0; padding: 0; margin: 0; border: 0; border-radius: 0; background: transparent; color: var(--gray-3); display: grid; place-items: center; cursor: pointer; }
+.mg-xp-btn:last-child { margin-right: 3px; }
+.mg-xp-btn:hover { color: #fff; }
+.mg-xp-btn .icon { width: 20px; height: 20px; }
+.mg-hint { font-size: var(--fs-sm); color: var(--text-muted); }
+.mg-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 30px; align-items: start; }
+.mg-row { display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; }
+.mg-portrait { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+.mg-portrait .portrait { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; font-size: 2.2rem; flex: none; }
+.mg-portrait .mg-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+/* Portraits gallery flyout */
+.pg-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.pg-tile { aspect-ratio: 1; padding: 0; border: 2px solid var(--accent-60); background: var(--accent-20); display: grid; place-items: center; color: var(--text-muted); font-size: var(--fs-2xs); text-transform: uppercase; overflow: hidden; cursor: pointer; border-radius: 0; min-height: 0; height: auto; }
+.pg-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pg-tile[aria-pressed="true"] { border-color: var(--gold); }
+.pg-tile.empty { border-style: dashed; cursor: default; }
+.pg-note { margin: 10px 0 0; font-size: var(--fs-sm); color: var(--text-muted); }
+
+/* Attacks */
+.mg-attacks { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 22px; align-items: start; }
+.mg-toolbar { display: flex; gap: 10px; margin: 10px 0 10px; flex-wrap: wrap; }
+.mg-tool { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 26px; min-height: 26px; min-width: 26px; padding: 0 5px; background: #242425; border: 0; border-radius: 0; color: var(--text); font-size: var(--fs-sm); font-weight: 600; cursor: pointer; }
+.mg-tool.wide { padding: 0 8px 0 5px; }
+.mg-tool:hover:not(:disabled) { background: #333334; }
+.mg-tool:disabled { opacity: 0.5; cursor: default; }
+.mg-tool .icon { width: 20px; height: 20px; }
+.atk-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.atk { position: relative; margin-left: 2px; display: flex; gap: 8px; align-items: flex-start; background: var(--light-2); border-left: 4px solid var(--aur-success); padding: 5px 11px 4px 10px; border: 1px solid transparent; border-left: 4px solid var(--aur-success); cursor: pointer; }
+.atk[aria-current="true"] { border-color: var(--gray-3); border-left-color: var(--aur-success); }
+.atk .info { flex: 1; min-width: 0; }
+.atk h3 { margin: 0; font-size: var(--fs-md); font-weight: 600; text-transform: uppercase; color: var(--text); }
+.atk p { margin: 0; font-size: 11px; font-style: italic; color: var(--text-muted); line-height: 14.5px; }
+.atk .ap-tags:empty { display: none; }
+.atk .btns { display: flex; gap: 0; flex: none; }
+.atk .btns button { background: transparent; border: 0; width: 30px; min-width: 30px; height: 24px; min-height: 24px; padding: 0; color: var(--gray-5); cursor: pointer; border-radius: 0; }
+.atk .btns button:hover { background: rgb(255 255 255 / 0.1); color: #fff; }
+.atk .btns .icon { width: 18px; height: 18px; }
+.atk .btns button[aria-pressed="false"] { opacity: 0.45; }
+.atk .ap-tags { margin-top: 3px; flex-wrap: wrap; }
+.atk-off { opacity: 0.8; }
+
+/* Options / rules */
+.mg-checks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 30px; }
+.mg-rules-list { list-style: none; margin: 0; padding: 0; }
+.mg-rules-list li { display: flex; gap: 10px; align-items: flex-start; padding: 5px 6px; border-bottom: 1px solid var(--accent-20); }
+.mg-rules-list li:hover { background: var(--accent-20); }
+.mg-rules-list .grow { flex: 1; min-width: 0; }
+.mg-edition { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+.mg-tiles { display: flex; flex-wrap: wrap; gap: 6px; }
+.mg-tile { min-width: 70px; padding: 4px 8px; background: var(--accent-20); border: 1px solid var(--accent-60); text-align: center; }
+.mg-tile span { display: block; font-size: 9px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); }
+.mg-tile b { font-size: var(--fs-xl, 20px); color: var(--text); font-weight: 600; }
+
+@media (max-width: 1023px) { .mg-attacks, .mg-two { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 899px) {
+  .mg-page { padding: 15px max(15px, var(--safe-l)) 25px max(15px, var(--safe-r)); gap: 20px; }
+  .mg-grid, .mg-grid.two, .mg-checks { grid-template-columns: minmax(0, 1fr); }
+  .mg-grid .span2 { grid-column: auto; }
+}
+
+/* Character options flyout: the manage sections without the page gutters. */
+.mg-flyout .mg-page { padding: 0 0 10px; gap: 20px; }
+.mg-flyout .mg-checks { grid-template-columns: minmax(0, 1fr); }
+
+/* Character options flyout: classic builder option cards (shared dashed card look from the new-character flyout). */
+.mg-flyout .v4-opts.mg-opt-cards { overflow: visible; flex: none; padding: 0; }
+.mg-flyout .v4-opt.locked { opacity: 0.6; }
+.mg-tag { margin-left: auto; font-size: 9px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); }
+.mg-tag + .mg-tag { margin-left: 8px; }
+.mg-flyout { display: flex; flex-direction: column; gap: 20px; }
+
+/* v4: New character + F8 option cards and tiles share classic builder's #191B1D fill, dashed #242B2F border and #7F7F7F hints. */
+.v4-opts .v4-opt { background: #191b1d; border-color: #242b2f; }
+.v4-opts .v4-opt p { color: #7f7f7f; }
+.v4-new .v4-tile-abil { background: #191b1d; border-color: #293338; }
+.v4-new .v4-tile-abil b { color: #ccc; }
+.v4-new .v4-fl { color: #7f7f7f; }
+/* CHARACTER OPTIONS has no chevron in the classic builder: a plain header, same type as the expander title. */
+.v4-new .v4-plain h2.aur-expander-toggle { margin: 0; cursor: default; display: flex; align-items: center; font-size: 13px; line-height: 24px; text-transform: uppercase; }
+.v4-new .v4-plain h2.aur-expander-toggle:hover { background: transparent; }
+/* Bold classic builder chevron on CHARACTER DETAILS (same treatment as the picker group headers). */
+.v4-new .aur-expander-chev .icon { width: 22px; height: 22px; }
+.v4-new .aur-expander-chev .icon path { stroke: currentColor; stroke-width: 1.4px; }
+.mg-flyout:focus { outline: none; }
+
+/* v4: Edition & compatibility flyout, built from the classic builder's flyout section / DescriptionCheckBox / field-header metrics. */
+.v4-ed { gap: 0; }
+.v4-ed-sec { margin: 25px 0 0; min-width: 0; }
+.v4-ed-sec:first-child { margin-top: 0; }
+.v4-ed-sec > h2 { margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; color: var(--text-primary-header); letter-spacing: 0; line-height: 1.25; }
+.v4-ed-sub { margin: 1px 0 10px; font-size: 11px; color: #7f7f7f; line-height: 14px; }
+.v4-ed-value { margin: 0 0 4px; font-size: 11px; color: var(--text-body); }
+.v4-ed-field { margin: 10px 0 0; }
+.v4-ed-field label { display: block; margin: 0 0 2px; font-size: 10px; font-weight: 600; text-transform: uppercase; color: #7f7f7f; }
+.v4-ed-check { display: grid; grid-template-columns: 24px 1fr; align-items: center; margin: 8px 0 0; }
+.v4-ed-check .v4-cb { margin: 0 8px 0 0; }
+.v4-ed-check .head { font-size: 11px; font-weight: 600; color: var(--text-primary-header); }
+.v4-ed-check.caps .head { text-transform: uppercase; }
+.v4-ed-check .desc { grid-column: 2; margin-top: 1px; font-size: 11px; color: #7f7f7f; }
+.v4-ed-actions { display: flex; align-items: center; gap: 10px; margin: 10px 0 0; }
+.v4-ed-actions .btn { background: #242425; border: 0; border-radius: 0; height: 26px; min-height: 0; padding: 0 10px; font-size: 11px; text-transform: uppercase; color: var(--text-body); }
+.v4-ed-list { list-style: none; margin: 0; padding: 0; }
+.v4-ed-list li { display: flex; flex-direction: column; margin: 8px 0 0; padding: 8px 10px 9px; border: 1px dashed #242b2f; background: #191b1d; }
+.v4-ed-list .head { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-primary-header); }
+.v4-ed-list .desc { margin-top: 1px; font-size: 11px; color: #7f7f7f; }
+.v4-foot.one { grid-template-columns: 1fr; }
+
+/* v4: New character vertical rhythm measured against classic builder (rows are ink runs at 1355x847). */
+.v4-new .v4-namefield .aur-textbox.light input { height: 28px; min-height: 0; }
+.v4-new .v4-row { margin-top: 5px; }
+.v4-new .v4-plain .sub { margin: -4px 0 8px; }
+.v4-new .aur-combo.light select { height: 26px; min-height: 0; }
+.v4-new .aur-textbox.light input:focus { outline: 0; }
+.v4-new .aur-combo { margin-top: -3px; }
+.v4-new .v4-row + .v4-fl { margin-top: 10px; }
+.v4-new .v4-row + .v4-fl + .aur-combo { margin-top: -2px; }

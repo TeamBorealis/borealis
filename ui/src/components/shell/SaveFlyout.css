@@ -1,0 +1,5 @@
+.sv { display: flex; flex-direction: column; padding-top: 4px; }
+.sv-portrait { align-self: center; padding: 0; border: 0; background: none; cursor: pointer; }
+.sv .qv-build, .sv .qv-sub { text-align: center; }
+.sv .field-hint { margin: 2px 0 0; min-height: 14px; font-size: var(--fs-2xs); color: var(--text-secondary); }
+.sv-fav { display: flex; align-items: center; gap: 8px; margin: var(--sp-3) 0; font-size: var(--fs-xs); text-transform: uppercase; color: var(--text-body); }

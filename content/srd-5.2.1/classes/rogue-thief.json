@@ -1,0 +1,174 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/rogue-thief",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SUBCLASS_ROGUE_THIEF",
+   "name": "Thief",
+   "type": "Archetype",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Rogue Subclass"
+   ],
+   "description": "<p>A mix of burglar, treasure hunter, and explorer, you are the epitome of an adventurer. In addition to improving your agility and stealth, you gain abilities useful for delving into ruins and getting maximum benefit from the magic items you find there.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_ROGUE_THIEF_FAST_HANDS",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_ROGUE_THIEF_SECOND_STORY_WORK",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_ROGUE_THIEF_SUPREME_SNEAK",
+     "type": "Archetype Feature",
+     "level": 9
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_ROGUE_THIEF_USE_MAGIC_DEVICE",
+     "type": "Archetype Feature",
+     "level": 13
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_ROGUE_THIEF_THIEFS_REFLEXES",
+     "type": "Archetype Feature",
+     "level": 17
+    }
+   ],
+   "data": {
+    "class": "ID_2024_CLASS_ROGUE",
+    "class_name": "Rogue",
+    "level_gained": 3
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ARCHETYPE_THIEF",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_ROGUE_THIEF_FAST_HANDS",
+   "name": "Fast Hands",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Bonus Action, you can do one of the following.</p>\n<p><b>Sleight of Hand.</b> Make a Dexterity (Sleight of Hand) check to pick a lock or disarm a trap with Thieves’ Tools or to pick a pocket.</p>\n<p><b>Use an Object.</b> Take the Utilize action, or take the Magic action to use a magic item that requires that action.</p>",
+   "data": {
+    "class": "Rogue",
+    "subclass": "Thief",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_ROGUE_THIEF_SECOND_STORY_WORK",
+   "name": "Second-Story Work",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You’ve trained to get into especially hard-to-reach places, granting you these benefits.</p>\n<p><b>Climber.</b> You gain a Climb Speed equal to your Speed.</p>\n<p><b>Jumper.</b> You can determine your jump distance using your Dexterity rather than your Strength.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "speed:climb",
+     "value": "speed"
+    }
+   ],
+   "data": {
+    "class": "Rogue",
+    "subclass": "Thief",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_ROGUE_THIEF_SUPREME_SNEAK",
+   "name": "Supreme Sneak",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You gain the following Cunning Strike option.</p>\n<p><b>Stealth Attack (Cost: 1d6).</b> If you have the Hide action’s Invisible condition, this attack doesn’t end that condition on you if you end the turn behind Three-Quarters Cover or Total Cover.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_2024_OPTION_CUNNING_STRIKE_STEALTH_ATTACK",
+     "type": "Option"
+    }
+   ],
+   "data": {
+    "class": "Rogue",
+    "subclass": "Thief",
+    "level": 9
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_ROGUE_THIEF_USE_MAGIC_DEVICE",
+   "name": "Use Magic Device",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You’ve learned how to maximize use of magic items, granting you the following benefits.</p>\n<p><b>Attunement.</b> You can attune to up to four magic items at once.</p>\n<p><b>Charges.</b> Whenever you use a magic item property that expends charges, roll 1d6. On a roll of 6, you use the property without expending the charges.</p>\n<p><b>Scrolls.</b> You can use any Spell Scroll, using Intelligence as your spellcasting ability for the spell. If the spell is a cantrip or a level 1 spell, you can cast it reliably. If the scroll contains a higher-level spell, you must first succeed on an Intelligence (Arcana) check (DC 10 plus the spell’s level). On a successful check, you cast the spell from the scroll. On a failed check, the scroll disintegrates.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "attunement:max",
+     "value": "1"
+    }
+   ],
+   "data": {
+    "class": "Rogue",
+    "subclass": "Thief",
+    "level": 13
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_ROGUE_THIEF_THIEFS_REFLEXES",
+   "name": "Thief’s Reflexes",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You are adept at laying ambushes and quickly escaping danger. You can take two turns during the first round of any combat. You take your first turn at your normal Initiative and your second turn at your Initiative minus 10.</p>",
+   "data": {
+    "class": "Rogue",
+    "subclass": "Thief",
+    "level": 17
+   }
+  },
+  {
+   "id": "ID_2024_OPTION_CUNNING_STRIKE_STEALTH_ATTACK",
+   "name": "Stealth Attack",
+   "type": "Option",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cunning Strike"
+   ],
+   "description": "<p>If you have the Hide action’s Invisible condition, this attack doesn’t end that condition on you if you end the turn behind Three-Quarters Cover or Total Cover.</p>",
+   "rules": [
+    {
+     "kind": "cunning_effect",
+     "cost_dice": 1
+    }
+   ],
+   "data": {
+    "class_name": "Rogue",
+    "group": "Cunning Strike",
+    "source_feature": "Supreme Sneak",
+    "level": 9
+   }
+  }
+ ]
+}

@@ -1,0 +1,43 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: base/source",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SOURCE_SRD521",
+   "name": "SRD 5.2.1",
+   "type": "Source",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>System Reference Document 5.2.1, published by Wizards of the Coast LLC under CC-BY-4.0.</p>",
+   "setters": [
+    {
+     "name": "url",
+     "value": "https://www.dndbeyond.com/srd"
+    },
+    {
+     "name": "abbreviation",
+     "value": "SRD"
+    },
+    {
+     "name": "official",
+     "value": "true"
+    },
+    {
+     "name": "core",
+     "value": "false"
+    },
+    {
+     "name": "release",
+     "value": "20250501"
+    }
+   ]
+  }
+ ]
+}

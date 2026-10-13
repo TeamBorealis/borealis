@@ -1,0 +1,254 @@
+/*
+ * Borealis design tokens (classic dark look).
+ * Default = dark theme. `data-theme="light"` is the alternate. `data-contrast="high"` stacks on either.
+ * Legacy token names (--bg, --surface, --accent ...) are kept as aliases so un-restyled pages keep working.
+ */
+:root {
+  --font-body: "Selawik", "Segoe UI", "Open Sans", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-body);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Type scale (px values from spec a.3). Body is 13 so un-restyled pages stay legible; classic builder lists are 11-12. */
+  --fs-2xs: 10px;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-lg: 13px;
+  --fs-xl: 20px;
+  --fs-2xl: 40px;
+  --fs-tab-main: 18px;
+  --fs-tab-sub: 14px;
+
+  /* Spacing scale actually used by the classic builder: 2 4 5 6 10 15 20 25 30 */
+  --sp-0: 2px;
+  --sp-1: 4px;
+  --sp-2: 6px;
+  --sp-3: 10px;
+  --sp-4: 15px;
+  --sp-5: 20px;
+  --sp-6: 25px;
+  --sp-7: 30px;
+
+  /* Almost everything is square; buttons are 2px. */
+  --radius-sm: 0;
+  --radius: 2px;
+  --radius-lg: 0;
+  --target: 26px;
+  --border-w: 1px;
+  --focus-w: 2px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* Shell metrics */
+  --title-h: 30px; /* incl. the 1px window border */
+  --profile-h: 23px;
+  --maintab-h: 36px;
+  --subtab-h: 30px;
+  --status-h: 26px;
+  --choices-footer-h: 24px;
+  --scrollbar: 17px;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+
+  /* Accent family, default slate #293338 (alphas of one colour) */
+  --accent-base: #293338;
+  --accent-80: #293338cc;
+  --accent-60: #29333899;
+  --accent-40: #29333866;
+  --accent-20: #29333833;
+  --highlight: #293338;
+  --ideal-fg: #ffffff;
+
+  /* Brand constants (theme independent) */
+  --gold: #b38000;
+  --gold-soft: #2a2208;
+  --borealis-teal: #305754;
+  --aur-success: #37753d;
+  --aur-warning: #cf6e39;
+  --aur-danger: #943131;
+  --aur-success-bright: #2f875b;
+  --aur-warning-bright: #f08348;
+  --aur-danger-bright: #be3e3e;
+  --aur-invalid: #d042cf;
+  --link: #4a7bf0;
+
+  color-scheme: dark;
+  /* Neutral ramp, dark theme */
+  --bg: #161616;
+  --window-bg: #101010;
+  --light-1: #151515;
+  --light-2: #242425;
+  --light-3: #333334;
+  --light-4: #424243;
+  --light-5: #515152;
+  --dark-1: #f7f7f7;
+  --dark-2: #e6e6e6;
+  --dark-3: #d5d5d5;
+  --dark-4: #c4c4c4;
+  --dark-4b: #b3b3b3;
+  --dark-5: #777777;
+  --text: #e6e6e6;
+  --text-body: #c4c4c4;
+  --text-primary-header: #d5d5d5;
+  --text-secondary: #7f7f7f;
+  --gray-1: #f9f9f9;
+  --gray-2: #7f7f7f;
+  --gray-3: #9d9d9d;
+  --gray-5: #b9b9b9;
+  --gray-6: #cccccc;
+  --text-muted: #7f7f7f;
+  --flyout-bg: #151516;
+  --description-bg: #101010;
+  --subnav-bg: #111111;
+  --subnav-border: #242424;
+  --chrome: #21292d; /* sampled from the classic builder title bar, tab row and status bar */
+  --chrome-hover: #343f44;
+  --menu-bg: #1d1d20;
+  --menu-select: #313131;
+  --scroll-thumb: #686868;
+  --scroll-thumb-hover: #9e9e9e;
+  --scroll-thumb-active: #efebef;
+  --toggle-off: #cccccc;
+  --toggle-hover: #ffffff;
+  --input-border: #a59f93;
+  --input-border-focus: #c4c4c4;
+  --input-border-hover: #f7f7f7;
+  --scrim: rgb(245 245 245 / 0.5); /* classic builder lightens the window behind a flyout */
+  --focus: #9bb0bb;
+
+  /* Legacy aliases (pages not yet restyled) */
+  --surface: var(--light-1);
+  --surface-2: var(--light-2);
+  --surface-3: var(--light-3);
+  --border: #2a2a2b;
+  --border-strong: var(--light-4);
+  --accent: var(--accent-base);
+  --accent-strong: var(--dark-2);
+  --accent-soft: var(--light-3);
+  --accent-contrast: #ffffff;
+  --success: var(--aur-success-bright);
+  --success-soft: #14261b;
+  --danger: var(--aur-danger-bright);
+  --danger-soft: #2c1717;
+  --warning: var(--aur-warning-bright);
+  --warning-soft: #2e2012;
+  --info: #6fa8dc;
+  --info-soft: #14212e;
+  --overlay: var(--scrim);
+  --shadow-1: none;
+  --shadow-2: 0 0 10px rgb(41 51 56 / 0.5);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --window-bg: #ffffff;
+  --light-1: #f7f7f7;
+  --light-2: #e6e6e6;
+  --light-3: #d5d5d5;
+  --light-4: #c4c4c4;
+  --light-5: #b3b3b3;
+  --dark-1: #101010;
+  --dark-2: #151515;
+  --dark-3: #242425;
+  --dark-4: #333334;
+  --dark-4b: #424243;
+  --dark-5: #515152;
+  --text: #151515;
+  --text-body: #242425;
+  --text-primary-header: #333334;
+  --text-secondary: #515152;
+  --gray-1: #333333;
+  --gray-2: #7f7f7f;
+  --gray-3: #9d9d9d;
+  --gray-5: #b9b9b9;
+  --gray-6: #cccccc;
+  --text-muted: #515152;
+  --flyout-bg: #f7f7f7;
+  --description-bg: #f7f7f7;
+  --subnav-bg: #111111;
+  --subnav-border: #333333;
+  --chrome: #4a5a62;
+  --chrome-hover: #5a6a72;
+  --menu-bg: #f7f7f7;
+  --menu-select: #dedede;
+  --scroll-thumb: #b3b3b3;
+  --scroll-thumb-hover: #888888;
+  --scroll-thumb-active: #555555;
+  --toggle-off: #333333;
+  --toggle-hover: #000000;
+  --gold: #8f6600;
+  --gold-soft: #f6e8c4;
+  --link: #1e50e6;
+  --border: #d5d5d5;
+  --border-strong: #b3b3b3;
+  --accent-strong: #293338;
+  --accent-soft: #d5d5d5;
+  --success-soft: #dcf0e0;
+  --danger-soft: #f8dde0;
+  --warning-soft: #fbebc9;
+  --info: #1e5c88;
+  --info-soft: #dcecf7;
+  --scrim: rgb(17 17 18 / 0.5);
+  --focus: #293338;
+  --shadow-2: 0 0 10px rgb(41 51 56 / 0.5);
+}
+
+/* High contrast: pure black/white, strong borders, thick focus. Works with either theme. */
+:root[data-contrast="high"] {
+  --text: #ffffff;
+  --text-body: #ffffff;
+  --text-primary-header: #ffffff;
+  --text-secondary: #ffffff;
+  --text-muted: #ffffff;
+  --bg: #000000;
+  --window-bg: #000000;
+  --description-bg: #000000;
+  --light-1: #000000;
+  --border: #ffffff;
+  --border-strong: #ffffff;
+  --input-border: #ffffff;
+  --chrome: #000000;
+  --subnav-bg: #000000;
+  --subnav-border: #ffffff;
+  --gold: #ffd24a;
+  --link: #8fb3ff;
+  --border-w: 2px;
+  --focus-w: 3px;
+  --focus: #ffff00;
+  --scroll-thumb: #ffffff;
+}
+:root[data-theme="light"][data-contrast="high"] {
+  --text: #000000;
+  --text-body: #000000;
+  --text-primary-header: #000000;
+  --text-secondary: #000000;
+  --text-muted: #000000;
+  --bg: #ffffff;
+  --window-bg: #ffffff;
+  --description-bg: #ffffff;
+  --light-1: #ffffff;
+  --border: #000000;
+  --border-strong: #000000;
+  --input-border: #000000;
+  --gold: #5c4200;
+  --link: #0031b8;
+  --focus: #000000;
+  --scroll-thumb: #000000;
+}
+
+@media (pointer: coarse), (max-width: 899px) {
+  :root { --target: 44px; --fs-md: 14px; --fs-sm: 13px; --fs-xs: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Android WebViews drawn edge to edge report no bottom inset: keep the bottom bar clear of the gesture bar. */
+:root.android { --safe-b: max(env(safe-area-inset-bottom, 0px), 20px); }

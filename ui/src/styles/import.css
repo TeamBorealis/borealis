@@ -1,0 +1,28 @@
+/* Import anything */
+.dropzone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-2); min-height: 11rem; padding: var(--sp-6) var(--sp-4); text-align: center; border: 2px dashed var(--border-strong); border-radius: var(--radius-lg); background: var(--surface); cursor: pointer; }
+.dropzone:hover, .dropzone.over { background: var(--surface-2); border-color: var(--accent); }
+.dropzone .icon { width: 2.5rem; height: 2.5rem; }
+.camera-btn { cursor: pointer; display: none; }
+@media (pointer: coarse), (max-width: 639px) { .camera-btn { display: inline-flex; } }
+.import-text-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
+.steps { display: flex; gap: var(--sp-2); list-style: none; padding: 0; margin: 0 0 var(--sp-4); flex-wrap: wrap; }
+.steps li { padding: var(--sp-1) var(--sp-3); border-radius: 0; background: var(--surface-2); color: var(--text-muted); font-size: var(--fs-sm); }
+.steps li[aria-current="step"] { background: var(--accent); color: var(--accent-contrast); font-weight: 600; }
+.timeline { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--sp-3); }
+.timeline li { display: flex; gap: var(--sp-3); align-items: flex-start; opacity: 0.55; }
+.timeline li[data-state="active"], .timeline li[data-state="done"] { opacity: 1; }
+.timeline li[data-state="active"] strong::after { content: " ..."; }
+.element-chips { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.element-split { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); margin-bottom: var(--sp-3); }
+.excerpt { margin: 0; } .excerpt blockquote { margin: 0; padding-left: var(--sp-3); border-left: 3px solid var(--border-strong); color: var(--text-muted); font-style: italic; }
+.element-card[data-status="needs_review"] { border-color: var(--warning, var(--border-strong)); }
+.element-card[data-status="failed"] { border-color: var(--danger); }
+.fix-row { align-items: flex-end; margin: var(--sp-3) 0; } .fix-row .grow { flex: 1 1 14rem; }
+.level-group > h2 { font-size: var(--fs-lg); margin: 0 0 var(--sp-2); }
+.radio-group { border: 0; padding: 0; margin: 0 0 var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
+.radio-row { display: flex; align-items: center; gap: var(--sp-2); min-height: var(--target); }
+.mono { font-family: var(--font-mono); }
+@media (max-width: 639px) {
+  .import-text-grid, .element-split { grid-template-columns: minmax(0, 1fr); }
+  .element-card { margin-inline: -4px; }
+}

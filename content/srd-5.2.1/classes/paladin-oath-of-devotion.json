@@ -1,0 +1,244 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/paladin-oath-of-devotion",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SUBCLASS_PALADIN_OATH_OF_DEVOTION",
+   "name": "Oath of Devotion",
+   "type": "Archetype",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Paladin Subclass"
+   ],
+   "description": "<p>The Oath of Devotion binds Paladins to the ideals of justice and order. These Paladins meet the archetype of the knight in shining armor. They hold themselves to the highest standards of conduct, and some—for better or worse—hold the rest of the world to the same standards.</p>\n<p>Many who swear this oath are devoted to gods of law and good and use their gods’ tenets as the measure of personal devotion. Others hold angels as their ideals and incorporate images of angelic wings into their helmets or coats of arms.</p>\n<p>These paladins share the following tenets:</p>\n<ul><li>Let your word be your promise.</li><li>Protect the weak and never fear to act.</li><li>Let your honorable deeds be an example.</li></ul>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_PALADIN_OATH_OF_DEVOTION_OATH_OF_DEVOTION_SPELLS",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_PALADIN_OATH_OF_DEVOTION_SACRED_WEAPON",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_PALADIN_OATH_OF_DEVOTION_AURA_OF_DEVOTION",
+     "type": "Archetype Feature",
+     "level": 7
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_PALADIN_OATH_OF_DEVOTION_SMITE_OF_PROTECTION",
+     "type": "Archetype Feature",
+     "level": 15
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_PALADIN_OATH_OF_DEVOTION_HOLY_NIMBUS",
+     "type": "Archetype Feature",
+     "level": 20
+    }
+   ],
+   "data": {
+    "class": "ID_2024_CLASS_PALADIN",
+    "class_name": "Paladin",
+    "level_gained": 3
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ARCHETYPE_PALADIN_OATH_OF_DEVOTION",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_PALADIN_OATH_OF_DEVOTION_OATH_OF_DEVOTION_SPELLS",
+   "name": "Oath of Devotion Spells",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>The magic of your oath ensures you always have certain spells ready; when you reach a Paladin level specified in the Oath of Devotion Spells table, you thereafter always have the listed spells prepared. Oath of Devotion Spells</p>\n<pre>    Paladin Level   Spells\n         3          Protection from Evil and Good,\n                    Shield of Faith\n         5          Aid, Zone of Truth\n         9          Beacon of Hope, Dispel Magic\n         13         Freedom of Movement,\n                    Guardian of Faith\n         17         Commune, Flame Strike</pre>",
+   "rules": [
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_PROTECTION_FROM_EVIL_AND_GOOD",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Paladin"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_SHIELD_OF_FAITH",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Paladin"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 5,
+     "spell": "ID_2024_SPELL_AID",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Paladin"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 5,
+     "spell": "ID_2024_SPELL_ZONE_OF_TRUTH",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Paladin"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 9,
+     "spell": "ID_2024_SPELL_BEACON_OF_HOPE",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Paladin"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 9,
+     "spell": "ID_2024_SPELL_DISPEL_MAGIC",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Paladin"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 13,
+     "spell": "ID_2024_SPELL_FREEDOM_OF_MOVEMENT",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Paladin"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 13,
+     "spell": "ID_2024_SPELL_GUARDIAN_OF_FAITH",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Paladin"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 17,
+     "spell": "ID_2024_SPELL_COMMUNE",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Paladin"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 17,
+     "spell": "ID_2024_SPELL_FLAME_STRIKE",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Paladin"
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "subclass": "Oath of Devotion",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_PALADIN_OATH_OF_DEVOTION_SACRED_WEAPON",
+   "name": "Sacred Weapon",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you take the Attack action, you can expend one use of your Channel Divinity to imbue one Melee weapon that you are holding with positive energy. For 10 minutes or until you use this feature again, you add your Charisma modifier to attack rolls you make with that weapon (minimum bonus of +1), and each time you hit with it, you cause it to deal its normal damage type or Radiant damage.</p>\n<p>The weapon also emits Bright Light in a 20-foot radius and Dim Light 20 feet beyond that.</p>\n<p>You can end this effect early (no action required). This effect also ends if you aren’t carrying the weapon.</p>",
+   "rules": [
+    {
+     "kind": "channel_divinity_option",
+     "name": "Sacred Weapon",
+     "duration": "10 minutes",
+     "attack_bonus": "max(1, charisma:modifier)"
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "subclass": "Oath of Devotion",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_PALADIN_OATH_OF_DEVOTION_AURA_OF_DEVOTION",
+   "name": "Aura of Devotion",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You and your allies have Immunity to the Charmed condition while in your Aura of Protection. If a Charmed ally enters the aura, that condition has no effect on that ally while there.</p>",
+   "rules": [
+    {
+     "kind": "aura_immunity",
+     "aura": "aura of protection",
+     "conditions": [
+      "charmed"
+     ]
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "subclass": "Oath of Devotion",
+    "level": 7
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_PALADIN_OATH_OF_DEVOTION_SMITE_OF_PROTECTION",
+   "name": "Smite of Protection",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Your magical smite now radiates protective energy. Whenever you cast Divine Smite, you and your allies have Half Cover while in your Aura of Protection. The aura has this benefit until the start of your next turn.</p>",
+   "data": {
+    "class": "Paladin",
+    "subclass": "Oath of Devotion",
+    "level": 15
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_PALADIN_OATH_OF_DEVOTION_HOLY_NIMBUS",
+   "name": "Holy Nimbus",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Bonus Action, you can imbue your Aura of Protection with holy power, granting the benefits below for 10 minutes or until you end them (no action required). Once you use this feature, you can’t use it again until you finish a Long Rest. You can also restore your use of it by expending a level 5 spell slot (no action required).</p>\n<p><b>Holy Ward.</b> You have Advantage on any saving throw you are forced to make by a Fiend or an Undead.</p>\n<p><b>Radiant Damage.</b> Whenever an enemy starts its turn in the aura, that creature takes Radiant damage equal to your Charisma modifier plus your Proficiency Bonus.</p>\n<p><b>Sunlight.</b> The aura is filled with Bright Light that is sunlight.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "holy nimbus",
+     "name": "Holy Nimbus",
+     "max": {
+      "type": "fixed",
+      "value": 1
+     },
+     "recharge": [
+      "long_rest"
+     ],
+     "alt_regain": "expend a level 5 spell slot"
+    }
+   ],
+   "data": {
+    "class": "Paladin",
+    "subclass": "Oath of Devotion",
+    "level": 20
+   }
+  }
+ ]
+}

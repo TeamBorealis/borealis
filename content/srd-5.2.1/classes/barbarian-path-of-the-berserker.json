@@ -1,0 +1,156 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/barbarian-path-of-the-berserker",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SUBCLASS_BARBARIAN_PATH_OF_THE_BERSERKER",
+   "name": "Path of the Berserker",
+   "type": "Archetype",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Barbarian Subclass"
+   ],
+   "description": "<p>Channel Rage into Violent Fury Barbarians who walk the Path of the Berserker direct their Rage primarily toward violence. Their path is one of untrammeled fury, and they thrill in the chaos of battle as they allow their Rage to seize and empower them.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_BARBARIAN_PATH_OF_THE_BERSERKER_FRENZY",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_BARBARIAN_PATH_OF_THE_BERSERKER_MINDLESS_RAGE",
+     "type": "Archetype Feature",
+     "level": 6
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_BARBARIAN_PATH_OF_THE_BERSERKER_RETALIATION",
+     "type": "Archetype Feature",
+     "level": 10
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_BARBARIAN_PATH_OF_THE_BERSERKER_INTIMIDATING_PRESENCE",
+     "type": "Archetype Feature",
+     "level": 14
+    }
+   ],
+   "data": {
+    "class": "ID_2024_CLASS_BARBARIAN",
+    "class_name": "Barbarian",
+    "level_gained": 3
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ARCHETYPE_PATH_OF_THE_BERSERKER",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_BARBARIAN_PATH_OF_THE_BERSERKER_FRENZY",
+   "name": "Frenzy",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>If you use Reckless Attack while your Rage is active, you deal extra damage to the first target you hit on your turn with a Strength-based attack. To determine the extra damage, roll a number of d6s equal to your Rage Damage bonus, and add them together. The damage has the same type as the weapon or Unarmed Strike used for the attack.</p>",
+   "rules": [
+    {
+     "kind": "extra_damage",
+     "name": "Frenzy",
+     "trigger": "Reckless Attack while Rage is active; first target hit with a Strength-based attack each turn",
+     "dice_count": {
+      "type": "stat",
+      "stat": "rage damage"
+     },
+     "die": "d6",
+     "once_per": "turn",
+     "first_target_only": true,
+     "damage_type": "same as the attack"
+    }
+   ],
+   "data": {
+    "class": "Barbarian",
+    "subclass": "Path of the Berserker",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_BARBARIAN_PATH_OF_THE_BERSERKER_MINDLESS_RAGE",
+   "name": "Mindless Rage",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>You have Immunity to the Charmed and Frightened conditions while your Rage is active. If you’re Charmed or Frightened when you enter your Rage, the condition ends on you.</p>",
+   "rules": [
+    {
+     "kind": "condition_immunity_while",
+     "toggle": "rage",
+     "conditions": [
+      "charmed",
+      "frightened"
+     ]
+    }
+   ],
+   "data": {
+    "class": "Barbarian",
+    "subclass": "Path of the Berserker",
+    "level": 6
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_BARBARIAN_PATH_OF_THE_BERSERKER_RETALIATION",
+   "name": "Retaliation",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you take damage from a creature that is within 5 feet of you, you can take a Reaction to make one melee attack against that creature, using a weapon or an Unarmed Strike.</p>",
+   "data": {
+    "class": "Barbarian",
+    "subclass": "Path of the Berserker",
+    "level": 10
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_BARBARIAN_PATH_OF_THE_BERSERKER_INTIMIDATING_PRESENCE",
+   "name": "Intimidating Presence",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Bonus Action, you can strike terror into others with your menacing presence and primal power. When you do so, each creature of your choice in a 30-foot Emanation originating from you must make a Wisdom saving throw (DC 8 plus your Strength modifier and Proficiency Bonus). On a failed save, a creature has the Frightened condition for 1 minute. At the end of each of the Frightened creature’s turns, the creature repeats the save, ending the effect on itself on a success.</p>\n<p>Once you use this feature, you can’t use it again until you finish a Long Rest unless you expend a use of your Rage (no action required) to restore your use of it.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "intimidating presence",
+     "name": "Intimidating Presence",
+     "max": {
+      "type": "fixed",
+      "value": 1
+     },
+     "recharge": [
+      "long_rest"
+     ],
+     "alt_regain": "expend a Rage use"
+    },
+    {
+     "kind": "save_dc",
+     "id": "intimidating presence",
+     "formula": "8+strength+proficiency"
+    }
+   ],
+   "data": {
+    "class": "Barbarian",
+    "subclass": "Path of the Berserker",
+    "level": 14
+   }
+  }
+ ]
+}

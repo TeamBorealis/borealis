@@ -1,0 +1,762 @@
+{
+ "format": "borealis-content/1",
+ "ruleset": "any",
+ "elements": [
+  {
+   "id": "ID_INTERNAL_OPTION_ALLOW_MULTICLASSING",
+   "name": "Multiclassing",
+   "type": "Option",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "default",
+     "value": "true"
+    },
+    {
+     "name": "locked",
+     "value": "true"
+    },
+    {
+     "name": "short",
+     "value": "Allows gaining levels in more than one class."
+    }
+   ],
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_MULTICLASS_SPELLCASTING",
+     "type": "Grants",
+     "requirements": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_MULTICLASSING_PREREQUISITE",
+   "name": "Multiclassing Prerequisite",
+   "type": "Grants",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "false"
+    }
+   ],
+   "description": "Granted when the main class allows taking a second class."
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_2",
+   "name": "Multiclassing (Level 2)",
+   "type": "Grants",
+   "source": "Internal",
+   "setters": [
+    {
+     "name": "level",
+     "value": "2"
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_3",
+   "name": "Multiclassing (Level 3)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_4",
+   "name": "Multiclassing (Level 4)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_5",
+   "name": "Multiclassing (Level 5)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_6",
+   "name": "Multiclassing (Level 6)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_7",
+   "name": "Multiclassing (Level 7)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_8",
+   "name": "Multiclassing (Level 8)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_9",
+   "name": "Multiclassing (Level 9)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_10",
+   "name": "Multiclassing (Level 10)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_11",
+   "name": "Multiclassing (Level 11)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_12",
+   "name": "Multiclassing (Level 12)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_13",
+   "name": "Multiclassing (Level 13)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_14",
+   "name": "Multiclassing (Level 14)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_15",
+   "name": "Multiclassing (Level 15)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_16",
+   "name": "Multiclassing (Level 16)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_17",
+   "name": "Multiclassing (Level 17)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_18",
+   "name": "Multiclassing (Level 18)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_19",
+   "name": "Multiclassing (Level 19)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_MULTICLASS_LEVEL_20",
+   "name": "Multiclassing (Level 20)",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_MULTICLASS_SPELLCASTING",
+   "name": "Multiclass Spellcasting",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:1",
+     "value": "2",
+     "level": 1
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:1",
+     "value": "1",
+     "level": 2
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:1",
+     "value": "1",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:2",
+     "value": "2",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:2",
+     "value": "1",
+     "level": 4
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:3",
+     "value": "2",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:3",
+     "value": "1",
+     "level": 6
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:4",
+     "value": "1",
+     "level": 7
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:4",
+     "value": "1",
+     "level": 8
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:4",
+     "value": "1",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:5",
+     "value": "1",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:5",
+     "value": "1",
+     "level": 10
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:6",
+     "value": "1",
+     "level": 11
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:7",
+     "value": "1",
+     "level": 13
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:8",
+     "value": "1",
+     "level": 15
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:9",
+     "value": "1",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:5",
+     "value": "1",
+     "level": 18
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:6",
+     "value": "1",
+     "level": 19
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:slot:7",
+     "value": "1",
+     "level": 20
+    }
+   ],
+   "description": "Spell slots by combined caster level (cumulative rules)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_SOLO",
+   "name": "Multiclass Spellcasting Slots Solo",
+   "type": "Grants",
+   "source": "Internal"
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_FULL",
+   "name": "Multiclass Spellcasting Slots Full",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 1
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 2
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 4
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 6
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 7
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 8
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 10
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 11
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 12
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 13
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 14
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 15
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 16
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 18
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 19
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 20
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_HALF",
+   "name": "Multiclass Spellcasting Slots Half",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 2
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 4
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 6
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 8
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 10
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 12
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 14
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 16
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 18
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 20
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_THIRD",
+   "name": "Multiclass Spellcasting Slots Third",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 6
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 12
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 15
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 18
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_FOURTH",
+   "name": "Multiclass Spellcasting Slots Fourth",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 4
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 8
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 12
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 16
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 20
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_FIFTH",
+   "name": "Multiclass Spellcasting Slots Fifth",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 10
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 15
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 20
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_HALF_UP",
+   "name": "Multiclass Spellcasting Slots Half Up",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 1
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 3
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 7
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 9
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 11
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 13
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 15
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 19
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_THIRD_UP",
+   "name": "Multiclass Spellcasting Slots Third Up",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 2
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 5
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 8
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 11
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 14
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 17
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 20
+    }
+   ]
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_MULTICLASS_SPELLCASTING_SLOTS_FOURTH_UP",
+   "name": "Multiclass Spellcasting Slots Fourth Up",
+   "type": "Grants",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 2
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 6
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 10
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 14
+    },
+    {
+     "kind": "stat",
+     "name": "multiclass:spellcasting:level",
+     "value": "1",
+     "level": 18
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,219 @@
+{
+ "format": "borealis-content/1",
+ "info": {
+  "name": "SRD 5.2.1: classes/cleric-life-domain",
+  "description": "Bundled 2024-rules content, SRD 5.2.1 (CC-BY-4.0).",
+  "update": {
+   "version": "1.0.0"
+  }
+ },
+ "ruleset": "dnd2024",
+ "elements": [
+  {
+   "id": "ID_2024_SUBCLASS_CLERIC_LIFE_DOMAIN",
+   "name": "Life Domain",
+   "type": "Archetype",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "supports": [
+    "Cleric Subclass"
+   ],
+   "description": "<p>The Life Domain focuses on the positive energy that helps sustain all life in the multiverse. Clerics who tap into this domain are masters of healing, using that life force to cure many hurts.</p>\n<p>Existence itself relies on the positive energy associated with this domain, so a Cleric of almost any religious tradition might choose it. This domain is particularly associated with agricultural deities, gods of healing or endurance, and gods of home and community. Religious orders of healing also seek the magic of this domain.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_CLERIC_LIFE_DOMAIN_DISCIPLE_OF_LIFE",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_CLERIC_LIFE_DOMAIN_LIFE_DOMAIN_SPELLS",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_CLERIC_LIFE_DOMAIN_PRESERVE_LIFE",
+     "type": "Archetype Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_CLERIC_LIFE_DOMAIN_BLESSED_HEALER",
+     "type": "Archetype Feature",
+     "level": 6
+    },
+    {
+     "kind": "grant",
+     "id": "ID_2024_SUBCLASS_FEATURE_CLERIC_LIFE_DOMAIN_SUPREME_HEALING",
+     "type": "Archetype Feature",
+     "level": 17
+    }
+   ],
+   "data": {
+    "class": "ID_2024_CLASS_CLERIC",
+    "class_name": "Cleric",
+    "level_gained": 3
+   },
+   "maps_to": {
+    "dnd2014": "ID_WOTC_PHB_ARCHETYPE_LIFEDOMAIN",
+    "kind": "equivalent"
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_CLERIC_LIFE_DOMAIN_DISCIPLE_OF_LIFE",
+   "name": "Disciple of Life",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When a spell you cast with a spell slot restores Hit Points to a creature, that creature regains additional Hit Points on the turn you cast the spell. The additional Hit Points equal 2 plus the spell slot’s level.</p>",
+   "data": {
+    "class": "Cleric",
+    "subclass": "Life Domain",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_CLERIC_LIFE_DOMAIN_LIFE_DOMAIN_SPELLS",
+   "name": "Life Domain Spells",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>Your connection to this divine domain ensures you always have certain spells ready. When you reach a Cleric level specified in the Life Domain Spells table, you thereafter always have the listed spells prepared. Life Domain Spells</p>\n<pre>Cleric        Prepared Spells</pre>\n<p>Level</p>\n<pre>      3       Aid, Bless, Cure Wounds,\n              Lesser Restoration\n      5       Mass Healing Word, Revivify\n      7       Aura of Life, Death Ward\n      9       Greater Restoration, Mass Cure Wounds</pre>",
+   "rules": [
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_AID",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Cleric"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_BLESS",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Cleric"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_CURE_WOUNDS",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Cleric"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 3,
+     "spell": "ID_2024_SPELL_LESSER_RESTORATION",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Cleric"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 5,
+     "spell": "ID_2024_SPELL_MASS_HEALING_WORD",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Cleric"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 5,
+     "spell": "ID_2024_SPELL_REVIVIFY",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Cleric"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 7,
+     "spell": "ID_2024_SPELL_AURA_OF_LIFE",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Cleric"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 7,
+     "spell": "ID_2024_SPELL_DEATH_WARD",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Cleric"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 9,
+     "spell": "ID_2024_SPELL_GREATER_RESTORATION",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Cleric"
+    },
+    {
+     "kind": "grant_spell",
+     "level": 9,
+     "spell": "ID_2024_SPELL_MASS_CURE_WOUNDS",
+     "mode": "always_prepared",
+     "counts_against_prepared": false,
+     "spell_list": "Cleric"
+    }
+   ],
+   "data": {
+    "class": "Cleric",
+    "subclass": "Life Domain",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_CLERIC_LIFE_DOMAIN_PRESERVE_LIFE",
+   "name": "Preserve Life",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>As a Magic action, you present your Holy Symbol and expend a use of your Channel Divinity to evoke healing energy that can restore a number of Hit Points equal to five times your Cleric level. Choose Bloodied creatures within 30 feet of yourself (which can include you), and divide those Hit Points among them. This feature can restore a creature to no more than half its Hit Point maximum.</p>",
+   "rules": [
+    {
+     "kind": "channel_divinity_option",
+     "pool_hit_points": "5*cleric level",
+     "max_fraction": "half hit point maximum"
+    }
+   ],
+   "data": {
+    "class": "Cleric",
+    "subclass": "Life Domain",
+    "level": 3
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_CLERIC_LIFE_DOMAIN_BLESSED_HEALER",
+   "name": "Blessed Healer",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>The healing spells you cast on others heal you as well. Immediately after you cast a spell with a spell slot that restores Hit Points to one or more creatures other than yourself, you regain Hit Points equal to 2 plus the spell slot’s level.</p>",
+   "data": {
+    "class": "Cleric",
+    "subclass": "Life Domain",
+    "level": 6
+   }
+  },
+  {
+   "id": "ID_2024_SUBCLASS_FEATURE_CLERIC_LIFE_DOMAIN_SUPREME_HEALING",
+   "name": "Supreme Healing",
+   "type": "Archetype Feature",
+   "source": "SRD 5.2.1",
+   "ruleset": "dnd2024",
+   "description": "<p>When you would normally roll one or more dice to restore Hit Points to a creature with a spell or Channel Divinity, don’t roll those dice for the healing; instead use the highest number possible for each die. For example, instead of restoring 2d6 Hit Points to a creature with a spell, you restore 12.</p>",
+   "data": {
+    "class": "Cleric",
+    "subclass": "Life Domain",
+    "level": 17
+   }
+  }
+ ]
+}

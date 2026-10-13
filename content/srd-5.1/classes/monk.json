@@ -1,0 +1,994 @@
+{
+  "format": "borealis-content/1",
+  "ruleset": "dnd2014",
+  "info": {
+    "name": "SRD 5.1 Monk"
+  },
+  "elements": [
+    {
+      "id": "ID_WOTC_PHB_CLASS_MONK",
+      "name": "Monk",
+      "type": "Class",
+      "source": "SRD 5.1",
+      "description": "<p>As a monk, you gain the following class features.</p><h5>HIT POINTS</h5><p><strong>Hit Dice:</strong> 1d8 per monk level</p><p><strong>Hit Points at 1st Level:</strong> 8 + your Constitution modifier</p><p><strong>Hit Points at Higher Levels:</strong> 1d8 (or 5) + your Constitution modifier per monk level after 1st</p><h5>PROFICIENCIES</h5><p><strong>Armor:</strong> None</p><p><strong>Weapons:</strong> Simple weapons, shortswords</p><p><strong>Tools:</strong> Choose one type of artisan’s tools or one musical instrument</p><p><strong>Saving Throws:</strong> Strength, Dexterity</p><p><strong>Skills:</strong> Choose two from Acrobatics, Athletics, History, Insight, Religion, and Stealth</p><h5>EQUIPMENT</h5><p>You start with the following equipment, in addition to the equipment granted by your background:</p><ul><li>(<em>a</em>) a shortsword or (<em>b</em>) any simple weapon</li><li>(<em>a</em>) a dungeoneer’s pack or (<em>b</em>) an explorer’s pack</li><li>10 darts</li></ul><h5 class=\"caption\">THE MONK</h5><table class=\"class-features\"><thead><tr><th>Level</th><th>Proficiency Bonus</th><th>Features</th><th>Martial Arts</th><th>Ki Points</th><th>Unarmored Movement</th></tr></thead><tbody><tr><td>1st</td><td>+2</td><td>Unarmored Defense, Martial Arts</td><td>1d4</td><td>—</td><td>—</td></tr><tr><td>2nd</td><td>+2</td><td>Ki, Unarmored Movement</td><td>1d4</td><td>2</td><td>+10 ft.</td></tr><tr><td>3rd</td><td>+2</td><td>Monastic Tradition, Deflect Missiles</td><td>1d4</td><td>3</td><td>+10 ft.</td></tr><tr><td>4th</td><td>+2</td><td>Ability Score Improvement, Slow Fall</td><td>1d4</td><td>4</td><td>+10 ft.</td></tr><tr><td>5th</td><td>+3</td><td>Extra Attack, Stunning Strike</td><td>1d6</td><td>5</td><td>+10 ft.</td></tr><tr><td>6th</td><td>+3</td><td>Ki-Empowered Strikes, Tradition feature</td><td>1d6</td><td>6</td><td>+15 ft.</td></tr><tr><td>7th</td><td>+3</td><td>Evasion, Stillness of Mind</td><td>1d6</td><td>7</td><td>+15 ft.</td></tr><tr><td>8th</td><td>+3</td><td>Ability Score Improvement</td><td>1d6</td><td>8</td><td>+15 ft.</td></tr><tr><td>9th</td><td>+4</td><td>Unarmored Movement improvement</td><td>1d6</td><td>9</td><td>+15 ft.</td></tr><tr><td>10th</td><td>+4</td><td>Purity of Body</td><td>1d6</td><td>10</td><td>+20 ft.</td></tr><tr><td>11th</td><td>+4</td><td>Tradition feature</td><td>1d8</td><td>11</td><td>+20 ft.</td></tr><tr><td>12th</td><td>+4</td><td>Ability Score Improvement</td><td>1d8</td><td>12</td><td>+20 ft.</td></tr><tr><td>13th</td><td>+5</td><td>Tongue of the Sun and Moon</td><td>1d8</td><td>13</td><td>+20 ft.</td></tr><tr><td>14th</td><td>+5</td><td>Diamond Soul</td><td>1d8</td><td>14</td><td>+25 ft.</td></tr><tr><td>15th</td><td>+5</td><td>Timeless Body</td><td>1d8</td><td>15</td><td>+25 ft.</td></tr><tr><td>16th</td><td>+5</td><td>Ability Score Improvement</td><td>1d8</td><td>16</td><td>+25 ft.</td></tr><tr><td>17th</td><td>+6</td><td>Tradition feature</td><td>1d10</td><td>17</td><td>+25 ft.</td></tr><tr><td>18th</td><td>+6</td><td>Empty Body</td><td>1d10</td><td>18</td><td>+30 ft.</td></tr><tr><td>19th</td><td>+6</td><td>Ability Score Improvement</td><td>1d10</td><td>19</td><td>+30 ft.</td></tr><tr><td>20th</td><td>+6</td><td>Perfect Self</td><td>1d10</td><td>20</td><td>+30 ft.</td></tr></tbody></table>",
+      "sheet": {
+        "display": false,
+        "descriptions": [
+          {
+            "text": "A master of martial arts, harnessing the power of the body in pursuit of physical and spiritual perfection."
+          }
+        ]
+      },
+      "setters": [
+        {
+          "name": "short",
+          "value": "A master of martial arts, harnessing the power of the body in pursuit of physical and spiritual perfection."
+        },
+        {
+          "name": "hd",
+          "value": "d8"
+        }
+      ],
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_MONK"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SHORTSWORD",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_MONK"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_STRENGTH",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_MONK"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_DEXTERITY",
+          "type": "Proficiency",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_MONK"
+        },
+        {
+          "kind": "select",
+          "type": "Proficiency",
+          "name": "Tool Proficiency (Monk)",
+          "supports": "Musical Instrument||Artisan tools",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_MONK"
+        },
+        {
+          "kind": "select",
+          "type": "Proficiency",
+          "name": "Skill Proficiency (Monk)",
+          "number": 2,
+          "supports": "Skill,Monk",
+          "requirements": "!ID_WOTC_PHB_MULTICLASS_MONK"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_UNARMORED_DEFENSE",
+          "type": "Class Feature",
+          "level": 1
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_MARTIAL_ARTS",
+          "type": "Class Feature",
+          "level": 1
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_KI",
+          "type": "Class Feature",
+          "level": 2
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_UNARMORED_MOVEMENT",
+          "type": "Class Feature",
+          "level": 2
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_MONASTIC_TRADITION",
+          "type": "Class Feature",
+          "level": 3
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_DEFLECT_MISSILES",
+          "type": "Class Feature",
+          "level": 3
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_ABILITYSCOREIMPROVEMENT_MONK",
+          "type": "Class Feature",
+          "level": 4
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_SLOW_FALL",
+          "type": "Class Feature",
+          "level": 4
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_EXTRA_ATTACK_MONK",
+          "type": "Class Feature",
+          "level": 5
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_STUNNING_STRIKE",
+          "type": "Class Feature",
+          "level": 5
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_KI_EMPOWERED_STRIKES",
+          "type": "Class Feature",
+          "level": 6
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_EVASION_MONK",
+          "type": "Class Feature",
+          "level": 7
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_STILLNESS_OF_MIND",
+          "type": "Class Feature",
+          "level": 7
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_PURITY_OF_BODY",
+          "type": "Class Feature",
+          "level": 10
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_TONGUE_OF_THE_SUN_AND_MOON",
+          "type": "Class Feature",
+          "level": 13
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_DIAMOND_SOUL",
+          "type": "Class Feature",
+          "level": 14
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_TIMELESS_BODY_MONK",
+          "type": "Class Feature",
+          "level": 15
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_EMPTY_BODY",
+          "type": "Class Feature",
+          "level": 18
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_PERFECT_SELF",
+          "type": "Class Feature",
+          "level": 20
+        }
+      ],
+      "multiclass": {
+        "id": "ID_WOTC_PHB_MULTICLASS_MONK",
+        "prerequisite": "Dexterity 13 and Wisdom 13",
+        "requirements": "([dex:13],[wis:13])",
+        "setters": [
+          {
+            "name": "multiclass proficiencies",
+            "value": "Simple weapons, shortswords"
+          }
+        ],
+        "rules": [
+          {
+            "kind": "grant",
+            "id": "ID_INTERNAL_GRANT_MULTICLASS",
+            "type": "Grants"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+            "type": "Proficiency"
+          },
+          {
+            "kind": "grant",
+            "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SHORTSWORD",
+            "type": "Proficiency"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_UNARMORED_DEFENSE",
+      "name": "Unarmored Defense",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning at 1st level, while you are wearing no armor and not wielding a shield, your AC equals 10 + your Dexterity modifier + your Wisdom modifier.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Beginning at 1st level, while you are wearing no armor and not wielding a shield, your AC equals 10 + your Dexterity modifier + your Wisdom modifier."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ac:unarmored defense monk:base",
+          "value": "10"
+        },
+        {
+          "kind": "stat",
+          "name": "ac:unarmored defense monk:dexterity",
+          "value": "dexterity:modifier"
+        },
+        {
+          "kind": "stat",
+          "name": "ac:unarmored defense monk:wisdom",
+          "value": "wisdom:modifier"
+        },
+        {
+          "kind": "stat",
+          "name": "ac:unarmored defense monk",
+          "value": "ac:unarmored defense monk:base"
+        },
+        {
+          "kind": "stat",
+          "name": "ac:unarmored defense monk",
+          "value": "ac:unarmored defense monk:dexterity"
+        },
+        {
+          "kind": "stat",
+          "name": "ac:unarmored defense monk",
+          "value": "ac:unarmored defense monk:wisdom"
+        },
+        {
+          "kind": "stat",
+          "name": "ac:calculation",
+          "value": "ac:unarmored defense monk",
+          "bonus": "calculation",
+          "equipped": "[armor:none],[shield:none]",
+          "alt": "Unarmored Defense (Monk)"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_MARTIAL_ARTS",
+      "name": "Martial Arts",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 1st level, your practice of martial arts gives you mastery of combat styles that use unarmed strikes and monk weapons, which are shortswords and any simple melee weapons that don’t have the two-handed or heavy property.</p><p>You gain the following benefits while you are unarmed or wielding only monk weapons and you aren’t wearing armor or wielding a shield:</p><ul><li>You can use Dexterity instead of Strength for the attack and damage rolls of your unarmed strikes and monk weapons.</li><li>You can roll a d4 in place of the normal damage of your unarmed strike or monk weapon. This die changes as you gain monk levels, as shown in the Martial Arts column of the Monk table.</li><li>When you use the Attack action with an unarmed strike or a monk weapon on your turn, you can</li></ul><p>make one unarmed strike as a bonus action. For example, if you take the Attack action and attack with a quarterstaff, you can also make an unarmed strike as a bonus action, assuming you haven’t already taken a bonus action this turn.</p><p>Certain monasteries use specialized forms of the monk weapons. For example, you might use a club that is two lengths of wood connected by a short chain (called a nunchaku) or a sickle with a shorter, straighter blade (called a kama). Whatever name you use for a monk weapon, you can use the game statistics provided for the weapon.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Use Dexterity for unarmed strikes and monk weapons; unarmed damage die d{{martial arts:dice}}; one unarmed strike as a bonus action after the Attack action."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "martial arts:attack",
+          "value": "strength:modifier",
+          "bonus": "martial arts"
+        },
+        {
+          "kind": "stat",
+          "name": "martial arts:attack",
+          "value": "dexterity:modifier",
+          "bonus": "martial arts"
+        },
+        {
+          "kind": "stat",
+          "name": "martial arts:damage",
+          "value": "strength:modifier",
+          "bonus": "martial arts"
+        },
+        {
+          "kind": "stat",
+          "name": "martial arts:damage",
+          "value": "dexterity:modifier",
+          "bonus": "martial arts"
+        },
+        {
+          "kind": "stat",
+          "name": "martial arts:dice",
+          "value": "4",
+          "bonus": "martial arts",
+          "level": 1
+        },
+        {
+          "kind": "stat",
+          "name": "martial arts:dice",
+          "value": "6",
+          "bonus": "martial arts",
+          "level": 5
+        },
+        {
+          "kind": "stat",
+          "name": "martial arts:dice",
+          "value": "8",
+          "bonus": "martial arts",
+          "level": 11
+        },
+        {
+          "kind": "stat",
+          "name": "martial arts:dice",
+          "value": "10",
+          "bonus": "martial arts",
+          "level": 17
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_KI",
+      "name": "Ki",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 2nd level, your training allows you to harness the mystic energy of ki. Your access to this energy is represented by a number of ki points. Your monk level determines the number of points you have, as shown in the Ki Points column of the Monk table.</p><p>You can spend these points to fuel various ki features. You start knowing three such features: Flurry of Blows, Patient Defense, and Step of the Wind. You learn more ki features as you gain levels in this class.</p><p>When you spend a ki point, it is unavailable until you finish a short or long rest, at the end of which you draw all of your expended ki back into yourself. You must spend at least 30 minutes of the rest meditating to regain your ki points.</p><p>Some of your ki features require your target to make a saving throw to resist the feature’s effects. The saving throw DC is calculated as follows:</p><p><strong>Ki save DC</strong> =8 + your proficiency bonus + your Wisdom modifier</p>",
+      "sheet": {
+        "usage": "{{ki:points}}/Short Rest",
+        "descriptions": [
+          {
+            "text": "Ki save DC {{ki:dc}}."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "ki:points",
+          "value": "level:monk"
+        },
+        {
+          "kind": "stat",
+          "name": "ki:dc",
+          "value": "8"
+        },
+        {
+          "kind": "stat",
+          "name": "ki:dc",
+          "value": "proficiency"
+        },
+        {
+          "kind": "stat",
+          "name": "ki:dc",
+          "value": "wisdom:modifier"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_KI_FLURRY_OF_BLOWS",
+          "type": "Class Feature"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_KI_PATIENT_DEFENSE",
+          "type": "Class Feature"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_KI_STEP_OF_THE_WIND",
+          "type": "Class Feature"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_KI_FLURRY_OF_BLOWS",
+      "name": "Flurry of Blows",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Immediately after you take the Attack action on your turn, you can spend 1 ki point to make two unarmed strikes as a bonus action.</p>",
+      "sheet": {
+        "usage": "1 ki point",
+        "action": "Bonus Action",
+        "descriptions": [
+          {
+            "text": "Immediately after you take the Attack action on your turn, you can spend 1 ki point to make two unarmed strikes as a bonus action."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_KI_PATIENT_DEFENSE",
+      "name": "Patient Defense",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>You can spend 1 ki point to take the Dodge action as a bonus action on your turn.</p>",
+      "sheet": {
+        "usage": "1 ki point",
+        "action": "Bonus Action",
+        "descriptions": [
+          {
+            "text": "You can spend 1 ki point to take the Dodge action as a bonus action on your turn."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_KI_STEP_OF_THE_WIND",
+      "name": "Step of the Wind",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>You can spend 1 ki point to take the Disengage or Dash action as a bonus action on your turn, and your jump distance is doubled for the turn.</p>",
+      "sheet": {
+        "usage": "1 ki point",
+        "action": "Bonus Action",
+        "descriptions": [
+          {
+            "text": "You can spend 1 ki point to take the Disengage or Dash action as a bonus action on your turn, and your jump distance is doubled for the turn."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_UNARMORED_MOVEMENT",
+      "name": "Unarmored Movement",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 2nd level, your speed increases by 10 feet while you are not wearing armor or wielding a shield. This bonus increases when you reach certain monk levels, as shown in the Monk table.</p><p>At 9th level, you gain the ability to move along vertical surfaces and across liquids on your turn without falling during the move.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Starting at 2nd level, your speed increases by 10 feet while you are not wearing armor or wielding a shield. This bonus increases when you reach certain monk levels, as shown in the Monk table."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "monk:unarmored movement",
+          "value": "10",
+          "bonus": "unarmored movement",
+          "level": 2
+        },
+        {
+          "kind": "stat",
+          "name": "monk:unarmored movement",
+          "value": "15",
+          "bonus": "unarmored movement",
+          "level": 6
+        },
+        {
+          "kind": "stat",
+          "name": "monk:unarmored movement",
+          "value": "20",
+          "bonus": "unarmored movement",
+          "level": 10
+        },
+        {
+          "kind": "stat",
+          "name": "monk:unarmored movement",
+          "value": "25",
+          "bonus": "unarmored movement",
+          "level": 14
+        },
+        {
+          "kind": "stat",
+          "name": "monk:unarmored movement",
+          "value": "30",
+          "bonus": "unarmored movement",
+          "level": 18
+        },
+        {
+          "kind": "stat",
+          "name": "innate speed:misc",
+          "value": "monk:unarmored movement",
+          "bonus": "unarmored movement",
+          "requirements": "[innate speed:1]",
+          "equipped": "[armor:none],[shield:none]"
+        },
+        {
+          "kind": "stat",
+          "name": "innate speed:climb:misc",
+          "value": "monk:unarmored movement",
+          "bonus": "unarmored movement",
+          "requirements": "[innate speed:climb:1]",
+          "equipped": "[armor:none],[shield:none]"
+        },
+        {
+          "kind": "stat",
+          "name": "innate speed:fly:misc",
+          "value": "monk:unarmored movement",
+          "bonus": "unarmored movement",
+          "requirements": "[innate speed:fly:1]",
+          "equipped": "[armor:none],[shield:none]"
+        },
+        {
+          "kind": "stat",
+          "name": "innate speed:swim:misc",
+          "value": "monk:unarmored movement",
+          "bonus": "unarmored movement",
+          "requirements": "[innate speed:swim:1]",
+          "equipped": "[armor:none],[shield:none]"
+        },
+        {
+          "kind": "stat",
+          "name": "innate speed:burrow:misc",
+          "value": "monk:unarmored movement",
+          "bonus": "unarmored movement",
+          "requirements": "[innate speed:burrow:1]",
+          "equipped": "[armor:none],[shield:none]"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_MONASTIC_TRADITION",
+      "name": "Monastic Tradition",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>When you reach 3rd level, you commit yourself to a monastic tradition, such as the Way of the Open Hand. Your tradition grants you features at 3rd level and again at 6th, 11th, and 17th level.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Archetype",
+          "name": "Monastic Tradition",
+          "level": 3,
+          "supports": "Monastic Tradition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_DEFLECT_MISSILES",
+      "name": "Deflect Missiles",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 3rd level, you can use your reaction to deflect or catch the missile when you are hit by a ranged weapon attack. When you do so, the damage you take from the attack is reduced by 1d10 + your Dexterity modifier + your monk level.</p><p>If you reduce the damage to 0, you can catch the missile if it is small enough for you to hold in one hand and you have at least one hand free. If you catch a missile in this way, you can spend 1 ki point to make a ranged attack with the weapon or piece of ammunition you just caught, as part of the same reaction. You make this attack with proficiency, regardless of your weapon proficiencies, and the missile counts as a monk weapon for the attack, which has a normal range of 20 feet and a long range of 60 feet.</p>",
+      "sheet": {
+        "action": "Reaction",
+        "descriptions": [
+          {
+            "text": "Reduce ranged weapon damage by 1d10 + {{monk:deflect missiles bonus}}."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "monk:deflect missiles bonus",
+          "value": "dexterity:modifier"
+        },
+        {
+          "kind": "stat",
+          "name": "monk:deflect missiles bonus",
+          "value": "level:monk"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_ABILITYSCOREIMPROVEMENT_MONK",
+      "name": "Ability Score Improvement",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>When you reach 4th level, and again at 8th, 12th, 16th, and 19th level, you can increase one ability score of your choice by 2, or you can increase two ability scores of your choice by 1. As normal, you can’t increase an ability score above 20 using this feature.</p>",
+      "sheet": {
+        "display": false
+      },
+      "compendium": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Monk 4)",
+          "level": 4,
+          "supports": "Improvement Option,Monk,4"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Monk 8)",
+          "level": 8,
+          "supports": "Improvement Option,Monk,8"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Monk 12)",
+          "level": 12,
+          "supports": "Improvement Option,Monk,12"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Monk 16)",
+          "level": 16,
+          "supports": "Improvement Option,Monk,16"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Improvement Option (Monk 19)",
+          "level": 19,
+          "supports": "Improvement Option,Monk,19"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_SLOW_FALL",
+      "name": "Slow Fall",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning at 4th level, you can use your reaction when you fall to reduce any falling damage you take by an amount equal to five times your monk level.</p>",
+      "sheet": {
+        "action": "Reaction",
+        "descriptions": [
+          {
+            "text": "Reduce falling damage by {{monk:slow fall}}."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "monk:slow fall",
+          "value": "level:monk"
+        },
+        {
+          "kind": "stat",
+          "name": "monk:slow fall",
+          "value": "level:monk"
+        },
+        {
+          "kind": "stat",
+          "name": "monk:slow fall",
+          "value": "level:monk"
+        },
+        {
+          "kind": "stat",
+          "name": "monk:slow fall",
+          "value": "level:monk"
+        },
+        {
+          "kind": "stat",
+          "name": "monk:slow fall",
+          "value": "level:monk"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_EXTRA_ATTACK_MONK",
+      "name": "Extra Attack",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning at 5th level, you can attack twice, instead of once, whenever you take the Attack action on your turn.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Beginning at 5th level, you can attack twice, instead of once, whenever you take the Attack action on your turn."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "extra attack:count",
+          "value": "2",
+          "bonus": "extra attack",
+          "level": 5
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_STUNNING_STRIKE",
+      "name": "Stunning Strike",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 5th level, you can interfere with the flow of ki in an opponent’s body. When you hit another creature with a melee weapon attack, you can spend 1 ki point to attempt a stunning strike. The target must succeed on a Constitution saving throw or be stunned until the end of your next turn.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Starting at 5th level, you can interfere with the flow of ki in an opponent’s body. When you hit another creature with a melee weapon attack, you can spend 1 ki point to attempt a stunning strike. The target must succeed on a Constitution saving throw or be stunned until the end of your next turn."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_KI_EMPOWERED_STRIKES",
+      "name": "Ki-Empowered Strikes",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 6th level, your unarmed strikes count as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Starting at 6th level, your unarmed strikes count as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_EVASION_MONK",
+      "name": "Evasion",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 7th level, your instinctive agility lets you dodge out of the way of certain area effects, such as a blue dragon’s lightning breath or a <em>fireball</em> spell. When you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "At 7th level, your instinctive agility lets you dodge out of the way of certain area effects, such as a blue dragon’s lightning breath or a fireball spell."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_STILLNESS_OF_MIND",
+      "name": "Stillness of Mind",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 7th level, you can use your action to end one effect on yourself that is causing you to be charmed or frightened.</p>",
+      "sheet": {
+        "action": "Action"
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_PURITY_OF_BODY",
+      "name": "Purity of Body",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 10th level, your mastery of the ki flowing through you makes you immune to disease and poison.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "At 10th level, your mastery of the ki flowing through you makes you immune to disease and poison."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_INTERNAL_CONDITION_DAMAGE_IMMUNITY_POISON",
+          "type": "Condition"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_TONGUE_OF_THE_SUN_AND_MOON",
+      "name": "Tongue of the Sun and Moon",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting at 13th level, you learn to touch the ki of other minds so that you understand all spoken languages. Moreover, any creature that can understand a language can understand what you say.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Starting at 13th level, you learn to touch the ki of other minds so that you understand all spoken languages. Moreover, any creature that can understand a language can understand what you say."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_DIAMOND_SOUL",
+      "name": "Diamond Soul",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning at 14th level, your mastery of ki grants you proficiency in all saving throws.</p><p>Additionally, whenever you make a saving throw and fail, you can spend 1 ki point to reroll it and take the second result.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Beginning at 14th level, your mastery of ki grants you proficiency in all saving throws. Additionally, whenever you make a saving throw and fail, you can spend 1 ki point to reroll it and take the second result."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_STRENGTH",
+          "type": "Proficiency"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_DEXTERITY",
+          "type": "Proficiency"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_CONSTITUTION",
+          "type": "Proficiency"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_INTELLIGENCE",
+          "type": "Proficiency"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_WISDOM",
+          "type": "Proficiency"
+        },
+        {
+          "kind": "grant",
+          "id": "ID_PROFICIENCY_SAVINGTHROW_CHARISMA",
+          "type": "Proficiency"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_TIMELESS_BODY_MONK",
+      "name": "Timeless Body",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 15th level, your ki sustains you so that you suffer none of the frailty of old age, and you can’t be aged magically. You can still die of old age, however. In addition, you no longer need food or water.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "At 15th level, your ki sustains you so that you suffer none of the frailty of old age, and you can’t be aged magically. You can still die of old age, however. In addition, you no longer need food or water."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_EMPTY_BODY",
+      "name": "Empty Body",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning at 18th level, you can use your action to spend 4 ki points to become invisible for 1 minute. During that time, you also have resistance to all damage but force damage.</p><p>Additionally, you can spend 8 ki points to cast the <em>astral projection</em> spell, without needing material components. When you do so, you can’t take any other creatures with you.</p>",
+      "sheet": {
+        "usage": "4 ki points",
+        "action": "Action"
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_MONK_PERFECT_SELF",
+      "name": "Perfect Self",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 20th level, when you roll for initiative and have no ki points remaining, you regain 4 ki points.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "At 20th level, when you roll for initiative and have no ki points remaining, you regain 4 ki points."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_WAY_OF_THE_OPEN_HAND",
+      "name": "Way of the Open Hand",
+      "type": "Archetype",
+      "source": "SRD 5.1",
+      "supports": [
+        "Monastic Tradition"
+      ],
+      "description": "<p>Monks of the Way of the Open Hand are the ultimate masters of martial arts combat, whether armed or unarmed. They learn techniques to push and trip their opponents, manipulate ki to heal damage to their bodies, and practice advanced meditation that can protect them from harm.</p>",
+      "sheet": {
+        "display": false
+      },
+      "rules": [
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WAYOFTHEOPENHAND_OPEN_HAND_TECHNIQUE",
+          "type": "Archetype Feature",
+          "level": 3
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WAYOFTHEOPENHAND_WHOLENESS_OF_BODY",
+          "type": "Archetype Feature",
+          "level": 6
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WAYOFTHEOPENHAND_TRANQUILITY",
+          "type": "Archetype Feature",
+          "level": 11
+        },
+        {
+          "kind": "grant",
+          "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WAYOFTHEOPENHAND_QUIVERING_PALM",
+          "type": "Archetype Feature",
+          "level": 17
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WAYOFTHEOPENHAND_OPEN_HAND_TECHNIQUE",
+      "name": "Open Hand Technique",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Starting when you choose this tradition at 3rd level, you can manipulate your enemy’s ki when you harness your own. Whenever you hit a creature with one of the attacks granted by your Flurry of Blows, you can impose one of the following effects on that target:</p><ul><li>It must succeed on a Dexterity saving throw or be knocked prone.</li><li>It must make a Strength saving throw. If it fails, you can push it up to 15 feet away from you.</li><li>It can’t take reactions until the end of your next turn.</li></ul>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Starting when you choose this tradition at 3rd level, you can manipulate your enemy’s ki when you harness your own."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WAYOFTHEOPENHAND_WHOLENESS_OF_BODY",
+      "name": "Wholeness of Body",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 6th level, you gain the ability to heal yourself. As an action, you can regain hit points equal to three times your monk level. You must finish a long rest before you can use this feature again.</p>",
+      "sheet": {
+        "usage": "1/Long Rest",
+        "action": "Action",
+        "descriptions": [
+          {
+            "text": "Regain {{monk:wholeness of body}} hit points."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "monk:wholeness of body",
+          "value": "level:monk"
+        },
+        {
+          "kind": "stat",
+          "name": "monk:wholeness of body",
+          "value": "level:monk"
+        },
+        {
+          "kind": "stat",
+          "name": "monk:wholeness of body",
+          "value": "level:monk"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WAYOFTHEOPENHAND_TRANQUILITY",
+      "name": "Tranquility",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>Beginning at 11th level, you can enter a special meditation that surrounds you with an aura of peace. At the end of a long rest, you gain the effect of a <em>sanctuary</em> spell that lasts until the start of your next long rest (the spell can end early as normal). The saving throw DC for the spell equals 8 + your Wisdom modifier + your proficiency bonus.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Sanctuary effect after a rest, save DC {{tranquility:dc}}."
+          }
+        ]
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "tranquility:dc",
+          "value": "8"
+        },
+        {
+          "kind": "stat",
+          "name": "tranquility:dc",
+          "value": "proficiency"
+        },
+        {
+          "kind": "stat",
+          "name": "tranquility:dc",
+          "value": "wisdom:modifier"
+        }
+      ]
+    },
+    {
+      "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_WAYOFTHEOPENHAND_QUIVERING_PALM",
+      "name": "Quivering Palm",
+      "type": "Archetype Feature",
+      "source": "SRD 5.1",
+      "description": "<p>At 17th level, you gain the ability to set up lethal vibrations in someone’s body. When you hit a creature with an unarmed strike, you can spend 3 ki points to start these imperceptible vibrations, which last for a number of days equal to your monk level. The vibrations are harmless unless you use your action to end them. To do so, you and the target must be on the same plane of existence. When you use this action, the creature must make a Constitution saving throw. If it fails, it is reduced to 0 hit points. If it succeeds, it takes 10d10 necrotic damage.</p><p>You can have only one creature under the effect of this feature at a time. You can choose to end the vibrations harmlessly without using an action.</p>",
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "At 17th level, you gain the ability to set up lethal vibrations in someone’s body. When you hit a creature with an unarmed strike, you can spend 3 ki points to start these imperceptible vibrations, which last for a number of days equal to your monk level."
+          }
+        ]
+      }
+    }
+  ]
+}
