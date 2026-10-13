@@ -24,10 +24,28 @@ jobs:
   verify-version:
     name: verify tag matches tauri.conf.json
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     outputs:
       version: ${{ steps.v.outputs.version }}
       tag: ${{ steps.v.outputs.tag }}
     steps:
+      # Releases only ship commits that CI has already tested: the release itself builds but
+      # does not run the test suite. Wait for CI to finish on main before pushing the tag.
+      - name: require a successful CI run on this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          passed=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$SHA&status=success" --jq '.total_count')
+          if [ "$passed" -lt 1 ]; then
+            echo "::error::no successful CI run for $SHA; push it to main, wait for CI to pass, then tag it"
+            exit 1
+          fi
+          echo "CI passed for $SHA"
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - id: v
         env:
