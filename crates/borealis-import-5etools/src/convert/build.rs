@@ -79,8 +79,13 @@ pub fn gate(rule: &mut Rule, requirements: &str) {
         Rule::Grant(r) => &mut r.requirements,
         Rule::Select(r) => &mut r.requirements,
         Rule::Stat(r) => &mut r.requirements,
-        // the engine reads `requirements` of the custom spell grant
-        Rule::Custom(c) if c.kind == "grant_spell" => {
+        // the engine reads `requirements` of these custom kinds
+        Rule::Custom(c)
+            if matches!(
+                c.kind.as_str(),
+                "grant_spell" | "ability_increase" | "ability_distribution"
+            ) =>
+        {
             let joined = match c.fields.get("requirements").and_then(|v| v.as_str()) {
                 Some(existing) if !existing.is_empty() => {
                     format!("({existing})&&{requirements}")

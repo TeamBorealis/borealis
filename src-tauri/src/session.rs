@@ -136,11 +136,12 @@ impl AppState {
     pub fn insert_session(
         &self,
         id: &str,
-        character: Character,
+        mut character: Character,
         path: PathBuf,
         dirty: bool,
     ) -> ApiResult<CharacterSnapshot> {
         let hub: Arc<ContentHub> = self.hub()?;
+        let _ = crate::renamed_ids::migrate(&mut character.build, &hub.store);
         let settings = self.settings()?;
         let session = Session {
             character,

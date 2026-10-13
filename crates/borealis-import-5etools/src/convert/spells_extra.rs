@@ -119,6 +119,11 @@ pub fn filter_to_supports(filter: &str) -> Option<String> {
             // spelling ("Cleric"); filters may be written in lower case
             "class" => values.iter().map(|c| crate::util::title_case(c)).collect(),
             "school" => values.iter().map(|c| school_name(c).to_string()).collect(),
+            // implicit spell tags of the engine (`isRitual`, component setters)
+            k if k.eq_ignore_ascii_case("components & miscellaneous") => values
+                .iter()
+                .map(|c| component_tag(c).map(str::to_string))
+                .collect::<Option<Vec<_>>>()?,
             _ => return None,
         };
         parts.push(if tags.len() == 1 {
@@ -128,6 +133,50 @@ pub fn filter_to_supports(filter: &str) -> Option<String> {
         });
     }
     (!parts.is_empty()).then(|| parts.join("&&"))
+}
+
+/// Implicit support tag of a `components & miscellaneous` filter value.
+fn component_tag(value: &str) -> Option<&'static str> {
+    Some(match value.to_lowercase().as_str() {
+        "ritual" => "Ritual",
+        "concentration" => "ID_INTERNAL_SUPPORT_CONCENTRATION",
+        "v" => "ID_INTERNAL_SUPPORT_VERBAL",
+        "s" => "ID_INTERNAL_SUPPORT_SOMATIC",
+        "m" => "ID_INTERNAL_SUPPORT_MATERIAL",
+        _ => return None,
+    })
+}
+
+/// Ids of the imported spells a filter selects, for filters the supports grammar cannot
+/// express (`spell attack=m;r`): an ID-range supports, as Aurora lists explicit spells.
+/// `None` when a key is not understood, an empty string when nothing matches.
+#[must_use]
+pub fn filter_to_ids(filter: &str, rows: &[super::prereq_index::SpellRow]) -> Option<String> {
+    let mut rows: Vec<_> = rows.iter().collect();
+    for clause in filter.split('|') {
+        let (k, v) = clause.split_once('=')?;
+        let values: Vec<String> = v.split(';').map(|x| x.trim().to_lowercase()).collect();
+        match k.trim().to_lowercase().as_str() {
+            "level" => rows.retain(|s| values.contains(&s.level.to_string())),
+            "class" => rows.retain(|s| s.classes.iter().any(|c| values.contains(c))),
+            "spell attack" => {
+                rows.retain(|s| s.attacks.iter().any(|a| values.contains(&a.to_lowercase())));
+            }
+            _ => return None,
+        }
+    }
+    match rows.as_slice() {
+        // the filter is understood but no imported spell matches it
+        [] => Some(String::new()),
+        // a lone id is written twice: ID-range mode needs a single pipe
+        [only] => Some(format!("{0}|{0}", only.id)),
+        many => Some(
+            many.iter()
+                .map(|s| s.id.as_str())
+                .collect::<Vec<_>>()
+                .join("|"),
+        ),
+    }
 }
 
 /// Full school name for a code.
@@ -327,7 +376,10 @@ impl Ctx<'_> {
             Value::String(f) if f.trim().is_empty() => {
                 (Some(ALL_SPELL_LEVELS.to_string()), "any spell".to_string())
             }
-            Value::String(f) => (filter_to_supports(f), f.replace('|', ", ")),
+            Value::String(f) => (
+                filter_to_supports(f).or_else(|| filter_to_ids(f, &self.sh.spell_rows)),
+                f.replace('|', ", "),
+            ),
             Value::Object(o) => {
                 let from: Vec<&str> = o
                     .get("from")
@@ -356,6 +408,12 @@ impl Ctx<'_> {
                 .push(format!("spell choice filter {choose} was not converted"));
             return;
         };
+        if supports.is_empty() {
+            self.partial.push(format!(
+                "spell choice filter {choose} matches no imported spell (nothing to offer)"
+            ));
+            return;
+        }
         let name = format!("Spell ({}) {what}", self.label);
         let mut s = select("Spell", &name, Some(&supports), count);
         s.level = (level > 1).then_some(level);
@@ -833,7 +891,46 @@ mod tests {
             Some("(1||2)&&Abjuration")
         );
         assert!(filter_to_supports("level=!0").is_none());
-        assert!(filter_to_supports("components & miscellaneous=ritual").is_none());
+        assert_eq!(
+            filter_to_supports("level=1|class=Wizard|components & miscellaneous=ritual").as_deref(),
+            Some("1&&Wizard&&Ritual")
+        );
+        assert_eq!(
+            filter_to_supports("Components & Miscellaneous=ritual|level=1").as_deref(),
+            Some("Ritual&&1")
+        );
+        assert!(filter_to_supports("components & miscellaneous=royalty").is_none());
+        assert!(filter_to_supports("level=0|spell attack=m;r").is_none());
+        let row = |id: &str, level: u32, class: &str, attacks: &[&str]| {
+            super::super::prereq_index::SpellRow {
+                name: id.to_lowercase(),
+                level,
+                classes: vec![class.into()],
+                damage: true,
+                attacks: attacks.iter().map(|a| (*a).to_string()).collect(),
+                id: id.into(),
+            }
+        };
+        let rows = vec![
+            row("ID_A", 0, "wizard", &["R"]),
+            row("ID_B", 0, "wizard", &["M"]),
+            row("ID_C", 0, "wizard", &[]),
+            row("ID_D", 1, "wizard", &["R"]),
+            row("ID_E", 0, "cleric", &["R"]),
+        ];
+        assert_eq!(
+            filter_to_ids("level=0|class=Wizard|spell attack=m;r;o", &rows).as_deref(),
+            Some("ID_A|ID_B")
+        );
+        assert_eq!(
+            filter_to_ids("level=0|class=Wizard|spell attack=o", &rows).as_deref(),
+            Some("")
+        );
+        assert_eq!(
+            filter_to_ids("level=1|spell attack=r", &rows).as_deref(),
+            Some("ID_D|ID_D")
+        );
+        assert!(filter_to_ids("level=0|range=touch", &rows).is_none());
         assert_eq!(school_name("V"), "Evocation");
         assert_eq!(school_name("?"), "Unknown");
     }

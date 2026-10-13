@@ -342,6 +342,7 @@ fn register_links(sh: &mut Shared, st: &mut State, e: &Ents) {
         }
         sh.class_ids.insert(class_key, id);
     }
+    register_subclass_twins(sh, &e.subclasses);
     let simple = [
         (&e.backgrounds, RefKind::Background, IdKind::Background),
         (&e.feats, RefKind::Feat, IdKind::Feat),
@@ -365,6 +366,36 @@ fn register_links(sh: &mut Shared, st: &mut State, e: &Ents) {
             sh.languages.entry(key(&ent.name)).or_insert(id);
         }
     }
+}
+
+fn register_subclass_twins(sh: &mut Shared, subclasses: &[Ent]) {
+    let field = |ent: &Ent, k: &str| {
+        ent.raw
+            .get(k)
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string()
+    };
+    let mut first: BTreeMap<String, (String, bool)> = BTreeMap::new();
+    for ent in subclasses {
+        let key = convert::subclass_twin_key(
+            &ent.source,
+            &field(ent, "className"),
+            &field(ent, "shortName"),
+        );
+        let class_source = field(ent, "classSource").to_uppercase();
+        match first.get_mut(&key) {
+            None => {
+                first.insert(key, (class_source, false));
+            }
+            Some((src, twin)) => *twin |= *src != class_source,
+        }
+    }
+    sh.subclass_twins = first
+        .into_iter()
+        .filter(|(_, (_, twin))| *twin)
+        .map(|(k, (src, _))| (k, src))
+        .collect();
 }
 
 fn index_features(list: &[Ent], sub: bool) -> (Vec<Ent>, BTreeMap<String, usize>) {
@@ -425,6 +456,7 @@ fn build_shared(loaded: &mut Loaded, e: &Ents, opts: &ImportOptions, st: &mut St
         ..Shared::default()
     };
     register_links(&mut sh, st, e);
+    sh.spell_rows = convert::prereq_index::spell_rows(&sh, &e.spells);
     let (cf, cf_keys) = index_features(&e.class_features, false);
     sh.class_features = cf;
     sh.class_feature_keys = cf_keys;
@@ -554,7 +586,11 @@ fn ids_in(value: &Value, re: &Regex, out: &mut BTreeSet<String>) {
             out.extend(re.find_iter(s).map(|m| m.as_str().to_string()));
         }
         Value::Array(a) => a.iter().for_each(|v| ids_in(v, re, out)),
-        Value::Object(m) => m.values().for_each(|v| ids_in(v, re, out)),
+        // `renamed_from` names a former id of the element itself, not a reference
+        Value::Object(m) => m
+            .iter()
+            .filter(|(k, _)| k.as_str() != "renamed_from")
+            .for_each(|(_, v)| ids_in(v, re, out)),
         _ => {}
     }
 }

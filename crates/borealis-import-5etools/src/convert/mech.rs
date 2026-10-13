@@ -3,7 +3,7 @@
 //! A [`Mech`] accumulates the rules of one element. Anything that cannot be expressed as a
 //! rule is recorded in `partial` (for the report) and `unmapped` (kept on the element).
 
-use super::build::{custom, gate, grant, select, setter_with, stat, stat_bonus};
+use super::build::{gate, grant, select, setter_with, stat_bonus};
 use super::Shared;
 use crate::core_ids::{self as core, DamageRelation};
 use crate::text::RefKind;
@@ -11,6 +11,8 @@ use crate::util::{id_fragment, title_case};
 use borealis_content::Rule;
 use serde_json::{json, Map, Value};
 use std::collections::BTreeMap;
+
+mod ability;
 
 /// Where an ability increase comes from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -586,110 +588,6 @@ impl<'a> Mech<'a> {
         }
     }
 
-    // --------------------------------------------------------------- ability
-
-    /// `ability` increases.
-    pub fn ability(&mut self, list: &[Value], source: AbilitySource) {
-        let weighted: Vec<&Value> = list
-            .iter()
-            .filter(|o| o.get("choose").and_then(|c| c.get("weighted")).is_some())
-            .collect();
-        if !weighted.is_empty() {
-            self.weighted_abilities(&weighted);
-            return;
-        }
-        let visible: Vec<&Value> = list
-            .iter()
-            .filter(|o| o.get("hidden") != Some(&Value::Bool(true)))
-            .collect();
-        let first = visible.first().copied().or_else(|| list.first());
-        if list.len() > 1 && source != AbilitySource::Feat {
-            self.partial
-                .push("alternative ability score arrays: only the first was converted".into());
-        }
-        let Some(first) = first else { return };
-        for (k, v) in obj_entries(first) {
-            match k.as_str() {
-                "choose" => self.ability_choose(v, source),
-                "hidden" | "max" => {
-                    if k == "max" {
-                        self.note(
-                            "ability",
-                            format!("ability score maximum {v} not converted"),
-                        );
-                    }
-                }
-                abbr => match (core::ability_stat(abbr), v.as_i64()) {
-                    (Some(stat_name), Some(n)) => self.push(Rule::Stat(stat(&stat_name, n))),
-                    _ => self.note("ability", format!("ability entry {abbr:?} not converted")),
-                },
-            }
-        }
-    }
-
-    fn ability_choose(&mut self, v: &Value, source: AbilitySource) {
-        let from = string_list(v.get("from"));
-        let from: Vec<String> = if from.is_empty() {
-            core::ABILITIES
-                .iter()
-                .map(|(a, _)| (*a).to_string())
-                .collect()
-        } else {
-            from
-        };
-        let count = count_of(v.get("count").unwrap_or(&json!(1)));
-        let amount = count_of(v.get("amount").unwrap_or(&json!(1)));
-        let names: Vec<&str> = from.iter().filter_map(|a| core::ability_name(a)).collect();
-        if names.is_empty() {
-            return;
-        }
-        let owner = if source == AbilitySource::Race {
-            "Race"
-        } else {
-            "Class"
-        };
-        let supports = format!("Ability Score Improvement&&{owner}&&({})", names.join("||"));
-        let picks = count * amount;
-        let name = self.unique_name("Ability Score Increase");
-        let mut rule = select("Ability Score Improvement", &name, Some(&supports), picks);
-        if amount > 1 {
-            rule.setters
-                .push(setter_with("amount", &amount.to_string(), &[]));
-            self.partial.push(format!(
-                "ability increase of +{amount} to {count} ability(ies) is offered as {picks} separate +1 picks"
-            ));
-        }
-        self.push(Rule::Select(rule));
-    }
-
-    fn weighted_abilities(&mut self, objs: &[&Value]) {
-        let mut pool: Vec<String> = Vec::new();
-        let mut options: Vec<Vec<i64>> = Vec::new();
-        for o in objs {
-            let w = &o["choose"]["weighted"];
-            for a in string_list(w.get("from")) {
-                if let Some(n) = core::ability_stat(&a) {
-                    if !pool.contains(&n) {
-                        pool.push(n);
-                    }
-                }
-            }
-            let weights: Vec<i64> = w
-                .get("weights")
-                .and_then(Value::as_array)
-                .map(|a| a.iter().filter_map(Value::as_i64).collect())
-                .unwrap_or_default();
-            if !weights.is_empty() && !options.contains(&weights) {
-                options.push(weights);
-            }
-        }
-        let name = self.unique_name("Ability Score Increase");
-        self.push(custom(
-            "select.ability_distribution",
-            json!({"name": name, "pool": pool, "options": options, "cap": 20}),
-        ));
-    }
-
     // ----------------------------------------------------------------- feats
 
     /// `feats` granted by a race, species or background.
@@ -780,11 +678,11 @@ pub fn feat_category_label(code: &str) -> &'static str {
 }
 
 #[cfg(test)]
-mod tests {
+mod tests_support {
     use super::*;
     use crate::source::default_source_name;
 
-    fn shared() -> Shared {
+    pub fn shared() -> Shared {
         let mut sh = Shared::default();
         sh.links.insert(
             (RefKind::Feat, "alert".into(), "XPHB".into()),
@@ -796,7 +694,7 @@ mod tests {
         sh
     }
 
-    fn ids_of(m: &Mech<'_>) -> Vec<String> {
+    pub fn ids_of(m: &Mech<'_>) -> Vec<String> {
         m.rules
             .iter()
             .map(|r| match r {
@@ -813,6 +711,12 @@ mod tests {
             })
             .collect()
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::tests_support::{ids_of, shared};
+    use super::*;
 
     #[test]
     fn skills_fixed_any_and_choose() {
@@ -951,55 +855,6 @@ mod tests {
                 "stat:darkvision:range=90".to_string()
             ]
         );
-    }
-
-    #[test]
-    fn abilities_fixed_choose_and_weighted() {
-        let sh = shared();
-        let mut m = Mech::new(&sh, "Elf");
-        m.ability(&[json!({"dex": 2, "cha": 1})], AbilitySource::Race);
-        m.ability(
-            &[json!({"cha": 2, "choose": {"from": ["str", "dex", "con"], "count": 2}})],
-            AbilitySource::Race,
-        );
-        let ids = ids_of(&m);
-        assert!(ids.contains(&"stat:dexterity=2".to_string()));
-        assert!(ids.contains(&"stat:charisma=1".to_string()));
-        assert!(ids.iter().any(|i| i == "select:Ability Score Improvement:Ability Score Increase (Elf):Ability Score Improvement&&Race&&(Strength||Dexterity||Constitution)"));
-        let mut bg = Mech::new(&sh, "Acolyte");
-        bg.ability(
-            &[
-                json!({"choose": {"weighted": {"from": ["int", "wis", "cha"], "weights": [2, 1]}}}),
-                json!({"choose": {"weighted": {"from": ["int", "wis", "cha"], "weights": [1, 1, 1]}}}),
-            ],
-            AbilitySource::Background,
-        );
-        let Rule::Custom(c) = &bg.rules[0] else {
-            panic!()
-        };
-        assert_eq!(c.kind, "select.ability_distribution");
-        assert_eq!(
-            c.fields["pool"],
-            json!(["intelligence", "wisdom", "charisma"])
-        );
-        assert_eq!(c.fields["options"], json!([[2, 1], [1, 1, 1]]));
-        assert_eq!(c.fields["cap"], 20);
-        let mut feat = Mech::new(&sh, "Feat");
-        feat.ability(
-            &[
-                json!({"choose": {"from": ["str", "dex"], "amount": 2}}),
-                json!({"hidden": true}),
-            ],
-            AbilitySource::Feat,
-        );
-        assert!(feat.partial.iter().any(|p| p.contains("+2")));
-        let Rule::Select(s) = &feat.rules[0] else {
-            panic!()
-        };
-        assert_eq!(s.number, Some(2));
-        let mut multi = Mech::new(&sh, "M");
-        multi.ability(&[json!({"str": 1}), json!({"dex": 1})], AbilitySource::Race);
-        assert!(multi.partial.iter().any(|p| p.contains("alternative")));
     }
 
     #[test]

@@ -220,7 +220,7 @@ fn spells_items_backgrounds_feats() {
     .is_some());
     let acolyte24 =
         serde_json::to_string(find(&result, "ID_5ET_XPHB_BACKGROUND_ACOLYTE").unwrap()).unwrap();
-    assert!(acolyte24.contains("select.ability_distribution"));
+    assert!(acolyte24.contains("\"kind\":\"ability_distribution\""));
     assert!(
         acolyte24.contains("ID_5ET_XPHB_FEAT_MAGIC_INITIATE"),
         "origin feat granted"

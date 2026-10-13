@@ -7,7 +7,7 @@
 //! dangling references are the documented `external_references`; two runs are byte-identical;
 //! single-source PHB / XPHB imports work. Thresholds were set from a full 2026-10 5etools
 //! checkout with a little headroom: at least 97% of entries converted, at most 260 skipped and
-//! 340 partial (none about additional spells), at least 85 packs and 12,000 elements (see the constants below).
+//! 60 partial (none about additional spells or the gaps closed by 5etools-gaps-1), at least 85 packs and 12,000 elements (see the constants below).
 
 mod support;
 
@@ -27,8 +27,15 @@ const MIN_CONVERTED_PERCENT: usize = 97;
 /// corpus, nearly all catalog entries and languages the core pack already defines).
 const MAX_SKIPPED: usize = 260;
 /// Highest acceptable number of partial-conversion notes (412 on the 2026-10 corpus before
-/// additional spells were mapped, 324 after).
-const MAX_PARTIAL: usize = 340;
+/// additional spells were mapped, 324 after, 104 after prerequisites, 49 after 5etools-gaps-1).
+const MAX_PARTIAL: usize = 60;
+/// Notes that must not appear any more (closed by 5etools-gaps-1): (starts with, contains).
+const CLOSED_GAPS: &[(&str, &str)] = &[
+    ("ability score maximum", ""),
+    ("ability increase of", "separate +1 picks"),
+    ("spell choice filter", "was not converted"),
+    ("subrace replaces the parent race's", ""),
+];
 /// Highest acceptable number of unenforced prerequisites (220 on the 2026-10 corpus before
 /// prerequisites were mapped, 5 after: 4 house renown tiers and 1 unknown race at most).
 const MAX_UNENFORCED_PREREQS: usize = 8;
@@ -201,6 +208,14 @@ fn five_etools_corpus() {
         "partial notes {}",
         r.partial.len()
     );
+    for (prefix, needle) in CLOSED_GAPS {
+        let open = r
+            .partial
+            .iter()
+            .filter(|n| n.reason.starts_with(prefix) && n.reason.contains(needle))
+            .count();
+        assert_eq!(open, 0, "closed gap reappeared: {prefix:?} ({open})");
+    }
     let prereq_notes = r
         .partial
         .iter()

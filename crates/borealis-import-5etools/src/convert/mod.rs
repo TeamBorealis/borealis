@@ -101,6 +101,23 @@ pub struct Shared {
     pub subclass_titles: BTreeMap<String, String>,
     /// Lower-case names of the imported classes that cast spells.
     pub caster_classes: std::collections::BTreeSet<String>,
+    /// The imported spells, for spell choice filters the supports grammar cannot express.
+    pub spell_rows: Vec<prereq_index::SpellRow>,
+    /// Subclasses printed for several classes of the same name (an XGE subclass for the PHB
+    /// and the XPHB class): `source|class|short name` (lower-case, source upper-case) -> the
+    /// class source of the first version in load order (it keeps the plain id).
+    pub subclass_twins: BTreeMap<String, String>,
+}
+
+/// Key of [`Shared::subclass_twins`].
+#[must_use]
+pub fn subclass_twin_key(source: &str, class_name: &str, short_name: &str) -> String {
+    format!(
+        "{}|{}|{}",
+        source.to_uppercase(),
+        class_name.to_lowercase(),
+        short_name.to_lowercase()
+    )
 }
 
 /// Spellcasting classes of the core rules (used when the class itself is not imported).

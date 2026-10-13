@@ -388,7 +388,7 @@ mod tests {
         assert!(bg
             .rules
             .iter()
-            .any(|r| matches!(r, Rule::Custom(c) if c.kind == "select.ability_distribution")));
+            .any(|r| matches!(r, Rule::Custom(c) if c.kind == "ability_distribution")));
         assert!(bg
             .rules
             .iter()

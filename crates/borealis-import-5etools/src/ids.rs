@@ -81,6 +81,42 @@ impl IdKind {
     }
 }
 
+fn full_key(kind: IdKind, source: &str, raw_key: &str) -> String {
+    format!(
+        "{}|{}|{}",
+        kind.token(),
+        source.to_lowercase(),
+        raw_key.to_lowercase()
+    )
+}
+
+fn plain_id(kind: IdKind, source: &str, parts: &[&str]) -> String {
+    let mut id = if source.is_empty() {
+        format!("ID_5ET_{}", kind.token())
+    } else {
+        format!("ID_5ET_{}_{}", id_fragment(source), kind.token())
+    };
+    for part in parts {
+        id.push('_');
+        id.push_str(&id_fragment(part));
+    }
+    id
+}
+
+fn hashed(id: &str, full_key: &str) -> String {
+    format!("{id}_{:08X}", fnv1a(full_key) & 0xFFFF_FFFF)
+}
+
+/// The id an entity got when it collided with an earlier one (`<plain id>_<hash>`). Ids that
+/// later became readable keep resolving through this value (`renamed_from`).
+#[must_use]
+pub fn collision_id(kind: IdKind, source: &str, parts: &[&str], raw_key: &str) -> String {
+    hashed(
+        &plain_id(kind, source, parts),
+        &full_key(kind, source, raw_key),
+    )
+}
+
 /// Allocates collision-free ids. Allocation is idempotent per raw key.
 #[derive(Debug, Default)]
 pub struct IdAlloc {
@@ -98,27 +134,14 @@ impl IdAlloc {
     /// The id for an entity. `raw_key` identifies the entity (any stable text unique to it);
     /// `parts` are the human readable name parts that appear in the id.
     pub fn id(&mut self, kind: IdKind, source: &str, parts: &[&str], raw_key: &str) -> String {
-        let full_key = format!(
-            "{}|{}|{}",
-            kind.token(),
-            source.to_lowercase(),
-            raw_key.to_lowercase()
-        );
+        let full_key = full_key(kind, source, raw_key);
         if let Some(existing) = self.by_key.get(&full_key) {
             return existing.clone();
         }
-        let mut id = if source.is_empty() {
-            format!("ID_5ET_{}", kind.token())
-        } else {
-            format!("ID_5ET_{}_{}", id_fragment(source), kind.token())
-        };
-        for part in parts {
-            id.push('_');
-            id.push_str(&id_fragment(part));
-        }
+        let mut id = plain_id(kind, source, parts);
         if let Some(owner) = self.owner.get(&id) {
             if *owner != full_key {
-                id = format!("{id}_{:08X}", fnv1a(&full_key) & 0xFFFF_FFFF);
+                id = hashed(&id, &full_key);
             }
         }
         self.owner.insert(id.clone(), full_key.clone());

@@ -112,44 +112,7 @@ impl PrereqIndex {
                 add(&mut ix.optfeatures, key(&ent.name), id);
             }
         }
-        for ent in inp.spells {
-            let Some(id) = sh.link(RefKind::Spell, &ent.name, &ent.source) else {
-                continue;
-            };
-            let attacks = ent
-                .raw
-                .get("spellAttack")
-                .and_then(Value::as_array)
-                .map(|a| {
-                    a.iter()
-                        .filter_map(Value::as_str)
-                        .map(str::to_uppercase)
-                        .collect()
-                })
-                .unwrap_or_default();
-            ix.spells.push(SpellRow {
-                name: key(&ent.name),
-                level: ent
-                    .raw
-                    .get("level")
-                    .and_then(Value::as_u64)
-                    .and_then(|n| u32::try_from(n).ok())
-                    .unwrap_or_default(),
-                classes: sh
-                    .spell_classes
-                    .classes(&ent.name, &ent.source)
-                    .iter()
-                    .map(|c| key(c))
-                    .collect(),
-                damage: ent
-                    .raw
-                    .get("damageInflict")
-                    .and_then(Value::as_array)
-                    .is_some_and(|a| !a.is_empty()),
-                attacks,
-                id,
-            });
-        }
+        ix.spells = sh.spell_rows.clone();
         ix
     }
 
@@ -195,7 +158,7 @@ impl PrereqIndex {
             let Ok(sc) = model::parse::<Subclass>(&ent.raw) else {
                 continue;
             };
-            let id = feature::subclass_id(st, &sc, &ent.source);
+            let id = feature::subclass_id(sh, st, &sc, &ent.source);
             if !st.emitted.contains(&id) {
                 continue;
             }
@@ -243,6 +206,51 @@ pub fn srd_ids(sh: &Shared, kind: SrdKind, name: &str) -> BTreeSet<String> {
         .into_iter()
         .filter_map(|rs| sh.srd.find(kind, rs, name).map(str::to_string))
         .collect()
+}
+
+/// The imported spells as `choose` filters see them (built once with the links).
+#[must_use]
+pub fn spell_rows(sh: &Shared, spells: &[Ent]) -> Vec<SpellRow> {
+    let mut rows = Vec::new();
+    for ent in spells {
+        let Some(id) = sh.link(RefKind::Spell, &ent.name, &ent.source) else {
+            continue;
+        };
+        let attacks = ent
+            .raw
+            .get("spellAttack")
+            .and_then(Value::as_array)
+            .map(|a| {
+                a.iter()
+                    .filter_map(Value::as_str)
+                    .map(str::to_uppercase)
+                    .collect()
+            })
+            .unwrap_or_default();
+        rows.push(SpellRow {
+            name: key(&ent.name),
+            level: ent
+                .raw
+                .get("level")
+                .and_then(Value::as_u64)
+                .and_then(|n| u32::try_from(n).ok())
+                .unwrap_or_default(),
+            classes: sh
+                .spell_classes
+                .classes(&ent.name, &ent.source)
+                .iter()
+                .map(|c| key(c))
+                .collect(),
+            damage: ent
+                .raw
+                .get("damageInflict")
+                .and_then(Value::as_array)
+                .is_some_and(|a| !a.is_empty()),
+            attacks,
+            id,
+        });
+    }
+    rows
 }
 
 /// Ids of linked entities of `kind` with this name (any source).

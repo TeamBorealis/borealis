@@ -58,6 +58,8 @@ fn normalize(name: &str) -> String {
 #[derive(Debug, Default, Clone)]
 pub struct SrdIndex {
     map: BTreeMap<(SrdKind, Ruleset, String), String>,
+    /// Supports of each SRD class's subclass select, by `(ruleset, normalised class name)`.
+    subclass_tags: BTreeMap<(Ruleset, String), String>,
 }
 
 impl SrdIndex {
@@ -80,6 +82,22 @@ impl SrdIndex {
         self.map
             .get(&(kind, ruleset, normalize(name)))
             .map(String::as_str)
+    }
+
+    /// The supports tag an SRD class offers subclasses with (`Martial Archetype`,
+    /// `Fighter Subclass`), so a subclass whose own class is not imported can attach to it.
+    #[must_use]
+    pub fn subclass_tag(&self, ruleset: Ruleset, class_name: &str) -> Option<&str> {
+        self.subclass_tags
+            .get(&(ruleset, normalize(class_name)))
+            .map(String::as_str)
+    }
+
+    /// Record the subclass select tag of an SRD class.
+    pub fn insert_subclass_tag(&mut self, ruleset: Ruleset, class_name: &str, tag: &str) {
+        self.subclass_tags
+            .entry((ruleset, normalize(class_name)))
+            .or_insert_with(|| tag.to_string());
     }
 
     /// Number of indexed elements.
@@ -133,6 +151,27 @@ impl SrdIndex {
         }
     }
 
+    /// A class file's subclass select (on the class or one of its features, as bundled).
+    fn index_subclass_tag(&mut self, file: &ContentFile, pack_ruleset: Option<Ruleset>) {
+        let Some(class) = file.elements.iter().find(|e| e.ty == "Class") else {
+            return;
+        };
+        let Some(ruleset) = class.ruleset.or(file.ruleset).or(pack_ruleset) else {
+            return;
+        };
+        let tag = file
+            .elements
+            .iter()
+            .flat_map(|e| &e.rules)
+            .find_map(|r| match r {
+                borealis_content::Rule::Select(s) if s.ty == "Archetype" => s.supports.clone(),
+                _ => None,
+            });
+        if let Some(tag) = tag {
+            self.insert_subclass_tag(ruleset, &class.name, &tag);
+        }
+    }
+
     fn load_file(&mut self, path: &Path, pack_ruleset: Option<Ruleset>) {
         let Ok(text) = std::fs::read_to_string(path) else {
             return;
@@ -140,6 +179,7 @@ impl SrdIndex {
         let Ok(file) = ContentFile::from_json_str(&text) else {
             return;
         };
+        self.index_subclass_tag(&file, pack_ruleset);
         for e in &file.elements {
             let ruleset = e.ruleset.or(file.ruleset).or(pack_ruleset);
             let (Some(kind), Some(ruleset)) = (SrdKind::of_type(&e.ty), ruleset) else {
@@ -217,5 +257,20 @@ mod tests {
         assert_eq!(idx.len(), 2);
         let none = SrdIndex::load::<&Path>(&[]);
         assert!(none.is_empty());
+    }
+
+    #[test]
+    fn bundled_srd_classes_offer_their_subclass_tags() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+        let idx = SrdIndex::load(&[root.join("srd-5.1"), root.join("srd-5.2.1")]);
+        assert_eq!(
+            idx.subclass_tag(Ruleset::Dnd2024, "fighter"),
+            Some("Fighter Subclass")
+        );
+        assert_eq!(
+            idx.subclass_tag(Ruleset::Dnd2014, "Fighter"),
+            Some("Martial Archetype")
+        );
+        assert!(idx.subclass_tag(Ruleset::Dnd2024, "Artificer").is_none());
     }
 }

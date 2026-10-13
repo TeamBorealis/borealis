@@ -138,6 +138,39 @@ pub fn key_of_feature(f: &Feature, sub: bool) -> String {
     }
 }
 
+/// Ritual casting of a class, as the bundled classes express it: the internal marker for a
+/// 2014 `Spellcasting` feature with a "Ritual Casting" part (Bard, Cleric, Druid, Wizard,
+/// Artificer), plus a `ritual_casting` rule when the rituals come from a spellbook without
+/// being prepared (2014 Wizard; 2024 "Ritual Adept").
+fn ritual_rules(name: &str, entries: &[Value]) -> Vec<Rule> {
+    let part = if name.eq_ignore_ascii_case("Ritual Adept") {
+        Some(Value::Array(entries.to_vec()))
+    } else if name.eq_ignore_ascii_case("Spellcasting") {
+        entries
+            .iter()
+            .find(|e| {
+                e.get("name")
+                    .and_then(Value::as_str)
+                    .is_some_and(|n| n.eq_ignore_ascii_case("Ritual Casting"))
+            })
+            .cloned()
+    } else {
+        None
+    };
+    let Some(part) = part else {
+        return Vec::new();
+    };
+    let mut rules = vec![super::build::grant("ID_INTERNAL_RITUAL_CASTING", "Grants")];
+    let text = crate::text::strip_tags(&part.to_string()).to_lowercase();
+    if text.contains("spellbook") && text.contains("prepared") {
+        rules.push(super::build::custom(
+            "ritual_casting",
+            serde_json::json!({"source": "spellbook", "requires_prepared": false}),
+        ));
+    }
+    rules
+}
+
 /// Allocate the id of a feature reference.
 pub fn feature_id(st: &mut State, r: &FeatureRef, sub: bool) -> String {
     let level = format!("L{}", r.level);
@@ -233,6 +266,17 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
         set_level(&mut rule, f.level);
         mech.push(rule);
     }
+    if !sub {
+        let rituals = ritual_rules(&f.name, &f.entries);
+        if !rituals.is_empty() {
+            // the engine reads a class's ritual rule from features whose `data.class` names it
+            el.data
+                .insert("class".into(), Value::String(f.class_name.clone()));
+        }
+        for r in rituals {
+            mech.push(r);
+        }
+    }
     el.rules = std::mem::take(&mut mech.rules);
     for (k, vs) in &mech.unmapped {
         note_unmapped(&mut el, k, &vs.join("; "));
@@ -280,23 +324,60 @@ fn feature_text(sh: &Shared, sc: &Subclass) -> String {
         .join(" ")
 }
 
-/// Allocate the id of a subclass (stable: the allocator returns the same id for the same key).
-pub fn subclass_id(st: &mut State, sc: &Subclass, source: &str) -> String {
-    let class_key = format!(
-        "{}|{}",
+fn subclass_raw_key(sc: &Subclass, source: &str) -> String {
+    format!(
+        "{}|{}|{}|{}",
         sc.class_name.to_lowercase(),
-        sc.class_source.to_uppercase()
-    );
-    st.ids.id(
+        sc.class_source.to_uppercase(),
+        sc.short_name.to_lowercase(),
+        source.to_uppercase()
+    )
+}
+
+/// The class source that qualifies a subclass id: set for the later version of a subclass
+/// printed for two classes of the same name (`ID_5ET_XGE_SUBCLASS_XPHB_BARBARIAN_ZEALOT` next
+/// to `ID_5ET_XGE_SUBCLASS_BARBARIAN_ZEALOT`).
+fn twin_qualifier(sh: &Shared, sc: &Subclass, source: &str) -> Option<String> {
+    let first = sh.subclass_twins.get(&super::subclass_twin_key(
+        source,
+        &sc.class_name,
+        &sc.short_name,
+    ))?;
+    (*first != sc.class_source.to_uppercase()).then(|| sc.class_source.to_uppercase())
+}
+
+/// Allocate the id of a subclass (stable: the allocator returns the same id for the same key).
+/// Versions of one subclass for two classes of the same name are told apart by the class
+/// source (readable, independent of what else is imported).
+pub fn subclass_id(sh: &Shared, st: &mut State, sc: &Subclass, source: &str) -> String {
+    let raw = subclass_raw_key(sc, source);
+    match twin_qualifier(sh, sc, source) {
+        Some(q) => st.ids.id(
+            IdKind::Subclass,
+            source,
+            &[&q, &sc.class_name, &sc.short_name],
+            &raw,
+        ),
+        None => st.ids.id(
+            IdKind::Subclass,
+            source,
+            &[&sc.class_name, &sc.short_name],
+            &raw,
+        ),
+    }
+}
+
+/// The hash-suffixed id a qualified subclass had before ids became readable (2026-10), so
+/// packs and characters made earlier still resolve (`renamed_from`).
+#[must_use]
+pub fn legacy_subclass_id(sh: &Shared, sc: &Subclass, source: &str) -> Option<String> {
+    twin_qualifier(sh, sc, source)?;
+    Some(crate::ids::collision_id(
         IdKind::Subclass,
         source,
         &[&sc.class_name, &sc.short_name],
-        &format!(
-            "{class_key}|{}|{}",
-            sc.short_name.to_lowercase(),
-            source.to_uppercase()
-        ),
-    )
+        &subclass_raw_key(sc, source),
+    ))
 }
 
 /// Convert a subclass (an `Archetype`).
@@ -326,7 +407,7 @@ pub fn convert_subclass(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
             crate::util::id_fragment(&sc.class_name)
         )
     });
-    let id = subclass_id(st, &sc, &ent.source);
+    let id = subclass_id(sh, st, &sc, &ent.source);
     let resolver = |k: RefKind, n: &str, s: &str| sh.link(k, n, s);
     let mut renderer = Renderer::new(&resolver);
     let mut el = new_element(
@@ -337,14 +418,28 @@ pub fn convert_subclass(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         ent.ruleset,
     );
     el.supports.push(class_id);
+    let mut partial: Vec<String> = Vec::new();
     if let Some(title) = sh.subclass_titles.get(&class_key) {
         let tag = supports_token(title);
         if !tag.is_empty() {
             el.supports.push(tag);
         }
+    } else if !sh.class_ids.contains_key(&class_key) {
+        // the class is not part of this import: attach to the bundled SRD class of that
+        // edition (`Fighter Subclass` for an XPHB class), else say what to import
+        let ruleset = crate::source::ruleset_for(&sc.class_source, None);
+        match sh.srd.subclass_tag(ruleset, &sc.class_name) {
+            Some(tag) => el.supports.push(tag.to_string()),
+            None => partial.push(format!(
+                "subclass of the {} class of {}, which is not part of this import: import {} as well to choose it",
+                sc.class_name, sc.class_source, sc.class_source
+            )),
+        }
+    }
+    if let Some(old) = legacy_subclass_id(sh, &sc, &ent.source) {
+        el.renamed_from = Some(old);
     }
     let mut mech = Mech::new(sh, &sc.name);
-    let mut partial: Vec<String> = Vec::new();
 
     // Features: grant each at its level; the introductory feature (named like the subclass)
     // becomes the description.
@@ -541,6 +636,14 @@ pub fn convert_subclass(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     drain_renderer(st, &renderer, &ent.file, &sc.name);
     partial.sort();
     partial.dedup();
+    // elements named after the subclass id keep resolving under the old (hashed) id too
+    if let Some(old) = el.renamed_from.clone() {
+        for e in &mut extra_elements {
+            if let Some(rest) = e.id.strip_prefix(id.as_str()) {
+                e.renamed_from = Some(format!("{old}{rest}"));
+            }
+        }
+    }
     let mut elements = vec![el];
     elements.extend(extra_elements);
     Conv { elements, partial }
@@ -551,6 +654,34 @@ mod tests {
     use super::*;
     use borealis_content::Ruleset;
     use serde_json::json;
+
+    #[test]
+    fn ritual_casting_follows_the_class_feature_text() {
+        let kinds = |rules: &[Rule]| {
+            rules
+                .iter()
+                .map(|r| match r {
+                    Rule::Grant(g) => g.id.clone(),
+                    Rule::Custom(c) => c.kind.clone(),
+                    _ => String::new(),
+                })
+                .collect::<Vec<_>>()
+        };
+        let book = json!({"type": "entries", "name": "Ritual Casting",
+            "entries": ["Cast it as a ritual if it is in your spellbook. You need not have it prepared."]});
+        let prepared = json!({"type": "entries", "name": "Ritual Casting",
+            "entries": ["Cast it as a ritual if you have it prepared."]});
+        assert_eq!(
+            kinds(&ritual_rules("Spellcasting", &[json!("x"), book])),
+            vec!["ID_INTERNAL_RITUAL_CASTING", "ritual_casting"]
+        );
+        assert_eq!(
+            kinds(&ritual_rules("Spellcasting", &[prepared])),
+            vec!["ID_INTERNAL_RITUAL_CASTING"]
+        );
+        assert!(ritual_rules("Spellcasting", &[json!("no rituals")]).is_empty());
+        assert!(ritual_rules("Rage", &[]).is_empty());
+    }
 
     fn ent(raw: Value, file: &str) -> Ent {
         Ent {

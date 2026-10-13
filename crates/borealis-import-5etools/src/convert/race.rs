@@ -132,6 +132,15 @@ pub fn replaced_props(raw: &Value) -> Vec<String> {
                 .map(|(k, _)| k.clone()),
         );
     }
+    // a subrace's own speed, size and senses replace the parent's (5etools merge rule)
+    if let Some(m) = raw.as_object() {
+        out.extend(
+            DEFINED_REPLACES
+                .iter()
+                .filter(|k| m.get(**k).is_some_and(|v| !v.is_null()))
+                .map(|k| (*k).to_string()),
+        );
+    }
     out.retain(|k| !METADATA_KEYS.contains(&k.as_str()));
     out.sort();
     out.dedup();
@@ -139,7 +148,14 @@ pub fn replaced_props(raw: &Value) -> Vec<String> {
 }
 
 /// Parent properties whose rules can be switched off while a replacing subrace is chosen.
+/// Properties a subrace replaces just by defining them.
+const DEFINED_REPLACES: &[&str] = &["speed", "size", "darkvision", "blindsight"];
+
 const REPLACEABLE: &[&str] = &[
+    "speed",
+    "size",
+    "darkvision",
+    "blindsight",
     "ability",
     "resist",
     "immune",
@@ -245,9 +261,14 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent, is_subrace: bool) -> Conv
     mech.set_gate(gate_for(&["ability"]).as_deref());
     mech.ability(&race.ability, AbilitySource::Race);
     mech.set_gate(None);
+    mech.set_gate(gate_for(&["size"]).as_deref());
     mech.size(&race.size);
+    mech.set_gate(gate_for(&["speed"]).as_deref());
     mech.speed(race.speed.as_ref());
-    mech.senses(race.darkvision, race.blindsight, &[]);
+    mech.set_gate(gate_for(&["darkvision"]).as_deref());
+    mech.senses(race.darkvision, None, &[]);
+    mech.set_gate(gate_for(&["blindsight"]).as_deref());
+    mech.senses(None, race.blindsight, &[]);
     mech.set_gate(gate_for(&["resist", "immune", "vulnerable", "conditionImmune"]).as_deref());
     mech.resistances(
         &race.resist,
@@ -596,11 +617,21 @@ mod tests {
         assert!(rules.iter().any(
             |r| matches!(r, Rule::Grant(g) if g.ty.as_deref() == Some("Language")) && !gated(r)
         ));
-        // the subrace itself converts, and only the unsupported replacement is reported
+        // speed is replaced too: the parent's walking speed is gated
+        assert!(rules
+            .iter()
+            .any(|r| matches!(r, Rule::Stat(s) if s.name == "innate speed") && gated(r)));
+        // the subrace itself converts without losses
         let conv = convert(&sh, &mut st, &sub, true);
         assert_eq!(conv.elements[0].id, sub_id);
-        assert_eq!(conv.partial.len(), 1, "{:?}", conv.partial);
-        assert!(conv.partial[0].contains("speed"));
+        assert!(conv.partial.is_empty(), "{:?}", conv.partial);
+        // a subrace's own speed and darkvision replace the parent's
+        let wood = json!({"name": "Wood", "source": "ZZZ", "raceName": "Elf", "speed": 35,
+            "darkvision": 60, "skillProficiencies": null});
+        assert_eq!(
+            replaced_props(&wood),
+            vec!["darkvision", "skillProficiencies", "speed"]
+        );
     }
 
     #[test]
