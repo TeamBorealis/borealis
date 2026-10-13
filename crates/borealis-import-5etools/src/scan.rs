@@ -17,6 +17,8 @@ pub struct SourceSummary {
     pub name: String,
     /// `dnd2014`, `dnd2024` or `mixed`.
     pub ruleset: String,
+    /// `book`, `adventure`, `homebrew` (a homebrew file) or `other` (in no catalog).
+    pub category: String,
     /// Entry counts by kind (`race`, `class`, `spell`, `item`, ...). Kinds with no entry are absent.
     pub counts: BTreeMap<String, usize>,
 }
@@ -86,10 +88,16 @@ fn summarize(loaded: &Loaded) -> Vec<SourceSummary> {
             } else {
                 "mixed"
             };
+            let category = loaded
+                .categories
+                .get(&upper)
+                .cloned()
+                .unwrap_or_else(|| "other".to_string());
             SourceSummary {
                 abbr,
                 name,
                 ruleset: ruleset.to_string(),
+                category,
                 counts: a.counts,
             }
         })
@@ -147,6 +155,8 @@ mod tests {
         assert_eq!(s[1].counts["race"], 2);
         assert_eq!(s[1].counts["item"], 1);
         assert!(!s[1].counts.contains_key("classFeature"));
+        assert_eq!(s[1].category, "book");
+        assert_eq!(s[0].category, "other");
         assert_eq!(s[0].ruleset, "dnd2024");
         assert_eq!(s[1].ruleset, "dnd2014");
         let json = serde_json::to_value(FiveToolsScan { sources: s }).unwrap();

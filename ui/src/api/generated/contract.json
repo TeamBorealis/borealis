@@ -4312,6 +4312,12 @@
       }
      }
     },
+    "replaced": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "skipped": {
      "opt": false,
      "t": {
@@ -4343,6 +4349,12 @@
    "k": "object",
    "props": {
     "abbr": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "category": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -4611,6 +4623,12 @@
    "k": "object",
    "props": {
     "element": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "kind": {
      "opt": false,
      "t": {
       "k": "prim"

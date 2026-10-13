@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import type { ContentProgress, FiveToolsImportReport, FiveToolsSource } from "../../api/contract";
-import { Alert, Button, Check, Chip, ProgressBar, TextField, useImportNotice } from "../../components";
-import { rulesetLabel } from "../../lib/format";
+import { Button, Check, ProgressBar, TextField, useImportNotice } from "../../components";
 import { useApi } from "../../state/ApiContext";
 import { errorMessage } from "../../state/useAsync";
-
-/** Convert the user's own local 5etools `data/` folder. Nothing is downloaded and no default URL exists. */
+import { FiveToolsReport } from "./FiveToolsReport";
+import { FiveToolsSources } from "./FiveToolsSources";
 import { Section } from "./Section";
 
+/** Convert the user's own local 5etools `data/` folder. Nothing is downloaded and no default URL exists. */
 export function FiveToolsTab() {
   const api = useApi();
   const notice = useImportNotice();
@@ -42,7 +42,6 @@ export function FiveToolsTab() {
     catch (e) { setError(errorMessage(e)); }
     finally { setRunning(false); }
   };
-  const toggle = (abbr: string, on: boolean) => setPicked(on ? [...picked, abbr] : picked.filter((x) => x !== abbr));
   return (
     <>
       <Section title="5etools import">
@@ -55,14 +54,7 @@ export function FiveToolsTab() {
       {sources && (
         <Section title="Source books found" actions={<Button variant="primary" disabled={running || picked.length === 0} onClick={() => void run()}>Import {picked.length} book(s)</Button>}>
           <div className="stack">
-            <ul className="list" aria-label="Source books">
-              {sources.map((s) => (
-                <li key={s.abbr}><div className="inv-row" style={{ padding: "var(--sp-2) var(--sp-3)" }}>
-                  <Check label={`${s.name} (${s.abbr})`} description={Object.entries(s.counts).map(([k, n]) => `${n} ${k}`).join(", ")} checked={picked.includes(s.abbr)} onChange={(e) => toggle(s.abbr, e.target.checked)} />
-                  <span className="spacer" /><Chip tone="accent">{rulesetLabel(s.ruleset)}</Chip>
-                </div></li>
-              ))}
-            </ul>
+            <FiveToolsSources sources={sources} picked={picked} onPicked={setPicked} />
             <Check label="Include fluff (descriptions and lore text)" checked={fluff} onChange={(e) => setFluff(e.target.checked)} />
             {running && progress && <div><ProgressBar label="Import progress" value={progress.done} max={Math.max(1, progress.total)} /><span className="small muted" role="status">{progress.message}</span></div>}
           </div>
@@ -70,11 +62,7 @@ export function FiveToolsTab() {
       )}
       {report && (
         <Section title="Import report">
-          <div className="stack" role="status">
-            <Alert tone="success">{report.converted} elements converted into {report.packs.length} pack(s). Marked "Local import — not redistributable".</Alert>
-            {report.partial.length > 0 && <div><h3>Partially converted</h3><ul>{report.partial.map((n, i) => <li key={i}><strong>{n.element}</strong>: {n.reason}</li>)}</ul></div>}
-            {report.skipped.length > 0 && <div><h3>Skipped</h3><ul>{report.skipped.map((n, i) => <li key={i}><strong>{n.element}</strong>: {n.reason}</li>)}</ul></div>}
-          </div>
+          <FiveToolsReport report={report} />
         </Section>
       )}
     </>

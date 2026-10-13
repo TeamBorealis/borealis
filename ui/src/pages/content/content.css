@@ -85,3 +85,11 @@
 .v4-impcounts li { display: flex; justify-content: space-between; align-items: center; min-height: 21px; padding: 0 5px; border-bottom: 1px solid rgba(0, 0, 0, .04); }
 .v4-impdiag li { min-height: 21px; padding: 0 5px; border-bottom: 1px solid rgba(0, 0, 0, .04); overflow-wrap: anywhere; }
 .v4-impdiag { max-height: 260px; overflow: auto; }
+
+/* 5etools import: source filters (search + edition), per-group select-all, report grouped by reason */
+.v4-5et-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.v4-5et-filters > :first-child { flex: 1 1 240px; }
+.v4-5et-all { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-sm); text-transform: none; cursor: pointer; }
+.v4-5et-count { display: inline-block; min-width: 28px; margin-right: 4px; color: var(--gold); font-variant-numeric: tabular-nums; }
+.v4-5et-notes { margin: 0; padding: 0; list-style: none; font-size: var(--fs-sm); max-height: 260px; overflow: auto; }
+.v4-5et-notes li { min-height: 21px; padding: 0 5px; border-bottom: 1px solid rgba(0, 0, 0, .04); overflow-wrap: anywhere; }

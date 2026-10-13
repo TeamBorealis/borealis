@@ -25,6 +25,9 @@ pub struct Loaded {
     pub spell_lookup: Option<Value>,
     /// Book names by source id from `books.json`.
     pub books: BTreeMap<String, String>,
+    /// Catalog of each source by upper-case id: `book` (`books.json`), `adventure`
+    /// (`adventures.json`) or `homebrew` (a homebrew file's `_meta`).
+    pub categories: BTreeMap<String, String>,
     /// Relative paths of every file that was read, sorted.
     pub files: Vec<String>,
     /// Files that could not be read or parsed: `(path, reason)`.
@@ -237,6 +240,10 @@ fn absorb(loaded: &mut Loaded, rel: &str, value: Value) {
                     .books
                     .entry(abbr.to_uppercase())
                     .or_insert_with(|| name.to_string());
+                loaded
+                    .categories
+                    .entry(abbr.to_uppercase())
+                    .or_insert_with(|| "homebrew".to_string());
             }
         }
     }
@@ -255,6 +262,9 @@ fn absorb(loaded: &mut Loaded, rel: &str, value: Value) {
                 let name = b.get("name").and_then(Value::as_str);
                 if let (Some(id), Some(name)) = (id, name) {
                     loaded.books.insert(id.to_uppercase(), name.to_string());
+                    loaded
+                        .categories
+                        .insert(id.to_uppercase(), prop.to_string());
                 }
             }
         }
@@ -317,6 +327,8 @@ mod tests {
         assert_eq!(loaded.props["race"].len(), 2);
         assert_eq!(loaded.books["HBX"], "Home Brew X");
         assert_eq!(loaded.books["QQA"], "Quest A");
+        assert_eq!(loaded.categories["HBX"], "homebrew");
+        assert_eq!(loaded.categories["QQA"], "adventure");
     }
 
     #[test]

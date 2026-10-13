@@ -201,11 +201,13 @@ describe("5etools local import", () => {
     const pickPath = api.pickPath.bind(api);
     api.pickPath = async (a) => { picks.push(a.purpose); return pickPath(a); };
     await user.click(screen.getByRole("button", { name: "Scan folder…" }));
-    const list = await screen.findByRole("list", { name: "Source books" });
+    const list = await screen.findByRole("list", { name: "Books sources" });
     expect(picks).toEqual(["5etools-folder"]);
     expect((screen.getByLabelText("Data folder") as HTMLInputElement).value).toBe("/home/me/5etools/data");
     expect(within(list).getAllByText(/^20(14|24)$/).length).toBe(3);
     await user.click(within(list).getByRole("checkbox", { name: /Basic Rules/ }));
+    await user.click(screen.getByRole("checkbox", { name: "Select all adventures" }));
+    await user.click(screen.getByRole("checkbox", { name: "Select all homebrew & other" }));
     await user.click(screen.getByRole("button", { name: "Import 2 book(s)" }));
     expect(await screen.findByText(/Partially converted/)).toBeTruthy();
     expect(progressSeen).toContain("converting");

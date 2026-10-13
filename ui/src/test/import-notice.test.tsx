@@ -58,7 +58,7 @@ describe("Content import notice", () => {
     expect(pick).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: "Scan folder…" }));
     await user.click(within(await noticeDialog()).getByRole("button", { name: "I understand, continue" }));
-    expect(await screen.findByRole("list", { name: "Source books" })).toBeTruthy();
+    expect(await screen.findByRole("list", { name: "Books sources" })).toBeTruthy();
     expect(pick).toHaveBeenCalledTimes(1);
   });
 

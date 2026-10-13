@@ -135,6 +135,8 @@ pub struct FiveToolsSource {
     pub abbr: String,
     pub name: String,
     pub ruleset: String,
+    /// `book`, `adventure`, `homebrew` or `other`.
+    pub category: String,
     pub counts: BTreeMap<String, usize>,
 }
 
@@ -159,6 +161,8 @@ pub struct FiveToolsImportRequest {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ImportNote {
     pub element: String,
+    /// Entity kind (`feat`, `language`, ...).
+    pub kind: String,
     pub reason: String,
 }
 
@@ -166,6 +170,8 @@ pub struct ImportNote {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct FiveToolsImportReport {
     pub converted: usize,
+    /// Packs that already existed and were replaced in place.
+    pub replaced: usize,
     pub partial: Vec<ImportNote>,
     pub skipped: Vec<ImportNote>,
     pub packs: Vec<ContentPack>,

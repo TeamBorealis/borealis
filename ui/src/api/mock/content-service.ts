@@ -185,9 +185,11 @@ export class ContentService {
   scan5etools(path: string): FiveToolsScan {
     if (!path.trim() || /missing|nonexistent/i.test(path)) throw apiError("not_found", "No 5etools data folder was found at that path.");
     return { sources: [
-      { abbr: "srd", name: "SRD 5.1 (2014)", ruleset: "dnd2014", counts: { class: 4, spell: 24, item: 12 } },
-      { abbr: "srd52", name: "SRD 5.2.1 (2024)", ruleset: "dnd2024", counts: { class: 4, spell: 30, feat: 8 } },
-      { abbr: "basicRules", name: "Basic Rules (2014)", ruleset: "dnd2014", counts: { feat: 6, spell: 10 } },
+      { abbr: "srd", name: "SRD 5.1 (2014)", ruleset: "dnd2014", category: "book", counts: { class: 4, spell: 24, item: 12 } },
+      { abbr: "srd52", name: "SRD 5.2.1 (2024)", ruleset: "dnd2024", category: "book", counts: { class: 4, spell: 30, feat: 8 } },
+      { abbr: "basicRules", name: "Basic Rules (2014)", ruleset: "dnd2014", category: "book", counts: { feat: 6, spell: 10 } },
+      { abbr: "QST", name: "Sample Quest", ruleset: "mixed", category: "adventure", counts: { item: 3 } },
+      { abbr: "HBX", name: "My Homebrew", ruleset: "dnd2014", category: "homebrew", counts: { feat: 2 } },
     ] };
   }
 
@@ -196,11 +198,12 @@ export class ContentService {
     const picked = sources.filter((s) => req.sources.includes(s.abbr));
     if (!picked.length) throw apiError("invalid_argument", "Select at least one source book.");
     const total = picked.length;
+    const replaced = picked.filter((src) => this.imported.some((p) => p.id === `pack-5et-${src.abbr.toLowerCase()}`)).length;
     const packs = picked.map((src, i) => {
       this.emitImport({ phase: "converting", done: i, total, message: `Converting ${src.name}` });
       const id = `pack-5et-${src.abbr.toLowerCase()}`;
       const count = Object.values(src.counts).reduce((a, b) => a + b, 0);
-      const pack: ContentPack = { id, name: src.name, version: "local", kind: "local-import", rulesets: [src.ruleset], elementCount: count, enabled: true,
+      const pack: ContentPack = { id, name: src.name, version: "local", kind: "local-import", rulesets: src.ruleset === "mixed" ? ["dnd2014", "dnd2024"] : [src.ruleset], elementCount: count, enabled: true,
         license: "Local import", attribution: "Converted from the user's own data folder.", sourceIds: [`5et-${src.abbr}`], redistributable: false };
       this.imported = [...this.imported.filter((p) => p.id !== id), pack];
       return pack;
@@ -208,9 +211,17 @@ export class ContentService {
     this.emitImport({ phase: "done", done: total, total, message: "Import finished" });
     this.reloaded();
     const converted = packs.reduce((n, p) => n + p.elementCount, 0);
-    return { converted, packs,
-      partial: [{ element: "Sample subclass", reason: "Spellcasting progression was converted with defaults." }],
-      skipped: [{ element: "Sample vehicle", reason: "Vehicles are not supported." }] };
+    return { converted, packs, replaced,
+      partial: [
+        { element: "Sample subclass", kind: "subclass", reason: "Spellcasting progression was converted with defaults." },
+        { element: "Sample kit", kind: "item", reason: "pack content \"alms box\" is not an item and was not converted" },
+        { element: "Sample kit", kind: "item", reason: "pack content \"censer\" is not an item and was not converted" },
+      ],
+      skipped: [
+        { element: "Sample vehicle", kind: "vehicle", reason: "Vehicles are not supported." },
+        { element: "Common|PHB", kind: "language", reason: "defined by the core pack" },
+        { element: "Elvish|PHB", kind: "language", reason: "defined by the core pack" },
+      ] };
   }
 
   clearDownloaded(): ContentPack[] {

@@ -336,6 +336,7 @@ impl AppState {
                     abbr: s.abbr,
                     name: s.name,
                     ruleset: s.ruleset,
+                    category: s.category,
                     counts: s.counts,
                 })
                 .collect(),
@@ -385,6 +386,11 @@ impl AppState {
             let path = pack.write_to(&scratch.0).map_err(|e| tools_error(&e))?;
             staged.push((path, pack.manifest.id.clone()));
         }
+        let existing: Vec<String> = self.list_packs()?.into_iter().map(|p| p.id).collect();
+        let replaced = staged
+            .iter()
+            .filter(|(_, id)| existing.contains(id))
+            .count();
         sink.import_progress(&progress(
             "reloading",
             staged.len(),
@@ -401,10 +407,12 @@ impl AppState {
             .collect();
         let note = |n: &borealis_import_5etools::report::ReportNote| ImportNote {
             element: n.element.clone(),
+            kind: n.kind.clone(),
             reason: n.reason.clone(),
         };
         Ok(FiveToolsImportReport {
             converted: result.report.converted,
+            replaced,
             partial: result.report.partial.iter().map(note).collect(),
             skipped: result.report.skipped.iter().map(note).collect(),
             packs,

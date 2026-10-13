@@ -127,11 +127,16 @@ export interface RestrictionPreview {
 
 /* ---------- 5etools local import ---------- */
 
+/** Where a 5etools source is listed: `books.json`, `adventures.json`, a homebrew file's `_meta`, or nowhere. */
+export type FiveToolsSourceCategory = "book" | "adventure" | "homebrew" | "other";
+
 export interface FiveToolsSource {
   /** Book abbreviation as used by the data folder (e.g. "PHB", "XPHB"). */
   abbr: string;
   name: string;
-  ruleset: Ruleset;
+  /** "mixed" when the source has entries of both editions. */
+  ruleset: Ruleset | "mixed";
+  category: FiveToolsSourceCategory;
   /** Element counts by type found for this book. */
   counts: Record<string, number>;
 }
@@ -150,11 +155,15 @@ export interface FiveToolsImportRequest {
 
 export interface ImportNote {
   element: string;
+  /** Entity kind ("feat", "language", "subclass", ...). */
+  kind: string;
   reason: string;
 }
 
 export interface FiveToolsImportReport {
   converted: number;
+  /** Packs that already existed and were replaced in place (re-import). */
+  replaced: number;
   partial: ImportNote[];
   skipped: ImportNote[];
   /** Packs installed into the user's library (kind "local-import", redistributable false). */

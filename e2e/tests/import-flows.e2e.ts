@@ -69,4 +69,35 @@ describe('import-flows', { tags: ['import-flows'] }, () => {
     await screen.getByRole('button', /Re-check missing content/).tap();
     await expect(screen.getByRole('button', /Re-check missing content/)).toBeHidden();
   });
+
+  test('5etools: sources grouped with edition filter and select-all; report groups notes and counts replaced packs', async (ctx) => {
+    const { screen, browser } = ctx;
+    await bootToHome(ctx);
+    await goTo(ctx, '#/content');
+    const scan = async () => {
+      await screen.getByRole('button', 'Scan folder…').tap();
+      await screen.getByRole('button', 'I understand, continue').tap();
+      await expect(screen.getByRole('list', 'Books sources')).toBeVisible();
+    };
+    await scan();
+    await expect(screen.getByRole('list', 'Adventures sources')).toBeVisible();
+    await expect(screen.getByRole('list', 'Homebrew & other sources')).toBeVisible();
+    // 2024 only: the 2014 books disappear, the mixed adventure stays.
+    await browser.locator('select[aria-label="Edition"]').selectOption({ value: 'dnd2024' });
+    await expect(screen.getByText(/Basic Rules \(2014\)/)).toBeHidden();
+    await expect(screen.getByText(/Sample Quest/)).toBeVisible();
+    await browser.locator('select[aria-label="Edition"]').selectOption({ value: 'all' });
+    await screen.getByRole('checkbox', 'Select all homebrew & other').tap();
+    await screen.getByRole('button', 'Import 4 book(s)').tap();
+    await expect(screen.getByText('Partially converted (3)')).toBeVisible();
+    await expect(screen.getByText(/2 entries already defined by the core rules/)).toBeVisible();
+    expect(await bodyText(ctx)).not.toMatch(/Common\|PHB/);
+    await screen.getByRole('button', /pack content "…" is not an item/).tap();
+    await expect(screen.getByText('Sample kit').first()).toBeVisible();
+    // Re-import: the same packs are replaced in place.
+    await scan();
+    await screen.getByRole('checkbox', 'Select all homebrew & other').tap();
+    await screen.getByRole('button', 'Import 4 book(s)').tap();
+    await expect(screen.getByText(/Replaced 4 existing pack\(s\)/)).toBeVisible();
+  });
 });
