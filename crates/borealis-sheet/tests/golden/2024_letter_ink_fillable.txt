@@ -1,9 +1,9 @@
 pages: 4
 page 1
-  roles: Artifact=148 H2=6 Lbl=26 P=136 TH=4
-  text-ops: 356
+  roles: Artifact=150 H2=6 Lbl=26 P=138 TH=4
+  text-ops: 358
   colours (10): 0.100 0.100 0.100 RG; 0.100 0.100 0.100 rg; 0.300 0.300 0.300 RG; 0.300 0.300 0.300 rg; 0.330 0.330 0.330 RG; 0.330 0.330 0.330 rg; 0.550 0.550 0.550 rg; 0.720 0.720 0.720 RG; 0.950 0.950 0.950 rg; 1.000 1.000 1.000 rg
-  fields (97):
+  fields (98):
     ac.note
     ac.shield
     armor.heavy
@@ -101,6 +101,7 @@ page 1
     skill.survival.exp
     skill.survival.prof
     use.1.box.1
+    use.2.box.1
 page 2
   roles: Artifact=36 H2=11 Lbl=18 P=43 TH=4
   text-ops: 175
@@ -238,4 +239,4 @@ page 4
     spell.1.slot.2.used.3
     spell.1.slot.3.used.1
     spell.1.slot.3.used.2
-document fields: 219
+document fields: 220

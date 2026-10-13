@@ -13,6 +13,10 @@ pub struct SpellcastingList {
     /// `known="bool"`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub known: Option<bool>,
+    /// `<extend>` with a spell id only: the spell is always prepared for every class this
+    /// extension applies to, once that class can cast spells of its level.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prepared: Option<bool>,
     /// Unknown attributes.
     #[serde(default, skip_serializing_if = "Extra::is_empty")]
     pub extra: Extra,

@@ -838,6 +838,11 @@
           "type": "boolean",
           "default": false
         },
+        "prepared": {
+          "type": "boolean",
+          "default": false,
+          "description": "<extend> with a spell id only: always prepared for each class the extension applies to once that class can cast the spell's level."
+        },
         "extra": {
           "$ref": "#/$defs/Extra"
         }

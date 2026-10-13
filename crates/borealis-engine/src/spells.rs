@@ -141,6 +141,53 @@ fn spell_grant(
     })
 }
 
+/// The element behind an extension block: a `Grants` carrier stands for its granter.
+fn extension_grant(graph: &Graph<'_>, node: NodeId) -> crate::snapshot::SpellGrant {
+    let mut n = &graph.nodes[node];
+    if n.e.el.ty == "Grants" {
+        if let Some(p) = n.parent {
+            n = &graph.nodes[p];
+        }
+    }
+    crate::snapshot::SpellGrant {
+        name: n.e.el.name.clone(),
+        ty: n.e.el.ty.clone(),
+        granted_by: n.parent.map(|id| graph.nodes[id].e.el.name.clone()),
+        class_name: None,
+    }
+}
+
+/// Spell-id `<extend prepared>` entries: always prepared once the class reaches their level.
+fn add_prepared_extensions(
+    graph: &Graph<'_>,
+    uni: &Universe,
+    extensions: &[(NodeId, &borealis_content::SpellcastingList)],
+    top: u32,
+    spells: &mut Vec<SpellEntry>,
+) {
+    for (node, l) in extensions {
+        if l.prepared != Some(true) || !l.is_spell_id() {
+            continue;
+        }
+        let id = l.supports.trim();
+        let Some(e) = uni.get(id) else { continue };
+        let level = spell_level(e);
+        if level == 0 || level > top || spells.iter().any(|s| s.id == id) {
+            continue;
+        }
+        spells.push(SpellEntry {
+            id: id.to_string(),
+            name: e.el.name.clone(),
+            level,
+            prepared: true,
+            always_prepared: true,
+            known: true,
+            damage: None,
+            granted_by: Some(extension_grant(graph, *node)),
+        });
+    }
+}
+
 fn spell_level(e: &crate::universe::UElem) -> u32 {
     e.spell_level().unwrap_or(0)
 }
@@ -156,7 +203,8 @@ pub fn spellcasting_snapshots(
     diags: &mut DiagSink,
 ) -> Vec<SpellcastingSnapshot> {
     let mut out: Vec<SpellcastingSnapshot> = Vec::new();
-    for info in graph.spell_infos() {
+    let all_infos = graph.spell_infos();
+    for info in &all_infos {
         if info.sc.extend == Some(true)
             || info.name.is_empty()
             || out.iter().any(|o| o.name == info.name)
@@ -267,6 +315,16 @@ pub fn spellcasting_snapshots(
         }
         let from_list = prepare && info.sc.list.as_ref().is_some_and(|l| l.known == Some(true));
         let top = graph.highest_slot_level(&info.name, class_lvl.max(1));
+        // extension blocks (patron lists, feat/species lists) that apply to this class (10.4)
+        let extensions: Vec<(NodeId, &borealis_content::SpellcastingList)> = all_infos
+            .iter()
+            .filter(|i| {
+                i.sc.extend == Some(true)
+                    && (i.sc.all == Some(true) || i.name.eq_ignore_ascii_case(&info.name))
+            })
+            .flat_map(|i| i.sc.extends.iter().map(move |l| (i.node, l)))
+            .collect();
+        add_prepared_extensions(graph, uni, &extensions, top, &mut spells);
         let extra_lists: Vec<borealis_content::SpellcastingList> = rules
             .extend_lists
             .iter()
@@ -303,8 +361,13 @@ pub fn spellcasting_snapshots(
                 out
             };
         let book_candidates = if rules.spellbook.is_some() {
-            let lists: Vec<&borealis_content::SpellcastingList> =
-                info.sc.list.iter().chain(info.sc.extends.iter()).collect();
+            let lists: Vec<&borealis_content::SpellcastingList> = info
+                .sc
+                .list
+                .iter()
+                .chain(info.sc.extends.iter())
+                .chain(extensions.iter().map(|e| e.1))
+                .collect();
             candidate_entries(&book, &lists)
         } else {
             Vec::new()
@@ -315,6 +378,7 @@ pub fn spellcasting_snapshots(
                 .list
                 .iter()
                 .chain(info.sc.extends.iter())
+                .chain(extensions.iter().map(|e| e.1))
                 .chain(extra_lists.iter())
                 .collect();
             let found = candidate_entries(&spells, &lists);

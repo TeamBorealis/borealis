@@ -496,7 +496,7 @@ impl<'u> Evaluation<'u> {
         }
         let multiclass_slots =
             spells::multiclass_slots(&self.graph, self.uni, self.hooks, &mut diags);
-        let free_casts = crate::spell_rules::free_casts(&self.graph, prof);
+        let free_casts = crate::spell_rules::free_casts(&self.graph, prof, &mods);
         let save_dcs = crate::spell_rules::save_dcs(&self.graph, &mods, prof, &spellcasting);
         let inventory = gear::inventory_snapshot(
             self.uni,

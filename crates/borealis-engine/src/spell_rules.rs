@@ -130,47 +130,88 @@ pub fn progression(uni: &Universe, class: &str, column: &str, class_level: u32) 
         .and_then(|n| i32::try_from(n).ok())
 }
 
-/// Limited free casts granted to the character.
+/// Uses of a `free_cast` object: the number (when the engine resolves it) and the authored rule.
+fn free_cast_uses(v: &Value, prof: i32, mods: &[i32; 6]) -> (Option<i32>, String) {
+    match v.get("uses") {
+        Some(Value::Number(k)) => (k.as_i64().and_then(|k| i32::try_from(k).ok()), k_text(k)),
+        Some(Value::String(s)) if s == "proficiency" => (Some(prof), s.clone()),
+        // an ability name: uses equal to its modifier, at least one
+        Some(Value::String(s)) if ABILITIES.contains(&s.as_str()) => {
+            let i = ABILITIES.iter().position(|a| a == s).unwrap_or(0);
+            (Some(mods[i].max(1)), s.clone())
+        }
+        Some(t) => (
+            None,
+            format!(
+                "table:{}",
+                t.get("key").and_then(Value::as_str).unwrap_or("?")
+            ),
+        ),
+        None => (None, String::new()),
+    }
+}
+
+/// The `spell_free_cast` rule of `parent` bound to the Spell select that filled slot `si`.
+fn select_free_cast(graph: &Graph<'_>, parent: usize, si: usize) -> Option<Value> {
+    let p = &graph.nodes[parent];
+    let ri = usize::try_from(p.slots.get(si)?.key.rule).ok()?;
+    let Some(Rule::Select(sel)) = p.e.el.rules.get(ri) else {
+        return None;
+    };
+    p.e.el.rules.iter().find_map(|r| match r {
+        Rule::Custom(c)
+            if c.kind == "spell_free_cast"
+                && c.fields.get("select").and_then(Value::as_str) == Some(sel.name.as_str()) =>
+        {
+            Some(Value::Object(c.fields.clone()))
+        }
+        _ => None,
+    })
+}
+
+/// Limited free casts granted to the character: `grant_spell.free_cast` on a grant, or a
+/// `spell_free_cast` rule bound to the Spell select the spell was picked in.
 #[must_use]
-pub fn free_casts(graph: &Graph<'_>, prof: i32) -> Vec<FreeCastSnapshot> {
+pub fn free_casts(graph: &Graph<'_>, prof: i32, mods: &[i32; 6]) -> Vec<FreeCastSnapshot> {
     let mut out = Vec::new();
     for id in graph.preorder() {
         let n = &graph.nodes[id];
-        let (Origin::Granted(ri), Some(parent)) = (&n.origin, n.parent) else {
-            continue;
+        let Some(parent) = n.parent else { continue };
+        let (v, also_with_slots) = match n.origin {
+            Origin::Granted(ri) => {
+                let Some(Rule::Grant(g)) = graph.nodes[parent].e.el.rules.get(ri) else {
+                    continue;
+                };
+                let Some(raw) = g.extra.attributes.get(X_FREE_CAST) else {
+                    continue;
+                };
+                let Ok(v) = serde_json::from_str::<Value>(raw) else {
+                    continue;
+                };
+                let also = g
+                    .extra
+                    .attributes
+                    .get(X_ALSO_WITH_SLOTS)
+                    .is_some_and(|s| s == "true");
+                (v, also)
+            }
+            Origin::Selected(si) if n.e.el.ty == "Spell" => {
+                let Some(rule) = select_free_cast(graph, parent, si) else {
+                    continue;
+                };
+                let also = rule.get("also_with_slots") == Some(&Value::Bool(true));
+                (rule, also)
+            }
+            _ => continue,
         };
-        let Some(Rule::Grant(g)) = graph.nodes[parent].e.el.rules.get(*ri) else {
-            continue;
-        };
-        let Some(raw) = g.extra.attributes.get(X_FREE_CAST) else {
-            continue;
-        };
-        let Ok(v) = serde_json::from_str::<Value>(raw) else {
-            continue;
-        };
-        let (uses, uses_rule) = match v.get("uses") {
-            Some(Value::Number(k)) => (k.as_i64().and_then(|k| i32::try_from(k).ok()), k_text(k)),
-            Some(Value::String(s)) if s == "proficiency" => (Some(prof), s.clone()),
-            Some(t) => (
-                None,
-                format!(
-                    "table:{}",
-                    t.get("key").and_then(Value::as_str).unwrap_or("?")
-                ),
-            ),
-            None => (None, String::new()),
-        };
+        let (uses, uses_rule) = free_cast_uses(&v, prof, mods);
         out.push(FreeCastSnapshot {
             spell: n.e.el.id.clone(),
             name: n.e.el.name.clone(),
             uses,
             uses_rule,
             recharge: text(&v, "recharge"),
-            also_with_slots: g
-                .extra
-                .attributes
-                .get(X_ALSO_WITH_SLOTS)
-                .is_some_and(|s| s == "true"),
+            also_with_slots,
             source: graph.nodes[parent].e.el.id.clone(),
         });
     }

@@ -123,9 +123,13 @@ fn rich_element() -> Element {
         list: Some(SpellcastingList {
             supports: "W".into(),
             known: Some(true),
+            prepared: None,
             extra: extra.clone(),
         }),
-        extends: vec![SpellcastingList::new("ID_S")],
+        extends: vec![SpellcastingList {
+            prepared: Some(true),
+            ..SpellcastingList::new("ID_S")
+        }],
         extra: extra.clone(),
     });
     e.equipment = Some(Equipment {
