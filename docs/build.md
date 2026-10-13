@@ -47,6 +47,17 @@ Needs JDK 17 (not on PATH by default), SDK with NDK 27.2.12479018, rust android 
 (unstripped debug `libborealis_lib.so` is 447 MB uncompressed; release build will be far smaller).
 Content packs are in `assets/content/`.
 
+### Release signing (Android)
+
+The committed Gradle project signs the `release` build only when both env vars are set; otherwise release
+builds stay unsigned as before. The keystore is PKCS12, key alias `borealis`, key password equal to the store
+password. `ANDROID_KEYSTORE_PATH` is the keystore file path and `ANDROID_KEYSTORE_PASSWORD` its password.
+In the release workflow they come from the repository secrets `ANDROID_KEYSTORE_B64` (base64 of the keystore,
+decoded to a temp file) and `ANDROID_KEYSTORE_PASSWORD`. Local signed build (arm64):
+`ANDROID_KEYSTORE_PATH=... ANDROID_KEYSTORE_PASSWORD=... npm run tauri -- android build --target aarch64 --apk`,
+output `src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk`
+(about 21 MiB); check with `apksigner verify --print-certs`.
+
 ## iOS (simulator, debug, aarch64-sim) - verified 2026-10-08
 
 Prereqs (no sudo): Xcode 27 (license accepted), `brew install cocoapods xcodegen` (the gem route needs sudo),
