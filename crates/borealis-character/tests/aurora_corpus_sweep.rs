@@ -49,7 +49,14 @@ const EXAMPLES: usize = 3;
 const FIGHTER: &str = "ID_WOTC_PHB_CLASS_FIGHTER";
 const HUMAN: &str = "ID_RACE_HUMAN";
 const HUMAN_VARIANT: &str = "ID_RACE_VARIANT_HUMAN_VARIANT";
-const BASE_PACKS: &[&str] = &["core", "srd-5.1", "srd-5.2.1"];
+const WIZARD: &str = "ID_WOTC_PHB_CLASS_WIZARD";
+const BASE_PACKS: &[&str] = &[
+    "core",
+    "srd-5.1",
+    "srd-5.2.1",
+    "srd-5.1-monsters",
+    "srd-5.2.1-monsters",
+];
 
 #[derive(Clone, Copy)]
 enum Pick {
@@ -749,8 +756,12 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
         }
     }
 
-    // feats on level 1 (variant human), 4 and 19 fighters
-    let hosts = feat_hosts(&sw, &fighter);
+    // feats on level 1 (variant human), 4 and 19 fighters and wizards (the caster hosts
+    // satisfy "can cast a spell" requirements, `[type:spell]`)
+    let mut hosts = feat_hosts(&sw, &fighter);
+    if let Ok(wizard) = sw.with_class(Ruleset::Dnd2014, WIZARD) {
+        hosts.extend(feat_hosts(&sw, &wizard));
+    }
     let mut unoffered = Counts::new();
     let mut unoffered_ex: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for el in of_type("Feat") {
@@ -833,7 +844,7 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
     }
     println!("--- diagnostics on our elements outside the build (once per element)");
     global.print();
-    println!("--- feats not offered on the level 1/4/19 fighter hosts");
+    println!("--- feats not offered on the level 1/4/19 fighter and wizard hosts");
     for (k, v) in &unoffered {
         println!("{v:>6}  {k}  [{}]", unoffered_ex[k].join(" "));
     }
@@ -868,8 +879,8 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
     panics
 }
 
-fn feat_hosts(sw: &Sweeper<'_>, fighter: &CharacterState) -> Vec<CharacterState> {
-    let mut state = fighter.clone();
+fn feat_hosts(sw: &Sweeper<'_>, class_host: &CharacterState) -> Vec<CharacterState> {
+    let mut state = class_host.clone();
     if let Some(Ok(s)) = sw.pick(&state, HUMAN) {
         state = s;
     }
@@ -887,7 +898,10 @@ fn feat_hosts(sw: &Sweeper<'_>, fighter: &CharacterState) -> Vec<CharacterState>
         }
         let snap = sw.engine.derive(&state);
         let feat_option = snap.slots.iter().find_map(|s| {
-            let o = s.options.iter().find(|o| o.name == "Feat")?;
+            let o = s
+                .options
+                .iter()
+                .find(|o| o.name == "Feat" || o.name.starts_with("Feat ("))?;
             (s.chosen.is_none() && s.ty == "Class Feature").then(|| (s.key.clone(), o.id.clone()))
         });
         let mut host = state.clone();
