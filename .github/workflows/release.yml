@@ -187,7 +187,7 @@ jobs:
           [ -f "$apk" ] || { echo "::error::release APK not found at $apk"; exit 1; }
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$apk"
           mkdir -p dist-release
-          cp "$apk" "dist-release/Borealis_${VERSION}_universal.apk"
+          cp "$apk" "dist-release/Borealis_${VERSION}_arm64.apk"
           ls -l dist-release
       - name: Remove keystore
         if: always()
@@ -219,11 +219,11 @@ jobs:
         run: |
           set -euo pipefail
           gh release view "$TAG" >/dev/null || { echo "::error::no release for $TAG; this mode only adds to an existing release"; exit 1; }
-          apk="Borealis_${VERSION}_universal.apk"
+          apk="Borealis_${VERSION}_arm64.apk"
           mkdir sums
           gh release download "$TAG" --pattern SHA256SUMS.txt --dir sums || : > sums/SHA256SUMS.txt
           line=$(cd apk && sha256sum "$apk")
-          { grep -v -F "_universal.apk" sums/SHA256SUMS.txt || true; echo "$line"; } | sort -k2 > SHA256SUMS.txt
+          { grep -v -F "_arm64.apk" sums/SHA256SUMS.txt || true; echo "$line"; } | sort -k2 > SHA256SUMS.txt
           cat SHA256SUMS.txt
           gh release upload "$TAG" "apk/$apk" SHA256SUMS.txt --clobber
 
@@ -254,7 +254,7 @@ jobs:
             "Borealis_${VERSION}_amd64.AppImage" \
             "Borealis-${VERSION}-1.x86_64.rpm" \
             "Borealis_${VERSION}_x64-setup.exe" \
-            "Borealis_${VERSION}_universal.apk"; do
+            "Borealis_${VERSION}_arm64.apk"; do
             [ -f "$f" ] || { echo "::error::missing expected asset $f"; ls -l; exit 1; }
           done
       - name: Checksums

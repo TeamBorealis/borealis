@@ -56,7 +56,7 @@ In the release workflow they come from the repository secrets `ANDROID_KEYSTORE_
 decoded to a temp file) and `ANDROID_KEYSTORE_PASSWORD`. Local signed build (arm64):
 `ANDROID_KEYSTORE_PATH=... ANDROID_KEYSTORE_PASSWORD=... npm run tauri -- android build --target aarch64 --apk`,
 output `src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk`
-(about 21 MiB); check with `apksigner verify --print-certs`.
+(about 21 MiB; arm64 only despite the Gradle variant name, published as `Borealis_<version>_arm64.apk`); check with `apksigner verify --print-certs`.
 
 ## iOS (simulator, debug, aarch64-sim) - verified 2026-10-08
 
