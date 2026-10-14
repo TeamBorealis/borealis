@@ -213,12 +213,65 @@ async fn transcribe(
             kept.join("; ")
         ));
     }
-    let text = best.map(|(_, _, t)| t).unwrap_or_default();
+    let (text, paraphrased) = strip_paraphrase(&best.map(|(_, _, t)| t).unwrap_or_default());
+    if paraphrased {
+        out.notes.push(format!(
+            "{READING_NOTE}{}: the visual transcription says it is not a word-for-word copy (paraphrased passages), so descriptions from these pages are not the printed text; import a text export of the source (ODT or DOCX) to keep the printed wording",
+            v.label
+        ));
+    }
     if text.trim().is_empty() {
         out.notes
             .push(format!("{READING_NOTE}{}: no text could be read", v.label));
     }
     Ok(text)
+}
+
+/// Phrases of a transcription's own disclaimer that it did not copy the page word for word.
+const DISCLAIMER_MARKS: [&str; 6] = [
+    "word-for-word",
+    "word for word",
+    "not verbatim",
+    "can't reproduce",
+    "cannot reproduce",
+    "paraphrased",
+];
+/// Paragraphs at the start of a transcription searched for its disclaimer.
+const DISCLAIMER_PARAGRAPHS: usize = 2;
+/// Inline markers a transcription puts on passages it reworded.
+const PARAPHRASE_MARKS: [&str; 4] = [
+    "[paraphrased]",
+    "[paraphrased.]",
+    "(paraphrased)",
+    "(paraphrased.)",
+];
+
+/// A transcription without its "not a word-for-word copy" disclaimer paragraph and its
+/// "(Paraphrased.)" passage markers, and whether it had either (its text is then not the
+/// printed text). Headings are never a disclaimer.
+fn strip_paraphrase(text: &str) -> (String, bool) {
+    let paragraphs: Vec<&str> = text.split("\n\n").collect();
+    let disclaimer = paragraphs.iter().take(DISCLAIMER_PARAGRAPHS).position(|p| {
+        let lower = p.to_lowercase();
+        !p.trim_start().starts_with('#') && DISCLAIMER_MARKS.iter().any(|m| lower.contains(m))
+    });
+    let kept: Vec<&str> = paragraphs
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| Some(*i) != disclaimer)
+        .map(|(_, p)| *p)
+        .collect();
+    let mut out = kept.join("\n\n");
+    let mut marked = false;
+    for mark in PARAPHRASE_MARKS {
+        while let Some(at) = out.to_lowercase().find(mark) {
+            let end = at + mark.len();
+            let skip = out[end..].len() - out[end..].trim_start_matches([' ', '\t']).len();
+            out.replace_range(at..end + skip, "");
+            marked = true;
+        }
+    }
+    (out, marked || disclaimer.is_some())
 }
 
 fn page_label(name: &str, first: u32, last: u32) -> String {
@@ -489,6 +542,22 @@ mod tests {
             w.join("\n").lines().count(),
             text.trim_end().lines().count()
         );
+    }
+
+    #[test]
+    fn a_paraphrase_disclaimer_and_markers_are_stripped_and_flagged() {
+        let t = "> **Note:** This is not a word-for-word copy of the pages.\n\n# Mossfolk\n[Paraphrased] Mossfolk live in bogs.\n\n**Age.** Adult at 20. (Paraphrased.)";
+        let (text, flagged) = strip_paraphrase(t);
+        assert!(flagged);
+        assert_eq!(
+            text,
+            "# Mossfolk\nMossfolk live in bogs.\n\n**Age.** Adult at 20. "
+        );
+        // A heading's paragraph is never the disclaimer.
+        let (_, flagged) = strip_paraphrase("# Mossfolk\nThey repeat oaths word for word.");
+        assert!(!flagged);
+        let plain = "# Mossfolk\n\nMossfolk live in bogs.";
+        assert_eq!(strip_paraphrase(plain), (plain.to_string(), false));
     }
 
     #[test]
