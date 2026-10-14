@@ -1,6 +1,8 @@
 //! The checks a reference character is judged by (`CharCheck`).
 
-use borealis_engine::snapshot::{CharacterSnapshot, SpellcastingSnapshot};
+use std::collections::BTreeSet;
+
+use borealis_engine::snapshot::{CharacterSnapshot, SlotSnapshot, SpellcastingSnapshot};
 use borealis_engine::Severity;
 
 use crate::character::Built;
@@ -195,6 +197,31 @@ fn save_dc(l: &Loaded, s: &CharacterSnapshot, name: &str, value: i32) -> Result<
     collect(vec![eq("save dc", dc.value, Some(Some(value)))])
 }
 
+/// Number of entries a slot offers: the entries of a `List` rule, else the element options.
+fn option_count(x: &SlotSnapshot) -> usize {
+    if x.list_items.is_empty() {
+        x.options.len()
+    } else {
+        x.list_items.len()
+    }
+}
+
+/// Does the slot offer an element with this id?
+fn offers_id(x: &SlotSnapshot, id: &str) -> bool {
+    x.options.iter().any(|o| o.id == id)
+}
+
+/// Does the slot offer an element, or a `List` entry, matching this name (`A|B`)?
+fn offers_name(x: &SlotSnapshot, n: &str) -> bool {
+    x.options.iter().any(|o| name_matches(n, &o.name))
+        || x.list_items.iter().any(|(_, t)| name_matches(n, t))
+}
+
+/// The rule a slot belongs to: the slots of a `select` with `number: N` share it.
+fn rule_of(x: &SlotSnapshot) -> (&str, u32, Option<&str>) {
+    (x.key.owner.as_str(), x.key.rule, x.key.instance.as_deref())
+}
+
 fn choice(s: &CharacterSnapshot, check: &CharCheck) -> Result<(), String> {
     let CharCheck::Choice {
         name_contains,
@@ -204,7 +231,10 @@ fn choice(s: &CharacterSnapshot, check: &CharCheck) -> Result<(), String> {
         options_include_names,
         options_exclude_ids,
         options_exclude_names,
+        name_excludes,
         count,
+        selects,
+        picks,
         options,
         min_options,
     } = check
@@ -218,27 +248,31 @@ fn choice(s: &CharacterSnapshot, check: &CharCheck) -> Result<(), String> {
             name_contains
                 .as_deref()
                 .map_or(true, |n| norm(&x.name).contains(&norm(n)))
+                && !name_excludes
+                    .iter()
+                    .any(|n| norm(&x.name).contains(&norm(n)))
                 && ty.as_deref().map_or(true, |t| name_matches(t, &x.ty))
                 && owner
                     .as_deref()
                     .map_or(true, |o| name_matches(o, &x.owner.name))
-                && options_include_ids
-                    .iter()
-                    .all(|id| x.options.iter().any(|o| &o.id == id))
-                && options_include_names
-                    .iter()
-                    .all(|n| x.options.iter().any(|o| name_matches(n, &o.name)))
+                && options_include_ids.iter().all(|id| offers_id(x, id))
+                && options_include_names.iter().all(|n| offers_name(x, n))
         })
         .collect();
     if slots.is_empty() {
         return Err("no matching choice slot".into());
     }
-    let first = slots[0].options.len();
-    let offered = |f: &dyn Fn(&borealis_engine::snapshot::OptionRef) -> bool| {
-        slots.iter().any(|x| x.options.iter().any(f))
-    };
+    let first = option_count(slots[0]);
+    let rules: BTreeSet<_> = slots.iter().map(|x| rule_of(x)).collect();
+    let first_picks = slots
+        .iter()
+        .filter(|x| rule_of(x) == rule_of(slots[0]))
+        .count();
+    let offered = |f: &dyn Fn(&SlotSnapshot) -> bool| slots.iter().any(|x| f(x));
     let mut errs = vec![
         eq("matching slots", slots.len(), *count),
+        eq("matching selects", rules.len(), *selects),
+        eq("picks", first_picks, *picks),
         eq("options", first, *options),
         min_options
             .filter(|m| first < *m)
@@ -247,12 +281,12 @@ fn choice(s: &CharacterSnapshot, check: &CharCheck) -> Result<(), String> {
     errs.extend(
         options_exclude_ids
             .iter()
-            .map(|id| offered(&|o| &o.id == id).then(|| format!("offers excluded {id}"))),
+            .map(|id| offered(&|x| offers_id(x, id)).then(|| format!("offers excluded {id}"))),
     );
     errs.extend(
-        options_exclude_names.iter().map(|n| {
-            offered(&|o| name_matches(n, &o.name)).then(|| format!("offers excluded {n:?}"))
-        }),
+        options_exclude_names
+            .iter()
+            .map(|n| offered(&|x| offers_name(x, n)).then(|| format!("offers excluded {n:?}"))),
     );
     collect(errs)
 }

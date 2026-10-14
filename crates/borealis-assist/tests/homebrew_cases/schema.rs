@@ -152,6 +152,10 @@ pub struct ElementExpect {
     /// `"setter"` or `"setter@attribute"` -> a token the value must contain (schema 2).
     #[serde(default)]
     pub setters_contain: BTreeMap<String, String>,
+    /// `rules_include` and `json` also look at every pack element this one grants, directly or
+    /// through further grants (a source section whose sub-headings became child elements).
+    #[serde(default)]
+    pub follow_grants: bool,
 }
 
 /// Filter over the imported pack's elements, shared by counts.
@@ -401,10 +405,20 @@ pub enum CharCheck {
         options_exclude_ids: Vec<String>,
         #[serde(default)]
         options_exclude_names: Vec<String>,
-        /// Exact number of matching slots.
+        /// No matching slot's rule name may contain these (schema 2).
+        #[serde(default)]
+        name_excludes: Vec<String>,
+        /// Exact number of matching slots (a `select` with `number: N` is N slots).
         #[serde(default)]
         count: Option<usize>,
-        /// Exact / minimum option count of the first matching slot.
+        /// Exact number of distinct matching select rules (one rule is one choice, whatever its
+        /// `number`).
+        #[serde(default)]
+        selects: Option<usize>,
+        /// Exact number of picks (slots) of the first matching select rule.
+        #[serde(default)]
+        picks: Option<usize>,
+        /// Exact / minimum option count of the first matching slot (entries of a `List`).
         #[serde(default)]
         options: Option<usize>,
         #[serde(default)]

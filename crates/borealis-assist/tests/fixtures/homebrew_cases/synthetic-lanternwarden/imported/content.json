@@ -820,6 +820,163 @@
      "value": "1"
     }
    ]
+  },
+  {
+   "id": "ID_SYNTH_CLASS_FEATURE_EMBER_RITE",
+   "name": "Ember Rite",
+   "type": "Class Feature",
+   "source": "Synthetic Test Source",
+   "description": "<p>A rite with its own sub-headings.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_SYNTH_CLASS_FEATURE_EMBER_POOL",
+     "type": "Class Feature"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_CLASS_FEATURE_EMBER_POOL",
+   "name": "Ember Pool",
+   "type": "Class Feature",
+   "source": "Synthetic Test Source",
+   "description": "<p>Your pool of embers.</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "ember pool",
+     "name": "Ember Pool",
+     "max": 2,
+     "recharge": [
+      "short_rest"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_RACE_DIMFOLK",
+   "name": "Dimfolk",
+   "type": "Race",
+   "source": "Synthetic Test Source",
+   "description": "<p>Dim people.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "1"
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed",
+     "value": "30",
+     "bonus": "base"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_SIZE_MEDIUM",
+     "type": "Size"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_LANGUAGE_COMMON",
+     "type": "Language"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_SYNTH_RACIAL_TRAIT_DIM_SIGHT",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "select",
+     "type": "Racial Trait",
+     "name": "Dim Gift",
+     "supports": "Dim Gift"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_RACIAL_TRAIT_DIM_SIGHT",
+   "name": "Dim Sight",
+   "type": "Racial Trait",
+   "source": "Synthetic Test Source",
+   "description": "<p>You see 60 feet in the dark.</p>",
+   "rules": [
+    {
+     "kind": "sense",
+     "sense": "darkvision",
+     "range": 60
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_RACIAL_TRAIT_GLIMMER",
+   "name": "Glimmer",
+   "type": "Racial Trait",
+   "source": "Synthetic Test Source",
+   "description": "<p>A glimmer of another gift.</p>",
+   "supports": [
+    "Other Gift"
+   ]
+  },
+  {
+   "id": "ID_SYNTH_RACIAL_TRAIT_GLIMMER_2",
+   "name": "Glimmer",
+   "type": "Racial Trait",
+   "source": "Synthetic Test Source",
+   "description": "<p>You gain Stealth proficiency.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_STEALTH",
+     "type": "Proficiency"
+    }
+   ],
+   "supports": [
+    "Dim Gift"
+   ]
+  },
+  {
+   "id": "ID_SYNTH_BACKGROUND_WICKWRIGHT",
+   "name": "Wickwright",
+   "type": "Background",
+   "source": "Synthetic Test Source",
+   "description": "<p>You made wicks for a living.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "List",
+     "name": "Quirk",
+     "number": 2,
+     "items": [
+      {
+       "id": 1,
+       "text": "Hums."
+      },
+      {
+       "id": 2,
+       "text": "Whistles."
+      },
+      {
+       "id": 3,
+       "text": "Mutters."
+      }
+     ]
+    },
+    {
+     "kind": "select",
+     "type": "Proficiency",
+     "name": "Tool Proficiency (Wickwright)",
+     "number": 2,
+     "supports": "ID_PROFICIENCY_TOOL_PROFICIENCY_THIEVES_TOOLS|ID_PROFICIENCY_TOOL_PROFICIENCY_FORGERY_KIT|ID_PROFICIENCY_TOOL_PROFICIENCY_DISGUISE_KIT"
+    },
+    {
+     "kind": "select",
+     "type": "Proficiency",
+     "name": "Tool Expertise (Wickwright)",
+     "number": 1,
+     "supports": "ID_PROFICIENCY_TOOL_PROFICIENCY_THIEVES_TOOLS|ID_PROFICIENCY_TOOL_PROFICIENCY_FORGERY_KIT|ID_PROFICIENCY_TOOL_PROFICIENCY_DISGUISE_KIT"
+    }
+   ]
   }
  ]
 }

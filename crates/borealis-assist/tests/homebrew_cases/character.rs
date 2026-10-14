@@ -132,13 +132,13 @@ fn pick_target(l: &Loaded, option: &str) -> Result<Target, String> {
     if option.starts_with("id:") {
         return resolve(l, "", option).map(Target::Id);
     }
-    Ok(l.elements
-        .iter()
-        .find(|e| name_matches(option, &e.name))
-        .map_or_else(
-            || Target::Name(option.to_string()),
-            |e| Target::Id(e.id.clone()),
-        ))
+    // Two pack elements with the name (one per option list that reuses it) cannot tell which
+    // one a slot offers: match by name in the slot instead.
+    let mut named = l.elements.iter().filter(|e| name_matches(option, &e.name));
+    Ok(match (named.next(), named.next()) {
+        (Some(e), None) => Target::Id(e.id.clone()),
+        _ => Target::Name(option.to_string()),
+    })
 }
 
 /// A built character: its snapshot and the inventory uid of every equip key.

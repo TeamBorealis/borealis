@@ -118,7 +118,10 @@ fn char_check_keys(check: &str) -> Option<&'static [&'static str]> {
             "options_include_names",
             "options_exclude_ids",
             "options_exclude_names",
+            "name_excludes",
             "count",
+            "selects",
+            "picks",
             "options",
             "min_options",
         ],
@@ -157,7 +160,7 @@ fn char_check_keys(check: &str) -> Option<&'static [&'static str]> {
     })
 }
 
-const ELEMENT_KEYS: [&str; 9] = [
+const ELEMENT_KEYS: [&str; 10] = [
     "setters_contain",
     "type",
     "name",
@@ -167,6 +170,7 @@ const ELEMENT_KEYS: [&str; 9] = [
     "rules_include",
     "json",
     "text_contains",
+    "follow_grants",
 ];
 
 fn unknown_keys(v: &Value, allowed: &[&str], at: &str, out: &mut Vec<String>) {
@@ -788,4 +792,82 @@ fn unresolved_origin_and_picks_fail_the_character() {
         .iter()
         .filter(|x| x.id.starts_with("bad-"))
         .all(|x| !x.pass));
+}
+
+/// `follow_grants` is what lets a rule on a granted sub-heading element satisfy an expectation
+/// on its parent; without it the parent alone is judged.
+#[test]
+fn follow_grants_reads_granted_elements_only_when_asked() {
+    let dir = fixture("synthetic-lanternwarden");
+    let mut case = read_case(&dir.join("expected.json")).expect("case");
+    let loaded = pack::load(&content_root(), &case, &dir).expect("pack");
+    let mut wide = case.clone();
+    wide.characters.clear();
+    let ok = run_loaded("follow-on", &wide, &loaded);
+    for id in ["el3.rite.pool", "el3.race.dim_sight", "el3.race.dim_json"] {
+        let row = ok.rows.iter().find(|r| r.id == id).expect("row");
+        assert!(row.pass, "{id}: {}", row.detail);
+    }
+    for x in case
+        .elements
+        .iter_mut()
+        .filter(|x| x.head.id.starts_with("el3."))
+    {
+        x.follow_grants = false;
+    }
+    case.characters.clear();
+    let off = run_loaded("follow-off", &case, &loaded);
+    let failing: Vec<&str> = off
+        .rows
+        .iter()
+        .filter(|r| r.id.starts_with("el3.") && !r.pass)
+        .map(|r| r.id.as_str())
+        .collect();
+    assert_eq!(
+        failing,
+        ["el3.rite.pool", "el3.race.dim_sight", "el3.race.dim_json"]
+    );
+}
+
+/// A wrong select count, pick count or list size is reported, and the rule name filter excludes.
+#[test]
+fn choice_selects_picks_and_list_sizes_are_checked() {
+    let dir = fixture("synthetic-lanternwarden");
+    let mut case = read_case(&dir.join("expected.json")).expect("case");
+    let loaded = pack::load(&content_root(), &case, &dir).expect("pack");
+    case.characters.retain(|c| c.id == "lw-bg");
+    for x in &mut case.characters[0].expect {
+        if let schema::CharCheck::Choice {
+            selects,
+            picks,
+            options,
+            name_excludes,
+            ..
+        } = &mut x.check
+        {
+            match x.head.id.as_str() {
+                "quirk" => *selects = Some(2),
+                "tools" => *picks = Some(1),
+                "expertise" => *options = Some(8),
+                "all_selects" => *name_excludes = vec!["tool".into()],
+                _ => {}
+            }
+        }
+    }
+    let r = run_loaded("synthetic-choice", &case, &loaded);
+    let detail = |id: &str| {
+        r.rows
+            .iter()
+            .find(|x| x.id == format!("lw-bg/{id}"))
+            .map(|x| (x.pass, x.detail.clone()))
+            .expect("row")
+    };
+    assert!(detail("quirk")
+        .1
+        .contains("matching selects = 1, expected 2"));
+    assert!(detail("tools").1.contains("picks = 2, expected 1"));
+    assert!(detail("expertise").1.contains("options = 3, expected 8"));
+    assert!(detail("all_selects")
+        .1
+        .contains("matching selects = 1, expected 3"));
 }

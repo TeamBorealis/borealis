@@ -11,8 +11,8 @@ use borealis_content::{
 use serde_json::Value;
 
 use crate::schema::{
-    AbsentExpect, CaseFile, CountExpect, ElementExpect, ElementFilter, Head, ImportReport, Level,
-    Mech, MentionExpect, ReportExpect, REPORT_FORMAT, REPORT_OUTCOMES,
+    AbsentExpect, CaseFile, CountExpect, ElementExpect, ElementFilter, Head, ImportReport,
+    JsonCheck, Level, Mech, MentionExpect, ReportExpect, REPORT_FORMAT, REPORT_OUTCOMES,
 };
 use crate::{Row, IMPORTED_DIR};
 
@@ -156,8 +156,23 @@ pub fn element_text(e: &Element) -> String {
         t.extend(s.usage.clone());
         t.extend(s.action.clone());
     }
-    t.extend(e.setters.iter().map(|s| s.value.clone()));
+    // a price keeps its unit in an attribute: "1500" + currency "gp" shows as "1500 gp"
+    t.extend(
+        e.setters
+            .iter()
+            .map(|s| match s.attributes.get("currency") {
+                Some(c) => format!("{} {c}", s.value),
+                None => s.value.clone(),
+            }),
+    );
     norm(&t.join(" \n "))
+}
+
+/// Does the (normalised) text contain the token, ignoring spacing ("1500gp" = "1500 gp",
+/// "Wood/Metal" = "Wood / Metal")?
+fn text_has(text: &str, token: &str) -> bool {
+    let t = norm(token);
+    text.contains(&t) || squash(text).contains(&squash(&t))
 }
 
 fn has_prose(e: &Element) -> bool {
@@ -438,6 +453,58 @@ fn rule_included(want: &Value, rules: &[Value]) -> bool {
     }
 }
 
+/// The element and, when `follow`, every pack element it grants (transitively), in grant order.
+fn granted_closure<'a>(l: &'a Loaded, e: &'a Element, follow: bool) -> Vec<&'a Element> {
+    let mut seen = vec![e];
+    if !follow {
+        return seen;
+    }
+    let mut next = 0;
+    while next < seen.len() {
+        let ids: Vec<String> = seen[next]
+            .all_rules()
+            .filter_map(|r| serde_json::to_value(r).ok())
+            .filter(|r| r.get("kind").and_then(Value::as_str) == Some("grant"))
+            .filter_map(|r| r.get("id").and_then(Value::as_str).map(str::to_string))
+            .collect();
+        next += 1;
+        for id in ids {
+            if let Some(g) = l.elements.iter().find(|x| x.id == id) {
+                if !seen.iter().any(|x| x.id == g.id) {
+                    seen.push(g);
+                }
+            }
+        }
+    }
+    seen
+}
+
+/// Does the JSON check hold on this serialized element?
+fn json_check_errors(json: &Value, j: &JsonCheck) -> Vec<String> {
+    let Some(v) = json.pointer(&j.pointer) else {
+        return vec![format!("{} missing", j.pointer)];
+    };
+    let mut errs = Vec::new();
+    if let Some(eq) = &j.equals {
+        if !subset(eq, v) {
+            errs.push(format!("{} = {v}, expected {eq}", j.pointer));
+        }
+    }
+    let text = norm(&match v {
+        Value::String(s) => s.clone(),
+        other => other.to_string(),
+    });
+    for t in &j.contains {
+        if !text.contains(&norm(t)) {
+            errs.push(format!("{} lacks {t:?}", j.pointer));
+        }
+    }
+    if !j.contains_any.is_empty() && !j.contains_any.iter().any(|t| text.contains(&norm(t))) {
+        errs.push(format!("{} has none of {:?}", j.pointer, j.contains_any));
+    }
+    errs
+}
+
 fn check_element(l: &Loaded, x: &ElementExpect) -> Result<(), String> {
     let Some(e) = find(l, &x.ty, &x.name) else {
         return Err(format!("no {} element named {:?}", x.ty, x.name));
@@ -466,9 +533,14 @@ fn check_element(l: &Loaded, x: &ElementExpect) -> Result<(), String> {
             errs.push(format!("no supports tag named {n:?}"));
         }
     }
-    let json = serde_json::to_value(e).map_err(|err| err.to_string())?;
-    let rules: Vec<Value> = e
-        .all_rules()
+    let closure = granted_closure(l, e, x.follow_grants);
+    let jsons: Vec<Value> = closure
+        .iter()
+        .map(|c| serde_json::to_value(c).map_err(|err| err.to_string()))
+        .collect::<Result<_, _>>()?;
+    let rules: Vec<Value> = closure
+        .iter()
+        .flat_map(|c| c.all_rules())
         .filter_map(|r| serde_json::to_value(r).ok())
         .collect();
     for want in &x.rules_include {
@@ -477,31 +549,30 @@ fn check_element(l: &Loaded, x: &ElementExpect) -> Result<(), String> {
         }
     }
     for j in &x.json {
-        let Some(v) = json.pointer(&j.pointer) else {
-            errs.push(format!("{} missing", j.pointer));
-            continue;
-        };
-        if let Some(eq) = &j.equals {
-            if !subset(eq, v) {
-                errs.push(format!("{} = {v}, expected {eq}", j.pointer));
-            }
-        }
-        let text = norm(&match v {
-            Value::String(s) => s.clone(),
-            other => other.to_string(),
+        // `/rules` of a closure is every rule of every element in it; any other pointer holds
+        // when some element of the closure satisfies it.
+        let all_rules = (j.pointer == "/rules" && x.follow_grants).then(|| {
+            let mut m = jsons[0].clone();
+            m["rules"] = Value::Array(rules.clone());
+            m
         });
-        for t in &j.contains {
-            if !text.contains(&norm(t)) {
-                errs.push(format!("{} lacks {t:?}", j.pointer));
+        let per = all_rules
+            .iter()
+            .chain(jsons.iter())
+            .map(|v| json_check_errors(v, j));
+        let mut best: Option<Vec<String>> = None;
+        for r in per {
+            if r.is_empty() {
+                best = Some(r);
+                break;
             }
+            best.get_or_insert(r);
         }
-        if !j.contains_any.is_empty() && !j.contains_any.iter().any(|t| text.contains(&norm(t))) {
-            errs.push(format!("{} has none of {:?}", j.pointer, j.contains_any));
-        }
+        errs.extend(best.unwrap_or_default());
     }
     let text = element_text(e);
     for t in &x.text_contains {
-        if !text.contains(&norm(t)) {
+        if !text_has(&text, t) {
             errs.push(format!("text lacks {t:?}"));
         }
     }
@@ -515,7 +586,7 @@ fn check_element(l: &Loaded, x: &ElementExpect) -> Result<(), String> {
 fn check_mention(l: &Loaded, x: &MentionExpect) -> Result<(), String> {
     let hit = l.elements.iter().any(|e| {
         let t = element_text(e);
-        x.text.iter().all(|w| t.contains(&norm(w)))
+        x.text.iter().all(|w| text_has(&t, w))
     });
     if hit {
         Ok(())

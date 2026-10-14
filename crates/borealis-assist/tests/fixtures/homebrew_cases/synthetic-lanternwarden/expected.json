@@ -71,6 +71,11 @@
   {
    "name": "Optional Rule: Dim Lanterns",
    "class": "unsupported"
+  },
+  {
+   "name": "Ember Rite",
+   "type": "Class Feature",
+   "class": "mechanised"
   }
  ],
  "elements": [
@@ -236,6 +241,73 @@
      ]
     }
    ]
+  },
+  {
+   "id": "el3.rite.pool",
+   "level": "must",
+   "class": "mechanised",
+   "type": "Class Feature",
+   "name": "Ember Rite",
+   "follow_grants": true,
+   "rules_include": [
+    {
+     "kind": "resource",
+     "recharge": [
+      "short_rest"
+     ]
+    }
+   ],
+   "note": "the resource lives on a sub-heading element the feature grants"
+  },
+  {
+   "id": "el3.race.dim_sight",
+   "level": "must",
+   "class": "mechanised",
+   "type": "Race",
+   "name": "Dimfolk",
+   "follow_grants": true,
+   "rules_include": [
+    [
+     {
+      "kind": "sense",
+      "sense": "darkvision",
+      "range": 60
+     },
+     {
+      "kind": "grant",
+      "id": "ID_VISION_DARKVISION"
+     }
+    ]
+   ],
+   "note": "darkvision as a sense rule on a granted trait or as the Vision grant"
+  },
+  {
+   "id": "el3.race.dim_json",
+   "level": "must",
+   "class": "mechanised",
+   "type": "Race",
+   "name": "Dimfolk",
+   "follow_grants": true,
+   "json": [
+    {
+     "pointer": "/rules",
+     "contains": [
+      "ID_LANGUAGE_COMMON",
+      "darkvision"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "el3.coat.price_text",
+   "level": "must",
+   "class": "mechanised",
+   "type": "Armor",
+   "name": "Wickweave Coat",
+   "text_contains": [
+    "30gp",
+    "12+dex modifier"
+   ]
   }
  ],
  "mentions": [
@@ -245,6 +317,24 @@
    "class": "text_only_ok",
    "text": [
     "lantern lore table"
+   ]
+  },
+  {
+   "id": "mention.price_glued",
+   "level": "must",
+   "class": "mechanised",
+   "text": [
+    "Coat",
+    "30gp"
+   ],
+   "note": "a price is value + currency attribute; spacing does not matter"
+  },
+  {
+   "id": "mention.spacing",
+   "level": "must",
+   "class": "mechanised",
+   "text": [
+    "DC8+proficiency+Constitution"
    ]
   }
  ],
@@ -928,6 +1018,116 @@
      ]
     }
    ]
+  },
+  {
+   "id": "lw-bg",
+   "race_id": "ID_RACE_HUMAN",
+   "background": "Wickwright",
+   "class_id": "ID_WOTC_PHB_CLASS_FIGHTER",
+   "level": 1,
+   "scores": [
+    14,
+    12,
+    13,
+    10,
+    10,
+    13
+   ],
+   "note": "a select with number 2 is one select rule with 2 picks",
+   "expect": [
+    {
+     "id": "quirk",
+     "level": "must",
+     "class": "mechanised",
+     "check": "choice",
+     "type": "List",
+     "owner": "Wickwright",
+     "name_contains": "Quirk",
+     "selects": 1,
+     "picks": 2,
+     "count": 2,
+     "options": 3,
+     "options_include_names": [
+      "Whistles."
+     ]
+    },
+    {
+     "id": "tools",
+     "level": "must",
+     "class": "mechanised",
+     "check": "choice",
+     "type": "Proficiency",
+     "owner": "Wickwright",
+     "name_excludes": [
+      "expertise"
+     ],
+     "selects": 1,
+     "picks": 2,
+     "count": 2,
+     "options_include_ids": [
+      "ID_PROFICIENCY_TOOL_PROFICIENCY_THIEVES_TOOLS"
+     ],
+     "options": 3
+    },
+    {
+     "id": "expertise",
+     "level": "must",
+     "class": "mechanised",
+     "check": "choice",
+     "type": "Proficiency",
+     "owner": "Wickwright",
+     "name_contains": "expertise",
+     "selects": 1,
+     "picks": 1,
+     "count": 1
+    },
+    {
+     "id": "all_selects",
+     "level": "must",
+     "class": "mechanised",
+     "check": "choice",
+     "owner": "Wickwright",
+     "selects": 3
+    }
+   ]
+  },
+  {
+   "id": "lw-dim",
+   "race": "Dimfolk",
+   "background_id": "ID_BACKGROUND_ACOLYTE",
+   "class_id": "ID_WOTC_PHB_CLASS_FIGHTER",
+   "level": 1,
+   "scores": [
+    14,
+    12,
+    13,
+    10,
+    10,
+    13
+   ],
+   "picks": [
+    {
+     "option": "Glimmer"
+    }
+   ],
+   "note": "two pack elements share the pick's name: the pick matches by name in the slot that offers one",
+   "expect": [
+    {
+     "id": "clean",
+     "level": "must",
+     "class": "mechanised",
+     "check": "clean"
+    },
+    {
+     "id": "granted",
+     "level": "must",
+     "class": "mechanised",
+     "check": "granted",
+     "ids": [
+      "ID_PROFICIENCY_SKILL_STEALTH"
+     ]
+    }
+   ]
   }
  ],
  "counts": [
@@ -967,7 +1167,7 @@
    "level": "must",
    "class": "mechanised",
    "type": "Race|Species",
-   "equals": 1
+   "equals": 2
   }
  ],
  "absent": [
