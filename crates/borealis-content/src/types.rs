@@ -94,6 +94,10 @@ known_types! {
     MonsterTrait => "Monster Trait": Default,
     Property => "Property": Default,
     RaceVariant => "Race Variant": Default,
+    /// Text-only rules or lore (no rules): the bundled 2024 glossary, and the rules sections
+    /// an import keeps as text in either edition. Not 2024-specific: 2014 content has no other
+    /// type for rules text.
+    RulesGlossaryEntry => "Rules Glossary Entry": Default,
     Size => "Size": Default,
     Skill => "Skill": Default,
     SpellcastingFocusGroup => "Spellcasting Focus Group": Default,
@@ -118,7 +122,7 @@ mod tests {
         for t in KnownType::ALL {
             assert_eq!(KnownType::parse(t.as_str()), Some(*t));
         }
-        assert_eq!(KnownType::ALL.len(), 63);
+        assert_eq!(KnownType::ALL.len(), 64);
     }
 
     #[test]
