@@ -39,30 +39,57 @@ fn element_source(source: &str, p: &PlannedElement) -> String {
         .unwrap_or_else(|| super::source::unlocated_source(source, &p.name).0)
 }
 
+/// The element has no section and is generated from the whole source.
+fn needs_whole(source: &str, p: &PlannedElement) -> bool {
+    p.excerpt.is_none()
+        && matches!(
+            super::source::unlocated_source(source, &p.name).1,
+            super::source::Unlocated::Whole(_)
+        )
+}
+
 /// `part` cut into batches of at most `size` elements whose sources together stay within
 /// [`BATCH_SOURCE_CHARS`] (a short source is sent whole once, so only the count matters).
+/// Elements generated from the whole source come first and share one copy of it per batch (a
+/// copy longer than the limit goes with them alone), so they cost no extra calls.
 fn split_by_size(source: &str, part: &[PlannedElement], size: usize) -> Vec<Vec<PlannedElement>> {
-    let short = source.chars().count() <= SOURCE_CHARS;
+    if source.chars().count() <= SOURCE_CHARS {
+        return part.chunks(size).map(<[PlannedElement]>::to_vec).collect();
+    }
+    let (whole, own): (Vec<&PlannedElement>, Vec<&PlannedElement>) =
+        part.iter().partition(|p| needs_whole(source, p));
+    let whole_chars = source.chars().count();
     let mut out: Vec<Vec<PlannedElement>> = Vec::new();
-    let mut chars = 0;
-    for p in part {
-        let n = if short {
-            0
-        } else {
-            element_source(source, p).chars().count()
+    let (mut cur, mut chars, mut shared): (Vec<PlannedElement>, usize, bool) =
+        (Vec::new(), 0, false);
+    for (p, is_whole) in whole
+        .into_iter()
+        .map(|p| (p, true))
+        .chain(own.into_iter().map(|p| (p, false)))
+    {
+        let n = match (is_whole, shared) {
+            (true, true) => 0,
+            (true, false) => whole_chars,
+            (false, _) => element_source(source, p).chars().count(),
         };
-        let fits = out
-            .last()
-            .is_some_and(|b| b.len() < size && chars + n <= BATCH_SOURCE_CHARS);
-        if fits {
-            chars += n;
-            if let Some(b) = out.last_mut() {
-                b.push(p.clone());
-            }
+        // A whole copy over the limit is shared by whole-source elements only.
+        let room = if shared && whole_chars > BATCH_SOURCE_CHARS {
+            is_whole
         } else {
-            chars = n;
-            out.push(vec![p.clone()]);
+            chars + n <= BATCH_SOURCE_CHARS
+        };
+        let fits = cur.len() < size && (cur.is_empty() || room);
+        if !fits {
+            out.push(std::mem::take(&mut cur));
+            (chars, shared) = (0, false);
         }
+        let n = if is_whole && !shared { whole_chars } else { n };
+        chars += n;
+        shared |= is_whole;
+        cur.push(p.clone());
+    }
+    if !cur.is_empty() {
+        out.push(cur);
     }
     out
 }
@@ -141,31 +168,41 @@ pub(crate) fn plan_batches(draft: &ImportDraft) -> Vec<Vec<PlannedElement>> {
 }
 
 /// The source text a batch needs: the whole source when it is short, else each element's own
-/// source (its section, or the passages mentioning it), labelled with its id, in source order.
-/// Nothing is truncated: [`plan_batches`] keeps a batch's sources within
-/// [`BATCH_SOURCE_CHARS`].
+/// source (its section, or the passages mentioning it), labelled with its id, in source order;
+/// the elements generated from the whole source share one labelled copy of it. Nothing is
+/// truncated: [`plan_batches`] keeps a batch's sources within [`BATCH_SOURCE_CHARS`].
 fn batch_source(draft: &ImportDraft, batch: &[PlannedElement]) -> String {
     let all = &draft.source_text;
     if all.chars().count() <= SOURCE_CHARS {
         return all.clone();
     }
-    let mut parts: Vec<(usize, &PlannedElement)> = batch
-        .iter()
+    let (whole, own): (Vec<&PlannedElement>, Vec<&PlannedElement>) =
+        batch.iter().partition(|p| needs_whole(all, p));
+    let mut parts: Vec<(usize, &PlannedElement)> = own
+        .into_iter()
         .map(|p| (p.excerpt.as_ref().map_or(usize::MAX, |e| e.start_line), p))
         .collect();
     parts.sort_by_key(|(line, _)| *line);
-    parts
-        .into_iter()
-        .map(|(_, p)| {
-            format!(
-                "=== Source for \"{}\" (id {}) ===\n{}",
-                p.name,
-                p.id,
-                element_source(all, p)
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n\n")
+    let mut out: Vec<String> = Vec::new();
+    if !whole.is_empty() {
+        let names: Vec<String> = whole
+            .iter()
+            .map(|p| format!("\"{}\" (id {})", p.name, p.id))
+            .collect();
+        out.push(format!(
+            "=== Source for {} (no section of its own: the whole source) ===\n{all}",
+            names.join(", ")
+        ));
+    }
+    out.extend(parts.into_iter().map(|(_, p)| {
+        format!(
+            "=== Source for \"{}\" (id {}) ===\n{}",
+            p.name,
+            p.id,
+            element_source(all, p)
+        )
+    }));
+    out.join("\n\n")
 }
 
 fn prompt(g: &GenCtx, batch: &[PlannedElement], prior: &str) -> String {
@@ -296,4 +333,69 @@ pub(crate) fn batch_parent(
     batch: &[PlannedElement],
 ) -> Option<super::types::ParentLink> {
     parent_of(draft, &batch[0])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::import::anything::types::SourceExcerpt;
+
+    fn feat(name: &str, line: Option<usize>) -> PlannedElement {
+        PlannedElement {
+            id: format!("ID_T_{}", name.to_uppercase().replace(' ', "_")),
+            ty: "Feat".into(),
+            name: name.into(),
+            role: Role::Standalone,
+            level: None,
+            owner: None,
+            brief: String::new(),
+            excerpt: line.map(|l| SourceExcerpt {
+                start_line: l,
+                end_line: l,
+                snippet: String::new(),
+            }),
+            parent: None,
+            picks: None,
+            prerequisite_level: None,
+            spells: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn elements_without_a_section_share_one_whole_copy_per_batch() {
+        // A source over the batch limit: each element with no section needs all of it.
+        let mut src = String::new();
+        for i in 0..1500 {
+            src.push_str(&format!("Line {i} of a long almanac of roads.\n"));
+        }
+        assert!(src.chars().count() > BATCH_SOURCE_CHARS);
+        let mut part: Vec<PlannedElement> = (0..10)
+            .map(|i| feat(&format!("Lost Feat {i}"), None))
+            .collect();
+        part.extend((0..3).map(|i| feat(&format!("Found Feat {i}"), Some(10 + i))));
+        let batches = split_by_size(&src, &part, BATCH_SIZE);
+        // 10 whole-source elements in two batches of at most 8, the located three apart.
+        assert_eq!(
+            batches.iter().map(Vec::len).collect::<Vec<_>>(),
+            vec![8, 2, 3]
+        );
+        let draft_src = |batch: &[PlannedElement]| {
+            let mut d = ImportDraft {
+                source_text: src.clone(),
+                ..serde_json::from_value(json!({"edition": "2024", "id_prefix": "t",
+                    "source_name": "T", "pack_id": "t", "pack_name": "T", "source_kind": "text",
+                    "source_text": "", "detection": {"kind": "feat", "edition": "2024",
+                    "confidence": 1.0, "items": []}, "plan": {"edition": "2024", "groups": [],
+                    "elements": [], "notes": []}, "elements": [], "sweep_issues": []}))
+                .unwrap()
+            };
+            d.plan.elements = batch.to_vec();
+            batch_source(&d, batch)
+        };
+        let whole = draft_src(&batches[0]);
+        assert_eq!(whole.matches("Line 1499 of a long").count(), 1);
+        assert!(whole.contains("\"Lost Feat 7\""));
+        let own = draft_src(&batches[2]);
+        assert!(own.contains("=== Source for \"Found Feat 1\"") && !own.contains("Line 1499"));
+    }
 }
