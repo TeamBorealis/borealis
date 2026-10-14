@@ -34,6 +34,14 @@ dexterity:modifier, \"<class> level\"; a bare ability name counts as 0), and `re
         "resource_cost spends uses: {\"kind\":\"resource_cost\",\"resource\":\"<resource id>\",\"cost\":1}.",
     ),
     (
+        "ability_increase",
+        &["name", "options", "cap"],
+        "ability_increase lets the player choose ability score increases: `options` is a list of OBJECTS, each one way to \
+choose, e.g. [{\"abilities\":[\"strength\",\"dexterity\"],\"pick\":1,\"amount\":1}] (pick 1 of those for +1) or \
+[{\"abilities\":1,\"amount\":2},{\"abilities\":2,\"amount\":1}] (any one +2, or two different +1); `cap` is the score maximum \
+(20). Fixed increases are `stat` rules (\"constitution\" +2), not this kind.",
+    ),
+    (
         "save_dc",
         &["id", "formula"],
         "save_dc names a DC: {\"kind\":\"save_dc\",\"id\":\"<name>\",\"formula\":\"8 + proficiency + dexterity\"}.",
@@ -97,11 +105,87 @@ pub(crate) fn rule_problems(el: &Value) -> Vec<String> {
             out.extend(
                 formula_problems(&c)
                     .into_iter()
+                    .chain(ability_problems(&c))
                     .map(|p| format!("{at}: {p}")),
             );
         }
     }
     out
+}
+
+const ABILITY_NAMES: [&str; 6] = [
+    "strength",
+    "dexterity",
+    "constitution",
+    "intelligence",
+    "wisdom",
+    "charisma",
+];
+
+fn ability_name(v: &Value) -> Option<String> {
+    let t = v.as_str()?.trim().to_lowercase();
+    ABILITY_NAMES
+        .iter()
+        .find(|a| **a == t || a[..3] == t)
+        .map(|a| (*a).to_string())
+}
+
+/// An `ability_increase` whose options the engine cannot enumerate offers no choice at all.
+fn ability_problems(c: &CustomRule) -> Vec<String> {
+    if c.kind != "ability_increase" {
+        return Vec::new();
+    }
+    let Some(options) = c.fields.get("options").and_then(Value::as_array) else {
+        return vec!["`options` must be a list of choice objects".into()];
+    };
+    let good = |o: &Value| {
+        let n = o.get("abilities");
+        o.get("amount").map_or(true, Value::is_i64)
+            && (n
+                .and_then(Value::as_u64)
+                .is_some_and(|k| (1..=6).contains(&k))
+                || n.and_then(Value::as_array)
+                    .is_some_and(|a| !a.is_empty() && a.iter().all(|x| ability_name(x).is_some())))
+    };
+    if options.is_empty() || !options.iter().all(good) {
+        return vec![format!(
+            "`options` {} is not a list of {{\"abilities\": <count or list of ability names>, \"pick\": n, \"amount\": n}} objects: the player would get no choice",
+            Value::Array(options.clone())
+        )];
+    }
+    Vec::new()
+}
+
+/// `ability_increase` written as a flat list of ability names (one of them, `amount` or a small
+/// `cap` as the increase) as the engine's option object. Returns a message when it changed.
+fn normalise_ability_increase(rule: &mut Map<String, Value>) -> Option<String> {
+    let options = rule.get("options")?.as_array()?;
+    if options.is_empty() || !options.iter().all(Value::is_string) {
+        return None;
+    }
+    let abilities: Vec<String> = options.iter().filter_map(ability_name).collect();
+    if abilities.len() != options.len() {
+        return None;
+    }
+    let pick = rule.remove("pick").and_then(|v| v.as_u64()).unwrap_or(1);
+    let cap = rule.get("cap").and_then(Value::as_i64);
+    let amount = match (rule.remove("amount").and_then(|v| v.as_i64()), cap) {
+        (Some(a), _) => a,
+        // a "cap" of 1-3 is the increase, not the score maximum
+        (None, Some(c)) if (1..=3).contains(&c) => {
+            rule.insert("cap".into(), json!(20));
+            c
+        }
+        _ => 1,
+    };
+    rule.insert(
+        "options".into(),
+        json!([{"abilities": abilities, "pick": pick, "amount": amount}]),
+    );
+    Some(format!(
+        "ability_increase options written as a list of abilities: read as choose {pick} of {} for +{amount}",
+        abilities.join("/")
+    ))
 }
 
 /// A `resource` max formula the engine cannot read: it would evaluate to 0.
@@ -281,7 +365,8 @@ fn for_each_rule(el: &mut Value, mut f: impl FnMut(&mut Map<String, Value>)) {
 }
 
 /// Unambiguous `resource` fixes (id from the name, bare-number `max`, formula words the engine
-/// cannot read such as a bare `dexterity`, rest names as tokens).
+/// cannot read such as a bare `dexterity`, rest names as tokens), `ability_increase` options
+/// written as a flat list of ability names, and lasting `movement_mode` speeds as stats.
 /// Returns one message per change.
 pub(crate) fn normalise_resources(el: &mut Value) -> Vec<String> {
     let mut out = Vec::new();
@@ -289,10 +374,57 @@ pub(crate) fn normalise_resources(el: &mut Value) -> Vec<String> {
         .pointer("/data/class")
         .and_then(Value::as_str)
         .map(str::to_string);
-    for_each_rule(el, |r| {
-        if r.get("kind").and_then(Value::as_str) == Some("resource") {
-            out.extend(normalise_resource(r, class.as_deref()));
+    for_each_rule(el, |r| match r.get("kind").and_then(Value::as_str) {
+        Some("resource") => out.extend(normalise_resource(r, class.as_deref())),
+        Some("ability_increase") => out.extend(normalise_ability_increase(r)),
+        Some("movement_mode") => out.extend(normalise_movement_mode(r)),
+        _ => {}
+    });
+    out
+}
+
+/// A `movement_mode` with no `duration` and no `action` is a speed the character always has:
+/// the engine reads that as a `speed:<mode>` stat (bundled shape), `movement_mode` is a timed,
+/// activated speed. Returns a message when it changed.
+fn normalise_movement_mode(rule: &mut Map<String, Value>) -> Option<String> {
+    if rule.contains_key("duration") || rule.contains_key("action") {
+        return None;
+    }
+    let mode = rule.get("mode")?.as_str()?.trim().to_lowercase();
+    if !matches!(mode.as_str(), "climb" | "swim" | "fly" | "burrow") {
+        return None;
+    }
+    let value = match rule.get("speed")? {
+        Value::Number(n) => n.as_i64()?.to_string(),
+        Value::String(t) => match t.trim().to_lowercase().as_str() {
+            "walk" | "walking" | "speed" | "walking speed" => "speed".to_string(),
+            other => other.parse::<i64>().ok()?.to_string(),
+        },
+        _ => return None,
+    };
+    let mut stat = Map::new();
+    stat.insert("kind".into(), json!("stat"));
+    stat.insert("name".into(), json!(format!("speed:{mode}")));
+    stat.insert("value".into(), json!(value));
+    for key in ["level", "requirements"] {
+        if let Some(v) = rule.get(key) {
+            stat.insert(key.into(), v.clone());
         }
+    }
+    *rule = stat;
+    Some(format!(
+        "a lasting {mode} speed (movement_mode without duration or action) became the stat speed:{mode} = {value}"
+    ))
+}
+
+/// The `ability_increase` and lasting `movement_mode` parts of [`normalise_resources`]
+/// (finalize re-applies them to drafts generated before they existed).
+pub(crate) fn normalise_abilities(el: &mut Value) -> Vec<String> {
+    let mut out = Vec::new();
+    for_each_rule(el, |r| match r.get("kind").and_then(Value::as_str) {
+        Some("ability_increase") => out.extend(normalise_ability_increase(r)),
+        Some("movement_mode") => out.extend(normalise_movement_mode(r)),
+        _ => {}
     });
     out
 }
@@ -418,6 +550,47 @@ mod tests {
         assert!(p.iter().any(|m| m.contains("\"requires\"")));
         assert!(p.iter().any(|m| m.contains("no `id`")));
         assert!(p.iter().any(|m| m.contains("`max` 3")));
+    }
+
+    #[test]
+    fn ability_increase_name_lists_become_choice_objects() {
+        let mut el = json!({"rules": [
+            {"kind": "ability_increase", "name": "Pick", "cap": 1,
+             "options": ["strength", "Dex"]},
+            {"kind": "ability_increase", "name": "Any", "cap": 20,
+             "options": ["strength", "dexterity", "wisdom"]},
+            {"kind": "ability_increase", "options": [{"abilities": 1, "amount": 2}], "cap": 20}
+        ]});
+        assert_eq!(normalise_resources(&mut el).len(), 2);
+        assert_eq!(
+            el["rules"][0],
+            json!({"kind": "ability_increase", "name": "Pick", "cap": 20,
+                "options": [{"abilities": ["strength", "dexterity"], "pick": 1, "amount": 1}]})
+        );
+        assert_eq!(
+            el["rules"][1]["options"],
+            json!([{"abilities": ["strength", "dexterity", "wisdom"], "pick": 1, "amount": 1}])
+        );
+        assert!(rule_problems(&el).is_empty(), "{:?}", rule_problems(&el));
+        let bad = json!({"rules": [{"kind": "ability_increase", "options": ["luck"]}]});
+        assert_eq!(rule_problems(&bad).len(), 1);
+    }
+
+    #[test]
+    fn lasting_movement_modes_become_speed_stats() {
+        let mut el = json!({"rules": [
+            {"kind": "movement_mode", "mode": "climb", "speed": "walk"},
+            {"kind": "movement_mode", "mode": "swim", "speed": 40},
+            {"kind": "movement_mode", "mode": "fly", "speed": "speed", "duration": "10 minutes",
+             "action": "bonus_action"}
+        ]});
+        assert_eq!(normalise_abilities(&mut el).len(), 2);
+        assert_eq!(
+            el["rules"][0],
+            json!({"kind": "stat", "name": "speed:climb", "value": "speed"})
+        );
+        assert_eq!(el["rules"][1]["value"], json!("40"));
+        assert_eq!(el["rules"][2]["kind"], json!("movement_mode"));
     }
 
     #[test]

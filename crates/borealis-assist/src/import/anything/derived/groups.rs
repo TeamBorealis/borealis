@@ -25,6 +25,8 @@ use crate::import::ids::{make_id, slug};
 /// for that key takes this id so such content resolves. Never a source of groups.
 const KNOWN_GROUP_IDS: [(&str, &str); 1] =
     [("firearm", "ID_PROFICIENCY_WEAPON_PROFICIENCY_FIREARMS")];
+/// Tag of the bundled group proficiencies ("Weapon Proficiency (Swords)", ...).
+const GROUP_SUPPORT: &str = "ID_INTERNAL_PROFICIENCY_GROUP";
 /// The engine's ranged marker for a weapon outside the standard (simple/martial) categories.
 const RANGED_TAG: &str = "ID_INTERNAL_WEAPON_CATEGORY_RANGED";
 /// Longest class-text term read as a group name (longer ones are prose).
@@ -178,14 +180,29 @@ fn library_tag(store: &ContentStore, key: &str) -> Option<String> {
         .map(|s| s.element.id.clone())
 }
 
-/// A loaded "Weapon Proficiency (<group>)" of that key.
+/// A loaded "Weapon Proficiency (<group>)" of that key: a group proficiency (bundled ones carry
+/// the `ID_INTERNAL_PROFICIENCY_GROUP` tag) first, never a single weapon's own proficiency. The
+/// group "Clubs" is the bundled "Weapon Proficiency (Clubs)", not "Weapon Proficiency (Club)".
 fn library_proficiency(store: &ContentStore, key: &str) -> Option<String> {
-    store
+    let matching: Vec<_> = store
         .by_type("Proficiency")
-        .find(|s| {
+        .filter(|s| {
             norm(&s.element.name).starts_with("weapon proficiency")
                 && group_key(&s.element.name) == key
         })
+        .collect();
+    let weapon_names: HashSet<String> = store
+        .by_type("Weapon")
+        .map(|w| norm(&w.element.name))
+        .collect();
+    let own_of_a_weapon = |name: &str| {
+        name.split_once('(')
+            .is_some_and(|(_, rest)| weapon_names.contains(&norm(rest.trim_end_matches(')'))))
+    };
+    matching
+        .iter()
+        .find(|s| s.element.supports.iter().any(|t| t == GROUP_SUPPORT))
+        .or_else(|| matching.iter().find(|s| !own_of_a_weapon(&s.element.name)))
         .map(|s| s.element.id.clone())
 }
 
@@ -348,7 +365,7 @@ fn apply_group(g: &Group, prefix: &str, store: &ContentStore, d: &mut Derived) {
         let own = weapon_proficiency(*i, &tag, prefix, &source, store, d);
         if let Some(base) = base_of(&d.docs[*i]) {
             if base != own {
-                append_grant(d, &base, &own);
+                append_grant(store, d, &base, &own);
             }
         }
         set_proficiency(&mut d.docs[*i], &own);
@@ -357,7 +374,7 @@ fn apply_group(g: &Group, prefix: &str, store: &ContentStore, d: &mut Derived) {
     let name = format!("Weapon Proficiency ({plural})");
     if lib.is_some() {
         for gr in &grants {
-            append_grant(d, &group_id, str_at(gr, "id"));
+            append_grant(store, d, &group_id, str_at(gr, "id"));
         }
     } else {
         d.extra
@@ -417,8 +434,18 @@ fn set_proficiency(weapon: &mut Value, id: &str) {
     }
 }
 
-/// `target` (a loaded proficiency) also grants `id`, by an append.
-fn append_grant(d: &mut Derived, target: &str, id: &str) {
+/// `target` (a loaded proficiency) also grants `id`, by an append. Never a grant of itself, and
+/// nothing `target` already grants (`derived/cycles.rs` drops longer cycles).
+fn append_grant(store: &ContentStore, d: &mut Derived, target: &str, id: &str) {
+    let has = store.get(target).is_some_and(|s| {
+        s.element
+            .rules
+            .iter()
+            .any(|r| matches!(r, borealis_content::Rule::Grant(g) if g.id == id))
+    });
+    if target == id || has {
+        return;
+    }
     let grant = json!({"kind": "grant", "id": id, "type": "Proficiency"});
     if let Some(a) = d
         .appends
@@ -584,6 +611,82 @@ mod tests {
         assert!(is_standard(&group_key("Simple weapons")));
         assert!(!is_standard(&group_key("Firearms")));
         assert_eq!(plural_title("chain weapon"), "Chain Weapons");
+    }
+
+    fn bundled() -> ContentStore {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+        borealis_content::ContentStoreBuilder::new()
+            .add_pack_dir(&root.join("core"))
+            .and_then(|b| b.add_pack_dir(&root.join("srd-5.1")))
+            .expect("bundled packs")
+            .build()
+    }
+
+    fn simple_weapon(name: &str, group: &str) -> Value {
+        json!({"id": format!("ID_T_WEAPON_{}", slug(name)), "name": name, "type": "Weapon",
+            "source": "Test", "data": {"weapon_category": "Simple Melee", "weapon_group": group,
+            "melee": true},
+            "setters": [{"name": "proficiency",
+                "value": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_MELEE_WEAPONS"}]})
+    }
+
+    /// A source group named like a single weapon ("Daggers" next to the bundled Dagger) is not
+    /// that weapon's proficiency: no proficiency is appended a grant of itself, a bundled group
+    /// proficiency of the name is reused, and only real groups are made.
+    #[test]
+    fn groups_named_like_a_weapon_never_grant_themselves() {
+        let store = bundled();
+        let plan = ImportPlan {
+            edition: crate::import::anything::types::Edition::Y2014,
+            groups: Vec::new(),
+            elements: Vec::new(),
+            notes: Vec::new(),
+        };
+        let mut d = Derived {
+            docs: vec![
+                simple_weapon("Dagger", "Daggers"),
+                simple_weapon("Needle Knife", "Daggers"),
+                simple_weapon("Knotted Cudgel", "Clubs"),
+                json!({"id": "ID_T_CLASS_KNIFER", "name": "Knifer", "type": "Class",
+                    "description": "<p><strong>Weapons:</strong> Simple weapons, daggers</p>",
+                    "rules": []}),
+            ],
+            ..Derived::default()
+        };
+        weapon_groups(&plan, &store, &mut d);
+        super::super::cycles::break_grant_cycles(&store, &mut d);
+        for a in &d.appends {
+            let own = str_at(a, "id");
+            let rules = a["rules"].as_array().expect("rules");
+            assert!(rules.iter().all(|r| str_at(r, "id") != own), "{a}");
+        }
+        let daggers = d
+            .extra
+            .iter()
+            .find(|e| str_at(e, "name") == "Weapon Proficiency (Daggers)")
+            .expect("a new Daggers group proficiency");
+        let grants: Vec<&str> = daggers["rules"]
+            .as_array()
+            .expect("rules")
+            .iter()
+            .map(|r| str_at(r, "id"))
+            .collect();
+        assert!(
+            grants.contains(&"ID_PROFICIENCY_WEAPON_PROFICIENCY_DAGGER"),
+            "{grants:?}"
+        );
+        assert_eq!(grants.len(), 2, "{grants:?}");
+        let clubs = library_proficiency(&store, "club").expect("bundled Clubs group");
+        let club_append = d
+            .appends
+            .iter()
+            .find(|a| str_at(a, "id") == clubs)
+            .expect("the bundled Clubs group grants the new club weapon");
+        assert_eq!(club_append["rules"].as_array().map(Vec::len), Some(1));
+        assert!(!d
+            .appends
+            .iter()
+            .any(|a| str_at(a, "id") == "ID_PROFICIENCY_WEAPON_PROFICIENCY_DAGGER"));
     }
 
     #[test]

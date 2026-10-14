@@ -20,6 +20,7 @@ use serde_json::{json, Map, Value};
 use super::caster::{caster_kind, CasterKind};
 use super::types::{Edition, ImportPlan, Role, SpellcastingOutline};
 
+mod cycles;
 mod groups;
 
 /// `data.progression` keys that are not counters.
@@ -65,7 +66,22 @@ pub(crate) fn derive(plan: &ImportPlan, docs: &[Value], store: &ContentStore) ->
     groups::new_properties(plan, store, &mut d);
     table_counters(&mut d);
     proficiency_choices(plan, store, &mut d);
+    ability_choices(&mut d);
+    cycles::break_grant_cycles(store, &mut d);
     d
+}
+
+/// `ability_increase` options written as a bare list of ability names (no choice for the engine)
+/// as choice objects, and lasting `movement_mode` speeds as `speed:<mode>` stats.
+fn ability_choices(d: &mut Derived) {
+    let mut notes = Vec::new();
+    for doc in &mut d.docs {
+        let id = str_at(doc, "id").to_string();
+        for m in super::rules::normalise_abilities(doc) {
+            notes.push((id.clone(), m));
+        }
+    }
+    d.notes.extend(notes);
 }
 
 /// Skill / tool choices of classes and bonus-cantrip choices of features (see `choices.rs`).
