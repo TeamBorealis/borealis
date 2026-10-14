@@ -332,6 +332,10 @@ pub struct SpellcastingOutline {
     /// 2014 prepared-count formula, e.g. `mod + level`, `mod + half`.
     #[serde(default)]
     pub prepared_formula: Option<String>,
+    /// Names of the spells on the class's spell list as the source prints it (existing spells
+    /// get the list by an append; see `derived.rs`).
+    #[serde(default, alias = "spell_list", skip_serializing_if = "Option::is_none")]
+    pub spells: Option<Vec<String>>,
 }
 
 impl Outline {

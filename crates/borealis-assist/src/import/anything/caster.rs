@@ -69,6 +69,8 @@ pub enum CasterKind {
     Third,
     /// Pact magic (Warlock).
     Pact,
+    /// Casts from a pool of points, not slots: spellcasting and spell choices, no slot tables.
+    Points,
     /// Does not cast.
     None,
 }
@@ -78,6 +80,8 @@ pub fn caster_kind(p: &SpellcastingOutline) -> CasterKind {
     let k = p.progression.to_lowercase();
     if k.contains("none") || k.trim() == "no" {
         CasterKind::None
+    } else if k.contains("point") || k.contains("pool") || k.contains("mana") {
+        CasterKind::Points
     } else if k.contains("pact") {
         CasterKind::Pact
     } else if k.contains("third") || k.contains("1/3") {
@@ -123,7 +127,7 @@ pub fn slot_rows(kind: CasterKind, edition: Edition) -> [Row; N] {
                 row[PACT_LEVEL[i] as usize - 1] = PACT_COUNT[i];
                 continue;
             }
-            CasterKind::None => 0,
+            CasterKind::None | CasterKind::Points => 0,
         };
         if cl > 0 {
             *row = FULL[cl - 1];
@@ -284,8 +288,14 @@ pub fn build_caster(
         kind != CasterKind::Pact && (p.known == Some(true) || p.prepared == Some(false));
     let is_2014 = edition == Edition::Y2014;
     let rows = slot_rows(kind, edition);
+    // Spell levels a points caster may choose: the full caster's (it gets no slots).
+    let level_rows = if kind == CasterKind::Points {
+        slot_rows(CasterKind::Full, edition)
+    } else {
+        rows
+    };
     let (cantrip_default, prepared_default, known_default) = match kind {
-        CasterKind::Full => (CANTRIPS_FULL, PREPARED_FULL, KNOWN_FULL),
+        CasterKind::Full | CasterKind::Points => (CANTRIPS_FULL, PREPARED_FULL, KNOWN_FULL),
         CasterKind::Half => ([0; N], PREPARED_HALF, KNOWN_HALF),
         CasterKind::Third => (CANTRIPS_THIRD, KNOWN_THIRD, KNOWN_THIRD),
         _ => (CANTRIPS_PACT, PREPARED_PACT, PREPARED_PACT),
@@ -321,7 +331,7 @@ pub fn build_caster(
                 ));
             }
         }
-    } else {
+    } else if kind != CasterKind::Points {
         for (k, col) in columns(&rows).iter().enumerate() {
             deltas(&slot_name(k + 1), col, is_2014, &mut rules);
         }
@@ -366,7 +376,7 @@ pub fn build_caster(
                 &mut rules,
             );
             for (level, n) in increments(&counts) {
-                let max = max_slot_level(&rows[level as usize - 1]).max(1);
+                let max = max_slot_level(&level_rows[level as usize - 1]).max(1);
                 let mut sel = json!({"kind": "select", "type": "Spell", "name": format!("Spell ({class_name})"),
                     "number": n, "level": level,
                     "supports": format!("$(spellcasting:list),{}", spell_levels(max)), "spellcasting": class_name});
@@ -404,10 +414,12 @@ pub fn build_caster(
         };
         rules.push(json!({"kind": "prepared_spell_change", "when": "long_rest", "count": count}));
     }
-    rules.push(
-        json!({"kind": "grant", "id": multiclass_grant(kind, edition), "type": "Grants",
-        "requirements": "ID_INTERNAL_GRANT_MULTICLASS"}),
-    );
+    if kind != CasterKind::Points {
+        rules.push(
+            json!({"kind": "grant", "id": multiclass_grant(kind, edition), "type": "Grants",
+            "requirements": "ID_INTERNAL_GRANT_MULTICLASS"}),
+        );
+    }
 
     // --- node ---
     let mut node =
@@ -435,16 +447,21 @@ pub fn build_caster(
         if kind == CasterKind::Pact {
             prog.insert("pact_slots".into(), json!(PACT_COUNT));
             prog.insert("pact_slot_level".into(), json!(PACT_LEVEL));
-        } else {
+        } else if kind != CasterKind::Points {
             let top = rows.iter().map(max_slot_level).max().unwrap_or(0);
             for (k, col) in columns(&rows).iter().enumerate().take(top) {
                 prog.insert(format!("slot_{}", k + 1), json!(col));
             }
         }
-        let sc = json!({"ability": ability, "list": list, "model": if kind == CasterKind::Pact { "pact" } else { "prepared" },
+        let mut sc = json!({"ability": ability, "list": list, "model": if kind == CasterKind::Pact { "pact" } else { "prepared" },
             "replace": if kind == CasterKind::Pact { "level" } else { "long_rest" },
             "multiclass_slots_grant": multiclass_grant(kind, edition),
             "has_cantrips": cantrips.iter().any(|c| *c > 0)});
+        if kind == CasterKind::Points {
+            if let Some(o) = sc.as_object_mut() {
+                o.remove("multiclass_slots_grant");
+            }
+        }
         (Some(sc), prog)
     };
     Some(BuiltCaster {

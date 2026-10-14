@@ -56,7 +56,8 @@ const CATEGORIES: [(&str, &str, &str, bool); 5] = [
         "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_RANGED_WEAPONS",
         false,
     ),
-    // No bundled firearm proficiency: martial ranged proficiency covers firearms.
+    // No bundled firearm proficiency: martial ranged proficiency covers firearms, unless a class
+    // of the source grants firearms (then `derived.rs` makes a Firearms group proficiency).
     (
         "firearm",
         "ID_INTERNAL_WEAPON_CATEGORY_FIREARM",
@@ -439,12 +440,9 @@ fn normalize_armor(el: &mut Value) {
         if cat == "shield" {
             rules.push(json!({"kind": "stat", "name": "ac:shield", "value": b.to_string(), "bonus": "shield"}));
         } else {
+            // Dex (light, medium) and the medium cap of 2 come from the core armored-AC rules
+            // by armor group, as for every bundled armor; repeating them counts Dex twice.
             rules.push(json!({"kind": "stat", "name": "ac:armored:armor", "value": b.to_string()}));
-            let dexv = if dex { "dexterity:modifier" } else { "0" };
-            rules.push(json!({"kind": "stat", "name": "ac:armored:dexterity", "value": dexv}));
-            if let Some(c) = cap.filter(|_| dex) {
-                rules.push(json!({"kind": "stat", "name": "ac:armored:dexterity:cap", "value": c.to_string()}));
-            }
         }
     }
     if stealth {
@@ -530,9 +528,12 @@ mod tests {
         assert_eq!(setter_value(&el, "slot").unwrap(), "body");
         assert_eq!(setter_value(&el, "cost").unwrap(), "40");
         let rules = el["rules"].as_array().unwrap();
-        assert!(rules
-            .iter()
-            .any(|r| r["name"] == "ac:armored:dexterity:cap"));
+        assert!(rules.iter().any(|r| r["name"] == "ac:armored:armor"));
+        // Dex and its cap come from the core rules by group; never a second time from the item.
+        assert!(!rules.iter().any(|r| r["name"]
+            .as_str()
+            .unwrap_or("")
+            .starts_with("ac:armored:dexterity")));
         assert_eq!(el["supports"], json!(["ID_INTERNAL_ARMOR_GROUP_MEDIUM"]));
     }
 }

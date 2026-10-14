@@ -4,8 +4,9 @@ use std::collections::HashSet;
 
 use borealis_content::file::{ContentFile, PackOrigin};
 use borealis_content::{ContentStoreBuilder, Severity};
-use serde_json::{json, Value};
+use serde_json::Value;
 
+use super::derived::{content_doc, derive};
 use super::types::{ElementStatus, ImportDraft};
 use crate::error::AssistError;
 use crate::import::ids::make_id;
@@ -45,15 +46,13 @@ pub fn finalize_draft(
             bad.join(", ")
         )));
     }
-    let library: HashSet<String> = base
-        .clone()
-        .build()
-        .iter()
-        .map(|s| s.element.id.clone())
-        .collect();
+    let library_store = base.clone().build();
+    let library: HashSet<String> = library_store.iter().map(|s| s.element.id.clone()).collect();
     let mut used: HashSet<String> = library.clone();
     used.extend(draft.elements.iter().map(|e| e.id.clone()));
-    let mut docs: Vec<Value> = draft.elements.iter().map(|e| e.json.clone()).collect();
+    let raw: Vec<Value> = draft.elements.iter().map(|e| e.json.clone()).collect();
+    let derived = derive(&draft.plan, &raw, &library_store);
+    let mut doc = content_doc(&derived);
     let mut renamed = Vec::new();
     for e in &draft.elements {
         if !library.contains(&e.id) {
@@ -64,13 +63,12 @@ pub fn finalize_draft(
         renamed.push((e.id.clone(), new));
     }
     if !renamed.is_empty() {
-        let mut text = json!(docs).to_string();
+        let mut text = doc.to_string();
         for (old, new) in &renamed {
             text = text.replace(&format!("\"{old}\""), &format!("\"{new}\""));
         }
-        docs = serde_json::from_str(&text).map_err(|e| AssistError::Invalid(e.to_string()))?;
+        doc = serde_json::from_str(&text).map_err(|e| AssistError::Invalid(e.to_string()))?;
     }
-    let doc = json!({"format": borealis_content::file::ContentFormat::ID, "elements": docs});
     let file = ContentFile::from_json_str(&doc.to_string())
         .map_err(|e| AssistError::Invalid(format!("the draft does not load: {e}")))?;
     let ids: HashSet<String> = file.elements.iter().map(|e| e.id.clone()).collect();
@@ -99,7 +97,19 @@ pub fn finalize_draft(
         &draft.source_kind,
         file,
     );
-    pack.report = Some(build_report(draft, &renamed));
+    let mut report = build_report(draft, &renamed);
+    report
+        .normalised
+        .extend(derived.notes.iter().map(|(id, m)| {
+            ReportIssue {
+                element: renamed
+                    .iter()
+                    .find(|(old, _)| old == id)
+                    .map_or_else(|| id.clone(), |(_, new)| new.clone()),
+                message: m.clone(),
+            }
+        }));
+    pack.report = Some(report);
     Ok(Finalized { pack, renamed })
 }
 

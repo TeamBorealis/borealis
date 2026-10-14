@@ -299,3 +299,49 @@ fn srd_dirs_add_maps_to_links() {
         "{target}"
     );
 }
+
+/// Spell Mastery and Signature Spells of both editions reach the pack as always-prepared Spell
+/// selects of the Wizard's spellcasting: the engine then lets them re-pick spellbook spells
+/// (`borealis-engine` tests/wizard_spellbook.rs), so they never run empty on a full book.
+#[test]
+fn spellbook_choices_are_prepared_selects_of_the_wizard() {
+    let result = import_fixtures();
+    let mut seen = 0;
+    for el in result.packs.iter().flat_map(|p| p.elements()) {
+        if el.ty != "Class Feature"
+            || !["Spell Mastery", "Signature Spells"].contains(&el.name.as_str())
+        {
+            continue;
+        }
+        let selects: Vec<_> = el
+            .rules
+            .iter()
+            .filter_map(|r| match r {
+                borealis_content::Rule::Select(s) if s.ty == "Spell" => Some(s),
+                _ => None,
+            })
+            .collect();
+        let picks: u32 = selects.iter().map(|s| s.number.unwrap_or(1)).sum();
+        assert_eq!(picks, 2, "{} ({}) picks", el.name, el.id);
+        for s in selects {
+            assert_eq!(s.prepared, Some(true), "{} {}", el.id, s.name);
+            assert_eq!(
+                s.spellcasting.as_deref(),
+                Some("Wizard"),
+                "{} {}",
+                el.id,
+                s.name
+            );
+            assert!(
+                s.supports
+                    .as_deref()
+                    .is_some_and(|x| x.starts_with("$(spellcasting:list)")),
+                "{} {}",
+                el.id,
+                s.name
+            );
+        }
+        seen += 1;
+    }
+    assert_eq!(seen, 4, "both features of both editions");
+}

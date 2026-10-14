@@ -7,8 +7,11 @@
 
 mod batch;
 pub mod caster;
+mod choices;
+mod derived;
 mod fewshot;
 mod finalize;
+mod formula;
 mod generate;
 mod items;
 mod normalize;

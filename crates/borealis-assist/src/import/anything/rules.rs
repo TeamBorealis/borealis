@@ -25,7 +25,8 @@ const SHAPES: &[(&str, &[&str], &str)] = &[
         &["id", "name", "max", "recharge"],
         "resource needs `id` (the lowercase name, e.g. \"rage\"), `name`, `max` as \
 {\"type\":\"fixed\",\"value\":2} | {\"type\":\"stat\",\"stat\":\"proficiency\"} | {\"type\":\"table\",\"key\":\"<progression key>\"} \
-| {\"type\":\"formula\",\"expr\":\"...\"}, and `recharge` as a list such as [\"short_rest\",\"long_rest\"] or [\"long_rest\"].",
+| {\"type\":\"formula\",\"expr\":\"...\"} (expr words: proficiency, <ability>:modifier such as \
+dexterity:modifier, \"<class> level\"; a bare ability name counts as 0), and `recharge` as a list such as [\"short_rest\",\"long_rest\"] or [\"long_rest\"].",
     ),
     (
         "resource_cost",
@@ -93,9 +94,37 @@ pub(crate) fn rule_problems(el: &Value) -> Vec<String> {
                 format!("{at}: {p}; use only the kinds and fields of the rule catalogue")
             }));
             out.extend(shape_problems(&c).into_iter().map(|p| format!("{at} {p}")));
+            out.extend(
+                formula_problems(&c)
+                    .into_iter()
+                    .map(|p| format!("{at}: {p}")),
+            );
         }
     }
     out
+}
+
+/// A `resource` max formula the engine cannot read: it would evaluate to 0.
+fn formula_problems(c: &CustomRule) -> Vec<String> {
+    if c.kind != "resource" {
+        return Vec::new();
+    }
+    let Some(max) = c.fields.get("max") else {
+        return Vec::new();
+    };
+    if max.get("type").and_then(Value::as_str) != Some("formula") {
+        return Vec::new();
+    }
+    let expr = max.get("expr").and_then(Value::as_str).unwrap_or("");
+    let bad = super::formula::unreadable(expr);
+    if bad.is_empty() {
+        return Vec::new();
+    }
+    vec![format!(
+        "max.expr {expr:?} uses {}, which the engine cannot read (it counts as 0); write it with only {}",
+        bad.iter().map(|b| format!("{b:?}")).collect::<Vec<_>>().join(", "),
+        super::formula::VOCABULARY
+    )]
 }
 
 /// Lowercase name with single spaces: the resource id convention of the bundled content.
@@ -153,16 +182,37 @@ fn normalise_recharge(r: &Value) -> Option<Value> {
     (&out != r).then_some(out)
 }
 
-fn normalise_max(m: &Value) -> Option<Value> {
+fn normalise_max(m: &Value, class: Option<&str>) -> Option<Value> {
     let n = match m {
         Value::Number(n) => n.as_i64()?,
-        Value::String(s) => s.trim().parse::<i64>().ok()?,
+        Value::String(s) => match s.trim().parse::<i64>() {
+            Ok(n) => n,
+            Err(_) => return formula_string(s, class),
+        },
+        Value::Object(o) if o.get("type").and_then(Value::as_str) == Some("formula") => {
+            let expr = o.get("expr").and_then(Value::as_str)?;
+            let (new, changes) = super::formula::normalise(expr, class);
+            if changes.is_empty() {
+                return None;
+            }
+            let mut out = o.clone();
+            out.insert("expr".into(), json!(new));
+            return Some(Value::Object(out));
+        }
         _ => return None,
     };
     (n >= 0).then(|| json!({"type": "fixed", "value": n}))
 }
 
-fn normalise_resource(rule: &mut Map<String, Value>) -> Vec<String> {
+/// A bare string `max` that is (or normalises to) a readable formula.
+fn formula_string(s: &str, class: Option<&str>) -> Option<Value> {
+    let (expr, _) = super::formula::normalise(s, class);
+    super::formula::unreadable(&expr)
+        .is_empty()
+        .then(|| json!({"type": "formula", "expr": expr}))
+}
+
+fn normalise_resource(rule: &mut Map<String, Value>, class: Option<&str>) -> Vec<String> {
     let mut out = Vec::new();
     let name = rule
         .get("name")
@@ -183,7 +233,7 @@ fn normalise_resource(rule: &mut Map<String, Value>) -> Vec<String> {
         out.push(format!("{label}: missing `id` set to {id:?} from its name"));
         rule.insert("id".into(), json!(id));
     }
-    if let Some(new) = rule.get("max").and_then(normalise_max) {
+    if let Some(new) = rule.get("max").and_then(|m| normalise_max(m, class)) {
         out.push(format!("{label}: `max` {} wrapped as {new}", rule["max"]));
         rule.insert("max".into(), new);
     }
@@ -230,13 +280,18 @@ fn for_each_rule(el: &mut Value, mut f: impl FnMut(&mut Map<String, Value>)) {
     }
 }
 
-/// Unambiguous `resource` fixes (id from the name, bare-number `max`, rest names as tokens).
+/// Unambiguous `resource` fixes (id from the name, bare-number `max`, formula words the engine
+/// cannot read such as a bare `dexterity`, rest names as tokens).
 /// Returns one message per change.
 pub(crate) fn normalise_resources(el: &mut Value) -> Vec<String> {
     let mut out = Vec::new();
+    let class = el
+        .pointer("/data/class")
+        .and_then(Value::as_str)
+        .map(str::to_string);
     for_each_rule(el, |r| {
         if r.get("kind").and_then(Value::as_str) == Some("resource") {
-            out.extend(normalise_resource(r));
+            out.extend(normalise_resource(r, class.as_deref()));
         }
     });
     out
@@ -385,6 +440,29 @@ mod tests {
         assert_eq!(r[2]["resource"], "ember coals");
         assert_eq!(notes.len(), 5, "{notes:?}");
         assert_eq!(rule_problems(&el).len(), 2, "{:?}", rule_problems(&el));
+    }
+
+    #[test]
+    fn resource_formulas_use_the_engine_dialect_or_are_problems() {
+        let mut el = json!({"data": {"class": "Tidecaller"}, "rules": [
+            {"kind": "resource", "id": "brine", "name": "Brine",
+             "max": {"type": "formula", "expr": "1 + wisdom"}, "recharge": ["long_rest"]},
+            {"kind": "resource", "id": "spray", "name": "Spray", "max": "max(1, dex mod)"},
+            {"kind": "resource", "id": "tide", "name": "Tide",
+             "max": {"type": "formula", "expr": "half your speed"}}
+        ]});
+        let notes = normalise_resources(&mut el);
+        let r = &el["rules"];
+        assert_eq!(r[0]["max"]["expr"], "1 + wisdom:modifier");
+        assert_eq!(
+            r[1]["max"],
+            json!({"type": "formula", "expr": "max(1, dexterity:modifier)"})
+        );
+        assert_eq!(r[2]["max"]["expr"], "half your speed");
+        assert_eq!(notes.len(), 2, "{notes:?}");
+        let p = rule_problems(&el);
+        assert_eq!(p.len(), 1, "{p:?}");
+        assert!(p[0].contains("\"half your speed\"") && p[0].contains("dexterity:modifier"));
     }
 
     #[test]

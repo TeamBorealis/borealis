@@ -69,8 +69,14 @@ fn targets(plan: &ImportPlan) -> Vec<Target<'_>> {
             (Some(p), Role::Subclass) => (p.class_id.clone(), Some(root.id.clone())),
             _ => (root.id.clone(), None),
         };
-        let casts =
-            root.role == Role::Class && g.outline.as_ref().is_some_and(|o| o.caster().is_some());
+        // Slot casters only: a points caster gets no slots by design.
+        let casts = root.role == Role::Class
+            && g.outline
+                .as_ref()
+                .and_then(|o| o.caster())
+                .is_some_and(|c| {
+                    super::caster::caster_kind(c) != super::caster::CasterKind::Points
+                });
         out.push(Target {
             class_id,
             subclass_id,
@@ -98,8 +104,8 @@ pub fn engine_sweep(
         })
         .map(|e| e.json.clone())
         .collect();
-    let doc =
-        serde_json::json!({"format": borealis_content::file::ContentFormat::ID, "elements": docs});
+    let library = ctx.base.clone().build();
+    let doc = super::derived::content_doc(&super::derived::derive(plan, &docs, &library));
     let file = match ContentFile::from_json_str(&doc.to_string()) {
         Ok(f) => f,
         Err(e) => return vec![issue(0, None, format!("the draft does not load: {e}"))],

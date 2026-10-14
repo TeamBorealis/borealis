@@ -276,7 +276,9 @@ to choose in `choose` [{{level: 1, count: N}}].",
             "the class \"{}\": a feature for each level that grants one (include the ability score improvement / \
 epic boon rows; SKIP levels that only change table numbers, they need no feature), the subclass choice level in `subclass_level`, the hit die, and spellcasting \
 (a profile {{kind: full|half|third|pact|none, ability, prepared|known, ritual, spell_list_name, \
-cantrips_by_level and spells_known_by_level as 20 cumulative numbers, prepared_formula}}); never write slot tables. {PARTS_RULE}",
+cantrips_by_level and spells_known_by_level as 20 cumulative numbers, prepared_formula, spells: the name of \
+every spell on the class's spell list as printed}}; kind `points` when it casts from a pool of points instead of \
+slots); never write slot tables. {PARTS_RULE}",
             item.name
         ),
     }
