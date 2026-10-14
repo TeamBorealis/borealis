@@ -10,6 +10,7 @@ use super::types::{ElementStatus, ImportDraft};
 use crate::error::AssistError;
 use crate::import::ids::make_id;
 use crate::import::pack::{assemble, ImportedPack};
+use crate::import::report::{ImportReport, ReportEntry, ReportIssue};
 
 /// A finished pack plus the ids that had to change.
 #[derive(Debug, Clone, PartialEq)]
@@ -91,12 +92,78 @@ pub fn finalize_draft(
             errors.join("; ")
         )));
     }
-    let pack = assemble(
+    let mut pack = assemble(
         &draft.pack_id,
         &draft.pack_name,
         draft.edition.ruleset(),
         &draft.source_kind,
         file,
     );
+    pack.report = Some(build_report(draft, &renamed));
     Ok(Finalized { pack, renamed })
+}
+
+fn same_name(a: &str, b: &str) -> bool {
+    let n = |s: &str| {
+        s.split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .to_lowercase()
+    };
+    n(a) == n(b)
+}
+
+/// The import report: source objects with no element of their name, the rule errors that
+/// survived every repair (removed from the pack) and the deterministic rule fixes.
+pub(crate) fn build_report(draft: &ImportDraft, renamed: &[(String, String)]) -> ImportReport {
+    let final_id = |id: &str| {
+        renamed
+            .iter()
+            .find(|(old, _)| old == id)
+            .map_or_else(|| id.to_string(), |(_, new)| new.clone())
+    };
+    let mut report = ImportReport::default();
+    for g in &draft.plan.groups {
+        let Some(root) = g.root_id.as_deref().and_then(|id| draft.element(id)) else {
+            report.entries.push(ReportEntry {
+                source: g.name.clone(),
+                outcome: "skipped".into(),
+                elements: Vec::new(),
+                note: "no element was planned for it".into(),
+            });
+            continue;
+        };
+        if !same_name(&root.name, &g.name) {
+            report.entries.push(ReportEntry {
+                source: g.name.clone(),
+                outcome: "element".into(),
+                elements: vec![final_id(&root.id)],
+                note: format!("imported as \"{}\"", root.name),
+            });
+        }
+    }
+    for o in &draft.detection.other {
+        let what = if o.what.is_empty() {
+            "this"
+        } else {
+            o.what.as_str()
+        };
+        let note = format!("no element kind for {what}; not imported. {}", o.note);
+        report.entries.push(ReportEntry {
+            source: o.name.clone(),
+            outcome: "unsupported".into(),
+            elements: Vec::new(),
+            note: note.trim().to_string(),
+        });
+    }
+    for e in &draft.elements {
+        let id = final_id(&e.id);
+        let issue = |m: &String| ReportIssue {
+            element: id.clone(),
+            message: m.clone(),
+        };
+        report.errors.extend(e.rule_errors.iter().map(issue));
+        report.normalised.extend(e.normalised.iter().map(issue));
+    }
+    report
 }

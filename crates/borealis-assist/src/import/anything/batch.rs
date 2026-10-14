@@ -1,6 +1,7 @@
-//! Batched generation of features: several class or subclass features in ONE model call, so a
-//! class import costs a small, bounded number of calls. Bound: `2 (detect, outline) + 1 (class
-//! element) + ceil(features / BATCH_SIZE)` calls, plus one per subclass and repair rounds.
+//! Batched generation: several elements of one type in ONE model call (class features, subclass
+//! features across subclasses, standalone items/feats/spells, subclass roots), so an import costs a
+//! small, bounded number of calls: `1 (detect) + ceil(outlined / 6) + 1 per class element +
+//! sum over types of ceil(n / BATCH_SIZE)` calls, plus repair rounds.
 
 use borealis_ai::task::prompt::fence;
 use borealis_ai::task::{run_task, AiRunner, RunOptions};
@@ -8,10 +9,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 use super::fewshot::{core_catalogue, exemplars_for};
-use super::generate::{element_issues, parent_of, GenCtx};
+use super::generate::{element_issues, guidance, parent_of, source_window, GenCtx};
 use super::normalize::normalize;
 use super::steps::{ElementOut, Step};
-use super::types::{ElementStatus, ImportDraft, PlannedElement, Role};
+use super::types::{ElementStatus, ImportDraft, ParentLink, PlannedElement, Role};
 
 /// Features generated per model call.
 pub(crate) const BATCH_SIZE: usize = 8;
@@ -29,27 +30,66 @@ fn batch_schema() -> Value {
           "notes":{"type":"array","items":{"type":"string"}}}}}}})
 }
 
-/// Pending feature elements grouped into batches (same owner and type, at most [`BATCH_SIZE`]).
+/// Generation phase of a role (features before standalone elements before subclass roots, so
+/// references resolve), or None when the role is generated on its own.
+fn phase(role: Role) -> Option<u8> {
+    match role {
+        Role::ClassFeature | Role::SubclassFeature => Some(0),
+        Role::Standalone => Some(1),
+        Role::Subclass => Some(2),
+        Role::Class | Role::SubclassGate => None,
+    }
+}
+
+/// Pending elements grouped into batches of at most [`BATCH_SIZE`] of one type: class features
+/// per class, subclass features across subclasses, standalone elements and subclass roots
+/// whenever there are at least two of a type (a lone one keeps the single-element call).
 pub(crate) fn plan_batches(draft: &ImportDraft) -> Vec<Vec<PlannedElement>> {
-    type Key = (Option<String>, String);
+    type Key = (u8, Option<String>, String);
     let mut groups: Vec<(Key, Vec<PlannedElement>)> = Vec::new();
     for p in &draft.plan.elements {
         let pending = draft
             .element(&p.id)
             .is_some_and(|e| e.status == ElementStatus::Pending);
-        if !pending || !matches!(p.role, Role::ClassFeature | Role::SubclassFeature) {
+        let Some(ph) = phase(p.role).filter(|_| pending) else {
             continue;
-        }
-        let key = (p.owner.clone(), p.ty.clone());
+        };
+        let owner = (p.role == Role::ClassFeature)
+            .then(|| p.owner.clone())
+            .flatten();
+        let key = (ph, owner, p.ty.clone());
         match groups.iter_mut().find(|(k, _)| *k == key) {
             Some((_, v)) => v.push(p.clone()),
             None => groups.push((key, vec![p.clone()])),
         }
     }
+    groups.sort_by_key(|((ph, _, _), _)| *ph);
     groups
         .into_iter()
+        .filter(|((ph, _, _), v)| *ph == 0 || v.len() > 1)
         .flat_map(|(_, v)| v.chunks(BATCH_SIZE).map(<[_]>::to_vec).collect::<Vec<_>>())
         .collect()
+}
+
+/// The source text a batch needs: the whole source when it fits, else the passages located for
+/// its elements (in source order), else the start of the source.
+fn batch_source(draft: &ImportDraft, batch: &[PlannedElement]) -> String {
+    let all = &draft.source_text;
+    if all.chars().count() <= SOURCE_CHARS || batch.iter().any(|p| p.excerpt.is_none()) {
+        return all.chars().take(SOURCE_CHARS).collect();
+    }
+    let mut parts: Vec<(usize, String)> = batch
+        .iter()
+        .filter_map(|p| {
+            p.excerpt
+                .as_ref()
+                .map(|e| (e.start_line, source_window(all, p)))
+        })
+        .collect();
+    parts.sort();
+    parts.dedup();
+    let joined: Vec<String> = parts.into_iter().map(|(_, t)| t).collect();
+    joined.join("\n...\n").chars().take(SOURCE_CHARS).collect()
 }
 
 fn prompt(g: &GenCtx, batch: &[PlannedElement], prior: &str) -> String {
@@ -69,18 +109,24 @@ fn prompt(g: &GenCtx, batch: &[PlannedElement], prior: &str) -> String {
             )
         })
         .collect();
-    let src: String = g.draft.source_text.chars().take(SOURCE_CHARS).collect();
+    let src = batch_source(g.draft, batch);
+    let each = if matches!(batch[0].role, Role::ClassFeature | Role::SubclassFeature) {
+        "Each: `description` in HTML paragraphs restating the source in your own words, and `rules` that implement it \
+(resources, grants, selects, stat changes); a feature with no mechanics may have no rules. Reuse existing core \
+ids. Spellcasting, slots, cantrips and progression tables are generated for you: describe them in prose only."
+    } else {
+        guidance(&batch[0], g.draft.edition)
+    };
     format!(
         "Write ALL of these {n} elements of type {ty} (edition {ed:?}) in ONE answer, each with EXACTLY its id:\n{list}\n\
-Each: `description` in HTML paragraphs restating the source in your own words, and `rules` that implement it \
-(resources, grants, selects, stat changes); a feature with no mechanics may have no rules. Reuse existing core \
-ids. Spellcasting, slots, cantrips and progression tables are generated for you: describe them in prose only.\n\n\
+{each}\n\n\
 Real examples of the same kind (copy the SHAPE, not the content):\n{shots}\n\n\
-Existing core ids you must reuse instead of inventing new ones:\n{cat}\n\n\
+Existing core ids you must reuse instead of inventing new ones:\n{cat}\n\n{kinds}\n\n\
 Answer {{\"elements\": [{{\"element\": {{...}}, \"notes\": [...]}}, ...]}}, one entry per id above; put doubts in notes.{prior}\n\n{src}",
         n = batch.len(),
         ed = g.draft.edition,
         cat = core_catalogue(g.store),
+        kinds = super::rules::catalogue(),
         src = fence("user_input", &src),
     )
 }
@@ -101,7 +147,9 @@ pub(crate) async fn run_batch(
         .map(|e| e.json.clone())
         .collect();
     let (ctx, plan, planned) = (g.ctx.clone(), g.draft.plan.clone(), batch.to_vec());
-    let (parent, source_name) = (g.parent.clone(), g.draft.source_name.clone());
+    let parents: Vec<Option<ParentLink>> = batch.iter().map(|p| parent_of(g.draft, p)).collect();
+    let source_name = g.draft.source_name.clone();
+    let check_parents = parents.clone();
     let step = Step::<BatchOut>::new(
         "import_generate",
         "write several content elements for the Borealis engine",
@@ -111,7 +159,7 @@ pub(crate) async fn run_batch(
     )
     .with_check(move |out: &BatchOut| {
         let mut issues = Vec::new();
-        for p in &planned {
+        for (p, parent) in planned.iter().zip(&check_parents) {
             let Some(o) = out
                 .elements
                 .iter()
@@ -139,7 +187,7 @@ pub(crate) async fn run_batch(
         .await
         .map_err(|e| e.to_string())?;
     let mut out = Vec::new();
-    for p in batch {
+    for (p, parent) in batch.iter().zip(&parents) {
         let found = res
             .output
             .elements
@@ -156,7 +204,7 @@ pub(crate) async fn run_batch(
             &mut el,
             p,
             &g.draft.plan,
-            g.parent.as_ref(),
+            parent.as_ref(),
             &g.draft.source_name,
         );
         out.push((el, found.notes.clone()));

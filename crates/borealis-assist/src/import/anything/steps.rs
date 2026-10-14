@@ -108,6 +108,9 @@ pub(crate) struct DetectOut {
     pub items: Vec<DetectedItem>,
     #[serde(default)]
     pub notes: Vec<String>,
+    /// Source objects that are none of the kinds.
+    #[serde(default)]
+    pub other: Vec<super::types::OtherItem>,
     /// Full text of the source as read (required for attachments).
     #[serde(default)]
     pub transcript: String,
@@ -157,6 +160,8 @@ pub(crate) fn detect_schema() -> Value {
             "properties":{"kind":{"type":"string","enum":KINDS},"name":{"type":"string"},
               "parent_hint":{"type":["string","null"]}}}},
           "notes":{"type":"array","items":{"type":"string"}},
+          "other":{"type":"array","items":{"type":"object","required":["name"],
+            "properties":{"name":{"type":"string"},"what":{"type":"string"},"note":{"type":"string"}}}},
           "transcript":{"type":"string"}}})
 }
 
@@ -197,7 +202,9 @@ in `transcript`; later steps only see that transcript."
     let user = format!(
         "Classify this source. List every distinct thing it describes in `items` (kind, name, and for a \
 subclass the parent class in `parent_hint`, as named or implied, e.g. \"Barbarian\" or \"Primal Path\"). \
-Set `kind` to the single kind, or \"mixed\" when there are several. Decide the edition: 2024 rules use \
+Set `kind` to the single kind, or \"mixed\" when there are several. List in `other` (name as printed, \
+`what` it is) every other thing the source defines that is none of these kinds: rules, weapon properties, \
+conditions, variant or optional rules, upgrades, tables. Decide the edition: 2024 rules use \
 \"species\", \"Weapon Mastery\", \"Origin feat\"; 2014 rules use \"race\" and \"Primal Path\"-style subclass \
 names. Default to {} when unclear. Give a confidence between 0 and 1.\n{transcript}\n\n{}",
         match edition_hint {
@@ -215,13 +222,8 @@ names. Default to {} when unclear. Give a confidence between 0 and 1.\n{transcri
     )
 }
 
-pub(crate) fn outline_step(
-    item: &DetectedItem,
-    edition: Edition,
-    source: &str,
-    parent_levels: Option<&[u32]>,
-) -> Step<OutlineOut> {
-    let what = if item.kind == ImportKind::Subclass {
+fn outline_what(item: &DetectedItem, parent_levels: Option<&[u32]>) -> String {
+    if item.kind == ImportKind::Subclass {
         let lv = parent_levels
             .map(|l| format!(" The parent class's subclasses gain features at levels {l:?}; use only those levels."))
             .unwrap_or_default();
@@ -237,10 +239,21 @@ epic boon rows; SKIP levels that only change table numbers, they need no feature
 cantrips_by_level and spells_known_by_level as 20 cumulative numbers, prepared_formula}}); never write slot tables.",
             item.name
         )
-    };
+    }
+}
+
+const QUOTE_RULE: &str = "For each feature give a short verbatim `quote` from the source \
+(under 80 characters) so the passage can be located.";
+
+pub(crate) fn outline_step(
+    item: &DetectedItem,
+    edition: Edition,
+    source: &str,
+    parent_levels: Option<&[u32]>,
+) -> Step<OutlineOut> {
     let user = format!(
-        "Outline {what} Edition: {edition:?}. For each feature give a short verbatim `quote` from the source \
-(under 80 characters) so the passage can be located.\n\n{}",
+        "Outline {} Edition: {edition:?}. {QUOTE_RULE}\n\n{}",
+        outline_what(item, parent_levels),
         fence("user_input", source)
     );
     Step::new(
@@ -250,4 +263,67 @@ cantrips_by_level and spells_known_by_level as 20 cumulative numbers, prepared_f
         user,
         outline_schema(),
     )
+}
+
+/// Combined outlines output.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct OutlinesOut {
+    pub outlines: Vec<Outline>,
+}
+
+fn same_name(a: &str, b: &str) -> bool {
+    let n = |s: &str| {
+        s.split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .to_lowercase()
+    };
+    n(a) == n(b)
+}
+
+impl OutlinesOut {
+    /// The outline answering `name`, else the one at `index`.
+    pub(crate) fn take(&self, name: &str, index: usize) -> Option<Outline> {
+        self.outlines
+            .iter()
+            .find(|o| same_name(&o.name, name))
+            .or_else(|| self.outlines.get(index))
+            .cloned()
+    }
+}
+
+/// ONE call outlining several classes and subclasses (`items` with their parent levels).
+pub(crate) fn outlines_step(
+    items: &[(DetectedItem, Option<Vec<u32>>)],
+    edition: Edition,
+    source: &str,
+) -> Step<OutlinesOut> {
+    let list: String = items
+        .iter()
+        .enumerate()
+        .map(|(i, (item, lv))| format!("{}. {}\n", i + 1, outline_what(item, lv.as_deref())))
+        .collect();
+    let user = format!(
+        "Outline each of these {n} in ONE answer, in this order, each with `name` exactly as given:\n{list}\
+Edition: {edition:?}. {QUOTE_RULE}\n\n{}",
+        fence("user_input", source),
+        n = items.len(),
+    );
+    let names: Vec<String> = items.iter().map(|(i, _)| i.name.clone()).collect();
+    let item_schema = outline_schema()["properties"]["outline"].clone();
+    Step::new(
+        "import_outline",
+        "outline several imported classes or subclasses into features by level",
+        "Output {\"outlines\": [{...}, ...]} only, one per requested name.",
+        user,
+        json!({"type":"object","required":["outlines"],
+            "properties":{"outlines":{"type":"array","items":item_schema}}}),
+    )
+    .with_check(move |out: &OutlinesOut| {
+        names
+            .iter()
+            .filter(|n| !out.outlines.iter().any(|o| same_name(&o.name, n)))
+            .map(|n| format!("no outline named \"{n}\""))
+            .collect()
+    })
 }

@@ -12,6 +12,7 @@ mod finalize;
 mod generate;
 mod normalize;
 mod plan;
+mod rules;
 mod steps;
 mod sweep;
 mod types;
@@ -31,7 +32,12 @@ pub use types::*;
 use generate::{
     emit, fill_pending, parent_of, pending, run_element, validate_and_repair, GenCtx, Progress,
 };
-use steps::{detect_step, outline_step, target_schema, Attaching, DetectOut, Step, TargetOut};
+use steps::{
+    detect_step, outline_step, outlines_step, target_schema, Attaching, DetectOut, Step, TargetOut,
+};
+
+/// Classes and subclasses outlined per model call.
+const OUTLINE_BATCH: usize = 6;
 
 /// Request for [`import_anything`].
 #[derive(Debug, Clone)]
@@ -114,10 +120,18 @@ pub async fn detect_source(
             "the model could not read any text in the attachments".into(),
         ));
     }
-    let items: Vec<DetectedItem> = out
+    let (items, mixed): (Vec<DetectedItem>, Vec<DetectedItem>) = out
         .items
         .into_iter()
-        .filter(|i| i.kind != ImportKind::Mixed)
+        .partition(|i| i.kind != ImportKind::Mixed);
+    let other: Vec<OtherItem> = out
+        .other
+        .into_iter()
+        .chain(mixed.into_iter().map(|i| OtherItem {
+            name: i.name,
+            what: "mixed".into(),
+            note: "listed with no single kind".into(),
+        }))
         .collect();
     if items.is_empty() {
         return Err(AssistError::Extraction(
@@ -135,6 +149,7 @@ pub async fn detect_source(
         confidence: out.confidence.clamp(0.0, 1.0),
         items,
         notes: out.notes,
+        other,
     };
     Ok((detection, text))
 }
@@ -163,31 +178,46 @@ pub async fn plan_import(
         elements: Vec::new(),
         notes: Vec::new(),
     };
+    // Parents first (they decide the subclass levels), then the outlines in as few calls as
+    // possible: one for a single class or subclass, else OUTLINE_BATCH per call.
+    let mut wanted: Vec<(usize, DetectedItem, Option<Vec<u32>>)> = Vec::new();
     for item in &detection.items {
         let mut group = plan::standalone(item.kind, &item.name);
-        match item.kind {
-            ImportKind::Class | ImportKind::Subclass => {
-                let mut levels: Option<Vec<u32>> = None;
-                if item.kind == ImportKind::Subclass {
-                    match plan::resolve_parent(
-                        &store,
-                        detection.edition,
-                        item.parent_hint.as_deref(),
-                        &item.name,
-                    ) {
-                        Ok(link) => {
-                            levels = Some(link.subclass_levels.clone());
-                            group.parent = Some(link);
-                        }
-                        Err(choice) => group.choice = Some(choice),
+        if matches!(item.kind, ImportKind::Class | ImportKind::Subclass) {
+            let mut levels: Option<Vec<u32>> = None;
+            if item.kind == ImportKind::Subclass {
+                match plan::resolve_parent(
+                    &store,
+                    detection.edition,
+                    item.parent_hint.as_deref(),
+                    &item.name,
+                ) {
+                    Ok(link) => {
+                        levels = Some(link.subclass_levels.clone());
+                        group.parent = Some(link);
                     }
+                    Err(choice) => group.choice = Some(choice),
                 }
-                let step = outline_step(item, detection.edition, source_text, levels.as_deref());
-                group.outline = Some(run_task(&adapter, &step, opts).await?.output.outline);
             }
-            _ => {}
+            wanted.push((plan.groups.len(), item.clone(), levels));
         }
         plan.groups.push(group);
+    }
+    if let [(gi, item, levels)] = wanted.as_slice() {
+        let step = outline_step(item, detection.edition, source_text, levels.as_deref());
+        plan.groups[*gi].outline = Some(run_task(&adapter, &step, opts).await?.output.outline);
+    } else {
+        for chunk in wanted.chunks(OUTLINE_BATCH) {
+            let items: Vec<(DetectedItem, Option<Vec<u32>>)> = chunk
+                .iter()
+                .map(|(_, i, l)| (i.clone(), l.clone()))
+                .collect();
+            let step = outlines_step(&items, detection.edition, source_text);
+            let out = run_task(&adapter, &step, opts).await?.output;
+            for (k, (gi, item, _)) in chunk.iter().enumerate() {
+                plan.groups[*gi].outline = out.take(&item.name, k);
+            }
+        }
     }
     plan::rebuild(&mut plan, &store, id_prefix, source_text);
     Ok(plan)

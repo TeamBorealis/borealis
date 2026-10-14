@@ -13,7 +13,7 @@ use serde_json::{json, Value};
 use super::fewshot::{core_catalogue, exemplars_for};
 use super::normalize::{gate_element, normalize, static_checks};
 use super::steps::{element_schema, ElementOut, Step};
-use super::sweep::engine_sweep;
+use super::sweep::{engine_sweep, SweepIssue};
 use super::types::{
     DraftElement, Edition, ElementStatus, ImportDraft, ImportProgress, ParentLink, PlannedElement,
     Role, Stage,
@@ -39,7 +39,7 @@ pub(crate) fn emit(p: Progress<'_>, stage: Stage, done: usize, total: usize, mes
     }
 }
 
-fn guidance(planned: &PlannedElement, edition: Edition) -> &'static str {
+pub(crate) fn guidance(planned: &PlannedElement, edition: Edition) -> &'static str {
     match (planned.role, planned.ty.as_str()) {
         (Role::Class, _) => "A Class element. Include: `setters` hd and short; `rules`: saving-throw grants, one skill `select` (type Proficiency) and weapon/armor grants, each limited with requirements \"!<multiclass id>\" like the example; `data`: hit_die, primary_abilities, saving_throws, subclass_level, asi_levels, progression (EVERY array has exactly 20 entries: proficiency_bonus plus any table the features use; spellcasting tables are generated), and the multiclass definition (2024: data.multiclass {prerequisite, requirements}; 2014: top-level multiclass {id, prerequisite, requirements, rules}). Do NOT add `Class Feature` grants; they are added for you.",
         (Role::ClassFeature, _) => "A Class Feature: `description` in HTML paragraphs that restates the source in your own words and `rules` that implement it (resources, grants, selects, stat changes). A feature with no mechanics may have no rules. Reuse existing core ids for skills, proficiencies and abilities.",
@@ -157,7 +157,7 @@ fn prompt_for(
         "Write the element \"{name}\" (type {ty}, edition {ed:?}). Use EXACTLY id \"{id}\".{lvl}{spell}\n\
 Guidance: {guide}\n\nWhat the source says: {brief}\n\n\
 Real examples from the bundled SRD of the same kind (copy the SHAPE, not the content):\n{shots}\n\n\
-Existing core ids you must reuse instead of inventing new ones:\n{cat}\n\n\
+Existing core ids you must reuse instead of inventing new ones:\n{cat}\n\n{kinds}\n\n\
 Answer {{\"element\": {{...}}, \"notes\": [...]}}; put doubts in notes.\n\n{src}",
         name = planned.name,
         ty = planned.ty,
@@ -167,6 +167,7 @@ Answer {{\"element\": {{...}}, \"notes\": [...]}}; put doubts in notes.\n\n{src}
         guide = guidance(planned, g.draft.edition),
         brief = planned.brief,
         cat = core_catalogue(g.store),
+        kinds = super::rules::catalogue(),
         src = fence("user_input", &source_window(&g.draft.source_text, planned)),
     );
     if let Some((el, issues)) = previous {
@@ -267,6 +268,8 @@ pub(crate) fn pending(plan: &super::types::ImportPlan) -> Vec<DraftElement> {
             balance: None,
             repair_rounds: 0,
             revisions: 0,
+            rule_errors: Vec::new(),
+            normalised: Vec::new(),
         })
         .collect()
 }
@@ -369,7 +372,7 @@ async fn fill_batches(
             Stage::Generate,
             first.unwrap_or(0),
             total,
-            &format!("{} features", batch.len()),
+            &format!("{} elements", batch.len()),
         );
         let parent = super::batch::batch_parent(draft, &batch);
         let result = {
@@ -424,20 +427,30 @@ pub(crate) async fn validate_and_repair(
         e.repair_rounds = 0;
     }
     let mut remaining = Vec::new();
+    let mut remaining_rules = Vec::new();
     for round in 0..=MAX_REPAIR_ROUNDS {
+        tidy_rules(draft);
         let issues = engine_sweep(ctx, &draft.plan, &draft.elements);
+        let rule_issues = rule_sweep(draft);
         emit(
             progress,
             Stage::Validate,
             round as usize,
             MAX_REPAIR_ROUNDS as usize + 1,
-            &format!("{} sweep issue(s)", issues.len()),
+            &format!(
+                "{} sweep issue(s), {} rule issue(s)",
+                issues.len(),
+                rule_issues.len()
+            ),
         );
-        if issues.is_empty() || round == MAX_REPAIR_ROUNDS {
+        let clean = issues.is_empty() && rule_issues.is_empty();
+        if clean || round == MAX_REPAIR_ROUNDS {
             remaining = issues;
+            remaining_rules = rule_issues;
             break;
         }
-        let blamed = blamed_elements(draft, &issues);
+        let all: Vec<SweepIssue> = issues.iter().chain(&rule_issues).cloned().collect();
+        let blamed = blamed_elements(draft, &all);
         let mut repaired_any = false;
         for (id, msgs) in blamed {
             let Some(idx) = draft.elements.iter().position(|e| e.id == id) else {
@@ -484,18 +497,82 @@ pub(crate) async fn validate_and_repair(
         }
         if !repaired_any {
             remaining = issues;
+            remaining_rules = rule_issues;
             break;
         }
     }
+    strip_unrepaired_rules(draft, &remaining_rules);
     mark_unresolved(draft, &remaining);
     draft.sweep_issues = remaining;
     attach_balance(ctx, &store, draft);
 }
 
-fn blamed_elements(
-    draft: &ImportDraft,
-    issues: &[super::sweep::SweepIssue],
-) -> Vec<(String, Vec<String>)> {
+/// Deterministic rule fixes on every generated element (recorded on the element).
+fn tidy_rules(draft: &mut ImportDraft) {
+    for e in draft.elements.iter_mut().filter(|e| !e.json.is_null()) {
+        let notes = super::rules::normalise_resources(&mut e.json);
+        push_new(&mut e.normalised, notes);
+    }
+    let known: Vec<(String, String)> = draft
+        .elements
+        .iter()
+        .flat_map(|e| super::rules::resources_of(&e.json))
+        .collect();
+    for e in draft.elements.iter_mut().filter(|e| !e.json.is_null()) {
+        let notes = super::rules::normalise_references(&mut e.json, &known);
+        push_new(&mut e.normalised, notes);
+    }
+}
+
+fn push_new(into: &mut Vec<String>, items: Vec<String>) {
+    for i in items {
+        if !into.contains(&i) {
+            into.push(i);
+        }
+    }
+}
+
+/// Rule-catalogue problems of every generated element, as repairable issues.
+fn rule_sweep(draft: &ImportDraft) -> Vec<SweepIssue> {
+    draft
+        .elements
+        .iter()
+        .filter(|e| !e.json.is_null() && e.status != ElementStatus::Failed)
+        .flat_map(|e| {
+            super::rules::rule_problems(&e.json)
+                .into_iter()
+                .map(|message| SweepIssue {
+                    level: 0,
+                    element_id: Some(e.id.clone()),
+                    message,
+                })
+        })
+        .collect()
+}
+
+/// Last resort after the repair rounds: drop what the engine would ignore, and say so on the
+/// element (it needs review; the import report lists it as an error).
+fn strip_unrepaired_rules(draft: &mut ImportDraft, remaining: &[SweepIssue]) {
+    for e in &mut draft.elements {
+        if !remaining
+            .iter()
+            .any(|i| i.element_id.as_deref() == Some(&e.id))
+        {
+            continue;
+        }
+        let removed = super::rules::strip_invalid(&mut e.json);
+        if removed.is_empty() {
+            continue;
+        }
+        if matches!(e.status, ElementStatus::Ok | ElementStatus::Repaired) {
+            e.status = ElementStatus::NeedsReview;
+        }
+        push_new(&mut e.issues, removed.clone());
+        push_new(&mut e.rule_errors, removed);
+    }
+}
+
+fn blamed_elements(draft: &ImportDraft, issues: &[SweepIssue]) -> Vec<(String, Vec<String>)> {
     let mut order: Vec<String> = Vec::new();
     let mut map: std::collections::BTreeMap<String, BTreeSet<String>> =
         std::collections::BTreeMap::new();

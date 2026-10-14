@@ -9,6 +9,7 @@ mod chunk;
 mod ids;
 mod pack;
 mod pdf;
+pub mod report;
 
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -27,6 +28,7 @@ pub use chunk::{chunk_text, Chunk, Hint};
 pub use ids::{make_id, slug};
 pub use pack::{assemble, ImportedPack, Provenance, CONTENT_FILE};
 pub use pdf::{extract_pdf_text, PdfText, MIN_CHARS_PER_PAGE};
+pub use report::{ImportReport, ReportEntry, ReportIssue, REPORT_FILE, REPORT_FORMAT};
 
 /// A chunk shorter than this with no recognised pattern is skipped as prose.
 const MIN_UNKNOWN_CHARS: usize = 80;

@@ -59,7 +59,8 @@ pub use import::anything::{
     ImportStep, VisionRunner,
 };
 pub use import::{
-    import_text_to_pack, ChunkReport, ChunkStatus, ImportOutcome, ImportRequest, ImportSource,
+    import_text_to_pack, ChunkReport, ChunkStatus, ImportOutcome, ImportReport, ImportRequest,
+    ImportSource,
 };
 pub use options::{apply_option, legal_options, LevelPath, LevelUpOption};
 pub use plan::{apply_plan, replay_step, Plan, PlanStep};

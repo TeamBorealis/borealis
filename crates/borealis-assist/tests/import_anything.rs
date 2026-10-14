@@ -902,3 +902,218 @@ async fn sweep_repair_gives_up_after_the_round_limit() {
         .any(|i| i.message.contains("offers no options")));
     assert!(finalize_draft(&base(), &d).is_err());
 }
+
+// ---- rule catalogue, normalisation, report, batching (import-pipeline-fix-1) --------------------
+
+fn tiny_request() -> AnythingRequest {
+    request(
+        ImportSource::Text("# The Runebinder\n\nRune Carving.\n\nGlyph Lore.\n".into()),
+        "rune",
+        Edition::Y2024,
+    )
+}
+
+/// The tiny class whose "Glyph Lore" carries `rules`; repairs of it answer `repairs` in turn.
+fn tiny_with_lore_rules(rules: Value, repairs: &[Value]) -> Fake {
+    let mut batch = good_tiny_batch();
+    batch[2]["element"]["rules"] = rules;
+    let replies: Vec<String> = repairs
+        .iter()
+        .map(|r| feature("Glyph Lore", json!({ "rules": r })))
+        .collect();
+    let fake = tiny_class_fake(vec![batch]);
+    if replies.is_empty() {
+        fake
+    } else {
+        fake.on("import_repair", "\"Glyph Lore\"", &replies)
+    }
+}
+
+async fn draft_of(fake: &Fake) -> ImportDraft {
+    let ImportStep::Draft(d) = import_anything(fake, &base(), &tiny_request(), &opts(), None)
+        .await
+        .unwrap()
+    else {
+        panic!("expected a draft")
+    };
+    *d
+}
+
+fn lore(d: &ImportDraft) -> &borealis_assist::import::anything::DraftElement {
+    d.elements.iter().find(|e| e.name == "Glyph Lore").unwrap()
+}
+
+#[tokio::test]
+async fn prompts_carry_the_rule_catalogue_from_the_registry() {
+    let fake = tiny_with_lore_rules(json!([]), &[]);
+    draft_of(&fake).await;
+    for p in fake.prompts("import_generate") {
+        assert!(p.contains("resource*: id, name, max"), "no catalogue");
+        assert!(p.contains("Any other kind or field is rejected"));
+    }
+}
+
+#[tokio::test]
+async fn invented_rule_kind_is_repaired_with_the_exact_errors() {
+    let invented = json!([{"kind": "strike_bonus", "amount": 2}]);
+    let clean = json!([{"kind": "stat", "name": "speed", "value": "5"}]);
+    let fake = tiny_with_lore_rules(invented, &[clean]);
+    let d = draft_of(&fake).await;
+    assert_eq!(fake.calls("import_repair"), 1);
+    let p = &fake.prompts("import_repair")[0];
+    assert!(
+        p.contains("\"strike_bonus\"") && p.contains("rule catalogue"),
+        "{p}"
+    );
+    let l = lore(&d);
+    assert_eq!(l.status, ElementStatus::Repaired);
+    assert!(l.rule_errors.is_empty());
+    assert_eq!(l.json["rules"][0]["kind"], "stat");
+}
+
+#[tokio::test]
+async fn rule_errors_that_survive_repairs_are_removed_and_reported() {
+    let invented = json!([{"kind": "strike_bonus", "amount": 2},
+        {"kind": "stat", "name": "speed", "value": "5"}]);
+    let fake = tiny_with_lore_rules(invented.clone(), &[invented]);
+    let d = draft_of(&fake).await;
+    assert_eq!(
+        fake.calls("import_repair"),
+        borealis_assist::import::anything::MAX_REPAIR_ROUNDS as usize
+    );
+    let l = lore(&d);
+    assert_eq!(l.status, ElementStatus::NeedsReview);
+    assert_eq!(l.rule_errors.len(), 1, "{:?}", l.rule_errors);
+    assert!(l.issues.iter().any(|i| i.contains("strike_bonus")));
+    assert_eq!(l.json["rules"].as_array().unwrap().len(), 1);
+
+    let done = finalize_draft(&base(), &d).unwrap();
+    let report = done.pack.report.clone().expect("report");
+    assert_eq!(report.errors.len(), 1);
+    assert_eq!(report.errors[0].element, l.id);
+    let dir = std::env::temp_dir().join(format!("borealis-report-test-{}", std::process::id()));
+    done.pack.write_to_dir(&dir).unwrap();
+    let text = std::fs::read_to_string(dir.join("report.json")).unwrap();
+    let _ = std::fs::remove_dir_all(&dir);
+    let v: Value = serde_json::from_str(&text).unwrap();
+    assert_eq!(v["format"], "borealis-import-report/1");
+    assert!(v["errors"][0]["message"]
+        .as_str()
+        .unwrap()
+        .contains("strike_bonus"));
+}
+
+#[tokio::test]
+async fn resource_rules_are_normalised_without_a_model_call() {
+    let rules = json!([
+        {"kind": "resource", "name": "Carving Charges", "max": 2, "recharge": "short rest"},
+        {"kind": "resource_cost", "resource": "Carving Charges", "cost": 1}
+    ]);
+    let fake = tiny_with_lore_rules(rules, &[]);
+    let d = draft_of(&fake).await;
+    assert_eq!(fake.calls("import_repair"), 0);
+    let l = lore(&d);
+    let r = &l.json["rules"];
+    assert_eq!(r[0]["id"], "carving charges");
+    assert_eq!(r[0]["max"], json!({"type": "fixed", "value": 2}));
+    assert_eq!(r[0]["recharge"], json!(["short_rest", "long_rest"]));
+    assert_eq!(r[1]["resource"], "carving charges");
+    assert_eq!(l.normalised.len(), 4, "{:?}", l.normalised);
+    let report = finalize_draft(&base(), &d).unwrap().pack.report.unwrap();
+    assert_eq!(report.normalised.len(), 4);
+    assert!(report.errors.is_empty());
+}
+
+fn el_reply(name: &str, ty: &str) -> String {
+    json!({"element": {"id": "X", "name": name, "type": ty,
+        "description": format!("<p>{name}.</p>")}, "notes": []})
+    .to_string()
+}
+
+fn outline_of(name: &str, features: &[(u32, &str)]) -> Value {
+    serde_json::from_str::<Value>(&outline(name, json!({}), features)).unwrap()["outline"].clone()
+}
+
+/// An invented mixed source: 2 Fighter subclasses (3 features each), 3 feats, 2 magic items and
+/// a weapon property no element kind covers.
+fn mixed_fake() -> Fake {
+    let detect = json!({"kind": "mixed", "edition": "2024", "confidence": 0.9, "items": [
+        {"kind": "subclass", "name": "Banner Knight", "parent_hint": "Fighter"},
+        {"kind": "subclass", "name": "Shield Warden", "parent_hint": "Fighter"},
+        {"kind": "feat", "name": "Quick Draw"}, {"kind": "feat", "name": "Steady Hand"},
+        {"kind": "feat", "name": "Iron Gut"},
+        {"kind": "item", "name": "Lantern Of Echoes"}, {"kind": "item", "name": "Copper Key"}],
+        "other": [{"name": "Thunderous", "what": "weapon property"}]});
+    let banner = [
+        (3, "Rally Banner"),
+        (7, "Hold The Line"),
+        (10, "Banner Mastery"),
+    ];
+    let warden = [(3, "Shield Wall"), (7, "Brace"), (10, "Bulwark")];
+    let outlines = json!({"outlines": [outline_of("Banner Knight", &banner),
+        outline_of("Shield Warden", &warden)]});
+    let feats: Vec<String> = banner
+        .iter()
+        .chain(&warden)
+        .map(|(_, n)| el_reply(n, "Archetype Feature"))
+        .collect();
+    let of = |names: &[&str], ty: &str| -> Vec<String> {
+        vec![batch_reply(
+            &names.iter().map(|n| el_reply(n, ty)).collect::<Vec<_>>(),
+        )]
+    };
+    Fake::default()
+        .on("import_detect", "Classify", &[detect.to_string()])
+        .on("import_outline", "in ONE answer", &[outlines.to_string()])
+        .on(
+            "import_generate",
+            "of type Archetype Feature (",
+            &[batch_reply(&feats)],
+        )
+        .on(
+            "import_generate",
+            "of type Archetype (",
+            &of(&["Banner Knight", "Shield Warden"], "Archetype"),
+        )
+        .on(
+            "import_generate",
+            "of type Feat (",
+            &of(&["Quick Draw", "Steady Hand", "Iron Gut"], "Feat"),
+        )
+        .on(
+            "import_generate",
+            "of type Magic Item (",
+            &of(&["Lantern Of Echoes", "Copper Key"], "Magic Item"),
+        )
+}
+
+#[tokio::test]
+async fn mixed_source_is_batched_by_type_and_reports_what_has_no_kind() {
+    let fake = mixed_fake();
+    let source = "Banner Knight. Shield Warden. Quick Draw. Steady Hand. Iron Gut. \
+Lantern Of Echoes. Copper Key. Thunderous.";
+    let req = request(ImportSource::Text(source.into()), "mix", Edition::Y2024);
+    let ImportStep::Draft(d) = import_anything(&fake, &base(), &req, &opts(), None)
+        .await
+        .unwrap()
+    else {
+        panic!("expected a draft")
+    };
+    let bad: Vec<_> = d
+        .elements
+        .iter()
+        .filter(|e| matches!(e.status, ElementStatus::Failed | ElementStatus::Pending))
+        .map(|e| (&e.name, &e.issues))
+        .collect();
+    assert!(bad.is_empty(), "{bad:?}");
+    // detect + ONE outline call + 4 batches (subclass features of both subclasses, both roots,
+    // feats, items). One call per outline, root and standalone element would be 12.
+    assert_eq!(fake.calls("import_detect"), 1);
+    assert_eq!(fake.calls("import_outline"), 1);
+    assert_eq!(fake.calls("import_generate"), 4);
+    assert_eq!(fake.calls("import_repair"), 0);
+    let report = finalize_draft(&base(), &d).unwrap().pack.report.unwrap();
+    assert_eq!(report.entries.len(), 1, "{:?}", report.entries);
+    assert_eq!(report.entries[0].source, "Thunderous");
+    assert_eq!(report.entries[0].outcome, "unsupported");
+}

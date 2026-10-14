@@ -4,16 +4,24 @@
 //! writes the finalized pack.
 //!
 //! ```sh
+//! cargo build -p borealis-mcp   # the profile's MCP server (skip with --no-profile)
 //! cargo run -p borealis-assist --example import_file -- <file.pdf|file.txt> <out_dir> \
-//!     [--edition 2014|2024] [--max-calls N]
+//!     [--edition 2014|2024] [--max-calls N] [--no-profile] [--mcp-bin <path>]
 //! cargo run -p borealis-assist --example import_file -- --resume <out_dir> --parent <CLASS_ID> \
 //!     [--max-calls N]
 //! ```
 //!
-//! `<out_dir>/imported/` gets the pack (`ImportedPack::write_to_dir`), `<out_dir>/draft.json` the
-//! reviewable draft (also the resume point after a parent choice), `<out_dir>/calls/NN.txt` each
-//! model reply. `--max-calls` (default 10) refuses further model calls. Differences from the desktop:
-//! no Borealis AI profile (MCP server), base packs are the bundled `core`, `srd-5.1`, `srd-5.2.1`.
+//! `<out_dir>/imported/` gets the pack and `report.json` (`ImportedPack::write_to_dir`),
+//! `<out_dir>/draft.json` the reviewable draft (also the resume point after a parent choice),
+//! `<out_dir>/calls/NN.txt` each model reply. `--max-calls` (default 10) refuses further model calls.
+//!
+//! Like the desktop, the session carries the Borealis AI profile: the profile assets
+//! (`crates/borealis-ai/profile-assets`, installed into `<out_dir>/ai-profile`) and the MCP server
+//! limited to the enabled packs. The desktop launches its own executable with `--mcp
+//! --content-dir <bundled> --content-dir <library> --packs <enabled>`; this runner launches the
+//! `borealis-mcp` binary (the same `borealis_mcp` server) with `--content <repo content>
+//! --packs core,srd-5.1,srd-5.2.1`. Remaining differences: no user library packs, the pack id/name
+//! are fixed, and no UI review between stages. `--no-profile` reproduces the e4f9279 runs.
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -22,8 +30,8 @@ use borealis_ai::provider::detect_all;
 use borealis_ai::session::{AiOutcome, AiRequest};
 use borealis_ai::task::{AiRunner, BoxFuture, RunOptions};
 use borealis_ai::{
-    AiError, AiEvent, AiSession, Attachment, AttachmentKind, DetectConfig, InputTrust,
-    SessionOptions,
+    AiError, AiEvent, AiSession, Attachment, AttachmentKind, DetectConfig, InputTrust, McpCommand,
+    ProfileConfig, SessionOptions,
 };
 use borealis_assist::import::anything::{ImportProgress, ImportSource};
 use borealis_assist::{
@@ -103,12 +111,15 @@ struct Args {
     parent: Option<String>,
     resume: bool,
     max_calls: u32,
+    profile: bool,
+    mcp_bin: Option<PathBuf>,
 }
 
 fn parse_args() -> Result<Args, String> {
     let mut it = std::env::args().skip(1);
     let mut pos = Vec::new();
     let (mut edition, mut parent, mut resume, mut max_calls) = (Edition::Y2024, None, false, 10);
+    let (mut profile, mut mcp_bin) = (true, None);
     while let Some(a) = it.next() {
         match a.as_str() {
             "--edition" => {
@@ -119,6 +130,8 @@ fn parse_args() -> Result<Args, String> {
                 }
             }
             "--parent" => parent = it.next(),
+            "--no-profile" => profile = false,
+            "--mcp-bin" => mcp_bin = it.next().map(PathBuf::from),
             "--resume" => resume = true,
             "--max-calls" => {
                 max_calls = it
@@ -141,11 +154,17 @@ fn parse_args() -> Result<Args, String> {
         parent,
         resume,
         max_calls,
+        profile,
+        mcp_bin,
     })
 }
 
+fn content_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content")
+}
+
 fn base_builder() -> Result<ContentStoreBuilder, String> {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+    let root = content_root();
     BASE_PACKS
         .iter()
         .try_fold(ContentStoreBuilder::new(), |b, p| {
@@ -174,13 +193,46 @@ fn source_of(path: &Path) -> Result<(ImportSource, String), String> {
     Ok((source, name))
 }
 
-async fn claude_session() -> Result<AiSession, String> {
+/// The desktop's profile: assets installed under `<out>/ai-profile`, MCP server on the base packs.
+fn profile_config(out: &Path, mcp_bin: Option<PathBuf>) -> Result<ProfileConfig, String> {
+    let program = match mcp_bin {
+        Some(p) => p,
+        None => std::env::current_exe()
+            .map_err(|e| e.to_string())?
+            .parent()
+            .and_then(Path::parent)
+            .map(|d| d.join("borealis-mcp"))
+            .ok_or("cannot locate the target directory")?,
+    };
+    if !program.is_file() {
+        return Err(format!(
+            "{} not found: run `cargo build -p borealis-mcp`, pass --mcp-bin, or --no-profile",
+            program.display()
+        ));
+    }
+    let assets = Path::new(env!("CARGO_MANIFEST_DIR")).join("../borealis-ai/profile-assets");
+    let dir = out.join("ai-profile");
+    borealis_ai::profile::install_profile(&assets, &dir).map_err(|e| e.to_string())?;
+    let args = vec![
+        "--content".to_string(),
+        content_root().to_string_lossy().into_owned(),
+        "--packs".to_string(),
+        BASE_PACKS.join(","),
+    ];
+    Ok(ProfileConfig::new(dir, McpCommand { program, args }))
+}
+
+async fn claude_session(profile: Option<ProfileConfig>) -> Result<AiSession, String> {
     let found = detect_all(&DetectConfig::default()).await;
     let p = found
         .into_iter()
         .find(|p| p.backend == borealis_ai::Backend::Claude)
         .ok_or("the claude CLI is not installed")?;
-    Ok(AiSession::new(p, SessionOptions::default()).with_input_trust(InputTrust::Untrusted, false))
+    let options = SessionOptions {
+        profile,
+        ..SessionOptions::default()
+    };
+    Ok(AiSession::new(p, options).with_input_trust(InputTrust::Untrusted, false))
 }
 
 fn save_draft(out: &Path, draft: &ImportDraft) -> Result<(), String> {
@@ -205,7 +257,12 @@ fn summarize(draft: &ImportDraft) {
 
 async fn run(args: Args) -> Result<(), String> {
     let base = base_builder()?;
-    let session = claude_session().await?;
+    let profile = if args.profile {
+        Some(profile_config(&args.out, args.mcp_bin.clone())?)
+    } else {
+        None
+    };
+    let session = claude_session(profile).await?;
     let runner = Counted {
         inner: &session,
         calls: AtomicU32::new(0),

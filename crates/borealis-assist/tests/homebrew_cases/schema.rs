@@ -315,6 +315,22 @@ pub struct ImportReport {
     pub format: String,
     #[serde(default)]
     pub entries: Vec<ReportEntry>,
+    /// Rules the engine would ignore that survived every repair and were removed.
+    #[serde(default)]
+    pub errors: Vec<ReportIssue>,
+    /// Deterministic rule fixes the importer applied.
+    #[serde(default)]
+    pub normalised: Vec<ReportIssue>,
+}
+
+/// One message about one pack element.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ReportIssue {
+    /// Element id in the pack.
+    pub element: String,
+    /// What happened.
+    pub message: String,
 }
 
 /// One report entry.

@@ -8,6 +8,7 @@ use borealis_content::file::{
 use borealis_content::Ruleset;
 use serde::{Deserialize, Serialize};
 
+use super::report::{ImportReport, REPORT_FILE};
 use crate::error::AssistError;
 
 /// Provenance written next to the manifest (the manifest format itself has no such field).
@@ -32,6 +33,8 @@ pub struct ImportedPack {
     pub provenance: Provenance,
     /// The converted elements (`content.json`).
     pub content: ContentFile,
+    /// The import report (`report.json`), when the pipeline produced one.
+    pub report: Option<ImportReport>,
 }
 
 /// File name of the content file inside the pack.
@@ -69,11 +72,13 @@ pub fn assemble(
             notice: notice.to_string(),
         },
         content,
+        report: None,
     }
 }
 
 impl ImportedPack {
-    /// Write `pack.json`, `content.json` and `import.json` into `dir` (created if missing).
+    /// Write `pack.json`, `content.json`, `import.json` and, when present, `report.json` into
+    /// `dir` (created if missing).
     ///
     /// # Errors
     /// [`AssistError::Invalid`] on I/O or serialization failures.
@@ -93,6 +98,12 @@ impl ImportedPack {
         .map_err(io)?;
         let prov = serde_json::to_string_pretty(&self.provenance)
             .map_err(|e| AssistError::Invalid(e.to_string()))?;
-        std::fs::write(dir.join("import.json"), prov).map_err(io)
+        std::fs::write(dir.join("import.json"), prov).map_err(io)?;
+        if let Some(report) = &self.report {
+            let text = serde_json::to_string_pretty(report)
+                .map_err(|e| AssistError::Invalid(e.to_string()))?;
+            std::fs::write(dir.join(REPORT_FILE), text).map_err(io)?;
+        }
+        Ok(())
     }
 }

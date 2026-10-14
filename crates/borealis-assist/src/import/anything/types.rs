@@ -89,6 +89,20 @@ pub struct DetectedItem {
     pub parent_hint: Option<String>,
 }
 
+/// Something the source defines that no element kind covers (a rule, a weapon property, a
+/// condition, a table): it is reported, not imported.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OtherItem {
+    /// Name as printed.
+    pub name: String,
+    /// What it is ("weapon property", "optional rule", ...).
+    #[serde(default)]
+    pub what: String,
+    /// Model note.
+    #[serde(default)]
+    pub note: String,
+}
+
 /// Stage 1 result.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Detection {
@@ -103,6 +117,9 @@ pub struct Detection {
     /// Model notes.
     #[serde(default)]
     pub notes: Vec<String>,
+    /// Source objects that are none of the import kinds (reported, not imported).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub other: Vec<OtherItem>,
 }
 
 /// Role of an element inside its group.
@@ -351,6 +368,13 @@ pub struct DraftElement {
     pub repair_rounds: u32,
     /// User revisions applied.
     pub revisions: u32,
+    /// Rules or fields removed because the engine would ignore them after every repair (also in
+    /// `issues`; they go to the import report as errors).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub rule_errors: Vec<String>,
+    /// Deterministic rule fixes applied (resource ids, `max`, rest names).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub normalised: Vec<String>,
 }
 
 /// Where the import text comes from.

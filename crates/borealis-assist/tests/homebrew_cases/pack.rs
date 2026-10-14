@@ -309,6 +309,13 @@ fn report_valid(l: &Loaded) -> Result<(), String> {
                 .collect();
             (!missing.is_empty()).then(|| format!("{}: unknown elements {missing:?}", e.source))
         })
+        .chain(
+            r.errors
+                .iter()
+                .chain(&r.normalised)
+                .filter(|i| !ids.contains(i.element.as_str()))
+                .map(|i| format!("{}: unknown element", i.element)),
+        )
         .collect();
     list_or_ok("bad report entries", bad)
 }
