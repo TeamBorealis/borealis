@@ -511,4 +511,98 @@ mod tests {
         let p = partial.problems("A light in a cave near a tower.");
         assert!(p[0].contains("leaves out 4 of 4"), "{p:?}");
     }
+
+    /// Offline measurement on a real import (no model calls): `BOREALIS_PROBE=<draft.json>`,
+    /// optional `BOREALIS_PROBE_PDF=<a.pdf>[,<b.pdf>]` to rebuild the source from the PDF text
+    /// layer (pages read visually are left out). Prints counts only.
+    #[test]
+    #[ignore = "needs a local draft.json"]
+    fn probe_locating_and_planned_calls() {
+        use super::super::types::{ElementStatus, ImportDraft, Role};
+        let Ok(path) = std::env::var("BOREALIS_PROBE") else {
+            return;
+        };
+        let mut draft: ImportDraft =
+            serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        if let Ok(pdfs) = std::env::var("BOREALIS_PROBE_PDF") {
+            let mut texts = Vec::new();
+            for f in pdfs.split(',') {
+                let a = Attachment {
+                    kind: AttachmentKind::Pdf,
+                    bytes: std::fs::read(f).unwrap(),
+                    name: "probe.pdf".into(),
+                };
+                for p in pdf_pieces(&a, &mut Vec::new()).unwrap() {
+                    if let Piece::Text(t) = p {
+                        texts.push(t.trim().to_string());
+                    }
+                }
+            }
+            draft.source_text = texts.join("\n\n");
+            if let Ok(dump) = std::env::var("BOREALIS_PROBE_DUMP") {
+                std::fs::write(dump, &draft.source_text).unwrap();
+            }
+        }
+        let src = draft.source_text.clone();
+        let (mut located, mut one_line) = (0, 0);
+        for p in &mut draft.plan.elements {
+            p.excerpt = super::super::plan::locate(&src, "", &p.name).or_else(|| {
+                super::super::variants::base_name(&p.name)
+                    .and_then(|b| super::super::plan::locate(&src, "", b))
+            });
+            let verbose = std::env::var("BOREALIS_PROBE_VERBOSE").is_ok();
+            let watch = std::env::var("BOREALIS_PROBE_NAMES").unwrap_or_default();
+            if watch.split(',').any(|w| w == p.name) {
+                println!("WATCH {:?}: {:?}", p.name, p.excerpt);
+            }
+            match &p.excerpt {
+                Some(ex) => {
+                    located += 1;
+                    one_line += usize::from(ex.end_line <= ex.start_line);
+                    if verbose && ex.end_line <= ex.start_line {
+                        println!("ONE {:?}: {}", p.name, ex.snippet);
+                    }
+                }
+                None if verbose => println!("MISS {:?} ({:?})", p.name, p.role),
+                None => {}
+            }
+        }
+        for e in &mut draft.elements {
+            e.status = ElementStatus::Pending;
+        }
+        let batches = super::super::batch::plan_batches(&draft);
+        let batched: Vec<&str> = batches.iter().flatten().map(|p| p.id.as_str()).collect();
+        let singles = draft
+            .plan
+            .elements
+            .iter()
+            .filter(|p| !batched.contains(&p.id.as_str()))
+            .filter(|p| {
+                p.role != Role::SubclassGate && !(p.role == Role::Text && p.excerpt.is_some())
+            })
+            .count();
+        if let Ok(out) = std::env::var("BOREALIS_PROBE_ROOT") {
+            let class = draft.plan.elements.iter().find(|p| p.role == Role::Class);
+            if let Some(p) = class {
+                std::fs::write(out, super::super::generate::source_window(&src, p)).unwrap();
+            }
+        }
+        let roots: Vec<usize> = draft
+            .plan
+            .elements
+            .iter()
+            .filter(|p| matches!(p.role, Role::Class | Role::Subclass))
+            .map(|p| {
+                super::super::generate::source_window(&src, p)
+                    .chars()
+                    .count()
+            })
+            .collect();
+        println!(
+            "chars {} | located {located}/{} (one-line {one_line}) | batches {} + singles {singles} | root windows {roots:?}",
+            src.chars().count(),
+            draft.plan.elements.len(),
+            batches.len(),
+        );
+    }
 }
