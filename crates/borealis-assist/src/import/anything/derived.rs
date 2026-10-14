@@ -59,6 +59,7 @@ pub(crate) fn derive(plan: &ImportPlan, docs: &[Value], store: &ContentStore) ->
         docs: docs.to_vec(),
         ..Derived::default()
     };
+    super::lists::class_lists(plan, store, &mut d);
     spell_lists(plan, store, &mut d);
     groups::weapon_groups(plan, store, &mut d);
     groups::new_properties(plan, store, &mut d);

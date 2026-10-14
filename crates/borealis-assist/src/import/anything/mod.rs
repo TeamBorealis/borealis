@@ -9,20 +9,25 @@ mod batch;
 pub mod caster;
 mod choices;
 mod derived;
+mod feature_spells;
 mod fewshot;
 mod finalize;
 mod formula;
 mod generate;
 mod ingest;
 mod items;
+mod lists;
 mod locate;
 mod normalize;
 mod parts;
 mod plan;
+mod prereq;
 mod rules;
 mod steps;
 mod sweep;
 mod types;
+mod units;
+mod variants;
 
 use borealis_ai::task::{run_task, RunOptions};
 use borealis_content::ContentStoreBuilder;
@@ -125,6 +130,7 @@ pub async fn detect_source(
         .items
         .into_iter()
         .partition(|i| i.kind != ImportKind::Mixed);
+    let items = variants::split(items, out.edition);
     let other: Vec<OtherItem> = out
         .other
         .into_iter()

@@ -181,7 +181,12 @@ pub(crate) fn outline_schema() -> Value {
               "parts":{"type":"array","items":part_schema()},
               "options":{"type":"array","items":part_schema()},
               "choose":{"type":"array","items":{"type":"object","required":["level","count"],
-                "properties":{"level":{"type":"integer"},"count":{"type":"integer"}}}}}}}}}}})
+                "properties":{"level":{"type":"integer"},"count":{"type":"integer"}}}},
+              "spells":{"type":"array","items":{"type":"object","required":["level","spells"],
+                "properties":{"level":{"type":"integer"},
+                  "spells":{"type":"array","items":{"type":"string"}}}}}}}},
+          "columns":{"type":"array","items":{"type":"object","required":["name","values"],
+            "properties":{"name":{"type":"string"},"values":{"type":"array"}}}}}}}})
 }
 
 fn part_schema() -> Value {
@@ -221,7 +226,10 @@ a species is kind subrace with its species in `parent_hint`. A weapon property t
 defines with its own rules text is kind weapon_property. Set `kind` to the single kind, or \"mixed\" when there are several. List in `other` (name as printed, \
 `what` it is) every other thing the source defines that is none of these kinds: rules, weapon properties, \
 conditions, variant or optional rules, upgrades, tables, and lore or setting sections with a heading; each named \
-row of a table of options is its own `other` entry. Named traits, features and options of a species, \
+row of a table of options is its own `other` entry. A magic item printed in several versions (+1, +2 and +3, \
+or one version per material, damage type, color or creature) is listed once per version, named \"<Item>, <version>\" \
+(e.g. \"Shield, +2\", \"Boots, Silver\"), the way the SRD lists them; in a 2024 source it stays one item. A class \
+spell list (a list of spell names under a class name) is an `other` entry named as printed. Named traits, features and options of a species, \
 background or class are NOT items or `other`: they are outlined later. Decide the edition: 2024 rules use \
 \"species\", \"Weapon Mastery\", \"Origin feat\"; 2014 rules use \"race\" and \"Primal Path\"-style subclass \
 names. Default to {} when unclear. Give a confidence between 0 and 1.\n{transcript}\n\n{}",
@@ -247,7 +255,7 @@ fn outline_what(item: &DetectedItem, parent_levels: Option<&[u32]>) -> String {
                 .map(|l| format!(" The parent class's subclasses gain features at levels {l:?}; use only those levels."))
                 .unwrap_or_default();
             format!(
-                "the subclass \"{}\" (only its own features).{lv} {PARTS_RULE}",
+                "the subclass \"{}\" (only its own features).{lv} {PARTS_RULE} {SPELLS_RULE}",
                 item.name
             )
         }
@@ -278,11 +286,18 @@ epic boon rows; SKIP levels that only change table numbers, they need no feature
 (a profile {{kind: full|half|third|pact|none, ability, prepared|known, ritual, spell_list_name, \
 cantrips_by_level and spells_known_by_level as 20 cumulative numbers, prepared_formula, spells: the name of \
 every spell on the class's spell list as printed}}; kind `points` when it casts from a pool of points instead of \
-slots); never write slot tables. {PARTS_RULE}",
+slots); never write slot tables. In `columns` list EVERY other column of the class table (not Level, Proficiency \
+Bonus, Features, cantrips or spells known, or spell slot columns; a points pool, uses, a die size or a bonus included): \
+{{name as printed, values: 20 entries, one per level, as printed}}. {PARTS_RULE} {SPELLS_RULE}",
             item.name
         ),
     }
 }
+
+/// Spell tables of features are data, never prose only.
+const SPELLS_RULE: &str = "When a feature grants spells by level (a table or list of spells you always have \
+prepared or know, such as subclass spells), list EVERY row in that feature's `spells` as [{level, spells: [names as \
+printed]}], level = the class level of the row.";
 
 /// Named sub-items are their own elements, never folded into the umbrella feature.
 const PARTS_RULE: &str = "When a feature grants named sub-features (named paragraphs or a list of abilities it \

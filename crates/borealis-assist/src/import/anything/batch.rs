@@ -172,7 +172,9 @@ fn prompt(g: &GenCtx, batch: &[PlannedElement], prior: &str) -> String {
     let each = if matches!(batch[0].role, Role::ClassFeature | Role::SubclassFeature) {
         "Each: `description` in HTML paragraphs restating the source in your own words, and `rules` that implement it \
 (resources, grants, selects, stat changes); a feature with no mechanics may have no rules. Reuse existing core \
-ids. Spellcasting, slots, cantrips and progression tables are generated for you: describe them in prose only."
+ids. The class's own spell slots, cantrip and spell choices and preparation are generated for you: describe them in \
+prose only. Spells a feature grants (a spell table) and counters from class table columns are added from the outline; \
+every other mechanic of the feature is yours to write."
     } else {
         guidance(&batch[0], g.draft.edition)
     };

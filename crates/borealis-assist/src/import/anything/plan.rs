@@ -212,12 +212,24 @@ impl Builder<'_> {
             level,
             owner: owner.map(str::to_string),
             brief: brief.to_string(),
-            excerpt: locate(self.source, quote, name),
+            excerpt: locate(self.source, quote, name).or_else(|| {
+                super::variants::base_name(name).and_then(|b| locate(self.source, "", b))
+            }),
             parent: None,
             picks: None,
             prerequisite_level: None,
+            spells: Vec::new(),
         });
         id
+    }
+
+    /// The spell table of feature `f` (planned as `id`), counted as `class` spells; resolved
+    /// once the whole plan is built.
+    fn feature_spells(&mut self, id: &str, f: &OutlineFeature, class: &str) {
+        let grants = super::feature_spells::unresolved(f, class);
+        if let Some(e) = self.get(id) {
+            e.spells = grants;
+        }
     }
 
     fn get(&mut self, id: &str) -> Option<&mut PlannedElement> {
@@ -551,6 +563,7 @@ fn class_group(b: &mut Builder, o: &Outline) -> String {
             );
             if role == Role::ClassFeature {
                 b.push_children(f, &id, "Class Feature", &o.name, Some(level), true);
+                b.feature_spells(&id, f, &o.name);
             }
         }
     }
@@ -601,6 +614,7 @@ fn subclass_group(b: &mut Builder, o: &Outline, parent: &ParentLink) -> String {
             &f.quote,
         );
         b.push_children(f, &id, "Archetype Feature", &o.name, Some(level), true);
+        b.feature_spells(&id, f, &parent.class_name);
     }
     b.used.remove(&root_id);
     let id = b.push(
@@ -719,6 +733,11 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
         };
         g.root_id = Some(standalone_group(&mut b, g, ty));
     }
+    b.notes.extend(super::feature_spells::resolve(
+        &mut b.out,
+        store,
+        plan.edition,
+    ));
     plan.elements = b.out;
     plan.notes = b.notes;
 }
@@ -798,7 +817,7 @@ pub(crate) fn subrace_parent(
         return Some(ParentLink {
             class_id: String::new(),
             class_name: name.to_string(),
-            supports: support_key(&[name, subrace_word(edition)]),
+            supports: subrace_key(name, edition),
             subclass_levels: Vec::new(),
             in_source: true,
         });
@@ -818,6 +837,15 @@ pub(crate) fn subrace_parent(
         subclass_levels: Vec::new(),
         in_source: false,
     })
+}
+
+/// The `supports` key of the subrace choice of a species of the source, as the bundled packs
+/// tag it: 2014 subraces support the race's name, 2024 lineages "<Species> Lineage".
+pub(crate) fn subrace_key(species: &str, edition: Edition) -> String {
+    match edition {
+        Edition::Y2014 => support_key(&[species]),
+        Edition::Y2024 => support_key(&[species, subrace_word(edition)]),
+    }
 }
 
 fn subrace_word(edition: Edition) -> &'static str {
@@ -859,6 +887,7 @@ pub(crate) fn text_group(name: &str, what: &str, note: &str) -> PlanGroup {
         spellcasting: None,
         features: Vec::new(),
         quote: String::new(),
+        columns: Vec::new(),
     });
     g
 }

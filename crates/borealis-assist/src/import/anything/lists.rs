@@ -1,0 +1,359 @@
+//! Class spell lists printed in the source (a section of spell names under a class name, kept
+//! as a text-only element) and a spell's own "Classes:" line both make a spell a member of the
+//! class's list, for classes of this import and of the library alike. Membership is the union
+//! of both; where they disagree the report says so.
+//!
+//! A draft spell joins a list through its `supports`, a library spell through an `append`
+//! (bundled spells carry their class lists in `supports`). Only names of known spells are read
+//! from a list section, so prose around the list adds nothing.
+
+use std::collections::{BTreeMap, BTreeSet, HashMap};
+
+use borealis_content::ContentStore;
+use serde_json::{json, Value};
+
+use super::derived::Derived;
+use super::fewshot::in_edition;
+use super::types::{ImportPlan, Role};
+
+/// Least share of a line's words that must be spell names for the line to count as a list.
+const MIN_LIST_SHARE: f64 = 0.5;
+/// Heading words after a class name that still name its list ("Wizard Spells").
+const LIST_SUFFIXES: [&str; 4] = [" spell list", " spells", " spell", " list"];
+
+fn norm(s: &str) -> String {
+    s.chars()
+        .map(|c| if c.is_alphanumeric() { c } else { ' ' })
+        .collect::<String>()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
+}
+
+fn str_at<'a>(v: &'a Value, key: &str) -> &'a str {
+    v.get(key).and_then(Value::as_str).unwrap_or("")
+}
+
+fn supports_of(v: &Value) -> Vec<String> {
+    v.get("supports")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|s| s.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Text segments of an HTML description (paragraphs, line breaks and bold headings apart).
+fn segments(html: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut cur = String::new();
+    let mut tag = String::new();
+    let mut in_tag = false;
+    for c in html.chars() {
+        match c {
+            '<' => {
+                in_tag = true;
+                tag.clear();
+            }
+            '>' if in_tag => {
+                in_tag = false;
+                let t = tag.trim_start_matches('/').to_lowercase();
+                if [
+                    "p", "br", "br/", "strong", "li", "h1", "h2", "h3", "h4", "tr", "td",
+                ]
+                .iter()
+                .any(|b| t.split_whitespace().next() == Some(b))
+                {
+                    out.push(std::mem::take(&mut cur));
+                }
+            }
+            c if in_tag => tag.push(c),
+            c => cur.push(c),
+        }
+    }
+    out.push(cur);
+    out.into_iter()
+        .map(|s| s.replace("&amp;", "&").trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+struct Lists {
+    /// norm(list) -> list name as the content writes it.
+    names: HashMap<String, String>,
+}
+
+impl Lists {
+    fn new(plan: &ImportPlan, store: &ContentStore, docs: &[Value]) -> Self {
+        let mut names = HashMap::new();
+        let mut add = |n: &str| {
+            if !n.trim().is_empty() {
+                names.entry(norm(n)).or_insert_with(|| n.trim().to_string());
+            }
+        };
+        store
+            .by_type("Class")
+            .filter(|c| in_edition(&c.element, plan.edition))
+            .for_each(|c| add(&c.element.name));
+        for doc in docs {
+            match str_at(doc, "type") {
+                "Class" => add(str_at(doc, "name")),
+                "Spell" => supports_of(doc).iter().for_each(|s| add(s)),
+                _ => {}
+            }
+        }
+        for g in &plan.groups {
+            if let Some(list) = g
+                .outline
+                .as_ref()
+                .and_then(|o| o.caster())
+                .and_then(|p| p.list.as_deref())
+            {
+                add(list);
+            }
+        }
+        Self { names }
+    }
+
+    /// The list a heading names ("Wizard", "Wizard Spells", "The Wizard Spell List").
+    fn heading(&self, text: &str) -> Option<String> {
+        let mut n = norm(text);
+        if let Some(rest) = n.strip_prefix("the ") {
+            n = rest.to_string();
+        }
+        if let Some(l) = self.names.get(&n) {
+            return Some(l.clone());
+        }
+        LIST_SUFFIXES
+            .iter()
+            .find_map(|s| n.strip_suffix(s))
+            .and_then(|base| self.names.get(base))
+            .cloned()
+    }
+}
+
+/// Known spell names, longest first (so "Mass Cure Wounds" is read before "Cure Wounds").
+fn spell_names(store: &ContentStore, plan: &ImportPlan, docs: &[Value]) -> Vec<String> {
+    let mut set: BTreeSet<String> = docs
+        .iter()
+        .filter(|d| str_at(d, "type") == "Spell")
+        .map(|d| norm(str_at(d, "name")))
+        .collect();
+    set.extend(
+        store
+            .by_type("Spell")
+            .filter(|s| in_edition(&s.element, plan.edition))
+            .map(|s| norm(&s.element.name)),
+    );
+    let mut v: Vec<String> = set.into_iter().filter(|n| !n.is_empty()).collect();
+    v.sort_by_key(|n| std::cmp::Reverse(n.len()));
+    v
+}
+
+/// The spells a line names, if the line is mostly spell names.
+fn spells_in(line: &str, names: &[String]) -> Vec<String> {
+    let text = format!(" {} ", norm(line));
+    let words = text.split_whitespace().count();
+    if words == 0 {
+        return Vec::new();
+    }
+    let mut taken = vec![false; text.len()];
+    let mut found = Vec::new();
+    let mut covered = 0;
+    for name in names {
+        let needle = format!(" {name} ");
+        let mut from = 0;
+        while let Some(pos) = text[from..].find(&needle).map(|p| p + from) {
+            let span = pos + 1..pos + needle.len() - 1;
+            if !taken[span.clone()].iter().any(|t| *t) {
+                taken[span].iter_mut().for_each(|t| *t = true);
+                covered += name.split(' ').count();
+                found.push(name.clone());
+            }
+            from = pos + 1;
+        }
+    }
+    // Level headings ("1st level", "cantrips") are list structure, not prose.
+    let structure = text
+        .split_whitespace()
+        .filter(|w| {
+            w.chars().next().is_some_and(|c| c.is_ascii_digit())
+                || matches!(*w, "level" | "cantrips" | "cantrip")
+        })
+        .count();
+    let share = covered as f64 / (words.saturating_sub(structure).max(1)) as f64;
+    if share >= MIN_LIST_SHARE {
+        found
+    } else {
+        Vec::new()
+    }
+}
+
+/// list -> spell names (normalised) the text sections of the plan print under it.
+fn section_members(
+    plan: &ImportPlan,
+    docs: &[Value],
+    lists: &Lists,
+    names: &[String],
+) -> BTreeMap<String, (String, BTreeSet<String>)> {
+    let mut out: BTreeMap<String, (String, BTreeSet<String>)> = BTreeMap::new();
+    let text_ids: Vec<&str> = plan
+        .elements
+        .iter()
+        .filter(|e| e.role == Role::Text)
+        .map(|e| e.id.as_str())
+        .collect();
+    for doc in docs.iter().filter(|d| text_ids.contains(&str_at(d, "id"))) {
+        let mut current = lists.heading(str_at(doc, "name"));
+        for seg in segments(str_at(doc, "description")) {
+            if let Some(l) = lists.heading(&seg) {
+                current = Some(l);
+                continue;
+            }
+            let Some(list) = current.as_ref() else {
+                continue;
+            };
+            let found = spells_in(&seg, names);
+            if !found.is_empty() {
+                out.entry(list.clone())
+                    .or_insert_with(|| (str_at(doc, "id").to_string(), BTreeSet::new()))
+                    .1
+                    .extend(found);
+            }
+        }
+    }
+    out
+}
+
+/// The lists a spell's own "Classes:" line names (in its description).
+fn classes_line(doc: &Value, lists: &Lists) -> Vec<String> {
+    segments(str_at(doc, "description"))
+        .iter()
+        .filter_map(|s| {
+            let lower = s.to_lowercase();
+            let at = lower
+                .find("classes:")
+                .map(|i| i + 8)
+                .or_else(|| lower.find("class:").map(|i| i + 6))?;
+            Some(s[at..].to_string())
+        })
+        .flat_map(|rest| {
+            rest.split([',', '/', ';'])
+                .flat_map(|p| p.split(" and "))
+                .flat_map(|p| p.split(" or "))
+                .filter_map(|p| lists.heading(p))
+                .collect::<Vec<_>>()
+        })
+        .collect()
+}
+
+fn push_append(d: &mut Derived, id: &str, list: &str) {
+    if let Some(a) = d.appends.iter_mut().find(|a| str_at(a, "id") == id) {
+        let mut s = supports_of(a);
+        if !s.iter().any(|t| t == list) {
+            s.push(list.to_string());
+            a["supports"] = json!(s);
+        }
+        return;
+    }
+    d.appends
+        .push(json!({"id": id, "type": "Spell", "supports": [list]}));
+}
+
+/// Apply printed class spell lists and "Classes:" lines as list membership (see the module
+/// docs); every addition and disagreement is reported.
+pub(crate) fn class_lists(plan: &ImportPlan, store: &ContentStore, d: &mut Derived) {
+    let lists = Lists::new(plan, store, &d.docs);
+    // "Classes:" lines in the spells' own text.
+    for doc in d.docs.iter_mut().filter(|e| str_at(e, "type") == "Spell") {
+        let mut s = supports_of(doc);
+        let before = s.len();
+        for l in classes_line(doc, &lists) {
+            if !s.contains(&l) {
+                s.push(l);
+            }
+        }
+        if s.len() > before {
+            doc["supports"] = json!(s);
+        }
+    }
+    let names = spell_names(store, plan, &d.docs);
+    let members = section_members(plan, &d.docs, &lists, &names);
+    for (list, (section_id, spells)) in members {
+        apply_list(plan, store, d, &list, &section_id, &spells);
+    }
+}
+
+fn apply_list(
+    plan: &ImportPlan,
+    store: &ContentStore,
+    d: &mut Derived,
+    list: &str,
+    section_id: &str,
+    spells: &BTreeSet<String>,
+) {
+    let mut added_own = Vec::new();
+    let mut appended = Vec::new();
+    for key in spells {
+        if let Some(doc) = d
+            .docs
+            .iter_mut()
+            .find(|e| str_at(e, "type") == "Spell" && norm(str_at(e, "name")) == *key)
+        {
+            let mut s = supports_of(doc);
+            if !s.iter().any(|t| t == list) {
+                s.push(list.to_string());
+                doc["supports"] = json!(s);
+                added_own.push(str_at(doc, "name").to_string());
+            }
+            continue;
+        }
+        let lib = store
+            .by_type("Spell")
+            .find(|s| in_edition(&s.element, plan.edition) && norm(&s.element.name) == *key);
+        if let Some(s) = lib.filter(|s| !s.element.supports.iter().any(|t| t == list)) {
+            let (id, name) = (s.element.id.clone(), s.element.name.clone());
+            push_append(d, &id, list);
+            appended.push(name);
+        }
+    }
+    let not_listed: Vec<String> = d
+        .docs
+        .iter()
+        .filter(|e| str_at(e, "type") == "Spell")
+        .filter(|e| supports_of(e).iter().any(|t| t == list))
+        .filter(|e| !spells.contains(&norm(str_at(e, "name"))))
+        .map(|e| str_at(e, "name").to_string())
+        .collect();
+    let mut note = |m: String| d.notes.push((section_id.to_string(), m));
+    if !added_own.is_empty() {
+        note(format!("{} spell(s) are in the {list} spell list section but their own Classes line omits {list}; they were added to the list (union): {}", added_own.len(), added_own.join(", ")));
+    }
+    if !appended.is_empty() {
+        note(format!("{} existing spell(s) of the {list} spell list section were added to the {list} list: {}", appended.len(), appended.join(", ")));
+    }
+    if !not_listed.is_empty() {
+        note(format!("{} spell(s) name {list} in their Classes line but are missing from its spell list section; they stay on the list (union): {}", not_listed.len(), not_listed.join(", ")));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_list_line_reads_the_longest_spell_names_and_skips_prose() {
+        let names: Vec<String> = ["mass cure wounds", "cure wounds", "light", "ember veil"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let got = spells_in("1st Level: Mass Cure Wounds, Ember Veil", &names);
+        assert_eq!(got, ["mass cure wounds", "ember veil"]);
+        assert!(spells_in("The torches give off a dim light in the hall.", &names).is_empty());
+        let segs = segments("<p><strong>Wizard Spells</strong></p><p>Light<br>Ember Veil</p>");
+        assert_eq!(segs, ["Wizard Spells", "Light", "Ember Veil"]);
+    }
+}

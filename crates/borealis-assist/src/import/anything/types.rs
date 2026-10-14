@@ -234,6 +234,24 @@ pub struct PlannedElement {
     /// An option's prerequisite level (above the level the list is first offered).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prerequisite_level: Option<u32>,
+    /// Spells the feature grants by class level (a subclass or feature spell table).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub spells: Vec<SpellGrant>,
+}
+
+/// A spell a planned feature grants at a class level, resolved against the import and the
+/// library when the plan is built.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SpellGrant {
+    /// Class level the spell is gained at.
+    pub level: u32,
+    /// Spell name as printed.
+    pub name: String,
+    /// Element id of the spell (`None` when neither the import nor the library has it).
+    #[serde(default)]
+    pub id: Option<String>,
+    /// The class whose spell it counts as (`spellcasting` / `spell_list` of the grant).
+    pub class: String,
 }
 
 /// A pick-N list: the select(s) an element carries and the `supports` key its options share.
@@ -301,6 +319,31 @@ pub struct OutlineFeature {
     /// Picks of `options` gained by level (one pick at the feature's level when empty).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub choose: Vec<PickCount>,
+    /// Spells the feature grants, by class level (a spell table such as subclass spells).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub spells: Vec<LeveledSpells>,
+}
+
+/// The spells a feature grants at one class level.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LeveledSpells {
+    /// Class level.
+    #[serde(default)]
+    pub level: u32,
+    /// Spell names as printed.
+    #[serde(default)]
+    pub spells: Vec<String>,
+}
+
+/// A column of a class table other than the level, proficiency bonus, features and spell
+/// slots (a points pool, uses, a die size, ...).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TableColumn {
+    /// Column heading as printed.
+    pub name: String,
+    /// One value per level 1-20, as printed.
+    #[serde(default)]
+    pub values: Vec<Value>,
 }
 
 /// Spellcasting as the source describes it.
@@ -369,6 +412,9 @@ pub struct Outline {
     /// Quote locating the class/subclass header.
     #[serde(default)]
     pub quote: String,
+    /// The class table's other columns (class outlines).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub columns: Vec<TableColumn>,
 }
 
 /// The parent class of a subclass (for a subrace: the parent species, `supports` = the key of

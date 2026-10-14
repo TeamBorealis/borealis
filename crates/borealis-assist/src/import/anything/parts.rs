@@ -60,6 +60,10 @@ pub(crate) fn apply(el: &mut Value, planned: &PlannedElement, plan: &ImportPlan)
     if let Some(p) = subrace_link(plan, &planned.id) {
         obj(el).insert("supports".into(), json!([p]));
     }
+    super::feature_spells::grant_spells(el, planned, plan.edition);
+    super::feature_spells::table_columns(el, planned, plan);
+    super::prereq::apply(el, planned, plan);
+    super::units::apply(el);
 }
 
 fn grant_parts(el: &mut Value, planned: &PlannedElement, plan: &ImportPlan) {
@@ -141,7 +145,14 @@ fn offer_subraces(el: &mut Value, planned: &PlannedElement, plan: &ImportPlan) {
         !(r.get("kind").and_then(Value::as_str) == Some("select")
             && r.get("type").and_then(Value::as_str) == Some(ty))
     });
-    rules.push(json!({"kind": "select", "type": ty, "name": key, "supports": key}));
+    // The bundled 2014 races tag their subraces with the race's own name; the choice is
+    // still called "<Race> Subrace".
+    let name = if key == planned.name {
+        format!("{key} Subrace")
+    } else {
+        key.clone()
+    };
+    rules.push(json!({"kind": "select", "type": ty, "name": name, "supports": key}));
 }
 
 fn shape_option(el: &mut Value, planned: &PlannedElement, plan: &ImportPlan) {
