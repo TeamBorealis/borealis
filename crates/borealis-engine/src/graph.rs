@@ -905,7 +905,11 @@ impl<'u> Graph<'u> {
                 return false;
             }
             let mastery = crate::custom_rules::kind_of(s) == Some("mastery");
-            if !mastery && !cand.allow_duplicate && self.ids.count(&cand.el.id) > 0 {
+            if !mastery
+                && !cand.allow_duplicate
+                && self.ids.count(&cand.el.id) > 0
+                && !self.repicks_known_spell(s, cand)
+            {
                 return false;
             }
         }
@@ -924,6 +928,30 @@ impl<'u> Graph<'u> {
         env.rule_class_level =
             (n.mgr != Mgr::Main).then(|| i32::try_from(self.mgr_level(n.mgr)).unwrap_or(0));
         requirement_holds(&cand.req, &env)
+    }
+
+    /// A `prepared` spell select of a spellcasting class may choose a spell that class already
+    /// knows and does not yet have always prepared (Spell Mastery and Signature Spells choose
+    /// from the spellbook): the pick makes it always prepared, it is no duplicate.
+    fn repicks_known_spell(&self, s: &borealis_content::SelectRule, cand: &UElem) -> bool {
+        let (Some(true), Some(class)) = (s.prepared, s.spellcasting.as_deref()) else {
+            return false;
+        };
+        if cand.el.ty != "Spell" {
+            return false;
+        }
+        let mut known = false;
+        for n in self
+            .nodes
+            .iter()
+            .filter(|n| n.alive && n.e.el.id == cand.el.id)
+        {
+            if n.always_prepared {
+                return false;
+            }
+            known |= n.spell_class.as_deref() == Some(class);
+        }
+        known
     }
 
     /// Nodes in pre-order (roots in order, children in insertion order), live only.

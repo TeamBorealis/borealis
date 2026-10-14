@@ -294,6 +294,12 @@ pub fn spellcasting_snapshots(
             {
                 picked_into_book.push(entry.clone());
             }
+            // a known spell picked again by a prepared select (Spell Mastery) is one entry
+            if let Some(known) = spells.iter_mut().find(|s| s.id == entry.id) {
+                known.prepared |= entry.prepared;
+                known.always_prepared |= entry.always_prepared;
+                continue;
+            }
             spells.push(entry);
         }
         let book_ids: Vec<String> = state

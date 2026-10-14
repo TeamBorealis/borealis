@@ -226,3 +226,51 @@ fn wizard_2014_picks_are_known_and_preparable() {
         .state;
     assert_eq!(e.derive(&s).caster("Wizard").unwrap().prepared_count, 1);
 }
+
+/// Spell Mastery and Signature Spells choose spells from the spellbook: their selects offer the
+/// book's spells of that level (a known spell is not a duplicate there), so they never run empty
+/// once the book holds every spell of the level.
+#[test]
+fn spell_mastery_and_signature_spells_offer_spellbook_spells() {
+    for ed in [&ED_2014, &ED_2024] {
+        let e = engine(ed.pack);
+        let s = wizard(ed, 20);
+        // 44 picks: check the filled book once instead of every pick (slow in debug builds)
+        borealis_engine::invariants::disable_for_thread();
+        let s = fill_book(ed, s);
+        borealis_engine::invariants::enable_for_thread();
+        let snap = e.derive(&s);
+        let book: BTreeSet<String> = slots_named(&snap, ed.book_prefix)
+            .iter()
+            .filter_map(|s| s.chosen.as_ref().map(|c| c.id.clone()))
+            .collect();
+        let picks: Vec<_> = snap
+            .slots
+            .iter()
+            .filter(|s| {
+                s.name.starts_with("Spell Mastery") || s.name.starts_with("Signature Spell")
+            })
+            .collect();
+        assert_eq!(picks.len(), 4, "{}: mastery and signature selects", ed.pack);
+        let level_of = |id: &str| {
+            snap.caster("Wizard")
+                .and_then(|c| c.spells.iter().find(|x| x.id == id))
+                .map(|x| x.level)
+        };
+        for s in picks {
+            let levels = option_levels(s);
+            assert!(!levels.is_empty(), "{} {} offers nothing", ed.pack, s.name);
+            if book
+                .iter()
+                .any(|b| level_of(b).is_some_and(|l| levels.contains(&l)))
+            {
+                assert!(
+                    s.options.iter().any(|o| book.contains(&o.id)),
+                    "{} {} offers no spellbook spell of its level",
+                    ed.pack,
+                    s.name
+                );
+            }
+        }
+    }
+}
