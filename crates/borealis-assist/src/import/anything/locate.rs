@@ -33,6 +33,22 @@ const NAME_WORDS: usize = 6;
 /// Most words of each other cell of an index table row (a rarity, a type).
 const INDEX_CELL_WORDS: usize = 2;
 
+/// Shortest word of a name that ties a table caption to it.
+const CAPTION_STEM: usize = 4;
+
+/// A word without its plural ending ("boxes" -> "box", "lamps" -> "lamp").
+fn stem(w: &str) -> &str {
+    if let Some(s) = w
+        .strip_suffix("es")
+        .filter(|s| s.ends_with(['x', 's', 'h']))
+    {
+        return s;
+    }
+    w.strip_suffix('s')
+        .filter(|s| !s.ends_with('s'))
+        .unwrap_or(w)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Kind {
     Mention,
@@ -244,9 +260,28 @@ impl Doc<'_> {
                     && (h.level < level
                         || (h.level == level
                             && !is_sub_part(&h.title, name)
-                            && !structural_heading(&h.title)))
+                            && !structural_heading(&h.title)
+                            && !self.caption_of(h, name)))
             })
             .map_or(self.lines.len(), |h| h.line)
+    }
+
+    /// `h` is the caption of a table of the element `name`: a table row follows it and its
+    /// title shares a word with the name ("Kinds of moth lamps" over a lamp's table).
+    fn caption_of(&self, h: &Heading, name: &str) -> bool {
+        let table_next = self.lines[h.line + 1..]
+            .iter()
+            .find(|l| !l.trim().is_empty())
+            .is_some_and(|l| l.contains(" | "));
+        let stems = |t: &str| -> Vec<String> {
+            norm_words(t)
+                .split(' ')
+                .filter(|w| w.chars().count() >= CAPTION_STEM)
+                .map(|w| stem(w).to_string())
+                .collect()
+        };
+        let named = stems(name);
+        table_next && stems(&h.title).iter().any(|w| named.contains(w))
     }
 
     /// End (exclusive) of a section without a marked heading level, starting at `line`: the
@@ -410,7 +445,9 @@ impl Doc<'_> {
 }
 
 /// The section of `source` that defines `name`; `quote` (a short verbatim quote from the model)
-/// breaks ties and is the fallback when the name is not found.
+/// breaks ties and is the fallback when the name is not found. A variant ("<Item>, <kind>")
+/// found only in a list or index takes its item's section when that section names the kind
+/// (the item's table of kinds).
 pub(crate) fn locate_section(source: &str, quote: &str, name: &str) -> Option<SourceExcerpt> {
     let lines: Vec<&str> = source.lines().collect();
     let marked = lines
@@ -424,45 +461,60 @@ pub(crate) fn locate_section(source: &str, quote: &str, name: &str) -> Option<So
         index: index_mask(&lines),
         lines,
     };
-    let name = norm_words(name);
-    let quote = norm_words(quote);
-    let found = doc.candidates(&name);
+    let own = find(&doc, &norm_words(name), &norm_words(quote));
+    if own.as_ref().is_some_and(|(_, definition)| *definition) {
+        return own.map(|(e, _)| e);
+    }
+    let parent = name.rsplit_once(", ").and_then(|(base, kind)| {
+        let (ex, definition) = find(&doc, &norm_words(base), "")?;
+        let kind = norm_words(kind);
+        let names_kind = doc.lines[ex.start_line - 1..ex.end_line]
+            .iter()
+            .any(|l| contains_name(l, &kind));
+        (definition && names_kind).then_some(ex)
+    });
+    parent.or(own.map(|(e, _)| e))
+}
+
+/// The best section for the normalised `name` and `quote`, and whether it can be the
+/// definition (not a bare name in a list or index).
+fn find(doc: &Doc, name: &str, quote: &str) -> Option<(SourceExcerpt, bool)> {
+    let found = doc.candidates(name);
     // The quote first, then an exact heading, run-in head or name line that can be a
     // definition (not a bare name in a list, an index row or a line with nothing under it),
     // then a match opening an entry body, then any that can be a definition, then the kind.
-    let best = found.iter().max_by(|a, b| {
-        let key = |c: &Candidate| {
-            let definition = !doc.not_a_definition(c, &name);
-            (
-                doc.contains_quote(c, &quote),
-                definition && c.kind >= Kind::ExactLine,
-                doc.opens_entry(c.line),
-                definition,
-                c.kind,
-                std::cmp::Reverse(c.line),
-            )
-        };
-        key(a).cmp(&key(b))
-    });
+    let key = |c: &Candidate| {
+        let definition = !doc.not_a_definition(c, name);
+        (
+            doc.contains_quote(c, quote),
+            definition && c.kind >= Kind::ExactLine,
+            doc.opens_entry(c.line),
+            definition,
+            c.kind,
+            std::cmp::Reverse(c.line),
+        )
+    };
+    let best = found.iter().max_by(|a, b| key(a).cmp(&key(b)));
+    let defines = |c: &Candidate| doc.contains_quote(c, quote) || !doc.not_a_definition(c, name);
     if let Some(c) = best {
-        let quoted = doc.contains_quote(c, &quote);
+        let quoted = doc.contains_quote(c, quote);
         // A bare mention loses to a quote found elsewhere (the definition's own text).
         if c.kind != Kind::Mention || quoted || quote.is_empty() {
-            return Some(doc.excerpt(c.line, c.end));
+            return Some((doc.excerpt(c.line, c.end), defines(c)));
         }
     }
     // The quote alone (when it is more than the name): its paragraph to the next heading.
     if quote.is_empty() || quote == name {
-        return best.map(|c| doc.excerpt(c.line, c.end));
+        return best.map(|c| (doc.excerpt(c.line, c.end), defines(c)));
     }
     let at = (0..doc.lines.len()).find(|&i| {
-        !doc.index[i] && !is_list_line(doc.lines[i]) && norm_words(doc.lines[i]).contains(&quote)
+        !doc.index[i] && !is_list_line(doc.lines[i]) && norm_words(doc.lines[i]).contains(quote)
     })?;
     let mut start = at;
     while start > 0 && !doc.lines[start - 1].trim().is_empty() && doc.heading_at(start).is_none() {
         start -= 1;
     }
-    Some(doc.excerpt(start, doc.paragraph_end(start, true, "")))
+    Some((doc.excerpt(start, doc.paragraph_end(start, true, "")), true))
 }
 
 #[cfg(test)]
@@ -540,6 +592,23 @@ Range: 60 feet\n\nMoths fill a cube.\n\n### Dew Lance\n\nEvocation cantrip\n\nA 
             "# Lamplighter\n\nKeepers of lamps.\n\n## Wick Paths\n\n#### Moth Lamplighter\n\n\
 Prerequisite: 5th level\n\nYou befriend moths.\n";
         assert_eq!(section(src, "Lamplighter", "")[0], "# Lamplighter");
+    }
+
+    #[test]
+    fn a_captioned_table_stays_with_its_entry_and_kinds_take_the_entry() {
+        let src = "# Items\n\n#### Common Things\n\nMoth lamp (tin)\nMoth lamp (glass)\nReed flute\nRope ladder\nTin cup\n\n#### Moth Lamp\n\n\
+Wondrous item, rarity varies\n\nA lamp that draws moths.\n\n#### Kinds of moth lamps\n\n\
+d6 | Kind | Rarity\n1-4 | Tin | Common\n5-6 | Glass | Rare\n\nThe moths obey the lamp.\n\n\
+#### Reed Flute\n\nWondrous item, common\n\nIt hums.\n";
+        let s = section(src, "Moth Lamp", "");
+        assert!(s.contains(&"5-6 | Glass | Rare"), "{s:?}");
+        assert!(s.contains(&"The moths obey the lamp."), "{s:?}");
+        assert!(!s.iter().any(|l| l.contains("Reed Flute")), "{s:?}");
+        // The kind is only in the index list above: it takes the lamp's section.
+        let s = section(src, "Moth Lamp, Glass", "");
+        assert_eq!(s[0], "#### Moth Lamp", "{s:?}");
+        // A kind the entry does not name keeps its own match.
+        assert!(locate_section(src, "", "Moth Lamp, Brass").is_none());
     }
 
     #[test]

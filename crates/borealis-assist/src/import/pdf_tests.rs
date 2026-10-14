@@ -454,3 +454,34 @@ fn a_two_column_table_in_a_column_reads_by_rows_and_the_heading_after_it_keeps_i
         .unwrap();
     assert!(next.starts_with("when you choose"), "{t}");
 }
+
+#[test]
+fn a_row_label_set_tight_against_the_next_cell_is_split_from_it() {
+    let mut c = prose(72.0, 740.0, 4, "the hollow lantern road winds on");
+    let rows = [
+        ("d100", "Metal", "Reach", "Rarity"),
+        ("01-20", "Tin", "5 feet", "Common"),
+        ("21-40", "Iron", "5 feet", "Common"),
+        ("41-60", "Lead", "5 feet", "Common"),
+        ("61-90", "Brass", "10 feet", "Rare"),
+    ];
+    for (k, (a, b, d, e)) in rows.iter().enumerate() {
+        let y = 660.0 - 14.0 * k as f32;
+        for (cell, x) in [(a, 72.0), (b, 110.0), (d, 170.0), (e, 230.0)] {
+            c += &show("F2", 10.0, x, y, &format!("({cell})"));
+        }
+    }
+    c += &show("F2", 10.0, 70.0, 590.0, "(91-100 Pewter)");
+    c += &show("F2", 10.0, 170.0, 590.0, "(15 feet)");
+    c += &show("F2", 10.0, 230.0, 590.0, "(Legendary)");
+    let t = extract_pdf_text(&pdf("a", &c)).unwrap().text;
+    assert!(
+        t.lines().any(|l| l == "61-90 | Brass | 10 feet | Rare"),
+        "{t}"
+    );
+    assert!(
+        t.lines()
+            .any(|l| l == "91-100 | Pewter | 15 feet | Legendary"),
+        "{t}"
+    );
+}

@@ -19,6 +19,8 @@ const MIN_COLUMN_LINES: usize = 3;
 /// A line this much larger than a column's text, at its left margin, is a heading of the
 /// column, not a table cell.
 const MARGIN_HEADING_RATIO: f32 = 1.12;
+/// Lines of a wrapped cell looked past for the row above.
+const WRAPPED_LINES: usize = 3;
 /// Font sizes from a column's left margin that a heading still starts at it.
 const MARGIN_SLACK: f32 = 0.5;
 
@@ -208,7 +210,42 @@ fn merge_rows(frags: Vec<Fragment>) -> Vec<Fragment> {
             _ => out.push(f),
         }
     }
-    out
+    split_label_cells(out)
+}
+
+/// In a table whose rows start with a row label alone ("01-50 | Iron | ..."), a row one cell
+/// short whose first cell is a label and a word ("96-100 Adamantine | ...") had those two cells
+/// set too close to part: they are split.
+fn split_label_cells(rows: Vec<Fragment>) -> Vec<Fragment> {
+    let first = |f: &Fragment| f.text.split(" | ").next().unwrap_or("").trim().to_string();
+    let cells = |f: &Fragment| f.text.split(" | ").count();
+    let split = |i: usize| -> Option<String> {
+        let row = &rows[i];
+        let head = first(row);
+        let (label, rest) = head.split_once(' ')?;
+        if !row.text.contains(" | ") || row_label(&head) || !row_label(label) {
+            return None;
+        }
+        // The row above, past a wrapped cell's lines.
+        let above = rows[..i]
+            .iter()
+            .rev()
+            .take(WRAPPED_LINES + 1)
+            .find(|r| r.text.contains(" | "));
+        let fits = above.is_some_and(|r| row_label(&first(r)) && cells(r) == cells(row) + 1);
+        fits.then(|| {
+            let tail = row.text.trim_start()[head.len()..].to_string();
+            format!("{label} | {}{tail}", rest.trim())
+        })
+    };
+    let fixed: Vec<Option<String>> = (0..rows.len()).map(split).collect();
+    rows.into_iter()
+        .zip(fixed)
+        .map(|(f, t)| match t {
+            Some(text) => Fragment { text, ..f },
+            None => f,
+        })
+        .collect()
 }
 
 // ---- stacked blocks -----------------------------------------------------------------------
