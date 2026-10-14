@@ -58,6 +58,10 @@ pub enum ImportKind {
     Monster,
     /// A weapon property the source defines (imported as a `Weapon Property` with its text).
     WeaponProperty,
+    /// A subrace or lineage of a species (offered by its species' choice).
+    Subrace,
+    /// Rules or lore text no element kind mechanises (kept as a text-only element).
+    Rules,
     /// Several kinds in one source (only valid for the document as a whole).
     Mixed,
 }
@@ -75,6 +79,8 @@ impl ImportKind {
             Self::Item => "Magic Item",
             Self::Monster => "Monster",
             Self::WeaponProperty => "Weapon Property",
+            Self::Subrace => "Sub Race",
+            Self::Rules => "Rules Glossary Entry",
             Self::Mixed => "Unknown",
         }
     }
@@ -180,6 +186,13 @@ pub enum Role {
     SubclassFeature,
     /// A single element (species, feat, spell, ...).
     Standalone,
+    /// A named part its `parent` element grants (a species trait, a background feature, a
+    /// sub-feature of a feature).
+    Part,
+    /// One option of a pick-N list its `parent` element offers through a select.
+    Option,
+    /// Rules or lore text kept as a text-only element (built from the source passage).
+    Text,
 }
 
 /// Where in the source an element came from.
@@ -212,12 +225,64 @@ pub struct PlannedElement {
     pub brief: String,
     /// Source passage.
     pub excerpt: Option<SourceExcerpt>,
+    /// Plan id of the element that grants ([`Role::Part`]) or offers ([`Role::Option`]) it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent: Option<String>,
+    /// The pick-N list this element offers (its options are [`Role::Option`] children).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub picks: Option<OptionPicks>,
+    /// An option's prerequisite level (above the level the list is first offered).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prerequisite_level: Option<u32>,
+}
+
+/// A pick-N list: the select(s) an element carries and the `supports` key its options share.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OptionPicks {
+    /// The `supports` key of every option (and of the selects).
+    pub key: String,
+    /// Element type of the options.
+    pub ty: String,
+    /// Picks gained, by level.
+    pub choose: Vec<PickCount>,
+}
+
+/// `count` picks gained at `level`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PickCount {
+    /// Level the picks are gained at (class level for class features, 1 otherwise).
+    #[serde(default)]
+    pub level: u32,
+    /// Number of picks.
+    #[serde(default = "one")]
+    pub count: u32,
+}
+
+fn one() -> u32 {
+    1
+}
+
+/// A named sub-item of a feature or trait in an outline.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OutlinePart {
+    /// Name as printed.
+    pub name: String,
+    /// What it does.
+    #[serde(default)]
+    pub summary: String,
+    /// A short verbatim quote from the source.
+    #[serde(default)]
+    pub quote: String,
+    /// For an option: its prerequisite level, if any.
+    #[serde(default)]
+    pub level: Option<u32>,
 }
 
 /// A feature in an outline.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct OutlineFeature {
-    /// Class (or subclass) level.
+    /// Class (or subclass) level (1 or unset for species and background traits).
+    #[serde(default)]
     pub level: u32,
     /// Feature name.
     pub name: String,
@@ -227,6 +292,15 @@ pub struct OutlineFeature {
     /// A short verbatim quote from the source (used to locate the passage).
     #[serde(default)]
     pub quote: String,
+    /// Named sub-features it grants (each its own element).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parts: Vec<OutlinePart>,
+    /// Named options to pick from (each its own element, offered by a select).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub options: Vec<OutlinePart>,
+    /// Picks of `options` gained by level (one pick at the feature's level when empty).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub choose: Vec<PickCount>,
 }
 
 /// Spellcasting as the source describes it.
@@ -293,7 +367,8 @@ pub struct Outline {
     pub quote: String,
 }
 
-/// The parent class of a subclass.
+/// The parent class of a subclass (for a subrace: the parent species, `supports` = the key of
+/// the species' subrace choice).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ParentLink {
     /// Class element id.

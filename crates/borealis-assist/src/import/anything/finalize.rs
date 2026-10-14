@@ -143,6 +143,9 @@ pub(crate) fn build_report(draft: &ImportDraft, renamed: &[(String, String)]) ->
         }
     }
     report.entries.extend(new_properties(draft, &final_id));
+    report
+        .entries
+        .extend(super::parts::report_entries(draft, &final_id));
     for o in draft.detection.other.iter().filter(|o| {
         !draft
             .plan

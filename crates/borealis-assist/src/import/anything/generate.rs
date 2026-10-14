@@ -51,8 +51,13 @@ pub(crate) fn guidance(planned: &PlannedElement, edition: Edition) -> &'static s
         (Role::ClassFeature, _) => "A Class Feature: `description` in HTML paragraphs that restates the source in your own words and `rules` that implement it (resources, grants, selects, stat changes). A feature with no mechanics may have no rules. Reuse existing core ids for skills, proficiencies and abilities.",
         (Role::SubclassFeature, _) => "An Archetype Feature: description plus rules implementing it, as in the example.",
         (Role::Subclass, _) => "An Archetype (subclass) element with a description. Feature grants and `supports` are added for you.",
-        (_, "Race" | "Species") => "A species: size/speed setters, traits as rules (grants/selects/stat), description.",
-        (_, "Background") => "A background: skill and tool proficiencies, languages, equipment, an origin feat (2024), description.",
+        (Role::Part | Role::Option, "Class Feature" | "Archetype Feature") => "A named part or option of a feature: `description` in HTML paragraphs restating the source in your own words, and `rules` implementing it (resources, grants, selects, stat changes) like the example. Its grant or select and any prerequisite are added for you.",
+        (_, "Racial Trait") => "A species trait: `description` in HTML paragraphs restating the source in your own words, and `rules` implementing it (stat, grant, select) like the example. It is granted to the species for you.",
+        (_, "Background Feature") => "A background feature: `description` in HTML paragraphs restating the source in your own words; `rules` only for real mechanics. It is granted to the background for you.",
+        (_, "Sub Race" | "Species Trait Option") => "A subrace or lineage: description, plus the rules it adds itself (ability scores, speed, size, languages). Its named traits are separate elements granted for you; `supports` is set for you.",
+        (Role::Text, _) | (_, "Rules Glossary Entry") => "A text-only rules or lore entry: `description` with the COMPLETE text of the section as HTML paragraphs (every sentence; table rows as a list). No rules.",
+        (_, "Race" | "Species") => "A species: size/speed setters, the ability score, size, speed and language rules, traits as rules (grants/selects/stat) unless the source summary says they are separate elements, description.",
+        (_, "Background") => "A background: skill and tool proficiencies, languages, equipment, an origin feat (2024), description. Named features listed as separate elements are granted for you.",
         (_, "Feat") => "A feat: prerequisite text, rules (stat/grant/select), description.",
         (_, "Spell") => if edition == Edition::Y2024 { "A spell with setters level, school, time, range, duration, components and `supports` listing the classes (2024 rules)." } else { "A spell with setters level, school, time, range, duration, components and `supports` listing the classes." },
         (_, "Magic Item") => "A magic item with rarity and attunement setters, rules for bonuses, description. A magic weapon or armor names its base item in the `type` setter like the example.",
@@ -329,6 +334,15 @@ pub(crate) async fn fill_pending(
             continue;
         };
         emit(progress, Stage::Generate, idx, total, &planned.name);
+        if planned.role == Role::Text && planned.excerpt.is_some() {
+            // Rules and lore keep the source passage as it is: no model call.
+            let mut el = super::parts::text_element(&planned, &draft.plan, &draft.source_text);
+            normalize(&mut el, &planned, &draft.plan, None, &draft.source_name);
+            let e = &mut draft.elements[idx];
+            e.json = el;
+            e.status = ElementStatus::Ok;
+            continue;
+        }
         if planned.role == Role::SubclassGate {
             let mut el = gate_element(&draft.plan, &planned);
             normalize(&mut el, &planned, &draft.plan, None, &draft.source_name);
@@ -653,7 +667,12 @@ fn attach_balance(ctx: &PackContext, store: &ContentStore, draft: &mut ImportDra
         if e.json.is_null()
             || matches!(
                 e.role,
-                Role::ClassFeature | Role::SubclassFeature | Role::SubclassGate
+                Role::ClassFeature
+                    | Role::SubclassFeature
+                    | Role::SubclassGate
+                    | Role::Part
+                    | Role::Option
+                    | Role::Text
             )
         {
             continue;

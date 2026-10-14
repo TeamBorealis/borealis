@@ -18,6 +18,8 @@ use super::types::{ElementStatus, ImportDraft, ParentLink, PlannedElement, Role}
 
 /// Features generated per model call.
 pub(crate) const BATCH_SIZE: usize = 8;
+/// Parts and options (species traits, sub-features, option lists) generated per model call.
+pub(crate) const PART_BATCH_SIZE: usize = 16;
 /// Sources up to this length go to every batch whole.
 pub(crate) const SOURCE_CHARS: usize = 9000;
 
@@ -51,20 +53,36 @@ fn batch_schema() -> Value {
           "notes":{"type":"array","items":{"type":"string"}}}}}}})
 }
 
-/// Generation phase of a role (features before standalone elements before subclass roots, so
-/// references resolve), or None when the role is generated on its own.
+/// Generation phase of a role: options before the parts and features offering them, parts
+/// before what grants them, features before standalone elements before subclass roots, so
+/// references resolve. None when the role is generated on its own.
 fn phase(role: Role) -> Option<u8> {
     match role {
-        Role::ClassFeature | Role::SubclassFeature => Some(0),
-        Role::Standalone => Some(1),
-        Role::Subclass => Some(2),
+        Role::Option => Some(0),
+        Role::Part => Some(1),
+        Role::ClassFeature | Role::SubclassFeature => Some(2),
+        Role::Standalone | Role::Text => Some(3),
+        Role::Subclass => Some(4),
         Role::Class | Role::SubclassGate => None,
     }
 }
 
-/// Pending elements grouped into batches of at most [`BATCH_SIZE`] of one type: class features
-/// per class, subclass features across subclasses, standalone elements and subclass roots
-/// whenever there are at least two of a type (a lone one keeps the single-element call).
+/// Phases batched even when alone (features, parts, options).
+const ALWAYS_BATCHED: u8 = 2;
+
+/// Elements per call of a phase: parts and options are short, so more fit in one answer.
+fn batch_size(phase: u8) -> usize {
+    if phase < 2 {
+        PART_BATCH_SIZE
+    } else {
+        BATCH_SIZE
+    }
+}
+
+/// Pending elements grouped into batches of one type: options, parts and features always
+/// (class features per class, the rest across owners), standalone elements and subclass roots
+/// whenever there are at least two of a type (a lone one keeps the single-element call). A
+/// located text-only element is built from its passage without the model.
 pub(crate) fn plan_batches(draft: &ImportDraft) -> Vec<Vec<PlannedElement>> {
     type Key = (u8, Option<String>, String);
     let mut groups: Vec<(Key, Vec<PlannedElement>)> = Vec::new();
@@ -72,7 +90,8 @@ pub(crate) fn plan_batches(draft: &ImportDraft) -> Vec<Vec<PlannedElement>> {
         let pending = draft
             .element(&p.id)
             .is_some_and(|e| e.status == ElementStatus::Pending);
-        let Some(ph) = phase(p.role).filter(|_| pending) else {
+        let built = p.role == Role::Text && p.excerpt.is_some();
+        let Some(ph) = phase(p.role).filter(|_| pending && !built) else {
             continue;
         };
         let owner = (p.role == Role::ClassFeature)
@@ -90,14 +109,14 @@ pub(crate) fn plan_batches(draft: &ImportDraft) -> Vec<Vec<PlannedElement>> {
     let long = draft.source_text.chars().count() > SOURCE_CHARS;
     groups
         .into_iter()
-        .filter(|((ph, _, _), v)| *ph == 0 || v.len() > 1)
-        .flat_map(|(_, v)| {
+        .filter(|((ph, _, _), v)| *ph <= ALWAYS_BATCHED || v.len() > 1)
+        .flat_map(|((ph, _, _), v)| {
             let (located, unlocated): (Vec<_>, Vec<_>) =
                 v.into_iter().partition(|p| !long || p.excerpt.is_some());
             [located, unlocated]
                 .into_iter()
                 .flat_map(|part| {
-                    part.chunks(BATCH_SIZE)
+                    part.chunks(batch_size(ph))
                         .map(<[_]>::to_vec)
                         .collect::<Vec<_>>()
                 })

@@ -7,8 +7,9 @@ use borealis_content::{ContentStore, Element, Rule};
 
 use super::fewshot::in_edition;
 use super::types::{
-    Edition, ImportKind, ImportPlan, ItemType, NeedsChoice, Outline, OutlineFeature,
-    ParentCandidate, ParentLink, PlanGroup, PlannedElement, Role, SourceExcerpt,
+    Edition, ImportKind, ImportPlan, ItemType, NeedsChoice, OptionPicks, Outline, OutlineFeature,
+    OutlinePart, ParentCandidate, ParentLink, PickCount, PlanGroup, PlannedElement, Role,
+    SourceExcerpt,
 };
 use crate::import::ids::make_id;
 
@@ -241,9 +242,182 @@ impl Builder<'_> {
             owner: owner.map(str::to_string),
             brief: brief.to_string(),
             excerpt: locate(self.source, quote, name),
+            parent: None,
+            picks: None,
+            prerequisite_level: None,
         });
         id
     }
+
+    fn get(&mut self, id: &str) -> Option<&mut PlannedElement> {
+        self.out.iter_mut().find(|e| e.id == id)
+    }
+
+    /// A [`Role::Part`] or [`Role::Option`] element of `parent`.
+    fn push_child(
+        &mut self,
+        ty: &str,
+        part: &OutlinePart,
+        role: Role,
+        level: Option<u32>,
+        parent: &str,
+    ) -> String {
+        let id = self.push(
+            ty,
+            &part.name,
+            role,
+            level,
+            None,
+            &part.summary,
+            &part.quote,
+        );
+        if let Some(e) = self.get(&id) {
+            e.parent = Some(parent.to_string());
+        }
+        id
+    }
+
+    /// The named parts and the pick-N options of the feature or trait `f` (planned as
+    /// `parent_id`, of type `parent_ty`, owned by `owner_name`), each its own element. The
+    /// parent keeps its text; its brief says the parts are written separately.
+    fn push_children(
+        &mut self,
+        f: &OutlineFeature,
+        parent_id: &str,
+        parent_ty: &str,
+        owner_name: &str,
+        level: Option<u32>,
+        with_parts: bool,
+    ) {
+        let ty = part_type(parent_ty);
+        let mut names: Vec<String> = Vec::new();
+        if with_parts {
+            for p in unique_parts(&f.parts, &f.name) {
+                self.push_child(ty, p, Role::Part, level, parent_id);
+                names.push(p.name.clone());
+            }
+        }
+        let options = unique_parts(&f.options, &f.name);
+        if !options.is_empty() {
+            let first = level.unwrap_or(1);
+            let choose = picks_of(&f.choose, first);
+            let opening = choose.first().map_or(first, |c| c.level);
+            // A prerequisite that would leave the first pick empty is not one.
+            let usable = options
+                .iter()
+                .any(|o| o.level.map_or(true, |l| l <= opening));
+            for o in &options {
+                let id = self.push_child(ty, o, Role::Option, level, parent_id);
+                if let (true, Some(l)) = (usable, o.level.filter(|l| *l > opening)) {
+                    if let Some(e) = self.get(&id) {
+                        e.prerequisite_level = Some(l);
+                    }
+                }
+            }
+            if let Some(e) = self.get(parent_id) {
+                e.picks = Some(OptionPicks {
+                    key: option_key(owner_name, &f.name),
+                    ty: ty.to_string(),
+                    choose,
+                });
+            }
+            names.extend(options.iter().map(|o| o.name.clone()));
+        }
+        if !names.is_empty() {
+            if let Some(e) = self.get(parent_id) {
+                e.brief = format!(
+                    "{} Its named parts and options ({}) are separate elements, granted or offered for you: keep their text in the description, but write no rules for them.",
+                    e.brief,
+                    names.join(", ")
+                )
+                .trim()
+                .to_string();
+            }
+        }
+    }
+}
+
+/// Element type of a part or option of an element of type `parent_ty` (the bundled packs'
+/// shapes: sub-features share their feature's type, species traits are `Racial Trait`).
+pub(crate) fn part_type(parent_ty: &str) -> &'static str {
+    match parent_ty {
+        "Class" | "Class Feature" => "Class Feature",
+        "Archetype" | "Archetype Feature" => "Archetype Feature",
+        "Background" | "Background Feature" => "Background Feature",
+        _ => "Racial Trait",
+    }
+}
+
+/// A `supports` key from names (no characters the supports grammar reads as operators).
+pub(crate) fn support_key(parts: &[&str]) -> String {
+    let joined = parts.join(" ");
+    let cleaned: String = joined
+        .chars()
+        .map(|c| if ",|&!()[]".contains(c) { ' ' } else { c })
+        .collect();
+    cleaned.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+/// The `supports` key of the options of `feature` (owned by `owner`).
+pub(crate) fn option_key(owner: &str, feature: &str) -> String {
+    if norm(feature).starts_with(&norm(owner)) {
+        support_key(&[feature])
+    } else {
+        support_key(&[owner, feature])
+    }
+}
+
+/// Picks by level: as the source says (levels below the feature's own raised to it), else one
+/// pick at the feature's level.
+fn picks_of(choose: &[PickCount], first: u32) -> Vec<PickCount> {
+    let mut out: Vec<PickCount> = choose
+        .iter()
+        .filter(|c| c.count > 0)
+        .map(|c| PickCount {
+            level: c.level.max(first),
+            count: c.count,
+        })
+        .collect();
+    out.sort_by_key(|c| c.level);
+    out.dedup_by(|b, a| {
+        let same = a.level == b.level;
+        if same {
+            a.count += b.count;
+        }
+        same
+    });
+    if out.is_empty() {
+        out.push(PickCount {
+            level: first,
+            count: 1,
+        });
+    }
+    out
+}
+
+/// Parts with a name, once each, never the parent itself.
+fn unique_parts<'a>(parts: &'a [OutlinePart], parent: &str) -> Vec<&'a OutlinePart> {
+    let mut seen = vec![norm(parent)];
+    let mut out = Vec::new();
+    for p in parts {
+        let n = norm(&p.name);
+        if n.is_empty() || seen.contains(&n) {
+            continue;
+        }
+        seen.push(n);
+        out.push(p);
+    }
+    out
+}
+
+/// Names of the parts and options of every feature of `o` (a feature row with one of these
+/// names is the same thing listed twice, not a feature of its own).
+fn sub_item_names(o: &Outline) -> Vec<String> {
+    o.features
+        .iter()
+        .flat_map(|f| f.parts.iter().chain(&f.options))
+        .map(|p| norm(&p.name))
+        .collect()
 }
 
 fn is_gate(name: &str) -> bool {
@@ -347,11 +521,13 @@ fn class_group(b: &mut Builder, o: &Outline) -> String {
     let class_id = make_id(b.prefix, "Class", &o.name, &b.used);
     b.used.insert(class_id.clone());
     let sub_level = gate_level(o);
+    let subs = sub_item_names(o);
     for level in LEVELS {
         let mut here: Vec<_> = o
             .features
             .iter()
             .filter(|f| f.level == level && !is_marker(f, sub_level))
+            .filter(|f| !subs.contains(&norm(&f.name)))
             .collect();
         if level == sub_level && !here.iter().any(|f| is_gate(&f.name)) {
             let name = format!("{} Subclass", o.name);
@@ -393,7 +569,7 @@ fn class_group(b: &mut Builder, o: &Outline) -> String {
             } else {
                 Role::ClassFeature
             };
-            b.push(
+            let id = b.push(
                 "Class Feature",
                 &f.name,
                 role,
@@ -402,6 +578,9 @@ fn class_group(b: &mut Builder, o: &Outline) -> String {
                 &f.summary,
                 &f.quote,
             );
+            if role == Role::ClassFeature {
+                b.push_children(f, &id, "Class Feature", &o.name, Some(level), true);
+            }
         }
     }
     // The class id was reserved first; push the root last so features come first in the order.
@@ -429,7 +608,8 @@ fn subclass_group(b: &mut Builder, o: &Outline, parent: &ParentLink) -> String {
     let root_id = make_id(b.prefix, "Archetype", &o.name, &b.used);
     b.used.insert(root_id.clone());
     let allowed: Vec<u32> = parent.subclass_levels.clone();
-    for f in &o.features {
+    let subs = sub_item_names(o);
+    for f in o.features.iter().filter(|f| !subs.contains(&norm(&f.name))) {
         let level = if allowed.is_empty() || allowed.contains(&f.level) {
             f.level
         } else {
@@ -440,7 +620,7 @@ fn subclass_group(b: &mut Builder, o: &Outline, parent: &ParentLink) -> String {
             ));
             s
         };
-        b.push(
+        let id = b.push(
             "Archetype Feature",
             &f.name,
             Role::SubclassFeature,
@@ -449,6 +629,7 @@ fn subclass_group(b: &mut Builder, o: &Outline, parent: &ParentLink) -> String {
             &f.summary,
             &f.quote,
         );
+        b.push_children(f, &id, "Archetype Feature", &o.name, Some(level), true);
     }
     b.used.remove(&root_id);
     let id = b.push(
@@ -529,32 +710,186 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
                 g.root_id = Some(subclass_group(&mut b, o, &link));
                 g.parent = Some(link);
             }
-            (ImportKind::Subclass, _, _) => {}
+            (ImportKind::Subclass, _, _) | (ImportKind::Subrace, ..) => {}
             (kind, _, _) => {
-                let brief = g
-                    .outline
-                    .as_ref()
-                    .map(|o| o.summary.clone())
-                    .unwrap_or_default();
-                let quote = g
-                    .outline
-                    .as_ref()
-                    .map(|o| o.quote.clone())
-                    .unwrap_or_default();
-                g.root_id = Some(b.push(
-                    kind.element_type_for(g.item_type),
-                    &g.name,
-                    Role::Standalone,
-                    None,
-                    None,
-                    &brief,
-                    &quote,
-                ));
+                let ty = kind.element_type_for(g.item_type);
+                g.root_id = Some(standalone_group(&mut b, g, ty));
             }
         }
     }
+    // Subraces last: those of a species from the same source link to its planned id.
+    let species: Vec<(String, String)> = plan
+        .groups
+        .iter()
+        .filter(|g| g.kind == ImportKind::Species)
+        .filter_map(|g| Some((g.name.clone(), g.root_id.clone()?)))
+        .collect();
+    for g in plan
+        .groups
+        .iter_mut()
+        .filter(|g| g.kind == ImportKind::Subrace)
+    {
+        if let Some(p) = g.parent.as_mut().filter(|p| p.in_source) {
+            p.class_id = species
+                .iter()
+                .find(|(n, _)| same(n, &p.class_name))
+                .map(|(_, id)| id.clone())
+                .unwrap_or_default();
+        }
+        let linked = g.parent.as_ref().is_some_and(|p| !p.class_id.is_empty());
+        let ty = if linked {
+            subrace_type(plan.edition)
+        } else {
+            b.notes.push(format!(
+                "{}: its parent species was not found, so it is imported as a species of its own",
+                g.name
+            ));
+            ImportKind::Species.element_type()
+        };
+        g.root_id = Some(standalone_group(&mut b, g, ty));
+    }
     plan.elements = b.out;
     plan.notes = b.notes;
+}
+
+/// Element type of a subrace in `edition` (the bundled packs: 2014 `Sub Race`, 2024 lineages
+/// are `Species Trait Option`s).
+pub(crate) fn subrace_type(edition: Edition) -> &'static str {
+    match edition {
+        Edition::Y2014 => "Sub Race",
+        Edition::Y2024 => "Species Trait Option",
+    }
+}
+
+/// Root, traits (parts) and trait options of a standalone group; rules and lore groups become
+/// one text-only element.
+fn standalone_group(b: &mut Builder, g: &PlanGroup, ty: &str) -> String {
+    let brief = g
+        .outline
+        .as_ref()
+        .map(|o| o.summary.clone())
+        .unwrap_or_default();
+    let quote = g
+        .outline
+        .as_ref()
+        .map(|o| o.quote.clone())
+        .unwrap_or_default();
+    let role = if g.kind == ImportKind::Rules {
+        Role::Text
+    } else {
+        Role::Standalone
+    };
+    let id = b.push(ty, &g.name, role, None, None, &brief, &quote);
+    let Some(o) = g.outline.as_ref().filter(|_| role == Role::Standalone) else {
+        return id;
+    };
+    let part_ty = part_type(ty);
+    let mut names = Vec::new();
+    for f in &o.features {
+        let part = OutlinePart {
+            name: f.name.clone(),
+            summary: f.summary.clone(),
+            quote: f.quote.clone(),
+            level: None,
+        };
+        if unique_parts(std::slice::from_ref(&part), &g.name).is_empty()
+            || names.contains(&norm(&f.name))
+        {
+            continue;
+        }
+        names.push(norm(&f.name));
+        let trait_id = b.push_child(part_ty, &part, Role::Part, None, &id);
+        b.push_children(f, &trait_id, part_ty, &g.name, None, false);
+    }
+    if !names.is_empty() {
+        if let Some(e) = b.get(&id) {
+            e.brief = format!(
+                "{} Its named traits are separate elements granted for you: keep their text in the description, but write no rules for them.",
+                e.brief
+            )
+            .trim()
+            .to_string();
+        }
+    }
+    id
+}
+
+/// The parent species of a subrace: a species of the same source its hint names (or the only
+/// one), else a library species of the edition with a subrace choice, as a link whose
+/// `supports` is the key the subrace must carry. `None` when neither is found.
+pub(crate) fn subrace_parent(
+    store: &ContentStore,
+    edition: Edition,
+    species: &[String],
+    hint: Option<&str>,
+) -> Option<ParentLink> {
+    if let Some(name) = in_source_class(species, hint) {
+        return Some(ParentLink {
+            class_id: String::new(),
+            class_name: name.to_string(),
+            supports: support_key(&[name, subrace_word(edition)]),
+            subclass_levels: Vec::new(),
+            in_source: true,
+        });
+    }
+    let h = norm(hint?);
+    let race = store
+        .by_type("Race")
+        .chain(store.by_type("Species"))
+        .map(|s| &s.element)
+        .filter(|e| in_edition(e, edition))
+        .find(|e| norm(&e.name) == h || contains_words(&h, &norm(&e.name)))?;
+    let key = subrace_select(store, race)?;
+    Some(ParentLink {
+        class_id: race.id.clone(),
+        class_name: race.name.clone(),
+        supports: key,
+        subclass_levels: Vec::new(),
+        in_source: false,
+    })
+}
+
+fn subrace_word(edition: Edition) -> &'static str {
+    match edition {
+        Edition::Y2014 => "Subrace",
+        Edition::Y2024 => "Lineage",
+    }
+}
+
+/// The `supports` of a library species' subrace or lineage choice (on the species or one of
+/// the traits it grants).
+fn subrace_select(store: &ContentStore, race: &Element) -> Option<String> {
+    let pick = |el: &Element| {
+        el.rules.iter().find_map(|r| match r {
+            Rule::Select(s) if matches!(s.ty.as_str(), "Sub Race" | "Species Trait Option") => {
+                s.supports.clone()
+            }
+            _ => None,
+        })
+    };
+    pick(race).or_else(|| {
+        race.rules.iter().find_map(|r| match r {
+            Rule::Grant(g) => store.element(&g.id).and_then(pick),
+            _ => None,
+        })
+    })
+}
+
+/// A text-only group for a rules or lore section the detection listed in `other`.
+pub(crate) fn text_group(name: &str, what: &str, note: &str) -> PlanGroup {
+    let mut g = standalone(ImportKind::Rules, name, None);
+    g.outline = Some(Outline {
+        name: name.to_string(),
+        summary: format!("{what}. {note}")
+            .trim_matches([' ', '.'])
+            .to_string(),
+        hit_die: None,
+        subclass_level: None,
+        spellcasting: None,
+        features: Vec::new(),
+        quote: String::new(),
+    });
+    g
 }
 
 /// A plan group for a standalone item.
@@ -579,6 +914,27 @@ mod tests {
         assert_eq!(snap(9, &[3, 7, 10, 15, 18]), 10);
         assert_eq!(snap(5, &[3, 7]), 7);
         assert_eq!(snap(3, &[3, 7]), 3);
+    }
+
+    #[test]
+    fn picks_default_to_one_at_the_feature_level_and_never_come_earlier() {
+        let p = |level, count| PickCount { level, count };
+        assert_eq!(picks_of(&[], 2), vec![p(2, 1)]);
+        assert_eq!(
+            picks_of(&[p(6, 1), p(1, 2), p(2, 1), p(9, 0)], 2),
+            vec![p(2, 3), p(6, 1)]
+        );
+    }
+
+    #[test]
+    fn option_keys_carry_no_supports_operators() {
+        assert_eq!(
+            option_key("Warden", "Charms (Wild, Tame)"),
+            "Warden Charms Wild Tame"
+        );
+        assert_eq!(option_key("Warden", "Warden Charms"), "Warden Charms");
+        assert_eq!(part_type("Race"), "Racial Trait");
+        assert_eq!(part_type("Archetype Feature"), "Archetype Feature");
     }
 
     #[test]

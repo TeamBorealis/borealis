@@ -101,8 +101,10 @@ pub(crate) fn normalize(
                 .and_then(|g| g.item_type);
             super::items::normalize_item(el, &planned.ty, &planned.name, item_type, plan);
         }
-        Role::SubclassGate => {}
+        Role::SubclassGate | Role::Part | Role::Option | Role::Text => {}
     }
+    // Named parts, option families, subraces and text-only elements (import-fix-i2).
+    super::parts::apply(el, planned, plan);
 }
 
 fn normalize_feature(

@@ -12,6 +12,7 @@ mod finalize;
 mod generate;
 mod items;
 mod normalize;
+mod parts;
 mod plan;
 mod rules;
 mod steps;
@@ -39,6 +40,8 @@ use steps::{
 
 /// Classes and subclasses outlined per model call.
 const OUTLINE_BATCH: usize = 6;
+/// Species, subraces and backgrounds (short outlines: their named traits) per model call.
+const PARTS_OUTLINE_BATCH: usize = 12;
 
 /// Request for [`import_anything`].
 #[derive(Debug, Clone)]
@@ -180,14 +183,20 @@ pub async fn plan_import(
         notes: Vec::new(),
     };
     // Parents first (they decide the subclass levels), then the outlines in as few calls as
-    // possible: one for a single class or subclass, else OUTLINE_BATCH per call.
+    // possible: one for a single item, else OUTLINE_BATCH classes and subclasses or
+    // PARTS_OUTLINE_BATCH species, subraces and backgrounds per call.
     let mut wanted: Vec<(usize, DetectedItem, Option<Vec<u32>>)> = Vec::new();
-    let classes: Vec<String> = detection
-        .items
-        .iter()
-        .filter(|i| i.kind == ImportKind::Class)
-        .map(|i| i.name.clone())
-        .collect();
+    let mut parted: Vec<(usize, DetectedItem, Option<Vec<u32>>)> = Vec::new();
+    let names_of = |kind: ImportKind| -> Vec<String> {
+        detection
+            .items
+            .iter()
+            .filter(|i| i.kind == kind)
+            .map(|i| i.name.clone())
+            .collect()
+    };
+    let classes = names_of(ImportKind::Class);
+    let species = names_of(ImportKind::Species);
     for item in &detection.items {
         let mut group = plan::standalone(item.kind, &item.name, item.item_type);
         if matches!(item.kind, ImportKind::Class | ImportKind::Subclass) {
@@ -213,14 +222,43 @@ pub async fn plan_import(
                 }
             }
             wanted.push((plan.groups.len(), item.clone(), levels));
+        } else if matches!(
+            item.kind,
+            ImportKind::Species | ImportKind::Subrace | ImportKind::Background
+        ) {
+            if item.kind == ImportKind::Subrace {
+                group.parent = plan::subrace_parent(
+                    &store,
+                    detection.edition,
+                    &species,
+                    item.parent_hint.as_deref(),
+                );
+            }
+            parted.push((plan.groups.len(), item.clone(), None));
         }
         plan.groups.push(group);
     }
-    if let [(gi, item, levels)] = wanted.as_slice() {
+    // Rules and lore the detection could not type keep their text as text-only elements.
+    let texts: Vec<PlanGroup> = detection
+        .other
+        .iter()
+        .filter(|o| !detection.items.iter().any(|i| same_name(&i.name, &o.name)))
+        .map(|o| plan::text_group(&o.name, &o.what, &o.note))
+        .collect();
+    for g in texts {
+        if !plan.groups.iter().any(|x| same_name(&x.name, &g.name)) {
+            plan.groups.push(g);
+        }
+    }
+    let all: Vec<_> = wanted.iter().chain(&parted).cloned().collect();
+    if let [(gi, item, levels)] = all.as_slice() {
         let step = outline_step(item, detection.edition, source_text, levels.as_deref());
         plan.groups[*gi].outline = Some(run_task(&adapter, &step, opts).await?.output.outline);
     } else {
-        for chunk in wanted.chunks(OUTLINE_BATCH) {
+        let chunks = wanted
+            .chunks(OUTLINE_BATCH)
+            .chain(parted.chunks(PARTS_OUTLINE_BATCH));
+        for chunk in chunks {
             let items: Vec<(DetectedItem, Option<Vec<u32>>)> = chunk
                 .iter()
                 .map(|(_, i, l)| (i.clone(), l.clone()))
@@ -243,6 +281,16 @@ pub async fn plan_import(
             }));
     }
     Ok(plan)
+}
+
+fn same_name(a: &str, b: &str) -> bool {
+    let n = |s: &str| {
+        s.split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .to_lowercase()
+    };
+    n(a) == n(b)
 }
 
 /// Resolve an open parent choice: the user picked `class_id` for the subclass `group`.

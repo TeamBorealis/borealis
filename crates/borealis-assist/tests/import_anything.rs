@@ -907,7 +907,7 @@ fn mixed_fake() -> Fake {
 }
 
 #[tokio::test]
-async fn mixed_source_is_batched_by_type_and_reports_what_has_no_kind() {
+async fn mixed_source_is_batched_by_type_and_keeps_what_has_no_kind_as_text() {
     let fake = mixed_fake();
     let source = "Banner Knight. Shield Warden. Quick Draw. Steady Hand. Iron Gut. \
 Lantern Of Echoes. Copper Key. Thunderous.";
@@ -934,5 +934,13 @@ Lantern Of Echoes. Copper Key. Thunderous.";
     let report = finalize_draft(&base(), &d).unwrap().pack.report.unwrap();
     assert_eq!(report.entries.len(), 1, "{:?}", report.entries);
     assert_eq!(report.entries[0].source, "Thunderous");
-    assert_eq!(report.entries[0].outcome, "unsupported");
+    // No element kind mechanises it: its text is kept as a text-only element (no model call).
+    assert_eq!(report.entries[0].outcome, "text_only");
+    assert_eq!(report.entries[0].elements.len(), 1);
+    let text = d.elements.iter().find(|e| e.name == "Thunderous").unwrap();
+    assert_eq!(text.ty, "Rules Glossary Entry");
+    assert!(text.json["description"]
+        .as_str()
+        .unwrap()
+        .contains("Thunderous"));
 }

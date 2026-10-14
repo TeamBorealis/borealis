@@ -138,10 +138,11 @@ pub(crate) struct TargetOut {
 
 // ---- schemas -------------------------------------------------------------------------------
 
-const KINDS: [&str; 10] = [
+const KINDS: [&str; 11] = [
     "class",
     "subclass",
     "species",
+    "subrace",
     "background",
     "feat",
     "spell",
@@ -176,7 +177,16 @@ pub(crate) fn outline_schema() -> Value {
           "spellcasting":{"type":["object","null"]},"quote":{"type":"string"},
           "features":{"type":"array","items":{"type":"object","required":["level","name"],
             "properties":{"level":{"type":"integer"},"name":{"type":"string"},
-              "summary":{"type":"string"},"quote":{"type":"string"}}}}}}}})
+              "summary":{"type":"string"},"quote":{"type":"string"},
+              "parts":{"type":"array","items":part_schema()},
+              "options":{"type":"array","items":part_schema()},
+              "choose":{"type":"array","items":{"type":"object","required":["level","count"],
+                "properties":{"level":{"type":"integer"},"count":{"type":"integer"}}}}}}}}}}})
+}
+
+fn part_schema() -> Value {
+    json!({"type":"object","required":["name"],"properties":{"name":{"type":"string"},
+        "summary":{"type":"string"},"quote":{"type":"string"},"level":{"type":["integer","null"]}}})
 }
 
 pub(crate) fn element_schema() -> Value {
@@ -206,10 +216,13 @@ in `transcript`; later steps only see that transcript."
         "Classify this source. List every distinct thing it describes in `items` (kind, name, and for a \
 subclass the parent class in `parent_hint`, as named or implied, e.g. \"Barbarian\" or \"Primal Path\"; \
 for an item its `item_type`: weapon for a mundane weapon (firearms and other ranged weapons included), armor \
-(shields included), ammunition, gear for other mundane equipment, magic_item). A weapon property the source \
+(shields included), ammunition, gear for other mundane equipment, magic_item). A subrace, lineage or variant of \
+a species is kind subrace with its species in `parent_hint`. A weapon property the source \
 defines with its own rules text is kind weapon_property. Set `kind` to the single kind, or \"mixed\" when there are several. List in `other` (name as printed, \
 `what` it is) every other thing the source defines that is none of these kinds: rules, weapon properties, \
-conditions, variant or optional rules, upgrades, tables. Decide the edition: 2024 rules use \
+conditions, variant or optional rules, upgrades, tables, and lore or setting sections with a heading; each named \
+row of a table of options is its own `other` entry. Named traits, features and options of a species, \
+background or class are NOT items or `other`: they are outlined later. Decide the edition: 2024 rules use \
 \"species\", \"Weapon Mastery\", \"Origin feat\"; 2014 rules use \"race\" and \"Primal Path\"-style subclass \
 names. Default to {} when unclear. Give a confidence between 0 and 1.\n{transcript}\n\n{}",
         match edition_hint {
@@ -221,31 +234,60 @@ names. Default to {} when unclear. Give a confidence between 0 and 1.\n{transcri
     Step::new(
         "import_detect",
         "classify imported D&D content by kind and edition",
-        "Kinds: class, subclass, species, background, feat, spell, item, monster, weapon_property, mixed.",
+        "Kinds: class, subclass, species, subrace, background, feat, spell, item, monster, weapon_property, mixed.",
         user,
         detect_schema(),
     )
 }
 
 fn outline_what(item: &DetectedItem, parent_levels: Option<&[u32]>) -> String {
-    if item.kind == ImportKind::Subclass {
-        let lv = parent_levels
-            .map(|l| format!(" The parent class's subclasses gain features at levels {l:?}; use only those levels."))
-            .unwrap_or_default();
-        format!(
-            "the subclass \"{}\" (only its own features).{lv}",
+    match item.kind {
+        ImportKind::Subclass => {
+            let lv = parent_levels
+                .map(|l| format!(" The parent class's subclasses gain features at levels {l:?}; use only those levels."))
+                .unwrap_or_default();
+            format!(
+                "the subclass \"{}\" (only its own features).{lv} {PARTS_RULE}",
+                item.name
+            )
+        }
+        ImportKind::Species | ImportKind::Subrace => {
+            let of = item
+                .parent_hint
+                .as_deref()
+                .filter(|_| item.kind == ImportKind::Subrace)
+                .map(|p| format!(" (a subrace or lineage of {p}: only its own traits)"))
+                .unwrap_or_default();
+            format!(
+                "the {} \"{}\"{of}: EVERY named trait as its own entry in `features` (level 1, `name` as printed, \
+`summary`, `quote`). The ability score, size, speed, age and language lines are not traits unless the source names them \
+as traits. A trait that lets you choose one of several named options lists every option in its `options` and the number \
+to choose in `choose` [{{level: 1, count: N}}].",
+                if item.kind == ImportKind::Subrace { "subrace" } else { "species" },
+                item.name
+            )
+        }
+        ImportKind::Background => format!(
+            "the background \"{}\": each named feature it grants as an entry in `features` (level 1, `name` as printed, \
+`summary`, `quote`), not the skill, tool, language or equipment lines.",
             item.name
-        )
-    } else {
-        format!(
+        ),
+        _ => format!(
             "the class \"{}\": a feature for each level that grants one (include the ability score improvement / \
 epic boon rows; SKIP levels that only change table numbers, they need no feature), the subclass choice level in `subclass_level`, the hit die, and spellcasting \
 (a profile {{kind: full|half|third|pact|none, ability, prepared|known, ritual, spell_list_name, \
-cantrips_by_level and spells_known_by_level as 20 cumulative numbers, prepared_formula}}); never write slot tables.",
+cantrips_by_level and spells_known_by_level as 20 cumulative numbers, prepared_formula}}); never write slot tables. {PARTS_RULE}",
             item.name
-        )
+        ),
     }
 }
+
+/// Named sub-items are their own elements, never folded into the umbrella feature.
+const PARTS_RULE: &str = "When a feature grants named sub-features (named paragraphs or a list of abilities it \
+gives you), list each in that feature's `parts` (name, summary, quote). When a feature lets you pick some of a list of \
+named options (invocations, maneuvers, styles, ...), list EVERY option in its `options` (name, summary, quote, `level` = \
+the option's prerequisite level if it has one) and the picks in `choose` as [{level, count}] (e.g. 2 at the feature's \
+level, 1 more at a later level). A part or option is never a feature row of its own.";
 
 const QUOTE_RULE: &str = "For each feature give a short verbatim `quote` from the source \
 (under 80 characters) so the passage can be located.";
