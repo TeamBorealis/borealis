@@ -32,6 +32,9 @@ use std::time::{Duration, Instant};
 type Counts = BTreeMap<String, usize>;
 
 const TEST_SCORES: [i32; 6] = [15, 14, 14, 12, 12, 10];
+/// Scores of the caster host (origins and feats): 13+ in every mental ability, so ability
+/// prerequisites like `[int:13]||[wis:13]` and `[cha:13]` are met.
+const CASTER_SCORES: [i32; 6] = [12, 12, 14, 15, 15, 15];
 const FILL_PASSES: usize = 60;
 const NOT_FILLED: &[&str] = &[
     "Race",
@@ -50,6 +53,10 @@ const FIGHTER: &str = "ID_WOTC_PHB_CLASS_FIGHTER";
 const HUMAN: &str = "ID_RACE_HUMAN";
 const HUMAN_VARIANT: &str = "ID_RACE_VARIANT_HUMAN_VARIANT";
 const WIZARD: &str = "ID_WOTC_PHB_CLASS_WIZARD";
+/// Origin of the class and archetype sweeps: a race and a background, so expertise and
+/// race-dependent features have something to work with (2014 ids, then 2024 ids).
+const ORIGIN_2014: (&str, &str) = ("ID_RACE_HUMAN", "ID_BACKGROUND_ACOLYTE");
+const ORIGIN_2024: (&str, &str) = ("ID_2024_SPECIES_HUMAN", "ID_2024_BACKGROUND_ACOLYTE");
 const BASE_PACKS: &[&str] = &[
     "core",
     "srd-5.1",
@@ -57,6 +64,32 @@ const BASE_PACKS: &[&str] = &[
     "srd-5.1-monsters",
     "srd-5.2.1-monsters",
 ];
+
+/// Ruleset and race (plus sub race) a sweep character starts with; `None` = the default human.
+#[derive(Clone, Debug)]
+struct Origin {
+    rs: Ruleset,
+    race: Option<(String, Option<String>)>,
+}
+
+impl Origin {
+    fn plain(rs: Ruleset) -> Self {
+        Self { rs, race: None }
+    }
+}
+
+/// `BOREALIS_SWEEP_LIST=1` prints every problem per element (`LIST` lines) for triage.
+fn listing() -> bool {
+    std::env::var("BOREALIS_SWEEP_LIST").is_ok()
+}
+
+/// `ID_*` tokens of an expression.
+fn ids_in(text: &str) -> Vec<String> {
+    text.split(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
+        .filter(|t| t.starts_with("ID_"))
+        .map(str::to_string)
+        .collect()
+}
 
 #[derive(Clone, Copy)]
 enum Pick {
@@ -112,6 +145,9 @@ impl Tally {
             *self.failed.entry(kind).or_default() += 1;
         }
         for p in problems {
+            if listing() {
+                println!("LIST {kind} {id}: {p}");
+            }
             let c = cause(&p);
             *self
                 .causes
@@ -161,12 +197,62 @@ impl Sweeper<'_> {
     }
 
     fn with_class(&self, rs: Ruleset, class: &str) -> Result<CharacterState, String> {
-        let state = self.base(rs);
+        self.with_class_from(self.base(rs), class)
+    }
+
+    /// The level-1 wizard host with high mental scores.
+    fn caster(&self) -> Option<CharacterState> {
+        let state = commands::new_character(self.engine, Ruleset::Dnd2014);
+        let state = commands::set_base_scores(self.engine, &state, CASTER_SCORES)
+            .ok()?
+            .state;
+        self.with_class_from(state, WIZARD).ok()
+    }
+
+    fn with_class_from(
+        &self,
+        state: CharacterState,
+        class: &str,
+    ) -> Result<CharacterState, String> {
         let snap = self.engine.derive(&state);
         let key = slot_key(&snap, "ID_LEVEL_1", "Class", 1).ok_or("no class slot")?;
         commands::select(self.engine, &state, &key, Choice::Element(class.into()))
             .map(|o| o.state)
             .map_err(|e| format!("class refused: {e}"))
+    }
+
+    /// `state` with the race (and sub race) picked; `None` when one is not offered.
+    fn with_race(
+        &self,
+        state: &CharacterState,
+        race: &str,
+        sub: Option<&str>,
+    ) -> Option<CharacterState> {
+        let mut state = self.pick(state, race)?.ok()?;
+        if let Some(sub) = sub {
+            state = self.pick(&state, sub)?.ok()?;
+        }
+        Some(state)
+    }
+
+    /// A class at level 1 with a race and a background (the sweep character).
+    fn start(&self, o: &Origin, class: &str) -> Result<CharacterState, String> {
+        let state = self.with_class(o.rs, class)?;
+        let (race, background) = if o.rs == Ruleset::Dnd2024 {
+            ORIGIN_2024
+        } else {
+            ORIGIN_2014
+        };
+        let state = match &o.race {
+            Some((r, sub)) => self
+                .with_race(&state, r, sub.as_deref())
+                .ok_or_else(|| format!("race {r} not offered"))?,
+            None => self.with_race(&state, race, None).unwrap_or(state),
+        };
+        Ok(match self.pick(&state, background) {
+            Some(Ok(s)) => s,
+            _ => state,
+        })
     }
 
     fn problems(&self, snap: &CharacterSnapshot, out: &mut Vec<String>) {
@@ -287,13 +373,13 @@ impl Sweeper<'_> {
         &self,
         class: &Element,
         sub: Option<&str>,
-        rs: Ruleset,
+        origin: &Origin,
         pick: Pick,
         spells: &mut Vec<String>,
     ) -> (Vec<String>, BTreeMap<String, u32>) {
         let mut out = Vec::new();
         let mut offered = BTreeMap::new();
-        let mut state = match self.with_class(rs, &class.id) {
+        let mut state = match self.start(origin, &class.id) {
             Ok(s) => s,
             Err(e) => return (vec![e], offered),
         };
@@ -301,12 +387,17 @@ impl Sweeper<'_> {
             .rules
             .iter()
             .filter_map(|r| match r {
-                // conditional grants depend on choices the sweep does not make
+                // conditional grants depend on choices the sweep does not make, and so do
+                // features with element requirements (replaced by another feature)
                 Rule::Grant(g)
                     if g.ty.as_deref() == Some("Class Feature")
                         && g.requirements
                             .as_deref()
-                            .map_or(true, |r| r.trim().is_empty()) =>
+                            .map_or(true, |r| r.trim().is_empty())
+                        && self
+                            .store
+                            .element(&g.id)
+                            .map_or(true, |e| e.requirements.trim().is_empty()) =>
                 {
                     Some((g.id.as_str(), g.level.unwrap_or(1)))
                 }
@@ -424,9 +515,9 @@ impl Sweeper<'_> {
     }
 
     /// Archetypes a class offers while levelling 1-20 without other choices (id -> level).
-    fn archetypes_of(&self, class: &str) -> BTreeMap<String, u32> {
+    fn archetypes_of(&self, class: &str, origin: &Origin) -> BTreeMap<String, u32> {
         let mut offered = BTreeMap::new();
-        let Ok(mut state) = self.with_class(Ruleset::Dnd2014, class) else {
+        let Ok(mut state) = self.start(origin, class) else {
             return offered;
         };
         for level in 1..=MAX_LEVEL {
@@ -661,25 +752,131 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
         };
 
     // classes: first-option and last-option passes (Aurora content is 2014)
+    let plain14 = Origin::plain(Ruleset::Dnd2014);
     for class in of_type("Class") {
         for (kind, pick) in [("class(first)", Pick::First), ("class(last)", Pick::Last)] {
             guarded(&mut t, kind, &class.id, &mut || {
-                sw.sweep(class, None, Ruleset::Dnd2014, pick, &mut spells_rows)
-                    .0
+                sw.sweep(class, None, &plain14, pick, &mut spells_rows).0
             });
         }
     }
-    // archetype -> the class offering it (any loaded 2014-usable class)
-    let mut parent: HashMap<String, (String, u32)> = HashMap::new();
-    for class in store.by_type("Class") {
-        let id = class.element.id.clone();
-        let offered = catch_unwind(AssertUnwindSafe(|| sw.archetypes_of(&id))).unwrap_or_default();
-        for (a, lvl) in offered {
-            parent.entry(a).or_insert((id.clone(), lvl));
+
+    // races and the race each sub race / race variant belongs to (on a bare level-1 fighter)
+    let fighter = sw.fill(
+        sw.with_class(Ruleset::Dnd2014, FIGHTER).expect("fighter"),
+        Pick::First,
+    );
+    // race (and sub race) offering each sub race / race variant; variants may hang off a sub race
+    let mut race_of: HashMap<String, (String, Option<String>)> = HashMap::new();
+    for race in store.by_type("Race") {
+        let rid = race.element.id.clone();
+        let Some(Ok(s)) = sw.pick(&fighter, &rid) else {
+            continue;
+        };
+        for slot in sw.engine.derive(&s).slots {
+            if slot.ty != "Sub Race" && slot.ty != "Race Variant" {
+                continue;
+            }
+            for o in slot.options {
+                race_of.entry(o.id.clone()).or_insert((rid.clone(), None));
+                if slot.ty != "Sub Race" {
+                    continue;
+                }
+                let Some(Ok(sub)) = sw.pick(&s, &o.id) else {
+                    continue;
+                };
+                for v in sw.engine.derive(&sub).slots {
+                    if v.ty == "Race Variant" {
+                        for vo in v.options {
+                            race_of
+                                .entry(vo.id)
+                                .or_insert((rid.clone(), Some(o.id.clone())));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // races satisfying a requirement: the race itself, a sub race, or one granting the id
+    let races_for = |requirements: &str| -> Vec<(String, Option<String>)> {
+        let mut out = Vec::new();
+        for id in ids_in(requirements) {
+            for r in ["Race", "Sub Race", "Race Variant"]
+                .iter()
+                .flat_map(|ty| store.by_type(ty))
+            {
+                let e = &r.element;
+                let grants = e
+                    .rules
+                    .iter()
+                    .any(|x| matches!(x, Rule::Grant(g) if g.id == id));
+                if e.id != id && !grants {
+                    continue;
+                }
+                let pair = if e.ty == "Race" {
+                    Some((e.id.clone(), None))
+                } else {
+                    race_of
+                        .get(&e.id)
+                        .map(|(p, _)| (p.clone(), Some(e.id.clone())))
+                };
+                if let Some(p) = pair.filter(|p| !out.contains(p)) {
+                    out.push(p);
+                }
+            }
+        }
+        out
+    };
+
+    // archetype -> the class offering it: 2014 classes, then 2024 classes (2014 subclasses
+    // are usable there), then 2014 classes with a race the archetype requires
+    let mut parent: HashMap<String, (String, Origin)> = HashMap::new();
+    let find_parents =
+        |parent: &mut HashMap<String, (String, Origin)>, origin: &Origin, only: Option<&str>| {
+            for class in store.by_type("Class") {
+                let is_2024 = class.element.ruleset == Some(Ruleset::Dnd2024);
+                if is_2024 != (origin.rs == Ruleset::Dnd2024) {
+                    continue;
+                }
+                let id = class.element.id.clone();
+                let offered = catch_unwind(AssertUnwindSafe(|| sw.archetypes_of(&id, origin)))
+                    .unwrap_or_default();
+                for (a, _) in offered {
+                    if only.map_or(true, |o| o == a) {
+                        parent
+                            .entry(a)
+                            .or_insert_with(|| (id.clone(), origin.clone()));
+                    }
+                }
+                if only.is_some_and(|o| parent.contains_key(o)) {
+                    return;
+                }
+            }
+        };
+    find_parents(&mut parent, &plain14, None);
+    if of_type("Archetype")
+        .iter()
+        .any(|a| !parent.contains_key(&a.id))
+    {
+        find_parents(&mut parent, &Origin::plain(Ruleset::Dnd2024), None);
+    }
+    for sub in of_type("Archetype") {
+        if parent.contains_key(&sub.id) {
+            continue;
+        }
+        for race in races_for(&sub.requirements) {
+            let origin = Origin {
+                rs: Ruleset::Dnd2014,
+                race: Some(race),
+            };
+            find_parents(&mut parent, &origin, Some(&sub.id));
+            if parent.contains_key(&sub.id) {
+                break;
+            }
         }
     }
     for sub in of_type("Archetype") {
-        let Some((cid, _)) = parent.get(&sub.id).cloned() else {
+        let Some((cid, origin)) = parent.get(&sub.id).cloned() else {
             t.record(
                 "archetype",
                 &sub.id,
@@ -693,36 +890,24 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
             ("archetype(last)", Pick::Last),
         ] {
             guarded(&mut t, kind, &sub.id, &mut || {
-                sw.sweep(
-                    &class,
-                    Some(&sub.id),
-                    Ruleset::Dnd2014,
-                    pick,
-                    &mut spells_rows,
-                )
-                .0
+                sw.sweep(&class, Some(&sub.id), &origin, pick, &mut spells_rows)
+                    .0
             });
         }
     }
 
-    // origins on a level-1 fighter
-    let fighter = sw.fill(
-        sw.with_class(Ruleset::Dnd2014, FIGHTER).expect("fighter"),
-        Pick::First,
-    );
-    let races: Vec<&Element> = store.by_type("Race").map(|s| &s.element).collect();
-    let mut race_of: HashMap<String, String> = HashMap::new();
-    for race in &races {
-        if let Some(Ok(s)) = sw.pick(&fighter, &race.id) {
-            for slot in sw.engine.derive(&s).slots {
-                if slot.ty == "Sub Race" || slot.ty == "Race Variant" {
-                    for o in slot.options {
-                        race_of.entry(o.id).or_insert_with(|| race.id.clone());
-                    }
-                }
-            }
-        }
-    }
+    // origins on a level-1 wizard with high mental scores (a fighter is already proficient with
+    // every weapon and armor, which empties "choose a martial weapon" selects), then on the
+    // fighter; an element whose requirements name a race is retried on a host of that race
+    let caster = sw.caster().map(|c| sw.fill(c, Pick::First));
+    let origin_hosts: Vec<&CharacterState> = caster.iter().chain([&fighter]).collect();
+    let race_host = |race: &(String, Option<String>)| {
+        let base = sw.caster()?;
+        Some(sw.fill(
+            sw.with_race(&base, &race.0, race.1.as_deref())?,
+            Pick::First,
+        ))
+    };
     for (ty, kind) in [
         ("Race", "race"),
         ("Sub Race", "sub race"),
@@ -731,44 +916,76 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
     ] {
         for el in of_type(ty) {
             guarded(&mut t, kind, &el.id, &mut || {
-                let mut problems = Vec::new();
-                let mut state = fighter.clone();
-                if ty == "Sub Race" || ty == "Race Variant" {
-                    match race_of.get(&el.id).and_then(|r| sw.pick(&state, r)) {
-                        Some(Ok(s)) => state = s,
-                        _ => return vec![format!("{ty}: no race offers it")],
-                    }
+                // start states: each host with the parent race (and sub race) picked
+                let mut starts: Vec<CharacterState> = origin_hosts
+                    .iter()
+                    .filter_map(|h| match race_of.get(&el.id) {
+                        Some((race, sub)) => sw.with_race(h, race, sub.as_deref()),
+                        None => Some((*h).clone()),
+                    })
+                    .collect();
+                if starts.is_empty() {
+                    return vec![format!("{ty}: no race offers it")];
                 }
-                for pick in [Pick::First, Pick::Last] {
-                    match sw.pick(&state, &el.id) {
-                        None if el.requirements.trim().is_empty() => {
-                            problems.push(format!("{ty} is not offered"));
+                if ty == "Background" && starts.iter().all(|s| sw.pick(s, &el.id).is_none()) {
+                    starts.extend(races_for(&el.requirements).iter().filter_map(&race_host));
+                }
+                // an origin works when it works on one host (a host may already have the
+                // proficiencies or languages a select offers)
+                let runs: Vec<Vec<String>> = starts
+                    .iter()
+                    .filter(|s| sw.pick(s, &el.id).is_some())
+                    .map(|state| {
+                        let mut problems = Vec::new();
+                        for pick in [Pick::First, Pick::Last] {
+                            match sw.pick(state, &el.id) {
+                                Some(Ok(s)) => {
+                                    sw.problems(&sw.engine.derive(&sw.fill(s, pick)), &mut problems)
+                                }
+                                Some(Err(e)) => problems.push(e),
+                                None => {}
+                            }
                         }
-                        None => problems.push(format!("{ty} with requirements is not offered")),
-                        Some(Err(e)) => problems.push(e),
-                        Some(Ok(s)) => {
-                            sw.problems(&sw.engine.derive(&sw.fill(s, pick)), &mut problems)
-                        }
-                    }
+                        problems
+                    })
+                    .collect();
+                let problems = runs.into_iter().min_by_key(Vec::len).unwrap_or_else(|| {
+                    vec![if el.requirements.trim().is_empty() {
+                        format!("{ty} is not offered")
+                    } else {
+                        format!("{ty} with requirements is not offered")
+                    }]
+                });
+                if !problems.is_empty() && listing() {
+                    println!("LIST {kind} {} req={:?}", el.id, el.requirements);
                 }
                 problems
             });
         }
     }
 
-    // feats on level 1 (variant human), 4 and 19 fighters and wizards (the caster hosts
-    // satisfy "can cast a spell" requirements, `[type:spell]`)
-    let mut hosts = feat_hosts(&sw, &fighter);
-    if let Ok(wizard) = sw.with_class(Ruleset::Dnd2014, WIZARD) {
-        hosts.extend(feat_hosts(&sw, &wizard));
-    }
+    // feats on level 1 (variant human), 4 and 19 wizards with high mental scores (they satisfy
+    // "can cast a spell", `[type:spell]`, and mental ability prerequisites), then fighters;
+    // feats naming a race are also looked for on wizards of that race
+    let mut hosts = sw.caster().map_or_else(Vec::new, |c| feat_hosts(&sw, &c));
+    hosts.extend(feat_hosts(&sw, &fighter));
+    let mut race_hosts: HashMap<(String, Option<String>), Vec<CharacterState>> = HashMap::new();
     let mut unoffered = Counts::new();
     let mut unoffered_ex: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for el in of_type("Feat") {
         let mut found = true;
+        let mut extra = Vec::new();
+        if hosts.iter().all(|h| sw.pick(h, &el.id).is_none()) {
+            for race in races_for(&el.requirements) {
+                let hs = race_hosts.entry(race.clone()).or_insert_with(|| {
+                    race_host(&race).map_or_else(Vec::new, |h| feat_hosts(&sw, &h))
+                });
+                extra.extend(hs.iter().cloned());
+            }
+        }
         guarded(&mut t, "feat", &el.id, &mut || {
             let mut problems = Vec::new();
-            match hosts.iter().find_map(|h| sw.pick(h, &el.id)) {
+            match hosts.iter().chain(&extra).find_map(|h| sw.pick(h, &el.id)) {
                 None => found = false,
                 Some(Err(e)) => problems.push(e),
                 Some(Ok(s)) => {
@@ -783,6 +1000,9 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
             } else {
                 "feat not offered: has requirements"
             };
+            if listing() {
+                println!("LIST unoffered-feat {} req={:?}", el.id, el.requirements);
+            }
             *unoffered.entry(why.into()).or_default() += 1;
             let ex = unoffered_ex.entry(why.into()).or_default();
             if ex.len() < EXAMPLES {

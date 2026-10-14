@@ -52,6 +52,12 @@ const CASTER_FEATS: &[&str] = &[
 const ELEMENTAL_ADEPT: &str = "ID_PHB_FEAT_ELEMENTAL_ADEPT";
 const ELEMENTAL_ADEPT_2: &str = "ID_PHB_FEAT_ELEMENTAL_ADEPT_2";
 const MIN_COMPANIONS: usize = 10;
+const PARTNERED: &str = "FreshRoyal__elements-partnered";
+const PARTNERED_PACK: &str = "dl-freshroyal-elements-partnered";
+/// Grant references left dangling in the partnered repo stacked on aurorabuilder: PHB 2024
+/// content outside the SRD, typos and ids of other packs (was 436 before the core pack defined
+/// the newer Aurora internal ids and PHB 2024 ids resolved to SRD 5.2.1).
+const MAX_PARTNERED_DANGLING_GRANTS: usize = 49;
 
 fn repo_dir() -> Option<PathBuf> {
     let dir = PathBuf::from(std::env::var("BOREALIS_CORPUS_DIR").ok()?);
@@ -63,22 +69,33 @@ fn repo_dir() -> Option<PathBuf> {
     Some(repos.join(REPO))
 }
 
-fn load(tmp: &Path, repo: &Path) -> ContentStore {
+fn convert(tmp: &Path, repo: &Path, pack: &str) -> PathBuf {
     let opts = MigrateOptions {
-        pack_id: Some(PACK.into()),
-        pack_name: Some(REPO.into()),
+        pack_id: Some(pack.into()),
+        pack_name: Some(pack.into()),
         origin: PackOrigin::Custom,
         ..MigrateOptions::default()
     };
     let out = migrate_path(repo, &opts).expect("migrate");
-    let dir = tmp.join(PACK);
+    let dir = tmp.join(pack);
     write_output(&dir, &out).expect("write pack");
+    dir
+}
+
+fn build(packs: &[PathBuf]) -> ContentStore {
     let content = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
     let mut b = ContentStoreBuilder::new();
     for p in BUNDLED {
         b = b.add_pack_dir(&content.join(p)).expect("bundled pack");
     }
-    b.add_pack_dir(&dir).expect("repo pack").build()
+    for dir in packs {
+        b = b.add_pack_dir(dir).expect("repo pack");
+    }
+    b.build()
+}
+
+fn load(tmp: &Path, repo: &Path) -> ContentStore {
+    build(&[convert(tmp, repo, PACK)])
 }
 
 struct Host<'a> {
@@ -352,5 +369,74 @@ fn aurora_corpus_requirements_and_companions() {
 
     check_caster_feats(&h, &mut failures);
     check_rangers_companion(&h, &ours, &mut failures);
+    assert!(failures.is_empty(), "{failures:#?}");
+}
+
+/// Newer Aurora internal ids (race tags, background ASI, custom ASI options) and PHB 2024 ids
+/// used by the partnered repo resolve once it is stacked on aurorabuilder.
+#[test]
+fn partnered_content_resolves_newer_aurora_ids() {
+    let Some(base) = repo_dir().filter(|d| d.is_dir()) else {
+        eprintln!("SKIPPED: BOREALIS_CORPUS_DIR is not set or has no {REPO}");
+        return;
+    };
+    let partnered = base.with_file_name(PARTNERED);
+    if !partnered.is_dir() {
+        eprintln!("SKIPPED: no {PARTNERED}");
+        return;
+    }
+    let tmp = tempfile::tempdir().unwrap();
+    let store = build(&[
+        convert(tmp.path(), &base, PACK),
+        convert(tmp.path(), &partnered, PARTNERED_PACK),
+    ]);
+    let prefix = format!("{PARTNERED_PACK}/");
+    let ours: HashSet<String> = store
+        .iter()
+        .filter(|s| s.file.starts_with(&prefix))
+        .map(|s| s.element.id.clone())
+        .collect();
+    let dangling = store
+        .validate()
+        .into_iter()
+        .filter(|i| i.code == IssueCode::DanglingReference)
+        .filter(|i| i.message.starts_with("grant references"))
+        .filter(|i| i.element.as_ref().is_some_and(|e| ours.contains(e)))
+        .count();
+    println!("dangling grant references in {PARTNERED}: {dangling}");
+    let mut failures = Vec::new();
+    if dangling > MAX_PARTNERED_DANGLING_GRANTS {
+        failures.push(format!("{dangling} dangling grant references"));
+    }
+
+    let engine = Engine::new(&store);
+    let h = Host { engine: &engine };
+    let fighter = h.new_char(FIGHTER);
+    for race in store
+        .by_type("Race")
+        .filter(|r| ours.contains(&r.element.id))
+    {
+        let id = &race.element.id;
+        let Some(s) = h.pick(&fighter, id) else {
+            failures.push(format!("{id} not offered"));
+            continue;
+        };
+        let snap = engine.derive(&s);
+        for d in &snap.diagnostics {
+            // PHB 2024 spells outside the SRD need the user's own PHB 2024 content
+            let phb24 = d.message.contains("ID_WOTC_PHB24_");
+            if d.code == "content.missing_element" && !phb24 {
+                failures.push(format!("{id}: {}", d.message));
+            }
+        }
+        for slot in &snap.slots {
+            if slot.ty == "Ability Score Improvement"
+                && slot.options.is_empty()
+                && ours.contains(&slot.owner.id)
+            {
+                failures.push(format!("{id}: empty ASI select {}", slot.name));
+            }
+        }
+    }
     assert!(failures.is_empty(), "{failures:#?}");
 }
