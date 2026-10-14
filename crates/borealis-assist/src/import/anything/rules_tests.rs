@@ -238,3 +238,31 @@ fn strip_removes_and_reports_everything_the_engine_ignores() {
     assert!(rules[0].get("requires").is_none());
     assert!(rule_problems(&el).is_empty());
 }
+
+#[test]
+fn a_damage_type_select_param_on_a_resistance_is_a_select_over_the_resistance_conditions() {
+    let mut el = json!({"description": "<p>You have resistance to acid, cold or fire damage \
+    (your choice).</p>", "rules": [
+        {"kind": "select_param", "name": "Wand Resistance", "options": ["Acid", "cold", "fire"],
+         "level": 3},
+        {"kind": "select_param", "name": "Element", "options": ["acid", "sunlight"]}
+    ]});
+    let notes = normalise_abilities(&mut el);
+    assert_eq!(notes.len(), 1, "{notes:?}");
+    assert_eq!(
+        el["rules"][0],
+        json!({"kind": "select", "type": "Condition", "name": "Wand Resistance", "level": 3,
+            "supports": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_ACID|\
+ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_COLD|ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FIRE"})
+    );
+    assert_eq!(
+        el["rules"][1]["kind"], "select_param",
+        "not all damage types"
+    );
+    assert!(rule_problems(&el).is_empty(), "{:?}", rule_problems(&el));
+    // Damage types without resistance (a breath weapon's element) stay a free parameter.
+    let mut breath = json!({"description": "<p>Choose the damage type of your breath.</p>",
+        "rules": [{"kind": "select_param", "name": "Breath", "options": ["fire", "cold"]}]});
+    assert!(normalise_resources(&mut breath).is_empty());
+    assert_eq!(breath["rules"][0]["kind"], "select_param");
+}

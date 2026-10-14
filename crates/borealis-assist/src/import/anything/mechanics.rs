@@ -34,12 +34,47 @@ const SKIP_TYPES: [&str; 9] = [
 /// The longest quote of a sentence in a finding.
 const QUOTE_CHARS: usize = 120;
 
+/// Frequency words before "per <period>" ("once per long rest", "three times per day").
+const FREQUENCIES: [&str; 3] = ["once per ", "twice per ", "times per "];
+/// Periods of a limited use.
+const PERIODS: [&str; 5] = [
+    "long rest",
+    "short rest",
+    "short or long rest",
+    "long or short rest",
+    "day",
+];
+/// Words that make an "equal to your <ability> modifier" sentence about a roll, damage,
+/// healing, a bonus, a duration or a number of uses, not a count of things you have.
+const NOT_A_COUNT: [&str; 18] = [
+    "damage",
+    "hit point",
+    "bonus",
+    "roll",
+    "saving throw",
+    " dc",
+    "times",
+    "number of",
+    "check",
+    "attack",
+    "feet",
+    "minute",
+    "hour",
+    "round",
+    "add ",
+    "level",
+    "uses",
+    "temporary",
+];
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Shape {
     ArmorClass,
     Ability,
     Speed,
     Bonus,
+    LimitedUse,
+    ModifierCount,
 }
 
 impl Shape {
@@ -55,6 +90,13 @@ bonus \"base\"; another mode: name \"speed:fly\" / \"speed:swim\" / \"speed:clim
 a speed you gain for a while is a `movement_mode` rule",
             Self::Bonus => "a lasting bonus is a `stat` rule (e.g. name \"ac\", value \"1\"; a magic weapon or armor \
 uses the enhancement shape of the example)",
+            Self::LimitedUse => "a limited use is a `resource` rule named as the feature ({\"kind\":\"resource\",\
+\"id\":\"<feature name, lowercase>\",\"name\":\"<Feature name>\",\"max\":{\"type\":\"fixed\",\"value\":1},\
+\"recharge\":[\"long_rest\"]}; \"per day\" is [\"long_rest\"], \"short or long rest\" [\"short_rest\",\"long_rest\"]), \
+next to the grant or spell it limits",
+            Self::ModifierCount => "a count of things tied to an ability modifier (\"one companion per point of your \
+Charisma modifier\") is a `stat` counter named for what it counts ({\"kind\":\"stat\",\"name\":\"<counted things, \
+e.g. companions>\",\"value\":\"charisma:modifier\"}; twice the modifier is two such rules)",
         }
     }
 }
@@ -100,11 +142,58 @@ fn has_number_after(s: &str, marker: &str) -> bool {
     })
 }
 
+/// "once per long rest", "three times per day": a use the text limits.
+fn limited_use(s: &str) -> bool {
+    FREQUENCIES.iter().any(|f| {
+        s.match_indices(f)
+            .any(|(i, _)| PERIODS.iter().any(|p| s[i + f.len()..].starts_with(p)))
+    })
+}
+
+/// "one companion per point of your Charisma modifier", "squires equal to twice your
+/// Charisma modifier": a count of things the text ties to an ability modifier.
+fn modifier_count(s: &str) -> bool {
+    ABILITIES.iter().any(|a| {
+        let modifier = format!("{a} modifier");
+        s.match_indices(&modifier).any(|(i, _)| {
+            let before = &s[..i];
+            let gap = |marker: &str| {
+                before
+                    .rfind(marker)
+                    .filter(|p| !before[..*p].ends_with(char::is_alphabetic))
+                    .map(|p| {
+                        before[p + marker.len()..]
+                            .split_whitespace()
+                            .collect::<Vec<_>>()
+                    })
+            };
+            let per = gap("per ").is_some_and(|g| g.iter().all(|w| PER_FILLERS.contains(w)));
+            let equal = gap("equal to ").is_some_and(|g| {
+                g.len() <= EQUAL_GAP_WORDS
+                    && g.iter()
+                        .all(|w| w.chars().all(|c| c.is_alphabetic() || c == '\''))
+            }) && !NOT_A_COUNT.iter().any(|w| s.contains(w));
+            per || equal
+        })
+    })
+}
+
+/// Words between "per" and "<ability> modifier" ("per point of your Charisma modifier").
+const PER_FILLERS: [&str; 7] = ["point", "of", "your", "the", "their", "his", "her"];
+/// Most words between "equal to" and "<ability> modifier" ("twice the character's").
+const EQUAL_GAP_WORDS: usize = 4;
+
 /// The rule shapes a lowercase sentence asks for.
 fn shapes_of(s: &str) -> Vec<Shape> {
     let mut out = Vec::new();
+    if modifier_count(s) {
+        out.push(Shape::ModifierCount);
+    }
     if !(s.contains("you") || s.contains("your")) {
         return out;
+    }
+    if limited_use(s) {
+        out.push(Shape::LimitedUse);
     }
     let ac = [
         "your ac ",
@@ -183,6 +272,16 @@ fn modelled(shape: Shape, rules: &[&Value]) -> bool {
             }
             Shape::Speed => (kind == "stat" && name.contains("speed")) || kind == "movement_mode",
             Shape::Bonus => matches!(kind, "stat" | "attack_bonus" | "skill_bonus"),
+            Shape::LimitedUse => {
+                // A resource, or uses with a recharge anywhere in the rule (a spell's free_cast).
+                let text = r.to_string();
+                matches!(kind, "resource" | "resource_cost")
+                    || text.contains("\"uses\"")
+                    || text.contains("\"recharge\"")
+            }
+            Shape::ModifierCount => {
+                matches!(kind, "stat" | "resource") && r.to_string().contains(":modifier")
+            }
         }
     })
 }
@@ -298,6 +397,45 @@ pub(crate) fn note_leftovers(draft: &mut ImportDraft) {
     }
 }
 
+/// A feature whose text sets a save against "your <class> spell save DC" names that DC: the
+/// sheet shows it under the feature (bundled shape `{"kind":"save_dc","formula":"spell save DC
+/// (<Class>)"}`). Added when the element has no `save_dc` rule and its class is known (the
+/// element's `data.class`, printed before "spell save DC" or the text says "your spell save
+/// DC"). Returns a note when it changed.
+pub(crate) fn caster_save_dc(el: &mut Value) -> Option<String> {
+    if SKIP_TYPES.contains(&str_at(el, "type")) {
+        return None;
+    }
+    let class = el
+        .pointer("/data/class")
+        .and_then(Value::as_str)?
+        .trim()
+        .to_string();
+    let lower = plain(str_at(el, "description")).to_lowercase();
+    let own = format!("your {} spell save dc", class.to_lowercase());
+    if class.is_empty() || !(lower.contains(&own) || lower.contains("your spell save dc")) {
+        return None;
+    }
+    if rules_of(el).iter().any(|r| str_at(r, "kind") == "save_dc") {
+        return None;
+    }
+    let id = str_at(el, "name").trim().to_lowercase();
+    if id.is_empty() {
+        return None;
+    }
+    let formula = format!("spell save DC ({class})");
+    let rule = serde_json::json!({"kind": "save_dc", "id": id, "formula": formula});
+    let obj = el.as_object_mut()?;
+    let rules = obj
+        .entry("rules")
+        .or_insert_with(|| Value::Array(Vec::new()))
+        .as_array_mut()?;
+    rules.push(rule);
+    Some(format!(
+        "save_dc {id:?} = {formula} (the text sets a save against it)"
+    ))
+}
+
 /// `requires attunement by a/an ...` printed in the text and the `attunement` setter's
 /// `addition` describe the same restriction: the setter gets the printed words when it has
 /// none, the text gets the setter's when it lacks them. Returns a note per change.
@@ -397,6 +535,83 @@ have a swimming speed of 40 feet and a +1 bonus to AC.</p>", "rules": []});
         }
         let spell = json!({"type": "Spell", "description": "<p>Your AC equals 13 + your Dexterity modifier.</p>"});
         assert!(unmodelled(&spell, &[]).is_empty());
+    }
+
+    #[test]
+    fn limited_uses_and_modifier_counts_without_rules_are_found() {
+        let trait_ = json!({"type": "Racial Trait", "name": "Moth Call", "description": "<p>Once per \
+long rest, you can cast a special version of the <em>Animal Friendship</em> spell.</p>",
+            "rules": [{"kind": "grant", "type": "Spell", "id": "ID_X_SPELL"}]});
+        let f = unmodelled(&trait_, &[]);
+        assert_eq!(f.len(), 1, "{f:?}");
+        assert!(f[0].contains("\"kind\":\"resource\""), "{f:?}");
+        let mut done = trait_.clone();
+        done["rules"] = json!([{"kind": "resource", "id": "moth call", "name": "Moth Call",
+            "max": {"type": "fixed", "value": 1}, "recharge": ["long_rest"]}]);
+        assert!(unmodelled(&done, &[]).is_empty());
+        let daily = json!({"type": "Magic Item", "rules": [], "description":
+            "<p>Three times per day you may cast a spell from it.</p>"});
+        assert_eq!(unmodelled(&daily, &[]).len(), 1);
+        let free = json!({"type": "Magic Item", "description": daily["description"],
+            "rules": [{"kind": "spell_free_cast", "select": "x", "uses": 3, "recharge": ["long_rest"]}]});
+        assert!(unmodelled(&free, &[]).is_empty());
+        let nested = json!({"type": "Magic Item", "description": daily["description"],
+            "rules": [{"kind": "grant_spell", "spell": "x",
+                "free_cast": {"uses": 3, "recharge": "long_rest"}}]});
+        assert!(unmodelled(&nested, &[]).is_empty());
+
+        for text in [
+            "<p>Heroes can keep one hound per point of their Charisma modifier.</p>",
+            "<p>Heroes may keep one hound or squire per charisma modifier, i.e. three at +3.</p>",
+            "<p>Heroes can take extra squires equal to twice the hero's Charisma modifier.</p>",
+        ] {
+            let feat = json!({"type": "Feat", "name": "Retinue", "description": text});
+            let f = unmodelled(&feat, &[]);
+            assert_eq!(f.len(), 1, "{text}: {f:?}");
+            assert!(f[0].contains("charisma:modifier"), "{f:?}");
+            let counted = json!({"type": "Feat", "description": text,
+                "rules": [{"kind": "stat", "name": "squires", "value": "charisma:modifier"}]});
+            assert!(unmodelled(&counted, &[]).is_empty(), "{text}");
+        }
+        // Rolls, healing, uses and formulas are not counts.
+        for quiet in [
+            "you gain a bonus to the roll equal to your charisma modifier",
+            "you regain hit points equal to your wisdom modifier",
+            "you can do this a number of times equal to your wisdom modifier",
+            "a range equal to 10 + your dexterity modifier",
+            "a proper charisma modifier",
+        ] {
+            assert!(!modifier_count(quiet), "{quiet}");
+        }
+        // Once per turn is no limited use.
+        let turn = json!({"type": "Feat", "rules": [],
+            "description": "<p>Once per turn, you can deal an extra 1d6 damage.</p>"});
+        assert!(unmodelled(&turn, &[]).is_empty());
+    }
+
+    #[test]
+    fn a_save_against_the_class_spell_save_dc_names_that_dc() {
+        let mut el = json!({"type": "Archetype Feature", "name": "Mind Spike",
+            "data": {"class": "Wayfinder", "level": 6},
+            "description": "<p>The target must make a Wisdom saving throw against your wayfinder \
+spell save DC.</p>", "rules": [{"kind": "resource", "id": "mind spike", "name": "Mind Spike"}]});
+        assert!(caster_save_dc(&mut el).is_some());
+        assert_eq!(
+            el["rules"][1],
+            json!({"kind": "save_dc", "id": "mind spike", "formula": "spell save DC (Wayfinder)"})
+        );
+        assert!(caster_save_dc(&mut el).is_none(), "idempotent");
+        // No class, a spell, or a DC the text sets otherwise: nothing to name.
+        for quiet in [
+            json!({"type": "Racial Trait", "name": "A", "description": "<p>against your spell save DC</p>"}),
+            json!({"type": "Spell", "name": "B", "data": {"class": "Wayfinder"},
+                "description": "<p>against your spell save DC</p>"}),
+            json!({"type": "Class Feature", "name": "C", "data": {"class": "Wayfinder"},
+                "description": "<p><strong>Spell save DC</strong> = 8 + your proficiency bonus</p>"}),
+        ] {
+            let mut q = quiet.clone();
+            assert!(caster_save_dc(&mut q).is_none(), "{quiet}");
+        }
     }
 
     #[test]

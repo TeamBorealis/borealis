@@ -104,6 +104,7 @@ pub(crate) fn normalize(
         }
         Role::SubclassGate | Role::Part | Role::Option | Role::Text => {}
     }
+    super::mechanics::caster_save_dc(el);
     // Named parts, option families, subraces and text-only elements (import-fix-i2).
     super::parts::apply(el, planned, plan);
 }

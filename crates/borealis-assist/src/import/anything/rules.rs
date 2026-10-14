@@ -65,7 +65,7 @@ const STAT_SHAPES: &str = "Write every mechanic the text states as a rule, never
 a fixed ability score increase is {\"kind\":\"stat\",\"name\":\"strength\",\"value\":\"2\"}; a species' walking speed \
 is {\"kind\":\"stat\",\"name\":\"innate speed\",\"value\":\"30\",\"bonus\":\"base\"} and another lasting speed \
 {\"kind\":\"stat\",\"name\":\"speed:fly\",\"value\":\"30\"}; a lasting bonus (\"+1 to AC\") is a `stat` rule. \
-mystic_arcanum (spells cast once per rest at higher tiers) always comes with ONE Spell `select` per slot, \
+a limited use (\"once per long rest\", \"three times per day\") is a `resource` named as the feature (max {\"type\":\"fixed\",\"value\":1}, recharge [\"long_rest\"]) next to the grant it limits; a count of things tied to an ability modifier (\"one companion per point of your Charisma modifier\") is a `stat` counter named for what it counts, {\"kind\":\"stat\",\"name\":\"companions\",\"value\":\"charisma:modifier\"}; a choice of damage resistance is a `select` of type Condition over the resistance ids ({\"kind\":\"select\",\"type\":\"Condition\",\"name\":\"<Feature> Resistance\",\"supports\":\"ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FIRE|ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_COLD\"}). mystic_arcanum (spells cast once per rest at higher tiers) always comes with ONE Spell `select` per slot, \
 {\"kind\":\"select\",\"type\":\"Spell\",\"name\":\"<Feature> (level 6)\",\"level\":11,\"supports\":\"<Class>,6\",\"spellcasting\":\"<Class>\"}. \
 In descriptions keep every number, game term and name as printed (\"fly speed of 30 feet\", \"six hours\", the \
 classes an item's attunement names).";
@@ -422,23 +422,94 @@ fn for_each_rule(el: &mut Value, mut f: impl FnMut(&mut Map<String, Value>)) {
 
 /// Unambiguous `resource` fixes (id from the name, bare-number `max`, formula words the engine
 /// cannot read such as a bare `dexterity`, rest names as tokens), `ability_increase` options
-/// written as a flat list of ability names, lasting `movement_mode` speeds as stats and
-/// save-DC shorthands ("Con mod", "PB") as engine terms.
-/// Returns one message per change.
+/// written as a flat list of ability names, lasting `movement_mode` speeds as stats,
+/// save-DC shorthands ("Con mod", "PB") as engine terms and damage-resistance choices written
+/// as a free `select_param`. Returns one message per change.
 pub(crate) fn normalise_resources(el: &mut Value) -> Vec<String> {
     let mut out = Vec::new();
     let class = el
         .pointer("/data/class")
         .and_then(Value::as_str)
         .map(str::to_string);
+    let resistance = says_resistance(el);
     for_each_rule(el, |r| match r.get("kind").and_then(Value::as_str) {
         Some("resource") => out.extend(normalise_resource(r, class.as_deref())),
         Some("ability_increase") => out.extend(normalise_ability_increase(r)),
         Some("movement_mode") => out.extend(normalise_movement_mode(r)),
         Some("save_dc") => out.extend(normalise_save_dc(r)),
+        Some("select_param") => out.extend(normalise_resistance_choice(r, resistance)),
         _ => {}
     });
     out
+}
+
+/// Damage types a resistance choice may list (the core resistance conditions).
+const DAMAGE_TYPES: [&str; 13] = [
+    "acid",
+    "bludgeoning",
+    "cold",
+    "fire",
+    "force",
+    "lightning",
+    "necrotic",
+    "piercing",
+    "poison",
+    "psychic",
+    "radiant",
+    "slashing",
+    "thunder",
+];
+/// Id prefix of the core resistance conditions (`..._FIRE`).
+const RESISTANCE_PREFIX: &str = "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_";
+
+/// The element's text speaks of damage resistance.
+fn says_resistance(el: &Value) -> bool {
+    el.get("description")
+        .and_then(Value::as_str)
+        .is_some_and(|d| d.to_lowercase().contains("resistan"))
+}
+
+/// A `select_param` whose options are all damage types, on an element that speaks of
+/// resistance (or named for it), is the choice of a resistance: a `select` over the core
+/// resistance conditions, so the pick grants it. Returns a message when it changed.
+fn normalise_resistance_choice(rule: &mut Map<String, Value>, resistance: bool) -> Option<String> {
+    let name = rule
+        .get("name")
+        .and_then(Value::as_str)
+        .unwrap_or("Damage Resistance")
+        .to_string();
+    if !resistance && !name.to_lowercase().contains("resist") {
+        return None;
+    }
+    let types: Vec<String> = rule
+        .get("options")?
+        .as_array()?
+        .iter()
+        .map(|o| o.as_str().map(|s| s.trim().to_lowercase()))
+        .collect::<Option<Vec<_>>>()?;
+    let all_damage = types.len() >= 2 && types.iter().all(|t| DAMAGE_TYPES.contains(&t.as_str()));
+    if !all_damage {
+        return None;
+    }
+    let supports: Vec<String> = types
+        .iter()
+        .map(|t| format!("{RESISTANCE_PREFIX}{}", t.to_uppercase()))
+        .collect();
+    let mut select = Map::new();
+    select.insert("kind".into(), json!("select"));
+    select.insert("type".into(), json!("Condition"));
+    select.insert("name".into(), json!(name));
+    select.insert("supports".into(), json!(supports.join("|")));
+    for key in ["level", "requirements"] {
+        if let Some(v) = rule.get(key) {
+            select.insert(key.into(), v.clone());
+        }
+    }
+    *rule = select;
+    Some(format!(
+        "select_param {name:?} over damage types ({}) is a resistance choice: a select over the core resistance conditions",
+        types.join("/")
+    ))
 }
 
 /// A `movement_mode` with no `duration` and no `action` is a speed the character always has:
@@ -475,14 +546,16 @@ fn normalise_movement_mode(rule: &mut Map<String, Value>) -> Option<String> {
     ))
 }
 
-/// The `ability_increase`, lasting `movement_mode` and `save_dc` parts of [`normalise_resources`]
-/// (finalize re-applies them to drafts generated before they existed).
+/// The `ability_increase`, lasting `movement_mode`, `save_dc` and resistance-choice parts of
+/// [`normalise_resources`] (finalize re-applies them to drafts generated before they existed).
 pub(crate) fn normalise_abilities(el: &mut Value) -> Vec<String> {
     let mut out = Vec::new();
+    let resistance = says_resistance(el);
     for_each_rule(el, |r| match r.get("kind").and_then(Value::as_str) {
         Some("ability_increase") => out.extend(normalise_ability_increase(r)),
         Some("movement_mode") => out.extend(normalise_movement_mode(r)),
         Some("save_dc") => out.extend(normalise_save_dc(r)),
+        Some("select_param") => out.extend(normalise_resistance_choice(r, resistance)),
         _ => {}
     });
     out

@@ -102,7 +102,7 @@ fn build_pack(
         .collect();
     let mut raw: Vec<Value> = kept.iter().map(|e| e.json.clone()).collect();
     let mut local = tiered_spell_choices(&mut raw, draft);
-    local.extend(attunement_text(&mut raw));
+    local.extend(printed_fixes(&mut raw));
     let mut derived = derive_with_source(&draft.plan, &raw, &library_store, &draft.source_text);
     let (markers, notes) =
         super::fallback::skill_fallbacks(&mut derived.docs, &draft.id_prefix, &mut used);
@@ -359,9 +359,11 @@ fn tiered_spell_choices(raw: &mut [Value], draft: &ImportDraft) -> Vec<(String, 
         .collect()
 }
 
-/// The attunement restriction in both the setter and the text (see
-/// [`super::mechanics::attunement_by`]); applied at generation, repeated for older drafts.
-fn attunement_text(raw: &mut [Value]) -> Vec<(String, String)> {
+/// Deterministic fixes applied at generation, repeated for older drafts: the attunement
+/// restriction in both the setter and the text ([`super::mechanics::attunement_by`]), the
+/// class spell save DC a feature's save uses ([`super::mechanics::caster_save_dc`]) and a
+/// prose-less weapon row's properties cell ([`super::items::keep_properties`]).
+fn printed_fixes(raw: &mut [Value]) -> Vec<(String, String)> {
     let mut out = Vec::new();
     for el in raw.iter_mut() {
         let id = el
@@ -369,11 +371,12 @@ fn attunement_text(raw: &mut [Value]) -> Vec<(String, String)> {
             .and_then(Value::as_str)
             .unwrap_or("")
             .to_string();
-        out.extend(
-            super::mechanics::attunement_by(el)
-                .into_iter()
-                .map(|n| (id.clone(), n)),
-        );
+        let mut notes = super::mechanics::attunement_by(el);
+        notes.extend(super::mechanics::caster_save_dc(el));
+        if el.get("type").and_then(Value::as_str) == Some("Weapon") {
+            notes.extend(super::items::keep_properties(el));
+        }
+        out.extend(notes.into_iter().map(|n| (id.clone(), n)));
     }
     out
 }

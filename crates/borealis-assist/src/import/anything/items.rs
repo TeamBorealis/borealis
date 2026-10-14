@@ -581,6 +581,50 @@ fn keep_columns(el: &mut Value, known: &[&str]) {
     }
 }
 
+/// Properties whose printed cell carries the weapon's range ("Ammunition (range 80/320)").
+const RANGED_PROPERTIES: [&str; 2] = ["ammunition", "thrown"];
+
+/// A weapon whose description has no text (a table row with no prose of its own) keeps its
+/// row's properties cell as a "Properties:" line: property details such as a new property's
+/// score ("Kick (12)") are printed nowhere else. Returns a note when it changed.
+pub(crate) fn keep_properties(el: &mut Value) -> Option<String> {
+    let desc = el
+        .get("description")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    if !super::fidelity::plain(&desc).trim().is_empty() {
+        return None;
+    }
+    let listed: Vec<String> = el
+        .pointer("/data/properties")
+        .and_then(Value::as_array)?
+        .iter()
+        .filter_map(|v| str_of(Some(v)))
+        .collect();
+    if listed.is_empty() {
+        return None;
+    }
+    let range = str_of(el.pointer("/data/range"));
+    let cells: Vec<String> = listed
+        .into_iter()
+        .map(|p| match &range {
+            Some(r)
+                if !p.contains('(') && RANGED_PROPERTIES.contains(&property_key(&p).as_str()) =>
+            {
+                format!("{p} (range {r})")
+            }
+            _ => p,
+        })
+        .collect();
+    let line = format!("<p><strong>Properties:</strong> {}</p>", cells.join(", "));
+    obj(el).insert("description".into(), json!(format!("{desc}{line}")));
+    Some(format!(
+        "description: the row's properties kept ({})",
+        cells.join(", ")
+    ))
+}
+
 /// Magic item kinds as printed in an item's subtitle ("Wondrous item, rare") and the `type`
 /// setter the bundled packs give them.
 const MAGIC_KINDS: [(&str, &str); 9] = [
@@ -677,6 +721,7 @@ pub(crate) fn normalize_item(
     match ty {
         "Weapon" => {
             normalize_weapon(el, &planned_properties(plan));
+            keep_properties(el);
             keep_columns(el, &WEAPON_KEYS);
         }
         "Armor" => {
@@ -758,6 +803,23 @@ mod tests {
             property_detail("Ammunition (range 80/320)").unwrap(),
             "range 80/320"
         );
+    }
+
+    #[test]
+    fn a_table_row_weapon_without_prose_keeps_its_properties_cell() {
+        let mut el = json!({"description": "", "data": {"weapon_category": "Martial Ranged",
+            "range": "40/120", "properties": ["Ammunition", "Recoil (11)", "Loud"]}});
+        assert!(keep_properties(&mut el).is_some());
+        let d = el["description"].as_str().unwrap().to_string();
+        assert_eq!(
+            d,
+            "<p><strong>Properties:</strong> Ammunition (range 40/120), Recoil (11), Loud</p>"
+        );
+        assert!(keep_properties(&mut el).is_none(), "idempotent");
+        assert!(super::super::fidelity::pipeline_paragraph(&d));
+        let mut prose = json!({"description": "<p>A carved stock of pale ash.</p>",
+            "data": {"properties": ["Loud"]}});
+        assert!(keep_properties(&mut prose).is_none());
     }
 
     #[test]
