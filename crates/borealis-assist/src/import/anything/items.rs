@@ -584,18 +584,21 @@ fn keep_columns(el: &mut Value, known: &[&str]) {
 /// Properties whose printed cell carries the weapon's range ("Ammunition (range 80/320)").
 const RANGED_PROPERTIES: [&str; 2] = ["ammunition", "thrown"];
 
-/// A weapon whose description has no text (a table row with no prose of its own) keeps its
-/// row's properties cell as a "Properties:" line: property details such as a new property's
-/// score ("Kick (12)") are printed nowhere else. Returns a note when it changed.
-pub(crate) fn keep_properties(el: &mut Value) -> Option<String> {
-    let desc = el
-        .get("description")
-        .and_then(Value::as_str)
-        .unwrap_or("")
-        .to_string();
-    if !super::fidelity::plain(&desc).trim().is_empty() {
-        return None;
-    }
+/// The label of the properties line [`keep_properties`] writes.
+const PROPERTIES_LINE: &str = "<p><strong>Properties:</strong> ";
+
+/// The row's printed properties cell (`data.columns`, any case of "Properties").
+fn printed_properties(el: &Value) -> Option<String> {
+    el.pointer("/data/columns")
+        .and_then(Value::as_object)?
+        .iter()
+        .find(|(k, _)| k.trim().eq_ignore_ascii_case("properties"))
+        .and_then(|(_, v)| cell_text(v))
+        .map(|t| t.split_whitespace().collect::<Vec<_>>().join(" "))
+}
+
+/// The normalised property names, with the range on the properties that print it.
+fn listed_properties(el: &Value) -> Option<String> {
     let listed: Vec<String> = el
         .pointer("/data/properties")
         .and_then(Value::as_array)?
@@ -617,12 +620,34 @@ pub(crate) fn keep_properties(el: &mut Value) -> Option<String> {
             _ => p,
         })
         .collect();
-    let line = format!("<p><strong>Properties:</strong> {}</p>", cells.join(", "));
-    obj(el).insert("description".into(), json!(format!("{desc}{line}")));
-    Some(format!(
-        "description: the row's properties kept ({})",
-        cells.join(", ")
-    ))
+    Some(cells.join(", "))
+}
+
+/// A weapon whose description has no text (a table row with no prose of its own) keeps its
+/// row's properties cell as a "Properties:" line: property details such as a new property's
+/// score ("Kick (12)") are printed nowhere else. The cell is kept as printed (`data.columns`);
+/// only a row without it gets the normalised names. A description that is only an earlier
+/// normalised line gets the printed cell. Returns a note when it changed.
+pub(crate) fn keep_properties(el: &mut Value) -> Option<String> {
+    let desc = el
+        .get("description")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let printed = printed_properties(el);
+    let ours = desc
+        .trim()
+        .strip_prefix(PROPERTIES_LINE)
+        .and_then(|r| r.strip_suffix("</p>"))
+        .filter(|r| !r.contains("<p>"));
+    let (kept, cells) = match (ours, &printed) {
+        (Some(line), Some(cell)) if line != cell => (String::new(), cell.clone()),
+        _ if !super::fidelity::plain(&desc).trim().is_empty() => return None,
+        _ => (desc, printed.or_else(|| listed_properties(el))?),
+    };
+    let line = format!("{PROPERTIES_LINE}{cells}</p>");
+    obj(el).insert("description".into(), json!(format!("{kept}{line}")));
+    Some(format!("description: the row's properties kept ({cells})"))
 }
 
 /// Magic item kinds as printed in an item's subtitle ("Wondrous item, rare") and the `type`
@@ -820,6 +845,34 @@ mod tests {
         let mut prose = json!({"description": "<p>A carved stock of pale ash.</p>",
             "data": {"properties": ["Loud"]}});
         assert!(keep_properties(&mut prose).is_none());
+    }
+
+    #[test]
+    fn a_table_row_weapon_keeps_its_printed_properties_cell() {
+        // Arrange: the model normalised the names; the row prints details with them.
+        let cell = "Ammunition (range 30/90), clatter (12), loud, reload (4 shots)";
+        let data = json!({"weapon_category": "Martial Ranged", "range": "30/90",
+            "properties": ["Ammunition", "Clatter", "Loud", "Reload"],
+            "columns": {"Properties": cell}});
+        let mut fresh = json!({"description": "", "data": data.clone()});
+        // An older draft already holds the normalised line.
+        let mut old = json!({"description": "<p><strong>Properties:</strong> Ammunition (range \
+            30/90), Clatter, Loud, Reload</p>", "data": data});
+        // Act / Assert
+        for el in [&mut fresh, &mut old] {
+            assert!(keep_properties(el).is_some());
+            let want = format!("<p><strong>Properties:</strong> {cell}</p>");
+            assert_eq!(el["description"], want.as_str());
+            assert!(keep_properties(el).is_none(), "idempotent");
+            keep_columns(el, &WEAPON_KEYS);
+            assert_eq!(el["description"], want.as_str(), "the cell is not repeated");
+        }
+        let mut prose = json!({"description": "<p>A clattering brass tube.</p>",
+            "data": {"properties": ["Loud"], "columns": {"Properties": "loud"}}});
+        assert!(
+            keep_properties(&mut prose).is_none(),
+            "printed prose is kept"
+        );
     }
 
     #[test]
