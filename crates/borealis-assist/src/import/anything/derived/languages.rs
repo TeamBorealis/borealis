@@ -75,8 +75,21 @@ fn is_name(part: &str) -> bool {
             .any(|w| NOT_NAMES.contains(&w.to_lowercase().as_str()))
 }
 
-/// The verb phrase a language list follows ("read and write", "read, and write"), as words.
-const LIST_VERBS: [&str; 3] = ["read and write ", "read, and write ", "read or write "];
+/// The verb phrases a language list follows ("read and write", "read, and write", "you can
+/// speak"; a people's lore saying what they speak grants the reader nothing).
+const LIST_VERBS: [&str; 6] = [
+    "read and write ",
+    "read, and write ",
+    "read or write ",
+    "you speak ",
+    "you can speak ",
+    "you can also speak ",
+];
+/// Lowercase words that may open a list item before the first name ("both Common and X",
+/// "write in both Common and X").
+const FILLERS: [&str; 5] = ["both", "either", "in", "also", "and"];
+/// Run-in heads whose text is a bare list of languages ("Languages. Common and X.").
+const LIST_HEADS: [&str; 2] = ["languages", "language"];
 
 /// Byte offset of the language list in `sentence` (after its verb phrase), if it has one.
 fn list_start(sentence: &str) -> Option<usize> {
@@ -92,13 +105,40 @@ fn list_start(sentence: &str) -> Option<usize> {
     })
 }
 
-/// The languages one sentence of `text` lets the reader speak, read and write, as printed.
-pub(super) fn named_languages(text: &str) -> Vec<String> {
+/// `t` without its leading filler words.
+fn strip_fillers(t: &str) -> &str {
+    let mut t = t.trim().trim_matches(['*', '_', ' ']);
+    while let Some((first, rest)) = t.split_once(char::is_whitespace) {
+        if !FILLERS.contains(&first.to_lowercase().as_str()) {
+            break;
+        }
+        t = rest.trim_start();
+    }
+    t
+}
+
+/// The language sentences of `text` (one clause each, as printed) and the list part of each.
+fn language_lists(text: &str) -> Vec<(String, String)> {
     let text = plain(text);
     let mut out = Vec::new();
+    let mut after_head = false;
     for sentence in text.split(['.', ';', '\n']) {
-        let Some(start) = list_start(sentence) else {
-            continue;
+        let head = sentence.trim().trim_matches(['*', '_', ' ']).to_lowercase();
+        let headed = std::mem::replace(&mut after_head, LIST_HEADS.contains(&head.as_str()));
+        // "Languages: Common and X": the head and its list in one clause.
+        let colon = sentence.find(':').filter(|&c| {
+            let h = sentence[..c]
+                .trim()
+                .trim_matches(['*', '_', ' '])
+                .to_lowercase();
+            LIST_HEADS.contains(&h.as_str())
+        });
+        let start = match (list_start(sentence), colon) {
+            (Some(start), _) => start,
+            (None, Some(c)) => c + 1,
+            // "Languages. Common and X.": the run-in head's text is the list itself.
+            (None, None) if headed => 0,
+            (None, None) => continue,
         };
         let mut tail = &sentence[start..];
         for stop in [", but", " but ", " (", ":", " if ", " when "] {
@@ -106,15 +146,33 @@ pub(super) fn named_languages(text: &str) -> Vec<String> {
                 tail = &tail[..i];
             }
         }
+        out.push((sentence.to_string(), tail.to_string()));
+    }
+    out
+}
+
+/// The languages one sentence of `text` lets the reader speak, read and write, as printed.
+pub(super) fn named_languages(text: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    for (_, tail) in language_lists(text) {
         let spaced = tail.replace(" and ", ",").replace(" or ", ",");
         for part in spaced.split(',') {
-            let p = part.trim().trim_start_matches("and ").trim();
+            let p = strip_fillers(part);
             if is_name(p) && !out.iter().any(|n: &String| norm(n) == norm(p)) {
                 out.push(p.to_string());
             }
         }
     }
     out
+}
+
+/// The language `name` is printed in one of the language sentences of `text`.
+fn printed(text: &str, name: &str) -> bool {
+    let name = norm(name).to_lowercase();
+    !name.is_empty()
+        && language_lists(text).iter().any(|(sentence, _)| {
+            format!(" {} ", norm(sentence).to_lowercase()).contains(&format!(" {name} "))
+        })
 }
 
 /// `(id, name)` of every language the import can grant: the library's of the edition, the
@@ -184,18 +242,30 @@ pub(super) fn languages(plan: &ImportPlan, store: &ContentStore, d: &mut Derived
         let id = str_at(&d.docs[i], "id").to_string();
         let source = str_at(&d.docs[i], "source").to_string();
         let mut wanted = Vec::new();
+        // A named language no loaded pack has (made now, or by an earlier element or the
+        // model): a bundled grant beyond the names may stand in for it.
         let mut made = false;
         for name in &names {
             let hit = known(store, plan.edition, d)
                 .into_iter()
                 .find(|(_, n)| norm(n) == norm(name))
                 .map(|(lid, _)| lid);
-            wanted.push(hit.unwrap_or_else(|| {
-                made = true;
-                new_language(plan, store, name, &source, d)
-            }));
+            made |= hit.as_ref().map_or(true, |lid| store.get(lid).is_none());
+            wanted.push(hit.unwrap_or_else(|| new_language(plan, store, name, &source, d)));
         }
         let had = language_grants(&d.docs[i]);
+        let names_of = known(store, plan.edition, d);
+        let text = str_at(&d.docs[i], "description").to_string();
+        // A grant the sentence prints by name is never a substitute.
+        let keep: Vec<String> = had
+            .iter()
+            .filter(|g| {
+                names_of
+                    .iter()
+                    .any(|(lid, n)| lid == *g && printed(&text, n))
+            })
+            .cloned()
+            .collect();
         let mut notes = Vec::new();
         let Some(rules) = rules_mut(&mut d.docs[i]) else {
             continue;
@@ -207,9 +277,11 @@ pub(super) fn languages(plan: &ImportPlan, store: &ContentStore, d: &mut Derived
         let total = had.len() + wanted.iter().filter(|w| !had.contains(w)).count();
         if made && total > names.len() {
             rules.retain(|r| {
+                let id = str_at(r, "id");
                 let stray = str_at(r, "kind") == "grant"
                     && str_at(r, "type") == "Language"
-                    && !wanted.iter().any(|w| w == str_at(r, "id"));
+                    && !wanted.iter().any(|w| w == id)
+                    && !keep.iter().any(|k| k == id);
                 if stray {
                     notes.push(format!(
                         "language grant {} removed: the text names {} instead",
@@ -305,5 +377,80 @@ mod tests {
         )
         .is_empty());
         assert!(named_languages("You can bread and write Mossic.").is_empty());
+    }
+
+    #[test]
+    fn fillers_and_bare_language_lines_yield_every_printed_name() {
+        assert_eq!(
+            named_languages("You can speak, read, and write both Common and Mossic."),
+            ["Common", "Mossic"]
+        );
+        assert_eq!(
+            named_languages("You can speak, read, and write in both Common and Mossic."),
+            ["Common", "Mossic"]
+        );
+        assert_eq!(
+            named_languages("<p><em>Languages.</em> Common and Mossic.</p>"),
+            ["Common", "Mossic"]
+        );
+        assert_eq!(
+            named_languages("**Languages:** Common, Mossic, or Old Brindle"),
+            ["Common", "Mossic", "Old Brindle"]
+        );
+        assert_eq!(named_languages("You can speak Mossic."), ["Mossic"]);
+        // Lore about what a people speak, and a heading text that is prose, grant nothing.
+        assert!(named_languages("Most of them speak Mossic among themselves.").is_empty());
+        assert!(named_languages("Languages. Few of them learn others.").is_empty());
+    }
+
+    #[test]
+    fn a_grant_the_sentence_prints_is_never_removed() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+        let store = borealis_content::ContentStoreBuilder::new()
+            .add_pack_dir(&root.join("core"))
+            .and_then(|b| b.add_pack_dir(&root.join("srd-5.1")))
+            .expect("bundled packs")
+            .build();
+        let plan: ImportPlan = serde_json::from_value(
+            json!({"edition": "2014", "elements": [], "notes": [], "groups": []}),
+        )
+        .expect("plan");
+        let race = |id: &str, text: &str| {
+            json!({"id": id, "name": id, "type": "Race", "source": "Test", "description": text,
+            "rules": [{"kind": "grant", "type": "Language", "id": "ID_LANGUAGE_COMMON"},
+                {"kind": "grant", "type": "Language", "id": "ID_LANGUAGE_PRIMORDIAL"}]})
+        };
+        let mut d = Derived {
+            docs: vec![
+                race(
+                    "ID_T_RACE_A",
+                    "<p>You can speak, read, and write both Common and Mossic.</p>",
+                ),
+                race(
+                    "ID_T_RACE_B",
+                    "<p><em>Languages.</em> Common and Mossic.</p>",
+                ),
+            ],
+            ..Derived::default()
+        };
+        languages(&plan, &store, &mut d);
+        let mossic = str_at(&d.extra[0], "id").to_string();
+        for i in 0..2 {
+            // Common is printed: kept. Primordial stood in for the new language: removed.
+            assert_eq!(
+                language_grants(&d.docs[i]),
+                ["ID_LANGUAGE_COMMON", mossic.as_str()],
+                "{i}"
+            );
+        }
+        // The guard alone: a printed bundled name the parser missed still keeps its grant.
+        assert!(printed(
+            "<p>You can speak, read, and write both Common and Mossic.</p>",
+            "Common"
+        ));
+        assert!(!printed(
+            "<p>You can speak, read, and write Mossic.</p>",
+            "Common"
+        ));
     }
 }
