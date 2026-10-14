@@ -33,6 +33,9 @@ const NAME_WORDS: usize = 6;
 /// Most words of each other cell of an index table row (a rarity, a type).
 const INDEX_CELL_WORDS: usize = 2;
 
+/// Times a heading's prefix recurs as a line of its own to be junk glued to the heading.
+const GLUE_RECURS: usize = 2;
+
 /// Shortest word of a name that ties a table caption to it.
 const CAPTION_STEM: usize = 4;
 
@@ -141,24 +144,44 @@ fn strip_marks(t: &str) -> &str {
     t.trim().trim_start_matches(['#', '*', '_', '-', ' '])
 }
 
+/// Lowercase words a title may contain.
+const SMALL_WORDS: [&str; 11] = [
+    "of", "the", "and", "a", "an", "in", "on", "to", "for", "with", "or",
+];
+/// Fewest words of text after a run-in head that make the line a paragraph.
+const RUN_IN_TEXT_WORDS: usize = 3;
+
 /// "Name." / "Name:" at the start of a line, the head being Title Case and short.
 fn run_in_head(t: &str) -> Option<&str> {
     let t = strip_marks(t);
     let cut = t.find(['.', ':'])?;
     let head = t[..cut].trim_end_matches(['*', '_']).trim();
     let words: Vec<&str> = head.split_whitespace().collect();
-    let small = [
-        "of", "the", "and", "a", "an", "in", "on", "to", "for", "with", "or",
-    ];
     let title = !words.is_empty()
         && words.len() <= MAX_RUN_IN_WORDS
         && words.iter().enumerate().all(|(i, w)| {
             w.chars()
                 .next()
                 .is_some_and(|c| c.is_uppercase() || !c.is_alphabetic())
-                || (i > 0 && small.contains(&w.to_lowercase().as_str()))
+                || (i > 0 && SMALL_WORDS.contains(&w.to_lowercase().as_str()))
         });
     title.then_some(head)
+}
+
+/// "Name. Text" (a run-in head followed by its text): a paragraph even without a final stop.
+fn run_in_paragraph(t: &str) -> bool {
+    let body = strip_marks(t);
+    run_in_head(body).is_some_and(|head| {
+        let rest: Vec<&str> = body[head.len()..]
+            .trim_start_matches(['*', '_', '.', ':'])
+            .split_whitespace()
+            .collect();
+        rest.len() >= RUN_IN_TEXT_WORDS
+            && rest.iter().any(|w| {
+                w.chars().next().is_some_and(char::is_lowercase)
+                    && !SMALL_WORDS.contains(&w.to_lowercase().as_str())
+            })
+    })
 }
 
 /// Words that make a heading a part of the element it follows ("<name> Traits").
@@ -244,6 +267,8 @@ struct Doc<'a> {
     lines: Vec<&'a str>,
     heads: Vec<Heading>,
     index: Vec<bool>,
+    /// The element is equipment, defined by a stat row (see [`ROW_TYPES`]).
+    rows_define: bool,
 }
 
 impl Doc<'_> {
@@ -291,7 +316,7 @@ impl Doc<'_> {
         let mut i = line + 1;
         while i < self.lines.len() {
             let l = self.lines[i];
-            let starts = self.heading_at(i).is_some()
+            let starts = self.section_heading(i)
                 || self.standalone_title(i)
                 || (run_in && run_in_head(l).is_some());
             let sub = is_sub_part(strip_marks(l), name) || structural_heading(strip_marks(l));
@@ -303,10 +328,63 @@ impl Doc<'_> {
         self.lines.len()
     }
 
-    /// A title-like line alone in its paragraph (a wrapped body line has a continuation).
+    /// `title` is the name with junk glued in front of it: a margin mark ("~ Signature Name")
+    /// or a line that recurs on its own elsewhere (a sidebar signature, a running header).
+    fn glued_title(&self, title: &str, name: &str) -> bool {
+        let t = norm_words(title);
+        let Some(prefix) = t
+            .strip_suffix(name)
+            .map(str::trim)
+            .filter(|p| !p.is_empty())
+        else {
+            return false;
+        };
+        if t.len() == prefix.len() + name.len() {
+            return false; // the name is the end of a longer word
+        }
+        let marked = title
+            .trim()
+            .chars()
+            .next()
+            .is_some_and(|c| !c.is_alphanumeric());
+        marked
+            || self
+                .lines
+                .iter()
+                .filter(|l| norm_words(strip_marks(l)) == prefix)
+                .take(GLUE_RECURS)
+                .count()
+                >= GLUE_RECURS
+    }
+
+    /// The bare name line at `line` continues a run of bare name lines (a list, not an entry).
+    fn in_name_run(&self, line: usize) -> bool {
+        let above = line.checked_sub(1).map(|k| (k, self.lines[k].trim()));
+        above.is_some_and(|(k, l)| {
+            !l.is_empty()
+                && self.heading_at(k).is_none()
+                && !l.contains(" | ")
+                && !l.ends_with(['.', ':', ';', ','])
+                && l.split_whitespace().count() <= NAME_WORDS
+        })
+    }
+
+    /// A title-like line alone in its paragraph (a wrapped body line has a continuation). A
+    /// run-in paragraph whose sentence lacks its final stop ("Size. You are Small") is no title.
     fn standalone_title(&self, i: usize) -> bool {
         let blank = |k: usize| self.lines.get(k).map_or(true, |l| l.trim().is_empty());
-        i > 0 && blank(i - 1) && blank(i + 1) && looks_like_title(self.lines[i])
+        i > 0
+            && blank(i - 1)
+            && blank(i + 1)
+            && looks_like_title(self.lines[i])
+            && !run_in_paragraph(self.lines[i])
+    }
+
+    /// A heading of the section structure: a marked heading, or (unmarked text) a guessed one
+    /// that is not a run-in paragraph missing its final stop.
+    fn section_heading(&self, i: usize) -> bool {
+        self.heading_at(i)
+            .is_some_and(|_| self.marked || !run_in_paragraph(self.lines[i]))
     }
 
     fn candidates(&self, name: &str) -> Vec<Candidate> {
@@ -316,32 +394,43 @@ impl Doc<'_> {
                 continue;
             }
             let t = strip_marks(raw);
-            let (kind, end) = if let Some(h) = self.heading_at(i) {
-                let kind = if same_name(&h.title, name) {
-                    Kind::Heading
+            let (kind, end) =
+                if let Some(h) = self.heading_at(i).filter(|_| self.section_heading(i)) {
+                    let kind = if same_name(&h.title, name) || self.glued_title(&h.title, name) {
+                        Kind::Heading
+                    } else {
+                        Kind::PartHeading
+                    };
+                    let end = if self.marked {
+                        self.heading_end(i, h.level, name)
+                    } else {
+                        self.paragraph_end(i, false, name)
+                    };
+                    (kind, end)
+                } else if run_in_head(t).is_some_and(|h| same_name(h, name)) {
+                    (Kind::RunIn, self.paragraph_end(i, true, name))
+                } else if same_name(t, name) {
+                    (Kind::ExactLine, self.paragraph_end(i, false, name))
+                } else if row_with_cell(t, name) {
+                    (Kind::TableRow, self.row_end(i))
+                } else if is_list_line(t) && !t.contains(" | ") {
+                    continue;
                 } else {
-                    Kind::PartHeading
+                    (Kind::Mention, self.paragraph_block_end(i))
                 };
-                let end = if self.marked {
-                    self.heading_end(i, h.level, name)
-                } else {
-                    self.paragraph_end(i, false, name)
-                };
-                (kind, end)
-            } else if run_in_head(t).is_some_and(|h| same_name(h, name)) {
-                (Kind::RunIn, self.paragraph_end(i, true, name))
-            } else if same_name(t, name) {
-                (Kind::ExactLine, self.paragraph_end(i, false, name))
-            } else if row_with_cell(t, name) {
-                (Kind::TableRow, self.row_end(i))
-            } else if is_list_line(t) && !t.contains(" | ") {
-                continue;
-            } else {
-                (Kind::Mention, self.paragraph_block_end(i))
-            };
             out.push(Candidate { line: i, kind, end });
         }
         out
+    }
+
+    /// The row at `line` gives the stats of `name`: its first cell is the name and another
+    /// cell holds a number (a cost, a die, an armor class).
+    fn stat_row(&self, line: usize, name: &str) -> bool {
+        let mut cells = self.lines[line].split(" | ");
+        cells
+            .next()
+            .is_some_and(|c| same_name(strip_marks(c), name))
+            && cells.any(|c| c.chars().any(|ch| ch.is_ascii_digit()))
     }
 
     /// A table row and its wrapped lines (to the next row, blank line or heading).
@@ -392,10 +481,14 @@ impl Doc<'_> {
                         && cell.split_whitespace().count() <= INDEX_CELL_WORDS)
             });
         }
+        if c.kind == Kind::ExactLine && self.in_name_run(c.line) {
+            return true;
+        }
+        // Page numbers between the name and the next block are no text of it.
         let body: Vec<&str> = self.lines[c.line..c.end]
             .iter()
             .map(|l| strip_marks(l))
-            .filter(|l| !l.is_empty())
+            .filter(|l| !l.is_empty() && !l.chars().all(|ch| ch.is_ascii_digit()))
             .collect();
         if body.len() <= 1 {
             return true;
@@ -449,6 +542,21 @@ impl Doc<'_> {
 /// found only in a list or index takes its item's section when that section names the kind
 /// (the item's table of kinds).
 pub(crate) fn locate_section(source: &str, quote: &str, name: &str) -> Option<SourceExcerpt> {
+    locate_section_as(source, quote, name, "")
+}
+
+/// Element types whose definition is a table row (cost, damage, armor class): a stat row with
+/// the name in its first cell beats a same-named heading that opens no entry (a prose
+/// sub-section, a modification of the same name).
+const ROW_TYPES: [&str; 3] = ["Weapon", "Armor", "Item"];
+
+/// [`locate_section`] for an element of type `ty` (see [`ROW_TYPES`]).
+pub(crate) fn locate_section_as(
+    source: &str,
+    quote: &str,
+    name: &str,
+    ty: &str,
+) -> Option<SourceExcerpt> {
     let lines: Vec<&str> = source.lines().collect();
     let marked = lines
         .iter()
@@ -460,6 +568,7 @@ pub(crate) fn locate_section(source: &str, quote: &str, name: &str) -> Option<So
         heads: headings(source),
         index: index_mask(&lines),
         lines,
+        rows_define: ROW_TYPES.contains(&ty),
     };
     let own = find(&doc, &norm_words(name), &norm_words(quote));
     if own.as_ref().is_some_and(|(_, definition)| *definition) {
@@ -485,10 +594,16 @@ fn find(doc: &Doc, name: &str, quote: &str) -> Option<(SourceExcerpt, bool)> {
     // then a match opening an entry body, then any that can be a definition, then the kind.
     let key = |c: &Candidate| {
         let definition = !doc.not_a_definition(c, name);
+        let opens = doc.opens_entry(c.line);
+        // Equipment: its stat row, or a heading opening an entry, first.
+        let stats = doc.rows_define
+            && ((c.kind == Kind::TableRow && doc.stat_row(c.line, name))
+                || (c.kind >= Kind::PartHeading && opens));
         (
             doc.contains_quote(c, quote),
-            definition && c.kind >= Kind::ExactLine,
-            doc.opens_entry(c.line),
+            stats,
+            definition && (c.kind >= Kind::ExactLine || c.kind == Kind::TableRow),
+            opens,
             definition,
             c.kind,
             std::cmp::Reverse(c.line),
@@ -518,123 +633,5 @@ fn find(doc: &Doc, name: &str, quote: &str) -> Option<(SourceExcerpt, bool)> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn section<'a>(src: &'a str, name: &str, quote: &str) -> Vec<&'a str> {
-        let ex = locate_section(src, quote, name).expect("located");
-        src.lines()
-            .skip(ex.start_line - 1)
-            .take(ex.end_line - ex.start_line + 1)
-            .collect()
-    }
-
-    const BOOK: &str = "# Wanderers of the Mist\n\nEmberkin – Tidewalker – Glasswing\n\n## Contents\n\nEmberkin ........ 4\nTidewalker ........ 6\nGlasswing ........ 9\nIndex ........ 12\n\n## Emberkin\n\nEmberkin carry a coal in their chest.\n\n### Emberkin Traits\n\nDarkvision. You see in dim light within 60 feet.\nEmber Heart. You resist fire damage.\n\nThe coal never cools.\n\n## Tidewalker\n\nTidewalkers breathe water.\n\nDarkvision. Tidewalkers see 30 feet in murk.\n\n## Index\n\nEmberkin 4\nGlasswing 9\nTidewalker 6\n";
-
-    #[test]
-    fn skips_cover_and_contents_and_keeps_subsections() {
-        let s = section(BOOK, "Emberkin", "");
-        assert_eq!(s[0], "## Emberkin");
-        assert!(s.contains(&"### Emberkin Traits"));
-        assert!(s.contains(&"The coal never cools."));
-        assert!(!s.iter().any(|l| l.contains("Tidewalker")), "{s:?}");
-        // Glasswing has no section of its own: only the cover, the contents and the index name it.
-        assert!(locate_section(BOOK, "", "Glasswing").is_none());
-    }
-
-    #[test]
-    fn run_in_traits_stop_at_the_next_trait_and_quotes_pick_the_right_one() {
-        let s = section(BOOK, "Ember Heart", "");
-        assert_eq!(
-            s.first().copied(),
-            Some("Ember Heart. You resist fire damage.")
-        );
-        assert!(s.contains(&"The coal never cools."));
-        let s = section(BOOK, "Darkvision", "see 30 feet in murk");
-        assert_eq!(s, vec!["Darkvision. Tidewalkers see 30 feet in murk."]);
-        let s = section(BOOK, "Darkvision", "");
-        assert!(s[0].contains("dim light"), "{s:?}");
-    }
-
-    #[test]
-    fn unmarked_sections_keep_their_own_parts() {
-        let src = "Glimmerkin\n\nSmall folk who glow at dusk and hum.\n\nGlimmerkin Traits\n\n\
-Ability Score Increase. Your Charisma rises by 2.\nSize. You are Small.\n\nDuskling\n\nA shy folk.\n";
-        let s = section(src, "Glimmerkin", "");
-        assert!(s.contains(&"Size. You are Small."), "{s:?}");
-        assert!(!s.contains(&"Duskling"), "{s:?}");
-        let s = section(src, "Ability Score Increase", "");
-        assert_eq!(s, vec!["Ability Score Increase. Your Charisma rises by 2."]);
-    }
-
-    #[test]
-    fn numbered_sub_headings_and_tables_stay_in_their_section() {
-        let src = "# Workshop\n\n## Glass Lanterns\n\nLanterns are blown in stages.\n\n## Tier 1\n\n\
-Cost | Time\n5 gp | 1 day\n\n## Lantern Table\n\nd6 | Colour\n1 | Amber\n\n## Rope Bridges\n\nBridges sway.\n\n\
-## Price List\n\nd4 | Item | Effect\n1 | Moth Jar | Glows faintly for an hour.\n2 | Dew Bottle | Never runs dry.\n";
-        let s = section(src, "Glass Lanterns", "");
-        assert!(s.contains(&"5 gp | 1 day"), "{s:?}");
-        assert!(s.contains(&"1 | Amber"), "{s:?}");
-        assert!(!s.iter().any(|l| l.contains("Bridges")), "{s:?}");
-        let s = section(src, "Moth Jar", "");
-        assert_eq!(s, vec!["1 | Moth Jar | Glows faintly for an hour."]);
-    }
-
-    #[test]
-    fn an_entry_body_beats_a_name_in_a_list_and_an_exact_heading_beats_both() {
-        let src = "# Spell Lists\n\n## Bard\n\nGlimmer Ward\nMoth Swarm\nDew Lance\nReed Song\n\n\
-## Spells\n\n### ~ Margin Note Moth Swarm\n\n2nd-level conjuration\n\nCasting Time: 1 action\n\
-Range: 60 feet\n\nMoths fill a cube.\n\n### Dew Lance\n\nEvocation cantrip\n\nA lance of dew.\n";
-        let s = section(src, "Moth Swarm", "");
-        assert_eq!(s[0], "### ~ Margin Note Moth Swarm", "{s:?}");
-        assert!(s.contains(&"Moths fill a cube."), "{s:?}");
-        let src =
-            "# Lamplighter\n\nKeepers of lamps.\n\n## Wick Paths\n\n#### Moth Lamplighter\n\n\
-Prerequisite: 5th level\n\nYou befriend moths.\n";
-        assert_eq!(section(src, "Lamplighter", "")[0], "# Lamplighter");
-    }
-
-    #[test]
-    fn a_captioned_table_stays_with_its_entry_and_kinds_take_the_entry() {
-        let src = "# Items\n\n#### Common Things\n\nMoth lamp (tin)\nMoth lamp (glass)\nReed flute\nRope ladder\nTin cup\n\n#### Moth Lamp\n\n\
-Wondrous item, rarity varies\n\nA lamp that draws moths.\n\n#### Kinds of moth lamps\n\n\
-d6 | Kind | Rarity\n1-4 | Tin | Common\n5-6 | Glass | Rare\n\nThe moths obey the lamp.\n\n\
-#### Reed Flute\n\nWondrous item, common\n\nIt hums.\n";
-        let s = section(src, "Moth Lamp", "");
-        assert!(s.contains(&"5-6 | Glass | Rare"), "{s:?}");
-        assert!(s.contains(&"The moths obey the lamp."), "{s:?}");
-        assert!(!s.iter().any(|l| l.contains("Reed Flute")), "{s:?}");
-        // The kind is only in the index list above: it takes the lamp's section.
-        let s = section(src, "Moth Lamp, Glass", "");
-        assert_eq!(s[0], "#### Moth Lamp", "{s:?}");
-        // A kind the entry does not name keeps its own match.
-        assert!(locate_section(src, "", "Moth Lamp, Brass").is_none());
-    }
-
-    #[test]
-    fn index_lines_are_recognised() {
-        let lines = [
-            "Alpha 3",
-            "Beta 7",
-            "Gamma 12",
-            "",
-            "Level 3",
-            "Deal 2d6 damage",
-            "Body.",
-        ];
-        let m = index_mask(&lines);
-        assert_eq!(m, vec![true, true, true, false, false, false, false]);
-        assert!(is_list_line("Alpha – Beta – Gamma"));
-        assert!(!is_list_line("Alpha, the first of them, wakes."));
-        // Table rows ending in a number (a DC, a weight) are data, not page references.
-        let rows = [
-            "Moth Club | 1 sp | 10",
-            "Reed Pike | 5 gp | 25",
-            "Dew Axe | 2 gp | 25",
-        ];
-        assert_eq!(index_mask(&rows), vec![false; 3]);
-        let src = "Weapons\n\nName | Cost | DC\nMoth Club | 1 sp | 10\nReed Pike | 5 gp | 25\nDew Axe | 2 gp | 25";
-        let ex = locate_section(src, "", "Reed Pike").unwrap();
-        assert_eq!((ex.start_line, ex.end_line), (5, 5));
-    }
-}
+#[path = "locate_tests.rs"]
+mod tests;
