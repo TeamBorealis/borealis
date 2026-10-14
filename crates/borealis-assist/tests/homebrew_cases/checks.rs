@@ -75,7 +75,8 @@ fn clean(s: &CharacterSnapshot) -> Result<(), String> {
     let mut errs: Errs = s
         .diagnostics
         .iter()
-        .filter(|d| d.severity == Severity::Error)
+        // a grant cycle is a warning (the engine cut it) but the pack is malformed
+        .filter(|d| d.severity == Severity::Error || d.code == "content.grant_cycle")
         .map(|d| Some(format!("{}: {}", d.code, d.message)))
         .collect();
     errs.extend(
@@ -150,17 +151,32 @@ fn resource(
     absent: Option<bool>,
 ) -> Result<(), String> {
     let n = norm(name);
-    let got = s
+    // an exact resource or stat name first: "ac" is the stat, not a resource whose name merely
+    // contains the letters ("Face of ...")
+    let exact = s
         .resources
         .iter()
-        .find(|r| norm(&r.name).contains(&n) || norm(&r.id).contains(&n))
+        .find(|r| norm(&r.name) == n || norm(&r.id) == n)
         .map(|r| r.max)
+        .or_else(|| s.stats.get(name).map(|v| v.value))
         .or_else(|| {
             s.stats
                 .iter()
-                .find(|(k, _)| norm(k).contains(&n))
+                .find(|(k, _)| norm(k) == n)
                 .map(|(_, v)| v.value)
         });
+    let got = exact.or_else(|| {
+        s.resources
+            .iter()
+            .find(|r| norm(&r.name).contains(&n) || norm(&r.id).contains(&n))
+            .map(|r| r.max)
+            .or_else(|| {
+                s.stats
+                    .iter()
+                    .find(|(k, _)| norm(k).contains(&n))
+                    .map(|(_, v)| v.value)
+            })
+    });
     match (got, absent == Some(true)) {
         (Some(v), true) => Err(format!("{name:?} exists (max {v}), expected none")),
         (None, true) => Ok(()),

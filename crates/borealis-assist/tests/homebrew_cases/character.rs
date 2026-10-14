@@ -63,25 +63,43 @@ fn try_pick(
     p: &Pending,
 ) -> Option<Result<CharacterState, String>> {
     let snap = engine.derive(s);
-    let (slot, option) = snap.slots.iter().find_map(|x| {
+    let (slot, choice) = snap.slots.iter().find_map(|x| {
         if x.chosen.is_some()
+            || x.list_choice.is_some()
             || p.slot
                 .as_deref()
                 .is_some_and(|f| !norm(&x.name).contains(&norm(f)))
         {
             return None;
         }
-        let o = x.options.iter().find(|o| match &p.target {
+        let element = x.options.iter().find(|o| match &p.target {
             Target::Id(id) => &o.id == id,
             Target::Name(n) => name_matches(n, &o.name),
-        })?;
-        Some((x, o.id.clone()))
+        });
+        if let Some(o) = element {
+            return Some((x, Choice::Element(o.id.clone())));
+        }
+        // a `List` entry ("Strength +1" for the option "Strength")
+        let Target::Name(n) = &p.target else {
+            return None;
+        };
+        x.list_items
+            .iter()
+            .find(|(_, text)| name_matches(n, text) || name_matches(n, list_label(text)))
+            .map(|(i, _)| (x, Choice::ListItem(*i)))
     })?;
     Some(
-        commands::select(engine, s, &slot.key, Choice::Element(option.clone()))
+        commands::select(engine, s, &slot.key, choice.clone())
             .map(|o| o.state)
-            .map_err(|e| format!("selecting {option} for {}: {e}", p.label)),
+            .map_err(|e| format!("selecting {choice:?} for {}: {e}", p.label)),
     )
+}
+
+/// A list entry without its trailing signed amount: "Strength +1" -> "Strength".
+fn list_label(text: &str) -> &str {
+    text.rsplit_once(' ')
+        .filter(|(_, n)| n.starts_with(['+', '-']) && n[1..].chars().all(|c| c.is_ascii_digit()))
+        .map_or(text, |(label, _)| label)
 }
 
 /// Apply every pending selection that is offered now, repeating while one succeeds.

@@ -337,8 +337,119 @@ fn fixture(name: &str) -> PathBuf {
         .join(name)
 }
 
+/// Env var set on the child process that judges one case (see [`run_case_isolated`]).
+const ONE_CASE_ENV: &str = "BOREALIS_HOMEBREW_ONE_CASE";
+/// Stack of the thread a case runs on: deep content must not abort a whole run.
+const CASE_STACK_BYTES: usize = 512 * 1024 * 1024;
+/// Prefix of the child's one-line verdict on stderr.
+const VERDICT: &str = "homebrew-case-verdict: ";
+/// Harness self-test only: a case folder holding this file aborts its child process.
+const ABORT_MARKER: &str = ".abort-for-harness-test";
+
+/// Run one case on a thread with a large stack; a panic becomes the case's fatal failure.
+fn run_case_guarded(dir: &Path) -> CaseReport {
+    let owned = dir.to_path_buf();
+    let joined = std::thread::Builder::new()
+        .name("homebrew-case".into())
+        .stack_size(CASE_STACK_BYTES)
+        .spawn(move || run_case(&owned))
+        .map_err(|e| format!("could not start the case thread: {e}"))
+        .and_then(|h| {
+            h.join().map_err(|p| {
+                let msg = p
+                    .downcast_ref::<String>()
+                    .cloned()
+                    .or_else(|| p.downcast_ref::<&str>().map(|s| (*s).to_string()))
+                    .unwrap_or_else(|| "unknown panic".into());
+                format!("the case panicked: {msg}")
+            })
+        });
+    joined.unwrap_or_else(|e| CaseReport {
+        case: dir
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default(),
+        fatal: Some(e),
+        rows: Vec::new(),
+    })
+}
+
+/// Why a report failed, or None when it passed.
+fn failure(r: &CaseReport) -> Option<String> {
+    if r.passed() {
+        return None;
+    }
+    Some(r.fatal.clone().unwrap_or_else(|| {
+        let ids: Vec<&str> = r.failed_musts().iter().map(|x| x.id.as_str()).collect();
+        format!("{} must expectations fail: {}", ids.len(), ids.join(", "))
+    }))
+}
+
+/// Judge one case in a child process (this test binary, [`homebrew_one_case`]), so a case that
+/// crashes the process (a stack overflow aborts) fails alone instead of ending the whole run.
+/// Returns why it failed, or None.
+fn run_case_isolated(dir: &Path) -> Option<String> {
+    let exe = match std::env::current_exe() {
+        Ok(e) => e,
+        Err(e) => return Some(format!("cannot find the test binary: {e}")),
+    };
+    let out = std::process::Command::new(exe)
+        .args([
+            "--exact",
+            "homebrew_one_case",
+            "--nocapture",
+            "--test-threads=1",
+        ])
+        .env(ONE_CASE_ENV, dir)
+        .output();
+    let out = match out {
+        Ok(o) => o,
+        Err(e) => return Some(format!("cannot run the case process: {e}")),
+    };
+    let err = String::from_utf8_lossy(&out.stderr);
+    let mut verdict = None;
+    for line in err.lines() {
+        match line.strip_prefix(VERDICT) {
+            Some(v) => verdict = Some(v.to_string()),
+            None => loud(line),
+        }
+    }
+    match (out.status.success(), verdict) {
+        (true, _) => None,
+        (false, Some(v)) => Some(v),
+        (false, None) => {
+            let tail: Vec<&str> = err.lines().rev().take(3).collect();
+            Some(format!(
+                "the case process crashed ({}): {}",
+                out.status,
+                tail.into_iter().rev().collect::<Vec<_>>().join(" | ")
+            ))
+        }
+    }
+}
+
+/// The child side of [`run_case_isolated`]: does nothing unless the parent named a case.
+#[test]
+fn homebrew_one_case() {
+    let Some(dir) = std::env::var_os(ONE_CASE_ENV) else {
+        return;
+    };
+    if Path::new(&dir).join(ABORT_MARKER).is_file() {
+        std::process::abort();
+    }
+    let r = run_case_guarded(Path::new(&dir));
+    loud(&r.table());
+    if let Some(why) = failure(&r) {
+        loud(&format!("{VERDICT}{}", why.replace('\n', " ")));
+        panic!("{}: {why}", r.case);
+    }
+}
+
 #[test]
 fn homebrew_cases_from_env() {
+    if std::env::var_os(ONE_CASE_ENV).is_some() {
+        return;
+    }
     let Some(root) = std::env::var_os(ENV) else {
         loud(&format!(
             "\n**** homebrew_cases: SKIPPED (local-only cases) -- set {ENV} to a directory of \
@@ -353,14 +464,9 @@ fn homebrew_cases_from_env() {
     );
     let mut failed = Vec::new();
     for d in &dirs {
-        let r = run_case(d);
-        loud(&r.table());
-        if !r.passed() {
-            let why = r.fatal.clone().unwrap_or_else(|| {
-                let ids: Vec<&str> = r.failed_musts().iter().map(|x| x.id.as_str()).collect();
-                format!("{} must expectations fail: {}", ids.len(), ids.join(", "))
-            });
-            failed.push(format!("{}: {why}", r.case));
+        if let Some(why) = run_case_isolated(d) {
+            let name = d.file_name().map(|n| n.to_string_lossy().into_owned());
+            failed.push(format!("{}: {why}", name.unwrap_or_default()));
         }
     }
     assert!(
@@ -368,6 +474,32 @@ fn homebrew_cases_from_env() {
         "homebrew cases failed:\n{}",
         failed.join("\n")
     );
+}
+
+/// A case that crashes its process (as a stack overflow does) fails alone; the run goes on.
+#[test]
+fn a_crashing_case_fails_alone_and_others_still_run() {
+    let tmp = std::env::temp_dir().join(format!("borealis-hc-abort-{}", std::process::id()));
+    let crash = tmp.join("crashes");
+    std::fs::create_dir_all(&crash).expect("tmp");
+    std::fs::copy(
+        fixture("synthetic-lanternwarden").join("expected.json"),
+        crash.join("expected.json"),
+    )
+    .expect("copy");
+    std::fs::write(crash.join(ABORT_MARKER), "").expect("marker");
+    let crashed = run_case_isolated(&crash);
+    let fine = run_case_isolated(&fixture("synthetic-lanternwarden"));
+    let _ = std::fs::remove_dir_all(&tmp);
+    let why = crashed.expect("the crashing case fails");
+    assert!(why.contains("crashed"), "{why}");
+    assert_eq!(fine, None, "the next case is still judged");
+}
+
+#[test]
+fn a_panicking_case_thread_is_a_fatal_failure() {
+    let r = run_case_guarded(Path::new("/nonexistent/borealis-homebrew-case"));
+    assert!(!r.passed());
 }
 
 #[test]
