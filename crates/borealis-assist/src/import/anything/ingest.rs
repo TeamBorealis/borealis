@@ -546,11 +546,13 @@ mod tests {
         let src = draft.source_text.clone();
         let (mut located, mut one_line) = (0, 0);
         let mut listing = String::new();
+        // `BOREALIS_PROBE_TYPED=1`: locate with each element's type (equipment prefers its row).
+        let typed = std::env::var("BOREALIS_PROBE_TYPED").is_ok();
         for p in &mut draft.plan.elements {
-            p.excerpt = super::super::plan::locate(&src, "", &p.name).or_else(|| {
-                super::super::variants::base_name(&p.name)
-                    .and_then(|b| super::super::plan::locate(&src, "", b))
-            });
+            let ty = if typed { p.ty.clone() } else { String::new() };
+            let at = |name: &str| super::super::locate::locate_section_as(&src, "", name, &ty);
+            p.excerpt =
+                at(&p.name).or_else(|| super::super::variants::base_name(&p.name).and_then(at));
             let verbose = std::env::var("BOREALIS_PROBE_VERBOSE").is_ok();
             let watch = std::env::var("BOREALIS_PROBE_NAMES").unwrap_or_default();
             if watch.split(',').any(|w| w == p.name) {
@@ -587,14 +589,25 @@ mod tests {
                 p.role != Role::SubclassGate && !(p.role == Role::Text && p.excerpt.is_some())
             })
             .count();
-        if let Ok(out) = std::env::var("BOREALIS_PROBE_WINDOWS") {
+        // Every element's window (single generation) or section (a batch's per-element source).
+        for (var, whole) in [
+            ("BOREALIS_PROBE_WINDOWS", true),
+            ("BOREALIS_PROBE_SECTIONS", false),
+        ] {
+            let Ok(out) = std::env::var(var) else {
+                continue;
+            };
             let all: Vec<String> = draft
                 .plan
                 .elements
                 .iter()
                 .map(|p| {
-                    let w = super::super::source::element_window(&src, p);
-                    format!("===== {} ({:?})\n{w}", p.name, p.role)
+                    let text = if whole {
+                        super::super::source::element_window(&src, p)
+                    } else {
+                        super::super::source::section_text(&src, p).unwrap_or_default()
+                    };
+                    format!("===== {} ({:?})\n{text}", p.name, p.role)
                 })
                 .collect();
             std::fs::write(out, all.join("\n")).unwrap();

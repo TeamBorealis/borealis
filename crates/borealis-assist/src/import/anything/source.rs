@@ -83,17 +83,16 @@ pub(crate) fn unlocated_message(source: &str, p: &PlannedElement) -> String {
     )
 }
 
-/// The located section of `p` (`None` without one), whole.
+/// The located section of `p` (`None` without one), whole; a table row also gets its table's
+/// caption, header and category rows (a row alone has no column names).
 pub(crate) fn section_text(source: &str, p: &PlannedElement) -> Option<String> {
     let ex = p.excerpt.as_ref()?;
-    Some(
-        source
-            .lines()
-            .skip(ex.start_line.saturating_sub(1))
-            .take(ex.end_line + 1 - ex.start_line.min(ex.end_line + 1))
-            .collect::<Vec<_>>()
-            .join("\n"),
-    )
+    let lines: Vec<&str> = source.lines().collect();
+    let start = ex.start_line.saturating_sub(1).min(lines.len());
+    let end = ex.end_line.max(ex.start_line).min(lines.len());
+    let mut blocks = vec![(start, end)];
+    blocks.extend(table_head(&lines, start));
+    Some(joined(&lines, blocks))
 }
 
 /// Fewest lines sent for a located element (a one-line excerpt still gets its context).
@@ -322,6 +321,49 @@ mod tests {
         assert!(w.contains("Name | Cost | Weight\nHeavy Lamps"), "{w}");
         assert!(w.contains("Lamp 5 | 5 gp"), "{w}");
         assert!(!w.contains("Tinkers sell"), "{w}");
+    }
+
+    #[test]
+    fn a_table_row_section_carries_the_tables_caption_and_header() {
+        // Rows apart by blank lines (one cell block a line), under a caption heading that
+        // follows a page heading: every row's section names the columns.
+        let mut src =
+            String::from("## Workshop Stats\n\n#### Light Lamps\n\nName | Cost | DC | Parts\n\n");
+        for k in 1..=4 {
+            src.push_str(&format!("Lamp {k} | {k} gp | 25 | {k} Glass\n\n"));
+        }
+        src.push_str(
+            "#### Heavy Lamps\n\nName | Cost | DC | Parts\n\nGreat Lamp | 9 gp | 40 | 2 Iron\n",
+        );
+        for k in 1..=4 {
+            let row = src
+                .lines()
+                .position(|l| l.starts_with(&format!("Lamp {k} |")))
+                .unwrap()
+                + 1;
+            let mut p = root(Role::Standalone, row, row);
+            p.ty = "Item".into();
+            let s = section_text(&src, &p).unwrap();
+            assert!(
+                s.starts_with("#### Light Lamps\n\nName | Cost | DC | Parts"),
+                "{s}"
+            );
+            assert!(
+                s.ends_with(&format!("Lamp {k} | {k} gp | 25 | {k} Glass")),
+                "{s}"
+            );
+            assert!(!s.contains("Heavy"), "{s}");
+        }
+        let row = src
+            .lines()
+            .position(|l| l.starts_with("Great Lamp"))
+            .unwrap()
+            + 1;
+        let s = section_text(&src, &root(Role::Standalone, row, row)).unwrap();
+        assert!(s.starts_with("#### Heavy Lamps"), "{s}");
+        // Prose sections stay as they are.
+        let s = section_text(&src, &root(Role::Standalone, 1, 1)).unwrap();
+        assert_eq!(s, "## Workshop Stats");
     }
 
     #[test]
