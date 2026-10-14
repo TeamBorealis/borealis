@@ -23,11 +23,12 @@ pub(crate) const PART_BATCH_SIZE: usize = 16;
 /// Sources up to this length go to every batch whole.
 pub(crate) const SOURCE_CHARS: usize = 9000;
 
-/// Why an element of a long source was generated from the whole source (its passage was not
-/// found), for the import report; `None` when it had its passage or the source is short.
+/// Why an element was generated from the whole source (no section of its own was found: the
+/// source only names it in contents, index or list lines, or not at all), for the import report;
+/// `None` when it had its section. Reported for short sources too: never a silent fallback.
 pub(crate) fn unlocated_warning(source: &str, p: &PlannedElement) -> Option<String> {
     let n = source.chars().count();
-    let skip = p.excerpt.is_some() || p.role == Role::SubclassGate || n <= SOURCE_CHARS;
+    let skip = p.excerpt.is_some() || p.role == Role::SubclassGate;
     (!skip).then(|| {
         let sent = if n > FULL_SOURCE_CHARS {
             format!("its first {FULL_SOURCE_CHARS} of {n} characters")
@@ -35,7 +36,7 @@ pub(crate) fn unlocated_warning(source: &str, p: &PlannedElement) -> Option<Stri
             format!("all {n} characters")
         };
         format!(
-            "\"{}\" was not found in the source; it was generated from {sent}",
+            "no section for \"{}\" was found in the source; it was generated from {sent}",
             p.name
         )
     })

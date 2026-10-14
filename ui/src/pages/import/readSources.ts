@@ -8,10 +8,13 @@ export function bytesToBase64(bytes: Uint8Array): string {
   return btoa(bin);
 }
 
-const kindOf = (f: { name: string; type: string }): "image" | "pdf" | "text" | null => {
+const DOCUMENT_TYPES = ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.oasis.opendocument.text"];
+
+const kindOf = (f: { name: string; type: string }): "image" | "pdf" | "document" | "text" | null => {
   const n = f.name.toLowerCase();
   if (f.type.startsWith("image/") || /\.(png|jpe?g|webp)$/.test(n)) return "image";
   if (f.type === "application/pdf" || n.endsWith(".pdf")) return "pdf";
+  if (DOCUMENT_TYPES.includes(f.type) || /\.(docx|odt)$/.test(n)) return "document";
   if (f.type.startsWith("text/") || f.type === "application/json" || /\.(txt|md|markdown|json)$/.test(n)) return "text";
   return null;
 };
@@ -21,10 +24,10 @@ const mb = (b: number) => `${Math.round(b / (1024 * 1024))} MB`;
 /** A friendly reason a file cannot be imported, or null. Mirrors the limits Rust enforces. */
 export function problemWith(f: { name: string; type: string; size: number }): string | null {
   const kind = kindOf(f);
-  if (!kind) return `"${f.name}" is not supported. Use an image (PNG, JPEG, WebP), a PDF, or a text file.`;
+  if (!kind) return `"${f.name}" is not supported. Use an image (PNG, JPEG, WebP), a PDF, a Word (.docx) or OpenDocument (.odt) file, or a text file.`;
   if (f.size === 0) return `"${f.name}" is empty.`;
-  const limit = kind === "image" ? IMPORT_LIMITS.maxImageBytes : kind === "pdf" ? IMPORT_LIMITS.maxPdfBytes : IMPORT_LIMITS.maxTextChars * 4;
-  if (f.size > limit) return `"${f.name}" is too large (the limit is ${kind === "text" ? "800 KB" : mb(limit)}).`;
+  const limit = kind === "image" ? IMPORT_LIMITS.maxImageBytes : kind === "pdf" ? IMPORT_LIMITS.maxPdfBytes : kind === "document" ? IMPORT_LIMITS.maxDocumentBytes : IMPORT_LIMITS.maxTextChars * 4;
+  if (f.size > limit) return `"${f.name}" is too large (the limit is ${mb(limit)}).`;
   return null;
 }
 

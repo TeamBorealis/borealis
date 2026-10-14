@@ -1,0 +1,407 @@
+//! Section locator: the passage of the source that defines a named element.
+//!
+//! A name is matched against headings first (a heading that IS the name), then run-in heads
+//! ("Name. text...") and lines that are exactly the name, and only then any line mentioning it.
+//! Table-of-contents and index lines (dot leaders, trailing page numbers, runs of such lines) and
+//! name lists ("A – B – C" cover lines) are never a section. The section runs from the match to
+//! the next heading of the same or a higher level, so multi-page sections and sub-headings stay
+//! whole. The model's verbatim quote, when it falls inside a candidate's section, picks among
+//! equal candidates.
+
+use super::types::SourceExcerpt;
+use crate::import::chunk::{
+    headings, looks_like_title, markdown_heading, norm_words, Heading, MARKED_UP,
+};
+
+const SNIPPET_CHARS: usize = 160;
+/// Most characters one section may span (a level-1 heading can cover a whole book).
+const MAX_SECTION_CHARS: usize = 40_000;
+/// Consecutive page-numbered lines that make a contents or index block.
+const INDEX_RUN: usize = 3;
+/// Longest run-in head ("Name." at the start of a paragraph), in words.
+const MAX_RUN_IN_WORDS: usize = 8;
+/// Separated names on one line that make it a list (cover line, "see also").
+const LIST_ITEMS: usize = 3;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum Kind {
+    Mention,
+    PartHeading,
+    ExactLine,
+    RunIn,
+    Heading,
+}
+
+struct Candidate {
+    line: usize,
+    kind: Kind,
+    end: usize,
+}
+
+fn trailing_page_number(t: &str) -> bool {
+    let t = t.trim_end();
+    let digits = t.chars().rev().take_while(char::is_ascii_digit).count();
+    if digits == 0 || digits > 4 || digits == t.chars().count() {
+        return false;
+    }
+    let before = t[..t.len() - digits].trim_end_matches([',', '-', '–', ' ', '\t']);
+    !before.is_empty()
+        && !before.ends_with(|c: char| c.is_ascii_digit() || c == '+')
+        && !is_dice_prefix(before)
+        && !before.to_lowercase().ends_with("level")
+}
+
+/// "2d" of "2d6": the number is a die size, not a page.
+fn is_dice_prefix(before: &str) -> bool {
+    let mut rev = before.chars().rev();
+    matches!(rev.next(), Some('d' | 'D')) && rev.next().is_some_and(|c| c.is_ascii_digit())
+}
+
+fn dot_leader(t: &str) -> bool {
+    t.contains("...") || t.contains('…') || t.contains(". . .") || t.contains("\t")
+}
+
+/// Lines that belong to a table of contents or an index: dot-leader entries, and runs of at
+/// least [`INDEX_RUN`] consecutive non-blank lines ending in a page number.
+fn index_mask(lines: &[&str]) -> Vec<bool> {
+    let numbered: Vec<bool> = lines
+        .iter()
+        .map(|l| trailing_page_number(l.trim().trim_end_matches('.')))
+        .collect();
+    let mut mask: Vec<bool> = lines
+        .iter()
+        .zip(&numbered)
+        .map(|(l, n)| *n && dot_leader(l.trim()))
+        .collect();
+    let filled: Vec<usize> = (0..lines.len())
+        .filter(|&i| !lines[i].trim().is_empty())
+        .collect();
+    let mut k = 0;
+    while k < filled.len() {
+        let mut j = k;
+        while j < filled.len() && numbered[filled[j]] {
+            j += 1;
+        }
+        if j - k >= INDEX_RUN {
+            for &i in &filled[k..j] {
+                mask[i] = true;
+            }
+        }
+        k = j.max(k + 1);
+    }
+    mask
+}
+
+/// A line listing several names ("Alpha – Beta – Gamma", "Alpha, Beta, Gamma and Delta").
+fn is_list_line(t: &str) -> bool {
+    let t = t.trim();
+    if t.ends_with(['.', ':', ';']) {
+        return false;
+    }
+    let items = t
+        .split([',', '|', '•', '·', '–', '—', '/'])
+        .flat_map(|p| p.split(" and "))
+        .filter(|p| !p.trim().is_empty())
+        .count();
+    items >= LIST_ITEMS
+}
+
+fn strip_marks(t: &str) -> &str {
+    t.trim().trim_start_matches(['#', '*', '_', '-', ' '])
+}
+
+/// "Name." / "Name:" at the start of a line, the head being Title Case and short.
+fn run_in_head(t: &str) -> Option<&str> {
+    let t = strip_marks(t);
+    let cut = t.find(['.', ':'])?;
+    let head = t[..cut].trim_end_matches(['*', '_']).trim();
+    let words: Vec<&str> = head.split_whitespace().collect();
+    let small = [
+        "of", "the", "and", "a", "an", "in", "on", "to", "for", "with", "or",
+    ];
+    let title = !words.is_empty()
+        && words.len() <= MAX_RUN_IN_WORDS
+        && words.iter().enumerate().all(|(i, w)| {
+            w.chars()
+                .next()
+                .is_some_and(|c| c.is_uppercase() || !c.is_alphabetic())
+                || (i > 0 && small.contains(&w.to_lowercase().as_str()))
+        });
+    title.then_some(head)
+}
+
+/// Words that make a heading a part of the element it follows ("<name> Traits").
+const PART_WORDS: [&str; 12] = [
+    "traits",
+    "trait",
+    "features",
+    "feature",
+    "names",
+    "lore",
+    "variant",
+    "variants",
+    "subraces",
+    "options",
+    "table",
+    "characteristics",
+];
+
+/// `title` is "<name> <part word>" (a sub-section of the element called `name`).
+fn is_sub_part(title: &str, name: &str) -> bool {
+    let t = norm_words(title);
+    !name.is_empty()
+        && t.strip_prefix(name)
+            .map(str::trim)
+            .and_then(|rest| rest.split(' ').next_back())
+            .is_some_and(|w| {
+                PART_WORDS.contains(&w) && t.split(' ').count() <= name.split(' ').count() + 2
+            })
+}
+
+fn same_name(a: &str, b: &str) -> bool {
+    !b.is_empty() && norm_words(a) == b
+}
+
+fn contains_name(hay: &str, name: &str) -> bool {
+    !name.is_empty() && format!(" {} ", norm_words(hay)).contains(&format!(" {name} "))
+}
+
+struct Doc<'a> {
+    /// The text marks its headings (`#` lines); else headings are guessed and a standalone
+    /// title line also ends a section.
+    marked: bool,
+    lines: Vec<&'a str>,
+    heads: Vec<Heading>,
+    index: Vec<bool>,
+}
+
+impl Doc<'_> {
+    fn heading_at(&self, line: usize) -> Option<&Heading> {
+        self.heads.iter().find(|h| h.line == line)
+    }
+
+    /// End (exclusive) of the section of the heading at `line` with `level`.
+    fn heading_end(&self, line: usize, level: u8, name: &str) -> usize {
+        self.heads
+            .iter()
+            .find(|h| h.line > line && h.level <= level && !is_sub_part(&h.title, name))
+            .map_or(self.lines.len(), |h| h.line)
+    }
+
+    /// End (exclusive) of a section without a marked heading level, starting at `line`: the
+    /// next heading or standalone title line after a paragraph break (unless it is a part of
+    /// `name`, such as "<name> Traits"), and for a run-in head also the next run-in head.
+    fn paragraph_end(&self, line: usize, run_in: bool, name: &str) -> usize {
+        let mut i = line + 1;
+        while i < self.lines.len() {
+            let l = self.lines[i];
+            let starts = self.heading_at(i).is_some()
+                || self.standalone_title(i)
+                || (run_in && run_in_head(l).is_some());
+            if starts && (run_in || !is_sub_part(strip_marks(l), name)) {
+                return i;
+            }
+            i += 1;
+        }
+        self.lines.len()
+    }
+
+    /// A title-like line alone in its paragraph (a wrapped body line has a continuation).
+    fn standalone_title(&self, i: usize) -> bool {
+        let blank = |k: usize| self.lines.get(k).map_or(true, |l| l.trim().is_empty());
+        i > 0 && blank(i - 1) && blank(i + 1) && looks_like_title(self.lines[i])
+    }
+
+    fn candidates(&self, name: &str) -> Vec<Candidate> {
+        let mut out = Vec::new();
+        for (i, raw) in self.lines.iter().enumerate() {
+            if self.index[i] || !contains_name(raw, name) {
+                continue;
+            }
+            let t = strip_marks(raw);
+            let (kind, end) = if let Some(h) = self.heading_at(i) {
+                let kind = if same_name(&h.title, name) {
+                    Kind::Heading
+                } else {
+                    Kind::PartHeading
+                };
+                let end = if self.marked {
+                    self.heading_end(i, h.level, name)
+                } else {
+                    self.paragraph_end(i, false, name)
+                };
+                (kind, end)
+            } else if run_in_head(t).is_some_and(|h| same_name(h, name)) {
+                (Kind::RunIn, self.paragraph_end(i, true, name))
+            } else if same_name(t, name) {
+                (Kind::ExactLine, self.paragraph_end(i, false, name))
+            } else if is_list_line(t) {
+                continue;
+            } else {
+                (Kind::Mention, self.paragraph_block_end(i))
+            };
+            out.push(Candidate { line: i, kind, end });
+        }
+        out
+    }
+
+    /// The paragraph (to the next blank line) around a mention.
+    fn paragraph_block_end(&self, line: usize) -> usize {
+        let mut end = line + 1;
+        while end < self.lines.len() && !self.lines[end].trim().is_empty() {
+            end += 1;
+        }
+        end
+    }
+
+    fn contains_quote(&self, c: &Candidate, quote: &str) -> bool {
+        !quote.is_empty()
+            && self.lines[c.line..c.end]
+                .iter()
+                .any(|l| norm_words(l).contains(quote))
+    }
+
+    fn excerpt(&self, start: usize, end: usize) -> SourceExcerpt {
+        let mut end = end.max(start + 1).min(self.lines.len());
+        while end > start + 1 && self.lines[end - 1].trim().is_empty() {
+            end -= 1;
+        }
+        let mut chars = 0;
+        let mut cut = start;
+        while cut < end && chars < MAX_SECTION_CHARS {
+            chars += self.lines[cut].chars().count() + 1;
+            cut += 1;
+        }
+        let snippet: String = self.lines[start..cut]
+            .iter()
+            .map(|l| l.trim())
+            .filter(|l| !l.is_empty())
+            .collect::<Vec<_>>()
+            .join(" ")
+            .chars()
+            .take(SNIPPET_CHARS)
+            .collect();
+        SourceExcerpt {
+            start_line: start + 1,
+            end_line: cut,
+            snippet,
+        }
+    }
+}
+
+/// The section of `source` that defines `name`; `quote` (a short verbatim quote from the model)
+/// breaks ties and is the fallback when the name is not found.
+pub(crate) fn locate_section(source: &str, quote: &str, name: &str) -> Option<SourceExcerpt> {
+    let lines: Vec<&str> = source.lines().collect();
+    let marked = lines
+        .iter()
+        .filter(|l| markdown_heading(l).is_some())
+        .count()
+        >= MARKED_UP;
+    let doc = Doc {
+        marked,
+        heads: headings(source),
+        index: index_mask(&lines),
+        lines,
+    };
+    let name = norm_words(name);
+    let quote = norm_words(quote);
+    let found = doc.candidates(&name);
+    let best = found.iter().max_by(|a, b| {
+        let key = |c: &Candidate| {
+            (
+                doc.contains_quote(c, &quote),
+                c.kind,
+                std::cmp::Reverse(c.line),
+            )
+        };
+        key(a).cmp(&key(b))
+    });
+    if let Some(c) = best {
+        let quoted = doc.contains_quote(c, &quote);
+        // A bare mention loses to a quote found elsewhere (the definition's own text).
+        if c.kind != Kind::Mention || quoted || quote.is_empty() {
+            return Some(doc.excerpt(c.line, c.end));
+        }
+    }
+    // The quote alone (when it is more than the name): its paragraph to the next heading.
+    if quote.is_empty() || quote == name {
+        return best.map(|c| doc.excerpt(c.line, c.end));
+    }
+    let at = (0..doc.lines.len()).find(|&i| {
+        !doc.index[i] && !is_list_line(doc.lines[i]) && norm_words(doc.lines[i]).contains(&quote)
+    })?;
+    let mut start = at;
+    while start > 0 && !doc.lines[start - 1].trim().is_empty() && doc.heading_at(start).is_none() {
+        start -= 1;
+    }
+    Some(doc.excerpt(start, doc.paragraph_end(start, true, "")))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn section<'a>(src: &'a str, name: &str, quote: &str) -> Vec<&'a str> {
+        let ex = locate_section(src, quote, name).expect("located");
+        src.lines()
+            .skip(ex.start_line - 1)
+            .take(ex.end_line - ex.start_line + 1)
+            .collect()
+    }
+
+    const BOOK: &str = "# Wanderers of the Mist\n\nEmberkin – Tidewalker – Glasswing\n\n## Contents\n\nEmberkin ........ 4\nTidewalker ........ 6\nGlasswing ........ 9\nIndex ........ 12\n\n## Emberkin\n\nEmberkin carry a coal in their chest.\n\n### Emberkin Traits\n\nDarkvision. You see in dim light within 60 feet.\nEmber Heart. You resist fire damage.\n\nThe coal never cools.\n\n## Tidewalker\n\nTidewalkers breathe water.\n\nDarkvision. Tidewalkers see 30 feet in murk.\n\n## Index\n\nEmberkin 4\nGlasswing 9\nTidewalker 6\n";
+
+    #[test]
+    fn skips_cover_and_contents_and_keeps_subsections() {
+        let s = section(BOOK, "Emberkin", "");
+        assert_eq!(s[0], "## Emberkin");
+        assert!(s.contains(&"### Emberkin Traits"));
+        assert!(s.contains(&"The coal never cools."));
+        assert!(!s.iter().any(|l| l.contains("Tidewalker")), "{s:?}");
+        // Glasswing has no section of its own: only the cover, the contents and the index name it.
+        assert!(locate_section(BOOK, "", "Glasswing").is_none());
+    }
+
+    #[test]
+    fn run_in_traits_stop_at_the_next_trait_and_quotes_pick_the_right_one() {
+        let s = section(BOOK, "Ember Heart", "");
+        assert_eq!(
+            s.first().copied(),
+            Some("Ember Heart. You resist fire damage.")
+        );
+        assert!(s.contains(&"The coal never cools."));
+        let s = section(BOOK, "Darkvision", "see 30 feet in murk");
+        assert_eq!(s, vec!["Darkvision. Tidewalkers see 30 feet in murk."]);
+        let s = section(BOOK, "Darkvision", "");
+        assert!(s[0].contains("dim light"), "{s:?}");
+    }
+
+    #[test]
+    fn unmarked_sections_keep_their_own_parts() {
+        let src = "Glimmerkin\n\nSmall folk who glow at dusk and hum.\n\nGlimmerkin Traits\n\n\
+Ability Score Increase. Your Charisma rises by 2.\nSize. You are Small.\n\nDuskling\n\nA shy folk.\n";
+        let s = section(src, "Glimmerkin", "");
+        assert!(s.contains(&"Size. You are Small."), "{s:?}");
+        assert!(!s.contains(&"Duskling"), "{s:?}");
+        let s = section(src, "Ability Score Increase", "");
+        assert_eq!(s, vec!["Ability Score Increase. Your Charisma rises by 2."]);
+    }
+
+    #[test]
+    fn index_lines_are_recognised() {
+        let lines = [
+            "Alpha 3",
+            "Beta 7",
+            "Gamma 12",
+            "",
+            "Level 3",
+            "Deal 2d6 damage",
+            "Body.",
+        ];
+        let m = index_mask(&lines);
+        assert_eq!(m, vec![true, true, true, false, false, false, false]);
+        assert!(is_list_line("Alpha – Beta – Gamma"));
+        assert!(!is_list_line("Alpha, the first of them, wakes."));
+    }
+}

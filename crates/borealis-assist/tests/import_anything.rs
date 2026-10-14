@@ -518,19 +518,9 @@ async fn attachments_reach_detect_and_use_the_transcript() {
         bytes: vec![1, 2, 3],
         name: "page1.png".into(),
     };
-    let detect = json!({"kind": "subclass", "edition": "2024", "confidence": 0.8,
-        "items": [{"kind": "subclass", "name": "Banner Knight", "parent_hint": "Cleric or Druid"}],
-        "transcript": BANNER_SOURCE})
-    .to_string();
-    let fake = banner_fake(None).on("import_detect", "attached", &[detect]);
-    // The attachment-specific detect rule must win over the text one: put it first.
-    let first = {
-        let mut r = fake.rules.lock().unwrap();
-        let last = r.pop().unwrap();
-        r.insert(0, last);
-        r.len()
-    };
-    assert!(first > 0);
+    // The image is transcribed verbatim first; detection then reads that text.
+    let transcript = json!({"text": BANNER_SOURCE, "headings": ["Banner Knight"]}).to_string();
+    let fake = banner_fake(None).on("import_transcribe", "page1.png", &[transcript]);
     let req = request(
         ImportSource::Attachments(vec![png]),
         "banner",
@@ -543,6 +533,8 @@ async fn attachments_reach_detect_and_use_the_transcript() {
         fake.attachments_seen.lock().unwrap().first().copied(),
         Some(1)
     );
+    assert_eq!(fake.calls("import_transcribe"), 1);
+    assert!(fake.prompts("import_detect")[0].contains("Rally Banner"));
     let ImportStep::NeedsChoice(d) = step else {
         panic!("expected a choice")
     };

@@ -13,7 +13,9 @@ mod fewshot;
 mod finalize;
 mod formula;
 mod generate;
+mod ingest;
 mod items;
+mod locate;
 mod normalize;
 mod parts;
 mod plan;
@@ -37,9 +39,7 @@ pub use types::*;
 use generate::{
     emit, fill_pending, parent_of, pending, run_element, validate_and_repair, GenCtx, Progress,
 };
-use steps::{
-    detect_step, outline_step, outlines_step, target_schema, Attaching, DetectOut, Step, TargetOut,
-};
+use steps::{outline_step, outlines_step, target_schema, Attaching, Step, TargetOut};
 
 /// Classes and subclasses outlined per model call.
 const OUTLINE_BATCH: usize = 6;
@@ -111,22 +111,16 @@ pub async fn detect_source(
     if attachments.is_empty() && text.trim().is_empty() {
         return Err(AssistError::Extraction("the source is empty".into()));
     }
-    let step: Step<DetectOut> = detect_step(text, !attachments.is_empty(), edition_hint);
-    let adapter = Attaching {
-        inner: runner,
-        attachments,
-    };
-    let out = run_task(&adapter, &step, opts).await?.output;
-    let text = if attachments.is_empty() {
-        text.to_string()
+    // Attachments are read into text first (text layers, else verbatim transcription part by
+    // part), so detection and every later stage see the whole source, never a summary.
+    let (text, reading) = if attachments.is_empty() {
+        (text.to_string(), Vec::new())
     } else {
-        out.transcript.clone()
+        let read = ingest::read_attachments(runner, attachments, opts).await?;
+        (read.text, read.notes)
     };
-    if text.trim().is_empty() {
-        return Err(AssistError::Extraction(
-            "the model could not read any text in the attachments".into(),
-        ));
-    }
+    let mut out = ingest::detect_text(runner, &text, edition_hint, opts).await?;
+    out.notes.extend(reading);
     let (items, mixed): (Vec<DetectedItem>, Vec<DetectedItem>) = out
         .items
         .into_iter()

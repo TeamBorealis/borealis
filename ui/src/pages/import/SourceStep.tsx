@@ -82,7 +82,7 @@ export function SourceStep({ initialFiles, busy, onStart, bar }: { initialFiles:
             <strong>Drop a PDF, a photo or a text file</strong>
             <span className="v5-note">or click to choose. Scans and screenshots are fine.</span>
           </div>
-          <input ref={picker} className="sr-only" type="file" multiple accept=".pdf,.txt,.md,.json,application/pdf,image/*,text/*" aria-label="Choose files" tabIndex={-1} onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
+          <input ref={picker} className="sr-only" type="file" multiple accept=".pdf,.docx,.odt,.txt,.md,.json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,image/*,text/*" aria-label="Choose files" tabIndex={-1} onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
           <div className="v5-foot">
             <Button className="camera-btn" icon="plus" onClick={() => void choose(camera)}>Take photo</Button>
             <input ref={camera} className="sr-only" type="file" accept="image/*" capture="environment" aria-label="Take photo" tabIndex={-1} onChange={(e) => { add(e.target.files); e.target.value = ""; }} />

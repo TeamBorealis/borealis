@@ -109,7 +109,7 @@ pub fn detect(lines: &[&str]) -> Hint {
     Hint::Unknown
 }
 
-fn looks_like_title(l: &str) -> bool {
+pub(crate) fn looks_like_title(l: &str) -> bool {
     let t = l.trim();
     !t.is_empty()
         && t.chars().count() <= MAX_HEADING_CHARS
@@ -168,6 +168,98 @@ pub fn chunk_text(text: &str) -> Vec<Chunk> {
     out
 }
 
+/// A heading of a source text.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Heading {
+    /// 0-based line index.
+    pub line: usize,
+    /// 1 = top level; larger is deeper.
+    pub level: u8,
+    /// Heading text without markup.
+    pub title: String,
+}
+
+/// Level of a heuristic (unmarked) heading in ALL CAPS.
+const CAPS_LEVEL: u8 = 2;
+/// Level of other heuristic headings (title lines over a stat block, spell or item line).
+const TITLE_LEVEL: u8 = 3;
+/// With at least this many `#` headings the text is taken as marked up: only `#` lines count.
+pub(crate) const MARKED_UP: usize = 3;
+
+/// `#`-heading level and title of a line.
+pub fn markdown_heading(line: &str) -> Option<(u8, &str)> {
+    let t = line.trim_start();
+    let hashes = t.chars().take_while(|c| *c == '#').count();
+    let rest = &t[hashes..];
+    (1..=6).contains(&hashes).then_some(())?;
+    rest.starts_with(' ').then_some(())?;
+    let title = rest.trim().trim_end_matches('#').trim();
+    (!title.is_empty()).then(|| (u8::try_from(hashes).unwrap_or(6), title))
+}
+
+/// Headings of `text`: `#` lines, and in unmarked text also ALL-CAPS title lines and title
+/// lines over a recognised stat block / spell / item signature.
+pub fn headings(text: &str) -> Vec<Heading> {
+    let lines: Vec<&str> = text.lines().collect();
+    let marked: Vec<Heading> = lines
+        .iter()
+        .enumerate()
+        .filter_map(|(i, l)| {
+            markdown_heading(l).map(|(level, title)| Heading {
+                line: i,
+                level,
+                title: title.to_string(),
+            })
+        })
+        .collect();
+    if marked.len() >= MARKED_UP {
+        return marked;
+    }
+    (0..lines.len())
+        .filter_map(|i| {
+            if let Some((level, title)) = markdown_heading(lines[i]) {
+                return Some(Heading {
+                    line: i,
+                    level,
+                    title: title.to_string(),
+                });
+            }
+            if !is_heading(&lines, i) {
+                return None;
+            }
+            let t = lines[i].trim();
+            Some(Heading {
+                line: i,
+                level: if all_caps(t) { CAPS_LEVEL } else { TITLE_LEVEL },
+                title: t.to_string(),
+            })
+        })
+        .collect()
+}
+
+/// Lower-case words of `s`, punctuation dropped.
+pub fn norm_words(s: &str) -> String {
+    s.split(|c: char| !c.is_alphanumeric())
+        .filter(|w| !w.is_empty())
+        .map(str::to_lowercase)
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// The `expected` headings that appear nowhere in `text` (case and punctuation ignored): the
+/// coverage check of an extraction.
+pub fn missing_headings(expected: &[String], text: &str) -> Vec<String> {
+    let hay = format!(" {} ", norm_words(text));
+    expected
+        .iter()
+        .filter(|h| {
+            let n = norm_words(h);
+            !n.is_empty() && !hay.contains(&format!(" {n} "))
+        })
+        .cloned()
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -187,5 +279,18 @@ mod tests {
             ]
         );
         assert_eq!(c[1].start_line, 5);
+    }
+
+    #[test]
+    fn headings_and_coverage() {
+        let doc = "# Book\n\n## Part One\ntext\n### Deep\n";
+        let h = headings(doc);
+        let got: Vec<(u8, &str)> = h.iter().map(|h| (h.level, h.title.as_str())).collect();
+        assert_eq!(got, vec![(1, "Book"), (2, "Part One"), (3, "Deep")]);
+        let plain =
+            headings("Intro.\n\nGLOOM STALKER\nMedium monstrosity, neutral evil\nArmor Class 13\n");
+        assert_eq!((plain[0].level, plain[0].line), (2, 2));
+        let missing = missing_headings(&["Part one".into(), "Gone Away".into()], doc);
+        assert_eq!(missing, vec!["Gone Away".to_string()]);
     }
 }

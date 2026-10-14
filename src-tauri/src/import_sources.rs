@@ -4,9 +4,10 @@
 use crate::error::{ApiError, ApiResult};
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
-use borealis_ai::attachment::{prepare, MAX_IMAGE_BYTES, MAX_PDF_BYTES, MAX_PDF_TEXT_CHARS};
+use borealis_ai::attachment::{prepare, MAX_IMAGE_BYTES, MAX_PDF_BYTES};
 use borealis_ai::{Attachment, AttachmentKind, Backend};
 use borealis_assist::import::anything::ImportSource;
+use borealis_assist::import::{office_text, OfficeFormat};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -16,8 +17,16 @@ pub const MAX_SOURCES: usize = 12;
 /// A raw image may exceed the 5 MiB the model gets because it is downscaled first; this caps what
 /// is accepted before that (a phone photo is typically 3 to 12 MiB).
 pub const MAX_RAW_IMAGE_BYTES: usize = 4 * MAX_IMAGE_BYTES;
+/// Largest PDF accepted: the importer reads its text layer and splits scanned pages into parts
+/// under the model's 20 MB limit, so a book far larger than one model call is fine.
+pub const MAX_IMPORT_PDF_BYTES: usize = 256 * 1024 * 1024;
+/// Largest Word / OpenDocument file accepted (a zip of XML and pictures).
+pub const MAX_DOCUMENT_BYTES: usize = 64 * 1024 * 1024;
+/// Longest text (pasted, text files and documents together): detection reads long text window by
+/// window, later stages read each element's own section.
+pub const MAX_TEXT_CHARS: usize = 2_000_000;
 /// Total bytes across all sources.
-pub const MAX_TOTAL_BYTES: usize = 64 * 1024 * 1024;
+pub const MAX_TOTAL_BYTES: usize = 320 * 1024 * 1024;
 /// Longest note that accompanies attachments.
 pub const MAX_NOTES_CHARS: usize = 4000;
 
@@ -55,7 +64,11 @@ enum Kind {
     Image,
     Pdf,
     Text,
+    Document(OfficeFormat),
 }
+
+const UNSUPPORTED: &str =
+    "Use an image (PNG, JPEG, WebP), a PDF, a Word (.docx) or OpenDocument (.odt) file, or a text file.";
 
 fn base_name(name: &str) -> String {
     let n = name.rsplit(['/', '\\']).next().unwrap_or(name).trim();
@@ -77,6 +90,12 @@ fn classify(name: &str, mime: &str) -> ApiResult<Kind> {
         Ok(Kind::Image)
     } else if mime == "application/pdf" || name.ends_with(".pdf") {
         Ok(Kind::Pdf)
+    } else if let Some(f) = OfficeFormat::of_name(&name).or(match mime.as_str() {
+        DOCX_MIME => Some(OfficeFormat::Docx),
+        ODT_MIME => Some(OfficeFormat::Odt),
+        _ => None,
+    }) {
+        Ok(Kind::Document(f))
     } else if mime.starts_with("text/")
         || mime == "application/json"
         || [".txt", ".md", ".markdown", ".json"]
@@ -86,7 +105,7 @@ fn classify(name: &str, mime: &str) -> ApiResult<Kind> {
         Ok(Kind::Text)
     } else {
         Err(ApiError::invalid(format!(
-            "\"{}\" is not a supported file. Use an image (PNG, JPEG, WebP), a PDF, or a text file.",
+            "\"{}\" is not a supported file. {UNSUPPORTED}",
             base_name(&name)
         )))
     }
@@ -95,8 +114,9 @@ fn classify(name: &str, mime: &str) -> ApiResult<Kind> {
 fn size_limit(kind: &Kind) -> usize {
     match kind {
         Kind::Image => MAX_RAW_IMAGE_BYTES,
-        Kind::Pdf => MAX_PDF_BYTES,
-        Kind::Text => MAX_PDF_TEXT_CHARS * 4,
+        Kind::Pdf => MAX_IMPORT_PDF_BYTES,
+        Kind::Text => MAX_TEXT_CHARS * 4,
+        Kind::Document(_) => MAX_DOCUMENT_BYTES,
     }
 }
 
@@ -134,6 +154,13 @@ impl Collected {
         match kind {
             Kind::Text => {
                 self.add_text(&String::from_utf8_lossy(&bytes));
+                Ok(())
+            }
+            Kind::Document(format) => {
+                let text = office_text(format, &bytes).map_err(|e| {
+                    ApiError::invalid(format!("\"{}\" could not be read: {e}", base_name(name)))
+                })?;
+                self.add_text(&text);
                 Ok(())
             }
             Kind::Image => {
@@ -176,9 +203,28 @@ fn mime_for(name: &str) -> &'static str {
         "pdf" => "application/pdf",
         "json" => "application/json",
         "txt" | "md" | "markdown" => "text/plain",
+        "docx" => DOCX_MIME,
+        "odt" => ODT_MIME,
         // Unknown extensions get no type, so `classify` refuses them by name (a key file stays out).
         _ => "",
     }
+}
+
+const DOCX_MIME: &str = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const ODT_MIME: &str = "application/vnd.oasis.opendocument.text";
+
+/// Validate attachments as the model will get them. A PDF over the model's limit is split into
+/// parts during the import, so here it only has to be a PDF.
+fn check_attachments(attachments: &[Attachment]) -> ApiResult<()> {
+    let (large, fits): (Vec<&Attachment>, Vec<&Attachment>) = attachments
+        .iter()
+        .partition(|a| a.kind == AttachmentKind::Pdf && a.bytes.len() > MAX_PDF_BYTES);
+    if let Some(a) = large.iter().find(|a| !a.bytes.starts_with(b"%PDF-")) {
+        return Err(ApiError::invalid(format!("\"{}\" is not a PDF.", a.name)));
+    }
+    let fits: Vec<Attachment> = fits.into_iter().cloned().collect();
+    prepare(Backend::Claude, &fits).map_err(|e| ApiError::invalid(e.to_string()))?;
+    Ok(())
 }
 
 /// Picked paths behind the `File` tokens of one import, resolved before the blocking work.
@@ -258,9 +304,9 @@ pub fn prepare_sources(
             }
         }
     }
-    if acc.text.chars().count() > MAX_PDF_TEXT_CHARS {
+    if acc.text.chars().count() > MAX_TEXT_CHARS {
         return Err(ApiError::invalid(format!(
-            "That text is too long to import (the limit is {MAX_PDF_TEXT_CHARS} characters). Split it up."
+            "That text is too long to import (the limit is {MAX_TEXT_CHARS} characters). Split it up."
         )));
     }
     let source_name = names.join(", ").chars().take(120).collect();
@@ -273,8 +319,7 @@ pub fn prepare_sources(
                     "The notes are too long (the limit is {MAX_NOTES_CHARS} characters when files are attached)."
                 )));
             }
-            prepare(Backend::Claude, &acc.attachments)
-                .map_err(|e| ApiError::invalid(e.to_string()))?;
+            check_attachments(&acc.attachments)?;
             (
                 ImportSource::Attachments(acc.attachments),
                 (!no_notes).then_some(acc.text),

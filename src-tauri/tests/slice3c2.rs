@@ -19,7 +19,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 const PNG: &str = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
-const FAKE: &str = "#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then echo 'fake-claude 1.0'; exit 0; fi\nD=\"$(dirname \"$0\")\"\ncat > \"$D/stdin.tmp\"\nA=\"$*\"\nwhile [ $# -gt 0 ]; do if [ \"$1\" = \"--system-prompt-file\" ]; then A=\"$A $(cat \"$2\")\"; fi; shift; done\nfor t in detect generate repair revise outline target; do\n case \"$A\" in *\"TASK: import_$t\"*) cp \"$D/stdin.tmp\" \"$D/stdin_$t.log\"; cat \"$D/r_$t.jsonl\"; exit 0;; esac\ndone\nexit 1\n";
+const FAKE: &str = "#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then echo 'fake-claude 1.0'; exit 0; fi\nD=\"$(dirname \"$0\")\"\ncat > \"$D/stdin.tmp\"\nA=\"$*\"\nwhile [ $# -gt 0 ]; do if [ \"$1\" = \"--system-prompt-file\" ]; then A=\"$A $(cat \"$2\")\"; fi; shift; done\nfor t in transcribe detect generate repair revise outline target; do\n case \"$A\" in *\"TASK: import_$t\"*) cp \"$D/stdin.tmp\" \"$D/stdin_$t.log\"; cat \"$D/r_$t.jsonl\"; exit 0;; esac\ndone\nexit 1\n";
 
 #[derive(Default)]
 struct Rec(Mutex<Vec<ImportEvent>>);
@@ -87,6 +87,8 @@ impl H {
         .unwrap();
     }
     fn script_feat(&self, transcript: &str) {
+        // Attachments are transcribed verbatim first; detection then reads that text.
+        self.reply("transcribe", &json!({"text": transcript, "headings": []}));
         self.reply(
             "detect",
             &json!({"kind":"feat","edition":"2014","confidence":0.9,
@@ -180,7 +182,7 @@ fn a_bytes_png_source_reaches_the_pipeline_as_an_image() {
     };
     let (id, rec) = h.run(vec![src]);
     assert_eq!(rec.0.lock().unwrap().last().unwrap().stage, "ready");
-    let stdin = std::fs::read_to_string(h.bin.path().join("stdin_detect.log")).unwrap();
+    let stdin = std::fs::read_to_string(h.bin.path().join("stdin_transcribe.log")).unwrap();
     assert!(stdin.contains("\"type\":\"image\""), "{stdin}");
     assert_eq!(
         h.state
@@ -210,20 +212,59 @@ fn text_notes_travel_with_attachments_in_one_import() {
     let (id, rec) = h.run(vec![notes, png()]);
     let id = id.expect("mixed text and image is accepted");
     assert_eq!(rec.0.lock().unwrap().last().unwrap().stage, "ready");
-    for task in ["detect", "generate"] {
+    for task in ["transcribe", "detect", "generate"] {
         let stdin =
             std::fs::read_to_string(h.bin.path().join(format!("stdin_{task}.log"))).unwrap();
         assert!(stdin.contains("2024 Fighter subclass"), "{task}: {stdin}");
     }
-    let stdin = std::fs::read_to_string(h.bin.path().join("stdin_detect.log")).unwrap();
+    let stdin = std::fs::read_to_string(h.bin.path().join("stdin_transcribe.log")).unwrap();
     assert!(stdin.contains("\"type\":\"image\""), "{stdin}");
     assert_eq!(h.state.import_get_draft(&id).unwrap().elements.len(), 1);
+}
+
+#[test]
+fn word_documents_and_pdfs_over_the_model_limit_are_imported_as_text() {
+    use borealis_assist::import::testing::{synthetic_pdf, synthetic_zip};
+    let h = harness();
+    h.script_feat("");
+    let doc = r#"<w:document xmlns:w="w"><w:body><w:p><w:r><w:t>Stonewall Stance</w:t></w:r></w:p><w:p><w:r><w:t>You plant your feet.</w:t></w:r></w:p></w:body></w:document>"#;
+    let docx = synthetic_zip(&[("word/document.xml", doc.as_bytes())]);
+    let src = ImportSourceDto::Bytes {
+        name: "feats.docx".into(),
+        mime: String::new(),
+        base64: STANDARD.encode(docx),
+    };
+    let (id, rec) = h.run(vec![src]);
+    assert!(id.is_ok());
+    assert_eq!(rec.0.lock().unwrap().last().unwrap().stage, "ready");
+    let stdin = std::fs::read_to_string(h.bin.path().join("stdin_detect.log")).unwrap();
+    assert!(stdin.contains("You plant your feet."), "{stdin}");
+
+    // A 21 MB PDF with a text layer: read from its text, no transcription call.
+    let page = vec![(
+        72.0,
+        700.0,
+        10.0,
+        false,
+        "Stonewall Stance. You plant your feet.",
+    )];
+    let pdf = synthetic_pdf(&[page], 21 * 1024 * 1024);
+    let src = ImportSourceDto::Bytes {
+        name: "big.pdf".into(),
+        mime: "application/pdf".into(),
+        base64: STANDARD.encode(pdf),
+    };
+    let (id, rec) = h.run(vec![src]);
+    assert!(id.is_ok());
+    assert_eq!(rec.0.lock().unwrap().last().unwrap().stage, "ready");
+    assert!(!h.bin.path().join("stdin_transcribe.log").exists());
 }
 
 #[test]
 fn oversized_unsupported_and_mixed_sources_are_rejected_up_front() {
     let h = harness();
     h.script_feat("");
+    // Over the model's 20 MB limit is fine for a real PDF (it is split); this one is not a PDF.
     let pdf = STANDARD.encode(vec![b'%'; 21 * 1024 * 1024]);
     let big = ImportSourceDto::Bytes {
         name: "big.pdf".into(),
@@ -246,7 +287,7 @@ fn oversized_unsupported_and_mixed_sources_are_rejected_up_front() {
         vec![not_png],
         vec![],
         vec![ImportSourceDto::Text {
-            text: "x".repeat(200_001),
+            text: "x".repeat(borealis_lib::import_sources::MAX_TEXT_CHARS + 1),
         }],
         vec![
             ImportSourceDto::Text {

@@ -467,7 +467,9 @@ tested reference of the *behaviour* the UI expects (it implements every command,
 
 ### Import anything: backend notes
 * `bytes` sources carry file contents read by the webview (drop, picker, camera); `file` is a native-dialog path (desktop "Browse...").
-  Limits (Rust, mirrors borealis-ai): max 12 sources, image <= 20 MB raw (downscaled to the 5 MB model limit), PDF <= 20 MB, text <= 200000 chars, 64 MB total.
+  Limits (Rust): max 12 sources, image <= 20 MB raw (downscaled to the 5 MB model limit), PDF <= 256 MB (text layer read
+  directly; scanned pages split into parts under the 20 MB model limit), Word `.docx` / OpenDocument `.odt` <= 64 MB (text,
+  headings and tables extracted; counts as text), text <= 2000000 chars, 320 MB total.
   Text MAY be mixed with images/PDFs in one `import_start`: with files present, every text source (and any text file) is concatenated into **notes**
   (<= 4000 chars, else `invalid_argument`) that ride along in each model step as `<user_notes>` hints ("this is a 2024 Fighter subclass"); the files stay the source.
   Text-only imports are unchanged (the text is the source). Notes apply to the start run only (not stored in the draft for revise). Other violations: `invalid_argument`, nothing is stored.

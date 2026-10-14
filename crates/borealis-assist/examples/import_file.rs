@@ -194,7 +194,13 @@ fn source_of(path: &Path) -> Result<(ImportSource, String), String> {
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_default();
     let is_pdf = name.to_ascii_lowercase().ends_with(".pdf");
-    let source = if is_pdf {
+    let office = borealis_assist::import::OfficeFormat::of_name(&name);
+    let source = if let Some(format) = office {
+        // As the desktop does: a Word / OpenDocument file is imported as its extracted text.
+        let text = borealis_assist::import::office_text(format, &bytes)
+            .map_err(|e| format!("{}: {e}", path.display()))?;
+        ImportSource::Text(text)
+    } else if is_pdf {
         ImportSource::Attachments(vec![Attachment {
             kind: AttachmentKind::Pdf,
             bytes,

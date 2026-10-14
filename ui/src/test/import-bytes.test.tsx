@@ -25,13 +25,16 @@ describe("import file sources", () => {
   });
 
   it("refuses oversized and unsupported files before reading them", async () => {
-    expect(problemWith({ name: "huge.pdf", type: "application/pdf", size: 21 * 1024 * 1024 })).toMatch(/too large/);
+    expect(problemWith({ name: "book.pdf", type: "application/pdf", size: 68 * 1024 * 1024 })).toBeNull();
+    expect(problemWith({ name: "huge.pdf", type: "application/pdf", size: 300 * 1024 * 1024 })).toMatch(/too large/);
+    expect(problemWith({ name: "notes.odt", type: "", size: 2 * 1024 * 1024 })).toBeNull();
+    expect(problemWith({ name: "notes.docx", type: "", size: 2 * 1024 * 1024 })).toBeNull();
     expect(problemWith({ name: "photo.png", type: "image/png", size: 12 * 1024 * 1024 })).toBeNull();
     expect(problemWith({ name: "movie.mp4", type: "video/mp4", size: 10 })).toMatch(/not supported/);
     const user = userEvent.setup();
     renderApp("/import", { api: fast() });
     const big = new File(["x"], "big.pdf", { type: "application/pdf" });
-    Object.defineProperty(big, "size", { value: 25 * 1024 * 1024 });
+    Object.defineProperty(big, "size", { value: 300 * 1024 * 1024 });
     await user.upload(await screen.findByLabelText("Choose files"), big);
     expect(await screen.findByText(/"big.pdf" is too large/)).toBeTruthy();
     expect((screen.getByRole("button", { name: "Import" }) as HTMLButtonElement).disabled).toBe(true);

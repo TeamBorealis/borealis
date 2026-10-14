@@ -16,7 +16,6 @@ use crate::import::ids::make_id;
 /// Levels a class has features at.
 pub(crate) const LEVELS: std::ops::RangeInclusive<u32> = 1..=20;
 const DEFAULT_SUBCLASS_LEVEL: u32 = 3;
-const SNIPPET_CHARS: usize = 160;
 const SCORE_NAME: u32 = 100;
 const SCORE_SUPPORTS: u32 = 90;
 const SCORE_CONTAINS_NAME: u32 = 60;
@@ -180,35 +179,7 @@ fn snap(level: u32, allowed: &[u32]) -> u32 {
 
 /// Locate `quote` (or `name`) in the source.
 pub(crate) fn locate(source: &str, quote: &str, name: &str) -> Option<SourceExcerpt> {
-    let lines: Vec<&str> = source.lines().collect();
-    let find = |needle: &str| {
-        let n = needle.trim().to_lowercase();
-        (!n.is_empty())
-            .then(|| lines.iter().position(|l| l.to_lowercase().contains(&n)))
-            .flatten()
-    };
-    // Last resort: the name with punctuation and case ignored ("Brass-Spitter" vs "BRASS SPITTER.").
-    let loose = || {
-        let n = norm(name);
-        (!n.is_empty())
-            .then(|| lines.iter().position(|l| contains_words(&norm(l), &n)))
-            .flatten()
-    };
-    let start = find(quote).or_else(|| find(name)).or_else(loose)?;
-    let mut end = start;
-    while end + 1 < lines.len() && !lines[end + 1].trim().is_empty() {
-        end += 1;
-    }
-    let snippet: String = lines[start..=end]
-        .join(" ")
-        .chars()
-        .take(SNIPPET_CHARS)
-        .collect();
-    Some(SourceExcerpt {
-        start_line: start + 1,
-        end_line: end + 1,
-        snippet,
-    })
+    super::locate::locate_section(source, quote, name)
 }
 
 struct Builder<'a> {

@@ -193,6 +193,15 @@ pub(crate) fn build_report(draft: &ImportDraft, renamed: &[(String, String)]) ->
             });
         }
     }
+    // What could not be read from the attachments (oversized pages, untranscribed headings).
+    for n in &draft.detection.notes {
+        if let Some(message) = n.strip_prefix(super::ingest::READING_NOTE) {
+            report.warnings.push(ReportIssue {
+                element: "source".into(),
+                message: message.to_string(),
+            });
+        }
+    }
     report
 }
 

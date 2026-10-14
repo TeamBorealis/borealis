@@ -20,8 +20,11 @@ export const IMPORT_LIMITS = {
   maxSources: 12,
   /** Photos are downscaled before the model sees them, so the raw cap is above the 5 MB model limit. */
   maxImageBytes: 20 * 1024 * 1024,
-  maxPdfBytes: 20 * 1024 * 1024,
-  maxTextChars: 200_000,
+  /** Large PDFs are split into parts under the model limit by the importer. */
+  maxPdfBytes: 256 * 1024 * 1024,
+  /** Word (.docx) and OpenDocument (.odt) files; their text is extracted. */
+  maxDocumentBytes: 64 * 1024 * 1024,
+  maxTextChars: 2_000_000,
   /** Typed notes that accompany images or PDFs in one `import_start`. */
   maxNotesChars: 4000,
 } as const;

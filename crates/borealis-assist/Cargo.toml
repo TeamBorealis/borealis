@@ -20,6 +20,8 @@ thiserror.workspace = true
 tracing.workspace = true
 tokio = { workspace = true, features = ["sync"] }
 lopdf = { version = "0.45", default-features = false }
+quick-xml.workspace = true
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt", "macros"] }

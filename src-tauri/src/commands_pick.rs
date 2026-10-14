@@ -91,7 +91,9 @@ fn native_pick(
         PickPurpose::ImportFile => dialog
             .add_filter(
                 "Rules content",
-                &["png", "jpg", "jpeg", "webp", "pdf", "txt", "md", "json"],
+                &[
+                    "png", "jpg", "jpeg", "webp", "pdf", "docx", "odt", "txt", "md", "json",
+                ],
             )
             .blocking_pick_files()
             .unwrap_or_default(),

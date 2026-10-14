@@ -7,9 +7,16 @@
 pub mod anything;
 mod chunk;
 mod ids;
+pub mod layout;
+pub mod office;
 mod pack;
 mod pdf;
+mod pdf_fonts;
+mod pdf_split;
 pub mod report;
+#[doc(hidden)]
+pub mod testing;
+mod zip;
 
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -26,8 +33,10 @@ use crate::homebrew::{ai_ruleset, PackContext, StoreValidator};
 
 pub use chunk::{chunk_text, Chunk, Hint};
 pub use ids::{make_id, slug};
+pub use office::{office_text, OfficeFormat};
 pub use pack::{assemble, ImportedPack, Provenance, CONTENT_FILE};
-pub use pdf::{extract_pdf_text, PdfText, MIN_CHARS_PER_PAGE};
+pub use pdf::{extract_pdf_text, read_pdf_layout, PdfLayout, PdfPage, PdfText, MIN_CHARS_PER_PAGE};
+pub use pdf_split::{split_pdf, OversizedPage, PdfPart};
 pub use report::{ImportReport, ReportEntry, ReportIssue, REPORT_FILE, REPORT_FORMAT};
 
 /// A chunk shorter than this with no recognised pattern is skipped as prose.
