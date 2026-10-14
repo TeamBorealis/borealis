@@ -121,11 +121,20 @@ pub(crate) fn element_window(source: &str, planned: &PlannedElement) -> String {
     let end = ex.end_line.max(ex.start_line).min(lines.len());
     if planned.role != Role::Class {
         let short = (end - start).max(MIN_WINDOW_LINES);
-        return lines[start..(start + short).min(lines.len())].join("\n");
+        let mut blocks = vec![(start, (start + short).min(lines.len()))];
+        // A table row also gets the table's caption, header and category rows above it.
+        blocks.extend(table_head(&lines, start));
+        return joined(&lines, blocks);
     }
     let mut blocks = vec![(start, end)];
     blocks.extend(progression_table(&lines, start));
     blocks.extend(proficiency_block(&lines, start));
+    joined(&lines, blocks)
+}
+
+/// `blocks` (0-based line ranges) in source order, overlapping ones merged, apart ones joined
+/// by a `...` line.
+fn joined(lines: &[&str], mut blocks: Vec<(usize, usize)>) -> String {
     blocks.sort_unstable();
     let mut merged: Vec<(usize, usize)> = Vec::new();
     for (s, e) in blocks {
@@ -139,6 +148,52 @@ pub(crate) fn element_window(source: &str, planned: &PlannedElement) -> String {
         .map(|(s, e)| lines[*s..*e].join("\n"))
         .collect::<Vec<_>>()
         .join("\n...\n")
+}
+
+/// Most lines of a table's head (caption, lead-in, header and category rows) kept above a row.
+const TABLE_HEAD_MAX: usize = 8;
+/// Most words of a category line inside a table ("Martial Ranged Weapons").
+const CATEGORY_WORDS: usize = 5;
+
+/// The head of the table the row at `row` (0-based) is in: from the caption heading (or the
+/// line just above the table) through the header row and category lines, up to the first row
+/// that is not one of them. `None` when `row` is not a table row or the table starts there.
+fn table_head(lines: &[&str], row: usize) -> Option<(usize, usize)> {
+    let is_row = |k: usize| lines.get(k).is_some_and(|l| l.contains(" | "));
+    let category = |k: usize| {
+        let l = lines[k].trim();
+        !l.is_empty()
+            && !l.starts_with('#')
+            && !l.ends_with(['.', ',', ';', ':'])
+            && l.split_whitespace().count() <= CATEGORY_WORDS
+    };
+    if !is_row(row) {
+        return None;
+    }
+    // Up through the table: rows, category lines, and single blank lines between rows.
+    let mut top = row;
+    while top > 0 {
+        let k = top - 1;
+        if is_row(k) || category(k) {
+            top = k;
+        } else if lines[k].trim().is_empty() && k > 0 && is_row(k - 1) {
+            top = k - 1;
+        } else {
+            break;
+        }
+    }
+    // The header row and category lines: the table's top to its first row after the top.
+    let head_end = (top + 1..=row).find(|&k| is_row(k)).unwrap_or(row);
+    // A caption heading right above the table (past one blank line).
+    let blank = |k: usize| lines[k].trim().is_empty();
+    let above = match top.checked_sub(1) {
+        Some(k) if blank(k) => k.checked_sub(1),
+        k => k,
+    };
+    let start = above
+        .filter(|&k| lines[k].trim_start().starts_with('#'))
+        .unwrap_or(top);
+    (start < row && head_end - start <= TABLE_HEAD_MAX).then_some((start, head_end))
 }
 
 /// A class table row: its first cell is a level ("1st", "12th", "3").
@@ -249,6 +304,24 @@ mod tests {
         let lines = src.lines().count();
         let w = element_window(&src, &root(Role::Subclass, 1, lines));
         assert_eq!(w.chars().count(), src.trim_end().chars().count());
+    }
+
+    #[test]
+    fn a_table_row_element_gets_the_tables_caption_header_and_category_rows() {
+        let mut src = String::from("# Gear\n\nTinkers sell these.\n\n#### Lamps\n\n");
+        src.push_str("Name | Cost | Weight\nHeavy Lamps\n");
+        for k in 1..=6 {
+            src.push_str(&format!("Lamp {k} | {k} gp | 2 lb.\n"));
+        }
+        src.push_str("\nThe lamps burn oil.\n");
+        let row = src.lines().position(|l| l.starts_with("Lamp 5")).unwrap() + 1;
+        let mut p = root(Role::Standalone, row, row);
+        p.ty = "Item".into();
+        let w = element_window(&src, &p);
+        assert!(w.starts_with("#### Lamps"), "{w}");
+        assert!(w.contains("Name | Cost | Weight\nHeavy Lamps"), "{w}");
+        assert!(w.contains("Lamp 5 | 5 gp"), "{w}");
+        assert!(!w.contains("Tinkers sell"), "{w}");
     }
 
     #[test]

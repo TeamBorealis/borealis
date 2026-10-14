@@ -587,6 +587,18 @@ mod tests {
                 p.role != Role::SubclassGate && !(p.role == Role::Text && p.excerpt.is_some())
             })
             .count();
+        if let Ok(out) = std::env::var("BOREALIS_PROBE_WINDOWS") {
+            let all: Vec<String> = draft
+                .plan
+                .elements
+                .iter()
+                .map(|p| {
+                    let w = super::super::source::element_window(&src, p);
+                    format!("===== {} ({:?})\n{w}", p.name, p.role)
+                })
+                .collect();
+            std::fs::write(out, all.join("\n")).unwrap();
+        }
         if let Ok(out) = std::env::var("BOREALIS_PROBE_ROOT") {
             let class = draft.plan.elements.iter().find(|p| p.role == Role::Class);
             if let Some(p) = class {
