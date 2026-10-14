@@ -49,7 +49,10 @@ pub(crate) fn apply(el: &mut Value, planned: &PlannedElement, plan: &ImportPlan)
     offer_subraces(el, planned, plan);
     match planned.role {
         Role::Option => shape_option(el, planned, plan),
-        Role::Part => mark_owner(el, planned, plan),
+        Role::Part => {
+            mark_owner(el, planned, plan);
+            drop_built_caster_rules(el, planned, plan);
+        }
         Role::Text => {
             let o = obj(el);
             o.insert("supports".into(), json!([RULES_SUPPORT]));
@@ -64,6 +67,45 @@ pub(crate) fn apply(el: &mut Value, planned: &PlannedElement, plan: &ImportPlan)
     super::feature_spells::table_columns(el, planned, plan);
     super::prereq::apply(el, planned, plan);
     super::units::apply(el);
+}
+
+/// Sub-heading names of a class's spellcasting section ("Cantrips", "Preparing Spells").
+const CASTER_PART_WORDS: [&str; 5] = [
+    "cantrip",
+    "spell slot",
+    "spells known",
+    "preparing",
+    "spellcasting",
+];
+
+fn is_caster_part(name: &str) -> bool {
+    let n = name.to_lowercase();
+    CASTER_PART_WORDS.iter().any(|w| n.contains(w))
+}
+
+/// A part of a casting class's spellcasting section (a feature at level 3 or lower that is
+/// caster-named or has caster sub-headings) describes what the caster builder generates for
+/// the class (cantrip and spell choices, slots, preparation): the model's own spellcasting
+/// rules there would count them twice.
+fn drop_built_caster_rules(el: &mut Value, planned: &PlannedElement, plan: &ImportPlan) {
+    let Some(section) = find(plan, planned.parent.as_deref()) else {
+        return;
+    };
+    let Some(class) = find(plan, section.owner.as_deref()).filter(|c| c.role == Role::Class) else {
+        return;
+    };
+    let casts = plan.groups.iter().any(|g| {
+        g.root_id.as_deref() == Some(class.id.as_str())
+            && g.outline.as_ref().is_some_and(|o| o.caster().is_some())
+    });
+    let caster_section = section.level.is_some_and(|l| l <= 3)
+        && (super::caster::is_caster_feature(&section.name)
+            || children(plan, &section.id)
+                .iter()
+                .any(|c| c.role == Role::Part && is_caster_part(&c.name)));
+    if casts && caster_section && is_caster_part(&planned.name) {
+        rules_of(el).retain(|r| !super::caster::is_model_caster_rule(r));
+    }
 }
 
 fn grant_parts(el: &mut Value, planned: &PlannedElement, plan: &ImportPlan) {
@@ -92,10 +134,25 @@ fn grant_parts(el: &mut Value, planned: &PlannedElement, plan: &ImportPlan) {
 fn offer_options(el: &mut Value, planned: &PlannedElement) {
     let Some(picks) = &planned.picks else { return };
     let own = planned.level.unwrap_or(1);
+    // A choice among existing elements: the model's own select or grants of them go.
+    let ids: Vec<&str> = if picks.key.starts_with("ID_") {
+        picks.key.split('|').collect()
+    } else {
+        Vec::new()
+    };
+    let names_an_id = |r: &Value| {
+        let s = r.get("supports").and_then(Value::as_str).unwrap_or("");
+        let id = r.get("id").and_then(Value::as_str).unwrap_or("");
+        ids.iter()
+            .any(|i| *i == id || s.split('|').any(|p| p.trim() == *i))
+    };
     let rules = rules_of(el);
     rules.retain(|r| {
-        !(r.get("kind").and_then(Value::as_str) == Some("select")
-            && r.get("supports").and_then(Value::as_str) == Some(picks.key.as_str()))
+        let kind = r.get("kind").and_then(Value::as_str);
+        let same_key = kind == Some("select")
+            && r.get("supports").and_then(Value::as_str) == Some(picks.key.as_str());
+        let model_pick = matches!(kind, Some("select" | "grant")) && names_an_id(r);
+        !(same_key || model_pick)
     });
     let several = picks.choose.len() > 1;
     for c in &picks.choose {
@@ -111,6 +168,9 @@ fn offer_options(el: &mut Value, planned: &PlannedElement) {
         }
         if c.level > own || (several && c.level > 1) {
             s["level"] = json!(c.level);
+        }
+        if let Some(sc) = &picks.spellcasting {
+            s["spellcasting"] = json!(sc);
         }
         rules.push(s);
     }
@@ -216,6 +276,47 @@ fn is_heading(line: &str) -> Option<usize> {
     let t = line.trim_start();
     let n = t.chars().take_while(|c| *c == '#').count();
     (n > 0 && t[n..].starts_with(' ')).then_some(n)
+}
+
+fn heading_text(line: &str) -> Option<(usize, String)> {
+    let n = is_heading(line)?;
+    let words: String = line.trim_start()[n..]
+        .chars()
+        .map(|c| if c.is_alphanumeric() { c } else { ' ' })
+        .collect();
+    Some((
+        n,
+        words
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .to_lowercase(),
+    ))
+}
+
+/// Does `part` have a heading of its own inside the section headed `parent` (a deeper
+/// heading before the next one at the parent's depth)? Such a sub-item is its own element,
+/// never folded into its parent.
+pub(crate) fn headed_within(source: &str, parent: &str, part: &str) -> bool {
+    let key = |s: &str| heading_text(&format!("# {s}")).map(|(_, t)| t);
+    let (Some(parent), Some(part)) = (key(parent), key(part)) else {
+        return false;
+    };
+    let mut depth: Option<usize> = None;
+    for line in source.lines() {
+        let Some((n, text)) = heading_text(line) else {
+            continue;
+        };
+        match depth {
+            None if text == parent => depth = Some(n),
+            Some(d) if n <= d => {
+                depth = (text == parent).then_some(n);
+            }
+            Some(_) if text == part => return true,
+            _ => {}
+        }
+    }
+    false
 }
 
 fn is_list_line(line: &str) -> bool {

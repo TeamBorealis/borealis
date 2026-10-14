@@ -54,12 +54,102 @@ fn level_term(t: &str) -> Option<String> {
     (words == ["level"] || words == ["character", "level"]).then(|| format!("[character:{level}]"))
 }
 
+/// A name without its articles ("Speaker of the Tides" ~ "Speaker of Tides").
+fn loose(s: &str) -> String {
+    norm(s)
+        .split(' ')
+        .filter(|w| !matches!(*w, "the" | "a" | "an"))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 /// An element this import plans, by name, that can be a prerequisite.
 fn planned_named<'a>(plan: &'a ImportPlan, name: &str, own: &str) -> Option<&'a PlannedElement> {
+    let usable = |e: &&PlannedElement| e.id != own && e.role != Role::Text && e.ty != "Spell";
     let want = norm(name);
+    let want_loose = loose(name);
     plan.elements
         .iter()
-        .find(|e| e.id != own && e.role != Role::Text && e.ty != "Spell" && norm(&e.name) == want)
+        .filter(usable)
+        .find(|e| norm(&e.name) == want)
+        .or_else(|| {
+            plan.elements
+                .iter()
+                .filter(usable)
+                .find(|e| !want_loose.is_empty() && loose(&e.name) == want_loose)
+        })
+}
+
+/// The planned names of "A, B, or C" alternatives; a bare alternative may share the first
+/// one's leading words ("Speaker of Tides, Stones, or Winds"). `None` unless every one is a
+/// planned element.
+fn alt_names(alts: &[&str], plan: &ImportPlan, own: &str) -> Option<Vec<String>> {
+    let first = norm(alts.first()?);
+    let lead: Vec<&str> = first.split(' ').collect();
+    let lead = lead[..lead.len().saturating_sub(1)].join(" ");
+    alts.iter()
+        .map(|a| {
+            let a = a.trim().trim_end_matches('.').trim();
+            let a = KIND_WORDS
+                .iter()
+                .find_map(|w| {
+                    a.to_lowercase()
+                        .ends_with(w)
+                        .then(|| a[..a.len() - w.len()].trim())
+                })
+                .unwrap_or(a);
+            planned_named(plan, a, own)
+                .or_else(|| {
+                    (!lead.is_empty())
+                        .then(|| planned_named(plan, &format!("{lead} {a}"), own))
+                        .flatten()
+                })
+                .map(|e| e.name.clone())
+        })
+        .collect()
+}
+
+/// `([feature:A]||[feature:B])` for alternatives that all name planned elements.
+fn alt_features(alts: &[&str], plan: &ImportPlan, own: &str) -> Option<String> {
+    let names = alt_names(alts, plan, own)?;
+    let ok = names
+        .iter()
+        .all(|n| !n.contains([']', '[', '|', '&', '!', ':']));
+    (ok && names.len() > 1).then(|| {
+        let terms: Vec<String> = names.iter().map(|n| format!("[feature:{n}]")).collect();
+        format!("({})", terms.join("||"))
+    })
+}
+
+/// A part that reads as a level or an ability score, never one alternative of a name list.
+fn is_level_or_score(part: &str) -> bool {
+    let n = norm(part);
+    n.chars().any(|c| c.is_ascii_digit())
+}
+
+/// The prerequisite parts with an "A, B, or C" list joined back into one " or " part.
+fn parts_of(text: &str) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for seg in text.split([',', ';']) {
+        let t = seg.trim();
+        let Some(last) = t.strip_prefix("or ") else {
+            out.push(t.to_string());
+            continue;
+        };
+        // Walk back over the alternatives of the same kind before "or C" (names, or scores).
+        let scores = is_level_or_score(last);
+        let mut alts = vec![last.to_string()];
+        while let Some(prev) = out.last().filter(|p| {
+            !p.is_empty()
+                && is_level_or_score(p) == scores
+                && (!scores || ability_term(p).is_some())
+        }) {
+            alts.insert(0, prev.clone());
+            out.pop();
+        }
+        out.push(alts.join(" or "));
+    }
+    out
 }
 
 /// The requirement of one prerequisite term, if it is one the grammar can test.
@@ -94,11 +184,12 @@ fn term(t: &str, plan: &ImportPlan, planned: &PlannedElement) -> Option<String> 
 /// unless every alternative is an ability score).
 fn requirements_of(text: &str, plan: &ImportPlan, planned: &PlannedElement) -> Vec<String> {
     let mut out = Vec::new();
-    for part in text.split([',', ';']).flat_map(|p| p.split(" and ")) {
+    let parts = parts_of(text);
+    for part in parts.iter().flat_map(|p| p.split(" and ")) {
         let alts: Vec<&str> = part.split(" or ").collect();
         if alts.len() > 1 && !part.trim().ends_with("or higher") {
-            let abilities = alt_abilities(&alts);
-            if let Some(a) = abilities {
+            if let Some(a) = alt_abilities(&alts).or_else(|| alt_features(&alts, plan, &planned.id))
+            {
                 out.push(a);
             }
             continue;
@@ -125,14 +216,59 @@ fn alt_abilities(alts: &[&str]) -> Option<String> {
     terms.map(|t| format!("({})", t.join("||")))
 }
 
-/// Add the requirements of `el`'s printed `prerequisite` that it does not test yet.
-pub(crate) fn apply(el: &mut Value, planned: &PlannedElement, plan: &ImportPlan) {
-    let Some(text) = el
+/// Labels of a printed prerequisite line.
+const LABELS: [&str; 2] = ["prerequisites", "prerequisite"];
+
+/// Plain text of the first paragraph of an HTML description.
+fn first_paragraph(html: &str) -> String {
+    let mut out = String::new();
+    let mut in_tag = false;
+    let mut tag = String::new();
+    for c in html.trim_start().chars() {
+        match c {
+            '<' => {
+                in_tag = true;
+                tag.clear();
+            }
+            '>' if in_tag => {
+                in_tag = false;
+                let t = tag.to_lowercase();
+                let ends = t.starts_with("/p") || t.starts_with("br") || t.starts_with("/li");
+                if ends && !out.trim().is_empty() {
+                    break;
+                }
+            }
+            c if in_tag => tag.push(c),
+            '\n' if !out.trim().is_empty() => break,
+            c => out.push(c),
+        }
+    }
+    out.replace("&amp;", "&").trim().to_string()
+}
+
+/// The printed prerequisite: the element's `prerequisite`, else a leading "Prerequisite:"
+/// paragraph of its description (the model often keeps it there only).
+fn printed(el: &Value) -> Option<String> {
+    if let Some(t) = el
         .get("prerequisite")
         .and_then(Value::as_str)
-        .map(str::to_string)
         .filter(|t| !t.trim().is_empty())
-    else {
+    {
+        return Some(t.to_string());
+    }
+    let para = first_paragraph(el.get("description").and_then(Value::as_str)?);
+    let lower = para.to_lowercase();
+    LABELS.iter().find_map(|l| {
+        let rest = lower.strip_prefix(l)?;
+        let rest = rest.trim_start().strip_prefix(':')?;
+        let at = para.len().checked_sub(rest.len())?;
+        Some(para.get(at..)?.trim().to_string()).filter(|t| !t.is_empty())
+    })
+}
+
+/// Add the requirements of `el`'s printed prerequisite that it does not test yet.
+pub(crate) fn apply(el: &mut Value, planned: &PlannedElement, plan: &ImportPlan) {
+    let Some(text) = printed(el) else {
         return;
     };
     let existing = el
@@ -210,6 +346,46 @@ mod tests {
         let req = el["requirements"].as_str().unwrap();
         assert_eq!(req.matches("Gloomstep").count(), 1);
         let mut prose = json!({"prerequisite": "the ability to cast at least one spell"});
+        apply(&mut prose, me, &plan);
+        assert!(prose.get("requirements").is_none());
+    }
+
+    #[test]
+    fn a_description_prerequisite_and_name_lists_become_requirements() {
+        let plan = ImportPlan {
+            edition: Edition::Y2014,
+            groups: Vec::new(),
+            elements: vec![
+                planned("ID_A_TIDES", "Keeper of the Tides", "Archetype"),
+                planned("ID_A_STONES", "Keeper of Stones", "Archetype"),
+                planned("ID_A_GALES", "Keeper of Gales", "Archetype"),
+                planned("ID_F_EMBER", "Gift of Embers", "Class Feature"),
+                planned("ID_F_OPT", "Ember Step", "Class Feature"),
+            ],
+            notes: Vec::new(),
+        };
+        let me = &plan.elements[4];
+        // Only in the description, as the model keeps it.
+        let mut el = json!({"description": "<p><i>Prerequisite: 9th level, Gift of Embers feature</i></p><p>You step.</p>",
+            "requirements": "[level:9]"});
+        apply(&mut el, me, &plan);
+        assert_eq!(el["requirements"], "[level:9]&&[feature:Gift of Embers]");
+        // "A, B, or C" with the first one's leading words; an article does not matter.
+        let mut list = json!({"prerequisite": "9th level, Keeper of Tides, Stones, or Gales"});
+        apply(&mut list, me, &plan);
+        assert_eq!(
+            list["requirements"],
+            "([feature:Keeper of the Tides]||[feature:Keeper of Stones]||[feature:Keeper of Gales])"
+        );
+        // A list with an unknown name adds nothing; scores in a list stay one "or" term.
+        let mut unknown = json!({"prerequisite": "Keeper of Stones, Mist, or Gales"});
+        apply(&mut unknown, me, &plan);
+        assert!(unknown.get("requirements").is_none());
+        let mut scores = json!({"prerequisite": "Strength 13, Dexterity 13, or Constitution 13"});
+        apply(&mut scores, me, &plan);
+        assert_eq!(scores["requirements"], "([str:13]||[dex:13]||[con:13])");
+        // Prose that is not a prerequisite line adds nothing.
+        let mut prose = json!({"description": "<p>You need no prerequisite: anyone can.</p>"});
         apply(&mut prose, me, &plan);
         assert!(prose.get("requirements").is_none());
     }

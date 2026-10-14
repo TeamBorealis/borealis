@@ -185,6 +185,8 @@ pub(crate) fn locate(source: &str, quote: &str, name: &str) -> Option<SourceExce
 struct Builder<'a> {
     prefix: &'a str,
     source: &'a str,
+    store: &'a ContentStore,
+    edition: Edition,
     used: HashSet<String>,
     out: Vec<PlannedElement>,
     notes: Vec<String>,
@@ -230,6 +232,41 @@ impl Builder<'_> {
         if let Some(e) = self.get(id) {
             e.spells = grants;
         }
+    }
+
+    /// A choice among existing elements: one select over their ids on the parent (no option
+    /// elements); options with no existing element stay in its text and are noted.
+    fn target_choice(
+        &mut self,
+        f: &OutlineFeature,
+        parent_id: &str,
+        owner_name: &str,
+        choose: Vec<PickCount>,
+        t: super::targets::Target,
+    ) {
+        if !t.unresolved.is_empty() {
+            self.notes.push(format!(
+                "{}: options not in the library are kept in its text only: {}",
+                f.name,
+                t.unresolved.join(", ")
+            ));
+        }
+        let Some(e) = self.get(parent_id) else { return };
+        let names: Vec<&str> = f.options.iter().map(|o| o.name.as_str()).collect();
+        e.brief = format!(
+            "{} The choice among {} is a select of existing {} elements written for you: keep the options in the description, but write no rule for that choice.",
+            e.brief,
+            names.join(", "),
+            t.ty
+        )
+        .trim()
+        .to_string();
+        e.picks = Some(OptionPicks {
+            key: t.ids.join("|"),
+            ty: t.ty.to_string(),
+            choose,
+            spellcasting: (t.ty == "Spell").then(|| owner_name.to_string()),
+        });
     }
 
     fn get(&mut self, id: &str) -> Option<&mut PlannedElement> {
@@ -281,7 +318,13 @@ impl Builder<'_> {
             }
         }
         let options = unique_parts(&f.options, &f.name);
-        if !options.is_empty() {
+        let target = (!options.is_empty())
+            .then(|| super::targets::resolve(self.store, self.edition, &options))
+            .flatten();
+        if let Some(t) = target {
+            let choose = picks_of(&f.choose, level.unwrap_or(1));
+            self.target_choice(f, parent_id, owner_name, choose, t);
+        } else if !options.is_empty() {
             let first = level.unwrap_or(1);
             let choose = picks_of(&f.choose, first);
             let opening = choose.first().map_or(first, |c| c.level);
@@ -302,6 +345,7 @@ impl Builder<'_> {
                     key: option_key(owner_name, &f.name),
                     ty: ty.to_string(),
                     choose,
+                    spellcasting: None,
                 });
             }
             names.extend(options.iter().map(|o| o.name.clone()));
@@ -500,7 +544,17 @@ pub(crate) fn planned_class_links(plan: &ImportPlan) -> Vec<ParentLink> {
         .collect()
 }
 
+/// `o` with the tier rows of one feature merged (see `leveled`).
+fn with_tiers_merged(o: &Outline) -> Outline {
+    Outline {
+        features: super::leveled::merge_tiers(&o.features),
+        ..o.clone()
+    }
+}
+
 fn class_group(b: &mut Builder, o: &Outline) -> String {
+    let merged = with_tiers_merged(o);
+    let o = &merged;
     let class_id = make_id(b.prefix, "Class", &o.name, &b.used);
     b.used.insert(class_id.clone());
     let sub_level = gate_level(o);
@@ -589,6 +643,8 @@ fn class_group(b: &mut Builder, o: &Outline) -> String {
 }
 
 fn subclass_group(b: &mut Builder, o: &Outline, parent: &ParentLink) -> String {
+    let merged = with_tiers_merged(o);
+    let o = &merged;
     let root_id = make_id(b.prefix, "Archetype", &o.name, &b.used);
     b.used.insert(root_id.clone());
     let allowed: Vec<u32> = parent.subclass_levels.clone();
@@ -672,6 +728,8 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
     let mut b = Builder {
         prefix,
         source,
+        store,
+        edition: plan.edition,
         used: store.iter().map(|s| s.element.id.clone()).collect(),
         out: Vec::new(),
         notes: Vec::new(),
@@ -679,6 +737,12 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
     // Classes first: subclasses of a class from the same source link to its planned id.
     for g in &mut plan.groups {
         g.root_id = None;
+        if let Some(sc) = g.outline.as_mut().and_then(|o| o.spellcasting.as_mut()) {
+            sc.prepared_formula = sc
+                .prepared_formula
+                .as_deref()
+                .map(super::prepared::canonical);
+        }
         if let (ImportKind::Class, Some(o)) = (g.kind, &g.outline) {
             g.root_id = Some(class_group(&mut b, o));
         }
@@ -733,6 +797,7 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
         };
         g.root_id = Some(standalone_group(&mut b, g, ty));
     }
+    super::variants::link_briefs(&mut b.out);
     b.notes.extend(super::feature_spells::resolve(
         &mut b.out,
         store,
@@ -789,7 +854,17 @@ fn standalone_group(b: &mut Builder, g: &PlanGroup, ty: &str) -> String {
         }
         names.push(norm(&f.name));
         let trait_id = b.push_child(part_ty, &part, Role::Part, None, &id);
-        b.push_children(f, &trait_id, part_ty, &g.name, None, false);
+        // A trait's sub-items are folded into it unless they have a heading of their own.
+        let headed = OutlineFeature {
+            parts: f
+                .parts
+                .iter()
+                .filter(|p| super::parts::headed_within(b.source, &f.name, &p.name))
+                .cloned()
+                .collect(),
+            ..f.clone()
+        };
+        b.push_children(&headed, &trait_id, part_ty, &g.name, None, true);
     }
     if !names.is_empty() {
         if let Some(e) = b.get(&id) {

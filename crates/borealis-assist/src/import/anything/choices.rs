@@ -8,6 +8,8 @@ use borealis_content::ContentStore;
 use serde_json::{json, Value};
 
 const COUNTS: [&str; 6] = ["one", "two", "three", "four", "five", "six"];
+/// Words of a class's own cantrip progression (never a bonus cantrip).
+const PROGRESSION_WORDS: [&str; 3] = ["cantrips known", "at higher levels", "as shown in the"];
 const SKILL_PREFIX: &str = "ID_PROFICIENCY_SKILL_";
 
 fn norm(s: &str) -> String {
@@ -233,6 +235,11 @@ pub(crate) fn cantrip_select(feature: &Value, lists: &[String]) -> Option<Value>
         return None;
     }
     let text = norm(str_at(feature, "description"));
+    // The class's own cantrips ("... more at higher levels, as shown in the Cantrips Known
+    // column") come from its caster profile, not a bonus select.
+    if PROGRESSION_WORDS.iter().any(|w| text.contains(w)) {
+        return None;
+    }
     let at = text.find(" cantrip")?;
     let before: Vec<&str> = text[..at].split_whitespace().collect();
     let count_word = before.last()?;
@@ -262,4 +269,21 @@ pub(crate) fn cantrip_select(feature: &Value, lists: &[String]) -> Option<Value>
         sel["number"] = json!(n);
     }
     Some(sel)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_bonus_cantrip_is_a_select_but_the_class_progression_is_not() {
+        let lists = vec!["Warden".to_string()];
+        let bonus = json!({"name": "Grove Lore", "data": {"class": "Warden"},
+            "description": "<p>You learn one cantrip of your choice from the Warden spell list.</p>"});
+        let sel = cantrip_select(&bonus, &lists).expect("bonus cantrip");
+        assert_eq!(sel["supports"], "Warden,0");
+        let own = json!({"name": "Cantrips", "data": {"class": "Warden"},
+            "description": "<p>You know one cantrip of your choice from the Warden spell list. You learn additional Warden cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Warden table.</p>"});
+        assert!(cantrip_select(&own, &lists).is_none());
+    }
 }

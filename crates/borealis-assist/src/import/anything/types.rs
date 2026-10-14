@@ -263,6 +263,9 @@ pub struct OptionPicks {
     pub ty: String,
     /// Picks gained, by level.
     pub choose: Vec<PickCount>,
+    /// A spell select's `spellcasting` name (options that are existing spells).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spellcasting: Option<String>,
 }
 
 /// `count` picks gained at `level`.

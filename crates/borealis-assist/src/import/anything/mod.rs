@@ -16,16 +16,21 @@ mod formula;
 mod generate;
 mod ingest;
 mod items;
+mod leveled;
 mod lists;
 mod locate;
 mod normalize;
 mod parts;
 mod plan;
+mod prepared;
 mod prereq;
 mod rules;
 mod source;
 mod steps;
+#[cfg(test)]
+mod structure_tests;
 mod sweep;
+mod targets;
 mod types;
 mod units;
 mod variants;
@@ -131,7 +136,7 @@ pub async fn detect_source(
         .items
         .into_iter()
         .partition(|i| i.kind != ImportKind::Mixed);
-    let items = variants::split(items, out.edition);
+    let items = variants::with_bases(variants::split(items, out.edition));
     let other: Vec<OtherItem> = out
         .other
         .into_iter()

@@ -282,9 +282,12 @@ to choose in `choose` [{{level: 1, count: N}}].",
         ),
         _ => format!(
             "the class \"{}\": a feature for each level that grants one (include the ability score improvement / \
-epic boon rows; SKIP levels that only change table numbers, they need no feature), the subclass choice level in `subclass_level`, the hit die, and spellcasting \
+epic boon rows; SKIP levels that only change table numbers, they need no feature; a feature the table lists at several \
+levels as tiers, such as \"X (6th level)\" and \"X (7th level)\", is ONE feature named as its heading in the text, at its \
+first level), the subclass choice level in `subclass_level`, the hit die, and spellcasting \
 (a profile {{kind: full|half|third|pact|none, ability, prepared|known, ritual, spell_list_name, \
-cantrips_by_level and spells_known_by_level as 20 cumulative numbers, prepared_formula, spells: the name of \
+cantrips_by_level and spells_known_by_level as 20 cumulative numbers, prepared_formula in the terms mod, level, half, third \
+or a number joined by + (e.g. \"mod + level\", or \"mod\" for an ability modifier alone), spells: the name of \
 every spell on the class's spell list as printed}}; kind `points` when it casts from a pool of points instead of \
 slots); never write slot tables. In `columns` list EVERY other column of the class table (not Level, Proficiency \
 Bonus, Features, cantrips or spells known, or spell slot columns; a points pool, uses, a die size or a bonus included): \
