@@ -193,15 +193,16 @@ pub(crate) fn build_report(draft: &ImportDraft, renamed: &[(String, String)]) ->
             });
         }
     }
-    // What could not be read from the attachments (oversized pages, untranscribed headings).
-    for n in &draft.detection.notes {
-        if let Some(message) = n.strip_prefix(super::ingest::READING_NOTE) {
-            report.warnings.push(ReportIssue {
-                element: "source".into(),
-                message: message.to_string(),
-            });
-        }
-    }
+    // What could not be read from the attachments (pages read visually, oversized pages,
+    // untranscribed headings): about the source, not one element.
+    report.source_warnings.extend(
+        draft
+            .detection
+            .notes
+            .iter()
+            .filter_map(|n| n.strip_prefix(super::ingest::READING_NOTE))
+            .map(str::to_string),
+    );
     report
 }
 
@@ -250,4 +251,33 @@ fn new_properties(draft: &ImportDraft, final_id: &dyn Fn(&str) -> String) -> Vec
             }
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reading_notes_are_source_warnings_not_element_warnings() {
+        let mut draft: ImportDraft = serde_json::from_value(serde_json::json!({
+            "edition": "2024", "id_prefix": "t", "source_name": "T", "pack_id": "t",
+            "pack_name": "T", "source_kind": "attachments", "source_text": "",
+            "detection": {"kind": "feat", "edition": "2024", "confidence": 1.0, "items": []},
+            "plan": {"edition": "2024", "groups": [], "elements": [], "notes": []},
+            "elements": [], "sweep_issues": []}))
+        .unwrap();
+        draft.detection.notes = vec![
+            format!(
+                "{}`a.pdf`: 2 page(s) were read visually",
+                super::super::ingest::READING_NOTE
+            ),
+            "An unrelated detection note.".into(),
+        ];
+        let report = build_report(&draft, &[]);
+        assert_eq!(
+            report.source_warnings,
+            vec!["`a.pdf`: 2 page(s) were read visually".to_string()]
+        );
+        assert!(report.warnings.iter().all(|w| w.element != "source"));
+    }
 }
