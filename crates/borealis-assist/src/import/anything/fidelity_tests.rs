@@ -72,6 +72,45 @@ fn words_join_line_end_hyphens_and_split_digits() {
 }
 
 #[test]
+fn a_compound_hyphen_at_a_line_end_matches_the_rejoined_compound() {
+    let source = "The shield bears a large sky-\nblue stone set in a ring of iron that hums when \
+        struck.\nIts maker was a re-\nnowned smith of the coast.";
+    let index = Index::new(source);
+    let el = json!({"description": "<p>The shield bears a large sky-blue stone set in a ring of \
+        iron that hums when struck.</p><p>Its maker was a renowned smith of the coast.</p>"});
+    assert!(untraced(&el, &index, &HashSet::new()).is_empty());
+}
+
+#[test]
+fn a_model_written_text_element_is_checked_and_a_located_one_is_not() {
+    let invented = "<p>Every caravan of the north hires these wanderers as its trusted guides.</p>";
+    let mut d = draft(
+        SOURCE,
+        vec![planned(
+            "t1",
+            "Lantern Lore",
+            "Rules Glossary Entry",
+            Role::Text,
+            None,
+        )],
+        &[invented],
+    );
+    // Unlocated: the model wrote it from the whole source, so it gets the review note.
+    assert_eq!(findings(&d).len(), 1);
+    assert!(sweep(&d).is_empty(), "no passage to repair from: no call");
+    note_leftovers(&mut d);
+    assert_eq!(d.elements[0].status, ElementStatus::NeedsReview);
+    assert!(d.elements[0].issues[0].starts_with(NOTE));
+    // Located: the pipeline copied the passage itself.
+    d.plan.elements[0].excerpt = Some(SourceExcerpt {
+        start_line: 3,
+        end_line: 3,
+        snippet: String::new(),
+    });
+    assert!(findings(&d).is_empty());
+}
+
+#[test]
 fn a_printed_sentence_passes_and_an_invented_one_is_found() {
     let index = Index::new(SOURCE);
     let el = json!({"description": "<p>You can see through smoke and fog out to 30 feet as if \

@@ -61,6 +61,12 @@ pub(crate) fn plain(html: &str) -> String {
 /// Lowercase word tokens: apostrophes dropped ("can't" = "cant"), a line-end hyphen joined,
 /// digits apart from letters ("25gp" = "25 gp").
 pub(crate) fn words(text: &str) -> Vec<String> {
+    tokens(text, true)
+}
+
+/// [`words`], with a line-end hyphen joining the word (`join`) or kept as a hyphen (a
+/// compound printed across a line break, "rainbow-\ncolored" = "rainbow colored").
+fn tokens(text: &str, join: bool) -> Vec<String> {
     let text = text.replace(['\u{2019}', '\u{2018}', '\''], "");
     let mut out: Vec<String> = Vec::new();
     let mut cur = String::new();
@@ -71,7 +77,7 @@ pub(crate) fn words(text: &str) -> Vec<String> {
         }
     };
     while let Some(c) = chars.next() {
-        if c == '-' && !cur.is_empty() {
+        if c == '-' && join && !cur.is_empty() {
             // "de-\n termining": a hyphen at a line end joins the word.
             let mut look = chars.clone();
             let mut newline = false;
@@ -109,8 +115,12 @@ fn grams(w: &[String]) -> impl Iterator<Item = String> + '_ {
 pub(crate) struct Index(HashSet<String>);
 
 impl Index {
+    /// A line-end hyphen is a word break or a compound's own hyphen: both readings are indexed,
+    /// so "de-\ntermining" matches "determining" and "rainbow-\ncolored" "rainbow-colored".
     pub(crate) fn new(text: &str) -> Self {
-        Self(grams(&words(text)).collect())
+        let joined = words(text);
+        let kept = tokens(text, false);
+        Self(grams(&joined).chain(grams(&kept)).collect())
     }
 }
 
@@ -191,13 +201,25 @@ pub(crate) fn untraced(el: &Value, index: &Index, mask: &HashSet<String>) -> Vec
         .collect()
 }
 
-/// Elements whose description is checked: generated ones the user has not revised (a text-only
-/// element and a subclass gate are written by the pipeline).
-fn checked(e: &DraftElement) -> bool {
+/// Elements whose description is checked: generated ones the user has not revised. A subclass
+/// gate is written by the pipeline, and so is a located text-only element (its passage as
+/// printed); an unlocated one is written by the model from the whole source and is checked.
+fn checked(draft: &ImportDraft, e: &DraftElement) -> bool {
+    let pipeline_text = e.role == Role::Text && located(draft, &e.id);
     !e.json.is_null()
         && e.status != ElementStatus::Failed
         && e.revisions == 0
-        && !matches!(e.role, Role::Text | Role::SubclassGate)
+        && e.role != Role::SubclassGate
+        && !pipeline_text
+}
+
+/// The planned element `id` has a source passage.
+fn located(draft: &ImportDraft, id: &str) -> bool {
+    draft
+        .plan
+        .elements
+        .iter()
+        .any(|p| p.id == id && p.excerpt.is_some())
 }
 
 fn quoted(found: &[String]) -> String {
@@ -218,7 +240,7 @@ fn findings(draft: &ImportDraft) -> Vec<(String, Vec<String>)> {
     draft
         .elements
         .iter()
-        .filter(|e| checked(e))
+        .filter(|e| checked(draft, e))
         .map(|e| (e.id.clone(), untraced(&e.json, &index, &mask)))
         .filter(|(_, f)| !f.is_empty())
         .collect()
