@@ -201,6 +201,9 @@ struct Eval<'a, 'u> {
 
 /// Ability maximum granted by Epic Boons unless the content says otherwise.
 const DEFAULT_BOON_CAP: i32 = 30;
+/// Reference depth limit of statistic evaluation. Bundled chains are a few links long; a
+/// malformed chain thousands deep would otherwise overflow the stack.
+const MAX_STAT_DEPTH: usize = 128;
 
 fn ability_of(name: &str) -> Option<(usize, &str)> {
     for (i, a) in ABILITIES.iter().enumerate() {
@@ -291,6 +294,20 @@ impl<'a, 'u> Eval<'a, 'u> {
                     format!(
                         "statistic '{name}' depends on itself ({})",
                         self.visiting.join(" -> ")
+                    ),
+                )
+                .at(name),
+            );
+            return;
+        }
+        if self.visiting.len() >= MAX_STAT_DEPTH {
+            self.diags.push(
+                Diagnostic::new(
+                    code::STAT_CYCLE,
+                    Severity::Error,
+                    format!(
+                        "statistic '{name}' sits more than {MAX_STAT_DEPTH} references deep; \
+                         not evaluated"
                     ),
                 )
                 .at(name),

@@ -319,6 +319,22 @@ fn all_abilities() -> Vec<String> {
     ABILITIES.iter().map(|a| (*a).to_string()).collect()
 }
 
+/// The distinct ability names of a content pool (at most six). Anything else is dropped, so a
+/// malformed pool can never blow up the arrangement count.
+fn ability_pool(list: Vec<String>) -> Vec<String> {
+    let mut seen = Vec::new();
+    list.into_iter()
+        .filter(|a| {
+            let Some(i) = ability_index(a) else {
+                return false;
+            };
+            let fresh = !seen.contains(&i);
+            seen.push(i);
+            fresh
+        })
+        .collect()
+}
+
 /// Ordered selections of `k` distinct items.
 fn arrangements(pool: &[String], k: usize) -> Vec<Vec<String>> {
     if k == 0 {
@@ -356,7 +372,7 @@ fn combinations(pool: &[String], k: usize) -> Vec<Vec<String>> {
 }
 
 fn distribution_choices(c: &CustomRule) -> Vec<Allocation> {
-    let pool = string_list(c, "pool");
+    let pool = ability_pool(string_list(c, "pool"));
     let patterns: Vec<Vec<i32>> = c
         .fields
         .get("options")
@@ -411,6 +427,7 @@ fn increase_choices(c: &CustomRule) -> Vec<Allocation> {
             ),
             None => (all_abilities(), 1),
         };
+        let pool = ability_pool(pool);
         for combo in combinations(&pool, count) {
             let alloc: Allocation = combo.into_iter().map(|a| (a, amount)).collect();
             if !out.contains(&alloc) {

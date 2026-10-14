@@ -169,3 +169,45 @@ fn a_deeply_nested_requirement_is_a_bad_expression() {
         .iter()
         .any(|d| d.code == code::CONTENT_BAD_EXPRESSION));
 }
+
+/// A statistic chain far longer than any real content is cut, not a stack overflow.
+#[test]
+fn a_very_long_statistic_chain_is_cut() {
+    let rules: Vec<Value> = (0..5_000)
+        .map(|i| {
+            json!({"kind": "stat", "name": format!("t:chain:{i}"),
+                        "value": format!("t:chain:{}", i + 1)})
+        })
+        .chain(std::iter::once(
+            json!({"kind": "stat", "name": "t:chain:5000", "value": "1"}),
+        ))
+        .collect();
+    let e = engine(&json!({
+        "format": "borealis-content/1", "ruleset": "dnd2014",
+        "elements": [{"id": "ID_T_RACE_CHAIN", "name": "Chain Folk", "type": "Race",
+                      "source": "Test", "rules": rules}]
+    }));
+    let s = fighter(&e, Some("ID_T_RACE_CHAIN"));
+    let snap = e.derive(&s);
+    assert!(snap.diagnostics.iter().any(|d| d.code == code::STAT_CYCLE));
+}
+
+/// An ability pool full of junk and repeats offers only the distinct abilities.
+#[test]
+fn a_malformed_ability_pool_stays_small() {
+    let junk: Vec<String> = (0..40).map(|i| format!("junk{i}")).collect();
+    let mut pool = vec![
+        "Strength".to_string(),
+        "strength".to_string(),
+        "Dexterity".to_string(),
+    ];
+    pool.extend(junk);
+    let e = engine(&json!({
+        "format": "borealis-content/1", "ruleset": "dnd2014",
+        "elements": [{"id": "ID_T_RACE_POOL", "name": "Pool Folk", "type": "Race",
+                      "source": "Test", "rules": [{"kind": "ability_distribution",
+                      "pool": pool, "options": [[2, 1, 1, 1, 1, 1, 1, 1]]}]}]
+    }));
+    let s = fighter(&e, Some("ID_T_RACE_POOL"));
+    let _ = e.derive(&s);
+}
