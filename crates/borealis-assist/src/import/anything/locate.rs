@@ -36,6 +36,11 @@ const INDEX_CELL_WORDS: usize = 2;
 /// Times a heading's prefix recurs as a line of its own to be junk glued to the heading.
 const GLUE_RECURS: usize = 2;
 
+/// Most lines a wrapped name spans.
+const WRAP_LINES: usize = 3;
+/// Fewest words of a name looked for across line breaks.
+const WRAP_MIN_WORDS: usize = 4;
+
 /// Shortest word of a name that ties a table caption to it.
 const CAPTION_STEM: usize = 4;
 
@@ -369,6 +374,82 @@ impl Doc<'_> {
         })
     }
 
+    /// The bare line at `line` is printed again elsewhere as a line of its own (not a heading):
+    /// a running page header, not an entry's title.
+    fn recurs(&self, line: usize) -> bool {
+        let own = norm_words(strip_marks(self.lines[line]));
+        !own.is_empty()
+            && (0..self.lines.len()).any(|k| {
+                k != line
+                    && self.heading_at(k).is_none()
+                    && norm_words(strip_marks(self.lines[k])) == own
+            })
+    }
+
+    /// Candidates whose name is wrapped over 2..=[`WRAP_LINES`] lines (blank lines between
+    /// them skipped): the joined lines are exactly the name. A heading among them makes it a
+    /// heading; the section runs from the first line to the end of the last line's section.
+    fn wrapped_candidates(&self, name: &str) -> Vec<Candidate> {
+        let mut out = Vec::new();
+        let first = name.split(' ').next().unwrap_or_default();
+        if name.split(' ').count() < WRAP_MIN_WORDS {
+            return out;
+        }
+        for i in 0..self.lines.len() {
+            let head = norm_words(strip_marks(self.lines[i]));
+            if self.index[i] || !head.starts_with(first) || !name.starts_with(&head) || head == name
+            {
+                continue;
+            }
+            let mut joined = head;
+            let mut k = i;
+            for _ in 1..WRAP_LINES {
+                let Some(next) = (k + 1..self.lines.len().min(k + 3))
+                    .find(|&j| !self.lines[j].trim().is_empty())
+                else {
+                    break;
+                };
+                k = next;
+                joined = format!("{joined} {}", norm_words(strip_marks(self.lines[k])));
+                if joined == name {
+                    let heading = (i..=k).find_map(|j| self.heading_at(j).map(|h| (j, h.level)));
+                    let (kind, end) = match heading {
+                        Some((_, level)) if self.marked => {
+                            let last = self.heading_at(k).map_or(level, |h| h.level);
+                            (Kind::Heading, self.heading_end(k, last, name))
+                        }
+                        Some(_) => (Kind::Heading, self.paragraph_end(k, false, name)),
+                        None => (Kind::ExactLine, self.paragraph_end(k, false, name)),
+                    };
+                    out.push(Candidate { line: i, kind, end });
+                    break;
+                }
+                if !name.starts_with(&joined) {
+                    break;
+                }
+            }
+        }
+        out
+    }
+
+    /// Lines from `line` up to the nearest heading naming `parent` whose section encloses it
+    /// (structural sub-headings such as "Tier 2" stay inside a section, so the nearest wins).
+    fn under(&self, line: usize, parent: &str) -> Option<usize> {
+        self.heads
+            .iter()
+            .filter(|h| h.line < line && contains_name(&h.title, parent))
+            .filter(|h| {
+                let end = if self.marked {
+                    self.heading_end(h.line, h.level, "")
+                } else {
+                    self.paragraph_end(h.line, false, "")
+                };
+                end > line
+            })
+            .map(|h| line - h.line)
+            .min()
+    }
+
     /// A title-like line alone in its paragraph (a wrapped body line has a continuation). A
     /// run-in paragraph whose sentence lacks its final stop ("Size. You are Small") is no title.
     fn standalone_title(&self, i: usize) -> bool {
@@ -420,6 +501,7 @@ impl Doc<'_> {
                 };
             out.push(Candidate { line: i, kind, end });
         }
+        out.extend(self.wrapped_candidates(name));
         out
     }
 
@@ -481,7 +563,7 @@ impl Doc<'_> {
                         && cell.split_whitespace().count() <= INDEX_CELL_WORDS)
             });
         }
-        if c.kind == Kind::ExactLine && self.in_name_run(c.line) {
+        if c.kind == Kind::ExactLine && (self.in_name_run(c.line) || self.recurs(c.line)) {
             return true;
         }
         // Page numbers between the name and the next block are no text of it.
@@ -574,6 +656,16 @@ pub(crate) fn locate_section_as(
     if own.as_ref().is_some_and(|(_, definition)| *definition) {
         return own.map(|(e, _)| e);
     }
+    if let Some(found) = qualified(name).and_then(|(base, parent)| {
+        find_under(
+            &doc,
+            &norm_words(base),
+            &norm_words(parent),
+            &norm_words(quote),
+        )
+    }) {
+        return Some(found);
+    }
     let parent = name.rsplit_once(", ").and_then(|(base, kind)| {
         let (ex, definition) = find(&doc, &norm_words(base), "")?;
         let kind = norm_words(kind);
@@ -583,6 +675,24 @@ pub(crate) fn locate_section_as(
         (definition && names_kind).then_some(ex)
     });
     parent.or(own.map(|(e, _)| e))
+}
+
+/// "<Name> (<Parent>)": a name the plan qualified with the section it is printed in.
+fn qualified(name: &str) -> Option<(&str, &str)> {
+    let (base, rest) = name.trim().strip_suffix(')')?.rsplit_once('(')?;
+    let (base, parent) = (base.trim(), rest.trim());
+    (!base.is_empty() && !parent.is_empty()).then_some((base, parent))
+}
+
+/// The definition of `name` printed under a heading that names `parent` (the qualifier of
+/// "<Name> (<Parent>)"); a definition elsewhere is a same-named entry of another section.
+fn find_under(doc: &Doc, name: &str, parent: &str, quote: &str) -> Option<SourceExcerpt> {
+    doc.candidates(name)
+        .into_iter()
+        .filter(|c| c.kind >= Kind::ExactLine && !doc.not_a_definition(c, name))
+        .filter_map(|c| doc.under(c.line, parent).map(|d| (c, d)))
+        .max_by_key(|(c, d)| (doc.contains_quote(c, quote), std::cmp::Reverse(*d), c.kind))
+        .map(|(c, _)| doc.excerpt(c.line, c.end))
 }
 
 /// The best section for the normalised `name` and `quote`, and whether it can be the

@@ -183,3 +183,42 @@ fn index_lines_are_recognised() {
     let ex = locate_section(src, "", "Reed Pike").unwrap();
     assert_eq!((ex.start_line, ex.end_line), (5, 5));
 }
+
+const GUIDE: &str = "# Lantern Guide\n\n## Building Lanterns\n\nBuilding takes a week.\n\n### Mishaps\n\nA lantern mishap cracks the glass and costs a day.\n\n## Charming Lanterns\n\nCharms take a month.\n\n### Mishaps\n\nA charm mishap dims the flame and drains a spark.\n\n## Charms\n\n### Glass Charms\n\n### Tier 1\n\n#### Burn Bright for an Hour\n\nCost: 10\n\n#### Shed Light in a Cone of Sixty\n\nfeet and Glow Like a Lamp\n\n#### Until Dawn\n\nCost: 20\n\nKeep the Wick Dry in the Rain\nand the Wind\nCost: 5\n\n### Tier 2\n\n#### Burn Bright for an Hour\n\nCost: 40\n\nCharms\nGlow Twice as Far\nCost: 60\nPrerequisites: Ability to light a lamp of the second tier or higher\nwithout help.\n\n\n### Steel Charms\n\nCharms\n\nSteel charms are rare.\n";
+
+/// "<Name> (<Parent>)": the plan's qualifier picks the entry printed under that heading.
+#[test]
+fn a_parent_qualified_name_is_found_under_its_parent_heading() {
+    let s = section(GUIDE, "Mishaps (Charming Lanterns)", "");
+    assert_eq!(s[0], "### Mishaps");
+    assert!(s.iter().any(|l| l.contains("dims the flame")), "{s:?}");
+    let s = section(GUIDE, "Mishaps (Building Lanterns)", "");
+    assert!(s.iter().any(|l| l.contains("cracks the glass")), "{s:?}");
+    let s = section(GUIDE, "Burn Bright for an Hour (Tier 2)", "");
+    assert!(s.contains(&"Cost: 40"), "{s:?}");
+    assert!(qualified("Plain Name").is_none());
+}
+
+/// A name wrapped over two or three lines (headings or plain lines) is found.
+#[test]
+fn a_name_wrapped_over_lines_is_found() {
+    let s = section(
+        GUIDE,
+        "Shed Light in a Cone of Sixty Feet and Glow Like a Lamp Until Dawn",
+        "",
+    );
+    assert_eq!(s[0], "#### Shed Light in a Cone of Sixty");
+    assert!(s.contains(&"Cost: 20"), "{s:?}");
+    assert!(!s.contains(&"Cost: 10"), "{s:?}");
+    let s = section(GUIDE, "Keep the Wick Dry in the Rain and the Wind", "");
+    assert_eq!(s[0], "Keep the Wick Dry in the Rain");
+    assert!(s.contains(&"Cost: 5"), "{s:?}");
+}
+
+/// A bare name line printed again elsewhere (a running page header) is no definition: the
+/// exact heading wins even when the header line is followed by text.
+#[test]
+fn a_recurring_bare_line_loses_to_the_exact_heading() {
+    let s = section(GUIDE, "Charms", "");
+    assert_eq!(s[0], "## Charms");
+}
