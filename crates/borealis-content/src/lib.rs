@@ -21,6 +21,7 @@ pub mod legacy;
 pub mod monster;
 pub mod monster_types;
 mod monster_validate;
+pub mod rule_kinds;
 pub mod rules;
 pub mod ruleset;
 pub mod schema;

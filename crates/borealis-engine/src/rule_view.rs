@@ -1,5 +1,8 @@
 //! Shared helpers for reading live custom rules (2024).
+use crate::eval::requirement_holds;
 use crate::graph::{Graph, NodeId};
+use crate::universe::Cond;
+use borealis_content::expr::RequirementsExpr;
 use borealis_content::rules::CustomRule;
 use borealis_content::{Element, Rule};
 use serde_json::Value;
@@ -44,6 +47,23 @@ pub fn level_met(graph: &Graph<'_>, node: NodeId, level: Option<u64>) -> bool {
     })
 }
 
+/// Is a custom rule of `node` live: its `level` gate met and its `requirements` expression (if
+/// any) true? Every reader of gated kinds (`KNOWN_KINDS` with `gated`) goes through this.
+#[must_use]
+pub fn rule_live(graph: &Graph<'_>, node: NodeId, c: &CustomRule) -> bool {
+    let level = c.fields.get("level").and_then(Value::as_u64);
+    if !level_met(graph, node, level) {
+        return false;
+    }
+    match c.fields.get("requirements").and_then(Value::as_str) {
+        Some(t) if !t.trim().is_empty() => {
+            let cond = Cond::from_parse(RequirementsExpr::parse(t), |e| e);
+            requirement_holds(&cond, &graph.env())
+        }
+        _ => true,
+    }
+}
+
 /// Live custom rules of the given kinds, in registration order.
 #[must_use]
 pub fn live_rules<'u>(graph: &Graph<'u>, kinds: &[&str]) -> Vec<Live<'u>> {
@@ -55,8 +75,7 @@ pub fn live_rules<'u>(graph: &Graph<'u>, kinds: &[&str]) -> Vec<Live<'u>> {
             if !kinds.contains(&c.kind.as_str()) {
                 continue;
             }
-            let level = c.fields.get("level").and_then(Value::as_u64);
-            if level_met(graph, id, level) {
+            if rule_live(graph, id, c) {
                 out.push(Live {
                     node: id,
                     el: &e.el,

@@ -26,7 +26,7 @@ pub enum Cond<E> {
 }
 
 impl<E> Cond<E> {
-    fn from_parse<T>(
+    pub(crate) fn from_parse<T>(
         r: Result<Option<T>, borealis_content::expr::ExprError>,
         wrap: fn(T) -> E,
     ) -> Self {
@@ -575,6 +575,11 @@ impl Universe {
         };
         let mut classes: Vec<Element> = Vec::new();
         for stored in store.iter() {
+            uni.diagnostics
+                .extend(crate::custom_rules::content_diagnostics(
+                    &stored.element,
+                    stored.origin,
+                ));
             let (mut el, edition) = classify(&stored.element, profile, adapter);
             if el.ty == "Class" {
                 classes.push(el.clone());

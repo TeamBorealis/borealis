@@ -8,8 +8,11 @@
 //! as `x-*` attributes in the rule's `extra`. Ability bonuses of a chosen list entry are
 //! prebuilt stat rules ([`Effects`]).
 
+use crate::diag::{Diagnostic, Severity};
 use crate::ids::{ability_index, ABILITIES};
 use crate::universe::{Cond, UStat, Val};
+use borealis_content::file::PackOrigin;
+pub use borealis_content::rule_kinds::{check_custom, spec, KindSpec, RuleProblem, KNOWN_KINDS};
 use borealis_content::rules::{CustomRule, GrantRule, ListItem, SelectRule};
 use borealis_content::{Element, Rule};
 use serde_json::Value;
@@ -535,6 +538,21 @@ pub fn normalize(el: &mut Element) -> Effects {
         }
     }
     effects
+}
+
+/// Custom rules of `el` the engine would ignore (`content.unknown_rule_kind` /
+/// `content.unknown_rule_field`). Errors for bundled (core) packs, warnings for third-party ones.
+/// Must run before [`normalize`] rewrites the known kinds.
+#[must_use]
+pub fn content_diagnostics(el: &Element, origin: PackOrigin) -> Vec<Diagnostic> {
+    let severity = match origin {
+        PackOrigin::Core => Severity::Error,
+        PackOrigin::Custom => Severity::Warning,
+    };
+    borealis_content::rule_kinds::check_rules(&el.rules)
+        .into_iter()
+        .map(|p| Diagnostic::new(p.code(), severity, format!("{}: {p}", el.name)).at(el.id.clone()))
+        .collect()
 }
 
 /// The `x-kind` marker of a select rule.

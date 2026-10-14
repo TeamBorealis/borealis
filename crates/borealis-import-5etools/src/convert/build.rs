@@ -73,48 +73,68 @@ pub fn setter_with(name: &str, value: &str, attrs: &[(&str, &str)]) -> Setter {
     s
 }
 
-/// Set the `requirements` of a rule when it has none yet.
-pub fn gate(rule: &mut Rule, requirements: &str) {
+/// Why a gate or level could not be applied: the engine reads no such field on this rule kind,
+/// so applying it silently would drop the condition.
+fn unsupported(rule: &Rule, field: &str) -> String {
+    let kind = match rule {
+        Rule::Custom(c) => c.kind.as_str(),
+        _ => rule.kind().as_str(),
+    };
+    format!("rule kind {kind:?} has no `{field}` the engine reads; the {field} was not applied")
+}
+
+/// Does the engine read `field` on this custom rule (`rule_kinds::KNOWN_KINDS`)?
+fn custom_reads(c: &borealis_content::CustomRule, field: &str) -> bool {
+    borealis_content::rule_kinds::spec(&c.kind).is_some_and(|s| s.reads(field))
+}
+
+/// Add `requirements` to a rule (joined with `&&` when it has some already).
+///
+/// # Errors
+/// The rule kind has no `requirements` the engine reads (an unknown rule, or a custom kind
+/// whose reader ignores it); the rule is left unchanged.
+pub fn gate(rule: &mut Rule, requirements: &str) -> Result<(), String> {
+    let join = |existing: Option<&str>| match existing {
+        Some(e) if !e.is_empty() => format!("({e})&&{requirements}"),
+        _ => requirements.to_string(),
+    };
     let slot = match rule {
         Rule::Grant(r) => &mut r.requirements,
         Rule::Select(r) => &mut r.requirements,
         Rule::Stat(r) => &mut r.requirements,
-        // the engine reads `requirements` of these custom kinds
-        Rule::Custom(c)
-            if matches!(
-                c.kind.as_str(),
-                "grant_spell" | "ability_increase" | "ability_distribution"
-            ) =>
-        {
-            let joined = match c.fields.get("requirements").and_then(|v| v.as_str()) {
-                Some(existing) if !existing.is_empty() => {
-                    format!("({existing})&&{requirements}")
-                }
-                _ => requirements.to_string(),
-            };
+        Rule::Custom(c) if custom_reads(c, "requirements") => {
+            let joined = join(c.fields.get("requirements").and_then(|v| v.as_str()));
             c.fields
                 .insert("requirements".into(), serde_json::Value::String(joined));
-            return;
+            return Ok(());
         }
-        Rule::Unknown(_) | Rule::Custom(_) => return,
+        Rule::Unknown(_) | Rule::Custom(_) => return Err(unsupported(rule, "requirements")),
     };
-    match slot {
-        Some(existing) if !existing.is_empty() => {
-            *slot = Some(format!("({existing})&&{requirements}"));
-        }
-        _ => *slot = Some(requirements.to_string()),
-    }
+    *slot = Some(join(slot.as_deref()));
+    Ok(())
 }
 
-/// Set the rule level when the rule kind has one.
-pub fn set_level(rule: &mut Rule, level: u32) {
+/// Set the rule level (`None` at level 1).
+///
+/// # Errors
+/// The rule kind has no `level` the engine reads; the rule is left unchanged.
+pub fn set_level(rule: &mut Rule, level: u32) -> Result<(), String> {
+    let value = (level > 1).then_some(level);
     let slot = match rule {
         Rule::Grant(r) => &mut r.level,
         Rule::Select(r) => &mut r.level,
         Rule::Stat(r) => &mut r.level,
-        Rule::Unknown(_) | Rule::Custom(_) => return,
+        Rule::Custom(c) if custom_reads(c, "level") => {
+            match value {
+                Some(l) => c.fields.insert("level".into(), l.into()),
+                None => c.fields.remove("level"),
+            };
+            return Ok(());
+        }
+        Rule::Unknown(_) | Rule::Custom(_) => return Err(unsupported(rule, "level")),
     };
-    *slot = (level > 1).then_some(level);
+    *slot = value;
+    Ok(())
 }
 
 /// A custom (forward compatible) rule.
@@ -137,14 +157,14 @@ mod tests {
     #[test]
     fn constructors_and_gates() {
         let mut g = grant("ID_X", "Proficiency");
-        gate(&mut g, "!ID_MC");
+        gate(&mut g, "!ID_MC").unwrap();
         assert_eq!(g.requirements(), Some("!ID_MC"));
-        gate(&mut g, "ID_OTHER");
+        gate(&mut g, "ID_OTHER").unwrap();
         assert_eq!(g.requirements(), Some("(!ID_MC)&&ID_OTHER"));
         let mut s = Rule::Select(select("Language", "L", Some("Standard"), 2));
-        set_level(&mut s, 3);
+        set_level(&mut s, 3).unwrap();
         assert_eq!(s.level(), 3);
-        set_level(&mut s, 1);
+        set_level(&mut s, 1).unwrap();
         assert_eq!(s.level(), 1);
         let Rule::Select(sel) = &s else {
             unreachable!()
@@ -161,14 +181,24 @@ mod tests {
         assert_eq!(sw.attribute("k"), Some("x"));
         let c = custom("grant.x", json!({"a": 1}));
         assert_eq!(c.kind().as_str(), "custom");
+        // an unknown kind is refused loudly and left unchanged
         let mut c2 = c.clone();
-        gate(&mut c2, "x");
-        set_level(&mut c2, 2);
+        assert!(gate(&mut c2, "x").unwrap_err().contains("grant.x"));
+        assert!(set_level(&mut c2, 2).is_err());
         assert_eq!(c2, c);
+        // a known kind whose reader ignores the field is refused too
+        let mut book = custom("spellbook", json!({"initial_spells": 6}));
+        assert!(gate(&mut book, "ID_A").is_err());
+        assert!(set_level(&mut book, 2).is_err());
         let mut gs = custom("grant_spell", json!({"spell": "ID_S"}));
-        gate(&mut gs, "!ID_A");
-        gate(&mut gs, "ID_B");
+        gate(&mut gs, "!ID_A").unwrap();
+        gate(&mut gs, "ID_B").unwrap();
+        set_level(&mut gs, 3).unwrap();
         let Rule::Custom(g) = &gs else { unreachable!() };
         assert_eq!(g.fields["requirements"], "(!ID_A)&&ID_B");
+        assert_eq!(g.fields["level"], 3);
+        set_level(&mut gs, 1).unwrap();
+        let Rule::Custom(g) = &gs else { unreachable!() };
+        assert!(!g.fields.contains_key("level"));
     }
 }

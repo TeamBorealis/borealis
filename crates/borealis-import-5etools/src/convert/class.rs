@@ -333,7 +333,9 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
             .clone()
             .unwrap_or_else(|| "Subclass".to_string());
         let mut rule = Rule::Select(select("Archetype", &title, Some(&id), 1));
-        set_level(&mut rule, *level);
+        if let Err(e) = set_level(&mut rule, *level) {
+            mech.partial.push(e);
+        }
         mech.push(rule);
     }
     for r in optional_feature_selects(&class.optionalfeature_progression, &mut partial) {

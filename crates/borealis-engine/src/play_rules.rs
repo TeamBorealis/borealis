@@ -281,7 +281,7 @@ pub fn toggle_snapshots(graph: &Graph<'_>, stats: &StatSet) -> Vec<ToggleSnapsho
             let Some(tid) = (c.kind == "toggle").then(|| field_str(c, "id")).flatten() else {
                 continue;
             };
-            if out.iter().any(|t| t.id == tid) {
+            if !crate::rule_view::rule_live(graph, id, c) || out.iter().any(|t| t.id == tid) {
                 continue;
             }
             let on = graph.runtime.toggles.contains(tid);
@@ -504,7 +504,7 @@ fn regain_rules(graph: &Graph<'_>) -> Vec<RegainRule> {
     for id in graph.preorder() {
         for r in &graph.nodes[id].e.el.rules {
             let Rule::Custom(c) = r else { continue };
-            if c.kind != "resource_regain" {
+            if c.kind != "resource_regain" || !crate::rule_view::rule_live(graph, id, c) {
                 continue;
             }
             out.push(RegainRule {
@@ -553,7 +553,7 @@ pub fn resource_snapshots(
         let el = &graph.nodes[id].e.el;
         for r in &el.rules {
             let Rule::Custom(c) = r else { continue };
-            if c.kind != "resource" {
+            if c.kind != "resource" || !crate::rule_view::rule_live(graph, id, c) {
                 continue;
             }
             let Some(rid) = field_str(c, "id") else {
@@ -617,7 +617,7 @@ pub fn resource_costs(graph: &Graph<'_>) -> Vec<ResourceCostSnapshot> {
         let el = &graph.nodes[id].e.el;
         for r in &el.rules {
             let Rule::Custom(c) = r else { continue };
-            if c.kind != "resource_cost" {
+            if c.kind != "resource_cost" || !crate::rule_view::rule_live(graph, id, c) {
                 continue;
             }
             out.push(ResourceCostSnapshot {
@@ -643,7 +643,7 @@ pub fn inspiration_sources(graph: &Graph<'_>) -> Vec<InspirationSource> {
         let el = &graph.nodes[id].e.el;
         for r in &el.rules {
             let Rule::Custom(c) = r else { continue };
-            if c.kind == "heroic_inspiration" {
+            if c.kind == "heroic_inspiration" && crate::rule_view::rule_live(graph, id, c) {
                 out.push(InspirationSource {
                     source: el.name.clone(),
                     trigger: field_str(c, "trigger").unwrap_or("").to_string(),
@@ -667,7 +667,7 @@ pub fn martial_arts(graph: &Graph<'_>) -> Option<MartialArtsSnapshot> {
         let el = &graph.nodes[id].e.el;
         for r in &el.rules {
             let Rule::Custom(c) = r else { continue };
-            if c.kind != "martial_arts" {
+            if c.kind != "martial_arts" || !crate::rule_view::rule_live(graph, id, c) {
                 continue;
             }
             let class = class_name(el).unwrap_or("Monk");

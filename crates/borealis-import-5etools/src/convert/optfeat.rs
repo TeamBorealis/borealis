@@ -123,7 +123,9 @@ pub fn optional_feature_selects(progs: &[Value], partial: &mut Vec<String>) -> V
             progression_levels(p.get("progression").unwrap_or(&Value::Null), partial)
         {
             let mut rule = Rule::Select(select("Class Feature", name, Some(&supports), count));
-            set_level(&mut rule, level);
+            if let Err(e) = set_level(&mut rule, level) {
+                partial.push(e);
+            }
             rules.push(rule);
         }
     }
@@ -153,7 +155,9 @@ pub fn feat_selects(progs: &[Value], partial: &mut Vec<String>) -> Vec<Rule> {
             progression_levels(p.get("progression").unwrap_or(&Value::Null), partial)
         {
             let mut rule = Rule::Select(select("Feat", name, Some(&supports), count));
-            set_level(&mut rule, level);
+            if let Err(e) = set_level(&mut rule, level) {
+                partial.push(e);
+            }
             rules.push(rule);
         }
     }

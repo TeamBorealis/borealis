@@ -11,7 +11,7 @@ use crate::ids::IdKind;
 use crate::model::{self, Feature};
 use crate::options::{ImportOptions, Phase, ProgressEvent, ProgressFn};
 use crate::pack::{build_pack, ImportedPack};
-use crate::report::{ImportReport, PackReport};
+use crate::report::{ImportReport, PackReport, ReportNote};
 use crate::source::{is_srd, ruleset_for, ruleset_of_entry};
 use crate::spell_lookup::SpellClassLookup;
 use crate::srd::SrdIndex;
@@ -611,6 +611,26 @@ fn external_references(packs: &[ImportedPack], emitted: &BTreeSet<String>) -> Ve
     referenced.difference(emitted).cloned().collect()
 }
 
+/// Emitted custom rules the engine would ignore (`rule_kinds::KNOWN_KINDS`), one note each.
+fn ignored_rules(packs: &[ImportedPack]) -> Vec<ReportNote> {
+    let mut out = Vec::new();
+    for pack in packs {
+        for el in pack.elements() {
+            for problem in borealis_content::rule_kinds::check_rules(&el.rules) {
+                out.push(ReportNote {
+                    element: el.id.clone(),
+                    kind: el.ty.clone(),
+                    file: pack.manifest.id.clone(),
+                    reason: format!("{}: {problem}", problem.code()),
+                });
+            }
+        }
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
 fn source_ruleset(abbr: &str, elements: &[Element]) -> Ruleset {
     let set: BTreeSet<Ruleset> = elements.iter().filter_map(|e| e.ruleset).collect();
     if set.len() == 1 {
@@ -645,6 +665,7 @@ fn finish(sh: &Shared, mut st: State, case: &BTreeMap<String, String>) -> Import
     let external = external_references(&packs, &emitted);
     let mut report = std::mem::take(&mut st.report).build();
     report.external_references = external;
+    report.errors = ignored_rules(&packs);
     report.packs = packs
         .iter()
         .map(|p| {

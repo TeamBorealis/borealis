@@ -75,7 +75,9 @@ impl<'a> Mech<'a> {
     /// Push a rule, applying the current gate.
     pub fn push(&mut self, mut rule: Rule) {
         if let Some(g) = &self.gate {
-            gate(&mut rule, g);
+            if let Err(e) = gate(&mut rule, g) {
+                self.partial.push(e);
+            }
         }
         self.rules.push(rule);
     }

@@ -310,7 +310,9 @@ pub fn caster(input: &CasterInput<'_>) -> CasterOut {
     // Multiclass spell slot pool.
     if let Some(id) = core_ids::multiclass_slot_grant(progression, input.is_2024) {
         let mut g = grant(id, "Grants");
-        super::build::gate(&mut g, "ID_INTERNAL_GRANT_MULTICLASS");
+        if let Err(e) = super::build::gate(&mut g, "ID_INTERNAL_GRANT_MULTICLASS") {
+            out.partial.push(e);
+        }
         out.rules.push(g);
     } else {
         out.partial.push(format!(

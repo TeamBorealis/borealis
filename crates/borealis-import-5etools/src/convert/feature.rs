@@ -263,7 +263,9 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
                 1,
             ))
         };
-        set_level(&mut rule, f.level);
+        if let Err(e) = set_level(&mut rule, f.level) {
+            mech.partial.push(e);
+        }
         mech.push(rule);
     }
     if !sub {

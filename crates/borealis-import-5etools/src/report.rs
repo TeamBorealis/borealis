@@ -89,6 +89,10 @@ pub struct ImportReport {
     pub external_references: Vec<String>,
     /// One entry per produced pack.
     pub packs: Vec<PackReport>,
+    /// Emitted rules the engine would ignore (`content.unknown_rule_kind` /
+    /// `content.unknown_rule_field`): a converter bug, never expected.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub errors: Vec<ReportNote>,
 }
 
 impl ImportReport {
@@ -204,6 +208,7 @@ impl ReportBuilder {
             warnings,
             external_references: Vec::new(),
             packs: Vec::new(),
+            errors: Vec::new(),
         }
     }
 }

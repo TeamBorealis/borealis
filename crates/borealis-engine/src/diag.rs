@@ -26,6 +26,10 @@ pub mod code {
     pub const STAT_UNRESOLVED: &str = "stat.unresolved_reference";
     pub const CONTENT_MISSING_ELEMENT: &str = "content.missing_element";
     pub const CONTENT_BAD_EXPRESSION: &str = "content.bad_expression";
+    /// A custom rule kind no engine reader handles (`custom_rules::KNOWN_KINDS`).
+    pub const CONTENT_UNKNOWN_RULE_KIND: &str = "content.unknown_rule_kind";
+    /// A field of a known custom rule kind that its reader ignores.
+    pub const CONTENT_UNKNOWN_RULE_FIELD: &str = "content.unknown_rule_field";
     pub const SELECTION_INVALID: &str = "selection.invalid";
     pub const SELECTION_MISSING_CONTENT: &str = "selection.missing_content";
     pub const ATTUNEMENT_OVER_LIMIT: &str = "attunement.over_limit";
