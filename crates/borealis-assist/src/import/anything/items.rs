@@ -3,31 +3,35 @@
 //! gear are `Item`s. The model writes the stats (in `data`, or setters copied from the example);
 //! the setters, `supports` tags and AC rules are derived here, deterministically.
 
+use std::sync::OnceLock;
+
 use serde_json::{json, Map, Value};
 
 use super::types::{ImportPlan, ItemType};
 
-/// Bundled weapon properties: printed name (lowercase) -> `supports` tag.
-const KNOWN_PROPERTIES: [(&str, &str); 15] = [
-    ("ammunition", "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION"),
-    ("finesse", "ID_INTERNAL_WEAPON_PROPERTY_FINESSE"),
-    ("heavy", "ID_INTERNAL_WEAPON_PROPERTY_HEAVY"),
-    ("light", "ID_INTERNAL_WEAPON_PROPERTY_LIGHT"),
-    ("loading", "ID_INTERNAL_WEAPON_PROPERTY_LOADING"),
-    ("range", "ID_INTERNAL_WEAPON_PROPERTY_RANGE"),
-    ("reach", "ID_INTERNAL_WEAPON_PROPERTY_REACH"),
-    ("thrown", "ID_INTERNAL_WEAPON_PROPERTY_THROWN"),
-    ("two-handed", "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED"),
-    ("versatile", "ID_INTERNAL_WEAPON_PROPERTY_VERSATILE"),
-    ("improvised", "ID_INTERNAL_WEAPON_PROPERTY_IMPROVISED"),
-    ("silvered", "ID_INTERNAL_WEAPON_PROPERTY_SILVERED"),
-    ("special", "ID_INTERNAL_WEAPON_PROPERTY_SPECIAL"),
-    ("reload", "ID_INTERNAL_WEAPON_PROPERTY_FIREARM_RELOAD"),
-    (
-        "burst fire",
-        "ID_INTERNAL_WEAPON_PROPERTY_FIREARM_BURST_FIRE",
-    ),
-];
+/// The core pack's weapon properties (the bundled vocabulary every pack shares): a printed
+/// property name maps to one of these, else it is the source's own (see `derived.rs`).
+const CORE_PROPERTIES: &str = include_str!("../../../../../content/core/properties.json");
+
+/// `(lowercase name, id)` of every core `Weapon Property`.
+fn core_properties() -> &'static [(String, String)] {
+    static LIST: OnceLock<Vec<(String, String)>> = OnceLock::new();
+    LIST.get_or_init(|| {
+        let doc: Value = serde_json::from_str(CORE_PROPERTIES).unwrap_or_default();
+        doc.get("elements")
+            .and_then(Value::as_array)
+            .map(|els| {
+                els.iter()
+                    .filter(|e| e.get("type").and_then(Value::as_str) == Some("Weapon Property"))
+                    .filter_map(|e| {
+                        let name = e.get("name")?.as_str()?.to_lowercase();
+                        Some((name, e.get("id")?.as_str()?.to_string()))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    })
+}
 const TWO_HANDED: &str = "ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED";
 const RANGE_TAG: &str = "ID_INTERNAL_WEAPON_PROPERTY_RANGE";
 /// Weapon categories: name -> (`supports` tag, proficiency that covers it, melee).
@@ -56,8 +60,8 @@ const CATEGORIES: [(&str, &str, &str, bool); 5] = [
         "ID_PROFICIENCY_WEAPON_PROFICIENCY_MARTIAL_RANGED_WEAPONS",
         false,
     ),
-    // No bundled firearm proficiency: martial ranged proficiency covers firearms, unless a class
-    // of the source grants firearms (then `derived.rs` makes a Firearms group proficiency).
+    // Core has the Firearm category but no proficiency for it: martial ranged covers firearms
+    // unless the source makes them a group of their own (`derived/groups.rs`).
     (
         "firearm",
         "ID_INTERNAL_WEAPON_CATEGORY_FIREARM",
@@ -97,7 +101,7 @@ const STEALTH_DISADVANTAGE: &str = "ID_INTERNAL_GRANTS_STEALTH_DISADVANTAGE";
 /// What the generation prompt asks for, per element type.
 pub(crate) fn guidance(ty: &str) -> Option<&'static str> {
     Some(match ty {
-        "Weapon" => "A mundane weapon, shaped like the example. Put its stats in `data`: weapon_category (Simple Melee, Simple Ranged, Martial Melee, Martial Ranged or Firearm), melee (true/false), damage {dice, type}, properties (EVERY property name as printed, new ones included, e.g. [\"Ammunition\", \"Loading\"]), versatile_damage, range (\"normal/long\" feet, ranged and thrown weapons), ammunition_type, cost {value, currency}, weight (pounds), and mastery for 2024. Setters, supports and proficiency are derived from `data`. Describe special rules of the weapon in `description`.",
+        "Weapon" => "A mundane weapon, shaped like the example. Put its stats in `data`: weapon_category (Simple Melee, Simple Ranged, Martial Melee, Martial Ranged, Firearm, or the category name exactly as the source prints it when it is none of these), weapon_group (the source's own weapon group or category name when it also gives one of the standard categories; omit otherwise), melee (true/false), damage {dice, type}, properties (EVERY property name as printed, new ones included, e.g. [\"Ammunition\", \"Loading\"]), versatile_damage, range (\"normal/long\" feet, ranged and thrown weapons), ammunition_type, cost {value, currency}, weight (pounds), and mastery for 2024. Setters, supports and proficiency are derived from `data`. Describe special rules of the weapon in `description`.",
         "Armor" => "Mundane armor or a shield, shaped like the example. Put its stats in `data`: armor_category (Light, Medium, Heavy or Shield), base_ac (the shield bonus for a shield), dex_modifier, dex_cap, strength_requirement, stealth_disadvantage, cost {value, currency}, weight (pounds). Setters, supports and AC rules are derived from `data`.",
         "Item" => "Mundane equipment (ammunition or adventuring gear), shaped like the example: description, and `data` with cost {value, currency}, weight (pounds); ammunition also data.ammunition true, amount (per bundle) and the weapon it is for in data.ammunition_for.",
         "Weapon Property" => "A weapon property: `description` in HTML paragraphs restating the rules of the property in your own words. No rules.",
@@ -152,7 +156,7 @@ fn data_mut(el: &mut Value) -> &mut Map<String, Value> {
 }
 
 /// Property name without its parenthesised detail, lowercase: "Versatile (1d10)" -> "versatile".
-fn property_key(name: &str) -> String {
+pub(crate) fn property_key(name: &str) -> String {
     let head = name.split('(').next().unwrap_or(name);
     let k = head.trim().to_lowercase().replace('_', " ");
     if k == "two handed" || k == "twohanded" {
@@ -162,13 +166,19 @@ fn property_key(name: &str) -> String {
     }
 }
 
-/// The `supports` tag of a bundled property.
+/// The `supports` tag of a core property: by the full printed name ("Special (Net)"), else by the
+/// name without its detail; of several of a name, the shortest id (the plain "Ammunition").
 pub(crate) fn known_property(name: &str) -> Option<&'static str> {
+    let full = name.trim().to_lowercase();
     let k = property_key(name);
-    KNOWN_PROPERTIES
-        .iter()
-        .find(|(n, _)| *n == k)
-        .map(|(_, id)| *id)
+    let core = core_properties();
+    let shortest = |hit: &dyn Fn(&str) -> bool| {
+        core.iter()
+            .filter(|(n, _)| hit(n))
+            .map(|(_, id)| id.as_str())
+            .min_by_key(|id| id.len())
+    };
+    shortest(&|n| n == full).or_else(|| shortest(&|n| property_key(n) == k))
 }
 
 /// Text inside the parentheses of a property, e.g. "1d10" or "range 80/320".
@@ -201,9 +211,9 @@ pub(crate) fn weapon_properties(el: &Value) -> Vec<String> {
         .and_then(Value::as_array)
         .map(|a| a.iter().filter_map(Value::as_str).collect())
         .unwrap_or_default();
-    KNOWN_PROPERTIES
+    core_properties()
         .iter()
-        .filter(|(_, id)| tags.contains(id))
+        .filter(|(_, id)| tags.contains(&id.as_str()))
         .map(|(n, _)| capitalise(n))
         .collect()
 }
@@ -513,6 +523,19 @@ mod tests {
         );
         assert_eq!(known_property("two handed"), Some(TWO_HANDED));
         assert_eq!(known_property("Sparkburst"), None);
+        assert_eq!(
+            known_property("Ammunition (range 80/320)"),
+            Some("ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION")
+        );
+        assert_eq!(
+            known_property("Special (Net)"),
+            Some("ID_INTERNAL_WEAPON_PROPERTY_SPECIAL_NET")
+        );
+        // Every core weapon property is known by its own name, nothing else is built in.
+        for (name, id) in core_properties() {
+            assert!(known_property(name).is_some(), "{name} ({id})");
+        }
+        assert!(core_properties().len() >= 15);
         assert_eq!(
             property_detail("Ammunition (range 80/320)").unwrap(),
             "range 80/320"

@@ -5,9 +5,9 @@
 //!   extension mechanism; bundled spells carry their lists in `supports`), its own new spells by
 //!   `supports`; spell choices on a list that would still be empty are left out (and reported),
 //!   so the class never stalls on an empty select;
-//! * weapon groups no bundled proficiency covers (firearms): a group proficiency element plus one
-//!   per weapon, as the bundled groups are built, the weapons pointing at them and the classes
-//!   whose proficiency text names the group granting it;
+//! * weapon groups and categories no loaded pack covers, and weapon properties no pack defines
+//!   (`groups.rs`): elements named from the source with the import's ids, the weapons tagged and
+//!   proficient through them, the classes whose proficiency text names a group granting it;
 //! * class table columns no rule reads: a counter (`resource` with its max from the table).
 //!
 //! Every change is reported (`notes`).
@@ -19,7 +19,8 @@ use serde_json::{json, Map, Value};
 
 use super::caster::{caster_kind, CasterKind};
 use super::types::{Edition, ImportPlan, Role, SpellcastingOutline};
-use crate::import::ids::slug;
+
+mod groups;
 
 /// `data.progression` keys that are not counters.
 const NOT_COUNTERS: [&str; 5] = [
@@ -32,18 +33,15 @@ const NOT_COUNTERS: [&str; 5] = [
 /// The builder's spell choices read the class list through this placeholder.
 const LIST_PLACEHOLDER: &str = "$(spellcasting:list)";
 
-/// Weapon groups without a bundled proficiency: (category tag, group name, word in class text).
-const NEW_GROUPS: [(&str, &str, &str); 1] =
-    [("ID_INTERNAL_WEAPON_CATEGORY_FIREARM", "Firearms", "firearm")];
-
 /// The draft's elements after the derived fixes, plus what they need.
 #[derive(Debug, Clone, Default)]
 pub(crate) struct Derived {
     /// The draft's elements (same order, same ids) with the fixes applied.
     pub docs: Vec<Value>,
-    /// New elements (weapon group proficiencies).
+    /// New elements (weapon groups, categories and properties).
     pub extra: Vec<Value>,
-    /// `appends` records (existing spells joining a new list).
+    /// `appends` records (existing spells joining a new list, existing proficiencies granting a
+    /// new weapon).
     pub appends: Vec<Value>,
     /// `(element id, message)` for each change, for the import report.
     pub notes: Vec<(String, String)>,
@@ -62,7 +60,8 @@ pub(crate) fn derive(plan: &ImportPlan, docs: &[Value], store: &ContentStore) ->
         ..Derived::default()
     };
     spell_lists(plan, store, &mut d);
-    weapon_groups(store, &mut d);
+    groups::weapon_groups(plan, store, &mut d);
+    groups::new_properties(plan, store, &mut d);
     table_counters(&mut d);
     proficiency_choices(plan, store, &mut d);
     d
@@ -296,127 +295,6 @@ fn proficiency_text(class: &Value) -> String {
         }
     }
     plain
-}
-
-/// The class's weapon proficiency lines name `word`.
-fn class_names_group(class: &Value, word: &str) -> bool {
-    proficiency_text(class).lines().any(|l| {
-        let l = l.to_lowercase();
-        l.contains("weapon") && l.contains(':') && l.contains(word)
-    })
-}
-
-fn existing_group(store: &ContentStore, group: &str) -> Option<String> {
-    let name = norm(&format!("Weapon Proficiency ({group})"));
-    store
-        .by_type("Proficiency")
-        .find(|s| norm(&s.element.name) == name)
-        .map(|s| s.element.id.clone())
-}
-
-fn set_proficiency(weapon: &mut Value, id: &str) {
-    let Some(o) = weapon.as_object_mut() else {
-        return;
-    };
-    let setters = o.entry("setters").or_insert_with(|| json!([]));
-    if let Some(arr) = setters.as_array_mut() {
-        arr.retain(|s| str_at(s, "name") != "proficiency");
-        arr.push(json!({"name": "proficiency", "value": id}));
-    }
-}
-
-fn weapon_groups(store: &ContentStore, d: &mut Derived) {
-    for (tag, group, word) in NEW_GROUPS {
-        let weapons: Vec<usize> = (0..d.docs.len())
-            .filter(|i| {
-                str_at(&d.docs[*i], "type") == "Weapon"
-                    && supports_of(&d.docs[*i]).iter().any(|t| t == tag)
-            })
-            .collect();
-        let classes: Vec<usize> = (0..d.docs.len())
-            .filter(|i| {
-                str_at(&d.docs[*i], "type") == "Class" && class_names_group(&d.docs[*i], word)
-            })
-            .collect();
-        let group_id = match existing_group(store, group) {
-            Some(id) => {
-                for i in &weapons {
-                    set_proficiency(&mut d.docs[*i], &id);
-                }
-                id
-            }
-            // Only a source whose class names the group makes it a proficiency of its own;
-            // otherwise the weapons keep their category's bundled proficiency.
-            None if classes.is_empty() => continue,
-            None => new_group(store, group, &weapons, d),
-        };
-        for i in classes {
-            grant_group(i, &group_id, group, d);
-        }
-    }
-}
-
-/// The group proficiency and one proficiency per weapon, shaped like the bundled ones.
-fn new_group(store: &ContentStore, group: &str, weapons: &[usize], d: &mut Derived) -> String {
-    let id = format!("ID_PROFICIENCY_WEAPON_PROFICIENCY_{}", slug(group));
-    let source = weapons
-        .first()
-        .map(|i| str_at(&d.docs[*i], "source").to_string())
-        .unwrap_or_else(|| "Imported".to_string());
-    let mut grants = Vec::new();
-    for i in weapons {
-        let w = &d.docs[*i];
-        let name = str_at(w, "name").to_string();
-        let own = format!("ID_PROFICIENCY_WEAPON_PROFICIENCY_{}", slug(&name));
-        let target = if store.get(&own).is_some() || own == id {
-            id.clone()
-        } else {
-            let mut tags = vec!["Weapon".to_string()];
-            tags.extend(supports_of(w));
-            d.extra.push(
-                json!({"id": own, "name": format!("Weapon Proficiency ({name})"),
-                "type": "Proficiency", "source": source, "supports": tags,
-                "description": format!("<p>Proficiency: Weapon Proficiency ({name}).</p>")}),
-            );
-            grants.push(json!({"kind": "grant", "id": own, "type": "Proficiency"}));
-            own
-        };
-        set_proficiency(&mut d.docs[*i], &target);
-    }
-    let name = format!("Weapon Proficiency ({group})");
-    d.extra.push(
-        json!({"id": id, "name": name, "type": "Proficiency", "source": source,
-        "rules": grants, "description": format!("<p>Proficiency: {name}.</p>")}),
-    );
-    d.note(&id, format!("new weapon group proficiency \"{name}\" created for {} weapon(s) of the import; attacks with them are proficient when a class or feature grants it", weapons.len()));
-    id
-}
-
-/// Grant the group where the class grants its other weapon proficiencies (same requirements).
-fn grant_group(class_idx: usize, group_id: &str, group: &str, d: &mut Derived) {
-    let class_id = str_at(&d.docs[class_idx], "id").to_string();
-    let Some(rules) = rules_mut(&mut d.docs[class_idx]) else {
-        return;
-    };
-    if rules.iter().any(|r| str_at(r, "id") == group_id) {
-        return;
-    }
-    let requirements = rules
-        .iter()
-        .find(|r| {
-            str_at(r, "type") == "Proficiency"
-                && str_at(r, "id").starts_with("ID_PROFICIENCY_WEAPON_")
-        })
-        .and_then(|r| r.get("requirements").cloned());
-    let mut g = json!({"kind": "grant", "id": group_id, "type": "Proficiency"});
-    if let Some(req) = requirements {
-        g["requirements"] = req;
-    }
-    rules.push(g);
-    d.note(
-        &class_id,
-        format!("the class's proficiency with {group} is granted (\"{group_id}\")"),
-    );
 }
 
 fn label_of(key: &str) -> String {
