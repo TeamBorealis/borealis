@@ -313,36 +313,96 @@ pub(crate) fn spanning_tables(frags: &[Fragment], side: SideOf) -> Vec<(f32, f32
         !r.iter().any(|f| side(f).is_none()) && l > 0 && n > 0 && l + n >= SPAN_MIN_CELLS
     };
     let mut out = Vec::new();
-    let mut run: Vec<&Fragment> = Vec::new();
-    let mut count = 0;
+    let mut run: Vec<&[&Fragment]> = Vec::new();
     for r in rows.iter().filter(|r| qualifies(r)) {
         let close = run
             .last()
-            .is_some_and(|p| p.y - r[0].y <= SPAN_ROW_GAP * p.size.max(1.0));
+            .is_some_and(|p| p[0].y - r[0].y <= SPAN_ROW_GAP * p[0].size.max(1.0));
         if !close {
-            push_span(&mut out, &run, count, frags, side);
+            push_span(&mut out, &run, frags, side);
             run.clear();
-            count = 0;
         }
-        run.push(r[0]);
-        count += 1;
+        run.push(r);
     }
-    push_span(&mut out, &run, count, frags, side);
+    push_span(&mut out, &run, frags, side);
     out
 }
 
-fn push_span(
-    out: &mut Vec<(f32, f32)>,
-    run: &[&Fragment],
-    count: usize,
-    all: &[Fragment],
-    side: SideOf,
-) {
+/// A line this much larger than the rows' text heads a list.
+const LIST_HEAD_RATIO: f32 = 1.12;
+/// Font sizes above or below a list heading where the next list's lines pass beside it.
+const LIST_HEAD_REACH: f32 = 1.5;
+
+/// Lists set side by side, not a table: below the first row, larger lines (list headings such
+/// as "Level 2", with another list's lines passing beside them) start at two or more of the
+/// rows' cell edges, in the rows or in the lines that go on under them at those edges. A
+/// table's own heading rows stand alone on their band.
+fn headed_lists(all: &[Fragment], run: &[&[&Fragment]]) -> bool {
+    let (Some(first), Some(last)) = (run.first(), run.last()) else {
+        return false;
+    };
+    let top = first[0].y;
+    let mut cell_edges: Vec<f32> = Vec::new();
+    for f in run.iter().flat_map(|r| r.iter()) {
+        if !cell_edges
+            .iter()
+            .any(|e| (e - f.x).abs() <= EDGE_SLACK * f.size)
+        {
+            cell_edges.push(f.x);
+        }
+    }
+    let at_edge = |f: &Fragment| {
+        cell_edges
+            .iter()
+            .any(|e| (e - f.x).abs() <= EDGE_SLACK * f.size.max(1.0))
+    };
+    // The lines at the cell edges from the first row down, while they keep close together.
+    let mut bottom = last[0].y;
+    let mut lines: Vec<&Fragment> = Vec::new();
+    for f in all
+        .iter()
+        .filter(|f| at_edge(f) && f.y <= top + 0.35 * f.size)
+    {
+        if f.y < bottom - SPAN_ROW_GAP * f.size.max(1.0) {
+            break;
+        }
+        bottom = bottom.min(f.y);
+        lines.push(f);
+    }
+    let mut sizes: Vec<f32> = lines.iter().map(|f| f.size).collect();
+    sizes.sort_by(f32::total_cmp);
+    let Some(body) = sizes.get(sizes.len() / 2) else {
+        return false;
+    };
+    let small = |f: &Fragment| f.size < LIST_HEAD_RATIO * body;
+    // A list heading has another list's line beside it; a table's heading row stands alone.
+    let beside = |h: &Fragment| {
+        lines.iter().any(|g| {
+            small(g)
+                && (g.x - h.x).abs() > EDGE_SLACK * g.size.max(1.0)
+                && (g.y - h.y).abs() <= LIST_HEAD_REACH * h.size
+        })
+    };
+    let mut edges: Vec<f32> = Vec::new();
+    for f in &lines {
+        let first_row = (f.y - top).abs() <= 0.35 * f.size.max(1.0);
+        if first_row || small(f) || !beside(f) {
+            continue;
+        }
+        if !edges.iter().any(|e| (e - f.x).abs() <= EDGE_SLACK * f.size) {
+            edges.push(f.x);
+        }
+    }
+    edges.len() >= 2
+}
+
+fn push_span(out: &mut Vec<(f32, f32)>, run: &[&[&Fragment]], all: &[Fragment], side: SideOf) {
     let (Some(first), Some(last)) = (run.first(), run.last()) else {
         return;
     };
-    let (top, bottom) = (first.y, last.y);
-    if count < SPAN_MIN_ROWS
+    let (top, bottom) = (first[0].y, last[0].y);
+    if run.len() < SPAN_MIN_ROWS
+        || headed_lists(all, run)
         || continues_column(all, top, bottom, true, side)
         || continues_column(all, top, bottom, false, side)
         || side_by_side(all, top, bottom, side)

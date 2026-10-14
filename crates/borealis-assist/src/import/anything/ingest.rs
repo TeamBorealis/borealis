@@ -545,6 +545,7 @@ mod tests {
         }
         let src = draft.source_text.clone();
         let (mut located, mut one_line) = (0, 0);
+        let mut listing = String::new();
         for p in &mut draft.plan.elements {
             p.excerpt = super::super::plan::locate(&src, "", &p.name).or_else(|| {
                 super::super::variants::base_name(&p.name)
@@ -555,6 +556,8 @@ mod tests {
             if watch.split(',').any(|w| w == p.name) {
                 println!("WATCH {:?}: {:?}", p.name, p.excerpt);
             }
+            let span = p.excerpt.as_ref().map(|e| (e.start_line, e.end_line));
+            listing.push_str(&format!("{}\t{:?}\t{span:?}\n", p.name, p.role));
             match &p.excerpt {
                 Some(ex) => {
                     located += 1;
@@ -566,6 +569,9 @@ mod tests {
                 None if verbose => println!("MISS {:?} ({:?})", p.name, p.role),
                 None => {}
             }
+        }
+        if let Ok(out) = std::env::var("BOREALIS_PROBE_LIST") {
+            std::fs::write(out, listing).unwrap();
         }
         for e in &mut draft.elements {
             e.status = ElementStatus::Pending;

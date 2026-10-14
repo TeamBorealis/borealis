@@ -320,3 +320,103 @@ fn a_numbered_two_column_table_inside_a_column_keeps_its_rows() {
         assert!(t.lines().any(|l| l == format!("{} | {name}", k + 1)), "{t}");
     }
 }
+
+/// A list column: a heading of `size` 13 at `top`, then `items` 13 points apart.
+fn list(x: f32, top: f32, head: &str, items: &[&str]) -> String {
+    let mut c = show("F2", 13.0, x, top, &format!("({head})"));
+    for (i, item) in items.iter().enumerate() {
+        c += &show(
+            "F2",
+            10.0,
+            x,
+            top - 13.0 * (i + 1) as f32,
+            &format!("({item})"),
+        );
+    }
+    c
+}
+
+/// One block: a big name over four list columns (the middle two share baselines).
+fn list_block(top: f32, name: &str, tag: &str) -> String {
+    let item = |n: usize| format!("{tag} item {n}");
+    let names: Vec<String> = (0..24).map(item).collect();
+    let n: Vec<&str> = names.iter().map(String::as_str).collect();
+    let mut c = show("F2", 28.0, 48.0, top, &format!("({name})"));
+    c += &list(48.0, top - 25.0, "Rank 1", &n[0..4]);
+    c += &list(48.0, top - 95.0, "Rank 2", &n[4..7]);
+    c += &list(179.0, top - 25.0, "Rank 3", &n[7..11]);
+    c += &list(179.0, top - 95.0, "Rank 4", &n[11..14]);
+    c += &list(310.0, top - 25.0, "Rank 5", &n[14..22]);
+    c += &list(441.0, top - 25.0, "Rank 6", &n[22..24]);
+    c
+}
+
+#[test]
+fn blocks_of_list_columns_stacked_on_a_page_are_read_block_by_block() {
+    let mut c = show("F2", 28.0, 218.0, 740.0, "(Lantern Lists)");
+    c += &show(
+        "F2",
+        9.0,
+        178.0,
+        715.0,
+        "(The lists below name the charms each order may learn.)",
+    );
+    c += &list_block(680.0, "Tinkers", "tinker");
+    c += &list_block(430.0, "Weavers", "weaver");
+    let t = extract_pdf_text(&pdf("a", &c)).unwrap().text;
+    let at = |s: &str| t.find(s).unwrap_or_else(|| panic!("{s} missing: {t}"));
+    let order = [
+        "Lantern Lists",
+        "Tinkers",
+        "tinker item 0",
+        "tinker item 6",
+        "tinker item 7",
+        "tinker item 14",
+        "tinker item 23",
+        "Weavers",
+        "weaver item 0",
+        "weaver item 23",
+    ];
+    assert!(order.windows(2).all(|w| at(w[0]) < at(w[1])), "{t}");
+    assert!(!t.lines().any(|l| l.contains(" | ")), "{t}");
+    assert!(t.lines().any(|l| l.ends_with("Rank 4")), "{t}");
+}
+
+#[test]
+fn a_big_heading_in_one_column_of_prose_does_not_cut_the_page() {
+    // Left column: prose, a big heading, prose. Right column: prose all the way down, and a
+    // second page where the right column ends above the left column's big heading.
+    let mut c = prose(72.0, 740.0, 6, "the hollow lantern road winds on");
+    c += &show("F2", 24.0, 72.0, 640.0, "(Moth Gate)");
+    c += &prose(72.0, 615.0, 6, "past the moth gate the road climbs");
+    c += &prose(320.0, 740.0, 14, "a quiet bell rings over the moor");
+    let t = extract_pdf_text(&pdf("a", &c)).unwrap().text;
+    let at = |s: &str| t.find(s).unwrap();
+    assert!(at("Moth Gate") < at("road climbs 5"), "{t}");
+    assert!(at("road climbs 5") < at("over the moor 0"), "{t}");
+
+    let mut c = prose(72.0, 740.0, 6, "the hollow lantern road winds on");
+    c += &show("F2", 24.0, 72.0, 640.0, "(Moth Gate)");
+    c += &prose(72.0, 615.0, 6, "past the moth gate the road climbs");
+    c += &prose(320.0, 740.0, 6, "a quiet bell rings over the moor");
+    let t = extract_pdf_text(&pdf("a", &c)).unwrap().text;
+    let at = |s: &str| t.find(s).unwrap();
+    assert!(at("road climbs 5") < at("over the moor 0"), "{t}");
+}
+
+#[test]
+fn lists_side_by_side_on_shared_baselines_are_not_a_table() {
+    let names: Vec<String> = (0..30).map(|n| format!("charm {n}")).collect();
+    let n: Vec<&str> = names.iter().map(String::as_str).collect();
+    let mut c = show("F2", 28.0, 48.0, 700.0, "(Wardens)");
+    c += &list(48.0, 680.0, "Rank 1", &n[0..6]);
+    c += &list(48.0, 589.0, "Rank 2", &n[6..12]);
+    c += &list(179.0, 680.0, "Rank 3", &n[12..19]);
+    c += &list(179.0, 576.0, "Rank 4", &n[19..24]);
+    c += &list(310.0, 680.0, "Rank 5", &n[24..29]);
+    let t = extract_pdf_text(&pdf("a", &c)).unwrap().text;
+    assert!(!t.lines().any(|l| l.contains(" | ")), "{t}");
+    let at = |s: &str| t.find(s).unwrap_or_else(|| panic!("{s} missing: {t}"));
+    let order = ["charm 0", "charm 11", "charm 12", "charm 23", "charm 24"];
+    assert!(order.windows(2).all(|w| at(w[0]) < at(w[1])), "{t}");
+}

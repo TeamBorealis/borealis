@@ -13,6 +13,10 @@ use super::pdf_trust::{distrust, Trust};
 use super::pdf_walk::{paint_page, Run};
 use crate::error::AssistError;
 
+// A child of this module so the import module list stays as it is.
+#[path = "pdf_blocks.rs"]
+mod blocks;
+
 /// A PDF with fewer non-whitespace characters per page than this is treated as scanned images.
 pub const MIN_CHARS_PER_PAGE: usize = 20;
 
@@ -417,6 +421,19 @@ fn reading_order(frags: Vec<Fragment>, width: f32) -> Vec<Fragment> {
 }
 
 fn order_columns(frags: Vec<Fragment>, x0: f32, x1: f32, depth: usize) -> Vec<Fragment> {
+    // Blocks stacked over all the columns are read one after the other.
+    let frags = if depth == 0 {
+        frags
+    } else {
+        match blocks::block_cut(frags, x0, x1) {
+            Ok((above, below)) => {
+                let mut out = order_columns(above, x0, x1, depth);
+                out.extend(order_columns(below, x0, x1, depth));
+                return out;
+            }
+            Err(frags) => frags,
+        }
+    };
     let width = (x1 - x0).max(1.0);
     let mid = gutter(&frags, x0, width);
     let slack = 2.0;
@@ -733,6 +750,37 @@ mod tests {
         .map(|s| t.find(s).unwrap_or(usize::MAX))
         .collect();
         assert!(order.windows(2).all(|w| w[0] < w[1]), "{t}");
+    }
+
+    /// Offline look at one page: `BOREALIS_PDF_FRAGS=<file.pdf>:<page>` prints its fragments
+    /// (x, end, y, size, text) in reading order.
+    #[test]
+    #[ignore = "needs a local PDF"]
+    fn probe_page_fragments() {
+        let Ok(arg) = std::env::var("BOREALIS_PDF_FRAGS") else {
+            return;
+        };
+        let (file, page) = arg.rsplit_once(':').unwrap();
+        let doc = load_pdf(&std::fs::read(file).unwrap()).unwrap();
+        let id = doc.get_pages()[&page.parse::<u32>().unwrap()];
+        let (mut cache, mut budget) = (FontCache::default(), MAX_EXTRACT_BYTES);
+        let painted = paint_page(&doc, id, &mut cache, &mut budget);
+        let mut runs = drop_overprints(painted.runs);
+        restore_spaces(&mut runs);
+        let (width, _) = page_size(&doc, id);
+        let raw = std::env::var("BOREALIS_PDF_RAW").is_ok();
+        let frags = fragments(runs);
+        let frags = if raw {
+            frags
+        } else {
+            reading_order(frags, width)
+        };
+        for f in frags {
+            println!(
+                "{:6.1} {:6.1} {:6.1} {:4.1} {}",
+                f.x, f.end, f.y, f.size, f.text
+            );
+        }
     }
 
     #[test]
