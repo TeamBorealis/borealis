@@ -16,6 +16,7 @@ use std::collections::HashSet;
 use borealis_content::ContentStore;
 use serde_json::{json, Value};
 
+use super::weapon_context::{names_group, weapon_context};
 use super::{norm, proficiency_text, push_support, rules_mut, str_at, Derived};
 use crate::import::anything::items::{known_property, property_key, weapon_properties};
 use crate::import::anything::types::ImportPlan;
@@ -231,7 +232,7 @@ fn group_mut<'a>(groups: &'a mut Vec<Group>, name: &str, category: bool) -> &'a 
 }
 
 /// The groups of the draft's weapons and of its classes' proficiency text.
-fn collect(store: &ContentStore, d: &Derived) -> Vec<Group> {
+fn collect(plan: &ImportPlan, source: &str, store: &ContentStore, d: &Derived) -> Vec<Group> {
     let mut groups: Vec<Group> = Vec::new();
     for (i, doc) in d.docs.iter().enumerate() {
         if str_at(doc, "type") != "Weapon" {
@@ -261,8 +262,18 @@ fn collect(store: &ContentStore, d: &Derived) -> Vec<Group> {
                 || norm(&term).ends_with("weapons")
                 || (library_tag(store, &key).is_some()
                     && library_proficiency(store, &key).is_some());
-            if known {
+            let printed = if known {
+                Vec::new()
+            } else {
+                printed_members(plan, source, store, d, &key)
+            };
+            if known || !printed.is_empty() {
                 let g = group_mut(&mut groups, &term, false);
+                for w in printed {
+                    if !g.weapons.contains(&w) {
+                        g.weapons.push(w);
+                    }
+                }
                 if !g.classes.contains(&i) {
                     g.classes.push(i);
                 }
@@ -272,9 +283,48 @@ fn collect(store: &ContentStore, d: &Derived) -> Vec<Group> {
     groups
 }
 
-pub(super) fn weapon_groups(plan: &ImportPlan, store: &ContentStore, d: &mut Derived) {
+/// For a class term the weapons' data leaves out but that is a group Aurora content knows (a
+/// known group id, a loaded weapon category or group tag): the draft's weapons the source
+/// prints under it (table caption, category line or heading over the weapon's table or over its
+/// properties' definitions). Empty for any other term.
+fn printed_members(
+    plan: &ImportPlan,
+    source: &str,
+    store: &ContentStore,
+    d: &Derived,
+    key: &str,
+) -> Vec<usize> {
+    let known = KNOWN_GROUP_IDS.iter().any(|(k, _)| *k == key) || library_tag(store, key).is_some();
+    if !known || source.is_empty() {
+        return Vec::new();
+    }
+    let lines: Vec<&str> = source.lines().collect();
+    d.docs
+        .iter()
+        .enumerate()
+        .filter(|(_, doc)| str_at(doc, "type") == "Weapon")
+        .filter(|(_, doc)| {
+            let row = plan
+                .elements
+                .iter()
+                .find(|p| p.id == str_at(doc, "id"))
+                .and_then(|p| p.excerpt.as_ref())
+                .map(|x| x.start_line.saturating_sub(1));
+            let context = weapon_context(&lines, row, &weapon_properties(doc));
+            names_group(&context, key)
+        })
+        .map(|(i, _)| i)
+        .collect()
+}
+
+pub(super) fn weapon_groups(
+    plan: &ImportPlan,
+    source: &str,
+    store: &ContentStore,
+    d: &mut Derived,
+) {
     let prefix = id_prefix(plan);
-    for g in collect(store, d) {
+    for g in collect(plan, source, store, d) {
         apply_group(&g, &prefix, store, d);
     }
 }
@@ -657,7 +707,7 @@ mod tests {
             docs: vec![simple_weapon("Light Crossbow", "Bolt Throwers")],
             ..Derived::default()
         };
-        weapon_groups(&plan, &store, &mut d);
+        weapon_groups(&plan, "", &store, &mut d);
         assert!(
             !d.extra
                 .iter()
@@ -719,7 +769,7 @@ mod tests {
             ],
             ..Derived::default()
         };
-        weapon_groups(&plan, &store, &mut d);
+        weapon_groups(&plan, "", &store, &mut d);
         super::super::cycles::break_grant_cycles(&store, &mut d);
         for a in &d.appends {
             let own = str_at(a, "id");

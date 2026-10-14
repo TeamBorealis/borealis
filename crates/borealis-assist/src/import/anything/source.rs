@@ -157,7 +157,7 @@ const CATEGORY_WORDS: usize = 5;
 /// The head of the table the row at `row` (0-based) is in: from the caption heading (or the
 /// line just above the table) through the header row and category lines, up to the first row
 /// that is not one of them. `None` when `row` is not a table row or the table starts there.
-fn table_head(lines: &[&str], row: usize) -> Option<(usize, usize)> {
+pub(crate) fn table_head(lines: &[&str], row: usize) -> Option<(usize, usize)> {
     let is_row = |k: usize| lines.get(k).is_some_and(|l| l.contains(" | "));
     let category = |k: usize| {
         let l = lines[k].trim();

@@ -24,6 +24,7 @@ mod cycles;
 mod groups;
 mod languages;
 mod progression;
+mod weapon_context;
 
 /// `data.progression` keys that are not counters.
 const NOT_COUNTERS: [&str; 5] = [
@@ -75,8 +76,9 @@ pub(crate) fn derive_with_source(
     super::lists::class_lists(plan, store, &mut d);
     super::lists::marked_lists(source, plan, store, &mut d);
     spell_lists(plan, store, &mut d);
-    groups::weapon_groups(plan, store, &mut d);
+    groups::weapon_groups(plan, source, store, &mut d);
     groups::new_properties(plan, store, &mut d);
+    weapon_context::unmatched_filters(store, &mut d);
     languages::languages(plan, store, &mut d);
     progression::outline_columns(plan, &mut d);
     progression::table_keys(store, &mut d);
