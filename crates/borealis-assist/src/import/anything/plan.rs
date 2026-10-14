@@ -15,7 +15,7 @@ use crate::import::ids::make_id;
 
 /// Levels a class has features at.
 #[path = "plan_sections.rs"]
-mod sections;
+pub(crate) mod sections;
 
 pub(crate) const LEVELS: std::ops::RangeInclusive<u32> = 1..=20;
 const DEFAULT_SUBCLASS_LEVEL: u32 = 3;
@@ -837,6 +837,14 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
             ImportKind::Species.element_type()
         };
         g.root_id = Some(standalone_group(&mut b, g, ty));
+    }
+    let folded = sections::fold_table_headings(&b.out, source);
+    if !folded.is_empty() {
+        let ids: Vec<&String> = folded.iter().map(|(id, _)| id).collect();
+        b.out.retain(|e| !ids.contains(&&e.id));
+        plan.groups
+            .retain(|g| !g.root_id.as_ref().is_some_and(|r| ids.contains(&r)));
+        b.notes.extend(folded.iter().map(|(_, n)| n.clone()));
     }
     super::variants::link_briefs(&mut b.out);
     b.notes.extend(super::feature_spells::resolve(

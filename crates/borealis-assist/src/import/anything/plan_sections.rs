@@ -3,10 +3,11 @@
 //! Charms") becomes one text-only group per printed section, so each keeps its own heading and
 //! passage. A class feature whose heading is followed by spellcasting headings of its own
 //! level ("Cantrips", "Preparing Spells": a section the PDF printed flat) is the class's
-//! spellcasting section, with those headings as its parts.
+//! spellcasting section, with those headings as its parts. A text-only entry planned on a
+//! category heading or a row inside another planned table is folded into that table.
 
 use super::super::caster::is_caster_part;
-use super::super::types::{ImportKind, Outline, OutlinePart, PlanGroup};
+use super::super::types::{ImportKind, Outline, OutlinePart, PlanGroup, PlannedElement, Role};
 use super::{norm, text_group};
 
 /// Fewest printed sections a merged name must stand for before it is split.
@@ -194,10 +195,112 @@ pub(crate) fn split_merged(groups: &mut Vec<PlanGroup>, source: &str) -> Vec<Str
     notes
 }
 
+/// Most words of a bare name line in a table's category list ("Lamp of the moth*").
+const MAX_NAME_LINE_WORDS: usize = 6;
+
+fn heading_level(line: &str) -> Option<usize> {
+    let t = line.trim_start();
+    let n = t.chars().take_while(|c| *c == '#').count();
+    (n > 0 && t[n..].starts_with(' ')).then_some(n)
+}
+
+/// A table row, or a bare name line of a table's category list (no sentence, no label).
+fn table_line(line: &str) -> bool {
+    let t = line.trim();
+    t.contains(" | ")
+        || (!t.contains(':')
+            && !t.ends_with(['.', '!', '?'])
+            && t.split_whitespace().count() <= MAX_NAME_LINE_WORDS)
+}
+
+/// The non-blank lines after the heading at `at`, up to the next heading.
+fn heading_body<'a>(lines: &[&'a str], at: usize) -> Vec<&'a str> {
+    lines
+        .iter()
+        .skip(at + 1)
+        .take_while(|l| heading_level(l).is_none())
+        .filter(|l| !l.trim().is_empty())
+        .copied()
+        .collect()
+}
+
+/// 0-based first line and end (exclusive) of an element's located passage.
+fn span(e: &PlannedElement) -> Option<(usize, usize)> {
+    let x = e.excerpt.as_ref()?;
+    let s = x.start_line.saturating_sub(1);
+    Some((s, x.end_line.max(s + 1)))
+}
+
+/// The planned element a text-only entry `t` is only a piece of: the element whose passage
+/// holds the table row `t` was located on; the element starting at `t`'s heading that the
+/// heading names (not `t`); or the table `t`'s heading is a category of (a sub-heading of a
+/// planned text-only table with no prose before its first sub-heading, over table lines only,
+/// and `t`'s brief names that table).
+fn folded_into<'a>(
+    t: &PlannedElement,
+    all: &'a [PlannedElement],
+    lines: &[&str],
+) -> Option<&'a PlannedElement> {
+    let (s, _) = span(t)?;
+    let line = lines.get(s)?;
+    let others = || all.iter().filter(|p| p.id != t.id);
+    let row_text = |p: &PlannedElement| {
+        p.role == Role::Text && span(p).is_some_and(|(ps, _)| lines[ps].contains(" | "))
+    };
+    if line.contains(" | ") {
+        return others()
+            .find(|p| !row_text(p) && span(p).is_some_and(|(ps, pe)| ps <= s && s < pe));
+    }
+    let level = heading_level(line)?;
+    let title = norm(line.trim_start().trim_start_matches('#'));
+    if let Some(p) = others().find(|p| {
+        span(p).is_some_and(|(ps, _)| ps == s) && norm(&p.name) == title && norm(&t.name) != title
+    }) {
+        return Some(p);
+    }
+    let enclosing = (0..s)
+        .rev()
+        .find(|&k| heading_level(lines[k]).is_some_and(|h| h < level))?;
+    let body = heading_body(lines, s);
+    let brief = norm(&t.brief);
+    others().find(|p| {
+        p.role == Role::Text
+            && span(p).is_some_and(|(ps, pe)| ps == enclosing && s < pe)
+            && brief.contains(&norm(&p.name))
+            && !body.is_empty()
+            && body.iter().all(|l| table_line(l))
+            && heading_body(lines, enclosing).iter().all(|l| table_line(l))
+    })
+}
+
+/// Text-only entries that are only a category heading or a row of another planned table (see
+/// [`folded_into`]): their text is that table's. Returns each one's id and a plan note.
+pub(crate) fn fold_table_headings(
+    elements: &[PlannedElement],
+    source: &str,
+) -> Vec<(String, String)> {
+    let lines: Vec<&str> = source.lines().collect();
+    elements
+        .iter()
+        .filter(|t| t.role == Role::Text)
+        .filter_map(|t| {
+            let p = folded_into(t, elements, &lines)?;
+            Some((
+                t.id.clone(),
+                format!(
+                    "{}: a category heading or row of {}, kept in its text (not an entry of its own)",
+                    t.name, p.name
+                ),
+            ))
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::import::anything::plan::standalone;
+    use crate::import::anything::types::Role;
 
     const SOURCE: &str = "# Charm Lore\n\n## Removing Old Charms\n\nScrub them off.\n\n\
 ## Charms\n\n### Minor Charms\n\nSmall charms.\n\n### Major Charms\n\nBig charms.\n\n\
@@ -236,6 +339,43 @@ Charms\nA running header line.\n\n## Woven Charms\n\nCloth charms.\n";
             split_merged(&mut g, faq).is_empty(),
             "long qualifiers are not sections"
         );
+    }
+
+    #[test]
+    fn category_headings_and_rows_of_a_planned_table_are_folded_into_it() {
+        use crate::import::anything::fidelity::tests::planned;
+        let src = "### Lamps by Rarity\n\n#### Common Item\n\nTin lamp\nReed lamp\n\n\
+#### Rare Item\n\nGlass lamp\n\n### Kinds of Lamp\n\nd4 | Kind\n1 | Tin\n2 | Glass\n\n\
+### Lamp Costs\n\n#### Oil Prices\n\nOil | Cost\nLamp oil | 1 sp\n\n#### Lamp Oils\n\nText.\n";
+        let text = |id: &str, name: &str, line: usize, brief: &str| {
+            let mut p = planned(id, name, "Rules Glossary Entry", Role::Text, Some(line));
+            p.brief = brief.into();
+            p
+        };
+        let mut table = text("t0", "Lamps by Rarity", 1, "table");
+        table.excerpt.as_mut().unwrap().end_line = 10;
+        let mut kinds = text("t3", "Kinds of Lamp", 12, "table");
+        kinds.excerpt.as_mut().unwrap().end_line = 16;
+        let mut costs = text("t5", "Lamp Costs", 18, "rule");
+        costs.excerpt.as_mut().unwrap().end_line = 27;
+        let elements = vec![
+            table,
+            text("t1", "Common", 3, "table. Lamps by Rarity subsection"),
+            text("t2", "Rare", 8, "table. Lamps by Rarity subsection"),
+            kinds,
+            text("t4", "Tin", 15, "table row"),
+            costs,
+            // A table of its own under a rules section, its brief naming no parent: kept.
+            text("t6", "Oil Prices", 20, "table"),
+            // Located on another entry's heading that names that entry: folded.
+            text("t7", "Oils", 25, "table"),
+            text("t8", "Lamp Oils", 25, "rule"),
+        ];
+        let folded: Vec<String> = fold_table_headings(&elements, src)
+            .into_iter()
+            .map(|(id, _)| id)
+            .collect();
+        assert_eq!(folded, ["t1", "t2", "t4", "t7"]);
     }
 
     #[test]
