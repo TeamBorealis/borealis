@@ -2,7 +2,7 @@
 //! section was found, every passage that mentions it. Nothing is cut silently: what an element
 //! without a section was given is stated in the import report.
 
-use super::types::PlannedElement;
+use super::types::{PlannedElement, Role};
 use crate::import::chunk::norm_words;
 
 /// Lines of context kept around each mention of an element that has no section.
@@ -94,6 +94,32 @@ pub(crate) fn section_text(source: &str, p: &PlannedElement) -> Option<String> {
             .collect::<Vec<_>>()
             .join("\n"),
     )
+}
+
+/// Fewest lines sent for a located element (a one-line excerpt still gets its context).
+const MIN_WINDOW_LINES: usize = 12;
+/// Most characters sent for a class or subclass root, counted from its header.
+const ROOT_SOURCE_CHARS: usize = 9000;
+
+/// The source one element is generated from on its own: its located section (a class or
+/// subclass root from its header on), else the passages mentioning it.
+pub(crate) fn element_window(source: &str, planned: &PlannedElement) -> String {
+    let Some(ex) = planned.excerpt.as_ref() else {
+        return unlocated_source(source, &planned.name).0;
+    };
+    let from_header = source.lines().skip(ex.start_line.saturating_sub(1));
+    if matches!(planned.role, Role::Class | Role::Subclass) {
+        return from_header
+            .collect::<Vec<_>>()
+            .join("\n")
+            .chars()
+            .take(ROOT_SOURCE_CHARS)
+            .collect();
+    }
+    from_header
+        .take((ex.end_line - ex.start_line + 1).max(MIN_WINDOW_LINES))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 #[cfg(test)]

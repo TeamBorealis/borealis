@@ -23,8 +23,6 @@ use crate::homebrew::PackContext;
 
 /// Repair rounds per element.
 pub const MAX_REPAIR_ROUNDS: u32 = 2;
-const WINDOW_LINES: usize = 40;
-const WHOLE_SOURCE_CHARS: usize = 9000;
 
 pub(crate) type Progress<'a> = Option<&'a (dyn Fn(ImportProgress) + Send + Sync)>;
 
@@ -65,26 +63,7 @@ pub(crate) fn guidance(planned: &PlannedElement, edition: Edition) -> &'static s
 
 /// The part of the source relevant to `planned`.
 pub(crate) fn source_window(source: &str, planned: &PlannedElement) -> String {
-    let Some(ex) = planned.excerpt.as_ref() else {
-        return super::source::unlocated_source(source, &planned.name).0;
-    };
-    if matches!(planned.role, Role::Class | Role::Subclass) {
-        // From the class or subclass header on, not from the start of a long source.
-        return source
-            .lines()
-            .skip(ex.start_line.saturating_sub(1))
-            .collect::<Vec<_>>()
-            .join("\n")
-            .chars()
-            .take(WHOLE_SOURCE_CHARS)
-            .collect();
-    }
-    source
-        .lines()
-        .skip(ex.start_line.saturating_sub(1))
-        .take((ex.end_line - ex.start_line + 1).max(WINDOW_LINES.min(12)))
-        .collect::<Vec<_>>()
-        .join("\n")
+    super::source::element_window(source, planned)
 }
 
 fn content_schema() -> &'static JsonSchemaValidator {
