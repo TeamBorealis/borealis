@@ -380,6 +380,9 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     if let Some(t) = table.data {
         el.data.insert("class_table".into(), t);
     }
+    if let Some(p) = super::feature_rules::table_progression(&class.class_table_groups) {
+        el.data.insert("progression".into(), p);
+    }
 
     // Class level additional spells (Artificer's expanded lists and similar).
     let (spell_rules, spell_partial, spell_helpers) = spells_extra_class(sh, &class, &el);

@@ -6,6 +6,7 @@ pub mod caster;
 pub mod class;
 pub mod feat;
 pub mod feature;
+pub mod feature_rules;
 pub mod item;
 pub mod mech;
 pub mod misc;

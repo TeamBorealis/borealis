@@ -622,6 +622,14 @@ impl<'a> Mech<'a> {
                         let (name, variant) = name_part
                             .split_once(';')
                             .map_or((name_part, None), |(n, v)| (n, Some(v.trim())));
+                        // a variant the data defines as a feat version ("Magic Initiate;
+                        // Cleric") is granted as that version, so its choice is already made
+                        let version = variant
+                            .and_then(|_| self.sh.link(RefKind::Feat, name_part.trim(), source));
+                        if let Some(id) = version {
+                            self.push(grant(&id, "Feat"));
+                            continue;
+                        }
                         match self.sh.link(RefKind::Feat, name.trim(), source) {
                             Some(id) => {
                                 let mut rule = grant(&id, "Feat");

@@ -67,77 +67,18 @@ const LOSSY: &[Accepted] = &[
     ),
 ];
 
-/// Open bugs found by this test (see specs/handoffs/diff-5etools-bundled-1.md).
-const KNOWN_GAPS: &[Accepted] = &[
-    (
-        "Dnd2014 Wizard",
-        "spell_choices",
-        &[20],
-        "importer: Spell Mastery (L18, 2) and Signature Spells (L20, 2) choices are not \
-         converted from the feature text",
-    ),
-    (
-        "Dnd2024 Wizard",
-        "spell_choices",
-        &[5, 11, 20],
-        "bundled SRD 5.2.1 Evoker Evocation Savant lacks the free spell per new slot level \
-         (imported is right, +1 at L5/7/9/11/13/15/17); importer lacks Spell Mastery and \
-         Signature Spells (-4 at L18/L20)",
-    ),
-    (
-        "Dnd2024 Wizard",
-        "select.Class Feature",
-        &[3, 5, 11, 20],
-        "importer: the 2024 Wizard Scholar expertise choice is not converted",
-    ),
-    (
-        "Dnd2024 Wizard",
-        "select.Proficiency",
-        &[3, 5, 11, 20],
-        "bundled SRD 5.2.1 Scholar also adds a skill proficiency select (the rule grants \
-         Expertise only), which shrinks the other skill selects",
-    ),
-    (
-        "Dnd2024 Wizard",
-        "skill.investigation",
-        &[3, 5, 11, 20],
-        "the extra bundled Scholar proficiency (picked by name order: Investigation)",
-    ),
-    (
-        "Dnd2024 Wizard/Evoker Dwarf",
-        "skill.arcana",
-        &[3, 5, 11, 20],
-        "importer: no Scholar expertise (bundled picks Arcana)",
-    ),
-    (
-        "Dnd2024 Wizard/Evoker Human",
-        "skill.acrobatics",
-        &[3, 5, 11, 20],
-        "importer: no Scholar expertise; the bundled Expertise select is not limited to the six \
-         Scholar skills (picks Acrobatics)",
-    ),
-    (
-        "Dnd2024 Fighter",
-        "select.Weapon",
-        &[],
-        "importer: 2024 Weapon Mastery (the class table column) is not converted",
-    ),
-    (
-        "Dnd2024",
-        "select.Feat Feature",
-        &[],
-        "importer: a background's feat variant ('magic initiate; cleric') is a grant setter the \
-         engine does not read, so the imported Acolyte chooses the Magic Initiate spell list \
-         again (the fill picks Cleric only by name order)",
-    ),
-    (
-        "Dnd2024 Fighter",
-        "select.Feat",
-        &[20],
-        "imported Magic Initiate has a spellcasting block, so the lenient [feature:spellcasting] \
-         prerequisite offers Boon of Spell Recall to a Fighter (7 Epic Boons vs 6)",
-    ),
-];
+/// Open bugs found by this test (see specs/handoffs/diff-5etools-bundled-1.md and
+/// specs/handoffs/import-gaps-2.md).
+const KNOWN_GAPS: &[Accepted] = &[(
+    "Dnd2024 Fighter",
+    "select.Feat",
+    &[20],
+    "engine: the imported Magic Initiate's spellcasting-ability choice is an element with a \
+         spellcasting block, and `data.prerequisite.requires_feature: Spellcasting` is checked \
+         leniently (any live block counts), so Boon of Spell Recall is offered to a Fighter (7 \
+         Epic Boons vs 6); needs a strict class-Spellcasting test for 2024 prerequisites (see \
+         specs/handoffs/import-gaps-2.md)",
+)];
 
 /// One side of a pair: the elements a character is built from.
 #[derive(Clone, Copy)]

@@ -269,6 +269,21 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
         mech.push(rule);
     }
     if !sub {
+        let plain = Renderer::plain(&f.entries);
+        let stated = super::feature_rules::feature_rules(&super::feature_rules::FeatureText {
+            name: &f.name,
+            class: &f.class_name,
+            level: f.level,
+            text: &plain,
+        });
+        if !stated.is_empty() {
+            // the engine reads a class table column (Weapon Mastery) through `data.class`
+            el.data
+                .insert("class".into(), Value::String(f.class_name.clone()));
+        }
+        for r in stated {
+            mech.push(r);
+        }
         let rituals = ritual_rules(&f.name, &f.entries);
         if !rituals.is_empty() {
             // the engine reads a class's ritual rule from features whose `data.class` names it

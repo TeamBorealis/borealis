@@ -116,12 +116,16 @@ z=defclass('Wizard',hd=6,primary=['intelligence'],saves=['intelligence','wisdom'
 z['features']={
  'Ritual Adept':[grant('ID_INTERNAL_RITUAL_CASTING','Grants'),custom('ritual_casting',source='spellbook',requires_prepared=False)],
  'Arcane Recovery':[res('arcane recovery','Arcane Recovery',fx(1),['long_rest']),custom('slot_recovery',on='short_rest',max_combined_level='ceil(wizard level / 2)',max_slot_level=5)],
- 'Scholar':[skill_sel('Scholar',['Arcana','History','Investigation','Medicine','Nature','Religion']),custom('expertise',count=1,from_='Scholar skill choice')],
+ # Expertise in one of these skills the wizard is already proficient in (the options require the proficiency;
+ # optional: a multiclass wizard may have none of them)
+ 'Scholar':[select('Class Feature','Scholar',supports='|'.join('ID_EXPERTISE_SKILL_'+s.upper() for s in ['Arcana','History','Investigation','Medicine','Nature','Religion']),optional=True)],
  'Wizard Subclass':[select('Archetype','Arcane Tradition',supports='Wizard Subclass')],
  'Memorize Spell':[],
  'Spell Mastery':[select('Spell','Spell Mastery (level 1)',supports='Wizard, 1',level=18,spellcasting='Wizard',prepared=True),select('Spell','Spell Mastery (level 2)',supports='Wizard, 2',level=18,spellcasting='Wizard',prepared=True),custom('at_will_spells',levels=[1,2],casting_time='action',swap_on='long_rest')],
  'Signature Spells':[select('Spell','Signature Spell 1',supports='Wizard, 3',level=20,spellcasting='Wizard',prepared=True),select('Spell','Signature Spell 2',supports='Wizard, 3',level=20,spellcasting='Wizard',prepared=True),custom('free_cast_choice',spell_level=3,count=2,uses_each=1,recharge=['short_rest','long_rest'])],
 }
 z['subclass']=dict(feature_rules={
- 'Evocation Savant':[select('Spell','Evocation Savant',supports='Wizard, Evocation, (0||1||2)',number=2,spellcasting='Wizard')],
+ # two Evocation spells (level 0-2) at level 3, then one per new spell slot level (Wizard levels 5, 7, ..., 17)
+ 'Evocation Savant':[select('Spell','Evocation Savant',supports='Wizard, Evocation, (0||1||2)',number=2,spellcasting='Wizard')]
+   +[select('Spell','Evocation Savant (level %d)'%sl,supports='Wizard, Evocation, (%s)'%'||'.join(str(x) for x in range(1,sl+1)),level=2*sl-1,spellcasting='Wizard') for sl in range(3,10)],
  'Potent Cantrip':[],'Sculpt Spells':[],'Empowered Evocation':[],'Overchannel':[]})

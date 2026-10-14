@@ -1062,14 +1062,10 @@
    "rules": [
     {
      "kind": "select",
-     "type": "Proficiency",
+     "type": "Class Feature",
      "name": "Scholar",
-     "supports": "ID_PROFICIENCY_SKILL_ARCANA|ID_PROFICIENCY_SKILL_HISTORY|ID_PROFICIENCY_SKILL_INVESTIGATION|ID_PROFICIENCY_SKILL_MEDICINE|ID_PROFICIENCY_SKILL_NATURE|ID_PROFICIENCY_SKILL_RELIGION"
-    },
-    {
-     "kind": "expertise",
-     "count": 1,
-     "from": "Scholar skill choice"
+     "supports": "ID_EXPERTISE_SKILL_ARCANA|ID_EXPERTISE_SKILL_HISTORY|ID_EXPERTISE_SKILL_INVESTIGATION|ID_EXPERTISE_SKILL_MEDICINE|ID_EXPERTISE_SKILL_NATURE|ID_EXPERTISE_SKILL_RELIGION",
+     "optional": true
     }
    ],
    "data": {
