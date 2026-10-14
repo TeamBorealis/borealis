@@ -192,6 +192,20 @@ fn spell_level(e: &crate::universe::UElem) -> u32 {
     e.spell_level().unwrap_or(0)
 }
 
+/// Pact slot level of a 2014 `slots:count` caster: the `<class>:spellcasting:slot` stat, or, when
+/// the content has none (Aurora Profane Soul), the highest per-level slot group that holds the
+/// pact slots (`engine.md` 10.5: exactly one level has `count` slots).
+fn pact_slot_level(slot_stat: i32, slots: &[i32; 9]) -> i32 {
+    if slot_stat > 0 {
+        return slot_stat;
+    }
+    slots
+        .iter()
+        .rposition(|s| *s > 0)
+        .and_then(|i| i32::try_from(i + 1).ok())
+        .unwrap_or(slot_stat)
+}
+
 /// Snapshot of every spellcasting class.
 #[must_use]
 pub fn spellcasting_snapshots(
@@ -243,7 +257,7 @@ pub fn spellcasting_snapshots(
                 .then(|| {
                     (
                         stats.sum(&format!("{lc}:spellcasting:slots:count")),
-                        stats.sum(&format!("{lc}:spellcasting:slot")),
+                        pact_slot_level(stats.sum(&format!("{lc}:spellcasting:slot")), &slots),
                     )
                 })
                 .filter(|p| p.0 > 0)
@@ -505,6 +519,16 @@ pub fn spell_merges(graph: &Graph<'_>) -> Vec<(String, String)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pact_slot_level_prefers_the_level_stat_then_the_slot_group() {
+        let mut groups = [0; 9];
+        assert_eq!(pact_slot_level(3, &groups), 3);
+        assert_eq!(pact_slot_level(0, &groups), 0, "nothing to read");
+        groups[3] = 2;
+        assert_eq!(pact_slot_level(0, &groups), 4, "Profane Soul at 19");
+        assert_eq!(pact_slot_level(5, &groups), 5, "the stat wins");
+    }
 
     #[test]
     fn contributions_follow_the_internal_tables() {
