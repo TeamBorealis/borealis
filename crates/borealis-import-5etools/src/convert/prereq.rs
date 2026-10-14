@@ -4,9 +4,9 @@
 //! (AND); list values inside one key are alternatives again ("an elf or a half-elf"). Every
 //! key is turned into existing requirement terms: `[character:N]`, `[<class>:N]`, ability
 //! tests and element ids (races, subraces, subclasses, backgrounds, feats, features,
-//! optional features, spells, proficiencies). A requirement on a named feature of a
-//! one-alternative prerequisite uses the engine's structured `data.prerequisite.requires_feature`
-//! (matched by element name, so it also holds for bundled classes). What cannot be checked
+//! optional features, spells, proficiencies). A named feature is `[feature:<name>]` (a live
+//! element with that name, also inside OR groups and for bundled classes) and the
+//! spellcasting keys are the strict `[spellcasting:1]` (a class spell-slot group). What cannot be checked
 //! stays in the display text with "(not checked)" and is treated as met, so the option is
 //! still offered.
 
@@ -31,8 +31,6 @@ pub struct Prereq {
     pub text: String,
     /// Requirements expression (empty when nothing can be enforced).
     pub requirements: String,
-    /// A feature (by element name) the character must have: `data.prerequisite.requires_feature`.
-    pub requires_feature: Option<String>,
     /// Character requirements that are shown but not enforced (reported as partial).
     pub unmapped: Vec<String>,
     /// Shown but deliberately not enforced: campaign settings, infusion item targets.
@@ -54,8 +52,6 @@ pub struct Cx<'a> {
 enum Part {
     /// A requirement term.
     Expr(String),
-    /// A named feature (structured check when possible) with its id-based fallback.
-    Feature(String, Option<String>),
     /// Nothing to enforce (a setting or an item target).
     Info,
     /// Always met here (no other feat of an exclusive category exists).
@@ -404,26 +400,17 @@ fn fighting_style_gate(text: &str) -> Option<String> {
     Some(format!("[{}:{}]", c[2].trim().to_lowercase(), &c[1]))
 }
 
-/// Feature names -> the structured check name (one name, spellcasting-like names collapse
-/// to `Spellcasting`, which the engine resolves to "has a spellcasting block").
-fn feature_check_name(names: &[String]) -> Option<String> {
-    if names
+/// Feature names -> `[feature:<name>]` terms (a live element with that name), OR-ed.
+fn feature_part(names: &[String]) -> Part {
+    let terms: Vec<String> = names
         .iter()
-        .all(|n| n == "spellcasting" || n == "pact magic")
-    {
-        return Some("Spellcasting".into());
-    }
-    match names {
-        [one] => Some(crate::util::title_case(one)),
-        _ => None,
-    }
-}
-
-fn feature_part(cx: &Cx<'_>, names: Vec<String>) -> Part {
-    let fallback = or_ids(&cx.ix.features_named(&names));
-    match feature_check_name(&names) {
-        Some(n) => Part::Feature(n, fallback),
-        None => fallback.map_or(Part::Unmapped, Part::Expr),
+        .filter(|n| !n.is_empty() && !n.contains(['[', ']', '(', ')', '&', '|', '!']))
+        .map(|n| format!("[feature:{n}]"))
+        .collect();
+    match terms.len() {
+        0 => Part::Unmapped,
+        1 => Part::Expr(terms.into_iter().next().unwrap_or_default()),
+        _ => Part::Expr(terms.join("||")),
     }
 }
 
@@ -466,11 +453,11 @@ fn convert_key(cx: &Cx<'_>, k: &str, v: &Value) -> Part {
             .collect()),
         "spell" => expr(spell_part(cx, v)),
         "proficiency" => expr(proficiency_part(v)),
-        "feature" => feature_part(cx, strings().iter().map(|s| key(s)).collect()),
+        "feature" => feature_part(&strings().iter().map(|s| key(s)).collect::<Vec<_>>()),
         "spellcasting" | "spellcasting2020" | "spellcastingFeature" | "spellcastingPrepared"
             if v.as_bool() != Some(false) =>
         {
-            feature_part(cx, vec!["spellcasting".into(), "pact magic".into()])
+            Part::Expr("[spellcasting:1]".into())
         }
         "featCategory" => ids(category_ids(cx, v)),
         "exclusiveFeatCategory" => none_of(&category_ids(cx, v)),
@@ -579,7 +566,6 @@ fn describe(key: &str, value: &Value) -> String {
 #[derive(Default)]
 struct Alt {
     exprs: Vec<String>,
-    feature: Option<(String, Option<String>)>,
     text: Vec<String>,
 }
 
@@ -615,10 +601,6 @@ fn convert_alt(cx: &Cx<'_>, map: &serde_json::Map<String, Value>, out: &mut Prer
                 alt.text.push(text);
             }
             Part::Met => alt.text.push(text),
-            Part::Feature(name, fallback) => {
-                alt.feature = Some((name, fallback));
-                alt.text.push(text);
-            }
             Part::Info => {
                 alt.text.push(format!("{text} {NOT_CHECKED}"));
                 out.informational.push(text);
@@ -650,7 +632,7 @@ fn join_alt(exprs: &[String]) -> Option<String> {
 #[must_use]
 pub fn prerequisites(items: &[Value], cx: &Cx<'_>) -> Prereq {
     let mut out = Prereq::default();
-    let mut alts: Vec<Alt> = items
+    let alts: Vec<Alt> = items
         .iter()
         .filter_map(Value::as_object)
         .map(|m| convert_alt(cx, m, &mut out))
@@ -661,19 +643,8 @@ pub fn prerequisites(items: &[Value], cx: &Cx<'_>) -> Prereq {
         .map(|a| a.text.join(", "))
         .collect::<Vec<_>>()
         .join(" or ");
-    // A single alternative can use the structured, name-based feature check; with several
-    // alternatives the feature must become an id test inside the expression.
-    if alts.len() == 1 {
-        out.requires_feature = alts[0].feature.take().map(|(name, _)| name);
-    }
     let mut exprs = Vec::new();
-    for alt in &mut alts {
-        if let Some((name, fallback)) = alt.feature.take() {
-            match fallback {
-                Some(f) => alt.exprs.push(f),
-                None => out.unmapped.push(format!("Feature: {name}")),
-            }
-        }
+    for alt in &alts {
         match join_alt(&alt.exprs) {
             Some(e) => exprs.push(e),
             // an alternative with nothing checkable is always met
@@ -725,12 +696,6 @@ pub fn apply_prerequisites(
     );
     el.prerequisite = p.text;
     el.requirements = p.requirements;
-    if let Some(f) = p.requires_feature {
-        el.data.insert(
-            "prerequisite".into(),
-            serde_json::json!({ "requires_feature": f }),
-        );
-    }
     for u in &p.unmapped {
         partial.push(format!("prerequisite not enforced: {u}"));
         super::note_unmapped(el, "prerequisite", u);

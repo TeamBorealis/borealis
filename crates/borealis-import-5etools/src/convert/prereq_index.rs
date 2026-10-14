@@ -187,16 +187,6 @@ impl PrereqIndex {
             }
         }
     }
-
-    /// Ids of the class/subclass features with one of these names.
-    #[must_use]
-    pub fn features_named(&self, names: &[String]) -> BTreeSet<String> {
-        self.features
-            .iter()
-            .filter(|f| names.contains(&f.name))
-            .map(|f| f.id.clone())
-            .collect()
-    }
 }
 
 /// Ids of the bundled SRD element with this name in either ruleset.

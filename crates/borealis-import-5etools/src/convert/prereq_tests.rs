@@ -150,24 +150,38 @@ fn class_and_subclass_levels() {
 }
 
 #[test]
-fn spellcasting_uses_the_structured_check_or_feature_ids() {
+fn spellcasting_and_features_are_engine_terms() {
     let p = run(&[json!({"spellcasting2020": true, "level": 4})], "");
-    assert_eq!(p.requires_feature.as_deref(), Some("Spellcasting"));
-    assert_eq!(p.requirements, "[character:4]");
+    assert_eq!(p.requirements, "[character:4]&&[spellcasting:1]");
     assert!(p.unmapped.is_empty());
+    for key in [
+        "spellcasting",
+        "spellcastingFeature",
+        "spellcastingPrepared",
+    ] {
+        assert_eq!(
+            run(&[json!({ key: true })], "").requirements,
+            "[spellcasting:1]"
+        );
+    }
     let p = run(&[json!({"feature": ["Fighting Style"]})], "");
-    assert_eq!(p.requires_feature.as_deref(), Some("Fighting Style"));
+    assert_eq!(p.requirements, "[feature:fighting style]");
     assert_eq!(p.text, "Feature: Fighting Style");
-    // with alternatives the feature must be an id inside the expression
+    // features and spellcasting also work inside OR groups
     let p = run(
         &[
             json!({"spellcastingFeature": true}),
             json!({"background": [{"name": "Reef Warden"}]}),
+            json!({"feature": ["Fighting Style", "Pact Boon"]}),
         ],
         "",
     );
-    assert_eq!(p.requires_feature, None);
-    assert_eq!(p.requirements, "ID_CF_TIDE_SPELLCASTING||ID_BG_REEF");
+    assert_eq!(
+        p.requirements,
+        "[spellcasting:1]||ID_BG_REEF||([feature:fighting style]||[feature:pact boon])"
+    );
+    assert!(p.unmapped.is_empty());
+    assert!(RequirementsExpr::parse(&p.requirements).is_ok());
 }
 
 #[test]

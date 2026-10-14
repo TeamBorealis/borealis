@@ -10,7 +10,7 @@
 //!
 //! Each case builds two characters that differ only in what the prerequisite looks at and
 //! checks the option is hidden on one and offered on the other: an ability-gated feat, a
-//! spellcasting-gated feat, a race-gated feat, a feat that requires another feat, a
+//! spellcasting-gated feat (strict: a half caster qualifies at level 2, feat-only casting never), a race-gated feat, a feat that requires another feat, a
 //! class-level-gated invocation and a level + pact-gated invocation.
 
 use borealis_content::{ContentStoreBuilder, Ruleset};
@@ -36,6 +36,7 @@ const NOT_FILLED: &[&str] = &[
 
 const FIGHTER: &str = "ID_5ET_PHB_CLASS_FIGHTER";
 const WIZARD: &str = "ID_5ET_PHB_CLASS_WIZARD";
+const PALADIN: &str = "ID_5ET_PHB_CLASS_PALADIN";
 const WARLOCK: &str = "ID_5ET_PHB_CLASS_WARLOCK";
 const HUMAN: &str = "ID_5ET_PHB_RACE_HUMAN";
 const VARIANT_HUMAN: &str = "ID_5ET_PHB_SUBRACE_HUMAN_VARIANT";
@@ -212,7 +213,7 @@ fn run(data: &Path) {
         &high,
     );
 
-    // spellcasting (structured feature check)
+    // spellcasting (strict `[spellcasting:1]`: a class spell-slot group)
     let wizard = w.variant_human(WIZARD, LOW_CHA);
     hidden_then_offered(
         &w,
@@ -220,6 +221,23 @@ fn run(data: &Path) {
         "ID_5ET_PHB_FEAT_WAR_CASTER",
         &low,
         &wizard,
+    );
+    // a 2014 half caster has no slots at level 1, but does at level 2
+    let paladin1 = w.variant_human(PALADIN, LOW_CHA);
+    let paladin2 = w.to_level(paladin1.clone(), 2, &[]);
+    hidden_then_offered(
+        &w,
+        "half caster level 2",
+        "ID_5ET_PHB_FEAT_WAR_CASTER",
+        &paladin1,
+        &paladin2,
+    );
+    // spellcasting granted by a feat only (no class slots) does not qualify
+    let feat_caster =
+        w.take_feat_option(w.to_level(w.pick(&low, "ID_5ET_PHB_FEAT_MAGIC_INITIATE"), 4, &[]));
+    assert!(
+        !w.offered(&feat_caster, "ID_5ET_PHB_FEAT_WAR_CASTER"),
+        "feat-only spellcasting must not satisfy [spellcasting:1]"
     );
 
     // race
