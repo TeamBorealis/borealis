@@ -323,11 +323,24 @@ Event `borealis://import-event` (`import:event`): `{draftId, stage: detect|plan|
 | `importUpdateElement` | `import_update_element` | `{draftId, elementId, json}` -> `ImportDraft` (element re-validated; may become `failed`) |
 | `importFinalize` | `import_finalize` | `{draftId, packName, prefix}` -> `ContentPack` (the spec's "PackInfo"; `redistributable:false`) |
 | `importDiscard` | `import_discard` | `{draftId}` -> void |
+| `importReportPreview` | `import_report_preview` | `{draftId?, packId?, note?, flagged?, includeSource?}` (exactly one of draftId/packId) -> `ImportReportPreview` (desktop) |
+| `importReportSend` | `import_report_send` | `{previewId}` -> `{id}` (desktop) |
 
 `ImportDraft`: `{draftId, stage, detected:{kinds,edition,names,confidence}, parentChoice?:{candidates:[{classId,name}]}, parentClassId?, elements:[ImportElement], sweep:{levelsPassed,errors}, suggestedPackName, suggestedPrefix}`.
 `ImportElement`: `{id, type, name, level?, status: ok|repaired|needs_review|failed, sourceExcerpt, json, balanceFlags[], validationIssues[]}`;
 `level` groups class/subclass features in review. `import_finalize` must fail while `parentChoice` is set or any element is `failed`.
 File sources: the UI sends `file.path` when the webview provides it, else the bare file name; the backend needs a way to receive picked bytes.
+
+Import bug reports (opt-in, decisions BR1-BR3; nothing is ever sent without the user pressing Send):
+`ImportReportPreview`: `{previewId, payload, bytes, selfChecksFailed, sourceAvailable, sourceBytes|null, sourceLimit, endpoint}`.
+`payload` is the exact `borealis-import-bug-report/1` JSON that `import_report_send` posts to
+`https://borealisbuilder.com/api/import-report`: app version/OS/arch, edition, origin (`draft`|`pack`), counts, grouped error
+`codes` (`rule_error`, `unlocated`, `unsupported`, `engine`, `invented_rule_kind`, `element_failed`, `user_flagged`, ...), the
+import report (messages cut, long quotes removed), engine diagnostics (draft level sweep), element STRUCTURE (id, type, name,
+rules, setters, requirements, sheet labels; descriptions and any prose longer than a short label removed), `flagged` ids, the
+user's `note` (<= 2000 chars) and `source` (null unless `includeSource`; drafts only, <= 1 MB of source text). The backend keeps
+the last 8 previews; `import_report_send` posts the stored bytes (HTTPS, no redirects) and forgets them; failures are `io_error`,
+an expired preview `not_found`. Payloads over 1.4 MB are refused with `invalid_argument`.
 
 ### AI tasks
 

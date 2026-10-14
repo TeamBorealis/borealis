@@ -132,7 +132,7 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
         <div className="aur-set-about">
           <h3 className="aur-set-title13 first flush">BOREALIS</h3>
           <div className="aur-set-version">{version.data ? `v${version.data}` : ""}</div>
-          <p className="aur-set-text">A character builder for fifth edition. Borealis collects no telemetry.</p>
+          <p className="aur-set-text">A character builder for fifth edition. Borealis collects no telemetry. Import bug reports are only sent when you choose to send one.</p>
         </div>
       );
     }

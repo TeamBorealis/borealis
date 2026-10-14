@@ -112,6 +112,8 @@
     "allow-import-update-element",
     "allow-import-finalize",
     "allow-import-discard",
+    "allow-import-report-preview",
+    "allow-import-report-send",
     "allow-ai-validate-homebrew",
     "allow-ai-add-homebrew-to-pack",
     "allow-preview-convert-to-2024",

@@ -4,6 +4,7 @@ import { Alert, Button, TextField } from "../../components";
 import { Expander } from "../../components/controls";
 import { DescHead, PaneSplit, Tag } from "../ai/Panes";
 import { ElementDetail, ElementRow } from "./ElementCard";
+import { ReportDialog, selfChecksFailed } from "./ReportDialog";
 import type { ImportRun } from "./useImport";
 
 function groupByLevel(elements: ImportElement[]): { key: string; title: string; items: ImportElement[] }[] {
@@ -44,6 +45,8 @@ export function ReviewStep({ run, draft, bar }: { run: ImportRun; draft: ImportD
   const [packName, setPackName] = useState(draft.suggestedPackName);
   const [prefix, setPrefix] = useState(draft.suggestedPrefix);
   const [picked, setPicked] = useState<string | null>(null);
+  const [reporting, setReporting] = useState<string[] | null>(null);
+  const checksFailed = selfChecksFailed(draft);
   const failed = draft.elements.filter((e) => e.status === "failed").length;
   const review = draft.elements.filter((e) => e.status === "needs_review").length;
   const blocked = !!draft.parentChoice || failed > 0 || !packName.trim() || !prefix.trim();
@@ -53,6 +56,12 @@ export function ReviewStep({ run, draft, bar }: { run: ImportRun; draft: ImportD
   const list = (
     <>
       <SweepBanner draft={draft} />
+      {checksFailed && (
+        <div className="imp-report-band">
+          <Alert tone="warning">The self-checks found problems with this import. A report helps fix the importer; you see exactly what is sent.</Alert>
+          <div><Button variant="warning" icon="send" onClick={() => setReporting([])}>Send a report</Button></div>
+        </div>
+      )}
       <div className="v5-foot" style={{ margin: "6px 0 10px" }}>
         <Tag tone="info">{draft.detected.kinds.join(", ")}</Tag>
         <Tag>{draft.detected.edition === "dnd2024" ? "2024 rules" : "2014 rules"}</Tag>
@@ -73,7 +82,8 @@ export function ReviewStep({ run, draft, bar }: { run: ImportRun; draft: ImportD
             {g.items.map((e) => (
               <ElementRow key={e.id} element={e} selected={e.id === selected?.id} onSelect={() => setPicked(e.id)}
                 revising={run.revising.has(e.id) || run.revising.has("*")}
-                onRevise={(i) => void run.revise(i, e.id)} onSaveJson={(j) => run.updateElement(e.id, j)} />
+                onRevise={(i) => void run.revise(i, e.id)} onSaveJson={(j) => run.updateElement(e.id, j)}
+                onReport={() => setReporting([e.id])} />
             ))}
           </ul>
         </Expander>
@@ -85,6 +95,7 @@ export function ReviewStep({ run, draft, bar }: { run: ImportRun; draft: ImportD
           <div className="v5-foot">
             <Button variant="primary" icon="save" disabled={blocked || run.busy} onClick={() => void run.finalize({ packName: packName.trim(), prefix: prefix.trim() })}>Add to Library</Button>
             <Button variant="ghost" onClick={() => void run.discard()}>Discard</Button>
+            {!checksFailed && <Button variant="ghost" onClick={() => setReporting([])}>Send a report</Button>}
           </div>
         </div>}>
         <div className="v5-inline v5-form">
@@ -95,5 +106,10 @@ export function ReviewStep({ run, draft, bar }: { run: ImportRun; draft: ImportD
     </>
   );
   const desc = selected ? <ElementDetail element={selected} /> : <DescHead title="Nothing to review" lead="No elements were generated." />;
-  return <PaneSplit list={<>{bar}{list}</>} desc={desc} label="Review" />;
+  return (
+    <>
+      <PaneSplit list={<>{bar}{list}</>} desc={desc} label="Review" />
+      {reporting && <ReportDialog target={{ draftId: draft.draftId }} flagged={reporting} onClose={() => setReporting(null)} />}
+    </>
+  );
 }

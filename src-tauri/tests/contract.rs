@@ -97,6 +97,20 @@ fn ts_declares_the_equipment_and_magic_column_keys() {
         ("InventoryItem", &["armor", "weapon", "showCard"]),
         ("CharacterDetails", &["treasure", "questItems"]),
         ("SelectionSlot", &["classSlotId", "groupId", "elementType"]),
+        (
+            "ImportReportPreview",
+            &[
+                "previewId",
+                "payload",
+                "bytes",
+                "selfChecksFailed",
+                "sourceAvailable",
+                "sourceBytes",
+                "sourceLimit",
+                "endpoint",
+            ],
+        ),
+        ("ImportReportSent", &["id"]),
     ];
     let mut missing = Vec::new();
     for (def, keys) in expect {

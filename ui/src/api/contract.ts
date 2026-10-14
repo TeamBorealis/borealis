@@ -50,6 +50,9 @@ import type {
   ImportDraft,
   ImportEvent,
   ImportFinalizeRequest,
+  ImportReportPreview,
+  ImportReportRequest,
+  ImportReportSent,
   ImportStartRequest,
   FiveToolsImportRequest,
   FiveToolsScan,
@@ -317,6 +320,10 @@ export interface ApiMethods {
   importUpdateElement(args: { draftId: string; elementId: string; json: Record<string, unknown> }): Promise<ImportDraft>;
   importFinalize(args: { draftId: string } & ImportFinalizeRequest): Promise<ContentPack>;
   importDiscard(args: { draftId: string }): Promise<void>;
+  /** Builds the opt-in bug report and keeps it for sending; sends nothing. */
+  importReportPreview(args: ImportReportRequest): Promise<ImportReportPreview>;
+  /** Sends exactly the previewed payload (HTTPS POST to the Borealis website). */
+  importReportSend(args: { previewId: string }): Promise<ImportReportSent>;
 }
 
 export type CommandName = keyof ApiMethods;
@@ -450,6 +457,8 @@ export const COMMANDS = {
   importUpdateElement: "import_update_element",
   importFinalize: "import_finalize",
   importDiscard: "import_discard",
+  importReportPreview: "import_report_preview",
+  importReportSend: "import_report_send",
 } as const satisfies Record<CommandName, string>;
 
 /** Backend -> UI push events (Tauri `emit`). */

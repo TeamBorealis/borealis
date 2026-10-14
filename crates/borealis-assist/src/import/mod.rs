@@ -5,6 +5,7 @@
 //! element a deterministic id, and report per chunk what was converted, needs review or failed.
 
 pub mod anything;
+pub mod bug_report;
 mod chunk;
 mod ids;
 pub mod layout;

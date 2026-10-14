@@ -591,6 +591,30 @@
     "name": "ImportPackResult"
    }
   },
+  "import_report_preview": {
+   "args": {
+    "draftId": true,
+    "flagged": true,
+    "includeSource": true,
+    "note": true,
+    "packId": true
+   },
+   "method": "importReportPreview",
+   "response": {
+    "k": "ref",
+    "name": "ImportReportPreview"
+   }
+  },
+  "import_report_send": {
+   "args": {
+    "previewId": false
+   },
+   "method": "importReportSend",
+   "response": {
+    "k": "ref",
+    "name": "ImportReportSent"
+   }
+  },
   "import_revise": {
    "args": {
     "allowUntrustedWithCodex": true,
@@ -4861,6 +4885,73 @@
       "t": {
        "k": "prim"
       }
+     }
+    }
+   }
+  },
+  "ImportReportPreview": {
+   "k": "object",
+   "props": {
+    "bytes": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "endpoint": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "payload": {
+     "opt": false,
+     "t": {
+      "k": "record",
+      "t": {
+       "k": "any"
+      }
+     }
+    },
+    "previewId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "selfChecksFailed": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sourceAvailable": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sourceBytes": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sourceLimit": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ImportReportSent": {
+   "k": "object",
+   "props": {
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
      }
     }
    }

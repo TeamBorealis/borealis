@@ -6,6 +6,7 @@ import { useToast } from "../../components/Toast";
 import { takeImportFiles } from "../../state/importInbox";
 import { DescHead, PaneSplit } from "../ai/Panes";
 import { ProgressStep } from "./ProgressStep";
+import { ReportDialog } from "./ReportDialog";
 import { ReviewStep } from "./ReviewStep";
 import { SourceStep } from "./SourceStep";
 import { useImport } from "./useImport";
@@ -18,6 +19,7 @@ export function ImportPage() {
   const toast = useToast();
   const navigate = useNavigate();
   const [initialFiles] = useState(() => takeImportFiles());
+  const [reporting, setReporting] = useState(false);
   const idx = ["source", "progress", "review", "done"].indexOf(run.phase);
 
   useEffect(() => { if (run.phase === "done" && run.pack) toast.push(`Added "${run.pack.name}" to your library.`); }, [run.phase, run.pack, toast]);
@@ -49,11 +51,13 @@ export function ImportPage() {
                 <Button variant="primary" onClick={() => navigate("/compendium")}>Open in Compendium</Button>
                 <Button onClick={() => navigate("/characters")}>Use on a character</Button>
                 <Button variant="ghost" onClick={() => void run.discard()}>Import another</Button>
+                <Button variant="ghost" onClick={() => setReporting(true)}>Send a report</Button>
               </div>}>
               <p className="v5-inline" style={{ margin: 0 }}><span><Icon name="check" /> <strong>{run.pack.name}</strong> is ready ({run.pack.elementCount} elements, kept on this device only).</span></p>
             </Expander></>}
           desc={<DescHead title={run.pack.name} lead="Added to your library." />} />
       )}
+      {run.phase === "done" && run.pack && reporting && <ReportDialog target={{ packId: run.pack.id }} onClose={() => setReporting(false)} />}
     </div>
   );
 }

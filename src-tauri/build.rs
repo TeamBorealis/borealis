@@ -109,6 +109,8 @@ const COMMANDS: &[&str] = &[
     "import_discard",
     "ai_validate_homebrew",
     "ai_add_homebrew_to_pack",
+    "import_report_preview",
+    "import_report_send",
     "preview_convert_to_2024",
     "apply_convert_to_2024",
     "spend_resource",

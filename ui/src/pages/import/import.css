@@ -11,3 +11,8 @@
 
 /* Section heads copy the description pane's head rule (`.desc-h`, builder.css): 16 px, 1 px underline, 23 px top margin. */
 .import-page h2 { margin: 23px 0 6px; padding-bottom: 1px; font-size: 16px; font-weight: 600; text-transform: uppercase; color: var(--desc-head); border-bottom: 1px solid #333333; }
+
+/* Opt-in bug report: the self-check band sits in the group margins; the payload preview scrolls inside the dialog. */
+.import-page .imp-report-band { display: flex; flex-direction: column; gap: 6px; margin: 6px 16px 10px 14px; }
+.imp-report-dlg .imp-report-lead { margin: 0; }
+.imp-report-dlg .imp-report-json { max-height: 320px; overflow: auto; margin: 0; padding: 6px 8px; font-size: 12px; white-space: pre; background: var(--description-bg, #1e1e1e); border: 1px solid #333333; }

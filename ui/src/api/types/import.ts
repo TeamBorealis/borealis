@@ -90,3 +90,26 @@ export interface ImportDraft {
 /** `allowUntrustedWithCodex`: the user agreed to run this import on Codex (asked once per import after `consent_required`). */
 export interface ImportStartRequest { sources: ImportSource[]; hint?: ImportHint; allowUntrustedWithCodex?: boolean }
 export interface ImportFinalizeRequest { packName: string; prefix: string }
+
+/**
+ * Opt-in import bug report (BR1-BR3): report on a draft under review (`draftId`) or an imported pack
+ * (`packId`), exactly one. Nothing is sent until `importReportSend` with the preview's id.
+ */
+export interface ImportReportRequest { draftId?: string; packId?: string; note?: string; flagged?: string[]; includeSource?: boolean }
+
+/** The exact payload that `importReportSend` would post, plus what the dialog shows about it. */
+export interface ImportReportPreview {
+  previewId: string;
+  /** Structure only: element types, ids, names, rules, setters; descriptions are removed. */
+  payload: Record<string, unknown>;
+  bytes: number;
+  /** Errors, unlocated sections, unsupported content, engine findings or invented rule kinds. */
+  selfChecksFailed: boolean;
+  /** The source text can be attached (drafts only). */
+  sourceAvailable: boolean;
+  sourceBytes: number | null;
+  sourceLimit: number;
+  endpoint: string;
+}
+
+export interface ImportReportSent { id: string }

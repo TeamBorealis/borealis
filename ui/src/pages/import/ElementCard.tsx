@@ -16,10 +16,12 @@ export interface ElementRowProps {
   onSelect: () => void;
   onRevise: (instruction: string) => void;
   onSaveJson: (json: Record<string, unknown>) => Promise<boolean>;
+  /** Opens the bug report dialog with this element marked as wrong. */
+  onReport?: () => void;
 }
 
 /** One generated element as a classic builder list row; the selected row opens its fix-with-AI box and raw JSON editor underneath. */
-export function ElementRow({ element, selected, revising, onSelect, onRevise, onSaveJson }: ElementRowProps) {
+export function ElementRow({ element, selected, revising, onSelect, onRevise, onSaveJson, onReport }: ElementRowProps) {
   const [instruction, setInstruction] = useState("");
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(() => JSON.stringify(element.json, null, 2));
@@ -53,7 +55,10 @@ export function ElementRow({ element, selected, revising, onSelect, onRevise, on
               <div style={{ flex: "1 1 14rem" }}><TextField label={`Fix ${element.name} with AI`} value={instruction} onChange={(e) => setInstruction(e.target.value)} placeholder="e.g. make this once per long rest" disabled={revising} /></div>
               <Button type="submit" icon="sparkles" disabled={revising || !instruction.trim()}>{revising ? "Fixing..." : "Fix with AI"}</Button>
             </form>
-            <div><Button small variant="ghost" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "Hide" : "Edit"} raw JSON</Button></div>
+            <div className="v5-foot">
+              <Button small variant="ghost" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "Hide" : "Edit"} raw JSON</Button>
+              {onReport && <Button small variant="ghost" onClick={onReport}>Report a problem</Button>}
+            </div>
             {open && (
               <div className="stack">
                 <label className="field-label" htmlFor={`json-${element.id}`}>Raw JSON for {element.name}</label>

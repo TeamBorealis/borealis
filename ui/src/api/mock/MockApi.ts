@@ -9,6 +9,7 @@ import { MockAiSetup, type MockSetupInit } from "./ai-setup";
 import { MockImport } from "./import";
 import { MockPicks } from "./picks";
 import { MockImportPreview } from "./import-preview";
+import { MockImportReports } from "./import-report";
 import { MockDataFiles } from "./data-files";
 import { validateHomebrew } from "./ai";
 import { ContentService } from "./content-service";
@@ -70,6 +71,8 @@ export class MockApi implements Api {
   private imp: MockImport;
   /** Mock native dialogs (`pickPath`); tests may set `picks.next`. */
   readonly picks = new MockPicks();
+  /** Opt-in import bug reports; tests read `reports.sent` or set `reports.failSend`. */
+  readonly reports = new MockImportReports();
   private dataFiles = new MockDataFiles(this.picks);
   private rng: () => number;
   private latency: number;
@@ -635,4 +638,6 @@ export class MockApi implements Api {
     return this.content.addImportedPack(r.name, r.count);
   }
   async importDiscard({ draftId }: { draftId: string }) { await this.tick(); this.imp.discard(draftId); }
+  async importReportPreview(req: Parameters<Api["importReportPreview"]>[0]) { await this.tick(); return this.reports.preview(req, (id) => this.imp.get(id)); }
+  async importReportSend({ previewId }: { previewId: string }) { await this.tick(); return this.reports.send(previewId); }
 }

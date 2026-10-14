@@ -33,6 +33,8 @@ pub mod commands_gear;
 pub mod commands_import;
 pub mod commands_pick;
 pub mod commands_play;
+#[cfg(desktop)]
+pub mod commands_report;
 pub mod commands_settings;
 pub mod commands_system;
 pub mod companion;
@@ -56,6 +58,8 @@ pub mod gear_facts;
 pub mod gear_info;
 pub mod homebrew_api;
 pub mod ids;
+#[cfg(desktop)]
+pub mod import_bug_report;
 pub mod import_check;
 #[cfg(desktop)]
 pub mod import_drafts;
@@ -220,7 +224,13 @@ pub fn run() {
     for arg in std::env::args_os().skip(1) {
         content_preview::push_opened_file(std::path::Path::new(&arg));
     }
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    // Opt-in import bug reports: previews wait here until the user presses Send.
+    #[cfg(desktop)]
+    let builder = builder.manage(std::sync::Arc::new(
+        import_bug_report::ReportOutbox::default(),
+    ));
+    builder
         .plugin(tauri_plugin_dialog::init())
         .on_window_event(|window, event| {
             startup_boot::on_window_event(window, event);
@@ -359,6 +369,10 @@ pub fn run() {
             commands_import::ai_validate_homebrew,
             #[cfg(desktop)]
             commands_import::ai_add_homebrew_to_pack,
+            #[cfg(desktop)]
+            commands_report::import_report_preview,
+            #[cfg(desktop)]
+            commands_report::import_report_send,
             commands_play::preview_convert_to_2024,
             commands_play::apply_convert_to_2024,
             commands_play::spend_resource,
