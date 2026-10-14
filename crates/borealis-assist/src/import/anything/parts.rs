@@ -436,26 +436,22 @@ fn continues_section(
         && !names_planned(plan, &planned.id, &title)
 }
 
-/// The 0-based line range of the section starting at the element's passage: up to the next
-/// planned passage or the next heading of the same or a higher level. A text-only element
-/// also reaches over the unplanned headings of its own level that follow (a section the PDF
-/// printed flat), up to the next planned element. The passage end is never cut short.
-pub(crate) fn section_range(
-    source: &str,
-    planned: &PlannedElement,
-    plan: &ImportPlan,
-) -> Option<(usize, usize)> {
+/// Where an element's section reaches (0-based): its first line; the end of its own heading's
+/// section, up to the next planned passage or the next heading of the same or a higher level
+/// (a text-only element also reaches over the unplanned headings of its own level that follow:
+/// a section the PDF printed flat); the end of its located passage; and the next planned
+/// passage's first line.
+struct Reach {
+    start: usize,
+    own_end: usize,
+    located_end: usize,
+    next: usize,
+}
+
+fn reach(lines: &[&str], planned: &PlannedElement, plan: &ImportPlan) -> Option<Reach> {
     let ex = planned.excerpt.as_ref()?;
-    let lines: Vec<&str> = source.lines().collect();
     let start = ex.start_line.saturating_sub(1).min(lines.len());
-    let next = plan
-        .elements
-        .iter()
-        .filter(|e| e.id != planned.id)
-        .filter_map(|e| e.excerpt.as_ref().map(|x| x.start_line.saturating_sub(1)))
-        .filter(|l| *l > start)
-        .min()
-        .unwrap_or(lines.len());
+    let next = next_start(lines, plan, &planned.id, start).unwrap_or(lines.len());
     let own = lines.get(start).and_then(|l| is_heading(l));
     let mut end = start + 1;
     let mut own_end: Option<usize> = None;
@@ -471,24 +467,127 @@ pub(crate) fn section_range(
         }
         end += 1;
     }
-    let mut end = end.max(ex.end_line.min(lines.len()));
+    Some(Reach {
+        start,
+        own_end: end.min(lines.len()),
+        located_end: ex.end_line.min(lines.len()),
+        next,
+    })
+}
+
+/// The first line (0-based) of the next planned passage after `start`, `except` left out; a
+/// row element's table row is no passage boundary (the table is printed whole).
+fn next_start(lines: &[&str], plan: &ImportPlan, except: &str, start: usize) -> Option<usize> {
+    plan.elements
+        .iter()
+        .filter(|e| e.id != except)
+        .filter_map(|e| e.excerpt.as_ref().map(|x| x.start_line.saturating_sub(1)))
+        .filter(|l| *l > start && !lines.get(*l).is_some_and(|t| t.contains(" | ")))
+        .min()
+}
+
+/// `end` moved back over trailing blank lines (never before `start + 1`).
+fn trimmed(lines: &[&str], start: usize, mut end: usize) -> usize {
     while end > start + 1 && lines[end - 1].trim().is_empty() {
         end -= 1;
     }
-    Some((start, end))
+    end
 }
 
-/// The source lines of [`section_range`].
+/// The end (exclusive) of the own section of a planned element starting at `at` inside another
+/// section that ends at `limit`: a text-only element's own section (its located end kept, but
+/// never past the next planned passage); a headed one up to
+/// the next heading of its level or higher; any other up to its located end or the next
+/// planned passage.
+fn inner_end(
+    lines: &[&str],
+    e: &PlannedElement,
+    plan: &ImportPlan,
+    at: usize,
+    limit: usize,
+) -> usize {
+    let end = match lines.get(at).and_then(|l| is_heading(l)) {
+        _ if e.role == Role::Text => {
+            reach(lines, e, plan).map_or(at + 1, |r| r.own_end.max(r.located_end.min(r.next)))
+        }
+        Some(h) => (at + 1..limit)
+            .find(|&k| is_heading(lines[k]).is_some_and(|k| k <= h))
+            .unwrap_or(limit),
+        None => {
+            // Up to the next planned start of any kind (a row element's row included).
+            let next = plan
+                .elements
+                .iter()
+                .filter(|o| o.id != e.id)
+                .filter_map(|o| o.excerpt.as_ref().map(|x| x.start_line.saturating_sub(1)))
+                .filter(|l| *l > at)
+                .min()
+                .unwrap_or(limit);
+            e.excerpt.as_ref().map_or(at + 1, |x| x.end_line.min(next))
+        }
+    };
+    end.clamp(at + 1, limit.max(at + 1))
+}
+
+/// The 0-based line ranges a text-only element's description is built from: its section to
+/// the end of its located passage, without the own sections of the other planned elements
+/// that start inside it (they carry their text themselves; the unplanned sub-sections between
+/// them stay the section's). Table rows stay: a row element does not take its row out of the
+/// table.
+pub(crate) fn section_blocks(
+    source: &str,
+    planned: &PlannedElement,
+    plan: &ImportPlan,
+) -> Vec<(usize, usize)> {
+    let lines: Vec<&str> = source.lines().collect();
+    let Some(r) = reach(&lines, planned, plan) else {
+        return Vec::new();
+    };
+    let end = trimmed(&lines, r.start, r.own_end.max(r.located_end));
+    let mut inner: Vec<(usize, usize)> = plan
+        .elements
+        .iter()
+        .filter(|e| e.id != planned.id)
+        .filter_map(|e| {
+            let at = e.excerpt.as_ref()?.start_line.saturating_sub(1);
+            // A row element keeps its row in the table too (a table is printed whole).
+            let row = lines.get(at).is_some_and(|l| l.contains(" | "));
+            (at > r.start && at < end && !row).then(|| (at, inner_end(&lines, e, plan, at, end)))
+        })
+        .collect();
+    inner.sort_unstable();
+    let mut out = Vec::new();
+    let mut from = r.start;
+    for (s, e) in inner {
+        if s > from {
+            out.push((from, s));
+        }
+        from = from.max(e);
+    }
+    if end > from {
+        out.push((from, end));
+    }
+    out.into_iter()
+        .map(|(s, e)| (s, trimmed(&lines, s, e)))
+        .filter(|(s, e)| lines[*s..*e].iter().any(|l| !l.trim().is_empty()))
+        .collect()
+}
+
+/// The source lines of [`section_blocks`], a blank line between blocks.
 pub(crate) fn section_lines<'a>(
     source: &'a str,
     planned: &PlannedElement,
     plan: &ImportPlan,
 ) -> Vec<&'a str> {
-    let Some((start, end)) = section_range(source, planned, plan) else {
-        return Vec::new();
-    };
     let lines: Vec<&str> = source.lines().collect();
-    lines[start..end.min(lines.len())].to_vec()
+    let mut out = Vec::new();
+    for (s, e) in section_blocks(source, planned, plan) {
+        if !out.is_empty() {
+            out.push("");
+        }
+        out.extend_from_slice(&lines[s..e]);
+    }
+    out
 }
 
 /// Source lines as HTML paragraphs (headings bold, list and table lines kept apart).

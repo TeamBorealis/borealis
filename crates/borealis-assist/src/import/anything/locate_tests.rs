@@ -158,6 +158,15 @@ d6 | Kind | Rarity\n1-4 | Tin | Common\n5-6 | Glass | Rare\n\nThe moths obey the
 }
 
 #[test]
+fn a_table_section_does_not_run_into_a_sibling_table_sharing_a_word() {
+    let src = "# Costs\n\n#### Light Lanterns\n\nName | Cost\nTin lantern | 2 gp\nReed lantern | 1 gp\n\n\
+#### Heavy Lanterns\n\nName | Cost\nIron lantern | 9 gp\n\n#### Wicks\n\nWicks burn.\n";
+    let s = section(src, "Light Lanterns", "");
+    assert!(s.contains(&"Reed lantern | 1 gp"), "{s:?}");
+    assert!(!s.iter().any(|l| l.contains("Iron lantern")), "{s:?}");
+}
+
+#[test]
 fn index_lines_are_recognised() {
     let lines = [
         "Alpha 3",

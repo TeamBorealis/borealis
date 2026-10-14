@@ -473,6 +473,155 @@ fn uncovered_prose_counts_a_generated_element_by_its_located_passage() {
     assert_eq!(entries[0].source, "Kindle");
 }
 
+#[test]
+fn a_text_section_leaves_its_planned_children_out_and_keeps_the_rest() {
+    let src = "## Lamp Lore\n\nLamps are old.\n\n### Tin Lamps\n\nTin lamps rust in the rain.\n\n\
+### Oil\n\nOil burns slow and clean.\n\n### Glass Lamps\n\nGlass lamps shine far.\n\n\
+Lamp | Cost\nTin lamp | 2 gp\n\n## Roads\n\nRoads are long.\n";
+    let mut lore = planned(
+        "t0",
+        "Lamp Lore",
+        "Rules Glossary Entry",
+        Role::Text,
+        Some(1),
+    );
+    // The locator's passage is the whole section, children included.
+    lore.excerpt.as_mut().unwrap().end_line = 19;
+    // A generated child (a text-only one would reach over the flat "Oil" heading itself).
+    let tin = planned("t1", "Tin Lamps", "Item", Role::Standalone, Some(5));
+    let glass = planned(
+        "t2",
+        "Glass Lamps",
+        "Rules Glossary Entry",
+        Role::Text,
+        Some(13),
+    );
+    let row = planned("i1", "Tin lamp", "Item", Role::Standalone, Some(18));
+    let d = draft(src, vec![lore, tin, glass, row], &[]);
+    let lines = super::super::parts::section_lines(src, &d.plan.elements[0], &d.plan);
+    let text = lines.join("\n");
+    assert!(text.contains("Lamps are old."), "{text}");
+    assert!(
+        text.contains("Oil burns slow"),
+        "an unplanned sub-section stays: {text}"
+    );
+    assert!(
+        !text.contains("rust in the rain"),
+        "a planned child is its own: {text}"
+    );
+    assert!(!text.contains("shine far"), "{text}");
+    assert!(!text.contains("Roads"), "{text}");
+    // The child keeps its table, a row element's row included.
+    let lines = super::super::parts::section_lines(src, &d.plan.elements[2], &d.plan);
+    assert!(lines.contains(&"Tin lamp | 2 gp"), "{lines:?}");
+}
+
+#[test]
+fn uncovered_prose_inside_a_generated_parent_after_its_child_is_reported() {
+    let src =
+        "## Lamplighter\n\nLamplighters keep the roads lit through the long and dark winter.\n\n\
+### Kindle\n\nYou light a lamp.\n\n## Other Notes\n\n### Printing\n\n\
+This little book was printed on reed paper by the lamplighters of the old marsh road.\n";
+    let mut root = planned("c0", "Lamplighter", "Class", Role::Class, Some(1));
+    root.excerpt.as_mut().unwrap().end_line = 15;
+    let kindle = planned("c1", "Kindle", "Class Feature", Role::ClassFeature, Some(5));
+    let d = draft(
+        src,
+        vec![root, kindle],
+        &[
+            "<p>Lamplighters keep the roads lit through the long and dark winter.</p>",
+            "<p>You light a lamp.</p>",
+        ],
+    );
+    let entries = uncovered_prose(&d);
+    assert_eq!(entries.len(), 1, "{entries:?}");
+    // Reported under the widest section no element is planned in.
+    assert_eq!(entries[0].source, "Other Notes");
+}
+
+#[test]
+fn a_run_in_printed_under_a_paragraph_is_reported_under_its_label() {
+    let src = "## Gear\n\nThe gear of a lamplighter is listed here for the table.\n\
+Starting Coin. A lamplighter starts with four gold pieces and a tin of lamp oil.\n";
+    let d = draft(
+        src,
+        vec![planned(
+            "g0",
+            "Gear",
+            "Rules Glossary Entry",
+            Role::Standalone,
+            Some(1),
+        )],
+        &["<p>The gear of a lamplighter is listed here for the table.</p>"],
+    );
+    let entries = uncovered_prose(&d);
+    assert_eq!(entries.len(), 1, "{entries:?}");
+    assert_eq!(entries[0].source, "Starting Coin");
+}
+
+#[test]
+fn a_feature_gets_the_printed_text_of_its_parts() {
+    let src = "#### Lamp Magic\n\nYou cast spells by lamplight.\n\n#### Wicks\n\n\
+You have wick points equal to your level.\n\n#### Casting Focus\n\nA lit lamp is your focus.\n";
+    let feat = planned(
+        "f0",
+        "Lamp Magic",
+        "Class Feature",
+        Role::ClassFeature,
+        Some(1),
+    );
+    let mut wicks = planned("p1", "Wicks", "Class Feature", Role::Part, Some(5));
+    wicks.parent = Some("f0".into());
+    let mut focus = planned("p2", "Casting Focus", "Class Feature", Role::Part, Some(9));
+    focus.parent = Some("f0".into());
+    let mut d = draft(
+        src,
+        vec![feat, wicks, focus],
+        &[
+            "<p>You cast spells by lamplight.</p>",
+            "<p>You have wick points equal to your level.</p>",
+            "<p>A lit lamp is your focus.</p>",
+        ],
+    );
+    assert_eq!(add_sub_sections(&mut d), vec!["f0".to_string()]);
+    assert_eq!(
+        d.elements[0].json["description"],
+        "<p>You cast spells by lamplight.</p><p><strong>Wicks</strong></p><p>You have wick points equal to your level.</p><p><strong>Casting Focus</strong></p><p>A lit lamp is your focus.</p>"
+    );
+    assert!(add_sub_sections(&mut d).is_empty(), "already there");
+    // A species keeps its traits' text by its brief; nothing is appended.
+    let mut d = draft(TRAITS, kin(), &["<p>Lantern kin walk the marsh roads.</p>"]);
+    d.plan.elements[1].parent = Some("t0".into());
+    assert!(add_sub_sections(&mut d).is_empty());
+}
+
+#[test]
+fn a_plural_or_merged_run_in_reaches_every_row_it_names() {
+    let src = "#### Lamps\n\nLamp | Cost\nLantern, hooded | 5 gp\nLantern, bullseye | 9 gp\n\
+Tin Cup | 1 sp\nReed Mat | 2 sp\n\n#### Rules\n\nLamps are described here.\n\
+Lanterns. A lantern can be shuttered as a bonus action.\n\n\
+Tin Cups and Reed Mats. These never break when dropped.\n";
+    let mut d = draft(
+        src,
+        vec![
+            planned("r1", "Lantern, hooded", "Item", Role::Standalone, Some(4)),
+            planned("r2", "Lantern, bullseye", "Item", Role::Standalone, Some(5)),
+            planned("r3", "Tin Cup", "Item", Role::Standalone, Some(6)),
+            planned("r4", "Reed Mat", "Item", Role::Standalone, Some(7)),
+        ],
+        &["<p>x</p>", "<p>y</p>", "<p>z</p>", "<p>w</p>"],
+    );
+    assert_eq!(add_sub_sections(&mut d), ["r1", "r2", "r3", "r4"]);
+    assert!(d.elements[1].json["description"]
+        .as_str()
+        .unwrap()
+        .starts_with("<p>A lantern can be shuttered"));
+    assert!(d.elements[3].json["description"]
+        .as_str()
+        .unwrap()
+        .starts_with("<p>These never break"));
+}
+
 /// Offline: `BOREALIS_PRINTED_REPLAY=<draft.json> BOREALIS_PRINTED_OUT=<dir>` re-applies the
 /// plan's structure (`parts::apply`) and the printed-passage fixes (`keep_printed`) to a stored
 /// draft, as generation would, then finalizes it into `<dir>`.
@@ -484,6 +633,34 @@ fn reprint_a_stored_draft() {
     };
     let mut d: ImportDraft =
         serde_json::from_str(&std::fs::read_to_string(path).expect("reads")).expect("parses");
+    // BOREALIS_PRINTED_FOLD: drop the text-only entries a rebuilt plan folds into a table.
+    if std::env::var("BOREALIS_PRINTED_FOLD").is_ok() {
+        let folded =
+            super::super::plan::sections::fold_table_headings(&d.plan.elements, &d.source_text);
+        let ids: Vec<&String> = folded.iter().map(|(id, _)| id).collect();
+        for (_, n) in &folded {
+            println!("folded: {n}");
+        }
+        d.plan.elements.retain(|e| !ids.contains(&&e.id));
+        d.plan
+            .groups
+            .retain(|g| !g.root_id.as_ref().is_some_and(|r| ids.contains(&r)));
+        d.elements.retain(|e| !ids.contains(&&e.id));
+    }
+    // BOREALIS_PRINTED_TEXT: text-only descriptions rebuilt from their sections.
+    if std::env::var("BOREALIS_PRINTED_TEXT").is_ok() {
+        let plan = d.plan.clone();
+        for e in d.elements.iter_mut().filter(|e| e.role == Role::Text) {
+            if let Some(p) = plan
+                .elements
+                .iter()
+                .find(|p| p.id == e.id && p.excerpt.is_some())
+            {
+                let el = super::super::parts::text_element(p, &plan, &d.source_text);
+                e.json["description"] = el["description"].clone();
+            }
+        }
+    }
     let before: Vec<Value> = d.elements.iter().map(|e| e.json.clone()).collect();
     let plan = d.plan.clone();
     for e in d.elements.iter_mut().filter(|e| !e.json.is_null()) {
@@ -498,7 +675,8 @@ fn reprint_a_stored_draft() {
         }
     }
     for r in uncovered_prose(&d) {
-        println!("uncovered: {}", r.source);
+        let note: String = r.note.chars().take(160).collect();
+        println!("uncovered: {}: {note}", r.source);
     }
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
     let mut b = borealis_content::ContentStoreBuilder::new();

@@ -281,8 +281,11 @@ impl Doc<'_> {
         self.heads.iter().find(|h| h.line == line)
     }
 
-    /// End (exclusive) of the section of the heading at `line` with `level`.
+    /// End (exclusive) of the section of the heading at `line` with `level`. A section that is
+    /// itself a table (its heading directly over a table row) has no caption below it: a
+    /// same-level table title after it is a sibling table ("Medium Armor" after "Light Armor").
     fn heading_end(&self, line: usize, level: u8, name: &str) -> usize {
+        let own_table = self.table_follows(line);
         self.heads
             .iter()
             .find(|h| {
@@ -291,18 +294,23 @@ impl Doc<'_> {
                         || (h.level == level
                             && !is_sub_part(&h.title, name)
                             && !structural_heading(&h.title)
-                            && !self.caption_of(h, name)))
+                            && (own_table || !self.caption_of(h, name))))
             })
             .map_or(self.lines.len(), |h| h.line)
+    }
+
+    /// The first non-blank line after `line` is a table row.
+    fn table_follows(&self, line: usize) -> bool {
+        self.lines
+            .get(line + 1..)
+            .and_then(|rest| rest.iter().find(|l| !l.trim().is_empty()))
+            .is_some_and(|l| l.contains(" | "))
     }
 
     /// `h` is the caption of a table of the element `name`: a table row follows it and its
     /// title shares a word with the name ("Kinds of moth lamps" over a lamp's table).
     fn caption_of(&self, h: &Heading, name: &str) -> bool {
-        let table_next = self.lines[h.line + 1..]
-            .iter()
-            .find(|l| !l.trim().is_empty())
-            .is_some_and(|l| l.contains(" | "));
+        let table_next = self.table_follows(h.line);
         let stems = |t: &str| -> Vec<String> {
             norm_words(t)
                 .split(' ')
