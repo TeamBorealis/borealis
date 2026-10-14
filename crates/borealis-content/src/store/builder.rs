@@ -271,7 +271,11 @@ impl ContentStoreBuilder {
             }
         }
 
-        let elements = slots.into_iter().flatten().collect();
+        let elements = super::alias::resolve_phb24_aliases(
+            slots.into_iter().flatten().collect(),
+            |s: &StoredElement| &s.element,
+            |s, element| StoredElement { element, ..s },
+        );
         ContentStore::assemble(elements, loaded_files, packs, indexes, diagnostics)
     }
 }

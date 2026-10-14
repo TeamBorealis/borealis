@@ -1,5 +1,6 @@
 //! The content store: many packs loaded in order, indexed for lookup.
 
+mod alias;
 mod builder;
 pub mod load_order;
 mod merge;
