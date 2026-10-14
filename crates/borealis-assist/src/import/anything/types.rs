@@ -62,6 +62,8 @@ pub enum ImportKind {
     Subrace,
     /// Rules or lore text no element kind mechanises (kept as a text-only element).
     Rules,
+    /// A condition the source defines (kept as a text-only `Condition` element).
+    Condition,
     /// Several kinds in one source (only valid for the document as a whole).
     Mixed,
 }
@@ -81,6 +83,7 @@ impl ImportKind {
             Self::WeaponProperty => "Weapon Property",
             Self::Subrace => "Sub Race",
             Self::Rules => "Rules Glossary Entry",
+            Self::Condition => "Condition",
             Self::Mixed => "Unknown",
         }
     }

@@ -237,8 +237,9 @@ every other mechanic of the feature is yours to write."
 {each}\n\n\
 Real examples of the same kind (copy the SHAPE, not the content):\n{shots}\n\n\
 Existing core ids you must reuse instead of inventing new ones:\n{cat}\n\n{kinds}\n\n\
-Answer {{\"elements\": [{{\"element\": {{...}}, \"notes\": [...]}}, ...]}}, one entry per id above; put doubts in notes.{prior}\n\n{src}",
+Answer {{\"elements\": [{{\"element\": {{...}}, \"notes\": [...]}}, ...]}}, one entry per id above; put doubts in notes.{pools}{prior}\n\n{src}",
         n = batch.len(),
+        pools = super::pools::pools_note(g.draft, batch),
         ed = g.draft.edition,
         cat = core_catalogue(g.store),
         kinds = super::rules::catalogue(),

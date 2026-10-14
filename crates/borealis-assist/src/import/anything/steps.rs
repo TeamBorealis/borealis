@@ -223,7 +223,8 @@ subclass the parent class in `parent_hint`, as named or implied, e.g. \"Barbaria
 for an item its `item_type`: weapon for a mundane weapon (firearms and other ranged weapons included), armor \
 (shields included), ammunition, gear for other mundane equipment, magic_item). A subrace, lineage or variant of \
 a species is kind subrace with its species in `parent_hint`. A weapon property the source \
-defines with its own rules text is kind weapon_property. Set `kind` to the single kind, or \"mixed\" when there are several. List in `other` (name as printed, \
+defines with its own rules text is kind weapon_property. A condition the source defines (a state a creature \
+is in, like the SRD's Poisoned or Prone) is an `other` entry whose `what` is exactly \"condition\". Set `kind` to the single kind, or \"mixed\" when there are several. List in `other` (name as printed, \
 `what` it is) every other thing the source defines that is none of these kinds: rules, weapon properties, \
 conditions, variant or optional rules, upgrades, tables, and lore or setting sections with a heading; each named \
 row of a table of options is its own `other` entry. A magic item printed in several versions (+1, +2 and +3, \

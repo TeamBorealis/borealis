@@ -27,7 +27,7 @@ fn outline(v: Value) -> Outline {
 const SOURCE: &str = "# Warden\n\n## Grove Magic\n\nYou cast from a pool.\n\n#### Cantrips\n\nYou know one cantrip.\n\n\
 ## Deep Lore\n\nAt 11th level you learn a secret.\n\n# Fenfolk\n\n### Bog Gift\n\nYou gain a gift.\n\n\
 #### Mire Spells\n\nYou know two spells.\n\n### Fen Skill\n\nOne of Acrobatics, Stealth or Perception.\n\n\
-#### Footnote\n\nOther text.\n";
+### Footnote\n\nOther text.\n";
 
 fn plan() -> ImportPlan {
     let class = outline(json!({

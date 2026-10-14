@@ -5,10 +5,12 @@
 //! gate come from the plan, and every element must load and survive an engine sweep (a test
 //! character takes the class and levels 1 to 20) before it is offered for review.
 
+mod arcanum;
 mod batch;
 pub mod caster;
 mod choices;
 mod derived;
+mod fallback;
 mod feature_spells;
 mod fewshot;
 mod finalize;
@@ -19,11 +21,17 @@ mod items;
 mod leveled;
 mod lists;
 mod locate;
+mod mechanics;
 mod normalize;
 mod parts;
 mod plan;
+#[cfg(test)]
+mod plan_shape_tests;
+mod pools;
 mod prepared;
 mod prereq;
+#[cfg(test)]
+mod replay_tests;
 mod rules;
 mod source;
 mod steps;

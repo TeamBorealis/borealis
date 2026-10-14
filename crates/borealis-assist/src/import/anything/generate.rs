@@ -155,13 +155,14 @@ fn prompt_for(
 Guidance: {guide}\n\nWhat the source says: {brief}\n\n\
 Real examples from the bundled SRD of the same kind (copy the SHAPE, not the content):\n{shots}\n\n\
 Existing core ids you must reuse instead of inventing new ones:\n{cat}\n\n{kinds}\n\n\
-Answer {{\"element\": {{...}}, \"notes\": [...]}}; put doubts in notes.\n\n{src}",
+Answer {{\"element\": {{...}}, \"notes\": [...]}}; put doubts in notes.{pools}\n\n{src}",
         name = planned.name,
         ty = planned.ty,
         ed = g.draft.edition,
         id = planned.id,
         lvl = planned.level.map(|l| format!(" It is gained at level {l}.")).unwrap_or_default(),
         guide = guidance(planned, g.draft.edition),
+        pools = super::pools::pools_note(g.draft, std::slice::from_ref(planned)),
         brief = planned.brief,
         cat = core_catalogue(g.store),
         kinds = super::rules::catalogue(),
@@ -437,7 +438,11 @@ pub(crate) async fn validate_and_repair(
     for round in 0..=MAX_REPAIR_ROUNDS {
         tidy_rules(draft);
         let issues = engine_sweep(ctx, &draft.plan, &draft.elements);
-        let rule_issues = rule_sweep(draft);
+        let mut rule_issues = rule_sweep(draft);
+        if round == 0 {
+            // Mechanics left in the text get one repair, never more.
+            rule_issues.extend(super::mechanics::sweep(draft));
+        }
         emit(
             progress,
             Stage::Validate,
@@ -510,6 +515,7 @@ pub(crate) async fn validate_and_repair(
     strip_unrepaired_rules(draft, &remaining_rules);
     mark_unresolved(draft, &remaining);
     draft.sweep_issues = remaining;
+    super::mechanics::note_leftovers(draft);
     attach_balance(ctx, &store, draft);
 }
 

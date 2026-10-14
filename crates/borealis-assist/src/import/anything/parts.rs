@@ -55,7 +55,7 @@ pub(crate) fn apply(el: &mut Value, planned: &PlannedElement, plan: &ImportPlan)
         }
         Role::Text => {
             let o = obj(el);
-            o.insert("supports".into(), json!([RULES_SUPPORT]));
+            o.insert("supports".into(), json!([text_support(&planned.ty)]));
             o.remove("rules");
         }
         _ => {}
@@ -67,20 +67,6 @@ pub(crate) fn apply(el: &mut Value, planned: &PlannedElement, plan: &ImportPlan)
     super::feature_spells::table_columns(el, planned, plan);
     super::prereq::apply(el, planned, plan);
     super::units::apply(el);
-}
-
-/// Sub-heading names of a class's spellcasting section ("Cantrips", "Preparing Spells").
-const CASTER_PART_WORDS: [&str; 5] = [
-    "cantrip",
-    "spell slot",
-    "spells known",
-    "preparing",
-    "spellcasting",
-];
-
-fn is_caster_part(name: &str) -> bool {
-    let n = name.to_lowercase();
-    CASTER_PART_WORDS.iter().any(|w| n.contains(w))
 }
 
 /// A part of a casting class's spellcasting section (a feature at level 3 or lower that is
@@ -102,8 +88,8 @@ fn drop_built_caster_rules(el: &mut Value, planned: &PlannedElement, plan: &Impo
         && (super::caster::is_caster_feature(&section.name)
             || children(plan, &section.id)
                 .iter()
-                .any(|c| c.role == Role::Part && is_caster_part(&c.name)));
-    if casts && caster_section && is_caster_part(&planned.name) {
+                .any(|c| c.role == Role::Part && super::caster::is_caster_part(&c.name)));
+    if casts && caster_section && super::caster::is_caster_part(&planned.name) {
         rules_of(el).retain(|r| !super::caster::is_model_caster_rule(r));
     }
 }
@@ -319,6 +305,46 @@ pub(crate) fn headed_within(source: &str, parent: &str, part: &str) -> bool {
     false
 }
 
+/// The headings (as printed) one level below or deeper inside the section headed `parent`,
+/// each with prose under it before the next heading (a caption over a bare table is not a
+/// sub-item). An outline that skipped them still gets them as their own elements.
+pub(crate) fn sub_headings(source: &str, parent: &str) -> Vec<String> {
+    let Some(want) = heading_text(&format!("# {parent}")).map(|(_, t)| t) else {
+        return Vec::new();
+    };
+    let mut out: Vec<String> = Vec::new();
+    let mut depth: Option<usize> = None;
+    let mut open: Option<(String, bool)> = None;
+    let close = |open: &mut Option<(String, bool)>, out: &mut Vec<String>| {
+        if let Some((name, true)) = open.take() {
+            if !out.contains(&name) {
+                out.push(name);
+            }
+        }
+    };
+    for line in source.lines() {
+        let Some((n, text)) = heading_text(line) else {
+            if let Some((_, prose)) = open.as_mut() {
+                let t = line.trim();
+                *prose |= !t.is_empty() && !t.starts_with('|');
+            }
+            continue;
+        };
+        close(&mut open, &mut out);
+        match depth {
+            None if text == want => depth = Some(n),
+            Some(d) if n <= d => depth = (text == want).then_some(n),
+            Some(_) => {
+                let raw = line.trim_start()[n..].trim().trim_end_matches('#').trim();
+                open = Some((raw.to_string(), false));
+            }
+            None => {}
+        }
+    }
+    close(&mut open, &mut out);
+    out
+}
+
 fn is_list_line(line: &str) -> bool {
     let t = line.trim_start();
     t.starts_with("- ")
@@ -406,7 +432,17 @@ pub(crate) fn text_element(planned: &PlannedElement, plan: &ImportPlan, source: 
         to_html(&lines)
     };
     json!({"id": planned.id, "name": planned.name, "type": planned.ty,
-        "supports": [RULES_SUPPORT], "description": description})
+        "supports": [text_support(&planned.ty)], "description": description})
+}
+
+/// `supports` of a text-only element: the bundled conditions are `Condition`, every other
+/// entry is in the rules glossary.
+fn text_support(ty: &str) -> &'static str {
+    if ty == "Condition" {
+        "Condition"
+    } else {
+        RULES_SUPPORT
+    }
 }
 
 /// Report entries for what this module changed about the source's objects: text-only rules
@@ -421,7 +457,7 @@ pub(crate) fn report_entries(
             continue;
         };
         match g.kind {
-            ImportKind::Rules => {
+            ImportKind::Rules | ImportKind::Condition => {
                 let what = g
                     .outline
                     .as_ref()

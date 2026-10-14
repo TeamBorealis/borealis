@@ -190,6 +190,8 @@ struct Builder<'a> {
     used: HashSet<String>,
     out: Vec<PlannedElement>,
     notes: Vec<String>,
+    /// Names of every group of the plan (a heading naming one is never a sub-item).
+    groups: Vec<String>,
 }
 
 impl Builder<'_> {
@@ -552,6 +554,15 @@ fn with_tiers_merged(o: &Outline) -> Outline {
     }
 }
 
+/// The outline feature is the class's spellcasting section: caster-named, or with
+/// spellcasting sub-headings as parts ("X Magic" with "Cantrips", "Preparing Spells").
+fn is_spellcasting_section(f: &OutlineFeature) -> bool {
+    super::caster::is_caster_feature(&f.name)
+        || f.parts
+            .iter()
+            .any(|p| super::caster::is_caster_part(&p.name))
+}
+
 fn class_group(b: &mut Builder, o: &Outline) -> String {
     let merged = with_tiers_merged(o);
     let o = &merged;
@@ -583,7 +594,7 @@ fn class_group(b: &mut Builder, o: &Outline) -> String {
             && !o
                 .features
                 .iter()
-                .any(|f| f.level <= 3 && super::caster::is_caster_feature(&f.name))
+                .any(|f| f.level <= 3 && is_spellcasting_section(f))
         {
             let name = format!("{} Spellcasting", o.name);
             let brief = o.caster().map_or_else(String::new, |s| {
@@ -733,6 +744,7 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
         used: store.iter().map(|s| s.element.id.clone()).collect(),
         out: Vec::new(),
         notes: Vec::new(),
+        groups: plan.groups.iter().map(|g| g.name.clone()).collect(),
     };
     // Classes first: subclasses of a class from the same source link to its planned id.
     for g in &mut plan.groups {
@@ -829,7 +841,7 @@ fn standalone_group(b: &mut Builder, g: &PlanGroup, ty: &str) -> String {
         .as_ref()
         .map(|o| o.quote.clone())
         .unwrap_or_default();
-    let role = if g.kind == ImportKind::Rules {
+    let role = if matches!(g.kind, ImportKind::Rules | ImportKind::Condition) {
         Role::Text
     } else {
         Role::Standalone
@@ -854,16 +866,16 @@ fn standalone_group(b: &mut Builder, g: &PlanGroup, ty: &str) -> String {
         }
         names.push(norm(&f.name));
         let trait_id = b.push_child(part_ty, &part, Role::Part, None, &id);
-        // A trait's sub-items are folded into it unless they have a heading of their own.
-        let headed = OutlineFeature {
-            parts: f
-                .parts
-                .iter()
-                .filter(|p| super::parts::headed_within(b.source, &f.name, &p.name))
-                .cloned()
-                .collect(),
-            ..f.clone()
-        };
+        // A trait's sub-items are folded into it unless they have a heading of their own;
+        // a heading inside the trait's section is one even when the outline skipped it.
+        let mut parts: Vec<OutlinePart> = f
+            .parts
+            .iter()
+            .filter(|p| super::parts::headed_within(b.source, &f.name, &p.name))
+            .cloned()
+            .collect();
+        parts.extend(headed_parts(b, o, f, &parts));
+        let headed = OutlineFeature { parts, ..f.clone() };
         b.push_children(&headed, &trait_id, part_ty, &g.name, None, true);
     }
     if !names.is_empty() {
@@ -877,6 +889,34 @@ fn standalone_group(b: &mut Builder, g: &PlanGroup, ty: &str) -> String {
         }
     }
     id
+}
+
+/// Headings inside trait `f`'s section that the outline did not list as parts (nor as another
+/// trait, feature or planned group), as parts with no summary: they are located by name.
+fn headed_parts(
+    b: &Builder,
+    o: &Outline,
+    f: &OutlineFeature,
+    listed: &[OutlinePart],
+) -> Vec<OutlinePart> {
+    let taken: Vec<String> = o
+        .features
+        .iter()
+        .flat_map(|x| std::iter::once(&x.name).chain(x.parts.iter().map(|p| &p.name)))
+        .chain(listed.iter().map(|p| &p.name))
+        .chain(b.groups.iter())
+        .map(|n| norm(n))
+        .collect();
+    super::parts::sub_headings(b.source, &f.name)
+        .into_iter()
+        .filter(|h| !taken.contains(&norm(h)))
+        .map(|name| OutlinePart {
+            name,
+            summary: String::new(),
+            quote: String::new(),
+            level: None,
+        })
+        .collect()
 }
 
 /// The parent species of a subrace: a species of the same source its hint names (or the only
@@ -951,7 +991,12 @@ fn subrace_select(store: &ContentStore, race: &Element) -> Option<String> {
 
 /// A text-only group for a rules or lore section the detection listed in `other`.
 pub(crate) fn text_group(name: &str, what: &str, note: &str) -> PlanGroup {
-    let mut g = standalone(ImportKind::Rules, name, None);
+    let kind = if is_condition(what) {
+        ImportKind::Condition
+    } else {
+        ImportKind::Rules
+    };
+    let mut g = standalone(kind, name, None);
     g.outline = Some(Outline {
         name: name.to_string(),
         summary: format!("{what}. {note}")
@@ -965,6 +1010,18 @@ pub(crate) fn text_group(name: &str, what: &str, note: &str) -> PlanGroup {
         columns: Vec::new(),
     });
     g
+}
+
+/// The detection's `what` of an `other` entry says it is a condition ("condition", "a new
+/// condition"), not a rule that mentions conditions ("condition immunity rules").
+fn is_condition(what: &str) -> bool {
+    let w: Vec<String> = what
+        .to_lowercase()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| !w.is_empty())
+        .map(str::to_string)
+        .collect();
+    w.last().is_some_and(|l| l == "condition")
 }
 
 /// A plan group for a standalone item.

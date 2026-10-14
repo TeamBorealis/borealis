@@ -49,6 +49,19 @@ choose, e.g. [{\"abilities\":[\"strength\",\"dexterity\"],\"pick\":1,\"amount\":
     ),
 ];
 
+/// How the mechanics that models most often leave in the text are written (bundled shapes).
+const STAT_SHAPES: &str = "Write every mechanic the text states as a rule, never as text only: an armor class formula \
+(\"your AC equals 13 + your Dexterity modifier\") is `stat` rules like the bundled Unarmored Defense \
+(ac:<name>:base = 13, ac:<name>:dexterity = dexterity:modifier, ac:<name> = each of them, then \
+{\"kind\":\"stat\",\"name\":\"ac:calculation\",\"value\":\"ac:<name>\",\"bonus\":\"calculation\",\"equipped\":\"[armor:none]\"}); \
+a fixed ability score increase is {\"kind\":\"stat\",\"name\":\"strength\",\"value\":\"2\"}; a species' walking speed \
+is {\"kind\":\"stat\",\"name\":\"innate speed\",\"value\":\"30\",\"bonus\":\"base\"} and another lasting speed \
+{\"kind\":\"stat\",\"name\":\"speed:fly\",\"value\":\"30\"}; a lasting bonus (\"+1 to AC\") is a `stat` rule. \
+mystic_arcanum (spells cast once per rest at higher tiers) always comes with ONE Spell `select` per slot, \
+{\"kind\":\"select\",\"type\":\"Spell\",\"name\":\"<Feature> (level 6)\",\"level\":11,\"supports\":\"<Class>,6\",\"spellcasting\":\"<Class>\"}. \
+In descriptions keep every number, game term and name as printed (\"fly speed of 30 feet\", \"six hours\", the \
+classes an item's attunement names).";
+
 /// The compact rule-kind catalogue for prompts, generated from `KNOWN_KINDS`.
 pub(crate) fn catalogue() -> &'static str {
     static TEXT: OnceLock<String> = OnceLock::new();
@@ -64,7 +77,7 @@ pub(crate) fn catalogue() -> &'static str {
         format!(
             "Rule kinds: `grant`, `select` and `stat` as in the examples, plus ONLY these custom kinds with ONLY \
 these fields (kinds marked * also accept `level` and `requirements`). Any other kind or field is rejected; \
-describe mechanics no kind covers in the description instead.\n{}\n{}",
+describe mechanics no kind covers in the description instead.\n{}\n{}\n{STAT_SHAPES}",
             lines.join("\n"),
             shapes.join("\n")
         )

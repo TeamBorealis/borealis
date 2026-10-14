@@ -100,6 +100,7 @@ pub(crate) fn normalize(
                 .find(|g| g.root_id.as_deref() == Some(planned.id.as_str()))
                 .and_then(|g| g.item_type);
             super::items::normalize_item(el, &planned.ty, &planned.name, item_type, plan);
+            super::mechanics::attunement_by(el);
         }
         Role::SubclassGate | Role::Part | Role::Option | Role::Text => {}
     }
@@ -131,6 +132,7 @@ fn normalize_feature(
     }
     d.insert("level".into(), json!(level));
     apply_caster_feature(el, planned, plan);
+    super::arcanum::with_selects(el, plan.edition);
 }
 
 /// The feature has spellcasting sub-headings as parts ("Cantrips", "Spell Slots", ...).

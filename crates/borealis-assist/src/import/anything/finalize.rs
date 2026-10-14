@@ -50,8 +50,15 @@ pub fn finalize_draft(
     let library: HashSet<String> = library_store.iter().map(|s| s.element.id.clone()).collect();
     let mut used: HashSet<String> = library.clone();
     used.extend(draft.elements.iter().map(|e| e.id.clone()));
-    let raw: Vec<Value> = draft.elements.iter().map(|e| e.json.clone()).collect();
-    let derived = derive(&draft.plan, &raw, &library_store);
+    let mut raw: Vec<Value> = draft.elements.iter().map(|e| e.json.clone()).collect();
+    let mut local = tiered_spell_choices(&mut raw, draft);
+    local.extend(attunement_text(&mut raw));
+    let mut derived = derive(&draft.plan, &raw, &library_store);
+    let (markers, notes) =
+        super::fallback::skill_fallbacks(&mut derived.docs, &draft.id_prefix, &mut used);
+    derived.extra.extend(markers);
+    local.extend(notes);
+    derived.notes.extend(local);
     let mut doc = content_doc(&derived);
     let mut renamed = Vec::new();
     for e in &draft.elements {
@@ -111,6 +118,43 @@ pub fn finalize_draft(
         }));
     pack.report = Some(report);
     Ok(Finalized { pack, renamed })
+}
+
+/// Tiered free-cast features of drafts written before the selects were added at generation
+/// (see [`super::arcanum`]); a no-op on current drafts.
+fn tiered_spell_choices(raw: &mut [Value], draft: &ImportDraft) -> Vec<(String, String)> {
+    raw.iter_mut()
+        .filter(|el| {
+            matches!(
+                el.get("type").and_then(Value::as_str),
+                Some("Class Feature" | "Archetype Feature")
+            )
+        })
+        .filter_map(|el| {
+            let note = super::arcanum::with_selects(el, draft.edition)?;
+            let id = el.get("id").and_then(Value::as_str)?.to_string();
+            Some((id, note))
+        })
+        .collect()
+}
+
+/// The attunement restriction in both the setter and the text (see
+/// [`super::mechanics::attunement_by`]); applied at generation, repeated for older drafts.
+fn attunement_text(raw: &mut [Value]) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    for el in raw.iter_mut() {
+        let id = el
+            .get("id")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
+        out.extend(
+            super::mechanics::attunement_by(el)
+                .into_iter()
+                .map(|n| (id.clone(), n)),
+        );
+    }
+    out
 }
 
 fn same_name(a: &str, b: &str) -> bool {
