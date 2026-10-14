@@ -86,8 +86,46 @@ pub(crate) fn derive_with_source(
     progression::dedupe_resources(&mut d);
     proficiency_choices(plan, store, &mut d);
     ability_choices(&mut d);
+    creature_types(store, &mut d);
     cycles::break_grant_cycles(store, &mut d);
     d
+}
+
+/// Tag-like prefix of the bundled creature-type racial traits ("Creature Type (Construct)").
+const CREATURE_TYPE_PREFIX: &str = "ID_INTERNAL_RACIAL_TRAIT_TYPE_";
+
+/// A race's printed creature type (`data.creature_type`) grants the bundled creature-type racial
+/// trait of that type, when the library has it and the race does not grant it yet.
+fn creature_types(store: &ContentStore, d: &mut Derived) {
+    for i in 0..d.docs.len() {
+        if !matches!(str_at(&d.docs[i], "type"), "Race" | "Sub Race") {
+            continue;
+        }
+        let Some(kind) = d.docs[i]
+            .pointer("/data/creature_type")
+            .and_then(Value::as_str)
+            .map(|k| norm(k).replace(' ', "_").to_uppercase())
+            .filter(|k| !k.is_empty())
+        else {
+            continue;
+        };
+        let trait_id = format!("{CREATURE_TYPE_PREFIX}{kind}");
+        if store.get(&trait_id).is_none() {
+            continue;
+        }
+        let id = str_at(&d.docs[i], "id").to_string();
+        let Some(rules) = rules_mut(&mut d.docs[i]) else {
+            continue;
+        };
+        if rules.iter().any(|r| str_at(r, "id") == trait_id) {
+            continue;
+        }
+        rules.push(json!({"kind": "grant", "type": "Racial Trait", "id": trait_id}));
+        d.note(
+            &id,
+            format!("grants its printed creature type ({trait_id})"),
+        );
+    }
 }
 
 /// `ability_increase` options written as a bare list of ability names (no choice for the engine)
@@ -493,4 +531,42 @@ pub(crate) fn content_doc(d: &Derived) -> Value {
         doc.insert("appends".into(), json!(d.appends));
     }
     Value::Object(doc)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_races_printed_creature_type_grants_the_bundled_type_trait() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+        let store = borealis_content::ContentStoreBuilder::new()
+            .add_pack_dir(&root.join("core"))
+            .expect("core pack")
+            .build();
+        let race = |id: &str, kind: &str| {
+            json!({"id": id, "name": id, "type": "Race", "data": {"creature_type": kind},
+                "rules": []})
+        };
+        let mut d = Derived {
+            docs: vec![
+                race("ID_T_RACE_A", "Construct"),
+                race("ID_T_RACE_B", "Moss Spirit"),
+            ],
+            ..Derived::default()
+        };
+        creature_types(&store, &mut d);
+        creature_types(&store, &mut d);
+        let grants = |i: usize| -> Vec<String> {
+            d.docs[i]["rules"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|r| str_at(r, "id").to_string())
+                .collect()
+        };
+        assert_eq!(grants(0), ["ID_INTERNAL_RACIAL_TRAIT_TYPE_CONSTRUCT"]);
+        assert!(grants(1).is_empty(), "an unknown type grants nothing");
+        assert_eq!(d.notes.len(), 1);
+    }
 }
