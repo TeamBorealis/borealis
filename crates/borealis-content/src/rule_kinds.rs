@@ -33,7 +33,23 @@ pub struct KindSpec {
     /// Fields bundled content carries that the engine knowingly does not evaluate, with the
     /// reason. They are accepted (no diagnostic); anything else is unknown.
     pub unmodelled: &'static [(&'static str, &'static str)],
+    /// Fields the reader cannot do without (absent, null or an empty string is a problem).
+    pub required: &'static [&'static str],
+    /// Closed value sets as `(path, allowed)`: `field`, `field.sub` (a key of an object field)
+    /// or `field[]` (every item of a list field).
+    pub enums: &'static [(&'static str, &'static [&'static str])],
 }
+
+/// `max.type` values a `resource` understands.
+pub const RESOURCE_MAX_TYPES: &[&str] = &["fixed", "stat", "table", "formula"];
+/// `recharge` tokens of a `resource` (`short_rest`/`long_rest` drive rests).
+pub const RESOURCE_RECHARGE: &[&str] = &[
+    "short_rest",
+    "long_rest",
+    "turn_start",
+    "initiative",
+    "none",
+];
 
 impl KindSpec {
     /// Does the engine accept `field` on this kind?
@@ -49,6 +65,58 @@ impl KindSpec {
     pub fn reads(&self, field: &str) -> bool {
         (self.gated && GATE_FIELDS.contains(&field)) || self.fields.contains(&field)
     }
+
+    const fn shape(
+        self,
+        required: &'static [&'static str],
+        enums: &'static [(&'static str, &'static [&'static str])],
+    ) -> Self {
+        Self {
+            required,
+            enums,
+            ..self
+        }
+    }
+
+    /// Missing required fields and values outside the closed sets, one message each.
+    #[must_use]
+    pub fn shape_problems(
+        &self,
+        fields: &serde_json::Map<String, serde_json::Value>,
+    ) -> Vec<String> {
+        use serde_json::Value;
+        let mut out: Vec<String> = self
+            .required
+            .iter()
+            .filter(|f| match fields.get(**f) {
+                None | Some(Value::Null) => true,
+                Some(Value::String(s)) => s.trim().is_empty(),
+                Some(_) => false,
+            })
+            .map(|f| format!("has no `{f}`"))
+            .collect();
+        for (path, allowed) in self.enums {
+            let ok = |v: &Value| v.as_str().is_some_and(|t| allowed.contains(&t));
+            if let Some(list) = path.strip_suffix("[]") {
+                if let Some(v) = fields.get(list) {
+                    if !v.as_array().is_some_and(|a| a.iter().all(ok)) {
+                        out.push(format!("`{list}` {v} is not a list of {allowed:?}"));
+                    }
+                }
+            } else if let Some((field, key)) = path.split_once('.') {
+                if let Some(v) = fields.get(field) {
+                    if !v.get(key).is_some_and(ok) {
+                        out.push(format!(
+                            "`{field}` {v} is not {{\"{key}\": one of {allowed:?}, ...}}"
+                        ));
+                    }
+                }
+            } else if let Some(v) = fields.get(*path).filter(|v| !ok(v)) {
+                out.push(format!("`{path}` {v} is not one of {allowed:?}"));
+            }
+        }
+        out
+    }
 }
 
 const fn k(
@@ -63,6 +131,8 @@ const fn k(
         gated,
         fields,
         unmodelled: &[],
+        required: &[],
+        enums: &[],
     }
 }
 
@@ -79,6 +149,8 @@ const fn ku(
         gated,
         fields,
         unmodelled,
+        required: &[],
+        enums: &[],
     }
 }
 
@@ -401,14 +473,22 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
             ("cure_poison_cost", GAP),
             ("kind_note", GAP),
         ],
+    )
+    .shape(
+        &["id", "max"],
+        &[
+            ("max.type", RESOURCE_MAX_TYPES),
+            ("recharge[]", RESOURCE_RECHARGE),
+        ],
     ),
-    k("resource_cost", PLAY, true, &["resource", "cost"]),
+    k("resource_cost", PLAY, true, &["resource", "cost"]).shape(&["resource"], &[]),
     k(
         "resource_regain",
         PLAY,
         true,
         &["resource", "on", "by", "up_to", "amount"],
-    ),
+    )
+    .shape(&["resource"], &[]),
     ku(
         "ritual_casting",
         SPELLS,
@@ -692,5 +772,20 @@ mod tests {
             fields: Map::new(),
         };
         assert!(check_rules(&[Rule::Custom(empty)]).is_empty());
+    }
+
+    #[test]
+    fn resource_shape_comes_from_the_registry() {
+        let r = spec("resource").unwrap();
+        let fields =
+            serde_json::json!({"name": "Ember", "max": {"value": 2}, "recharge": ["dawn"]});
+        let p = r.shape_problems(fields.as_object().unwrap());
+        assert_eq!(p.len(), 3, "{p:?}");
+        assert!(p[0].contains("has no `id`"));
+        let ok = serde_json::json!({"id": "ember", "max": {"type": "fixed", "value": 2},
+            "recharge": ["short_rest", "long_rest"]});
+        assert!(r.shape_problems(ok.as_object().unwrap()).is_empty());
+        let cost = spec("resource_cost").unwrap();
+        assert_eq!(cost.shape_problems(&Map::new()), vec!["has no `resource`"]);
     }
 }

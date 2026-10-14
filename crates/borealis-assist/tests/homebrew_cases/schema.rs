@@ -321,6 +321,9 @@ pub struct ImportReport {
     /// Deterministic rule fixes the importer applied.
     #[serde(default)]
     pub normalised: Vec<ReportIssue>,
+    /// Things to check by hand (an element whose source passage was not found).
+    #[serde(default)]
+    pub warnings: Vec<ReportIssue>,
 }
 
 /// One message about one pack element.

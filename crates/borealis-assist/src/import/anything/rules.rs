@@ -6,20 +6,12 @@
 
 use std::sync::OnceLock;
 
-use borealis_content::rule_kinds::{check_custom, KNOWN_KINDS};
+use borealis_content::rule_kinds::{
+    check_custom, spec, KNOWN_KINDS, RESOURCE_RECHARGE as RECHARGE_TOKENS,
+};
 use borealis_content::rules::{CustomRule, Rule};
 use serde_json::{json, Map, Value};
 
-/// `max.type` values `resource` understands.
-const MAX_TYPES: [&str; 4] = ["fixed", "stat", "table", "formula"];
-/// `recharge` tokens used by content (`short_rest`/`long_rest` drive rests).
-const RECHARGE_TOKENS: [&str; 5] = [
-    "short_rest",
-    "long_rest",
-    "turn_start",
-    "initiative",
-    "none",
-];
 /// Words a free-text rest description may consist of.
 const REST_WORDS: [&str; 10] = [
     "short", "long", "rest", "rests", "or", "and", "a", "finish", "after", "you",
@@ -84,50 +76,9 @@ fn rule_arrays(el: &Value) -> Vec<&Vec<Value>> {
         .collect()
 }
 
+/// Required fields and closed value sets, from the registry (`KindSpec::shape_problems`).
 fn shape_problems(c: &CustomRule) -> Vec<String> {
-    let f = &c.fields;
-    let mut out = Vec::new();
-    match c.kind.as_str() {
-        "resource" => {
-            if !f
-                .get("id")
-                .and_then(Value::as_str)
-                .is_some_and(|s| !s.is_empty())
-            {
-                out.push("has no `id` (the engine skips resources without one)".to_string());
-            }
-            match f.get("max") {
-                None => out.push("has no `max`".to_string()),
-                Some(m) if !max_ok(m) => out.push(format!(
-                    "`max` {m} is not {{\"type\": one of {MAX_TYPES:?}, ...}}"
-                )),
-                Some(_) => {}
-            }
-            if let Some(r) = f.get("recharge").filter(|r| !recharge_ok(r)) {
-                out.push(format!(
-                    "`recharge` {r} is not a list of {RECHARGE_TOKENS:?}"
-                ));
-            }
-        }
-        "resource_cost" | "resource_regain" if f.get("resource").is_none() => {
-            out.push("has no `resource` id".to_string());
-        }
-        _ => {}
-    }
-    out
-}
-
-fn max_ok(m: &Value) -> bool {
-    m.get("type")
-        .and_then(Value::as_str)
-        .is_some_and(|t| MAX_TYPES.contains(&t))
-}
-
-fn recharge_ok(r: &Value) -> bool {
-    r.as_array().is_some_and(|a| {
-        a.iter()
-            .all(|t| t.as_str().is_some_and(|t| RECHARGE_TOKENS.contains(&t)))
-    })
+    spec(&c.kind).map_or_else(Vec::new, |s| s.shape_problems(&c.fields))
 }
 
 /// Everything in the element's custom rules the engine would ignore or misread, one message per

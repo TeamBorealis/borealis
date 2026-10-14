@@ -25,6 +25,9 @@ use crate::homebrew::PackContext;
 pub const MAX_REPAIR_ROUNDS: u32 = 2;
 const WINDOW_LINES: usize = 40;
 const WHOLE_SOURCE_CHARS: usize = 9000;
+/// Most source sent for an element whose passage was not located (a long source is sent whole
+/// rather than cut at its start).
+pub(crate) const FULL_SOURCE_CHARS: usize = 60_000;
 
 pub(crate) type Progress<'a> = Option<&'a (dyn Fn(ImportProgress) + Send + Sync)>;
 
@@ -40,6 +43,9 @@ pub(crate) fn emit(p: Progress<'_>, stage: Stage, done: usize, total: usize, mes
 }
 
 pub(crate) fn guidance(planned: &PlannedElement, edition: Edition) -> &'static str {
+    if let Some(g) = super::items::guidance(&planned.ty) {
+        return g;
+    }
     match (planned.role, planned.ty.as_str()) {
         (Role::Class, _) => "A Class element. Include: `setters` hd and short; `rules`: saving-throw grants, one skill `select` (type Proficiency) and weapon/armor grants, each limited with requirements \"!<multiclass id>\" like the example; `data`: hit_die, primary_abilities, saving_throws, subclass_level, asi_levels, progression (EVERY array has exactly 20 entries: proficiency_bonus plus any table the features use; spellcasting tables are generated), and the multiclass definition (2024: data.multiclass {prerequisite, requirements}; 2014: top-level multiclass {id, prerequisite, requirements, rules}). Do NOT add `Class Feature` grants; they are added for you.",
         (Role::ClassFeature, _) => "A Class Feature: `description` in HTML paragraphs that restates the source in your own words and `rules` that implement it (resources, grants, selects, stat changes). A feature with no mechanics may have no rules. Reuse existing core ids for skills, proficiencies and abilities.",
@@ -49,7 +55,7 @@ pub(crate) fn guidance(planned: &PlannedElement, edition: Edition) -> &'static s
         (_, "Background") => "A background: skill and tool proficiencies, languages, equipment, an origin feat (2024), description.",
         (_, "Feat") => "A feat: prerequisite text, rules (stat/grant/select), description.",
         (_, "Spell") => if edition == Edition::Y2024 { "A spell with setters level, school, time, range, duration, components and `supports` listing the classes (2024 rules)." } else { "A spell with setters level, school, time, range, duration, components and `supports` listing the classes." },
-        (_, "Magic Item") => "A magic item with rarity and attunement setters, rules for bonuses, description.",
+        (_, "Magic Item") => "A magic item with rarity and attunement setters, rules for bonuses, description. A magic weapon or armor names its base item in the `type` setter like the example.",
         (_, "Monster") => "A monster: the stat block in `data` as in the example.",
         _ => "A content element as in the example.",
     }
@@ -57,10 +63,20 @@ pub(crate) fn guidance(planned: &PlannedElement, edition: Edition) -> &'static s
 
 /// The part of the source relevant to `planned`.
 pub(crate) fn source_window(source: &str, planned: &PlannedElement) -> String {
-    if matches!(planned.role, Role::Class | Role::Subclass) || planned.excerpt.is_none() {
-        return source.chars().take(WHOLE_SOURCE_CHARS).collect();
+    let Some(ex) = planned.excerpt.as_ref() else {
+        return source.chars().take(FULL_SOURCE_CHARS).collect();
+    };
+    if matches!(planned.role, Role::Class | Role::Subclass) {
+        // From the class or subclass header on, not from the start of a long source.
+        return source
+            .lines()
+            .skip(ex.start_line.saturating_sub(1))
+            .collect::<Vec<_>>()
+            .join("\n")
+            .chars()
+            .take(WHOLE_SOURCE_CHARS)
+            .collect();
     }
-    let ex = planned.excerpt.as_ref().expect("checked above");
     source
         .lines()
         .skip(ex.start_line.saturating_sub(1))

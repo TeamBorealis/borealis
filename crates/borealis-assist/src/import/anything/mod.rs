@@ -10,6 +10,7 @@ pub mod caster;
 mod fewshot;
 mod finalize;
 mod generate;
+mod items;
 mod normalize;
 mod plan;
 mod rules;
@@ -181,11 +182,23 @@ pub async fn plan_import(
     // Parents first (they decide the subclass levels), then the outlines in as few calls as
     // possible: one for a single class or subclass, else OUTLINE_BATCH per call.
     let mut wanted: Vec<(usize, DetectedItem, Option<Vec<u32>>)> = Vec::new();
+    let classes: Vec<String> = detection
+        .items
+        .iter()
+        .filter(|i| i.kind == ImportKind::Class)
+        .map(|i| i.name.clone())
+        .collect();
     for item in &detection.items {
-        let mut group = plan::standalone(item.kind, &item.name);
+        let mut group = plan::standalone(item.kind, &item.name, item.item_type);
         if matches!(item.kind, ImportKind::Class | ImportKind::Subclass) {
             let mut levels: Option<Vec<u32>> = None;
-            if item.kind == ImportKind::Subclass {
+            let own = (item.kind == ImportKind::Subclass)
+                .then(|| plan::in_source_class(&classes, item.parent_hint.as_deref()))
+                .flatten();
+            if let Some(class) = own {
+                // A subclass of a class from this source: linked to the planned class.
+                group.parent = Some(plan::in_source_link(class));
+            } else if item.kind == ImportKind::Subclass {
                 match plan::resolve_parent(
                     &store,
                     detection.edition,
@@ -220,6 +233,15 @@ pub async fn plan_import(
         }
     }
     plan::rebuild(&mut plan, &store, id_prefix, source_text);
+    let own = plan::planned_class_links(&plan);
+    for choice in plan.groups.iter_mut().filter_map(|g| g.choice.as_mut()) {
+        choice
+            .candidates
+            .extend(own.iter().map(|link| ParentCandidate {
+                link: link.clone(),
+                score: 0,
+            }));
+    }
     Ok(plan)
 }
 
@@ -234,9 +256,15 @@ pub fn choose_parent(
     class_id: &str,
 ) -> Result<ImportDraft, AssistError> {
     let store = base.clone().build();
-    let link = plan::link_for(&store, draft.edition, class_id).ok_or_else(|| {
-        AssistError::Invalid(format!("{class_id} is not a class with a subclass choice"))
-    })?;
+    let link = plan::link_for(&store, draft.edition, class_id)
+        .or_else(|| {
+            plan::planned_class_links(&draft.plan)
+                .into_iter()
+                .find(|l| l.class_id == class_id)
+        })
+        .ok_or_else(|| {
+            AssistError::Invalid(format!("{class_id} is not a class with a subclass choice"))
+        })?;
     let mut next = draft.clone();
     let g = next
         .plan

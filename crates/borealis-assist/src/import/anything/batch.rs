@@ -9,14 +9,35 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 use super::fewshot::{core_catalogue, exemplars_for};
-use super::generate::{element_issues, guidance, parent_of, source_window, GenCtx};
+use super::generate::{
+    element_issues, guidance, parent_of, source_window, GenCtx, FULL_SOURCE_CHARS,
+};
 use super::normalize::normalize;
 use super::steps::{ElementOut, Step};
 use super::types::{ElementStatus, ImportDraft, ParentLink, PlannedElement, Role};
 
 /// Features generated per model call.
 pub(crate) const BATCH_SIZE: usize = 8;
-const SOURCE_CHARS: usize = 9000;
+/// Sources up to this length go to every batch whole.
+pub(crate) const SOURCE_CHARS: usize = 9000;
+
+/// Why an element of a long source was generated from the whole source (its passage was not
+/// found), for the import report; `None` when it had its passage or the source is short.
+pub(crate) fn unlocated_warning(source: &str, p: &PlannedElement) -> Option<String> {
+    let n = source.chars().count();
+    let skip = p.excerpt.is_some() || p.role == Role::SubclassGate || n <= SOURCE_CHARS;
+    (!skip).then(|| {
+        let sent = if n > FULL_SOURCE_CHARS {
+            format!("its first {FULL_SOURCE_CHARS} of {n} characters")
+        } else {
+            format!("all {n} characters")
+        };
+        format!(
+            "\"{}\" was not found in the source; it was generated from {sent}",
+            p.name
+        )
+    })
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct BatchOut {
@@ -64,19 +85,37 @@ pub(crate) fn plan_batches(draft: &ImportDraft) -> Vec<Vec<PlannedElement>> {
         }
     }
     groups.sort_by_key(|((ph, _, _), _)| *ph);
+    // In a long source a batch either sends the located passages of all its elements or, for
+    // elements whose passage was not found, the whole source: never both in one batch.
+    let long = draft.source_text.chars().count() > SOURCE_CHARS;
     groups
         .into_iter()
         .filter(|((ph, _, _), v)| *ph == 0 || v.len() > 1)
-        .flat_map(|(_, v)| v.chunks(BATCH_SIZE).map(<[_]>::to_vec).collect::<Vec<_>>())
+        .flat_map(|(_, v)| {
+            let (located, unlocated): (Vec<_>, Vec<_>) =
+                v.into_iter().partition(|p| !long || p.excerpt.is_some());
+            [located, unlocated]
+                .into_iter()
+                .flat_map(|part| {
+                    part.chunks(BATCH_SIZE)
+                        .map(<[_]>::to_vec)
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>()
+        })
         .collect()
 }
 
 /// The source text a batch needs: the whole source when it fits, else the passages located for
-/// its elements (in source order), else the start of the source.
+/// its elements (in source order), else (no passage located) the whole source up to
+/// [`FULL_SOURCE_CHARS`] (reported, see [`unlocated_warning`]).
 fn batch_source(draft: &ImportDraft, batch: &[PlannedElement]) -> String {
     let all = &draft.source_text;
-    if all.chars().count() <= SOURCE_CHARS || batch.iter().any(|p| p.excerpt.is_none()) {
-        return all.chars().take(SOURCE_CHARS).collect();
+    if all.chars().count() <= SOURCE_CHARS {
+        return all.clone();
+    }
+    if batch.iter().any(|p| p.excerpt.is_none()) {
+        return all.chars().take(FULL_SOURCE_CHARS).collect();
     }
     let mut parts: Vec<(usize, String)> = batch
         .iter()

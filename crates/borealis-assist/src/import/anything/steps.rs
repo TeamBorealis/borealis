@@ -138,7 +138,7 @@ pub(crate) struct TargetOut {
 
 // ---- schemas -------------------------------------------------------------------------------
 
-const KINDS: [&str; 9] = [
+const KINDS: [&str; 10] = [
     "class",
     "subclass",
     "species",
@@ -147,8 +147,10 @@ const KINDS: [&str; 9] = [
     "spell",
     "item",
     "monster",
+    "weapon_property",
     "mixed",
 ];
+const ITEM_TYPES: [&str; 5] = ["weapon", "armor", "ammunition", "gear", "magic_item"];
 
 pub(crate) fn detect_schema() -> Value {
     json!({"type":"object","required":["kind","edition","confidence","items"],
@@ -158,7 +160,8 @@ pub(crate) fn detect_schema() -> Value {
           "confidence":{"type":"number"},
           "items":{"type":"array","items":{"type":"object","required":["kind","name"],
             "properties":{"kind":{"type":"string","enum":KINDS},"name":{"type":"string"},
-              "parent_hint":{"type":["string","null"]}}}},
+              "parent_hint":{"type":["string","null"]},
+              "item_type":{"type":["string","null"],"enum":[ITEM_TYPES[0],ITEM_TYPES[1],ITEM_TYPES[2],ITEM_TYPES[3],ITEM_TYPES[4],null]}}}},
           "notes":{"type":"array","items":{"type":"string"}},
           "other":{"type":"array","items":{"type":"object","required":["name"],
             "properties":{"name":{"type":"string"},"what":{"type":"string"},"note":{"type":"string"}}}},
@@ -201,8 +204,10 @@ in `transcript`; later steps only see that transcript."
     };
     let user = format!(
         "Classify this source. List every distinct thing it describes in `items` (kind, name, and for a \
-subclass the parent class in `parent_hint`, as named or implied, e.g. \"Barbarian\" or \"Primal Path\"). \
-Set `kind` to the single kind, or \"mixed\" when there are several. List in `other` (name as printed, \
+subclass the parent class in `parent_hint`, as named or implied, e.g. \"Barbarian\" or \"Primal Path\"; \
+for an item its `item_type`: weapon for a mundane weapon (firearms and other ranged weapons included), armor \
+(shields included), ammunition, gear for other mundane equipment, magic_item). A weapon property the source \
+defines with its own rules text is kind weapon_property. Set `kind` to the single kind, or \"mixed\" when there are several. List in `other` (name as printed, \
 `what` it is) every other thing the source defines that is none of these kinds: rules, weapon properties, \
 conditions, variant or optional rules, upgrades, tables. Decide the edition: 2024 rules use \
 \"species\", \"Weapon Mastery\", \"Origin feat\"; 2014 rules use \"race\" and \"Primal Path\"-style subclass \
@@ -216,7 +221,7 @@ names. Default to {} when unclear. Give a confidence between 0 and 1.\n{transcri
     Step::new(
         "import_detect",
         "classify imported D&D content by kind and edition",
-        "Kinds: class, subclass, species, background, feat, spell, item, monster, mixed.",
+        "Kinds: class, subclass, species, background, feat, spell, item, monster, weapon_property, mixed.",
         user,
         detect_schema(),
     )

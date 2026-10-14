@@ -142,7 +142,14 @@ pub(crate) fn build_report(draft: &ImportDraft, renamed: &[(String, String)]) ->
             });
         }
     }
-    for o in &draft.detection.other {
+    report.entries.extend(new_properties(draft, &final_id));
+    for o in draft.detection.other.iter().filter(|o| {
+        !draft
+            .plan
+            .groups
+            .iter()
+            .any(|g| same_name(&g.name, &o.name))
+    }) {
         let what = if o.what.is_empty() {
             "this"
         } else {
@@ -165,5 +172,60 @@ pub(crate) fn build_report(draft: &ImportDraft, renamed: &[(String, String)]) ->
         report.errors.extend(e.rule_errors.iter().map(issue));
         report.normalised.extend(e.normalised.iter().map(issue));
     }
+    for p in &draft.plan.elements {
+        if let Some(message) = super::batch::unlocated_warning(&draft.source_text, p) {
+            report.warnings.push(ReportIssue {
+                element: final_id(&p.id),
+                message,
+            });
+        }
+    }
     report
+}
+
+/// Weapon properties no bundled tag covers: kept as named properties (with the source's text
+/// when it defines them), never dropped, and reported because the engine applies no rules.
+fn new_properties(draft: &ImportDraft, final_id: &dyn Fn(&str) -> String) -> Vec<ReportEntry> {
+    let mut by_name: Vec<(String, Vec<String>)> = Vec::new();
+    for e in draft.elements.iter().filter(|e| e.ty == "Weapon") {
+        for p in super::items::weapon_properties(&e.json) {
+            if super::items::known_property(&p).is_some() {
+                continue;
+            }
+            let key = p.split('(').next().unwrap_or(&p).trim().to_string();
+            match by_name.iter_mut().find(|(n, _)| same_name(n, &key)) {
+                Some((_, users)) => users.push(e.name.clone()),
+                None => by_name.push((key, vec![e.name.clone()])),
+            }
+        }
+    }
+    by_name
+        .into_iter()
+        .map(|(name, users)| {
+            let defined = draft
+                .elements
+                .iter()
+                .find(|e| e.ty == "Weapon Property" && same_name(&e.name, &name));
+            let on = users.join(", ");
+            match defined {
+                Some(p) => ReportEntry {
+                    source: name,
+                    outcome: "text_only".into(),
+                    elements: vec![final_id(&p.id)],
+                    note: format!("new weapon property, imported with its description; the engine applies no rules for it (on {on})"),
+                },
+                None => ReportEntry {
+                    source: name,
+                    outcome: "text_only".into(),
+                    elements: draft
+                        .elements
+                        .iter()
+                        .filter(|e| e.ty == "Weapon" && users.contains(&e.name))
+                        .map(|e| final_id(&e.id))
+                        .collect(),
+                    note: format!("weapon property the source does not define; kept by name on {on}, no rules"),
+                },
+            }
+        })
+        .collect()
 }

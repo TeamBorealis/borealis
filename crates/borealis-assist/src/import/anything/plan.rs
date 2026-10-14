@@ -7,8 +7,8 @@ use borealis_content::{ContentStore, Element, Rule};
 
 use super::fewshot::in_edition;
 use super::types::{
-    Edition, ImportKind, ImportPlan, NeedsChoice, Outline, ParentCandidate, ParentLink, PlanGroup,
-    PlannedElement, Role, SourceExcerpt,
+    Edition, ImportKind, ImportPlan, ItemType, NeedsChoice, Outline, OutlineFeature,
+    ParentCandidate, ParentLink, PlanGroup, PlannedElement, Role, SourceExcerpt,
 };
 use crate::import::ids::make_id;
 
@@ -79,6 +79,7 @@ fn candidate(store: &ContentStore, class: &Element) -> Option<Cand> {
             class_name: class.name.clone(),
             supports,
             subclass_levels: levels,
+            in_source: false,
         },
         aliases,
     })
@@ -185,7 +186,14 @@ pub(crate) fn locate(source: &str, quote: &str, name: &str) -> Option<SourceExce
             .then(|| lines.iter().position(|l| l.to_lowercase().contains(&n)))
             .flatten()
     };
-    let start = find(quote).or_else(|| find(name))?;
+    // Last resort: the name with punctuation and case ignored ("Brass-Spitter" vs "BRASS SPITTER.").
+    let loose = || {
+        let n = norm(name);
+        (!n.is_empty())
+            .then(|| lines.iter().position(|l| contains_words(&norm(l), &n)))
+            .flatten()
+    };
+    let start = find(quote).or_else(|| find(name)).or_else(loose)?;
     let mut end = start;
     while end + 1 < lines.len() && !lines[end + 1].trim().is_empty() {
         end += 1;
@@ -243,12 +251,108 @@ fn is_gate(name: &str) -> bool {
     n.contains("subclass") || n.contains("archetype")
 }
 
+/// Level of the class's subclass choice: the outline's `subclass_level`, else its first
+/// subclass-named feature, else 3.
+fn gate_level(o: &Outline) -> u32 {
+    o.subclass_level
+        .or_else(|| {
+            o.features
+                .iter()
+                .filter(|f| is_gate(&f.name))
+                .map(|f| f.level)
+                .min()
+        })
+        .unwrap_or(DEFAULT_SUBCLASS_LEVEL)
+}
+
+/// A subclass-named class row at another level than the choice ("Subclass feature" at 7): it
+/// only says when subclasses gain features, so it is no element of its own.
+fn is_marker(f: &OutlineFeature, gate: u32) -> bool {
+    is_gate(&f.name) && f.level != gate
+}
+
+/// Levels where the subclasses of an in-source class gain features: the choice level plus the
+/// class's "subclass feature" rows, else plus every level its in-source subclasses use.
+fn in_source_levels(o: &Outline, subclasses: &[&Outline]) -> Vec<u32> {
+    let gate = gate_level(o);
+    let mut levels: Vec<u32> = o
+        .features
+        .iter()
+        .filter(|f| is_marker(f, gate))
+        .map(|f| f.level)
+        .collect();
+    if levels.is_empty() {
+        levels = subclasses
+            .iter()
+            .flat_map(|s| s.features.iter().map(|f| f.level))
+            .filter(|l| *l >= gate)
+            .collect();
+    }
+    levels.push(gate);
+    levels.sort_unstable();
+    levels.dedup();
+    levels
+}
+
+/// The class of the same source a subclass belongs to: the one its hint names, or the only
+/// class of the source when the hint names none.
+pub(crate) fn in_source_class<'a>(classes: &'a [String], hint: Option<&str>) -> Option<&'a str> {
+    let h = norm(hint.unwrap_or_default());
+    if h.is_empty() {
+        return match classes {
+            [only] => Some(only.as_str()),
+            _ => None,
+        };
+    }
+    let hits: Vec<&String> = classes
+        .iter()
+        .filter(|c| {
+            let n = norm(c);
+            h == n || contains_words(&h, &n)
+        })
+        .collect();
+    match hits.as_slice() {
+        [one] => Some(one.as_str()),
+        _ => None,
+    }
+}
+
+/// A link to the in-source class `class_name`; [`rebuild`] fills its id and levels.
+pub(crate) fn in_source_link(class_name: &str) -> ParentLink {
+    ParentLink {
+        class_id: String::new(),
+        class_name: class_name.to_string(),
+        supports: super::normalize::subclass_key(class_name),
+        subclass_levels: Vec::new(),
+        in_source: true,
+    }
+}
+
+/// Links to the planned classes of `plan` (parent choices for its subclasses).
+pub(crate) fn planned_class_links(plan: &ImportPlan) -> Vec<ParentLink> {
+    plan.groups
+        .iter()
+        .filter(|g| g.kind == ImportKind::Class)
+        .filter_map(|g| {
+            let o = g.outline.as_ref()?;
+            let mut link = in_source_link(&o.name);
+            link.class_id = g.root_id.clone()?;
+            link.subclass_levels = in_source_levels(o, &[]);
+            Some(link)
+        })
+        .collect()
+}
+
 fn class_group(b: &mut Builder, o: &Outline) -> String {
     let class_id = make_id(b.prefix, "Class", &o.name, &b.used);
     b.used.insert(class_id.clone());
-    let sub_level = o.subclass_level.unwrap_or(DEFAULT_SUBCLASS_LEVEL);
+    let sub_level = gate_level(o);
     for level in LEVELS {
-        let mut here: Vec<_> = o.features.iter().filter(|f| f.level == level).collect();
+        let mut here: Vec<_> = o
+            .features
+            .iter()
+            .filter(|f| f.level == level && !is_marker(f, sub_level))
+            .collect();
         if level == sub_level && !here.iter().any(|f| is_gate(&f.name)) {
             let name = format!("{} Subclass", o.name);
             b.push(
@@ -366,6 +470,37 @@ fn subclass_group(b: &mut Builder, o: &Outline, parent: &ParentLink) -> String {
     id
 }
 
+fn same(a: &str, b: &str) -> bool {
+    norm(a) == norm(b)
+}
+
+/// (names, link) of every planned class: subclasses of it gain features at the levels its
+/// outline and its in-source subclasses say.
+fn in_source_classes(plan: &ImportPlan) -> Vec<(Vec<String>, ParentLink)> {
+    plan.groups
+        .iter()
+        .filter(|g| g.kind == ImportKind::Class)
+        .filter_map(|g| {
+            let o = g.outline.as_ref()?;
+            let names = vec![g.name.clone(), o.name.clone()];
+            let subs: Vec<&Outline> = plan
+                .groups
+                .iter()
+                .filter(|s| {
+                    s.parent.as_ref().is_some_and(|p| {
+                        p.in_source && names.iter().any(|n| same(n, &p.class_name))
+                    })
+                })
+                .filter_map(|s| s.outline.as_ref())
+                .collect();
+            let mut link = in_source_link(&o.name);
+            link.class_id = g.root_id.clone()?;
+            link.subclass_levels = in_source_levels(o, &subs);
+            Some((names, link))
+        })
+        .collect()
+}
+
 /// Recompute `plan.elements` (and group root ids) from the groups.
 pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str, source: &str) {
     let mut b = Builder {
@@ -375,14 +510,26 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
         out: Vec::new(),
         notes: Vec::new(),
     };
+    // Classes first: subclasses of a class from the same source link to its planned id.
     for g in &mut plan.groups {
         g.root_id = None;
+        if let (ImportKind::Class, Some(o)) = (g.kind, &g.outline) {
+            g.root_id = Some(class_group(&mut b, o));
+        }
+    }
+    let classes = in_source_classes(plan);
+    for g in &mut plan.groups {
         match (g.kind, &g.outline, &g.parent) {
-            (ImportKind::Class, Some(o), _) => g.root_id = Some(class_group(&mut b, o)),
+            (ImportKind::Class, ..) => {}
             (ImportKind::Subclass, Some(o), Some(p)) => {
-                g.root_id = Some(subclass_group(&mut b, o, p))
+                let link = classes
+                    .iter()
+                    .find(|(names, _)| p.in_source && names.iter().any(|n| same(n, &p.class_name)))
+                    .map_or_else(|| p.clone(), |(_, l)| l.clone());
+                g.root_id = Some(subclass_group(&mut b, o, &link));
+                g.parent = Some(link);
             }
-            (ImportKind::Subclass | ImportKind::Class, _, _) => {}
+            (ImportKind::Subclass, _, _) => {}
             (kind, _, _) => {
                 let brief = g
                     .outline
@@ -395,7 +542,7 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
                     .map(|o| o.quote.clone())
                     .unwrap_or_default();
                 g.root_id = Some(b.push(
-                    kind.element_type(),
+                    kind.element_type_for(g.item_type),
                     &g.name,
                     Role::Standalone,
                     None,
@@ -411,7 +558,7 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
 }
 
 /// A plan group for a standalone item.
-pub(crate) fn standalone(kind: ImportKind, name: &str) -> PlanGroup {
+pub(crate) fn standalone(kind: ImportKind, name: &str, item_type: Option<ItemType>) -> PlanGroup {
     PlanGroup {
         kind,
         name: name.to_string(),
@@ -419,6 +566,7 @@ pub(crate) fn standalone(kind: ImportKind, name: &str) -> PlanGroup {
         outline: None,
         parent: None,
         choice: None,
+        item_type: item_type.filter(|_| kind == ImportKind::Item),
     }
 }
 

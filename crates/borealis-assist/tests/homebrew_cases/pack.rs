@@ -313,6 +313,7 @@ fn report_valid(l: &Loaded) -> Result<(), String> {
             r.errors
                 .iter()
                 .chain(&r.normalised)
+                .chain(&r.warnings)
                 .filter(|i| !ids.contains(i.element.as_str()))
                 .map(|i| format!("{}: unknown element", i.element)),
         )

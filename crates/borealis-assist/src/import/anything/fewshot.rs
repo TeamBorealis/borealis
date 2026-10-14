@@ -111,6 +111,17 @@ pub(crate) fn exemplars_for(
             out.extend(exemplar(store, edition, "Archetype Feature", prefer));
             out
         }
+        // The richest bundled shape of each equipment type (range and ammunition, a Dex cap,
+        // a bundle of ammunition).
+        "Weapon" => exemplar(store, edition, "Weapon", &["Longbow"])
+            .into_iter()
+            .collect(),
+        "Armor" => exemplar(store, edition, "Armor", &["Scale Mail"])
+            .into_iter()
+            .collect(),
+        "Item" => exemplar(store, edition, "Item", &["Arrows", "Arrows (20)"])
+            .into_iter()
+            .collect(),
         other => exemplar(store, edition, other, prefer)
             .into_iter()
             .collect(),

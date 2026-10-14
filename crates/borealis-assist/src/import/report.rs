@@ -23,6 +23,9 @@ pub struct ImportReport {
     /// Deterministic fixes applied to generated rules.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub normalised: Vec<ReportIssue>,
+    /// Things to check by hand (an element whose source passage was not found).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub warnings: Vec<ReportIssue>,
 }
 
 impl Default for ImportReport {
@@ -32,6 +35,7 @@ impl Default for ImportReport {
             entries: Vec::new(),
             errors: Vec::new(),
             normalised: Vec::new(),
+            warnings: Vec::new(),
         }
     }
 }

@@ -93,7 +93,15 @@ pub(crate) fn normalize(
         Role::Class => normalize_class(el, planned, plan),
         Role::Subclass => normalize_subclass(el, planned, plan, parent),
         Role::ClassFeature | Role::SubclassFeature => normalize_feature(el, planned, plan, parent),
-        Role::SubclassGate | Role::Standalone => {}
+        Role::Standalone => {
+            let item_type = plan
+                .groups
+                .iter()
+                .find(|g| g.root_id.as_deref() == Some(planned.id.as_str()))
+                .and_then(|g| g.item_type);
+            super::items::normalize_item(el, &planned.ty, &planned.name, item_type, plan);
+        }
+        Role::SubclassGate => {}
     }
 }
 

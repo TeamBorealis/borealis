@@ -56,6 +56,8 @@ pub enum ImportKind {
     Item,
     /// A monster stat block.
     Monster,
+    /// A weapon property the source defines (imported as a `Weapon Property` with its text).
+    WeaponProperty,
     /// Several kinds in one source (only valid for the document as a whole).
     Mixed,
 }
@@ -72,7 +74,44 @@ impl ImportKind {
             Self::Spell => "Spell",
             Self::Item => "Magic Item",
             Self::Monster => "Monster",
+            Self::WeaponProperty => "Weapon Property",
             Self::Mixed => "Unknown",
+        }
+    }
+
+    /// Element type of a standalone element of this kind, items by their [`ItemType`].
+    pub fn element_type_for(self, item_type: Option<ItemType>) -> &'static str {
+        match (self, item_type) {
+            (Self::Item, Some(t)) => t.element_type(),
+            _ => self.element_type(),
+        }
+    }
+}
+
+/// What kind of item an [`ImportKind::Item`] is (the bundled packs model each differently).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ItemType {
+    /// A mundane weapon (firearms and other ranged weapons included): an attack.
+    Weapon,
+    /// Mundane armor or a shield.
+    Armor,
+    /// Ammunition.
+    Ammunition,
+    /// Other mundane equipment.
+    Gear,
+    /// A magic item.
+    MagicItem,
+}
+
+impl ItemType {
+    /// Content element type, as in the bundled SRD packs.
+    pub fn element_type(self) -> &'static str {
+        match self {
+            Self::Weapon => "Weapon",
+            Self::Armor => "Armor",
+            Self::Ammunition | Self::Gear => "Item",
+            Self::MagicItem => "Magic Item",
         }
     }
 }
@@ -87,6 +126,9 @@ pub struct DetectedItem {
     /// For a subclass: the parent class as named or hinted in the source.
     #[serde(default)]
     pub parent_hint: Option<String>,
+    /// For an item: weapon, armor, ammunition, gear or magic item (magic item when unset).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub item_type: Option<ItemType>,
 }
 
 /// Something the source defines that no element kind covers (a rule, a weapon property, a
@@ -262,6 +304,10 @@ pub struct ParentLink {
     pub supports: String,
     /// Levels where the parent's subclasses gain features.
     pub subclass_levels: Vec<u32>,
+    /// The parent is a class imported from the same source (its id and levels come from the
+    /// plan, not the library).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub in_source: bool,
 }
 
 /// A parent class candidate.
@@ -300,6 +346,9 @@ pub struct PlanGroup {
     pub parent: Option<ParentLink>,
     /// Open parent choice (subclasses).
     pub choice: Option<NeedsChoice>,
+    /// Item type (items).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub item_type: Option<ItemType>,
 }
 
 /// Stage 2 result.
