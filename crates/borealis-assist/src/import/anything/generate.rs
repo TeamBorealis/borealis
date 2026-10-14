@@ -66,7 +66,7 @@ pub(crate) fn guidance(planned: &PlannedElement, edition: Edition) -> &'static s
         (Role::Part | Role::Option, "Class Feature" | "Archetype Feature") => concat!("A named part or option of a feature: ", printed!(), ", and `rules` implementing it (resources, grants, selects, stat changes) like the example, and `prerequisite` with the COMPLETE printed prerequisite if it has one (every part: level, another feature, subclass). Its grant or select and the requirements for the prerequisite are added for you."),
         (_, "Racial Trait") => concat!("A species trait: ", printed!(), ", and `rules` implementing it (stat, grant, select) like the example. It is granted to the species for you."),
         (_, "Background Feature") => concat!("A background feature: ", printed!(), "; `rules` only for real mechanics. It is granted to the background for you."),
-        (_, "Sub Race" | "Species Trait Option") => concat!("A subrace or lineage: ", printed!(), ", plus the rules it adds itself (ability scores, speed, size, languages). Its named traits are separate elements granted for you; `supports` is set for you."),
+        (_, "Sub Race" | "Species Trait Option") => concat!("A subrace or lineage: ", printed!(), ", plus the rules it adds itself (ability scores, speed, size, languages). Only the traits the brief names as separate elements are granted for you (write no rules for those); every other line, such as a line granting a language, a speed or an ability score line, is a rule of this element itself. `supports` is set for you."),
         (Role::Text, _) | (_, "Rules Glossary Entry") => "A text-only rules or lore entry: `description` with the COMPLETE text of the section as HTML paragraphs (every sentence; table rows as a list). No rules.",
         (_, "Race" | "Species") => concat!("A species: size/speed setters, the ability score, size, speed and language rules, traits as rules (grants/selects/stat) unless the source summary says they are separate elements, and ", printed!(), "."),
         (_, "Background") => concat!("A background: skill and tool proficiencies, languages, equipment, an origin feat (2024), and ", printed!(), ". Named features listed as separate elements are granted for you."),
@@ -763,5 +763,19 @@ mod tests {
             assert!(!g.contains("own words"), "{g}");
         }
         assert!(BRIEF_NEVER_OMITS.contains("never removes source content"));
+    }
+
+    #[test]
+    fn a_subrace_writes_its_base_lines_and_leaves_only_the_briefed_traits() {
+        let g = guidance(
+            &planned("t", "T", "Sub Race", Role::Standalone, None),
+            Edition::Y2014,
+        );
+        assert!(
+            g.contains("traits the brief names as separate elements"),
+            "{g}"
+        );
+        assert!(g.contains("a line granting a language"), "{g}");
+        assert!(!g.contains("Its named traits are separate elements"), "{g}");
     }
 }
