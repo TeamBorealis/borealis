@@ -31,9 +31,7 @@ macro_rules! printed {
     };
 }
 
-/// The batch prompt's instruction for class and subclass features: `batch.rs` is to use it in
-/// place of its own "in your own words" wording (wired there separately).
-#[allow(dead_code)]
+/// The batch prompt's instruction for class and subclass features.
 pub(crate) const FEATURE_BATCH_EACH: &str = concat!(
     "Each: ",
     printed!(),

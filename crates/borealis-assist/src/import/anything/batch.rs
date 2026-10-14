@@ -224,11 +224,7 @@ fn prompt(g: &GenCtx, batch: &[PlannedElement], prior: &str) -> String {
         .collect();
     let src = batch_source(g.draft, batch);
     let each = if matches!(batch[0].role, Role::ClassFeature | Role::SubclassFeature) {
-        "Each: `description` in HTML paragraphs restating the source in your own words, and `rules` that implement it \
-(resources, grants, selects, stat changes); a feature with no mechanics may have no rules. Reuse existing core \
-ids. The class's own spell slots, cantrip and spell choices and preparation are generated for you: describe them in \
-prose only. Spells a feature grants (a spell table) and counters from class table columns are added from the outline; \
-every other mechanic of the feature is yours to write."
+        super::generate::FEATURE_BATCH_EACH
     } else {
         guidance(&batch[0], g.draft.edition)
     };
