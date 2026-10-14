@@ -165,14 +165,95 @@ pub fn element_text(e: &Element) -> String {
                 None => s.value.clone(),
             }),
     );
-    norm(&t.join(" \n "))
+    norm(&plain_text(&t.join(" \n ")))
+}
+
+/// Descriptions are HTML: drop the markup so a phrase split by inline tags
+/// (`<i>glow orb</i> cantrip`) reads as the plain text a player sees. Block tags become
+/// a space, inline tags vanish, the common entities are decoded.
+fn plain_text(html: &str) -> String {
+    const BLOCK: [&str; 14] = [
+        "p", "br", "li", "ul", "ol", "div", "tr", "td", "th", "table", "h1", "h2", "h3", "h4",
+    ];
+    let mut out = String::with_capacity(html.len());
+    let mut rest = html;
+    while let Some(open) = rest.find('<') {
+        out.push_str(&rest[..open]);
+        let after = &rest[open + 1..];
+        let Some(close) = after.find('>') else {
+            // not a tag: a literal "<" (as in "HP < 10")
+            out.push('<');
+            rest = after;
+            continue;
+        };
+        let tag = &after[..close];
+        let name = tag
+            .trim_start_matches('/')
+            .split(|c: char| !c.is_ascii_alphanumeric())
+            .next()
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        let is_tag = !name.is_empty() && name.starts_with(|c: char| c.is_ascii_alphabetic());
+        if !is_tag {
+            out.push('<');
+            rest = after;
+            continue;
+        }
+        if BLOCK.contains(&name.as_str()) {
+            out.push(' ');
+        }
+        rest = &after[close + 1..];
+    }
+    out.push_str(rest);
+    out.replace("&nbsp;", " ")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+        .replace("&amp;", "&")
+}
+
+/// Number words as digits ("six hours" = "6 hours"): the same information, written either way.
+fn digits(text: &str) -> String {
+    const WORDS: [&str; 20] = [
+        "one",
+        "two",
+        "three",
+        "four",
+        "five",
+        "six",
+        "seven",
+        "eight",
+        "nine",
+        "ten",
+        "eleven",
+        "twelve",
+        "thirteen",
+        "fourteen",
+        "fifteen",
+        "sixteen",
+        "seventeen",
+        "eighteen",
+        "nineteen",
+        "twenty",
+    ];
+    text.split(' ')
+        .map(|w| {
+            let bare = w.trim_matches(|c: char| !c.is_ascii_alphanumeric());
+            match WORDS.iter().position(|x| *x == bare) {
+                Some(i) => w.replace(bare, &(i + 1).to_string()),
+                None => w.to_string(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// Does the (normalised) text contain the token, ignoring spacing ("1500gp" = "1500 gp",
-/// "Wood/Metal" = "Wood / Metal")?
+/// "Wood/Metal" = "Wood / Metal") and number words ("six hours" = "6 hours")?
 fn text_has(text: &str, token: &str) -> bool {
     let t = norm(token);
-    text.contains(&t) || squash(text).contains(&squash(&t))
+    text.contains(&t) || squash(text).contains(&squash(&t)) || digits(text).contains(&digits(&t))
 }
 
 fn has_prose(e: &Element) -> bool {
@@ -691,4 +772,35 @@ pub fn element_rows(case: &CaseFile, l: &Loaded) -> Vec<Row> {
             .map(|x| row(&x.head, x.head.id.clone(), check_report(l, x))),
     );
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn inline_tags_do_not_split_a_phrase() {
+        let t = norm(&plain_text("<p>You know the <i>glow orb</i> cantrip.</p>"));
+        assert!(text_has(&t, "glow orb cantrip"));
+    }
+
+    #[test]
+    fn block_tags_separate_words_and_entities_decode() {
+        let t = norm(&plain_text(
+            "<ul><li>fire</li><li>ice &amp; frost</li></ul>",
+        ));
+        assert_eq!(t, "fire ice & frost");
+    }
+
+    #[test]
+    fn a_literal_less_than_sign_survives() {
+        assert_eq!(plain_text("HP < 10 and 3<4"), "HP < 10 and 3<4");
+    }
+
+    #[test]
+    fn number_words_match_digits_both_ways() {
+        assert!(text_has("spend at least 6 hours resting", "six hours"));
+        assert!(text_has("spend at least six hours resting", "6 hours"));
+        assert!(!text_has("spend at least 7 hours resting", "six hours"));
+    }
 }

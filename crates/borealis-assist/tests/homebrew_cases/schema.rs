@@ -581,6 +581,10 @@ pub struct ImportReport {
     /// Things to check by hand (an element whose source passage was not found).
     #[serde(default)]
     pub warnings: Vec<ReportIssue>,
+    /// Notes about the source as a whole (a page read visually, a bad text layer), not about
+    /// one element.
+    #[serde(default)]
+    pub source_warnings: Vec<String>,
 }
 
 /// One message about one pack element.
@@ -612,3 +616,17 @@ pub struct ReportEntry {
 pub const REPORT_FORMAT: &str = "borealis-import-report/1";
 /// Allowed [`ReportEntry::outcome`] values.
 pub const REPORT_OUTCOMES: [&str; 5] = ["element", "merged", "text_only", "unsupported", "skipped"];
+
+#[cfg(test)]
+mod report_tests {
+    use super::*;
+
+    #[test]
+    fn report_accepts_source_warnings_and_still_refuses_unknown_fields() {
+        let ok = r#"{"format":"borealis-import-report/1","source_warnings":["page 2 was read visually"]}"#;
+        let r: ImportReport = serde_json::from_str(ok).expect("source_warnings is a report field");
+        assert_eq!(r.source_warnings, vec!["page 2 was read visually"]);
+        let bad = r#"{"format":"borealis-import-report/1","surprise":[]}"#;
+        assert!(serde_json::from_str::<ImportReport>(bad).is_err());
+    }
+}
