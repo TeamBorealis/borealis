@@ -26,6 +26,10 @@ pub struct ImportReport {
     /// Things to check by hand (an element whose source passage was not found).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub warnings: Vec<ReportIssue>,
+    /// Things to check about the source as a whole, not one element (pages read visually, a
+    /// page too large to read). [`ReportIssue::element`] is always an element id of the pack.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub source_warnings: Vec<String>,
 }
 
 impl Default for ImportReport {
@@ -36,6 +40,7 @@ impl Default for ImportReport {
             errors: Vec::new(),
             normalised: Vec::new(),
             warnings: Vec::new(),
+            source_warnings: Vec::new(),
         }
     }
 }
@@ -62,4 +67,25 @@ pub struct ReportIssue {
     pub element: String,
     /// What happened.
     pub message: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn source_warnings_are_kept_apart_from_element_warnings() {
+        let empty = serde_json::to_value(ImportReport::default()).unwrap();
+        assert!(empty.get("source_warnings").is_none(), "{empty}");
+        let mut r = ImportReport::default();
+        r.source_warnings
+            .push("2 page(s) were read visually".into());
+        let back: ImportReport = serde_json::from_value(serde_json::to_value(&r).unwrap()).unwrap();
+        assert_eq!(back, r);
+        assert!(back.warnings.is_empty());
+        // Reports written before the field existed still load.
+        let old: ImportReport =
+            serde_json::from_str(r#"{"format":"borealis-import-report/1"}"#).unwrap();
+        assert!(old.source_warnings.is_empty());
+    }
 }
