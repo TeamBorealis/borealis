@@ -86,10 +86,31 @@ const LIST_VERBS: [&str; 6] = [
     "you can also speak ",
 ];
 /// Lowercase words that may open a list item before the first name ("both Common and X",
-/// "write in both Common and X").
-const FILLERS: [&str; 5] = ["both", "either", "in", "also", "and"];
+/// "write in both Common and X", "write the X language").
+const FILLERS: [&str; 6] = ["both", "either", "in", "also", "and", "the"];
 /// Run-in heads whose text is a bare list of languages ("Languages. Common and X.").
 const LIST_HEADS: [&str; 2] = ["languages", "language"];
+
+/// A run-in head whose text lists languages: "Languages", or a short head ending in
+/// "language(s)" ("Bonus Language", "Extra Languages").
+fn list_head(head: &str) -> bool {
+    let words = head.split_whitespace().count();
+    LIST_HEADS.contains(&head)
+        || (words <= MAX_WORDS && LIST_HEADS.iter().any(|h| head.ends_with(&format!(" {h}"))))
+}
+
+/// A list item without a trailing "language(s)" ("Abyssal language" -> "Abyssal").
+fn strip_language_word(t: &str) -> &str {
+    let lower = t.to_lowercase();
+    LIST_HEADS
+        .iter()
+        .find_map(|h| {
+            lower
+                .strip_suffix(&format!(" {h}"))
+                .map(|rest| t[..rest.len()].trim_end())
+        })
+        .unwrap_or(t)
+}
 
 /// Byte offset of the language list in `sentence` (after its verb phrase), if it has one.
 fn list_start(sentence: &str) -> Option<usize> {
@@ -124,20 +145,22 @@ fn language_lists(text: &str) -> Vec<(String, String)> {
     let mut after_head = false;
     for sentence in text.split(['.', ';', '\n']) {
         let head = sentence.trim().trim_matches(['*', '_', ' ']).to_lowercase();
-        let headed = std::mem::replace(&mut after_head, LIST_HEADS.contains(&head.as_str()));
+        let headed = std::mem::replace(&mut after_head, list_head(&head));
         // "Languages: Common and X": the head and its list in one clause.
         let colon = sentence.find(':').filter(|&c| {
             let h = sentence[..c]
                 .trim()
                 .trim_matches(['*', '_', ' '])
                 .to_lowercase();
-            LIST_HEADS.contains(&h.as_str())
+            list_head(&h)
         });
         let start = match (list_start(sentence), colon) {
             (Some(start), _) => start,
             (None, Some(c)) => c + 1,
             // "Languages. Common and X.": the run-in head's text is the list itself.
             (None, None) if headed => 0,
+            // "X (speak, read, write)": a name with its verbs in parentheses.
+            (None, None) if sentence.to_lowercase().contains(" (speak") => 0,
             (None, None) => continue,
         };
         let mut tail = &sentence[start..];
@@ -157,7 +180,7 @@ pub(super) fn named_languages(text: &str) -> Vec<String> {
     for (_, tail) in language_lists(text) {
         let spaced = tail.replace(" and ", ",").replace(" or ", ",");
         for part in spaced.split(',') {
-            let p = strip_fillers(part);
+            let p = strip_language_word(strip_fillers(part));
             if is_name(p) && !out.iter().any(|n: &String| norm(n) == norm(p)) {
                 out.push(p.to_string());
             }
@@ -452,5 +475,58 @@ mod tests {
             "<p>You can speak, read, and write Mossic.</p>",
             "Common"
         ));
+    }
+
+    #[test]
+    fn a_run_in_language_line_and_a_the_x_language_sentence_yield_the_name() {
+        assert_eq!(
+            named_languages(
+                "<p><strong>Bonus Language.</strong> Mossic (speak, read, write).</p>"
+            ),
+            ["Mossic"]
+        );
+        assert_eq!(
+            named_languages("<p>You can also speak, read, and write the Mossic language.</p>"),
+            ["Mossic"]
+        );
+        assert_eq!(
+            named_languages("You can speak, read, and write the Mossic and Old Brindle languages."),
+            ["Mossic", "Old Brindle"]
+        );
+        assert_eq!(named_languages("Mossic (speak only)."), ["Mossic"]);
+        // A choice stays a choice; a long head is prose, not a language run-in.
+        assert!(
+            named_languages("You can speak, read, and write the language of your choice.")
+                .is_empty()
+        );
+        assert!(named_languages("The Story Of Their First Language. Mossic Is Old.").is_empty());
+    }
+
+    /// The parser makes the printed language and drops the bundled stand-in the model granted.
+    #[test]
+    fn a_run_in_language_the_library_lacks_replaces_the_models_substitute() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+        let store = borealis_content::ContentStoreBuilder::new()
+            .add_pack_dir(&root.join("core"))
+            .and_then(|b| b.add_pack_dir(&root.join("srd-5.1")))
+            .expect("bundled packs")
+            .build();
+        let plan: ImportPlan = serde_json::from_value(
+            json!({"edition": "2014", "elements": [], "notes": [], "groups": []}),
+        )
+        .expect("plan");
+        let mut d = Derived {
+            docs: vec![
+                json!({"id": "ID_T_SUBRACE_A", "name": "A", "type": "Sub Race",
+                "source": "Test",
+                "description": "<p><strong>Bonus Language.</strong> Mossic (speak, read, write).</p>",
+                "rules": [{"kind": "grant", "type": "Language", "id": "ID_LANGUAGE_PRIMORDIAL"}]}),
+            ],
+            ..Derived::default()
+        };
+        languages(&plan, &store, &mut d);
+        assert_eq!(str_at(&d.extra[0], "name"), "Mossic");
+        let mossic = str_at(&d.extra[0], "id").to_string();
+        assert_eq!(language_grants(&d.docs[0]), [mossic.as_str()]);
     }
 }
