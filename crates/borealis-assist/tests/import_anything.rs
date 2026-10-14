@@ -503,10 +503,21 @@ async fn finalize_builds_loadable_pack_and_renames_collisions() {
     assert_eq!(fixed.renamed.len(), 1);
     assert!(fixed.pack.content.elements.iter().all(|e| e.id != lib));
 
-    // Unready drafts are refused.
-    let mut broken = draft.clone();
-    broken.elements[0].status = ElementStatus::Failed;
-    assert!(finalize_draft(&base(), &broken).is_err());
+    // Unfinished drafts are refused; a failed element is left out or kept, never the import.
+    let mut unfinished = draft.clone();
+    unfinished.elements[0].status = ElementStatus::Pending;
+    assert!(finalize_draft(&base(), &unfinished).is_err());
+    let mut failed = draft.clone();
+    failed.elements[0].status = ElementStatus::Failed;
+    failed.elements[1].status = ElementStatus::Failed;
+    failed.elements[1].json = serde_json::Value::Null;
+    let report = finalize_draft(&base(), &failed)
+        .expect("commits")
+        .pack
+        .report
+        .expect("report");
+    let outcomes: Vec<&str> = report.entries.iter().map(|e| e.outcome.as_str()).collect();
+    assert!(outcomes.contains(&"unchecked") && outcomes.contains(&"dropped"));
 }
 
 #[tokio::test]
@@ -685,7 +696,16 @@ async fn generation_gives_up_after_max_repairs_with_a_clear_error() {
         "{:?}",
         lore.issues
     );
-    assert!(finalize_draft(&base(), &d).is_err());
+    // The import is not lost: the failed elements are left out and reported.
+    let pack = finalize_draft(&base(), &d)
+        .expect("commits without them")
+        .pack;
+    assert!(pack.content.elements.iter().all(|e| e.id != lore.id));
+    let report = pack.report.expect("report");
+    assert!(report
+        .entries
+        .iter()
+        .any(|e| e.source == "Glyph Lore" && e.outcome == "dropped"));
 }
 
 #[tokio::test]
@@ -721,7 +741,16 @@ async fn sweep_repair_gives_up_after_the_round_limit() {
         .sweep_issues
         .iter()
         .any(|i| i.message.contains("offers no options")));
-    assert!(finalize_draft(&base(), &d).is_err());
+    // Its output still loads: kept for review and reported, the import is not lost.
+    let report = finalize_draft(&base(), &d)
+        .expect("commits")
+        .pack
+        .report
+        .expect("report");
+    assert!(report
+        .entries
+        .iter()
+        .any(|e| e.source == "Glyph Lore" && e.outcome == "unchecked"));
 }
 
 // ---- rule catalogue, normalisation, report, batching (import-pipeline-fix-1) --------------------

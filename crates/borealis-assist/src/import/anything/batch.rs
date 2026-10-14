@@ -247,6 +247,33 @@ Answer {{\"elements\": [{{\"element\": {{...}}, \"notes\": [...]}}, ...]}}, one 
     )
 }
 
+/// What a batch element may reference besides the library: the generated elements outside the
+/// batch, and a stub (id, name, type) for every other element the plan has, so a reference to an
+/// element written in this batch, a later one, or one that failed is never an issue the model is
+/// asked to fix (it cannot: finalize resolves or removes those references).
+fn known_siblings(draft: &ImportDraft, batch: &[PlannedElement]) -> Vec<Value> {
+    let generated: Vec<&super::types::DraftElement> = draft
+        .elements
+        .iter()
+        .filter(|e| {
+            !batch.iter().any(|p| p.id == e.id)
+                && !e.json.is_null()
+                && e.status != ElementStatus::Failed
+        })
+        .collect();
+    let stubs = draft
+        .plan
+        .elements
+        .iter()
+        .filter(|p| !generated.iter().any(|e| e.id == p.id))
+        .map(|p| json!({"id": p.id, "name": p.name, "type": p.ty, "source": draft.source_name}));
+    generated
+        .iter()
+        .map(|e| e.json.clone())
+        .chain(stubs)
+        .collect()
+}
+
 /// Generate one batch. Returns the normalized elements with their notes and the attempts used.
 pub(crate) async fn run_batch(
     runner: &dyn AiRunner,
@@ -254,14 +281,7 @@ pub(crate) async fn run_batch(
     batch: &[PlannedElement],
     opts: &RunOptions<'_>,
 ) -> Result<(Vec<(Value, Vec<String>)>, u32), String> {
-    let ids: Vec<String> = batch.iter().map(|p| p.id.clone()).collect();
-    let siblings: Vec<Value> = g
-        .draft
-        .elements
-        .iter()
-        .filter(|e| !ids.contains(&e.id) && !e.json.is_null() && e.status != ElementStatus::Failed)
-        .map(|e| e.json.clone())
-        .collect();
+    let siblings = known_siblings(g.draft, batch);
     let (ctx, plan, planned) = (g.ctx.clone(), g.draft.plan.clone(), batch.to_vec());
     let parents: Vec<Option<ParentLink>> = batch.iter().map(|p| parent_of(g.draft, p)).collect();
     let source_name = g.draft.source_name.clone();
@@ -291,8 +311,13 @@ pub(crate) async fn run_batch(
             };
             let mut el = o.element.clone();
             normalize(&mut el, p, &plan, parent.as_ref(), &source_name);
+            let others: Vec<Value> = siblings
+                .iter()
+                .filter(|s| s.get("id").and_then(Value::as_str) != Some(p.id.as_str()))
+                .cloned()
+                .collect();
             issues.extend(
-                element_issues(&ctx, &siblings, &el, p, &plan)
+                element_issues(&ctx, &others, &el, p, &plan)
                     .into_iter()
                     .map(|i| format!("\"{}\": {i}", p.name)),
             );
@@ -398,5 +423,91 @@ mod tests {
         assert!(whole.contains("\"Lost Feat 7\""));
         let own = draft_src(&batches[2]);
         assert!(own.contains("=== Source for \"Found Feat 1\"") && !own.contains("Line 1499"));
+    }
+
+    /// Answers every call with the same batch and counts the calls.
+    struct OneAnswer {
+        answer: String,
+        calls: std::sync::atomic::AtomicUsize,
+    }
+
+    impl borealis_ai::task::AiRunner for OneAnswer {
+        fn run<'a>(
+            &'a self,
+            _req: &'a borealis_ai::AiRequest,
+            _sink: Option<&'a tokio::sync::mpsc::UnboundedSender<borealis_ai::AiEvent>>,
+        ) -> borealis_ai::task::BoxFuture<'a, Result<borealis_ai::AiOutcome, borealis_ai::AiError>>
+        {
+            self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            let text = self.answer.clone();
+            Box::pin(async move {
+                Ok(borealis_ai::AiOutcome {
+                    text,
+                    ..Default::default()
+                })
+            })
+        }
+    }
+
+    fn part(name: &str, parent: &str) -> PlannedElement {
+        PlannedElement {
+            ty: "Racial Trait".into(),
+            role: Role::Part,
+            parent: Some(parent.into()),
+            ..feat(name, Some(1))
+        }
+    }
+
+    #[tokio::test]
+    async fn a_nested_part_in_the_same_batch_as_its_parent_is_known() {
+        // A species trait with a sub-part of its own, both parts in one batch; the trait's grant
+        // of the sub-part (added by normalize) must not send the batch back for repair.
+        let race = PlannedElement {
+            ty: "Race".into(),
+            ..feat("Glassfolk", Some(1))
+        };
+        let heart = part("Gem Heart", &race.id);
+        let sparks = part("Sparks", &heart.id);
+        let mut draft: ImportDraft = serde_json::from_value(json!({"edition": "2024",
+            "id_prefix": "ID_T", "source_name": "T", "pack_id": "t", "pack_name": "T",
+            "source_kind": "text", "source_text": "Gem Heart. Your heart is a gem. Sparks. You shine.",
+            "detection": {"kind": "species", "edition": "2024", "confidence": 1.0, "items": []},
+            "plan": {"edition": "2024", "groups": [], "elements": [], "notes": []},
+            "elements": [], "sweep_issues": []}))
+        .unwrap();
+        draft.plan.elements = vec![race, heart.clone(), sparks.clone()];
+        let el = |p: &PlannedElement| {
+            json!({"element": {"id": p.id, "name": p.name, "type": p.ty, "source": "T",
+                "description": "<p>Invented.</p>", "rules": []}, "notes": []})
+        };
+        let runner = OneAnswer {
+            answer: json!({"elements": [el(&heart), el(&sparks)]}).to_string(),
+            calls: 0.into(),
+        };
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+        let base = borealis_content::ContentStoreBuilder::new()
+            .add_pack_dir(&root.join("core"))
+            .unwrap();
+        let ctx = crate::homebrew::PackContext {
+            base: base.clone(),
+            ruleset: draft.edition.ruleset(),
+        };
+        let store = base.build();
+        let g = GenCtx {
+            ctx: &ctx,
+            store: &store,
+            draft: &draft,
+            parent: None,
+        };
+        let (out, attempts) = run_batch(&runner, &g, &[heart, sparks], &RunOptions::default())
+            .await
+            .expect("the batch passes");
+        assert_eq!(attempts, 1);
+        assert_eq!(runner.calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+        assert!(
+            out[0].0.to_string().contains("ID_T_SPARKS"),
+            "the parent grants its part: {}",
+            out[0].0
+        );
     }
 }

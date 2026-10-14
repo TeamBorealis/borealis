@@ -6,7 +6,7 @@ use std::collections::HashSet;
 use borealis_content::file::{ContentFile, PackOrigin};
 use borealis_content::Severity as ContentSeverity;
 use borealis_engine::commands::{self, slot_key};
-use borealis_engine::{Choice, Engine, Severity as EngineSeverity};
+use borealis_engine::{CharacterState, Choice, Engine, Severity as EngineSeverity, SlotKey};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -198,7 +198,8 @@ fn sweep_one(
                 }
             }
         }
-        collect_level(&snap, level, ids, t, &mut out, &mut totals);
+        let filled_later = offered_after_picks(engine, &state, &snap, ids);
+        collect_level(&snap, &filled_later, level, ids, t, &mut out, &mut totals);
     }
     if !picked_subclass {
         if let Some(sub) = &t.subclass_id {
@@ -213,8 +214,119 @@ fn sweep_one(
     out
 }
 
+/// Rounds of picks per level: a pick can open another select (a feat with a choice of its own).
+const FILL_ROUNDS: usize = 4;
+/// Options tried per select before the sweep leaves it open.
+const FILL_TRIES: usize = 8;
+
+/// Picks of the character as a whole (and the class and subclass, made apart): the sweep
+/// looks at the class alone and leaves them open.
+const NOT_FILLED: [&str; 7] = [
+    "Archetype",
+    "Class",
+    "Race",
+    "Sub Race",
+    "Background",
+    "Alignment",
+    "Deity",
+];
+
+/// An open, required select of the class's own picks the test character can fill; a `List`
+/// only when it is one of ours.
+fn fillable(s: &borealis_engine::snapshot::SlotSnapshot, ids: &HashSet<String>) -> bool {
+    s.chosen.is_none()
+        && s.list_choice.is_none()
+        && s.requires_selection
+        && s.rejected.is_none()
+        && !NOT_FILLED.contains(&s.ty.as_str())
+        && (s.ty != "List" || ids.contains(&s.owner.id))
+        && (!s.options.is_empty() || !s.list_items.is_empty())
+}
+
+/// The test character makes the picks a player would (the first allowed option of each open
+/// required select, never one already picked), so a select whose options depend on another pick
+/// (expertise over the skills picked as proficiencies) is judged after that pick, as the
+/// engine's own invariants judge it. A select that offers nothing stays open and is flagged.
+fn fill_open_picks(
+    engine: &Engine,
+    state: CharacterState,
+    ids: &HashSet<String>,
+) -> CharacterState {
+    let mut state = state;
+    for _ in 0..FILL_ROUNDS {
+        let snap = engine.derive(&state);
+        let mut taken: HashSet<String> = snap
+            .slots
+            .iter()
+            .filter_map(|s| s.chosen.as_ref().map(|c| c.id.clone()))
+            .collect();
+        let mut changed = false;
+        for s in snap.slots.iter().filter(|s| fillable(s, ids)) {
+            let choices = s
+                .options
+                .iter()
+                .filter(|o| !taken.contains(&o.id))
+                .map(|o| Choice::Element(o.id.clone()))
+                .chain(s.list_items.iter().map(|(i, _)| Choice::ListItem(*i)))
+                .take(FILL_TRIES);
+            for c in choices {
+                let picked = match &c {
+                    Choice::Element(id) => Some(id.clone()),
+                    Choice::ListItem(_) => None,
+                };
+                if let Ok(o) = commands::select(engine, &state, &s.key, c) {
+                    state = o.state;
+                    taken.extend(picked);
+                    changed = true;
+                    break;
+                }
+            }
+        }
+        if !changed {
+            break;
+        }
+    }
+    state
+}
+
+/// A select of ours that offers nothing (before any pick of the test character).
+fn is_empty_select(s: &borealis_engine::snapshot::SlotSnapshot, ids: &HashSet<String>) -> bool {
+    ids.contains(&s.owner.id)
+        && s.ty != "Archetype"
+        && s.options.is_empty()
+        && s.list_items.is_empty()
+}
+
+/// The empty selects of `snap` that offer something (or are filled) once the test character
+/// has made the picks a player makes first: expertise over the skills picked as proficiencies.
+/// The sweep's own character stays unfilled; the picks are made on a copy, only when needed.
+fn offered_after_picks(
+    engine: &Engine,
+    state: &CharacterState,
+    snap: &borealis_engine::CharacterSnapshot,
+    ids: &HashSet<String>,
+) -> HashSet<SlotKey> {
+    let empty: Vec<&SlotKey> = snap
+        .slots
+        .iter()
+        .filter(|s| is_empty_select(s, ids))
+        .map(|s| &s.key)
+        .collect();
+    if empty.is_empty() {
+        return HashSet::new();
+    }
+    let filled = engine.derive(&fill_open_picks(engine, state.clone(), ids));
+    filled
+        .slots
+        .iter()
+        .filter(|s| empty.contains(&&s.key) && (s.chosen.is_some() || !is_empty_select(s, ids)))
+        .map(|s| s.key.clone())
+        .collect()
+}
+
 fn collect_level(
     snap: &borealis_engine::CharacterSnapshot,
+    filled_later: &HashSet<SlotKey>,
     level: u32,
     ids: &HashSet<String>,
     t: &Target,
@@ -234,18 +346,16 @@ fn collect_level(
             format!("broken selection: {inv:?}"),
         ));
     }
-    for s in &snap.slots {
-        if ids.contains(&s.owner.id)
-            && s.ty != "Archetype"
-            && s.options.is_empty()
-            && s.list_items.is_empty()
-        {
-            out.push(issue(
-                level,
-                Some(&s.owner.id),
-                format!("select \"{}\" ({}) offers no options", s.name, s.ty),
-            ));
-        }
+    for s in snap
+        .slots
+        .iter()
+        .filter(|s| is_empty_select(s, ids) && !filled_later.contains(&s.key))
+    {
+        out.push(issue(
+            level,
+            Some(&s.owner.id),
+            format!("select \"{}\" ({}) offers no options", s.name, s.ty),
+        ));
     }
     for (fid, flevel) in &t.features {
         if *flevel == level && !snap.features.iter().any(|f| f.id == *fid) {
@@ -304,3 +414,7 @@ fn check_slot_table(t: &Target, totals: &[(u32, i32)], out: &mut Vec<SweepIssue>
         ));
     }
 }
+
+#[cfg(test)]
+#[path = "sweep_tests.rs"]
+mod tests;

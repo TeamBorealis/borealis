@@ -637,7 +637,10 @@ fn error_codes(
         .iter()
         .for_each(|s| add("source_warning", pattern(s)));
     for e in &report.entries {
-        if matches!(e.outcome.as_str(), "unsupported" | "skipped") {
+        if matches!(
+            e.outcome.as_str(),
+            "unsupported" | "skipped" | "dropped" | "unchecked"
+        ) {
             add(&e.outcome, pattern(&e.note));
         }
     }

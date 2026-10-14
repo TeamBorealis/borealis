@@ -6,8 +6,8 @@ use borealis_content::file::{ContentFile, PackOrigin};
 use borealis_content::{ContentStoreBuilder, Severity};
 use serde_json::Value;
 
-use super::derived::{content_doc, derive};
-use super::types::{ElementStatus, ImportDraft};
+use super::derived::{content_doc, derive_with_source};
+use super::types::{DraftElement, ElementStatus, ImportDraft};
 use crate::error::AssistError;
 use crate::import::ids::make_id;
 use crate::import::pack::{assemble, ImportedPack};
@@ -22,46 +22,96 @@ pub struct Finalized {
     pub renamed: Vec<(String, String)>,
 }
 
+/// Longest failure reason copied into the report.
+const REASON_MAX_CHARS: usize = 300;
+
 /// Build the pack from a reviewed draft.
 ///
+/// One bad element never costs the import: an element with no usable output (generation or
+/// repair failed) is left out, every grant, select or list pointing at it is removed so nothing
+/// dangles, and the report gets one `dropped` entry for it. A `Failed` element that still has
+/// output (a sweep check it never passed) is kept for review, unless the pack does not load
+/// with it; then it is left out the same way.
+///
 /// # Errors
-/// [`AssistError::Invalid`] while elements are pending or failed, or when the assembled pack does
-/// not load cleanly on top of `base`.
+/// [`AssistError::Invalid`] while elements are pending (the import has not finished), or when
+/// the pack does not load cleanly on top of `base` for a reason no left-out element explains.
 pub fn finalize_draft(
     base: &ContentStoreBuilder,
     draft: &ImportDraft,
 ) -> Result<Finalized, AssistError> {
-    let bad: Vec<String> = draft
+    let pending: Vec<String> = draft
         .elements
         .iter()
-        .filter(|e| {
-            matches!(e.status, ElementStatus::Pending | ElementStatus::Failed) || e.json.is_null()
-        })
-        .map(|e| format!("{} ({:?})", e.name, e.status))
+        .filter(|e| e.status == ElementStatus::Pending)
+        .map(|e| e.name.clone())
         .collect();
-    if !bad.is_empty() {
+    if !pending.is_empty() {
         return Err(AssistError::Invalid(format!(
-            "cannot commit: {} element(s) are not ready: {}",
-            bad.len(),
-            bad.join(", ")
+            "cannot commit: {} element(s) are not generated yet: {}",
+            pending.len(),
+            pending.join(", ")
         )));
     }
+    let mut left_out: HashSet<String> = draft
+        .elements
+        .iter()
+        .filter(|e| e.json.is_null())
+        .map(|e| e.id.clone())
+        .collect();
+    loop {
+        let errors = match build_pack(base, draft, &left_out)? {
+            Ok(done) => return Ok(done),
+            Err(errors) => errors,
+        };
+        // A kept failed element that breaks the pack is left out too; anything else is a bug.
+        let culprits: Vec<String> = errors
+            .iter()
+            .filter_map(|(id, _)| draft.element(id))
+            .filter(|e| e.status == ElementStatus::Failed && !left_out.contains(&e.id))
+            .map(|e| e.id.clone())
+            .collect();
+        if culprits.is_empty() {
+            let messages: Vec<&str> = errors.iter().map(|(_, m)| m.as_str()).collect();
+            return Err(AssistError::Invalid(format!(
+                "the pack has errors: {}",
+                messages.join("; ")
+            )));
+        }
+        left_out.extend(culprits);
+    }
+}
+
+/// `(draft element id, message)` of the pack's load errors.
+type PackErrors = Vec<(String, String)>;
+
+/// The pack without the `left_out` elements, or its load errors.
+fn build_pack(
+    base: &ContentStoreBuilder,
+    draft: &ImportDraft,
+    left_out: &HashSet<String>,
+) -> Result<Result<Finalized, PackErrors>, AssistError> {
     let library_store = base.clone().build();
     let library: HashSet<String> = library_store.iter().map(|s| s.element.id.clone()).collect();
     let mut used: HashSet<String> = library.clone();
     used.extend(draft.elements.iter().map(|e| e.id.clone()));
-    let mut raw: Vec<Value> = draft.elements.iter().map(|e| e.json.clone()).collect();
+    let kept: Vec<&DraftElement> = draft
+        .elements
+        .iter()
+        .filter(|e| !left_out.contains(&e.id))
+        .collect();
+    let mut raw: Vec<Value> = kept.iter().map(|e| e.json.clone()).collect();
     let mut local = tiered_spell_choices(&mut raw, draft);
     local.extend(attunement_text(&mut raw));
-    let mut derived = derive(&draft.plan, &raw, &library_store);
+    let mut derived = derive_with_source(&draft.plan, &raw, &library_store, &draft.source_text);
     let (markers, notes) =
         super::fallback::skill_fallbacks(&mut derived.docs, &draft.id_prefix, &mut used);
     derived.extra.extend(markers);
     local.extend(notes);
     derived.notes.extend(local);
-    let mut doc = content_doc(&derived);
+    let (mut doc, removed) = without_references(&content_doc(&derived), left_out);
     let mut renamed = Vec::new();
-    for e in &draft.elements {
+    for e in &kept {
         if !library.contains(&e.id) {
             continue;
         }
@@ -83,19 +133,23 @@ pub fn finalize_draft(
         .clone()
         .add_file("import-final", PackOrigin::Custom, file.clone())
         .build();
-    let errors: Vec<String> = store
+    let original = |id: &str| {
+        renamed
+            .iter()
+            .find(|(_, new)| new == id)
+            .map_or_else(|| id.to_string(), |(old, _)| old.clone())
+    };
+    let errors: PackErrors = store
         .validate()
         .into_iter()
-        .filter(|i| {
-            i.severity == Severity::Error && i.element.as_ref().is_some_and(|id| ids.contains(id))
+        .filter(|i| i.severity == Severity::Error)
+        .filter_map(|i| {
+            let id = i.element.filter(|id| ids.contains(id))?;
+            Some((original(&id), i.message))
         })
-        .map(|i| i.message)
         .collect();
     if !errors.is_empty() {
-        return Err(AssistError::Invalid(format!(
-            "the pack has errors: {}",
-            errors.join("; ")
-        )));
+        return Ok(Err(errors));
     }
     let mut pack = assemble(
         &draft.pack_id,
@@ -104,20 +158,187 @@ pub fn finalize_draft(
         &draft.source_kind,
         file,
     );
-    let mut report = build_report(draft, &renamed);
+    let mut report = build_report(draft, &renamed, left_out);
+    let final_id = |id: &str| {
+        renamed
+            .iter()
+            .find(|(old, _)| old == id)
+            .map_or_else(|| id.to_string(), |(_, new)| new.clone())
+    };
+    report
+        .entries
+        .extend(left_out_entries(draft, left_out, &removed, &final_id));
     report
         .normalised
-        .extend(derived.notes.iter().map(|(id, m)| {
-            ReportIssue {
-                element: renamed
-                    .iter()
-                    .find(|(old, _)| old == id)
-                    .map_or_else(|| id.clone(), |(_, new)| new.clone()),
-                message: m.clone(),
-            }
+        .extend(derived.notes.iter().map(|(id, m)| ReportIssue {
+            element: final_id(id),
+            message: m.clone(),
         }));
     pack.report = Some(report);
-    Ok(Finalized { pack, renamed })
+    Ok(Ok(Finalized { pack, renamed }))
+}
+
+/// Report entries for the failed elements: `dropped` for each left-out one (with how many
+/// references to it were removed) and `unchecked` for each one kept with output it never got
+/// past the engine checks. The bug report counts both as failed self-checks.
+fn left_out_entries(
+    draft: &ImportDraft,
+    left_out: &HashSet<String>,
+    removed: &[(String, usize)],
+    final_id: &dyn Fn(&str) -> String,
+) -> Vec<ReportEntry> {
+    let reason = |e: &DraftElement| -> String {
+        e.issues
+            .first()
+            .map_or("no usable element was generated", String::as_str)
+            .chars()
+            .take(REASON_MAX_CHARS)
+            .collect()
+    };
+    draft
+        .elements
+        .iter()
+        .filter(|e| left_out.contains(&e.id) || e.status == ElementStatus::Failed)
+        .map(|e| {
+            if !left_out.contains(&e.id) {
+                return ReportEntry {
+                    source: e.name.clone(),
+                    outcome: UNCHECKED.into(),
+                    elements: vec![final_id(&e.id)],
+                    note: format!(
+                        "{} kept although it never passed the engine checks ({}); check it by hand.",
+                        e.ty,
+                        reason(e)
+                    ),
+                };
+            }
+            let refs = match removed.iter().find(|(id, _)| *id == e.id) {
+                Some((_, n)) => format!(" {n} reference(s) to it were removed."),
+                None => String::new(),
+            };
+            ReportEntry {
+                source: e.name.clone(),
+                outcome: DROPPED.into(),
+                elements: Vec::new(),
+                note: format!(
+                    "{} left out of the pack: it failed generation or every repair ({}).{refs} \
+Revise the draft to bring it back.",
+                    e.ty,
+                    reason(e)
+                ),
+            }
+        })
+        .collect()
+}
+
+/// Report outcome of a failed element kept for review.
+pub(crate) const UNCHECKED: &str = "unchecked";
+/// Report outcome of an element left out of the pack.
+pub(crate) const DROPPED: &str = "dropped";
+
+/// `doc` with every rule that points at a left-out element removed, and every left-out id taken
+/// out of id lists (`a|b` supports, arrays of ids); a rule whose list becomes empty goes too.
+/// Returns the new document and `(left-out id, references removed)`.
+fn without_references(doc: &Value, left_out: &HashSet<String>) -> (Value, Vec<(String, usize)>) {
+    let mut counts: Vec<(String, usize)> = Vec::new();
+    let mut hit = |id: &str| match counts.iter_mut().find(|(i, _)| i == id) {
+        Some((_, n)) => *n += 1,
+        None => counts.push((id.to_string(), 1)),
+    };
+    let out = scrub(doc, left_out, &mut hit);
+    (out, counts)
+}
+
+fn scrub(v: &Value, left_out: &HashSet<String>, hit: &mut dyn FnMut(&str)) -> Value {
+    match v {
+        Value::Object(map) => Value::Object(
+            map.iter()
+                .map(|(k, x)| {
+                    let x = if k == "rules" {
+                        scrub_rules(x, left_out, hit)
+                    } else {
+                        scrub(x, left_out, hit)
+                    };
+                    (k.clone(), x)
+                })
+                .collect(),
+        ),
+        Value::Array(items) => {
+            Value::Array(items.iter().map(|x| scrub(x, left_out, hit)).collect())
+        }
+        other => other.clone(),
+    }
+}
+
+fn scrub_rules(rules: &Value, left_out: &HashSet<String>, hit: &mut dyn FnMut(&str)) -> Value {
+    let Some(items) = rules.as_array() else {
+        return rules.clone();
+    };
+    Value::Array(
+        items
+            .iter()
+            .filter_map(|r| scrub_rule(r, left_out, hit))
+            .collect(),
+    )
+}
+
+/// The rule without its references to left-out elements, or None when nothing of it is left.
+fn scrub_rule(
+    rule: &Value,
+    left_out: &HashSet<String>,
+    hit: &mut dyn FnMut(&str),
+) -> Option<Value> {
+    let Some(map) = rule.as_object() else {
+        return Some(rule.clone());
+    };
+    let mut out = map.clone();
+    for (k, v) in map {
+        match v {
+            Value::String(s) if left_out.contains(s) => {
+                hit(s);
+                return None;
+            }
+            Value::String(s) if s.contains('|') => {
+                let parts: Vec<&str> = s.split('|').collect();
+                let kept: Vec<&str> = parts
+                    .iter()
+                    .copied()
+                    .filter(|p| !left_out.contains(p.trim()))
+                    .collect();
+                if kept.len() == parts.len() {
+                    continue;
+                }
+                parts
+                    .iter()
+                    .filter(|p| left_out.contains(p.trim()))
+                    .for_each(|p| hit(p.trim()));
+                if kept.is_empty() {
+                    return None;
+                }
+                out.insert(k.clone(), Value::String(kept.join("|")));
+            }
+            Value::Array(a)
+                if a.iter()
+                    .any(|x| x.as_str().is_some_and(|s| left_out.contains(s))) =>
+            {
+                let kept: Vec<Value> = a
+                    .iter()
+                    .filter(|x| {
+                        let gone = x.as_str().filter(|s| left_out.contains(*s));
+                        gone.iter().for_each(|s| hit(s));
+                        gone.is_none()
+                    })
+                    .cloned()
+                    .collect();
+                if kept.is_empty() {
+                    return None;
+                }
+                out.insert(k.clone(), Value::Array(kept));
+            }
+            _ => {}
+        }
+    }
+    Some(Value::Object(out))
 }
 
 /// Tiered free-cast features of drafts written before the selects were added at generation
@@ -169,7 +390,11 @@ fn same_name(a: &str, b: &str) -> bool {
 
 /// The import report: source objects with no element of their name, the rule errors that
 /// survived every repair (removed from the pack) and the deterministic rule fixes.
-pub(crate) fn build_report(draft: &ImportDraft, renamed: &[(String, String)]) -> ImportReport {
+pub(crate) fn build_report(
+    draft: &ImportDraft,
+    renamed: &[(String, String)],
+    left_out: &HashSet<String>,
+) -> ImportReport {
     let final_id = |id: &str| {
         renamed
             .iter()
@@ -220,7 +445,7 @@ pub(crate) fn build_report(draft: &ImportDraft, renamed: &[(String, String)]) ->
             note: note.trim().to_string(),
         });
     }
-    for e in &draft.elements {
+    for e in draft.elements.iter().filter(|e| !left_out.contains(&e.id)) {
         let id = final_id(&e.id);
         let issue = |m: &String| ReportIssue {
             element: id.clone(),
@@ -229,7 +454,12 @@ pub(crate) fn build_report(draft: &ImportDraft, renamed: &[(String, String)]) ->
         report.errors.extend(e.rule_errors.iter().map(issue));
         report.normalised.extend(e.normalised.iter().map(issue));
     }
-    for p in &draft.plan.elements {
+    for p in draft
+        .plan
+        .elements
+        .iter()
+        .filter(|p| !left_out.contains(&p.id))
+    {
         if let Some(message) = super::batch::unlocated_warning(&draft.source_text, p) {
             report.warnings.push(ReportIssue {
                 element: final_id(&p.id),
@@ -298,30 +528,5 @@ fn new_properties(draft: &ImportDraft, final_id: &dyn Fn(&str) -> String) -> Vec
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn reading_notes_are_source_warnings_not_element_warnings() {
-        let mut draft: ImportDraft = serde_json::from_value(serde_json::json!({
-            "edition": "2024", "id_prefix": "t", "source_name": "T", "pack_id": "t",
-            "pack_name": "T", "source_kind": "attachments", "source_text": "",
-            "detection": {"kind": "feat", "edition": "2024", "confidence": 1.0, "items": []},
-            "plan": {"edition": "2024", "groups": [], "elements": [], "notes": []},
-            "elements": [], "sweep_issues": []}))
-        .unwrap();
-        draft.detection.notes = vec![
-            format!(
-                "{}`a.pdf`: 2 page(s) were read visually",
-                super::super::ingest::READING_NOTE
-            ),
-            "An unrelated detection note.".into(),
-        ];
-        let report = build_report(&draft, &[]);
-        assert_eq!(
-            report.source_warnings,
-            vec!["`a.pdf`: 2 page(s) were read visually".to_string()]
-        );
-        assert!(report.warnings.iter().all(|w| w.element != "source"));
-    }
-}
+#[path = "finalize_tests.rs"]
+mod tests;

@@ -603,7 +603,8 @@ pub struct ReportIssue {
 pub struct ReportEntry {
     /// The source object's name as printed.
     pub source: String,
-    /// `element`, `merged`, `text_only`, `unsupported` or `skipped`.
+    /// `element`, `merged`, `text_only`, `unsupported`, `skipped`, `dropped` (a failed element
+    /// left out) or `unchecked` (a failed element kept for review).
     pub outcome: String,
     /// Element ids that carry it.
     #[serde(default)]
@@ -615,7 +616,15 @@ pub struct ReportEntry {
 /// Format tag of [`ImportReport`].
 pub const REPORT_FORMAT: &str = "borealis-import-report/1";
 /// Allowed [`ReportEntry::outcome`] values.
-pub const REPORT_OUTCOMES: [&str; 5] = ["element", "merged", "text_only", "unsupported", "skipped"];
+pub const REPORT_OUTCOMES: [&str; 7] = [
+    "element",
+    "merged",
+    "text_only",
+    "unsupported",
+    "skipped",
+    "dropped",
+    "unchecked",
+];
 
 #[cfg(test)]
 mod report_tests {

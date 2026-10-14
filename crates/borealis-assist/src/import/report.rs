@@ -50,7 +50,8 @@ impl Default for ImportReport {
 pub struct ReportEntry {
     /// Name as printed in the source.
     pub source: String,
-    /// `element` (renamed element), `merged`, `text_only`, `unsupported` or `skipped`.
+    /// `element` (renamed element), `merged`, `text_only`, `unsupported`, `skipped`, `dropped`
+    /// (an element that failed and was left out) or `unchecked` (a failed element kept for review).
     pub outcome: String,
     /// Element ids of the pack that carry it.
     #[serde(default)]

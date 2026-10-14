@@ -13,8 +13,14 @@ use borealis_content::rules::{CustomRule, Rule};
 use serde_json::{json, Map, Value};
 
 /// Words a free-text rest description may consist of.
-const REST_WORDS: [&str; 10] = [
-    "short", "long", "rest", "rests", "or", "and", "a", "finish", "after", "you",
+const REST_WORDS: [&str; 18] = [
+    "short", "long", "rest", "rests", "or", "and", "a", "finish", "after", "you", "at", "each",
+    "every", "per", "the", "next", "once", "until",
+];
+/// Once-a-day recharges ("at dawn", "daily"): a character's day ends with a long rest, the
+/// engine's token for them.
+const DAY_WORDS: [&str; 8] = [
+    "dawn", "daybreak", "sunrise", "sunset", "dusk", "day", "daily", "days",
 ];
 
 /// Shape hints for the kinds generated content needs most. Kept in sync with the registry by
@@ -26,7 +32,9 @@ const SHAPES: &[(&str, &[&str], &str)] = &[
         "resource needs `id` (the lowercase name, e.g. \"rage\"), `name`, `max` as \
 {\"type\":\"fixed\",\"value\":2} | {\"type\":\"stat\",\"stat\":\"proficiency\"} | {\"type\":\"table\",\"key\":\"<progression key>\"} \
 | {\"type\":\"formula\",\"expr\":\"...\"} (expr words: proficiency, <ability>:modifier such as \
-dexterity:modifier, \"<class> level\"; a bare ability name counts as 0), and `recharge` as a list such as [\"short_rest\",\"long_rest\"] or [\"long_rest\"].",
+dexterity:modifier, \"<class> level\"; a bare ability name counts as 0), and `recharge` as a list such as [\"short_rest\",\"long_rest\"] or [\"long_rest\"] \
+(\"at dawn\" or \"daily\" is [\"long_rest\"]). A pool that grows with character level (1 use, 2 at level 3, 3 at level 5) is one \
+resource rule per step with the same `id`, each later one with `level` and `replaces` set to that id; name the pool as the source names it.",
     ),
     (
         "resource_cost",
@@ -266,22 +274,23 @@ pub(crate) fn resource_id(name: &str) -> String {
         .to_lowercase()
 }
 
-/// `recharge` written as words ("short rest", "a short or long rest") as engine tokens, or None
-/// when the text is anything else.
+/// `recharge` written as words ("short rest", "a short or long rest", "at dawn", "daily") as
+/// engine tokens, or None when the text is anything else.
 fn rest_tokens(text: &str) -> Option<Vec<&'static str>> {
     let lower = text.to_lowercase();
     let words: Vec<&str> = lower
         .split(|c: char| !c.is_ascii_alphabetic())
         .filter(|w| !w.is_empty())
         .collect();
-    if words.is_empty() || !words.iter().all(|w| REST_WORDS.contains(w)) {
+    let known = |w: &&str| REST_WORDS.contains(w) || DAY_WORDS.contains(w);
+    if words.is_empty() || !words.iter().all(known) {
         return None;
     }
     let mut out = Vec::new();
     if words.contains(&"short") {
         out.push("short_rest");
     }
-    if words.contains(&"long") {
+    if words.contains(&"long") || words.iter().any(|w| DAY_WORDS.contains(w)) {
         out.push("long_rest");
     }
     (!out.is_empty()).then_some(out)
@@ -562,146 +571,5 @@ fn strip_rule(rule: &Value, out: &mut Vec<String>) -> Option<Value> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use borealis_content::rule_kinds::spec;
-
-    #[test]
-    fn catalogue_lists_every_registered_kind() {
-        let c = catalogue();
-        for s in KNOWN_KINDS {
-            assert!(c.contains(&format!("\n{}", s.kind)), "{} missing", s.kind);
-        }
-        assert!(c.contains("resource*: id, name, max"));
-    }
-
-    #[test]
-    fn shape_hints_name_registered_kinds_and_fields() {
-        for (kind, fields, _) in SHAPES {
-            let s = spec(kind).unwrap_or_else(|| panic!("{kind} not registered"));
-            for f in *fields {
-                assert!(s.reads(f), "{kind}.{f} is not read");
-            }
-        }
-    }
-
-    #[test]
-    fn invented_kinds_fields_and_broken_resources_are_problems() {
-        let el = json!({"rules": [
-            {"kind": "grant", "id": "ID_X", "type": "Proficiency"},
-            {"kind": "strike_bonus", "amount": 2},
-            {"kind": "resource", "name": "Ember", "max": 3, "requires": "x"},
-            {"kind": "resource", "id": "ember", "name": "Ember", "max": {"type": "fixed", "value": 3},
-             "recharge": ["long_rest"]}
-        ]});
-        let p = rule_problems(&el);
-        assert_eq!(p.len(), 4, "{p:?}");
-        assert!(p[0].contains("strike_bonus"));
-        assert!(p.iter().any(|m| m.contains("\"requires\"")));
-        assert!(p.iter().any(|m| m.contains("no `id`")));
-        assert!(p.iter().any(|m| m.contains("`max` 3")));
-    }
-
-    #[test]
-    fn ability_increase_name_lists_become_choice_objects() {
-        let mut el = json!({"rules": [
-            {"kind": "ability_increase", "name": "Pick", "cap": 1,
-             "options": ["strength", "Dex"]},
-            {"kind": "ability_increase", "name": "Any", "cap": 20,
-             "options": ["strength", "dexterity", "wisdom"]},
-            {"kind": "ability_increase", "options": [{"abilities": 1, "amount": 2}], "cap": 20}
-        ]});
-        assert_eq!(normalise_resources(&mut el).len(), 2);
-        assert_eq!(
-            el["rules"][0],
-            json!({"kind": "ability_increase", "name": "Pick", "cap": 20,
-                "options": [{"abilities": ["strength", "dexterity"], "pick": 1, "amount": 1}]})
-        );
-        assert_eq!(
-            el["rules"][1]["options"],
-            json!([{"abilities": ["strength", "dexterity", "wisdom"], "pick": 1, "amount": 1}])
-        );
-        assert!(rule_problems(&el).is_empty(), "{:?}", rule_problems(&el));
-        let bad = json!({"rules": [{"kind": "ability_increase", "options": ["luck"]}]});
-        assert_eq!(rule_problems(&bad).len(), 1);
-    }
-
-    #[test]
-    fn lasting_movement_modes_become_speed_stats() {
-        let mut el = json!({"rules": [
-            {"kind": "movement_mode", "mode": "climb", "speed": "walk"},
-            {"kind": "movement_mode", "mode": "swim", "speed": 40},
-            {"kind": "movement_mode", "mode": "fly", "speed": "speed", "duration": "10 minutes",
-             "action": "bonus_action"}
-        ]});
-        assert_eq!(normalise_abilities(&mut el).len(), 2);
-        assert_eq!(
-            el["rules"][0],
-            json!({"kind": "stat", "name": "speed:climb", "value": "speed"})
-        );
-        assert_eq!(el["rules"][1]["value"], json!("40"));
-        assert_eq!(el["rules"][2]["kind"], json!("movement_mode"));
-    }
-
-    #[test]
-    fn resources_are_normalised_only_when_unambiguous() {
-        let mut el = json!({"rules": [
-            {"kind": "resource", "name": "Ember  Coals", "max": 2, "recharge": "Short Rest"},
-            {"kind": "resource", "name": "Odd", "max": "lots", "recharge": "dawn"},
-            {"kind": "resource_cost", "resource": "EMBER COALS", "cost": 1}
-        ]});
-        let mut notes = normalise_resources(&mut el);
-        let known = resources_of(&el);
-        notes.extend(normalise_references(&mut el, &known));
-        let r = &el["rules"];
-        assert_eq!(r[0]["id"], "ember coals");
-        assert_eq!(r[0]["max"], json!({"type": "fixed", "value": 2}));
-        assert_eq!(r[0]["recharge"], json!(["short_rest", "long_rest"]));
-        assert_eq!(r[1]["id"], "odd");
-        assert_eq!(r[1]["max"], "lots");
-        assert_eq!(r[1]["recharge"], "dawn");
-        assert_eq!(r[2]["resource"], "ember coals");
-        assert_eq!(notes.len(), 5, "{notes:?}");
-        assert_eq!(rule_problems(&el).len(), 2, "{:?}", rule_problems(&el));
-    }
-
-    #[test]
-    fn resource_formulas_use_the_engine_dialect_or_are_problems() {
-        let mut el = json!({"data": {"class": "Tidecaller"}, "rules": [
-            {"kind": "resource", "id": "brine", "name": "Brine",
-             "max": {"type": "formula", "expr": "1 + wisdom"}, "recharge": ["long_rest"]},
-            {"kind": "resource", "id": "spray", "name": "Spray", "max": "max(1, dex mod)"},
-            {"kind": "resource", "id": "tide", "name": "Tide",
-             "max": {"type": "formula", "expr": "half your speed"}}
-        ]});
-        let notes = normalise_resources(&mut el);
-        let r = &el["rules"];
-        assert_eq!(r[0]["max"]["expr"], "1 + wisdom:modifier");
-        assert_eq!(
-            r[1]["max"],
-            json!({"type": "formula", "expr": "max(1, dexterity:modifier)"})
-        );
-        assert_eq!(r[2]["max"]["expr"], "half your speed");
-        assert_eq!(notes.len(), 2, "{notes:?}");
-        let p = rule_problems(&el);
-        assert_eq!(p.len(), 1, "{p:?}");
-        assert!(p[0].contains("\"half your speed\"") && p[0].contains("dexterity:modifier"));
-    }
-
-    #[test]
-    fn strip_removes_and_reports_everything_the_engine_ignores() {
-        let mut el = json!({"rules": [
-            {"kind": "strike_bonus", "amount": 2},
-            {"kind": "resource", "id": "ember", "name": "Ember", "max": {"type": "fixed", "value": 1},
-             "requires": "x"},
-            {"kind": "resource", "name": "Nameless", "max": "lots"},
-            {"kind": "stat", "name": "speed", "value": "5"}
-        ]});
-        let notes = strip_invalid(&mut el);
-        assert_eq!(notes.len(), 3, "{notes:?}");
-        let rules = el["rules"].as_array().unwrap();
-        assert_eq!(rules.len(), 2);
-        assert!(rules[0].get("requires").is_none());
-        assert!(rule_problems(&el).is_empty());
-    }
-}
+#[path = "rules_tests.rs"]
+mod tests;
