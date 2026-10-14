@@ -146,13 +146,9 @@ def armor_el(a):
         rules.append(stat('ac:shield','2',bonus='shield'))
     else:
         if a['stealth']!='—': rules.append(grant('ID_INTERNAL_GRANTS_STEALTH_DISADVANTAGE','Grants'))
-        if dex:
-            rules.append(stat('ac:armored:armor',str(base)))
-            rules.append(stat('ac:armored:dexterity','dexterity:modifier'))
-            if cap: rules.append(stat('ac:armored:dexterity:cap','2'))
-        else:
-            rules.append(stat('ac:armored:armor',str(base)))
-            rules.append(stat('ac:armored:dexterity','0'))
+        # Dex and its cap come from the core armored-AC rules by armor group (as in 2014);
+        # adding them here too counted Dex twice.
+        rules.append(stat('ac:armored:armor',str(base)))
         if strv: rules.append(stat('speed','-10',bonus='armor',requirements='![str:%d]'%strv))
     old={'Padded Armor':'ID_WOTC_ARMOR_LIGHT_PADDED','Chain Mail':'ID_WOTC_ARMOR_HEAVY_CHAIN_MAIL'}.get(name)
     # find 2014 armor id by name

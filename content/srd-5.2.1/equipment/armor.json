@@ -68,11 +68,6 @@
      "kind": "stat",
      "name": "ac:armored:armor",
      "value": "11"
-    },
-    {
-     "kind": "stat",
-     "name": "ac:armored:dexterity",
-     "value": "dexterity:modifier"
     }
    ],
    "data": {
@@ -143,11 +138,6 @@
      "kind": "stat",
      "name": "ac:armored:armor",
      "value": "11"
-    },
-    {
-     "kind": "stat",
-     "name": "ac:armored:dexterity",
-     "value": "dexterity:modifier"
     }
    ],
    "data": {
@@ -218,11 +208,6 @@
      "kind": "stat",
      "name": "ac:armored:armor",
      "value": "12"
-    },
-    {
-     "kind": "stat",
-     "name": "ac:armored:dexterity",
-     "value": "dexterity:modifier"
     }
    ],
    "data": {
@@ -293,16 +278,6 @@
      "kind": "stat",
      "name": "ac:armored:armor",
      "value": "12"
-    },
-    {
-     "kind": "stat",
-     "name": "ac:armored:dexterity",
-     "value": "dexterity:modifier"
-    },
-    {
-     "kind": "stat",
-     "name": "ac:armored:dexterity:cap",
-     "value": "2"
     }
    ],
    "data": {
@@ -373,16 +348,6 @@
      "kind": "stat",
      "name": "ac:armored:armor",
      "value": "13"
-    },
-    {
-     "kind": "stat",
-     "name": "ac:armored:dexterity",
-     "value": "dexterity:modifier"
-    },
-    {
-     "kind": "stat",
-     "name": "ac:armored:dexterity:cap",
-     "value": "2"
     }
    ],
    "data": {
@@ -458,16 +423,6 @@
      "kind": "stat",
      "name": "ac:armored:armor",
      "value": "14"
-    },
-    {
-     "kind": "stat",
-     "name": "ac:armored:dexterity",
-     "value": "dexterity:modifier"
-    },
-    {
-     "kind": "stat",
-     "name": "ac:armored:dexterity:cap",
-     "value": "2"
     }
    ],
    "data": {
@@ -538,16 +493,6 @@
      "kind": "stat",
      "name": "ac:armored:armor",
      "value": "14"
-    },
-    {
-     "kind": "stat",
-     "name": "ac:armored:dexterity",
-     "value": "dexterity:modifier"
-    },
-    {
-     "kind": "stat",
-     "name": "ac:armored:dexterity:cap",
-     "value": "2"
     }
    ],
    "data": {
@@ -623,16 +568,6 @@
      "kind": "stat",
      "name": "ac:armored:armor",
      "value": "15"
-    },
-    {
-     "kind": "stat",
-     "name": "ac:armored:dexterity",
-     "value": "dexterity:modifier"
-    },
-    {
-     "kind": "stat",
-     "name": "ac:armored:dexterity:cap",
-     "value": "2"
     }
    ],
    "data": {
@@ -708,11 +643,6 @@
      "kind": "stat",
      "name": "ac:armored:armor",
      "value": "14"
-    },
-    {
-     "kind": "stat",
-     "name": "ac:armored:dexterity",
-     "value": "0"
     }
    ],
    "data": {
@@ -792,11 +722,6 @@
      "kind": "stat",
      "name": "ac:armored:armor",
      "value": "16"
-    },
-    {
-     "kind": "stat",
-     "name": "ac:armored:dexterity",
-     "value": "0"
     },
     {
      "kind": "stat",
@@ -886,11 +811,6 @@
     },
     {
      "kind": "stat",
-     "name": "ac:armored:dexterity",
-     "value": "0"
-    },
-    {
-     "kind": "stat",
      "name": "speed",
      "value": "-10",
      "bonus": "armor",
@@ -974,11 +894,6 @@
      "kind": "stat",
      "name": "ac:armored:armor",
      "value": "18"
-    },
-    {
-     "kind": "stat",
-     "name": "ac:armored:dexterity",
-     "value": "0"
     },
     {
      "kind": "stat",
