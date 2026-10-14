@@ -16,6 +16,14 @@ use super::derived::Derived;
 use super::fewshot::in_edition;
 use super::types::{ImportPlan, Role};
 
+/// Fewest and most letters of a class mark glued to a spell name ("Sh", "Wiz").
+const MIN_MARKER_CHARS: usize = 2;
+const MAX_MARKER_CHARS: usize = 3;
+/// Fewest distinct spells a mark must follow to be a class mark (not a glued word).
+const MIN_MARKED_SPELLS: usize = 2;
+/// Most words of a spell name read before a mark.
+const MAX_SPELL_WORDS: usize = 5;
+
 /// Least share of a line's words that must be spell names for the line to count as a list.
 const MIN_LIST_SHARE: f64 = 0.5;
 /// Heading words after a class name that still name its list ("Wizard Spells").
@@ -116,6 +124,17 @@ impl Lists {
             }
         }
         Self { names }
+    }
+
+    /// The one list whose name starts with `marker` (a class abbreviation, "Wiz" for Wizard).
+    fn abbreviated(&self, marker: &str) -> Option<String> {
+        let m = norm(marker);
+        if m.chars().count() < MIN_MARKER_CHARS {
+            return None;
+        }
+        let mut hits = self.names.iter().filter(|(n, _)| n.starts_with(&m));
+        let (_, list) = hits.next()?;
+        hits.next().is_none().then(|| list.clone())
     }
 
     /// The list a heading names ("Wizard", "Wizard Spells", "The Wizard Spell List").
@@ -287,6 +306,103 @@ pub(crate) fn class_lists(plan: &ImportPlan, store: &ContentStore, d: &mut Deriv
     }
 }
 
+/// `word` split into a lowercase-ending stem and a glued mark of capitals ("madnessWz" ->
+/// ("madness", "Wz"), "gustEE" -> ("gust", "EE")), as a superscript reads in a text layer.
+fn glued_mark(word: &str) -> Option<(&str, &str)> {
+    let at = word
+        .char_indices()
+        .zip(word.chars().skip(1))
+        .find(|((_, a), b)| a.is_lowercase() && b.is_uppercase())
+        .map(|((i, a), _)| i + a.len_utf8())?;
+    let (stem, mark) = word.split_at(at);
+    let n = mark.chars().count();
+    ((MIN_MARKER_CHARS..=MAX_MARKER_CHARS).contains(&n) && mark.chars().all(char::is_alphabetic))
+        .then_some((stem, mark))
+}
+
+/// mark -> spells (normalised) printed with that mark glued to their last word.
+fn marked_spells(text: &str, names: &BTreeSet<String>) -> BTreeMap<String, BTreeSet<String>> {
+    let words: Vec<&str> = text
+        .split(|c: char| c.is_whitespace() || matches!(c, ',' | ';' | '(' | ')' | '.' | ':'))
+        .filter(|w| !w.is_empty())
+        .collect();
+    let mut out: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for (i, w) in words.iter().enumerate() {
+        let Some((stem, mark)) = glued_mark(w) else {
+            continue;
+        };
+        // The longest known spell name ending in this stem.
+        let spell = (0..MAX_SPELL_WORDS.min(i + 1))
+            .rev()
+            .map(|k| {
+                let mut phrase: Vec<&str> = words[i - k..i].to_vec();
+                phrase.push(stem);
+                norm(&phrase.join(" "))
+            })
+            .find(|p| names.contains(p));
+        if let Some(spell) = spell {
+            out.entry(mark.to_string()).or_default().insert(spell);
+        }
+    }
+    out
+}
+
+/// Spells the source marks with a class's abbreviation glued after their name (a superscript
+/// such as "Wz" in the text layer: "moth swarmWz") join that class's list, when the mark
+/// follows at least [`MIN_MARKED_SPELLS`] spells and names exactly one list. Run after
+/// [`class_lists`] on the source text and the elements' descriptions; every addition is
+/// reported.
+pub(crate) fn marked_lists(source: &str, plan: &ImportPlan, store: &ContentStore, d: &mut Derived) {
+    let lists = Lists::new(plan, store, &d.docs);
+    let names: BTreeSet<String> = spell_names(store, plan, &d.docs).into_iter().collect();
+    let mut texts = vec![source.to_string()];
+    texts.retain(|t| !t.is_empty());
+    texts.extend(
+        d.docs
+            .iter()
+            .map(|e| segments(str_at(e, "description")).join(" ")),
+    );
+    let mut marked: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for t in &texts {
+        for (mark, spells) in marked_spells(t, &names) {
+            marked.entry(mark).or_default().extend(spells);
+        }
+    }
+    for (mark, spells) in marked {
+        let Some(list) = lists
+            .abbreviated(&mark)
+            .filter(|_| spells.len() >= MIN_MARKED_SPELLS)
+        else {
+            continue;
+        };
+        let why = format!("joins the {list} list: the source marks it \"{mark}\"");
+        for key in &spells {
+            if let Some(doc) = d
+                .docs
+                .iter_mut()
+                .find(|e| str_at(e, "type") == "Spell" && norm(str_at(e, "name")) == *key)
+            {
+                let mut s = supports_of(doc);
+                if !s.contains(&list) {
+                    s.push(list.clone());
+                    doc["supports"] = json!(s);
+                    let id = str_at(doc, "id").to_string();
+                    d.notes.push((id, why.clone()));
+                }
+                continue;
+            }
+            let lib = store
+                .by_type("Spell")
+                .find(|s| in_edition(&s.element, plan.edition) && norm(&s.element.name) == *key);
+            if let Some(s) = lib.filter(|s| !s.element.supports.contains(&list)) {
+                let id = s.element.id.clone();
+                push_append(d, &id, &list);
+                d.notes.push((id, why.clone()));
+            }
+        }
+    }
+}
+
 fn apply_list(
     plan: &ImportPlan,
     store: &ContentStore,
@@ -343,6 +459,96 @@ fn apply_list(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_class_mark_glued_to_spell_names_joins_its_list() {
+        let names: BTreeSet<String> = ["moth swarm", "dew lance", "light", "gust"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let text = "You learn the gustXX, moth swarmLa, and dew lanceLa cantrips.\n\
+The dim lightLa fades. A lightThe glow.";
+        let got = marked_spells(text, &names);
+        let la: Vec<&str> = got["La"].iter().map(String::as_str).collect();
+        assert_eq!(la, ["dew lance", "light", "moth swarm"]);
+        assert_eq!(got["XX"].len(), 1);
+        // A glued word of mark length is read too; it names no list, so it adds nothing.
+        assert_eq!(got["The"].len(), 1);
+        assert_eq!(glued_mark("madnessWz"), Some(("madness", "Wz")));
+        assert_eq!(glued_mark("lightWizards"), None);
+    }
+
+    #[test]
+    fn marked_spells_get_the_list_the_mark_abbreviates() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+        let store = borealis_content::ContentStoreBuilder::new()
+            .add_pack_dir(&root.join("core"))
+            .and_then(|b| b.add_pack_dir(&root.join("srd-5.1")))
+            .expect("bundled packs")
+            .build();
+        let plan: ImportPlan = serde_json::from_value(
+            json!({"edition": "2014", "elements": [], "notes": [], "groups": []}),
+        )
+        .expect("plan");
+        let spell = |id: &str, name: &str| json!({"id": id, "name": name, "type": "Spell", "supports": [], "description": "<p>x</p>"});
+        let mut d = Derived {
+            docs: vec![
+                json!({"id": "ID_T_CLASS_LAMPLIGHTER", "name": "Lamplighter", "type": "Class",
+                    "description": "<p>Keepers.</p>"}),
+                spell("ID_T_SPELL_MOTH_SWARM", "Moth Swarm"),
+                spell("ID_T_SPELL_DEW_LANCE", "Dew Lance"),
+                spell("ID_T_SPELL_REED_SONG", "Reed Song"),
+            ],
+            ..Derived::default()
+        };
+        let source =
+            "Spells marked La are new.\nYou gain the moth swarmLa and dew lanceLa cantrips \
+and learn reed song. You also know mage handLa.\nA lone reed songLam. The lightThe and gustThe.";
+        marked_lists(source, &plan, &store, &mut d);
+        let supports = |i: usize| supports_of(&d.docs[i]);
+        assert_eq!(supports(1), ["Lamplighter"]);
+        assert_eq!(supports(2), ["Lamplighter"]);
+        assert!(
+            supports(3).is_empty(),
+            "unmarked, or a mark of one spell only"
+        );
+        // A library spell with the mark is appended to the list.
+        assert_eq!(d.appends.len(), 1, "{:?}", d.appends);
+        assert_eq!(supports_of(&d.appends[0]), ["Lamplighter"]);
+        assert_eq!(d.notes.len(), 3);
+    }
+
+    /// Offline: `BOREALIS_MARKS_PROBE=<draft.json>` prints what [`marked_lists`] adds to the
+    /// stored draft's derived elements.
+    #[test]
+    #[ignore = "needs a local draft.json"]
+    fn probe_marked_lists() {
+        let Ok(path) = std::env::var("BOREALIS_MARKS_PROBE") else {
+            return;
+        };
+        let draft: crate::import::anything::types::ImportDraft =
+            serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+        let mut b = borealis_content::ContentStoreBuilder::new();
+        for pack in ["core", "srd-5.1", "srd-5.2.1"] {
+            b = b.add_pack_dir(&root.join(pack)).unwrap();
+        }
+        let store = b.build();
+        let raw: Vec<Value> = draft.elements.iter().map(|e| e.json.clone()).collect();
+        let d = super::super::derived::derive_with_source(
+            &draft.plan,
+            &raw,
+            &store,
+            &draft.source_text,
+        );
+        for (id, m) in d
+            .notes
+            .iter()
+            .filter(|(_, m)| m.contains("the source marks it"))
+        {
+            println!("MARK {id}: {m}");
+        }
+    }
 
     #[test]
     fn a_list_line_reads_the_longest_spell_names_and_skips_prose() {

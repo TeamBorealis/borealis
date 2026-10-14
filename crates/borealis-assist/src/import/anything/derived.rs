@@ -58,11 +58,22 @@ impl Derived {
 
 /// Apply every derived fix to a copy of `docs`; `store` is the library without the draft.
 pub(crate) fn derive(plan: &ImportPlan, docs: &[Value], store: &ContentStore) -> Derived {
+    derive_with_source(plan, docs, store, "")
+}
+
+/// [`derive`], also reading the import's `source` text (class marks glued to spell names).
+pub(crate) fn derive_with_source(
+    plan: &ImportPlan,
+    docs: &[Value],
+    store: &ContentStore,
+    source: &str,
+) -> Derived {
     let mut d = Derived {
         docs: docs.to_vec(),
         ..Derived::default()
     };
     super::lists::class_lists(plan, store, &mut d);
+    super::lists::marked_lists(source, plan, store, &mut d);
     spell_lists(plan, store, &mut d);
     groups::weapon_groups(plan, store, &mut d);
     groups::new_properties(plan, store, &mut d);
