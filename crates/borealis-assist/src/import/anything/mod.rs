@@ -13,6 +13,7 @@ mod derived;
 mod fallback;
 mod feature_spells;
 mod fewshot;
+mod fidelity;
 mod finalize;
 mod formula;
 mod generate;
@@ -24,6 +25,7 @@ mod locate;
 mod mechanics;
 mod normalize;
 mod parts;
+mod passage;
 mod plan;
 #[cfg(test)]
 mod plan_shape_tests;

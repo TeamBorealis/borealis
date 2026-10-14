@@ -15,14 +15,33 @@ use super::normalize::{gate_element, normalize, static_checks};
 use super::steps::{element_schema, ElementOut, Step};
 use super::sweep::{engine_sweep, SweepIssue};
 use super::types::{
-    DraftElement, Edition, ElementStatus, ImportDraft, ImportProgress, ParentLink, PlannedElement,
-    Role, Stage,
+    DraftElement, Edition, ElementStatus, ImportDraft, ImportPlan, ImportProgress, ParentLink,
+    PlannedElement, Role, Stage,
 };
 use crate::balance::{balance_report, load_into_engine, Baselines};
 use crate::homebrew::PackContext;
 
 /// Repair rounds per element.
 pub const MAX_REPAIR_ROUNDS: u32 = 2;
+
+/// How a generated description keeps the source (a literal, for `concat!`).
+macro_rules! printed {
+    () => {
+        "`description` in HTML paragraphs with the source's own text kept as printed (its sentences word for word: no rewording, no summary, lead-in or sentence of your own; game terms exactly as printed)"
+    };
+}
+
+/// The batch prompt's instruction for class and subclass features: `batch.rs` is to use it in
+/// place of its own "in your own words" wording (wired there separately).
+#[allow(dead_code)]
+pub(crate) const FEATURE_BATCH_EACH: &str = concat!(
+    "Each: ",
+    printed!(),
+    ", and `rules` that implement it (resources, grants, selects, stat changes); a feature with no mechanics may have no rules. Reuse existing core ids. The class's own spell slots, cantrip and spell choices and preparation are generated for you: describe them in prose only. Spells a feature grants (a spell table) and counters from class table columns are added from the outline; every other mechanic of the feature is yours to write."
+);
+
+/// The plan's summary of an element only orients the model; it never removes source content.
+pub(crate) const BRIEF_NEVER_OMITS: &str = "The summary under \"What the source says\" only orients you and never removes source content: write every line of the source passage (ability score, size, speed, language and proficiency lines included) as text and as rules, even where a summary or note says to leave lines out.";
 
 pub(crate) type Progress<'a> = Option<&'a (dyn Fn(ImportProgress) + Send + Sync)>;
 
@@ -42,20 +61,20 @@ pub(crate) fn guidance(planned: &PlannedElement, edition: Edition) -> &'static s
         return g;
     }
     match (planned.role, planned.ty.as_str()) {
-        (Role::Class, _) => "A Class element. Include: `setters` hd and short; `rules`: saving-throw grants, one skill `select` (type Proficiency) and weapon/armor grants, each limited with requirements \"!<multiclass id>\" like the example; `data`: hit_die, primary_abilities, saving_throws, subclass_level, asi_levels, progression (EVERY array has exactly 20 entries: proficiency_bonus plus EVERY other column of the class table, keyed in snake_case, numbers as numbers and \"—\" as 0, e.g. a points pool, uses or a die size; only the spell slot columns are generated), and the multiclass definition (2024: data.multiclass {prerequisite, requirements}; 2014: top-level multiclass {id, prerequisite, requirements, rules}). Do NOT add `Class Feature` grants; they are added for you.",
-        (Role::ClassFeature, _) => "A Class Feature: `description` in HTML paragraphs that restates the source in your own words and `rules` that implement it (resources, grants, selects, stat changes). A feature with no mechanics may have no rules. Reuse existing core ids for skills, proficiencies and abilities.",
-        (Role::SubclassFeature, _) => "An Archetype Feature: description plus rules implementing it, as in the example.",
-        (Role::Subclass, _) => "An Archetype (subclass) element with a description. Feature grants and `supports` are added for you.",
-        (Role::Part | Role::Option, "Class Feature" | "Archetype Feature") => "A named part or option of a feature: `description` in HTML paragraphs restating the source in your own words, and `rules` implementing it (resources, grants, selects, stat changes) like the example, and `prerequisite` with the COMPLETE printed prerequisite if it has one (every part: level, another feature, subclass). Its grant or select and the requirements for the prerequisite are added for you.",
-        (_, "Racial Trait") => "A species trait: `description` in HTML paragraphs restating the source in your own words, and `rules` implementing it (stat, grant, select) like the example. It is granted to the species for you.",
-        (_, "Background Feature") => "A background feature: `description` in HTML paragraphs restating the source in your own words; `rules` only for real mechanics. It is granted to the background for you.",
-        (_, "Sub Race" | "Species Trait Option") => "A subrace or lineage: description, plus the rules it adds itself (ability scores, speed, size, languages). Its named traits are separate elements granted for you; `supports` is set for you.",
+        (Role::Class, _) => concat!("A Class element. Include: `setters` hd and short; `rules`: saving-throw grants, one skill `select` (type Proficiency) and weapon/armor grants, each limited with requirements \"!<multiclass id>\" like the example; `data`: hit_die, primary_abilities, saving_throws, subclass_level, asi_levels, progression (EVERY array has exactly 20 entries: proficiency_bonus plus EVERY other column of the class table, keyed in snake_case, numbers as numbers and \"—\" as 0, e.g. a points pool, uses or a die size; only the spell slot columns are generated), and the multiclass definition (2024: data.multiclass {prerequisite, requirements}; 2014: top-level multiclass {id, prerequisite, requirements, rules}). Do NOT add `Class Feature` grants; they are added for you. The multiclassing section, when the source has one, gives the multiclass prerequisite and the proficiencies a multiclass character gains (write those grants in the multiclass definition). ", printed!(), " for the class's own text (not its features)."),
+        (Role::ClassFeature, _) => concat!("A Class Feature: ", printed!(), " and `rules` that implement it (resources, grants, selects, stat changes). A feature with no mechanics may have no rules. Reuse existing core ids for skills, proficiencies and abilities."),
+        (Role::SubclassFeature, _) => concat!("An Archetype Feature: ", printed!(), ", plus rules implementing it, as in the example."),
+        (Role::Subclass, _) => concat!("An Archetype (subclass) element: ", printed!(), " (its own text only, never a digest of its features). Feature grants and `supports` are added for you."),
+        (Role::Part | Role::Option, "Class Feature" | "Archetype Feature") => concat!("A named part or option of a feature: ", printed!(), ", and `rules` implementing it (resources, grants, selects, stat changes) like the example, and `prerequisite` with the COMPLETE printed prerequisite if it has one (every part: level, another feature, subclass). Its grant or select and the requirements for the prerequisite are added for you."),
+        (_, "Racial Trait") => concat!("A species trait: ", printed!(), ", and `rules` implementing it (stat, grant, select) like the example. It is granted to the species for you."),
+        (_, "Background Feature") => concat!("A background feature: ", printed!(), "; `rules` only for real mechanics. It is granted to the background for you."),
+        (_, "Sub Race" | "Species Trait Option") => concat!("A subrace or lineage: ", printed!(), ", plus the rules it adds itself (ability scores, speed, size, languages). Its named traits are separate elements granted for you; `supports` is set for you."),
         (Role::Text, _) | (_, "Rules Glossary Entry") => "A text-only rules or lore entry: `description` with the COMPLETE text of the section as HTML paragraphs (every sentence; table rows as a list). No rules.",
-        (_, "Race" | "Species") => "A species: size/speed setters, the ability score, size, speed and language rules, traits as rules (grants/selects/stat) unless the source summary says they are separate elements, description.",
-        (_, "Background") => "A background: skill and tool proficiencies, languages, equipment, an origin feat (2024), description. Named features listed as separate elements are granted for you.",
-        (_, "Feat") => "A feat: `prerequisite` with the COMPLETE printed prerequisite (every part: level, ability score, another feat or feature, proficiency, spellcasting), rules (stat/grant/select), description. Requirements for a prerequisite on another feat or feature are added for you.",
-        (_, "Spell") => if edition == Edition::Y2024 { "A spell with setters level, school, time, range, duration, components and `supports` listing EVERY class the source names for it, as printed (a class from another source or outside the core rules included, never dropped) (2024 rules)." } else { "A spell with setters level, school, time, range, duration, components and `supports` listing EVERY class the source names for it, as printed (a class from another source or outside the core rules included, never dropped)." },
-        (_, "Magic Item") => "A magic item with rarity and attunement setters, rules for bonuses, description. A magic weapon or armor names its base item in the `type` setter like the example.",
+        (_, "Race" | "Species") => concat!("A species: size/speed setters, the ability score, size, speed and language rules, traits as rules (grants/selects/stat) unless the source summary says they are separate elements, and ", printed!(), "."),
+        (_, "Background") => concat!("A background: skill and tool proficiencies, languages, equipment, an origin feat (2024), and ", printed!(), ". Named features listed as separate elements are granted for you."),
+        (_, "Feat") => concat!("A feat: `prerequisite` with the COMPLETE printed prerequisite (every part: level, ability score, another feat or feature, proficiency, spellcasting), rules (stat/grant/select), and ", printed!(), ". Requirements for a prerequisite on another feat or feature are added for you."),
+        (_, "Spell") => if edition == Edition::Y2024 { concat!("A spell with setters level, school, time, range, duration, components and `supports` listing EVERY class the source names for it, as printed (a class from another source or outside the core rules included, never dropped) (2024 rules), and the text after the stat block as ", printed!(), ".") } else { concat!("A spell with setters level, school, time, range, duration, components and `supports` listing EVERY class the source names for it, as printed (a class from another source or outside the core rules included, never dropped), and the text after the stat block as ", printed!(), ".") },
+        (_, "Magic Item") => concat!("A magic item with rarity and attunement setters, a `type` setter (Wondrous item, Ring, Rod, Staff, Wand, Potion, Scroll, or Weapon/Armor with the base item as addition, like the example), rules for bonuses, and ", printed!(), "; never a placeholder or a note about the source in it (doubts go in notes)."),
         (_, "Monster") => "A monster: the stat block in `data` as in the example.",
         _ => "A content element as in the example.",
     }
@@ -64,6 +83,29 @@ pub(crate) fn guidance(planned: &PlannedElement, edition: Edition) -> &'static s
 /// The part of the source relevant to `planned`.
 pub(crate) fn source_window(source: &str, planned: &PlannedElement) -> String {
     super::source::element_window(source, planned)
+}
+
+/// The source of a single-element call: its window, and for a class root also the
+/// multiclassing section and the unplanned prose sub-sections its window does not reach.
+fn generation_source(source: &str, planned: &PlannedElement, plan: &ImportPlan) -> String {
+    let mut out = source_window(source, planned);
+    if !matches!(planned.role, Role::Class | Role::Subclass) {
+        return out;
+    }
+    let extra = super::passage::multiclass_section(source, planned)
+        .into_iter()
+        .chain(
+            super::passage::unplanned_sections(source, planned, plan)
+                .into_iter()
+                .map(|s| format!("## {}\n{}", s.title, s.lines.join("\n"))),
+        );
+    for x in extra {
+        let first = x.lines().find(|l| !l.trim().is_empty()).unwrap_or("");
+        if !first.is_empty() && !out.contains(first) {
+            out.push_str(&format!("\n...\n{x}"));
+        }
+    }
+    out
 }
 
 fn content_schema() -> &'static JsonSchemaValidator {
@@ -152,7 +194,7 @@ fn prompt_for(
         .unwrap_or_default();
     let mut p = format!(
         "Write the element \"{name}\" (type {ty}, edition {ed:?}). Use EXACTLY id \"{id}\".{lvl}{spell}\n\
-Guidance: {guide}\n\nWhat the source says: {brief}\n\n\
+Guidance: {guide}\n\nWhat the source says: {brief}\n{never}\n\n\
 Real examples from the bundled SRD of the same kind (copy the SHAPE, not the content):\n{shots}\n\n\
 Existing core ids you must reuse instead of inventing new ones:\n{cat}\n\n{kinds}\n\n\
 Answer {{\"element\": {{...}}, \"notes\": [...]}}; put doubts in notes.{pools}\n\n{src}",
@@ -163,10 +205,11 @@ Answer {{\"element\": {{...}}, \"notes\": [...]}}; put doubts in notes.{pools}\n
         lvl = planned.level.map(|l| format!(" It is gained at level {l}.")).unwrap_or_default(),
         guide = guidance(planned, g.draft.edition),
         pools = super::pools::pools_note(g.draft, std::slice::from_ref(planned)),
-        brief = planned.brief,
+        brief = super::fidelity::sanitize_brief(&planned.brief),
+        never = BRIEF_NEVER_OMITS,
         cat = core_catalogue(g.store),
         kinds = super::rules::catalogue(),
-        src = fence("user_input", &source_window(&g.draft.source_text, planned)),
+        src = fence("user_input", &generation_source(&g.draft.source_text, planned, &g.draft.plan)),
     );
     if let Some((el, issues)) = previous {
         let head = if issues.is_empty() {
@@ -433,6 +476,7 @@ pub(crate) async fn validate_and_repair(
         }
         e.repair_rounds = 0;
     }
+    keep_printed(draft);
     let mut remaining = Vec::new();
     let mut remaining_rules = Vec::new();
     for round in 0..=MAX_REPAIR_ROUNDS {
@@ -442,6 +486,8 @@ pub(crate) async fn validate_and_repair(
         if round == 0 {
             // Mechanics left in the text get one repair, never more.
             rule_issues.extend(super::mechanics::sweep(draft));
+            // So do description sentences the source does not have.
+            rule_issues.extend(super::fidelity::sweep(draft));
         }
         emit(
             progress,
@@ -516,7 +562,18 @@ pub(crate) async fn validate_and_repair(
     mark_unresolved(draft, &remaining);
     draft.sweep_issues = remaining;
     super::mechanics::note_leftovers(draft);
+    keep_printed(draft);
+    super::fidelity::note_leftovers(draft);
     attach_balance(ctx, &store, draft);
+}
+
+/// Deterministic description fixes: a description that only rewords its element's own printed
+/// passage becomes the passage, a class or subclass root gets its unplanned prose
+/// sub-sections, and a table row loses sentences the source does not print.
+pub(crate) fn keep_printed(draft: &mut ImportDraft) {
+    super::passage::restore(draft);
+    super::passage::add_sub_sections(draft);
+    super::passage::drop_unprinted_row_text(draft);
 }
 
 /// Deterministic rule fixes on every generated element (recorded on the element).
@@ -669,5 +726,44 @@ fn attach_balance(ctx: &PackContext, store: &ContentStore, draft: &mut ImportDra
                 e.balance = Some(report);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::import::anything::fidelity::tests::planned;
+
+    #[test]
+    fn a_class_root_is_generated_with_its_multiclassing_section() {
+        let src = "## Lamplighter\n\nLamplighters keep the roads lit.\n\n## Other Things\n\n### Multiclassing\n\nPrerequisite: Wisdom 13. You gain light armor proficiency.\n";
+        let mut root = planned("c0", "Lamplighter", "Class", Role::Class, Some(1));
+        root.excerpt.as_mut().unwrap().end_line = 3;
+        let plan: ImportPlan = serde_json::from_value(json!({
+            "edition": "2024", "groups": [], "elements": [], "notes": []}))
+        .unwrap();
+        let out = generation_source(src, &root, &plan);
+        assert!(out.contains("Lamplighters keep the roads lit."));
+        assert!(out.contains("### Multiclassing"));
+        assert!(out.contains("light armor proficiency"));
+    }
+
+    #[test]
+    fn prompts_keep_the_printed_wording_and_ignore_omission_briefs() {
+        for g in [
+            FEATURE_BATCH_EACH,
+            guidance(
+                &planned("t", "T", "Racial Trait", Role::Part, None),
+                Edition::Y2024,
+            ),
+            guidance(
+                &planned("t", "T", "Spell", Role::Standalone, None),
+                Edition::Y2014,
+            ),
+        ] {
+            assert!(g.contains("kept as printed"), "{g}");
+            assert!(!g.contains("own words"), "{g}");
+        }
+        assert!(BRIEF_NEVER_OMITS.contains("never removes source content"));
     }
 }

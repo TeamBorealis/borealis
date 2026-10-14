@@ -482,6 +482,7 @@ pub(crate) fn report_entries(
             _ => {}
         }
     }
+    out.extend(super::passage::uncovered_prose(draft));
     out
 }
 

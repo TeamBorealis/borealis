@@ -177,9 +177,19 @@ fn snap(level: u32, allowed: &[u32]) -> u32 {
         .unwrap_or(level)
 }
 
-/// Locate `quote` (or `name`) in the source.
-pub(crate) fn locate(source: &str, quote: &str, name: &str) -> Option<SourceExcerpt> {
-    super::locate::locate_section(source, quote, name)
+/// Locate `quote` (or `name`) in the source; an element of type `ty` the way its type is
+/// printed (equipment on its stat row, see `locate::locate_section_as`).
+pub(crate) fn locate(
+    source: &str,
+    quote: &str,
+    name: &str,
+    ty: Option<&str>,
+) -> Option<SourceExcerpt> {
+    match ty {
+        // Equipment prefers its stat row over a same-named prose heading.
+        Some(ty) => super::locate::locate_section_as(source, quote, name, ty),
+        None => super::locate::locate_section(source, quote, name),
+    }
 }
 
 struct Builder<'a> {
@@ -215,9 +225,10 @@ impl Builder<'_> {
             role,
             level,
             owner: owner.map(str::to_string),
-            brief: brief.to_string(),
-            excerpt: locate(self.source, quote, name).or_else(|| {
-                super::variants::base_name(name).and_then(|b| locate(self.source, "", b))
+            // A brief is a summary: never an instruction to leave source lines out.
+            brief: super::fidelity::sanitize_brief(brief),
+            excerpt: locate(self.source, quote, name, Some(ty)).or_else(|| {
+                super::variants::base_name(name).and_then(|b| locate(self.source, "", b, Some(ty)))
             }),
             parent: None,
             picks: None,
@@ -1072,8 +1083,8 @@ mod tests {
     #[test]
     fn locates_a_quote_paragraph() {
         let src = "Intro\n\nRally Banner.\nYou raise it.\n\nOther";
-        let ex = locate(src, "rally banner.", "x").unwrap();
+        let ex = locate(src, "rally banner.", "x", None).unwrap();
         assert_eq!((ex.start_line, ex.end_line), (3, 4));
-        assert!(locate(src, "", "nothing here").is_none());
+        assert!(locate(src, "", "nothing here", None).is_none());
     }
 }

@@ -101,10 +101,10 @@ const STEALTH_DISADVANTAGE: &str = "ID_INTERNAL_GRANTS_STEALTH_DISADVANTAGE";
 /// What the generation prompt asks for, per element type.
 pub(crate) fn guidance(ty: &str) -> Option<&'static str> {
     Some(match ty {
-        "Weapon" => "A mundane weapon, shaped like the example. Put its stats in `data`: weapon_category (Simple Melee, Simple Ranged, Martial Melee, Martial Ranged, Firearm, or the category name exactly as the source prints it when it is none of these), weapon_group (the source's own weapon group or category name when it also gives one of the standard categories; omit otherwise), melee (true/false), damage {dice, type}, properties (EVERY property name as printed, new ones included, e.g. [\"Ammunition\", \"Loading\"]), versatile_damage, range (\"normal/long\" feet, ranged and thrown weapons), ammunition_type, cost {value, currency}, weight (pounds), and mastery for 2024. Setters, supports and proficiency are derived from `data`. Describe special rules of the weapon in `description`. COLUMNS: every other column of the weapon's table row (a material, a crafting cost or DC, ...) goes in data.columns {\"<column as printed>\": \"<cell as printed>\"}; it is kept in the description. Cost and weight exactly as the row prints them.",
-        "Armor" => "Mundane armor or a shield, shaped like the example. Put its stats in `data`: armor_category (Light, Medium, Heavy or Shield), base_ac (the shield bonus for a shield), dex_modifier, dex_cap, strength_requirement, stealth_disadvantage, cost {value, currency}, weight (pounds). Setters, supports and AC rules are derived from `data`. COLUMNS: every other column of its table row goes in data.columns {\"<column as printed>\": \"<cell as printed>\"}; it is kept in the description.",
-        "Item" => "Mundane equipment (ammunition or adventuring gear), shaped like the example: description, and `data` with cost {value, currency}, weight (pounds); ammunition also data.ammunition true, amount (per bundle) and the weapon it is for in data.ammunition_for. COLUMNS: every other column of its table row goes in data.columns {\"<column as printed>\": \"<cell as printed>\"}; it is kept in the description.",
-        "Weapon Property" => "A weapon property: `description` in HTML paragraphs restating the rules of the property in your own words. No rules.",
+        "Weapon" => "A mundane weapon, shaped like the example. Put its stats in `data`: weapon_category (Simple Melee, Simple Ranged, Martial Melee, Martial Ranged, Firearm, or the category name exactly as the source prints it when it is none of these), weapon_group (the source's own weapon group or category name when it also gives one of the standard categories; omit otherwise), melee (true/false), damage {dice, type}, properties (EVERY property name as printed, new ones included, e.g. [\"Ammunition\", \"Loading\"]), versatile_damage, range (\"normal/long\" feet, ranged and thrown weapons), ammunition_type, cost {value, currency}, weight (pounds), and mastery for 2024. Setters, supports and proficiency are derived from `data`. Describe special rules of the weapon in `description`. COLUMNS: every other column of the weapon's table row (a material, a crafting cost or DC, ...) goes in data.columns {\"<column as printed>\": \"<cell as printed>\"}; it is kept in the description. Cost and weight exactly as the row prints them. DESCRIPTION: only what the source prints for it, word for word; a table row with no prose of its own gets no sentence you write (no summary, no core rules text).",
+        "Armor" => "Mundane armor or a shield, shaped like the example. Put its stats in `data`: armor_category (Light, Medium, Heavy or Shield), base_ac (the shield bonus for a shield), dex_modifier, dex_cap, strength_requirement, stealth_disadvantage, cost {value, currency}, weight (pounds). Setters, supports and AC rules are derived from `data`. COLUMNS: every other column of its table row goes in data.columns {\"<column as printed>\": \"<cell as printed>\"}; it is kept in the description. DESCRIPTION: only what the source prints for it, word for word; a table row with no prose of its own gets no sentence you write (no summary, no core rules text).",
+        "Item" => "Mundane equipment (ammunition or adventuring gear), shaped like the example: description, and `data` with cost {value, currency}, weight (pounds); ammunition also data.ammunition true, amount (per bundle) and the weapon it is for in data.ammunition_for. COLUMNS: every other column of its table row goes in data.columns {\"<column as printed>\": \"<cell as printed>\"}; it is kept in the description. DESCRIPTION: only what the source prints for it, word for word; a table row with no prose of its own gets no sentence you write (no summary, no core rules text).",
+        "Weapon Property" => "A weapon property: `description` in HTML paragraphs with the rules of the property kept as printed (word for word, nothing added). No rules.",
         _ => return None,
     })
 }
@@ -581,6 +581,91 @@ fn keep_columns(el: &mut Value, known: &[&str]) {
     }
 }
 
+/// Magic item kinds as printed in an item's subtitle ("Wondrous item, rare") and the `type`
+/// setter the bundled packs give them.
+const MAGIC_KINDS: [(&str, &str); 9] = [
+    ("wondrous item", "Wondrous item"),
+    ("ring", "Ring"),
+    ("rod", "Rod"),
+    ("staff", "Staff"),
+    ("wand", "Wand"),
+    ("potion", "Potion"),
+    ("scroll", "Scroll"),
+    ("weapon", "Weapon"),
+    ("armor", "Armor"),
+];
+/// The bundled packs' magic item `category` setters and the `type` they go with.
+const MAGIC_CATEGORIES: [(&str, &str); 8] = [
+    ("wondrous items", "Wondrous item"),
+    ("rings", "Ring"),
+    ("rods", "Rod"),
+    ("staffs", "Staff"),
+    ("wands", "Wand"),
+    ("potions", "Potion"),
+    ("spell scrolls", "Scroll"),
+    ("scrolls", "Scroll"),
+];
+/// Leading paragraphs of a description searched for the subtitle.
+const SUBTITLE_PARAGRAPHS: usize = 2;
+
+/// `(type, base item)` of a subtitle line: "Weapon (longbow), rare" -> ("Weapon", "longbow").
+fn subtitle_type(line: &str) -> Option<(&'static str, Option<String>)> {
+    let t = line.trim().trim_start_matches(['*', '_']).trim_start();
+    let low = t.to_lowercase();
+    MAGIC_KINDS.iter().find_map(|(word, value)| {
+        let rest = low.strip_prefix(word)?;
+        if !rest.starts_with([',', ' ']) {
+            return None;
+        }
+        let rest = rest.trim_start();
+        if let Some(inner) = rest.strip_prefix('(') {
+            // The bundled packs write the base item lowercase ("longsword").
+            let base = inner.split(')').next().unwrap_or("").trim();
+            return Some((*value, (!base.is_empty()).then(|| base.to_string())));
+        }
+        rest.starts_with(',').then_some((*value, None))
+    })
+}
+
+/// A magic item with no `type` setter gets one: from its printed subtitle (in its description,
+/// else its located passage), else from its `category` setter.
+pub(crate) fn magic_item_type(el: &mut Value, name: &str, plan: &ImportPlan) {
+    if setter(el, "type").is_some() {
+        return;
+    }
+    let desc = el.get("description").and_then(Value::as_str).unwrap_or("");
+    let from_desc = desc
+        .split_inclusive("</p>")
+        .take(SUBTITLE_PARAGRAPHS)
+        .find_map(|p| subtitle_type(&super::fidelity::plain(p)));
+    let from_passage = || {
+        let snippet = &plan
+            .elements
+            .iter()
+            .find(|p| p.name == name && p.ty == "Magic Item")?
+            .excerpt
+            .as_ref()?
+            .snippet;
+        let t = snippet.trim_start_matches(['#', ' ']);
+        let rest = t.get(name.len()..).filter(|_| {
+            t.get(..name.len())
+                .is_some_and(|h| h.eq_ignore_ascii_case(name))
+        })?;
+        subtitle_type(rest)
+    };
+    let from_category = || {
+        let cat = setter_value(el, "category")?.to_lowercase();
+        MAGIC_CATEGORIES
+            .iter()
+            .find(|(c, _)| *c == cat.trim())
+            .map(|(_, v)| (*v, None))
+    };
+    let Some((value, base)) = from_desc.or_else(from_passage).or_else(from_category) else {
+        return;
+    };
+    put_setter(el, "type", value, base.map(|b| json!({"addition": b})));
+}
+
 /// Apply the equipment shape to a standalone element of type `ty`.
 pub(crate) fn normalize_item(
     el: &mut Value,
@@ -603,6 +688,7 @@ pub(crate) fn normalize_item(
             keep_columns(el, &GEAR_KEYS);
         }
         "Weapon Property" => normalize_property(el, name),
+        "Magic Item" => magic_item_type(el, name, plan),
         _ => {}
     }
 }
@@ -610,6 +696,42 @@ pub(crate) fn normalize_item(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_magic_item_without_a_type_setter_gets_one_from_its_subtitle_or_category() {
+        let plan: ImportPlan = serde_json::from_value(json!({
+            "edition": "2024", "groups": [], "elements": [], "notes": []}))
+        .unwrap();
+        let type_of = |el: &Value| {
+            let s = setter(el, "type").cloned().unwrap_or(Value::Null);
+            (
+                s.get("value").and_then(Value::as_str).map(str::to_string),
+                s.pointer("/attributes/addition")
+                    .and_then(Value::as_str)
+                    .map(str::to_string),
+            )
+        };
+        let mut wondrous = json!({"description": "<p><em>Wondrous item, rare (requires attunement)</em></p><p>A lamp.</p>",
+            "setters": [{"name": "rarity", "value": "Rare"}]});
+        magic_item_type(&mut wondrous, "Moth Lamp", &plan);
+        assert_eq!(type_of(&wondrous), (Some("Wondrous item".into()), None));
+        let mut blade =
+            json!({"description": "<p>Weapon (longsword), very rare</p><p>It hums.</p>"});
+        magic_item_type(&mut blade, "Hum Blade", &plan);
+        assert_eq!(
+            type_of(&blade),
+            (Some("Weapon".into()), Some("longsword".into()))
+        );
+        let mut ring = json!({"description": "<p>A ring of reeds.</p>",
+            "setters": [{"name": "category", "value": "Rings"}]});
+        magic_item_type(&mut ring, "Reed Ring", &plan);
+        assert_eq!(type_of(&ring), (Some("Ring".into()), None));
+        // The model's own setter stays.
+        let mut kept = json!({"description": "<p>Wand, rare</p>",
+            "setters": [{"name": "type", "value": "Rod"}]});
+        magic_item_type(&mut kept, "Odd Rod", &plan);
+        assert_eq!(type_of(&kept), (Some("Rod".into()), None));
+    }
 
     #[test]
     fn property_names_match_bundled_tags_with_details() {

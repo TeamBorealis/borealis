@@ -1,0 +1,364 @@
+use super::*;
+use crate::import::anything::fidelity::tests::{draft, planned};
+use crate::import::anything::types::ElementStatus;
+
+const TRAITS: &str = "## Lantern Kin\n\
+\n\
+Lantern kin walk the marsh roads.\n\
+**Ember Sight.** You can see through smoke and fog out to 30\n\
+feet as if it were clear air.\n\
+**Warm Hands.** Once per long rest you can warm a creature you\n\
+touch, ending the frozen condition on it.\n\
+**Languages.** Common and Marsh Cant.\n";
+
+fn kin() -> Vec<PlannedElement> {
+    vec![
+        planned("t0", "Lantern Kin", "Species", Role::Standalone, Some(1)),
+        planned("t1", "Ember Sight", "Racial Trait", Role::Part, Some(4)),
+        planned("t2", "Warm Hands", "Racial Trait", Role::Part, Some(6)),
+    ]
+}
+
+#[test]
+fn a_run_in_trait_passage_is_its_paragraph_without_the_label() {
+    let d = draft(TRAITS, kin(), &[]);
+    let p = own_passage(TRAITS, &d.plan.elements[2], &d.plan).unwrap();
+    assert_eq!(
+        p,
+        [
+            "Once per long rest you can warm a creature you",
+            "touch, ending the frozen condition on it."
+        ]
+    );
+    assert_eq!(
+        html_of(&p),
+        "<p>Once per long rest you can warm a creature you touch, ending the frozen condition on it.</p>"
+    );
+}
+
+#[test]
+fn a_headed_passage_stops_at_the_next_heading_of_its_level() {
+    let src = "#### Steady Aim 1st\n\nYou ignore half cover. Your aim is sure-\nfooted.\n\n#### Grit 2nd\n\nYou have grit points.\n";
+    let mut p = planned(
+        "t1",
+        "Steady Aim",
+        "Class Feature",
+        Role::ClassFeature,
+        Some(1),
+    );
+    // The locator's passage runs on into the next feature.
+    p.excerpt.as_mut().unwrap().end_line = 8;
+    let d = draft(src, vec![p], &[]);
+    let lines = own_passage(src, &d.plan.elements[0], &d.plan).unwrap();
+    assert_eq!(
+        html_of(&lines),
+        "<p>You ignore half cover. Your aim is surefooted.</p>"
+    );
+}
+
+#[test]
+fn shared_and_table_row_passages_are_not_an_elements_own() {
+    let src = "#### Lamps\n\nA lamp of three kinds.\n\nOil Lamp | 5 gp | 1 lb.\n";
+    let d = draft(
+        src,
+        vec![
+            planned("t1", "Brass Lamp", "Item", Role::Standalone, Some(1)),
+            planned("t2", "Glass Lamp", "Item", Role::Standalone, Some(1)),
+            planned("t3", "Oil Lamp", "Item", Role::Standalone, Some(5)),
+        ],
+        &[],
+    );
+    assert!(own_passage(src, &d.plan.elements[0], &d.plan).is_none());
+    assert!(own_passage(src, &d.plan.elements[2], &d.plan).is_none());
+}
+
+#[test]
+fn a_spell_passage_starts_after_its_stat_block() {
+    let src = "### Cinder Lash\n\n2nd-level evocation\n\nCasting Time: 1 action\nRange: 30 feet\n\nA whip of embers strikes one creature you can see.\n";
+    let d = draft(
+        src,
+        vec![planned(
+            "t1",
+            "Cinder Lash",
+            "Spell",
+            Role::Standalone,
+            Some(1),
+        )],
+        &[],
+    );
+    let lines = own_passage(src, &d.plan.elements[0], &d.plan).unwrap();
+    assert_eq!(
+        lines,
+        ["A whip of embers strikes one creature you can see."]
+    );
+}
+
+#[test]
+fn a_reworded_description_becomes_the_printed_passage() {
+    let mut d = draft(
+        TRAITS,
+        kin(),
+        &[
+            // Verbatim already: untouched.
+            "<p>Lantern kin walk the marsh roads.</p>",
+            "<p>You can see through smoke and fog out to 30 feet as if it were clear air.</p>",
+            "<p>Once per long rest, you can warm a creature you touch, which ends the frozen condition on it.</p><p><strong>Cost:</strong> 5 gp</p>",
+        ],
+    );
+    let changed = restore(&mut d);
+    assert_eq!(changed, vec!["t2".to_string()]);
+    assert_eq!(
+        d.elements[2].json["description"],
+        "<p>Once per long rest you can warm a creature you touch, ending the frozen condition on it.</p><p><strong>Cost:</strong> 5 gp</p>"
+    );
+    assert_eq!(d.elements[2].normalised.len(), 1);
+    assert_eq!(d.elements[2].status, ElementStatus::Ok);
+}
+
+#[test]
+fn a_description_with_other_content_or_a_user_revision_is_kept() {
+    let added = "<p>Once per long rest you can warm a creature you touch, ending the frozen condition. \
+        Kin who overuse this gift grow cold and pale for days, and the marsh spirits notice them.</p>";
+    let mut d = draft(TRAITS, kin(), &["", "", added]);
+    assert!(restore(&mut d).is_empty());
+    let mut d = draft(TRAITS, kin(), &["", "", "<p>Once per long rest, you can warm a creature you touch, which ends the frozen condition on it.</p>"]);
+    d.elements[2].revisions = 1;
+    assert!(restore(&mut d).is_empty());
+    // A root with parts: its description carries their text past its own passage.
+    let mut parts = kin();
+    parts[1].parent = Some("t0".into());
+    let mut d = draft(
+        TRAITS,
+        parts,
+        &["<p>Lantern kin travel the marsh roads.</p>"],
+    );
+    assert!(restore(&mut d).is_empty());
+}
+
+const CLASS: &str = "## Lamplighter\n\
+\n\
+Lamplighters keep the roads lit.\n\
+\n\
+### Quick Build\n\
+\n\
+Put your highest score in Wisdom.\n\
+\n\
+### Hit Points\n\
+\n\
+Hit Dice: 1d8 per lamplighter level\n\
+\n\
+### Kindle 1st\n\
+\n\
+You light a lamp.\n\
+\n\
+#### Kindle Options\n\
+\n\
+Pick one flame.\n\
+\n\
+## Other Things\n\
+\n\
+### Multiclassing\n\
+\n\
+Prerequisite: Wisdom 13. You gain light armor proficiency.\n";
+
+fn lamplighter() -> Vec<PlannedElement> {
+    let mut root = planned("c0", "Lamplighter", "Class", Role::Class, Some(1));
+    root.excerpt.as_mut().unwrap().end_line = 20;
+    vec![
+        root,
+        planned(
+            "c1",
+            "Kindle",
+            "Class Feature",
+            Role::ClassFeature,
+            Some(13),
+        ),
+    ]
+}
+
+#[test]
+fn unplanned_prose_sub_sections_reach_the_class_description() {
+    let d = draft(CLASS, lamplighter(), &[]);
+    let subs = unplanned_sections(CLASS, &d.plan.elements[0], &d.plan);
+    let titles: Vec<&str> = subs.iter().map(|s| s.title.as_str()).collect();
+    // Hit points are the class's rules; Kindle and its own sub-heading are planned.
+    assert_eq!(titles, ["Quick Build"]);
+    let mut d = draft(
+        CLASS,
+        lamplighter(),
+        &[
+            "<p>Lamplighters keep the roads lit.</p>",
+            "<p>You light a lamp.</p>",
+        ],
+    );
+    assert_eq!(add_sub_sections(&mut d), vec!["c0".to_string()]);
+    assert_eq!(
+        d.elements[0].json["description"],
+        "<p>Lamplighters keep the roads lit.</p><p><strong>Quick Build</strong></p><p>Put your highest score in Wisdom.</p>"
+    );
+    // Run again: the content is there now.
+    assert!(add_sub_sections(&mut d).is_empty());
+}
+
+#[test]
+fn flat_headings_before_the_first_feature_are_the_roots_sub_sections() {
+    let src = "#### Lamplighter\n\nLamplighters keep the roads lit.\n\n#### Creating a Lamplighter\n\nThink of the road you walked.\n\n#### Kindle 1st\n\nYou light a lamp.\n\n#### Afterword\n\nThanks for reading this book.\n";
+    let mut kindle = planned("c1", "Kindle", "Class Feature", Role::ClassFeature, Some(9));
+    kindle.owner = Some("c0".into());
+    let d = draft(
+        src,
+        vec![
+            planned("c0", "Lamplighter", "Class", Role::Class, Some(1)),
+            kindle,
+        ],
+        &[],
+    );
+    let titles: Vec<String> = unplanned_sections(src, &d.plan.elements[0], &d.plan)
+        .into_iter()
+        .map(|s| s.title)
+        .collect();
+    assert_eq!(titles, ["Creating a Lamplighter"]);
+}
+
+#[test]
+fn a_class_root_gets_the_multiclassing_section_outside_its_passage() {
+    let d = draft(CLASS, lamplighter(), &[]);
+    let m = multiclass_section(CLASS, &d.plan.elements[0]).unwrap();
+    assert!(m.starts_with("### Multiclassing"));
+    assert!(m.contains("light armor proficiency"));
+    assert!(multiclass_section(CLASS, &d.plan.elements[1]).is_none());
+}
+
+#[test]
+fn a_table_row_keeps_only_printed_text() {
+    let src = "#### Lamps\n\nOil Lamp | 5 gp | 1 lb. | Burns for six hours on a pint of oil.\n";
+    let mut d = draft(
+        src,
+        vec![planned("t1", "Oil Lamp", "Item", Role::Standalone, Some(3))],
+        &["<p>A simple clay lamp that lights a small room with a steady flame.</p><p>Burns for six hours on a pint of oil.</p><p><strong>Cost:</strong> 5 gp</p>"],
+    );
+    assert_eq!(drop_unprinted_row_text(&mut d), vec!["t1".to_string()]);
+    assert_eq!(
+        d.elements[0].json["description"],
+        "<p>Burns for six hours on a pint of oil.</p><p><strong>Cost:</strong> 5 gp</p>"
+    );
+}
+
+#[test]
+fn prose_no_element_carries_is_a_report_entry() {
+    let src = "# Lantern Book\n\nThis book collects the marsh folk and their old roads, \
+with notes for running them at your table.\n\n## Lantern Kin\n\nLantern kin walk the marsh \
+roads and keep the lamps burning through every night.\n";
+    let d = draft(
+        src,
+        vec![planned("t0", "Lantern Kin", "Species", Role::Standalone, Some(5))],
+        &["<p>Lantern kin walk the marsh roads and keep the lamps burning through every night.</p>"],
+    );
+    let entries = uncovered_prose(&d);
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].source, "Lantern Book");
+    assert_eq!(entries[0].outcome, "skipped");
+    assert!(entries[0]
+        .note
+        .contains("\"This book collects the marsh folk"));
+}
+
+/// `BOREALIS_FIDELITY_REPLAY=<draft.json> [BOREALIS_FIDELITY_OUT=<draft out>] cargo test -p
+/// borealis-assist --lib -- --ignored replay_fidelity_on_a_stored_draft --nocapture`: applies the
+/// deterministic description steps to a stored draft and prints the fidelity numbers before and
+/// after, the elements the repair would get and the uncovered-prose entries.
+#[test]
+#[ignore = "needs BOREALIS_FIDELITY_REPLAY (a stored draft.json)"]
+fn replay_fidelity_on_a_stored_draft() {
+    use crate::import::anything::fidelity::{name_mask, sentences, sweep, untraced, Index};
+    let Ok(path) = std::env::var("BOREALIS_FIDELITY_REPLAY") else {
+        return;
+    };
+    let text = std::fs::read_to_string(&path).expect("draft reads");
+    let mut d: ImportDraft = serde_json::from_str(&text).expect("draft parses");
+    let stats = |d: &ImportDraft| {
+        let (index, mask) = (Index::new(&d.source_text), name_mask(d));
+        let checked = d
+            .elements
+            .iter()
+            .filter(|e| !e.json.is_null() && !matches!(e.role, Role::Text | Role::SubclassGate));
+        let total: usize = checked
+            .clone()
+            .map(|e| {
+                sentences(
+                    e.json
+                        .get("description")
+                        .and_then(Value::as_str)
+                        .unwrap_or(""),
+                )
+                .iter()
+                .filter(|s| words(s).len() >= 6)
+                .count()
+            })
+            .sum();
+        let flagged: usize = checked
+            .map(|e| untraced(&e.json, &index, &mask).len())
+            .sum();
+        (total, flagged)
+    };
+    let before = stats(&d);
+    let plan = d.plan.clone();
+    let mut typed = 0;
+    for e in d
+        .elements
+        .iter_mut()
+        .filter(|e| e.ty == "Magic Item" && !e.json.is_null())
+    {
+        let had = e.json.clone();
+        crate::import::anything::items::magic_item_type(&mut e.json, &e.name, &plan);
+        typed += usize::from(had != e.json);
+    }
+    println!("magic items given a type setter: {typed}");
+    let restored = restore(&mut d);
+    let added = add_sub_sections(&mut d);
+    println!(
+        "table rows with unprinted text removed: {}",
+        drop_unprinted_row_text(&mut d).len()
+    );
+    let after = stats(&d);
+    let mut by_role: std::collections::BTreeMap<String, usize> = Default::default();
+    for id in &restored {
+        let role = d
+            .element(id)
+            .map(|e| format!("{:?}", e.role))
+            .unwrap_or_default();
+        *by_role.entry(role).or_default() += 1;
+    }
+    println!("sentences >=6 words / untraced: before {before:?}, after {after:?}");
+    println!(
+        "restored to the printed passage: {} {by_role:?}",
+        restored.len()
+    );
+    println!("sub-sections added to roots: {}", added.len());
+    println!("fidelity repairs (capped): {}", sweep(&d).len());
+    let mut noted = d.clone();
+    crate::import::anything::fidelity::note_leftovers(&mut noted);
+    let flagged = noted
+        .elements
+        .iter()
+        .filter(|e| {
+            e.issues
+                .iter()
+                .any(|i| i.starts_with("description not traced"))
+        })
+        .count();
+    println!("elements with an untraced sentence (review note if the repair leaves it): {flagged}");
+    let entries = uncovered_prose(&d);
+    println!("uncovered-prose entries: {}", entries.len());
+    for e in entries.iter().take(8) {
+        println!(
+            "  {}: {}",
+            e.source,
+            e.note.chars().take(140).collect::<String>()
+        );
+    }
+    if let Ok(out) = std::env::var("BOREALIS_FIDELITY_OUT") {
+        std::fs::write(&out, serde_json::to_string(&d).expect("draft serialises")).expect("writes");
+        println!("written to {out}");
+    }
+}
