@@ -231,19 +231,91 @@ fn font_info(doc: &Document, font: &Dictionary, glyphs: &mut GlyphCache) -> Font
     } else {
         (0.001, 1.0)
     };
+    let mut unicode = to_unicode(doc, font);
+    let base = if two_byte {
+        Vec::new()
+    } else {
+        base_table(doc, font, glyphs)
+    };
+    if !two_byte && glyph_scale == 0.001 && reencoded(&unicode, &base) {
+        unicode = repair_identity_fallbacks(unicode, |c| width_of(&widths, glyph_scale, c));
+    }
     FontInfo {
         bold: is_bold_font(font),
         widths,
         two_byte,
-        to_unicode: to_unicode(doc, font),
-        base: if two_byte {
-            Vec::new()
-        } else {
-            base_table(doc, font, glyphs)
-        },
+        to_unicode: unicode,
+        base,
         glyph_scale,
         size_scale,
     }
+}
+
+fn width_of(widths: &Widths, glyph_scale: f32, code: u32) -> f32 {
+    match widths {
+        Widths::Simple { first, w, missing } => code
+            .checked_sub(*first)
+            .and_then(|i| w.get(i as usize))
+            .copied()
+            .filter(|x| *x > 0.0)
+            .unwrap_or(*missing),
+        Widths::Cid { map, default } => map.get(&code).copied().unwrap_or(*default),
+        Widths::Unknown => DEFAULT_WIDTH / (glyph_scale * 1000.0).max(f32::EPSILON),
+    }
+}
+
+/// The codes do not follow the font's encoding: most `ToUnicode` texts differ from it (a
+/// subset font numbered in its own order). Only then is a code's own byte as its text a sign
+/// of a glyph the producer could not name.
+fn reencoded(map: &HashMap<u32, String>, base: &[Option<String>]) -> bool {
+    let agree = map
+        .iter()
+        .filter(|(c, t)| base.get(**c as usize).and_then(Option::as_ref) == Some(*t))
+        .count();
+    !map.is_empty() && 2 * agree < map.len()
+}
+
+/// A glyph narrower than this share of the glyph sharing its text is not that character.
+const FALLBACK_NARROW: f32 = 0.75;
+/// Widest glyph (thousandths of the font size) read as a word space, then as a hyphen.
+const SPACE_WIDTH_MAX: f32 = 280.0;
+const HYPHEN_WIDTH_MAX: f32 = 420.0;
+
+/// Some producers write a code's own byte as its `ToUnicode` text when they cannot name the
+/// glyph (the space and the hyphen, whose characters have several code points). Such a code
+/// collides with the code really mapped to that character and is much narrower than it; by its
+/// width it is read as a word space or a hyphen ("Ember-Lit" printed with `O` for the hyphen
+/// decodes as "EmberOLit" otherwise). Other codes are kept.
+fn repair_identity_fallbacks(
+    map: HashMap<u32, String>,
+    width: impl Fn(u32) -> f32,
+) -> HashMap<u32, String> {
+    let identity = |code: u32, t: &str| {
+        let mut chars = t.chars();
+        chars.next().map(u32::from) == Some(code) && chars.next().is_none()
+    };
+    let repaired = |code: u32, t: &str| -> Option<String> {
+        if !identity(code, t) {
+            return None;
+        }
+        let w = width(code);
+        let wider = map
+            .iter()
+            .any(|(c, u)| *c != code && u == t && w < FALLBACK_NARROW * width(*c));
+        if !wider {
+            return None;
+        }
+        if w <= SPACE_WIDTH_MAX {
+            Some(" ".into())
+        } else if w <= HYPHEN_WIDTH_MAX {
+            Some("-".into())
+        } else {
+            None
+        }
+    };
+    map.iter()
+        .map(|(c, t)| (*c, repaired(*c, t).unwrap_or_else(|| t.clone())))
+        .collect()
 }
 
 impl FontCache {
@@ -311,16 +383,7 @@ impl FontInfo {
     }
 
     fn width(&self, code: u32) -> f32 {
-        match &self.widths {
-            Widths::Simple { first, w, missing } => code
-                .checked_sub(*first)
-                .and_then(|i| w.get(i as usize))
-                .copied()
-                .filter(|x| *x > 0.0)
-                .unwrap_or(*missing),
-            Widths::Cid { map, default } => map.get(&code).copied().unwrap_or(*default),
-            Widths::Unknown => DEFAULT_WIDTH / (self.glyph_scale * 1000.0).max(f32::EPSILON),
-        }
+        width_of(&self.widths, self.glyph_scale, code)
     }
 
     /// Horizontal advance of `bytes` in unscaled text space.
@@ -379,4 +442,74 @@ pub(crate) fn shown(font: Option<&FontInfo>, operands: &[Object], sp: &Spacing) 
         }
     }
     (text, advance)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_narrow_code_mapped_to_its_own_byte_beside_the_real_letter_is_a_hyphen_or_space() {
+        let map: HashMap<u32, String> = [
+            (0x4f, "O"),
+            (0x58, "O"),
+            (0x21, "!"),
+            (0x30, "!"),
+            (0x41, "A"),
+            (0x50, "P"),
+        ]
+        .into_iter()
+        .map(|(c, t)| (c, t.to_string()))
+        .collect();
+        let widths = |c: u32| match c {
+            0x4f => 330.0,
+            0x21 => 220.0,
+            0x30 => 500.0,
+            0x50 => 330.0,
+            _ => 700.0,
+        };
+        let fixed = repair_identity_fallbacks(map, widths);
+        assert_eq!(fixed[&0x4f], "-");
+        assert_eq!(fixed[&0x58], "O");
+        assert_eq!(fixed[&0x21], " ");
+        assert_eq!(fixed[&0x41], "A");
+        // Narrow but alone with its text: kept.
+        assert_eq!(fixed[&0x50], "P");
+    }
+
+    #[test]
+    fn only_a_font_numbered_in_its_own_order_counts_as_reencoded() {
+        let mut base: Vec<Option<String>> = vec![None; 256];
+        for c in 0x41u8..=0x5a {
+            base[c as usize] = Some((c as char).to_string());
+        }
+        let own_order: HashMap<u32, String> = (0x41u32..=0x46)
+            .map(|c| (c, char::from_u32(c + 6).unwrap().to_string()))
+            .collect();
+        assert!(reencoded(&own_order, &base));
+        let follows: HashMap<u32, String> = (0x41u32..=0x46)
+            .map(|c| (c, char::from_u32(c).unwrap().to_string()))
+            .collect();
+        assert!(!reencoded(&follows, &base));
+    }
+
+    /// Offline look at a PDF's fonts: `BOREALIS_PDF_FONT=<file.pdf>:<object id>` prints the
+    /// codes whose `ToUnicode` text differs from the encoding, with their widths.
+    #[test]
+    #[ignore = "needs a local PDF"]
+    fn probe_font_codes() {
+        let Ok(arg) = std::env::var("BOREALIS_PDF_FONT") else {
+            return;
+        };
+        let (file, id) = arg.rsplit_once(':').unwrap();
+        let doc = Document::load_mem(&std::fs::read(file).unwrap()).unwrap();
+        let dict = doc.get_dictionary((id.parse().unwrap(), 0)).unwrap();
+        let info = font_info(&doc, dict, &mut GlyphCache::default());
+        let mut codes: Vec<_> = info.to_unicode.iter().collect();
+        codes.sort();
+        for (code, t) in codes {
+            let base = info.base.get(*code as usize).cloned().flatten();
+            println!("{code:#04x} {t:?} base={base:?} w={}", info.width(*code));
+        }
+    }
 }
