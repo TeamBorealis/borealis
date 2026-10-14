@@ -249,14 +249,21 @@ seed step carrying the snapshot value.
 
 | Command | Args (camelCase keys) | Returns |
 |---|---|---|
-| `scan_5etools_folder` | `path` | `FiveToolsScan` = `{ sources: [{ abbr, name, ruleset, counts }] }` |
-| `import_5etools` | `request: { path, sources: string[], includeFluff }` | `FiveToolsImportReport` = `{ converted, partial: [{element, reason}], skipped: [{element, reason}], packs: ContentPack[] }` |
+| `scan_5etools_folder` | `path` | `FiveToolsScan` = `{ sources: [{ abbr, name, ruleset, category, counts }] }` |
+| `import_5etools` | `request: { path, sources: string[], includeFluff }` | `FiveToolsImportReport` = `{ converted, replaced, partial: [{element, kind, reason}], skipped: [{element, kind, reason}], packs: ContentPack[] }` |
 
 The user supplies a path to their own local 5etools `data/` folder (typed path; a native folder dialog is optional on
 desktop). `scan_5etools_folder` is read-only. `import_5etools` emits `borealis://import_5etools_progress` (`ContentProgress`,
 phase `converting` then `done`), installs one pack per source into the library with `kind: "local-import"` and
 `redistributable: false` (UI badge: "Local import — not redistributable"), and triggers `content-reloaded`. No default
 download URL exists; nothing is fetched from the network.
+
+Fields added by the 5etools import gaps work:
+
+- `FiveToolsSource.category`: `"book" | "adventure" | "homebrew" | "other"`, from `books.json` / `adventures.json` or a homebrew
+  file's `_meta`; `"other"` when listed nowhere. `ruleset` may be `"mixed"` (entries of both editions). The UI groups sources by it.
+- `ImportNote.kind` (on every `partial` and `skipped` note): entity kind of the element (`"feat"`, `"language"`, `"subclass"`, ...).
+- `FiveToolsImportReport.replaced`: number of packs that already existed and were replaced in place (re-import).
 
 ### Settings
 
