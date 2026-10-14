@@ -1,0 +1,346 @@
+{
+ "format": "borealis-content/1",
+ "ruleset": "dnd2014",
+ "elements": [
+  {
+   "id": "ID_SYNTH_SOURCE",
+   "name": "Synthetic Test Source",
+   "type": "Source",
+   "source": "Core",
+   "description": "<p>Invented content used to test the homebrew-case harness.</p>",
+   "setters": [
+    {
+     "name": "abbreviation",
+     "value": "SYN"
+    },
+    {
+     "name": "url",
+     "value": "https://example.invalid/synthetic"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_CLASS_LANTERNWARDEN",
+   "name": "Lanternwarden",
+   "type": "Class",
+   "source": "Synthetic Test Source",
+   "description": "<p>Keepers of the road lanterns. Lantern Lore Table: d4 keeper oaths.</p>",
+   "setters": [
+    {
+     "name": "hd",
+     "value": "d10"
+    },
+    {
+     "name": "short",
+     "value": "Constitution; Light armor"
+    }
+   ],
+   "multiclass": {
+    "id": "ID_SYNTH_MULTICLASS_LANTERNWARDEN",
+    "prerequisite": "Constitution 13",
+    "requirements": "[con:13]",
+    "rules": [
+     {
+      "kind": "grant",
+      "id": "ID_INTERNAL_GRANT_MULTICLASS",
+      "type": "Grants"
+     },
+     {
+      "kind": "grant",
+      "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+      "type": "Proficiency"
+     }
+    ]
+   },
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SAVINGTHROW_STRENGTH",
+     "type": "Proficiency",
+     "requirements": "!ID_SYNTH_MULTICLASS_LANTERNWARDEN"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SAVINGTHROW_CONSTITUTION",
+     "type": "Proficiency",
+     "requirements": "!ID_SYNTH_MULTICLASS_LANTERNWARDEN"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+     "type": "Proficiency",
+     "requirements": "!ID_SYNTH_MULTICLASS_LANTERNWARDEN"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS",
+     "type": "Proficiency",
+     "requirements": "!ID_SYNTH_MULTICLASS_LANTERNWARDEN"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_SYNTH_PROFICIENCY_LANTERN_WEAPONS",
+     "type": "Proficiency",
+     "requirements": "!ID_SYNTH_MULTICLASS_LANTERNWARDEN"
+    },
+    {
+     "kind": "select",
+     "type": "Proficiency",
+     "name": "Skill Proficiency (Lanternwarden)",
+     "number": 2,
+     "supports": "ID_PROFICIENCY_SKILL_ATHLETICS|ID_PROFICIENCY_SKILL_PERCEPTION|ID_PROFICIENCY_SKILL_RELIGION|ID_PROFICIENCY_SKILL_SURVIVAL",
+     "requirements": "!ID_SYNTH_MULTICLASS_LANTERNWARDEN"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_SYNTH_CLASS_FEATURE_KINDLE",
+     "type": "Class Feature"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_SYNTH_CLASS_FEATURE_STEADY_GLOW",
+     "type": "Class Feature",
+     "level": 2
+    },
+    {
+     "kind": "grant",
+     "id": "ID_SYNTH_CLASS_FEATURE_LANTERN_OATH",
+     "type": "Class Feature",
+     "level": 3
+    },
+    {
+     "kind": "grant",
+     "id": "ID_SYNTH_CLASS_FEATURE_FLARE",
+     "type": "Class Feature",
+     "level": 5
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_CLASS_FEATURE_KINDLE",
+   "name": "Kindle",
+   "type": "Class Feature",
+   "source": "Synthetic Test Source",
+   "description": "<p>You carry embers equal to 1 + your Constitution modifier (minimum 1). Creatures you scorch make a Constitution save (DC 8 + proficiency + Constitution).</p>",
+   "rules": [
+    {
+     "kind": "resource",
+     "id": "embers",
+     "name": "Embers",
+     "max": {
+      "type": "formula",
+      "expr": "max(1, 1 + constitution:modifier)"
+     },
+     "recharge": [
+      "long_rest"
+     ]
+    },
+    {
+     "kind": "save_dc",
+     "id": "kindle",
+     "formula": "8+proficiency+constitution"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_CLASS_FEATURE_STEADY_GLOW",
+   "name": "Steady Glow",
+   "type": "Class Feature",
+   "source": "Synthetic Test Source",
+   "description": "<p>You have advantage on initiative rolls.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_GRANTS_INITIATIVE_ADVANTAGE",
+     "type": "Grants"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_CLASS_FEATURE_LANTERN_OATH",
+   "name": "Lantern Oath",
+   "type": "Class Feature",
+   "source": "Synthetic Test Source",
+   "description": "<p>Choose an oath path.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Archetype",
+     "name": "Lantern Oath",
+     "level": 3,
+     "supports": "Lantern Oath"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_CLASS_FEATURE_FLARE",
+   "name": "Flare",
+   "type": "Class Feature",
+   "source": "Synthetic Test Source",
+   "description": "<p>Once per turn your light flares; the effect is described here only.</p>"
+  },
+  {
+   "id": "ID_SYNTH_ARCHETYPE_PATH_OF_ASH",
+   "name": "Path of Ash",
+   "type": "Archetype",
+   "source": "Synthetic Test Source",
+   "supports": [
+    "Lantern Oath"
+   ],
+   "description": "<p>Wardens who let their lanterns burn low.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_SYNTH_ARCHETYPE_FEATURE_ASHEN_VEIL",
+     "type": "Archetype Feature",
+     "level": 3
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_ARCHETYPE_FEATURE_ASHEN_VEIL",
+   "name": "Ashen Veil",
+   "type": "Archetype Feature",
+   "source": "Synthetic Test Source",
+   "description": "<p>You gain proficiency in the Stealth skill.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_STEALTH",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_WEAPON_PROPERTY_GLOWING",
+   "name": "Glowing",
+   "type": "Weapon Property",
+   "source": "Synthetic Test Source",
+   "description": "<p>The weapon sheds dim light in a 10-foot radius.</p>"
+  },
+  {
+   "id": "ID_SYNTH_PROFICIENCY_LANTERN_FLAIL",
+   "name": "Weapon Proficiency (Lantern Flail)",
+   "type": "Proficiency",
+   "source": "Synthetic Test Source",
+   "supports": [
+    "Weapon",
+    "Martial",
+    "Melee",
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE"
+   ],
+   "description": "Proficiency: Weapon Proficiency (Lantern Flail)."
+  },
+  {
+   "id": "ID_SYNTH_PROFICIENCY_LANTERN_WEAPONS",
+   "name": "Weapon Proficiency (Lantern Weapons)",
+   "type": "Proficiency",
+   "source": "Synthetic Test Source",
+   "description": "Proficiency: every lantern weapon.",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_SYNTH_PROFICIENCY_LANTERN_FLAIL",
+     "type": "Proficiency"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_WEAPON_LANTERN_FLAIL",
+   "name": "Lantern Flail",
+   "type": "Weapon",
+   "source": "Synthetic Test Source",
+   "supports": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE",
+    "ID_INTERNAL_DAMAGE_TYPE_BLUDGEONING",
+    "ID_SYNTH_WEAPON_PROPERTY_GLOWING"
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Weapons"
+    },
+    {
+     "name": "cost",
+     "value": "20",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "4 lb.",
+     "attributes": {
+      "lb": "4"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "onehand"
+    },
+    {
+     "name": "damage",
+     "value": "1d8",
+     "attributes": {
+      "type": "bludgeoning"
+     }
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_SYNTH_PROFICIENCY_LANTERN_FLAIL"
+    }
+   ],
+   "description": "<p>A flail whose head is a caged lantern (glowing).</p>"
+  },
+  {
+   "id": "ID_SYNTH_MAGIC_ITEM_EMBER_FLAIL",
+   "name": "Ember Flail",
+   "type": "Magic Item",
+   "source": "Synthetic Test Source",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Magic Weapons"
+    },
+    {
+     "name": "type",
+     "value": "Weapon",
+     "attributes": {
+      "addition": "lantern flail"
+     }
+    },
+    {
+     "name": "rarity",
+     "value": "Uncommon"
+    },
+    {
+     "name": "enhancement",
+     "value": "1"
+    },
+    {
+     "name": "weapon",
+     "value": "ID_SYNTH_WEAPON_LANTERN_FLAIL"
+    },
+    {
+     "name": "name-format",
+     "value": "{{parent}} +{{enhancement}}"
+    }
+   ],
+   "description": "<p>You gain a +1 bonus to attack and damage rolls made with this magic weapon.</p>"
+  },
+  {
+   "id": "ID_SYNTH_FEAT_WICK_TRIMMER",
+   "name": "Wick Trimmer",
+   "type": "Feat",
+   "source": "Synthetic Test Source",
+   "description": "<p>Once per short rest you can snuff a light within 30 feet.</p>"
+  },
+  {
+   "id": "ID_SYNTH_CONDITION_SMOULDERING",
+   "name": "Smouldering",
+   "type": "Condition",
+   "source": "Synthetic Test Source",
+   "description": "<p>A smouldering creature takes 1d4 fire damage at the start of its turn.</p>"
+  }
+ ]
+}

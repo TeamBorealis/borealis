@@ -1,0 +1,466 @@
+{
+ "schema": 1,
+ "case": "synthetic-lanternwarden",
+ "title": "Invented class used to prove the harness (not homebrew from any source)",
+ "ruleset": "dnd2014",
+ "source_objects": [
+  {
+   "name": "Lanternwarden",
+   "type": "Class",
+   "class": "mechanised"
+  },
+  {
+   "name": "Kindle",
+   "type": "Class Feature",
+   "class": "mechanised"
+  },
+  {
+   "name": "Steady Glow",
+   "type": "Class Feature",
+   "class": "mechanised"
+  },
+  {
+   "name": "Lantern Oath",
+   "type": "Class Feature",
+   "class": "mechanised"
+  },
+  {
+   "name": "Flare",
+   "type": "Class Feature",
+   "class": "text_only_ok"
+  },
+  {
+   "name": "Path of Ash",
+   "type": "Archetype",
+   "class": "mechanised"
+  },
+  {
+   "name": "Ashen Veil",
+   "type": "Archetype Feature",
+   "class": "mechanised"
+  },
+  {
+   "name": "Lantern Flail",
+   "type": "Weapon",
+   "class": "mechanised"
+  },
+  {
+   "name": "Glowing",
+   "type": "Weapon Property",
+   "class": "text_only_ok"
+  },
+  {
+   "name": "Ember Flail",
+   "type": "Magic Item",
+   "class": "mechanised"
+  },
+  {
+   "name": "Wick Trimmer",
+   "type": "Feat",
+   "class": "text_only_ok"
+  },
+  {
+   "name": "Smouldering",
+   "type": "Condition",
+   "class": "text_only_ok"
+  },
+  {
+   "name": "Lantern Lore Table",
+   "class": "text_only_ok"
+  },
+  {
+   "name": "Optional Rule: Dim Lanterns",
+   "class": "unsupported"
+  }
+ ],
+ "elements": [
+  {
+   "id": "el.class",
+   "level": "must",
+   "class": "mechanised",
+   "type": "Class",
+   "name": "Lanternwarden",
+   "setters": {
+    "hd": "d10"
+   },
+   "rules_include": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SAVINGTHROW_STRENGTH"
+    },
+    {
+     "kind": "select",
+     "type": "Proficiency",
+     "number": 2
+    }
+   ],
+   "json": [
+    {
+     "pointer": "/multiclass/requirements",
+     "contains": [
+      "con:13"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "el.subclass",
+   "level": "must",
+   "class": "mechanised",
+   "type": "Archetype",
+   "name": "Path of Ash",
+   "supports_names": [
+    "Lantern Oath"
+   ]
+  },
+  {
+   "id": "el.weapon.lantern_flail",
+   "level": "must",
+   "class": "mechanised",
+   "type": "Weapon",
+   "name": "Lantern Flail",
+   "setters": {
+    "damage": "1d8",
+    "damage@type": "bludgeoning",
+    "cost": "20",
+    "cost@currency": "gp",
+    "weight@lb": "4"
+   },
+   "supports_names": [
+    "Martial Melee",
+    "Glowing"
+   ],
+   "supports_ids": [
+    "ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE"
+   ]
+  },
+  {
+   "id": "el.magic.ember_flail",
+   "level": "must",
+   "class": "mechanised",
+   "type": "Magic Item",
+   "name": "Ember Flail",
+   "setters": {
+    "enhancement": "1",
+    "rarity": "uncommon"
+   }
+  },
+  {
+   "id": "el.property.glowing",
+   "level": "must",
+   "class": "text_only_ok",
+   "type": "Weapon Property",
+   "name": "Glowing"
+  },
+  {
+   "id": "el.feat.wick_trimmer",
+   "level": "must",
+   "class": "text_only_ok",
+   "type": "Feat",
+   "name": "Wick Trimmer",
+   "text_contains": [
+    "30 feet"
+   ]
+  },
+  {
+   "id": "el.condition.smouldering",
+   "level": "should",
+   "class": "text_only_ok",
+   "type": "Condition",
+   "name": "Smouldering",
+   "text_contains": [
+    "1d4",
+    "fire"
+   ]
+  },
+  {
+   "id": "el.feature.flare",
+   "level": "must",
+   "class": "text_only_ok",
+   "type": "Class Feature",
+   "name": "Flare|Flare Up"
+  }
+ ],
+ "mentions": [
+  {
+   "id": "mention.lore_table",
+   "level": "should",
+   "class": "text_only_ok",
+   "text": [
+    "lantern lore table"
+   ]
+  }
+ ],
+ "characters": [
+  {
+   "id": "lw-l1",
+   "race_id": "ID_RACE_HUMAN",
+   "background_id": "ID_BACKGROUND_ACOLYTE",
+   "class": "Lanternwarden",
+   "level": 1,
+   "scores": [
+    14,
+    12,
+    15,
+    8,
+    13,
+    10
+   ],
+   "expect": [
+    {
+     "id": "clean",
+     "level": "must",
+     "class": "mechanised",
+     "check": "clean"
+    },
+    {
+     "id": "hp",
+     "level": "must",
+     "class": "mechanised",
+     "check": "hit_points",
+     "value": 13
+    },
+    {
+     "id": "pb",
+     "level": "must",
+     "class": "mechanised",
+     "check": "proficiency_bonus",
+     "value": 2
+    },
+    {
+     "id": "save.str",
+     "level": "must",
+     "class": "mechanised",
+     "check": "save",
+     "ability": "str",
+     "proficient": true,
+     "total": 4
+    },
+    {
+     "id": "save.dex",
+     "level": "must",
+     "class": "mechanised",
+     "check": "save",
+     "ability": "dex",
+     "proficient": false,
+     "total": 1
+    },
+    {
+     "id": "features",
+     "level": "must",
+     "class": "mechanised",
+     "check": "features",
+     "present": [
+      "Kindle"
+     ],
+     "absent": [
+      "Steady Glow",
+      "Lantern Oath"
+     ]
+    },
+    {
+     "id": "initiative",
+     "level": "must",
+     "class": "mechanised",
+     "check": "initiative",
+     "total": 1,
+     "advantage": false
+    },
+    {
+     "id": "skills.choice",
+     "level": "must",
+     "class": "mechanised",
+     "check": "choice",
+     "name_contains": "Skill Proficiency",
+     "type": "Proficiency",
+     "count": 2,
+     "options": 3,
+     "options_include_ids": [
+      "ID_PROFICIENCY_SKILL_SURVIVAL"
+     ],
+     "note": "Religion is already granted by the Acolyte background, so the engine offers 3 of the 4"
+    },
+    {
+     "id": "granted",
+     "level": "must",
+     "class": "mechanised",
+     "check": "granted",
+     "ids": [
+      "ID_PROFICIENCY_ARMOR_PROFICIENCY_LIGHT_ARMOR",
+      "ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS"
+     ],
+     "absent_ids": [
+      "ID_PROFICIENCY_SKILL_STEALTH"
+     ]
+    },
+    {
+     "id": "resource.embers",
+     "level": "must",
+     "class": "mechanised",
+     "check": "resource",
+     "name": "embers",
+     "max": 4
+    }
+   ]
+  },
+  {
+   "id": "lw-l3",
+   "race_id": "ID_RACE_HUMAN",
+   "background_id": "ID_BACKGROUND_ACOLYTE",
+   "class": "Lanternwarden",
+   "level": 3,
+   "scores": [
+    14,
+    12,
+    15,
+    8,
+    13,
+    10
+   ],
+   "subclass": "Path of Ash",
+   "equip": [
+    {
+     "key": "flail",
+     "item": "Lantern Flail"
+    }
+   ],
+   "expect": [
+    {
+     "id": "clean",
+     "level": "must",
+     "class": "mechanised",
+     "check": "clean"
+    },
+    {
+     "id": "hp",
+     "level": "must",
+     "class": "mechanised",
+     "check": "hit_points",
+     "value": 31
+    },
+    {
+     "id": "features",
+     "level": "must",
+     "class": "mechanised",
+     "check": "features",
+     "present": [
+      "Kindle",
+      "Steady Glow",
+      "Lantern Oath",
+      "Ashen Veil"
+     ],
+     "absent": [
+      "Flare"
+     ]
+    },
+    {
+     "id": "initiative",
+     "level": "must",
+     "class": "mechanised",
+     "check": "initiative",
+     "total": 1,
+     "advantage": true
+    },
+    {
+     "id": "skill.stealth",
+     "level": "must",
+     "class": "mechanised",
+     "check": "skill",
+     "skill": "Stealth",
+     "proficient": true,
+     "total": 3
+    },
+    {
+     "id": "save_dc.kindle",
+     "level": "must",
+     "class": "mechanised",
+     "check": "save_dc",
+     "name": "kindle",
+     "value": 13
+    },
+    {
+     "id": "attack.flail",
+     "level": "must",
+     "class": "mechanised",
+     "check": "attack",
+     "equip": "flail",
+     "attack": 4,
+     "damage": "1d8+2 bludgeoning",
+     "proficient": true
+    }
+   ]
+  },
+  {
+   "id": "lw-l5",
+   "race_id": "ID_RACE_HUMAN",
+   "background_id": "ID_BACKGROUND_ACOLYTE",
+   "class": "Lanternwarden",
+   "level": 5,
+   "scores": [
+    14,
+    12,
+    15,
+    8,
+    13,
+    10
+   ],
+   "subclass": "Path of Ash",
+   "equip": [
+    {
+     "key": "flail",
+     "item": "Lantern Flail",
+     "adorner": "Ember Flail"
+    }
+   ],
+   "expect": [
+    {
+     "id": "clean",
+     "level": "must",
+     "class": "mechanised",
+     "check": "clean"
+    },
+    {
+     "id": "hp",
+     "level": "must",
+     "class": "mechanised",
+     "check": "hit_points",
+     "value": 49
+    },
+    {
+     "id": "pb",
+     "level": "must",
+     "class": "mechanised",
+     "check": "proficiency_bonus",
+     "value": 3
+    },
+    {
+     "id": "features",
+     "level": "must",
+     "class": "mechanised",
+     "check": "features",
+     "present": [
+      "Flare"
+     ]
+    },
+    {
+     "id": "save_dc.kindle",
+     "level": "must",
+     "class": "mechanised",
+     "check": "save_dc",
+     "name": "kindle",
+     "value": 14
+    },
+    {
+     "id": "attack.flail_adorned",
+     "level": "must",
+     "class": "mechanised",
+     "check": "attack",
+     "equip": "flail",
+     "attack": 6,
+     "damage": "1d8+3 bludgeoning",
+     "proficient": true
+    }
+   ]
+  }
+ ]
+}

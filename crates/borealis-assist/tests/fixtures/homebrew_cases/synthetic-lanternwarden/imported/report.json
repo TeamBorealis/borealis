@@ -1,0 +1,7 @@
+{
+  "format": "borealis-import-report/1",
+  "entries": [
+    {"source": "Lantern Lore Table", "outcome": "text_only", "elements": ["ID_SYNTH_CLASS_LANTERNWARDEN"], "note": "kept in the class description"},
+    {"source": "Optional Rule: Dim Lanterns", "outcome": "unsupported", "note": "no variant-rule element"}
+  ]
+}

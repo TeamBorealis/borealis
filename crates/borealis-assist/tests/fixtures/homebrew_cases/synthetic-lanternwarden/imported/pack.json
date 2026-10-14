@@ -1,0 +1,11 @@
+{
+  "format": "borealis-pack/1",
+  "id": "user-import-synthetic-lanternwarden",
+  "name": "Synthetic Lanternwarden (test fixture)",
+  "version": "1.0.0",
+  "origin": "custom",
+  "rulesets": ["dnd2014"],
+  "attribution": "Invented test content for the homebrew-case harness.",
+  "description": "Hand-made stand-in for an imported pack.",
+  "files": [{"path": "content.json", "kind": "content"}]
+}
