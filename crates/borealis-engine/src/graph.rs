@@ -9,9 +9,9 @@ use crate::eval::{
 use crate::ids;
 use crate::state::{CharacterState, Choice, ClassSlot, SlotKey};
 use crate::universe::{Cond, UElem, URule, UStat, Universe};
-use borealis_content::expr::Dynamic;
+use borealis_content::expr::{Dynamic, SupportsExpr};
 use borealis_content::{Rule, SourceRestriction};
-use std::cell::RefCell;
+use std::cell::{OnceCell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
@@ -871,6 +871,20 @@ impl<'u> Graph<'u> {
         cand: &UElem,
         existing: bool,
     ) -> bool {
+        let dyns = SpellDynamics::new(self, owner, rule_index);
+        self.choice_allowed_with(owner, rule_index, cand, existing, &dyns)
+    }
+
+    /// [`Self::choice_allowed`] with a prepared spell token context for the same owner and rule
+    /// (an option list builds it once for all candidates).
+    pub(crate) fn choice_allowed_with(
+        &self,
+        owner: NodeId,
+        rule_index: usize,
+        cand: &UElem,
+        existing: bool,
+        dyns: &SpellDynamics<'_, 'u>,
+    ) -> bool {
         let n = &self.nodes[owner];
         let (Rule::Select(s), URule::Select { supports, .. }) =
             (&n.e.el.rules[rule_index], &n.e.rules[rule_index])
@@ -900,8 +914,7 @@ impl<'u> Graph<'u> {
         {
             return false;
         }
-        let dyns = SpellDynamics::new(self, owner, rule_index);
-        if !alternative && !supports_cond_match(supports, cand, &dyns) {
+        if !alternative && !supports_cond_match(supports, cand, dyns) {
             return false;
         }
         if !self.prereq_holds(cand) {
@@ -1083,11 +1096,24 @@ impl<'u> Graph<'u> {
 }
 
 /// Dynamic `$(spellcasting:...)` tokens for one select rule.
+///
+/// The graph is borrowed immutably, so what the tokens read from it (the highest slot level, the
+/// class spell lists) is computed once on first use and reused for every candidate.
 pub struct SpellDynamics<'g, 'u> {
     graph: &'g Graph<'u>,
     class: Option<String>,
     level: u32,
     owner: Option<NodeId>,
+    slot_level: OnceCell<u32>,
+    lists: OnceCell<ClassSpellLists<'u>>,
+}
+
+/// The spell lists of the live spellcasting blocks that serve one spellcasting name.
+struct ClassSpellLists<'u> {
+    /// Single spell ids (`is_spell_id` entries), trimmed.
+    ids: HashSet<&'u str>,
+    /// Parsed expression entries (unparsable or empty entries never match).
+    exprs: Vec<SupportsExpr>,
 }
 
 impl<'g, 'u> SpellDynamics<'g, 'u> {
@@ -1115,6 +1141,8 @@ impl<'g, 'u> SpellDynamics<'g, 'u> {
             class,
             level,
             owner: Some(owner),
+            slot_level: OnceCell::new(),
+            lists: OnceCell::new(),
         }
     }
 
@@ -1126,40 +1154,58 @@ impl<'g, 'u> SpellDynamics<'g, 'u> {
             class,
             level,
             owner: None,
+            slot_level: OnceCell::new(),
+            lists: OnceCell::new(),
         }
+    }
+
+    /// Highest spell level with a slot group for the class at this context's level.
+    fn slot_level(&self, class: &str) -> u32 {
+        *self
+            .slot_level
+            .get_or_init(|| self.graph.highest_slot_level(class, self.level))
+    }
+
+    /// The lists of every live block serving `class` (a block of that name, or an `extend`
+    /// block for it or for all names).
+    fn lists(&self, class: &str) -> &ClassSpellLists<'u> {
+        self.lists.get_or_init(|| {
+            let mut out = ClassSpellLists {
+                ids: HashSet::new(),
+                exprs: Vec::new(),
+            };
+            for info in self.graph.spell_infos().iter().filter(|i| {
+                i.sc.extend != Some(true) && i.name == class
+                    || i.sc.extend == Some(true)
+                        && (i.sc.all == Some(true) || i.name.eq_ignore_ascii_case(class))
+            }) {
+                for l in info.sc.list.iter().chain(info.sc.extends.iter()) {
+                    if l.is_spell_id() {
+                        out.ids.insert(l.supports.trim());
+                    } else if let Ok(Some(expr)) = l.expr() {
+                        out.exprs.push(expr);
+                    }
+                }
+            }
+            out
+        })
     }
 
     fn list_matches(&self, element: &UElem) -> bool {
         let Some(class) = &self.class else {
             return false;
         };
-        let infos = self.graph.spell_infos();
-        let allowed = self.graph.highest_slot_level(class, self.level);
-        let spell_level = element.spell_level().unwrap_or(0);
-        for info in infos.iter().filter(|i| {
-            i.sc.extend != Some(true) && &i.name == class
-                || i.sc.extend == Some(true)
-                    && (i.sc.all == Some(true) || i.name.eq_ignore_ascii_case(class))
-        }) {
-            let lists = info.sc.list.iter().chain(info.sc.extends.iter());
-            for l in lists {
-                if l.is_spell_id() {
-                    if l.supports.trim() == element.el.id
-                        && spell_level <= allowed.max(1)
-                        && spell_level != 0
-                    {
-                        return true;
-                    }
-                    continue;
-                }
-                if let Ok(Some(expr)) = l.expr() {
-                    if crate::eval::supports_match(&expr, element, &crate::eval::NoDynamics) {
-                        return true;
-                    }
-                }
+        let lists = self.lists(class);
+        if lists.ids.contains(element.el.id.as_str()) {
+            let spell_level = element.spell_level().unwrap_or(0);
+            if spell_level != 0 && spell_level <= self.slot_level(class).max(1) {
+                return true;
             }
         }
-        false
+        lists
+            .exprs
+            .iter()
+            .any(|e| crate::eval::supports_match(e, element, &crate::eval::NoDynamics))
     }
 }
 
@@ -1171,7 +1217,7 @@ impl DynamicSupports for SpellDynamics<'_, '_> {
                 let Some(class) = &self.class else {
                     return false;
                 };
-                let h = self.graph.highest_slot_level(class, self.level);
+                let h = self.slot_level(class);
                 element.spell_level().is_some_and(|l| (1..=h).contains(&l))
             }
             Dynamic::Other(token) => {
