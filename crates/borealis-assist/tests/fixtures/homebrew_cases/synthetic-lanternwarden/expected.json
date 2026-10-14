@@ -808,7 +808,7 @@
      "level": "must",
      "class": "mechanised",
      "check": "resource",
-     "name": "embers",
+     "name": "cinders|embers",
      "max": 3
     },
     {

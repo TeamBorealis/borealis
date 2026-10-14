@@ -146,12 +146,8 @@ fn granted(s: &CharacterSnapshot, check: &CharCheck) -> Result<(), String> {
     collect(errs)
 }
 
-fn resource(
-    s: &CharacterSnapshot,
-    name: &str,
-    max: Option<i32>,
-    absent: Option<bool>,
-) -> Result<(), String> {
+/// The max of the resource or stat named like `name`.
+fn resource_max(s: &CharacterSnapshot, name: &str) -> Option<i32> {
     let n = norm(name);
     // an exact resource or stat name first: "ac" is the stat, not a resource whose name merely
     // contains the letters ("Face of ...")
@@ -167,7 +163,7 @@ fn resource(
                 .find(|(k, _)| norm(k) == n)
                 .map(|(_, v)| v.value)
         });
-    let got = exact.or_else(|| {
+    exact.or_else(|| {
         s.resources
             .iter()
             .find(|r| norm(&r.name).contains(&n) || norm(&r.id).contains(&n))
@@ -178,7 +174,17 @@ fn resource(
                     .find(|(k, _)| norm(k).contains(&n))
                     .map(|(_, v)| v.value)
             })
-    });
+    })
+}
+
+fn resource(
+    s: &CharacterSnapshot,
+    name: &str,
+    max: Option<i32>,
+    absent: Option<bool>,
+) -> Result<(), String> {
+    // `a|b`: the pool may be printed under either name
+    let got = name.split('|').find_map(|alt| resource_max(s, alt));
     match (got, absent == Some(true)) {
         (Some(v), true) => Err(format!("{name:?} exists (max {v}), expected none")),
         (None, true) => Ok(()),

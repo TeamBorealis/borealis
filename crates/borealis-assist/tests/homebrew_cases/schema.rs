@@ -374,6 +374,7 @@ pub enum CharCheck {
         absent_names: Vec<String>,
     },
     /// A limited-use pool: a resource (name or id contains `name`) or a stat key containing it.
+    /// `name` may list alternatives as `a|b`.
     /// `absent: true` (schema 2) requires that neither exists.
     Resource {
         name: String,
