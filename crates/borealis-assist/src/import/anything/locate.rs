@@ -41,6 +41,10 @@ struct Candidate {
 
 fn trailing_page_number(t: &str) -> bool {
     let t = t.trim_end();
+    // A table row of three cells or more ending in a number is data, not a page reference.
+    if t.matches(" | ").count() >= 2 {
+        return false;
+    }
     let digits = t.chars().rev().take_while(char::is_ascii_digit).count();
     if digits == 0 || digits > 4 || digits == t.chars().count() {
         return false;
@@ -479,5 +483,15 @@ Cost | Time\n5 gp | 1 day\n\n## Lantern Table\n\nd6 | Colour\n1 | Amber\n\n## Ro
         assert_eq!(m, vec![true, true, true, false, false, false, false]);
         assert!(is_list_line("Alpha – Beta – Gamma"));
         assert!(!is_list_line("Alpha, the first of them, wakes."));
+        // Table rows ending in a number (a DC, a weight) are data, not page references.
+        let rows = [
+            "Moth Club | 1 sp | 10",
+            "Reed Pike | 5 gp | 25",
+            "Dew Axe | 2 gp | 25",
+        ];
+        assert_eq!(index_mask(&rows), vec![false; 3]);
+        let src = "Weapons\n\nName | Cost | DC\nMoth Club | 1 sp | 10\nReed Pike | 5 gp | 25\nDew Axe | 2 gp | 25";
+        let ex = locate_section(src, "", "Reed Pike").unwrap();
+        assert_eq!((ex.start_line, ex.end_line), (5, 5));
     }
 }

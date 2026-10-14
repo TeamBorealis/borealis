@@ -192,3 +192,114 @@ fn catalogue_rows_keep_the_item_name_whole_beside_its_text() {
         assert!(row.contains(desc[0]) && row.contains(desc[2]), "{row}\n{t}");
     }
 }
+
+/// Prose lines of a column: `words` repeated to about `chars` characters per line.
+fn prose(x: f32, top: f32, lines: usize, words: &str) -> String {
+    (0..lines)
+        .map(|i| {
+            show(
+                "F2",
+                10.0,
+                x,
+                top - 14.0 * i as f32,
+                &format!("({words} {i})"),
+            )
+        })
+        .collect()
+}
+
+#[test]
+fn a_table_across_the_column_gutter_is_read_row_by_row() {
+    let mut c = prose(72.0, 740.0, 8, "the hollow lantern road winds on");
+    c += &prose(320.0, 740.0, 8, "a quiet bell rings over the moor");
+    let rows = [
+        ["Name", "Cost", "Damage", "Weight", "Properties"],
+        [
+            "Lantern rod",
+            "12 gp",
+            "1d6 fire",
+            "3 lb.",
+            "Glows (range 20/60), loud",
+        ],
+        [
+            "Bell staff",
+            "30 gp",
+            "1d8 thunder",
+            "4 lb.",
+            "Rings (range 30/90), heavy",
+        ],
+        [
+            "Moth sling",
+            "2 gp",
+            "1d4 piercing",
+            "1 lb.",
+            "Quiet (range 40/120), light",
+        ],
+    ];
+    for (k, row) in rows.iter().enumerate() {
+        let y = 600.0 - 14.0 * k as f32;
+        for (cell, x) in row.iter().zip([72.0, 140.0, 180.0, 250.0, 290.0]) {
+            c += &show("F2", 10.0, x, y, &format!("({cell})"));
+        }
+    }
+    let t = extract_pdf_text(&pdf("a", &c)).unwrap().text;
+    for row in &rows[1..] {
+        assert!(t.lines().any(|l| l == row.join(" | ")), "{t}");
+    }
+    let left = t.find("road winds on 7").unwrap();
+    let right = t.find("over the moor 0").unwrap();
+    assert!(
+        left < right && right < t.find("Lantern rod").unwrap(),
+        "{t}"
+    );
+}
+
+#[test]
+fn a_table_inside_one_column_keeps_its_rows_beside_the_other_columns_prose() {
+    let mut c = prose(72.0, 740.0, 4, "the hollow lantern road winds on");
+    c += &prose(320.0, 740.0, 14, "a quiet bell rings over the moor");
+    for (k, row) in [
+        ["d4", "Moss", "Terrain"],
+        ["1", "Fern", "Bog, fen"],
+        ["2", "Reed", "Marsh"],
+        ["3", "Pine", "Hills"],
+    ]
+    .iter()
+    .enumerate()
+    {
+        let y = 670.0 - 14.0 * k as f32;
+        for (cell, x) in row.iter().zip([72.0, 100.0, 180.0]) {
+            c += &show("F2", 10.0, x, y, &format!("({cell})"));
+        }
+    }
+    c += &prose(72.0, 600.0, 4, "past the old mill and the ford");
+    let t = extract_pdf_text(&pdf("a", &c)).unwrap().text;
+    for row in [
+        "1 | Fern | Bog, fen",
+        "2 | Reed | Marsh",
+        "3 | Pine | Hills",
+    ] {
+        assert!(t.lines().any(|l| l == row), "{t}");
+    }
+    assert!(
+        !t.lines().any(|l| l.contains("Fern") && l.contains("moor")),
+        "{t}"
+    );
+    let column = t.find("the ford 3").unwrap();
+    assert!(column < t.find("over the moor 0").unwrap(), "{t}");
+}
+
+#[test]
+fn a_repeated_two_word_label_is_not_split_into_cells() {
+    let mut c = String::new();
+    for k in 0..5 {
+        let top = 740.0 - 70.0 * k as f32;
+        c += &show("F2", 10.0, 72.0, top, &format!("(Spell number {k})"));
+        c += &show("F2", 10.0, 72.0, top - 14.0, "(Casting)");
+        c += &show("F2", 10.0, 110.0, top - 14.0, "(Time: 1 action)");
+        c += &show("F2", 10.0, 72.0, top - 28.0, "(Range: 30 feet)");
+    }
+    let t = extract_pdf_text(&pdf("a", &c)).unwrap().text;
+    assert_eq!(t.matches("Casting Time: 1 action").count(), 5, "{t}");
+    assert!(!t.contains(" | "), "{t}");
+}

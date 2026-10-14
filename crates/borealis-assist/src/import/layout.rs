@@ -140,8 +140,10 @@ impl HeadingScale {
         if let Some(l) = line.level {
             return Some(l.clamp(1, MAX_LEVEL));
         }
+        // A table row (`cell | cell`) is never a heading, even its bold header row.
         if self.body <= 0.0
             || !heading_text_ok(&line.text)
+            || line.text.contains(" | ")
             || prose_like(&line.text)
             || self.prose_styles.contains(&style_key(line))
         {
@@ -276,6 +278,21 @@ mod tests {
         assert!(md.contains("\n## A Section\n"), "{md}");
         assert!(md.contains("\n### Bold Item\n"), "{md}");
         assert!(md.contains("Body sentence ends here."));
+    }
+
+    #[test]
+    fn a_bold_table_header_row_is_not_a_heading() {
+        let body = "Body text that is long enough to be the size most characters have.";
+        let lines = vec![
+            line(body, 10.0, false),
+            line("Name | Cost | Weight", 10.0, true),
+            line("Moth jar | 2 gp | 1 lb.", 10.0, false),
+            line("Bold Item", 10.0, true),
+            line(body, 10.0, false),
+        ];
+        let md = to_markdown(&lines);
+        assert!(md.contains("\nName | Cost | Weight\n"), "{md}");
+        assert!(md.contains("# Bold Item"), "{md}");
     }
 
     #[test]

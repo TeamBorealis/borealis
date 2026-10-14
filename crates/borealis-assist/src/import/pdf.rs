@@ -8,7 +8,7 @@ use lopdf::{Document, Object, ObjectId};
 
 use super::layout::{render, HeadingScale, TextLine};
 use super::pdf_fonts::FontCache;
-use super::pdf_table::tables;
+use super::pdf_table::{spanning_tables, tables};
 use super::pdf_trust::{distrust, Trust};
 use super::pdf_walk::{paint_page, Run};
 use crate::error::AssistError;
@@ -432,31 +432,51 @@ fn order_columns(frags: Vec<Fragment>, x0: f32, x1: f32, depth: usize) -> Vec<Fr
             Side::Right
         }
     };
-    let lefts = frags.iter().filter(|f| side(f) == Side::Left).count();
-    let rights = frags.iter().filter(|f| side(f) == Side::Right).count();
-    if depth == 0 || lefts < MIN_COLUMN_LINES || rights < MIN_COLUMN_LINES {
+    let side_of = |f: &Fragment| match side(f) {
+        Side::Left => Some(true),
+        Side::Right => Some(false),
+        Side::Full => None,
+    };
+    let spans = spanning_tables(&frags, &side_of);
+    let in_span = |f: &Fragment| {
+        let slack = SAME_LINE * f.size.max(1.0);
+        spans
+            .iter()
+            .any(|(top, bottom)| f.y <= top + slack && f.y >= bottom - slack)
+    };
+    let count = |s: Side| frags.iter().filter(|f| !in_span(f) && side(f) == s).count();
+    if depth == 0 || count(Side::Left) < MIN_COLUMN_LINES || count(Side::Right) < MIN_COLUMN_LINES {
         return merge_rows(tables(frags));
     }
     let mut out = Vec::new();
-    let (mut left, mut right): (Vec<Fragment>, Vec<Fragment>) = (Vec::new(), Vec::new());
+    let (mut left, mut right, mut table) = (Vec::new(), Vec::new(), Vec::new());
+    let flush = |out: &mut Vec<Fragment>, left: &mut Vec<Fragment>, right: &mut Vec<Fragment>| {
+        out.extend(order_columns(std::mem::take(left), x0, mid, depth - 1));
+        out.extend(order_columns(std::mem::take(right), mid, x1, depth - 1));
+    };
     for f in frags {
+        // A table across the gutter is read row by row, after the columns above it.
+        if in_span(&f) {
+            if table.is_empty() {
+                flush(&mut out, &mut left, &mut right);
+            }
+            table.push(f);
+            continue;
+        }
+        if !table.is_empty() {
+            out.extend(merge_rows(tables(std::mem::take(&mut table))));
+        }
         match side(&f) {
             Side::Left => left.push(f),
             Side::Right => right.push(f),
             Side::Full => {
-                out.extend(order_columns(std::mem::take(&mut left), x0, mid, depth - 1));
-                out.extend(order_columns(
-                    std::mem::take(&mut right),
-                    mid,
-                    x1,
-                    depth - 1,
-                ));
+                flush(&mut out, &mut left, &mut right);
                 out.push(f);
             }
         }
     }
-    out.extend(order_columns(left, x0, mid, depth - 1));
-    out.extend(order_columns(right, mid, x1, depth - 1));
+    out.extend(merge_rows(tables(table)));
+    flush(&mut out, &mut left, &mut right);
     out
 }
 
