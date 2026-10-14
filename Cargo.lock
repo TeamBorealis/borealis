@@ -475,6 +475,7 @@ name = "borealis-import-5etools"
 version = "1.0.0"
 dependencies = [
  "borealis-content",
+ "borealis-engine",
  "regex",
  "serde",
  "serde_json",
