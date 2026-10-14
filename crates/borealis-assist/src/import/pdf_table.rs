@@ -525,8 +525,8 @@ fn edges(frags: &[&Fragment]) -> Vec<f32> {
 }
 
 /// The two sides between `top` and `bottom` are tables of one format next to each other (a
-/// long table continued in the next column): one side's column edges recur, shifted, as a run
-/// of the other side's.
+/// long table continued in the next column): each side has a row of two or more cells, and one
+/// side's column edges recur, shifted, as a run of the other side's.
 fn side_by_side(all: &[Fragment], top: f32, bottom: f32, side: SideOf) -> bool {
     let part = |left: bool| -> Vec<&Fragment> {
         all.iter()
@@ -535,6 +535,18 @@ fn side_by_side(all: &[Fragment], top: f32, bottom: f32, side: SideOf) -> bool {
     };
     let (l, r) = (part(true), part(false));
     let size = l.iter().chain(&r).map(|f| f.size).fold(1.0, f32::max);
+    // A continued table has two or more cells on some row of each side.
+    let cells = |side: &[&Fragment]| {
+        let owned: Vec<Fragment> = side.iter().map(|f| (*f).clone()).collect();
+        baseline_rows(&owned)
+            .iter()
+            .map(Vec::len)
+            .max()
+            .unwrap_or(0)
+    };
+    if cells(&l).min(cells(&r)) < 2 {
+        return false;
+    }
     let (el, er) = (edges(&l), edges(&r));
     let (short, long) = if el.len() <= er.len() {
         (&el, &er)

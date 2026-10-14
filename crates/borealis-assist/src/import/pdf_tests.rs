@@ -485,3 +485,41 @@ fn a_row_label_set_tight_against_the_next_cell_is_split_from_it() {
         "{t}"
     );
 }
+
+#[test]
+fn a_full_width_table_with_one_centred_column_past_the_gutter_keeps_that_column() {
+    let mut c = show("F2", 12.0, 48.0, 720.0, "(Simple Tools)");
+    let head = [
+        (120.0, "Name"),
+        (240.0, "Cost"),
+        (296.0, "DC"),
+        (425.0, "Parts"),
+    ];
+    for (x, t) in head {
+        c += &show("F2", 10.0, x, 707.0, &format!("({t})"));
+    }
+    let rows = [
+        ("Awl", 110.0, "2 Tin/Oak", 414.0),
+        ("Lantern Hook", 102.0, "1 Tin", 428.0),
+        ("Rasp", 110.0, "1 Oak", 427.0),
+        ("Moth Net", 102.0, "2 Reed/Tin", 413.0),
+        ("Tongs", 110.0, "1 Tin", 428.0),
+        ("Reed Pipe", 102.0, "1 Reed", 426.0),
+    ];
+    for (k, (name, nx, parts, px)) in rows.iter().enumerate() {
+        let y = 691.0 - 16.0 * k as f32;
+        c += &show("F2", 10.0, *nx, y, &format!("({name})"));
+        c += &show("F2", 10.0, 241.0, y, "(2gp)");
+        c += &show("F2", 10.0, 297.0, y, "(25)");
+        c += &show("F2", 10.0, *px, y, &format!("({parts})"));
+    }
+    let t = extract_pdf_text(&pdf("a", &c)).unwrap().text;
+    assert!(t.lines().any(|l| l == "Name | Cost | DC | Parts"), "{t}");
+    for (name, _, parts, _) in &rows {
+        assert!(
+            t.lines()
+                .any(|l| l == format!("{name} | 2gp | 25 | {parts}")),
+            "{t}"
+        );
+    }
+}
