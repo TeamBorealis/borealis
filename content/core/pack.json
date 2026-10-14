@@ -24,6 +24,10 @@
    "kind": "content"
   },
   {
+   "path": "aurora-compat.json",
+   "kind": "content"
+  },
+  {
    "path": "abilities.json",
    "kind": "content"
   },

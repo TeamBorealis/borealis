@@ -9,7 +9,7 @@ legacy id fixtures (maintainer-local, not included). It is read ONLY for identif
 (levels, base grants, multiclass tables, skills, saves, expertise, ASI, templates, options)
 are generated here from the engine rules; descriptions are our own text.
 """
-import glob, json, os, sys
+import glob, itertools, json, os, sys
 
 SRC, OUT = sys.argv[1], sys.argv[2]
 FMT = "borealis-content/1"
@@ -268,9 +268,101 @@ catalogue("proficiencies.json", ["proficiencies.proficiency-armor", "proficienci
 catalogue("properties.json", ["properties.properties-armor", "properties.properties-firearms", "properties.properties-weapons", "support.properties-tools"],
           lambda e: f"{e['name']} ({e['type']}).")
 
+# ---- Aurora compatibility: internal ids newer Aurora content references --------------------
+# Race tags, the background-ASI marker, custom/background ability score options, sizes and
+# creature types, feat +1 options, internal expertise, PHB 2024 tiefling markers. Our own
+# minimal definitions (ids only must match Aurora's so community content resolves).
+AB = [("STRENGTH","Strength","STR"),("DEXTERITY","Dexterity","DEX"),("CONSTITUTION","Constitution","CON"),
+      ("INTELLIGENCE","Intelligence","INT"),("WISDOM","Wisdom","WIS"),("CHARISMA","Charisma","CHA")]
+compat = []
+def grants(id_, name, desc):
+    compat.append({"id": id_, "name": name, "type": "Grants", "source": "Internal", "description": desc})
+RACES = ["AARAKOCRA","AASIMAR","BUGBEAR","DRAGONBORN","DWARF","ELF","FIRBOLG","GENASI","AIR_GENASI","EARTH_GENASI",
+ "FIRE_GENASI","WATER_GENASI","GNOME","GOBLIN","GOBLINOID","GOLIATH","HALF_ELF","HALF_ORC","HALFLING","HOBGOBLIN",
+ "HUMAN","KENKU","KOBOLD","LIZARDFOLK","ORC","TABAXI","TIEFLING","TORTLE","TRITON","WARFORGED","YUAN_TI"]
+for r in RACES:
+    label = r.replace("_"," ").title().replace("Half Elf","Half-Elf").replace("Half Orc","Half-Orc").replace("Yuan Ti","Yuan-Ti")
+    grants(f"ID_INTERNAL_GRANT_RACE_{r}", f"Race {label}", f"Marks the character as {label} for requirements (Aurora race tag).")
+grants("ID_INTERNAL_GRANTS_BACKGROUND_ASI", "Background Ability Score Improvement",
+       "Marks that the background provides the ability score increases; races that check it skip their own.")
+grants("ID_INTERNAL_GRANTS_MULTICLASS_UNLOCKER", "Multiclass Unlocker", "Internal marker used by multiclass requirements.")
+grants("ID_INTERNAL_GRANTS_SPELLCASTING_FEATURE", "Spellcasting Feature", "Marks a feature that provides the Spellcasting feature.")
+grants("ID_INTERNAL_GRANTS_PACT_MAGIC_FEATURE", "Pact Magic Feature", "Marks a feature that provides Pact Magic.")
+grants("ID_INTERNAL_GRANTS_FIGHTING_STYLE_FEATURE", "Fighting Style Feature", "Marks a feature that provides a Fighting Style.")
+grants("ID_INTERNAL_GRANT_ARMOR_IGNORE_STRENGTH_REQUIREMENT", "Ignore Armor Strength Requirement",
+       "Heavy armor does not reduce speed for a low Strength score.")
+grants("ID_INTERNAL_GRANT_JACK_OF_ALL_TRADES_DISABLE", "Disable Jack of All Trades", "Internal marker that switches Jack of All Trades off.")
+grants("ID_INTERNAL_FEATURE_REPLACEMENT_CLERIC_DIVINE_STRIKE_OR_POTENT_SPELLCASTING", "Cleric Divine Strike or Potent Spellcasting Replaced",
+       "Marks that a feature replaces the cleric's level 8 domain feature.")
+# sizes
+for sz, label in [("TINY","Tiny"),("SMALL","Small"),("MEDIUM","Medium")]:
+    compat.append({"id": f"ID_INTERNAL_RACIAL_TRAIT_{sz}", "name": label, "type": "Racial Trait", "source": "Internal",
+                "rules": [{"kind":"grant","type":"Size","id":f"ID_SIZE_{sz}"}], "description": f"Your size is {label}."})
+for t in ["ABERRATION","BEAST","CELESTIAL","CONSTRUCT","DRAGON","ELEMENTAL","FEY","FIEND","GIANT","HUMANOID","MONSTROSITY","OOZE","PLANT","UNDEAD"]:
+    label = t.title()
+    compat.append({"id": f"ID_INTERNAL_RACIAL_TRAIT_TYPE_{t}", "name": f"Creature Type ({label})", "type": "Racial Trait",
+                "source": "Internal", "description": f"Your creature type is {label}."})
+# feat +1 options
+for key, name, _ in AB:
+    compat.append({"id": f"ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_FEAT_{key}", "name": f"{name} +1", "type": "Ability Score Improvement",
+                "source": "Internal", "supports": ["Feat Ability Score Increase"],
+                "setters": [{"name":"allow duplicate","value":"true"}],
+                "rules": [{"kind":"stat","name":name.lower(),"value":"1","alt":"Ability Score Increase"}],
+                "description": f"+1 {name}."})
+# custom ASI (+1 / +2 per ability), Aurora's customized-origin ids
+for key, name, _ in AB:
+    for n in (1, 2):
+        compat.append({"id": f"ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_{key}_INCREASE_{n}", "name": f"{name} +{n}",
+                    "type": "Ability Score Improvement", "source": "Internal", "supports": [f"Custom Ability Score Increase {n}"],
+                    "rules": [{"kind":"stat","name":name.lower(),"value":str(n),"alt":"Ability Score Increase"}],
+                    "description": f"+{n} {name}."})
+compat.append({"id": "ID_INTERNAL_CUSTOM_ASI_OPTION_PLUS_2_PLUS_1", "name": "Ability Score Increase +2, +1", "type": "Ability Score Improvement",
+            "source": "Internal", "supports": ["Custom Ability Score Improvement Option"],
+            "rules": [{"kind":"select","type":"Ability Score Improvement","name":"Ability Score Increase +2","supports":"Custom Ability Score Increase 2"},
+                      {"kind":"select","type":"Ability Score Improvement","name":"Ability Score Increase +1","supports":"Custom Ability Score Increase 1"}],
+            "description": "Increase one ability score by 2 and a different one by 1."})
+compat.append({"id": "ID_INTERNAL_CUSTOM_ASI_OPTION_PLUS_1_PLUS_1_PLUS_1", "name": "Ability Score Increase +1, +1, +1", "type": "Ability Score Improvement",
+            "source": "Internal", "supports": ["Custom Ability Score Improvement Option"],
+            "rules": [{"kind":"select","type":"Ability Score Improvement","name":"Ability Score Increase +1","number":3,"supports":"Custom Ability Score Increase 1"}],
+            "description": "Increase three different ability scores by 1."})
+# background combinations (2024-style backgrounds)
+for combo in itertools.combinations(AB, 3):
+    code = "_".join(c[2] for c in combo)
+    names = [c[1] for c in combo]
+    base = f"ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_{code}"
+    listed = ", ".join(names)
+    compat.append({"id": base, "name": listed, "type": "Ability Score Improvement", "source": "Internal",
+                "supports": ["Custom Background Ability Score Combination"],
+                "rules": [{"kind":"select","type":"Ability Score Improvement","name":"Background Ability Scores","supports":f"{base}_1|{base}_2"}],
+                "description": f"Increase one of {listed} by 2 and another by 1, or all three by 1."})
+    plus = lambda n: "|".join(f"ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_{c[0]}_INCREASE_{n}" for c in combo)
+    compat.append({"id": f"{base}_1", "name": "Ability Score Increase +2, +1", "type": "Ability Score Improvement", "source": "Internal",
+                "rules": [{"kind":"select","type":"Ability Score Improvement","name":"Background Ability Score +2","supports":plus(2)},
+                          {"kind":"select","type":"Ability Score Improvement","name":"Background Ability Score +1","supports":plus(1)}],
+                "description": f"Increase one of {listed} by 2 and a different one of them by 1."})
+    compat.append({"id": f"{base}_2", "name": "Ability Score Increase +1, +1, +1", "type": "Ability Score Improvement", "source": "Internal",
+                "rules": [{"kind":"stat","name":c[1].lower(),"value":"1","alt":"Ability Score Increase (Background)"} for c in combo],
+                "description": f"Increase {listed} by 1 each."})
+for sk in ["ACROBATICS","ANIMALHANDLING:animal handling","ARCANA","ATHLETICS","DECEPTION","HISTORY","INSIGHT","INTIMIDATION",
+           "INVESTIGATION","MEDICINE","NATURE","PERCEPTION","PERFORMANCE","PERSUASION","RELIGION","SLEIGHTOFHAND:sleight of hand",
+           "STEALTH","SURVIVAL"]:
+    key, _, stat = sk.partition(":")
+    stat = stat or key.lower()
+    compat.append({"id": f"ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_{key}", "name": f"Skill Expertise ({stat.title()})",
+                "type": "Proficiency", "source": "Internal",
+                "supports": ["Expertise", "Skill Expertise", "ID_INTERNAL_SUPPORT_EXPERTISE"],
+                "rules": [{"kind":"stat","name":f"{stat}:proficiency","value":"proficiency","bonus":"double"}],
+                "description": f"Double proficiency bonus for {stat.title()}."})
+compat.append({"id": "ID_VISION_LESSER_DARKVISION", "name": "Darkvision", "type": "Vision", "source": "Internal",
+            "description": "Darkvision whose range is set by the feature that grants it."})
+for ab in ["CHARISMA","INTELLIGENCE","WISDOM"]:
+    grants(f"ID_WOTC_PHB24_GRANTS_TIEFLING_FIENDISH_LEGACY_SPELLCASTING_ABILITY_{ab}", f"Fiendish Legacy Spellcasting Ability ({ab.title()})",
+           "Marker naming the spellcasting ability of Fiendish Legacy spells (Aurora PHB 2024 id).")
+files["aurora-compat.json"] = compat
+
 # ---- write -------------------------------------------------------------------------------------
 os.makedirs(OUT, exist_ok=True)
-order = ["core-levels.json", "multiclass.json", "internal.json", "abilities.json", "saving-throws.json", "skills.json",
+order = ["core-levels.json", "multiclass.json", "internal.json", "aurora-compat.json", "abilities.json", "saving-throws.json", "skills.json",
          "skill-helpers.json", "expertise.json", "catalogues.json", "proficiencies.json", "properties.json"]
 for f in order:
     els = files[f]

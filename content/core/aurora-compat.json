@@ -1,0 +1,2530 @@
+{
+ "format": "borealis-content/1",
+ "ruleset": "any",
+ "elements": [
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_AARAKOCRA",
+   "name": "Race Aarakocra",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Aarakocra for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_AASIMAR",
+   "name": "Race Aasimar",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Aasimar for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_BUGBEAR",
+   "name": "Race Bugbear",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Bugbear for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_DRAGONBORN",
+   "name": "Race Dragonborn",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Dragonborn for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_DWARF",
+   "name": "Race Dwarf",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Dwarf for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_ELF",
+   "name": "Race Elf",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Elf for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_FIRBOLG",
+   "name": "Race Firbolg",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Firbolg for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_GENASI",
+   "name": "Race Genasi",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Genasi for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_AIR_GENASI",
+   "name": "Race Air Genasi",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Air Genasi for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_EARTH_GENASI",
+   "name": "Race Earth Genasi",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Earth Genasi for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_FIRE_GENASI",
+   "name": "Race Fire Genasi",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Fire Genasi for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_WATER_GENASI",
+   "name": "Race Water Genasi",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Water Genasi for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_GNOME",
+   "name": "Race Gnome",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Gnome for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_GOBLIN",
+   "name": "Race Goblin",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Goblin for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_GOBLINOID",
+   "name": "Race Goblinoid",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Goblinoid for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_GOLIATH",
+   "name": "Race Goliath",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Goliath for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_HALF_ELF",
+   "name": "Race Half-Elf",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Half-Elf for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_HALF_ORC",
+   "name": "Race Half-Orc",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Half-Orc for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_HALFLING",
+   "name": "Race Halfling",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Halfling for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_HOBGOBLIN",
+   "name": "Race Hobgoblin",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Hobgoblin for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_HUMAN",
+   "name": "Race Human",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Human for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_KENKU",
+   "name": "Race Kenku",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Kenku for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_KOBOLD",
+   "name": "Race Kobold",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Kobold for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_LIZARDFOLK",
+   "name": "Race Lizardfolk",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Lizardfolk for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_ORC",
+   "name": "Race Orc",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Orc for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_TABAXI",
+   "name": "Race Tabaxi",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Tabaxi for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_TIEFLING",
+   "name": "Race Tiefling",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Tiefling for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_TORTLE",
+   "name": "Race Tortle",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Tortle for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_TRITON",
+   "name": "Race Triton",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Triton for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_WARFORGED",
+   "name": "Race Warforged",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Warforged for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_RACE_YUAN_TI",
+   "name": "Race Yuan-Ti",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks the character as Yuan-Ti for requirements (Aurora race tag)."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_BACKGROUND_ASI",
+   "name": "Background Ability Score Improvement",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks that the background provides the ability score increases; races that check it skip their own."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_MULTICLASS_UNLOCKER",
+   "name": "Multiclass Unlocker",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Internal marker used by multiclass requirements."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_SPELLCASTING_FEATURE",
+   "name": "Spellcasting Feature",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks a feature that provides the Spellcasting feature."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_PACT_MAGIC_FEATURE",
+   "name": "Pact Magic Feature",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks a feature that provides Pact Magic."
+  },
+  {
+   "id": "ID_INTERNAL_GRANTS_FIGHTING_STYLE_FEATURE",
+   "name": "Fighting Style Feature",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks a feature that provides a Fighting Style."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_ARMOR_IGNORE_STRENGTH_REQUIREMENT",
+   "name": "Ignore Armor Strength Requirement",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Heavy armor does not reduce speed for a low Strength score."
+  },
+  {
+   "id": "ID_INTERNAL_GRANT_JACK_OF_ALL_TRADES_DISABLE",
+   "name": "Disable Jack of All Trades",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Internal marker that switches Jack of All Trades off."
+  },
+  {
+   "id": "ID_INTERNAL_FEATURE_REPLACEMENT_CLERIC_DIVINE_STRIKE_OR_POTENT_SPELLCASTING",
+   "name": "Cleric Divine Strike or Potent Spellcasting Replaced",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marks that a feature replaces the cleric's level 8 domain feature."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_TINY",
+   "name": "Tiny",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "type": "Size",
+     "id": "ID_SIZE_TINY"
+    }
+   ],
+   "description": "Your size is Tiny."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_SMALL",
+   "name": "Small",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "type": "Size",
+     "id": "ID_SIZE_SMALL"
+    }
+   ],
+   "description": "Your size is Small."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_MEDIUM",
+   "name": "Medium",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "grant",
+     "type": "Size",
+     "id": "ID_SIZE_MEDIUM"
+    }
+   ],
+   "description": "Your size is Medium."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_TYPE_ABERRATION",
+   "name": "Creature Type (Aberration)",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "description": "Your creature type is Aberration."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_TYPE_BEAST",
+   "name": "Creature Type (Beast)",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "description": "Your creature type is Beast."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_TYPE_CELESTIAL",
+   "name": "Creature Type (Celestial)",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "description": "Your creature type is Celestial."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_TYPE_CONSTRUCT",
+   "name": "Creature Type (Construct)",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "description": "Your creature type is Construct."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_TYPE_DRAGON",
+   "name": "Creature Type (Dragon)",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "description": "Your creature type is Dragon."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_TYPE_ELEMENTAL",
+   "name": "Creature Type (Elemental)",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "description": "Your creature type is Elemental."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_TYPE_FEY",
+   "name": "Creature Type (Fey)",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "description": "Your creature type is Fey."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_TYPE_FIEND",
+   "name": "Creature Type (Fiend)",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "description": "Your creature type is Fiend."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_TYPE_GIANT",
+   "name": "Creature Type (Giant)",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "description": "Your creature type is Giant."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_TYPE_HUMANOID",
+   "name": "Creature Type (Humanoid)",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "description": "Your creature type is Humanoid."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_TYPE_MONSTROSITY",
+   "name": "Creature Type (Monstrosity)",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "description": "Your creature type is Monstrosity."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_TYPE_OOZE",
+   "name": "Creature Type (Ooze)",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "description": "Your creature type is Ooze."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_TYPE_PLANT",
+   "name": "Creature Type (Plant)",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "description": "Your creature type is Plant."
+  },
+  {
+   "id": "ID_INTERNAL_RACIAL_TRAIT_TYPE_UNDEAD",
+   "name": "Creature Type (Undead)",
+   "type": "Racial Trait",
+   "source": "Internal",
+   "description": "Your creature type is Undead."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_FEAT_STRENGTH",
+   "name": "Strength +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Feat Ability Score Increase"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Strength."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_FEAT_DEXTERITY",
+   "name": "Dexterity +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Feat Ability Score Increase"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Dexterity."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_FEAT_CONSTITUTION",
+   "name": "Constitution +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Feat Ability Score Increase"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "constitution",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Constitution."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_FEAT_INTELLIGENCE",
+   "name": "Intelligence +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Feat Ability Score Increase"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "intelligence",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Intelligence."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_FEAT_WISDOM",
+   "name": "Wisdom +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Feat Ability Score Increase"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "wisdom",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Wisdom."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_FEAT_CHARISMA",
+   "name": "Charisma +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Feat Ability Score Increase"
+   ],
+   "setters": [
+    {
+     "name": "allow duplicate",
+     "value": "true"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "charisma",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Charisma."
+  },
+  {
+   "id": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_1",
+   "name": "Strength +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Ability Score Increase 1"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Strength."
+  },
+  {
+   "id": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_2",
+   "name": "Strength +2",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Ability Score Increase 2"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength",
+     "value": "2",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+2 Strength."
+  },
+  {
+   "id": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_1",
+   "name": "Dexterity +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Ability Score Increase 1"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Dexterity."
+  },
+  {
+   "id": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_2",
+   "name": "Dexterity +2",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Ability Score Increase 2"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "2",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+2 Dexterity."
+  },
+  {
+   "id": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_1",
+   "name": "Constitution +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Ability Score Increase 1"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "constitution",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Constitution."
+  },
+  {
+   "id": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_2",
+   "name": "Constitution +2",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Ability Score Increase 2"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "constitution",
+     "value": "2",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+2 Constitution."
+  },
+  {
+   "id": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_1",
+   "name": "Intelligence +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Ability Score Increase 1"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "intelligence",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Intelligence."
+  },
+  {
+   "id": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_2",
+   "name": "Intelligence +2",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Ability Score Increase 2"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "intelligence",
+     "value": "2",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+2 Intelligence."
+  },
+  {
+   "id": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_1",
+   "name": "Wisdom +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Ability Score Increase 1"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "wisdom",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Wisdom."
+  },
+  {
+   "id": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_2",
+   "name": "Wisdom +2",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Ability Score Increase 2"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "wisdom",
+     "value": "2",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+2 Wisdom."
+  },
+  {
+   "id": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_1",
+   "name": "Charisma +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Ability Score Increase 1"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "charisma",
+     "value": "1",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+1 Charisma."
+  },
+  {
+   "id": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_2",
+   "name": "Charisma +2",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Ability Score Increase 2"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "charisma",
+     "value": "2",
+     "alt": "Ability Score Increase"
+    }
+   ],
+   "description": "+2 Charisma."
+  },
+  {
+   "id": "ID_INTERNAL_CUSTOM_ASI_OPTION_PLUS_2_PLUS_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Ability Score Improvement Option"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Ability Score Increase +2",
+     "supports": "Custom Ability Score Increase 2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Ability Score Increase +1",
+     "supports": "Custom Ability Score Increase 1"
+    }
+   ],
+   "description": "Increase one ability score by 2 and a different one by 1."
+  },
+  {
+   "id": "ID_INTERNAL_CUSTOM_ASI_OPTION_PLUS_1_PLUS_1_PLUS_1",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Ability Score Improvement Option"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Ability Score Increase +1",
+     "number": 3,
+     "supports": "Custom Ability Score Increase 1"
+    }
+   ],
+   "description": "Increase three different ability scores by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_CON",
+   "name": "Strength, Dexterity, Constitution",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_CON_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_CON_2"
+    }
+   ],
+   "description": "Increase one of Strength, Dexterity, Constitution by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_CON_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Strength, Dexterity, Constitution by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_CON_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "constitution",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Strength, Dexterity, Constitution by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_INT",
+   "name": "Strength, Dexterity, Intelligence",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_INT_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_INT_2"
+    }
+   ],
+   "description": "Increase one of Strength, Dexterity, Intelligence by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_INT_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Strength, Dexterity, Intelligence by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_INT_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "intelligence",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Strength, Dexterity, Intelligence by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_WIS",
+   "name": "Strength, Dexterity, Wisdom",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_WIS_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_WIS_2"
+    }
+   ],
+   "description": "Increase one of Strength, Dexterity, Wisdom by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_WIS_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Strength, Dexterity, Wisdom by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_WIS_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "wisdom",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Strength, Dexterity, Wisdom by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_CHA",
+   "name": "Strength, Dexterity, Charisma",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_CHA_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_CHA_2"
+    }
+   ],
+   "description": "Increase one of Strength, Dexterity, Charisma by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_CHA_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Strength, Dexterity, Charisma by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_DEX_CHA_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "charisma",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Strength, Dexterity, Charisma by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_CON_INT",
+   "name": "Strength, Constitution, Intelligence",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_CON_INT_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_CON_INT_2"
+    }
+   ],
+   "description": "Increase one of Strength, Constitution, Intelligence by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_CON_INT_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Strength, Constitution, Intelligence by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_CON_INT_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "constitution",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "intelligence",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Strength, Constitution, Intelligence by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_CON_WIS",
+   "name": "Strength, Constitution, Wisdom",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_CON_WIS_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_CON_WIS_2"
+    }
+   ],
+   "description": "Increase one of Strength, Constitution, Wisdom by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_CON_WIS_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Strength, Constitution, Wisdom by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_CON_WIS_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "constitution",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "wisdom",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Strength, Constitution, Wisdom by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_CON_CHA",
+   "name": "Strength, Constitution, Charisma",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_CON_CHA_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_CON_CHA_2"
+    }
+   ],
+   "description": "Increase one of Strength, Constitution, Charisma by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_CON_CHA_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Strength, Constitution, Charisma by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_CON_CHA_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "constitution",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "charisma",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Strength, Constitution, Charisma by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_INT_WIS",
+   "name": "Strength, Intelligence, Wisdom",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_INT_WIS_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_INT_WIS_2"
+    }
+   ],
+   "description": "Increase one of Strength, Intelligence, Wisdom by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_INT_WIS_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Strength, Intelligence, Wisdom by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_INT_WIS_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "intelligence",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "wisdom",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Strength, Intelligence, Wisdom by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_INT_CHA",
+   "name": "Strength, Intelligence, Charisma",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_INT_CHA_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_INT_CHA_2"
+    }
+   ],
+   "description": "Increase one of Strength, Intelligence, Charisma by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_INT_CHA_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Strength, Intelligence, Charisma by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_INT_CHA_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "intelligence",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "charisma",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Strength, Intelligence, Charisma by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_WIS_CHA",
+   "name": "Strength, Wisdom, Charisma",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_WIS_CHA_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_WIS_CHA_2"
+    }
+   ],
+   "description": "Increase one of Strength, Wisdom, Charisma by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_WIS_CHA_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_STRENGTH_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Strength, Wisdom, Charisma by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_STR_WIS_CHA_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "strength",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "wisdom",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "charisma",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Strength, Wisdom, Charisma by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_CON_INT",
+   "name": "Dexterity, Constitution, Intelligence",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_CON_INT_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_CON_INT_2"
+    }
+   ],
+   "description": "Increase one of Dexterity, Constitution, Intelligence by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_CON_INT_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Dexterity, Constitution, Intelligence by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_CON_INT_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "constitution",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "intelligence",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Dexterity, Constitution, Intelligence by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_CON_WIS",
+   "name": "Dexterity, Constitution, Wisdom",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_CON_WIS_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_CON_WIS_2"
+    }
+   ],
+   "description": "Increase one of Dexterity, Constitution, Wisdom by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_CON_WIS_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Dexterity, Constitution, Wisdom by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_CON_WIS_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "constitution",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "wisdom",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Dexterity, Constitution, Wisdom by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_CON_CHA",
+   "name": "Dexterity, Constitution, Charisma",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_CON_CHA_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_CON_CHA_2"
+    }
+   ],
+   "description": "Increase one of Dexterity, Constitution, Charisma by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_CON_CHA_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Dexterity, Constitution, Charisma by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_CON_CHA_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "constitution",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "charisma",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Dexterity, Constitution, Charisma by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_INT_WIS",
+   "name": "Dexterity, Intelligence, Wisdom",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_INT_WIS_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_INT_WIS_2"
+    }
+   ],
+   "description": "Increase one of Dexterity, Intelligence, Wisdom by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_INT_WIS_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Dexterity, Intelligence, Wisdom by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_INT_WIS_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "intelligence",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "wisdom",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Dexterity, Intelligence, Wisdom by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_INT_CHA",
+   "name": "Dexterity, Intelligence, Charisma",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_INT_CHA_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_INT_CHA_2"
+    }
+   ],
+   "description": "Increase one of Dexterity, Intelligence, Charisma by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_INT_CHA_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Dexterity, Intelligence, Charisma by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_INT_CHA_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "intelligence",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "charisma",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Dexterity, Intelligence, Charisma by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_WIS_CHA",
+   "name": "Dexterity, Wisdom, Charisma",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_WIS_CHA_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_WIS_CHA_2"
+    }
+   ],
+   "description": "Increase one of Dexterity, Wisdom, Charisma by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_WIS_CHA_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_DEXTERITY_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Dexterity, Wisdom, Charisma by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_DEX_WIS_CHA_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "wisdom",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "charisma",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Dexterity, Wisdom, Charisma by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_CON_INT_WIS",
+   "name": "Constitution, Intelligence, Wisdom",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_CON_INT_WIS_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_CON_INT_WIS_2"
+    }
+   ],
+   "description": "Increase one of Constitution, Intelligence, Wisdom by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_CON_INT_WIS_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Constitution, Intelligence, Wisdom by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_CON_INT_WIS_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "constitution",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "intelligence",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "wisdom",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Constitution, Intelligence, Wisdom by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_CON_INT_CHA",
+   "name": "Constitution, Intelligence, Charisma",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_CON_INT_CHA_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_CON_INT_CHA_2"
+    }
+   ],
+   "description": "Increase one of Constitution, Intelligence, Charisma by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_CON_INT_CHA_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Constitution, Intelligence, Charisma by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_CON_INT_CHA_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "constitution",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "intelligence",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "charisma",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Constitution, Intelligence, Charisma by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_CON_WIS_CHA",
+   "name": "Constitution, Wisdom, Charisma",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_CON_WIS_CHA_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_CON_WIS_CHA_2"
+    }
+   ],
+   "description": "Increase one of Constitution, Wisdom, Charisma by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_CON_WIS_CHA_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CONSTITUTION_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Constitution, Wisdom, Charisma by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_CON_WIS_CHA_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "constitution",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "wisdom",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "charisma",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Constitution, Wisdom, Charisma by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_INT_WIS_CHA",
+   "name": "Intelligence, Wisdom, Charisma",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "supports": [
+    "Custom Background Ability Score Combination"
+   ],
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Scores",
+     "supports": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_INT_WIS_CHA_1|ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_INT_WIS_CHA_2"
+    }
+   ],
+   "description": "Increase one of Intelligence, Wisdom, Charisma by 2 and another by 1, or all three by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_INT_WIS_CHA_1",
+   "name": "Ability Score Increase +2, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +2",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_2|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_2"
+    },
+    {
+     "kind": "select",
+     "type": "Ability Score Improvement",
+     "name": "Background Ability Score +1",
+     "supports": "ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_INTELLIGENCE_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_WISDOM_INCREASE_1|ID_WOTC_TCOE_OPTION_CUSTOMIZED_ASI_CHARISMA_INCREASE_1"
+    }
+   ],
+   "description": "Increase one of Intelligence, Wisdom, Charisma by 2 and a different one of them by 1."
+  },
+  {
+   "id": "ID_INTERNAL_ABILITY_SCORE_IMPROVEMENT_COMBINATION_INT_WIS_CHA_2",
+   "name": "Ability Score Increase +1, +1, +1",
+   "type": "Ability Score Improvement",
+   "source": "Internal",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "intelligence",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "wisdom",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    },
+    {
+     "kind": "stat",
+     "name": "charisma",
+     "value": "1",
+     "alt": "Ability Score Increase (Background)"
+    }
+   ],
+   "description": "Increase Intelligence, Wisdom, Charisma by 1 each."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_ACROBATICS",
+   "name": "Skill Expertise (Acrobatics)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "acrobatics:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Acrobatics."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_ANIMALHANDLING",
+   "name": "Skill Expertise (Animal Handling)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "animal handling:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Animal Handling."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_ARCANA",
+   "name": "Skill Expertise (Arcana)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "arcana:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Arcana."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_ATHLETICS",
+   "name": "Skill Expertise (Athletics)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "athletics:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Athletics."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_DECEPTION",
+   "name": "Skill Expertise (Deception)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "deception:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Deception."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_HISTORY",
+   "name": "Skill Expertise (History)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "history:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for History."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_INSIGHT",
+   "name": "Skill Expertise (Insight)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "insight:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Insight."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_INTIMIDATION",
+   "name": "Skill Expertise (Intimidation)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "intimidation:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Intimidation."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_INVESTIGATION",
+   "name": "Skill Expertise (Investigation)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "investigation:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Investigation."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_MEDICINE",
+   "name": "Skill Expertise (Medicine)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "medicine:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Medicine."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_NATURE",
+   "name": "Skill Expertise (Nature)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "nature:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Nature."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_PERCEPTION",
+   "name": "Skill Expertise (Perception)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "perception:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Perception."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_PERFORMANCE",
+   "name": "Skill Expertise (Performance)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "performance:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Performance."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_PERSUASION",
+   "name": "Skill Expertise (Persuasion)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "persuasion:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Persuasion."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_RELIGION",
+   "name": "Skill Expertise (Religion)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "religion:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Religion."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_SLEIGHTOFHAND",
+   "name": "Skill Expertise (Sleight Of Hand)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "sleight of hand:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Sleight Of Hand."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_STEALTH",
+   "name": "Skill Expertise (Stealth)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "stealth:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Stealth."
+  },
+  {
+   "id": "ID_INTERNAL_PROFICIENCY_SKILL_EXPERTISE_SURVIVAL",
+   "name": "Skill Expertise (Survival)",
+   "type": "Proficiency",
+   "source": "Internal",
+   "supports": [
+    "Expertise",
+    "Skill Expertise",
+    "ID_INTERNAL_SUPPORT_EXPERTISE"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "survival:proficiency",
+     "value": "proficiency",
+     "bonus": "double"
+    }
+   ],
+   "description": "Double proficiency bonus for Survival."
+  },
+  {
+   "id": "ID_VISION_LESSER_DARKVISION",
+   "name": "Darkvision",
+   "type": "Vision",
+   "source": "Internal",
+   "description": "Darkvision whose range is set by the feature that grants it."
+  },
+  {
+   "id": "ID_WOTC_PHB24_GRANTS_TIEFLING_FIENDISH_LEGACY_SPELLCASTING_ABILITY_CHARISMA",
+   "name": "Fiendish Legacy Spellcasting Ability (Charisma)",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marker naming the spellcasting ability of Fiendish Legacy spells (Aurora PHB 2024 id)."
+  },
+  {
+   "id": "ID_WOTC_PHB24_GRANTS_TIEFLING_FIENDISH_LEGACY_SPELLCASTING_ABILITY_INTELLIGENCE",
+   "name": "Fiendish Legacy Spellcasting Ability (Intelligence)",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marker naming the spellcasting ability of Fiendish Legacy spells (Aurora PHB 2024 id)."
+  },
+  {
+   "id": "ID_WOTC_PHB24_GRANTS_TIEFLING_FIENDISH_LEGACY_SPELLCASTING_ABILITY_WISDOM",
+   "name": "Fiendish Legacy Spellcasting Ability (Wisdom)",
+   "type": "Grants",
+   "source": "Internal",
+   "description": "Marker naming the spellcasting ability of Fiendish Legacy spells (Aurora PHB 2024 id)."
+  }
+ ]
+}
