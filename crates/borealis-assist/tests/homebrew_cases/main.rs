@@ -8,6 +8,7 @@
 //! Unset, the env test is skipped; the synthetic case below always runs.
 
 mod character;
+mod checks;
 mod pack;
 mod schema;
 
@@ -17,7 +18,7 @@ use std::path::{Path, PathBuf};
 use borealis_engine::Engine;
 use serde_json::Value;
 
-use schema::{CaseFile, Level, Mech, SCHEMA};
+use schema::{CaseFile, Level, Mech, SCHEMAS};
 
 /// Env var naming the directory of case folders.
 pub const ENV: &str = "BOREALIS_HOMEBREW_CASES";
@@ -103,11 +104,11 @@ fn char_check_keys(check: &str) -> Option<&'static [&'static str]> {
         "clean" => &[],
         "hit_points" | "proficiency_bonus" => &["value"],
         "save" => &["ability", "proficient", "total"],
-        "skill" => &["skill", "proficient", "expertise", "total"],
+        "skill" => &["skill", "proficient", "expertise", "total", "advantage"],
         "initiative" => &["total", "advantage"],
         "features" => &["present", "absent"],
-        "granted" => &["ids", "absent_ids"],
-        "resource" => &["name", "max"],
+        "granted" => &["ids", "absent_ids", "names", "absent_names"],
+        "resource" => &["name", "max", "absent"],
         "save_dc" => &["name", "value"],
         "choice" => &[
             "name_contains",
@@ -115,16 +116,49 @@ fn char_check_keys(check: &str) -> Option<&'static [&'static str]> {
             "owner",
             "options_include_ids",
             "options_include_names",
+            "options_exclude_ids",
+            "options_exclude_names",
             "count",
             "options",
             "min_options",
         ],
         "attack" => &["equip", "attack", "damage", "range", "proficient"],
+        "ability_scores" | "size" | "armor_class" => &["value"],
+        "speed" => &["walk", "climb", "swim", "fly", "burrow"],
+        "vision" => &["darkvision", "blindsight", "tremorsense", "truesight"],
+        "languages" => &["ids", "names", "text", "absent_ids"],
+        "spellcasting" => &[
+            "name",
+            "present",
+            "ability",
+            "dc",
+            "attack",
+            "prepare_limit",
+            "slots",
+            "no_slots",
+            "cantrips",
+            "spells_include_ids",
+            "spells_include_names",
+            "spells_exclude_ids",
+            "spells_exclude_names",
+        ],
+        "defenses" => &[
+            "resistances",
+            "immunities",
+            "vulnerabilities",
+            "condition_immunities",
+            "absent",
+        ],
+        "advantage" => &["roll", "text", "absent"],
+        "attunement" => &["attuned", "limit"],
+        "item" => &["equip", "equipped", "attuned"],
+        "any_of" => &["any_of"],
         _ => return None,
     })
 }
 
-const ELEMENT_KEYS: [&str; 8] = [
+const ELEMENT_KEYS: [&str; 9] = [
+    "setters_contain",
     "type",
     "name",
     "setters",
@@ -145,6 +179,25 @@ fn unknown_keys(v: &Value, allowed: &[&str], at: &str, out: &mut Vec<String>) {
     }
 }
 
+/// Lint one character check (and the alternatives of an `any_of`).
+fn lint_check(x: &Value, at: &str, out: &mut Vec<String>) {
+    let check = x.get("check").and_then(Value::as_str).unwrap_or("");
+    let Some(keys) = char_check_keys(check) else {
+        out.push(format!("{at}: unknown check {check:?}"));
+        return;
+    };
+    let mut allowed = keys.to_vec();
+    allowed.push("check");
+    unknown_keys(x, &allowed, at, out);
+    if let Some(alts) = x.get("any_of").and_then(Value::as_array) {
+        for (i, a) in alts.iter().enumerate() {
+            lint_check(a, &format!("{at}.any_of[{i}]"), out);
+        }
+    }
+}
+
+const COUNT_KEYS: [&str; 6] = ["type", "setters", "supports_names", "equals", "min", "max"];
+
 /// serde `flatten` cannot deny unknown fields, so typos are caught here.
 fn lint_keys(raw: &Value) -> Vec<String> {
     let mut out = Vec::new();
@@ -160,6 +213,15 @@ fn lint_keys(raw: &Value) -> Vec<String> {
     for (i, e) in list("mentions").iter().enumerate() {
         unknown_keys(e, &["text"], &format!("mentions[{i}]"), &mut out);
     }
+    for (i, e) in list("counts").iter().enumerate() {
+        unknown_keys(e, &COUNT_KEYS, &format!("counts[{i}]"), &mut out);
+    }
+    for (i, e) in list("absent").iter().enumerate() {
+        unknown_keys(e, &["type", "name"], &format!("absent[{i}]"), &mut out);
+    }
+    for (i, e) in list("report").iter().enumerate() {
+        unknown_keys(e, &["source", "outcome"], &format!("report[{i}]"), &mut out);
+    }
     for c in list("characters") {
         let cid = c
             .get("id")
@@ -172,15 +234,7 @@ fn lint_keys(raw: &Value) -> Vec<String> {
             .cloned()
             .unwrap_or_default();
         for (i, x) in exp.iter().enumerate() {
-            let check = x.get("check").and_then(Value::as_str).unwrap_or("");
-            match char_check_keys(check) {
-                Some(keys) => {
-                    let mut allowed = keys.to_vec();
-                    allowed.push("check");
-                    unknown_keys(x, &allowed, &format!("{cid}.expect[{i}]"), &mut out);
-                }
-                None => out.push(format!("{cid}.expect[{i}]: unknown check {check:?}")),
-            }
+            lint_check(x, &format!("{cid}.expect[{i}]"), &mut out);
         }
     }
     out
@@ -195,9 +249,9 @@ pub fn read_case(path: &Path) -> Result<CaseFile, String> {
         return Err(format!("expected.json: {}", lint.join("; ")));
     }
     let case: CaseFile = serde_json::from_value(raw).map_err(|e| format!("expected.json: {e}"))?;
-    if case.schema != SCHEMA {
+    if !SCHEMAS.contains(&case.schema) {
         return Err(format!(
-            "expected.json schema {}, this harness reads {SCHEMA}",
+            "expected.json schema {}, this harness reads {SCHEMAS:?}",
             case.schema
         ));
     }
@@ -207,6 +261,9 @@ pub fn read_case(path: &Path) -> Result<CaseFile, String> {
         .iter()
         .map(|x| x.head.id.clone())
         .chain(case.mentions.iter().map(|x| x.head.id.clone()))
+        .chain(case.counts.iter().map(|x| x.head.id.clone()))
+        .chain(case.absent.iter().map(|x| x.head.id.clone()))
+        .chain(case.report.iter().map(|x| x.head.id.clone()))
         .chain(case.characters.iter().flat_map(|c| {
             c.expect
                 .iter()
@@ -390,9 +447,213 @@ fn typos_in_expected_json_are_refused() {
                       "name": "X", "setter": {}}],
         "characters": [{"id": "c", "expect": [
             {"id": "a", "level": "must", "class": "mechanised", "check": "hit_points", "valeu": 3},
-            {"id": "b", "level": "must", "class": "mechanised", "check": "hp"}
-        ]}]
+            {"id": "b", "level": "must", "class": "mechanised", "check": "hp"},
+            {"id": "c", "level": "must", "class": "mechanised", "check": "any_of", "any_of": [
+                {"check": "speed", "walk": 30},
+                {"check": "speed", "wlak": 30}
+            ]}
+        ]}],
+        "counts": [{"id": "n", "level": "must", "class": "mechanised", "type": "Spell", "equal": 3}],
+        "absent": [{"id": "m", "level": "must", "class": "mechanised", "name": "X", "typ": "Y"}]
     });
     let lint = lint_keys(&raw);
-    assert_eq!(lint.len(), 3, "{lint:?}");
+    assert_eq!(lint.len(), 6, "{lint:?}");
+}
+
+/// Edit the loaded pack elements as JSON, then rebuild the store.
+fn edit_pack(
+    case: &CaseFile,
+    loaded: pack::Loaded,
+    edit: impl FnOnce(&mut Vec<Value>),
+) -> pack::Loaded {
+    let mut els: Vec<Value> = loaded
+        .elements
+        .iter()
+        .map(|e| serde_json::to_value(e).expect("element json"))
+        .collect();
+    edit(&mut els);
+    let elements = els
+        .into_iter()
+        .map(|v| serde_json::from_value(v).expect("element"))
+        .collect();
+    pack::reload_with(&content_root(), case, pack::Loaded { elements, ..loaded }).expect("reload")
+}
+
+fn element_mut<'a>(els: &'a mut [Value], name: &str) -> &'a mut Value {
+    els.iter_mut()
+        .find(|e| e["name"] == name)
+        .unwrap_or_else(|| panic!("no element {name}"))
+}
+
+/// Replace the first rule of `name` matching `pick` (by JSON subset); `None` removes it.
+fn set_rule(els: &mut [Value], name: &str, pick: Value, to: Option<Value>) {
+    let rules = element_mut(els, name)["rules"]
+        .as_array_mut()
+        .expect("rules");
+    let i = rules
+        .iter()
+        .position(|r| pack::subset(&pick, r))
+        .unwrap_or_else(|| panic!("{name}: no rule like {pick}"));
+    match to {
+        Some(v) => rules[i] = v,
+        None => {
+            rules.remove(i);
+        }
+    }
+}
+
+fn set_setter(els: &mut [Value], name: &str, setter: &str, value: &str) {
+    let setters = element_mut(els, name)["setters"]
+        .as_array_mut()
+        .expect("setters");
+    let s = setters
+        .iter_mut()
+        .find(|s| s["name"] == setter)
+        .unwrap_or_else(|| panic!("{name}: no setter {setter}"));
+    s["value"] = Value::from(value);
+}
+
+/// Every schema-2 expectation type fails when the pack is wrong in the way it checks.
+#[test]
+fn schema2_expectations_fail_on_a_mutated_pack() {
+    use serde_json::json;
+    let dir = fixture("synthetic-lanternwarden");
+    let case = read_case(&dir.join("expected.json")).expect("case");
+    let mut loaded = pack::load(&content_root(), &case, &dir).expect("pack");
+    if let Some(r) = loaded.report.as_mut() {
+        for e in r.entries.iter_mut().filter(|e| e.outcome == "unsupported") {
+            e.outcome = "skipped".into();
+        }
+    }
+    let loaded = edit_pack(&case, loaded, |els| {
+        let race = "Wickfolk";
+        let stat = |n: &str, v: &str| json!({"kind": "stat", "name": n, "value": v});
+        let grant = |id: &str, ty: &str| json!({"kind": "grant", "id": id, "type": ty});
+        set_rule(
+            els,
+            race,
+            stat("dexterity", "2"),
+            Some(stat("dexterity", "1")),
+        );
+        set_rule(els, race, stat("innate speed:climb", "20"), None);
+        let size = grant("ID_SIZE_MEDIUM", "Size");
+        set_rule(els, race, json!({"id": "ID_SIZE_SMALL"}), Some(size));
+        set_rule(els, race, json!({"id": "ID_VISION_DARKVISION"}), None);
+        let elvish = grant("ID_LANGUAGE_ELVISH", "Language");
+        set_rule(els, race, json!({"id": "ID_LANGUAGE_COMMON"}), Some(elvish));
+        let poison = grant(
+            "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_POISON",
+            "Condition",
+        );
+        set_rule(els, "Ember Skin", json!({"kind": "grant"}), Some(poison));
+        set_rule(els, "Quiet Flame", json!({"kind": "roll_advantage"}), None);
+        let ash = grant("ID_SYNTH_SPELL_ASHFALL", "Spell");
+        set_rule(els, "Quiet Flame", json!({"kind": "grant"}), Some(ash));
+        set_setter(els, "Ashfall", "level", "1");
+        set_setter(els, "Ashfall", "school", "Illusion");
+        set_setter(els, "Ember Ring", "attunement", "false");
+        element_mut(els, "Bright Ward")
+            .as_object_mut()
+            .expect("feat")
+            .remove("requirements");
+        let embers = json!({"kind": "resource", "id": "wick_debt_embers", "name": "Embers",
+            "max": {"type": "formula", "expr": "max(1, 2 + constitution:modifier)"},
+            "recharge": ["long_rest"]});
+        set_rule(els, "Kindle", json!({"kind": "resource"}), Some(embers));
+        let mut sword = element_mut(els, "Lantern Flail").clone();
+        sword["id"] = json!("ID_SYNTH_WEAPON_LANTERN_SWORD");
+        sword["name"] = json!("Lantern Sword");
+        els.push(sword);
+    });
+    let r = run_loaded("synthetic-mutated-2", &case, &loaded);
+    let mut failing: Vec<&str> = r
+        .rows
+        .iter()
+        .filter(|x| !x.pass)
+        .map(|x| x.id.as_str())
+        .collect();
+    failing.sort_unstable();
+    assert_eq!(
+        failing,
+        [
+            "absent.lantern_sword",
+            "count.spells_illusion",
+            "count.spells_level_1",
+            "el2.feat.bright_ward",
+            "el2.spell.ashfall",
+            "el2.trait.quiet_flame",
+            "lw-cleric/spellcasting",
+            "lw-feat-low-cha/choice.feat",
+            "lw-l1/resource.embers",
+            "lw-origin/ability_scores",
+            "lw-origin/advantage",
+            "lw-origin/any_of",
+            "lw-origin/armor_class",
+            "lw-origin/attunement",
+            "lw-origin/defenses",
+            "lw-origin/granted.names",
+            "lw-origin/item.ring",
+            "lw-origin/languages",
+            "lw-origin/resource.embers",
+            "lw-origin/resource.none",
+            "lw-origin/size",
+            "lw-origin/skill.stealth",
+            "lw-origin/speed",
+            "lw-origin/vision",
+            "lw-wizard/choice.spellbook",
+            "report.dim_lanterns",
+        ],
+        "{}",
+        r.table()
+    );
+}
+
+/// Pack names that resolve to nothing, or picks never offered, fail every check of the
+/// character with a clear reason.
+#[test]
+fn unresolved_origin_and_picks_fail_the_character() {
+    let dir = fixture("synthetic-lanternwarden");
+    let mut case = read_case(&dir.join("expected.json")).expect("case");
+    let loaded = pack::load(&content_root(), &case, &dir).expect("pack");
+    let base = case
+        .characters
+        .iter()
+        .find(|c| c.id == "lw-origin")
+        .expect("lw-origin")
+        .clone();
+    let mut bad_race = base.clone();
+    bad_race.id = "bad-race".into();
+    bad_race.race = Some("Nobody".into());
+    let mut bad_sub = base.clone();
+    bad_sub.id = "bad-sub".into();
+    bad_sub.subrace = Some("Path of Ash".into());
+    let mut bad_pick = base;
+    bad_pick.id = "bad-pick".into();
+    bad_pick.picks = vec![schema::PickSpec {
+        slot: Some("Feat".into()),
+        option: "Bright Ward".into(),
+    }];
+    case.characters = vec![bad_race, bad_sub, bad_pick];
+    let r = run_loaded("synthetic-unresolved", &case, &loaded);
+    let detail = |id: &str| {
+        r.rows
+            .iter()
+            .find(|x| x.id == format!("{id}/clean"))
+            .map(|x| (x.pass, x.detail.clone()))
+            .expect("row")
+    };
+    let (pass, d) = detail("bad-race");
+    assert!(
+        !pass && d.contains("no Race|Species named \"Nobody\""),
+        "{d}"
+    );
+    let (pass, d) = detail("bad-sub");
+    assert!(!pass && d.contains("no Sub Race"), "{d}");
+    let (pass, d) = detail("bad-pick");
+    assert!(!pass && d.contains("never offered up to level 1"), "{d}");
+    assert!(r
+        .rows
+        .iter()
+        .filter(|x| x.id.starts_with("bad-"))
+        .all(|x| !x.pass));
 }

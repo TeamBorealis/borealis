@@ -341,6 +341,485 @@
    "type": "Condition",
    "source": "Synthetic Test Source",
    "description": "<p>A smouldering creature takes 1d4 fire damage at the start of its turn.</p>"
+  },
+  {
+   "id": "ID_SYNTH_RACE_WICKFOLK",
+   "name": "Wickfolk",
+   "type": "Race",
+   "source": "Synthetic Test Source",
+   "description": "<p>Small folk whose hair smoulders like a trimmed wick.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "dexterity",
+     "value": "2"
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed",
+     "value": "30",
+     "bonus": "base"
+    },
+    {
+     "kind": "stat",
+     "name": "innate speed:climb",
+     "value": "20",
+     "bonus": "base"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_SIZE_SMALL",
+     "type": "Size"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_VISION_DARKVISION",
+     "type": "Vision"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_LANGUAGE_COMMON",
+     "type": "Language"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_SYNTH_RACIAL_TRAIT_EMBER_SKIN",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_SYNTH_RACIAL_TRAIT_QUIET_FLAME",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_SYNTH_RACIAL_TRAIT_WICKCANT",
+     "type": "Racial Trait"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_SYNTH_RACIAL_TRAIT_WICKFOLK_LINEAGE",
+     "type": "Racial Trait"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_RACIAL_TRAIT_EMBER_SKIN",
+   "name": "Ember Skin",
+   "type": "Racial Trait",
+   "source": "Synthetic Test Source",
+   "description": "<p>You have resistance to fire damage.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FIRE",
+     "type": "Condition"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_RACIAL_TRAIT_QUIET_FLAME",
+   "name": "Quiet Flame",
+   "type": "Racial Trait",
+   "source": "Synthetic Test Source",
+   "description": "<p>You have advantage on Dexterity (Stealth) checks and know the Spark Mote cantrip.</p>",
+   "rules": [
+    {
+     "kind": "roll_advantage",
+     "roll": "ability_check",
+     "skill": "stealth"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_SYNTH_SPELL_SPARK_MOTE",
+     "type": "Spell",
+     "spellcasting": "Wickfolk"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_RACIAL_TRAIT_WICKCANT",
+   "name": "Wickcant",
+   "type": "Racial Trait",
+   "source": "Synthetic Test Source",
+   "description": "<p>You speak, read and write Common and Wickcant, a whispered trade tongue.</p>"
+  },
+  {
+   "id": "ID_SYNTH_RACIAL_TRAIT_WICKFOLK_LINEAGE",
+   "name": "Wickfolk Lineage",
+   "type": "Racial Trait",
+   "source": "Synthetic Test Source",
+   "description": "<p>Choose a lineage.</p>",
+   "rules": [
+    {
+     "kind": "select",
+     "type": "Sub Race",
+     "name": "Wickfolk Lineage",
+     "supports": "Wickfolk"
+    }
+   ],
+   "sheet": {
+    "display": false
+   }
+  },
+  {
+   "id": "ID_SYNTH_SUB_RACE_CINDERBORN",
+   "name": "Cinderborn",
+   "type": "Sub Race",
+   "source": "Synthetic Test Source",
+   "description": "<p>Your Wisdom score increases by 1.</p>",
+   "supports": [
+    "Wickfolk"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "wisdom",
+     "value": "1"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_BACKGROUND_LAMPLIGHTER",
+   "name": "Lamplighter",
+   "type": "Background",
+   "source": "Synthetic Test Source",
+   "description": "<p>You kept the street lamps burning.</p>",
+   "rules": [
+    {
+     "kind": "grant",
+     "id": "ID_PROFICIENCY_SKILL_PERCEPTION",
+     "type": "Proficiency"
+    },
+    {
+     "kind": "grant",
+     "id": "ID_SYNTH_BACKGROUND_FEATURE_NIGHT_ROUNDS",
+     "type": "Background Feature"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_BACKGROUND_FEATURE_NIGHT_ROUNDS",
+   "name": "Night Rounds",
+   "type": "Background Feature",
+   "source": "Synthetic Test Source",
+   "description": "<p>Watchmen know your face and share rumours with you.</p>"
+  },
+  {
+   "id": "ID_SYNTH_FEAT_BRIGHT_WARD",
+   "name": "Bright Ward",
+   "type": "Feat",
+   "source": "Synthetic Test Source",
+   "description": "<p>Your presence wards off the dark. Your AC increases by 1.</p>",
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "ac:misc",
+     "value": "1"
+    }
+   ],
+   "prerequisite": "Charisma 13 or higher",
+   "requirements": "[cha:13]"
+  },
+  {
+   "id": "ID_SYNTH_SPELL_SPARK_MOTE",
+   "name": "Spark Mote",
+   "type": "Spell",
+   "source": "Synthetic Test Source",
+   "description": "<p>An invented evocation spell.</p>",
+   "supports": [
+    "Wizard",
+    "Cleric"
+   ],
+   "setters": [
+    {
+     "name": "level",
+     "value": "0"
+    },
+    {
+     "name": "school",
+     "value": "Evocation"
+    },
+    {
+     "name": "time",
+     "value": "1 action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_SPELL_LANTERN_WARD",
+   "name": "Lantern Ward",
+   "type": "Spell",
+   "source": "Synthetic Test Source",
+   "description": "<p>An invented abjuration spell.</p>",
+   "supports": [
+    "Wizard",
+    "Cleric"
+   ],
+   "setters": [
+    {
+     "name": "level",
+     "value": "1"
+    },
+    {
+     "name": "school",
+     "value": "Abjuration"
+    },
+    {
+     "name": "time",
+     "value": "1 action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_SPELL_DIM_THE_WICK",
+   "name": "Dim the Wick",
+   "type": "Spell",
+   "source": "Synthetic Test Source",
+   "description": "<p>An invented illusion spell.</p>",
+   "supports": [
+    "Wizard"
+   ],
+   "setters": [
+    {
+     "name": "level",
+     "value": "1"
+    },
+    {
+     "name": "school",
+     "value": "Illusion"
+    },
+    {
+     "name": "time",
+     "value": "1 action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_SPELL_ASHFALL",
+   "name": "Ashfall",
+   "type": "Spell",
+   "source": "Synthetic Test Source",
+   "description": "<p>An invented conjuration spell.</p>",
+   "supports": [
+    "Wizard",
+    "Cleric"
+   ],
+   "setters": [
+    {
+     "name": "level",
+     "value": "3"
+    },
+    {
+     "name": "school",
+     "value": "Conjuration"
+    },
+    {
+     "name": "time",
+     "value": "1 action"
+    },
+    {
+     "name": "duration",
+     "value": "Instantaneous"
+    },
+    {
+     "name": "range",
+     "value": "30 feet"
+    },
+    {
+     "name": "hasVerbalComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasSomaticComponent",
+     "value": "true"
+    },
+    {
+     "name": "hasMaterialComponent",
+     "value": "false"
+    },
+    {
+     "name": "isConcentration",
+     "value": "false"
+    },
+    {
+     "name": "isRitual",
+     "value": "false"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_ARMOR_WICKWEAVE_COAT",
+   "name": "Wickweave Coat",
+   "type": "Armor",
+   "source": "Synthetic Test Source",
+   "description": "<p>A coat of waxed cord.</p>",
+   "supports": [
+    "ID_INTERNAL_ARMOR_GROUP_LIGHT"
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "ac:armored:armor",
+     "value": "12"
+    }
+   ],
+   "setters": [
+    {
+     "name": "category",
+     "value": "Armor"
+    },
+    {
+     "name": "cost",
+     "value": "30",
+     "attributes": {
+      "currency": "gp"
+     }
+    },
+    {
+     "name": "weight",
+     "value": "8 lb.",
+     "attributes": {
+      "lb": "8"
+     }
+    },
+    {
+     "name": "slot",
+     "value": "body"
+    },
+    {
+     "name": "armor",
+     "value": "Light"
+    },
+    {
+     "name": "armorClass",
+     "value": "12 + Dex modifier"
+    },
+    {
+     "name": "proficiency",
+     "value": "ID_PROFICIENCY_ARMOR_PROFICIENCY_LEATHER"
+    }
+   ]
+  },
+  {
+   "id": "ID_SYNTH_MAGIC_ITEM_EMBER_RING",
+   "name": "Ember Ring",
+   "type": "Magic Item",
+   "source": "Synthetic Test Source",
+   "description": "<p>A warm iron ring. While attuned, your AC increases by 1.</p>",
+   "setters": [
+    {
+     "name": "category",
+     "value": "Rings"
+    },
+    {
+     "name": "slot",
+     "value": "ring"
+    },
+    {
+     "name": "type",
+     "value": "Ring"
+    },
+    {
+     "name": "attunement",
+     "value": "true"
+    },
+    {
+     "name": "rarity",
+     "value": "Rare"
+    }
+   ],
+   "rules": [
+    {
+     "kind": "stat",
+     "name": "ac:misc",
+     "value": "1"
+    }
+   ]
   }
  ]
 }

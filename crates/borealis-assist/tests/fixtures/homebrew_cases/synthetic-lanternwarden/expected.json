@@ -1,5 +1,5 @@
 {
- "schema": 1,
+ "schema": 2,
  "case": "synthetic-lanternwarden",
  "title": "Invented class used to prove the harness (not homebrew from any source)",
  "ruleset": "dnd2014",
@@ -179,6 +179,63 @@
    "class": "text_only_ok",
    "type": "Class Feature",
    "name": "Flare|Flare Up"
+  },
+  {
+   "id": "el2.spell.ashfall",
+   "level": "must",
+   "class": "mechanised",
+   "type": "Spell",
+   "name": "Ashfall",
+   "setters": {
+    "level": "3",
+    "school": "Conjuration|Evocation"
+   },
+   "setters_contain": {
+    "school": "conjur"
+   },
+   "supports_names": [
+    "Wizard",
+    "Cleric"
+   ]
+  },
+  {
+   "id": "el2.trait.quiet_flame",
+   "level": "must",
+   "class": "mechanised",
+   "type": "Racial Trait",
+   "name": "Quiet Flame",
+   "rules_include": [
+    [
+     {
+      "kind": "grant",
+      "id": "ID_SYNTH_SPELL_SPARK_MOTE"
+     },
+     {
+      "kind": "grant_spell",
+      "spell": "ID_SYNTH_SPELL_SPARK_MOTE"
+     }
+    ],
+    {
+     "kind": "roll_advantage",
+     "skill": "stealth"
+    }
+   ]
+  },
+  {
+   "id": "el2.feat.bright_ward",
+   "level": "must",
+   "class": "mechanised",
+   "type": "Feat",
+   "name": "Bright Ward",
+   "json": [
+    {
+     "pointer": "/requirements",
+     "contains_any": [
+      "cha:13",
+      "charisma 13"
+     ]
+    }
+   ]
   }
  ],
  "mentions": [
@@ -461,6 +518,487 @@
      "proficient": true
     }
    ]
+  },
+  {
+   "id": "lw-origin",
+   "note": "race, subrace and background from the pack",
+   "race": "Wickfolk",
+   "subrace": "Cinderborn",
+   "background": "Lamplighter",
+   "class": "Lanternwarden",
+   "level": 1,
+   "scores": [
+    14,
+    12,
+    15,
+    8,
+    13,
+    10
+   ],
+   "equip": [
+    {
+     "key": "coat",
+     "item": "Wickweave Coat",
+     "slot": "armor"
+    },
+    {
+     "key": "ring",
+     "item": "Ember Ring",
+     "slot": "worn"
+    }
+   ],
+   "expect": [
+    {
+     "id": "clean",
+     "level": "must",
+     "class": "mechanised",
+     "check": "clean"
+    },
+    {
+     "id": "ability_scores",
+     "level": "must",
+     "class": "mechanised",
+     "check": "ability_scores",
+     "value": [
+      14,
+      14,
+      15,
+      8,
+      14,
+      10
+     ]
+    },
+    {
+     "id": "speed",
+     "level": "must",
+     "class": "mechanised",
+     "check": "speed",
+     "walk": 30,
+     "climb": 20,
+     "swim": 0,
+     "fly": 0
+    },
+    {
+     "id": "size",
+     "level": "must",
+     "class": "mechanised",
+     "check": "size",
+     "value": "Small"
+    },
+    {
+     "id": "vision",
+     "level": "must",
+     "class": "mechanised",
+     "check": "vision",
+     "darkvision": 60,
+     "blindsight": 0
+    },
+    {
+     "id": "languages",
+     "level": "must",
+     "class": "mechanised",
+     "check": "languages",
+     "ids": [
+      "ID_LANGUAGE_COMMON"
+     ],
+     "names": [
+      "Common"
+     ],
+     "text": [
+      "Wickcant"
+     ],
+     "absent_ids": [
+      "ID_LANGUAGE_ELVISH"
+     ]
+    },
+    {
+     "id": "armor_class",
+     "level": "must",
+     "class": "mechanised",
+     "check": "armor_class",
+     "value": 15,
+     "note": "coat 12 + Dex 2 + ring 1"
+    },
+    {
+     "id": "defenses",
+     "level": "must",
+     "class": "mechanised",
+     "check": "defenses",
+     "resistances": [
+      "fire"
+     ],
+     "absent": [
+      "poison"
+     ]
+    },
+    {
+     "id": "advantage",
+     "level": "must",
+     "class": "mechanised",
+     "check": "advantage",
+     "roll": "ability_check",
+     "text": [
+      "stealth"
+     ]
+    },
+    {
+     "id": "advantage.none_on_saves",
+     "level": "must",
+     "class": "mechanised",
+     "check": "advantage",
+     "roll": "saving_throw",
+     "absent": true
+    },
+    {
+     "id": "skill.stealth",
+     "level": "must",
+     "class": "mechanised",
+     "check": "skill",
+     "skill": "Stealth",
+     "advantage": true
+    },
+    {
+     "id": "skill.perception",
+     "level": "must",
+     "class": "mechanised",
+     "check": "skill",
+     "skill": "Perception",
+     "proficient": true,
+     "advantage": false
+    },
+    {
+     "id": "granted.names",
+     "level": "must",
+     "class": "mechanised",
+     "check": "granted",
+     "names": [
+      "Spark Mote",
+      "Night Rounds|Night Round"
+     ],
+     "absent_names": [
+      "Ashfall"
+     ]
+    },
+    {
+     "id": "attunement",
+     "level": "must",
+     "class": "mechanised",
+     "check": "attunement",
+     "attuned": 1,
+     "limit": 3
+    },
+    {
+     "id": "item.ring",
+     "level": "must",
+     "class": "mechanised",
+     "check": "item",
+     "equip": "ring",
+     "equipped": true,
+     "attuned": true
+    },
+    {
+     "id": "item.coat",
+     "level": "must",
+     "class": "mechanised",
+     "check": "item",
+     "equip": "coat",
+     "equipped": true,
+     "attuned": false
+    },
+    {
+     "id": "resource.none",
+     "level": "must",
+     "class": "mechanised",
+     "check": "resource",
+     "name": "wick_debt",
+     "absent": true
+    },
+    {
+     "id": "resource.embers",
+     "level": "must",
+     "class": "mechanised",
+     "check": "resource",
+     "name": "embers",
+     "max": 3
+    },
+    {
+     "id": "spellcasting.none",
+     "level": "must",
+     "class": "mechanised",
+     "check": "spellcasting",
+     "name": "Lanternwarden",
+     "present": false
+    },
+    {
+     "id": "any_of",
+     "level": "must",
+     "class": "mechanised",
+     "check": "any_of",
+     "any_of": [
+      {
+       "check": "resource",
+       "name": "embers",
+       "max": 30
+      },
+      {
+       "check": "resource",
+       "name": "embers",
+       "max": 3
+      }
+     ],
+     "note": "the second alternative passes"
+    }
+   ]
+  },
+  {
+   "id": "lw-feat",
+   "race_id": "ID_RACE_HUMAN",
+   "background_id": "ID_BACKGROUND_ACOLYTE",
+   "class_id": "ID_WOTC_PHB_CLASS_FIGHTER",
+   "level": 4,
+   "scores": [
+    14,
+    12,
+    13,
+    10,
+    10,
+    13
+   ],
+   "picks": [
+    {
+     "slot": "Improvement",
+     "option": "Feat|Feat (4)"
+    },
+    {
+     "slot": "Feat",
+     "option": "Bright Ward"
+    }
+   ],
+   "expect": [
+    {
+     "id": "clean",
+     "level": "must",
+     "class": "mechanised",
+     "check": "clean"
+    },
+    {
+     "id": "features",
+     "level": "must",
+     "class": "mechanised",
+     "check": "features",
+     "present": [
+      "Bright Ward"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "lw-feat-low-cha",
+   "race_id": "ID_RACE_HUMAN",
+   "background_id": "ID_BACKGROUND_ACOLYTE",
+   "class_id": "ID_WOTC_PHB_CLASS_FIGHTER",
+   "level": 4,
+   "scores": [
+    14,
+    12,
+    13,
+    10,
+    10,
+    10
+   ],
+   "picks": [
+    {
+     "slot": "Improvement",
+     "option": "Feat|Feat (4)"
+    }
+   ],
+   "expect": [
+    {
+     "id": "choice.feat",
+     "level": "must",
+     "class": "mechanised",
+     "check": "choice",
+     "type": "Feat",
+     "options_include_names": [
+      "Wick Trimmer"
+     ],
+     "options_exclude_names": [
+      "Bright Ward"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "lw-wizard",
+   "race_id": "ID_RACE_HUMAN",
+   "background_id": "ID_BACKGROUND_ACOLYTE",
+   "class_id": "ID_WOTC_PHB_CLASS_WIZARD",
+   "level": 1,
+   "scores": [
+    8,
+    14,
+    13,
+    15,
+    12,
+    10
+   ],
+   "expect": [
+    {
+     "id": "clean",
+     "level": "must",
+     "class": "mechanised",
+     "check": "clean"
+    },
+    {
+     "id": "spellcasting",
+     "level": "must",
+     "class": "mechanised",
+     "check": "spellcasting",
+     "name": "Wizard",
+     "ability": "int",
+     "dc": 13,
+     "attack": 5,
+     "slots": [
+      2,
+      0
+     ],
+     "no_slots": false
+    },
+    {
+     "id": "choice.spellbook",
+     "level": "must",
+     "class": "mechanised",
+     "check": "choice",
+     "name_contains": "Spellbook",
+     "options_include_names": [
+      "Lantern Ward",
+      "Dim the Wick"
+     ],
+     "options_exclude_names": [
+      "Ashfall"
+     ]
+    },
+    {
+     "id": "choice.cantrip",
+     "level": "must",
+     "class": "mechanised",
+     "check": "choice",
+     "name_contains": "Cantrip",
+     "options_include_names": [
+      "Spark Mote"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "lw-cleric",
+   "race_id": "ID_RACE_HUMAN",
+   "background_id": "ID_BACKGROUND_ACOLYTE",
+   "class_id": "ID_WOTC_PHB_CLASS_CLERIC",
+   "level": 1,
+   "scores": [
+    8,
+    10,
+    14,
+    12,
+    15,
+    13
+   ],
+   "expect": [
+    {
+     "id": "spellcasting",
+     "level": "must",
+     "class": "mechanised",
+     "check": "spellcasting",
+     "name": "Cleric",
+     "ability": "Wisdom",
+     "prepare_limit": 4,
+     "spells_include_names": [
+      "Lantern Ward"
+     ],
+     "spells_exclude_names": [
+      "Ashfall",
+      "Dim the Wick"
+     ],
+     "spells_include_ids": [
+      "ID_SYNTH_SPELL_LANTERN_WARD"
+     ],
+     "spells_exclude_ids": [
+      "ID_SYNTH_SPELL_ASHFALL"
+     ]
+    }
+   ]
+  }
+ ],
+ "counts": [
+  {
+   "id": "count.spells_level_1",
+   "level": "must",
+   "class": "mechanised",
+   "type": "Spell",
+   "setters": {
+    "level": "1"
+   },
+   "equals": 2
+  },
+  {
+   "id": "count.spells_illusion",
+   "level": "must",
+   "class": "mechanised",
+   "type": "Spell",
+   "setters": {
+    "school": "Illusion"
+   },
+   "equals": 1
+  },
+  {
+   "id": "count.spells_wizard",
+   "level": "must",
+   "class": "mechanised",
+   "type": "Spell",
+   "supports_names": [
+    "Wizard"
+   ],
+   "min": 4,
+   "max": 4
+  },
+  {
+   "id": "count.races",
+   "level": "must",
+   "class": "mechanised",
+   "type": "Race|Species",
+   "equals": 1
+  }
+ ],
+ "absent": [
+  {
+   "id": "absent.lantern_sword",
+   "level": "must",
+   "class": "mechanised",
+   "type": "Weapon",
+   "name": "Lantern Sword"
+  },
+  {
+   "id": "absent.any_glowstaff",
+   "level": "must",
+   "class": "mechanised",
+   "name": "Glowstaff"
+  }
+ ],
+ "report": [
+  {
+   "id": "report.dim_lanterns",
+   "level": "must",
+   "class": "mechanised",
+   "source": "Optional Rule: Dim Lanterns",
+   "outcome": "unsupported"
+  },
+  {
+   "id": "report.lore_table",
+   "level": "must",
+   "class": "mechanised",
+   "source": "Lantern Lore Table",
+   "outcome": "text_only|merged"
   }
  ]
 }

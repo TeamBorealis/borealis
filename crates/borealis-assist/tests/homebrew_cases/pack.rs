@@ -11,8 +11,8 @@ use borealis_content::{
 use serde_json::Value;
 
 use crate::schema::{
-    CaseFile, ElementExpect, Head, ImportReport, Level, Mech, MentionExpect, REPORT_FORMAT,
-    REPORT_OUTCOMES,
+    AbsentExpect, CaseFile, CountExpect, ElementExpect, ElementFilter, Head, ImportReport, Level,
+    Mech, MentionExpect, ReportExpect, REPORT_FORMAT, REPORT_OUTCOMES,
 };
 use crate::{Row, IMPORTED_DIR};
 
@@ -381,7 +381,8 @@ pub fn find<'a>(l: &'a Loaded, ty: &str, name: &str) -> Option<&'a Element> {
         .find(|e| name_matches(name, &e.name) && name_matches(ty, &e.ty))
 }
 
-fn setter_ok(e: &Element, key: &str, want: &str) -> Result<(), String> {
+/// The value of `"setter"` or `"setter@attribute"`.
+fn setter_value<'a>(e: &'a Element, key: &str) -> Result<&'a str, String> {
     let (name, attr) = match key.split_once('@') {
         Some((n, a)) => (n, Some(a)),
         None => (key, None),
@@ -389,15 +390,51 @@ fn setter_ok(e: &Element, key: &str, want: &str) -> Result<(), String> {
     let Some(s) = e.setter(name) else {
         return Err(format!("no setter {name}"));
     };
-    let got = match attr {
+    Ok(match attr {
         Some(a) => s.attribute(a).unwrap_or(""),
         None => s.value.as_str(),
-    };
-    let clean = |v: &str| norm(v).replace(' ', "");
-    if clean(got) == clean(want) {
+    })
+}
+
+fn squash(v: &str) -> String {
+    norm(v).replace(' ', "")
+}
+
+/// Exact (normalised) compare; `want` may list `A|B` alternatives.
+fn setter_ok(e: &Element, key: &str, want: &str) -> Result<(), String> {
+    let got = setter_value(e, key)?;
+    if want.split('|').any(|w| squash(got) == squash(w)) {
         Ok(())
     } else {
         Err(format!("{key} = {got:?}, expected {want:?}"))
+    }
+}
+
+fn setter_contains(e: &Element, key: &str, token: &str) -> Result<(), String> {
+    let got = setter_value(e, key)?;
+    if norm(got).contains(&norm(token)) {
+        Ok(())
+    } else {
+        Err(format!("{key} = {got:?} lacks {token:?}"))
+    }
+}
+
+/// Is `n` a `supports` tag of `e`, or the name of the element a tag names?
+fn supports_name(l: &Loaded, e: &Element, n: &str) -> bool {
+    e.supports.iter().any(|tag| {
+        name_matches(n, tag)
+            || l.store
+                .element(tag)
+                .is_some_and(|t| name_matches(n, &t.name))
+    })
+}
+
+/// A `rules_include` entry: an object (JSON subset of one rule) or an array of such objects,
+/// any of which may match.
+fn rule_included(want: &Value, rules: &[Value]) -> bool {
+    match want {
+        Value::Array(alts) => alts.iter().any(|a| rule_included(a, rules)),
+        w => rules.iter().any(|r| subset(w, r)),
     }
 }
 
@@ -414,19 +451,18 @@ fn check_element(l: &Loaded, x: &ElementExpect) -> Result<(), String> {
             errs.push(m);
         }
     }
+    for (k, v) in &x.setters_contain {
+        if let Err(m) = setter_contains(e, k, v) {
+            errs.push(m);
+        }
+    }
     for id in &x.supports_ids {
         if !e.has_support(id) {
             errs.push(format!("does not support {id}"));
         }
     }
     for n in &x.supports_names {
-        let hit = e.supports.iter().any(|tag| {
-            name_matches(n, tag)
-                || l.store
-                    .element(tag)
-                    .is_some_and(|t| name_matches(n, &t.name))
-        });
-        if !hit {
+        if !supports_name(l, e, n) {
             errs.push(format!("no supports tag named {n:?}"));
         }
     }
@@ -436,7 +472,7 @@ fn check_element(l: &Loaded, x: &ElementExpect) -> Result<(), String> {
         .filter_map(|r| serde_json::to_value(r).ok())
         .collect();
     for want in &x.rules_include {
-        if !rules.iter().any(|r| subset(want, r)) {
+        if !rule_included(want, &rules) {
             errs.push(format!("no rule like {want}"));
         }
     }
@@ -458,6 +494,9 @@ fn check_element(l: &Loaded, x: &ElementExpect) -> Result<(), String> {
             if !text.contains(&norm(t)) {
                 errs.push(format!("{} lacks {t:?}", j.pointer));
             }
+        }
+        if !j.contains_any.is_empty() && !j.contains_any.iter().any(|t| text.contains(&norm(t))) {
+            errs.push(format!("{} has none of {:?}", j.pointer, j.contains_any));
         }
     }
     let text = element_text(e);
@@ -485,7 +524,75 @@ fn check_mention(l: &Loaded, x: &MentionExpect) -> Result<(), String> {
     }
 }
 
-/// Rows of the `elements` and `mentions` expectations.
+fn filter_matches(l: &Loaded, f: &ElementFilter, e: &Element) -> bool {
+    name_matches(&f.ty, &e.ty)
+        && f.setters.iter().all(|(k, v)| setter_ok(e, k, v).is_ok())
+        && f.supports_names.iter().all(|n| supports_name(l, e, n))
+}
+
+fn check_count(l: &Loaded, x: &CountExpect) -> Result<(), String> {
+    let n = l
+        .elements
+        .iter()
+        .filter(|e| filter_matches(l, &x.filter, e))
+        .count();
+    let bad = x.equals.is_some_and(|w| n != w)
+        || x.min.is_some_and(|m| n < m)
+        || x.max.is_some_and(|m| n > m);
+    if bad {
+        Err(format!(
+            "{n} elements match, expected{}{}{}",
+            x.equals.map(|w| format!(" = {w}")).unwrap_or_default(),
+            x.min.map(|w| format!(" >= {w}")).unwrap_or_default(),
+            x.max.map(|w| format!(" <= {w}")).unwrap_or_default()
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+fn check_absent(l: &Loaded, x: &AbsentExpect) -> Result<(), String> {
+    let found: Vec<&str> = l
+        .elements
+        .iter()
+        .filter(|e| {
+            name_matches(&x.name, &e.name)
+                && x.ty.as_deref().map_or(true, |t| name_matches(t, &e.ty))
+        })
+        .map(|e| e.id.as_str())
+        .collect();
+    if found.is_empty() {
+        Ok(())
+    } else {
+        Err(format!("unexpected element(s) {found:?}"))
+    }
+}
+
+fn check_report(l: &Loaded, x: &ReportExpect) -> Result<(), String> {
+    let Some(r) = &l.report else {
+        return Err("no report.json".into());
+    };
+    let entries: Vec<_> = r
+        .entries
+        .iter()
+        .filter(|e| name_matches(&x.source, &e.source))
+        .collect();
+    if entries.is_empty() {
+        return Err(format!("no report entry for {:?}", x.source));
+    }
+    match &x.outcome {
+        Some(o) if !entries.iter().any(|e| name_matches(o, &e.outcome)) => Err(format!(
+            "outcome {:?}, expected {o:?}",
+            entries
+                .iter()
+                .map(|e| e.outcome.as_str())
+                .collect::<Vec<_>>()
+        )),
+        _ => Ok(()),
+    }
+}
+
+/// Rows of the `elements`, `mentions`, `counts`, `absent` and `report` expectations.
 pub fn element_rows(case: &CaseFile, l: &Loaded) -> Vec<Row> {
     let mut out: Vec<Row> = case
         .elements
@@ -496,6 +603,21 @@ pub fn element_rows(case: &CaseFile, l: &Loaded) -> Vec<Row> {
         case.mentions
             .iter()
             .map(|x| row(&x.head, x.head.id.clone(), check_mention(l, x))),
+    );
+    out.extend(
+        case.counts
+            .iter()
+            .map(|x| row(&x.head, x.head.id.clone(), check_count(l, x))),
+    );
+    out.extend(
+        case.absent
+            .iter()
+            .map(|x| row(&x.head, x.head.id.clone(), check_absent(l, x))),
+    );
+    out.extend(
+        case.report
+            .iter()
+            .map(|x| row(&x.head, x.head.id.clone(), check_report(l, x))),
     );
     out
 }

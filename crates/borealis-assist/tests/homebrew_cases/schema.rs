@@ -1,20 +1,24 @@
-//! `expected.json` (schema 1) and `imported/report.json`: the serde model of a homebrew
+//! `expected.json` (schema 1 or 2) and `imported/report.json`: the serde model of a homebrew
 //! acceptance case. Documented for case authors in `specs/homebrew-cases/README.md`.
 
 use std::collections::BTreeMap;
 
 use borealis_content::Ruleset;
+use borealis_engine::state::EquipSlot;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-/// The schema version this harness reads.
-pub const SCHEMA: u32 = 1;
+/// The current schema version. Schema 2 only adds optional fields and checks, so schema 1
+/// files keep their meaning.
+pub const SCHEMA: u32 = 2;
+/// Every schema version this harness reads.
+pub const SCHEMAS: [u32; 2] = [1, SCHEMA];
 
 /// One case: everything a correct import of one source must satisfy.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct CaseFile {
-    /// Must be [`SCHEMA`].
+    /// One of [`SCHEMAS`].
     pub schema: u32,
     /// Case id (the folder name, by convention).
     pub case: String,
@@ -35,6 +39,15 @@ pub struct CaseFile {
     /// Checks that some pack element carries a piece of text (TEXT-ONLY-OK sub-items).
     #[serde(default)]
     pub mentions: Vec<MentionExpect>,
+    /// Element counts over the imported pack (schema 2).
+    #[serde(default)]
+    pub counts: Vec<CountExpect>,
+    /// Elements that must NOT be in the imported pack (nothing invented; schema 2).
+    #[serde(default)]
+    pub absent: Vec<AbsentExpect>,
+    /// Required `report.json` entries (schema 2).
+    #[serde(default)]
+    pub report: Vec<ReportExpect>,
     /// Reference characters built with the real engine.
     #[serde(default)]
     pub characters: Vec<CharacterSpec>,
@@ -136,6 +149,62 @@ pub struct ElementExpect {
     /// Every token must occur in the element's text (description, sheet text, setter values).
     #[serde(default)]
     pub text_contains: Vec<String>,
+    /// `"setter"` or `"setter@attribute"` -> a token the value must contain (schema 2).
+    #[serde(default)]
+    pub setters_contain: BTreeMap<String, String>,
+}
+
+/// Filter over the imported pack's elements, shared by counts.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ElementFilter {
+    /// Element type, `A|B` alternatives.
+    #[serde(rename = "type")]
+    pub ty: String,
+    /// `"setter"` or `"setter@attribute"` -> value (`A|B`, normalised comparison).
+    #[serde(default)]
+    pub setters: BTreeMap<String, String>,
+    /// Every name must be a `supports` tag of the element or the name of the element it names.
+    #[serde(default)]
+    pub supports_names: Vec<String>,
+}
+
+/// How many pack elements match a filter.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CountExpect {
+    #[serde(flatten)]
+    pub head: Head,
+    #[serde(flatten)]
+    pub filter: ElementFilter,
+    #[serde(default)]
+    pub equals: Option<usize>,
+    #[serde(default)]
+    pub min: Option<usize>,
+    #[serde(default)]
+    pub max: Option<usize>,
+}
+
+/// No pack element has this name (and type, if given).
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AbsentExpect {
+    #[serde(flatten)]
+    pub head: Head,
+    /// Element type(s), `A|B`; absent = any type.
+    #[serde(default, rename = "type")]
+    pub ty: Option<String>,
+    /// Name, `A|B`.
+    pub name: String,
+}
+
+/// `report.json` has an entry for this source object.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ReportExpect {
+    #[serde(flatten)]
+    pub head: Head,
+    /// Source name as printed, `A|B`.
+    pub source: String,
+    /// Accepted outcomes, `A|B` (absent = any).
+    #[serde(default)]
+    pub outcome: Option<String>,
 }
 
 /// A JSON pointer check (RFC 6901) on the serialized element.
@@ -149,6 +218,9 @@ pub struct JsonCheck {
     /// The value at the pointer, as text, must contain every token (case-insensitive).
     #[serde(default)]
     pub contains: Vec<String>,
+    /// ... and at least one of these tokens (schema 2).
+    #[serde(default)]
+    pub contains_any: Vec<String>,
 }
 
 /// Some pack element (name or text) mentions every token.
@@ -164,12 +236,24 @@ pub struct MentionExpect {
 #[serde(deny_unknown_fields)]
 pub struct CharacterSpec {
     pub id: String,
+    /// Free text for case authors.
+    #[serde(default)]
+    pub note: String,
     /// Library race/species id (bundled SRD content).
     #[serde(default)]
     pub race_id: Option<String>,
+    /// Race/species by name, looked up in the imported pack (schema 2).
+    #[serde(default)]
+    pub race: Option<String>,
+    /// Subrace by name, looked up in the imported pack; picked as soon as it is offered.
+    #[serde(default)]
+    pub subrace: Option<String>,
     /// Library background id.
     #[serde(default)]
     pub background_id: Option<String>,
+    /// Background by name, looked up in the imported pack (schema 2).
+    #[serde(default)]
+    pub background: Option<String>,
     /// Class by name, looked up in the imported pack.
     #[serde(default)]
     pub class: Option<String>,
@@ -182,6 +266,9 @@ pub struct CharacterSpec {
     pub level: u32,
     /// Base scores STR, DEX, CON, INT, WIS, CHA (before race bonuses).
     pub scores: [i32; 6],
+    /// Generic selections, each made as soon as a matching slot offers it (schema 2).
+    #[serde(default)]
+    pub picks: Vec<PickSpec>,
     /// Items added and equipped in a hand, in order.
     #[serde(default)]
     pub equip: Vec<EquipSpec>,
@@ -201,6 +288,20 @@ pub struct EquipSpec {
     /// Optional magic item (adorner) name in the pack, or `id:<library id>`.
     #[serde(default)]
     pub adorner: Option<String>,
+    /// Equip slot (`armor`, `primary_hand`, `secondary_hand`, `worn`); absent = the engine's pick.
+    #[serde(default)]
+    pub slot: Option<EquipSlot>,
+}
+
+/// A selection: the first open slot whose name contains `slot` and that offers `option`.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct PickSpec {
+    /// Slot name fragment (normalised `contains`); absent = any slot.
+    #[serde(default)]
+    pub slot: Option<String>,
+    /// A pack element name (`A|B`), an option name, or `id:<id>`.
+    pub option: String,
 }
 
 /// One check on a derived character.
@@ -239,6 +340,9 @@ pub enum CharCheck {
         expertise: Option<bool>,
         #[serde(default)]
         total: Option<i32>,
+        /// An active `ability_check` advantage whose text names the skill (schema 2).
+        #[serde(default)]
+        advantage: Option<bool>,
     },
     Initiative {
         #[serde(default)]
@@ -253,17 +357,26 @@ pub enum CharCheck {
         #[serde(default)]
         absent: Vec<String>,
     },
-    /// Library element ids the character has (granted proficiencies and the like).
+    /// Element ids (and, schema 2, names `A|B`) the character has registered, or has as a
+    /// spell of a spellcasting block.
     Granted {
         #[serde(default)]
         ids: Vec<String>,
         #[serde(default)]
         absent_ids: Vec<String>,
+        #[serde(default)]
+        names: Vec<String>,
+        #[serde(default)]
+        absent_names: Vec<String>,
     },
     /// A limited-use pool: a resource (name or id contains `name`) or a stat key containing it.
+    /// `absent: true` (schema 2) requires that neither exists.
     Resource {
         name: String,
-        max: i32,
+        #[serde(default)]
+        max: Option<i32>,
+        #[serde(default)]
+        absent: Option<bool>,
     },
     /// A named save DC whose owner element name or id contains `name`.
     SaveDc {
@@ -283,6 +396,11 @@ pub enum CharCheck {
         options_include_ids: Vec<String>,
         #[serde(default)]
         options_include_names: Vec<String>,
+        /// No matching slot may offer these (schema 2).
+        #[serde(default)]
+        options_exclude_ids: Vec<String>,
+        #[serde(default)]
+        options_exclude_names: Vec<String>,
         /// Exact number of matching slots.
         #[serde(default)]
         count: Option<usize>,
@@ -303,6 +421,131 @@ pub enum CharCheck {
         range: Option<String>,
         #[serde(default)]
         proficient: Option<bool>,
+    },
+    /// Final ability scores STR..CHA (schema 2).
+    AbilityScores {
+        value: [i32; 6],
+    },
+    /// Speeds in feet (schema 2); 0 = none.
+    Speed {
+        #[serde(default)]
+        walk: Option<i32>,
+        #[serde(default)]
+        climb: Option<i32>,
+        #[serde(default)]
+        swim: Option<i32>,
+        #[serde(default)]
+        fly: Option<i32>,
+        #[serde(default)]
+        burrow: Option<i32>,
+    },
+    /// The registered Size element's name, `A|B` (schema 2).
+    Size {
+        value: String,
+    },
+    /// Sense ranges in feet (schema 2); 0 = the character lacks the sense.
+    Vision {
+        #[serde(default)]
+        darkvision: Option<i32>,
+        #[serde(default)]
+        blindsight: Option<i32>,
+        #[serde(default)]
+        tremorsense: Option<i32>,
+        #[serde(default)]
+        truesight: Option<i32>,
+    },
+    /// Registered Language elements (schema 2). `text`: tokens found in a language name or in
+    /// a feature's text (languages with no element).
+    Languages {
+        #[serde(default)]
+        ids: Vec<String>,
+        #[serde(default)]
+        names: Vec<String>,
+        #[serde(default)]
+        text: Vec<String>,
+        #[serde(default)]
+        absent_ids: Vec<String>,
+    },
+    /// Armor class with what is equipped (schema 2).
+    ArmorClass {
+        value: i32,
+    },
+    /// A spellcasting block (`name` `A|B`, else the first one) (schema 2).
+    Spellcasting {
+        #[serde(default)]
+        name: Option<String>,
+        /// `false`: no block (matching `name`) exists.
+        #[serde(default)]
+        present: Option<bool>,
+        #[serde(default)]
+        ability: Option<String>,
+        #[serde(default)]
+        dc: Option<i32>,
+        #[serde(default)]
+        attack: Option<i32>,
+        #[serde(default)]
+        prepare_limit: Option<i32>,
+        /// Slots by spell level from 1st (a prefix; missing levels are not checked).
+        #[serde(default)]
+        slots: Option<Vec<i32>>,
+        /// `true`: no slots at any level and no pact slots.
+        #[serde(default)]
+        no_slots: Option<bool>,
+        /// Number of level-0 spells in the block's spell list.
+        #[serde(default)]
+        cantrips: Option<usize>,
+        /// Spells listed by the block (known, prepared, or preparable from the class list).
+        #[serde(default)]
+        spells_include_ids: Vec<String>,
+        #[serde(default)]
+        spells_include_names: Vec<String>,
+        #[serde(default)]
+        spells_exclude_ids: Vec<String>,
+        #[serde(default)]
+        spells_exclude_names: Vec<String>,
+    },
+    /// Damage / condition defences by name, any toggle state (schema 2).
+    Defenses {
+        #[serde(default)]
+        resistances: Vec<String>,
+        #[serde(default)]
+        immunities: Vec<String>,
+        #[serde(default)]
+        vulnerabilities: Vec<String>,
+        #[serde(default)]
+        condition_immunities: Vec<String>,
+        /// In none of the four lists.
+        #[serde(default)]
+        absent: Vec<String>,
+    },
+    /// An advantage entry whose roll matches and whose text has every token (schema 2).
+    Advantage {
+        #[serde(default)]
+        roll: Option<String>,
+        #[serde(default)]
+        text: Vec<String>,
+        /// `true`: no such entry.
+        #[serde(default)]
+        absent: Option<bool>,
+    },
+    /// Attuned item count and attunement limit (schema 2).
+    Attunement {
+        #[serde(default)]
+        attuned: Option<u32>,
+        #[serde(default)]
+        limit: Option<u32>,
+    },
+    /// The inventory line of an equip key (schema 2).
+    Item {
+        equip: String,
+        #[serde(default)]
+        equipped: Option<bool>,
+        #[serde(default)]
+        attuned: Option<bool>,
+    },
+    /// Passes when at least one alternative passes (schema 2). Alternatives carry no head.
+    AnyOf {
+        any_of: Vec<CharCheck>,
     },
 }
 
