@@ -163,6 +163,14 @@ pub(crate) fn pipeline_paragraph(html: &str) -> bool {
         || plain(t).trim_start().starts_with("Requires attunement")
 }
 
+/// Tags that end a line of their own: a list item, a heading and every table cell (a table's
+/// cells are measured one by one, so a table re-laid in another row order, such as a d12 table
+/// printed in three column pairs, is still the source's text).
+const LINE_ENDS: [&str; 13] = [
+    "<br>", "<br/>", "<br />", "</li>", "</td>", "</th>", "</tr>", "</h1>", "</h2>", "</h3>",
+    "</h4>", "</h5>", "</h6>",
+];
+
 /// The sentences of a description, paragraph by paragraph, without the pipeline's own.
 pub(crate) fn sentences(description: &str) -> Vec<String> {
     let mut out = Vec::new();
@@ -170,7 +178,9 @@ pub(crate) fn sentences(description: &str) -> Vec<String> {
         if pipeline_paragraph(para) {
             continue;
         }
-        let text = plain(&para.replace("<br>", "\n").replace("</li>", "\n"));
+        let text = plain(&LINE_ENDS.iter().fold(para.to_string(), |t, end| {
+            t.replace(end, &format!("{end}\n"))
+        }));
         for line in text.split('\n') {
             let mut start = 0;
             let b = line.as_bytes();

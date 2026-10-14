@@ -123,6 +123,32 @@ fn a_printed_sentence_passes_and_an_invented_one_is_found() {
 }
 
 #[test]
+fn a_table_re_laid_in_another_row_order_is_the_printed_text() {
+    // Arrange: a d6 table printed in two column pairs; the model lays it out one row per roll.
+    let source = "## Odd Hobbies\n\nEvery tinker has a hobby they cannot stop talking about.\n\n\
+        | d6 | Hobby | d6 | Hobby |\n| 1 | Kites | 4 | Moths |\n| 2 | Clocks | 5 | Riddles |\n\
+        | 3 | Bells | 6 | Knots |\n";
+    let index = Index::new(source);
+    let rows: String = ["Kites", "Clocks", "Bells", "Moths", "Riddles", "Knots"]
+        .iter()
+        .enumerate()
+        .map(|(i, h)| format!("<tr><td>{}</td><td>{h}</td></tr>", i + 1))
+        .collect();
+    let el = json!({"description": format!("<p>Every tinker has a hobby they cannot stop \
+        talking about.</p><table><thead><tr><th>d6</th><th>Hobby</th></tr></thead><tbody>{rows}\
+        </tbody></table><h5>Feature: Endless Chatter</h5><p>Every tinker has a hobby they \
+        cannot stop talking about.</p>")});
+    // Act / Assert: no cell or heading runs into a sentence.
+    assert!(untraced(&el, &index, &HashSet::new()).is_empty());
+    let sentences = sentences(el["description"].as_str().unwrap());
+    assert!(sentences.contains(&"Feature: Endless Chatter".to_string()));
+    // An invented sentence after a table is still found.
+    let invented = json!({"description": format!("<table><tbody>{rows}</tbody></table><p>Tinkers \
+        are welcome guests at every harvest fair in the valley.</p>")});
+    assert_eq!(untraced(&invented, &index, &HashSet::new()).len(), 1);
+}
+
+#[test]
 fn pipeline_paragraphs_and_short_sentences_are_not_checked() {
     let index = Index::new(SOURCE);
     let el = json!({"description": "<p>See below.</p><p><strong>Crafting Cost:</strong> 40 gp \
