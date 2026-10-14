@@ -666,16 +666,17 @@ pub fn string_list(v: Option<&Value>) -> Vec<String> {
         .unwrap_or_default()
 }
 
-/// Label of a feat category code.
+/// Supports tag of a feat category code: the `<Category> Feat` tags the bundled SRD 5.2.1
+/// feats and feat selects use, so imported selects offer bundled feats and the other way round.
 #[must_use]
 pub fn feat_category_label(code: &str) -> &'static str {
     match code {
-        "O" => "Origin",
-        "G" => "General",
-        "D" | "DG" => "Dragonmark",
-        "FS" | "FS:P" | "FS:R" => "Fighting Style",
-        "EB" => "Epic Boon",
-        _ => "Other",
+        "O" => "Origin Feat",
+        "G" => "General Feat",
+        "D" | "DG" => "Dragonmark Feat",
+        "FS" | "FS:P" | "FS:R" => "Fighting Style Feat",
+        "EB" => "Epic Boon Feat",
+        _ => "Other Feat",
     }
 }
 
@@ -872,7 +873,7 @@ mod tests {
         let ids = ids_of(&m);
         assert!(ids.contains(&"grant:ID_5ET_XPHB_FEAT_ALERT".to_string()));
         assert!(ids.contains(&"grant:ID_5ET_XPHB_FEAT_MAGIC_INITIATE".to_string()));
-        assert!(ids.contains(&"select:Feat:Feat (Human):Origin".to_string()));
+        assert!(ids.contains(&"select:Feat:Feat (Human):Origin Feat".to_string()));
         let Rule::Select(any) = &m.rules[3] else {
             panic!()
         };
@@ -910,7 +911,7 @@ mod tests {
         assert!(ids.iter().any(|i| i.ends_with("Skill||Tool||Gaming Set")));
         assert!(ids.contains(&"grant:ID_PROFICIENCY_SKILL_ATHLETICS".to_string()));
         assert!(ids.iter().any(|i| i.starts_with("select:Language")));
-        assert_eq!(feat_category_label("EB"), "Epic Boon");
-        assert_eq!(feat_category_label("zz"), "Other");
+        assert_eq!(feat_category_label("EB"), "Epic Boon Feat");
+        assert_eq!(feat_category_label("zz"), "Other Feat");
     }
 }

@@ -201,7 +201,7 @@ mod tests {
         let el = &conv.elements[0];
         assert!(conv.partial.is_empty(), "{:?}", conv.partial);
         assert_eq!(el.id, "ID_5ET_ZZZ_FEAT_STURDY");
-        assert_eq!(el.supports, vec!["General"]);
+        assert_eq!(el.supports, vec!["General Feat"]);
         assert_eq!(el.requirements, "[character:4]");
         assert_eq!(el.setter_value("allow duplicate"), Some("true"));
         assert!(el
@@ -263,7 +263,7 @@ mod tests {
             Some("Dabbler: Wizard Spells")
         );
         assert_eq!(el.ruleset, Some(Ruleset::Dnd2024));
-        assert_eq!(el.supports, vec!["Origin"]);
+        assert_eq!(el.supports, vec!["Origin Feat"]);
     }
 
     #[test]

@@ -2,7 +2,7 @@
 
 use super::build::{grant_at, select, set_level};
 use super::caster::{caster, class_table, CasterInput};
-use super::mech::Mech;
+use super::mech::{feat_category_label, Mech};
 use super::optfeat::{feat_selects, optional_feature_selects};
 use super::spell_blocks;
 use super::spell_choices::school_rule;
@@ -252,7 +252,7 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
             Rule::Select(select(
                 "Feat",
                 &format!("Feat ({} {})", f.class_name, f.level),
-                Some("General"),
+                Some(feat_category_label("G")),
                 1,
             ))
         } else {
@@ -781,7 +781,7 @@ mod tests {
         };
         assert_eq!(
             (s.ty.as_str(), s.supports.as_deref(), s.name.as_str()),
-            ("Feat", Some("General"), "Feat (Fighter 8)")
+            ("Feat", Some("General Feat"), "Feat (Fighter 8)")
         );
         assert_eq!(el.ruleset, Some(Ruleset::Dnd2024));
         assert!(st

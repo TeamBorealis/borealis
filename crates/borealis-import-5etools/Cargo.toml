@@ -27,4 +27,5 @@ thiserror.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
+borealis-engine.workspace = true
 tempfile = "3.27.0"

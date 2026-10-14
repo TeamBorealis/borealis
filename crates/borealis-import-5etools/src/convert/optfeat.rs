@@ -319,7 +319,7 @@ mod tests {
         let Rule::Select(s) = &rules[1] else { panic!() };
         assert_eq!(
             (s.ty.as_str(), s.level, s.supports.as_deref()),
-            ("Feat", Some(19), Some("Epic Boon"))
+            ("Feat", Some(19), Some("Epic Boon Feat"))
         );
     }
 

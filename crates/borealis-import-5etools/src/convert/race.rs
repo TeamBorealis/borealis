@@ -1,6 +1,6 @@
 //! Races, subraces and 2024 species.
 
-use super::build::{grant, select, setter_with};
+use super::build::{grant, select, setter_with, stat};
 use super::mech::{AbilitySource, Mech};
 use super::spell_blocks::{self, Carrier};
 use super::spells_extra;
@@ -27,6 +27,20 @@ const DESCRIPTIVE_SECTIONS: &[&str] = &[
     "creature type",
     "creature types",
 ];
+
+/// Dwarven Toughness (both editions): "your hit point maximum increases by 1, and it increases
+/// by 1 (again) every time / whenever you gain a level". 5etools has no field for it; the bundled
+/// packs grant one hit point per character level.
+fn toughness_rule(text: &str) -> Option<Rule> {
+    static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let re = RE.get_or_init(|| {
+        regex::Regex::new(
+            r"(?i)hit points? maximum increases by 1,? and it increases by 1(?: again)? (?:every time|each time|whenever) you gain a level",
+        )
+        .expect("toughness pattern")
+    });
+    re.is_match(text).then(|| Rule::Stat(stat("hp", "level")))
+}
 
 /// Split top-level entries into descriptive text and named traits.
 #[must_use]
@@ -380,7 +394,9 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent, is_subrace: bool) -> Conv
             ent.ruleset,
         );
         te.description = renderer.entries(&body);
-        te.sheet = Some(sheet_text(&short_text(&Renderer::plain(&body), 300)));
+        let plain = Renderer::plain(&body);
+        te.rules.extend(toughness_rule(&plain));
+        te.sheet = Some(sheet_text(&short_text(&plain, 300)));
         mech.push(grant(&tid, "Racial Trait"));
         extra_elements.push(te);
     }
@@ -683,5 +699,19 @@ mod tests {
         let rep = st.report.build();
         assert_eq!(rep.skipped.len(), 1);
         assert!(rep.skipped[0].reason.contains("invalid shape"));
+    }
+
+    #[test]
+    fn dwarven_toughness_text_grants_a_hit_point_per_level() {
+        for text in [
+            "Your hit point maximum increases by 1, and it increases by 1 every time you gain a level.",
+            "Your Hit Point maximum increases by 1, and it increases by 1 again whenever you gain a level.",
+        ] {
+            assert!(
+                matches!(toughness_rule(text), Some(Rule::Stat(s)) if s.name == "hp" && s.value == "level"),
+                "{text}"
+            );
+        }
+        assert!(toughness_rule("Your hit point maximum increases by 2.").is_none());
     }
 }

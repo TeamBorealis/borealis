@@ -746,7 +746,7 @@ mod tests {
         assert_eq!(sc.ability.as_deref(), Some("Intelligence"));
         assert!(el.rules.iter().any(|r| matches!(r, Rule::Stat(s) if s.name == "wizard:spellcasting:slots:1" && s.value == "2")));
         assert!(el.rules.iter().any(|r| matches!(r, Rule::Stat(s) if s.name == "wizard:spellcasting:prepare" && s.value == "4")));
-        assert!(el.rules.iter().any(|r| matches!(r, Rule::Select(s) if s.ty == "Feat" && s.level == Some(19) && s.supports.as_deref() == Some("Epic Boon"))));
+        assert!(el.rules.iter().any(|r| matches!(r, Rule::Select(s) if s.ty == "Feat" && s.level == Some(19) && s.supports.as_deref() == Some("Epic Boon Feat"))));
         assert!(el
             .rules
             .iter()
