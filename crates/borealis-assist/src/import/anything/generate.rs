@@ -25,9 +25,6 @@ use crate::homebrew::PackContext;
 pub const MAX_REPAIR_ROUNDS: u32 = 2;
 const WINDOW_LINES: usize = 40;
 const WHOLE_SOURCE_CHARS: usize = 9000;
-/// Most source sent for an element whose passage was not located (a long source is sent whole
-/// rather than cut at its start).
-pub(crate) const FULL_SOURCE_CHARS: usize = 60_000;
 
 pub(crate) type Progress<'a> = Option<&'a (dyn Fn(ImportProgress) + Send + Sync)>;
 
@@ -69,7 +66,7 @@ pub(crate) fn guidance(planned: &PlannedElement, edition: Edition) -> &'static s
 /// The part of the source relevant to `planned`.
 pub(crate) fn source_window(source: &str, planned: &PlannedElement) -> String {
     let Some(ex) = planned.excerpt.as_ref() else {
-        return source.chars().take(FULL_SOURCE_CHARS).collect();
+        return super::source::unlocated_source(source, &planned.name).0;
     };
     if matches!(planned.role, Role::Class | Role::Subclass) {
         // From the class or subclass header on, not from the start of a long source.

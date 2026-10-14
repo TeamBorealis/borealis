@@ -27,6 +27,27 @@ const MAX_HEADING_CHARS: usize = 90;
 const MAX_HEADING_LINES: usize = 2;
 /// Sizes closer than this (points) are one heading level.
 const SIZE_STEP: f32 = 0.6;
+/// A heading style (size and weight) with at least this many lines, this share of them reading
+/// like prose, is a body style (a sidebar or a larger prose face), not headings.
+const STYLE_MIN_LINES: usize = 3;
+const STYLE_PROSE_SHARE: f32 = 0.34;
+/// A line with this many words is prose, not a heading.
+const MAX_HEADING_WORDS: usize = 12;
+
+/// The line reads like a piece of prose: it starts in lower case, carries a list of clauses,
+/// is long, or is a sentence.
+pub(crate) fn prose_like(t: &str) -> bool {
+    let t = t.trim().trim_start_matches('#').trim();
+    let words = t.split_whitespace().count();
+    t.chars().next().is_some_and(char::is_lowercase)
+        || t.matches(',').count() >= 2
+        || words >= MAX_HEADING_WORDS
+        || (t.ends_with(['.', ';']) && words >= 6)
+}
+
+fn style_key(l: &TextLine) -> (i32, bool) {
+    (round(l.size), l.bold)
+}
 
 fn round(size: f32) -> i32 {
     (size * 2.0).round() as i32
@@ -39,6 +60,8 @@ pub struct HeadingScale {
     sizes: Vec<f32>,
     /// (size, level) of headings whose level the document declares.
     declared: Vec<(f32, u8)>,
+    /// Larger or bold styles that are body text (most of their lines read like prose).
+    prose_styles: Vec<(i32, bool)>,
 }
 
 fn heading_text_ok(t: &str) -> bool {
@@ -74,12 +97,30 @@ impl HeadingScale {
             .filter(|l| l.size >= body * HEADING_RATIO && heading_text_ok(&l.text))
             .map(|l| l.size)
             .collect();
+        let mut styles: std::collections::BTreeMap<(i32, bool), (usize, usize)> =
+            Default::default();
+        for l in all.iter().filter(|l| {
+            l.level.is_none()
+                && (l.size >= body * HEADING_RATIO || (l.bold && (l.size - body).abs() < SIZE_STEP))
+        }) {
+            let e = styles.entry(style_key(l)).or_default();
+            e.0 += 1;
+            e.1 += usize::from(prose_like(&l.text));
+        }
+        let prose_styles: Vec<(i32, bool)> = styles
+            .into_iter()
+            .filter(|(_, (n, p))| {
+                *n >= STYLE_MIN_LINES && *p as f32 >= STYLE_PROSE_SHARE * *n as f32
+            })
+            .map(|(k, _)| k)
+            .collect();
         sizes.sort_by(|a, b| b.total_cmp(a));
         sizes.dedup_by(|a, b| (*b - *a).abs() < SIZE_STEP);
         Self {
             body,
             sizes,
             declared,
+            prose_styles,
         }
     }
 
@@ -99,7 +140,11 @@ impl HeadingScale {
         if let Some(l) = line.level {
             return Some(l.clamp(1, MAX_LEVEL));
         }
-        if self.body <= 0.0 || !heading_text_ok(&line.text) {
+        if self.body <= 0.0
+            || !heading_text_ok(&line.text)
+            || prose_like(&line.text)
+            || self.prose_styles.contains(&style_key(line))
+        {
             return None;
         }
         if line.size >= self.body * HEADING_RATIO {
@@ -146,6 +191,8 @@ pub fn render(lines: &[TextLine], scale: &HeadingScale) -> String {
         if levels.get(i + 1) == Some(&Some(level))
             && l.level.is_none()
             && lines[i + 1].level.is_none()
+            && lines[i + 1].bold == l.bold
+            && !lines[i + 1].gap_before
         {
             text.push(' ');
             text.push_str(lines[i + 1].text.trim());
@@ -229,5 +276,34 @@ mod tests {
         assert!(md.contains("\n## A Section\n"), "{md}");
         assert!(md.contains("\n### Bold Item\n"), "{md}");
         assert!(md.contains("Body sentence ends here."));
+    }
+
+    #[test]
+    fn prose_in_a_larger_face_is_not_a_heading() {
+        let body = "Small table text that carries most of the characters of this page.";
+        let mut lines = vec![line("Moth Lanterns", 14.0, true)];
+        for _ in 0..6 {
+            lines.push(line(body, 9.0, false));
+        }
+        // A sidebar set larger than the tables: sentences and wrapped clauses, not headings.
+        lines.push(line("The following lanterns can be hung from", 11.0, false));
+        lines.push(line("any hook. A lantern does not need oil,", 11.0, false));
+        lines.push(line("unless the keeper says otherwise.", 11.0, false));
+        lines.push(line("Dew Bottles", 14.0, true));
+        let md = to_markdown(&lines);
+        assert!(
+            md.contains("# Moth Lanterns") && md.contains("# Dew Bottles"),
+            "{md}"
+        );
+        assert!(
+            !md.lines()
+                .any(|l| l.starts_with('#') && l.contains("any hook")),
+            "{md}"
+        );
+        assert!(
+            !md.lines()
+                .any(|l| l.starts_with('#') && l.contains("following")),
+            "{md}"
+        );
     }
 }

@@ -23,6 +23,7 @@ mod parts;
 mod plan;
 mod prereq;
 mod rules;
+mod source;
 mod steps;
 mod sweep;
 mod types;

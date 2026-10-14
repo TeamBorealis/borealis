@@ -406,7 +406,7 @@ fn long_source() -> String {
 }
 
 #[tokio::test]
-async fn long_source_batches_send_passages_or_the_whole_source_and_report_it() {
+async fn long_source_batches_give_each_element_its_own_source_and_report_it() {
     let detect = json!({"kind": "feat", "edition": "2024", "confidence": 0.9, "items": [
         {"kind": "feat", "name": "Quick Draw"}, {"kind": "feat", "name": "Steady Hand"},
         {"kind": "feat", "name": "Iron Gut"}]});
@@ -418,14 +418,22 @@ async fn long_source_batches_send_passages_or_the_whole_source_and_report_it() {
     assert!(source.len() > 9000);
     let d = draft_for(&fake, &source, "lg").await;
     let prompts = fake.prompts("import_generate");
-    // The located pair in one call with their passages only; the unlocated feat alone, with the
-    // whole source (its passage is past the old 9000-character cut).
-    assert_eq!(prompts.len(), 2, "{}", prompts.len());
-    let located = prompts.iter().find(|p| p.contains("Steady Hand")).unwrap();
-    assert!(located.contains("Quick Draw") && !located.contains("Filler line 3 "));
-    assert!(!located.contains("\"Iron Gut\""));
-    let whole = prompts.iter().find(|p| p.contains("\"Iron Gut\"")).unwrap();
-    assert!(whole.contains("Gut Of Iron. Poison troubles you less."));
+    // One call: every feat brings its own labelled source. The located pair their passages
+    // only; the unlocated feat the whole source (its passage is past the old 9000-character cut).
+    assert_eq!(prompts.len(), 1, "{}", prompts.len());
+    let p = &prompts[0];
+    let own = |name: &str| {
+        let start = p.find(&format!("=== Source for \"{name}\"")).unwrap();
+        let rest = &p[start + 4..];
+        rest[..rest.find("=== Source for").unwrap_or(rest.len())].to_string()
+    };
+    let quick = own("Quick Draw");
+    assert!(quick.contains("Quick Draw. You draw") && !quick.contains("Filler line 3 "));
+    let whole = own("Iron Gut");
+    assert!(
+        whole.contains("Filler line 3 ")
+            && whole.contains("Gut Of Iron. Poison troubles you less.")
+    );
     let report = finalize_draft(&base(), &d).unwrap().pack.report.unwrap();
     assert_eq!(report.warnings.len(), 1, "{:?}", report.warnings);
     assert!(report.warnings[0].message.contains("Iron Gut"));

@@ -11,8 +11,14 @@ pub mod layout;
 pub mod office;
 mod pack;
 mod pdf;
+mod pdf_cmap;
 mod pdf_fonts;
 mod pdf_split;
+mod pdf_table;
+#[cfg(test)]
+mod pdf_tests;
+mod pdf_trust;
+mod pdf_walk;
 pub mod report;
 #[doc(hidden)]
 pub mod testing;

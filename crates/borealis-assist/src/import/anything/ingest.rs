@@ -23,8 +23,16 @@ use crate::import::{read_pdf_layout, split_pdf, PdfLayout};
 pub(crate) const VISUAL_PAGES_PER_CALL: usize = 4;
 /// Largest PDF part sent (below the 20 MB attachment limit, leaving room for base64).
 pub(crate) const MAX_PART_BYTES: usize = 15 * 1024 * 1024;
-/// Extra transcription attempts when listed headings are missing from the text.
+/// Extra transcription attempts when listed headings are missing from the text, or the text is
+/// shorter than the pages hold, or leaves out words their text layer has.
 const COVERAGE_RETRIES: usize = 1;
+/// A transcription shorter than this share of the characters the pages' (garbled) text layer
+/// holds was condensed, not copied.
+const MIN_LENGTH_SHARE: f32 = 0.75;
+/// Share of the words of a page's incomplete text layer a verbatim transcription contains.
+const MIN_WORD_SHARE: f32 = 0.85;
+/// Words of the text layer checked per part (longest first).
+const MAX_CHECK_WORDS: usize = 400;
 /// Most source characters one detection call reads; a longer source is detected window by
 /// window (cut at headings) and the findings are merged.
 pub(crate) const DETECT_WINDOW_CHARS: usize = 120_000;
@@ -49,27 +57,29 @@ pub(crate) struct TranscribeOut {
     pub headings: Vec<String>,
 }
 
-fn transcribe_step(label: &str, missing: &[String]) -> Step<TranscribeOut> {
-    let again = if missing.is_empty() {
+fn transcribe_step(label: &str, problems: &[String]) -> Step<TranscribeOut> {
+    let again = if problems.is_empty() {
         String::new()
     } else {
         format!(
-            "\nA previous transcription left out these headings and their text: {}. Transcribe everything again, completely.",
-            missing.join("; ")
+            "\nA previous transcription of these pages was rejected: {}. Copy every word again, exactly as printed.",
+            problems.join("; ")
         )
     };
     let user = format!(
-        "Transcribe {label} completely and verbatim, in reading order (a two-column page: the left \
-column, then the right column). Do NOT summarise, shorten, merge or skip anything: every heading, \
-paragraph, list item, sidebar, table row and stat block line. Mark headings with Markdown `#`, `##`, \
-`###` by their printed size. Write each table row as `cell | cell | cell`. Leave out running page \
-headers, footers and page numbers. In `headings` list every heading on these pages exactly as \
+        "Transcribe {label} completely and VERBATIM: copy the printed words one by one, in reading \
+order (a two-column page: the left column, then the right column). This is copying, not writing: \
+do NOT summarise, shorten, paraphrase, reword, correct, reorder, merge or skip anything; keep every \
+number, die expression, name and sentence exactly as printed. Include every heading, paragraph, \
+list item, sidebar, table row and stat block line. Mark headings with Markdown `#`, `##`, `###` by \
+their printed size. Write each table row on one line as `cell | cell | cell`. Leave out running \
+page headers, footers and page numbers. In `headings` list every heading on these pages exactly as \
 printed.{again}"
     );
     Step::new(
         "import_transcribe",
-        "transcribe the attached pages of a D&D source verbatim",
-        "Output the text exactly as printed; never paraphrase.",
+        "copy the attached pages of a D&D source word for word",
+        "Output the printed text exactly, word for word; never paraphrase or condense.",
         user,
         json!({"type":"object","required":["text"],"properties":{
             "text":{"type":"string"},
@@ -81,6 +91,76 @@ printed.{again}"
 struct Visual {
     label: String,
     attachments: Vec<Attachment>,
+    /// What a verbatim transcription of it must contain, from the pages' text layer.
+    expect: Expect,
+}
+
+/// What a verbatim transcription is checked against: the glyph count of a garbled text layer
+/// (it shows as many characters as the page prints) and the words of an incomplete one.
+#[derive(Debug, Clone, Default)]
+struct Expect {
+    min_chars: usize,
+    words: Vec<String>,
+}
+
+impl Expect {
+    /// Why `text` is not a verbatim transcription of the pages; empty when it is.
+    fn problems(&self, text: &str) -> Vec<String> {
+        let mut out = Vec::new();
+        let chars = text.chars().filter(|c| !c.is_whitespace()).count();
+        if self.min_chars > 0 && (chars as f32) < MIN_LENGTH_SHARE * self.min_chars as f32 {
+            out.push(format!(
+                "it has {chars} characters but the pages print about {}",
+                self.min_chars
+            ));
+        }
+        if !self.words.is_empty() {
+            let hay = format!(" {} ", norm_words(text));
+            let missing: Vec<&String> = self
+                .words
+                .iter()
+                .filter(|w| !hay.contains(&format!(" {w} ")))
+                .collect();
+            let kept = (self.words.len() - missing.len()) as f32;
+            if kept < MIN_WORD_SHARE * self.words.len() as f32 {
+                let sample: Vec<&str> = missing.iter().take(12).map(|w| w.as_str()).collect();
+                out.push(format!(
+                    "it leaves out {} of {} printed words (such as: {})",
+                    missing.len(),
+                    self.words.len(),
+                    sample.join(", ")
+                ));
+            }
+        }
+        out
+    }
+
+    /// The expectation for the pages `numbers` of `layout`.
+    fn of(layout: &PdfLayout, numbers: std::ops::RangeInclusive<u32>) -> Self {
+        let mut e = Self::default();
+        let mut words: Vec<String> = Vec::new();
+        for p in layout.pages.iter().filter(|p| numbers.contains(&p.number)) {
+            if p.garbled() {
+                e.min_chars += p.chars();
+            } else {
+                for l in &p.lines {
+                    words.extend(
+                        norm_words(&l.text)
+                            .split(' ')
+                            .filter(|w| {
+                                w.chars().count() >= 4 && w.chars().all(char::is_alphabetic)
+                            })
+                            .map(str::to_string),
+                    );
+                }
+            }
+        }
+        words.sort_by_key(|w| std::cmp::Reverse(w.chars().count()));
+        words.dedup();
+        words.truncate(MAX_CHECK_WORDS);
+        e.words = words;
+        e
+    }
 }
 
 /// One piece of the source in reading order.
@@ -99,30 +179,41 @@ async fn transcribe(
         inner: runner,
         attachments: &v.attachments,
     };
-    let mut missing: Vec<String> = Vec::new();
-    let mut best: Option<(usize, String)> = None;
+    let mut problems: Vec<String> = Vec::new();
+    let mut best: Option<(usize, Vec<String>, String)> = None;
     for _ in 0..=COVERAGE_RETRIES {
         out.calls += 1;
-        let reply = run_task(&adapter, &transcribe_step(&v.label, &missing), opts)
+        let reply = run_task(&adapter, &transcribe_step(&v.label, &problems), opts)
             .await?
             .output;
         let gaps = missing_headings(&reply.headings, &reply.text);
-        if best.as_ref().map_or(true, |(n, _)| gaps.len() < *n) {
-            best = Some((gaps.len(), reply.text));
+        let mut found: Vec<String> = Vec::new();
+        if !gaps.is_empty() {
+            found.push(format!(
+                "these headings were seen but their text is missing: {}",
+                gaps.join("; ")
+            ));
         }
-        missing = gaps;
-        if missing.is_empty() {
+        found.extend(v.expect.problems(&reply.text));
+        let score = gaps.len() + found.len();
+        if best.as_ref().map_or(true, |(n, _, _)| score < *n) {
+            best = Some((score, found.clone(), reply.text));
+        }
+        problems = found;
+        if problems.is_empty() {
             break;
         }
     }
-    if !missing.is_empty() {
+    let kept = best.as_ref().map(|(_, p, _)| p.clone()).unwrap_or_default();
+    if !kept.is_empty() {
         out.notes.push(format!(
-            "{READING_NOTE}{}: these headings were seen but their text could not be transcribed: {}",
+            "{READING_NOTE}{} may not be verbatim after {} attempts: {}",
             v.label,
-            missing.join("; ")
+            COVERAGE_RETRIES + 1,
+            kept.join("; ")
         ));
     }
-    let text = best.map(|(_, t)| t).unwrap_or_default();
+    let text = best.map(|(_, _, t)| t).unwrap_or_default();
     if text.trim().is_empty() {
         out.notes
             .push(format!("{READING_NOTE}{}: no text could be read", v.label));
@@ -151,11 +242,29 @@ fn pdf_pieces(a: &Attachment, notes: &mut Vec<String>) -> Result<Vec<Piece>, Ass
             return Ok(vec![Piece::Visual(Visual {
                 label: format!("`{}`", a.name),
                 attachments: vec![a.clone()],
+                expect: Expect::default(),
             })]);
         }
         Err(e) => return Err(e),
     };
     let scale = layout.scale();
+    let reasons: Vec<String> = layout
+        .pages
+        .iter()
+        .filter_map(|p| {
+            p.distrust
+                .as_ref()
+                .map(|r| format!("page {}: {r}", p.number))
+        })
+        .collect();
+    if !reasons.is_empty() {
+        notes.push(format!(
+            "{READING_NOTE}`{}`: {} page(s) were read visually because their text layer cannot be used ({})",
+            a.name,
+            reasons.len(),
+            reasons.join("; ")
+        ));
+    }
     let mut pieces = Vec::new();
     let mut i = 0;
     while i < layout.pages.len() {
@@ -203,6 +312,7 @@ fn visual_parts(
                     name: format!("{} ({label})", a.name),
                 }],
                 label,
+                expect: Expect::of(layout, p.first_page..=p.last_page),
             })
         })
         .collect())
@@ -227,6 +337,7 @@ pub(crate) async fn read_attachments(
             pieces.push(Piece::Visual(Visual {
                 label: format!("the attached image(s) {}", names.join(", ")),
                 attachments: group.to_vec(),
+                expect: Expect::default(),
             }));
         }
         images.clear();
@@ -378,5 +489,26 @@ mod tests {
             w.join("\n").lines().count(),
             text.trim_end().lines().count()
         );
+    }
+
+    #[test]
+    fn condensed_or_reworded_transcriptions_are_rejected() {
+        let garbled = Expect {
+            min_chars: 400,
+            words: Vec::new(),
+        };
+        assert!(!garbled.problems("A short summary of the page.").is_empty());
+        assert!(garbled.problems(&"word ".repeat(120)).is_empty());
+        let partial = Expect {
+            min_chars: 0,
+            words: ["lantern", "hollow", "glimmer", "spire"]
+                .map(String::from)
+                .to_vec(),
+        };
+        assert!(partial
+            .problems("The glimmer of a lantern in the hollow by the spire.")
+            .is_empty());
+        let p = partial.problems("A light in a cave near a tower.");
+        assert!(p[0].contains("leaves out 4 of 4"), "{p:?}");
     }
 }

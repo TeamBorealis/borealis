@@ -4,11 +4,13 @@
 
 use std::collections::BTreeMap;
 
-use lopdf::content::Content;
 use lopdf::{Document, Object, ObjectId};
 
 use super::layout::{render, HeadingScale, TextLine};
-use super::pdf_fonts::{page_fonts, shown, Spacing};
+use super::pdf_fonts::FontCache;
+use super::pdf_table::tables;
+use super::pdf_trust::{distrust, Trust};
+use super::pdf_walk::{paint_page, Run};
 use crate::error::AssistError;
 
 /// A PDF with fewer non-whitespace characters per page than this is treated as scanned images.
@@ -18,29 +20,34 @@ pub const MIN_CHARS_PER_PAGE: usize = 20;
 const PDF_THREAD_STACK: usize = 64 * 1024 * 1024;
 /// Stop collecting text once this many bytes are extracted (flate-bomb guard).
 pub const MAX_EXTRACT_BYTES: usize = 8 * 1024 * 1024;
-/// Most decompressed content read from one page (flate-bomb guard).
-const MAX_PAGE_CONTENT: usize = 32 * 1024 * 1024;
-/// Latin letters a page needs before its vowel share is judged.
-const GARBLE_MIN_LETTERS: usize = 200;
-/// Below this share of vowels among Latin letters the text layer is nonsense (prose in
-/// European languages has about 35-45%).
-const GARBLE_VOWEL_SHARE: f32 = 0.2;
 /// Share of a font's characters one symbol must reach to be that font's word space.
 const SPACE_STAND_IN_SHARE: f32 = 0.08;
 /// Symbols some fonts decode their space glyph to.
 const SPACE_STAND_INS: &str = "%!$#&*+=@^_|~";
-/// Page width when the page declares none (US letter).
-const DEFAULT_WIDTH: f32 = 612.0;
+/// Page size when the page declares none (US letter).
+const DEFAULT_SIZE: (f32, f32) = (612.0, 792.0);
 /// Runs whose baselines differ by less than this share of the font size are one line.
 const SAME_LINE: f32 = 0.35;
 /// A horizontal gap wider than this many font sizes splits a line into fragments.
 const SPLIT_GAP: f32 = 1.5;
 /// A gap wider than this share of the font size between two runs is a word space.
 const WORD_GAP: f32 = 0.15;
+/// Column splits followed (two levels: up to four columns).
+const MAX_COLUMN_SPLITS: usize = 2;
+/// Where a column gutter is looked for (shares of the page width).
+const GUTTER_RANGE: (f32, f32) = (0.3, 0.7);
+/// A full-width line reaches this share of the page width into both halves.
+const FULL_REACH: f32 = 0.15;
 /// Fragments on each side of the middle before a page counts as two columns.
 const MIN_COLUMN_LINES: usize = 3;
 /// A vertical gap of more than this many line heights is a paragraph break.
 const PARA_GAP: f32 = 1.6;
+/// Runs of the same text closer than this many font sizes are one overprinted run.
+const OVERPRINT: f32 = 0.3;
+/// A run this much smaller than its neighbour may sit this far off the baseline (superscript
+/// "th" of "4th", a footnote mark) and still belong to the line.
+const SUPERSCRIPT_SIZE: f32 = 0.85;
+const SUPERSCRIPT_RISE: f32 = 0.6;
 
 /// Text pulled out of a PDF.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -58,6 +65,9 @@ pub struct PdfPage {
     pub number: u32,
     /// Lines in reading order.
     pub lines: Vec<TextLine>,
+    /// Why the text layer cannot stand for the page (it decodes to nonsense, or the page
+    /// shows text that is not in it); `None` when it can.
+    pub distrust: Option<String>,
 }
 
 impl PdfPage {
@@ -69,26 +79,15 @@ impl PdfPage {
             .sum()
     }
 
-    /// The page has a usable text layer.
+    /// The page has a usable text layer: enough text, and nothing says it is garbled or
+    /// incomplete. Other pages are read visually.
     pub fn has_text(&self) -> bool {
-        self.chars() >= MIN_CHARS_PER_PAGE && !self.garbled()
+        self.chars() >= MIN_CHARS_PER_PAGE && self.distrust.is_none()
     }
 
-    /// The text layer decodes to nonsense (a font without a usable character map): too few
-    /// vowels among Latin letters. Such a page is read visually instead.
+    /// The text layer decodes to nonsense (a font without a usable character map).
     pub fn garbled(&self) -> bool {
-        let letters: Vec<char> = self
-            .lines
-            .iter()
-            .flat_map(|l| l.text.chars())
-            .filter(char::is_ascii_alphabetic)
-            .collect();
-        let vowels = letters
-            .iter()
-            .filter(|c| "aeiouyAEIOUY".contains(**c))
-            .count();
-        letters.len() >= GARBLE_MIN_LETTERS
-            && (vowels as f32) < GARBLE_VOWEL_SHARE * letters.len() as f32
+        matches!(super::pdf_trust::judge_text(&self.lines), Trust::Garbled(_))
     }
 }
 
@@ -184,162 +183,60 @@ Borealis does not run OCR: paste the text instead, or run OCR in another tool fi
     })
 }
 
-// ---- positioned runs ---------------------------------------------------------------------------
-
-type Matrix = [f32; 6];
-const IDENTITY: Matrix = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
-
-fn mul(a: &Matrix, b: &Matrix) -> Matrix {
-    [
-        a[0] * b[0] + a[1] * b[2],
-        a[0] * b[1] + a[1] * b[3],
-        a[2] * b[0] + a[3] * b[2],
-        a[2] * b[1] + a[3] * b[3],
-        a[4] * b[0] + a[5] * b[2] + b[4],
-        a[4] * b[1] + a[5] * b[3] + b[5],
-    ]
-}
-
-fn translate(tx: f32, ty: f32) -> Matrix {
-    [1.0, 0.0, 0.0, 1.0, tx, ty]
-}
-
-#[derive(Debug, Clone)]
-struct Run {
-    x: f32,
-    y: f32,
-    end: f32,
-    size: f32,
-    bold: bool,
-    text: String,
-    font: Vec<u8>,
-}
-
-#[derive(Clone)]
-struct State {
-    ctm: Matrix,
-    font: Vec<u8>,
-    size: f32,
-    leading: f32,
-    char_space: f32,
-    word_space: f32,
-    scale: f32,
-}
+// ---- runs ---------------------------------------------------------------------------------
 
 fn num(o: &Object) -> f32 {
     o.as_float().unwrap_or(0.0)
 }
 
-fn nums<const N: usize>(ops: &[Object]) -> Option<[f32; N]> {
-    let mut out = [0.0; N];
-    for (i, slot) in out.iter_mut().enumerate() {
-        *slot = num(ops.get(i)?);
+/// Overprinted text (fake bold drawn twice, a drop shadow) is one run: a run whose text an
+/// earlier run already shows at (almost) the same place is dropped.
+fn drop_overprints(runs: Vec<Run>) -> Vec<Run> {
+    let mut kept: Vec<Run> = Vec::with_capacity(runs.len());
+    let mut by_text: std::collections::HashMap<String, Vec<usize>> = Default::default();
+    for r in runs {
+        let key = r.text.trim().to_string();
+        // Closer than a share of the run's own width: a repeated letter drawn on its own
+        // ("l" then "l") sits a full letter further on.
+        let near = |k: &Run| {
+            let em = k.size.max(r.size).max(1.0);
+            let reach = (OVERPRINT * em).min(OVERPRINT * (k.end - k.x).abs());
+            (k.x - r.x).abs() < reach && (k.y - r.y).abs() < OVERPRINT * em
+        };
+        let seen = by_text
+            .get(&key)
+            .is_some_and(|ix| ix.iter().any(|&i| near(&kept[i])));
+        if seen {
+            continue;
+        }
+        by_text.entry(key).or_default().push(kept.len());
+        kept.push(r);
     }
-    Some(out)
+    kept
 }
 
-fn page_runs(doc: &Document, page: ObjectId, budget: &mut usize) -> Vec<Run> {
-    let Ok(data) = doc.get_page_content_with_limit(page, MAX_PAGE_CONTENT) else {
-        return Vec::new();
-    };
-    let Ok(content) = Content::decode(&data) else {
-        return Vec::new();
-    };
-    let fonts = page_fonts(doc, page);
-    let mut stack: Vec<State> = Vec::new();
-    let mut st = State {
-        ctm: IDENTITY,
-        font: Vec::new(),
-        size: 0.0,
-        leading: 0.0,
-        char_space: 0.0,
-        word_space: 0.0,
-        scale: 1.0,
-    };
-    let (mut tm, mut lm) = (IDENTITY, IDENTITY);
-    let mut runs = Vec::new();
-    for op in &content.operations {
-        let o = &op.operands;
-        match op.operator.as_str() {
-            "q" => stack.push(st.clone()),
-            "Q" => st = stack.pop().unwrap_or(st),
-            "cm" => {
-                if let Some(m) = nums::<6>(o) {
-                    st.ctm = mul(&m, &st.ctm);
-                }
-            }
-            "BT" => (tm, lm) = (IDENTITY, IDENTITY),
-            "Tf" => {
-                st.font = o
-                    .first()
-                    .and_then(|f| f.as_name().ok())
-                    .unwrap_or_default()
-                    .to_vec();
-                st.size = o.get(1).map(num).unwrap_or(0.0);
-            }
-            "TL" => st.leading = o.first().map(num).unwrap_or(0.0),
-            "Tc" => st.char_space = o.first().map(num).unwrap_or(0.0),
-            "Tw" => st.word_space = o.first().map(num).unwrap_or(0.0),
-            "Tz" => st.scale = o.first().map_or(100.0, num) / 100.0,
-            "Td" | "TD" => {
-                if let Some([tx, ty]) = nums::<2>(o) {
-                    if op.operator == "TD" {
-                        st.leading = -ty;
-                    }
-                    lm = mul(&translate(tx, ty), &lm);
-                    tm = lm;
-                }
-            }
-            "Tm" => {
-                if let Some(m) = nums::<6>(o) {
-                    (tm, lm) = (m, m);
-                }
-            }
-            "T*" => {
-                lm = mul(&translate(0.0, -st.leading), &lm);
-                tm = lm;
-            }
-            "Tj" | "TJ" | "'" | "\"" => {
-                if op.operator != "Tj" && op.operator != "TJ" {
-                    lm = mul(&translate(0.0, -st.leading), &lm);
-                    tm = lm;
-                }
-                let strings = if op.operator == "\"" {
-                    o.get(2..).unwrap_or_default()
-                } else {
-                    o
-                };
-                let font = fonts.get(&st.font);
-                let sp = Spacing {
-                    size: st.size,
-                    char_space: st.char_space,
-                    word_space: st.word_space,
-                    scale: st.scale,
-                };
-                let (text, advance) = shown(font, strings, &sp);
-                let m = mul(&tm, &st.ctm);
-                let scale = (m[2] * m[2] + m[3] * m[3]).sqrt();
-                let size = (st.size * scale).abs();
-                let width = advance * (m[0] * m[0] + m[1] * m[1]).sqrt();
-                tm = mul(&translate(advance, 0.0), &tm);
-                if text.trim().is_empty() || *budget == 0 {
-                    continue;
-                }
-                *budget = budget.saturating_sub(text.len());
-                runs.push(Run {
-                    x: m[4],
-                    y: m[5],
-                    end: m[4] + width,
-                    size,
-                    bold: font.is_some_and(|f| f.bold),
-                    text,
-                    font: st.font.clone(),
-                });
-            }
-            _ => {}
-        }
+/// `Word%Word%Word%` in one run (no spaces, a stand-in symbol between words and at the end):
+/// the font decodes its space to that symbol. Short runs (headings) the per-font repair misses.
+fn short_run_spaces(text: &str) -> Option<String> {
+    let t = text.trim();
+    if t.contains(' ') || t.chars().count() < 3 {
+        return None;
     }
-    runs
+    let last = t.chars().last()?;
+    if !(SPACE_STAND_INS.contains(last) || last == '\'') {
+        return None;
+    }
+    // A single word with a stand-in after it ("Items%"): a percent sign never follows letters.
+    let body = &t[..t.len() - last.len_utf8()];
+    if last == '%' && !body.contains(last) && body.chars().all(char::is_alphabetic) {
+        return Some(body.to_string());
+    }
+    let parts: Vec<&str> = t[..t.len() - last.len_utf8()].split(last).collect();
+    let words = parts.len() >= 2
+        && parts
+            .iter()
+            .all(|p| !p.is_empty() && p.chars().all(char::is_alphanumeric));
+    words.then(|| parts.join(" "))
 }
 
 /// Some fonts decode their space glyph to a symbol ("word%word%word"): when a font's text has
@@ -367,18 +264,24 @@ fn restore_spaces(runs: &mut [Run]) {
             r.text = r.text.replace(c, " ");
         }
     }
+    for r in runs.iter_mut() {
+        if let Some(fixed) = short_run_spaces(&r.text) {
+            r.text = fixed;
+        }
+    }
 }
 
 // ---- lines and columns -------------------------------------------------------------------------
 
+/// Text on one baseline between two wide gaps (a line of a column, a table cell line).
 #[derive(Debug, Clone)]
-struct Fragment {
-    x: f32,
-    end: f32,
-    y: f32,
-    size: f32,
-    bold: bool,
-    text: String,
+pub(crate) struct Fragment {
+    pub x: f32,
+    pub end: f32,
+    pub y: f32,
+    pub size: f32,
+    pub bold: bool,
+    pub text: String,
 }
 
 /// A fragment being built: its runs' characters by size and how many are bold.
@@ -440,13 +343,27 @@ impl Building {
     }
 }
 
+fn same_line(a: &Run, b: &Run) -> bool {
+    (a.y - b.y).abs() <= SAME_LINE * a.size.max(b.size).max(1.0)
+}
+
+/// `small` is a raised or lowered smaller run touching `big` (an ordinal suffix, a mark).
+fn superscript_of(a: &Run, b: &Run) -> bool {
+    let (big, small) = if a.size >= b.size { (a, b) } else { (b, a) };
+    let em = big.size.max(1.0);
+    small.size < SUPERSCRIPT_SIZE * big.size
+        && (big.y - small.y).abs() <= SUPERSCRIPT_RISE * em
+        && (small.x - big.end).abs().min((big.x - small.end).abs()) <= WORD_GAP * em
+}
+
 fn fragments(mut runs: Vec<Run>) -> Vec<Fragment> {
     runs.sort_by(|a, b| b.y.total_cmp(&a.y).then(a.x.total_cmp(&b.x)));
+    let stops = super::pdf_table::tab_stops(&runs);
     // Baselines first (runs within SAME_LINE of the line's first run), then left to right.
     let mut lines: Vec<Vec<Run>> = Vec::new();
     for r in runs {
         match lines.last_mut() {
-            Some(l) if (l[0].y - r.y).abs() <= SAME_LINE * l[0].size.max(r.size).max(1.0) => {
+            Some(l) if l.iter().any(|k| same_line(k, &r) || superscript_of(k, &r)) => {
                 l.push(r);
             }
             _ => lines.push(vec![r]),
@@ -460,7 +377,10 @@ fn fragments(mut runs: Vec<Run>) -> Vec<Fragment> {
             if let Some(b) = cur.as_mut() {
                 let gap = r.x - b.frag.end;
                 let em = b.frag.size.max(r.size);
-                if gap <= SPLIT_GAP * em {
+                let cell = gap >= super::pdf_table::CELL_GAP * em
+                    && super::pdf_table::at_stop(&stops, r.x)
+                    && (b.frag.x - r.x).abs() > 1.0;
+                if gap <= SPLIT_GAP * em && !cell {
                     if gap > WORD_GAP * em
                         && !b.frag.text.ends_with(' ')
                         && !r.text.starts_with(' ')
@@ -486,24 +406,36 @@ enum Side {
     Full,
 }
 
-/// Reading order: one column top to bottom, or, on a two-column page, each band between
-/// full-width lines read left column then right column.
+/// Reading order: one column top to bottom, or, on a page of columns, each band between
+/// full-width lines read column by column (columns found recursively, so three columns or
+/// unequal columns read in order too).
 fn reading_order(frags: Vec<Fragment>, width: f32) -> Vec<Fragment> {
-    let mid = width / 2.0;
-    let slack = width * 0.04;
+    order_columns(frags, 0.0, width, MAX_COLUMN_SPLITS)
+}
+
+fn order_columns(frags: Vec<Fragment>, x0: f32, x1: f32, depth: usize) -> Vec<Fragment> {
+    let width = (x1 - x0).max(1.0);
+    let mid = gutter(&frags, x0, width);
+    let slack = 2.0;
+    // Full width: well into both halves. A cell line slightly over the gutter keeps the side
+    // most of it is on.
     let side = |f: &Fragment| {
         if f.end <= mid + slack {
             Side::Left
         } else if f.x >= mid - slack {
             Side::Right
-        } else {
+        } else if f.x < mid - FULL_REACH * width && f.end > mid + FULL_REACH * width {
             Side::Full
+        } else if (f.x + f.end) / 2.0 < mid {
+            Side::Left
+        } else {
+            Side::Right
         }
     };
     let lefts = frags.iter().filter(|f| side(f) == Side::Left).count();
     let rights = frags.iter().filter(|f| side(f) == Side::Right).count();
-    if lefts < MIN_COLUMN_LINES || rights < MIN_COLUMN_LINES {
-        return merge_rows(frags);
+    if depth == 0 || lefts < MIN_COLUMN_LINES || rights < MIN_COLUMN_LINES {
+        return merge_rows(tables(frags));
     }
     let mut out = Vec::new();
     let (mut left, mut right): (Vec<Fragment>, Vec<Fragment>) = (Vec::new(), Vec::new());
@@ -512,15 +444,44 @@ fn reading_order(frags: Vec<Fragment>, width: f32) -> Vec<Fragment> {
             Side::Left => left.push(f),
             Side::Right => right.push(f),
             Side::Full => {
-                out.append(&mut left);
-                out.append(&mut right);
+                out.extend(order_columns(std::mem::take(&mut left), x0, mid, depth - 1));
+                out.extend(order_columns(
+                    std::mem::take(&mut right),
+                    mid,
+                    x1,
+                    depth - 1,
+                ));
                 out.push(f);
             }
         }
     }
-    out.append(&mut left);
-    out.append(&mut right);
+    out.extend(order_columns(left, x0, mid, depth - 1));
+    out.extend(order_columns(right, mid, x1, depth - 1));
     out
+}
+
+/// The x of the widest vertical white channel near the middle of the page (between two
+/// columns, which need not be equal): the place fewest fragments cross, nearest the middle.
+fn gutter(frags: &[Fragment], x0: f32, width: f32) -> f32 {
+    let mid = x0 + width / 2.0;
+    let lo = (x0 + width * GUTTER_RANGE.0) as i32;
+    let hi = (x0 + width * GUTTER_RANGE.1) as i32;
+    // Only places with columns on both sides count.
+    let balanced = |x: f32| {
+        let left = frags.iter().filter(|f| f.end <= x).count();
+        let right = frags.iter().filter(|f| f.x >= x).count();
+        left.min(right) >= MIN_COLUMN_LINES
+    };
+    let crossing = |x: f32| frags.iter().filter(|f| f.x < x && f.end > x).count();
+    (lo..=hi)
+        .map(|x| x as f32)
+        .filter(|x| balanced(*x))
+        .min_by(|a, b| {
+            crossing(*a)
+                .cmp(&crossing(*b))
+                .then((a - mid).abs().total_cmp(&(b - mid).abs()))
+        })
+        .unwrap_or(mid)
 }
 
 /// Single-column page: fragments on one baseline (table cells) become one `a | b` line.
@@ -539,7 +500,7 @@ fn merge_rows(frags: Vec<Fragment>) -> Vec<Fragment> {
     out
 }
 
-fn page_width(doc: &Document, page: ObjectId) -> f32 {
+fn page_size(doc: &Document, page: ObjectId) -> (f32, f32) {
     let mut id = Some(page);
     for _ in 0..32 {
         let Some(dict) = id.and_then(|i| doc.get_dictionary(i).ok()) else {
@@ -551,14 +512,15 @@ fn page_width(doc: &Document, page: ObjectId) -> f32 {
         {
             if b.len() == 4 {
                 let w = (num(&b[2]) - num(&b[0])).abs();
-                if w > 0.0 {
-                    return w;
+                let h = (num(&b[3]) - num(&b[1])).abs();
+                if w > 0.0 && h > 0.0 {
+                    return (w, h);
                 }
             }
         }
         id = dict.get(b"Parent").and_then(Object::as_reference).ok();
     }
-    DEFAULT_WIDTH
+    DEFAULT_SIZE
 }
 
 fn to_lines(frags: &[Fragment]) -> Vec<TextLine> {
@@ -645,16 +607,22 @@ fn strip_running_lines(pages: &mut [PdfPage]) {
 
 fn layout_of(doc: &Document) -> PdfLayout {
     let mut budget = MAX_EXTRACT_BYTES;
+    let mut cache = FontCache::default();
     let mut pages: Vec<PdfPage> = doc
         .get_pages()
         .into_iter()
         .map(|(number, id)| {
-            let mut runs = page_runs(doc, id, &mut budget);
+            let painted = paint_page(doc, id, &mut cache, &mut budget);
+            let mut runs = drop_overprints(painted.runs);
             restore_spaces(&mut runs);
-            let ordered = reading_order(fragments(runs), page_width(doc, id));
+            let (width, height) = page_size(doc, id);
+            let ordered = reading_order(fragments(runs), width);
+            let lines = to_lines(&ordered);
+            let distrust = distrust(&lines, &painted.images, (width, height));
             PdfPage {
                 number,
-                lines: to_lines(&ordered),
+                lines,
+                distrust,
             }
         })
         .collect();

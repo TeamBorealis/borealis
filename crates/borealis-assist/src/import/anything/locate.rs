@@ -26,6 +26,7 @@ const LIST_ITEMS: usize = 3;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Kind {
     Mention,
+    TableRow,
     PartHeading,
     ExactLine,
     RunIn,
@@ -158,6 +159,46 @@ fn is_sub_part(title: &str, name: &str) -> bool {
             })
 }
 
+/// Words that make a heading a structural sub-heading of the section it is in ("Tier 1",
+/// "Crafting Table", "Example"), even at the section's own level.
+const STRUCTURE_WORDS: [&str; 12] = [
+    "tier",
+    "tiers",
+    "rank",
+    "level",
+    "stage",
+    "step",
+    "table",
+    "tables",
+    "example",
+    "examples",
+    "requirements",
+    "cost",
+];
+
+/// A structural sub-heading: it numbers a part ("Tier 1", "Stage II") or names a table or an
+/// example, so it belongs to the section above it.
+fn structural_heading(title: &str) -> bool {
+    let t = norm_words(title);
+    let words: Vec<&str> = t.split(' ').filter(|w| !w.is_empty()).collect();
+    let numbered = words.len() <= 4
+        && words.iter().any(|w| {
+            w.chars().all(|c| c.is_ascii_digit())
+                || ["i", "ii", "iii", "iv", "v", "vi"].contains(w)
+                || w.trim_end_matches(|c: char| c.is_ascii_alphabetic())
+                    .parse::<u32>()
+                    .is_ok()
+        });
+    numbered
+        || words.first().is_some_and(|w| STRUCTURE_WORDS.contains(w))
+        || words.last().is_some_and(|w| STRUCTURE_WORDS.contains(w))
+}
+
+/// A table row (`a | b | c`) one of whose cells is the name.
+fn row_with_cell(t: &str, name: &str) -> bool {
+    t.contains(" | ") && t.split(" | ").any(|c| same_name(c, name))
+}
+
 fn same_name(a: &str, b: &str) -> bool {
     !b.is_empty() && norm_words(a) == b
 }
@@ -184,7 +225,13 @@ impl Doc<'_> {
     fn heading_end(&self, line: usize, level: u8, name: &str) -> usize {
         self.heads
             .iter()
-            .find(|h| h.line > line && h.level <= level && !is_sub_part(&h.title, name))
+            .find(|h| {
+                h.line > line
+                    && (h.level < level
+                        || (h.level == level
+                            && !is_sub_part(&h.title, name)
+                            && !structural_heading(&h.title)))
+            })
             .map_or(self.lines.len(), |h| h.line)
     }
 
@@ -198,7 +245,8 @@ impl Doc<'_> {
             let starts = self.heading_at(i).is_some()
                 || self.standalone_title(i)
                 || (run_in && run_in_head(l).is_some());
-            if starts && (run_in || !is_sub_part(strip_marks(l), name)) {
+            let sub = is_sub_part(strip_marks(l), name) || structural_heading(strip_marks(l));
+            if starts && (run_in || !sub) {
                 return i;
             }
             i += 1;
@@ -235,7 +283,9 @@ impl Doc<'_> {
                 (Kind::RunIn, self.paragraph_end(i, true, name))
             } else if same_name(t, name) {
                 (Kind::ExactLine, self.paragraph_end(i, false, name))
-            } else if is_list_line(t) {
+            } else if row_with_cell(t, name) {
+                (Kind::TableRow, self.row_end(i))
+            } else if is_list_line(t) && !t.contains(" | ") {
                 continue;
             } else {
                 (Kind::Mention, self.paragraph_block_end(i))
@@ -243,6 +293,19 @@ impl Doc<'_> {
             out.push(Candidate { line: i, kind, end });
         }
         out
+    }
+
+    /// A table row and its wrapped lines (to the next row, blank line or heading).
+    fn row_end(&self, line: usize) -> usize {
+        let mut end = line + 1;
+        while end < self.lines.len()
+            && !self.lines[end].trim().is_empty()
+            && !self.lines[end].contains(" | ")
+            && self.heading_at(end).is_none()
+        {
+            end += 1;
+        }
+        end
     }
 
     /// The paragraph (to the next blank line) around a mention.
@@ -386,6 +449,19 @@ Ability Score Increase. Your Charisma rises by 2.\nSize. You are Small.\n\nDuskl
         assert!(!s.contains(&"Duskling"), "{s:?}");
         let s = section(src, "Ability Score Increase", "");
         assert_eq!(s, vec!["Ability Score Increase. Your Charisma rises by 2."]);
+    }
+
+    #[test]
+    fn numbered_sub_headings_and_tables_stay_in_their_section() {
+        let src = "# Workshop\n\n## Glass Lanterns\n\nLanterns are blown in stages.\n\n## Tier 1\n\n\
+Cost | Time\n5 gp | 1 day\n\n## Lantern Table\n\nd6 | Colour\n1 | Amber\n\n## Rope Bridges\n\nBridges sway.\n\n\
+## Price List\n\nd4 | Item | Effect\n1 | Moth Jar | Glows faintly for an hour.\n2 | Dew Bottle | Never runs dry.\n";
+        let s = section(src, "Glass Lanterns", "");
+        assert!(s.contains(&"5 gp | 1 day"), "{s:?}");
+        assert!(s.contains(&"1 | Amber"), "{s:?}");
+        assert!(!s.iter().any(|l| l.contains("Bridges")), "{s:?}");
+        let s = section(src, "Moth Jar", "");
+        assert_eq!(s, vec!["1 | Moth Jar | Glows faintly for an hour."]);
     }
 
     #[test]
