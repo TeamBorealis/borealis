@@ -362,3 +362,153 @@ fn replay_fidelity_on_a_stored_draft() {
         println!("written to {out}");
     }
 }
+
+#[test]
+fn a_rules_section_printed_flat_reaches_over_its_unplanned_headings() {
+    let src = "#### Lamp FAQ\n\nAnswers.\n\n#### Can a lamp go out?\n\nOnly in rain.\n\n\
+#### Is oil required?\n\nYes, always.\n\n#### Appendix: Numbers\n\nTables of numbers.\n\n\
+#### Wick Rules\n\nTrim it.\n";
+    let mut faq = planned("t1", "Lamp FAQ", "Rules", Role::Text, Some(1));
+    faq.ty = "Rules Glossary Entry".into();
+    let d = draft(src, vec![faq.clone()], &[]);
+    let lines = super::super::parts::section_lines(src, &d.plan.elements[0], &d.plan);
+    assert!(
+        lines.iter().any(|l| l.contains("Yes, always.")),
+        "{lines:?}"
+    );
+    assert!(
+        !lines.iter().any(|l| l.contains("Tables")),
+        "an appendix is not part of it"
+    );
+    // A planned heading ends it.
+    let d = draft(
+        src,
+        vec![
+            faq,
+            planned("t2", "Is oil required", "Rules", Role::Text, Some(9)),
+        ],
+        &[],
+    );
+    let lines = super::super::parts::section_lines(src, &d.plan.elements[0], &d.plan);
+    assert!(lines.iter().any(|l| l.contains("Only in rain.")));
+    assert!(!lines.iter().any(|l| l.contains("Yes, always.")));
+    // A generated feature's passage does not reach past its own heading's section.
+    let feat = planned(
+        "f1",
+        "Lamp FAQ",
+        "Class Feature",
+        Role::ClassFeature,
+        Some(1),
+    );
+    let d = draft(src, vec![feat], &[]);
+    let lines = super::super::parts::section_lines(src, &d.plan.elements[0], &d.plan);
+    assert!(!lines.iter().any(|l| l.contains("Only in rain.")));
+}
+
+#[test]
+fn a_planned_lore_section_in_a_flat_class_intro_reaches_the_class() {
+    let src = "#### Lamplighter\n\nLamplighters keep the roads lit.\n\n#### The Lamplighter\n\nA life of lamps and long nights on the road.\n\n#### Quick Build\n\nPut your highest score in Wisdom.\n\n#### Kindle 1st\n\nYou light a lamp.\n";
+    let mut kindle = planned(
+        "c1",
+        "Kindle",
+        "Class Feature",
+        Role::ClassFeature,
+        Some(13),
+    );
+    kindle.owner = Some("c0".into());
+    let d = draft(
+        src,
+        vec![
+            planned("c0", "Lamplighter", "Class", Role::Class, Some(1)),
+            planned(
+                "x1",
+                "The Lamplighter",
+                "Rules Glossary Entry",
+                Role::Text,
+                Some(5),
+            ),
+            kindle,
+        ],
+        &[],
+    );
+    let titles: Vec<String> = unplanned_sections(src, &d.plan.elements[0], &d.plan)
+        .into_iter()
+        .map(|s| s.title)
+        .collect();
+    assert_eq!(titles, ["The Lamplighter", "Quick Build"]);
+}
+
+#[test]
+fn a_table_row_gets_the_run_in_rule_printed_after_its_table() {
+    let src = "#### Lamp Oils\n\nOil | Cost\nGlow Oils (5) | 2 gp\nSmoke Oil (5) | 1 gp\n\n\
+#### Special Oils\n\nGlow Oil. A lamp filled with it sheds bright light\nfor twice as far.\n\n\
+Other text. Not a row.\n";
+    let mut d = draft(
+        src,
+        vec![
+            planned("r1", "Glow Oils (5)", "Item", Role::Standalone, Some(4)),
+            planned("r2", "Smoke Oil (5)", "Item", Role::Standalone, Some(5)),
+        ],
+        &[
+            "<p><strong>Cost:</strong> 2 gp</p>",
+            "<p><strong>Cost:</strong> 1 gp</p>",
+        ],
+    );
+    assert_eq!(add_sub_sections(&mut d), vec!["r1".to_string()]);
+    assert_eq!(
+        d.elements[0].json["description"],
+        "<p>A lamp filled with it sheds bright light for twice as far.</p><p><strong>Cost:</strong> 2 gp</p>"
+    );
+    assert!(add_sub_sections(&mut d).is_empty(), "already there");
+}
+
+#[test]
+fn uncovered_prose_counts_a_generated_element_by_its_located_passage() {
+    let src = "#### Kindle\n\nYou light a lamp.\n\nThe lamplighters of the old roads kept every lamp lit through the longest winter nights.\n";
+    let mut kindle = planned("c1", "Kindle", "Class Feature", Role::ClassFeature, Some(1));
+    kindle.excerpt.as_mut().unwrap().end_line = 3;
+    let d = draft(src, vec![kindle], &["<p>You light a lamp.</p>"]);
+    let entries = uncovered_prose(&d);
+    assert_eq!(entries.len(), 1, "{entries:?}");
+    assert_eq!(entries[0].source, "Kindle");
+}
+
+/// Offline: `BOREALIS_PRINTED_REPLAY=<draft.json> BOREALIS_PRINTED_OUT=<dir>` re-applies the
+/// plan's structure (`parts::apply`) and the printed-passage fixes (`keep_printed`) to a stored
+/// draft, as generation would, then finalizes it into `<dir>`.
+#[test]
+#[ignore = "needs a local draft.json"]
+fn reprint_a_stored_draft() {
+    let Ok(path) = std::env::var("BOREALIS_PRINTED_REPLAY") else {
+        return;
+    };
+    let mut d: ImportDraft =
+        serde_json::from_str(&std::fs::read_to_string(path).expect("reads")).expect("parses");
+    let before: Vec<Value> = d.elements.iter().map(|e| e.json.clone()).collect();
+    let plan = d.plan.clone();
+    for e in d.elements.iter_mut().filter(|e| !e.json.is_null()) {
+        if let Some(p) = plan.elements.iter().find(|p| p.id == e.id) {
+            super::super::parts::apply(&mut e.json, p, &plan);
+        }
+    }
+    super::super::generate::keep_printed(&mut d);
+    for (e, b) in d.elements.iter().zip(&before) {
+        if &e.json != b {
+            println!("changed: {}", e.id);
+        }
+    }
+    for r in uncovered_prose(&d) {
+        println!("uncovered: {}", r.source);
+    }
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+    let mut b = borealis_content::ContentStoreBuilder::new();
+    for pack in ["core", "srd-5.1", "srd-5.2.1"] {
+        b = b.add_pack_dir(&root.join(pack)).expect("pack loads");
+    }
+    let done = super::super::finalize::finalize_draft(&b, &d).expect("finalizes");
+    if let Ok(out) = std::env::var("BOREALIS_PRINTED_OUT") {
+        done.pack
+            .write_to_dir(std::path::Path::new(&out))
+            .expect("pack writes");
+    }
+}

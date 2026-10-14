@@ -45,7 +45,7 @@ fn find<'a>(plan: &'a ImportPlan, id: Option<&str>) -> Option<&'a PlannedElement
 /// `supports`, a species' subrace choice, a text-only element's shape.
 pub(crate) fn apply(el: &mut Value, planned: &PlannedElement, plan: &ImportPlan) {
     grant_parts(el, planned, plan);
-    offer_options(el, planned);
+    offer_options(el, planned, plan);
     offer_subraces(el, planned, plan);
     match planned.role {
         Role::Option => shape_option(el, planned, plan),
@@ -117,29 +117,59 @@ fn grant_parts(el: &mut Value, planned: &PlannedElement, plan: &ImportPlan) {
     );
 }
 
-fn offer_options(el: &mut Value, planned: &PlannedElement) {
+/// `name` without a trailing " (Level N)", lowercased and trimmed.
+fn pick_name(name: &str) -> String {
+    let n = name.trim();
+    let base = n
+        .strip_suffix(')')
+        .and_then(|r| r.rsplit_once(" (Level "))
+        .filter(|(_, lvl)| !lvl.is_empty() && lvl.chars().all(|c| c.is_ascii_digit()))
+        .map_or(n, |(b, _)| b);
+    base.trim().to_lowercase()
+}
+
+/// Whether the model's rule `r` is its own version of the planned pick: a select of the
+/// pick's type named like it (or a "(Level N)" variant), or a select or grant of one of the
+/// planned options (`option_ids`, or the ids the pick key itself lists).
+fn replaced_pick(
+    r: &Value,
+    picks: &super::types::OptionPicks,
+    name: &str,
+    option_ids: &[&str],
+) -> bool {
+    let kind = r.get("kind").and_then(Value::as_str);
+    let s = r.get("supports").and_then(Value::as_str).unwrap_or("");
+    let id = r.get("id").and_then(Value::as_str).unwrap_or("");
+    let names_an_id = option_ids
+        .iter()
+        .any(|i| *i == id || s.split('|').any(|p| p.trim() == *i));
+    let is_select = kind == Some("select");
+    let same_key = is_select && s == picks.key;
+    let same_name = is_select
+        && r.get("type").and_then(Value::as_str) == Some(picks.ty.as_str())
+        && r.get("name").and_then(Value::as_str).map(pick_name) == Some(pick_name(name));
+    let model_pick = matches!(kind, Some("select" | "grant")) && names_an_id;
+    same_key || same_name || model_pick
+}
+
+fn offer_options(el: &mut Value, planned: &PlannedElement, plan: &ImportPlan) {
     let Some(picks) = &planned.picks else { return };
     let own = planned.level.unwrap_or(1);
-    // A choice among existing elements: the model's own select or grants of them go.
-    let ids: Vec<&str> = if picks.key.starts_with("ID_") {
+    // A choice among existing elements, or among the planned options: the model's own
+    // select (or grants) of them go, so the pick is offered once.
+    let mut ids: Vec<&str> = if picks.key.starts_with("ID_") {
         picks.key.split('|').collect()
     } else {
         Vec::new()
     };
-    let names_an_id = |r: &Value| {
-        let s = r.get("supports").and_then(Value::as_str).unwrap_or("");
-        let id = r.get("id").and_then(Value::as_str).unwrap_or("");
-        ids.iter()
-            .any(|i| *i == id || s.split('|').any(|p| p.trim() == *i))
-    };
+    ids.extend(
+        children(plan, &planned.id)
+            .into_iter()
+            .filter(|c| c.role == Role::Option)
+            .map(|c| c.id.as_str()),
+    );
     let rules = rules_of(el);
-    rules.retain(|r| {
-        let kind = r.get("kind").and_then(Value::as_str);
-        let same_key = kind == Some("select")
-            && r.get("supports").and_then(Value::as_str) == Some(picks.key.as_str());
-        let model_pick = matches!(kind, Some("select" | "grant")) && names_an_id(r);
-        !(same_key || model_pick)
-    });
+    rules.retain(|r| !replaced_pick(r, picks, &planned.name, &ids));
     let several = picks.choose.len() > 1;
     for c in &picks.choose {
         let name = if several {
@@ -354,16 +384,68 @@ fn is_list_line(line: &str) -> bool {
             .is_some_and(|(n, _)| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()))
 }
 
-/// The source lines of the section starting at the element's passage: up to the next planned
-/// passage or the next heading of the same or a higher level.
-pub(crate) fn section_lines<'a>(
-    source: &'a str,
+/// Most lines a text-only section reaches past its own heading's section over unplanned
+/// headings of its level.
+const MAX_EXTENSION_LINES: usize = 150;
+/// Heading words that open another part of the document, never a sub-section of the text
+/// before it.
+const BOUNDARY_WORDS: [&str; 8] = [
+    "appendix",
+    "license",
+    "licence",
+    "credits",
+    "contents",
+    "index",
+    "chapter",
+    "introduction",
+];
+
+/// Is `title` (a heading's words) the name of a planned element other than `except`, alone or
+/// with a level after it ("Second Wind 2nd")?
+pub(crate) fn names_planned(plan: &ImportPlan, except: &str, title: &str) -> bool {
+    let t = heading_text(&format!("# {title}"))
+        .map(|(_, t)| t)
+        .unwrap_or_default();
+    plan.elements.iter().filter(|e| e.id != except).any(|e| {
+        let n = heading_text(&format!("# {}", e.name))
+            .map(|(_, t)| t)
+            .unwrap_or_default();
+        let level = t
+            .strip_prefix(&format!("{n} "))
+            .and_then(|rest| rest.split(' ').next())
+            .is_some_and(|w| w.starts_with(|c: char| c.is_ascii_digit()));
+        !n.is_empty() && (t == n || level)
+    })
+}
+
+/// A heading of the same level that only continues a text-only section the PDF flattened (a
+/// question of a FAQ, a sub-rule): unplanned, no boundary word, within reach.
+fn continues_section(
+    plan: &ImportPlan,
+    planned: &PlannedElement,
+    line: &str,
+    own_end: Option<usize>,
+    at: usize,
+) -> bool {
+    let Some((_, title)) = heading_text(line) else {
+        return false;
+    };
+    planned.role == Role::Text
+        && own_end.map_or(true, |e| at < e + MAX_EXTENSION_LINES)
+        && !title.split(' ').any(|w| BOUNDARY_WORDS.contains(&w))
+        && !names_planned(plan, &planned.id, &title)
+}
+
+/// The 0-based line range of the section starting at the element's passage: up to the next
+/// planned passage or the next heading of the same or a higher level. A text-only element
+/// also reaches over the unplanned headings of its own level that follow (a section the PDF
+/// printed flat), up to the next planned element. The passage end is never cut short.
+pub(crate) fn section_range(
+    source: &str,
     planned: &PlannedElement,
     plan: &ImportPlan,
-) -> Vec<&'a str> {
-    let Some(ex) = planned.excerpt.as_ref() else {
-        return Vec::new();
-    };
+) -> Option<(usize, usize)> {
+    let ex = planned.excerpt.as_ref()?;
     let lines: Vec<&str> = source.lines().collect();
     let start = ex.start_line.saturating_sub(1).min(lines.len());
     let next = plan
@@ -376,20 +458,37 @@ pub(crate) fn section_lines<'a>(
         .unwrap_or(lines.len());
     let own = lines.get(start).and_then(|l| is_heading(l));
     let mut end = start + 1;
+    let mut own_end: Option<usize> = None;
     while end < lines.len().min(next).min(start + MAX_SECTION_LINES) {
         if let (Some(o), Some(h)) = (own, is_heading(lines[end])) {
-            if h <= o {
+            let same = h == o;
+            if h < o || (same && !continues_section(plan, planned, lines[end], own_end, end)) {
                 break;
+            }
+            if same {
+                own_end.get_or_insert(end);
             }
         }
         end += 1;
     }
-    let end = end.max(ex.end_line.min(lines.len()));
-    let mut out: Vec<&str> = lines[start..end].to_vec();
-    while out.last().is_some_and(|l| l.trim().is_empty()) {
-        out.pop();
+    let mut end = end.max(ex.end_line.min(lines.len()));
+    while end > start + 1 && lines[end - 1].trim().is_empty() {
+        end -= 1;
     }
-    out
+    Some((start, end))
+}
+
+/// The source lines of [`section_range`].
+pub(crate) fn section_lines<'a>(
+    source: &'a str,
+    planned: &PlannedElement,
+    plan: &ImportPlan,
+) -> Vec<&'a str> {
+    let Some((start, end)) = section_range(source, planned, plan) else {
+        return Vec::new();
+    };
+    let lines: Vec<&str> = source.lines().collect();
+    lines[start..end.min(lines.len())].to_vec()
 }
 
 /// Source lines as HTML paragraphs (headings bold, list and table lines kept apart).
@@ -508,3 +607,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "parts_tests.rs"]
+mod pick_tests;

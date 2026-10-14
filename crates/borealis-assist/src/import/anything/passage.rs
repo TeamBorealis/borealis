@@ -365,6 +365,20 @@ fn planned_heading(plan: &ImportPlan, root: &str, line_idx: usize, title: &str) 
     })
 }
 
+/// A text-only element starts at heading `line_idx` (or is named `title`).
+fn planned_text(plan: &ImportPlan, line_idx: usize, title: &str) -> bool {
+    let t = norm(title);
+    plan.elements
+        .iter()
+        .filter(|e| e.role == Role::Text)
+        .any(|e| {
+            e.excerpt
+                .as_ref()
+                .is_some_and(|x| x.start_line.saturating_sub(1) == line_idx)
+                || (!t.is_empty() && norm(&e.name) == t)
+        })
+}
+
 /// The headed prose sub-sections inside a class or subclass root's section that no element is
 /// planned for (a planned heading's own sub-headings included), each up to the next heading;
 /// with flat headings, also the root-level headings before its first feature.
@@ -404,7 +418,11 @@ pub(crate) fn unplanned_sections(
         if h < depth || (h == depth && !flat) {
             break;
         }
-        if flat && planned_heading(plan, &planned.id, i, &heading_title(lines[i])) {
+        let title = heading_title(lines[i]);
+        // A rules or lore section planned on its own inside the root's flat intro is printed
+        // as part of the root too; any other planned heading there ends the intro.
+        let text_here = flat && planned_text(plan, i, &title);
+        if flat && !text_here && planned_heading(plan, &planned.id, i, &title) {
             break;
         }
         if skip_below.is_some_and(|s| h > s) {
@@ -412,10 +430,9 @@ pub(crate) fn unplanned_sections(
             continue;
         }
         skip_below = None;
-        let title = heading_title(lines[i]);
         let low = title.to_lowercase();
         let block = planned.role == Role::Class && CLASS_BLOCK.iter().any(|b| low.contains(b));
-        if planned_heading(plan, &planned.id, i, &title) || block {
+        if (!text_here && planned_heading(plan, &planned.id, i, &title)) || block {
             skip_below = Some(h);
             i += 1;
             continue;
@@ -435,10 +452,101 @@ pub(crate) fn unplanned_sections(
     out
 }
 
-/// The unplanned sub-sections of a class or subclass root appended to its description (as a
-/// bold heading and its printed text) unless the description already has their content.
-pub(crate) fn add_sub_sections(draft: &mut ImportDraft) -> Vec<String> {
+/// Most words of a run-in label ("Heat Lance." opening a paragraph).
+const RUN_IN_LABEL_WORDS: usize = 5;
+
+/// A name without a trailing parenthetical ("Lamp Oil (20)" -> "lamp oil"), singular.
+fn row_key(name: &str) -> String {
+    let base = name
+        .trim()
+        .strip_suffix(')')
+        .and_then(|r| r.rsplit_once(" ("))
+        .map_or(name, |(b, _)| b);
+    let n = norm(base);
+    n.strip_suffix('s').map_or(n.clone(), str::to_string)
+}
+
+/// The label of a run-in paragraph line ("Heat Lance. When you ..." or "**Heat Lance.** ...").
+fn run_in_label(line: &str) -> Option<String> {
+    let t = line.trim_start().trim_start_matches("**");
+    let (label, rest) = t.split_once(". ").or_else(|| t.split_once(".** "))?;
+    let label = label.trim_end_matches("**");
+    let words = label.split_whitespace().count();
+    let opens = rest
+        .trim_start()
+        .trim_start_matches("**")
+        .starts_with(char::is_uppercase);
+    ((1..=RUN_IN_LABEL_WORDS).contains(&words) && label.starts_with(char::is_uppercase) && opens)
+        .then(|| label.to_string())
+}
+
+/// The paragraph (label left out) of the one run-in in `source` labelled like the table row
+/// element `planned` (its name without a count, singular or plural): a row has no prose of its
+/// own, its rule is printed after the table. `None` unless exactly one such paragraph exists
+/// and no other element starts at it.
+fn row_run_in(source: &str, planned: &PlannedElement, plan: &ImportPlan) -> Option<Vec<String>> {
+    let lines: Vec<&str> = source.lines().collect();
+    let row = planned.excerpt.as_ref()?.start_line.checked_sub(1)?;
+    if !lines.get(row).is_some_and(|l| l.contains(" | ")) {
+        return None;
+    }
+    let key = row_key(&planned.name);
+    let mut hits = (0..lines.len()).filter(|&i| {
+        heading(lines[i]).is_none()
+            && (i == 0 || lines[i - 1].trim().is_empty() || heading(lines[i - 1]).is_some())
+            && run_in_label(lines[i]).is_some_and(|l| row_key(&l) == key)
+    });
+    let at = hits.next()?;
+    if hits.next().is_some() || starts(plan, &planned.id).contains(&at) {
+        return None;
+    }
+    let end = (at + 1..lines.len())
+        .find(|&k| lines[k].trim().is_empty() || heading(lines[k]).is_some() || run_in(lines[k]))
+        .unwrap_or(lines.len());
+    let label = run_in_label(lines[at]).unwrap_or_default();
+    let mut out: Vec<String> = lines[at..end].iter().map(|l| l.to_string()).collect();
+    out[0] = strip_label(&out[0], &label);
+    Some(out)
+}
+
+/// Table row elements get the run-in paragraph the source prints for them after the table
+/// (see [`row_run_in`]) unless their description already has it. Returns the ids changed.
+fn attach_run_ins(draft: &mut ImportDraft) -> Vec<String> {
     let mut changed = Vec::new();
+    for i in 0..draft.elements.len() {
+        let e = &draft.elements[i];
+        if e.json.is_null() || e.revisions > 0 || e.role != Role::Standalone {
+            continue;
+        }
+        let Some(planned) = draft.plan.elements.iter().find(|p| p.id == e.id) else {
+            continue;
+        };
+        let Some(para) = row_run_in(&draft.source_text, planned, &draft.plan) else {
+            continue;
+        };
+        let desc = e
+            .json
+            .get("description")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
+        if share(&content(&para.join("\n")), &content(&plain(&desc))) >= SAME_CONTENT {
+            continue;
+        }
+        let e = &mut draft.elements[i];
+        e.json["description"] = json!(format!("{}{desc}", html_of(&para)));
+        e.normalised
+            .push("description: the rule the source prints for this row after its table".into());
+        changed.push(e.id.clone());
+    }
+    changed
+}
+
+/// The unplanned sub-sections of a class or subclass root appended to its description (as a
+/// bold heading and its printed text) unless the description already has their content; table
+/// rows get the run-in paragraph printed for them (see [`attach_run_ins`]).
+pub(crate) fn add_sub_sections(draft: &mut ImportDraft) -> Vec<String> {
+    let mut changed = attach_run_ins(draft);
     for i in 0..draft.elements.len() {
         let e = &draft.elements[i];
         if e.json.is_null() || e.revisions > 0 || !matches!(e.role, Role::Class | Role::Subclass) {
@@ -545,18 +653,19 @@ pub(crate) fn uncovered_prose(draft: &ImportDraft) -> Vec<ReportEntry> {
         .join("\n");
     let index = Index::new(&all);
     let none = HashSet::new();
+    // The range each element's description was built from: a text-only element's section,
+    // a generated element's located passage.
     let ranges: Vec<(usize, usize)> = draft
         .plan
         .elements
         .iter()
         .filter_map(|p| {
             let ex = p.excerpt.as_ref()?;
-            let n = super::parts::section_lines(&draft.source_text, p, &draft.plan).len();
+            if p.role == Role::Text {
+                return super::parts::section_range(&draft.source_text, p, &draft.plan);
+            }
             let s = ex.start_line.saturating_sub(1);
-            Some((
-                s,
-                s + n.max(ex.end_line + 1 - ex.start_line.min(ex.end_line)),
-            ))
+            Some((s, ex.end_line.max(s + 1)))
         })
         .collect();
     let mut out: Vec<ReportEntry> = Vec::new();

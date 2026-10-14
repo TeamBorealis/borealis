@@ -227,7 +227,9 @@ defines with its own rules text is kind weapon_property. A condition the source 
 is in, like the SRD's Poisoned or Prone) is an `other` entry whose `what` is exactly \"condition\". Set `kind` to the single kind, or \"mixed\" when there are several. List in `other` (name as printed, \
 `what` it is) every other thing the source defines that is none of these kinds: rules, weapon properties, \
 conditions, variant or optional rules, upgrades, tables, and lore or setting sections with a heading; each named \
-row of a table of options is its own `other` entry. A magic item printed in several versions (+1, +2 and +3, \
+row of a table of options is its own `other` entry. Each printed section with a heading of its own is its own \
+entry, named as printed: never merge several sections into one (three sections \"Minor Charms\", \"Major Charms\" \
+and \"Woven Charms\" are three entries, not one \"Charms\"). A magic item printed in several versions (+1, +2 and +3, \
 or one version per material, damage type, color or creature) is listed once per version, named \"<Item>, <version>\" \
 (e.g. \"Shield, +2\", \"Boots, Silver\"), the way the SRD lists them; in a 2024 source it stays one item. A class \
 spell list (a list of spell names under a class name) is an `other` entry named as printed. Named traits, features and options of a species, \

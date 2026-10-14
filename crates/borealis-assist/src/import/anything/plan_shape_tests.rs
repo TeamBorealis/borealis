@@ -112,3 +112,97 @@ fn a_spellcasting_section_with_another_name_gets_no_generated_twin() {
     let without = rebuilt(vec![class(json!([{"name": "Rods"}]))], "");
     assert!(twin(&without));
 }
+
+#[test]
+fn a_species_brief_names_the_traits_granted_for_it() {
+    let species = group(
+        ImportKind::Species,
+        json!({"name": "Glasskin", "summary": "Glass folk.", "quote": "",
+            "features": [{"level": 1, "name": "Prism Body", "summary": "Glass.", "parts": []}]}),
+    );
+    let plan = rebuilt(vec![species], SPECIES);
+    let root = plan
+        .elements
+        .iter()
+        .find(|e| e.name == "Glasskin")
+        .expect("species");
+    assert!(
+        root.brief
+            .contains("separate elements granted for you: Prism Body."),
+        "{}",
+        root.brief
+    );
+    assert!(root.brief.contains("languages"), "{}", root.brief);
+}
+
+#[test]
+fn spellcasting_headings_printed_flat_after_a_feature_are_its_parts() {
+    let source = "#### Dowser\n\nWater finders.\n\n#### Rod Sense\n\nYou feel water.\n\n\
+#### Water Magic\n\nYou draw on springs.\n\n#### Spells From Wells\n\nOther spells count.\n\n\
+#### Cantrips\n\nYou know two cantrips.\n\n#### Spring Points\n\nYou have a pool.\n\n\
+#### Preparing Spells\n\nYou prepare spells.\n\n#### Deep Current\n\nA later feature.\n";
+    let class = group(
+        ImportKind::Class,
+        json!({"name": "Dowser", "summary": "", "quote": "",
+            "spellcasting": {"ability": "Wisdom", "progression": "points", "list": "Dowser"},
+            "features": [
+                {"level": 1, "name": "Rod Sense", "summary": ""},
+                {"level": 1, "name": "Water Magic", "summary": ""},
+                {"level": 2, "name": "Deep Current", "summary": ""}]}),
+    );
+    let plan = rebuilt(vec![class], source);
+    assert!(!plan
+        .elements
+        .iter()
+        .any(|e| e.name == "Dowser Spellcasting"));
+    let magic = plan
+        .elements
+        .iter()
+        .find(|e| e.name == "Water Magic")
+        .expect("feature");
+    let parts: Vec<&str> = plan
+        .elements
+        .iter()
+        .filter(|e| e.parent.as_deref() == Some(magic.id.as_str()) && e.role == Role::Part)
+        .map(|e| e.name.as_str())
+        .collect();
+    assert_eq!(
+        parts,
+        [
+            "Spells From Wells",
+            "Cantrips",
+            "Spring Points",
+            "Preparing Spells"
+        ]
+    );
+    // A heading planned as its own rules entry inside the run is passed over.
+    let class = group(
+        ImportKind::Class,
+        json!({"name": "Dowser", "summary": "", "quote": "",
+            "spellcasting": {"ability": "Wisdom", "progression": "points", "list": "Dowser"},
+            "features": [{"level": 1, "name": "Water Magic", "summary": ""},
+                {"level": 2, "name": "Deep Current", "summary": ""}]}),
+    );
+    let rules = super::plan::text_group("Spells From Wells", "rules", "");
+    let plan = rebuilt(vec![class, rules], source);
+    let parts = plan
+        .elements
+        .iter()
+        .filter(|e| e.role == Role::Part)
+        .map(|e| e.name.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(parts, ["Cantrips", "Spring Points", "Preparing Spells"]);
+    // One spellcasting heading alone is not a section.
+    let lone = source.replace("#### Preparing Spells\n\nYou prepare spells.\n\n", "");
+    let class = group(
+        ImportKind::Class,
+        json!({"name": "Dowser", "summary": "", "quote": "",
+            "spellcasting": {"ability": "Wisdom", "progression": "points", "list": "Dowser"},
+            "features": [{"level": 1, "name": "Water Magic", "summary": ""}]}),
+    );
+    let plan = rebuilt(vec![class], &lone);
+    assert!(plan
+        .elements
+        .iter()
+        .any(|e| e.name == "Dowser Spellcasting"));
+}

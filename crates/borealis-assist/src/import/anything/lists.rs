@@ -39,6 +39,15 @@ fn norm(s: &str) -> String {
         .to_lowercase()
 }
 
+/// A normalised list name without its list suffix ("wizard spells" -> "wizard").
+fn list_base(n: &str) -> &str {
+    LIST_SUFFIXES
+        .iter()
+        .find_map(|s| n.strip_suffix(s))
+        .filter(|b| !b.is_empty())
+        .unwrap_or(n)
+}
+
 fn str_at<'a>(v: &'a Value, key: &str) -> &'a str {
     v.get(key).and_then(Value::as_str).unwrap_or("")
 }
@@ -127,14 +136,33 @@ impl Lists {
     }
 
     /// The one list whose name starts with `marker` (a class abbreviation, "Wiz" for Wizard).
+    /// Names that differ only by a list suffix ("Wizard", "Wizard Spells") are one list; the
+    /// bare name is preferred.
     fn abbreviated(&self, marker: &str) -> Option<String> {
         let m = norm(marker);
         if m.chars().count() < MIN_MARKER_CHARS {
             return None;
         }
-        let mut hits = self.names.iter().filter(|(n, _)| n.starts_with(&m));
-        let (_, list) = hits.next()?;
-        hits.next().is_none().then(|| list.clone())
+        let bases: BTreeSet<&str> = self
+            .names
+            .keys()
+            .filter(|n| n.starts_with(&m))
+            .map(|n| list_base(n))
+            .collect();
+        let mut it = bases.into_iter();
+        let base = it.next()?;
+        if it.next().is_some() {
+            return None;
+        }
+        self.names.get(base).cloned().or_else(|| {
+            let mut same: Vec<(&String, &String)> = self
+                .names
+                .iter()
+                .filter(|(n, _)| list_base(n) == base)
+                .collect();
+            same.sort();
+            same.first().map(|(_, l)| (*l).clone())
+        })
     }
 
     /// The list a heading names ("Wizard", "Wizard Spells", "The Wizard Spell List").
@@ -282,9 +310,95 @@ fn push_append(d: &mut Derived, id: &str, list: &str) {
         .push(json!({"id": id, "type": "Spell", "supports": [list]}));
 }
 
+/// The spell lists the plan's casters cast from, by their [`list_base`].
+fn casting_lists(plan: &ImportPlan) -> HashMap<String, String> {
+    plan.groups
+        .iter()
+        .filter_map(|g| g.outline.as_ref()?.caster()?.list.clone())
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| (list_base(&norm(&l)).to_string(), l.trim().to_string()))
+        .collect()
+}
+
+/// `name` written as the casting list it names with or without a list suffix ("Warden" for a
+/// class whose list is "Warden Spells"), when it differs from that list's own spelling.
+fn as_casting_list<'a>(name: &str, casting: &'a HashMap<String, String>) -> Option<&'a String> {
+    let n = norm(name);
+    casting
+        .get(list_base(&n))
+        .filter(|l| norm(l) != n && !n.is_empty())
+}
+
+/// A spell select or spell `supports` that names a caster's list with another suffix than the
+/// list itself ("Warden,6" for the "Warden Spells" list) names that list: otherwise the select
+/// offers nothing and the spell joins no list. Run before the lists are read.
+fn one_list_name(plan: &ImportPlan, d: &mut Derived) {
+    let casting = casting_lists(plan);
+    if casting.is_empty() {
+        return;
+    }
+    let mut notes = Vec::new();
+    for doc in &mut d.docs {
+        let id = str_at(doc, "id").to_string();
+        if str_at(doc, "type") == "Spell" {
+            let s = supports_of(doc);
+            let fixed: Vec<String> = s
+                .iter()
+                .map(|t| {
+                    as_casting_list(t, &casting)
+                        .cloned()
+                        .unwrap_or_else(|| t.clone())
+                })
+                .collect();
+            if fixed != s {
+                notes.push((
+                    id.clone(),
+                    format!("supports the {} list by its printed name", fixed.join(", ")),
+                ));
+                doc["supports"] = json!(fixed);
+            }
+        }
+        let Some(rules) = doc.get_mut("rules").and_then(Value::as_array_mut) else {
+            continue;
+        };
+        for r in rules.iter_mut().filter(|r| {
+            r.get("kind").and_then(Value::as_str) == Some("select")
+                && r.get("type").and_then(Value::as_str) == Some("Spell")
+        }) {
+            let before = str_at(r, "supports").to_string();
+            let after = before
+                .split('|')
+                .map(|part| {
+                    let (list, rest) = part.split_once(',').unwrap_or((part, ""));
+                    match as_casting_list(list, &casting) {
+                        Some(l) if !list.trim_start().starts_with("$(") => {
+                            if rest.is_empty() && !part.contains(',') {
+                                l.clone()
+                            } else {
+                                format!("{l},{rest}")
+                            }
+                        }
+                        _ => part.to_string(),
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("|");
+            if after != before {
+                notes.push((
+                    id.clone(),
+                    format!("a spell choice names the list as printed: {after}"),
+                ));
+                r["supports"] = json!(after);
+            }
+        }
+    }
+    d.notes.extend(notes);
+}
+
 /// Apply printed class spell lists and "Classes:" lines as list membership (see the module
 /// docs); every addition and disagreement is reported.
 pub(crate) fn class_lists(plan: &ImportPlan, store: &ContentStore, d: &mut Derived) {
+    one_list_name(plan, d);
     let lists = Lists::new(plan, store, &d.docs);
     // "Classes:" lines in the spells' own text.
     for doc in d.docs.iter_mut().filter(|e| str_at(e, "type") == "Spell") {
@@ -515,6 +629,63 @@ and learn reed song. You also know mage handLa.\nA lone reed songLam. The lightT
         // A library spell with the mark is appended to the list.
         assert_eq!(d.appends.len(), 1, "{:?}", d.appends);
         assert_eq!(supports_of(&d.appends[0]), ["Lamplighter"]);
+        assert_eq!(d.notes.len(), 3);
+    }
+
+    #[test]
+    fn a_list_named_with_and_without_its_suffix_is_one_list_for_a_mark() {
+        let names = |v: &[&str]| Lists {
+            names: v.iter().map(|n| (norm(n), n.to_string())).collect(),
+        };
+        let l = names(&["Lamplighter", "Lamplighter Spells", "Wizard"]);
+        assert_eq!(l.abbreviated("La").as_deref(), Some("Lamplighter"));
+        let only_suffixed = names(&["Lamplighter Spell List", "Wizard"]);
+        assert_eq!(
+            only_suffixed.abbreviated("La").as_deref(),
+            Some("Lamplighter Spell List")
+        );
+        // Two different lists sharing the prefix stay ambiguous.
+        let two = names(&["Lamplighter", "Lantern Spells"]);
+        assert_eq!(two.abbreviated("La"), None);
+    }
+
+    #[test]
+    fn a_spell_choice_naming_the_class_finds_the_list_spelled_with_a_suffix() {
+        let mut g = crate::import::anything::plan::standalone(
+            crate::import::anything::types::ImportKind::Class,
+            "Lamplighter",
+            None,
+        );
+        g.outline = Some(
+            serde_json::from_value(json!({"name": "Lamplighter", "summary": "", "quote": "",
+                "spellcasting": {"ability": "Wisdom", "progression": "full",
+                    "list": "Lamplighter Spells"},
+                "features": []}))
+            .expect("outline"),
+        );
+        let plan: ImportPlan = ImportPlan {
+            edition: crate::import::anything::types::Edition::Y2014,
+            groups: vec![g],
+            elements: Vec::new(),
+            notes: Vec::new(),
+        };
+        let mut d = Derived {
+            docs: vec![
+                json!({"id": "ID_T_LORE", "type": "Class Feature", "name": "Lore", "rules": [
+                    {"kind": "select", "type": "Spell", "supports": "Lamplighter,6"},
+                    {"kind": "select", "type": "Spell", "supports": "$(spellcasting:list),0"},
+                    {"kind": "select", "type": "Spell", "supports": "Wizard,1|Lamplighter,2"}]}),
+                json!({"id": "ID_T_SPELL_GLOW", "type": "Spell", "name": "Glow",
+                    "supports": ["Lamplighter", "Wizard"], "description": "<p>x</p>"}),
+            ],
+            ..Derived::default()
+        };
+        one_list_name(&plan, &mut d);
+        let r = &d.docs[0]["rules"];
+        assert_eq!(r[0]["supports"], "Lamplighter Spells,6");
+        assert_eq!(r[1]["supports"], "$(spellcasting:list),0");
+        assert_eq!(r[2]["supports"], "Wizard,1|Lamplighter Spells,2");
+        assert_eq!(supports_of(&d.docs[1]), ["Lamplighter Spells", "Wizard"]);
         assert_eq!(d.notes.len(), 3);
     }
 

@@ -14,6 +14,9 @@ use super::types::{
 use crate::import::ids::make_id;
 
 /// Levels a class has features at.
+#[path = "plan_sections.rs"]
+mod sections;
+
 pub(crate) const LEVELS: std::ops::RangeInclusive<u32> = 1..=20;
 const DEFAULT_SUBCLASS_LEVEL: u32 = 3;
 const SCORE_NAME: u32 = 100;
@@ -202,6 +205,8 @@ struct Builder<'a> {
     notes: Vec<String>,
     /// Names of every group of the plan (a heading naming one is never a sub-item).
     groups: Vec<String>,
+    /// Names of the plan's text-only (rules, lore, condition) groups.
+    text_groups: Vec<String>,
 }
 
 impl Builder<'_> {
@@ -575,7 +580,13 @@ fn is_spellcasting_section(f: &OutlineFeature) -> bool {
 }
 
 fn class_group(b: &mut Builder, o: &Outline) -> String {
-    let merged = with_tiers_merged(o);
+    let mut merged = with_tiers_merged(o);
+    sections::flat_caster_parts(
+        &mut merged,
+        b.source,
+        (&b.groups, &b.text_groups),
+        is_spellcasting_section,
+    );
     let o = &merged;
     let class_id = make_id(b.prefix, "Class", &o.name, &b.used);
     b.used.insert(class_id.clone());
@@ -747,6 +758,7 @@ fn in_source_classes(plan: &ImportPlan) -> Vec<(Vec<String>, ParentLink)> {
 
 /// Recompute `plan.elements` (and group root ids) from the groups.
 pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str, source: &str) {
+    let split_notes = sections::split_merged(&mut plan.groups, source);
     let mut b = Builder {
         prefix,
         source,
@@ -756,6 +768,12 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
         out: Vec::new(),
         notes: Vec::new(),
         groups: plan.groups.iter().map(|g| g.name.clone()).collect(),
+        text_groups: plan
+            .groups
+            .iter()
+            .filter(|g| matches!(g.kind, ImportKind::Rules | ImportKind::Condition))
+            .map(|g| g.name.clone())
+            .collect(),
     };
     // Classes first: subclasses of a class from the same source link to its planned id.
     for g in &mut plan.groups {
@@ -828,6 +846,7 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
     ));
     plan.elements = b.out;
     plan.notes = b.notes;
+    plan.notes.extend(split_notes);
 }
 
 /// Element type of a subrace in `edition` (the bundled packs: 2014 `Sub Race`, 2024 lineages
@@ -863,6 +882,7 @@ fn standalone_group(b: &mut Builder, g: &PlanGroup, ty: &str) -> String {
     };
     let part_ty = part_type(ty);
     let mut names = Vec::new();
+    let mut printed: Vec<String> = Vec::new();
     for f in &o.features {
         let part = OutlinePart {
             name: f.name.clone(),
@@ -876,6 +896,7 @@ fn standalone_group(b: &mut Builder, g: &PlanGroup, ty: &str) -> String {
             continue;
         }
         names.push(norm(&f.name));
+        printed.push(f.name.trim().to_string());
         let trait_id = b.push_child(part_ty, &part, Role::Part, None, &id);
         // A trait's sub-items are folded into it unless they have a heading of their own;
         // a heading inside the trait's section is one even when the outline skipped it.
@@ -892,8 +913,9 @@ fn standalone_group(b: &mut Builder, g: &PlanGroup, ty: &str) -> String {
     if !names.is_empty() {
         if let Some(e) = b.get(&id) {
             e.brief = format!(
-                "{} Its named traits are separate elements granted for you: keep their text in the description, but write no rules for them.",
-                e.brief
+                "{} Its named traits are separate elements granted for you: {}. Keep their text in the description, but write no rules for them. Every other line (ability scores, speed, size, languages) is this element's own: write its rules here.",
+                e.brief,
+                printed.join(", ")
             )
             .trim()
             .to_string();
