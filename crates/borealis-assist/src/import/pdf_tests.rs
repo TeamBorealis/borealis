@@ -523,3 +523,59 @@ fn a_full_width_table_with_one_centred_column_past_the_gutter_keeps_that_column(
         );
     }
 }
+
+/// A numbered table in the right column whose text cells run on at line leading (no gap
+/// between rows) and whose name cells sit centred left of a narrow gap before the text: the
+/// gap is not a column gutter, and each row keeps its label, name and every text line.
+#[test]
+fn a_numbered_table_with_running_text_cells_keeps_each_row_whole() {
+    let items = [
+        (
+            "Lamp of",
+            "Dusk",
+            [
+                "Glows for an hour",
+                "when shaken twice",
+                "at night and dims.",
+            ],
+        ),
+        (
+            "Jar of",
+            "Plenty",
+            [
+                "Fills with water",
+                "each dawn and never",
+                "runs dry at all.",
+            ],
+        ),
+        (
+            "Ring of",
+            "Warmth",
+            ["Keeps the wearer", "warm in snow and", "biting wind alike."],
+        ),
+        (
+            "Hook of",
+            "Holding",
+            ["Holds any lantern", "steady on a moving", "cart or a boat."],
+        ),
+    ];
+    let mut c = prose(40.0, 740.0, 30, "Old ways keep lamps named");
+    for (k, (a, b, desc)) in items.iter().enumerate() {
+        let top = 740.0 - 33.0 * k as f32;
+        c += &show("F2", 10.0, 320.0, top, &format!("({})", k + 11));
+        c += &show("F2", 10.0, 340.0, top - 6.0, &format!("({a})"));
+        c += &show("F2", 10.0, 340.0, top - 17.0, &format!("({b})"));
+        for (j, l) in desc.iter().enumerate() {
+            c += &show("F2", 10.0, 410.0, top - 11.0 * j as f32, &format!("({l})"));
+        }
+    }
+    let t = extract_pdf_text(&pdf("a", &c)).unwrap().text;
+    for (k, (a, b, desc)) in items.iter().enumerate() {
+        let row = t
+            .lines()
+            .find(|l| l.starts_with(&format!("{} | ", k + 11)))
+            .unwrap_or_else(|| panic!("{t}"));
+        assert!(row.contains(&format!("{a} {b}")), "{row}\n{t}");
+        assert!(desc.iter().all(|d| row.contains(d)), "{row}\n{t}");
+    }
+}

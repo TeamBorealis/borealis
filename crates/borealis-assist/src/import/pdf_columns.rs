@@ -2,7 +2,7 @@
 //! (two levels: up to four columns), tables across a gutter read row by row, and two-column
 //! tables inside a column of prose read row by row.
 
-use super::super::pdf_table::{paired_rows, spanning_tables, tables};
+use super::super::pdf_table::{paired_rows, row_label, spanning_tables, tables};
 use super::{Fragment, SAME_LINE};
 
 /// Column splits followed (two levels: up to four columns).
@@ -113,9 +113,11 @@ fn order_columns(frags: Vec<Fragment>, x0: f32, x1: f32, depth: usize) -> Vec<Fr
     let count = |s: Side| frags.iter().filter(|f| !in_span(f) && side(f) == s).count();
     // Inside a column, a left side of numbers ("1", "01-50", "d20") is a table's first column.
     let lefts: Vec<&Fragment> = frags.iter().filter(|f| side(f) == Side::Left).collect();
+    let rights: Vec<&Fragment> = frags.iter().filter(|f| side(f) == Side::Right).collect();
     let numbered = depth < MAX_COLUMN_SPLITS
-        && lefts.iter().filter(|f| row_label(&f.text)).count() as f32
-            >= NUMBERED_SHARE * lefts.len() as f32;
+        && (lefts.iter().filter(|f| row_label(&f.text)).count() as f32
+            >= NUMBERED_SHARE * lefts.len() as f32
+            || margin_labels(&lefts, &rights));
     if depth == 0
         || numbered
         || count(Side::Left) < MIN_COLUMN_LINES
@@ -163,14 +165,42 @@ fn order_columns(frags: Vec<Fragment>, x0: f32, x1: f32, depth: usize) -> Vec<Fr
     out
 }
 
-/// A table row label: a number, a number range or a die ("12", "01-50", "d20").
-fn row_label(t: &str) -> bool {
-    let t = t.trim();
-    let t = t.strip_prefix(['d', 'D']).unwrap_or(t);
-    !t.is_empty()
-        && t.chars().any(|c| c.is_ascii_digit())
-        && t.chars()
-            .all(|c| c.is_ascii_digit() || matches!(c, '-' | '–' | '+'))
+/// Points from a column's left margin that a fragment still starts at it.
+const STOP_EDGE: f32 = 2.0;
+/// Fewest row labels at a column's left margin that make its left side a table's first columns.
+const MIN_LABELS: usize = 3;
+
+/// The fragments starting where the left side's leftmost row label starts are nearly all row
+/// labels (at least
+/// [`MIN_LABELS`]): a table whose label column has its name column beside it, both left of a
+/// gutter that is only the gap before the table's text column (whose side holds no labels).
+fn margin_labels(lefts: &[&Fragment], rights: &[&Fragment]) -> bool {
+    // A right side with row labels of its own is the next column of a page of tables.
+    if rights.iter().filter(|f| row_label(&f.text)).count() >= MIN_LABELS {
+        return false;
+    }
+    let Some(edge) = lefts
+        .iter()
+        .filter(|f| row_label(&f.text))
+        .map(|f| f.x)
+        .min_by(f32::total_cmp)
+    else {
+        return false;
+    };
+    // Text left of the labels (a heading, prose at the column's margin): labels indented
+    // in a column, not the column's first cells. A lone word there (a page number) is not text.
+    if lefts
+        .iter()
+        .any(|f| f.x < edge - STOP_EDGE && f.text.split_whitespace().count() >= 2)
+    {
+        return false;
+    }
+    let at_edge: Vec<&&Fragment> = lefts
+        .iter()
+        .filter(|f| (f.x - edge).abs() <= STOP_EDGE)
+        .collect();
+    let labels = at_edge.iter().filter(|f| row_label(&f.text)).count();
+    labels >= MIN_LABELS && labels as f32 >= NUMBERED_SHARE * at_edge.len() as f32
 }
 
 /// The x of the widest vertical white channel near the middle of the page (between two

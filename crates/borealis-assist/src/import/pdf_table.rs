@@ -19,6 +19,8 @@ pub(crate) const CELL_GAP: f32 = 0.3;
 const CELL_LEADING: f32 = 1.45;
 /// A single fragment wider than this share of the table ends it (a prose line).
 const WIDE_LINE: f32 = 0.6;
+/// A line this much larger than a table's first line is a heading after it.
+const HEADING_RATIO: f32 = 1.12;
 /// Fewest rows a table has.
 const MIN_ROWS: usize = 2;
 /// Cells on a baseline that make it a full row of a dense table.
@@ -122,13 +124,23 @@ pub(crate) fn tables(frags: Vec<Fragment>) -> Vec<Fragment> {
         let x0 = lines[i].iter().map(|f| f.x).fold(f32::MAX, f32::min);
         let x1 = lines[i].iter().map(|f| f.end).fold(f32::MIN, f32::max);
         let width = (x1 - x0).max(1.0);
+        let labelled = row_label(&lines[i][0].text);
+        let size = lines[i].iter().map(|f| f.size).fold(0.0, f32::max);
         let mut j = i + 1;
         while j < lines.len() {
             let l = &lines[j];
-            let wide = l.len() == 1 && l[0].end - l[0].x > WIDE_LINE * width;
+            // In a table of row labels, a long line starting at a later cell of the block's
+            // first line is that cell's text running on, not prose.
+            let in_cell = labelled
+                && lines[i][1..]
+                    .iter()
+                    .any(|f| (f.x - l[0].x).abs() <= STOP_SLACK);
+            let wide = l.len() == 1 && l[0].end - l[0].x > WIDE_LINE * width && !in_cell;
+            // A larger line (a heading) ends the table.
+            let larger = l.iter().any(|f| f.size > HEADING_RATIO * size);
             let outside = l.iter().any(|f| f.x < x0 - 2.0);
             let far = (lines[j - 1][0].y - l[0].y) > 3.0 * l[0].size.max(1.0);
-            if wide || outside || far {
+            if wide || outside || far || larger {
                 break;
             }
             j += 1;
@@ -215,6 +227,9 @@ fn rows(block: &[Fragment]) -> Option<Vec<Fragment>> {
             _ => cells[c].push(vec![f]),
         }
     }
+    if let Some(rows) = labelled_rows(block, &cells, &col_of) {
+        return Some(rows);
+    }
     let anchor = (0..cols.len())
         .max_by_key(|&c| (cells[c].len(), cells[c].iter().map(Vec::len).sum::<usize>()))?;
     if cells[anchor].len() < MIN_ROWS {
@@ -270,6 +285,118 @@ fn rows(block: &[Fragment]) -> Option<Vec<Fragment>> {
             })
             .collect(),
     )
+}
+
+/// A table row label: a number, a number range or a die ("12", "01-50", "d20").
+pub(crate) fn row_label(t: &str) -> bool {
+    let t = t.trim();
+    let t = t.strip_prefix(['d', 'D']).unwrap_or(t);
+    !t.is_empty()
+        && t.chars().any(|c| c.is_ascii_digit())
+        && t.chars()
+            .all(|c| c.is_ascii_digit() || matches!(c, '-' | '–' | '+'))
+}
+
+/// Rows of a table whose first column is a row label on each row's first baseline: every other
+/// fragment belongs to the row of the nearest label at or above it. (A text cell's lines run on
+/// at line leading into the next row's, so stacking by leading would merge them; a name cell
+/// is centred beside its text.) Lines above the first label (the header) stay rows of their own.
+/// Used only when stacking by leading put two labels' rows into one text cell.
+fn labelled_rows(
+    block: &[Fragment],
+    stacked: &[Vec<Vec<&Fragment>>],
+    col_of: &dyn Fn(&Fragment) -> usize,
+) -> Option<Vec<Fragment>> {
+    let columns = stacked.len();
+    // The label column: the one with the most row labels; above its first label only the
+    // header ("d20") may stand in it or left of it.
+    let label_col = (0..columns).max_by_key(|&c| {
+        let labels = block
+            .iter()
+            .filter(|f| col_of(f) == c && row_label(&f.text))
+            .count();
+        (labels, std::cmp::Reverse(c))
+    })?;
+    let mut labels: Vec<&Fragment> = block
+        .iter()
+        .filter(|f| col_of(f) == label_col && row_label(&f.text))
+        .collect();
+    labels.sort_by(|a, b| b.y.total_cmp(&a.y));
+    let first_y = labels.first()?.y;
+    let stray = block.iter().any(|f| {
+        col_of(f) <= label_col && !row_label(&f.text) && f.y <= first_y + 0.35 * f.size.max(1.0)
+    });
+    let on_a_row = |l: &&Fragment| {
+        block
+            .iter()
+            .any(|f| col_of(f) > label_col && same_baseline(l, f))
+    };
+    if labels.len() < MIN_ROWS || stray || !labels.iter().all(on_a_row) {
+        return None;
+    }
+    let merged = (0..columns)
+        .filter(|&c| c != label_col)
+        .flat_map(|c| &stacked[c])
+        .any(|cell| {
+            labels
+                .iter()
+                .filter(|l| cell.iter().any(|f| same_baseline(l, f)))
+                .count()
+                >= 2
+        });
+    if !merged {
+        return None;
+    }
+    let slack = |f: &Fragment| 0.35 * f.size.max(1.0);
+    let mut header: Vec<Fragment> = Vec::new();
+    let mut cells: Vec<Vec<Vec<&Fragment>>> = vec![vec![Vec::new(); columns]; labels.len()];
+    let mut ordered: Vec<&Fragment> = block.iter().collect();
+    ordered.sort_by(|a, b| b.y.total_cmp(&a.y).then(a.x.total_cmp(&b.x)));
+    for f in ordered {
+        match labels.iter().rposition(|l| l.y + slack(l) >= f.y) {
+            Some(r) => cells[r][col_of(f)].push(f),
+            None => header.push(f.clone()),
+        }
+    }
+    let x = block.iter().map(|f| f.x).fold(f32::MAX, f32::min);
+    let end = block.iter().map(|f| f.end).fold(f32::MIN, f32::max);
+    let mut out: Vec<Fragment> = visual_lines(header)
+        .into_iter()
+        .map(|l| Fragment {
+            text: l
+                .iter()
+                .map(|f| f.text.trim())
+                .collect::<Vec<_>>()
+                .join(" | "),
+            x: l[0].x,
+            end: l.iter().map(|f| f.end).fold(f32::MIN, f32::max),
+            y: l[0].y,
+            size: l[0].size,
+            bold: l.iter().all(|f| f.bold),
+        })
+        .collect();
+    for (label, row) in labels.iter().zip(cells) {
+        let text = row
+            .iter()
+            .map(|cell| {
+                cell.iter()
+                    .map(|f| f.text.trim())
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            })
+            .filter(|t| !t.is_empty())
+            .collect::<Vec<_>>()
+            .join(" | ");
+        out.push(Fragment {
+            x,
+            end,
+            y: label.y,
+            size: label.size,
+            bold: false,
+            text,
+        });
+    }
+    Some(out)
 }
 
 // ---- tables across a column gutter ------------------------------------------------------------
