@@ -14,7 +14,7 @@ mod sanitize;
 pub mod supports;
 pub mod template;
 
-pub use bool_expr::BoolExpr;
+pub use bool_expr::{BoolExpr, MAX_NESTING};
 pub use equipped::{EquippedExpr, EquippedTest};
 pub use requirements::{RequirementLeaf, RequirementsExpr, StatTest, TestValue};
 pub use sanitize::sanitize;
@@ -40,6 +40,8 @@ pub enum ExprErrorKind {
     InvalidId(String),
     /// A malformed `$(...)` placeholder.
     InvalidPlaceholder(String),
+    /// Nested deeper than [`MAX_NESTING`] levels.
+    TooDeep,
 }
 
 impl std::fmt::Display for ExprErrorKind {
@@ -53,6 +55,7 @@ impl std::fmt::Display for ExprErrorKind {
             Self::InvalidInteger(v) => write!(f, "test value {v:?} is not an integer"),
             Self::InvalidId(v) => write!(f, "invalid element reference {v:?}"),
             Self::InvalidPlaceholder(v) => write!(f, "invalid placeholder {v:?}"),
+            Self::TooDeep => write!(f, "nested more than {} levels deep", bool_expr::MAX_NESTING),
         }
     }
 }

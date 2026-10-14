@@ -46,6 +46,10 @@ pub mod kind {
     pub const OPTION_ORACLE: &str = "invariant.option_oracle";
     /// Option filters ran with statistic sums other than the settled ones.
     pub const STALE_OPTION_STATS: &str = "invariant.stale_option_stats";
+    /// An element grants or selects itself (directly or through others), or a grant chain nests
+    /// past the engine's depth limit (`content.grant_cycle`). The engine cuts the chain, so the
+    /// character still builds, but the content is malformed.
+    pub const GRANT_CYCLE: &str = "invariant.grant_cycle";
 }
 
 /// One failed invariant.
@@ -205,6 +209,7 @@ fn diagnostics(snap: &CharacterSnapshot, out: &mut Vec<Violation>) {
                 kind::UNKNOWN_RULE
             }
             code::EVAL_NOT_CONVERGED => kind::NOT_CONVERGED,
+            code::CONTENT_GRANT_CYCLE => kind::GRANT_CYCLE,
             _ => continue,
         };
         out.push(violation(kind, d.element.as_deref(), d.message.clone()));

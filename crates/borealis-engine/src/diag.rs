@@ -30,6 +30,9 @@ pub mod code {
     pub const CONTENT_UNKNOWN_RULE_KIND: &str = "content.unknown_rule_kind";
     /// A field of a known custom rule kind that its reader ignores.
     pub const CONTENT_UNKNOWN_RULE_FIELD: &str = "content.unknown_rule_field";
+    /// An element grants or selects itself, directly or through other elements, or nests deeper
+    /// than any real content; expansion stops at the repeat.
+    pub const CONTENT_GRANT_CYCLE: &str = "content.grant_cycle";
     pub const SELECTION_INVALID: &str = "selection.invalid";
     pub const SELECTION_MISSING_CONTENT: &str = "selection.missing_content";
     pub const ATTUNEMENT_OVER_LIMIT: &str = "attunement.over_limit";

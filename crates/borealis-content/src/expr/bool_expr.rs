@@ -135,7 +135,13 @@ pub(crate) struct Cursor {
     chars: Vec<char>,
     pos: usize,
     input: String,
+    /// Current `(` / `!` nesting (bounded by [`MAX_NESTING`]).
+    depth: usize,
 }
+
+/// Deepest `(` / `!` nesting accepted. Real expressions nest a few levels; malformed input
+/// nested thousands deep would otherwise overflow the stack of this recursive parser.
+pub const MAX_NESTING: usize = 64;
 
 impl Cursor {
     pub(crate) fn new(sanitized: &str) -> Self {
@@ -143,6 +149,7 @@ impl Cursor {
             chars: sanitized.chars().collect(),
             pos: 0,
             input: sanitized.to_string(),
+            depth: 0,
         }
     }
 
@@ -238,6 +245,19 @@ fn parse_and<L>(
 }
 
 fn parse_unary<L>(
+    cursor: &mut Cursor,
+    leaf: &dyn Fn(&mut Cursor) -> Result<L, ExprError>,
+) -> Result<BoolExpr<L>, ExprError> {
+    if cursor.depth >= MAX_NESTING {
+        return Err(cursor.error(ExprErrorKind::TooDeep));
+    }
+    cursor.depth += 1;
+    let out = parse_unary_inner(cursor, leaf);
+    cursor.depth -= 1;
+    out
+}
+
+fn parse_unary_inner<L>(
     cursor: &mut Cursor,
     leaf: &dyn Fn(&mut Cursor) -> Result<L, ExprError>,
 ) -> Result<BoolExpr<L>, ExprError> {

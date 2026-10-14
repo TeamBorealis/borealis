@@ -152,6 +152,9 @@ pub struct Graph<'u> {
 }
 
 const MAX_PASSES: usize = 60;
+/// Grant/select nesting limit. Real content nests a handful of levels (level, class, feature,
+/// option, granted proficiency); anything deeper is malformed and would only grow the tree.
+const MAX_NEST_DEPTH: usize = 64;
 
 type SlotCache = HashMap<(u64, u32), Rc<HashSet<String>>>;
 
@@ -770,7 +773,7 @@ impl<'u> Graph<'u> {
                     && matches!(self.nodes[*c].origin, Origin::Granted(_))
                     && self.nodes[*c].e.el.id == target.el.id
             });
-            if already {
+            if already || self.nesting_refused(id, target, "grants") {
                 continue;
             }
             let mgr = self.nodes[id].mgr;
@@ -781,6 +784,44 @@ impl<'u> Graph<'u> {
             changed = true;
         }
         changed
+    }
+
+    /// Would adding `target` below node `id` repeat an element of `id`'s own chain (a grant or
+    /// selection cycle, e.g. an element that grants itself), or nest past [`MAX_NEST_DEPTH`]?
+    /// Malformed content must never recurse without end, so such a child is not added and a
+    /// `content.grant_cycle` diagnostic names the chain.
+    fn nesting_refused(&mut self, id: NodeId, target: &UElem, verb: &str) -> bool {
+        let mut chain: Vec<&str> = Vec::new();
+        let mut repeat = false;
+        let mut cur = Some(id);
+        while let Some(n) = cur {
+            let eid = self.nodes[n].e.el.id.as_str();
+            chain.push(eid);
+            repeat |= eid == target.el.id;
+            cur = self.nodes[n].parent;
+        }
+        if !repeat && chain.len() < MAX_NEST_DEPTH {
+            return false;
+        }
+        let owner = chain[0].to_string();
+        let message = if repeat {
+            let upto = chain.iter().position(|x| *x == target.el.id).unwrap_or(0);
+            let mut path: Vec<&str> = chain[..=upto].to_vec();
+            path.reverse();
+            format!(
+                "{owner} {verb} {}, which is already in its own chain ({}); not expanded again",
+                target.el.id,
+                path.join(" > ")
+            )
+        } else {
+            format!(
+                "{owner} {verb} {} more than {MAX_NEST_DEPTH} levels deep; not expanded",
+                target.el.id
+            )
+        };
+        self.diags
+            .push(Diagnostic::new(code::CONTENT_GRANT_CYCLE, Severity::Warning, message).at(owner));
+        true
     }
 
     fn process_slots(&mut self, id: NodeId, e: &'u UElem) -> bool {
@@ -837,6 +878,10 @@ impl<'u> Graph<'u> {
                 );
                 continue;
             };
+            if self.nesting_refused(id, target, "selects") {
+                self.nodes[id].slots[si].rejected = Some(Choice::Element(wanted));
+                continue;
+            }
             if self.choice_allowed(id, ri, target, true) {
                 let mgr = self.mgr_for_selected(id, target);
                 let c = self.add_child(id, target, Origin::Selected(si), mgr);
