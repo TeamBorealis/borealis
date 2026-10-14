@@ -99,6 +99,23 @@ pub fn is_caster_feature(name: &str) -> bool {
     n.contains("spellcasting") || n.contains("pact magic")
 }
 
+/// Sub-heading words of a spellcasting section ("Cantrips", "Spell Slots", "Spells Known",
+/// "Preparing Spells", "Spellcasting Ability"): a feature with such parts is the class's
+/// spellcasting feature whatever its own name.
+const CASTER_PART_WORDS: [&str; 5] = [
+    "cantrip",
+    "spell slot",
+    "spells known",
+    "preparing",
+    "spellcasting",
+];
+
+/// Is this a sub-heading of a spellcasting section?
+pub(crate) fn is_caster_part(name: &str) -> bool {
+    let n = name.to_lowercase();
+    CASTER_PART_WORDS.iter().any(|w| n.contains(w))
+}
+
 /// What the builder produces for one class.
 #[derive(Debug, Clone)]
 pub struct BuiltCaster {

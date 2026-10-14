@@ -49,7 +49,7 @@ struct Group {
 }
 
 /// The id prefix of the import, read back from a planned element's id (`ID_<PREFIX>_<TYPE>_<NAME>`).
-fn id_prefix(plan: &ImportPlan) -> String {
+pub(super) fn id_prefix(plan: &ImportPlan) -> String {
     plan.elements
         .iter()
         .find_map(|e| {
@@ -61,7 +61,13 @@ fn id_prefix(plan: &ImportPlan) -> String {
 }
 
 /// An import id for `name` that neither the library nor the draft uses.
-fn fresh_id(prefix: &str, ty: &str, name: &str, store: &ContentStore, d: &Derived) -> String {
+pub(super) fn fresh_id(
+    prefix: &str,
+    ty: &str,
+    name: &str,
+    store: &ContentStore,
+    d: &Derived,
+) -> String {
     let mut used: HashSet<String> = d
         .docs
         .iter()
@@ -193,11 +199,11 @@ fn library_proficiency(store: &ContentStore, key: &str) -> Option<String> {
         .collect();
     let weapon_names: HashSet<String> = store
         .by_type("Weapon")
-        .map(|w| norm(&w.element.name))
+        .map(|w| word_key(&w.element.name))
         .collect();
     let own_of_a_weapon = |name: &str| {
         name.split_once('(')
-            .is_some_and(|(_, rest)| weapon_names.contains(&norm(rest.trim_end_matches(')'))))
+            .is_some_and(|(_, rest)| weapon_names.contains(&word_key(rest.trim_end_matches(')'))))
     };
     matching
         .iter()
@@ -388,6 +394,41 @@ fn apply_group(g: &Group, prefix: &str, store: &ContentStore, d: &mut Derived) {
     }
 }
 
+/// A name's words in a fixed order, so "Crossbow, Light" and "Light Crossbow" are one name.
+pub(super) fn word_key(name: &str) -> String {
+    let mut words: Vec<String> = norm(name).split(' ').map(str::to_string).collect();
+    words.sort_unstable();
+    words.join(" ")
+}
+
+/// The loaded proficiency of a weapon named `weapon` (any word order): the one a loaded weapon
+/// of that name points at, else a "Weapon Proficiency (<name>)".
+fn loaded_weapon_proficiency(store: &ContentStore, weapon: &str) -> Option<String> {
+    let key = word_key(weapon);
+    let via_weapon = store
+        .by_type("Weapon")
+        .filter(|w| word_key(&w.element.name) == key)
+        .find_map(|w| {
+            w.element
+                .setters
+                .iter()
+                .find(|s| s.name == "proficiency")
+                .map(|s| s.value.clone())
+        })
+        .filter(|id| {
+            store
+                .get(id)
+                .is_some_and(|p| !p.element.supports.iter().any(|t| t == GROUP_SUPPORT))
+        });
+    via_weapon.or_else(|| {
+        let want = word_key(&format!("Weapon Proficiency ({weapon})"));
+        store
+            .by_type("Proficiency")
+            .find(|s| word_key(&s.element.name) == want)
+            .map(|s| s.element.id.clone())
+    })
+}
+
 /// The weapon's own proficiency: a loaded one of its name, else a new element.
 fn weapon_proficiency(
     i: usize,
@@ -399,12 +440,8 @@ fn weapon_proficiency(
 ) -> String {
     let weapon = str_at(&d.docs[i], "name").to_string();
     let name = format!("Weapon Proficiency ({weapon})");
-    let key = norm(&name);
-    if let Some(s) = store
-        .by_type("Proficiency")
-        .find(|s| norm(&s.element.name) == key)
-    {
-        return s.element.id.clone();
+    if let Some(id) = loaded_weapon_proficiency(store, &weapon) {
+        return id;
     }
     let id = fresh_id(prefix, "Proficiency", &name, store, d);
     d.extra.push(
@@ -600,6 +637,35 @@ fn property_element(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn weapon_names_match_in_any_word_order() {
+        let store = bundled();
+        assert_eq!(word_key("Crossbow, Light"), word_key("light crossbow"));
+        assert_eq!(
+            loaded_weapon_proficiency(&store, "Light Crossbow").as_deref(),
+            Some("ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_LIGHT")
+        );
+        assert_eq!(loaded_weapon_proficiency(&store, "Brine Lance"), None);
+        let plan = ImportPlan {
+            edition: crate::import::anything::types::Edition::Y2014,
+            groups: Vec::new(),
+            elements: Vec::new(),
+            notes: Vec::new(),
+        };
+        let mut d = Derived {
+            docs: vec![simple_weapon("Light Crossbow", "Bolt Throwers")],
+            ..Derived::default()
+        };
+        weapon_groups(&plan, &store, &mut d);
+        assert!(
+            !d.extra
+                .iter()
+                .any(|e| str_at(e, "name").contains("Light Crossbow")),
+            "{:?}",
+            d.extra
+        );
+    }
 
     #[test]
     fn group_names_match_singular_and_wrapped_forms() {

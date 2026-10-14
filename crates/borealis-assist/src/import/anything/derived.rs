@@ -22,6 +22,8 @@ use super::types::{Edition, ImportPlan, Role, SpellcastingOutline};
 
 mod cycles;
 mod groups;
+mod languages;
+mod progression;
 
 /// `data.progression` keys that are not counters.
 const NOT_COUNTERS: [&str; 5] = [
@@ -64,7 +66,11 @@ pub(crate) fn derive(plan: &ImportPlan, docs: &[Value], store: &ContentStore) ->
     spell_lists(plan, store, &mut d);
     groups::weapon_groups(plan, store, &mut d);
     groups::new_properties(plan, store, &mut d);
+    languages::languages(plan, store, &mut d);
+    progression::outline_columns(plan, &mut d);
+    progression::table_keys(store, &mut d);
     table_counters(&mut d);
+    progression::dedupe_resources(&mut d);
     proficiency_choices(plan, store, &mut d);
     ability_choices(&mut d);
     cycles::break_grant_cycles(store, &mut d);
@@ -417,13 +423,47 @@ fn add_counter(class_id: &str, class: &str, vals: &[i64], key: &str, d: &mut Der
         d.note(class_id, format!("class table column \"{key}\" has no feature to carry its counter; kept as a table column only"));
         return;
     };
+    let rid = super::rules::resource_id(&label);
+    if repair_counter(class, &rid, key, d) {
+        return;
+    }
     let home_id = str_at(&d.docs[home], "id").to_string();
-    let rule = json!({"kind": "resource", "id": super::rules::resource_id(&label), "name": label,
+    let rule = json!({"kind": "resource", "id": rid, "name": label,
         "max": {"type": "table", "key": key}});
     if let Some(rules) = rules_mut(&mut d.docs[home]) {
         rules.push(rule);
     }
     d.note(&home_id, format!("class table column \"{key}\" became the counter \"{label}\" (its value by {class} level)"));
+}
+
+/// A `resource` the model already wrote under the counter's id on one of the class's features
+/// reads the column instead of getting a twin (the engine would keep only the first of the two).
+fn repair_counter(class: &str, rid: &str, key: &str, d: &mut Derived) -> bool {
+    for doc in &mut d.docs {
+        if str_at(doc, "type") != "Class Feature"
+            || doc.pointer("/data/class").and_then(Value::as_str) != Some(class)
+        {
+            continue;
+        }
+        let id = str_at(doc, "id").to_string();
+        let Some(rules) = doc.get_mut("rules").and_then(Value::as_array_mut) else {
+            continue;
+        };
+        let Some(r) = rules
+            .iter_mut()
+            .find(|r| str_at(r, "kind") == "resource" && str_at(r, "id") == rid)
+        else {
+            continue;
+        };
+        let old = r.get("max").cloned().unwrap_or(Value::Null);
+        r["max"] = json!({"type": "table", "key": key});
+        d.notes.push((
+            id,
+            format!("resource \"{rid}\" reads the class table column \"{key}\" (was {old})"),
+        ));
+        return true;
+    }
+    false
 }
 
 /// The derived elements and appends as a content file document next to the draft's own.

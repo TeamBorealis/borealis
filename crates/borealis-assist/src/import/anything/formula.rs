@@ -134,9 +134,96 @@ pub(crate) fn unreadable(expr: &str) -> Vec<String> {
     out
 }
 
+/// The save-DC dialect (`spell_rules::eval_formula` of the engine): `spell save DC (<class>)`,
+/// or terms joined by `+`, each an integer, `proficiency` or an ability (`constitution` or
+/// `constitution:modifier`). Anything else leaves the DC unknown.
+pub(crate) const DC_VOCABULARY: &str =
+    "\"spell save DC (<class>)\", or terms joined by + where each \
+term is an integer, proficiency or an ability (e.g. \"8 + proficiency + constitution:modifier\")";
+
+fn is_caster_dc(expr: &str) -> bool {
+    expr.trim().to_lowercase().starts_with("spell save dc (")
+}
+
+fn dc_term_readable(term: &str) -> bool {
+    let t = term.trim().to_lowercase();
+    t.parse::<i32>().is_ok()
+        || t == "proficiency"
+        || t == "proficiency bonus"
+        || ABILITIES.contains(&t.strip_suffix(":modifier").unwrap_or(&t))
+}
+
+/// The terms of a save-DC formula the engine cannot read (the DC would be missing).
+pub(crate) fn dc_unreadable(expr: &str) -> Vec<String> {
+    if expr.trim().is_empty() {
+        return vec!["(empty)".to_string()];
+    }
+    if is_caster_dc(expr) {
+        return Vec::new();
+    }
+    expr.split('+')
+        .map(str::trim)
+        .filter(|t| !dc_term_readable(t))
+        .map(|t| {
+            if t.is_empty() {
+                "(empty term)".to_string()
+            } else {
+                t.to_string()
+            }
+        })
+        .collect()
+}
+
+/// A save-DC formula with every unambiguous term rewritten ("con mod" -> constitution:modifier,
+/// "PB" -> proficiency), and the `(from, to)` rewrites.
+pub(crate) fn normalise_dc(expr: &str) -> (String, Vec<(String, String)>) {
+    if is_caster_dc(expr) {
+        return (expr.to_string(), Vec::new());
+    }
+    let mut changes = Vec::new();
+    let terms: Vec<String> = expr
+        .split('+')
+        .map(|t| {
+            let trimmed = t.trim();
+            if dc_term_readable(trimmed) {
+                return trimmed.to_string();
+            }
+            match rewrite(trimmed, None) {
+                Some(new) => {
+                    changes.push((trimmed.to_string(), new.clone()));
+                    new
+                }
+                None => trimmed.to_string(),
+            }
+        })
+        .collect();
+    if changes.is_empty() {
+        return (expr.to_string(), changes);
+    }
+    (terms.join(" + "), changes)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn save_dc_terms_are_checked_and_shorthands_rewritten() {
+        assert!(dc_unreadable("8 + proficiency + constitution:modifier").is_empty());
+        assert!(dc_unreadable("8+proficiency+wisdom").is_empty());
+        assert!(dc_unreadable("spell save DC (Tidecaller)").is_empty());
+        assert_eq!(dc_unreadable("8 + proficiency + con"), ["con"]);
+        assert_eq!(dc_unreadable("10 + half your level"), ["half your level"]);
+        assert_eq!(dc_unreadable(""), ["(empty)"]);
+        let (e, ch) = normalise_dc("8 + PB + Con mod");
+        assert_eq!(e, "8 + proficiency + constitution:modifier");
+        assert_eq!(ch.len(), 2);
+        assert!(dc_unreadable(&e).is_empty());
+        assert_eq!(
+            normalise_dc("8+proficiency+dexterity").0,
+            "8+proficiency+dexterity"
+        );
+    }
 
     #[test]
     fn bare_abilities_and_shorthands_become_engine_atoms() {

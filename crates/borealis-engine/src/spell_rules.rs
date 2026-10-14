@@ -231,7 +231,8 @@ const ABILITIES: [&str; 6] = [
     "charisma",
 ];
 
-/// Evaluate `8+strength+proficiency` / `spell save DC (Cleric)` style formulas.
+/// Evaluate `8+strength+proficiency` / `spell save DC (Cleric)` style formulas. An ability term
+/// may also be written `<ability>:modifier`, the form resource formulas use.
 fn eval_formula(
     formula: &str,
     mods: &[i32; 6],
@@ -251,10 +252,11 @@ fn eval_formula(
         let t = term.trim();
         total += if let Ok(n) = t.parse::<i32>() {
             n
-        } else if t == "proficiency" {
+        } else if t == "proficiency" || t == "proficiency bonus" {
             prof
         } else {
-            mods[ABILITIES.iter().position(|a| *a == t)?]
+            let ability = t.strip_suffix(":modifier").map_or(t, str::trim);
+            mods[ABILITIES.iter().position(|a| *a == ability)?]
         };
     }
     Some(total)
@@ -287,4 +289,27 @@ pub fn save_dcs(
         }
     }
     out
+}
+
+#[cfg(test)]
+mod save_dc_tests {
+    use super::eval_formula;
+
+    #[test]
+    fn save_dc_terms_read_abilities_in_both_forms() {
+        let mods = [0, 1, 3, 0, 2, 0];
+        assert_eq!(
+            eval_formula("8 + proficiency + constitution", &mods, 2, &[]),
+            Some(13)
+        );
+        assert_eq!(
+            eval_formula("8 + proficiency + constitution:modifier", &mods, 2, &[]),
+            Some(13)
+        );
+        assert_eq!(
+            eval_formula("8+proficiency bonus+wisdom", &mods, 3, &[]),
+            Some(13)
+        );
+        assert_eq!(eval_formula("8 + con", &mods, 2, &[]), None);
+    }
 }

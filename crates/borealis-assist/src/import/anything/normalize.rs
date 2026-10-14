@@ -4,7 +4,7 @@
 
 use serde_json::{json, Map, Value};
 
-use super::caster::{build_caster, is_caster_feature, is_model_caster_rule};
+use super::caster::{build_caster, is_caster_feature, is_caster_part, is_model_caster_rule};
 use super::types::{Edition, ImportPlan, ParentLink, PlannedElement, Role, SpellcastingOutline};
 
 /// `data.progression` keys the caster builder owns (besides `slot_N`).
@@ -133,17 +133,26 @@ fn normalize_feature(
     apply_caster_feature(el, planned, plan);
 }
 
-/// The id of the class's spellcasting feature: the first caster-named feature at level <= 3.
+/// The feature has spellcasting sub-headings as parts ("Cantrips", "Spell Slots", ...).
+fn has_caster_parts(plan: &ImportPlan, feature: &PlannedElement) -> bool {
+    plan.elements.iter().any(|e| {
+        e.role == Role::Part
+            && e.parent.as_deref() == Some(feature.id.as_str())
+            && is_caster_part(&e.name)
+    })
+}
+
+/// The id of the class's spellcasting feature: the first feature at level <= 3 that has
+/// spellcasting sub-headings (whatever the source calls it, "X Magic"), else the first
+/// caster-named one.
 fn caster_feature_id<'a>(plan: &'a ImportPlan, root: &str) -> Option<&'a str> {
     owned(plan, root)
         .into_iter()
-        .filter(|f| {
-            f.role == Role::ClassFeature
-                && f.level.is_some_and(|l| l <= 3)
-                && is_caster_feature(&f.name)
-        })
-        .min_by_key(|f| f.level)
-        .map(|f| f.id.as_str())
+        .filter(|f| f.role == Role::ClassFeature && f.level.is_some_and(|l| l <= 3))
+        .map(|f| (f, has_caster_parts(plan, f)))
+        .filter(|(f, parts)| *parts || is_caster_feature(&f.name))
+        .min_by_key(|(f, parts)| (!parts, f.level))
+        .map(|(f, _)| f.id.as_str())
 }
 
 fn class_profile<'a>(plan: &'a ImportPlan, root: &str) -> Option<&'a SpellcastingOutline> {
@@ -306,4 +315,38 @@ pub(crate) fn static_checks(
         out.push("the class casts spells but data.spellcasting is missing".to_string());
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn planned(id: &str, name: &str, role: &str, parent: Option<&str>) -> Value {
+        json!({"id": id, "ty": "Class Feature", "name": name, "role": role, "level": 1,
+            "owner": "C", "brief": "", "excerpt": null, "parent": parent})
+    }
+
+    /// A source spellcasting section under another name ("Moss Magic" with "Cantrips" and
+    /// "Spell Slots" sub-headings) is the caster feature, not the generated "<Class>
+    /// Spellcasting" beside it.
+    #[test]
+    fn a_feature_with_caster_parts_is_the_spellcasting_feature() {
+        let plan: ImportPlan = serde_json::from_value(json!({"edition": "2014", "notes": [],
+        "groups": [], "elements": [
+            planned("GEN", "Tidecaller Spellcasting", "class_feature", None),
+            planned("MOSS", "Moss Magic", "class_feature", None),
+            planned("P1", "Cantrips", "part", Some("MOSS")),
+            planned("P2", "Spell Slots", "part", Some("MOSS")),
+            planned("OTHER", "Tide Sense", "class_feature", None),
+        ]}))
+        .expect("plan");
+        assert_eq!(caster_feature_id(&plan, "C"), Some("MOSS"));
+        let without: ImportPlan = serde_json::from_value(json!({"edition": "2014", "notes": [],
+        "groups": [], "elements": [
+            planned("OTHER", "Tide Sense", "class_feature", None),
+            planned("GEN", "Tidecaller Spellcasting", "class_feature", None),
+        ]}))
+        .expect("plan");
+        assert_eq!(caster_feature_id(&without, "C"), Some("GEN"));
+    }
 }

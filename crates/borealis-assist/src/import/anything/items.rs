@@ -101,9 +101,9 @@ const STEALTH_DISADVANTAGE: &str = "ID_INTERNAL_GRANTS_STEALTH_DISADVANTAGE";
 /// What the generation prompt asks for, per element type.
 pub(crate) fn guidance(ty: &str) -> Option<&'static str> {
     Some(match ty {
-        "Weapon" => "A mundane weapon, shaped like the example. Put its stats in `data`: weapon_category (Simple Melee, Simple Ranged, Martial Melee, Martial Ranged, Firearm, or the category name exactly as the source prints it when it is none of these), weapon_group (the source's own weapon group or category name when it also gives one of the standard categories; omit otherwise), melee (true/false), damage {dice, type}, properties (EVERY property name as printed, new ones included, e.g. [\"Ammunition\", \"Loading\"]), versatile_damage, range (\"normal/long\" feet, ranged and thrown weapons), ammunition_type, cost {value, currency}, weight (pounds), and mastery for 2024. Setters, supports and proficiency are derived from `data`. Describe special rules of the weapon in `description`.",
-        "Armor" => "Mundane armor or a shield, shaped like the example. Put its stats in `data`: armor_category (Light, Medium, Heavy or Shield), base_ac (the shield bonus for a shield), dex_modifier, dex_cap, strength_requirement, stealth_disadvantage, cost {value, currency}, weight (pounds). Setters, supports and AC rules are derived from `data`.",
-        "Item" => "Mundane equipment (ammunition or adventuring gear), shaped like the example: description, and `data` with cost {value, currency}, weight (pounds); ammunition also data.ammunition true, amount (per bundle) and the weapon it is for in data.ammunition_for.",
+        "Weapon" => "A mundane weapon, shaped like the example. Put its stats in `data`: weapon_category (Simple Melee, Simple Ranged, Martial Melee, Martial Ranged, Firearm, or the category name exactly as the source prints it when it is none of these), weapon_group (the source's own weapon group or category name when it also gives one of the standard categories; omit otherwise), melee (true/false), damage {dice, type}, properties (EVERY property name as printed, new ones included, e.g. [\"Ammunition\", \"Loading\"]), versatile_damage, range (\"normal/long\" feet, ranged and thrown weapons), ammunition_type, cost {value, currency}, weight (pounds), and mastery for 2024. Setters, supports and proficiency are derived from `data`. Describe special rules of the weapon in `description`. COLUMNS: every other column of the weapon's table row (a material, a crafting cost or DC, ...) goes in data.columns {\"<column as printed>\": \"<cell as printed>\"}; it is kept in the description. Cost and weight exactly as the row prints them.",
+        "Armor" => "Mundane armor or a shield, shaped like the example. Put its stats in `data`: armor_category (Light, Medium, Heavy or Shield), base_ac (the shield bonus for a shield), dex_modifier, dex_cap, strength_requirement, stealth_disadvantage, cost {value, currency}, weight (pounds). Setters, supports and AC rules are derived from `data`. COLUMNS: every other column of its table row goes in data.columns {\"<column as printed>\": \"<cell as printed>\"}; it is kept in the description.",
+        "Item" => "Mundane equipment (ammunition or adventuring gear), shaped like the example: description, and `data` with cost {value, currency}, weight (pounds); ammunition also data.ammunition true, amount (per bundle) and the weapon it is for in data.ammunition_for. COLUMNS: every other column of its table row goes in data.columns {\"<column as printed>\": \"<cell as printed>\"}; it is kept in the description.",
         "Weapon Property" => "A weapon property: `description` in HTML paragraphs restating the rules of the property in your own words. No rules.",
         _ => return None,
     })
@@ -494,6 +494,93 @@ fn normalize_property(el: &mut Value, name: &str) {
     data_mut(el).insert("property".into(), json!(property_key(name)));
 }
 
+/// `data` keys the equipment shape reads (or the bundled packs carry), per element type.
+const WEAPON_KEYS: [&str; 13] = [
+    "weapon_category",
+    "weapon_group",
+    "melee",
+    "damage",
+    "properties",
+    "versatile_damage",
+    "range",
+    "ammunition_type",
+    "cost",
+    "weight",
+    "mastery",
+    "proficiency",
+    "columns",
+];
+const ARMOR_KEYS: [&str; 9] = [
+    "armor_category",
+    "base_ac",
+    "dex_modifier",
+    "dex_cap",
+    "strength_requirement",
+    "stealth_disadvantage",
+    "cost",
+    "weight",
+    "columns",
+];
+const GEAR_KEYS: [&str; 6] = [
+    "cost",
+    "weight",
+    "ammunition",
+    "amount",
+    "ammunition_for",
+    "columns",
+];
+
+fn label_of(key: &str) -> String {
+    capitalise(key.replace('_', " ").trim())
+}
+
+fn cell_text(v: &Value) -> Option<String> {
+    match v {
+        Value::String(s) if !s.trim().is_empty() => Some(s.trim().to_string()),
+        Value::Number(n) => Some(n.to_string()),
+        _ => None,
+    }
+}
+
+/// Table columns no field of the shape holds (`data.columns`, and any other `data` key the
+/// shape does not read) are kept as "Column: value" lines of the description, never dropped.
+fn keep_columns(el: &mut Value, known: &[&str]) {
+    let Some(data) = el.get("data").and_then(Value::as_object) else {
+        return;
+    };
+    let mut cells: Vec<(String, String)> = data
+        .get("columns")
+        .and_then(Value::as_object)
+        .map(|c| {
+            c.iter()
+                .filter_map(|(k, v)| Some((k.trim().to_string(), cell_text(v)?)))
+                .collect()
+        })
+        .unwrap_or_default();
+    cells.extend(
+        data.iter()
+            .filter(|(k, _)| !known.contains(&k.as_str()))
+            .filter_map(|(k, v)| Some((label_of(k), cell_text(v)?))),
+    );
+    let mut desc = el
+        .get("description")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let lower = desc.to_lowercase();
+    let mut added = false;
+    for (label, value) in cells {
+        if label.is_empty() || lower.contains(&format!("{}:", label.to_lowercase())) {
+            continue;
+        }
+        desc.push_str(&format!("<p><strong>{label}:</strong> {value}</p>"));
+        added = true;
+    }
+    if added {
+        obj(el).insert("description".into(), json!(desc));
+    }
+}
+
 /// Apply the equipment shape to a standalone element of type `ty`.
 pub(crate) fn normalize_item(
     el: &mut Value,
@@ -503,9 +590,18 @@ pub(crate) fn normalize_item(
     plan: &ImportPlan,
 ) {
     match ty {
-        "Weapon" => normalize_weapon(el, &planned_properties(plan)),
-        "Armor" => normalize_armor(el),
-        "Item" => normalize_gear(el, item_type == Some(ItemType::Ammunition)),
+        "Weapon" => {
+            normalize_weapon(el, &planned_properties(plan));
+            keep_columns(el, &WEAPON_KEYS);
+        }
+        "Armor" => {
+            normalize_armor(el);
+            keep_columns(el, &ARMOR_KEYS);
+        }
+        "Item" => {
+            normalize_gear(el, item_type == Some(ItemType::Ammunition));
+            keep_columns(el, &GEAR_KEYS);
+        }
         "Weapon Property" => normalize_property(el, name),
         _ => {}
     }
@@ -540,6 +636,23 @@ mod tests {
             property_detail("Ammunition (range 80/320)").unwrap(),
             "range 80/320"
         );
+    }
+
+    #[test]
+    fn unmapped_table_columns_stay_in_the_description() {
+        let mut el = json!({"description": "<p>A cudgel.</p>", "data": {
+            "weapon_category": "Simple Melee", "damage": {"dice": "1d4", "type": "bludgeoning"},
+            "cost": {"value": 1, "currency": "sp"}, "craft_dc": 10,
+            "columns": {"Material": "Oak/Iron", "Notes": ""}}});
+        keep_columns(&mut el, &WEAPON_KEYS);
+        let d = el["description"].as_str().unwrap().to_string();
+        assert!(d.contains("<strong>Material:</strong> Oak/Iron"), "{d}");
+        assert!(d.contains("<strong>Craft dc:</strong> 10"), "{d}");
+        assert!(!d.contains("Notes"), "{d}");
+        assert!(!d.contains("Weapon category"), "{d}");
+        // Idempotent: a second pass adds nothing.
+        keep_columns(&mut el, &WEAPON_KEYS);
+        assert_eq!(el["description"].as_str().unwrap(), d);
     }
 
     #[test]

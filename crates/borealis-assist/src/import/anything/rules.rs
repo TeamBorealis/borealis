@@ -44,7 +44,8 @@ choose, e.g. [{\"abilities\":[\"strength\",\"dexterity\"],\"pick\":1,\"amount\":
     (
         "save_dc",
         &["id", "formula"],
-        "save_dc names a DC: {\"kind\":\"save_dc\",\"id\":\"<name>\",\"formula\":\"8 + proficiency + dexterity\"}.",
+        "save_dc names a DC: {\"kind\":\"save_dc\",\"id\":\"<name>\",\"formula\":\"8 + proficiency + dexterity\"} \
+(terms joined by + only: integers, proficiency, an ability name; or \"spell save DC (<class>)\").",
     ),
 ];
 
@@ -105,6 +106,7 @@ pub(crate) fn rule_problems(el: &Value) -> Vec<String> {
             out.extend(
                 formula_problems(&c)
                     .into_iter()
+                    .chain(dc_problems(&c))
                     .chain(ability_problems(&c))
                     .map(|p| format!("{at}: {p}")),
             );
@@ -209,6 +211,38 @@ fn formula_problems(c: &CustomRule) -> Vec<String> {
         bad.iter().map(|b| format!("{b:?}")).collect::<Vec<_>>().join(", "),
         super::formula::VOCABULARY
     )]
+}
+
+/// A `save_dc` formula the engine cannot read: the DC would be missing.
+fn dc_problems(c: &CustomRule) -> Vec<String> {
+    if c.kind != "save_dc" {
+        return Vec::new();
+    }
+    let expr = c
+        .fields
+        .get("formula")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let bad = super::formula::dc_unreadable(expr);
+    if bad.is_empty() {
+        return Vec::new();
+    }
+    vec![format!(
+        "formula {expr:?} uses {}, which the engine cannot read (the DC would be missing); write it as {}",
+        bad.iter().map(|b| format!("{b:?}")).collect::<Vec<_>>().join(", "),
+        super::formula::DC_VOCABULARY
+    )]
+}
+
+/// Unambiguous save-DC terms in the engine's form. Returns a message when it changed.
+fn normalise_save_dc(rule: &mut Map<String, Value>) -> Option<String> {
+    let expr = rule.get("formula")?.as_str()?.to_string();
+    let (new, changes) = super::formula::normalise_dc(&expr);
+    if changes.is_empty() {
+        return None;
+    }
+    rule.insert("formula".into(), json!(new));
+    Some(format!("save_dc formula {expr:?} read as {new:?}"))
 }
 
 /// Lowercase name with single spaces: the resource id convention of the bundled content.
@@ -366,7 +400,8 @@ fn for_each_rule(el: &mut Value, mut f: impl FnMut(&mut Map<String, Value>)) {
 
 /// Unambiguous `resource` fixes (id from the name, bare-number `max`, formula words the engine
 /// cannot read such as a bare `dexterity`, rest names as tokens), `ability_increase` options
-/// written as a flat list of ability names, and lasting `movement_mode` speeds as stats.
+/// written as a flat list of ability names, lasting `movement_mode` speeds as stats and
+/// save-DC shorthands ("Con mod", "PB") as engine terms.
 /// Returns one message per change.
 pub(crate) fn normalise_resources(el: &mut Value) -> Vec<String> {
     let mut out = Vec::new();
@@ -378,6 +413,7 @@ pub(crate) fn normalise_resources(el: &mut Value) -> Vec<String> {
         Some("resource") => out.extend(normalise_resource(r, class.as_deref())),
         Some("ability_increase") => out.extend(normalise_ability_increase(r)),
         Some("movement_mode") => out.extend(normalise_movement_mode(r)),
+        Some("save_dc") => out.extend(normalise_save_dc(r)),
         _ => {}
     });
     out
@@ -417,13 +453,14 @@ fn normalise_movement_mode(rule: &mut Map<String, Value>) -> Option<String> {
     ))
 }
 
-/// The `ability_increase` and lasting `movement_mode` parts of [`normalise_resources`]
+/// The `ability_increase`, lasting `movement_mode` and `save_dc` parts of [`normalise_resources`]
 /// (finalize re-applies them to drafts generated before they existed).
 pub(crate) fn normalise_abilities(el: &mut Value) -> Vec<String> {
     let mut out = Vec::new();
     for_each_rule(el, |r| match r.get("kind").and_then(Value::as_str) {
         Some("ability_increase") => out.extend(normalise_ability_increase(r)),
         Some("movement_mode") => out.extend(normalise_movement_mode(r)),
+        Some("save_dc") => out.extend(normalise_save_dc(r)),
         _ => {}
     });
     out
