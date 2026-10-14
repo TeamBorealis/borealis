@@ -65,6 +65,11 @@ fn supports_of(v: &Value) -> Vec<String> {
 
 /// Text segments of an HTML description (paragraphs, line breaks and bold headings apart).
 fn segments(html: &str) -> Vec<String> {
+    marked_segments(html).into_iter().map(|(s, _)| s).collect()
+}
+
+/// [`segments`], each with whether it is a bold heading (a `<strong>` run).
+fn marked_segments(html: &str) -> Vec<(String, bool)> {
     let mut out = Vec::new();
     let mut cur = String::new();
     let mut tag = String::new();
@@ -84,18 +89,46 @@ fn segments(html: &str) -> Vec<String> {
                 .iter()
                 .any(|b| t.split_whitespace().next() == Some(b))
                 {
-                    out.push(std::mem::take(&mut cur));
+                    let closes_bold =
+                        tag.starts_with('/') && (t.starts_with("strong") || t.starts_with('h'));
+                    out.push((std::mem::take(&mut cur), closes_bold));
                 }
             }
             c if in_tag => tag.push(c),
             c => cur.push(c),
         }
     }
-    out.push(cur);
+    out.push((cur, false));
     out.into_iter()
-        .map(|s| s.replace("&amp;", "&").trim().to_string())
-        .filter(|s| !s.is_empty())
+        .map(|(s, h)| (s.replace("&amp;", "&").trim().to_string(), h))
+        .filter(|(s, _)| !s.is_empty())
         .collect()
+}
+
+/// Fewest spells a section must list under a heading that names no known list for the
+/// heading to open a list of its own ("Vigil Spells").
+const MIN_PRINTED_LIST_SPELLS: usize = 3;
+/// Most words of a heading that opens a list of its own.
+const MAX_LIST_HEADING_WORDS: usize = 5;
+
+/// Level and structure words of a list's sub-headings ("1st Level", "Cantrips (0 Level)").
+fn level_phrase(n: &str) -> bool {
+    n.split(' ').any(|w| {
+        w.starts_with(|c: char| c.is_ascii_digit()) || matches!(w, "level" | "cantrip" | "cantrips")
+    })
+}
+
+/// A heading that opens a spell list named as printed though no class or known list has that
+/// name ("Vigil Spells"): a short title ending in a list suffix, not a level heading.
+fn printed_list(text: &str) -> Option<String> {
+    let n = norm(text);
+    let base = LIST_SUFFIXES
+        .iter()
+        .filter(|s| **s != " spell")
+        .find_map(|s| n.strip_suffix(s))?;
+    let words = text.split_whitespace().count();
+    (!base.is_empty() && words <= MAX_LIST_HEADING_WORDS && !level_phrase(&n))
+        .then(|| text.split_whitespace().collect::<Vec<_>>().join(" "))
 }
 
 struct Lists {
@@ -253,17 +286,32 @@ fn section_members(
         .filter(|e| e.role == Role::Text)
         .map(|e| e.id.as_str())
         .collect();
+    // Lists opened by a heading that names no known list keep at least
+    // MIN_PRINTED_LIST_SPELLS spells, or nothing.
+    let mut printed: BTreeSet<String> = BTreeSet::new();
+    let opens = |text: &str, printed: &mut BTreeSet<String>| {
+        lists.heading(text).or_else(|| {
+            let l = printed_list(text)?;
+            printed.insert(l.clone());
+            Some(l)
+        })
+    };
     for doc in docs.iter().filter(|d| text_ids.contains(&str_at(d, "id"))) {
-        let mut current = lists.heading(str_at(doc, "name"));
-        for seg in segments(str_at(doc, "description")) {
-            if let Some(l) = lists.heading(&seg) {
+        let mut current = opens(str_at(doc, "name"), &mut printed);
+        for (seg, bold) in marked_segments(str_at(doc, "description")) {
+            if let Some(l) = opens(&seg, &mut printed) {
                 current = Some(l);
+                continue;
+            }
+            let found = spells_in(&seg, names);
+            // Another heading (not a level heading, not a spell) ends the list before it.
+            if bold && found.is_empty() && !level_phrase(&norm(&seg)) {
+                current = None;
                 continue;
             }
             let Some(list) = current.as_ref() else {
                 continue;
             };
-            let found = spells_in(&seg, names);
             if !found.is_empty() {
                 out.entry(list.clone())
                     .or_insert_with(|| (str_at(doc, "id").to_string(), BTreeSet::new()))
@@ -272,6 +320,11 @@ fn section_members(
             }
         }
     }
+    out.retain(|list, (_, spells)| {
+        !printed.contains(list)
+            || lists.heading(list).is_some()
+            || spells.len() >= MIN_PRINTED_LIST_SPELLS
+    });
     out
 }
 
@@ -416,7 +469,8 @@ pub(crate) fn class_lists(plan: &ImportPlan, store: &ContentStore, d: &mut Deriv
     let names = spell_names(store, plan, &d.docs);
     let members = section_members(plan, &d.docs, &lists, &names);
     for (list, (section_id, spells)) in members {
-        apply_list(plan, store, d, &list, &section_id, &spells);
+        let printed_only = lists.heading(&list).is_none();
+        apply_list(plan, store, d, &list, &section_id, &spells, printed_only);
     }
 }
 
@@ -524,6 +578,7 @@ fn apply_list(
     list: &str,
     section_id: &str,
     spells: &BTreeSet<String>,
+    printed_only: bool,
 ) {
     let mut added_own = Vec::new();
     let mut appended = Vec::new();
@@ -559,6 +614,11 @@ fn apply_list(
         .map(|e| str_at(e, "name").to_string())
         .collect();
     let mut note = |m: String| d.notes.push((section_id.to_string(), m));
+    if printed_only && !(added_own.is_empty() && appended.is_empty()) {
+        let all: Vec<String> = added_own.iter().chain(&appended).cloned().collect();
+        note(format!("{} spell(s) joined the {list} list, as the source prints it under that heading (no class or known list of that name): {}", all.len(), all.join(", ")));
+        return;
+    }
     if !added_own.is_empty() {
         note(format!("{} spell(s) are in the {list} spell list section but their own Classes line omits {list}; they were added to the list (union): {}", added_own.len(), added_own.join(", ")));
     }
@@ -630,6 +690,50 @@ and learn reed song. You also know mage handLa.\nA lone reed songLam. The lightT
         assert_eq!(d.appends.len(), 1, "{:?}", d.appends);
         assert_eq!(supports_of(&d.appends[0]), ["Lamplighter"]);
         assert_eq!(d.notes.len(), 3);
+    }
+
+    #[test]
+    fn a_printed_list_heading_opens_its_own_list_and_other_headings_end_one() {
+        let lists = Lists {
+            names: [("lamplighter".to_string(), "Lamplighter".to_string())]
+                .into_iter()
+                .collect(),
+        };
+        let names: Vec<String> = ["moth swarm", "dew lance", "reed song", "light", "gust"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let plan: ImportPlan = serde_json::from_value(json!({"edition": "2014", "groups": [], "notes": [],
+            "elements": [
+                {"id": "T1", "ty": "Rules Glossary Entry", "name": "Lamplighter Spells", "role": "text", "brief": ""},
+                {"id": "T2", "ty": "Rules Glossary Entry", "name": "Vigil Spells", "role": "text", "brief": ""},
+                {"id": "T3", "ty": "Rules Glossary Entry", "name": "1st Level Spells", "role": "text", "brief": ""}]}))
+        .expect("plan");
+        let text = |id: &str, name: &str, desc: &str| json!({"id": id, "name": name, "type": "Rules Glossary Entry", "description": desc});
+        let docs = vec![
+            text("T1", "Lamplighter Spells", "<p><strong>Lamplighter Spells</strong></p><p><strong>1st Level</strong></p><p>Moth Swarm Dew Lance</p><p><strong>Lamp Care</strong></p><p>Light Gust</p>"),
+            text("T2", "Vigil Spells", "<p><strong>Vigil Spells</strong></p><p>Moth Swarm Reed Song</p><p>59</p><p>Gust</p>"),
+            text("T3", "1st Level Spells", "<p><strong>1st Level Spells</strong></p><p>Light Gust Reed Song</p>"),
+        ];
+        let got = section_members(&plan, &docs, &lists, &names);
+        let members = |l: &str| {
+            got.get(l)
+                .map(|(_, s)| s.iter().cloned().collect::<Vec<_>>())
+        };
+        // A level sub-heading keeps the class list; another heading ends it.
+        assert_eq!(members("Lamplighter").unwrap(), ["dew lance", "moth swarm"]);
+        // "Vigil Spells" names no class: it is a list of its own, named as printed.
+        assert_eq!(
+            members("Vigil Spells").unwrap(),
+            ["gust", "moth swarm", "reed song"]
+        );
+        assert_eq!(got.len(), 2, "a level heading is no list: {got:?}");
+        assert_eq!(
+            printed_list("Vigil Spells").as_deref(),
+            Some("Vigil Spells")
+        );
+        assert_eq!(printed_list("Cantrips (0 Level) Spells"), None);
+        assert_eq!(printed_list("Class Spell Lists"), None);
     }
 
     #[test]
