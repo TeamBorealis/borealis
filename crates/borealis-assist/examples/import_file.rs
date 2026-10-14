@@ -105,7 +105,7 @@ impl VisionRunner for Counted<'_> {
 }
 
 struct Args {
-    source: Option<PathBuf>,
+    source: Vec<PathBuf>,
     out: PathBuf,
     edition: Edition,
     parent: Option<String>,
@@ -113,6 +113,8 @@ struct Args {
     max_calls: u32,
     profile: bool,
     mcp_bin: Option<PathBuf>,
+    /// `--revise <ELEMENT_ID> <instruction>` with `--resume`: the desktop's Revise on one element.
+    revise: Option<(String, String)>,
 }
 
 fn parse_args() -> Result<Args, String> {
@@ -120,6 +122,7 @@ fn parse_args() -> Result<Args, String> {
     let mut pos = Vec::new();
     let (mut edition, mut parent, mut resume, mut max_calls) = (Edition::Y2024, None, false, 10);
     let (mut profile, mut mcp_bin) = (true, None);
+    let mut revise = None;
     while let Some(a) = it.next() {
         match a.as_str() {
             "--edition" => {
@@ -133,6 +136,15 @@ fn parse_args() -> Result<Args, String> {
             "--no-profile" => profile = false,
             "--mcp-bin" => mcp_bin = it.next().map(PathBuf::from),
             "--resume" => resume = true,
+            "--revise" => {
+                let id = it
+                    .next()
+                    .ok_or("--revise needs <ELEMENT_ID> <instruction>")?;
+                let text = it
+                    .next()
+                    .ok_or("--revise needs <ELEMENT_ID> <instruction>")?;
+                revise = Some((id, text));
+            }
             "--max-calls" => {
                 max_calls = it
                     .next()
@@ -143,8 +155,8 @@ fn parse_args() -> Result<Args, String> {
         }
     }
     let (source, out) = match (resume, pos.as_slice()) {
-        (true, [out]) => (None, out.clone()),
-        (false, [src, out]) => (Some(src.clone()), out.clone()),
+        (true, [out]) => (Vec::new(), out.clone()),
+        (false, [srcs @ .., out]) if !srcs.is_empty() => (srcs.to_vec(), out.clone()),
         _ => return Err("usage: import_file <file> <out_dir> | --resume <out_dir>".into()),
     };
     Ok(Args {
@@ -156,6 +168,7 @@ fn parse_args() -> Result<Args, String> {
         max_calls,
         profile,
         mcp_bin,
+        revise,
     })
 }
 
@@ -191,6 +204,29 @@ fn source_of(path: &Path) -> Result<(ImportSource, String), String> {
         ImportSource::Text(String::from_utf8_lossy(&bytes).trim().to_string())
     };
     Ok((source, name))
+}
+
+/// Several picked files as one import, as `prepare_sources` joins them: every PDF one attachment,
+/// the source name the file names joined by ", ". One file is exactly [`source_of`].
+fn sources_of(paths: &[PathBuf]) -> Result<(ImportSource, String), String> {
+    let [first, rest @ ..] = paths else {
+        return Err("no source".into());
+    };
+    if rest.is_empty() {
+        return source_of(first);
+    }
+    let mut attachments = Vec::new();
+    let mut names = Vec::new();
+    for p in paths {
+        match source_of(p)? {
+            (ImportSource::Attachments(a), name) => {
+                attachments.extend(a);
+                names.push(name);
+            }
+            _ => return Err(format!("{}: only PDFs can be combined", p.display())),
+        }
+    }
+    Ok((ImportSource::Attachments(attachments), names.join(", ")))
 }
 
 /// The desktop's profile: assets installed under `<out>/ai-profile`, MCP server on the base packs.
@@ -274,7 +310,14 @@ async fn run(args: Args) -> Result<(), String> {
         sink: None,
     };
     let cb = |p: ImportProgress| eprintln!("[{:?} {}/{}] {}", p.stage, p.done, p.total, p.message);
-    let step = if args.resume {
+    let step = if let (true, Some((id, text))) = (args.resume, args.revise.as_ref()) {
+        let draft = load_draft(&args.out)?;
+        let next =
+            borealis_assist::revise_draft(&runner, &base, &draft, text, Some(id), &opts, Some(&cb))
+                .await
+                .map_err(|e| e.to_string())?;
+        ImportStep::Draft(Box::new(next))
+    } else if args.resume {
         let draft = load_draft(&args.out)?;
         let parent = args.parent.as_deref().ok_or("--resume needs --parent")?;
         let group = draft
@@ -288,8 +331,7 @@ async fn run(args: Args) -> Result<(), String> {
             .await
             .map_err(|e| e.to_string())?
     } else {
-        let src = args.source.as_deref().ok_or("no source")?;
-        let (source, source_name) = source_of(src)?;
+        let (source, source_name) = sources_of(&args.source)?;
         let req = AnythingRequest {
             source,
             id_prefix: DEFAULT_PREFIX.to_string(),
