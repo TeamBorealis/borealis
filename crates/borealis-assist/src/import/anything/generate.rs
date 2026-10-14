@@ -6,6 +6,7 @@ use std::collections::BTreeSet;
 use borealis_ai::task::prompt::fence;
 use borealis_ai::task::validate::{issues_to_strings, ContentValidator, JsonSchemaValidator};
 use borealis_ai::task::{run_task, AiRunner, RunOptions};
+use borealis_ai::AiError;
 use borealis_content::file::PackOrigin;
 use borealis_content::{ContentStore, Element};
 use serde_json::{json, Value};
@@ -20,6 +21,10 @@ use super::types::{
 };
 use crate::balance::{balance_report, load_into_engine, Baselines};
 use crate::homebrew::PackContext;
+use retry::{fill_batches, generate_single, stopped, Retries};
+
+#[path = "retry.rs"]
+mod retry;
 
 /// Repair rounds per element.
 pub const MAX_REPAIR_ROUNDS: u32 = 2;
@@ -274,11 +279,24 @@ pub(crate) async fn run_element(
     instruction: Option<&str>,
     opts: &RunOptions<'_>,
 ) -> Result<(Value, Vec<String>, u32), String> {
+    run_element_call(runner, g, planned, name, previous, instruction, opts)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// [`run_element`] with the model error kept, so the caller can retry it.
+async fn run_element_call(
+    runner: &dyn AiRunner,
+    g: &GenCtx<'_>,
+    planned: &PlannedElement,
+    name: &str,
+    previous: Option<(&Value, &[String])>,
+    instruction: Option<&str>,
+    opts: &RunOptions<'_>,
+) -> Result<(Value, Vec<String>, u32), AiError> {
     let user = prompt_for(g, planned, previous, instruction);
     let step = make_step(name, g, planned, siblings_of(g.draft, &planned.id), user);
-    let res = run_task(runner, &step, opts)
-        .await
-        .map_err(|e| e.to_string())?;
+    let res = run_task(runner, &step, opts).await?;
     let mut el = res.output.element;
     normalize(
         &mut el,
@@ -337,7 +355,8 @@ pub(crate) async fn fill_pending(
 ) {
     let store = ctx.base.clone().build();
     let total = draft.elements.len();
-    fill_batches(runner, ctx, &store, draft, opts, progress, total).await;
+    let mut retries = Retries::default();
+    let alone = fill_batches(runner, ctx, &store, draft, opts, progress, &mut retries).await;
     for idx in 0..total {
         if draft.elements[idx].status != ElementStatus::Pending {
             continue;
@@ -369,6 +388,13 @@ pub(crate) async fn fill_pending(
             e.status = ElementStatus::Ok;
             continue;
         }
+        let after = alone.iter().find(|(id, _)| *id == planned.id);
+        if let Some((_, err)) = after.filter(|_| retries.exhausted()) {
+            let e = &mut draft.elements[idx];
+            e.status = ElementStatus::Failed;
+            e.issues = vec![stopped(err)];
+            continue;
+        }
         let parent = parent_of(draft, &planned);
         let result = {
             let g = GenCtx {
@@ -377,11 +403,12 @@ pub(crate) async fn fill_pending(
                 draft,
                 parent,
             };
-            run_element(runner, &g, &planned, "import_generate", None, None, opts).await
+            generate_single(runner, &g, &planned, opts, progress, &mut retries).await
         };
         let e = &mut draft.elements[idx];
         match result {
-            Ok((el, notes, attempts)) => {
+            Ok((el, notes, attempts, retried)) => {
+                push_new(&mut e.normalised, retried);
                 e.json = el;
                 e.repair_rounds = 0;
                 if notes.is_empty() {
@@ -398,60 +425,6 @@ pub(crate) async fn fill_pending(
             Err(msg) => {
                 e.status = ElementStatus::Failed;
                 e.issues = vec![format!("generation failed: {msg}")];
-            }
-        }
-    }
-}
-
-/// Generate the pending class and subclass features in batches (several per call).
-async fn fill_batches(
-    runner: &dyn AiRunner,
-    ctx: &PackContext,
-    store: &ContentStore,
-    draft: &mut ImportDraft,
-    opts: &RunOptions<'_>,
-    progress: Progress<'_>,
-    total: usize,
-) {
-    for batch in super::batch::plan_batches(draft) {
-        let first = draft.elements.iter().position(|e| e.id == batch[0].id);
-        emit(
-            progress,
-            Stage::Generate,
-            first.unwrap_or(0),
-            total,
-            &format!("{} elements", batch.len()),
-        );
-        let parent = super::batch::batch_parent(draft, &batch);
-        let result = {
-            let g = GenCtx {
-                ctx,
-                store,
-                draft,
-                parent,
-            };
-            super::batch::run_batch(runner, &g, &batch, opts).await
-        };
-        for (i, p) in batch.iter().enumerate() {
-            let Some(e) = draft.elements.iter_mut().find(|e| e.id == p.id) else {
-                continue;
-            };
-            match &result {
-                Ok((els, attempts)) => {
-                    let (el, notes) = els[i].clone();
-                    e.json = el;
-                    e.repair_rounds = 0;
-                    e.status = match (notes.is_empty(), *attempts > 1) {
-                        (false, _) => ElementStatus::NeedsReview,
-                        (true, true) => ElementStatus::Repaired,
-                        (true, false) => ElementStatus::Ok,
-                    };
-                    e.issues = notes;
-                }
-                Err(msg) => {
-                    e.status = ElementStatus::Failed;
-                    e.issues = vec![format!("generation failed: {msg}")];
-                }
             }
         }
     }
@@ -574,10 +547,12 @@ pub(crate) fn keep_printed(draft: &mut ImportDraft) {
     super::passage::drop_unprinted_row_text(draft);
 }
 
-/// Deterministic rule fixes on every generated element (recorded on the element).
+/// Deterministic rule fixes on every generated element (recorded on the element): unknown
+/// fields of complete rules removed, resources and references normalised.
 fn tidy_rules(draft: &mut ImportDraft) {
     for e in draft.elements.iter_mut().filter(|e| !e.json.is_null()) {
-        let notes = super::rules::normalise_resources(&mut e.json);
+        let mut notes = super::rules::strip_unknown_fields(&mut e.json);
+        notes.extend(super::rules::normalise_resources(&mut e.json));
         push_new(&mut e.normalised, notes);
     }
     let known: Vec<(String, String)> = draft
@@ -731,6 +706,58 @@ fn attach_balance(ctx: &PackContext, store: &ContentStore, draft: &mut ImportDra
 mod tests {
     use super::*;
     use crate::import::anything::fidelity::tests::planned;
+
+    /// Counts calls and refuses them all.
+    struct NoModel(std::sync::atomic::AtomicUsize);
+
+    impl AiRunner for NoModel {
+        fn run<'a>(
+            &'a self,
+            _req: &'a borealis_ai::AiRequest,
+            _sink: Option<&'a tokio::sync::mpsc::UnboundedSender<borealis_ai::AiEvent>>,
+        ) -> borealis_ai::task::BoxFuture<'a, Result<borealis_ai::AiOutcome, AiError>> {
+            self.0.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            Box::pin(async { Err(AiError::Invalid("no model in this test".into())) })
+        }
+    }
+
+    #[tokio::test]
+    async fn an_unknown_field_of_a_complete_rule_costs_no_repair_call() {
+        // Arrange: a generated trinket whose rules carry a flag the engine does not read.
+        let p = planned("ID_T_FEAT_GLIM", "Glim", "Feat", Role::Standalone, None);
+        let mut draft: ImportDraft = serde_json::from_value(json!({"edition": "2024",
+            "id_prefix": "ID_T", "source_name": "T", "pack_id": "t", "pack_name": "T",
+            "source_kind": "text", "source_text": "Glim. You glow.\n",
+            "detection": {"kind": "feat", "edition": "2024", "confidence": 1.0, "items": []},
+            "plan": {"edition": "2024", "groups": [], "elements": [], "notes": []},
+            "elements": [], "sweep_issues": []}))
+        .unwrap();
+        draft.plan.elements = vec![p.clone()];
+        draft.elements = pending(&draft.plan);
+        draft.elements[0].status = ElementStatus::Ok;
+        draft.elements[0].json = json!({"id": p.id, "name": "Glim", "type": "Feat",
+            "source": "T", "description": "<p>You glow.</p>", "rules": [
+                {"kind": "resource", "id": "glim", "name": "Glim",
+                 "max": {"type": "fixed", "value": 1}, "recharge": ["long_rest"],
+                 "equipped": true}]});
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+        let base = borealis_content::ContentStoreBuilder::new()
+            .add_pack_dir(&root.join("core"))
+            .unwrap();
+        let ctx = PackContext {
+            base,
+            ruleset: draft.edition.ruleset(),
+        };
+        let runner = NoModel(0.into());
+        // Act
+        validate_and_repair(&runner, &ctx, &mut draft, &RunOptions::default(), None).await;
+        // Assert
+        let e = &draft.elements[0];
+        assert_eq!(runner.0.load(std::sync::atomic::Ordering::SeqCst), 0);
+        assert!(e.json["rules"][0].get("equipped").is_none(), "{}", e.json);
+        assert!(e.normalised.iter().any(|n| n.contains("\"equipped\"")));
+        assert_ne!(e.status, ElementStatus::Failed, "{:?}", e.issues);
+    }
 
     #[test]
     fn a_class_root_is_generated_with_its_multiclassing_section() {

@@ -266,3 +266,31 @@ ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_COLD|ID_INTERNAL_CONDITION_DAMAGE_RESIST
     assert!(normalise_resources(&mut breath).is_empty());
     assert_eq!(breath["rules"][0]["kind"], "select_param");
 }
+
+#[test]
+fn unknown_fields_of_a_complete_rule_are_removed_before_validation() {
+    // Arrange: an extra flag on complete rules, and an unknown field that is the misnamed
+    // required one (a repair renames it; it is kept).
+    let mut el = json!({"rules": [
+        {"kind": "resource", "id": "glim", "name": "Glim", "max": {"type": "fixed", "value": 2},
+         "recharge": ["long_rest"], "equipped": true},
+        {"kind": "resource_cost", "resource": "glim", "cost": 1, "equipped": true},
+        {"kind": "resource_cost", "resource_id": "glim", "cost": 1}
+    ]});
+    let before = rule_problems(&el).len();
+    // Act
+    let notes = strip_unknown_fields(&mut el);
+    // Assert
+    assert_eq!(notes.len(), 2, "{notes:?}");
+    assert!(notes.iter().all(|n| n.contains("\"equipped\"")));
+    let rules = el["rules"].as_array().unwrap();
+    assert_eq!(rules.len(), 3, "no rule is removed");
+    assert!(rules[0].get("equipped").is_none() && rules[1].get("equipped").is_none());
+    assert!(
+        rules[2].get("resource_id").is_some(),
+        "the misnamed field stays for a repair"
+    );
+    assert!(rule_problems(&el).len() < before);
+    assert!(rule_problems(&el).iter().all(|p| p.contains("rule 3")));
+    assert!(strip_unknown_fields(&mut el).is_empty(), "idempotent");
+}

@@ -669,7 +669,13 @@ async fn generation_gives_up_after_max_repairs_with_a_clear_error() {
     let mut bad = good_tiny_batch();
     bad[2]["element"]["rules"] =
         json!([{"kind": "grant", "id": "ID_NO_SUCH_THING", "type": "Proficiency"}]);
-    let fake = tiny_class_fake(vec![bad]); // the last reply sticks: always invalid
+    let bad_single = json!({"element": bad[2]["element"].clone(), "notes": []}).to_string();
+    // The last reply sticks: the batch and the element alone are always invalid.
+    let fake = tiny_class_fake(vec![bad]).on(
+        "import_generate",
+        "Write the element \"Glyph Lore\"",
+        &[bad_single],
+    );
     let req = request(
         ImportSource::Text("# The Runebinder\n\nGlyph Lore.\n".into()),
         "rune",
@@ -681,13 +687,30 @@ async fn generation_gives_up_after_max_repairs_with_a_clear_error() {
     else {
         panic!("expected a draft")
     };
-    // 1 + max_repairs (2) attempts, then the batch's elements are Failed with the reason.
+    // 1 + max_repairs (2) attempts, then the batch is split: its valid half is kept, and the
+    // invalid element alone gets 1 + max_repairs attempts before it is Failed with the reason.
+    let generate = fake.prompts("import_generate");
     assert_eq!(
-        fake.prompts("import_generate")
+        generate.iter().filter(|p| p.contains(BATCH_NEEDLE)).count(),
+        4
+    );
+    assert_eq!(
+        generate
             .iter()
-            .filter(|p| p.contains(BATCH_NEEDLE))
+            .filter(|p| p.contains("Write the element \"Glyph Lore\""))
             .count(),
         3
+    );
+    let carving = d
+        .elements
+        .iter()
+        .find(|e| e.name == "Rune Carving")
+        .unwrap();
+    assert_ne!(
+        carving.status,
+        ElementStatus::Failed,
+        "{:?}",
+        carving.issues
     );
     let lore = d.elements.iter().find(|e| e.name == "Glyph Lore").unwrap();
     assert_eq!(lore.status, ElementStatus::Failed);

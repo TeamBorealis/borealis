@@ -594,6 +594,59 @@ pub(crate) fn normalise_references(el: &mut Value, known: &[(String, String)]) -
     out
 }
 
+/// Fields the engine does not read, removed before validation when the rule is complete
+/// without them (an extra flag such as `"equipped": true` costs no repair call). A rule that
+/// lacks a required field keeps its unknown ones: they may be the misnamed field, which a
+/// repair renames. Returns one message per removal.
+pub(crate) fn strip_unknown_fields(el: &mut Value) -> Vec<String> {
+    let mut out = Vec::new();
+    for ptr in ["/rules", "/multiclass/rules"] {
+        let Some(rules) = el.pointer_mut(ptr).and_then(Value::as_array_mut) else {
+            continue;
+        };
+        let kept: Vec<Value> = rules
+            .iter()
+            .map(|r| without_unknown_fields(r, &mut out).unwrap_or_else(|| r.clone()))
+            .collect();
+        *rules = kept;
+    }
+    out
+}
+
+/// `rule` without its unknown fields, when it has some and is complete without them.
+fn without_unknown_fields(rule: &Value, out: &mut Vec<String>) -> Option<Value> {
+    let c = custom_of(rule)?;
+    spec(&c.kind)?;
+    let unknown: Vec<String> = check_custom(&c)
+        .into_iter()
+        .filter_map(|p| match p {
+            borealis_content::rule_kinds::RuleProblem::UnknownField { field, .. } => Some(field),
+            borealis_content::rule_kinds::RuleProblem::UnknownKind(_) => None,
+        })
+        .collect();
+    if unknown.is_empty() {
+        return None;
+    }
+    let mut fields = c.fields.clone();
+    for f in &unknown {
+        fields.remove(f);
+    }
+    let cleaned = CustomRule {
+        kind: c.kind.clone(),
+        fields,
+    };
+    if !shape_problems(&cleaned).is_empty() {
+        return None;
+    }
+    out.extend(unknown.iter().map(|f| {
+        format!(
+            "removed field {f:?} of rule {:?}: the engine does not read it",
+            c.kind
+        )
+    }));
+    serde_json::to_value(Rule::Custom(cleaned)).ok()
+}
+
 /// Remove what the engine would ignore or misread: rules of unknown kinds, unknown fields and
 /// resources it cannot use. Returns one message per removal.
 pub(crate) fn strip_invalid(el: &mut Value) -> Vec<String> {

@@ -5,6 +5,7 @@
 
 use borealis_ai::task::prompt::fence;
 use borealis_ai::task::{run_task, AiRunner, RunOptions};
+use borealis_ai::AiError;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
@@ -270,13 +271,14 @@ fn known_siblings(draft: &ImportDraft, batch: &[PlannedElement]) -> Vec<Value> {
         .collect()
 }
 
-/// Generate one batch. Returns the normalized elements with their notes and the attempts used.
+/// Generate one batch. Returns the normalized elements with their notes and the attempts used;
+/// the error says how the call failed, so the caller can retry it ([`super::generate`]).
 pub(crate) async fn run_batch(
     runner: &dyn AiRunner,
     g: &GenCtx<'_>,
     batch: &[PlannedElement],
     opts: &RunOptions<'_>,
-) -> Result<(Vec<(Value, Vec<String>)>, u32), String> {
+) -> Result<(Vec<(Value, Vec<String>)>, u32), AiError> {
     let siblings = known_siblings(g.draft, batch);
     let (ctx, plan, planned) = (g.ctx.clone(), g.draft.plan.clone(), batch.to_vec());
     let parents: Vec<Option<ParentLink>> = batch.iter().map(|p| parent_of(g.draft, p)).collect();
@@ -320,9 +322,7 @@ pub(crate) async fn run_batch(
         }
         issues
     });
-    let res = run_task(runner, &step, opts)
-        .await
-        .map_err(|e| e.to_string())?;
+    let res = run_task(runner, &step, opts).await?;
     let mut out = Vec::new();
     for (p, parent) in batch.iter().zip(&parents) {
         let found = res
@@ -335,7 +335,10 @@ pub(crate) async fn run_batch(
                     o.element.get("name").and_then(Value::as_str) == Some(p.name.as_str())
                 })
             })
-            .ok_or_else(|| format!("the model omitted \"{}\"", p.name))?;
+            .ok_or_else(|| AiError::Validation {
+                attempts: res.attempts,
+                errors: vec![format!("the model omitted \"{}\"", p.name)],
+            })?;
         let mut el = found.element.clone();
         normalize(
             &mut el,
