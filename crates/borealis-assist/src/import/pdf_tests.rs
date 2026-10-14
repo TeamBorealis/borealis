@@ -303,3 +303,20 @@ fn a_repeated_two_word_label_is_not_split_into_cells() {
     assert_eq!(t.matches("Casting Time: 1 action").count(), 5, "{t}");
     assert!(!t.contains(" | "), "{t}");
 }
+
+#[test]
+fn a_numbered_two_column_table_inside_a_column_keeps_its_rows() {
+    let mut c = prose(72.0, 740.0, 3, "the hollow lantern road winds on");
+    c += &prose(320.0, 740.0, 16, "a quiet bell rings over the moor");
+    let names = ["Moss", "Fern", "Reed", "Pine", "Sedge", "Heath"];
+    for (k, name) in names.iter().enumerate() {
+        let y = 690.0 - 14.0 * k as f32;
+        c += &show("F2", 10.0, 72.0, y, &format!("({})", k + 1));
+        c += &show("F2", 10.0, 150.0, y, &format!("({name})"));
+    }
+    c += &prose(72.0, 590.0, 3, "past the old mill and the ford");
+    let t = extract_pdf_text(&pdf("a", &c)).unwrap().text;
+    for (k, name) in names.iter().enumerate() {
+        assert!(t.lines().any(|l| l == format!("{} | {name}", k + 1)), "{t}");
+    }
+}

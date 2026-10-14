@@ -10,7 +10,7 @@
 
 use super::types::SourceExcerpt;
 use crate::import::chunk::{
-    headings, looks_like_title, markdown_heading, norm_words, Heading, MARKED_UP,
+    detect, headings, looks_like_title, markdown_heading, norm_words, Heading, Hint, MARKED_UP,
 };
 
 const SNIPPET_CHARS: usize = 160;
@@ -22,6 +22,16 @@ const INDEX_RUN: usize = 3;
 const MAX_RUN_IN_WORDS: usize = 8;
 /// Separated names on one line that make it a list (cover line, "see also").
 const LIST_ITEMS: usize = 3;
+/// Lines after a match searched for the opening of an entry (level line, type and rarity).
+const ENTRY_LINES: usize = 8;
+/// Lines of a section that make it a list when nearly all are bare names.
+const LIST_LINES: usize = 3;
+/// Share of bare names among a section's lines that make it a name list.
+const LIST_SHARE: f32 = 0.8;
+/// Most words of a bare name line.
+const NAME_WORDS: usize = 6;
+/// Most words of each other cell of an index table row (a rarity, a type).
+const INDEX_CELL_WORDS: usize = 2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Kind {
@@ -321,6 +331,49 @@ impl Doc<'_> {
         end
     }
 
+    /// The lines after `line` (to the next heading) open an entry: a spell's level line, an
+    /// item's type and rarity, a stat block, a feat's prerequisite.
+    fn opens_entry(&self, line: usize) -> bool {
+        let stop = (line + 1..self.lines.len())
+            .find(|&k| self.heading_at(k).is_some())
+            .unwrap_or(self.lines.len())
+            .min(line + 1 + ENTRY_LINES);
+        detect(&self.lines[line + 1..stop]) != Hint::Unknown
+    }
+
+    /// The candidate is unlikely to be the element's definition (it loses to any that can be): a heading, name line or mention with
+    /// no text under it, or an entry in a list of bare names (contents, a class spell list, an
+    /// index, an index table row: the name and a rarity or type). A catalogue or stat row
+    /// (numbers, a description) is a definition.
+    fn not_a_definition(&self, c: &Candidate, name: &str) -> bool {
+        if c.kind == Kind::RunIn {
+            return false;
+        }
+        if c.kind == Kind::TableRow {
+            // An index row: besides the name only a word or two (a rarity, a type).
+            return self.lines[c.line].split(" | ").all(|cell| {
+                same_name(cell, name)
+                    || (!cell.chars().any(|ch| ch.is_ascii_digit())
+                        && cell.split_whitespace().count() <= INDEX_CELL_WORDS)
+            });
+        }
+        let body: Vec<&str> = self.lines[c.line..c.end]
+            .iter()
+            .map(|l| strip_marks(l))
+            .filter(|l| !l.is_empty())
+            .collect();
+        if body.len() <= 1 {
+            return true;
+        }
+        let names = body
+            .iter()
+            .filter(|l| !l.ends_with(['.', ':', ';']) && l.split_whitespace().count() <= NAME_WORDS)
+            .count();
+        c.kind != Kind::Heading
+            && body.len() >= LIST_LINES
+            && names as f32 >= LIST_SHARE * body.len() as f32
+    }
+
     fn contains_quote(&self, c: &Candidate, quote: &str) -> bool {
         !quote.is_empty()
             && self.lines[c.line..c.end]
@@ -374,10 +427,17 @@ pub(crate) fn locate_section(source: &str, quote: &str, name: &str) -> Option<So
     let name = norm_words(name);
     let quote = norm_words(quote);
     let found = doc.candidates(&name);
+    // The quote first, then an exact heading, run-in head or name line that can be a
+    // definition (not a bare name in a list, an index row or a line with nothing under it),
+    // then a match opening an entry body, then any that can be a definition, then the kind.
     let best = found.iter().max_by(|a, b| {
         let key = |c: &Candidate| {
+            let definition = !doc.not_a_definition(c, &name);
             (
                 doc.contains_quote(c, &quote),
+                definition && c.kind >= Kind::ExactLine,
+                doc.opens_entry(c.line),
+                definition,
                 c.kind,
                 std::cmp::Reverse(c.line),
             )
@@ -466,6 +526,20 @@ Cost | Time\n5 gp | 1 day\n\n## Lantern Table\n\nd6 | Colour\n1 | Amber\n\n## Ro
         assert!(!s.iter().any(|l| l.contains("Bridges")), "{s:?}");
         let s = section(src, "Moth Jar", "");
         assert_eq!(s, vec!["1 | Moth Jar | Glows faintly for an hour."]);
+    }
+
+    #[test]
+    fn an_entry_body_beats_a_name_in_a_list_and_an_exact_heading_beats_both() {
+        let src = "# Spell Lists\n\n## Bard\n\nGlimmer Ward\nMoth Swarm\nDew Lance\nReed Song\n\n\
+## Spells\n\n### ~ Margin Note Moth Swarm\n\n2nd-level conjuration\n\nCasting Time: 1 action\n\
+Range: 60 feet\n\nMoths fill a cube.\n\n### Dew Lance\n\nEvocation cantrip\n\nA lance of dew.\n";
+        let s = section(src, "Moth Swarm", "");
+        assert_eq!(s[0], "### ~ Margin Note Moth Swarm", "{s:?}");
+        assert!(s.contains(&"Moths fill a cube."), "{s:?}");
+        let src =
+            "# Lamplighter\n\nKeepers of lamps.\n\n## Wick Paths\n\n#### Moth Lamplighter\n\n\
+Prerequisite: 5th level\n\nYou befriend moths.\n";
+        assert_eq!(section(src, "Lamplighter", "")[0], "# Lamplighter");
     }
 
     #[test]

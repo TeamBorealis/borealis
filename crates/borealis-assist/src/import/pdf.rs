@@ -34,6 +34,9 @@ const SPLIT_GAP: f32 = 1.5;
 const WORD_GAP: f32 = 0.15;
 /// Column splits followed (two levels: up to four columns).
 const MAX_COLUMN_SPLITS: usize = 2;
+/// Share of row labels (numbers, dice) among the left lines of a column that make them a
+/// table's first column rather than a column of their own.
+const NUMBERED_SHARE: f32 = 0.8;
 /// Where a column gutter is looked for (shares of the page width).
 const GUTTER_RANGE: (f32, f32) = (0.3, 0.7);
 /// A full-width line reaches this share of the page width into both halves.
@@ -445,7 +448,16 @@ fn order_columns(frags: Vec<Fragment>, x0: f32, x1: f32, depth: usize) -> Vec<Fr
             .any(|(top, bottom)| f.y <= top + slack && f.y >= bottom - slack)
     };
     let count = |s: Side| frags.iter().filter(|f| !in_span(f) && side(f) == s).count();
-    if depth == 0 || count(Side::Left) < MIN_COLUMN_LINES || count(Side::Right) < MIN_COLUMN_LINES {
+    // Inside a column, a left side of numbers ("1", "01-50", "d20") is a table's first column.
+    let lefts: Vec<&Fragment> = frags.iter().filter(|f| side(f) == Side::Left).collect();
+    let numbered = depth < MAX_COLUMN_SPLITS
+        && lefts.iter().filter(|f| row_label(&f.text)).count() as f32
+            >= NUMBERED_SHARE * lefts.len() as f32;
+    if depth == 0
+        || numbered
+        || count(Side::Left) < MIN_COLUMN_LINES
+        || count(Side::Right) < MIN_COLUMN_LINES
+    {
         return merge_rows(tables(frags));
     }
     let mut out = Vec::new();
@@ -478,6 +490,16 @@ fn order_columns(frags: Vec<Fragment>, x0: f32, x1: f32, depth: usize) -> Vec<Fr
     out.extend(merge_rows(tables(table)));
     flush(&mut out, &mut left, &mut right);
     out
+}
+
+/// A table row label: a number, a number range or a die ("12", "01-50", "d20").
+fn row_label(t: &str) -> bool {
+    let t = t.trim();
+    let t = t.strip_prefix(['d', 'D']).unwrap_or(t);
+    !t.is_empty()
+        && t.chars().any(|c| c.is_ascii_digit())
+        && t.chars()
+            .all(|c| c.is_ascii_digit() || matches!(c, '-' | '–' | '+'))
 }
 
 /// The x of the widest vertical white channel near the middle of the page (between two
