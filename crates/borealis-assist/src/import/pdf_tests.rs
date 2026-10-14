@@ -420,3 +420,37 @@ fn lists_side_by_side_on_shared_baselines_are_not_a_table() {
     let order = ["charm 0", "charm 11", "charm 12", "charm 23", "charm 24"];
     assert!(order.windows(2).all(|w| at(w[0]) < at(w[1])), "{t}");
 }
+
+#[test]
+fn a_two_column_table_in_a_column_reads_by_rows_and_the_heading_after_it_keeps_its_text() {
+    let mut c = prose(72.0, 740.0, 30, "the hollow lantern road winds on");
+    c += &prose(320.0, 740.0, 8, "a quiet bell rings over the moor");
+    c += &show("F2", 12.0, 320.0, 610.0, "(Ember Calling)");
+    let rows = [
+        ("Level", "Charms"),
+        ("1st", "spark ward, glow"),
+        ("3rd", "cinder step, flare"),
+        ("5th", "ash cloak, kindle"),
+        ("7th", "smoke veil, char"),
+    ];
+    for (k, (a, b)) in rows.iter().enumerate() {
+        let y = 594.0 - 12.0 * k as f32;
+        c += &show("F2", 9.0, 350.0, y, &format!("({a})"));
+        c += &show("F2", 9.0, 410.0, y, &format!("({b})"));
+    }
+    c += &show("F2", 12.0, 320.0, 520.0, "(Gifts of Ember)");
+    c += &prose(320.0, 505.0, 4, "when you choose this calling you gain");
+    let t = extract_pdf_text(&pdf("a", &c)).unwrap().text;
+    for (a, b) in &rows {
+        assert!(t.lines().any(|l| l == format!("{a} | {b}")), "{t}");
+    }
+    let at = |s: &str| t.find(s).unwrap_or_else(|| panic!("{s} missing: {t}"));
+    assert!(at("smoke veil") < at("Gifts of Ember"), "{t}");
+    let after = &t[at("Gifts of Ember")..];
+    let next = after
+        .lines()
+        .skip(1)
+        .find(|l| !l.trim().is_empty())
+        .unwrap();
+    assert!(next.starts_with("when you choose"), "{t}");
+}

@@ -8,14 +8,14 @@ use lopdf::{Document, Object, ObjectId};
 
 use super::layout::{render, HeadingScale, TextLine};
 use super::pdf_fonts::FontCache;
-use super::pdf_table::{spanning_tables, tables};
 use super::pdf_trust::{distrust, Trust};
 use super::pdf_walk::{paint_page, Run};
 use crate::error::AssistError;
 
 // A child of this module so the import module list stays as it is.
-#[path = "pdf_blocks.rs"]
-mod blocks;
+#[path = "pdf_columns.rs"]
+mod columns;
+use columns::reading_order;
 
 /// A PDF with fewer non-whitespace characters per page than this is treated as scanned images.
 pub const MIN_CHARS_PER_PAGE: usize = 20;
@@ -36,17 +36,6 @@ const SAME_LINE: f32 = 0.35;
 const SPLIT_GAP: f32 = 1.5;
 /// A gap wider than this share of the font size between two runs is a word space.
 const WORD_GAP: f32 = 0.15;
-/// Column splits followed (two levels: up to four columns).
-const MAX_COLUMN_SPLITS: usize = 2;
-/// Share of row labels (numbers, dice) among the left lines of a column that make them a
-/// table's first column rather than a column of their own.
-const NUMBERED_SHARE: f32 = 0.8;
-/// Where a column gutter is looked for (shares of the page width).
-const GUTTER_RANGE: (f32, f32) = (0.3, 0.7);
-/// A full-width line reaches this share of the page width into both halves.
-const FULL_REACH: f32 = 0.15;
-/// Fragments on each side of the middle before a page counts as two columns.
-const MIN_COLUMN_LINES: usize = 3;
 /// A vertical gap of more than this many line heights is a paragraph break.
 const PARA_GAP: f32 = 1.6;
 /// Runs of the same text closer than this many font sizes are one overprinted run.
@@ -402,159 +391,6 @@ fn fragments(mut runs: Vec<Run>) -> Vec<Fragment> {
             cur = Some(Building::new(r));
         }
         out.extend(cur.map(Building::done));
-    }
-    out
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum Side {
-    Left,
-    Right,
-    Full,
-}
-
-/// Reading order: one column top to bottom, or, on a page of columns, each band between
-/// full-width lines read column by column (columns found recursively, so three columns or
-/// unequal columns read in order too).
-fn reading_order(frags: Vec<Fragment>, width: f32) -> Vec<Fragment> {
-    order_columns(frags, 0.0, width, MAX_COLUMN_SPLITS)
-}
-
-fn order_columns(frags: Vec<Fragment>, x0: f32, x1: f32, depth: usize) -> Vec<Fragment> {
-    // Blocks stacked over all the columns are read one after the other.
-    let frags = if depth == 0 {
-        frags
-    } else {
-        match blocks::block_cut(frags, x0, x1) {
-            Ok((above, below)) => {
-                let mut out = order_columns(above, x0, x1, depth);
-                out.extend(order_columns(below, x0, x1, depth));
-                return out;
-            }
-            Err(frags) => frags,
-        }
-    };
-    let width = (x1 - x0).max(1.0);
-    let mid = gutter(&frags, x0, width);
-    let slack = 2.0;
-    // Full width: well into both halves. A cell line slightly over the gutter keeps the side
-    // most of it is on.
-    let side = |f: &Fragment| {
-        if f.end <= mid + slack {
-            Side::Left
-        } else if f.x >= mid - slack {
-            Side::Right
-        } else if f.x < mid - FULL_REACH * width && f.end > mid + FULL_REACH * width {
-            Side::Full
-        } else if (f.x + f.end) / 2.0 < mid {
-            Side::Left
-        } else {
-            Side::Right
-        }
-    };
-    let side_of = |f: &Fragment| match side(f) {
-        Side::Left => Some(true),
-        Side::Right => Some(false),
-        Side::Full => None,
-    };
-    let spans = spanning_tables(&frags, &side_of);
-    let in_span = |f: &Fragment| {
-        let slack = SAME_LINE * f.size.max(1.0);
-        spans
-            .iter()
-            .any(|(top, bottom)| f.y <= top + slack && f.y >= bottom - slack)
-    };
-    let count = |s: Side| frags.iter().filter(|f| !in_span(f) && side(f) == s).count();
-    // Inside a column, a left side of numbers ("1", "01-50", "d20") is a table's first column.
-    let lefts: Vec<&Fragment> = frags.iter().filter(|f| side(f) == Side::Left).collect();
-    let numbered = depth < MAX_COLUMN_SPLITS
-        && lefts.iter().filter(|f| row_label(&f.text)).count() as f32
-            >= NUMBERED_SHARE * lefts.len() as f32;
-    if depth == 0
-        || numbered
-        || count(Side::Left) < MIN_COLUMN_LINES
-        || count(Side::Right) < MIN_COLUMN_LINES
-    {
-        return merge_rows(tables(frags));
-    }
-    let mut out = Vec::new();
-    let (mut left, mut right, mut table) = (Vec::new(), Vec::new(), Vec::new());
-    let flush = |out: &mut Vec<Fragment>, left: &mut Vec<Fragment>, right: &mut Vec<Fragment>| {
-        out.extend(order_columns(std::mem::take(left), x0, mid, depth - 1));
-        out.extend(order_columns(std::mem::take(right), mid, x1, depth - 1));
-    };
-    for f in frags {
-        // A table across the gutter is read row by row, after the columns above it.
-        if in_span(&f) {
-            if table.is_empty() {
-                flush(&mut out, &mut left, &mut right);
-            }
-            table.push(f);
-            continue;
-        }
-        if !table.is_empty() {
-            out.extend(merge_rows(tables(std::mem::take(&mut table))));
-        }
-        match side(&f) {
-            Side::Left => left.push(f),
-            Side::Right => right.push(f),
-            Side::Full => {
-                flush(&mut out, &mut left, &mut right);
-                out.push(f);
-            }
-        }
-    }
-    out.extend(merge_rows(tables(table)));
-    flush(&mut out, &mut left, &mut right);
-    out
-}
-
-/// A table row label: a number, a number range or a die ("12", "01-50", "d20").
-fn row_label(t: &str) -> bool {
-    let t = t.trim();
-    let t = t.strip_prefix(['d', 'D']).unwrap_or(t);
-    !t.is_empty()
-        && t.chars().any(|c| c.is_ascii_digit())
-        && t.chars()
-            .all(|c| c.is_ascii_digit() || matches!(c, '-' | '–' | '+'))
-}
-
-/// The x of the widest vertical white channel near the middle of the page (between two
-/// columns, which need not be equal): the place fewest fragments cross, nearest the middle.
-fn gutter(frags: &[Fragment], x0: f32, width: f32) -> f32 {
-    let mid = x0 + width / 2.0;
-    let lo = (x0 + width * GUTTER_RANGE.0) as i32;
-    let hi = (x0 + width * GUTTER_RANGE.1) as i32;
-    // Only places with columns on both sides count.
-    let balanced = |x: f32| {
-        let left = frags.iter().filter(|f| f.end <= x).count();
-        let right = frags.iter().filter(|f| f.x >= x).count();
-        left.min(right) >= MIN_COLUMN_LINES
-    };
-    let crossing = |x: f32| frags.iter().filter(|f| f.x < x && f.end > x).count();
-    (lo..=hi)
-        .map(|x| x as f32)
-        .filter(|x| balanced(*x))
-        .min_by(|a, b| {
-            crossing(*a)
-                .cmp(&crossing(*b))
-                .then((a - mid).abs().total_cmp(&(b - mid).abs()))
-        })
-        .unwrap_or(mid)
-}
-
-/// Single-column page: fragments on one baseline (table cells) become one `a | b` line.
-fn merge_rows(frags: Vec<Fragment>) -> Vec<Fragment> {
-    let mut out: Vec<Fragment> = Vec::new();
-    for f in frags {
-        match out.last_mut() {
-            Some(prev) if (prev.y - f.y).abs() <= SAME_LINE * prev.size.max(f.size).max(1.0) => {
-                prev.text = format!("{} | {}", prev.text.trim_end(), f.text.trim_start());
-                prev.end = f.end;
-                prev.bold &= f.bold;
-            }
-            _ => out.push(f),
-        }
     }
     out
 }

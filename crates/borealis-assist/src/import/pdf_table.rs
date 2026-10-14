@@ -274,6 +274,44 @@ fn rows(block: &[Fragment]) -> Option<Vec<Fragment>> {
 
 // ---- tables across a column gutter ------------------------------------------------------------
 
+/// Share of the lines on each side of a band that must share a baseline with a line on the
+/// other side for the two sides to be one table's columns.
+const PAIRED_SHARE: f32 = 0.8;
+/// Lines smaller than this share of the band's usual size (marks, superscripts) are left out.
+const MARK_SIZE: f32 = 0.75;
+
+/// The two sides of a band pair up line by line on shared baselines (one line a side per
+/// baseline, at least two lines a side, nearly all with a partner on the other side): a
+/// two-column table, not two columns.
+pub(crate) fn paired_rows(left: &[Fragment], right: &[Fragment]) -> bool {
+    let mut sizes: Vec<f32> = left.iter().chain(right).map(|f| f.size).collect();
+    sizes.sort_by(f32::total_cmp);
+    let Some(usual) = sizes.get(sizes.len() / 2).copied() else {
+        return false;
+    };
+    let lines = |side: &[Fragment]| -> Vec<Fragment> {
+        side.iter()
+            .filter(|f| f.size >= MARK_SIZE * usual)
+            .cloned()
+            .collect()
+    };
+    let (l, r) = (lines(left), lines(right));
+    let partnered = |a: &[Fragment], b: &[Fragment]| {
+        let n = a
+            .iter()
+            .filter(|f| b.iter().any(|g| same_baseline(f, g)))
+            .count();
+        a.len() >= 2 && n as f32 >= PAIRED_SHARE * a.len() as f32
+    };
+    // One cell a side per row: a side with two cells on a baseline is itself columns.
+    let single = |a: &[Fragment]| {
+        a.iter()
+            .enumerate()
+            .all(|(i, f)| !a[i + 1..].iter().any(|g| same_baseline(f, g)))
+    };
+    single(&l) && single(&r) && partnered(&l, &r) && partnered(&r, &l)
+}
+
 /// Which side of a gutter a fragment is on (`None`: it crosses the gutter).
 pub(crate) type SideOf<'a> = &'a dyn Fn(&Fragment) -> Option<bool>;
 
