@@ -444,48 +444,58 @@ fn oracle(
             format!("option filters read statistic sums other than the settled ones: {differs:?}"),
         ));
     }
-    let mut slow: BTreeMap<&crate::state::SlotKey, BTreeSet<&str>> = BTreeMap::new();
+    // open slots in tree order, empty lists first (the most suspicious, and rare)
+    let empty: BTreeSet<&crate::state::SlotKey> = snap
+        .slots
+        .iter()
+        .filter(|s| s.options.is_empty())
+        .map(|s| &s.key)
+        .collect();
+    let mut open = Vec::new();
     for id in g.preorder() {
-        if slow.len() >= ORACLE_OPEN_SLOTS {
-            break;
-        }
-        let n = &g.nodes[id];
-        for slot in &n.slots {
-            let Rule::Select(rule) = &n.e.el.rules[slot.rule] else {
-                continue;
-            };
-            // open slots only: the per-candidate check is slow, and an open slot is the list a
-            // user picks from
-            if rule.is_list() || slot.chosen.is_some() || slow.len() >= ORACLE_OPEN_SLOTS {
-                continue;
-            }
-            let mut allowed: BTreeSet<&str> = uni
-                .candidates_for(&rule.ty)
-                .filter(|c| g.choice_allowed(id, slot.rule, c, false))
-                .map(|c| c.el.id.as_str())
-                .collect();
-            for alt in crate::custom_rules::alternatives_of(rule) {
-                if let Some(c) = uni.get(alt) {
-                    if g.choice_allowed(id, slot.rule, c, false) {
-                        allowed.insert(c.el.id.as_str());
-                    }
+        for slot in &g.nodes[id].slots {
+            if let Rule::Select(rule) = &g.nodes[id].e.el.rules[slot.rule] {
+                // open slots only: an open slot is the list a user picks from
+                if !rule.is_list() && slot.chosen.is_none() {
+                    open.push((id, slot, rule));
                 }
             }
-            slow.insert(&slot.key, allowed);
         }
     }
+    open.sort_by_key(|(_, slot, _)| !empty.contains(&slot.key));
+    let mut slow: BTreeMap<&crate::state::SlotKey, BTreeSet<&str>> = BTreeMap::new();
+    for (id, slot, rule) in open.into_iter().take(ORACLE_OPEN_SLOTS) {
+        let mut allowed: BTreeSet<&str> = uni
+            .candidates_for(&rule.ty)
+            .filter(|c| g.choice_allowed(id, slot.rule, c, false))
+            .map(|c| c.el.id.as_str())
+            .collect();
+        for alt in crate::custom_rules::alternatives_of(rule) {
+            if let Some(c) = uni.get(alt) {
+                if g.choice_allowed(id, slot.rule, c, false) {
+                    allowed.insert(c.el.id.as_str());
+                }
+            }
+        }
+        slow.insert(&slot.key, allowed);
+    }
+    let name = |id: &str| uni.get(id).map(|e| e.el.name.to_lowercase());
     for s in &snap.slots {
         let Some(expected) = slow.get(&s.key) else {
             continue;
         };
         let listed: BTreeSet<&str> = s.options.iter().map(|o| o.id.as_str()).collect();
-        // a Companion select drops typed monsters named like a content companion
+        let listed_names: BTreeSet<String> =
+            s.options.iter().map(|o| o.name.to_lowercase()).collect();
         let extra: Vec<&&str> = listed.difference(expected).take(5).collect();
-        let missing: Vec<&&str> = if s.ty == "Companion" {
-            Vec::new()
-        } else {
-            expected.difference(&listed).take(5).collect()
-        };
+        // a Companion select drops a typed monster named like an offered companion
+        let missing: Vec<&&str> = expected
+            .difference(&listed)
+            .filter(|id| {
+                s.ty != "Companion" || name(id).map_or(true, |n| !listed_names.contains(&n))
+            })
+            .take(5)
+            .collect();
         if !extra.is_empty() || !missing.is_empty() {
             out.push(violation(
                 kind::OPTION_ORACLE,
