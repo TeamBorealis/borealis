@@ -555,6 +555,10 @@ impl Doc<'_> {
         if c.kind == Kind::RunIn {
             return false;
         }
+        // A question ("Can a <name> ...?", an FAQ entry) is about the element, not its definition.
+        if self.lines[c.line].trim_end().ends_with('?') {
+            return true;
+        }
         if c.kind == Kind::TableRow {
             // An index row: besides the name only a word or two (a rarity, a type).
             return self.lines[c.line].split(" | ").all(|cell| {

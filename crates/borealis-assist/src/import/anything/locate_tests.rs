@@ -222,3 +222,11 @@ fn a_recurring_bare_line_loses_to_the_exact_heading() {
     let s = section(GUIDE, "Charms", "");
     assert_eq!(s[0], "## Charms");
 }
+
+/// An FAQ question heading naming the element is no definition of it.
+#[test]
+fn a_question_heading_is_no_definition() {
+    let src = "# Book\n\n## Questions\n\n### Does Glimmer stack with itself?\n\nNo, it never stacks with another use of itself.\n\n## Features\n\nGlimmer\nYou shine dimly for one minute and light the room.\n";
+    let s = section(src, "Glimmer", "");
+    assert_eq!(s[0], "Glimmer");
+}
