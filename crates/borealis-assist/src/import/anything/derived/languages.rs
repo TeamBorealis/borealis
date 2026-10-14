@@ -480,9 +480,7 @@ mod tests {
     #[test]
     fn a_run_in_language_line_and_a_the_x_language_sentence_yield_the_name() {
         assert_eq!(
-            named_languages(
-                "<p><strong>Bonus Language.</strong> Mossic (speak, read, write).</p>"
-            ),
+            named_languages("<p><strong>Bonus Language.</strong> Mossic (speak, read, write).</p>"),
             ["Mossic"]
         );
         assert_eq!(
