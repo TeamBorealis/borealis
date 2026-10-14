@@ -14,6 +14,7 @@ pub mod eval;
 pub mod gear;
 pub mod graph;
 pub mod ids;
+pub mod invariants;
 pub mod inventory;
 pub mod levels;
 pub mod money;

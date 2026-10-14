@@ -13,6 +13,7 @@ const OPTION: &str = "ID_HOMEBREW_OPTION_GONE";
 const SPELL: &str = "ID_UNKNOWN_CANTRIP_FROM_A_BOOK_I_LACK";
 
 fn app() -> (tempfile::TempDir, AppState) {
+    borealis_engine::invariants::enable_for_thread();
     let dir = tempfile::tempdir().expect("temp dir");
     let paths = AppPaths {
         content_root: PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../content"),

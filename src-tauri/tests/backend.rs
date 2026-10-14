@@ -13,6 +13,7 @@ const HUMAN: &str = "ID_RACE_HUMAN";
 const FIGHTER: &str = "ID_WOTC_PHB_CLASS_FIGHTER";
 
 fn app() -> (tempfile::TempDir, AppState) {
+    borealis_engine::invariants::enable_for_thread();
     let dir = tempfile::tempdir().expect("temp dir");
     let paths = AppPaths {
         content_root: PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../content"),

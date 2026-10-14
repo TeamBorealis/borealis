@@ -1,5 +1,7 @@
 //! Shared fixtures for the golden tests. Aurora XML fixtures are migrated on the fly and are
 //! never copied into the repository; tests are skipped (with a notice) when they are absent.
+//! Every full derive of a test that uses these helpers is checked against the settle invariants
+//! (`borealis_engine::invariants`).
 #![allow(dead_code)]
 
 use borealis_content::{ContentFile, ContentStore, ContentStoreBuilder, PackOrigin};
@@ -97,6 +99,7 @@ pub fn engine(v: Variant) -> Option<&'static Engine> {
 
 /// Run a test body against both content variants (skips with a notice without fixtures).
 pub fn each_variant(name: &str, body: impl Fn(&Engine, Variant)) {
+    borealis_engine::invariants::enable_for_thread();
     let mut ran = false;
     for v in [Variant::Fixture, Variant::CorePack] {
         match engine(v) {
@@ -120,6 +123,7 @@ pub const LEVEL1: &str = "ID_LEVEL_1";
 
 impl<'e> Hero<'e> {
     pub fn new(e: &'e Engine, average_hp: bool) -> Self {
+        borealis_engine::invariants::enable_for_thread();
         let mut s = commands::new_character(e, borealis_content::Ruleset::Dnd2014);
         s.options
             .retain(|o| o != "ID_INTERNAL_OPTION_ALLOW_AVERAGE_HP");

@@ -37,6 +37,7 @@ fn pick(s: &CharacterState, owner: &str, name: &str, id: &str) -> CharacterState
 }
 
 fn hero(rules: Ruleset, race: &str, class: &str, level: u32) -> CharacterSnapshot {
+    borealis_engine::invariants::enable_for_thread();
     let mut s = commands::new_character(engine(), rules);
     s = pick(&s, "ID_LEVEL_1", "Race", race);
     s = pick(&s, "ID_LEVEL_1", "Class", class);

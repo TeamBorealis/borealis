@@ -23,8 +23,10 @@ pub fn fixtures_dir() -> Option<PathBuf> {
 
 static ENGINE: OnceLock<Option<(ContentStore, Engine)>> = OnceLock::new();
 
-/// Core pack plus the fixture SRD elements.
+/// Core pack plus the fixture SRD elements. Every later full derive on the calling test thread
+/// is checked against the settle invariants (`borealis_engine::invariants`).
 pub fn engine() -> Option<&'static Engine> {
+    borealis_engine::invariants::enable_for_thread();
     ENGINE
         .get_or_init(|| {
             let dir = fixtures_dir()?;

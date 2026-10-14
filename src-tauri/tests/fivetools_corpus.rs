@@ -15,7 +15,7 @@
 
 use borealis_content::{ContentStoreBuilder, Element, Rule, Ruleset};
 use borealis_engine::commands::{self, slot_key};
-use borealis_engine::{CharacterSnapshot, CharacterState, Choice, Engine, Severity};
+use borealis_engine::{invariants, CharacterSnapshot, CharacterState, Choice, Engine, Severity};
 use borealis_import_5etools::{import_folder, ImportOptions};
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
@@ -93,7 +93,18 @@ impl Sweeper<'_> {
     }
 
     /// Problems of a snapshot that concern imported elements.
-    fn problems(&self, snap: &CharacterSnapshot, out: &mut Vec<String>) {
+    fn problems(&self, state: &CharacterState, snap: &CharacterSnapshot, out: &mut Vec<String>) {
+        // settle invariants (engine-test-audit-1 WP2); unknown rules of elements outside the
+        // import belong to other tests
+        for v in invariants::check(self.engine, state, snap) {
+            let foreign = v.kind == invariants::kind::UNKNOWN_RULE
+                && v.element
+                    .as_deref()
+                    .is_some_and(|e| !self.ours.contains_key(e));
+            if !foreign {
+                out.push(format!("{} {}", v.kind, v.message));
+            }
+        }
         for d in &snap.diagnostics {
             let ours = d
                 .element
@@ -210,7 +221,7 @@ impl Sweeper<'_> {
             }
             state = self.fill(state);
             let snap = self.engine.derive(&state);
-            self.problems(&snap, &mut out);
+            self.problems(&state, &snap, &mut out);
             for (fid, flevel) in &expected {
                 if *flevel == level && !snap.features.iter().any(|f| f.id == *fid) {
                     out.push("class feature missing at its level".into());
@@ -346,7 +357,10 @@ fn run(data: &Path) {
                     match sw.pick(&state, &el.id) {
                         None => problems.push(format!("{ty} is not offered")),
                         Some(Err(e)) => problems.push(e),
-                        Some(Ok(s)) => sw.problems(&sw.engine.derive(&sw.fill(s)), &mut problems),
+                        Some(Ok(s)) => {
+                            let s = sw.fill(s);
+                            sw.problems(&s, &sw.engine.derive(&s), &mut problems);
+                        }
                     }
                 }
             }
@@ -384,7 +398,10 @@ fn run(data: &Path) {
                 bump(&mut unoffered, format!("{rs:?} {category}: {why}"));
             }
             Some(Err(e)) => problems.push(e),
-            Some(Ok(s)) => sw.problems(&sw.engine.derive(&sw.fill(s)), &mut problems),
+            Some(Ok(s)) => {
+                let s = sw.fill(s);
+                sw.problems(&s, &sw.engine.derive(&s), &mut problems);
+            }
         }
         problems.sort();
         problems.dedup();
@@ -406,7 +423,7 @@ fn run(data: &Path) {
                         Err(e) => problems.push(cause(&format!("equip refused: {e}"))),
                         Ok(eq) => {
                             let snap = sw.engine.derive(&eq.state);
-                            sw.problems(&snap, &mut problems);
+                            sw.problems(&eq.state, &snap, &mut problems);
                             if ty == "Weapon" && snap.attacks.is_empty() {
                                 problems.push("equipped weapon gives no attack".into());
                             }

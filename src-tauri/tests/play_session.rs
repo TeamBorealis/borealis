@@ -21,6 +21,7 @@ struct Session {
 
 impl Session {
     fn new() -> Self {
+        borealis_engine::invariants::enable_for_thread();
         let dir = tempfile::tempdir().unwrap();
         let paths = AppPaths {
             content_root: PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../content"),

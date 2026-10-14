@@ -27,6 +27,9 @@ fn engine() -> Engine {
         stat("soul:spellcasting:slots:1", count, 1),
         stat("soul:spellcasting:slots:1", &format!("-{count}"), 3),
         stat("soul:spellcasting:slots:2", count, 3),
+        // a way to learn a levelled spell (settle invariant: casters can acquire spells)
+        {"kind": "select", "type": "Spell", "name": "Spell Known (Soul)",
+         "supports": "$(spellcasting:list), $(spellcasting:slots)", "spellcasting": "Soul"},
     ]});
     let file: ContentFile = serde_json::from_value(
         json!({"format": "borealis-content/1", "ruleset": "dnd2014", "elements": [race]}),
@@ -42,6 +45,7 @@ fn engine() -> Engine {
 }
 
 fn fighter(e: &Engine, level: u32) -> CharacterState {
+    borealis_engine::invariants::enable_for_thread();
     let s = commands::new_character(e, Ruleset::Dnd2014);
     let pick = |s: &CharacterState, name: &str, id: &str| {
         let key = slot_key(&e.derive(s), "ID_LEVEL_1", name, 1).expect("slot");

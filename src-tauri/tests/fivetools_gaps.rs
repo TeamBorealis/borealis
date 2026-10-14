@@ -28,6 +28,7 @@ struct World<'a> {
 
 impl World<'_> {
     fn character(&self, rs: Ruleset, class: &str) -> CharacterState {
+        borealis_engine::invariants::enable_for_thread();
         let e = self.e;
         let s = commands::new_character(e, rs);
         let s = commands::set_base_scores(e, &s, SCORES)

@@ -18,11 +18,13 @@
 //! first option, then with their last option); every archetype is swept on the class that offers
 //! it; races, sub races, race variants and backgrounds are picked on a level-1 fighter; feats are
 //! looked for on level 1/4/19 hosts; spells are checked against the class spell lists. The test
-//! asserts only that nothing panics: the counts are the audit.
+//! asserts only that nothing panics: the counts are the audit. Every checked snapshot also runs
+//! the settle invariants (`borealis_engine::invariants::check`), reported as `invariant.*`
+//! problems.
 
 use borealis_content::{ContentStore, ContentStoreBuilder, Element, PackOrigin, Rule, Ruleset};
 use borealis_engine::commands::{self, slot_key};
-use borealis_engine::{CharacterSnapshot, CharacterState, Choice, Engine, Severity};
+use borealis_engine::{invariants, CharacterSnapshot, CharacterState, Choice, Engine, Severity};
 use borealis_migrate::{migrate_path, write_output, MigrateOptions};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -255,12 +257,23 @@ impl Sweeper<'_> {
         })
     }
 
-    fn problems(&self, snap: &CharacterSnapshot, out: &mut Vec<String>) {
+    fn problems(&self, state: &CharacterState, snap: &CharacterSnapshot, out: &mut Vec<String>) {
         let built: HashSet<&str> = snap
             .elements
             .iter()
             .map(|r| r.element.id.as_str())
             .collect();
+        // settle invariants (engine-test-audit-1 WP2); unknown rules of elements this character
+        // does not use belong to other sweeps
+        for v in invariants::check(self.engine, state, snap) {
+            let foreign = v.kind == invariants::kind::UNKNOWN_RULE
+                && v.element
+                    .as_deref()
+                    .is_some_and(|e| !built.contains(e) && !self.ours.contains(e));
+            if !foreign {
+                out.push(format!("{} {}", v.kind, v.message));
+            }
+        }
         for d in &snap.diagnostics {
             let Some(el) = d.element.as_ref().filter(|e| self.ours.contains(*e)) else {
                 continue;
@@ -435,7 +448,7 @@ impl Sweeper<'_> {
             }
             state = self.fill(state, pick);
             let snap = self.engine.derive(&state);
-            self.problems(&snap, &mut out);
+            self.problems(&state, &snap, &mut out);
             for (fid, flevel) in &expected {
                 if *flevel == level && !snap.features.iter().any(|f| f.id == *fid) {
                     out.push(format!("class feature missing at its level {fid}"));
@@ -940,7 +953,8 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
                         for pick in [Pick::First, Pick::Last] {
                             match sw.pick(state, &el.id) {
                                 Some(Ok(s)) => {
-                                    sw.problems(&sw.engine.derive(&sw.fill(s, pick)), &mut problems)
+                                    let s = sw.fill(s, pick);
+                                    sw.problems(&s, &sw.engine.derive(&s), &mut problems);
                                 }
                                 Some(Err(e)) => problems.push(e),
                                 None => {}
@@ -989,7 +1003,8 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
                 None => found = false,
                 Some(Err(e)) => problems.push(e),
                 Some(Ok(s)) => {
-                    sw.problems(&sw.engine.derive(&sw.fill(s, Pick::First)), &mut problems)
+                    let s = sw.fill(s, Pick::First);
+                    sw.problems(&s, &sw.engine.derive(&s), &mut problems);
                 }
             }
             problems
@@ -1023,10 +1038,16 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
                         if let (Some(uid), true) = (uid, ty != "Magic Item") {
                             match commands::equip(sw.engine, &o.state, &uid, None) {
                                 Err(e) => problems.push(format!("equip refused: {e}")),
-                                Ok(eq) => sw.problems(&sw.engine.derive(&eq.state), &mut problems),
+                                Ok(eq) => {
+                                    sw.problems(
+                                        &eq.state,
+                                        &sw.engine.derive(&eq.state),
+                                        &mut problems,
+                                    );
+                                }
                             }
                         } else {
-                            sw.problems(&sw.engine.derive(&o.state), &mut problems);
+                            sw.problems(&o.state, &sw.engine.derive(&o.state), &mut problems);
                         }
                     }
                 }

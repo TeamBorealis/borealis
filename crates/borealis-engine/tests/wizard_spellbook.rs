@@ -54,6 +54,7 @@ fn engine(pack: &str) -> &'static Engine {
 }
 
 fn wizard(ed: &Edition, level: u32) -> CharacterState {
+    borealis_engine::invariants::enable_for_thread();
     let e = engine(ed.pack);
     let mut s = commands::new_character(e, ed.ruleset);
     let key = slot_key(&e.derive(&s), "ID_LEVEL_1", "Class", 1).expect("class slot");

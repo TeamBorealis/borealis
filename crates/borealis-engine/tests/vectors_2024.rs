@@ -29,6 +29,7 @@ struct Hero {
 
 impl Hero {
     fn new() -> Self {
+        borealis_engine::invariants::enable_for_thread();
         Self {
             s: commands::new_character(engine(), Ruleset::Dnd2024),
         }

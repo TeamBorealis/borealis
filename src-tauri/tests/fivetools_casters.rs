@@ -178,6 +178,7 @@ fn corpus_casters(data: &Path, imported: &BTreeMap<String, Element>) -> Vec<Cast
 }
 
 fn character(e: &Engine, rs: Ruleset, class: &str) -> CharacterState {
+    borealis_engine::invariants::enable_for_thread();
     let s = commands::new_character(e, rs);
     let s = commands::set_base_scores(e, &s, SCORES)
         .expect("scores")

@@ -85,12 +85,16 @@ impl Engine {
         opts: EvaluateOptions,
     ) -> CharacterSnapshot {
         let uni = self.universe(state.ruleset);
-        Evaluation::run(uni, state, &self.settings, opts.provenance).snapshot(
+        let snap = Evaluation::run(uni, state, &self.settings, opts.provenance).snapshot(
             state,
             &self.settings,
             include_options,
             opts.provenance,
-        )
+        );
+        if include_options && !opts.provenance {
+            crate::invariants::after_derive(self, state, &snap);
+        }
+        snap
     }
 
     /// The deterministic provenance trace of one statistic (`ac`, `strength:score`, ...):

@@ -43,6 +43,7 @@ struct Harness {
 }
 
 fn harness(with_cli: bool) -> Harness {
+    borealis_engine::invariants::enable_for_thread();
     let data = tempfile::tempdir().unwrap();
     let bin = tempfile::tempdir_in(env!("CARGO_TARGET_TMPDIR")).unwrap();
     let paths = AppPaths {

@@ -53,6 +53,7 @@ fn paths(data: &Path) -> AppPaths {
 }
 
 fn harness() -> H {
+    borealis_engine::invariants::enable_for_thread();
     use std::os::unix::fs::PermissionsExt;
     let data = tempfile::tempdir().unwrap();
     let bin = tempfile::tempdir().unwrap();

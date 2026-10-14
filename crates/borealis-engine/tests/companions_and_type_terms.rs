@@ -60,6 +60,7 @@ fn content() -> Vec<Value> {
 }
 
 fn with_class(e: &Engine, class: &str) -> CharacterState {
+    borealis_engine::invariants::enable_for_thread();
     let s = commands::new_character(e, Ruleset::Dnd2014);
     let s = commands::set_base_scores(e, &s, [12, 12, 12, 12, 12, 12]).map_or(s, |o| o.state);
     let key = slot_key(&e.derive(&s), "ID_LEVEL_1", "Class", 1).expect("class slot");

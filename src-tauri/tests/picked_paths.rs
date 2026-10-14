@@ -24,6 +24,7 @@ struct H {
 }
 
 fn harness() -> H {
+    borealis_engine::invariants::enable_for_thread();
     let data = tempfile::tempdir().unwrap();
     let empty = tempfile::tempdir().unwrap();
     let state = AppState::new(AppPaths {

@@ -227,6 +227,7 @@ fn script(dir: &Path, name: &str, body: &str) {
 }
 
 fn rig(setup: impl Fn(&Path)) -> Rig {
+    borealis_engine::invariants::enable_for_thread();
     let data = tempfile::tempdir().unwrap();
     let bin = tempfile::tempdir().unwrap();
     setup(bin.path());

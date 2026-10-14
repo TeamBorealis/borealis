@@ -83,6 +83,7 @@ fn srd_51_engine() -> Option<Engine> {
 }
 
 fn class_at(engine: &Engine, class: &str, level: u32) -> borealis_engine::state::CharacterState {
+    borealis_engine::invariants::enable_for_thread();
     let s = commands::new_character(engine, Ruleset::Dnd2014);
     let key = slot_key(&engine.derive(&s), "ID_LEVEL_1", "Class", 1).expect("class slot");
     let mut s = commands::select(engine, &s, &key, Choice::Element(class.into()))

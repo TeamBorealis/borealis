@@ -104,6 +104,7 @@ struct Host<'a> {
 
 impl Host<'_> {
     fn new_char(&self, class: &str) -> CharacterState {
+        borealis_engine::invariants::enable_for_thread();
         let e = self.engine;
         let s = commands::new_character(e, Ruleset::Dnd2014);
         let s = commands::set_base_scores(e, &s, SCORES).map_or(s, |o| o.state);

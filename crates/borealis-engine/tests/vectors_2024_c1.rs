@@ -31,6 +31,7 @@ struct Hero {
 
 impl Hero {
     fn new(class: &str, class_name: &str) -> Self {
+        borealis_engine::invariants::enable_for_thread();
         let array = engine()
             .universe(Ruleset::Dnd2024)
             .tables()

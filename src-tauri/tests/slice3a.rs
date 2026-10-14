@@ -91,6 +91,7 @@ impl Fetcher for Stub {
 }
 
 fn app() -> (tempfile::TempDir, AppState) {
+    borealis_engine::invariants::enable_for_thread();
     let dir = tempfile::tempdir().expect("temp dir");
     let paths = AppPaths {
         content_root: PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../content"),
@@ -221,6 +222,8 @@ fn manage_commands_round_trip_through_save_and_reopen() {
 #[test]
 fn source_restrictions_preview_and_apply() {
     let (_dir, app) = app();
+    // restricting every source empties the Race and Class selects on purpose
+    borealis_engine::invariants::disable_for_thread();
     let snap = new_hero(&app, Ruleset::Dnd2014);
     let id = snap.id.clone();
     let race_slot = snap
@@ -345,6 +348,8 @@ fn bad_import_files_are_rejected_without_changing_content() {
 #[test]
 fn pack_disable_and_enable_changes_available_content() {
     let (_dir, app) = app();
+    // disabling the packs empties the Race and Class selects on purpose
+    borealis_engine::invariants::disable_for_thread();
     app.import_pack(&xml_request(), &NullSink).expect("import");
     let races_2014 = |app: &AppState, id: &str, slot: &str| {
         app.get_slot_options(id, slot, None, Some(200), None)
