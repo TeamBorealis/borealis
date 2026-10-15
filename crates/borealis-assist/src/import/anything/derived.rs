@@ -24,6 +24,7 @@ mod cycles;
 mod groups;
 mod languages;
 mod progression;
+mod roll_tables;
 mod weapon_context;
 
 /// `data.progression` keys that are not counters.
@@ -80,6 +81,8 @@ pub(crate) fn derive_with_source(
     groups::new_properties(plan, store, &mut d);
     weapon_context::unmatched_filters(store, &mut d);
     languages::languages(plan, store, &mut d);
+    roll_tables::roll_tables(plan, source, &mut d);
+    strip_furniture(source, &mut d);
     progression::outline_columns(plan, &mut d);
     progression::table_keys(store, &mut d);
     table_counters(&mut d);
@@ -89,6 +92,29 @@ pub(crate) fn derive_with_source(
     creature_types(store, &mut d);
     cycles::break_grant_cycles(store, &mut d);
     d
+}
+
+/// Page furniture of the source (a running header or footer, a web address line) copied into a
+/// description is taken out of it.
+fn strip_furniture(source: &str, d: &mut Derived) {
+    let furniture = super::furniture::furniture(source);
+    if furniture.texts().is_empty() {
+        return;
+    }
+    for i in 0..d.docs.len() {
+        let Some(html) = d.docs[i].get("description").and_then(Value::as_str) else {
+            continue;
+        };
+        let Some(clean) = super::furniture::strip_texts(html, furniture.texts()) else {
+            continue;
+        };
+        d.docs[i]["description"] = json!(clean);
+        let id = str_at(&d.docs[i], "id").to_string();
+        d.note(
+            &id,
+            "description: page furniture (running header, footer or web address) left out".into(),
+        );
+    }
 }
 
 /// Tag-like prefix of the bundled creature-type racial traits ("Creature Type (Construct)").
