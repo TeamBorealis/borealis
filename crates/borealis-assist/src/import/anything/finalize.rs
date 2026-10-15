@@ -102,7 +102,7 @@ fn build_pack(
         .collect();
     let mut raw: Vec<Value> = kept.iter().map(|e| e.json.clone()).collect();
     let mut local = tiered_spell_choices(&mut raw, draft);
-    local.extend(printed_fixes(&mut raw));
+    local.extend(printed_fixes(&mut raw, draft));
     let mut derived = derive_with_source(&draft.plan, &raw, &library_store, &draft.source_text);
     let (markers, notes) =
         super::fallback::skill_fallbacks(&mut derived.docs, &draft.id_prefix, &mut used);
@@ -362,8 +362,9 @@ fn tiered_spell_choices(raw: &mut [Value], draft: &ImportDraft) -> Vec<(String, 
 /// Deterministic fixes applied at generation, repeated for older drafts: the attunement
 /// restriction in both the setter and the text ([`super::mechanics::attunement_by`]), the
 /// class spell save DC a feature's save uses ([`super::mechanics::caster_save_dc`]) and a
-/// prose-less weapon row's properties cell ([`super::items::keep_properties`]).
-fn printed_fixes(raw: &mut [Value]) -> Vec<(String, String)> {
+/// magic armor's enhancement bonus ([`super::items::armor_enhancement`]). A table-row
+/// item's column lines are its printed row ([`super::items::printed_row_fixes`]).
+fn printed_fixes(raw: &mut [Value], draft: &ImportDraft) -> Vec<(String, String)> {
     let mut out = Vec::new();
     for el in raw.iter_mut() {
         let id = el
@@ -373,8 +374,14 @@ fn printed_fixes(raw: &mut [Value]) -> Vec<(String, String)> {
             .to_string();
         let mut notes = super::mechanics::attunement_by(el);
         notes.extend(super::mechanics::caster_save_dc(el));
-        if el.get("type").and_then(Value::as_str) == Some("Weapon") {
-            notes.extend(super::items::keep_properties(el));
+        let planned = draft.plan.elements.iter().find(|p| p.id == id);
+        notes.extend(super::items::printed_row_fixes(
+            el,
+            planned,
+            &draft.source_text,
+        ));
+        if el.get("type").and_then(Value::as_str) == Some("Magic Item") {
+            notes.extend(super::items::armor_enhancement(el));
         }
         out.extend(notes.into_iter().map(|n| (id.clone(), n)));
     }
@@ -389,6 +396,16 @@ fn same_name(a: &str, b: &str) -> bool {
             .to_lowercase()
     };
     n(a) == n(b)
+}
+
+/// A plan group, or an element in the pack, has the source object's name (a table's rows
+/// planned as options or items are imported, whatever detect called them).
+fn imported_as_named(draft: &ImportDraft, left_out: &HashSet<String>, name: &str) -> bool {
+    draft.plan.groups.iter().any(|g| same_name(&g.name, name))
+        || draft
+            .elements
+            .iter()
+            .any(|e| !left_out.contains(&e.id) && same_name(&e.name, name))
 }
 
 /// The import report: source objects with no element of their name, the rule errors that
@@ -428,13 +445,12 @@ pub(crate) fn build_report(
     report
         .entries
         .extend(super::parts::report_entries(draft, &final_id));
-    for o in draft.detection.other.iter().filter(|o| {
-        !draft
-            .plan
-            .groups
-            .iter()
-            .any(|g| same_name(&g.name, &o.name))
-    }) {
+    for o in draft
+        .detection
+        .other
+        .iter()
+        .filter(|o| !imported_as_named(draft, left_out, &o.name))
+    {
         let what = if o.what.is_empty() {
             "this"
         } else {

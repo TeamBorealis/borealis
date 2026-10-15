@@ -89,7 +89,9 @@ a choice is an `ability_increase`",
 bonus \"base\"; another mode: name \"speed:fly\" / \"speed:swim\" / \"speed:climb\", value \"30\" or \"speed\"); \
 a speed you gain for a while is a `movement_mode` rule",
             Self::Bonus => "a lasting bonus is a `stat` rule (e.g. name \"ac\", value \"1\"; a magic weapon or armor \
-uses the enhancement shape of the example)",
+uses the enhancement shape of the example; a magic armor's or shield's own +N to AC is {\"kind\":\"stat\",\
+\"name\":\"ac:armored:enhancement\",\"value\":\"N\",\"bonus\":\"enhancement\"}, a shield's bonus \
+\"enhancement:shield\")",
             Self::LimitedUse => "a limited use is a `resource` rule named as the feature ({\"kind\":\"resource\",\
 \"id\":\"<feature name, lowercase>\",\"name\":\"<Feature name>\",\"max\":{\"type\":\"fixed\",\"value\":1},\
 \"recharge\":[\"long_rest\"]}; \"per day\" is [\"long_rest\"], \"short or long rest\" [\"short_rest\",\"long_rest\"]), \

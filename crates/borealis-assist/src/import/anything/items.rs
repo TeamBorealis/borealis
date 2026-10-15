@@ -7,7 +7,10 @@ use std::sync::OnceLock;
 
 use serde_json::{json, Map, Value};
 
-use super::types::{ImportPlan, ItemType};
+use super::types::{ImportPlan, ItemType, PlannedElement};
+
+#[path = "items_row.rs"]
+pub(crate) mod row;
 
 /// The core pack's weapon properties (the bundled vocabulary every pack shares): a printed
 /// property name maps to one of these, else it is the source's own (see `derived.rs`).
@@ -735,6 +738,93 @@ pub(crate) fn magic_item_type(el: &mut Value, name: &str, plan: &ImportPlan) {
     put_setter(el, "type", value, base.map(|b| json!({"addition": b})));
 }
 
+/// The `data` keys the equipment shape of `ty` reads.
+fn known_keys(ty: &str) -> Option<&'static [&'static str]> {
+    match ty {
+        "Weapon" => Some(&WEAPON_KEYS),
+        "Armor" => Some(&ARMOR_KEYS),
+        "Item" => Some(&GEAR_KEYS),
+        _ => None,
+    }
+}
+
+/// A table-row weapon, armor or item gets its printed row as its column lines
+/// ([`row::keep_printed_row`]); a weapon whose row is not located keeps the properties fallback
+/// ([`keep_properties`]). Run at finalize, where the source is at hand. Returns notes.
+pub(crate) fn printed_row_fixes(
+    el: &mut Value,
+    planned: Option<&PlannedElement>,
+    source: &str,
+) -> Vec<String> {
+    let ty = el
+        .get("type")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let Some(known) = known_keys(&ty) else {
+        return Vec::new();
+    };
+    let name = el
+        .get("name")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    match planned.and_then(|p| row::printed_row(source, p)) {
+        Some(r) => row::keep_printed_row(el, &name, known, &r),
+        None if ty == "Weapon" => keep_properties(el).into_iter().collect(),
+        None => Vec::new(),
+    }
+}
+
+/// The SRD shape of a magic armor's or shield's own "+N to AC" ("Armor, +1", "Arrow-Catching
+/// Shield"): the armored enhancement bonus. The model sometimes writes it as a plain `ac` stat.
+const ENHANCEMENT_STAT: &str = "ac:armored:enhancement";
+
+/// A Magic Item whose `type` setter is Armor and whose one AC rule is a bare `stat ac N`
+/// (no condition) gets the SRD enhancement rule instead (bonus `enhancement`, a shield's
+/// `enhancement:shield`). Returns a note when it changed.
+pub(crate) fn armor_enhancement(el: &mut Value) -> Option<String> {
+    let ty = setter(el, "type")?;
+    if str_of(ty.get("value"))?.to_lowercase() != "armor" {
+        return None;
+    }
+    let shield = str_of(ty.pointer("/attributes/addition"))
+        .into_iter()
+        .chain(setter_value(el, "armor"))
+        .any(|v| v.to_lowercase().contains("shield"));
+    let rules = el.get("rules")?.as_array()?;
+    if rules
+        .iter()
+        .any(|r| r.get("name").and_then(Value::as_str) == Some(ENHANCEMENT_STAT))
+    {
+        return None;
+    }
+    let bare = |r: &Value| {
+        r.get("kind").and_then(Value::as_str) == Some("stat")
+            && r.get("name").and_then(Value::as_str) == Some("ac")
+            && r.as_object().is_some_and(|o| {
+                o.keys()
+                    .all(|k| matches!(k.as_str(), "kind" | "name" | "value"))
+            })
+    };
+    let found: Vec<usize> = (0..rules.len()).filter(|&i| bare(&rules[i])).collect();
+    let [i] = found[..] else {
+        return None;
+    };
+    let n = int_of(rules[i].get("value")).filter(|n| *n > 0)?;
+    let bonus = if shield {
+        "enhancement:shield"
+    } else {
+        "enhancement"
+    };
+    let rule =
+        json!({"kind": "stat", "name": ENHANCEMENT_STAT, "value": n.to_string(), "bonus": bonus});
+    el.get_mut("rules")?.as_array_mut()?[i] = rule;
+    Some(format!(
+        "rules: the armor's +{n} to AC is its {ENHANCEMENT_STAT} bonus"
+    ))
+}
+
 /// Apply the equipment shape to a standalone element of type `ty`.
 pub(crate) fn normalize_item(
     el: &mut Value,
@@ -758,155 +848,14 @@ pub(crate) fn normalize_item(
             keep_columns(el, &GEAR_KEYS);
         }
         "Weapon Property" => normalize_property(el, name),
-        "Magic Item" => magic_item_type(el, name, plan),
+        "Magic Item" => {
+            magic_item_type(el, name, plan);
+            armor_enhancement(el);
+        }
         _ => {}
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_magic_item_without_a_type_setter_gets_one_from_its_subtitle_or_category() {
-        let plan: ImportPlan = serde_json::from_value(json!({
-            "edition": "2024", "groups": [], "elements": [], "notes": []}))
-        .unwrap();
-        let type_of = |el: &Value| {
-            let s = setter(el, "type").cloned().unwrap_or(Value::Null);
-            (
-                s.get("value").and_then(Value::as_str).map(str::to_string),
-                s.pointer("/attributes/addition")
-                    .and_then(Value::as_str)
-                    .map(str::to_string),
-            )
-        };
-        let mut wondrous = json!({"description": "<p><em>Wondrous item, rare (requires attunement)</em></p><p>A lamp.</p>",
-            "setters": [{"name": "rarity", "value": "Rare"}]});
-        magic_item_type(&mut wondrous, "Moth Lamp", &plan);
-        assert_eq!(type_of(&wondrous), (Some("Wondrous item".into()), None));
-        let mut blade =
-            json!({"description": "<p>Weapon (longsword), very rare</p><p>It hums.</p>"});
-        magic_item_type(&mut blade, "Hum Blade", &plan);
-        assert_eq!(
-            type_of(&blade),
-            (Some("Weapon".into()), Some("longsword".into()))
-        );
-        let mut ring = json!({"description": "<p>A ring of reeds.</p>",
-            "setters": [{"name": "category", "value": "Rings"}]});
-        magic_item_type(&mut ring, "Reed Ring", &plan);
-        assert_eq!(type_of(&ring), (Some("Ring".into()), None));
-        // The model's own setter stays.
-        let mut kept = json!({"description": "<p>Wand, rare</p>",
-            "setters": [{"name": "type", "value": "Rod"}]});
-        magic_item_type(&mut kept, "Odd Rod", &plan);
-        assert_eq!(type_of(&kept), (Some("Rod".into()), None));
-    }
-
-    #[test]
-    fn property_names_match_bundled_tags_with_details() {
-        assert_eq!(
-            known_property("Versatile (1d10)"),
-            Some("ID_INTERNAL_WEAPON_PROPERTY_VERSATILE")
-        );
-        assert_eq!(known_property("two handed"), Some(TWO_HANDED));
-        assert_eq!(known_property("Sparkburst"), None);
-        assert_eq!(
-            known_property("Ammunition (range 80/320)"),
-            Some("ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION")
-        );
-        assert_eq!(
-            known_property("Special (Net)"),
-            Some("ID_INTERNAL_WEAPON_PROPERTY_SPECIAL_NET")
-        );
-        // Every core weapon property is known by its own name, nothing else is built in.
-        for (name, id) in core_properties() {
-            assert!(known_property(name).is_some(), "{name} ({id})");
-        }
-        assert!(core_properties().len() >= 15);
-        assert_eq!(
-            property_detail("Ammunition (range 80/320)").unwrap(),
-            "range 80/320"
-        );
-    }
-
-    #[test]
-    fn a_table_row_weapon_without_prose_keeps_its_properties_cell() {
-        let mut el = json!({"description": "", "data": {"weapon_category": "Martial Ranged",
-            "range": "40/120", "properties": ["Ammunition", "Recoil (11)", "Loud"]}});
-        assert!(keep_properties(&mut el).is_some());
-        let d = el["description"].as_str().unwrap().to_string();
-        assert_eq!(
-            d,
-            "<p><strong>Properties:</strong> Ammunition (range 40/120), Recoil (11), Loud</p>"
-        );
-        assert!(keep_properties(&mut el).is_none(), "idempotent");
-        assert!(super::super::fidelity::pipeline_paragraph(&d));
-        let mut prose = json!({"description": "<p>A carved stock of pale ash.</p>",
-            "data": {"properties": ["Loud"]}});
-        assert!(keep_properties(&mut prose).is_none());
-    }
-
-    #[test]
-    fn a_table_row_weapon_keeps_its_printed_properties_cell() {
-        // Arrange: the model normalised the names; the row prints details with them.
-        let cell = "Ammunition (range 30/90), clatter (12), loud, reload (4 shots)";
-        let data = json!({"weapon_category": "Martial Ranged", "range": "30/90",
-            "properties": ["Ammunition", "Clatter", "Loud", "Reload"],
-            "columns": {"Properties": cell}});
-        let mut fresh = json!({"description": "", "data": data.clone()});
-        // An older draft already holds the normalised line.
-        let mut old = json!({"description": "<p><strong>Properties:</strong> Ammunition (range \
-            30/90), Clatter, Loud, Reload</p>", "data": data});
-        // Act / Assert
-        for el in [&mut fresh, &mut old] {
-            assert!(keep_properties(el).is_some());
-            let want = format!("<p><strong>Properties:</strong> {cell}</p>");
-            assert_eq!(el["description"], want.as_str());
-            assert!(keep_properties(el).is_none(), "idempotent");
-            keep_columns(el, &WEAPON_KEYS);
-            assert_eq!(el["description"], want.as_str(), "the cell is not repeated");
-        }
-        let mut prose = json!({"description": "<p>A clattering brass tube.</p>",
-            "data": {"properties": ["Loud"], "columns": {"Properties": "loud"}}});
-        assert!(
-            keep_properties(&mut prose).is_none(),
-            "printed prose is kept"
-        );
-    }
-
-    #[test]
-    fn unmapped_table_columns_stay_in_the_description() {
-        let mut el = json!({"description": "<p>A cudgel.</p>", "data": {
-            "weapon_category": "Simple Melee", "damage": {"dice": "1d4", "type": "bludgeoning"},
-            "cost": {"value": 1, "currency": "sp"}, "craft_dc": 10,
-            "columns": {"Material": "Oak/Iron", "Notes": ""}}});
-        keep_columns(&mut el, &WEAPON_KEYS);
-        let d = el["description"].as_str().unwrap().to_string();
-        assert!(d.contains("<strong>Material:</strong> Oak/Iron"), "{d}");
-        assert!(d.contains("<strong>Craft dc:</strong> 10"), "{d}");
-        assert!(!d.contains("Notes"), "{d}");
-        assert!(!d.contains("Weapon category"), "{d}");
-        // Idempotent: a second pass adds nothing.
-        keep_columns(&mut el, &WEAPON_KEYS);
-        assert_eq!(el["description"].as_str().unwrap(), d);
-    }
-
-    #[test]
-    fn armor_gets_srd_ac_rules() {
-        let mut el = json!({"data": {"armor_category": "Medium", "base_ac": 13, "dex_cap": 2,
-            "cost": "40 gp", "weight": 18}});
-        normalize_armor(&mut el);
-        assert_eq!(setter_value(&el, "armorClass").unwrap(), "13 + Dex (max 2)");
-        assert_eq!(setter_value(&el, "slot").unwrap(), "body");
-        assert_eq!(setter_value(&el, "cost").unwrap(), "40");
-        let rules = el["rules"].as_array().unwrap();
-        assert!(rules.iter().any(|r| r["name"] == "ac:armored:armor"));
-        // Dex and its cap come from the core rules by group; never a second time from the item.
-        assert!(!rules.iter().any(|r| r["name"]
-            .as_str()
-            .unwrap_or("")
-            .starts_with("ac:armored:dexterity")));
-        assert_eq!(el["supports"], json!(["ID_INTERNAL_ARMOR_GROUP_MEDIUM"]));
-    }
-}
+#[path = "items_tests.rs"]
+mod tests;

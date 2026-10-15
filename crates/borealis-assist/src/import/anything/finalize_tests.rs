@@ -160,3 +160,39 @@ fn a_pending_element_still_blocks_the_commit() {
     let err = finalize_draft(&library(), &draft).unwrap_err().to_string();
     assert!(err.contains("not generated yet"), "{err}");
 }
+
+#[test]
+fn table_rows_imported_as_elements_are_not_reported_as_not_imported() {
+    // Arrange: detect listed a table's rows as "other"; the plan made them option traits.
+    let draft: ImportDraft = serde_json::from_value(serde_json::json!({
+        "edition": "2014", "id_prefix": "t", "source_name": "T", "pack_id": "t",
+        "pack_name": "T", "source_kind": "attachments", "source_text": "",
+        "detection": {"kind": "species", "edition": "2014", "confidence": 1.0, "items": [],
+            "other": [
+                {"name": "Spiral Grip", "what": "table row", "note": "Clawform option"},
+                {"name": "Hooked Grip", "what": "table row", "note": "Clawform option"},
+                {"name": "Credits", "what": "lore section", "note": ""}]},
+        "plan": {"edition": "2014", "groups": [], "elements": [], "notes": []},
+        "elements": [
+            element("ID_T_SPIRAL_GRIP", "Racial Trait", "ok", Value::Null),
+            element("ID_T_HOOKED_GRIP", "Racial Trait", "ok", Value::Null)],
+        "sweep_issues": []}))
+    .unwrap();
+    // Act
+    let report = build_report(&draft, &[], &HashSet::new());
+    let unsupported = |r: &ImportReport| -> Vec<String> {
+        r.entries
+            .iter()
+            .filter(|e| e.outcome == "unsupported")
+            .map(|e| e.source.clone())
+            .collect()
+    };
+    // Assert: only the object no element has is reported.
+    assert_eq!(unsupported(&report), vec!["Credits".to_string()]);
+    // An element left out of the pack is not imported.
+    let left: HashSet<String> = ["ID_T_HOOKED_GRIP".to_string()].into();
+    assert_eq!(
+        unsupported(&build_report(&draft, &[], &left)),
+        vec!["Hooked Grip".to_string(), "Credits".to_string()]
+    );
+}
