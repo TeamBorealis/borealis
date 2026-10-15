@@ -32,7 +32,7 @@ export function LogsRow({ mobile }: { mobile: boolean }) {
   return (
     <>
       <FieldLabel>LOGS</FieldLabel>
-      <Help>Borealis keeps a few days of diagnostic logs on this device. They hold no character or source content and are never sent anywhere unless you choose to include them in a report.</Help>
+      <Help>Borealis keeps a few days of diagnostic logs on this device. They hold no character or source content, and Borealis never sends them anywhere.</Help>
       <div className="aur-set-left-clear">
         {mobile
           ? <Button onClick={() => void share()}>Share logs</Button>
