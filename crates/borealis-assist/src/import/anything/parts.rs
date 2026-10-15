@@ -9,6 +9,8 @@ use serde_json::{json, Map, Value};
 use super::types::{ImportDraft, ImportKind, ImportPlan, PlannedElement, Role};
 use crate::import::report::ReportEntry;
 
+#[path = "parts_html.rs"]
+mod html;
 #[path = "parts_rows.rs"]
 mod rows;
 
@@ -378,15 +380,6 @@ pub(crate) fn sub_headings(source: &str, parent: &str) -> Vec<String> {
     out
 }
 
-fn is_list_line(line: &str) -> bool {
-    let t = line.trim_start();
-    t.starts_with("- ")
-        || t.starts_with("* ")
-        || t.starts_with('|')
-        || t.split_once(". ")
-            .is_some_and(|(n, _)| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()))
-}
-
 /// Most lines a text-only section reaches past its own heading's section over unplanned
 /// headings of its level.
 const MAX_EXTENSION_LINES: usize = 150;
@@ -683,34 +676,10 @@ pub(crate) fn section_lines<'a>(
     out
 }
 
-/// Source lines as HTML paragraphs (headings bold, list and table lines kept apart).
+/// Source lines as HTML: paragraphs, bold headings, list lines apart (a wrapped list line joins
+/// its item), pipe-table lines as a table (a wrapped cell joins its row), `**bold**` as bold.
 pub(crate) fn to_html(lines: &[&str]) -> String {
-    let mut out = String::new();
-    for block in lines.split(|l| l.trim().is_empty()) {
-        if block.is_empty() {
-            continue;
-        }
-        let mut para: Vec<String> = Vec::new();
-        let flush = |para: &mut Vec<String>, out: &mut String, list: bool| {
-            if !para.is_empty() {
-                let sep = if list { "<br>" } else { " " };
-                out.push_str(&format!("<p>{}</p>", para.join(sep)));
-                para.clear();
-            }
-        };
-        let list = block.iter().any(|l| is_list_line(l));
-        for l in block {
-            if let Some(n) = is_heading(l) {
-                flush(&mut para, &mut out, list);
-                let text = l.trim_start()[n..].trim();
-                out.push_str(&format!("<p><strong>{}</strong></p>", escape(text)));
-            } else {
-                para.push(escape(l.trim()));
-            }
-        }
-        flush(&mut para, &mut out, list);
-    }
-    out
+    html::to_html(lines)
 }
 
 /// The text-only element of a rules or lore section, built from its source passage (no model
@@ -722,7 +691,7 @@ pub(crate) fn text_element(planned: &PlannedElement, plan: &ImportPlan, source: 
     } else {
         // Rows of elements imported on their own keep only their roll and name here.
         let blocks = section_blocks(source, planned, plan);
-        let rows = rows::rows_of_others(&lines, &planned.id, &blocks, plan);
+        let rows = rows::rows_of_others(&lines, &planned.id, &blocks, plan, source);
         to_html(&rows.iter().map(AsRef::as_ref).collect::<Vec<&str>>())
     };
     json!({"id": planned.id, "name": planned.name, "type": planned.ty,

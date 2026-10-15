@@ -4,12 +4,26 @@
 //! imported twice.
 
 use std::borrow::Cow;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
-use super::super::types::{ImportPlan, Role};
+use super::super::fidelity::words;
+use super::super::types::{ImportPlan, PlannedElement, Role};
 
 /// Cells (from the left) that may hold a row's name: a roll or number column, then the name.
 const NAME_CELLS: usize = 2;
+/// Share (percent) of the words of a row's other cells its element's own passage must print
+/// for the row to be cut to its name.
+const HELD_PCT: usize = 90;
+
+/// Roles whose rows a text-only entry may cut: elements a table lists (items, options, parts),
+/// never a class, a subclass or a feature a table only names.
+fn item_like(role: Role) -> bool {
+    matches!(role, Role::Standalone | Role::Option | Role::Part)
+}
+
+fn content(text: &str) -> HashSet<String> {
+    words(text).into_iter().collect()
+}
 
 fn norm(s: &str) -> String {
     s.split(|c: char| !c.is_alphanumeric() && c != '\'')
@@ -28,35 +42,45 @@ fn cells(line: &str) -> Option<Vec<&str>> {
 }
 
 /// Index of the cell naming an element of `names`, when cells follow it.
-fn name_cell(cells: &[&str], names: &HashSet<String>) -> Option<usize> {
+fn name_cell(cells: &[&str], names: &HashMap<String, HashSet<String>>) -> Option<usize> {
     (0..NAME_CELLS.min(cells.len()))
-        .find(|&k| names.contains(&norm(cells[k])))
+        .find(|&k| names.contains_key(&norm(cells[k])))
         .filter(|&k| cells.len() > k + 1)
 }
 
-/// `lines` of the text-only entry `own_id` (printed from the 0-based line ranges `blocks`) with
-/// the rows of elements located on a passage of their own outside it cut after their name
-/// cell, and the header row over them cut to the same columns. An element located on its row
-/// here keeps the row whole (the row is its only printing).
+/// `lines` of the text-only entry `own_id` (printed from the 0-based line ranges `blocks` of
+/// `source`) with the rows of item- or option-like elements located on a passage of their own
+/// outside it cut after their name cell, and the header row over them cut to the same columns.
+/// A row is cut only when its other cells are printed in that element's own passage too (they
+/// stay with the element); a row naming a class or a feature, a row whose element is located
+/// on it here, and a row with text its element's passage lacks stay whole.
 pub(crate) fn rows_of_others<'a>(
     lines: &[&'a str],
     own_id: &str,
     blocks: &[(usize, usize)],
     plan: &ImportPlan,
+    source: &str,
 ) -> Vec<Cow<'a, str>> {
-    let elsewhere = |e: &&super::super::types::PlannedElement| {
+    let elsewhere = |e: &&PlannedElement| {
         e.excerpt.as_ref().is_some_and(|x| {
             let at = x.start_line.saturating_sub(1);
             !blocks.iter().any(|(s, end)| at >= *s && at < *end)
         })
     };
-    let names: HashSet<String> = plan
+    let src: Vec<&str> = source.lines().collect();
+    // norm(name) -> the words of the element's own located passage.
+    let names: HashMap<String, HashSet<String>> = plan
         .elements
         .iter()
-        .filter(|e| e.id != own_id && e.role != Role::Text)
+        .filter(|e| e.id != own_id && item_like(e.role))
         .filter(elsewhere)
-        .map(|e| norm(&e.name))
-        .filter(|n| !n.is_empty())
+        .filter_map(|e| {
+            let x = e.excerpt.as_ref()?;
+            let s = x.start_line.saturating_sub(1).min(src.len());
+            let end = x.end_line.clamp(s, src.len());
+            let n = norm(&e.name);
+            (!n.is_empty()).then(|| (n, content(&src[s..end].join(" "))))
+        })
         .collect();
     let mut out: Vec<Cow<'a, str>> = lines.iter().map(|l| Cow::Borrowed(*l)).collect();
     if names.is_empty() {
@@ -74,6 +98,13 @@ pub(crate) fn rows_of_others<'a>(
             header = Some((i, c.len()));
             continue;
         };
+        // The cut cells must be the element's own text, or the row keeps them.
+        let cut = content(&c[k + 1..].join(" "));
+        let passage = &names[&norm(c[k])];
+        if cut.intersection(passage).count() * 100 < cut.len() * HELD_PCT {
+            header = Some((i, c.len()));
+            continue;
+        }
         out[i] = Cow::Owned(c[..=k].join(" | "));
         if let Some((h, n)) = header.take().filter(|(_, n)| *n == c.len()) {
             let hc = cells(lines[h]).unwrap_or_default();
@@ -106,10 +137,11 @@ mod tests {
                     "Lamp of Echoes",
                     "Magic Item",
                     Role::Standalone,
-                    Some(9),
+                    Some(11),
                 ),
-                planned("b", "Lamp of Ash", "Magic Item", Role::Standalone, Some(12)),
+                planned("b", "Lamp of Ash", "Magic Item", Role::Standalone, Some(13)),
                 planned("c", "Lamp of Fog", "Magic Item", Role::Standalone, Some(7)),
+                planned("w", "Warden", "Class", Role::Class, Some(15)),
             ],
             edition: crate::import::anything::types::Edition::Y2024,
             groups: Vec::new(),
@@ -123,14 +155,24 @@ mod tests {
             "",
             "2 | Lamp of Ash | It burns ash for oil.",
             "3 | Lamp of Fog | Its light is grey.",
+            "Class | Minimum",
+            "Warden | Wisdom 13",
         ];
-        // The entry prints lines 1-7; Lamp of Fog is located on its row there.
-        let out = rows_of_others(&lines, "t", &[(0, 7)], &plan);
+        let source = format!(
+            "{}\n\nLamp of Echoes. Its light repeats the last word spoken, twice.\n\nLamp of Ash. It burns oil.\n\n# Warden\nWardens keep the wood.",
+            lines.join("\n")
+        );
+        // The entry prints lines 1-9; Lamp of Fog is located on its row there.
+        let out = rows_of_others(&lines, "t", &[(0, 9)], &plan, &source);
         assert_eq!(out[1], "d4 | Item");
         assert_eq!(out[3], "1 | Lamp of Echoes");
-        assert_eq!(out[5], "2 | Lamp of Ash");
+        // Its passage lacks words of the row: the row keeps them.
+        assert_eq!(out[5], lines[5]);
         // A row whose element is located on it keeps its text.
         assert_eq!(out[6], lines[6]);
         assert_eq!(out[0], lines[0]);
+        // A row naming a class (a multiclassing table) keeps its columns.
+        assert_eq!(out[7], lines[7]);
+        assert_eq!(out[8], lines[8]);
     }
 }

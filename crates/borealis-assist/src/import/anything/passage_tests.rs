@@ -887,12 +887,12 @@ fn appended_sub_sections_leave_out_running_headers_and_stray_glyphs() {
     assert!(!desc.contains("Dex modifier"), "{desc}");
 }
 
-/// A heading with no prose of its own over printed sub-sections ("Other Notes" over "Credits")
+/// A heading with no prose of its own over printed sub-sections ("Other Notes" over "Makers")
 /// is printed above them; one whose sub-sections the root already has is not added.
 #[test]
 fn a_heading_over_appended_sub_sections_is_printed_above_them() {
     let src = "# Emberkin\n\nEmberkin glow softly at dusk.\n\n## Traits\n\n### Warm Hands\n\n\
-Your touch dries wet cloth.\n\n## Other Notes\n\n### Credits\n\n\
+Your touch dries wet cloth.\n\n## Other Notes\n\n### Makers\n\n\
 Drawn by the kiln guild for the long winter book.\n\n## Lore Notes\n\n### Hearths\n\n\
 Emberkin glow softly at dusk.\n";
     let mut root = planned("r0", "Emberkin", "Race", Role::Standalone, Some(1));
@@ -910,7 +910,7 @@ Emberkin glow softly at dusk.\n";
     assert_eq!(add_sub_sections(&mut d), vec!["r0".to_string()]);
     let desc = d.elements[0].json["description"].as_str().unwrap();
     let notes = desc.find("<strong>Other Notes</strong>").expect(desc);
-    let credits = desc.find("<strong>Credits</strong>").expect(desc);
+    let credits = desc.find("<strong>Makers</strong>").expect(desc);
     assert!(
         notes < credits && desc.contains("long winter book"),
         "{desc}"

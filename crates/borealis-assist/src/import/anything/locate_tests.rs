@@ -312,3 +312,15 @@ common and cheap to buy.\n\n#### Common%Hanging%Lamps%\n\nd6 | Item\n1 | Chain l
     let ex = locate_section_as(src, "", "Common Hanging Lamps", TEXT_TYPE).expect("found");
     assert_eq!(ex.start_line, 5, "{ex:?}");
 }
+
+#[test]
+fn the_last_section_stops_at_the_end_matter() {
+    let src = "# Mirefolk\n\nMirefolk live in bogs.\n\n## Mirefolk Traits\n\nSwim. You swim at 30 feet.\n\n### Deep Mirefolk\n\nYou hold your breath for an hour.\n\n## Legal Information\n\nAll names are trademarks of their owners.\n\n## Special Thanks To\n\nThe playtesters.\n";
+    let s = section(src, "Mirefolk", "");
+    assert!(s.contains(&"You hold your breath for an hour."), "{s:?}");
+    assert!(
+        !s.iter()
+            .any(|l| l.contains("trademarks") || l.contains("playtesters")),
+        "{s:?}"
+    );
+}

@@ -84,7 +84,8 @@ fn marked_segments(html: &str) -> Vec<(String, bool)> {
                 in_tag = false;
                 let t = tag.trim_start_matches('/').to_lowercase();
                 if [
-                    "p", "br", "br/", "strong", "li", "h1", "h2", "h3", "h4", "tr", "td",
+                    "p", "br", "br/", "strong", "li", "h1", "h2", "h3", "h4", "h5", "tr", "td",
+                    "th",
                 ]
                 .iter()
                 .any(|b| t.split_whitespace().next() == Some(b))
@@ -633,6 +634,15 @@ fn apply_list(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn table_cells_and_header_cells_are_segments_of_their_own() {
+        let html = "<table><thead><tr><th>Level</th><th>Spells</th></tr></thead><tbody><tr><td>1st</td><td>ember ward, mist step</td></tr></tbody></table>";
+        assert_eq!(
+            segments(html),
+            ["Level", "Spells", "1st", "ember ward, mist step"]
+        );
+    }
 
     #[test]
     fn a_class_mark_glued_to_spell_names_joins_its_list() {

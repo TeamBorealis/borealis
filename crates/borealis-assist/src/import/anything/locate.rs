@@ -353,6 +353,7 @@ impl Doc<'_> {
     /// End (exclusive) of the section of the heading at `line` with `level`. A section that is
     /// itself a table (its heading directly over a table row) has no caption below it: a
     /// same-level table title after it is a sibling table ("Medium Armor" after "Light Armor").
+    /// The document's end matter (a legal notice, credits) ends any section it is printed in.
     fn heading_end(&self, line: usize, level: u8, name: &str) -> usize {
         let own_table = self.table_follows(line);
         self.heads
@@ -360,6 +361,7 @@ impl Doc<'_> {
             .find(|h| {
                 h.line > line
                     && (h.level < level
+                        || super::passage::end_matter(&h.title)
                         || (h.level == level
                             && !is_sub_part(&h.title, name)
                             && !structural_heading(&h.title)

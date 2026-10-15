@@ -15,6 +15,8 @@ use crate::import::report::ReportEntry;
 mod lore;
 #[path = "page_marks.rs"]
 pub(crate) mod page_marks;
+#[path = "passage_tables.rs"]
+pub(crate) mod tables;
 
 /// Most lines of one passage or sub-section.
 const MAX_LINES: usize = 400;
@@ -451,6 +453,49 @@ fn stray_glyph(line: &str) -> bool {
     !t.is_empty() && !t.chars().any(char::is_alphanumeric)
 }
 
+/// Heading words of a document's end matter (legal notice, credits, thanks), never a part of
+/// the element printed before it.
+const END_MATTER: [&str; 10] = [
+    "legal",
+    "license",
+    "licence",
+    "credits",
+    "thanks",
+    "acknowledgements",
+    "acknowledgments",
+    "copyright",
+    "afterword",
+    "colophon",
+];
+
+/// A heading title of end matter ("Legal Information", "Special Thanks To").
+pub(crate) fn end_matter(title: &str) -> bool {
+    words(title)
+        .iter()
+        .any(|w| END_MATTER.contains(&w.as_str()))
+}
+
+/// The first line (0-based) of the end matter after the last planned passage: the first
+/// end-matter heading after it, or the first heading of that level or higher between them (an
+/// unplanned closing section printed right before the legal notice is no part of the last
+/// element either). `None` without end matter there.
+pub(crate) fn end_matter_start(lines: &[&str], plan: &ImportPlan) -> Option<usize> {
+    let at_end_matter = |l: usize| {
+        lines
+            .get(l)
+            .is_some_and(|t| heading(t).is_some() && end_matter(&heading_title(t)))
+    };
+    let last = starts(plan, "")
+        .into_iter()
+        .filter(|l| !at_end_matter(*l))
+        .max()?;
+    let e = (last + 1..lines.len()).find(|&k| at_end_matter(k))?;
+    let level = heading(lines[e])?;
+    (last + 1..e)
+        .find(|&k| heading(lines[k]).is_some_and(|h| h <= level))
+        .or(Some(e))
+}
+
 /// The unplanned sub-sections in one root's section (see [`unplanned_sections_in`]). Page
 /// furniture (running headers, page numbers) and stray glyph lines are left out of their text.
 fn own_sections(lines: &[&str], planned: &PlannedElement, plan: &ImportPlan) -> Vec<SubSection> {
@@ -475,8 +520,12 @@ fn own_sections(lines: &[&str], planned: &PlannedElement, plan: &ImportPlan) -> 
     let mut skip_below: Option<usize> = None;
     let mut furniture: Option<page_marks::PageFurniture> = None;
     let mut group: Option<(usize, SubSection)> = None;
+    // The document's end matter is no sub-section of the last root.
+    let stop = end_matter_start(lines, plan)
+        .filter(|e| *e > start)
+        .unwrap_or(lines.len());
     let mut i = start + 1;
-    while i < lines.len() {
+    while i < stop {
         let Some(h) = heading(lines[i]) else {
             i += 1;
             continue;
@@ -505,9 +554,9 @@ fn own_sections(lines: &[&str], planned: &PlannedElement, plan: &ImportPlan) -> 
             i += 1;
             continue;
         }
-        let end = (i + 1..lines.len().min(i + MAX_LINES))
+        let end = (i + 1..stop.min(i + MAX_LINES))
             .find(|&k| heading(lines[k]).is_some())
-            .unwrap_or_else(|| lines.len().min(i + MAX_LINES));
+            .unwrap_or_else(|| stop.min(i + MAX_LINES));
         let furniture =
             furniture.get_or_insert_with(|| page_marks::page_furniture(&lines.join("\n")));
         let body: Vec<String> = (i + 1..end)
@@ -577,9 +626,17 @@ fn run_in_label(line: &str) -> Option<String> {
 /// A line after which a run-in label opens a new paragraph: blank, a heading, or a finished
 /// sentence (a run-in printed right under the paragraph before it).
 fn opens_paragraph(prev: &str) -> bool {
-    prev.trim().is_empty()
-        || heading(prev).is_some()
-        || prev.trim_end().ends_with(['.', '!', '?', ':'])
+    prev.trim().is_empty() || heading(prev).is_some() || ends_sentence(prev)
+}
+
+/// Closing marks a finished sentence may end in ("... they rarely stray.]", "... (see below).)").
+const CLOSING_MARKS: [char; 7] = [']', ')', '"', '\'', '\u{201d}', '\u{2019}', '*'];
+
+/// `line` ends a sentence (a stop, perhaps inside closing brackets or quotes) or a label.
+pub(crate) fn ends_sentence(line: &str) -> bool {
+    line.trim_end()
+        .trim_end_matches(CLOSING_MARKS)
+        .ends_with(['.', '!', '?', ':'])
 }
 
 /// The keys a table row element answers to: its name, and the group its name opens before a
@@ -759,6 +816,47 @@ fn add_part_text(draft: &mut ImportDraft) -> Vec<String> {
     changed
 }
 
+/// A table line ("a | b").
+fn table_line(line: &str) -> bool {
+    let t = line.trim();
+    t.contains(" | ") || t.starts_with('|')
+}
+
+/// The blocks of a sub-section's `lines` (blank-line separated; a table apart from the prose
+/// around it) whose content `have` (a description's content words) lacks, blank-line
+/// separated, and whether some block was already there.
+fn missing_blocks(lines: &[String], have: &HashSet<String>) -> (Vec<String>, bool) {
+    let mut blocks: Vec<Vec<String>> = Vec::new();
+    let mut prev: Option<bool> = None;
+    for l in lines {
+        if l.trim().is_empty() {
+            prev = None;
+            continue;
+        }
+        let table = table_line(l);
+        // A wrapped cell (no pipe, lower case) stays in its table.
+        let wrapped = prev == Some(true) && l.trim_start().starts_with(char::is_lowercase);
+        if prev.is_none() || (prev != Some(table) && !wrapped) {
+            blocks.push(Vec::new());
+        }
+        blocks.last_mut().expect("a block").push(l.clone());
+        prev = Some(table || wrapped);
+    }
+    let mut out: Vec<String> = Vec::new();
+    let mut partial = false;
+    for b in blocks {
+        if share(&content(&b.join("\n")), have) >= SAME_CONTENT {
+            partial = true;
+            continue;
+        }
+        if !out.is_empty() {
+            out.push(String::new());
+        }
+        out.extend(b);
+    }
+    (out, partial)
+}
+
 /// The unplanned sub-sections of a class or subclass root appended to its description (as a
 /// bold heading and its printed text) unless the description already has their content; table
 /// rows get the run-in paragraph printed for them (see [`attach_run_ins`]); an element with
@@ -805,17 +903,28 @@ pub(crate) fn add_sub_sections(draft: &mut ImportDraft) -> Vec<String> {
             if share(&content(&s.lines.join("\n")), &have) >= SAME_CONTENT {
                 continue;
             }
+            // Only the blocks the description lacks; the heading too unless the description
+            // already prints it over the blocks it has.
+            let (lines, partial) = missing_blocks(&s.lines, &have);
+            if lines.is_empty() {
+                continue;
+            }
+            let titled = plain(&desc)
+                .to_lowercase()
+                .contains(&s.title.to_lowercase());
             if let Some(title) = group.take() {
                 desc.push_str(&format!(
                     "<p><strong>{}</strong></p>",
                     title.replace('&', "&amp;").replace('<', "&lt;")
                 ));
             }
-            desc.push_str(&format!(
-                "<p><strong>{}</strong></p>{}",
-                s.title.replace('&', "&amp;").replace('<', "&lt;"),
-                html_of(&s.lines)
-            ));
+            if !(partial && titled) {
+                desc.push_str(&format!(
+                    "<p><strong>{}</strong></p>",
+                    s.title.replace('&', "&amp;").replace('<', "&lt;")
+                ));
+            }
+            desc.push_str(&html_of(&lines));
             added.push(s.title);
         }
         if added.is_empty() {
@@ -828,6 +937,11 @@ pub(crate) fn add_sub_sections(draft: &mut ImportDraft) -> Vec<String> {
             added.join(", ")
         ));
         changed.push(e.id.clone());
+    }
+    for id in tables::add_owner_tables(draft) {
+        if !changed.contains(&id) {
+            changed.push(id);
+        }
     }
     for id in lore::restore_opening_lore(draft) {
         if !changed.contains(&id) {
@@ -958,6 +1072,8 @@ pub(crate) fn uncovered_prose(draft: &ImportDraft) -> Vec<ReportEntry> {
     // The ranges each element's description was built from: a text-only element's section
     // blocks, a generated element's located passage up to the next planned passage (a child
     // or sibling planned inside it carries that text itself).
+    let src_lines: Vec<&str> = draft.source_text.lines().collect();
+    let tail = end_matter_start(&src_lines, &draft.plan).unwrap_or(usize::MAX);
     let ranges: Vec<(usize, usize)> = draft
         .plan
         .elements
@@ -975,7 +1091,9 @@ pub(crate) fn uncovered_prose(draft: &ImportDraft) -> Vec<ReportEntry> {
                 .filter(|l| *l > s)
                 .min()
                 .unwrap_or(usize::MAX);
-            vec![(s, ex.end_line.min(next).max(s + 1))]
+            // A generated element's passage never covers the end matter after it.
+            let end = if s < tail { next.min(tail) } else { next };
+            vec![(s, ex.end_line.min(end).max(s + 1))]
         })
         .collect();
     let mut out: Vec<ReportEntry> = Vec::new();
@@ -1033,6 +1151,9 @@ pub(crate) fn uncovered_prose(draft: &ImportDraft) -> Vec<ReportEntry> {
     out
 }
 
+#[cfg(test)]
+#[path = "passage_bounds_tests.rs"]
+mod bounds_tests;
 #[cfg(test)]
 #[path = "passage_tests.rs"]
 mod tests;

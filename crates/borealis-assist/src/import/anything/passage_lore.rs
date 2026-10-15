@@ -26,7 +26,31 @@ fn prose(text: &str) -> bool {
             (1..=MAX_LABEL_WORDS).contains(&n) && label.trim_start().starts_with(char::is_uppercase)
         })
     });
-    text.trim_end().ends_with(['.', '!', '?']) && !labelled
+    let last = text.lines().last().unwrap_or("");
+    super::ends_sentence(last) && !last.trim_end().ends_with(':') && !labelled
+}
+
+/// Most words of the label of a bracketed note ("[Summary: ...]").
+const MAX_NOTE_LABEL_WORDS: usize = 2;
+
+/// A paragraph that is one bracketed note with a short label ("[Summary: Text.]", a
+/// transcription's or editor's mark around the printed lore) without the brackets and the
+/// label; any other paragraph as it is.
+fn unwrap_note(text: &str) -> String {
+    let t = text.trim();
+    let inner = t
+        .strip_prefix('[')
+        .and_then(|r| r.strip_suffix(']'))
+        .filter(|r| !r.contains(['[', ']']));
+    let Some((label, body)) = inner.and_then(|r| r.split_once(':')) else {
+        return text.to_string();
+    };
+    let short = (1..=MAX_NOTE_LABEL_WORDS).contains(&label.split_whitespace().count());
+    if short && label.trim_start().starts_with(char::is_uppercase) {
+        body.trim().to_string()
+    } else {
+        text.to_string()
+    }
 }
 
 /// Roots whose generated description should open with their printed lore.
@@ -79,7 +103,10 @@ pub(crate) fn restore_opening_lore(draft: &mut ImportDraft) -> Vec<String> {
         let have = content(&plain(&desc));
         let mut missing: Vec<&str> = Vec::new();
         let mut carried = false;
-        for (_, _, text) in paras.iter().filter(|(l, ..)| *l >= s && *l < end) {
+        // Lore is looked for up to the next planned passage; what the description carries,
+        // over its whole located passage (a subrace lists its traits' text too).
+        let located = ex.end_line.max(end);
+        for (l, _, text) in paras.iter().filter(|(l, ..)| *l >= s && *l < located) {
             let w = words(text);
             if w.len() < MIN_PARAGRAPH_WORDS {
                 continue;
@@ -87,6 +114,9 @@ pub(crate) fn restore_opening_lore(draft: &mut ImportDraft) -> Vec<String> {
             if coverage(&w, &own, &none).is_some_and(|c| c >= MIN_COVERAGE) {
                 carried = true;
                 break;
+            }
+            if *l >= end {
+                continue;
             }
             let elsewhere = coverage(&w, &everywhere, &none).is_some_and(|c| c >= MIN_COVERAGE);
             if !elsewhere && prose(text) && share(&content(text), &have) < MAX_REWORDED {
@@ -100,8 +130,13 @@ pub(crate) fn restore_opening_lore(draft: &mut ImportDraft) -> Vec<String> {
         }
         let lines: Vec<String> = missing
             .iter()
-            .flat_map(|p| p.lines().chain(std::iter::once("")))
-            .map(str::to_string)
+            .map(|p| unwrap_note(p))
+            .flat_map(|p| {
+                p.lines()
+                    .map(str::to_string)
+                    .chain(std::iter::once(String::new()))
+                    .collect::<Vec<_>>()
+            })
             .collect();
         let restored = format!("{}{desc}", html_of(&lines));
         let n = missing.len();
