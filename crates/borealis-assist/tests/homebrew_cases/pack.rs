@@ -12,7 +12,8 @@ use serde_json::Value;
 
 use crate::schema::{
     AbsentExpect, CaseFile, CountExpect, ElementExpect, ElementFilter, Head, ImportReport,
-    JsonCheck, Level, Mech, MentionExpect, ReportExpect, REPORT_FORMAT, REPORT_OUTCOMES,
+    JsonCheck, Level, Mech, MentionExpect, PackEmptyExpect, ReportExpect, REPORT_FORMAT,
+    REPORT_OUTCOMES,
 };
 use crate::{Row, IMPORTED_DIR};
 
@@ -699,7 +700,7 @@ fn check_mention(l: &Loaded, x: &MentionExpect) -> Result<(), String> {
 }
 
 fn filter_matches(l: &Loaded, f: &ElementFilter, e: &Element) -> bool {
-    name_matches(&f.ty, &e.ty)
+    f.ty.as_deref().map_or(true, |t| name_matches(t, &e.ty))
         && f.setters.iter().all(|(k, v)| setter_ok(e, k, v).is_ok())
         && f.supports_names.iter().all(|n| supports_name(l, e, n))
 }
@@ -722,6 +723,28 @@ fn check_count(l: &Loaded, x: &CountExpect) -> Result<(), String> {
         ))
     } else {
         Ok(())
+    }
+}
+
+fn check_pack_empty(l: &Loaded, x: &PackEmptyExpect) -> Result<(), String> {
+    let found: Vec<String> = l
+        .elements
+        .iter()
+        .filter(|e| {
+            x.except_types
+                .as_deref()
+                .map_or(true, |t| !name_matches(t, &e.ty))
+        })
+        .map(|e| format!("{} ({})", e.name, e.ty))
+        .collect();
+    if found.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "{} unexpected element(s): {:?}",
+            found.len(),
+            &found[..found.len().min(8)]
+        ))
     }
 }
 
@@ -782,6 +805,11 @@ pub fn element_rows(case: &CaseFile, l: &Loaded) -> Vec<Row> {
         case.counts
             .iter()
             .map(|x| row(&x.head, x.head.id.clone(), check_count(l, x))),
+    );
+    out.extend(
+        case.pack_empty
+            .iter()
+            .map(|x| row(&x.head, x.head.id.clone(), check_pack_empty(l, x))),
     );
     out.extend(
         case.absent

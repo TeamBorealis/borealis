@@ -42,6 +42,9 @@ pub struct CaseFile {
     /// Element counts over the imported pack (schema 2).
     #[serde(default)]
     pub counts: Vec<CountExpect>,
+    /// The pack holds no element, or only of the allowed types (schema 2).
+    #[serde(default)]
+    pub pack_empty: Vec<PackEmptyExpect>,
     /// Elements that must NOT be in the imported pack (nothing invented; schema 2).
     #[serde(default)]
     pub absent: Vec<AbsentExpect>,
@@ -161,9 +164,9 @@ pub struct ElementExpect {
 /// Filter over the imported pack's elements, shared by counts.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ElementFilter {
-    /// Element type, `A|B` alternatives.
-    #[serde(rename = "type")]
-    pub ty: String,
+    /// Element type, `A|B` alternatives; absent = any type.
+    #[serde(default, rename = "type")]
+    pub ty: Option<String>,
     /// `"setter"` or `"setter@attribute"` -> value (`A|B`, normalised comparison).
     #[serde(default)]
     pub setters: BTreeMap<String, String>,
@@ -185,6 +188,17 @@ pub struct CountExpect {
     pub min: Option<usize>,
     #[serde(default)]
     pub max: Option<usize>,
+}
+
+/// The imported pack holds no element at all, except optionally of the listed types ("nothing
+/// importable": a lore-only source).
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct PackEmptyExpect {
+    #[serde(flatten)]
+    pub head: Head,
+    /// Element type(s), `A|B`, that may exist; absent = none may.
+    #[serde(default)]
+    pub except_types: Option<String>,
 }
 
 /// No pack element has this name (and type, if given).

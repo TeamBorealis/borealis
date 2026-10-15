@@ -220,6 +220,9 @@ fn lint_keys(raw: &Value) -> Vec<String> {
     for (i, e) in list("counts").iter().enumerate() {
         unknown_keys(e, &COUNT_KEYS, &format!("counts[{i}]"), &mut out);
     }
+    for (i, e) in list("pack_empty").iter().enumerate() {
+        unknown_keys(e, &["except_types"], &format!("pack_empty[{i}]"), &mut out);
+    }
     for (i, e) in list("absent").iter().enumerate() {
         unknown_keys(e, &["type", "name"], &format!("absent[{i}]"), &mut out);
     }
@@ -266,6 +269,7 @@ pub fn read_case(path: &Path) -> Result<CaseFile, String> {
         .map(|x| x.head.id.clone())
         .chain(case.mentions.iter().map(|x| x.head.id.clone()))
         .chain(case.counts.iter().map(|x| x.head.id.clone()))
+        .chain(case.pack_empty.iter().map(|x| x.head.id.clone()))
         .chain(case.absent.iter().map(|x| x.head.id.clone()))
         .chain(case.report.iter().map(|x| x.head.id.clone()))
         .chain(case.characters.iter().flat_map(|c| {
@@ -647,6 +651,70 @@ fn set_setter(els: &mut [Value], name: &str, setter: &str, value: &str) {
         .find(|s| s["name"] == setter)
         .unwrap_or_else(|| panic!("{name}: no setter {setter}"));
     s["value"] = Value::from(value);
+}
+
+/// Rows of one synthetic case with extra `counts` / `pack_empty` rows, as (id -> pass).
+fn extra_rows(extra: serde_json::Value) -> std::collections::BTreeMap<String, bool> {
+    let dir = fixture("synthetic-lanternwarden");
+    let mut case = read_case(&dir.join("expected.json")).expect("case");
+    let loaded = pack::load(&content_root(), &case, &dir).expect("pack");
+    case.counts = serde_json::from_value(extra["counts"].clone()).expect("counts");
+    case.pack_empty = serde_json::from_value(extra["pack_empty"].clone()).expect("pack_empty");
+    pack::element_rows(&case, &loaded)
+        .into_iter()
+        .map(|r| (r.id, r.pass))
+        .collect()
+}
+
+/// A count without `type` spans every type; `A|B` alternatives and `pack_empty` (with and without
+/// allowed types) behave as documented.
+#[test]
+fn counts_without_a_type_and_pack_empty() {
+    use serde_json::json;
+    let head = |id: &str| json!({"id": id, "level": "must", "class": "mechanised"});
+    let with = |id: &str, extra: serde_json::Value| {
+        let mut h = head(id);
+        h.as_object_mut()
+            .expect("obj")
+            .extend(extra.as_object().expect("obj").clone());
+        h
+    };
+    let dir = fixture("synthetic-lanternwarden");
+    let case = read_case(&dir.join("expected.json")).expect("case");
+    let loaded = pack::load(&content_root(), &case, &dir).expect("pack");
+    let mut types: Vec<&str> = loaded.elements.iter().map(|e| e.ty.as_str()).collect();
+    types.sort_unstable();
+    types.dedup();
+    let all_types = types.join("|");
+    let rows = extra_rows(json!({
+        "counts": [
+            with("any.min", json!({"min": 5})),
+            with("any.zero", json!({"equals": 0})),
+            with("alt.spells_or_races", json!({"type": "Spell|Race", "min": 2})),
+            with("alt.none", json!({"type": "Monster|NPC", "equals": 0}))
+        ],
+        "pack_empty": [
+            with("empty.strict", json!({})),
+            with("empty.allow_all", json!({"except_types": all_types})),
+            with("empty.allow_some", json!({"except_types": "Spell"}))
+        ]
+    }));
+    assert!(rows["any.min"], "{rows:?}");
+    assert!(!rows["any.zero"]);
+    assert!(rows["alt.spells_or_races"]);
+    assert!(rows["alt.none"]);
+    assert!(!rows["empty.strict"]);
+    assert!(rows["empty.allow_all"]);
+    assert!(!rows["empty.allow_some"]);
+}
+
+/// `pack_empty` takes only its own keys.
+#[test]
+fn pack_empty_refuses_unknown_keys() {
+    let raw = serde_json::json!({
+        "pack_empty": [{"id": "e", "level": "must", "class": "mechanised", "except_type": "Spell"}]
+    });
+    assert_eq!(lint_keys(&raw).len(), 1);
 }
 
 /// Every schema-2 expectation type fails when the pack is wrong in the way it checks.
