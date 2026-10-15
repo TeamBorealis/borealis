@@ -196,3 +196,46 @@ fn table_rows_imported_as_elements_are_not_reported_as_not_imported() {
         vec!["Hooked Grip".to_string(), "Credits".to_string()]
     );
 }
+
+#[test]
+fn tables_and_rows_folded_into_text_or_imported_as_items_are_not_reported() {
+    // Arrange: detect listed two tables and a table's rows as "other". The first table's rows
+    // are items; the second table and its rows are printed inside a text entry; "Credits" and
+    // "Loot Table" are in no element.
+    let source = "## Gear\n\n#### Hand Tools\n\nName | Cost\n\nMallet (2) | 1 gp\n\nAwl | 2 gp\n\n\
+        #### Loot Table\n\nName | Cost\n\nGold Idol | 9 gp\n\n#### Tiers\n\nTier | Cost\n\nLow | 5 gp\n";
+    let text = "<p><strong>Gear</strong></p><p><strong>Tiers</strong></p><p>Tier | Cost</p>\
+        <p>Low | 5 gp</p>";
+    let draft: ImportDraft = serde_json::from_value(serde_json::json!({
+        "edition": "2014", "id_prefix": "t", "source_name": "T", "pack_id": "t",
+        "pack_name": "T", "source_kind": "attachments", "source_text": source,
+        "detection": {"kind": "item", "edition": "2014", "confidence": 1.0, "items": [],
+            "other": [
+                {"name": "Hand Tools", "what": "table", "note": ""},
+                {"name": "Tiers", "what": "table", "note": ""},
+                {"name": "Low", "what": "table row", "note": "Tiers"},
+                {"name": "Loot Table", "what": "table", "note": ""},
+                {"name": "Credits", "what": "lore section", "note": ""}]},
+        "plan": {"edition": "2014", "groups": [], "elements": [], "notes": []},
+        "elements": [
+            element("ID_T_MALLET", "Item", "ok", Value::Null),
+            element("ID_T_AWL", "Item", "ok", Value::Null),
+            element("ID_T_GEAR", "Rules Glossary Entry", "ok",
+                serde_json::json!({"description": text}))],
+        "sweep_issues": []}))
+    .unwrap();
+    // Act
+    let report = build_report(&draft, &[], &HashSet::new());
+    // Assert: only the real gaps are reported.
+    let unsupported: Vec<&str> = report
+        .entries
+        .iter()
+        .filter(|e| e.outcome == "unsupported")
+        .map(|e| e.source.as_str())
+        .collect();
+    assert_eq!(unsupported, vec!["Loot Table", "Credits"]);
+    // The text entry left out of the pack: its table is reported again.
+    let left: HashSet<String> = ["ID_T_GEAR".to_string()].into();
+    let again = build_report(&draft, &[], &left);
+    assert!(again.entries.iter().any(|e| e.source == "Tiers"));
+}

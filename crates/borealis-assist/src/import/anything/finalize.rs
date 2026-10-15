@@ -398,14 +398,97 @@ fn same_name(a: &str, b: &str) -> bool {
     n(a) == n(b)
 }
 
-/// A plan group, or an element in the pack, has the source object's name (a table's rows
-/// planned as options or items are imported, whatever detect called them).
+/// The source object `name` was imported: a plan group or an element in the pack has its name
+/// (a table's rows planned as options or items, whatever detect called them), an element's
+/// description prints it as a heading, run-in or table row (a table or sub-heading folded into
+/// a text entry), or every row of its table is an element in the pack.
 fn imported_as_named(draft: &ImportDraft, left_out: &HashSet<String>, name: &str) -> bool {
+    let kept = || draft.elements.iter().filter(|e| !left_out.contains(&e.id));
     draft.plan.groups.iter().any(|g| same_name(&g.name, name))
-        || draft
-            .elements
+        || kept().any(|e| same_name(&e.name, name))
+        || kept().any(|e| {
+            e.json
+                .get("description")
+                .and_then(Value::as_str)
+                .is_some_and(|d| printed_in(d, name))
+        })
+        || rows_imported(draft, left_out, name)
+}
+
+/// The text runs of `html` between its tags.
+fn text_runs(html: &str) -> Vec<&str> {
+    let mut out = Vec::new();
+    let mut start = 0;
+    let mut tag = false;
+    for (i, c) in html.char_indices() {
+        match c {
+            '<' if !tag => {
+                out.push(&html[start..i]);
+                tag = true;
+            }
+            '>' if tag => {
+                tag = false;
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    if !tag {
+        out.push(&html[start..]);
+    }
+    out
+}
+
+/// `html` prints `name` as a line of its own (a heading, a run-in label) or as a table row's
+/// first cell ("Name | ...", or a `<td>`).
+fn printed_in(html: &str, name: &str) -> bool {
+    text_runs(html).into_iter().any(|run| {
+        let line = run.trim().trim_end_matches(['.', ':']).trim_end();
+        let first = run.split('|').next().unwrap_or("");
+        same_name(line, name) || (run.contains('|') && same_name(first.trim(), name))
+    })
+}
+
+/// Most lines below a table's caption searched for its rows.
+const TABLE_SCAN_LINES: usize = 120;
+
+/// The source prints `name` as a caption line, and every row of the table under it (to the
+/// next heading; its first `|` line is the header) is an element in the pack.
+fn rows_imported(draft: &ImportDraft, left_out: &HashSet<String>, name: &str) -> bool {
+    let names: Vec<&str> = draft
+        .elements
+        .iter()
+        .filter(|e| !left_out.contains(&e.id))
+        .map(|e| e.name.as_str())
+        .collect();
+    let row_named = |cell: &str| {
+        let cell = cell.trim();
+        names.iter().any(|n| {
+            same_name(cell, n)
+                || cell
+                    .to_lowercase()
+                    .strip_prefix(&n.to_lowercase())
+                    .is_some_and(|rest| rest.starts_with(" ("))
+        })
+    };
+    let lines: Vec<&str> = draft.source_text.lines().collect();
+    lines.iter().enumerate().any(|(k, line)| {
+        if !same_name(line.trim_start_matches('#').trim(), name) {
+            return false;
+        }
+        let rows: Vec<&str> = lines[k + 1..]
             .iter()
-            .any(|e| !left_out.contains(&e.id) && same_name(&e.name, name))
+            .take(TABLE_SCAN_LINES)
+            .take_while(|l| !l.trim_start().starts_with('#'))
+            .filter(|l| l.contains('|'))
+            .skip(1)
+            .copied()
+            .collect();
+        !rows.is_empty()
+            && rows
+                .iter()
+                .all(|r| row_named(r.split('|').next().unwrap_or("")))
+    })
 }
 
 /// The import report: source objects with no element of their name, the rule errors that
