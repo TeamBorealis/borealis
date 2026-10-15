@@ -518,9 +518,12 @@ pub(crate) fn caster_save_dc(el: &mut Value) -> Option<String> {
 
 /// `requires attunement by a/an ...` printed in the text and the `attunement` setter's
 /// `addition` describe the same restriction: the setter gets the printed words when it has
-/// none, the text gets the setter's when it lacks them. Returns a note per change.
+/// none, the text gets the setter's when it lacks them. An item's rule conditions that only
+/// restate that the item is equipped or attuned are removed first
+/// ([`super::rule_terms::item_self_conditions`]; this is the item fix both generation and
+/// finalize run, before the armor enhancement rewrite). Returns a note per change.
 pub(crate) fn attunement_by(el: &mut Value) -> Vec<String> {
-    let mut notes = Vec::new();
+    let mut notes = super::rule_terms::item_self_conditions(el);
     let text = plain(str_at(el, "description"));
     let lower = text.to_lowercase();
     let printed = lower.find("attunement by ").map(|i| {

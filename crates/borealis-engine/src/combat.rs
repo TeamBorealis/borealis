@@ -168,7 +168,7 @@ pub fn defenses(graph: &Graph<'_>, toggles: &[ToggleSnapshot]) -> Defenses {
             push_unique(
                 &mut d.condition_immunities,
                 DefenseEntry {
-                    name: cond.to_lowercase(),
+                    name: crate::rule_terms::condition(graph.uni, &cond),
                     source: l.el.name.clone(),
                     active,
                     while_toggle: toggle.clone(),
@@ -260,10 +260,13 @@ pub fn carry(graph: &Graph<'_>, strength: i32) -> Option<CarrySnapshot> {
     })
 }
 
-fn roll_text(l: &Live<'_>) -> (String, String) {
-    let roll = l.str("roll").unwrap_or("ability_check");
-    let ab = l.str("ability").map(cap);
-    let text = match (roll, ab, l.str("skill"), l.str("spell_class")) {
+fn roll_text(l: &Live<'_>, uni: &crate::universe::Universe) -> (String, String) {
+    let roll = crate::rule_terms::roll_kind(l.str("roll").unwrap_or("ability_check"));
+    let ab = l
+        .str("ability")
+        .map(|a| cap(&crate::rule_terms::ability(a)));
+    let skill = l.str("skill").map(|s| crate::rule_terms::skill(uni, s));
+    let text = match (roll.as_str(), ab, skill.as_deref(), l.str("spell_class")) {
         ("initiative", ..) => "Advantage on initiative rolls".to_string(),
         ("spell_attack", _, _, class) => format!(
             "Advantage on spell attack rolls{}",
@@ -274,7 +277,7 @@ fn roll_text(l: &Live<'_>) -> (String, String) {
         ("ability_check", Some(a), ..) => format!("Advantage on {a} checks"),
         (r, ..) => format!("Advantage on {} rolls", r.replace('_', " ")),
     };
-    (roll.to_string(), text)
+    (roll, text)
 }
 
 fn save_text(l: &Live<'_>) -> String {
@@ -328,7 +331,7 @@ pub fn advantages(graph: &Graph<'_>, toggles: &[ToggleSnapshot]) -> Vec<Advantag
     ) {
         match l.c.kind.as_str() {
             "roll_advantage" => {
-                let (roll, text) = roll_text(&l);
+                let (roll, text) = roll_text(&l, graph.uni);
                 out.push(adv(&roll, text, &l, None, true));
             }
             "save_advantage" => out.push(adv("saving_throw", save_text(&l), &l, None, true)),
@@ -372,7 +375,7 @@ pub fn advantages(graph: &Graph<'_>, toggles: &[ToggleSnapshot]) -> Vec<Advantag
                 el: l.el,
                 c: &fake,
             };
-            let (roll, text) = roll_text(&inner);
+            let (roll, text) = roll_text(&inner, graph.uni);
             out.push(adv(&roll, text, &l, Some(tid), on));
         }
     }

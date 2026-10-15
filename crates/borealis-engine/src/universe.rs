@@ -223,6 +223,7 @@ impl UElem {
         edition: EditionStatus,
         supports: Vec<String>,
     ) -> Self {
+        crate::item_conds::normalize(&mut el);
         let list_effects = crate::custom_rules::normalize(&mut el);
         let repeatable = crate::custom_rules::is_repeatable(&el);
         let prereq = crate::custom_rules::Prereq::from_element(&el);

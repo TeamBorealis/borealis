@@ -161,7 +161,9 @@ pub fn attacks_with(
     let arts = cx.martial_arts.filter(|m| m.active);
     let mut out = Vec::new();
     for it in &state.inventory.items {
-        let Some(e) = uni.get(&it.item) else { continue };
+        let Some((e, adorner)) = crate::item_base::resolve(uni, it) else {
+            continue;
+        };
         if !item_facts(e).weapon
             || !matches!(
                 it.equipped,
@@ -183,7 +185,6 @@ pub fn attacks_with(
                     && has("ID_INTERNAL_WEAPON_PROPERTY_LIGHT")));
         let dexterous = (finesse || (arts.is_some() && monk_weapon)) && mods[1] > mods[0];
         let ability = if ranged || dexterous { 1 } else { 0 };
-        let adorner = it.adorner.as_deref().and_then(|a| uni.get(a));
         let enh = weapon_enhancement(&e.el, adorner.map(|a| &a.el));
         let proficient =
             e.el.setter_value("proficiency")
@@ -247,7 +248,10 @@ pub fn attacks_with(
             die_floor: am.die_floor,
             offhand_damage,
             uid: it.uid.clone(),
-            name: it.alt_name.clone().unwrap_or_else(|| e.el.name.clone()),
+            name: it.alt_name.clone().unwrap_or_else(|| {
+                uni.get(&it.item)
+                    .map_or_else(|| e.el.name.clone(), |own| own.el.name.clone())
+            }),
             range: e.el.setter_value("range").unwrap_or("").to_string(),
             attack: atk,
             damage: if dice.is_empty() {

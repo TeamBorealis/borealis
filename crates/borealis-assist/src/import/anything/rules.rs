@@ -62,6 +62,19 @@ choose, e.g. [{\"abilities\":[\"strength\",\"dexterity\"],\"pick\":1,\"amount\":
 (20). Fixed increases are `stat` rules (\"constitution\" +2), not this kind.",
     ),
     (
+        "roll_advantage",
+        &["roll", "ability", "skill"],
+        "roll_advantage: `roll` is ability_check | saving_throw | initiative | spell_attack; advantage on a skill's \
+checks is roll ability_check with `skill` the skill's name (\"stealth\"), on an ability's checks or saves `ability` the \
+ability's name (\"wisdom\").",
+    ),
+    (
+        "condition_immunity",
+        &["conditions"],
+        "condition_immunity lists `conditions` by name ([\"frightened\", \"charmed\"]). An item's rules apply only \
+while it is equipped (and attuned, when it requires attunement): never add `equipped` or `requirements` to say so.",
+    ),
+    (
         "save_dc",
         &["id", "formula"],
         "save_dc names a DC: {\"kind\":\"save_dc\",\"id\":\"<name>\",\"formula\":\"8 + proficiency + dexterity\"} \
@@ -435,8 +448,10 @@ fn for_each_rule(el: &mut Value, mut f: impl FnMut(&mut Map<String, Value>)) {
 /// Unambiguous `resource` fixes (id from the name, bare-number `max`, formula words the engine
 /// cannot read such as a bare `dexterity`, rest names as tokens), `ability_increase` options
 /// written as a flat list of ability names, lasting `movement_mode` speeds as stats,
-/// save-DC shorthands ("Con mod", "PB") as engine terms and damage-resistance choices written
-/// as a free `select_param`. Returns one message per change.
+/// save-DC shorthands ("Con mod", "PB") as engine terms, damage-resistance choices written
+/// as a free `select_param`, and the spelling fixes of [`super::rule_terms`] (roll kinds,
+/// condition and skill ids, a stated ability choice written as a fixed `stat`). Returns one
+/// message per change.
 pub(crate) fn normalise_resources(el: &mut Value) -> Vec<String> {
     let mut out = Vec::new();
     let class = el
@@ -450,8 +465,9 @@ pub(crate) fn normalise_resources(el: &mut Value) -> Vec<String> {
         Some("movement_mode") => out.extend(normalise_movement_mode(r)),
         Some("save_dc") => out.extend(normalise_save_dc(r)),
         Some("select_param") => out.extend(normalise_resistance_choice(r, resistance)),
-        _ => {}
+        _ => out.extend(super::rule_terms::normalise_rule(r)),
     });
+    out.extend(super::rule_terms::ability_choice(el));
     out
 }
 
@@ -558,8 +574,9 @@ fn normalise_movement_mode(rule: &mut Map<String, Value>) -> Option<String> {
     ))
 }
 
-/// The `ability_increase`, lasting `movement_mode`, `save_dc` and resistance-choice parts of
-/// [`normalise_resources`] (finalize re-applies them to drafts generated before they existed).
+/// The `ability_increase`, lasting `movement_mode`, `save_dc`, resistance-choice and rule-term
+/// parts of [`normalise_resources`] (finalize re-applies them to drafts generated before they
+/// existed).
 pub(crate) fn normalise_abilities(el: &mut Value) -> Vec<String> {
     let mut out = Vec::new();
     let resistance = says_resistance(el);
@@ -568,8 +585,9 @@ pub(crate) fn normalise_abilities(el: &mut Value) -> Vec<String> {
         Some("movement_mode") => out.extend(normalise_movement_mode(r)),
         Some("save_dc") => out.extend(normalise_save_dc(r)),
         Some("select_param") => out.extend(normalise_resistance_choice(r, resistance)),
-        _ => {}
+        _ => out.extend(super::rule_terms::normalise_rule(r)),
     });
+    out.extend(super::rule_terms::ability_choice(el));
     out
 }
 

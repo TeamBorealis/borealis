@@ -116,7 +116,7 @@ pub fn multiclass_slots(
 }
 
 /// Scaled damage of a cantrip at `level` (cantrips only).
-fn cantrip_damage(e: &crate::universe::UElem, level: u32) -> Option<String> {
+pub(crate) fn cantrip_damage(e: &crate::universe::UElem, level: u32) -> Option<String> {
     if spell_level(e) != 0 {
         return None;
     }
@@ -124,7 +124,7 @@ fn cantrip_damage(e: &crate::universe::UElem, level: u32) -> Option<String> {
 }
 
 /// The element that granted a spell node, with its own granter and owning class.
-fn spell_grant(
+pub(crate) fn spell_grant(
     graph: &Graph<'_>,
     node: &crate::graph::Node<'_>,
 ) -> Option<crate::snapshot::SpellGrant> {
@@ -188,7 +188,7 @@ fn add_prepared_extensions(
     }
 }
 
-fn spell_level(e: &crate::universe::UElem) -> u32 {
+pub(crate) fn spell_level(e: &crate::universe::UElem) -> u32 {
     e.spell_level().unwrap_or(0)
 }
 
@@ -485,6 +485,7 @@ pub fn spellcasting_snapshots(
         });
         let _ = abbr;
     }
+    crate::item_spells::add_item_blocks(graph, stats, &mut out);
     out
 }
 

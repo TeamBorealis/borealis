@@ -93,7 +93,7 @@ pub fn active_items<'u>(
     let mut eq = EquipState::default();
     let mut attuned_count = 0u32;
     for it in &inv.items {
-        let Some(base) = uni.get(&it.item) else {
+        let Some((base, adorner)) = crate::item_base::resolve(uni, it) else {
             diags.push(
                 Diagnostic::new(
                     code::CONTENT_MISSING_ELEMENT,
@@ -106,7 +106,6 @@ pub fn active_items<'u>(
         };
         let Some(slot) = it.equipped else { continue };
         let bf = item_facts(base);
-        let adorner = it.adorner.as_deref().and_then(|a| uni.get(a));
         let af = adorner.map(item_facts);
         let needs_att =
             bf.requires_attunement || af.as_ref().is_some_and(|f| f.requires_attunement);

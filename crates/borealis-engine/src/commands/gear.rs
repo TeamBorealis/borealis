@@ -99,7 +99,7 @@ pub fn equip(
             .filter_map(|it| {
                 ev.uni
                     .get(&it.item)
-                    .map(|e| (it.uid.clone(), item_facts(e)))
+                    .map(|e| (it.uid.clone(), crate::item_base::effective_facts(ev.uni, e)))
             })
             .collect();
         let adorner = state.inventory.items[i]

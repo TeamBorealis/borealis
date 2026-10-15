@@ -39,6 +39,7 @@ mod regenerate;
 #[cfg(test)]
 mod replay_tests;
 pub mod review;
+mod rule_terms;
 mod rules;
 mod selfcheck;
 mod source;
