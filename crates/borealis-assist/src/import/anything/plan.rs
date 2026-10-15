@@ -7,9 +7,9 @@ use borealis_content::{ContentStore, Element, Rule};
 
 use super::fewshot::in_edition;
 use super::types::{
-    Edition, ImportKind, ImportPlan, ItemType, NeedsChoice, OptionPicks, Outline, OutlineFeature,
-    OutlinePart, ParentCandidate, ParentLink, PickCount, PlanGroup, PlannedElement, Role,
-    SourceExcerpt,
+    Edition, ImportKind, ImportPlan, ItemType, NeedsChoice, OptionPicks, OtherItem, Outline,
+    OutlineFeature, OutlinePart, ParentCandidate, ParentLink, PickCount, PlanGroup, PlannedElement,
+    Role, SourceExcerpt,
 };
 use crate::import::ids::make_id;
 
@@ -207,6 +207,8 @@ struct Builder<'a> {
     groups: Vec<String>,
     /// Names of the plan's text-only (rules, lore, condition) groups.
     text_groups: Vec<String>,
+    /// The spells a printed spell name can stand for (the library's and the plan's own).
+    book: super::feature_spells::SpellBook,
 }
 
 impl Builder<'_> {
@@ -245,8 +247,21 @@ impl Builder<'_> {
 
     /// The spell table of feature `f` (planned as `id`), counted as `class` spells; resolved
     /// once the whole plan is built.
+    /// Spells the feature prints that the outline left out are granted too (see
+    /// `feature_spells::printed_grants`).
     fn feature_spells(&mut self, id: &str, f: &OutlineFeature, class: &str) {
-        let grants = super::feature_spells::unresolved(f, class);
+        let mut grants = super::feature_spells::unresolved(f, class, &self.book);
+        if let Some(e) = self.out.iter().find(|e| e.id == id) {
+            let printed = super::feature_spells::printed_grants(
+                self.source,
+                e,
+                f,
+                class,
+                &self.book,
+                &grants,
+            );
+            grants.extend(printed);
+        }
         if let Some(e) = self.get(id) {
             e.spells = grants;
         }
@@ -758,11 +773,12 @@ fn in_source_classes(plan: &ImportPlan) -> Vec<(Vec<String>, ParentLink)> {
 
 /// Recompute `plan.elements` (and group root ids) from the groups.
 pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str, source: &str) {
-    // Library references are decided at intake, not by the groups: they outlive a rebuild.
+    // Library references and narrative sections are decided at intake, not by the groups:
+    // they outlive a rebuild.
     let references: Vec<String> = plan
         .notes
         .iter()
-        .filter(|n| n.starts_with(super::intake::LIBRARY_NOTE))
+        .filter(|n| n.starts_with(super::intake::LIBRARY_NOTE) || n.starts_with(NARRATIVE_NOTE))
         .cloned()
         .collect();
     let mut split_notes = sections::drop_outlined_texts(&mut plan.groups);
@@ -782,6 +798,16 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
             .filter(|g| matches!(g.kind, ImportKind::Rules | ImportKind::Condition))
             .map(|g| g.name.clone())
             .collect(),
+        book: super::feature_spells::SpellBook::new(
+            store,
+            plan.edition,
+            &plan
+                .groups
+                .iter()
+                .filter(|g| g.kind == ImportKind::Spell)
+                .map(|g| g.name.clone())
+                .collect::<Vec<_>>(),
+        ),
     };
     // Classes first: subclasses of a class from the same source link to its planned id.
     for g in &mut plan.groups {
@@ -846,12 +872,7 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
         };
         g.root_id = Some(standalone_group(&mut b, g, ty));
     }
-    let mut folded = sections::fold_table_headings(&b.out, source);
-    let nested: Vec<(String, String)> = sections::fold_nested_lore(&b.out, plan.edition, source)
-        .into_iter()
-        .filter(|(id, _)| !folded.iter().any(|(f, _)| f == id))
-        .collect();
-    folded.extend(nested);
+    let folded = folded_entries(&b.out, plan.edition, source);
     if !folded.is_empty() {
         let ids: Vec<&String> = folded.iter().map(|(id, _)| id).collect();
         b.out.retain(|e| !ids.contains(&&e.id));
@@ -869,6 +890,29 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
     plan.notes = b.notes;
     plan.notes.extend(split_notes);
     plan.notes.extend(references);
+}
+
+/// Text-only entries that are pieces of another element, each with a plan note: a category
+/// heading or row of a table a passage prints, a section a class or subclass root prints as its
+/// own, and a table (or its caption) printed inside one element's own passage (an item's
+/// variant table, a feature's component list). Each id once, first reason wins.
+pub(crate) fn folded_entries(
+    elements: &[PlannedElement],
+    edition: Edition,
+    source: &str,
+) -> Vec<(String, String)> {
+    let mut folded = sections::fold_table_headings(elements, source);
+    folded.extend(sections::fold_nested_lore(elements, edition, source));
+    let plan = ImportPlan {
+        edition,
+        groups: Vec::new(),
+        elements: elements.to_vec(),
+        notes: Vec::new(),
+    };
+    folded.extend(super::passage::tables::owner_table_entries(&plan, source));
+    let mut seen = HashSet::new();
+    folded.retain(|(id, _)| seen.insert(id.clone()));
+    folded
 }
 
 /// Element type of a subrace in `edition` (the bundled packs: 2014 `Sub Race`, 2024 lineages
@@ -1059,6 +1103,33 @@ fn subrace_select(store: &ContentStore, race: &Element) -> Option<String> {
             _ => None,
         })
     })
+}
+
+/// Plan note prefix of a section the detection called narrative (`"<prefix><name>"`, see
+/// `intake::is_narrative`): never imported, and a boundary no text-only section reaches over.
+pub(crate) const NARRATIVE_NOTE: &str = "narrative section: ";
+
+/// The plan notes of the detection's narrative sections (see [`NARRATIVE_NOTE`]).
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "plan_import adds these notes beside the intake notes (mod.rs)"
+    )
+)]
+pub(crate) fn narrative_notes(other: &[OtherItem]) -> Vec<String> {
+    other
+        .iter()
+        .filter(|o| super::intake::is_narrative(&o.what) && !o.name.trim().is_empty())
+        .map(|o| format!("{NARRATIVE_NOTE}{}", o.name.trim()))
+        .collect()
+}
+
+/// The narrative section names the plan's notes carry (see [`narrative_notes`]).
+pub(crate) fn narrative_sections(plan: &ImportPlan) -> impl Iterator<Item = &str> {
+    plan.notes
+        .iter()
+        .filter_map(|n| n.strip_prefix(NARRATIVE_NOTE))
 }
 
 /// A text-only group for a rules or lore section the detection listed in `other`.

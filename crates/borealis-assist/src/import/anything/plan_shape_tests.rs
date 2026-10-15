@@ -206,3 +206,212 @@ fn spellcasting_headings_printed_flat_after_a_feature_are_its_parts() {
         .iter()
         .any(|e| e.name == "Dowser Spellcasting"));
 }
+
+const LANTERN: &str = "# Wonders\n\n### Lantern of Tides\n\nWondrous item, rare\n\n\
+This lantern of green brass shows the sea's mood. Roll on the table each dusk.\n\n\
+#### Tide Moods\n\nd4 | Mood\n1 | **Ebb.** The flame shrinks.\n2 | **Surge.** The flame doubles.\n\
+3 | **Slack.** Nothing changes.\n\n### Kettle of Ash\n\nWondrous item, common\n\n\
+This kettle boils water with no fire under it.\n\n## Tidal Lore\n\nThe tides answer the moon.\n";
+
+#[test]
+fn entries_planned_on_an_items_own_table_are_folded_into_the_item() {
+    let item = |name: &str| {
+        super::plan::standalone(
+            ImportKind::Item,
+            name,
+            Some(super::types::ItemType::MagicItem),
+        )
+    };
+    let text = |name: &str, what: &str| super::plan::text_group(name, what, "");
+    let plan = rebuilt(
+        vec![
+            item("Lantern of Tides"),
+            item("Kettle of Ash"),
+            text("Tide Moods", "table"),
+            text("Surge", "table row"),
+            text("Tidal Lore", "lore"),
+        ],
+        LANTERN,
+    );
+    let names: Vec<&str> = plan.elements.iter().map(|e| e.name.as_str()).collect();
+    assert!(!names.contains(&"Tide Moods"), "{names:?}");
+    assert!(!names.contains(&"Surge"), "{names:?}");
+    // A section of its own after the items stays an entry.
+    assert!(names.contains(&"Tidal Lore"), "{names:?}");
+    // The caption over the item's table is no entry of its own either.
+    assert!(!plan.groups.iter().any(|g| g.name == "Tide Moods"));
+    assert!(
+        plan.notes
+            .iter()
+            .any(|n| n.starts_with("Tide Moods: a table or row of Lantern of Tides")),
+        "{:?}",
+        plan.notes
+    );
+}
+
+#[test]
+fn narrative_sections_are_plan_notes_that_outlive_a_rebuild() {
+    let other = |name: &str, what: &str| super::types::OtherItem {
+        name: name.into(),
+        what: what.into(),
+        note: String::new(),
+    };
+    let notes = super::plan::narrative_notes(&[
+        other("The Drowned Mill", "narrative (keyed area)"),
+        other("Ferry Rules", "optional rule"),
+    ]);
+    assert_eq!(notes.len(), 1);
+    let mut plan = ImportPlan {
+        edition: Edition::Y2014,
+        groups: vec![super::plan::text_group("Ferry Rules", "optional rule", "")],
+        elements: Vec::new(),
+        notes,
+    };
+    let src = "## Ferry Rules\n\nThe ferry costs a copper.\n\n## The Drowned Mill\n\nFog.\n";
+    super::plan::rebuild(&mut plan, &library(), "ID_T", src);
+    let names: Vec<&str> = super::plan::narrative_sections(&plan).collect();
+    assert_eq!(names, ["The Drowned Mill"]);
+}
+
+const REEDS: &str = "## Circle of Reeds\n\nDruids of the marsh.\n\n### Reed Cantrips\n\n\
+When you join this circle at 2nd level, you learn the druidcraft,\nguidance, and mending \
+cantrips.\n\n### Reed Spells\n\nDruid Level | Reed Spells\n3rd | fog cloud, misty step\n\
+5th | sleet storm, water\nbreathing\n\n### Reed Walk\n\nYou walk on reeds.\n";
+
+#[test]
+fn spells_and_cantrips_a_feature_prints_are_granted_when_the_outline_drops_one() {
+    let store = library();
+    let mut sub = group(
+        ImportKind::Subclass,
+        json!({"name": "Circle of Reeds", "summary": "", "quote": "Druids of the marsh.",
+            "features": [
+                {"level": 2, "name": "Reed Cantrips", "summary": "You learn three cantrips.",
+                    "quote": "you learn the druidcraft", "parts": []},
+                {"level": 3, "name": "Reed Spells", "summary": "Circle spells.", "parts": [],
+                    "spells": [{"level": 3, "spells": ["Fog Cloud", "Misty Step"]},
+                        {"level": 5, "spells": ["Sleet Storm"]}]},
+                {"level": 6, "name": "Reed Walk", "summary": "Walk.", "parts": []}]}),
+    );
+    sub.parent = super::plan::link_for(&store, Edition::Y2014, "ID_WOTC_PHB_CLASS_DRUID");
+    assert!(sub.parent.is_some(), "the library druid offers circles");
+    let mut plan = ImportPlan {
+        edition: Edition::Y2014,
+        groups: vec![sub],
+        elements: Vec::new(),
+        notes: Vec::new(),
+    };
+    super::plan::rebuild(&mut plan, &store, "ID_T", REEDS);
+    let spells = |name: &str| -> Vec<(String, u32, bool)> {
+        plan.elements
+            .iter()
+            .find(|e| e.name == name)
+            .expect("feature")
+            .spells
+            .iter()
+            .map(|g| (g.name.clone(), g.level, g.id.is_some()))
+            .collect()
+    };
+    let table = spells("Reed Spells");
+    assert!(
+        table.contains(&("Water Breathing".to_string(), 5, true)),
+        "{table:?}"
+    );
+    assert_eq!(table.len(), 4, "{table:?}");
+    let cantrips = spells("Reed Cantrips");
+    let names: Vec<&str> = cantrips.iter().map(|(n, ..)| n.as_str()).collect();
+    assert_eq!(names, ["Druidcraft", "Guidance", "Mending"]);
+    assert!(cantrips.iter().all(|(_, level, id)| *level == 0 && *id));
+    assert!(spells("Reed Walk").is_empty());
+}
+
+/// Offline: `BOREALIS_REPLAN_REPLAY=<draft.json> BOREALIS_REPLAN_OUT=<dir>` rebuilds a stored
+/// draft's plan with the current planner and, with `BOREALIS_REPLAN_MINE=1`, applies what it
+/// changes in owner-table folds and feature spell grants; both runs then fold, reprint the
+/// text-only entries, re-apply the plan's structure and finalize into `<dir>` (as
+/// `passage_tests::reprint_a_stored_draft` does), so the two packs differ only by those changes.
+#[test]
+#[ignore = "needs a local draft.json"]
+fn replan_a_stored_draft() {
+    use super::types::ImportDraft;
+    let Ok(path) = std::env::var("BOREALIS_REPLAN_REPLAY") else {
+        return;
+    };
+    let mut d: ImportDraft =
+        serde_json::from_str(&std::fs::read_to_string(path).expect("reads")).expect("parses");
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+    let mut lib = ContentStoreBuilder::new();
+    for pack in ["core", "srd-5.1", "srd-5.2.1"] {
+        lib = lib.add_pack_dir(&root.join(pack)).expect("pack loads");
+    }
+    let store = lib.clone().build();
+    let mine = std::env::var("BOREALIS_REPLAN_MINE").is_ok();
+    let mut replanned = d.plan.clone();
+    super::plan::rebuild(&mut replanned, &store, &d.id_prefix, &d.source_text);
+    let owned = super::passage::tables::owner_table_entries(&d.plan, &d.source_text);
+    for (_, n) in &owned {
+        println!("owner table: {n}");
+    }
+    let mut gone: Vec<String> = owned.into_iter().map(|(id, _)| id).collect();
+    gone.extend(
+        super::plan::folded_entries(&d.plan.elements, d.plan.edition, &d.source_text)
+            .into_iter()
+            .map(|(id, _)| id),
+    );
+    for p in d.plan.elements.iter_mut() {
+        let Some(new) = replanned.elements.iter().find(|n| n.id == p.id) else {
+            continue;
+        };
+        let added: Vec<String> = new
+            .spells
+            .iter()
+            .filter(|g| !p.spells.iter().any(|o| o.name == g.name && o.id == g.id))
+            .map(|g| format!("{} (level {}, {})", g.name, g.level, g.id.is_some()))
+            .collect();
+        if !added.is_empty() {
+            println!("spells of {}: + {}", p.name, added.join("; "));
+            if mine {
+                p.spells.clone_from(&new.spells);
+            }
+        }
+    }
+    if !mine {
+        // Before: the folds the planner made without the owner tables.
+        gone = super::plan::sections::fold_table_headings(&d.plan.elements, &d.source_text)
+            .into_iter()
+            .chain(super::plan::sections::fold_nested_lore(
+                &d.plan.elements,
+                d.plan.edition,
+                &d.source_text,
+            ))
+            .map(|(id, _)| id)
+            .collect();
+    }
+    d.plan.elements.retain(|e| !gone.contains(&e.id));
+    d.plan
+        .groups
+        .retain(|g| !g.root_id.as_ref().is_some_and(|r| gone.contains(r)));
+    d.elements.retain(|e| !gone.contains(&e.id));
+    let plan = d.plan.clone();
+    for e in d.elements.iter_mut().filter(|e| e.role == Role::Text) {
+        if let Some(p) = plan
+            .elements
+            .iter()
+            .find(|p| p.id == e.id && p.excerpt.is_some())
+        {
+            let el = super::parts::text_element(p, &plan, &d.source_text);
+            e.json["description"] = el["description"].clone();
+        }
+    }
+    for e in d.elements.iter_mut().filter(|e| !e.json.is_null()) {
+        if let Some(p) = plan.elements.iter().find(|p| p.id == e.id) {
+            super::parts::apply(&mut e.json, p, &plan);
+        }
+    }
+    super::generate::keep_printed(&mut d);
+    let done = super::finalize::finalize_draft(&lib, &d).expect("finalizes");
+    if let Ok(out) = std::env::var("BOREALIS_REPLAN_OUT") {
+        done.pack
+            .write_to_dir(Path::new(&out))
+            .expect("pack writes");
+    }
+}

@@ -168,4 +168,27 @@ mod claimed {
         assert!(parent.contains(&"Cost: 100"), "{parent:?}");
         assert!(!parent.contains(&"### Tier 2"), "{parent:?}");
     }
+
+    #[test]
+    fn a_text_section_stops_at_a_narrative_or_end_matter_heading_of_its_level() {
+        // A flattened sub-rule continues the section; a narrative section the detection named
+        // (never imported) and end matter do not.
+        let src = "## Ferry Rules\n\nThe ferry costs a copper.\n\n## Night Crossings\n\n\
+Double fare after dark.\n\n## The Drowned Mill\n\nRead aloud: the wheel creaks in the fog.\n\n\
+## Thanks\n\nTo the river folk.\n";
+        let rules = || text("t0", "Ferry Rules", 1, 3);
+        let mut d = draft(src, vec![rules()], &[]);
+        let all = section_lines(src, &d.plan.elements[0], &d.plan).join("\n");
+        assert!(all.contains("Double fare after dark."), "{all}");
+        assert!(!all.contains("To the river folk."), "{all}");
+        d.plan.notes.push(format!(
+            "{}The Drowned Mill",
+            super::super::super::plan::NARRATIVE_NOTE
+        ));
+        let own = section_lines(src, &d.plan.elements[0], &d.plan).join("\n");
+        assert!(own.contains("Double fare after dark."), "{own}");
+        assert!(!own.contains("the wheel creaks"), "{own}");
+        // Without the narrative note the unplanned heading is read as a flattened sub-rule.
+        assert!(all.contains("the wheel creaks"), "{all}");
+    }
 }

@@ -144,13 +144,6 @@ pub(crate) fn add_owner_tables(draft: &mut ImportDraft) -> Vec<String> {
 /// rows, or on the caption heading right over it with only table lines under it): pieces of
 /// that owner, whose description carries the table (see [`add_owner_tables`]). Returns each
 /// entry's id and a plan note, for the planner to fold.
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "the planner folds these entries (plan.rs, beside fold_table_headings)"
-    )
-)]
 pub(crate) fn owner_table_entries(plan: &ImportPlan, source: &str) -> Vec<(String, String)> {
     let lines: Vec<&str> = source.lines().collect();
     let owned: Vec<(&PlannedElement, (usize, usize))> = plan

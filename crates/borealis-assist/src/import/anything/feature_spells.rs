@@ -6,6 +6,9 @@
 //!   `grant_spell` on the class's list), resolved against this import and the library;
 //! * the class table's other columns (a points pool, uses, a die size): written into
 //!   `data.progression`, where the derived pass turns numeric ones into counters.
+//!
+//! The model's spell table is checked against the printed one (see `feature_spells_text.rs`):
+//! a member it dropped or misspelled, and a cantrip the feature names, are granted too.
 
 use std::collections::HashMap;
 
@@ -16,6 +19,18 @@ use super::fewshot::in_edition;
 use super::types::{
     Edition, ImportPlan, OutlineFeature, PlannedElement, Role, SpellGrant, TableColumn,
 };
+
+#[path = "feature_spells_text.rs"]
+mod text;
+pub(crate) use text::SpellBook;
+use text::{key, level_rows, members, named_cantrips, own_lines};
+
+/// `SpellGrant::level` of a cantrip the feature names: known from the feature on, no class
+/// level of its own.
+const CANTRIP: u32 = 0;
+/// A printed table lists at least 1 in this many of the outline's spells to be that feature's
+/// table (half of them).
+const SAME_TABLE_SHARE: usize = 2;
 
 /// Levels of a class table.
 const TABLE_ROWS: usize = 20;
@@ -41,8 +56,22 @@ fn norm(s: &str) -> String {
         .to_lowercase()
 }
 
-/// The grants of feature `f`'s spell table, ids not yet resolved.
-pub(crate) fn unresolved(f: &OutlineFeature, class: &str) -> Vec<SpellGrant> {
+fn push_grant(out: &mut Vec<SpellGrant>, level: u32, name: &str, class: &str) {
+    if out.iter().any(|g| key(&g.name) == key(name)) {
+        return;
+    }
+    out.push(SpellGrant {
+        level,
+        name: name.to_string(),
+        id: None,
+        class: class.to_string(),
+    });
+}
+
+/// The grants of feature `f`'s spell table, ids not yet resolved. A model-written name that is
+/// no spell as a whole but a list of them ("a and b") or one with a mark is read as the spells
+/// it names; any other name is kept as written (resolving notes it).
+pub(crate) fn unresolved(f: &OutlineFeature, class: &str, book: &SpellBook) -> Vec<SpellGrant> {
     let mut out: Vec<SpellGrant> = Vec::new();
     for row in &f.spells {
         let level = row.level.max(f.level).max(1);
@@ -52,15 +81,71 @@ pub(crate) fn unresolved(f: &OutlineFeature, class: &str) -> Vec<SpellGrant> {
             .map(|n| n.trim())
             .filter(|n| !n.is_empty())
         {
-            if out.iter().any(|g| norm(&g.name) == norm(name)) {
-                continue;
+            let found = match book.find(name) {
+                Some((n, _)) => vec![n.clone()],
+                None => members(name, book).into_iter().map(|(n, _)| n).collect(),
+            };
+            if found.is_empty() {
+                push_grant(&mut out, level, name, class);
             }
-            out.push(SpellGrant {
-                level,
-                name: name.to_string(),
-                id: None,
-                class: class.to_string(),
-            });
+            for n in found {
+                push_grant(&mut out, level, &n, class);
+            }
+        }
+    }
+    out
+}
+
+/// The grants feature `p` (outlined as `f`) prints that `have` lacks: the members of its spell
+/// table's rows (when the outline lists a table and the printed one shares at least half of its
+/// spells, see [`SAME_TABLE_SHARE`]: the same table), and the cantrips it says you gain (when
+/// the outline speaks of a cantrip). Only names of spells the import or the library has.
+pub(crate) fn printed_grants(
+    source: &str,
+    p: &PlannedElement,
+    f: &OutlineFeature,
+    class: &str,
+    book: &SpellBook,
+    have: &[SpellGrant],
+) -> Vec<SpellGrant> {
+    let lines = own_lines(source, p);
+    let mut out: Vec<SpellGrant> = Vec::new();
+    let known =
+        |n: &str, out: &[SpellGrant]| have.iter().chain(out).any(|g| key(&g.name) == key(n));
+    if !have.is_empty() {
+        let rows: Vec<(u32, Vec<String>)> = level_rows(&lines)
+            .into_iter()
+            .map(|(l, cells)| {
+                (
+                    l,
+                    members(&cells, book).into_iter().map(|(n, _)| n).collect(),
+                )
+            })
+            .collect();
+        let printed: Vec<&String> = rows.iter().flat_map(|(_, n)| n).collect();
+        let shared = have
+            .iter()
+            .filter(|g| printed.iter().any(|n| key(n) == key(&g.name)))
+            .count();
+        let same = shared > 0 && shared * SAME_TABLE_SHARE >= have.len();
+        if same {
+            for (level, names) in &rows {
+                for n in names {
+                    if !known(n, &out) {
+                        push_grant(&mut out, (*level).max(f.level).max(1), n, class);
+                    }
+                }
+            }
+        }
+    }
+    let speaks = |t: &str| t.to_lowercase().contains("cantrip");
+    if speaks(&f.name) || speaks(&f.summary) || speaks(&f.quote) {
+        for list in named_cantrips(&lines) {
+            for (n, level) in members(&list, book) {
+                if matches!(level, Some(0) | None) && !known(&n, &out) {
+                    push_grant(&mut out, CANTRIP, &n, class);
+                }
+            }
         }
     }
     out
@@ -80,19 +165,19 @@ pub(crate) fn resolve(
         .by_type("Spell")
         .map(|s| &s.element)
         .filter(|e| in_edition(e, edition))
-        .map(|e| (norm(&e.name), e.id.clone()))
+        .map(|e| (key(&e.name), e.id.clone()))
         .collect();
     // The import's own spells win over a library spell of the same name.
     ids.extend(
         out.iter()
             .filter(|e| e.ty == "Spell")
-            .map(|e| (norm(&e.name), e.id.clone())),
+            .map(|e| (key(&e.name), e.id.clone())),
     );
     let mut notes = Vec::new();
     for e in out.iter_mut().filter(|e| !e.spells.is_empty()) {
         let mut missing = Vec::new();
         for g in &mut e.spells {
-            g.id = ids.get(&norm(&g.name)).cloned();
+            g.id = ids.get(&key(&g.name)).cloned();
             if g.id.is_none() {
                 missing.push(g.name.clone());
             }
@@ -135,11 +220,18 @@ pub(crate) fn grant_spells(el: &mut Value, planned: &PlannedElement, edition: Ed
         return;
     };
     rules.retain(|r| !is_spell_grant_of(r, &ids));
-    rules.extend(grants.iter().map(|g| match edition {
-        Edition::Y2014 => json!({"kind": "grant", "id": g.id, "type": "Spell", "level": g.level,
-            "spellcasting": g.class, "prepared": true}),
-        Edition::Y2024 => json!({"kind": "grant_spell", "level": g.level, "spell": g.id,
-            "mode": "always_prepared", "counts_against_prepared": false, "spell_list": g.class}),
+    rules.extend(grants.iter().map(|g| match (edition, g.level == CANTRIP) {
+        // A named cantrip: known from the feature on, as the bundled species grant theirs.
+        (Edition::Y2014, true) => {
+            json!({"kind": "grant", "id": g.id, "type": "Spell", "spellcasting": g.class})
+        }
+        (Edition::Y2024, true) => json!({"kind": "grant_spell", "spell": g.id,
+            "mode": "known_cantrip", "spell_list": g.class}),
+        (Edition::Y2014, false) => json!({"kind": "grant", "id": g.id, "type": "Spell",
+            "level": g.level, "spellcasting": g.class, "prepared": true}),
+        (Edition::Y2024, false) => json!({"kind": "grant_spell", "level": g.level,
+            "spell": g.id, "mode": "always_prepared", "counts_against_prepared": false,
+            "spell_list": g.class}),
     }));
 }
 
@@ -261,7 +353,7 @@ mod tests {
                 spells: vec!["Mist Step".into(), " ".into()],
             }],
         };
-        let mut grants = unresolved(&f, "Hedgekeeper");
+        let mut grants = unresolved(&f, "Hedgekeeper", &SpellBook::of(&[]));
         assert_eq!(grants.len(), 1);
         grants[0].id = Some("ID_X_MIST_STEP".into());
         let planned = PlannedElement {
@@ -289,5 +381,18 @@ mod tests {
         grant_spells(&mut el, &planned, Edition::Y2024);
         assert_eq!(el["rules"][0]["kind"], "grant_spell");
         assert_eq!(el["rules"][0]["spell_list"], "Hedgekeeper");
+        // A named cantrip is known from the feature on: no class level, not "prepared".
+        let mut cantrip = planned;
+        cantrip.spells[0].level = CANTRIP;
+        let mut el = json!({});
+        grant_spells(&mut el, &cantrip, Edition::Y2014);
+        assert_eq!(
+            el["rules"][0],
+            json!({"kind": "grant", "id": "ID_X_MIST_STEP", "type": "Spell", "spellcasting": "Hedgekeeper"})
+        );
+        let mut el = json!({});
+        grant_spells(&mut el, &cantrip, Edition::Y2024);
+        assert_eq!(el["rules"][0]["mode"], "known_cantrip");
+        assert!(el["rules"][0].get("level").is_none());
     }
 }

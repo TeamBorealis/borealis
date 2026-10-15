@@ -8,6 +8,8 @@ use borealis_content::ContentStore;
 use serde_json::{json, Value};
 
 const COUNTS: [&str; 6] = ["one", "two", "three", "four", "five", "six"];
+/// Words between a count and "cantrip" that keep it a count ("one additional cantrip").
+const QUALIFIERS: [&str; 4] = ["additional", "extra", "bonus", "more"];
 /// Words of a class's own cantrip progression (never a bonus cantrip).
 const PROGRESSION_WORDS: [&str; 3] = ["cantrips known", "at higher levels", "as shown in the"];
 const SKILL_PREFIX: &str = "ID_PROFICIENCY_SKILL_";
@@ -227,8 +229,9 @@ fn tool_select(
     Some(sel)
 }
 
-/// "learn N cantrip(s) ... from the <List> spell list" in a feature with no spell choice: the
-/// bundled bonus-cantrip select (`<List>,0`). Returns the select, or None.
+/// "learn N cantrip(s) ... from the <List> spell list" or "learn N additional <List>
+/// cantrip(s)" in a feature with no spell choice: the bundled bonus-cantrip select
+/// (`<List>,0`). Returns the select, or None.
 pub(crate) fn cantrip_select(feature: &Value, lists: &[String]) -> Option<Value> {
     let rules = feature.get("rules").and_then(Value::as_array);
     if rules.is_some_and(|r| r.iter().any(|x| str_at(x, "type") == "Spell")) {
@@ -241,7 +244,22 @@ pub(crate) fn cantrip_select(feature: &Value, lists: &[String]) -> Option<Value>
         return None;
     }
     let at = text.find(" cantrip")?;
-    let before: Vec<&str> = text[..at].split_whitespace().collect();
+    let mut before: Vec<&str> = text[..at].split_whitespace().collect();
+    // "one additional <List> cantrip": the list named right before the word.
+    let named = lists
+        .iter()
+        .filter(|l| {
+            let n = norm(l);
+            let words: Vec<&str> = n.split_whitespace().collect();
+            !words.is_empty() && before.ends_with(&words)
+        })
+        .max_by_key(|l| norm(l).split_whitespace().count());
+    if let Some(l) = named {
+        before.truncate(before.len() - norm(l).split_whitespace().count());
+    }
+    while before.last().is_some_and(|w| QUALIFIERS.contains(w)) {
+        before.pop();
+    }
     let count_word = before.last()?;
     let n = count_word.parse::<u32>().ok().or_else(|| {
         COUNTS
@@ -258,9 +276,11 @@ pub(crate) fn cantrip_select(feature: &Value, lists: &[String]) -> Option<Value>
         return None;
     }
     let rest = &text[at..];
-    let list = lists
-        .iter()
-        .find(|l| rest.contains(&format!("{} spell list", norm(l))))?;
+    let list = named.or_else(|| {
+        lists
+            .iter()
+            .find(|l| rest.contains(&format!("{} spell list", norm(l))))
+    })?;
     let mut sel = json!({"kind": "select", "type": "Spell",
         "name": format!("{list} Cantrip ({})", str_at(feature, "name")),
         "supports": format!("{list},0"),
@@ -285,5 +305,24 @@ mod tests {
         let own = json!({"name": "Cantrips", "data": {"class": "Warden"},
             "description": "<p>You know one cantrip of your choice from the Warden spell list. You learn additional Warden cantrips of your choice at higher levels, as shown in the Cantrips Known column of the Warden table.</p>"});
         assert!(cantrip_select(&own, &lists).is_none());
+    }
+
+    #[test]
+    fn a_bonus_cantrip_named_by_its_list_before_the_word_is_a_select() {
+        let lists = vec!["Warden".to_string(), "Hedge Warden".to_string()];
+        let one = json!({"name": "Grove Gift", "data": {"class": "Warden"},
+            "description": "<p>When you choose this grove at 2nd level, you learn one additional hedge warden cantrip of your choice.</p>"});
+        let sel = cantrip_select(&one, &lists).expect("bonus cantrip");
+        assert_eq!(sel["supports"], "Hedge Warden,0");
+        assert!(sel.get("number").is_none());
+        let two = json!({"name": "Grove Gift", "description": "<p>You learn two extra Warden cantrips of your choice.</p>"});
+        let sel = cantrip_select(&two, &lists).expect("bonus cantrips");
+        assert_eq!(
+            (sel["supports"].as_str(), &sel["number"]),
+            (Some("Warden,0"), &json!(2))
+        );
+        // A named cantrip is no choice.
+        let named = json!({"name": "Grove Gift", "description": "<p>You learn the ember lash cantrip.</p>"});
+        assert!(cantrip_select(&named, &lists).is_none());
     }
 }

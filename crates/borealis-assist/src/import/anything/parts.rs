@@ -414,8 +414,16 @@ pub(crate) fn names_planned(plan: &ImportPlan, except: &str, title: &str) -> boo
     })
 }
 
+/// Is `title` (a heading's words) a section the detection called narrative (see
+/// `plan::narrative_notes`)? Narrative is never imported, so it is no text section's either.
+fn names_narrative(plan: &ImportPlan, title: &str) -> bool {
+    super::plan::narrative_sections(plan)
+        .any(|n| heading_text(&format!("# {n}")).is_some_and(|(_, n)| !n.is_empty() && n == title))
+}
+
 /// A heading of the same level that only continues a text-only section the PDF flattened (a
-/// question of a FAQ, a sub-rule): unplanned, no boundary word, within reach.
+/// question of a FAQ, a sub-rule): unplanned, no boundary word, no end matter or narrative,
+/// within reach.
 fn continues_section(
     lines: &[&str],
     plan: &ImportPlan,
@@ -429,7 +437,9 @@ fn continues_section(
     planned.role == Role::Text
         && own_end.map_or(true, |e| at < e + MAX_EXTENSION_LINES)
         && !title.split(' ').any(|w| BOUNDARY_WORDS.contains(&w))
+        && !super::passage::end_matter(&title)
         && !names_planned(plan, &planned.id, &title)
+        && !names_narrative(plan, &title)
         && !root_sub_section(lines, plan, at)
         && !nested(lines, plan, planned)
 }
