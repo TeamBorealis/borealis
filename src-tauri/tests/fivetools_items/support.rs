@@ -1,6 +1,9 @@
 //! Helpers of the gated 5etools item audit (`fivetools_items.rs`): the raw 5etools entries
 //! matched to imported elements, the test characters, the tally and the per-book table.
 
+#[path = "../../../tools/regression-gate/outcome.rs"]
+mod outcome;
+
 use borealis_content::{Element, Ruleset};
 use borealis_engine::commands::{self, slot_key};
 use borealis_engine::state::AbilityMethod;
@@ -91,6 +94,12 @@ pub struct Tally {
 
 impl Tally {
     pub fn record(&mut self, cat: &str, id: &str, v: Verdict) {
+        let (pass, why) = match &v {
+            Verdict::Correct => (true, ""),
+            Verdict::Wrong(why) => (false, why.as_str()),
+            Verdict::NotModelled => (false, "not modelled"),
+        };
+        outcome::record("fivetools_items", &format!("{cat}/{id}"), pass, why);
         let c = self.cats.entry(cat.to_string()).or_default();
         c.checked += 1;
         match v {
@@ -98,6 +107,22 @@ impl Tally {
             Verdict::Wrong(why) => c.wrong.push((id.to_string(), why)),
             Verdict::NotModelled => c.not_modelled.push(id.to_string()),
         }
+    }
+
+    /// `(wrong, not modelled)` counts of a category (`None` when nothing was checked).
+    pub fn misses(&self, cat: &str) -> Option<(usize, usize)> {
+        self.cats
+            .get(cat)
+            .map(|c| (c.wrong.len(), c.not_modelled.len()))
+    }
+
+    /// Categories with wrong values, with the count.
+    pub fn wrong_counts(&self) -> Vec<(&str, usize)> {
+        self.cats
+            .iter()
+            .filter(|(_, c)| !c.wrong.is_empty())
+            .map(|(cat, c)| (cat.as_str(), c.wrong.len()))
+            .collect()
     }
 
     /// Ids of every wrong or not-modelled check, with the category.

@@ -144,7 +144,9 @@ impl Check<'_> {
         let props = self.raw.properties();
         let ranged = self.raw.code() == "R";
         let finesse = props.iter().any(|p| p == "F");
-        let (s, d) = (self.base.mods[0], self.base.mods[1]);
+        // the equipped character's modifiers: the weapon may change a score itself
+        let modifier = |i: usize| self.snap.abilities[i].modifier;
+        let (s, d) = (modifier(0), modifier(1));
         let ability = if ranged || (finesse && d > s) { d } else { s };
         let n = self.raw.int("bonusWeapon").unwrap_or(0);
         let extra_atk = self.raw.int("bonusWeaponAttack").unwrap_or(0);
@@ -458,6 +460,8 @@ impl Check<'_> {
         };
         for (how, modes) in m {
             for (mode, v) in modes.as_object().into_iter().flatten() {
+                // a bonus to every speed shows on the walking speed, which every character has
+                let mode = if mode == "*" { "walk" } else { mode.as_str() };
                 let before = get(&self.base.snap, mode);
                 let got = get(self.snap, mode);
                 let want = match (how.as_str(), v) {

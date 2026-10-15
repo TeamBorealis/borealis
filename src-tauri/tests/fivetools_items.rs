@@ -13,9 +13,11 @@
 //! violations and unread rule fields are counted. Values the engine computes are compared with
 //! expectations derived from the 5etools source fields of the same entry (`+N` weapons, armor
 //! AC formulas, ability scores, saves, defences, speeds, charges, attunement, spells, masteries,
-//! cost, weight...). Equipment packs and item groups must point at real items. The only hard
-//! assertions are no panics and no dangling pack/group references; value checks are reported
-//! per category (checked / correct / wrong / not modelled).
+//! cost, weight...). Equipment packs and item groups must point at real items. Hard
+//! assertions: no panics, no dangling pack/group references and, on a full run (no
+//! `BOREALIS_5ETOOLS_ITEM_LIMIT`), a ratchet: no wrong values beyond the known ones and no more
+//! "not modelled" checks in the converted categories. Value checks are reported per category
+//! (checked / correct / wrong / not modelled).
 
 #[path = "fivetools_items/checks.rs"]
 mod checks;
@@ -189,6 +191,47 @@ fn run(data: &Path) {
         dangling.is_empty(),
         "pack/group contents that are not installed items: {dangling:?}"
     );
+    if std::env::var_os("BOREALIS_5ETOOLS_ITEM_LIMIT").is_none() {
+        ratchet(&tally);
+    }
+}
+
+/// Wrong values allowed per category (known, not fixed yet).
+const KNOWN_WRONG: &[(&str, usize)] = &[
+    // medium armor with `dexterityMax: null` (no Dex cap)
+    ("base armor AC (light/medium/heavy dex caps)", 1),
+];
+
+/// Most "not modelled" checks allowed in categories that are converted.
+const NOT_MODELLED_CEILING: &[(&str, usize)] = &[
+    ("+N weapon attack/damage", 0),
+    ("+N shield AC", 0),
+    ("ability score flat bonus", 0),
+    ("weapon mastery (2024)", 0),
+    ("weapon proficiency (fighter, simple/martial)", 0),
+    ("Weapon Mastery select offers imported weapons", 0),
+    ("speed change (modifySpeed)", 0),
+    // charges on mundane gear that cannot be equipped
+    ("charges/uses", 7),
+];
+
+/// The full corpus run may not lose ground: no new wrong values, no regressions in what is
+/// converted.
+fn ratchet(tally: &Tally) {
+    for (cat, n) in tally.wrong_counts() {
+        let allowed = KNOWN_WRONG
+            .iter()
+            .find(|(c, _)| *c == cat)
+            .map_or(0, |(_, a)| *a);
+        assert!(n <= allowed, "{cat}: {n} wrong (allowed {allowed})");
+    }
+    for (cat, ceiling) in NOT_MODELLED_CEILING {
+        let (_, missing) = tally.misses(cat).unwrap_or((0, 0));
+        assert!(
+            missing <= *ceiling,
+            "{cat}: {missing} not modelled (ceiling {ceiling})"
+        );
+    }
 }
 
 fn print_pass(pass: &Pass) {
