@@ -403,6 +403,7 @@ pub async fn import_anything(
         elements: pending(&plan),
         plan,
         sweep_issues: Vec::new(),
+        source_checks: Vec::new(),
     };
     continue_draft(runner, base, draft, opts, progress).await
 }

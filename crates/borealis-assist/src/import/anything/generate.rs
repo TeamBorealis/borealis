@@ -327,6 +327,7 @@ pub(crate) fn pending(plan: &super::types::ImportPlan) -> Vec<DraftElement> {
             revisions: 0,
             rule_errors: Vec::new(),
             normalised: Vec::new(),
+            checks: Vec::new(),
         })
         .collect()
 }

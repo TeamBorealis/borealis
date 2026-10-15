@@ -555,6 +555,21 @@ pub struct DraftElement {
     /// Deterministic rule fixes applied (resource ids, `max`, rest names).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub normalised: Vec<String>,
+    /// Source-derived acceptance checks run on this element (see [`ElementCheck`]).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub checks: Vec<ElementCheck>,
+}
+
+/// One acceptance check derived from the source itself (a heading, table row, number or
+/// reference the element must carry). Feeds the element's review state.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ElementCheck {
+    /// Stable machine code, e.g. `table_row_missing`, `number_not_in_source`.
+    pub code: String,
+    /// One line for the user, naming what is missing or wrong.
+    pub message: String,
+    /// Whether the check failed.
+    pub failed: bool,
 }
 
 /// Where the import text comes from.
@@ -623,6 +638,9 @@ pub struct ImportDraft {
     pub elements: Vec<DraftElement>,
     /// Unresolved engine sweep issues.
     pub sweep_issues: Vec<super::sweep::SweepIssue>,
+    /// Source-derived checks not tied to one element (e.g. a heading no element covers).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub source_checks: Vec<ElementCheck>,
 }
 
 impl ImportDraft {
