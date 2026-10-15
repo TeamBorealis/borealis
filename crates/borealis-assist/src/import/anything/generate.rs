@@ -34,6 +34,8 @@ pub(crate) async fn generate_single_once(
 
 #[path = "retry.rs"]
 mod retry;
+#[path = "stat_blocks.rs"]
+mod stat_blocks;
 #[path = "validate.rs"]
 mod validate;
 #[cfg(test)]
@@ -371,6 +373,8 @@ pub(crate) async fn fill_pending(
     let store = ctx.base.clone().build();
     let total = draft.elements.len();
     let mut retries = Retries::default();
+    // A creature without a printed stat block is never sent for numbers.
+    stat_blocks::keep_unprinted_as_text(draft);
     let alone = fill_batches(runner, ctx, &store, draft, opts, progress, &mut retries).await;
     for idx in 0..total {
         if draft.elements[idx].status != ElementStatus::Pending {

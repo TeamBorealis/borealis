@@ -56,6 +56,8 @@ pub(crate) async fn validate_rounds(
             rule_issues.extend(super::super::mechanics::sweep(draft));
             // So do description sentences the source does not have.
             rule_issues.extend(super::super::fidelity::sweep(draft));
+            // And stat block numbers the printed stat block does not have.
+            rule_issues.extend(super::stat_blocks::sweep(draft));
         }
         emit(
             progress,
@@ -129,6 +131,7 @@ pub(crate) async fn validate_rounds(
     strip_unrepaired_rules(draft, &remaining_rules);
     mark_unresolved(draft, &remaining);
     draft.sweep_issues = remaining;
+    super::stat_blocks::settle(draft);
     super::super::mechanics::note_leftovers(draft);
     keep_printed(draft);
     super::super::fidelity::note_leftovers(draft);

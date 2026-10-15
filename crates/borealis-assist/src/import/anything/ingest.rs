@@ -19,6 +19,9 @@ use crate::error::AssistError;
 use crate::import::chunk::{headings, missing_headings, norm_words};
 use crate::import::{read_pdf_layout, split_pdf, PdfLayout};
 
+#[path = "pictures.rs"]
+mod pictures;
+
 /// Pages (or images) the model transcribes per call: few enough to copy verbatim.
 pub(crate) const VISUAL_PAGES_PER_CALL: usize = 4;
 /// Largest PDF part sent (below the 20 MB attachment limit, leaving room for base64).
@@ -167,6 +170,13 @@ impl Expect {
 enum Piece {
     Text(String),
     Visual(Visual),
+    /// Text-layer pages (the run's text and each page's own text) with pictures that may print
+    /// text the layer lacks, and the calls that copy those pictures.
+    Pictured {
+        text: String,
+        pages: Vec<(u32, String)>,
+        parts: Vec<pictures::PicturePart>,
+    },
 }
 
 async fn transcribe(
@@ -318,6 +328,13 @@ fn pdf_pieces(a: &Attachment, notes: &mut Vec<String>) -> Result<Vec<Piece>, Ass
             reasons.join("; ")
         ));
     }
+    let text_pages: std::collections::BTreeSet<u32> = layout
+        .pages
+        .iter()
+        .filter(|p| p.has_text())
+        .map(|p| p.number)
+        .collect();
+    let pictured = pictures::pictured_pages(&a.bytes, &text_pages);
     let mut pieces = Vec::new();
     let mut i = 0;
     while i < layout.pages.len() {
@@ -327,7 +344,21 @@ fn pdf_pieces(a: &Attachment, notes: &mut Vec<String>) -> Result<Vec<Piece>, Ass
             j += 1;
         }
         let run: Vec<usize> = (i..j).collect();
-        if text {
+        let with_pictures: Vec<usize> = run
+            .iter()
+            .copied()
+            .filter(|&k| pictured.contains(&layout.pages[k].number))
+            .collect();
+        if text && !with_pictures.is_empty() {
+            pieces.push(Piece::Pictured {
+                text: layout.text_of(&run, &scale),
+                pages: run
+                    .iter()
+                    .map(|&k| (layout.pages[k].number, layout.text_of(&[k], &scale)))
+                    .collect(),
+                parts: pictures::picture_parts(a, &layout, &with_pictures, notes)?,
+            });
+        } else if text {
             pieces.push(Piece::Text(layout.text_of(&run, &scale)));
         } else {
             pieces.extend(visual_parts(a, &layout, &run, notes)?);
@@ -410,6 +441,14 @@ pub(crate) async fn read_attachments(
         let t = match p {
             Piece::Text(t) => t.clone(),
             Piece::Visual(v) => transcribe(runner, v, opts, &mut out).await?,
+            Piece::Pictured { text, pages, parts } => {
+                let mut insets = Vec::new();
+                for part in parts {
+                    insets
+                        .extend(pictures::transcribe_pictures(runner, part, opts, &mut out).await);
+                }
+                pictures::splice(text, pages, &insets)
+            }
         };
         if !t.trim().is_empty() {
             texts.push(t.trim().to_string());
@@ -624,7 +663,7 @@ mod tests {
                     name: "probe.pdf".into(),
                 };
                 for p in pdf_pieces(&a, &mut Vec::new()).unwrap() {
-                    if let Piece::Text(t) = p {
+                    if let Piece::Text(t) | Piece::Pictured { text: t, .. } = p {
                         texts.push(t.trim().to_string());
                     }
                 }
