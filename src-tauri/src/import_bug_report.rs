@@ -39,6 +39,8 @@ pub struct ReportRequest {
     pub flagged: Vec<String>,
     /// The user ticked "include the source".
     pub include_source: bool,
+    /// The user ticked "Include recent logs" (off unless asked).
+    pub include_logs: bool,
 }
 
 /// The exact payload and what the dialog needs to show about it.
@@ -59,6 +61,8 @@ pub struct ImportReportPreview {
     pub source_bytes: Option<usize>,
     /// Largest source that can be attached.
     pub source_limit: usize,
+    /// There are local log lines that can be attached.
+    pub logs_available: bool,
     /// Where the report would go.
     pub endpoint: String,
 }
@@ -151,9 +155,15 @@ impl AppState {
         req: ReportRequest,
     ) -> ApiResult<ImportReportPreview> {
         let app = AppInfo::current(env!("CARGO_PKG_VERSION"));
+        let recent = crate::app_logs::recent_logs(
+            &self.paths.logs(),
+            borealis_assist::import::bug_report::MAX_LOG_LINES,
+        );
+        let logs_available = !recent.trim().is_empty();
         let mut options = ReportOptions {
             note: req.note,
             flagged: req.flagged,
+            logs: (req.include_logs && logs_available).then_some(recent),
             ..ReportOptions::default()
         };
         let (report, source_bytes) = match (req.draft_id.as_deref(), req.pack_id.as_deref()) {
@@ -197,6 +207,7 @@ impl AppState {
             source_available: source_bytes.is_some(),
             source_bytes,
             source_limit: MAX_SOURCE_BYTES,
+            logs_available,
             endpoint: outbox.endpoint.clone(),
         })
     }

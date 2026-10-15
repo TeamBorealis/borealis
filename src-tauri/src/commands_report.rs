@@ -10,6 +10,7 @@ use crate::state::AppState;
 use tauri::State;
 
 #[tauri::command(async)]
+#[allow(clippy::too_many_arguments)] // one parameter per contract argument
 pub fn import_report_preview(
     state: State<'_, AppState>,
     outbox: State<'_, Arc<ReportOutbox>>,
@@ -18,6 +19,7 @@ pub fn import_report_preview(
     note: Option<String>,
     flagged: Option<Vec<String>>,
     include_source: Option<bool>,
+    include_logs: Option<bool>,
 ) -> ApiResult<ImportReportPreview> {
     let req = ReportRequest {
         draft_id,
@@ -25,6 +27,7 @@ pub fn import_report_preview(
         note: note.unwrap_or_default(),
         flagged: flagged.unwrap_or_default(),
         include_source: include_source.unwrap_or(false),
+        include_logs: include_logs.unwrap_or(false),
     };
     state.import_report_preview(&outbox, req)
 }

@@ -49,6 +49,29 @@ describe("import bug reports (opt-in)", () => {
     expect(screen.queryByRole("dialog", { name: "Send a report" })).toBeNull();
   });
 
+  it("includes recent logs only after the box is ticked and shows them in the preview", async () => {
+    const user = userEvent.setup();
+    const api = fast();
+    renderApp("/import", { api });
+    await reviewRunebinder(user);
+    await user.click(screen.getByRole("button", { name: "Send a report" }));
+    const dialog = await screen.findByRole("dialog", { name: "Send a report" });
+    const box = await within(dialog).findByLabelText(/Include recent logs \(last 200 lines\)/) as HTMLInputElement;
+    expect(box.checked).toBe(false);
+    await user.click(within(dialog).getByRole("button", { name: /Report contents/ }));
+    const json = await within(dialog).findByLabelText("Report contents");
+    expect(json.textContent).not.toContain("Borealis started");
+
+    await user.click(box);
+    await waitFor(() => expect(within(dialog).getByLabelText("Report contents").textContent).toContain("Borealis started"));
+    const send = within(dialog).getByRole("button", { name: "Send" }) as HTMLButtonElement;
+    await waitFor(() => expect(send.disabled).toBe(false));
+    const shown: unknown = JSON.parse(within(dialog).getByLabelText("Report contents").textContent ?? "{}");
+    await user.click(send);
+    await within(dialog).findByText(/Report sent/);
+    expect(api.reports.sent[0]).toEqual(shown);
+  });
+
   it("flags one element, shows send failures and sends nothing on cancel", async () => {
     const user = userEvent.setup();
     const api = fast();

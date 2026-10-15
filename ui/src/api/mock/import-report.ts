@@ -3,6 +3,7 @@ import { apiError } from "./errors";
 
 const ENDPOINT = "https://borealisbuilder.com/api/import-report";
 const SOURCE_LIMIT = 1_000_000;
+const MOCK_LOGS = "INFO borealis_lib::app_logs: Borealis started\nWARN borealis_lib::content_index: index https://example.test/a.index: refused";
 const MOCK_SOURCE = "Runebinder\nHit Die d8. Saving throws: Intelligence, Wisdom.";
 
 /** Mirrors the backend outbox: previews are structure-only payloads; `send` posts nothing, it records. */
@@ -40,12 +41,13 @@ export class MockImportReports {
       flagged,
       note: (req.note ?? "").trim(),
       source: d && req.includeSource ? { name: "pasted text", kind: "text", chars: MOCK_SOURCE.length, text: MOCK_SOURCE } : null,
+      ...(req.includeLogs ? { logs: { lines: MOCK_LOGS.split("\n").length, text: MOCK_LOGS } } : {}),
     };
     const previewId = `preview-${++this.seq}`;
     this.previews.set(previewId, payload);
     return {
       previewId, payload, bytes: JSON.stringify(payload).length, selfChecksFailed: failed || codes.length > flagged.length,
-      sourceAvailable: !!d, sourceBytes: d ? MOCK_SOURCE.length : null, sourceLimit: SOURCE_LIMIT, endpoint: ENDPOINT,
+      sourceAvailable: !!d, sourceBytes: d ? MOCK_SOURCE.length : null, sourceLimit: SOURCE_LIMIT, logsAvailable: true, endpoint: ENDPOINT,
     };
   }
 

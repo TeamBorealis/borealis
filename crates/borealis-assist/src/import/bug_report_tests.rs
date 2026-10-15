@@ -222,3 +222,34 @@ fn prose_detection_keeps_expressions_and_labels() {
         "short quotes are labels"
     );
 }
+
+#[test]
+fn logs_are_attached_only_when_opted_in_and_capped() {
+    let many: String = (0..500).map(|i| format!("INFO line {i}\n")).collect();
+    assert!(pack_report(ReportOptions::default()).logs.is_none());
+    let json = serde_json::to_value(pack_report(ReportOptions::default())).unwrap();
+    assert!(json.get("logs").is_none(), "absent, not null, when off");
+
+    let with = pack_report(ReportOptions {
+        logs: Some(many),
+        ..ReportOptions::default()
+    });
+    let logs = with.logs.expect("logs attached");
+    assert_eq!(logs.lines, MAX_LOG_LINES);
+    assert_eq!(logs.text.lines().count(), MAX_LOG_LINES);
+    assert!(logs.text.ends_with("INFO line 499"));
+    assert!(!logs.text.contains("INFO line 299\n"));
+
+    let huge = format!("{}\n", "x".repeat(MAX_LOG_BYTES / 2)).repeat(4);
+    let capped = pack_report(ReportOptions {
+        logs: Some(huge),
+        ..ReportOptions::default()
+    });
+    assert!(capped.logs.unwrap().text.len() <= MAX_LOG_BYTES);
+    assert!(pack_report(ReportOptions {
+        logs: Some(String::new()),
+        ..ReportOptions::default()
+    })
+    .logs
+    .is_none());
+}

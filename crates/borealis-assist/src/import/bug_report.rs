@@ -22,6 +22,10 @@ use crate::error::AssistError;
 
 /// Format tag of [`BugReport`].
 pub const BUG_REPORT_FORMAT: &str = "borealis-import-bug-report/1";
+/// Most log lines attached (the newest ones).
+pub const MAX_LOG_LINES: usize = 200;
+/// Largest log text attached.
+pub const MAX_LOG_BYTES: usize = 100 * 1024;
 /// Largest source text that may be attached.
 pub const MAX_SOURCE_BYTES: usize = 1_000_000;
 /// Longest user note kept.
@@ -134,6 +138,15 @@ pub struct SourceAttachment {
     pub text: String,
 }
 
+/// The newest local log lines, attached only on the user's explicit choice (UP3, BR1).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LogAttachment {
+    /// Number of lines in `text`.
+    pub lines: usize,
+    /// The lines, home folder already replaced by `~`.
+    pub text: String,
+}
+
 /// What the user adds.
 #[derive(Debug, Clone, Default)]
 pub struct ReportOptions {
@@ -143,6 +156,8 @@ pub struct ReportOptions {
     pub flagged: Vec<String>,
     /// Attach the source text (`None` unless the user ticked the box).
     pub source: Option<(String, String, String)>,
+    /// The recent log text (`None` unless the user ticked "Include recent logs").
+    pub logs: Option<String>,
     /// The user's review decisions on the draft (accepted elements, text-only overrides).
     pub review: super::anything::review::ReviewOverrides,
 }
@@ -207,6 +222,24 @@ pub struct BugReport {
     pub note: String,
     /// The source, only when the user chose to include it.
     pub source: Option<SourceAttachment>,
+    /// Recent log lines, only when the user chose to include them.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logs: Option<LogAttachment>,
+}
+
+/// The last [`MAX_LOG_LINES`] lines of `text`, cut to [`MAX_LOG_BYTES`] at a line start.
+fn clean_logs(text: &str) -> Option<LogAttachment> {
+    let all: Vec<&str> = text.lines().collect();
+    let mut kept = &all[all.len().saturating_sub(MAX_LOG_LINES)..];
+    let mut bytes: usize = kept.iter().map(|l| l.len() + 1).sum();
+    while bytes > MAX_LOG_BYTES && !kept.is_empty() {
+        bytes -= kept[0].len() + 1;
+        kept = &kept[1..];
+    }
+    (!kept.is_empty()).then(|| LogAttachment {
+        lines: kept.len(),
+        text: kept.join("\n"),
+    })
 }
 
 /// A report for an installed import pack: its `report.json`, `content.json` and the engine
@@ -427,6 +460,7 @@ fn assemble(
         flagged,
         note: options.note.trim().chars().take(MAX_NOTE_CHARS).collect(),
         source,
+        logs: options.logs.as_deref().and_then(clean_logs),
     })
 }
 

@@ -654,6 +654,7 @@
    "args": {
     "draftId": true,
     "flagged": true,
+    "includeLogs": true,
     "includeSource": true,
     "note": true,
     "packId": true
@@ -5152,6 +5153,12 @@
      }
     },
     "endpoint": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "logsAvailable": {
      "opt": false,
      "t": {
       "k": "prim"

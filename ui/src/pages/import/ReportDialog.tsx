@@ -26,6 +26,7 @@ export function ReportDialog({ target, flagged = [], onClose }: { target: Report
   const api = useApi();
   const [note, setNote] = useState("");
   const [includeSource, setIncludeSource] = useState(false);
+  const [includeLogs, setIncludeLogs] = useState(false);
   const [preview, setPreview] = useState<ImportReportPreview | null>(null);
   const [stale, setStale] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -39,13 +40,13 @@ export function ReportDialog({ target, flagged = [], onClose }: { target: Report
     let live = true;
     setStale(true);
     const t = setTimeout(() => {
-      const args = { ...(draftId ? { draftId } : { packId }), note, includeSource, flagged: flaggedKey ? flaggedKey.split("\n") : [] };
+      const args = { ...(draftId ? { draftId } : { packId }), note, includeSource, includeLogs, flagged: flaggedKey ? flaggedKey.split("\n") : [] };
       api.importReportPreview(args)
         .then((p) => { if (live) { loaded.current = true; setPreview(p); setLoadError(null); setStale(false); } })
         .catch((e) => { if (live) { setLoadError(errorMessage(e)); setStale(false); } });
     }, loaded.current ? NOTE_DELAY_MS : 0);
     return () => { live = false; clearTimeout(t); };
-  }, [api, draftId, packId, note, includeSource, flaggedKey]);
+  }, [api, draftId, packId, note, includeSource, includeLogs, flaggedKey]);
 
   const send = async () => {
     if (!preview) return;
@@ -81,6 +82,10 @@ export function ReportDialog({ target, flagged = [], onClose }: { target: Report
                 : tooLarge ? `The source is too large to attach (${kb(preview.sourceBytes ?? 0)}).`
                 : "Only include it if you are allowed to share it. It may be someone else's copyrighted material; it is used only to fix the importer and is never published."} />
             {includeSource && <Alert tone="warning">The full text of your source will be sent with this report.</Alert>}
+            <Check label="Include recent logs (last 200 lines)" checked={includeLogs} disabled={!preview?.logsAvailable}
+              onChange={(e) => setIncludeLogs(e.target.checked)}
+              description={preview && !preview.logsAvailable ? "There are no logs on this device yet."
+                : "Diagnostic lines from this device: app version, content index updates and errors. They hold no character or source text, and your home folder is shown as ~. See them under Report contents before sending."} />
             {loadError && <Alert tone="danger">{loadError}</Alert>}
             {phase.kind === "failed" && <Alert tone="danger" role="alert">{phase.message}</Alert>}
             <Expander title="Report contents" defaultOpen={false} headerExtra={<span>{preview ? kb(preview.bytes) : "..."}</span>}>

@@ -127,7 +127,7 @@ export interface ImportFinalizeRequest { packName: string; prefix: string }
  * Opt-in import bug report (BR1-BR3): report on a draft under review (`draftId`) or an imported pack
  * (`packId`), exactly one. Nothing is sent until `importReportSend` with the preview's id.
  */
-export interface ImportReportRequest { draftId?: string; packId?: string; note?: string; flagged?: string[]; includeSource?: boolean }
+export interface ImportReportRequest { draftId?: string; packId?: string; note?: string; flagged?: string[]; includeSource?: boolean; includeLogs?: boolean }
 
 /** The exact payload that `importReportSend` would post, plus what the dialog shows about it. */
 export interface ImportReportPreview {
@@ -141,6 +141,8 @@ export interface ImportReportPreview {
   sourceAvailable: boolean;
   sourceBytes: number | null;
   sourceLimit: number;
+  /** There are local log lines that can be attached (BR1, UP3). */
+  logsAvailable: boolean;
   endpoint: string;
 }
 

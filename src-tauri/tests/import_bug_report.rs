@@ -224,3 +224,44 @@ fn an_installed_import_pack_can_be_reported_with_flagged_elements() {
         ErrorCode::NotFound
     );
 }
+
+#[test]
+fn recent_logs_are_in_the_preview_only_when_ticked() {
+    let h = imported_draft();
+    let logs = h.state.paths.logs();
+    std::fs::create_dir_all(&logs).unwrap();
+    std::fs::write(
+        logs.join("borealis-2026-10-15.log"),
+        "INFO borealis_lib: Borealis started\nWARN index https://example.test/a.index: refused\n",
+    )
+    .unwrap();
+    let outbox = ReportOutbox::new(
+        "https://example.test/api/import-report",
+        Arc::new(FakePost::default()),
+    );
+
+    let off = h
+        .state
+        .import_report_preview(&outbox, draft_req(&h))
+        .unwrap();
+    assert!(off.logs_available);
+    assert!(
+        off.payload.get("logs").is_none(),
+        "logs stay out unless ticked"
+    );
+    assert!(!off.payload.to_string().contains("Borealis started"));
+
+    let req = ReportRequest {
+        include_logs: true,
+        ..draft_req(&h)
+    };
+    let on = h.state.import_report_preview(&outbox, req).unwrap();
+    assert_eq!(on.payload["logs"]["lines"], 2);
+    assert!(on.payload["logs"]["text"]
+        .as_str()
+        .unwrap()
+        .contains("refused"));
+    let errs = contract_support::Contract::load()
+        .def("ImportReportPreview", &serde_json::to_value(&on).unwrap());
+    assert!(errs.is_empty(), "{errs:?}");
+}
