@@ -433,11 +433,13 @@ fn app_folder_enum_maps_to_app_owned_dirs() {
         app.app_folder(AppFolder::Characters),
         data.join("characters")
     );
+    assert_eq!(app.app_folder(AppFolder::Logs), data.join("logs"));
 }
 
 #[test]
 fn app_folder_enum_rejects_unknown_names() {
     use borealis_lib::commands_system::AppFolder;
     assert!(serde_json::from_str::<AppFolder>("\"user-content\"").is_ok());
+    assert!(serde_json::from_str::<AppFolder>("\"logs\"").is_ok());
     assert!(serde_json::from_str::<AppFolder>("\"/etc\"").is_err());
 }

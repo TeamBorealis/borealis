@@ -42,6 +42,12 @@ impl AppPaths {
         self.data.join("characters")
     }
 
+    /// Log files (see `app_logs`).
+    #[must_use]
+    pub fn logs(&self) -> PathBuf {
+        self.data.join(crate::app_logs::LOGS_DIR)
+    }
+
     /// Content preferences (disabled packs, update indexes).
     #[must_use]
     pub fn prefs_file(&self) -> PathBuf {

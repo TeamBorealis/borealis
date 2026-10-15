@@ -141,7 +141,7 @@ pub(super) async fn generate_single(
                     return Err(err.to_string());
                 }
                 let msg = format!("retrying \"{}\" after: {err}", planned.name);
-                tracing::warn!(element = %planned.id, "{msg}");
+                tracing::warn!(element = %planned.id, "import: retrying one element");
                 emit(progress, Stage::Generate, 0, 0, &msg);
                 failed = Some(err);
             }
@@ -277,7 +277,7 @@ fn queue_retry(
         Next::Alone => format!("retrying \"{}\" on its own after: {err}", part[0].name),
         Next::GiveUp => format!("{n} element(s) failed: {err}"),
     };
-    tracing::warn!("{msg}");
+    tracing::warn!(elements = n, next = ?next, "import: element generation will be retried");
     emit(progress, Stage::Generate, 0, 0, &msg);
     let retry = |how| Some((how, err.to_string()));
     match next {

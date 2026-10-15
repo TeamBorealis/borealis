@@ -19,6 +19,8 @@ pub enum AppFolder {
     UserContent,
     /// Saved characters.
     Characters,
+    /// Local log files (UP3).
+    Logs,
 }
 
 impl AppState {
@@ -29,6 +31,7 @@ impl AppState {
             AppFolder::Content => self.paths.content_root.clone(),
             AppFolder::UserContent => self.paths.library(),
             AppFolder::Characters => self.characters_dir(),
+            AppFolder::Logs => self.paths.logs(),
         }
     }
 }
@@ -63,6 +66,12 @@ fn open_in_os(_dir: &std::path::Path) -> ApiResult<()> {
 #[tauri::command(async)]
 pub fn open_app_folder(state: S<'_>, folder: AppFolder) -> ApiResult<()> {
     open_in_os(&state.app_folder(folder))
+}
+
+/// The newest log lines, redacted: what a phone shares (there is no folder to open there).
+#[tauri::command(async)]
+pub fn get_recent_logs(state: S<'_>) -> String {
+    crate::app_logs::recent_logs(&state.paths.logs(), crate::app_logs::EXCERPT_LINES)
 }
 
 /// Restart the application (new content is loaded once per process).

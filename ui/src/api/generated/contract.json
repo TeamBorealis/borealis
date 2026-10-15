@@ -491,6 +491,13 @@
     "name": "ElementDetail"
    }
   },
+  "get_recent_logs": {
+   "args": {},
+   "method": "getRecentLogs",
+   "response": {
+    "k": "prim"
+   }
+  },
   "get_ruleset_profile": {
    "args": {
     "ruleset": false

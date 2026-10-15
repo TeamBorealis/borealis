@@ -38,6 +38,10 @@ impl StartupEmitter for TauriEmitter {
 /// If the splash window cannot be created.
 pub fn install(app: &tauri::App) -> tauri::Result<()> {
     let handle = app.handle().clone();
+    if let Ok(data) = handle.path().app_data_dir() {
+        crate::app_logs::init(&data);
+    }
+    crate::app_logs::log_startup();
     let startup = Arc::new(Startup::new(Box::new(TauriEmitter(handle.clone()))));
     app.manage(Arc::clone(&startup));
     for event in [EVENT_SPLASH_READY, EVENT_MAIN_LOADED] {

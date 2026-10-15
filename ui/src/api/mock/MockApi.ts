@@ -581,7 +581,11 @@ export class MockApi implements Api {
   async appUpdateStatus() { await this.tick(); return { ...this.appUpdate.status }; }
   async checkAppUpdate() { await this.tick(); this.appUpdate.requests += 1; this.emit("appupdate:status", { ...this.appUpdate.status }); return { ...this.appUpdate.status }; }
   async openDownloadPage() { await this.tick(); this.appUpdate.opened += 1; }
-  async openAppFolder() { await this.tick(); }
+  /** Folders asked to be opened, and the log text the mock "device" holds (tests set it). */
+  readonly openedFolders: string[] = [];
+  recentLogs = "2026-10-15T09:00:00Z  INFO borealis_lib::app_logs: Borealis started version=\"1.0.1\"";
+  async openAppFolder(args: { folder: string }) { await this.tick(); this.openedFolders.push(args.folder); }
+  async getRecentLogs() { await this.tick(); return this.recentLogs; }
   async restartApp() { await this.tick(); }
 
   /* ---------- AI ---------- */

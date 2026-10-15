@@ -30,6 +30,8 @@ serde_json = "1"
 thiserror = "2"
 anyhow = "1"
 tracing = "0.1"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["std", "fmt", "env-filter"] }
+tracing-appender = "0.2"
 quick-xml = "0.42"
 tokio = { version = "1", features = ["process", "io-util", "rt", "macros", "sync"] }
 borealis-content = { path = "crates/borealis-content" }
