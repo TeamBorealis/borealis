@@ -4,6 +4,10 @@
 //! in one line. Only `check` elements need the user's eyes; the rest of what we know stays in
 //! `details`.
 //!
+//! `text_only` is one concept with the import report: a whole section kept as a text entry (the
+//! report's `text_only` outcome) is text only here too, beside mechanical elements whose text
+//! states mechanics no rule implements (or that the import kept in the text on purpose).
+//!
 //! The user's own decisions ([`ReviewOverrides`]) are kept beside the draft: an element marked
 //! as fine stays `ok` until its JSON changes, and a text-only override says whether the sheet is
 //! expected to compute an element's mechanics.
@@ -65,7 +69,8 @@ pub struct ReviewState {
     pub reason: String,
     /// Everything else we know, most important first (model notes, normalisations, balance).
     pub details: Vec<String>,
-    /// The sheet will not compute some of this element's mechanics.
+    /// The sheet will not compute some of this element's mechanics (a text entry computes
+    /// none: it is text only too).
     pub text_only: bool,
     /// Why it is text only (empty when not).
     pub text_only_reason: String,
@@ -266,7 +271,7 @@ fn check_reasons(el: &DraftElement, draft: &ImportDraft, found: &DraftFindings) 
             "It has no speed: its source passage was probably cut short. Point to the full passage or add the missing traits.",
         ));
     }
-    let passage = source_passage(el, draft).map(|(_, _, t)| t);
+    let passage = own_passage(el, draft);
     for gap in super::mechanics::element_mechanics(draft, el, passage.as_deref()).gaps {
         out.push(reason(code::MECHANIC_LOST, sentence_case(&short(&gap))));
     }
@@ -291,8 +296,83 @@ fn check_reasons(el: &DraftElement, draft: &ImportDraft, found: &DraftFindings) 
         .iter()
         .find(|p| p.id == el.id)
         .and_then(|p| super::batch::unlocated_warning(&draft.source_text, p))
+        .filter(|_| !traced_from_source(el, found))
     {
         out.push(reason(code::UNLOCATED, sentence_case(&short(&msg))));
+    }
+    out
+}
+
+/// Fewest description words beyond the name that make a traced description evidence that the
+/// element was read from the source, wherever its passage is.
+const MIN_TRACED_WORDS: usize = 12;
+
+/// Its description passed the fidelity check (every sentence is in the source) and says more
+/// than its name: an unlocated passage did not lose it (a name wrapped over two lines, a table
+/// read in columns).
+fn traced_from_source(el: &DraftElement, found: &DraftFindings) -> bool {
+    let passed = el
+        .checks
+        .iter()
+        .any(|c| c.code == "description_untraced" && !c.failed)
+        && !el
+            .checks
+            .iter()
+            .any(|c| c.code == "description_untraced" && c.failed);
+    let name = super::fidelity::words(&el.name);
+    let extra = super::fidelity::words(&super::fidelity::plain(
+        el.json
+            .get("description")
+            .and_then(Value::as_str)
+            .unwrap_or(""),
+    ))
+    .into_iter()
+    .filter(|w| !name.contains(w))
+    .count();
+    passed && !found.untraced.contains_key(&el.id) && extra >= MIN_TRACED_WORDS
+}
+
+/// The element's own source passage: its located lines without the lines of the other planned
+/// elements that start inside it (a species' passage holds its subraces, whose mechanics are
+/// theirs).
+fn own_passage(el: &DraftElement, draft: &ImportDraft) -> Option<String> {
+    let (start, end, _) = source_passage(el, draft)?;
+    let inner: Vec<(usize, usize)> = draft
+        .plan
+        .elements
+        .iter()
+        .filter(|p| p.id != el.id)
+        .filter_map(|p| p.excerpt.as_ref())
+        .map(|x| (x.start_line, x.end_line))
+        .filter(|(s, _)| *s > start && *s <= end)
+        .collect();
+    let lines: Vec<&str> = draft.source_text.lines().collect();
+    let own: Vec<&str> = (start..=end)
+        .filter(|n| !inner.iter().any(|(s, e)| n >= s && n <= e))
+        .filter_map(|n| lines.get(n - 1).copied())
+        .collect();
+    Some(join_wrapped(&own))
+}
+
+/// A line of prose (not blank, a heading, a table row or a list item).
+fn prose_line(line: &str) -> bool {
+    let t = line.trim();
+    let item = t.starts_with("- ") || t.starts_with("* ") || t.starts_with('\u{2022}');
+    !t.is_empty() && !t.starts_with('#') && !item && !t.contains(" | ")
+}
+
+/// `lines` with the wrapped lines of a paragraph joined, so a sentence printed over two lines
+/// is read whole.
+fn join_wrapped(lines: &[&str]) -> String {
+    let mut out = String::new();
+    let mut prev_prose = false;
+    for l in lines {
+        let prose = prose_line(l);
+        if !out.is_empty() {
+            out.push(if prev_prose && prose { ' ' } else { '\n' });
+        }
+        out.push_str(l.trim_end());
+        prev_prose = prose;
     }
     out
 }
@@ -322,6 +402,20 @@ fn info_details(el: &DraftElement) -> Vec<String> {
     out
 }
 
+/// Words of a generation note saying a mechanic was left in the text on purpose (no rule kind
+/// fits it).
+const KEPT_IN_TEXT_NOTES: [&str; 6] = [
+    "description only",
+    "only in the description",
+    "no rule kind",
+    "no allowed rule kind",
+    "none of the available rule kinds",
+    "kept as text",
+];
+
+/// Why the sheet will not compute (all of) `el`: mechanics its text states that no rule
+/// implements, a generation note saying a mechanic was kept in the text, a new weapon property,
+/// or a whole section kept as a text entry (the report's `text_only` outcome).
 fn text_only_of(el: &DraftElement, draft: &ImportDraft) -> Option<String> {
     if el.json.is_null() {
         return None;
@@ -330,9 +424,38 @@ fn text_only_of(el: &DraftElement, draft: &ImportDraft) -> Option<String> {
     if let Some(first) = found.first() {
         return Some(sentence_case(&short(first)));
     }
+    let noted = el
+        .issues
+        .iter()
+        .filter(|i| !is_pipeline_issue(i))
+        .find(|i| {
+            let low = i.to_lowercase();
+            KEPT_IN_TEXT_NOTES.iter().any(|k| low.contains(k))
+        });
+    if let Some(note) = noted.filter(|_| el.role != Role::Text) {
+        return Some(format!("Kept in the text by the import: {}", short(note)));
+    }
     let new_property =
         el.ty == "Weapon Property" && super::items::known_property(&el.name).is_none();
-    new_property.then(|| "A new weapon property: the app applies no rules for it.".to_string())
+    if new_property {
+        return Some("A new weapon property: the app applies no rules for it.".to_string());
+    }
+    text_entry(el, draft).then(|| {
+        "A text entry: the app shows the source's text and computes nothing from it.".to_string()
+    })
+}
+
+/// `el` is a whole section kept as a text entry: the root of a rules or condition group (what
+/// the import report lists with the `text_only` outcome).
+fn text_entry(el: &DraftElement, draft: &ImportDraft) -> bool {
+    el.role == Role::Text
+        && draft.plan.groups.iter().any(|g| {
+            g.root_id.as_deref() == Some(el.id.as_str())
+                && matches!(
+                    g.kind,
+                    super::types::ImportKind::Rules | super::types::ImportKind::Condition
+                )
+        })
 }
 
 fn state_of(
@@ -427,6 +550,7 @@ const MAX_NOTE_ITEMS: usize = 40;
 fn note_summary(code: &str) -> String {
     match code {
         "heading_uncovered" => "These headings weren't imported".into(),
+        "text_uncovered" => "This text wasn't imported".into(),
         other => format!(
             "The import failed the check \"{}\"",
             other.replace('_', " ")
@@ -471,7 +595,9 @@ pub struct ReviewCounts {
     pub check: usize,
     /// `not_imported` elements.
     pub not_imported: usize,
-    /// Elements whose mechanics the sheet will not (fully) compute.
+    /// Elements whose mechanics the sheet will not (fully) compute: mechanical elements with
+    /// text-only mechanics, and every section kept as a text entry (each import report entry
+    /// with the `text_only` outcome is one of these).
     pub text_only: usize,
     /// Elements the user marked as fine.
     pub accepted: usize,

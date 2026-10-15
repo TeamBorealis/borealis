@@ -74,11 +74,22 @@ fn row_words(line: &str) -> Vec<String> {
         .collect()
 }
 
+/// A row of a table of contents: a name and a page number ("Old Ways | 12").
+fn contents_row(line: &str) -> bool {
+    let cs = cells(line);
+    cs.len() == 2
+        && !cs[1].is_empty()
+        && cs[1].chars().all(|c| c.is_ascii_digit())
+        && cs[0].chars().any(char::is_alphabetic)
+        && !cs[0].chars().any(|c| c.is_ascii_digit())
+}
+
 /// The data rows of the tables in `[s, e)`: header rows (before a block's first row printing a
-/// number other than a die, so "d6 | Effect" is a header), lone rows and page furniture left
-/// out.
+/// number other than a die, so "d6 | Effect" is a header), lone rows, rows of a table of
+/// contents and page furniture left out.
 fn data_rows(lines: &[String], s: usize, e: usize, furniture: &Furniture) -> Vec<usize> {
-    let row = |i: usize| lines.get(i).is_some_and(|l| is_row(l)) && !furniture.has(i);
+    let row =
+        |i: usize| lines.get(i).is_some_and(|l| is_row(l) && !contents_row(l)) && !furniture.has(i);
     let mut out = Vec::new();
     let mut numbered_block = false;
     for (i, line) in lines.iter().enumerate().take(e).skip(s) {
@@ -126,6 +137,65 @@ pub(super) fn row_owners(draft: &ImportDraft, lines: &[String]) -> HashMap<Strin
             if let Some((id, _, _)) = nearest.filter(|(_, _, e)| i < *e) {
                 out.entry((*id).to_string()).or_default().push(i);
             }
+        }
+    }
+    out
+}
+
+/// End (exclusive) of the section a passage starting at `s` heads: the next heading of its
+/// level or higher, else `end`.
+fn section_end(lines: &[String], s: usize, end: usize) -> usize {
+    let Some((level, _)) = lines.get(s).and_then(|l| heading(l)) else {
+        return end;
+    };
+    (s + 1..end)
+        .find(|j| heading(&lines[*j]).is_some_and(|(n, _)| n <= level))
+        .unwrap_or(end)
+}
+
+/// The rows of a table inside an element's own section that text entries planned inside that
+/// section own (a table split into entries of their own): element id -> rows. Class and
+/// subclass roots, whose sections hold their features, and text entries are left out.
+pub(super) fn piece_rows(
+    draft: &ImportDraft,
+    lines: &[String],
+    owners: &HashMap<String, Vec<usize>>,
+) -> HashMap<String, Vec<usize>> {
+    let plan = &draft.plan.elements;
+    let text_starts: Vec<(&str, usize)> = plan
+        .iter()
+        .filter(|p| p.role == Role::Text)
+        .filter_map(|p| span(p).map(|(s, _)| (p.id.as_str(), s)))
+        .collect();
+    let mut out: HashMap<String, Vec<usize>> = HashMap::new();
+    for p in plan.iter().filter(|p| {
+        !matches!(
+            p.role,
+            Role::Text | Role::Class | Role::Subclass | Role::SubclassGate
+        )
+    }) {
+        let Some((s, e)) = span(p) else {
+            continue;
+        };
+        let next_element = plan
+            .iter()
+            .filter(|o| o.role != Role::Text && o.id != p.id)
+            .filter_map(span)
+            .map(|(o, _)| o)
+            .filter(|o| *o > s)
+            .min()
+            .unwrap_or(e);
+        let end = section_end(lines, s, e.min(next_element));
+        let rows: Vec<usize> = text_starts
+            .iter()
+            .filter(|(_, t)| *t > s && *t < end)
+            .filter_map(|(id, _)| owners.get(*id))
+            .flatten()
+            .copied()
+            .filter(|i| *i > s && *i < end)
+            .collect();
+        if !rows.is_empty() {
+            out.insert(p.id.clone(), rows);
         }
     }
     out
@@ -240,6 +310,21 @@ pub(super) fn row_checks(
         None => c.rows.get(&e.id).map_or(&[][..], Vec::as_slice),
     };
     let mut out = Vec::new();
+    let pieces = match root {
+        Some(_) => &[][..],
+        None => c.pieces.get(&e.id).map_or(&[][..], Vec::as_slice),
+    };
+    let split = missing_rows(json, &e.name, pieces, &c.lines);
+    if !split.is_empty() {
+        out.push(failed(
+            TABLE_ROW_MISSING,
+            format!(
+                "{} of its own table's rows are separate entries, not in it: {}",
+                split.len(),
+                quoted_list(&split)
+            ),
+        ));
+    }
     let missing = missing_rows(json, &e.name, rows, &c.lines);
     if !missing.is_empty() {
         let message = if missing.len() == 1 {
@@ -263,7 +348,10 @@ pub(super) fn row_checks(
             ));
         }
     }
-    if out.is_empty() && (!rows.is_empty() || root.is_some() && features == 0 && has_table(c, root))
+    if out.is_empty()
+        && (!rows.is_empty()
+            || !pieces.is_empty()
+            || root.is_some() && features == 0 && has_table(c, root))
     {
         out.push(passed(TABLE_ROW_MISSING, "Every table row is imported"));
     }

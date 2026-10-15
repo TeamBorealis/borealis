@@ -55,8 +55,16 @@ const RULE_SKIP_KEYS: [&str; 11] = [
     "replaces",
     "cap",
 ];
-/// `data` fields whose numbers the source prints (an item's table row, a weapon's cells).
-const DATA_NUMBER_KEYS: [&str; 10] = [
+/// `data` fields whose numbers the source prints (an item's table row, a weapon's cells, a
+/// stat block's average hit points and ability scores).
+const DATA_NUMBER_KEYS: [&str; 17] = [
+    "average",
+    "str",
+    "dex",
+    "con",
+    "int",
+    "wis",
+    "cha",
     "dice",
     "versatile_damage",
     "range",
@@ -221,7 +229,14 @@ fn walk(v: &Value, key: &str, label: &str, f: &Fields, out: &mut Vec<(String, Cl
 }
 
 /// Field names as the user reads them.
-const LABELS: [(&str, &str); 6] = [
+const LABELS: [(&str, &str); 13] = [
+    ("average", "hit points"),
+    ("str", "STR"),
+    ("dex", "DEX"),
+    ("con", "CON"),
+    ("int", "INT"),
+    ("wis", "WIS"),
+    ("cha", "CHA"),
     ("armorclass", "AC"),
     ("base ac", "AC"),
     ("dc", "DC"),

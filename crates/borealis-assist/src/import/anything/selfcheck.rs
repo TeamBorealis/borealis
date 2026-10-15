@@ -9,10 +9,14 @@
 //! (a number neither the passage nor the rules library prints, a row most of whose words the
 //! element lacks), so a failed check is worth the user's look.
 //!
-//! Stable codes (the review state maps them): [`HEADING_UNCOVERED`] (import level),
-//! [`TABLE_ROW_MISSING`], [`NUMBER_NOT_IN_SOURCE`], [`REFERENCE_UNRESOLVED`],
-//! [`DESCRIPTION_UNTRACED`]. A passed check is recorded once per code the element was checked
-//! for, so "checked and fine" differs from "not checked".
+//! Stable codes (the review state maps them): [`HEADING_UNCOVERED`] and [`TEXT_UNCOVERED`]
+//! (import level), [`TABLE_ROW_MISSING`], [`NUMBER_NOT_IN_SOURCE`], [`REFERENCE_UNRESOLVED`],
+//! [`DESCRIPTION_UNTRACED`], [`STAT_BLOCK_ABSENT`], [`LIST_MEMBER_MISSING`], [`RULE_MISSING`],
+//! [`DESCRIPTION_EMPTY`], [`NARRATIVE_TEXT`], [`LIBRARY_DUPLICATE`]. A passed check is
+//! recorded once per code the element was checked for, so "checked and fine" differs from "not
+//! checked" (the last three record failures only: they apply to every element). Only the
+//! numbers, rows and references checks are repaired by a model call; the others are the
+//! user's to decide.
 
 use std::collections::{HashMap, HashSet};
 
@@ -32,6 +36,12 @@ use super::types::{
 };
 use crate::homebrew::PackContext;
 
+#[path = "selfcheck_content.rs"]
+mod content;
+#[path = "selfcheck_lists.rs"]
+mod lists;
+#[path = "selfcheck_monsters.rs"]
+mod monsters;
 #[path = "selfcheck_numbers.rs"]
 mod numbers;
 #[path = "selfcheck_rows.rs"]
@@ -48,6 +58,24 @@ pub(crate) const NUMBER_NOT_IN_SOURCE: &str = "number_not_in_source";
 pub(crate) const REFERENCE_UNRESOLVED: &str = "reference_unresolved";
 /// Description sentences the source does not have (the fidelity check's result).
 pub(crate) const DESCRIPTION_UNTRACED: &str = "description_untraced";
+/// Source text that starts no heading (a margin quote, a sentence read as a title) that no
+/// element carries (an import-level check, beside [`HEADING_UNCOVERED`]).
+pub(crate) const TEXT_UNCOVERED: &str = "text_uncovered";
+/// A creature with no printed stat block in its passage, or whose stat block numbers are mostly
+/// not printed there.
+pub(crate) const STAT_BLOCK_ABSENT: &str = "stat_block_absent";
+/// Spells a list in the element's passage names (or a cantrip it teaches) that it does not
+/// grant while it grants the others.
+pub(crate) const LIST_MEMBER_MISSING: &str = "list_member_missing";
+/// A lasting mechanic an item's text states (advantage, an immunity, a resistance, a spell, an
+/// Armor Class bonus) that none of its rules carries.
+pub(crate) const RULE_MISSING: &str = "rule_missing";
+/// A description that is only the element's name.
+pub(crate) const DESCRIPTION_EMPTY: &str = "description_empty";
+/// A text entry that reads as an adventure's narrative, not a rule.
+pub(crate) const NARRATIVE_TEXT: &str = "narrative_text";
+/// An item the rules library already has that the source only mentions.
+pub(crate) const LIBRARY_DUPLICATE: &str = "library_duplicate";
 
 /// Fewest words of a heading's own body that make it a content heading.
 const MIN_BODY_WORDS: usize = 12;
@@ -178,6 +206,8 @@ fn quoted_list(names: &[String]) -> String {
 struct Checker {
     lines: Vec<String>,
     rows: HashMap<String, Vec<usize>>,
+    /// Rows of an element's own table that text entries of their own carry.
+    pieces: HashMap<String, Vec<usize>>,
     library: ContentStore,
     spells: Vec<(String, String)>,
 }
@@ -186,8 +216,10 @@ impl Checker {
     fn new(base: &ContentStoreBuilder, draft: &ImportDraft) -> Self {
         let lines: Vec<String> = draft.source_text.lines().map(str::to_string).collect();
         let library = base.clone().build();
+        let owners = rows::row_owners(draft, &lines);
         Self {
-            rows: rows::row_owners(draft, &lines),
+            pieces: rows::piece_rows(draft, &lines, &owners),
+            rows: owners,
             spells: numbers::spell_names(&library),
             lines,
             library,
@@ -251,6 +283,49 @@ fn strings(v: &Value, out: &mut Vec<String>) {
     }
 }
 
+/// Words a title never ends on: a line that does is a sentence cut at the line end.
+const FRAGMENT_END_WORDS: [&str; 40] = [
+    "a", "an", "the", "of", "to", "that", "who", "which", "my", "your", "our", "their", "and",
+    "or", "in", "on", "at", "for", "with", "by", "from", "is", "are", "was", "were", "we", "it",
+    "as", "but", "could", "would", "should", "can", "will", "have", "had", "be", "been", "not",
+    "than",
+];
+/// First words of a sentence told in the first person, never of a title.
+const FIRST_PERSON: [&str; 6] = ["i", "ive", "im", "id", "ill", "my"];
+/// Most words of a title; a longer heading line is a sentence (a margin quote read as one).
+const MAX_TITLE_WORDS: usize = 8;
+
+/// A heading line that is no title: a sentence cut at the line end, a quote, or a sentence
+/// as long as a line of prose.
+fn fragment(title: &str) -> bool {
+    let ws: Vec<String> = title
+        .split_whitespace()
+        .map(|w| {
+            w.trim_matches(|c: char| !c.is_alphanumeric())
+                .to_lowercase()
+        })
+        .filter(|w| !w.is_empty())
+        .collect();
+    let quoted = title.starts_with(['"', '\u{201c}', '\u{2018}', '\'']);
+    let open_end = title.ends_with([',', ';']);
+    // A stop inside the line ("... It was") ends a sentence a title never has.
+    let inner_stop = title
+        .trim_end_matches(['.', '!', '?'])
+        .contains(['.', '!', '?']);
+    let first = ws
+        .first()
+        .map(|w| w.replace(['\'', '\u{2019}'], ""))
+        .unwrap_or_default();
+    quoted
+        || open_end
+        || inner_stop
+        || FIRST_PERSON.contains(&first.as_str())
+        || ws.len() > MAX_TITLE_WORDS
+        || ws
+            .last()
+            .is_some_and(|w| FRAGMENT_END_WORDS.contains(&w.as_str()))
+}
+
 /// Every content heading (one with a body of its own) is in an element's passage, names an
 /// element, or has its body in the elements' text; the others are reported.
 fn heading_checks(draft: &ImportDraft) -> Vec<ElementCheck> {
@@ -302,12 +377,19 @@ fn heading_checks(draft: &ImportDraft) -> Vec<ElementCheck> {
         if named || coverage(&w, &index, &none).is_some_and(|c| c >= BODY_COVERED) {
             continue;
         }
-        out.push(failed(
-            HEADING_UNCOVERED,
-            format!("The section \"{title}\" was not imported"),
-        ));
+        out.push(if fragment(title) {
+            failed(
+                TEXT_UNCOVERED,
+                format!("The text starting \"{title}\" was not imported"),
+            )
+        } else {
+            failed(
+                HEADING_UNCOVERED,
+                format!("The section \"{title}\" was not imported"),
+            )
+        });
     }
-    if out.is_empty() {
+    if out.iter().all(|c| c.code != HEADING_UNCOVERED) {
         out.push(passed(
             HEADING_UNCOVERED,
             "Every section of the source was imported",
@@ -450,11 +532,14 @@ fn apply_with(checker: &Checker, base: &ContentStoreBuilder, draft: &mut ImportD
             if e.json.is_null() || e.status == ElementStatus::Failed {
                 return Vec::new();
             }
-            let mut out = checker.element(draft, e, &e.json);
+            let mut out = monsters::stat_block_checks(draft, e);
+            out.extend(checker.element(draft, e, &e.json));
             out.extend(reference_checks(refs.get(&e.id)));
             if fidelity_checked(draft, e) {
                 out.extend(description_checks(e, &index, &mask));
             }
+            out.extend(lists::list_checks(checker, draft, e));
+            out.extend(content::content_checks(checker, draft, e));
             out
         })
         .collect();
@@ -638,3 +723,7 @@ async fn heal_filtered(
 #[cfg(test)]
 #[path = "selfcheck_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "selfcheck_content_tests.rs"]
+mod content_tests;

@@ -437,3 +437,192 @@ fn the_review_report_carries_codes_and_overrides_but_no_text() {
         "{text}"
     );
 }
+
+fn passed_check(code: &str) -> ElementCheck {
+    ElementCheck {
+        code: code.into(),
+        message: "fine".into(),
+        failed: false,
+    }
+}
+
+#[test]
+fn an_unlocated_element_whose_long_description_is_traced_is_ok() {
+    // Arrange: no located passage, but every sentence is the source's (a name wrapped over two
+    // lines, a table read in columns).
+    let src = "Lantern of\nQuiet Dusk\nThis lantern burns with a pale flame that never warms \
+the hand, and its light reveals the tracks of small animals for a mile.";
+    let desc = "<p>This lantern burns with a pale flame that never warms the hand, and its light \
+reveals the tracks of small animals for a mile.</p>";
+    let mut e = element(
+        "ID_T_LANTERN",
+        "Magic Item",
+        json!({"id": "ID_T_LANTERN", "type": "Magic Item", "name": "Lantern of Quiet Dusk", "description": desc}),
+    );
+    e.excerpt = None;
+    e.checks = vec![passed_check("description_untraced")];
+    let mut d = draft(src, vec![e]);
+    // Act
+    let traced = review_state(&d.elements[0], &d);
+    d.elements[0].checks.clear();
+    let unchecked = review_state(&d.elements[0], &d);
+    // Assert: traced -> ok; without the passed fidelity check it still asks for a look.
+    assert_eq!(traced.state, ReviewLevel::Ok, "{traced:?}");
+    assert_eq!(unchecked.code, code::UNLOCATED, "{unchecked:?}");
+}
+
+#[test]
+fn a_mechanic_of_a_child_inside_the_parent_passage_is_not_the_parent_gap() {
+    // Arrange: the species passage holds its subrace, whose own element states the increase.
+    let src = "## Glassborn\nYou like quiet places.\n### Deep Glassborn\nYour Strength score increases by 2.";
+    let parent = element(
+        "ID_T_RACE_GLASSBORN",
+        "Race",
+        json!({"id": "ID_T_RACE_GLASSBORN", "type": "Race", "name": "Glassborn", "description": "<p>You like quiet places.</p>", "rules": [{"kind": "stat", "name": "innate speed", "value": "30", "bonus": "base"}]}),
+    );
+    let mut child = element(
+        "ID_T_SUBRACE_DEEP",
+        "Sub Race",
+        json!({"id": "ID_T_SUBRACE_DEEP", "type": "Sub Race", "name": "Deep Glassborn", "description": "<p>Your Strength score increases by 2.</p>", "rules": [{"kind": "stat", "name": "strength", "value": "2"}]}),
+    );
+    let mut parent = parent;
+    parent.excerpt = Some(SourceExcerpt {
+        start_line: 1,
+        end_line: 4,
+        snippet: String::new(),
+    });
+    child.excerpt = Some(SourceExcerpt {
+        start_line: 3,
+        end_line: 4,
+        snippet: String::new(),
+    });
+    let d = draft(src, vec![parent, child]);
+    // Act
+    let s = review_state(&d.elements[0], &d);
+    // Assert
+    assert_eq!(s.state, ReviewLevel::Ok, "{s:?}");
+}
+
+#[test]
+fn a_sentence_wrapped_over_two_lines_is_read_whole_for_gaps() {
+    // Arrange: "a number of ... equal to your Charisma modifier" is no count once read whole.
+    let src = "Brisk Walker\nWhen you rest, choose a number of routes\nequal to your Charisma modifier (minimum of one route).";
+    let desc = "<p>When you rest, choose a number of routes equal to your Charisma modifier (minimum of one route).</p>";
+    let mut e = feat("ID_T_FEAT_BRISK", desc, json!([]));
+    e.excerpt = Some(SourceExcerpt {
+        start_line: 1,
+        end_line: 3,
+        snippet: String::new(),
+    });
+    let d = draft(src, vec![e]);
+    // Act
+    let s = review_state(&d.elements[0], &d);
+    // Assert
+    assert_ne!(s.code, code::MECHANIC_LOST, "{s:?}");
+}
+
+#[test]
+fn a_section_kept_as_a_text_entry_is_text_only() {
+    // Arrange: the root of a rules group (the report's text_only outcome).
+    let mut e = element(
+        "ID_T_RULE_CAMPING",
+        "Rules Glossary Entry",
+        json!({"id": "ID_T_RULE_CAMPING", "type": "Rules Glossary Entry", "name": "Camping", "description": "<p>Pitch camp at dusk.</p>"}),
+    );
+    e.role = Role::Text;
+    let mut d = draft("Camping\nPitch camp at dusk.", vec![e]);
+    d.plan.groups = vec![serde_json::from_value(json!({
+        "name": "Camping", "kind": "rules", "root_id": "ID_T_RULE_CAMPING"
+    }))
+    .expect("group parses")];
+    // Act
+    let states = review_all(&d, &ReviewOverrides::default());
+    // Assert
+    assert_eq!(states[0].state, ReviewLevel::Ok);
+    assert!(states[0].text_only, "{:?}", states[0]);
+    assert!(states[0].text_only_reason.contains("text entry"));
+    assert_eq!(ReviewCounts::of(&states).text_only, 1);
+}
+
+#[test]
+fn a_model_note_keeping_a_mechanic_in_the_text_makes_it_text_only() {
+    // Arrange
+    let mut e = feat(
+        "ID_T_FEAT_BRISK",
+        "<p>For 1 minute you shrug off cuts.</p>",
+        json!([]),
+    );
+    e.issues = vec!["The 1-minute resistance is kept in the description only.".into()];
+    let d = draft("Brisk Walker\nFor 1 minute you shrug off cuts.", vec![e]);
+    // Act
+    let s = review_state(&d.elements[0], &d);
+    // Assert
+    assert!(s.text_only, "{s:?}");
+    assert!(s.text_only_reason.contains("description only"));
+}
+
+#[test]
+fn a_text_fragment_note_has_its_own_summary() {
+    // Arrange
+    let mut d = draft("x", Vec::new());
+    d.source_checks = vec![failed(
+        "text_uncovered",
+        "The text starting \"I always knew the\" was not imported",
+    )];
+    // Act
+    let notes = import_level_notes(&d);
+    // Assert
+    assert_eq!(notes[0].summary, "This text wasn't imported");
+    assert_eq!(notes[0].items, vec!["I always knew the".to_string()]);
+}
+
+/// Offline probe over stored drafts (not a test): `BOREALIS_REVIEW_PROBE=<draft.json>[:...]`
+/// prints each draft's review counts and every element that is not plainly `ok`, after
+/// re-running the source checks over the bundled packs. Reference checks are left out: the
+/// bundled packs are not the user's library, so they would dangle.
+#[test]
+#[ignore = "offline probe over stored drafts"]
+fn probe_review_states() {
+    let Ok(paths) = std::env::var("BOREALIS_REVIEW_PROBE") else {
+        return;
+    };
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+    let mut base = borealis_content::ContentStoreBuilder::new();
+    for p in [
+        "core",
+        "srd-5.1",
+        "srd-5.1-monsters",
+        "srd-5.2.1",
+        "srd-5.2.1-monsters",
+    ] {
+        base = base
+            .add_pack_dir(&root.join(p))
+            .expect("bundled pack loads");
+    }
+    for path in paths.split(':') {
+        let text = std::fs::read_to_string(path).expect("draft readable");
+        let mut d: ImportDraft = serde_json::from_str(&text).expect("draft loads");
+        super::super::selfcheck::apply(&base, &mut d);
+        for e in &mut d.elements {
+            e.checks.retain(|c| c.code != "reference_unresolved");
+        }
+        let states = review_all(&d, &ReviewOverrides::default());
+        println!("== {path} {:?}", ReviewCounts::of(&states));
+        for n in import_level_notes(&d) {
+            println!("  note {} {}: {:?}", n.code, n.items.len(), n.items);
+        }
+        for (e, s) in d.elements.iter().zip(&states) {
+            if s.state != ReviewLevel::Ok || s.text_only {
+                println!(
+                    "  {:?}\t{}\t{}\t{}\tTO={}\t{}",
+                    s.state,
+                    s.code,
+                    e.id,
+                    e.ty,
+                    u8::from(s.text_only),
+                    s.reason.chars().take(160).collect::<String>()
+                );
+            }
+        }
+    }
+}
