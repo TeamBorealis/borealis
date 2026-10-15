@@ -332,7 +332,7 @@ pub(crate) fn fold_table_headings(
 ) -> Vec<(String, String)> {
     let lines: Vec<&str> = source.lines().collect();
     let furniture = furniture(source);
-    elements
+    let folds: Vec<(String, String)> = elements
         .iter()
         .filter(|t| t.role == Role::Text)
         .filter_map(|t| {
@@ -345,6 +345,48 @@ pub(crate) fn fold_table_headings(
                 ),
             ))
         })
+        .collect();
+    let split = split_tables(elements, &folds, &lines);
+    folds
+        .into_iter()
+        .filter(|(id, _)| !split.contains(id))
+        .collect()
+}
+
+/// The table (0-based `[start, end)` run of `|` lines) the text entry `t` was located on a
+/// row of.
+fn row_table(t: &PlannedElement, lines: &[&str]) -> Option<(usize, usize)> {
+    let (s, _) = span(t)?;
+    let row = |i: usize| lines.get(i).is_some_and(|l| l.contains(" | "));
+    if !row(s) {
+        return None;
+    }
+    let start = (0..s).rev().take_while(|&i| row(i)).last().unwrap_or(s);
+    let end = (s..lines.len()).take_while(|&i| row(i)).count() + s;
+    Some((start, end))
+}
+
+/// Folded row entries of a table whose other row entries stay entries of their own: one table
+/// gets one outcome, so these are kept as entries too. Returns their ids.
+fn split_tables(
+    elements: &[PlannedElement],
+    folds: &[(String, String)],
+    lines: &[&str],
+) -> Vec<String> {
+    let folded = |id: &str| folds.iter().any(|(f, _)| f == id);
+    let rows: Vec<(&PlannedElement, (usize, usize))> = elements
+        .iter()
+        .filter(|t| t.role == Role::Text)
+        .filter_map(|t| Some((t, row_table(t, lines)?)))
+        .collect();
+    rows.iter()
+        .filter(|(t, table)| {
+            folded(&t.id)
+                && rows
+                    .iter()
+                    .any(|(o, other)| other == table && !folded(&o.id))
+        })
+        .map(|(t, _)| t.id.clone())
         .collect()
 }
 
@@ -497,6 +539,51 @@ Charms\nA running header line.\n\n## Woven Charms\n\nCloth charms.\n";
             .map(|(id, _)| id)
             .collect();
         assert_eq!(folded, ["t1", "t2", "t4", "t7"]);
+    }
+
+    #[test]
+    fn the_rows_of_one_table_get_one_outcome() {
+        use crate::import::anything::fidelity::tests::planned;
+        let src =
+            "### Ward Rules\n\nA ward lasts one hour.\n\nWard | Effect\nAsh Ward | Blocks smoke.\n\
+Bone Ward | Blocks fear.\nSalt Ward | Blocks spirits.\nIron Ward | Blocks fey.\n";
+        let rows = |rule_end: usize| {
+            let mut rule = planned(
+                "t0",
+                "Ward Rules",
+                "Rules Glossary Entry",
+                Role::Text,
+                Some(1),
+            );
+            rule.excerpt.as_mut().unwrap().end_line = rule_end;
+            let mut out = vec![rule];
+            for (k, name) in ["Ash Ward", "Bone Ward", "Salt Ward", "Iron Ward"]
+                .iter()
+                .enumerate()
+            {
+                let mut p = planned(
+                    &format!("r{k}"),
+                    name,
+                    "Rules Glossary Entry",
+                    Role::Text,
+                    Some(6 + k),
+                );
+                p.brief = "table row".into();
+                out.push(p);
+            }
+            out
+        };
+        let folded = |rule_end: usize| -> Vec<String> {
+            fold_table_headings(&rows(rule_end), src)
+                .into_iter()
+                .map(|(id, _)| id)
+                .collect()
+        };
+        // The rule's passage reaches into the table: its first two rows alone are not folded
+        // while the last two stay entries.
+        assert!(folded(7).is_empty(), "{:?}", folded(7));
+        // The whole table inside the rule's passage: every row is its text.
+        assert_eq!(folded(9), ["r0", "r1", "r2", "r3"]);
     }
 
     #[test]

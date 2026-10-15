@@ -19,7 +19,9 @@ mod formula;
 mod furniture;
 mod generate;
 mod ingest;
+mod intake;
 mod items;
+mod lead_in;
 mod leveled;
 mod lists;
 mod locate;
@@ -161,18 +163,10 @@ pub async fn detect_source(
             note: "listed with no single kind".into(),
         }))
         .collect();
-    if items.is_empty() {
-        return Err(AssistError::Extraction(
-            "nothing recognisable was found in the source".into(),
-        ));
-    }
-    let same = items.iter().all(|i| i.kind == items[0].kind);
+    // A source with no element kinds is still an import: its rules and lore become text
+    // entries, and the report says when nothing mechanical was found.
     let detection = Detection {
-        kind: if same {
-            items[0].kind
-        } else {
-            ImportKind::Mixed
-        },
+        kind: overall_kind(&items),
         edition: out.edition,
         confidence: out.confidence.clamp(0.0, 1.0),
         items,
@@ -221,7 +215,13 @@ pub async fn plan_import(
     };
     let classes = names_of(ImportKind::Class);
     let species = names_of(ImportKind::Species);
-    for item in &detection.items {
+    // An item the source only mentions that the library has is referenced, not re-created.
+    let references =
+        intake::library_references(&store, detection.edition, &detection.items, source_text);
+    let referenced = |item: &DetectedItem| {
+        item.kind == ImportKind::Item && references.iter().any(|(n, _)| n == &item.name)
+    };
+    for item in detection.items.iter().filter(|i| !referenced(i)) {
         let mut group = plan::standalone(item.kind, &item.name, item.item_type);
         if matches!(item.kind, ImportKind::Class | ImportKind::Subclass) {
             let mut levels: Option<Vec<u32>> = None;
@@ -262,18 +262,7 @@ pub async fn plan_import(
         }
         plan.groups.push(group);
     }
-    // Rules and lore the detection could not type keep their text as text-only elements.
-    let texts: Vec<PlanGroup> = detection
-        .other
-        .iter()
-        .filter(|o| !detection.items.iter().any(|i| same_name(&i.name, &o.name)))
-        .map(|o| plan::text_group(&o.name, &o.what, &o.note))
-        .collect();
-    for g in texts {
-        if !plan.groups.iter().any(|x| same_name(&x.name, &g.name)) {
-            plan.groups.push(g);
-        }
-    }
+    add_text_groups(&mut plan.groups, detection);
     let all: Vec<_> = wanted.iter().chain(&parted).cloned().collect();
     if let [(gi, item, levels)] = all.as_slice() {
         let step = outline_step(item, detection.edition, source_text, levels.as_deref());
@@ -294,7 +283,25 @@ pub async fn plan_import(
             }
         }
     }
+    let tables = intake::option_tables(&detection.other, source_text);
+    let mut intake_notes = intake::attach_option_tables(&mut plan.groups, &tables);
     plan::rebuild(&mut plan, &store, id_prefix, source_text);
+    // Rules prose introducing a list of planned entries is kept as an entry of its own.
+    let leads = lead_in::lead_ins(&plan, source_text);
+    if !leads.is_empty() {
+        plan.groups.extend(
+            leads
+                .iter()
+                .map(|t| plan::text_group(t, "rules introducing the entries below", "")),
+        );
+        plan::rebuild(&mut plan, &store, id_prefix, source_text);
+    }
+    intake_notes.extend(
+        references
+            .iter()
+            .map(|(name, id)| intake::library_note(name, id)),
+    );
+    plan.notes.extend(intake_notes);
     let own = plan::planned_class_links(&plan);
     for choice in plan.groups.iter_mut().filter_map(|g| g.choice.as_mut()) {
         choice
@@ -305,6 +312,33 @@ pub async fn plan_import(
             }));
     }
     Ok(plan)
+}
+
+/// Rules and lore the detection could not type keep their text as text-only groups; narrative
+/// sections (see [`intake::is_narrative`]) are reported, never imported as rules.
+fn add_text_groups(groups: &mut Vec<PlanGroup>, detection: &Detection) {
+    let texts: Vec<PlanGroup> = detection
+        .other
+        .iter()
+        .filter(|o| !intake::is_narrative(&o.what))
+        .filter(|o| !detection.items.iter().any(|i| same_name(&i.name, &o.name)))
+        .map(|o| plan::text_group(&o.name, &o.what, &o.note))
+        .collect();
+    for g in texts {
+        if !groups.iter().any(|x| same_name(&x.name, &g.name)) {
+            groups.push(g);
+        }
+    }
+}
+
+/// The kind of the whole source: the single kind of its items, `Mixed` for several, `Rules`
+/// when the detection found no element kind at all.
+fn overall_kind(items: &[DetectedItem]) -> ImportKind {
+    match items.first() {
+        None => ImportKind::Rules,
+        Some(first) if items.iter().all(|i| i.kind == first.kind) => first.kind,
+        Some(_) => ImportKind::Mixed,
+    }
 }
 
 fn same_name(a: &str, b: &str) -> bool {

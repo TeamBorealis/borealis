@@ -624,22 +624,21 @@ pub(crate) fn build_report(
         .other
         .iter()
         .filter(|o| !imported_as_named(draft, left_out, &headers, &o.name))
-        .filter(|o| !reported_as_prose(&report.entries, &o.name))
         .collect();
     for o in missing {
-        let what = if o.what.is_empty() {
-            "this"
-        } else {
-            o.what.as_str()
-        };
-        let note = format!("no element kind for {what}; not imported. {}", o.note);
-        report.entries.push(ReportEntry {
-            source: o.name.clone(),
-            outcome: "unsupported".into(),
-            elements: Vec::new(),
-            note: note.trim().to_string(),
-        });
+        // Narrative is said to be narrative, in place of the generic note on its prose.
+        if super::intake::is_narrative(&o.what) {
+            report
+                .entries
+                .retain(|e| !(e.outcome == "skipped" && same_name(&e.source, &o.name)));
+        } else if reported_as_prose(&report.entries, &o.name) {
+            continue;
+        }
+        report.entries.push(super::intake::not_imported(o));
     }
+    report
+        .entries
+        .extend(super::intake::intake_entries(draft, left_out, &final_id));
     for e in draft.elements.iter().filter(|e| !left_out.contains(&e.id)) {
         let id = final_id(&e.id);
         let issue = |m: &String| ReportIssue {
@@ -672,6 +671,9 @@ pub(crate) fn build_report(
             .filter_map(|n| n.strip_prefix(super::ingest::READING_NOTE))
             .map(str::to_string),
     );
+    report
+        .source_warnings
+        .extend(super::intake::nothing_mechanical(draft, left_out));
     report
 }
 

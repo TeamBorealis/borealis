@@ -758,6 +758,13 @@ fn in_source_classes(plan: &ImportPlan) -> Vec<(Vec<String>, ParentLink)> {
 
 /// Recompute `plan.elements` (and group root ids) from the groups.
 pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str, source: &str) {
+    // Library references are decided at intake, not by the groups: they outlive a rebuild.
+    let references: Vec<String> = plan
+        .notes
+        .iter()
+        .filter(|n| n.starts_with(super::intake::LIBRARY_NOTE))
+        .cloned()
+        .collect();
     let mut split_notes = sections::drop_outlined_texts(&mut plan.groups);
     split_notes.extend(sections::split_merged(&mut plan.groups, source));
     let mut b = Builder {
@@ -861,6 +868,7 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
     plan.elements = b.out;
     plan.notes = b.notes;
     plan.notes.extend(split_notes);
+    plan.notes.extend(references);
 }
 
 /// Element type of a subrace in `edition` (the bundled packs: 2014 `Sub Race`, 2024 lineages
@@ -891,9 +899,13 @@ fn standalone_group(b: &mut Builder, g: &PlanGroup, ty: &str) -> String {
         Role::Standalone
     };
     let id = b.push(ty, &g.name, role, None, None, &brief, &quote);
-    let Some(o) = g.outline.as_ref().filter(|_| role == Role::Standalone) else {
+    let Some(o) = g.outline.as_ref() else {
         return id;
     };
+    if role == Role::Text {
+        text_options(b, o, &id, &g.name);
+        return id;
+    }
     let part_ty = part_type(ty);
     let mut names = Vec::new();
     let mut printed: Vec<String> = Vec::new();
@@ -936,6 +948,19 @@ fn standalone_group(b: &mut Builder, g: &PlanGroup, ty: &str) -> String {
         }
     }
     id
+}
+
+/// Element type of the options a rules entry offers (a table of options printed with a rule):
+/// selectable like a feature's options, offered by whatever class, feat or species takes the
+/// rule's `supports` key.
+pub(crate) const RULE_OPTION_TYPE: &str = "Class Feature";
+
+/// The options of a text-only rules entry (see `intake::attach_option_tables`): each its own
+/// element with the entry's `supports` key; the entry keeps the rule's text.
+fn text_options(b: &mut Builder, o: &Outline, id: &str, name: &str) {
+    for f in o.features.iter().filter(|f| !f.options.is_empty()) {
+        b.push_children(f, id, RULE_OPTION_TYPE, name, None, false);
+    }
 }
 
 /// Headings inside trait `f`'s section that the outline did not list as parts (nor as another

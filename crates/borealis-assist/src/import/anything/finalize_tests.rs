@@ -20,9 +20,13 @@ fn reading_notes_are_source_warnings_not_element_warnings() {
     ];
     let report = build_report(&draft, &[], &HashSet::new());
     assert_eq!(
-        report.source_warnings,
-        vec!["`a.pdf`: 2 page(s) were read visually".to_string()]
+        report.source_warnings[0],
+        "`a.pdf`: 2 page(s) were read visually"
     );
+    assert!(!report
+        .source_warnings
+        .iter()
+        .any(|w| w.contains("unrelated")));
     assert!(report.warnings.iter().all(|w| w.element != "source"));
 }
 
