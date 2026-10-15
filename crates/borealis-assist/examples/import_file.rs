@@ -14,6 +14,9 @@
 //! `<out_dir>/imported/` gets the pack and `report.json` (`ImportedPack::write_to_dir`),
 //! `<out_dir>/draft.json` the reviewable draft (also the resume point after a parent choice),
 //! `<out_dir>/calls/NN.txt` each model reply. `--max-calls` (default 10) refuses further model calls.
+//! `BOREALIS_AI_CALL_TIMEOUT_SECS=<n>` (test only, this runner only) sets the per-call timeout
+//! (default 300 s) of every model call from `BOREALIS_AI_CALL_TIMEOUT_FROM` (default 2, after
+//! detect) on, e.g. to force timeouts and check that batches split and retry.
 //!
 //! Like the desktop, the session carries the Borealis AI profile: the profile assets
 //! (`crates/borealis-ai/profile-assets`, installed into `<out_dir>/ai-profile`) and the MCP server
@@ -25,6 +28,7 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
+use std::time::Duration;
 
 use borealis_ai::provider::detect_all;
 use borealis_ai::session::{AiOutcome, AiRequest};
@@ -51,12 +55,22 @@ const BASE_PACKS: [&str; 3] = ["core", "srd-5.1", "srd-5.2.1"];
 /// Counts model calls, refuses any beyond `cap`, and logs each outcome to `log/NN.txt`.
 struct Counted<'a> {
     inner: &'a dyn VisionRunner,
+    /// The session with the test-only timeout override and the first call it runs.
+    short: Option<(&'a dyn VisionRunner, u32)>,
     calls: AtomicU32,
     cap: u32,
     log: PathBuf,
 }
 
-impl Counted<'_> {
+impl<'a> Counted<'a> {
+    /// The session call `n` runs on.
+    fn session(&self, n: u32) -> &'a dyn VisionRunner {
+        match self.short {
+            Some((short, from)) if n >= from => short,
+            _ => self.inner,
+        }
+    }
+
     fn admit(&self) -> Result<u32, AiError> {
         let n = self.calls.fetch_add(1, Ordering::SeqCst) + 1;
         eprintln!("[model call {n}/{}]", self.cap);
@@ -85,7 +99,7 @@ impl AiRunner for Counted<'_> {
     ) -> BoxFuture<'a, Result<AiOutcome, AiError>> {
         Box::pin(async move {
             let n = self.admit()?;
-            self.record(n, self.inner.run(req, sink).await)
+            self.record(n, self.session(n).run(req, sink).await)
         })
     }
 }
@@ -99,7 +113,7 @@ impl VisionRunner for Counted<'_> {
     ) -> BoxFuture<'a, Result<AiOutcome, AiError>> {
         Box::pin(async move {
             let n = self.admit()?;
-            self.record(n, self.inner.run_with(req, attachments, sink).await)
+            self.record(n, self.session(n).run_with(req, attachments, sink).await)
         })
     }
 }
@@ -264,15 +278,55 @@ fn profile_config(out: &Path, mcp_bin: Option<PathBuf>) -> Result<ProfileConfig,
     Ok(ProfileConfig::new(dir, McpCommand { program, args }))
 }
 
-async fn claude_session(profile: Option<ProfileConfig>) -> Result<AiSession, String> {
+/// Test-only override of the per-call timeout, to force timeouts in a live run and exercise the
+/// import's split/retry path. Read by this runner only; the desktop app always uses the default.
+const CALL_TIMEOUT_ENV: &str = "BOREALIS_AI_CALL_TIMEOUT_SECS";
+/// The first model call (1-based) the override applies to. Default 2: the detect call (which is
+/// not retried and reads the whole source) keeps the default timeout.
+const CALL_TIMEOUT_FROM_ENV: &str = "BOREALIS_AI_CALL_TIMEOUT_FROM";
+/// Default of [`CALL_TIMEOUT_FROM_ENV`].
+const DEFAULT_TIMEOUT_FROM: u32 = 2;
+
+/// A whole number > 0 from `var`, `None` when unset.
+fn positive_env(var: &str) -> Result<Option<u64>, String> {
+    let Ok(raw) = std::env::var(var) else {
+        return Ok(None);
+    };
+    raw.trim()
+        .parse::<u64>()
+        .ok()
+        .filter(|n| *n > 0)
+        .map(Some)
+        .ok_or_else(|| format!("{var} must be a whole number > 0, got {raw:?}"))
+}
+
+/// `(timeout, first call)` of the test-only per-call timeout override, `None` when unset.
+fn call_timeout_override() -> Result<Option<(Duration, u32)>, String> {
+    let Some(secs) = positive_env(CALL_TIMEOUT_ENV)? else {
+        return Ok(None);
+    };
+    let from = match positive_env(CALL_TIMEOUT_FROM_ENV)? {
+        Some(n) => u32::try_from(n).map_err(|e| e.to_string())?,
+        None => DEFAULT_TIMEOUT_FROM,
+    };
+    eprintln!("per-call timeout overridden: {secs} s from model call {from} ({CALL_TIMEOUT_ENV})");
+    Ok(Some((Duration::from_secs(secs), from)))
+}
+
+async fn claude_session(
+    profile: Option<ProfileConfig>,
+    timeout: Option<Duration>,
+) -> Result<AiSession, String> {
     let found = detect_all(&DetectConfig::default()).await;
     let p = found
         .into_iter()
         .find(|p| p.backend == borealis_ai::Backend::Claude)
         .ok_or("the claude CLI is not installed")?;
+    let defaults = SessionOptions::default();
     let options = SessionOptions {
         profile,
-        ..SessionOptions::default()
+        timeout: timeout.unwrap_or(defaults.timeout),
+        ..defaults
     };
     Ok(AiSession::new(p, options).with_input_trust(InputTrust::Untrusted, false))
 }
@@ -304,9 +358,16 @@ async fn run(args: Args) -> Result<(), String> {
     } else {
         None
     };
-    let session = claude_session(profile).await?;
+    let session = claude_session(profile.clone(), None).await?;
+    let short = match call_timeout_override()? {
+        Some((timeout, from)) => Some((claude_session(profile, Some(timeout)).await?, from)),
+        None => None,
+    };
     let runner = Counted {
         inner: &session,
+        short: short
+            .as_ref()
+            .map(|(s, from)| (s as &dyn VisionRunner, *from)),
         calls: AtomicU32::new(0),
         cap: args.max_calls,
         log: args.out.join("calls"),
