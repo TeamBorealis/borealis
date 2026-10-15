@@ -27,8 +27,9 @@ const MIN_CONVERTED_PERCENT: usize = 97;
 /// corpus, nearly all catalog entries and languages the core pack already defines).
 const MAX_SKIPPED: usize = 260;
 /// Highest acceptable number of partial-conversion notes (412 on the 2026-10 corpus before
-/// additional spells were mapped, 324 after, 104 after prerequisites, 49 after 5etools-gaps-1).
-const MAX_PARTIAL: usize = 60;
+/// additional spells were mapped, 324 after, 104 after prerequisites, 49 after 5etools-gaps-1,
+/// 152 after fix-w9d made item gaps that used to drop silently report a note: 111 of them items).
+const MAX_PARTIAL: usize = 160;
 /// Notes that must not appear any more (closed by 5etools-gaps-1): (starts with, contains).
 const CLOSED_GAPS: &[(&str, &str)] = &[
     ("ability score maximum", ""),
