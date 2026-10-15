@@ -231,7 +231,9 @@ row of a table of options is its own `other` entry whose `what` is \"option of <
 the table, as printed>\". Narrative sections of an adventure or story (keyed areas and rooms, read-aloud text, \
 encounters, NPC and location descriptions) are `other` entries whose `what` starts with \"narrative\". Each printed section with a heading of its own is its own \
 entry, named as printed: never merge several sections into one (three sections \"Minor Charms\", \"Major Charms\" \
-and \"Woven Charms\" are three entries, not one \"Charms\"). A magic item printed in several versions (+1, +2 and +3, \
+and \"Woven Charms\" are three entries, not one \"Charms\"). A creature printed with several stat blocks \
+(variants, ranks, ages) is listed once per stat block, named exactly as printed; keep every creature and variant \
+name as printed, never rename, shorten or merge them. A magic item printed in several versions (+1, +2 and +3, \
 or one version per material, damage type, color or creature) is listed once per version, named \"<Item>, <version>\" \
 (e.g. \"Shield, +2\", \"Boots, Silver\"), the way the SRD lists them; in a 2024 source it stays one item. A class \
 spell list (a list of spell names under a class name) is an `other` entry named as printed. Named traits, features and options of a species, \

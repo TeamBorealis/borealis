@@ -1110,13 +1110,6 @@ fn subrace_select(store: &ContentStore, race: &Element) -> Option<String> {
 pub(crate) const NARRATIVE_NOTE: &str = "narrative section: ";
 
 /// The plan notes of the detection's narrative sections (see [`NARRATIVE_NOTE`]).
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "plan_import adds these notes beside the intake notes (mod.rs)"
-    )
-)]
 pub(crate) fn narrative_notes(other: &[OtherItem]) -> Vec<String> {
     other
         .iter()

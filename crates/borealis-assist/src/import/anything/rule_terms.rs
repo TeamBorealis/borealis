@@ -215,8 +215,8 @@ fn any_ability_at(words: &[&str]) -> Option<usize> {
 fn count_before(words: &[&str], at: usize) -> i64 {
     words[at.saturating_sub(3)..at]
         .iter()
-        .filter_map(|w| number(w))
-        .last()
+        .rev()
+        .find_map(|w| number(w))
         .filter(|n| (1..=6).contains(n))
         .unwrap_or(1)
 }

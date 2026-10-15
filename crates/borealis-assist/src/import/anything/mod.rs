@@ -303,6 +303,7 @@ pub async fn plan_import(
             .map(|(name, id)| intake::library_note(name, id)),
     );
     plan.notes.extend(intake_notes);
+    plan.notes.extend(plan::narrative_notes(&detection.other));
     let own = plan::planned_class_links(&plan);
     for choice in plan.groups.iter_mut().filter_map(|g| g.choice.as_mut()) {
         choice
