@@ -399,7 +399,6 @@ impl AppState {
         tracing::info!(
             packs = staged.len(),
             converted = result.report.converted,
-            replaced,
             partial = result.report.partial.len(),
             skipped = result.report.skipped.len(),
             "5etools import finished"

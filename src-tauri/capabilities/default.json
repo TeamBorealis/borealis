@@ -140,6 +140,7 @@
     "allow-check-app-update",
     "allow-open-download-page",
     "allow-open-app-folder",
+    "allow-get-recent-logs",
     "allow-restart-app"
   ]
 }
