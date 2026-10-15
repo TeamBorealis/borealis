@@ -37,6 +37,7 @@ mod prereq;
 mod replay_tests;
 pub mod review;
 mod rules;
+mod selfcheck;
 mod source;
 mod steps;
 #[cfg(test)]
@@ -373,6 +374,7 @@ pub async fn continue_draft(
     };
     fill_pending(&adapter, &ctx, &mut draft, opts, progress).await;
     validate_and_repair(&adapter, &ctx, &mut draft, opts, progress).await;
+    selfcheck::heal(&adapter, &ctx, &mut draft, opts, progress).await;
     Ok(ImportStep::Draft(Box::new(draft)))
 }
 
@@ -484,6 +486,7 @@ pub async fn revise_draft(
     };
     e.issues = notes;
     validate_and_repair(&adapter, &ctx, &mut next, opts, progress).await;
+    selfcheck::apply(&ctx.base, &mut next);
     Ok(next)
 }
 

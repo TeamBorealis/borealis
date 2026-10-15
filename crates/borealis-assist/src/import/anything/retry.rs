@@ -108,6 +108,12 @@ fn kind(err: &AiError) -> Kind {
     }
 }
 
+/// The call was refused before or outside the model (the import's call budget, a cancel, a
+/// missing CLI): no later call of the import will pass either.
+pub(crate) fn refused(err: &AiError) -> bool {
+    kind(err) == Kind::Refused
+}
+
 /// One single-element generation call, retried once on a transient failure (see
 /// [this module](self)). Returns the element, its notes, the attempts and the retry note (if retried).
 pub(super) async fn generate_single(

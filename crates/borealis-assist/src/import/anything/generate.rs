@@ -21,6 +21,7 @@ use super::types::{
 };
 use crate::balance::{balance_report, load_into_engine, Baselines};
 use crate::homebrew::PackContext;
+pub(crate) use retry::refused;
 use retry::{fill_batches, generate_single, stopped, Retries};
 
 #[path = "retry.rs"]
@@ -260,7 +261,7 @@ fn make_step(
     })
 }
 
-fn siblings_of(draft: &ImportDraft, except: &str) -> Vec<Value> {
+pub(crate) fn siblings_of(draft: &ImportDraft, except: &str) -> Vec<Value> {
     draft
         .elements
         .iter()
@@ -285,7 +286,7 @@ pub(crate) async fn run_element(
 }
 
 /// [`run_element`] with the model error kept, so the caller can retry it.
-async fn run_element_call(
+pub(crate) async fn run_element_call(
     runner: &dyn AiRunner,
     g: &GenCtx<'_>,
     planned: &PlannedElement,
@@ -440,18 +441,33 @@ pub(crate) async fn validate_and_repair(
     opts: &RunOptions<'_>,
     progress: Progress<'_>,
 ) {
+    validate_rounds(runner, ctx, draft, opts, progress, MAX_REPAIR_ROUNDS).await;
+}
+
+/// [`validate_and_repair`] with at most `max_rounds` repair rounds; with 0 it makes no model
+/// call (a re-validation after the source checks' repairs) and keeps the repair counts.
+pub(crate) async fn validate_rounds(
+    runner: &dyn AiRunner,
+    ctx: &PackContext,
+    draft: &mut ImportDraft,
+    opts: &RunOptions<'_>,
+    progress: Progress<'_>,
+    max_rounds: u32,
+) {
     let store = ctx.base.clone().build();
     for e in &mut draft.elements {
         if e.status == ElementStatus::Failed && !e.json.is_null() {
             e.status = ElementStatus::Repaired;
             e.issues.clear();
         }
-        e.repair_rounds = 0;
+        if max_rounds > 0 {
+            e.repair_rounds = 0;
+        }
     }
     keep_printed(draft);
     let mut remaining = Vec::new();
     let mut remaining_rules = Vec::new();
-    for round in 0..=MAX_REPAIR_ROUNDS {
+    for round in 0..=max_rounds {
         tidy_rules(draft);
         let issues = engine_sweep(ctx, &draft.plan, &draft.elements);
         let mut rule_issues = rule_sweep(draft);
@@ -465,7 +481,7 @@ pub(crate) async fn validate_and_repair(
             progress,
             Stage::Validate,
             round as usize,
-            MAX_REPAIR_ROUNDS as usize + 1,
+            max_rounds as usize + 1,
             &format!(
                 "{} sweep issue(s), {} rule issue(s)",
                 issues.len(),
@@ -473,7 +489,7 @@ pub(crate) async fn validate_and_repair(
             ),
         );
         let clean = issues.is_empty() && rule_issues.is_empty();
-        if clean || round == MAX_REPAIR_ROUNDS {
+        if clean || round == max_rounds {
             remaining = issues;
             remaining_rules = rule_issues;
             break;
