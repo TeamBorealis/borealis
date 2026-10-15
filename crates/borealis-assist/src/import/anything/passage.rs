@@ -474,6 +474,7 @@ fn own_sections(lines: &[&str], planned: &PlannedElement, plan: &ImportPlan) -> 
     let mut out = Vec::new();
     let mut skip_below: Option<usize> = None;
     let mut furniture: Option<page_marks::PageFurniture> = None;
+    let mut group: Option<(usize, SubSection)> = None;
     let mut i = start + 1;
     while i < lines.len() {
         let Some(h) = heading(lines[i]) else {
@@ -517,12 +518,28 @@ fn own_sections(lines: &[&str], planned: &PlannedElement, plan: &ImportPlan) -> 
             !l.trim().is_empty() && !l.trim_start().starts_with('|') && !l.contains(" | ")
         });
         if prose {
+            // A heading over the sub-sections, with no prose of its own, is printed above them.
+            if let Some((level, group)) = group.take() {
+                if h > level {
+                    out.push(group);
+                }
+            }
             out.push(SubSection {
                 title,
                 lines: body,
                 at: i,
                 end,
             });
+        } else {
+            group = Some((
+                h,
+                SubSection {
+                    title,
+                    lines: Vec::new(),
+                    at: i,
+                    end,
+                },
+            ));
         }
         i = end;
     }
@@ -774,10 +791,25 @@ pub(crate) fn add_sub_sections(draft: &mut ImportDraft) -> Vec<String> {
             .unwrap_or("")
             .to_string();
         let mut added = Vec::new();
+        // A heading over sub-sections is printed only above one that is added.
+        let mut group: Option<String> = None;
         for s in subs {
             let have = content(&plain(&desc));
+            if s.lines.is_empty() {
+                let printed = plain(&desc)
+                    .to_lowercase()
+                    .contains(&s.title.to_lowercase());
+                group = (!printed).then_some(s.title);
+                continue;
+            }
             if share(&content(&s.lines.join("\n")), &have) >= SAME_CONTENT {
                 continue;
+            }
+            if let Some(title) = group.take() {
+                desc.push_str(&format!(
+                    "<p><strong>{}</strong></p>",
+                    title.replace('&', "&amp;").replace('<', "&lt;")
+                ));
             }
             desc.push_str(&format!(
                 "<p><strong>{}</strong></p>{}",

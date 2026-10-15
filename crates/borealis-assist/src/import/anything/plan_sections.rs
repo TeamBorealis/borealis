@@ -372,6 +372,25 @@ pub(crate) fn fold_nested_lore(
     let condition = ImportKind::Condition.element_type();
     let mut out: Vec<(String, String)> = Vec::new();
     for root in elements.iter().filter(|e| owns_sub_sections(e, elements)) {
+        // A text-only entry on the root's own heading is the root's whole section again.
+        let own = span(root)
+            .map(|(s, _)| s)
+            .filter(|s| lines.get(*s).is_some_and(|l| heading_level(l).is_some()));
+        let at_root = elements.iter().filter(|t| {
+            t.role == Role::Text
+                && t.ty != condition
+                && own.is_some()
+                && span(t).map(|(s, _)| s) == own
+        });
+        out.extend(at_root.map(|t| {
+            (
+                t.id.clone(),
+                format!(
+                    "{}: the section of {}, kept in its text (not an entry of its own)",
+                    t.name, root.name
+                ),
+            )
+        }));
         for sub in unplanned_sections_in(&lines, root, &bare) {
             let found: Vec<&PlannedElement> = elements
                 .iter()

@@ -129,11 +129,14 @@ pub(crate) fn tables(frags: Vec<Fragment>) -> Vec<Fragment> {
         let mut j = i + 1;
         while j < lines.len() {
             let l = &lines[j];
-            // In a table of row labels, a long line starting at a later cell of the block's
-            // first line is that cell's text running on, not prose.
+            // In a table of row labels, a long line starting where a later cell of the block's
+            // lines starts is that cell's text running on (or a name run into its text, with no
+            // gap left to part them), not prose.
             let in_cell = labelled
-                && lines[i][1..]
+                && lines[i..j]
                     .iter()
+                    .flatten()
+                    .filter(|f| f.x > lines[i][0].end)
                     .any(|f| (f.x - l[0].x).abs() <= STOP_SLACK);
             let wide = l.len() == 1 && l[0].end - l[0].x > WIDE_LINE * width && !in_cell;
             // A larger line (a heading) ends the table.
@@ -651,9 +654,28 @@ fn edges(frags: &[&Fragment]) -> Vec<f32> {
         .collect()
 }
 
+/// The `left` side's lines between `top` and `bottom`, with that side's table rows (two or more
+/// cells on one baseline) above and below them: the layout of a table of the side's own, whose
+/// rows start on other baselines than the next column's (a column of labels may have no line
+/// between `top` and `bottom`).
+fn side_layout(all: &[Fragment], top: f32, bottom: f32, left: bool, side: SideOf) -> Vec<Fragment> {
+    let mine: Vec<Fragment> = all
+        .iter()
+        .filter(|f| side(f) == Some(left))
+        .cloned()
+        .collect();
+    baseline_rows(&mine)
+        .into_iter()
+        .filter(|row| row.len() >= 2 || row.iter().all(|f| within(f, top, bottom)))
+        .flatten()
+        .cloned()
+        .collect()
+}
+
 /// The two sides between `top` and `bottom` are tables of one format next to each other (a
-/// long table continued in the next column): each side has a row of two or more cells, and one
-/// side's column edges recur, shifted, as a run of the other side's.
+/// long table continued in the next column, or one table in each column whose rows happen to
+/// share baselines): each side has a row of two or more cells, and one side's column edges
+/// (from its table rows around the band too) recur, shifted, as a run of the other side's.
 fn side_by_side(all: &[Fragment], top: f32, bottom: f32, side: SideOf) -> bool {
     let part = |left: bool| -> Vec<&Fragment> {
         all.iter()
@@ -674,7 +696,14 @@ fn side_by_side(all: &[Fragment], top: f32, bottom: f32, side: SideOf) -> bool {
     if cells(&l).min(cells(&r)) < 2 {
         return false;
     }
-    let (el, er) = (edges(&l), edges(&r));
+    let (wide_l, wide_r) = (
+        side_layout(all, top, bottom, true, side),
+        side_layout(all, top, bottom, false, side),
+    );
+    let (el, er) = (
+        edges(&wide_l.iter().collect::<Vec<_>>()),
+        edges(&wide_r.iter().collect::<Vec<_>>()),
+    );
     let (short, long) = if el.len() <= er.len() {
         (&el, &er)
     } else {

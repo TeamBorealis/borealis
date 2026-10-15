@@ -848,8 +848,8 @@ fn a_species_root_owns_its_lore_sections_and_its_own_section() {
     let folded =
         super::super::plan::sections::fold_nested_lore(&glassfolk(), Edition::Y2024, SPECIES);
     let ids: Vec<&str> = folded.iter().map(|(id, _)| id.as_str()).collect();
-    // The entry on the root's own heading stays (it may carry sections a revised root lost).
-    assert_eq!(ids, ["t1", "t2"], "{folded:?}");
+    // The entry on the root's own heading is the root's section again.
+    assert_eq!(ids, ["t0", "t1", "t2"], "{folded:?}");
     // A standalone element without parts claims nothing.
     let mut lone = glassfolk();
     lone.retain(|p| p.id != "r1");
@@ -885,6 +885,37 @@ fn appended_sub_sections_leave_out_running_headers_and_stray_glyphs() {
     );
     // The trait's own section is its element's, not the species'.
     assert!(!desc.contains("Dex modifier"), "{desc}");
+}
+
+/// A heading with no prose of its own over printed sub-sections ("Other Notes" over "Credits")
+/// is printed above them; one whose sub-sections the root already has is not added.
+#[test]
+fn a_heading_over_appended_sub_sections_is_printed_above_them() {
+    let src = "# Emberkin\n\nEmberkin glow softly at dusk.\n\n## Traits\n\n### Warm Hands\n\n\
+Your touch dries wet cloth.\n\n## Other Notes\n\n### Credits\n\n\
+Drawn by the kiln guild for the long winter book.\n\n## Lore Notes\n\n### Hearths\n\n\
+Emberkin glow softly at dusk.\n";
+    let mut root = planned("r0", "Emberkin", "Race", Role::Standalone, Some(1));
+    root.excerpt.as_mut().unwrap().end_line = 22;
+    let mut hands = planned("r1", "Warm Hands", "Racial Trait", Role::Part, Some(7));
+    hands.owner = Some("r0".into());
+    let mut d = draft(
+        src,
+        vec![root, hands],
+        &[
+            "<p>Emberkin glow softly at dusk.</p>",
+            "<p>Dries cloth.</p>",
+        ],
+    );
+    assert_eq!(add_sub_sections(&mut d), vec!["r0".to_string()]);
+    let desc = d.elements[0].json["description"].as_str().unwrap();
+    let notes = desc.find("<strong>Other Notes</strong>").expect(desc);
+    let credits = desc.find("<strong>Credits</strong>").expect(desc);
+    assert!(
+        notes < credits && desc.contains("long winter book"),
+        "{desc}"
+    );
+    assert!(!desc.contains("Lore Notes"), "{desc}");
 }
 
 #[test]

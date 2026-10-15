@@ -360,3 +360,7 @@ fn block_cut(
     };
     Ok(frags.into_iter().partition(|f| f.y > y))
 }
+
+#[cfg(test)]
+#[path = "pdf_columns_tests.rs"]
+mod tests;
