@@ -12,6 +12,9 @@ use super::types::{ImportPlan, ItemType, PlannedElement};
 #[path = "items_row.rs"]
 pub(crate) mod row;
 
+#[path = "items_variant.rs"]
+pub(crate) mod variant;
+
 /// The core pack's weapon properties (the bundled vocabulary every pack shares): a printed
 /// property name maps to one of these, else it is the source's own (see `derived.rs`).
 const CORE_PROPERTIES: &str = include_str!("../../../../../content/core/properties.json");

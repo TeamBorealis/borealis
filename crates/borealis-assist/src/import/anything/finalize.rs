@@ -363,9 +363,12 @@ fn tiered_spell_choices(raw: &mut [Value], draft: &ImportDraft) -> Vec<(String, 
 /// restriction in both the setter and the text ([`super::mechanics::attunement_by`]), the
 /// class spell save DC a feature's save uses ([`super::mechanics::caster_save_dc`]) and a
 /// magic armor's enhancement bonus ([`super::items::armor_enhancement`]). A table-row
-/// item's column lines are its printed row ([`super::items::printed_row_fixes`]).
+/// item's column lines are its printed row ([`super::items::printed_row_fixes`]); a version
+/// of an item ("<Item>, <version>") keeps only its own row of the item's table
+/// ([`super::items::variant::own_row_fix`]).
 fn printed_fixes(raw: &mut [Value], draft: &ImportDraft) -> Vec<(String, String)> {
     let mut out = Vec::new();
+    let items = super::items::variant::item_descriptions(raw);
     for el in raw.iter_mut() {
         let id = el
             .get("id")
@@ -383,14 +386,20 @@ fn printed_fixes(raw: &mut [Value], draft: &ImportDraft) -> Vec<(String, String)
         if el.get("type").and_then(Value::as_str) == Some("Magic Item") {
             notes.extend(super::items::armor_enhancement(el));
         }
+        notes.extend(super::items::variant::own_row_fix(el, &items));
         out.extend(notes.into_iter().map(|n| (id.clone(), n)));
     }
     out
 }
 
+/// Footnote markers printed after a name in an index ("Name*").
+const MARKERS: [char; 2] = ['*', '†'];
+
 fn same_name(a: &str, b: &str) -> bool {
     let n = |s: &str| {
-        s.split_whitespace()
+        s.trim()
+            .trim_end_matches(MARKERS)
+            .split_whitespace()
             .collect::<Vec<_>>()
             .join(" ")
             .to_lowercase()
@@ -398,11 +407,55 @@ fn same_name(a: &str, b: &str) -> bool {
     n(a) == n(b)
 }
 
+/// Fewest headings ending in the same word that make it a column header glued onto captions.
+const GLUED_CAPTIONS: usize = 3;
+
+/// Column header words of the source's tables (lowercase): the first cell of a `|` line, or a
+/// last word that ends [`GLUED_CAPTIONS`] or more headings. Index tables extracted from a PDF
+/// often print the header on the caption's line ("Rings Item" over a one-column "Item" table).
+fn header_words(source: &str) -> HashSet<String> {
+    let mut words: HashSet<String> = source
+        .lines()
+        .filter(|l| l.contains('|'))
+        .filter_map(|l| l.split('|').map(str::trim).find(|c| !c.is_empty()))
+        .filter(|c| !c.contains(' ') && !c.chars().any(|ch| ch.is_ascii_digit()))
+        .map(str::to_lowercase)
+        .collect();
+    let mut ends: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    for l in source.lines().filter(|l| l.trim_start().starts_with('#')) {
+        let t = l.trim_start_matches('#').trim();
+        if let Some((_, w)) = t.rsplit_once(' ') {
+            *ends.entry(w.to_lowercase()).or_default() += 1;
+        }
+    }
+    words.extend(
+        ends.into_iter()
+            .filter(|(_, n)| *n >= GLUED_CAPTIONS)
+            .map(|(w, _)| w),
+    );
+    words
+}
+
+/// `line` is `name`, or `name` with a column header word glued after it.
+fn captions(line: &str, name: &str, headers: &HashSet<String>) -> bool {
+    same_name(line, name)
+        || line
+            .trim()
+            .rsplit_once(' ')
+            .is_some_and(|(head, w)| headers.contains(&w.to_lowercase()) && same_name(head, name))
+}
+
 /// The source object `name` was imported: a plan group or an element in the pack has its name
 /// (a table's rows planned as options or items, whatever detect called them), an element's
 /// description prints it as a heading, run-in or table row (a table or sub-heading folded into
-/// a text entry), or every row of its table is an element in the pack.
-fn imported_as_named(draft: &ImportDraft, left_out: &HashSet<String>, name: &str) -> bool {
+/// a text entry), or every row of its table is an element in the pack. A caption may carry its
+/// table's column header ([`header_words`]).
+fn imported_as_named(
+    draft: &ImportDraft,
+    left_out: &HashSet<String>,
+    headers: &HashSet<String>,
+    name: &str,
+) -> bool {
     let kept = || draft.elements.iter().filter(|e| !left_out.contains(&e.id));
     draft.plan.groups.iter().any(|g| same_name(&g.name, name))
         || kept().any(|e| same_name(&e.name, name))
@@ -410,9 +463,9 @@ fn imported_as_named(draft: &ImportDraft, left_out: &HashSet<String>, name: &str
             e.json
                 .get("description")
                 .and_then(Value::as_str)
-                .is_some_and(|d| printed_in(d, name))
+                .is_some_and(|d| printed_in(d, name, headers))
         })
-        || rows_imported(draft, left_out, name)
+        || rows_imported(draft, left_out, headers, name)
 }
 
 /// The text runs of `html` between its tags.
@@ -439,22 +492,50 @@ fn text_runs(html: &str) -> Vec<&str> {
     out
 }
 
-/// `html` prints `name` as a line of its own (a heading, a run-in label) or as a table row's
-/// first cell ("Name | ...", or a `<td>`).
-fn printed_in(html: &str, name: &str) -> bool {
+/// `html` prints `name` as a line of its own (a heading, a run-in label, a caption with its
+/// column header glued on) or as a table row's first cell ("Name | ...", or a `<td>`).
+fn printed_in(html: &str, name: &str, headers: &HashSet<String>) -> bool {
     text_runs(html).into_iter().any(|run| {
         let line = run.trim().trim_end_matches(['.', ':']).trim_end();
         let first = run.split('|').next().unwrap_or("");
-        same_name(line, name) || (run.contains('|') && same_name(first.trim(), name))
+        captions(line, name, headers) || (run.contains('|') && same_name(first.trim(), name))
     })
 }
 
 /// Most lines below a table's caption searched for its rows.
 const TABLE_SCAN_LINES: usize = 120;
 
+/// The rows of the table under a caption at `k`: its `|` lines after the header, else (a
+/// one-column table) the first block of plain lines.
+fn rows_under<'a>(lines: &[&'a str], k: usize) -> Vec<&'a str> {
+    let below: Vec<&str> = lines[k + 1..]
+        .iter()
+        .take(TABLE_SCAN_LINES)
+        .take_while(|l| !l.trim_start().starts_with('#'))
+        .copied()
+        .collect();
+    if below.iter().any(|l| l.contains('|')) {
+        return below
+            .into_iter()
+            .filter(|l| l.contains('|'))
+            .skip(1)
+            .collect();
+    }
+    below
+        .into_iter()
+        .skip_while(|l| l.trim().is_empty())
+        .take_while(|l| !l.trim().is_empty())
+        .collect()
+}
+
 /// The source prints `name` as a caption line, and every row of the table under it (to the
 /// next heading; its first `|` line is the header) is an element in the pack.
-fn rows_imported(draft: &ImportDraft, left_out: &HashSet<String>, name: &str) -> bool {
+fn rows_imported(
+    draft: &ImportDraft,
+    left_out: &HashSet<String>,
+    headers: &HashSet<String>,
+    name: &str,
+) -> bool {
     let names: Vec<&str> = draft
         .elements
         .iter()
@@ -462,7 +543,7 @@ fn rows_imported(draft: &ImportDraft, left_out: &HashSet<String>, name: &str) ->
         .map(|e| e.name.as_str())
         .collect();
     let row_named = |cell: &str| {
-        let cell = cell.trim();
+        let cell = cell.trim().trim_end_matches(MARKERS);
         names.iter().any(|n| {
             same_name(cell, n)
                 || cell
@@ -473,21 +554,30 @@ fn rows_imported(draft: &ImportDraft, left_out: &HashSet<String>, name: &str) ->
     };
     let lines: Vec<&str> = draft.source_text.lines().collect();
     lines.iter().enumerate().any(|(k, line)| {
-        if !same_name(line.trim_start_matches('#').trim(), name) {
+        if !captions(line.trim_start_matches('#'), name, headers) {
             return false;
         }
-        let rows: Vec<&str> = lines[k + 1..]
-            .iter()
-            .take(TABLE_SCAN_LINES)
-            .take_while(|l| !l.trim_start().starts_with('#'))
-            .filter(|l| l.contains('|'))
-            .skip(1)
-            .copied()
-            .collect();
+        let rows = rows_under(&lines, k);
         !rows.is_empty()
             && rows
                 .iter()
                 .all(|r| row_named(r.split('|').next().unwrap_or("")))
+    })
+}
+
+/// A `skipped` entry already reports the prose a section of this name opens ("<Name>: ..."
+/// or "<Name> (...)" quoted), or the section itself.
+fn reported_as_prose(entries: &[ReportEntry], name: &str) -> bool {
+    let quoted = format!("\"{}", name.trim().to_lowercase());
+    entries.iter().filter(|e| e.outcome == "skipped").any(|e| {
+        let note = e.note.to_lowercase();
+        same_name(&e.source, name)
+            || note.match_indices(&quoted).any(|(k, m)| {
+                note[k + m.len()..]
+                    .chars()
+                    .next()
+                    .is_some_and(|c| !c.is_alphanumeric())
+            })
     })
 }
 
@@ -528,12 +618,15 @@ pub(crate) fn build_report(
     report
         .entries
         .extend(super::parts::report_entries(draft, &final_id));
-    for o in draft
+    let headers = header_words(&draft.source_text);
+    let missing: Vec<_> = draft
         .detection
         .other
         .iter()
-        .filter(|o| !imported_as_named(draft, left_out, &o.name))
-    {
+        .filter(|o| !imported_as_named(draft, left_out, &headers, &o.name))
+        .filter(|o| !reported_as_prose(&report.entries, &o.name))
+        .collect();
+    for o in missing {
         let what = if o.what.is_empty() {
             "this"
         } else {

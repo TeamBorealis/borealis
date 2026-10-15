@@ -239,3 +239,65 @@ fn tables_and_rows_folded_into_text_or_imported_as_items_are_not_reported() {
     let again = build_report(&draft, &[], &left);
     assert!(again.entries.iter().any(|e| e.source == "Tiers"));
 }
+
+#[test]
+fn index_captions_with_their_column_header_glued_on_are_not_reported() {
+    // Arrange: an index whose captions carry the one-column table's header ("Tools Item"),
+    // names marked with a footnote "*". "Tools" is printed in a text entry; "Bags" only in the
+    // source, its rows are items; "Loot" is a real gap.
+    let source = "### Gear by Kind\n\n#### Tools Item\n\nMallet*\nAwl\n\n#### Bags Item\n\nSack*\n\n\
+        #### Cases Item\n\nTin\n\n#### Weapons\n\nItem | Cost\nClub* | 1 gp\n\n#### Loot\n\nGold Idol\n";
+    let text = "<p><strong>Gear by Kind</strong></p><p><strong>Tools Item</strong></p>\
+        <p>Mallet* Awl</p>";
+    let draft: ImportDraft = serde_json::from_value(serde_json::json!({
+        "edition": "2014", "id_prefix": "t", "source_name": "T", "pack_id": "t",
+        "pack_name": "T", "source_kind": "attachments", "source_text": source,
+        "detection": {"kind": "item", "edition": "2014", "confidence": 1.0, "items": [],
+            "other": [
+                {"name": "Tools", "what": "table", "note": ""},
+                {"name": "Bags", "what": "table", "note": ""},
+                {"name": "Loot", "what": "table", "note": ""}]},
+        "plan": {"edition": "2014", "groups": [], "elements": [], "notes": []},
+        "elements": [
+            element("ID_T_SACK", "Item", "ok", Value::Null),
+            element("ID_T_GEAR", "Rules Glossary Entry", "ok",
+                serde_json::json!({"description": text}))],
+        "sweep_issues": []}))
+    .unwrap();
+    // Act
+    let report = build_report(&draft, &[], &HashSet::new());
+    // Assert
+    let unsupported: Vec<&str> = report
+        .entries
+        .iter()
+        .filter(|e| e.outcome == "unsupported")
+        .map(|e| e.source.as_str())
+        .collect();
+    assert_eq!(unsupported, vec!["Loot"]);
+    // A caption word that is no column header still counts as part of the name.
+    let headers = header_words(source);
+    assert!(headers.contains("item"));
+    assert!(!printed_in("<p>Tools Kit</p>", "Tools", &headers));
+}
+
+#[test]
+fn a_section_whose_prose_is_already_reported_is_not_reported_twice() {
+    // Arrange: the uncovered prose entry quotes the section's run-in ("Preface (...): ...").
+    let skipped = ReportEntry {
+        source: "Some Book".into(),
+        outcome: "skipped".into(),
+        elements: Vec::new(),
+        note: "prose in no element's description (check it is not rules text): \"Preface (short): This book adds ...\"".into(),
+    };
+    // Act + Assert: only the section that prose opens is covered, by whole word.
+    assert!(reported_as_prose(std::slice::from_ref(&skipped), "Preface"));
+    assert!(!reported_as_prose(std::slice::from_ref(&skipped), "Pref"));
+    assert!(!reported_as_prose(
+        std::slice::from_ref(&skipped),
+        "Credits"
+    ));
+    assert!(reported_as_prose(
+        std::slice::from_ref(&skipped),
+        "Some Book"
+    ));
+}

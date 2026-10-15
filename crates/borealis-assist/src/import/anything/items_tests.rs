@@ -291,3 +291,80 @@ fn a_magic_armors_plain_ac_bonus_becomes_its_enhancement() {
         "value": "1"}], "setters": [{"name": "type", "value": "Ring"}]});
     assert!(armor_enhancement(&mut ring).is_none());
 }
+
+/// A synthetic item with a roll table of its versions (the roll is the first cell).
+const VERSION_TABLE: &str = "<table><thead><tr><th>d6</th><th>Animal</th></tr></thead><tbody>\
+    <tr><td>1-2</td><td>Otter</td></tr><tr><td>3-4</td><td>Heron</td></tr>\
+    <tr><td>5-6</td><td>Marten*</td></tr></tbody></table>";
+
+fn version(name: &str, desc: &str) -> Value {
+    json!({"id": "x", "name": name, "type": "Magic Item", "description": desc})
+}
+
+#[test]
+fn a_version_keeps_only_its_own_row_of_the_items_roll_table() {
+    // Arrange: the item prints the whole table; one version copied it whole.
+    let item_desc = format!("<p>A carved charm.</p><p>Roll on the table.</p><h5>Charm animals</h5>{VERSION_TABLE}<p>Use it once.</p>");
+    let raw = vec![
+        version("Charm of the Wild", &item_desc),
+        version("Charm of the Wild, Heron", &item_desc),
+    ];
+    let items = variant::item_descriptions(&raw);
+    let mut el = raw[1].clone();
+    // Act
+    let note = variant::own_row_fix(&mut el, &items);
+    // Assert: header + the Heron row, the other rows gone, the rest of the text unchanged.
+    let desc = el["description"].as_str().unwrap();
+    assert!(note.is_some_and(|n| n.contains("2 other row")));
+    assert!(desc.contains("<th>d6</th><th>Animal</th>"));
+    assert!(desc.contains("<td>3-4</td><td>Heron</td>"));
+    assert!(!desc.contains("Otter") && !desc.contains("Marten"));
+    assert!(desc.starts_with("<p>A carved charm.</p>") && desc.ends_with("<p>Use it once.</p>"));
+    // The item itself keeps every row; a version that names no row is untouched.
+    let mut item = raw[0].clone();
+    assert_eq!(variant::own_row_fix(&mut item, &items), None);
+    let mut other = version("Charm of the Wild, Lynx", &item_desc);
+    assert_eq!(variant::own_row_fix(&mut other, &items), None);
+}
+
+#[test]
+fn a_version_without_its_row_gets_it_from_the_items_table_after_the_shared_paragraph() {
+    // Arrange: the version printed the item's text but no table (a footnote marker on the cell).
+    let item_desc = format!("<p>A carved charm.</p><p>Roll on the table.</p><h5>Charm animals</h5>{VERSION_TABLE}<p>Use it once.</p>");
+    let raw = vec![version("Charm of the Wild", &item_desc)];
+    let items = variant::item_descriptions(&raw);
+    let mut placed = version(
+        "Charm of the Wild, Marten",
+        "<p>A carved charm.</p><p>Roll on the table.</p><p>Use it once.</p>",
+    );
+    let mut appended = version("Charm of the Wild, Otter", "<p>A carved charm.</p>");
+    // Act
+    let placed_note = variant::own_row_fix(&mut placed, &items);
+    let appended_note = variant::own_row_fix(&mut appended, &items);
+    // Assert: caption + header + its own row, after the paragraph the item prints before them.
+    assert!(placed_note.is_some_and(|n| n.contains("added")));
+    assert!(appended_note.is_some());
+    let placed = placed["description"].as_str().unwrap();
+    assert!(placed.starts_with(
+        "<p>A carved charm.</p><p>Roll on the table.</p><h5>Charm animals</h5><table>"
+    ));
+    assert!(placed.contains("<td>5-6</td><td>Marten*</td>") && !placed.contains("Heron"));
+    assert!(placed.ends_with("</table><p>Use it once.</p>"));
+    let appended = appended["description"].as_str().unwrap();
+    assert!(appended.starts_with("<p>A carved charm.</p><h5>Charm animals</h5>"));
+    assert!(appended.contains("Otter") && !appended.contains("Heron"));
+}
+
+#[test]
+fn a_version_whose_table_already_prints_only_its_row_is_left_alone() {
+    // Arrange: the version names itself in the FIRST cell of its own one-row table.
+    let item_desc = format!("<p>A carved charm.</p>{VERSION_TABLE}");
+    let raw = vec![version("Charm of the Wild", &item_desc)];
+    let items = variant::item_descriptions(&raw);
+    let own = "<p>A carved charm.</p><table><thead><tr><th>Animal</th></tr></thead><tbody>\
+        <tr><td>Heron</td></tr></tbody></table>";
+    let mut el = version("Charm of the Wild, Heron", own);
+    // Act + Assert
+    assert_eq!(variant::own_row_fix(&mut el, &items), None);
+    assert_eq!(el["description"], own);
+}
