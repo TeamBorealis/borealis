@@ -151,6 +151,7 @@ impl AppState {
     /// Run detect, plan, generate and validate; always ends with a `ready` or `error` event.
     pub async fn run_import_start(&self, ai: &AiService, job: StartJob, sink: Arc<dyn ImportSink>) {
         let em = Emitter::new(&job.draft_id, sink);
+        tracing::info!(draft = %job.draft_id, "import started");
         let result = self.start_inner(ai, &job, &em).await;
         self.finish(&job.draft_id, &em, result, None);
     }
@@ -334,6 +335,14 @@ impl AppState {
         result: ApiResult<ImportDraft>,
         previous: Option<StoredDraft>,
     ) {
+        match &result {
+            Ok(draft) => tracing::info!(
+                draft = id,
+                elements = draft.elements.len(),
+                "import step finished"
+            ),
+            Err(e) => tracing::warn!(draft = id, code = ?e.code, "import step failed"),
+        }
         let outcome = match result {
             Ok(draft) => {
                 let msg = if draft.plan.open_choices().is_empty() {

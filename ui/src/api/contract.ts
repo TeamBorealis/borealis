@@ -280,6 +280,8 @@ export interface ApiMethods {
   openDownloadPage(): Promise<void>;
   /** Open an app-owned folder in the OS file manager. The backend resolves the path; the UI never sends one. */
   openAppFolder(args: { folder: AppFolder }): Promise<void>;
+  /** The newest log lines (home folder shown as `~`), for sharing from a phone, which has no folder to open. */
+  getRecentLogs(): Promise<string>;
   /** Restart the application so new content loads. */
   restartApp(): Promise<void>;
 
@@ -434,6 +436,7 @@ export const COMMANDS = {
   checkAppUpdate: "check_app_update",
   openDownloadPage: "open_download_page",
   openAppFolder: "open_app_folder",
+  getRecentLogs: "get_recent_logs",
   restartApp: "restart_app",
   aiStatus: "ai_status",
   aiStartTask: "ai_start_task",

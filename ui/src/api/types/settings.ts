@@ -141,7 +141,7 @@ export interface AppUpdateStatus {
 export type ContentUpdateState = "idle" | "disabled" | "pending" | "running" | "done" | "failed";
 
 /** App-owned folders the backend can open (the UI never passes a path). */
-export type AppFolder = "content" | "user-content" | "characters";
+export type AppFolder = "content" | "user-content" | "characters" | "logs";
 
 /** Outcome of the automatic content update at startup (also sent on `content:progress`). */
 export interface ContentUpdateStatus {

@@ -20,6 +20,7 @@ pub mod ai_service;
 #[cfg(desktop)]
 pub mod ai_setup;
 pub mod app_api;
+pub mod app_logs;
 pub mod app_update;
 pub mod builder;
 pub mod bundled_content;
@@ -386,6 +387,7 @@ pub fn run() {
             commands_app_update::check_app_update,
             commands_app_update::open_download_page,
             commands_system::open_app_folder,
+            commands_system::get_recent_logs,
             commands_system::restart_app,
         ])
         .build(tauri::generate_context!())

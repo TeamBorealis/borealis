@@ -1,5 +1,6 @@
 import { Alert, Button } from "../../components";
 import type { AppSettings, DataDirs } from "../../api/contract";
+import { LogsRow } from "./LogsRow";
 import { DescCheck, FieldLabel, Help, PathBox, SectionDesc, SectionTitle } from "./rows";
 
 /** Folders chosen in this session but not saved yet. A pick holds the backend's single-use token. */
@@ -35,6 +36,7 @@ export function DataFilesTab({ form, set, dirs, held, browse, unlink, clearCache
       <div className="aur-set-left-clear">
         <Button disabled={cacheCleared} onClick={clearCache}>Clear Cache</Button>
       </div>
+      <LogsRow mobile={form.mobile} />
       {error && <Alert tone="danger" role="alert">{error}</Alert>}
     </>
   );

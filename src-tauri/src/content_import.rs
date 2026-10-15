@@ -118,6 +118,7 @@ impl AppState {
                 "\"{id}\" is a bundled pack id and cannot be replaced."
             )));
         }
+        tracing::info!(packs = staged.len(), reason, "installing imported packs");
         let library = self.paths.library();
         let backup = Scratch::new(&self.paths.data)?;
         let mut moved = Vec::new();
@@ -179,6 +180,7 @@ impl AppState {
                 "That file is empty or too large to import.",
             ));
         }
+        tracing::info!(bytes = bytes.len(), "content file import started");
         sink.content_progress(&progress("converting", 0, 1, &request.file_name));
         self.import_files_now(request, bytes, sink)
     }
@@ -353,6 +355,7 @@ impl AppState {
     ) -> ApiResult<FiveToolsImportReport> {
         let _guard = self.content_lock()?;
         let dir = self.picked_folder(&request.folder)?;
+        tracing::info!(sources = request.sources.len(), "5etools import started");
         if request.sources.is_empty() {
             return Err(ApiError::invalid("Choose at least one source to import."));
         }
@@ -393,6 +396,14 @@ impl AppState {
         ));
         self.install_packs(&staged, sink, "5etools-imported")?;
         sink.import_progress(&progress("done", staged.len(), staged.len(), "Imported"));
+        tracing::info!(
+            packs = staged.len(),
+            converted = result.report.converted,
+            replaced,
+            partial = result.report.partial.len(),
+            skipped = result.report.skipped.len(),
+            "5etools import finished"
+        );
         let ids: Vec<&String> = staged.iter().map(|(_, id)| id).collect();
         let packs: Vec<ContentPack> = self
             .list_packs()?

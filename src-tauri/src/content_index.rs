@@ -328,8 +328,10 @@ impl AppState {
         let mut outcome = AuroraOutcome::default();
         let mut staged: Vec<(PathBuf, String)> = Vec::new();
         let mut scratches = Vec::new();
+        tracing::info!(indexes = total, "content index update started");
         for n in 0..total {
             let previous = prefs.indexes[n].clone();
+            let staged_before = staged.len();
             sink.content_progress(&progress("checking", n, total, &previous.url));
             let record = self.check_index(
                 fetcher,
@@ -340,7 +342,15 @@ impl AppState {
                 &mut outcome,
             );
             match record {
-                Ok(r) => prefs.indexes[n] = r,
+                Ok(r) => {
+                    tracing::info!(
+                        url = %previous.url,
+                        updated = staged.len() - staged_before,
+                        problem = r.problem.as_deref().unwrap_or("none"),
+                        "content index checked"
+                    );
+                    prefs.indexes[n] = r;
+                }
                 Err(why) => {
                     tracing::warn!("index {}: {why}", previous.url);
                     prefs.indexes[n].problem = Some(why);
@@ -360,6 +370,11 @@ impl AppState {
             self.install_packs(&staged, sink, "indexes-updated")?;
         }
         let message = update_message(updated, outcome.failed.len());
+        tracing::info!(
+            updated,
+            failed = outcome.failed.len(),
+            "content index update finished"
+        );
         sink.content_progress(&progress("done", total, total, &message));
         Ok(UpdateIndexesResult {
             updated,
