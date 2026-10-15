@@ -12,6 +12,9 @@ use crate::util::{id_fragment, title_case};
 use borealis_content::{Element, ExtractItem, Rule, Setter};
 use serde_json::{json, Map, Value};
 
+#[path = "item_mech.rs"]
+mod item_mech;
+
 fn strip_source(code: &str) -> &str {
     code.split('|').next().unwrap_or(code)
 }
@@ -365,7 +368,15 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         el.setters
             .push(Setter::new("enhancement", bonus.to_string()));
     }
+    if ty == "Weapon" {
+        item_mech::weapon_bonus_rules(&it, &mut mech);
+        item_mech::mastery_data(&mut st.ids, &it, &code, &mut el);
+    }
     magic_rules(&it, ty, &code, &mut mech, &mut el);
+    item_mech::ability_bonus_rules(&it, &mut mech, &mut partial);
+    item_mech::speed_rules(&it, &mut mech, &mut partial);
+    mech.rules
+        .extend(item_mech::charges_rule(&it, &el, &mut partial));
 
     // Equipment packs.
     if !it.pack_contents.is_empty() {
@@ -452,11 +463,9 @@ fn weapon(it: &Item, code: &str, base_name: &str, el: &mut Element) {
             el.supports.push((*id).to_string());
         }
     }
-    for m in &it.mastery {
-        if let Some(name) = m.as_str().map(strip_source) {
-            el.supports.push(format!("Mastery {name}"));
-            el.setters.push(Setter::new("mastery", name));
-        }
+    for name in item_mech::mastery_names(it) {
+        el.supports.push(format!("Mastery {name}"));
+        el.setters.push(Setter::new("mastery", name));
     }
     el.setters.push(Setter::new(
         "slot",
@@ -475,7 +484,15 @@ fn weapon(it: &Item, code: &str, base_name: &str, el: &mut Element) {
     if let Some(r) = &it.range {
         el.setters.push(Setter::new("range", r.clone()));
     }
-    if let Some(id) = core_ids::weapon_prof_id(base_name) {
+    // a weapon with no proficiency of its own (a non-core base, a named weapon without a
+    // base item) is covered by its category; firearms have their own proficiency
+    let prof = core_ids::weapon_prof_id(base_name).or_else(|| {
+        (!flag(it, "firearm"))
+            .then_some(it.weapon_category.as_deref())
+            .flatten()
+            .and_then(core_ids::weapon_prof_id)
+    });
+    if let Some(id) = prof {
         el.setters.push(Setter::new("proficiency", id));
     }
 }
@@ -526,14 +543,11 @@ fn armor(it: &Item, code: &str, base_name: &str, el: &mut Element, mech: &mut Me
 
 fn magic_rules(it: &Item, ty: &str, code: &str, mech: &mut Mech<'_>, el: &mut Element) {
     if let Some(bonus) = it.bonus_ac.as_deref().and_then(signed_value) {
-        if ty == "Armor" {
-            let name = "ac:armored:enhancement";
-            let bonus_class = if code == "S" {
-                "enhancement:shield"
-            } else {
-                "enhancement"
-            };
-            mech.push(stat_bonus(name, bonus, bonus_class));
+        if ty == "Armor" && code == "S" {
+            // on the shield's own AC, which counts with and without body armor
+            mech.push(stat_bonus("ac:shield", bonus, "enhancement:shield"));
+        } else if ty == "Armor" {
+            mech.push(stat_bonus("ac:armored:enhancement", bonus, "enhancement"));
         } else {
             mech.push(Rule::Stat(stat("ac:misc", bonus)));
         }

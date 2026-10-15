@@ -184,10 +184,7 @@ pub fn attacks_with(
         let dexterous = (finesse || (arts.is_some() && monk_weapon)) && mods[1] > mods[0];
         let ability = if ranged || dexterous { 1 } else { 0 };
         let adorner = it.adorner.as_deref().and_then(|a| uni.get(a));
-        let enh = adorner
-            .and_then(|a| a.el.setter_value("enhancement"))
-            .and_then(|v| v.trim().trim_start_matches('+').parse::<i32>().ok())
-            .unwrap_or(0);
+        let enh = weapon_enhancement(&e.el, adorner.map(|a| &a.el));
         let proficient =
             e.el.setter_value("proficiency")
                 .is_some_and(|p| graph.has(p));
@@ -269,6 +266,23 @@ pub fn attacks_with(
     out
 }
 
+fn enhancement_of(el: &borealis_content::Element) -> Option<i32> {
+    el.setter_value("enhancement")
+        .and_then(|v| v.trim().trim_start_matches('+').parse::<i32>().ok())
+}
+
+/// The `+N` of a weapon: its adorner's enhancement when the adorner has one (a `+1 Weapon`
+/// put on a plain Longsword), else the weapon's own (a concrete `+1 Longsword`).
+fn weapon_enhancement(
+    weapon: &borealis_content::Element,
+    adorner: Option<&borealis_content::Element>,
+) -> i32 {
+    adorner
+        .and_then(enhancement_of)
+        .or_else(|| enhancement_of(weapon))
+        .unwrap_or(0)
+}
+
 /// Extra damage of toggles such as Rage: the group `damage:strength melee`.
 fn strength_melee_bonus(stats: &StatSet, ability: usize, melee: bool) -> i32 {
     if ability == 0 && melee {
@@ -328,5 +342,32 @@ mod tests {
         assert_eq!(dice_with_bonus("1d8", 3, "slashing"), "1d8+3 slashing");
         assert_eq!(dice_with_bonus("1d4", -1, "piercing"), "1d4-1 piercing");
         assert_eq!(dice_with_bonus("1d6", 0, ""), "1d6");
+    }
+
+    fn with_enhancement(value: Option<&str>) -> borealis_content::Element {
+        let mut el = borealis_content::Element {
+            id: "ID_TEST_BLADE".into(),
+            name: "Test Blade".into(),
+            ty: "Weapon".into(),
+            ..borealis_content::Element::default()
+        };
+        if let Some(v) = value {
+            el.setters
+                .push(borealis_content::Setter::new("enhancement", v));
+        }
+        el
+    }
+
+    #[test]
+    fn weapon_reads_its_own_enhancement_when_not_adorned() {
+        let plain = with_enhancement(None);
+        let own = with_enhancement(Some("+2"));
+        let adorner = with_enhancement(Some("1"));
+        assert_eq!(weapon_enhancement(&plain, None), 0);
+        assert_eq!(weapon_enhancement(&own, None), 2);
+        assert_eq!(weapon_enhancement(&plain, Some(&adorner)), 1);
+        // the adorner's bonus replaces the weapon's own, they do not stack
+        assert_eq!(weapon_enhancement(&own, Some(&adorner)), 1);
+        assert_eq!(weapon_enhancement(&own, Some(&plain)), 2);
     }
 }
