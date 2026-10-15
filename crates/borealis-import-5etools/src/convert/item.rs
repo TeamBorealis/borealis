@@ -14,6 +14,8 @@ use serde_json::{json, Map, Value};
 
 #[path = "item_mech.rs"]
 mod item_mech;
+#[path = "item_spells.rs"]
+mod item_spells;
 
 fn strip_source(code: &str) -> &str {
     code.split('|').next().unwrap_or(code)
@@ -221,6 +223,19 @@ fn element_type(it: &Item, code: &str) -> &'static str {
 /// Source 5etools assumes for an item reference that names none.
 const DEFAULT_ITEM_SOURCE: &str = "DMG";
 
+/// The imported element of a weapon's `baseItem` (`longsword|phb`; base items default to the
+/// PHB), when the import has it: a `+1 Longsword` counts as a Longsword for Weapon Mastery.
+fn base_weapon_id(sh: &Shared, it: &Item) -> Option<String> {
+    let uid = it.extra.get("baseItem")?.as_str()?;
+    let (name, source) = uid.split_once('|').unwrap_or((uid, ""));
+    let source = if source.trim().is_empty() {
+        "PHB"
+    } else {
+        source.trim()
+    };
+    sh.link(RefKind::Item, name.trim(), &source.to_uppercase())
+}
+
 fn extract_items(sh: &Shared, it: &Item) -> (Vec<ExtractItem>, Vec<String>) {
     let mut out = Vec::new();
     let mut partial = Vec::new();
@@ -371,12 +386,25 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     if ty == "Weapon" {
         item_mech::weapon_bonus_rules(&it, &mut mech);
         item_mech::mastery_data(&mut st.ids, &it, &code, &mut el);
+        if let Some(base) = base_weapon_id(sh, &it) {
+            el.data.insert("base_weapon".into(), json!(base));
+        }
     }
     magic_rules(&it, ty, &code, &mut mech, &mut el);
     item_mech::ability_bonus_rules(&it, &mut mech, &mut partial);
     item_mech::speed_rules(&it, &mut mech, &mut partial);
-    mech.rules
-        .extend(item_mech::charges_rule(&it, &el, &mut partial));
+    let charges = item_mech::charges_rule(&it, &el, &mut partial);
+    let has_charges = charges.is_some();
+    mech.rules.extend(charges);
+    if let Some(attached) = it.extra.get("attachedSpells") {
+        mech.rules.extend(item_spells::attached_spell_rules(
+            sh,
+            &el.id,
+            has_charges,
+            attached,
+            &mut partial,
+        ));
+    }
 
     // Equipment packs.
     if !it.pack_contents.is_empty() {
@@ -1044,6 +1072,10 @@ mod tests {
             (RefKind::Item, "backpack".into(), "PHB".into()),
             "ID_5ET_PHB_ITEM_BACKPACK".into(),
         );
+        sh.links.insert(
+            (RefKind::Item, "dagger".into(), "PHB".into()),
+            "ID_5ET_PHB_ITEM_DAGGER".into(),
+        );
         let mut st = State::default();
         let ring = json!({"name": "Ring of Protection", "source": "DMG", "type": "RG|DMG", "rarity": "rare", "reqAttune": true, "bonusAc": "+1", "bonusSavingThrow": "+1", "entries": ["+1 AC."]});
         let el = &convert(&sh, &mut st, &ent(ring)).elements[0];
@@ -1084,6 +1116,26 @@ mod tests {
         assert_eq!(
             setter(el, "proficiency").value,
             "ID_PROFICIENCY_WEAPON_PROFICIENCY_DAGGER"
+        );
+        assert_eq!(
+            el.data["base_weapon"], "ID_5ET_PHB_ITEM_DAGGER",
+            "counts as a Dagger"
+        );
+        let wand = json!({"name": "Wand of Glow", "source": "ZZZ", "type": "WD", "rarity": "rare", "charges": 3,
+            "recharge": "dawn", "attachedSpells": {"charges": {"2": ["glow orb|zzz"]}}});
+        let el = &convert(&sh, &mut st, &ent(wand)).elements[0];
+        let spell = el
+            .rules
+            .iter()
+            .find_map(|r| match r {
+                Rule::Custom(c) if c.kind == "grant_spell" => Some(c),
+                _ => None,
+            })
+            .expect("attached spell");
+        assert_eq!(
+            spell.fields["resource_cost"],
+            json!({"resource": el.id, "cost": 2}),
+            "spends the wand's charges"
         );
         let pack = json!({"name": "Test Pack", "source": "PHB", "type": "G", "value": 200, "packContents": ["backpack|phb", {"item": "candle|phb", "quantity": 5}, {"special": "10 feet of string"}]});
         let conv = convert(&sh, &mut st, &ent(pack));
