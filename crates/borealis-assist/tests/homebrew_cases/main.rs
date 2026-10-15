@@ -9,6 +9,7 @@
 
 mod character;
 mod checks;
+mod corrections;
 mod pack;
 mod schema;
 
@@ -42,6 +43,8 @@ pub struct CaseReport {
     /// Set when the case could not be evaluated at all (it fails).
     pub fatal: Option<String>,
     pub rows: Vec<Row>,
+    /// Corrections of `expected.json` slips applied (opt-in, see `corrections.rs`).
+    pub corrections: Vec<String>,
 }
 
 impl CaseReport {
@@ -59,6 +62,9 @@ impl CaseReport {
     /// The per-expectation table.
     pub fn table(&self) -> String {
         let mut out = format!("== case {} ==\n", self.case);
+        for c in &self.corrections {
+            out.push_str(&format!("correction applied: {c}\n"));
+        }
         if let Some(f) = &self.fatal {
             out.push_str(&format!("FAIL  (case)  {f}\n"));
             return out;
@@ -249,8 +255,15 @@ fn lint_keys(raw: &Value) -> Vec<String> {
 
 /// Read and validate `expected.json`.
 pub fn read_case(path: &Path) -> Result<CaseFile, String> {
+    read_case_corrected(path).map(|(case, _)| case)
+}
+
+/// Like [`read_case`], also returning the corrections applied (only with
+/// `BOREALIS_HOMEBREW_CORRECTIONS=1`, see `corrections.rs`).
+pub fn read_case_corrected(path: &Path) -> Result<(CaseFile, Vec<String>), String> {
     let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
-    let raw: Value = serde_json::from_str(&text).map_err(|e| format!("expected.json: {e}"))?;
+    let mut raw: Value = serde_json::from_str(&text).map_err(|e| format!("expected.json: {e}"))?;
+    let applied = corrections::apply_for(path, &mut raw)?;
     let lint = lint_keys(&raw);
     if !lint.is_empty() {
         return Err(format!("expected.json: {}", lint.join("; ")));
@@ -282,7 +295,7 @@ pub fn read_case(path: &Path) -> Result<CaseFile, String> {
             return Err(format!("expected.json: duplicate expectation id {id}"));
         }
     }
-    Ok(case)
+    Ok((case, applied))
 }
 
 /// Evaluate one case folder.
@@ -295,8 +308,9 @@ pub fn run_case(case_dir: &Path) -> CaseReport {
         case: name.clone(),
         fatal: Some(m),
         rows: Vec::new(),
+        corrections: Vec::new(),
     };
-    let case = match read_case(&case_dir.join("expected.json")) {
+    let (case, applied) = match read_case_corrected(&case_dir.join("expected.json")) {
         Ok(c) => c,
         Err(e) => return fatal(e),
     };
@@ -304,7 +318,10 @@ pub fn run_case(case_dir: &Path) -> CaseReport {
         Ok(l) => l,
         Err(e) => return fatal(e),
     };
-    run_loaded(&name, &case, &loaded)
+    CaseReport {
+        corrections: applied,
+        ..run_loaded(&name, &case, &loaded)
+    }
 }
 
 /// Evaluate a case whose pack is already loaded.
@@ -319,6 +336,7 @@ pub fn run_loaded(name: &str, case: &CaseFile, loaded: &pack::Loaded) -> CaseRep
         case: name.to_string(),
         fatal: None,
         rows,
+        corrections: Vec::new(),
     }
 }
 
@@ -379,6 +397,7 @@ fn run_case_guarded(dir: &Path) -> CaseReport {
             .unwrap_or_default(),
         fatal: Some(e),
         rows: Vec::new(),
+        corrections: Vec::new(),
     })
 }
 

@@ -166,7 +166,107 @@ pub fn element_text(e: &Element) -> String {
                 None => s.value.clone(),
             }),
     );
-    norm(&plain_text(&t.join(" \n ")))
+    let mut text = t.join(" \n ");
+    if !e.data.is_empty() {
+        text.push_str(" \n ");
+        text.push_str(&data_text(&e.data));
+    }
+    norm(&plain_text(&text))
+}
+
+/// The structured `data` of an element (a Monster's stat block) as the words and numbers a
+/// reader sees: every string, every number (a number from 1000 up also with a thousands
+/// separator), each scalar next to its field name ("str 10", "xp 1,100"), and the labelled
+/// headline values ("AC 13", "HP 22", "CR 1/4", "XP 1,100").
+fn data_text(data: &std::collections::BTreeMap<String, Value>) -> String {
+    let mut out = Vec::new();
+    for (k, v) in data {
+        scalars(Some(k), v, &mut out);
+    }
+    for (key, label, inner) in [
+        ("ac", "AC", Some("value")),
+        ("hp", "HP", Some("average")),
+        ("cr", "CR", None),
+        ("xp", "XP", None),
+        ("xp_lair", "XP", None),
+    ] {
+        let Some(v) = data.get(key) else { continue };
+        let items = v.as_array().cloned().unwrap_or_else(|| vec![v.clone()]);
+        for item in &items {
+            let shown = match (inner, item) {
+                (Some(f), Value::Object(o)) => o.get(f).map(scalar_text),
+                _ => Some(scalar_text(item)),
+            };
+            let Some(n) = shown.filter(|n| !n.is_empty()) else {
+                continue;
+            };
+            out.push(format!("{label} {n}"));
+            if let Some(big) = n.parse::<u64>().ok().filter(|b| *b >= 1000) {
+                out.push(format!("{label} {}", with_separators(big)));
+            }
+        }
+    }
+    out.join(" \n ")
+}
+
+fn scalar_text(v: &Value) -> String {
+    match v {
+        Value::String(s) => s.clone(),
+        Value::Number(n) => n.to_string(),
+        Value::Object(o) => o
+            .get("numer")
+            .zip(o.get("denom"))
+            .map(|(n, d)| match d.as_u64() {
+                Some(1) => n.to_string(),
+                _ => format!("{n}/{d}"),
+            })
+            .unwrap_or_default(),
+        _ => String::new(),
+    }
+}
+
+/// `1100` as `1,100`.
+fn with_separators(n: u64) -> String {
+    let digits = n.to_string();
+    let mut out = String::new();
+    for (i, c) in digits.chars().enumerate() {
+        if i > 0 && (digits.len() - i) % 3 == 0 {
+            out.push(',');
+        }
+        out.push(c);
+    }
+    out
+}
+
+fn scalars(key: Option<&str>, v: &Value, out: &mut Vec<String>) {
+    let label = |text: &str| match key {
+        Some(k) => format!("{} {text}", k.replace('_', " ")),
+        None => text.to_string(),
+    };
+    match v {
+        Value::String(s) => {
+            out.push(s.clone());
+            out.push(label(s));
+        }
+        Value::Number(n) => {
+            out.push(n.to_string());
+            out.push(label(&n.to_string()));
+            if let Some(big) = n.as_u64().filter(|b| *b >= 1000) {
+                out.push(with_separators(big));
+                out.push(label(&with_separators(big)));
+            }
+        }
+        Value::Array(a) => a.iter().for_each(|x| scalars(key, x, out)),
+        Value::Object(o) => {
+            let fraction = scalar_text(v);
+            if !fraction.is_empty() {
+                out.push(fraction.clone());
+                out.push(label(&fraction));
+            }
+            o.iter().for_each(|(k, x)| scalars(Some(k), x, out));
+        }
+        _ => {}
+    }
 }
 
 /// Descriptions are HTML: drop the markup so a phrase split by inline tags
@@ -250,11 +350,27 @@ fn digits(text: &str) -> String {
         .join(" ")
 }
 
-/// Does the (normalised) text contain the token, ignoring spacing ("1500gp" = "1500 gp",
-/// "Wood/Metal" = "Wood / Metal") and number words ("six hours" = "6 hours")?
+/// The `A|B` alternatives of a token. A token without a second non-empty alternative (a lone
+/// literal `|`) is one alternative, as written.
+fn alternatives(token: &str) -> Vec<&str> {
+    let alts: Vec<&str> = token.split('|').filter(|a| !a.trim().is_empty()).collect();
+    if alts.len() > 1 {
+        alts
+    } else {
+        vec![token]
+    }
+}
+
+/// Does the (normalised) text contain the token (or one of its `A|B` alternatives), ignoring
+/// spacing ("1500gp" = "1500 gp", "Wood/Metal" = "Wood / Metal") and number words
+/// ("six hours" = "6 hours")?
 fn text_has(text: &str, token: &str) -> bool {
-    let t = norm(token);
-    text.contains(&t) || squash(text).contains(&squash(&t)) || digits(text).contains(&digits(&t))
+    alternatives(token).into_iter().any(|alt| {
+        let t = norm(alt);
+        text.contains(&t)
+            || squash(text).contains(&squash(&t))
+            || digits(text).contains(&digits(&t))
+    })
 }
 
 fn has_prose(e: &Element) -> bool {
@@ -472,10 +588,10 @@ fn silent_drop_rows(case: &CaseFile, l: &Loaded) -> Vec<Row> {
 }
 
 /// The pack element an expectation targets.
-pub fn find<'a>(l: &'a Loaded, ty: &str, name: &str) -> Option<&'a Element> {
+pub fn find<'a>(l: &'a Loaded, ty: Option<&str>, name: &str) -> Option<&'a Element> {
     l.elements
         .iter()
-        .find(|e| name_matches(name, &e.name) && name_matches(ty, &e.ty))
+        .find(|e| name_matches(name, &e.name) && ty.map_or(true, |t| name_matches(t, &e.ty)))
 }
 
 /// The value of `"setter"` or `"setter@attribute"`.
@@ -509,7 +625,10 @@ fn setter_ok(e: &Element, key: &str, want: &str) -> Result<(), String> {
 
 fn setter_contains(e: &Element, key: &str, token: &str) -> Result<(), String> {
     let got = setter_value(e, key)?;
-    if norm(got).contains(&norm(token)) {
+    if alternatives(token)
+        .into_iter()
+        .any(|alt| norm(got).contains(&norm(alt)))
+    {
         Ok(())
     } else {
         Err(format!("{key} = {got:?} lacks {token:?}"))
@@ -599,7 +718,7 @@ fn json_check_errors(json: &Value, j: &JsonCheck) -> Vec<String> {
         other => other.to_string(),
     });
     for t in &j.contains {
-        if !text.contains(&norm(t)) {
+        if !alternatives(t).into_iter().any(|a| text.contains(&norm(a))) {
             errs.push(format!("{} lacks {t:?}", j.pointer));
         }
     }
@@ -610,8 +729,12 @@ fn json_check_errors(json: &Value, j: &JsonCheck) -> Vec<String> {
 }
 
 fn check_element(l: &Loaded, x: &ElementExpect) -> Result<(), String> {
-    let Some(e) = find(l, &x.ty, &x.name) else {
-        return Err(format!("no {} element named {:?}", x.ty, x.name));
+    let Some(e) = find(l, x.ty.as_deref(), &x.name) else {
+        return Err(format!(
+            "no {} element named {:?}",
+            x.ty.as_deref().unwrap_or("(any type)"),
+            x.name
+        ));
     };
     let mut errs = Vec::new();
     if x.head.class != Mech::Mechanised && !has_prose(e) {
@@ -765,6 +888,25 @@ fn check_absent(l: &Loaded, x: &AbsentExpect) -> Result<(), String> {
     }
 }
 
+/// Is one of the `A|B` names a whole-word phrase inside the report entry's source heading
+/// ("Rest Rules" reported under "Optional Rules: Rest Rules and Recovery")?
+fn heading_names(alternatives: &str, heading: &str) -> bool {
+    let h = format!(" {} ", norm_words(heading));
+    alternatives.split('|').any(|alt| {
+        let a = norm_words(alt);
+        !a.is_empty() && h.contains(&format!(" {a} "))
+    })
+}
+
+/// Normalised words joined by single spaces, punctuation dropped.
+fn norm_words(s: &str) -> String {
+    norm(s)
+        .split(|c: char| !c.is_alphanumeric() && c != '\'')
+        .filter(|w| !w.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 fn check_report(l: &Loaded, x: &ReportExpect) -> Result<(), String> {
     let Some(r) = &l.report else {
         return Err("no report.json".into());
@@ -772,7 +914,7 @@ fn check_report(l: &Loaded, x: &ReportExpect) -> Result<(), String> {
     let entries: Vec<_> = r
         .entries
         .iter()
-        .filter(|e| name_matches(&x.source, &e.source))
+        .filter(|e| name_matches(&x.source, &e.source) || heading_names(&x.source, &e.source))
         .collect();
     if entries.is_empty() {
         return Err(format!("no report entry for {:?}", x.source));
@@ -870,5 +1012,76 @@ mod tests {
         assert!(text_has("spend at least 6 hours resting", "six hours"));
         assert!(text_has("spend at least six hours resting", "6 hours"));
         assert!(!text_has("spend at least 7 hours resting", "six hours"));
+    }
+
+    #[test]
+    fn alternatives_work_in_text_tokens() {
+        let t = norm("save dc 13 or poisoned for 1 minute");
+        assert!(text_has(&t, "DC13|DC 13"));
+        assert!(text_has(&t, "next minute|1 minute|minute"));
+        assert!(!text_has(&t, "DC 15|DC15"));
+        // a lone literal pipe is still one token
+        assert!(text_has(&norm("a | b"), "|"));
+        assert!(!text_has(&norm("a b"), "|"));
+    }
+
+    fn monster(data: serde_json::Value) -> Element {
+        let mut e = Element {
+            id: "ID_M".into(),
+            name: "Test Beast".into(),
+            ty: "Monster".into(),
+            ..Element::default()
+        };
+        e.data = serde_json::from_value(data).expect("data");
+        e
+    }
+
+    #[test]
+    fn a_monsters_stat_block_is_part_of_its_text() {
+        let e = monster(serde_json::json!({
+            "ac": [{"value": 13, "source": "natural armor"}],
+            "hp": {"average": 27, "formula": "5d8 + 5"},
+            "abilities": {"str": 10, "dex": 15},
+            "cr": {"numer": 1, "denom": 4},
+            "xp": 1100,
+            "xp_lair": 18000,
+            "traits": [{"name": "Keen Smell", "text": "Advantage on Perception checks."}]
+        }));
+        let t = element_text(&e);
+        for want in [
+            "AC 13",
+            "HP 27",
+            "5d8 + 5",
+            "CR 1/4",
+            "XP 1,100",
+            "xp 1100",
+            "XP 18,000",
+            "str 10",
+            "Keen Smell",
+            "Advantage on Perception",
+        ] {
+            assert!(text_has(&t, want), "{want} missing from {t}");
+        }
+        assert!(!text_has(&t, "AC 14"));
+        assert!(!text_has(&t, "XP 1,200"));
+    }
+
+    #[test]
+    fn an_element_without_data_has_the_same_text_as_before() {
+        let mut e = monster(serde_json::json!({}));
+        e.description = "<p>Plain.</p>".into();
+        assert_eq!(element_text(&e), "test beast plain.");
+    }
+
+    #[test]
+    fn a_report_heading_containing_the_subsystem_name_matches() {
+        assert!(heading_names(
+            "Rest Rules",
+            "Optional Rules: Rest Rules and Recovery"
+        ));
+        assert!(heading_names("Alpha|Rest Rules", "Rest Rules (variant)"));
+        assert!(!heading_names("Rest", "Forest Rules"));
+        assert!(!heading_names("", "Anything"));
+        assert!(!heading_names("Rest Rules", "Rest Cycles"));
     }
 }

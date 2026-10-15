@@ -129,9 +129,9 @@ fn must() -> Level {
 pub struct ElementExpect {
     #[serde(flatten)]
     pub head: Head,
-    /// Element type, `A|B` alternatives.
-    #[serde(rename = "type")]
-    pub ty: String,
+    /// Element type, `A|B` alternatives; absent = any type (only a correction produces that).
+    #[serde(default, rename = "type")]
+    pub ty: Option<String>,
     /// Element name, `A|B` alternatives (case, quotes and spacing are normalised).
     pub name: String,
     /// `"setter"` or `"setter@attribute"` -> expected value (normalised comparison).
