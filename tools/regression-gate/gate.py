@@ -32,6 +32,7 @@ TEST_LINE = re.compile(r"^test (\S+) \.\.\. (ok|FAILED|ignored)")
 ROW = re.compile(r"^(PASS|FAIL)\s+(must|should)\s+(\S+)\s+(\S+)(?:\s+--\s+(.*))?$")
 CASE_HEAD = re.compile(r"== case (\S+) ==$")
 SUMMARY = re.compile(r"^summary: (\d+) rows, must (\d+)/(\d+) pass, should (\d+)/(\d+) pass")
+PINNED = PRIVATE / "pinned-drafts"  # the drafts the gate re-finalizes (live ones move during live runs)
 STALE_RUN = re.compile(r"-(prev|rerun\d*)$")
 REPLAY_TEST = "import::anything::replay_tests::refinalize_a_stored_draft"
 
@@ -111,8 +112,8 @@ def run_tests(targets, logs, oc):
             print(f"    {pkg}:{target}: did not run (build error?), see {logs}")
 
 
-def drafts():
-    """(case name, case dir, draft.json) of every stored draft: <case>/draft.json and
+def live_drafts():
+    """(name, case dir, draft.json) of every live draft: <case>/draft.json and
     <case>/<sub>/draft.json (stale `-prev` / `-rerunN` copies skipped)."""
     found = []
     for case in sorted(p for p in CASES.iterdir() if (p / "expected.json").is_file()):
@@ -124,10 +125,42 @@ def drafts():
     return found
 
 
+def pinned_drafts():
+    """(name, case dir, draft.json) of every pinned draft: <PINNED>/<name>/draft.json, judged against
+    the case named in <name>/case (default: <name>)."""
+    found = []
+    for d in sorted(p for p in PINNED.iterdir() if (p / "draft.json").is_file()):
+        marker = d / "case"
+        case = CASES / (marker.read_text().strip() if marker.is_file() else d.name)
+        if not (case / "expected.json").is_file():
+            raise SystemExit(f"pinned draft {d}: no expected.json in {case} (write the case name to {marker})")
+        found.append((d.name, case, d / "draft.json"))
+    return found
+
+
+def pin_drafts():
+    """Replace the pinned drafts with copies of the live ones (after a live run is accepted)."""
+    live = live_drafts()
+    if not live:
+        print(f"no live drafts under {CASES}", file=sys.stderr)
+        return 2
+    shutil.rmtree(PINNED, ignore_errors=True)
+    for name, case, draft in live:
+        (PINNED / name).mkdir(parents=True)
+        shutil.copy(draft, PINNED / name / "draft.json")
+        (PINNED / name / "case").write_text(case.name + "\n")
+        print(f"  pinned {draft} -> {PINNED / name}")
+    print("pinned drafts replaced; run the gate and --accept the import-cases suite")
+    return 0
+
+
 def run_import_cases(logs, work, oc):
     judge_root = work / "cases"
     shutil.rmtree(judge_root, ignore_errors=True)
-    for name, case, draft in drafts():
+    if not PINNED.is_dir():
+        oc.add("import-cases/(no pinned drafts)", False, f"{PINNED} missing: run --pin-drafts")
+        return
+    for name, case, draft in pinned_drafts():
         dest = judge_root / name
         (dest / "imported").mkdir(parents=True)
         shutil.copy(case / "expected.json", dest / "expected.json")
@@ -251,6 +284,8 @@ def main():
     ap.add_argument("--accept", action="store_true", help="make this run the baseline of the suites it ran")
     ap.add_argument("--accept-last", action="store_true",
                     help="make the last run the baseline of the suites it ran, without running")
+    ap.add_argument("--pin-drafts", action="store_true",
+                    help="copy the live import drafts to the pinned set (after accepting a live run) and exit")
     ap.add_argument("--only", default="", help="comma-separated suites to run")
     ap.add_argument("--skip", default="", help="comma-separated suites to leave out")
     ap.add_argument("--quick", action="store_true", help="leave out the slow aurora-sweep suite")
@@ -273,6 +308,8 @@ def main():
     run_dir, prev = PRIVATE / "last-run", PRIVATE / "prev-run"
     base_file = PRIVATE / "baseline.json"
     base = json.loads(base_file.read_text()) if base_file.is_file() else {"suites": {}}
+    if a.pin_drafts:
+        return pin_drafts()
     if a.accept_last:
         last = run_dir / "results.json"
         if not last.is_file():

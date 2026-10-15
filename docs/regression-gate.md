@@ -13,6 +13,7 @@ python3 -I tools/regression-gate/gate.py --only 5etools-items,import-cases
 python3 -I tools/regression-gate/gate.py --list     # suites and the inputs they need
 python3 -I tools/regression-gate/gate.py --accept   # make this run the baseline of the suites it ran
 python3 -I tools/regression-gate/gate.py --accept-last   # same for the last run, without running again
+python3 -I tools/regression-gate/gate.py --pin-drafts    # pin the live import drafts (after accepting a live run)
 ```
 
 Run it from `app/` (any directory works; paths are resolved from the script). Python 3.9+, standard library
@@ -38,11 +39,16 @@ A suite whose input folder is missing is skipped and keeps its baseline.
   element id, feat offered). The tests emit them through `tools/regression-gate/outcome.rs` when
   `BOREALIS_OUTCOMES` is set; to cover a new per-item test, call `outcome::record(suite, id, pass, detail)` once
   per checked item (ids and short reasons only, never content text).
-* `import-cases`: the AI importer without the model. Each stored live draft (`<case>/draft.json`, and
-  `<case>/<run>/draft.json` for a second source of the same case) is re-finalized with the current code
+* `import-cases`: the AI importer without the model. Each pinned draft
+  (`$BOREALIS_GATE_DIR/pinned-drafts/<name>/draft.json`, judged against the case named in `<name>/case`) is
+  re-finalized with the current code
   (`replay_tests.rs`, `BOREALIS_FINALIZE_REPLAY`) and judged by the homebrew harness (`tests/homebrew_cases`):
   every `must` and `should` row, a fatal case, and the case summary line. Everything after the model calls is
   deterministic, so it is ratcheted like the rest. Live model runs vary and stay outside the gate.
+  The gate never reads the live drafts, which a live run moves aside and rewrites. When a live run is accepted,
+  `--pin-drafts` replaces the pinned set with copies of `<case>/draft.json` and `<case>/<sub>/draft.json`
+  (`-prev` / `-rerunN` folders skipped; a nested draft is named `<case>@<sub>`); then run the gate and
+  `--accept` so the baseline matches the new drafts.
 
 ## Reading the result
 
