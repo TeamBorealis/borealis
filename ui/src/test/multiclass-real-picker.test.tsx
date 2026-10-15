@@ -53,7 +53,7 @@ describe("New multiclass on real-shaped data", () => {
     // Spec (ui-workflows.md, ui-inventory.md): NEW MULTICLASS adds an empty class slot; the class is picked here.
     const options = await screen.findByRole("list", { name: /Multiclass.* options/ });
     expect(screen.queryByText(/Nothing matches/)).toBeNull();
-    const fighter = within(options).getByRole("button", { name: /^Fighter/ });
+    const fighter = await within(options).findByRole("button", { name: /^Fighter/ });
     expect(within(options).getByText(/Requires Strength 13 or Dexterity 13/)).toBeTruthy();
     expect(within(options).getByRole("button", { name: /^Barbarian/ })).toBeTruthy();
 
