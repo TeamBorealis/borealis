@@ -166,5 +166,8 @@ fn the_panic_hook_logs_message_and_location() {
     let text = String::from_utf8(capture.0.lock().unwrap().clone()).unwrap();
     assert!(text.contains("panic at "), "{text}");
     assert!(text.contains("boom for the log"), "{text}");
-    assert!(text.contains("app_logs/tests.rs"), "{text}");
+    assert!(
+        text.replace('\\', "/").contains("app_logs/tests.rs"),
+        "{text}"
+    );
 }

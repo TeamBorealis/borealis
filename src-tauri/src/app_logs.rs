@@ -108,8 +108,13 @@ impl RollingFile {
     fn open_day(&mut self, day: String) -> io::Result<()> {
         std::fs::create_dir_all(&self.dir)?;
         let path = self.dir.join(format!("{FILE_PREFIX}{day}{FILE_SUFFIX}"));
-        let file = OpenOptions::new().create(true).append(true).open(path)?;
-        self.written = file.metadata().map_or(0, |m| m.len());
+        // Not `append`: on Windows an append-only handle cannot be truncated at the size cap.
+        let mut file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(false)
+            .open(path)?;
+        self.written = file.seek(SeekFrom::End(0))?;
         self.file = Some(file);
         self.day = day;
         self.prune();
