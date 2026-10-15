@@ -2,12 +2,14 @@
 //! missing files, HTTPS-only entries and redirects, cycles, the depth and file limits, and trust on
 //! first use of file hashes. All content here is invented; nothing touches the network.
 
-use borealis_lib::content_dto::PackKind;
-use borealis_lib::content_index::{redirect_refusal, Fetcher};
+use borealis_lib::content_auto::{update_message, MSG_UPDATED, MSG_UP_TO_DATE};
+use borealis_lib::content_dto::{ContentProgress, PackKind};
+use borealis_lib::content_index::{raw_file_url, redirect_refusal, Fetcher};
 use borealis_lib::content_index_aurora::{
     crawl, parse_index, relative_path, MAX_INDEX_FILES, MAX_NESTED_DEPTH,
 };
-use borealis_lib::content_packs::NullSink;
+use borealis_lib::content_packs::{EventSink, NullSink};
+use borealis_lib::settings_dto::ContentUpdateState;
 use borealis_lib::state::{AppPaths, AppState};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -315,4 +317,269 @@ fn file_paths_mirror_the_repository_and_stay_inside_it() {
     );
     assert_eq!(relative_path(BASE, &url("core/../../etc.xml")), None);
     assert_eq!(relative_path(BASE, &url("core//x.xml")), None);
+}
+
+// ---- index-bug-1: a GitHub page link, the self-referencing <update> entry, honest messages ----
+
+const RAW: &str = "https://raw.githubusercontent.com/Owner/elements/master/";
+const PAGE: &str = "https://github.com/Owner/elements/blob/master/";
+
+fn raw(rel: &str) -> String {
+    format!("{RAW}{rel}")
+}
+
+/// What github.com answers for a file's page link: a web page, not the file.
+const GITHUB_PAGE_HTML: &str =
+    "\n\n<!DOCTYPE html>\n<html lang=\"en\"><head><title>elements/core.index</title></head><body></body></html>";
+
+/// The shape of a real Aurora repository's `core.index`: an `<info><update>` entry pointing at
+/// the index itself, two direct content files, and nested book indexes (one listed by its GitHub
+/// page link, as people paste them).
+fn github_repo() -> Stub {
+    let core = format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<index>
+  <info>
+    <name>Core</name>
+    <description>The content from the core rulebooks.</description>
+    <update version="0.2.8">
+      <file name="core.index" url="{core}" />
+    </update>
+  </info>
+  <files>
+    <!-- Aurora-specific -->
+    <file name="internal.xml" url="{internal}" />
+    <file name="ALE.xml" url="{ale}" />
+    <file name="players-handbook.index" url="{phb}" />
+    <file name="monster-manual.index" url="{PAGE}core/monster-manual.index" />
+  </files>
+</index>"#,
+        core = raw("core.index"),
+        internal = raw("core/internal.xml"),
+        ale = raw("core/ALE.xml"),
+        phb = raw("core/players-handbook.index"),
+    );
+    let phb = index(
+        "Player's Handbook",
+        &[
+            ("file", "feats.xml", raw("core/players-handbook/feats.xml")),
+            (
+                "file",
+                "spells.xml",
+                raw("core/players-handbook/spells.xml"),
+            ),
+        ],
+    );
+    let mm = index(
+        "Monster Manual",
+        &[("file", "beasts.xml", raw("core/monster-manual/beasts.xml"))],
+    );
+    let mut stub = Stub::default()
+        .with(&raw("core.index"), &core)
+        .with(&raw("core/internal.xml"), &feat("INTERNAL", "internal"))
+        .with(&raw("core/ALE.xml"), &feat("ALE", "ale"))
+        .with(&raw("core/players-handbook.index"), &phb)
+        .with(&raw("core/monster-manual.index"), &mm)
+        .with(
+            &raw("core/players-handbook/feats.xml"),
+            &feat("PHB1", "one"),
+        )
+        .with(
+            &raw("core/players-handbook/spells.xml"),
+            &feat("PHB2", "two"),
+        )
+        .with(
+            &raw("core/monster-manual/beasts.xml"),
+            &feat("MM1", "three"),
+        );
+    for page in [
+        format!("{PAGE}core.index"),
+        format!("{PAGE}core/monster-manual.index"),
+    ] {
+        stub = stub.with(&page, GITHUB_PAGE_HTML);
+    }
+    stub
+}
+
+const GITHUB_IDS: [&str; 5] = [
+    "ID_INVENTED_FEAT_INTERNAL",
+    "ID_INVENTED_FEAT_ALE",
+    "ID_INVENTED_FEAT_PHB1",
+    "ID_INVENTED_FEAT_PHB2",
+    "ID_INVENTED_FEAT_MM1",
+];
+
+/// Keeps every progress event.
+#[derive(Default)]
+struct Recording(Mutex<Vec<ContentProgress>>);
+
+impl EventSink for Recording {
+    fn content_progress(&self, p: &ContentProgress) {
+        self.0.lock().unwrap().push(p.clone());
+    }
+    fn import_progress(&self, _: &ContentProgress) {}
+    fn content_reloaded(&self, _: &str) {}
+}
+
+impl Recording {
+    fn done_message(&self) -> String {
+        let events = self.0.lock().unwrap();
+        events
+            .iter()
+            .rev()
+            .find(|p| p.phase == "done")
+            .map(|p| p.message.clone())
+            .expect("a done event")
+    }
+}
+
+fn installed_packs(state: &AppState) -> Vec<(String, usize)> {
+    state
+        .list_packs()
+        .unwrap()
+        .into_iter()
+        .filter(|p| p.kind != PackKind::Bundled)
+        .map(|p| (p.name, p.element_count))
+        .collect()
+}
+
+#[test]
+fn github_page_links_become_raw_file_addresses() {
+    assert_eq!(
+        raw_file_url(&format!("{PAGE}core.index")),
+        raw("core.index")
+    );
+    assert_eq!(
+        raw_file_url("https://github.com/Owner/elements/raw/master/core.index"),
+        raw("core.index")
+    );
+    assert_eq!(
+        raw_file_url(&format!(" {PAGE}core.index?raw=true ")),
+        raw("core.index")
+    );
+    for unchanged in [
+        raw("core.index"),
+        "https://github.com/Owner/elements".to_string(),
+        "https://example.invalid/blob/x/core.index".to_string(),
+    ] {
+        assert_eq!(raw_file_url(&unchanged), unchanged);
+    }
+}
+
+#[test]
+fn a_github_page_link_downloads_the_whole_index_tree() {
+    let (_d, state) = app();
+    let stub = github_repo();
+    let listed = state.add_index(&format!("{PAGE}core.index")).expect("add");
+    assert_eq!(listed[0].url, raw("core.index"), "stored as the raw file");
+    let sink = Recording::default();
+    let result = state.update_indexes(&stub, &sink).expect("update");
+    assert!(result.failed.is_empty(), "{:?}", result.failed);
+    assert_eq!(result.updated, 1);
+    for id in GITHUB_IDS {
+        assert!(has(&state, id), "{id} installed");
+    }
+    assert_eq!(installed_packs(&state), vec![("Core".to_string(), 5)]);
+    assert!(
+        !stub.asked(&format!("{PAGE}core.index"))
+            && !stub.asked(&format!("{PAGE}core/monster-manual.index")),
+        "GitHub pages are never fetched"
+    );
+    let idx = &state.list_indexes()[0];
+    assert_eq!((idx.file_count, idx.problem.clone()), (5, None));
+    assert_eq!(sink.done_message(), MSG_UPDATED);
+}
+
+#[test]
+fn the_self_referencing_update_entry_is_neither_content_nor_a_cycle() {
+    let stub = github_repo();
+    let top_bytes = stub.files[&raw("core.index")].clone();
+    let top = parse_index(&top_bytes, &raw("core.index")).expect("parse");
+    let found = crawl(&stub, &raw("core.index"), &top);
+    assert!(found.problems.is_empty(), "{:?}", found.problems);
+    assert_eq!(found.files.len(), 5);
+    assert_eq!(
+        stub.asked
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|u| **u == raw("core.index"))
+            .count(),
+        0,
+        "the top-level index is not fetched again"
+    );
+}
+
+#[test]
+fn an_index_saved_as_a_github_page_link_is_repaired_on_update() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let page = format!("{PAGE}core.index");
+    let prefs = serde_json::json!({ "indexes": [{ "url": page, "name": page }] });
+    std::fs::write(dir.path().join("content-prefs.json"), prefs.to_string()).unwrap();
+    let paths = AppPaths {
+        content_root: PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../content"),
+        data: dir.path().to_path_buf(),
+    };
+    let state = AppState::new(paths).expect("state");
+    let result = state
+        .update_indexes(&github_repo(), &NullSink)
+        .expect("update");
+    assert_eq!((result.updated, result.failed.len()), (1, 0));
+    let indexes = state.list_indexes();
+    assert_eq!(indexes.len(), 1);
+    assert_eq!(
+        (indexes[0].url.as_str(), indexes[0].name.as_str()),
+        (raw("core.index").as_str(), "Core")
+    );
+}
+
+#[test]
+fn a_web_page_is_reported_and_never_called_up_to_date() {
+    let (_d, state) = app();
+    let page = "https://example.invalid/elements/core.index";
+    let stub = Stub::default().with(page, GITHUB_PAGE_HTML);
+    state.add_index(page).expect("add");
+    let sink = Recording::default();
+    let result = state.update_indexes(&stub, &sink).expect("update");
+    assert_eq!(
+        (result.updated, result.failed.clone()),
+        (0, vec![page.to_string()])
+    );
+    assert!(installed_packs(&state).is_empty());
+    let idx = &state.list_indexes()[0];
+    let problem = idx.problem.clone().expect("problem");
+    assert!(problem.contains("web page"), "{problem}");
+    assert_eq!(idx.last_checked, None, "never downloaded");
+    let done = sink.done_message();
+    assert!(!done.to_lowercase().contains("up to date"), "{done}");
+}
+
+#[test]
+fn update_messages_never_call_a_failure_up_to_date() {
+    assert_eq!(update_message(0, 0), MSG_UP_TO_DATE);
+    assert_eq!(update_message(2, 0), MSG_UPDATED);
+    let partial = update_message(1, 3);
+    assert!(
+        partial.starts_with(MSG_UPDATED) && partial.contains('3'),
+        "{partial}"
+    );
+    let failed = update_message(0, 1);
+    assert!(!failed.to_lowercase().contains("up to date"), "{failed}");
+    assert!(failed.contains("could not be updated"), "{failed}");
+}
+
+#[test]
+fn the_startup_check_reports_a_failed_index_as_a_failure() {
+    let (_d, state) = app();
+    let page = "https://example.invalid/elements/core.index";
+    state.add_index(page).expect("add");
+    let stub = Stub::default().with(page, GITHUB_PAGE_HTML);
+    let status = state.run_auto_content_update(&stub, &NullSink);
+    assert_eq!(status.state, ContentUpdateState::Done);
+    assert_eq!((status.updated, status.failed.len()), (0, 1));
+    assert!(
+        !status.message.to_lowercase().contains("up to date"),
+        "{}",
+        status.message
+    );
 }

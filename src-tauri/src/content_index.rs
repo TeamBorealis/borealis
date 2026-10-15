@@ -3,6 +3,7 @@
 //! [`crate::content_index_aurora`] (nested, unhashed, never "verified").
 //! Nothing is fetched until the user adds an index and asks for an update; no default URLs exist.
 
+use crate::content_auto::update_message;
 use crate::content_dto::{ContentIndex, ImportPackRequest, UpdateIndexesResult};
 use crate::content_import::{slug, stem, write_pack_meta, Scratch};
 use crate::content_index_aurora::{looks_like_xml, AuroraOutcome, MAX_FILE_BYTES, MAX_INDEX_BYTES};
@@ -23,6 +24,7 @@ const FETCH_TIMEOUT_SECS: u64 = 30;
 const SHA256_ATTRIBUTE: &str = "sha256";
 const MAX_SIGNATURE_BYTES: usize = 4 * 1024;
 const SIGNATURE_SUFFIX: &str = ".sig";
+const RAW_GITHUB: &str = "https://raw.githubusercontent.com/";
 
 /// Detached signature document served at `<index url>.sig`: base64 key and signature over the
 /// exact index bytes.
@@ -99,6 +101,49 @@ pub fn require_https(url: &str) -> ApiResult<()> {
         ))
     }
 }
+
+/// The address that serves a file's raw bytes. A GitHub page link
+/// (`https://github.com/<owner>/<repo>/blob/<branch>/<path>`, or `.../raw/...`) is what a browser
+/// shows; it answers with an HTML page, so it is turned into its `raw.githubusercontent.com`
+/// address. Every other address is returned unchanged (trimmed).
+#[must_use]
+pub fn raw_file_url(url: &str) -> String {
+    let url = url.trim();
+    let Some(rest) = url
+        .strip_prefix("https://github.com/")
+        .or_else(|| url.strip_prefix("https://www.github.com/"))
+    else {
+        return url.to_string();
+    };
+    let path = rest.split(['?', '#']).next().unwrap_or(rest);
+    let parts: Vec<&str> = path.splitn(4, '/').collect();
+    match parts.as_slice() {
+        [owner, repo, "blob" | "raw", tail] if !owner.is_empty() && !repo.is_empty() => {
+            format!("{RAW_GITHUB}{owner}/{repo}/{tail}")
+        }
+        _ => url.to_string(),
+    }
+}
+
+/// True when `bytes` are an HTML web page (what a link to a page, not a file, returns).
+#[must_use]
+pub fn looks_like_html(bytes: &[u8]) -> bool {
+    let text = bytes.strip_prefix(b"\xef\xbb\xbf").unwrap_or(bytes);
+    let start = text
+        .iter()
+        .position(|b| !b.is_ascii_whitespace())
+        .unwrap_or(text.len());
+    let head: Vec<u8> = text[start..]
+        .iter()
+        .take(16)
+        .map(u8::to_ascii_lowercase)
+        .collect();
+    head.starts_with(b"<!doctype html") || head.starts_with(b"<html")
+}
+
+/// Shown when an index address answers with a web page instead of the index file.
+pub const WEB_PAGE_NOT_INDEX: &str = "this address is a web page, not an index file; \
+     use the address of the file itself (on GitHub: open the file and use its Raw button)";
 
 /// Why a redirect must not be followed: anything but HTTPS, or too many hops.
 #[must_use]
@@ -199,6 +244,26 @@ fn dto(r: &IndexRecord) -> ContentIndex {
     }
 }
 
+/// Stored index addresses in their raw-file form (records added before GitHub page links were
+/// converted), without duplicates.
+fn normalize_index_urls(indexes: &mut Vec<IndexRecord>) {
+    let mut seen = std::collections::BTreeSet::new();
+    let normalized: Vec<IndexRecord> = indexes
+        .drain(..)
+        .map(|r| {
+            let url = raw_file_url(&r.url);
+            if url == r.url {
+                r
+            } else {
+                let name = if r.name == r.url { url.clone() } else { r.name };
+                IndexRecord { url, name, ..r }
+            }
+        })
+        .filter(|r| seen.insert(r.url.clone()))
+        .collect();
+    *indexes = normalized;
+}
+
 fn installed_hash(state: &AppState, pack_id: &str) -> Option<String> {
     let text =
         std::fs::read_to_string(state.paths.library().join(pack_id).join(PACK_META_FILE)).ok()?;
@@ -218,7 +283,8 @@ impl AppState {
     /// # Errors
     /// `invalid_argument` unless the URL is HTTPS.
     pub fn add_index(&self, url: &str) -> ApiResult<Vec<ContentIndex>> {
-        let url = url.trim();
+        let url = raw_file_url(url);
+        let url = url.as_str();
         require_https(url)?;
         let _guard = self.content_lock()?;
         let mut prefs = self.content_prefs();
@@ -257,6 +323,7 @@ impl AppState {
     ) -> ApiResult<UpdateIndexesResult> {
         let _guard = self.content_lock()?;
         let mut prefs = self.content_prefs();
+        normalize_index_urls(&mut prefs.indexes);
         let total = prefs.indexes.len();
         let mut outcome = AuroraOutcome::default();
         let mut staged: Vec<(PathBuf, String)> = Vec::new();
@@ -292,7 +359,8 @@ impl AppState {
             ));
             self.install_packs(&staged, sink, "indexes-updated")?;
         }
-        sink.content_progress(&progress("done", total, total, "Up to date"));
+        let message = update_message(updated, outcome.failed.len());
+        sink.content_progress(&progress("done", total, total, &message));
         Ok(UpdateIndexesResult {
             updated,
             failed: outcome.failed,
@@ -315,6 +383,9 @@ impl AppState {
         let url = previous.url.as_str();
         require_https(url).map_err(|e| e.message)?;
         let bytes = fetcher.get(url, MAX_INDEX_BYTES)?;
+        if looks_like_html(&bytes) {
+            return Err(WEB_PAGE_NOT_INDEX.into());
+        }
         if looks_like_xml(&bytes) {
             return self.check_aurora_index(
                 fetcher, sink, url, &bytes, previous, staged, scratches, outcome,
