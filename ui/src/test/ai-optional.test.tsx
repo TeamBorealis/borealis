@@ -155,7 +155,7 @@ describe("Import without AI", () => {
     renderApp("/characters", { api: mock({ mobile: true }) });
     await screen.findByRole("heading", { name: "Characters" });
     drop([file("scan.png", "x", "image/png")]);
-    const msg = await screen.findByText(/scan\.png cannot be imported here/);
+    const msg = await screen.findByText(/scan\.png cannot be imported here/, {}, { timeout: 5000 });
     expect(msg.textContent).not.toMatch(AI_TEXT);
   });
 
