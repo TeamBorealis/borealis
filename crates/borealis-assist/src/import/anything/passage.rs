@@ -421,7 +421,7 @@ pub(crate) fn unplanned_sections_in(
     let inner: Vec<usize> = plan
         .elements
         .iter()
-        .filter(|e| e.id != planned.id && matches!(e.role, Role::Class | Role::Subclass))
+        .filter(|e| e.id != planned.id && owns_sub_sections(e, &plan.elements))
         .filter(|e| e.excerpt.as_ref().is_some_and(|x| x.start_line > start))
         .flat_map(|e| own_sections(lines, e, plan))
         .map(|s| s.at)
@@ -430,7 +430,29 @@ pub(crate) fn unplanned_sections_in(
     out
 }
 
-/// The unplanned sub-sections in one root's section (see [`unplanned_sections_in`]).
+/// A root that prints the unplanned sub-sections of its section as its own text: a class or
+/// subclass, or a standalone element with granted parts (a species whose traits are planned
+/// under it, with its lore sections beside them).
+pub(crate) fn owns_sub_sections(planned: &PlannedElement, elements: &[PlannedElement]) -> bool {
+    match planned.role {
+        Role::Class | Role::Subclass => true,
+        Role::Standalone => elements.iter().any(|e| {
+            [&e.owner, &e.parent]
+                .iter()
+                .any(|o| o.as_deref() == Some(planned.id.as_str()))
+        }),
+        _ => false,
+    }
+}
+
+/// A line with no letter or digit (a stray glyph such as a lone "!" or bullet).
+fn stray_glyph(line: &str) -> bool {
+    let t = line.trim();
+    !t.is_empty() && !t.chars().any(char::is_alphanumeric)
+}
+
+/// The unplanned sub-sections in one root's section (see [`unplanned_sections_in`]). Page
+/// furniture (running headers, page numbers) and stray glyph lines are left out of their text.
 fn own_sections(lines: &[&str], planned: &PlannedElement, plan: &ImportPlan) -> Vec<SubSection> {
     let Some(ex) = planned.excerpt.as_ref() else {
         return Vec::new();
@@ -451,6 +473,7 @@ fn own_sections(lines: &[&str], planned: &PlannedElement, plan: &ImportPlan) -> 
         .unwrap_or(start);
     let mut out = Vec::new();
     let mut skip_below: Option<usize> = None;
+    let mut furniture: Option<page_marks::PageFurniture> = None;
     let mut i = start + 1;
     while i < lines.len() {
         let Some(h) = heading(lines[i]) else {
@@ -484,7 +507,12 @@ fn own_sections(lines: &[&str], planned: &PlannedElement, plan: &ImportPlan) -> 
         let end = (i + 1..lines.len().min(i + MAX_LINES))
             .find(|&k| heading(lines[k]).is_some())
             .unwrap_or_else(|| lines.len().min(i + MAX_LINES));
-        let body: Vec<String> = lines[i + 1..end].iter().map(|l| l.to_string()).collect();
+        let furniture =
+            furniture.get_or_insert_with(|| page_marks::page_furniture(&lines.join("\n")));
+        let body: Vec<String> = (i + 1..end)
+            .filter(|&k| !furniture.has(k) && !stray_glyph(lines[k]))
+            .map(|k| lines[k].to_string())
+            .collect();
         let prose = body.iter().any(|l| {
             !l.trim().is_empty() && !l.trim_start().starts_with('|') && !l.contains(" | ")
         });
@@ -727,10 +755,15 @@ pub(crate) fn add_sub_sections(draft: &mut ImportDraft) -> Vec<String> {
     }
     for i in 0..draft.elements.len() {
         let e = &draft.elements[i];
-        if e.json.is_null() || e.revisions > 0 || !matches!(e.role, Role::Class | Role::Subclass) {
+        if e.json.is_null() || e.revisions > 0 {
             continue;
         }
-        let Some(planned) = draft.plan.elements.iter().find(|p| p.id == e.id) else {
+        let Some(planned) = draft
+            .plan
+            .elements
+            .iter()
+            .find(|p| p.id == e.id && owns_sub_sections(p, &draft.plan.elements))
+        else {
             continue;
         };
         let subs = unplanned_sections(&draft.source_text, planned, &draft.plan);
@@ -917,6 +950,14 @@ pub(crate) fn uncovered_prose(draft: &ImportDraft) -> Vec<ReportEntry> {
     let lines: Vec<&str> = draft.source_text.lines().collect();
     let planned = starts(&draft.plan, "");
     let paras = paragraphs(&draft.source_text);
+    // A paragraph printed more than once (each file's cover or legal block in a multi-file
+    // source) is covered only as often as the descriptions print it.
+    let key = |w: &[String]| w.join(" ");
+    let mut printed: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    for (_, _, text) in &paras {
+        *printed.entry(key(&words(text))).or_default() += 1;
+    }
+    let described = format!(" {} ", words(&all).join(" "));
     for (line, under, text) in &paras {
         let (line, under) = (*line, *under);
         let w = words(text);
@@ -925,7 +966,9 @@ pub(crate) fn uncovered_prose(draft: &ImportDraft) -> Vec<ReportEntry> {
         if short || ranges.iter().any(|(s, e)| line >= *s && line < *e) {
             continue;
         }
-        if super::fidelity::coverage(&w, &index, &none).is_some_and(|c| c >= MIN_COVERAGE) {
+        let times = printed.get(&key(&w)).copied().unwrap_or(1);
+        let held = times <= 1 || described.matches(&format!(" {} ", key(&w))).count() >= times;
+        if held && super::fidelity::coverage(&w, &index, &none).is_some_and(|c| c >= MIN_COVERAGE) {
             continue;
         }
         let first: Vec<&str> = text.split_whitespace().take(QUOTED_WORDS).collect();

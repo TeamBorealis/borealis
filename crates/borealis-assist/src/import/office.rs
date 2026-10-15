@@ -7,7 +7,7 @@ use quick_xml::events::{BytesStart, Event};
 use quick_xml::Reader;
 use quick_xml::XmlVersion;
 
-use super::layout::{to_markdown, TextLine};
+use super::layout::{to_markdown, without_continuations, TextLine};
 use super::zip::read_entry;
 use crate::error::AssistError;
 
@@ -49,7 +49,7 @@ pub fn office_text(format: OfficeFormat, bytes: &[u8]) -> Result<String, AssistE
         OfficeFormat::Docx => docx_lines(bytes)?,
         OfficeFormat::Odt => odt_lines(bytes)?,
     };
-    let text = to_markdown(&lines);
+    let text = without_continuations(&to_markdown(&lines));
     if text.trim().is_empty() {
         return Err(AssistError::Extraction("the document has no text".into()));
     }

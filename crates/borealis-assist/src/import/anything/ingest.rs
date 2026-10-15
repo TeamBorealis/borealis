@@ -415,7 +415,9 @@ pub(crate) async fn read_attachments(
             texts.push(t.trim().to_string());
         }
     }
-    out.text = texts.join("\n\n");
+    // Page-break continuation marks (a transcribed "(continued from previous page)" heading, a
+    // "<Title> (Cont.)" heading) would close the section they continue.
+    out.text = crate::import::layout::without_continuations(&texts.join("\n\n"));
     if out.text.trim().is_empty() {
         return Err(AssistError::Extraction(
             "the model could not read any text in the attachments".into(),
@@ -628,9 +630,11 @@ mod tests {
                 }
             }
             draft.source_text = texts.join("\n\n");
-            if let Ok(dump) = std::env::var("BOREALIS_PROBE_DUMP") {
-                std::fs::write(dump, &draft.source_text).unwrap();
-            }
+        }
+        // Read as `read_attachments` reads it now (a stored text predates its cleanup).
+        draft.source_text = crate::import::layout::without_continuations(&draft.source_text);
+        if let Ok(dump) = std::env::var("BOREALIS_PROBE_DUMP") {
+            std::fs::write(dump, &draft.source_text).unwrap();
         }
         let src = draft.source_text.clone();
         let (mut located, mut one_line) = (0, 0);

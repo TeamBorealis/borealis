@@ -297,3 +297,18 @@ fn an_index_caption_with_its_column_header_glued_on_is_the_table_heading() {
     let ex = locate_section(src, "", "Hanging Lamps").expect("found");
     assert_eq!(ex.start_line, 3, "{ex:?}");
 }
+
+#[test]
+fn a_section_heading_over_its_same_named_table_caption_keeps_its_intro() {
+    let src = "## Lamp Catalogue\n\n### Common Hanging Lamps\n\nThe following hanging lamps are \
+common and cheap to buy.\n\n#### Common%Hanging%Lamps%\n\nd6 | Item\n1 | Chain lamp\n2 | Hook lamp\n\n\
+### Rare Lamps\n\nNone yet.\n";
+    for ty in ["", TEXT_TYPE] {
+        let ex = locate_section_as(src, "", "Common Hanging Lamps", ty).expect("found");
+        assert_eq!((ex.start_line, ex.end_line), (3, 11), "{ty}: {ex:?}");
+    }
+    // A caption under a differently named section is still its own section.
+    let src = "### Lamp Lore\n\nLamps are old.\n\n#### Common Hanging Lamps\n\nd6 | Item\n1 | Chain lamp\n";
+    let ex = locate_section_as(src, "", "Common Hanging Lamps", TEXT_TYPE).expect("found");
+    assert_eq!(ex.start_line, 5, "{ex:?}");
+}

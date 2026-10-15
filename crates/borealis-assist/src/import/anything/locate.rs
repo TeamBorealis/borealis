@@ -680,6 +680,30 @@ impl Doc<'_> {
             && names as f32 >= LIST_SHARE * body.len() as f32
     }
 
+    /// The same-named heading one level up whose section `c` (a heading) opens after only
+    /// prose: a section with an intro over its same-named table caption ("Wondrous Things"
+    /// intro, then "Wondrous Things" over the table) is read from the section heading, so the
+    /// intro is not lost to the caption.
+    fn parent_heading<'c>(&self, c: &Candidate, found: &'c [Candidate]) -> Option<&'c Candidate> {
+        if c.kind != Kind::Heading || !self.marked {
+            return None;
+        }
+        let own = self.heading_at(c.line)?;
+        let above = self
+            .heads
+            .iter()
+            .filter(|h| h.line < c.line)
+            .max_by_key(|h| h.line)?;
+        (above.level < own.level)
+            .then(|| {
+                found
+                    .iter()
+                    .find(|p| p.line == above.line && p.kind == Kind::Heading)
+            })
+            .flatten()
+            .filter(|p| p.end >= c.end)
+    }
+
     fn contains_quote(&self, c: &Candidate, quote: &str) -> bool {
         !quote.is_empty()
             && self.lines[c.line..c.end]
@@ -831,7 +855,10 @@ fn find(doc: &Doc, name: &str, quote: &str) -> Option<(SourceExcerpt, bool)> {
             std::cmp::Reverse(c.line),
         )
     };
-    let best = found.iter().max_by(|a, b| key(a).cmp(&key(b)));
+    let best = found
+        .iter()
+        .max_by(|a, b| key(a).cmp(&key(b)))
+        .map(|c| doc.parent_heading(c, &found).unwrap_or(c));
     let defines = |c: &Candidate| doc.contains_quote(c, quote) || !doc.not_a_definition(c, name);
     if let Some(c) = best {
         let quoted = doc.contains_quote(c, quote);

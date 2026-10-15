@@ -2,6 +2,10 @@
 //! rendered as Markdown-like text whose headings are `#` lines. PDF, ODT and DOCX readers all
 //! produce [`TextLine`]s, so the section locator and the chunker see one convention.
 
+#[path = "layout_continued.rs"]
+mod continued;
+pub(crate) use continued::without_continuations;
+
 /// One line (or paragraph) of a document.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TextLine {

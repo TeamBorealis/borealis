@@ -8,7 +8,7 @@
 
 use super::super::caster::is_caster_part;
 use super::super::passage::page_marks::{page_furniture as furniture, PageFurniture as Furniture};
-use super::super::passage::unplanned_sections_in;
+use super::super::passage::{owns_sub_sections, unplanned_sections_in};
 use super::super::types::{
     Edition, ImportKind, ImportPlan, Outline, OutlinePart, PlanGroup, PlannedElement, Role,
 };
@@ -371,10 +371,7 @@ pub(crate) fn fold_nested_lore(
     };
     let condition = ImportKind::Condition.element_type();
     let mut out: Vec<(String, String)> = Vec::new();
-    for root in elements
-        .iter()
-        .filter(|e| matches!(e.role, Role::Class | Role::Subclass))
-    {
+    for root in elements.iter().filter(|e| owns_sub_sections(e, elements)) {
         for sub in unplanned_sections_in(&lines, root, &bare) {
             let found: Vec<&PlannedElement> = elements
                 .iter()

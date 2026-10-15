@@ -790,3 +790,135 @@ green light.</p>",
         .iter()
         .any(|n| n.contains("1 printed opening paragraph")));
 }
+
+/// A species with lore sections beside its planned traits, with a running header and a stray
+/// glyph line printed inside a lore section.
+const SPECIES: &str = "# Glassfolk\n\
+\n\
+Glassfolk are born in kilns.\n\
+\n\
+## Origins\n\
+\n\
+The first glassfolk woke in a furnace by the sea and walked out.\n\
+Glassfolk Book | 4\n\
+!\n\
+They still keep that shore holy.\n\
+\n\
+## Looks\n\
+\n\
+Their skin rings softly when tapped by a curious friend.\n\
+\n\
+## Traits\n\
+\n\
+### Shard Skin\n\
+\n\
+Your AC is 13 + your Dex modifier.\n\
+Glassfolk Book | 5\n\
+\n\
+## Other Notes\n\
+\n\
+Glassfolk Book | 6\n\
+Thanks to the kiln guild for its help with this little book.\n";
+
+fn glassfolk() -> Vec<PlannedElement> {
+    let mut root = planned("r0", "Glassfolk", "Race", Role::Standalone, Some(1));
+    root.excerpt.as_mut().unwrap().end_line = 28;
+    let mut skin = planned("r1", "Shard Skin", "Racial Trait", Role::Part, Some(19));
+    skin.owner = Some("r0".into());
+    let mut whole = planned(
+        "t0",
+        "Glassfolk",
+        "Rules Glossary Entry",
+        Role::Text,
+        Some(1),
+    );
+    whole.excerpt.as_mut().unwrap().end_line = 28;
+    vec![
+        root,
+        skin,
+        whole,
+        planned("t1", "Origins", "Rules Glossary Entry", Role::Text, Some(5)),
+        planned("t2", "Looks", "Rules Glossary Entry", Role::Text, Some(12)),
+    ]
+}
+
+#[test]
+fn a_species_root_owns_its_lore_sections_and_its_own_section() {
+    use crate::import::anything::types::Edition;
+    let folded =
+        super::super::plan::sections::fold_nested_lore(&glassfolk(), Edition::Y2024, SPECIES);
+    let ids: Vec<&str> = folded.iter().map(|(id, _)| id.as_str()).collect();
+    // The entry on the root's own heading stays (it may carry sections a revised root lost).
+    assert_eq!(ids, ["t1", "t2"], "{folded:?}");
+    // A standalone element without parts claims nothing.
+    let mut lone = glassfolk();
+    lone.retain(|p| p.id != "r1");
+    assert!(
+        super::super::plan::sections::fold_nested_lore(&lone, Edition::Y2024, SPECIES).is_empty()
+    );
+}
+
+#[test]
+fn appended_sub_sections_leave_out_running_headers_and_stray_glyphs() {
+    let mut planned = glassfolk();
+    planned.retain(|p| p.role != Role::Text);
+    let mut d = draft(
+        SPECIES,
+        planned,
+        &[
+            "<p>Glassfolk are born in kilns.</p>",
+            "<p>Your AC is 13.</p>",
+        ],
+    );
+    assert_eq!(add_sub_sections(&mut d), vec!["r0".to_string()]);
+    let desc = d.elements[0].json["description"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    assert!(
+        desc.contains("<strong>Origins</strong>") && desc.contains("<strong>Other Notes</strong>")
+    );
+    assert!(desc.contains("They still keep that shore holy."), "{desc}");
+    assert!(
+        !desc.contains("Glassfolk Book") && !desc.contains("!"),
+        "{desc}"
+    );
+    // The trait's own section is its element's, not the species'.
+    assert!(!desc.contains("Dex modifier"), "{desc}");
+}
+
+#[test]
+fn a_block_printed_by_each_file_is_covered_once_per_printing() {
+    // Two files in one source: each opens with the same legal block; only the first file's
+    // block is in an element.
+    let legal = "All of the marsh lore in this little book is shared under the open lantern \
+licence for your table.";
+    let src = format!(
+        "# Lantern Kin\n\nLantern kin walk the marsh roads and keep the lamps burning.\n\n{legal}\n\n\
+# Lantern Notes\n\nA supplement for the lantern kin.\n\n{legal}\n"
+    );
+    let mut first = planned("t0", "Lantern Kin", "Species", Role::Standalone, Some(1));
+    first.excerpt.as_mut().unwrap().end_line = 6;
+    let held = format!(
+        "<p>Lantern kin walk the marsh roads and keep the lamps burning.</p><p>{legal}</p>"
+    );
+    let d = draft(&src, vec![first.clone()], &[held.as_str()]);
+    let entries = uncovered_prose(&d);
+    assert_eq!(entries.len(), 1, "{entries:?}");
+    assert_eq!(entries[0].source, "Lantern Notes");
+    assert!(
+        entries[0].note.contains("\"All of the marsh lore"),
+        "{entries:?}"
+    );
+    // Printed in two descriptions: both printings are covered.
+    let mut second = planned(
+        "t1",
+        "Lantern Notes",
+        "Rules Glossary Entry",
+        Role::Text,
+        Some(8),
+    );
+    second.excerpt.as_mut().unwrap().end_line = 8;
+    let d = draft(&src, vec![first, second], &[held.as_str(), held.as_str()]);
+    assert!(uncovered_prose(&d).is_empty(), "{:?}", uncovered_prose(&d));
+}

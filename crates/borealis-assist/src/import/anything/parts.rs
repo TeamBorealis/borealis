@@ -9,6 +9,9 @@ use serde_json::{json, Map, Value};
 use super::types::{ImportDraft, ImportKind, ImportPlan, PlannedElement, Role};
 use crate::import::report::ReportEntry;
 
+#[path = "parts_rows.rs"]
+mod rows;
+
 /// Most source lines a text-only element keeps.
 const MAX_SECTION_LINES: usize = 400;
 /// `supports` of the bundled rules entries.
@@ -717,7 +720,10 @@ pub(crate) fn text_element(planned: &PlannedElement, plan: &ImportPlan, source: 
     let description = if lines.is_empty() {
         format!("<p>{}</p>", escape(&planned.brief))
     } else {
-        to_html(&lines)
+        // Rows of elements imported on their own keep only their roll and name here.
+        let blocks = section_blocks(source, planned, plan);
+        let rows = rows::rows_of_others(&lines, &planned.id, &blocks, plan);
+        to_html(&rows.iter().map(AsRef::as_ref).collect::<Vec<&str>>())
     };
     json!({"id": planned.id, "name": planned.name, "type": planned.ty,
         "supports": [text_support(&planned.ty)], "description": description})
