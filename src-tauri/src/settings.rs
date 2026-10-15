@@ -138,6 +138,8 @@ pub struct AppSettings {
     /// Show the "Import only content you own" notice before every content import (default on). Turned off by
     /// "Don't show this again"; turned back on in Settings > Data files.
     pub show_import_notice: bool,
+    /// "Check for new versions of Borealis": at startup, ask GitHub for the latest version number (default on).
+    pub check_app_updates: bool,
 }
 
 impl Default for CardSettings {
@@ -210,6 +212,7 @@ impl Default for AppSettings {
             accent_color: "default".into(),
             portrait_size: 150,
             show_import_notice: true,
+            check_app_updates: true,
         }
     }
 }

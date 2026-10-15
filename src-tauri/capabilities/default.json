@@ -136,6 +136,9 @@
     "allow-restore-default-settings",
     "allow-clear-caches",
     "allow-content-update-status",
+    "allow-app-update-status",
+    "allow-check-app-update",
+    "allow-open-download-page",
     "allow-open-app-folder",
     "allow-restart-app"
   ]

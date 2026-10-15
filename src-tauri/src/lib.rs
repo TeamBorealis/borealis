@@ -20,6 +20,7 @@ pub mod ai_service;
 #[cfg(desktop)]
 pub mod ai_setup;
 pub mod app_api;
+pub mod app_update;
 pub mod builder;
 pub mod bundled_content;
 pub mod commands;
@@ -27,6 +28,7 @@ pub mod commands;
 pub mod commands_ai;
 #[cfg(desktop)]
 pub mod commands_ai_setup;
+pub mod commands_app_update;
 pub mod commands_content;
 pub mod commands_gear;
 #[cfg(desktop)]
@@ -380,6 +382,9 @@ pub fn run() {
             commands_settings::restore_default_settings,
             commands_settings::clear_caches,
             commands_settings::content_update_status,
+            commands_app_update::app_update_status,
+            commands_app_update::check_app_update,
+            commands_app_update::open_download_page,
             commands_system::open_app_folder,
             commands_system::restart_app,
         ])

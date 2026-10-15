@@ -10,6 +10,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
     cardsNewPage: { item: true, attack: false, feature: true }, legacySpellcastingPage: false,
   },
   ai: { enabled: false, provider: "claude", pairedHost: null, overridePath: null },
-  documentsDir: null, secondaryContentDir: null, autoContentUpdate: true, rowHeight: "medium",
+  documentsDir: null, secondaryContentDir: null, autoContentUpdate: true, checkAppUpdates: true, rowHeight: "medium",
   skillsPanelExpanded: true, savingThrowsExpanded: false, accentColor: "default", portraitSize: 150, showImportNotice: true, mobile: false,
 };

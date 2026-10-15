@@ -8,6 +8,7 @@ import { useSettings } from "../../state/SettingsContext";
 import { errorMessage, useAsync } from "../../state/useAsync";
 import { UnverifiedBadge } from "../content/IndexesTab";
 import { AiHostPanel } from "./AiHostPanel";
+import { checkAppUpdateNow, openDownload, useAppUpdateView } from "../../state/appUpdate";
 import { DescCheck, FieldLabel, Help, NumberField, SectionDesc } from "./rows";
 import { SettingsWindow } from "./SettingsWindow";
 
@@ -39,6 +40,9 @@ export function BorealisSettings({ onClose, initialTab }: { onClose: () => void;
   const ruleset = useId();
   const density = useId();
   const indexes = useAsync(() => api.listIndexes(), [api]);
+  const [checking, setChecking] = useState(false);
+  const { status: updateStatus } = useAppUpdateView();
+  const checkNow = async () => { setChecking(true); try { await checkAppUpdateNow(api); } finally { setChecking(false); } };
   const set = (patch: Partial<AppSettings>) => void update(patch);
   const setAi = (patch: Partial<AppSettings["ai"]>) => set({ ai: { ...s.ai, ...patch } });
 
@@ -115,8 +119,23 @@ export function BorealisSettings({ onClose, initialTab }: { onClose: () => void;
           <NumberField label="POINT-BUY BUDGET" value={s.pointBuyBudget} min={1} max={60} onChange={(n) => set({ pointBuyBudget: n })} />
           <NumberField label="MINIMUM BASE SCORE" value={s.abilityMinBase} min={1} max={20} onChange={(n) => set({ abilityMinBase: n })} />
           <NumberField label="MAXIMUM BASE SCORE" value={s.abilityMaxBase} min={8} max={30} onChange={(n) => set({ abilityMaxBase: n })} />
+          <FieldLabel>UPDATES</FieldLabel>
+          <DescCheck title="Check for new versions of Borealis" description="Only asks GitHub for the latest version number; nothing about you or your characters is sent."
+            checked={s.checkAppUpdates} onChange={(v) => set({ checkAppUpdates: v })} />
+          <div className="aur-set-buttons">
+            <Button disabled={checking} onClick={() => void checkNow()}>Check now</Button>
+            {updateStatus?.state === "done" && updateStatus.newer && <Button onClick={() => void openDownload(api, updateStatus.url ?? undefined)}>Download</Button>}
+          </div>
+          <p className="aur-set-help" role="status">{updateText(updateStatus)}</p>
         </>
       )}
     </SettingsWindow>
   );
+}
+
+/** The line under "Check now": the last answer in words. */
+export function updateText(u: ReturnType<typeof useAppUpdateView>["status"]): string {
+  if (!u || u.state === "idle" || u.state === "disabled") return "";
+  if (u.state === "failed") return "Could not reach GitHub. Check your connection and try again.";
+  return u.newer ? `Borealis ${u.latest} is available (you have ${u.current}).` : `You have the latest version (${u.current}).`;
 }
