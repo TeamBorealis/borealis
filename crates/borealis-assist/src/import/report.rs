@@ -53,6 +53,18 @@ pub struct ReviewReport {
     /// or with a text-only override).
     #[serde(default)]
     pub elements: Vec<ReviewReportEntry>,
+    /// Failed import-level source checks (codes and counts only).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub import_checks: Vec<ImportCheckReport>,
+}
+
+/// One failed import-level source check, as a code and a count.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ImportCheckReport {
+    /// The check's code.
+    pub code: String,
+    /// How many things failed it.
+    pub count: usize,
 }
 
 /// One element's review state, as codes.

@@ -116,8 +116,17 @@ fn no_output_is_not_imported_with_the_failure_as_reason() {
     assert_eq!(review_state(&p.elements[0], &p).code, code::PENDING);
 }
 
+fn failed(code: &str, message: &str) -> ElementCheck {
+    ElementCheck {
+        code: code.into(),
+        message: message.into(),
+        failed: true,
+    }
+}
+
 #[test]
-fn a_failed_check_leads_over_rule_errors_and_both_are_kept() {
+fn a_failed_check_comes_after_removed_rules_and_both_are_kept() {
+    // Arrange
     let mut e = feat("ID_T_FEAT_BRISK", DESCRIPTION, json!([]));
     e.rule_errors = vec!["removed a rule of unknown kind \"teleport\"".into()];
     e.checks = vec![
@@ -126,18 +135,110 @@ fn a_failed_check_leads_over_rule_errors_and_both_are_kept() {
             message: "heading is covered".into(),
             failed: false,
         },
-        ElementCheck {
-            code: "table_row_missing".into(),
-            message: "table row \"3rd\" is missing".into(),
-            failed: true,
-        },
+        failed("table_row_missing", "table row \"3rd\" is missing"),
     ];
+    let d = draft(SOURCE, vec![e]);
+    // Act
+    let s = review_state(&d.elements[0], &d);
+    // Assert
+    assert_eq!(s.state, ReviewLevel::Check);
+    assert_eq!(s.code, code::RULE_REMOVED);
+    assert!(
+        s.details[0].contains("Table row \"3rd\" is missing"),
+        "{:?}",
+        s.details
+    );
+}
+
+#[test]
+fn a_failed_check_alone_is_check_with_its_message_as_reason() {
+    let mut e = feat("ID_T_FEAT_BRISK", DESCRIPTION, json!([]));
+    e.checks = vec![failed(
+        "number_not_in_source",
+        "the weight 9 is not in the source text",
+    )];
     let d = draft(SOURCE, vec![e]);
     let s = review_state(&d.elements[0], &d);
     assert_eq!(s.state, ReviewLevel::Check);
-    assert_eq!(s.code, "check:table_row_missing");
-    assert_eq!(s.reason, "Table row \"3rd\" is missing");
-    assert!(s.details[0].contains("removed"), "{:?}", s.details);
+    assert_eq!(s.code, "check:number_not_in_source");
+    assert_eq!(s.reason, "The weight 9 is not in the source text");
+}
+
+#[test]
+fn a_sweep_issue_leads_over_a_failed_check() {
+    let mut e = feat("ID_T_FEAT_BRISK", DESCRIPTION, json!([]));
+    e.checks = vec![failed(
+        "reference_unresolved",
+        "points at something that does not exist",
+    )];
+    let mut d = draft(SOURCE, vec![e]);
+    d.sweep_issues = vec![SweepIssue {
+        level: 0,
+        element_id: Some("ID_T_FEAT_BRISK".into()),
+        message: "unknown resource".into(),
+    }];
+    let s = review_state(&d.elements[0], &d);
+    assert_eq!(s.code, code::ENGINE);
+    assert!(
+        s.details.iter().any(|x| x.contains("does not exist")),
+        "{:?}",
+        s.details
+    );
+}
+
+#[test]
+fn a_failed_untraced_check_and_the_fidelity_finding_are_one_reason() {
+    let mut e = feat(
+        "ID_T_FEAT_BRISK",
+        "<p>A sentence the source never prints at all.</p>",
+        json!([]),
+    );
+    e.checks = vec![failed(
+        "description_untraced",
+        "one sentence of the description is not in the source",
+    )];
+    let d = draft(SOURCE, vec![e]);
+    let s = review_state(&d.elements[0], &d);
+    assert_eq!(s.code, "check:description_untraced");
+    assert!(
+        !s.details
+            .iter()
+            .any(|x| x.contains("description sentence(s)")),
+        "{:?}",
+        s.details
+    );
+}
+
+#[test]
+fn failed_import_level_checks_become_one_note_per_code_with_the_names() {
+    let mut d = draft(
+        SOURCE,
+        vec![feat("ID_T_FEAT_BRISK", DESCRIPTION, json!([]))],
+    );
+    d.source_checks = vec![
+        failed(
+            "heading_uncovered",
+            "The section \"Camp Rules\" was not imported",
+        ),
+        ElementCheck {
+            code: "heading_uncovered".into(),
+            message: "The section \"Fine\" was imported".into(),
+            failed: false,
+        },
+        failed(
+            "heading_uncovered",
+            "The section \"Road Lore\" was not imported",
+        ),
+    ];
+    let notes = import_level_notes(&d);
+    assert_eq!(notes.len(), 1);
+    assert_eq!(notes[0].code, "heading_uncovered");
+    assert_eq!(notes[0].summary, "These headings weren't imported");
+    assert_eq!(notes[0].items, ["Camp Rules", "Road Lore"]);
+    let report = review_report(&d, &ReviewOverrides::default(), &[]);
+    assert_eq!(report.import_checks.len(), 1);
+    assert_eq!(report.import_checks[0].count, 2);
+    assert!(import_level_notes(&draft(SOURCE, vec![])).is_empty());
 }
 
 #[test]

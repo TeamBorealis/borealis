@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::types::{DraftElement, ElementStatus, ImportDraft, Role};
-use crate::import::report::{ReviewReport, ReviewReportEntry};
+use crate::import::report::{ImportCheckReport, ReviewReport, ReviewReportEntry};
 
 /// The three states the review screen shows.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -232,12 +232,6 @@ fn check_reasons(el: &DraftElement, draft: &ImportDraft, found: &DraftFindings) 
             format!("The rules engine rejects it: {}", short(last)),
         ));
     }
-    for c in el.checks.iter().filter(|c| c.failed) {
-        out.push(reason(
-            &format!("{}{}", code::CHECK_PREFIX, c.code),
-            sentence_case(&c.message),
-        ));
-    }
     for i in draft
         .sweep_issues
         .iter()
@@ -259,6 +253,13 @@ fn check_reasons(el: &DraftElement, draft: &ImportDraft, found: &DraftFindings) 
             ),
         ));
     }
+    // The source-derived checks come after what the engine and the rule catalogue say.
+    for c in el.checks.iter().filter(|c| c.failed) {
+        out.push(reason(
+            &format!("{}{}", code::CHECK_PREFIX, c.code),
+            sentence_case(&c.message),
+        ));
+    }
     if super::mechanics::species_without_speed(draft, el) {
         out.push(reason(
             code::INCOMPLETE,
@@ -269,7 +270,12 @@ fn check_reasons(el: &DraftElement, draft: &ImportDraft, found: &DraftFindings) 
     for gap in super::mechanics::element_mechanics(draft, el, passage.as_deref()).gaps {
         out.push(reason(code::MECHANIC_LOST, sentence_case(&short(&gap))));
     }
-    if let Some(found) = found.untraced.get(&el.id) {
+    // A failed `description_untraced` check already says it.
+    let traced_by_check = el
+        .checks
+        .iter()
+        .any(|c| c.failed && c.code == "description_untraced");
+    if let Some(found) = found.untraced.get(&el.id).filter(|_| !traced_by_check) {
         out.push(reason(
             code::UNTRACED,
             format!(
@@ -402,6 +408,60 @@ fn state_of(
     }
 }
 
+/// A failed check on the import as a whole (`ImportDraft::source_checks`), for a banner above
+/// the element list.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ImportLevelNote {
+    /// The check's code (`heading_uncovered`, ...).
+    pub code: String,
+    /// One line for the banner, e.g. "These headings weren't imported".
+    pub summary: String,
+    /// What failed, one short item each (the names in the check messages).
+    pub items: Vec<String>,
+}
+
+/// Longest list of items in one import-level note.
+const MAX_NOTE_ITEMS: usize = 40;
+
+/// The summary line of an import-level check code.
+fn note_summary(code: &str) -> String {
+    match code {
+        "heading_uncovered" => "These headings weren't imported".into(),
+        other => format!(
+            "The import failed the check \"{}\"",
+            other.replace('_', " ")
+        ),
+    }
+}
+
+/// The quoted name in a check message (`The section "X" was not imported` -> `X`), else the
+/// whole message.
+fn note_item(message: &str) -> String {
+    match (message.find('"'), message.rfind('"')) {
+        (Some(a), Some(b)) if b > a + 1 => message[a + 1..b].to_string(),
+        _ => message.to_string(),
+    }
+}
+
+/// The failed import-level checks of `draft`, one note per check code, in first-seen order.
+#[must_use]
+pub fn import_level_notes(draft: &ImportDraft) -> Vec<ImportLevelNote> {
+    let mut notes: Vec<ImportLevelNote> = Vec::new();
+    for c in draft.source_checks.iter().filter(|c| c.failed) {
+        let item = note_item(&c.message);
+        match notes.iter_mut().find(|n| n.code == c.code) {
+            Some(n) if n.items.len() < MAX_NOTE_ITEMS => n.items.push(item),
+            Some(_) => {}
+            None => notes.push(ImportLevelNote {
+                summary: note_summary(&c.code),
+                code: c.code.clone(),
+                items: vec![item],
+            }),
+        }
+    }
+    notes
+}
+
 /// Counts of each state, for the review header and the reports.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ReviewCounts {
@@ -477,6 +537,13 @@ pub fn review_report(
         text_only: c.text_only,
         accepted: c.accepted,
         elements,
+        import_checks: import_level_notes(draft)
+            .into_iter()
+            .map(|n| ImportCheckReport {
+                code: n.code,
+                count: n.items.len(),
+            })
+            .collect(),
     }
 }
 

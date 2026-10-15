@@ -15,7 +15,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 use super::anything::{finalize_draft, Edition, ElementStatus, ImportDraft, Role};
-use super::report::{ImportReport, ReportEntry, ReportIssue, ReviewReport, ReviewReportEntry};
+use super::report::{
+    ImportCheckReport, ImportReport, ReportEntry, ReportIssue, ReviewReport, ReviewReportEntry,
+};
 use crate::error::AssistError;
 
 /// Format tag of [`BugReport`].
@@ -481,6 +483,15 @@ fn clean_report(r: &ImportReport) -> ImportReport {
                     state: cut(&e.state, 32),
                     code: cut(&e.code, 64),
                     ..e.clone()
+                })
+                .collect(),
+            import_checks: v
+                .import_checks
+                .iter()
+                .take(MAX_ITEMS)
+                .map(|c| ImportCheckReport {
+                    code: cut(&c.code, 64),
+                    count: c.count,
                 })
                 .collect(),
             ..v.clone()
