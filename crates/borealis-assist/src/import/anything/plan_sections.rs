@@ -7,6 +7,7 @@
 //! category heading or a row inside another planned table is folded into that table.
 
 use super::super::caster::is_caster_part;
+use super::super::furniture::{furniture, Furniture};
 use super::super::types::{ImportKind, Outline, OutlinePart, PlanGroup, PlannedElement, Role};
 use super::{norm, text_group};
 
@@ -195,6 +196,43 @@ pub(crate) fn split_merged(groups: &mut Vec<PlanGroup>, source: &str) -> Vec<Str
     notes
 }
 
+/// Text-only groups (rules, lore, conditions from the detection's `other` list) named after a
+/// feature, part or option an outline already plans: that section is the feature's, and a
+/// text entry of the same name would print it twice. Returns a plan note per dropped group.
+pub(crate) fn drop_outlined_texts(groups: &mut Vec<PlanGroup>) -> Vec<String> {
+    let outlined: Vec<(String, String)> = groups
+        .iter()
+        .filter(|g| !is_text(g))
+        .filter_map(|g| g.outline.as_ref().map(|o| (g, o)))
+        .flat_map(|(g, o)| {
+            o.features.iter().flat_map(move |f| {
+                std::iter::once(&f.name)
+                    .chain(f.parts.iter().map(|p| &p.name))
+                    .chain(f.options.iter().map(|p| &p.name))
+                    .map(move |n| (norm(n), g.name.clone()))
+            })
+        })
+        .collect();
+    let mut notes = Vec::new();
+    groups.retain(|g| {
+        let owner = is_text(g)
+            .then(|| outlined.iter().find(|(n, _)| *n == norm(&g.name)))
+            .flatten();
+        if let Some((_, of)) = owner {
+            notes.push(format!(
+                "{}: planned in the outline of {of}, not as a text-only entry too",
+                g.name
+            ));
+        }
+        owner.is_none()
+    });
+    notes
+}
+
+fn is_text(g: &PlanGroup) -> bool {
+    matches!(g.kind, ImportKind::Rules | ImportKind::Condition)
+}
+
 /// Most words of a bare name line in a table's category list ("Lamp of the moth*").
 const MAX_NAME_LINE_WORDS: usize = 6;
 
@@ -213,15 +251,22 @@ fn table_line(line: &str) -> bool {
             && t.split_whitespace().count() <= MAX_NAME_LINE_WORDS)
 }
 
-/// The non-blank lines after the heading at `at`, up to the next heading.
-fn heading_body<'a>(lines: &[&'a str], at: usize) -> Vec<&'a str> {
+/// The non-blank lines after the heading at `at`, up to the next heading, page furniture (a
+/// page number, a running header or footer) left out.
+fn heading_body<'a>(lines: &[&'a str], at: usize, furniture: &Furniture) -> Vec<&'a str> {
     lines
         .iter()
+        .enumerate()
         .skip(at + 1)
-        .take_while(|l| heading_level(l).is_none())
-        .filter(|l| !l.trim().is_empty())
-        .copied()
+        .take_while(|(_, l)| heading_level(l).is_none())
+        .filter(|(i, l)| !l.trim().is_empty() && !furniture.has(*i))
+        .map(|(_, l)| *l)
         .collect()
+}
+
+/// A planned text-only entry the detection listed as a table (its brief opens with "table").
+fn is_table(p: &PlannedElement) -> bool {
+    norm(&p.brief).split(' ').next() == Some("table")
 }
 
 /// 0-based first line and end (exclusive) of an element's located passage.
@@ -234,12 +279,13 @@ fn span(e: &PlannedElement) -> Option<(usize, usize)> {
 /// The planned element a text-only entry `t` is only a piece of: the element whose passage
 /// holds the table row `t` was located on; the element starting at `t`'s heading that the
 /// heading names (not `t`); or the table `t`'s heading is a category of (a sub-heading of a
-/// planned text-only table with no prose before its first sub-heading, over table lines only,
-/// and `t`'s brief names that table).
+/// planned text-only table with no prose before its first sub-heading, over table lines only
+/// (page furniture left out), when that entry is a table or `t`'s brief names it).
 fn folded_into<'a>(
     t: &PlannedElement,
     all: &'a [PlannedElement],
     lines: &[&str],
+    furniture: &Furniture,
 ) -> Option<&'a PlannedElement> {
     let (s, _) = span(t)?;
     let line = lines.get(s)?;
@@ -261,15 +307,17 @@ fn folded_into<'a>(
     let enclosing = (0..s)
         .rev()
         .find(|&k| heading_level(lines[k]).is_some_and(|h| h < level))?;
-    let body = heading_body(lines, s);
+    let body = heading_body(lines, s, furniture);
     let brief = norm(&t.brief);
     others().find(|p| {
         p.role == Role::Text
             && span(p).is_some_and(|(ps, pe)| ps == enclosing && s < pe)
-            && brief.contains(&norm(&p.name))
+            && (brief.contains(&norm(&p.name)) || is_table(p))
             && !body.is_empty()
             && body.iter().all(|l| table_line(l))
-            && heading_body(lines, enclosing).iter().all(|l| table_line(l))
+            && heading_body(lines, enclosing, furniture)
+                .iter()
+                .all(|l| table_line(l))
     })
 }
 
@@ -280,11 +328,12 @@ pub(crate) fn fold_table_headings(
     source: &str,
 ) -> Vec<(String, String)> {
     let lines: Vec<&str> = source.lines().collect();
+    let furniture = furniture(source);
     elements
         .iter()
         .filter(|t| t.role == Role::Text)
         .filter_map(|t| {
-            let p = folded_into(t, elements, &lines)?;
+            let p = folded_into(t, elements, &lines, &furniture)?;
             Some((
                 t.id.clone(),
                 format!(
@@ -345,7 +394,7 @@ Charms\nA running header line.\n\n## Woven Charms\n\nCloth charms.\n";
     fn category_headings_and_rows_of_a_planned_table_are_folded_into_it() {
         use crate::import::anything::fidelity::tests::planned;
         let src = "### Lamps by Rarity\n\n#### Common Item\n\nTin lamp\nReed lamp\n\n\
-#### Rare Item\n\nGlass lamp\n\n### Kinds of Lamp\n\nd4 | Kind\n1 | Tin\n2 | Glass\n\n\
+#### Rare Item\n\nGlass lamp\n7!\n\n### Kinds of Lamp\n\nd4 | Kind\n1 | Tin\n2 | Glass\n\n\
 ### Lamp Costs\n\n#### Oil Prices\n\nOil | Cost\nLamp oil | 1 sp\n\n#### Lamp Oils\n\nText.\n";
         let text = |id: &str, name: &str, line: usize, brief: &str| {
             let mut p = planned(id, name, "Rules Glossary Entry", Role::Text, Some(line));
@@ -353,29 +402,52 @@ Charms\nA running header line.\n\n## Woven Charms\n\nCloth charms.\n";
             p
         };
         let mut table = text("t0", "Lamps by Rarity", 1, "table");
-        table.excerpt.as_mut().unwrap().end_line = 10;
-        let mut kinds = text("t3", "Kinds of Lamp", 12, "table");
-        kinds.excerpt.as_mut().unwrap().end_line = 16;
-        let mut costs = text("t5", "Lamp Costs", 18, "rule");
-        costs.excerpt.as_mut().unwrap().end_line = 27;
+        table.excerpt.as_mut().unwrap().end_line = 11;
+        let mut kinds = text("t3", "Kinds of Lamp", 13, "table");
+        kinds.excerpt.as_mut().unwrap().end_line = 17;
+        let mut costs = text("t5", "Lamp Costs", 19, "rule");
+        costs.excerpt.as_mut().unwrap().end_line = 28;
         let elements = vec![
             table,
             text("t1", "Common", 3, "table. Lamps by Rarity subsection"),
-            text("t2", "Rare", 8, "table. Lamps by Rarity subsection"),
+            // The parent is a table: its category needs no brief naming it, and a page number
+            // under the category is no prose.
+            text("t2", "Rare", 8, "table. Rarity index subsection"),
             kinds,
-            text("t4", "Tin", 15, "table row"),
+            text("t4", "Tin", 16, "table row"),
             costs,
             // A table of its own under a rules section, its brief naming no parent: kept.
-            text("t6", "Oil Prices", 20, "table"),
+            text("t6", "Oil Prices", 21, "table"),
             // Located on another entry's heading that names that entry: folded.
-            text("t7", "Oils", 25, "table"),
-            text("t8", "Lamp Oils", 25, "rule"),
+            text("t7", "Oils", 26, "table"),
+            text("t8", "Lamp Oils", 26, "rule"),
         ];
         let folded: Vec<String> = fold_table_headings(&elements, src)
             .into_iter()
             .map(|(id, _)| id)
             .collect();
         assert_eq!(folded, ["t1", "t2", "t4", "t7"]);
+    }
+
+    #[test]
+    fn a_text_entry_named_after_an_outlined_feature_is_dropped() {
+        let mut bg = text_group("Lamp Keeper", "background", "");
+        bg.kind = ImportKind::Background;
+        bg.outline.as_mut().unwrap().features = vec![serde_json::from_value(
+            serde_json::json!({"name": "Wick Tie", "parts": [{"name": "Oil Debt"}]}),
+        )
+        .unwrap()];
+        let mut groups = vec![
+            bg,
+            text_group("Wick tie", "table", "d8 table of the keeper's ties"),
+            text_group("Oil Debt", "rules", ""),
+            text_group("Old Roads", "lore", ""),
+        ];
+        let notes = drop_outlined_texts(&mut groups);
+        let names: Vec<&str> = groups.iter().map(|g| g.name.as_str()).collect();
+        assert_eq!(names, ["Lamp Keeper", "Old Roads"]);
+        assert_eq!(notes.len(), 2);
+        assert!(notes[0].contains("Lamp Keeper"), "{notes:?}");
     }
 
     #[test]

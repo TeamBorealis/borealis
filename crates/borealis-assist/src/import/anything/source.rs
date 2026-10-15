@@ -92,7 +92,7 @@ pub(crate) fn section_text(source: &str, p: &PlannedElement) -> Option<String> {
     let end = ex.end_line.max(ex.start_line).min(lines.len());
     let mut blocks = vec![(start, end)];
     blocks.extend(table_head(&lines, start));
-    Some(joined(&lines, blocks))
+    Some(joined(source, &lines, blocks))
 }
 
 /// Fewest lines sent for a located element (a one-line excerpt still gets its context).
@@ -123,17 +123,18 @@ pub(crate) fn element_window(source: &str, planned: &PlannedElement) -> String {
         let mut blocks = vec![(start, (start + short).min(lines.len()))];
         // A table row also gets the table's caption, header and category rows above it.
         blocks.extend(table_head(&lines, start));
-        return joined(&lines, blocks);
+        return joined(source, &lines, blocks);
     }
     let mut blocks = vec![(start, end)];
     blocks.extend(progression_table(&lines, start));
     blocks.extend(proficiency_block(&lines, start));
-    joined(&lines, blocks)
+    joined(source, &lines, blocks)
 }
 
 /// `blocks` (0-based line ranges) in source order, overlapping ones merged, apart ones joined
-/// by a `...` line.
-fn joined(lines: &[&str], mut blocks: Vec<(usize, usize)>) -> String {
+/// by a `...` line; the page furniture of `source` left out.
+fn joined(source: &str, lines: &[&str], mut blocks: Vec<(usize, usize)>) -> String {
+    let furniture = super::furniture::furniture(source);
     blocks.sort_unstable();
     let mut merged: Vec<(usize, usize)> = Vec::new();
     for (s, e) in blocks {
@@ -144,7 +145,13 @@ fn joined(lines: &[&str], mut blocks: Vec<(usize, usize)>) -> String {
     }
     merged
         .iter()
-        .map(|(s, e)| lines[*s..*e].join("\n"))
+        .map(|(s, e)| {
+            (*s..*e)
+                .filter(|i| !furniture.has(*i))
+                .map(|i| lines[i])
+                .collect::<Vec<_>>()
+                .join("\n")
+        })
         .collect::<Vec<_>>()
         .join("\n...\n")
 }

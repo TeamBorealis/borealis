@@ -421,31 +421,76 @@ pub(crate) fn names_planned(plan: &ImportPlan, except: &str, title: &str) -> boo
 /// A heading of the same level that only continues a text-only section the PDF flattened (a
 /// question of a FAQ, a sub-rule): unplanned, no boundary word, within reach.
 fn continues_section(
+    lines: &[&str],
     plan: &ImportPlan,
     planned: &PlannedElement,
-    line: &str,
     own_end: Option<usize>,
     at: usize,
 ) -> bool {
-    let Some((_, title)) = heading_text(line) else {
+    let Some((_, title)) = heading_text(lines[at]) else {
         return false;
     };
     planned.role == Role::Text
         && own_end.map_or(true, |e| at < e + MAX_EXTENSION_LINES)
         && !title.split(' ').any(|w| BOUNDARY_WORDS.contains(&w))
         && !names_planned(plan, &planned.id, &title)
+        && !root_sub_section(lines, plan, at)
+        && !nested(lines, plan, planned)
+}
+
+/// `planned` starts inside the heading section of another planned text-only element of a
+/// higher heading level: the unplanned sections after it are that section's, not its own.
+fn nested(lines: &[&str], plan: &ImportPlan, planned: &PlannedElement) -> bool {
+    let Some(at) = planned
+        .excerpt
+        .as_ref()
+        .map(|x| x.start_line.saturating_sub(1))
+    else {
+        return false;
+    };
+    let Some(level) = lines.get(at).and_then(|l| is_heading(l)) else {
+        return false;
+    };
+    plan.elements
+        .iter()
+        .filter(|e| e.id != planned.id && e.role == Role::Text)
+        .filter_map(|e| e.excerpt.as_ref().map(|x| x.start_line.saturating_sub(1)))
+        .filter(|&s| s < at)
+        .any(|s| {
+            lines.get(s).and_then(|l| is_heading(l)).is_some_and(|h| {
+                h < level && !(s + 1..at).any(|k| is_heading(lines[k]).is_some_and(|k| k <= h))
+            })
+        })
+}
+
+/// The heading at `at` opens an unplanned sub-section a class or subclass root carries in its
+/// description (see [`super::passage::unplanned_sections`]).
+fn root_sub_section(lines: &[&str], plan: &ImportPlan, at: usize) -> bool {
+    plan.elements
+        .iter()
+        .filter(|e| matches!(e.role, Role::Class | Role::Subclass))
+        .filter(|e| {
+            e.excerpt
+                .as_ref()
+                .is_some_and(|x| x.start_line.saturating_sub(1) < at)
+        })
+        .any(|e| {
+            super::passage::unplanned_sections_in(lines, e, plan)
+                .iter()
+                .any(|s| s.at == at)
+        })
 }
 
 /// Where an element's section reaches (0-based): its first line; the end of its own heading's
 /// section, up to the next planned passage or the next heading of the same or a higher level
 /// (a text-only element also reaches over the unplanned headings of its own level that follow:
 /// a section the PDF printed flat); the end of its located passage; and the next planned
-/// passage's first line.
+/// passage's first line (a passage without a heading of its own: up to the first heading after
+/// its located passage).
 struct Reach {
     start: usize,
     own_end: usize,
     located_end: usize,
-    next: usize,
 }
 
 fn reach(lines: &[&str], planned: &PlannedElement, plan: &ImportPlan) -> Option<Reach> {
@@ -455,10 +500,16 @@ fn reach(lines: &[&str], planned: &PlannedElement, plan: &ImportPlan) -> Option<
     let own = lines.get(start).and_then(|l| is_heading(l));
     let mut end = start + 1;
     let mut own_end: Option<usize> = None;
+    let located_end = ex.end_line.min(lines.len());
     while end < lines.len().min(next).min(start + MAX_SECTION_LINES) {
+        // A passage without a heading of its own (a name line, a wrapped title) ends at the
+        // first heading after its located passage: what follows is another section.
+        if own.is_none() && end >= located_end && is_heading(lines[end]).is_some() {
+            break;
+        }
         if let (Some(o), Some(h)) = (own, is_heading(lines[end])) {
             let same = h == o;
-            if h < o || (same && !continues_section(plan, planned, lines[end], own_end, end)) {
+            if h < o || (same && !continues_section(lines, plan, planned, own_end, end)) {
                 break;
             }
             if same {
@@ -470,8 +521,7 @@ fn reach(lines: &[&str], planned: &PlannedElement, plan: &ImportPlan) -> Option<
     Some(Reach {
         start,
         own_end: end.min(lines.len()),
-        located_end: ex.end_line.min(lines.len()),
-        next,
+        located_end,
     })
 }
 
@@ -494,25 +544,25 @@ fn trimmed(lines: &[&str], start: usize, mut end: usize) -> usize {
     end
 }
 
-/// The end (exclusive) of the own section of a planned element starting at `at` inside another
-/// section that ends at `limit`: a text-only element's own section (its located end kept, but
-/// never past the next planned passage); a headed one up to
-/// the next heading of its level or higher; any other up to its located end or the next
-/// planned passage.
-fn inner_end(
-    lines: &[&str],
-    e: &PlannedElement,
-    plan: &ImportPlan,
-    at: usize,
-    limit: usize,
-) -> usize {
+/// The end (exclusive, 0-based) of the lines a planned element claims as its own text, ONE
+/// range used both for the element's own text and for leaving it out of the section it is
+/// printed in: a text-only element its section to the end of its located passage (see
+/// [`Reach`]); a headed generated one its heading's section (to the next heading of its level
+/// or higher) or its located passage, whichever reaches further (it is generated from that
+/// passage); any other its located passage up to the next planned passage.
+fn claimed_end(lines: &[&str], e: &PlannedElement, plan: &ImportPlan) -> Option<usize> {
+    let ex = e.excerpt.as_ref()?;
+    let at = ex.start_line.saturating_sub(1).min(lines.len());
+    let located = ex.end_line.min(lines.len());
     let end = match lines.get(at).and_then(|l| is_heading(l)) {
         _ if e.role == Role::Text => {
-            reach(lines, e, plan).map_or(at + 1, |r| r.own_end.max(r.located_end.min(r.next)))
+            let r = reach(lines, e, plan)?;
+            trimmed(lines, r.start, r.own_end.max(r.located_end))
         }
-        Some(h) => (at + 1..limit)
+        Some(h) => (at + 1..lines.len())
             .find(|&k| is_heading(lines[k]).is_some_and(|k| k <= h))
-            .unwrap_or(limit),
+            .unwrap_or(lines.len())
+            .max(located),
         None => {
             // Up to the next planned start of any kind (a row element's row included).
             let next = plan
@@ -522,18 +572,18 @@ fn inner_end(
                 .filter_map(|o| o.excerpt.as_ref().map(|x| x.start_line.saturating_sub(1)))
                 .filter(|l| *l > at)
                 .min()
-                .unwrap_or(limit);
-            e.excerpt.as_ref().map_or(at + 1, |x| x.end_line.min(next))
+                .unwrap_or(lines.len());
+            located.min(next)
         }
     };
-    end.clamp(at + 1, limit.max(at + 1))
+    Some(end.max(at + 1))
 }
 
-/// The 0-based line ranges a text-only element's description is built from: its section to
-/// the end of its located passage, without the own sections of the other planned elements
-/// that start inside it (they carry their text themselves; the unplanned sub-sections between
-/// them stay the section's). Table rows stay: a row element does not take its row out of the
-/// table.
+/// The 0-based line ranges a text-only element's description is built from: its claimed lines
+/// (see [`claimed_end`]) without the claimed lines of the other planned elements that start
+/// inside it (they carry their text themselves; the unplanned sub-sections between them stay
+/// the section's), and without the headings left with nothing under them. Table rows stay: a
+/// row element does not take its row out of the table.
 pub(crate) fn section_blocks(
     source: &str,
     planned: &PlannedElement,
@@ -543,16 +593,31 @@ pub(crate) fn section_blocks(
     let Some(r) = reach(&lines, planned, plan) else {
         return Vec::new();
     };
-    let end = trimmed(&lines, r.start, r.own_end.max(r.located_end));
+    let end = claimed_end(&lines, planned, plan).unwrap_or(r.start + 1);
     let mut inner: Vec<(usize, usize)> = plan
         .elements
         .iter()
         .filter(|e| e.id != planned.id)
-        .filter_map(|e| {
-            let at = e.excerpt.as_ref()?.start_line.saturating_sub(1);
+        .flat_map(|e| {
+            let Some(at) = e.excerpt.as_ref().map(|x| x.start_line.saturating_sub(1)) else {
+                return Vec::new();
+            };
             // A row element keeps its row in the table too (a table is printed whole).
             let row = lines.get(at).is_some_and(|l| l.contains(" | "));
-            (at > r.start && at < end && !row).then(|| (at, inner_end(&lines, e, plan, at, end)))
+            if at <= r.start || at >= end || row {
+                return Vec::new();
+            }
+            let mut own = vec![(at, claimed_end(&lines, e, plan).unwrap_or(at + 1).min(end))];
+            // A class or subclass root's description also carries its unplanned sub-sections.
+            if matches!(e.role, Role::Class | Role::Subclass) {
+                own.extend(
+                    super::passage::unplanned_sections_in(&lines, e, plan)
+                        .into_iter()
+                        .filter(|s| s.at > r.start && s.at < end)
+                        .map(|s| (s.at, s.end.min(end))),
+                );
+            }
+            own
         })
         .collect();
     inner.sort_unstable();
@@ -567,25 +632,50 @@ pub(crate) fn section_blocks(
     if end > from {
         out.push((from, end));
     }
-    out.into_iter()
-        .map(|(s, e)| (s, trimmed(&lines, s, e)))
+    let blocks: Vec<(usize, usize)> = out
+        .into_iter()
+        .map(|(s, e)| (s, without_bare_headings(&lines, s, e)))
         .filter(|(s, e)| lines[*s..*e].iter().any(|l| !l.trim().is_empty()))
-        .collect()
+        .collect();
+    // A block of headings only (a sub-heading whose body is all planned children) says nothing.
+    let has_body = |(s, e): &(usize, usize)| {
+        lines[*s..*e]
+            .iter()
+            .any(|l| !l.trim().is_empty() && is_heading(l).is_none())
+    };
+    if blocks.iter().any(has_body) {
+        blocks.into_iter().filter(has_body).collect()
+    } else {
+        blocks.into_iter().take(1).collect()
+    }
 }
 
-/// The source lines of [`section_blocks`], a blank line between blocks.
+/// `end` moved back over trailing blank lines and over the headings at the end of the block
+/// `start..end` that have nothing under them (their body is a planned child's), never before
+/// `start + 1`.
+fn without_bare_headings(lines: &[&str], start: usize, end: usize) -> usize {
+    let mut end = trimmed(lines, start, end);
+    while end > start + 1 && is_heading(lines[end - 1]).is_some() {
+        end = trimmed(lines, start, end - 1);
+    }
+    end
+}
+
+/// The source lines of [`section_blocks`], a blank line between blocks, page furniture left out.
 pub(crate) fn section_lines<'a>(
     source: &'a str,
     planned: &PlannedElement,
     plan: &ImportPlan,
 ) -> Vec<&'a str> {
     let lines: Vec<&str> = source.lines().collect();
+    let furniture = super::furniture::furniture(source);
     let mut out = Vec::new();
     for (s, e) in section_blocks(source, planned, plan) {
         if !out.is_empty() {
             out.push("");
         }
-        out.extend_from_slice(&lines[s..e]);
+        // Page furniture (a page number, a running header or footer) is no part of it.
+        out.extend((s..e).filter(|i| !furniture.has(*i)).map(|i| lines[i]));
     }
     out
 }

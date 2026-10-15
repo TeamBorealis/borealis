@@ -758,7 +758,8 @@ fn in_source_classes(plan: &ImportPlan) -> Vec<(Vec<String>, ParentLink)> {
 
 /// Recompute `plan.elements` (and group root ids) from the groups.
 pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str, source: &str) {
-    let split_notes = sections::split_merged(&mut plan.groups, source);
+    let mut split_notes = sections::drop_outlined_texts(&mut plan.groups);
+    split_notes.extend(sections::split_merged(&mut plan.groups, source));
     let mut b = Builder {
         prefix,
         source,

@@ -274,6 +274,9 @@ struct Doc<'a> {
     index: Vec<bool>,
     /// The element is equipment, defined by a stat row (see [`ROW_TYPES`]).
     rows_define: bool,
+    /// The element is a text-only entry: a title over a table is its definition, not a trait's
+    /// run-in naming that table.
+    text_entry: bool,
 }
 
 impl Doc<'_> {
@@ -643,6 +646,8 @@ pub(crate) fn locate_section(source: &str, quote: &str, name: &str) -> Option<So
 /// the name in its first cell beats a same-named heading that opens no entry (a prose
 /// sub-section, a modification of the same name).
 const ROW_TYPES: [&str; 3] = ["Weapon", "Armor", "Item"];
+/// Element type of a text-only rules or lore entry.
+const TEXT_TYPE: &str = "Rules Glossary Entry";
 
 /// [`locate_section`] for an element of type `ty` (see [`ROW_TYPES`]).
 pub(crate) fn locate_section_as(
@@ -663,6 +668,7 @@ pub(crate) fn locate_section_as(
         index: index_mask(&lines),
         lines,
         rows_define: ROW_TYPES.contains(&ty),
+        text_entry: ty == TEXT_TYPE,
     };
     let own = find(&doc, &norm_words(name), &norm_words(quote));
     if own.as_ref().is_some_and(|(_, definition)| *definition) {
@@ -721,8 +727,14 @@ fn find(doc: &Doc, name: &str, quote: &str) -> Option<(SourceExcerpt, bool)> {
         let stats = doc.rows_define
             && ((c.kind == Kind::TableRow && doc.stat_row(c.line, name))
                 || (c.kind >= Kind::PartHeading && opens));
+        // A text-only entry: the title line over its table (a trait's run-in only names it).
+        let table_title = doc.text_entry
+            && c.kind >= Kind::ExactLine
+            && c.kind != Kind::RunIn
+            && doc.table_follows(c.line);
         (
             doc.contains_quote(c, quote),
+            table_title,
             stats,
             definition && (c.kind >= Kind::ExactLine || c.kind == Kind::TableRow),
             opens,

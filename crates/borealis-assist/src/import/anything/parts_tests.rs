@@ -112,3 +112,60 @@ fn a_model_select_with_a_level_suffix_is_replaced_by_the_tiered_picks() {
     assert_eq!(super::pick_name("Grove Gift (Level 12)"), "grove gift");
     assert_eq!(super::pick_name("Grove Gift (Lore)"), "grove gift (lore)");
 }
+
+mod claimed {
+    use super::super::section_lines;
+    use crate::import::anything::fidelity::tests::{draft, planned};
+    use crate::import::anything::types::Role;
+
+    fn text(id: &str, name: &str, line: usize, end: usize) -> super::PlannedElement {
+        let mut p = planned(id, name, "Rules Glossary Entry", Role::Text, Some(line));
+        p.excerpt.as_mut().unwrap().end_line = end;
+        p
+    }
+
+    #[test]
+    fn a_child_is_left_out_of_its_parent_by_the_range_it_prints_itself() {
+        // The child's located passage reaches past its own heading's section (a flat sub-section
+        // it prints): the parent leaves all of it out, so nothing is printed twice.
+        let src = "## Lamp Lore\n\nLamps are old.\n\n### Wicks\n\nWicks are cotton.\n\n\
+### Wick Care\n\nTrim them daily.\n\n### Oils\n\nOil burns slow.\n";
+        let parent = text("t0", "Lamp Lore", 1, 16);
+        let wicks = text("t1", "Wicks", 5, 12);
+        let d = draft(src, vec![parent, wicks], &[]);
+        let own = section_lines(src, &d.plan.elements[1], &d.plan).join("\n");
+        assert!(own.contains("Trim them daily."), "{own}");
+        let parent = section_lines(src, &d.plan.elements[0], &d.plan).join("\n");
+        assert!(!parent.contains("Trim them daily."), "{parent}");
+        assert!(parent.contains("Oil burns slow.") && parent.contains("Lamps are old."));
+        // A generated (headed) child that was generated from a passage past its heading's
+        // section claims that passage too.
+        let mut item = planned("i1", "Wicks", "Item", Role::Standalone, Some(5));
+        item.excerpt.as_mut().unwrap().end_line = 12;
+        let d = draft(src, vec![text("t0", "Lamp Lore", 1, 16), item], &[]);
+        let parent = section_lines(src, &d.plan.elements[0], &d.plan).join("\n");
+        assert!(!parent.contains("Trim them daily."), "{parent}");
+    }
+
+    #[test]
+    fn a_section_without_a_heading_of_its_own_stops_at_the_next_heading() {
+        // A name printed across a line and a heading ("Bonus Fire, or" / "#### Cold Damage"):
+        // the entry is its located lines, not the unplanned sections after it.
+        let src = "## Charms\n\n### Tier 1\n\nBonus Fire, or\n\n#### Cold Damage\n\nCost: 50\n\n\
+#### Charm Ward\n\nCost: 100\n\n### Tier 2\n\n#### Great Ward\n\nCost: 200\n";
+        let parent = text("t0", "Charms", 1, 20);
+        let child = text("t1", "Bonus Fire, or Cold Damage", 5, 9);
+        let ward = text("t2", "Great Ward", 17, 20);
+        let d = draft(src, vec![parent, child, ward], &[]);
+        let own = section_lines(src, &d.plan.elements[1], &d.plan).join("\n");
+        assert!(
+            own.contains("Cost: 50") && !own.contains("Charm Ward"),
+            "{own}"
+        );
+        // The parent keeps the unplanned "Charm Ward", but no heading left with nothing under
+        // it ("Tier 2" holds only a planned child).
+        let parent = section_lines(src, &d.plan.elements[0], &d.plan);
+        assert!(parent.contains(&"Cost: 100"), "{parent:?}");
+        assert!(!parent.contains(&"### Tier 2"), "{parent:?}");
+    }
+}

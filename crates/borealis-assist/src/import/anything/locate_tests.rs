@@ -239,3 +239,16 @@ fn a_question_heading_is_no_definition() {
     let s = section(src, "Glimmer", "");
     assert_eq!(s[0], "Glimmer");
 }
+
+#[test]
+fn a_text_entry_named_after_a_table_is_the_tables_title_not_a_traits_run_in() {
+    let src = "GLASSWING\n\nGlasswings fly low.\n\nWing Shape. Choose a shape from the wing shape table.\n\n\
+Languages. Common.\n\nWing Shape\n\n| Shape | Speed |\n\n|---|---|\n\n| Narrow | 40 |\n\n| Broad | 30 |\n";
+    let line = |ty: &str| {
+        locate_section_as(src, "", "Wing Shape", ty)
+            .expect("located")
+            .start_line
+    };
+    assert_eq!(line("Rules Glossary Entry"), 9, "the table's title");
+    assert_eq!(line("Racial Trait"), 5, "the trait's run-in");
+}

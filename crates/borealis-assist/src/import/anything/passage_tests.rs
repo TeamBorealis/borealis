@@ -406,7 +406,7 @@ fn a_rules_section_printed_flat_reaches_over_its_unplanned_headings() {
 }
 
 #[test]
-fn a_planned_lore_section_in_a_flat_class_intro_reaches_the_class() {
+fn a_planned_lore_section_in_a_flat_class_intro_is_its_own_and_the_intro_goes_on() {
     let src = "#### Lamplighter\n\nLamplighters keep the roads lit.\n\n#### The Lamplighter\n\nA life of lamps and long nights on the road.\n\n#### Quick Build\n\nPut your highest score in Wisdom.\n\n#### Kindle 1st\n\nYou light a lamp.\n";
     let mut kindle = planned(
         "c1",
@@ -435,7 +435,12 @@ fn a_planned_lore_section_in_a_flat_class_intro_reaches_the_class() {
         .into_iter()
         .map(|s| s.title)
         .collect();
-    assert_eq!(titles, ["The Lamplighter", "Quick Build"]);
+    // The lore entry carries its own text (printed once); the intro goes on past it.
+    assert_eq!(titles, ["Quick Build"]);
+    // The lore entry's text is its own section, the class's intro is not in it.
+    let lore = super::super::parts::section_lines(src, &d.plan.elements[1], &d.plan);
+    assert!(lore.iter().any(|l| l.contains("long nights")), "{lore:?}");
+    assert!(!lore.iter().any(|l| l.contains("Wisdom")), "{lore:?}");
 }
 
 #[test]
@@ -633,7 +638,8 @@ fn reprint_a_stored_draft() {
     };
     let mut d: ImportDraft =
         serde_json::from_str(&std::fs::read_to_string(path).expect("reads")).expect("parses");
-    // BOREALIS_PRINTED_FOLD: drop the text-only entries a rebuilt plan folds into a table.
+    // BOREALIS_PRINTED_FOLD: drop the text-only entries a rebuilt plan folds into a table or
+    // leaves to an outlined feature.
     if std::env::var("BOREALIS_PRINTED_FOLD").is_ok() {
         let folded =
             super::super::plan::sections::fold_table_headings(&d.plan.elements, &d.source_text);
@@ -646,6 +652,21 @@ fn reprint_a_stored_draft() {
             .groups
             .retain(|g| !g.root_id.as_ref().is_some_and(|r| ids.contains(&r)));
         d.elements.retain(|e| !ids.contains(&&e.id));
+        // And the text-only groups an outline already plans as features.
+        let mut groups = d.plan.groups.clone();
+        for n in super::super::plan::sections::drop_outlined_texts(&mut groups) {
+            println!("dropped: {n}");
+        }
+        let gone: Vec<String> = d
+            .plan
+            .groups
+            .iter()
+            .filter(|g| !groups.iter().any(|k| k.name == g.name))
+            .filter_map(|g| g.root_id.clone())
+            .collect();
+        d.plan.groups = groups;
+        d.plan.elements.retain(|e| !gone.contains(&e.id));
+        d.elements.retain(|e| !gone.contains(&e.id));
     }
     // BOREALIS_PRINTED_TEXT: text-only descriptions rebuilt from their sections.
     if std::env::var("BOREALIS_PRINTED_TEXT").is_ok() {
@@ -689,4 +710,30 @@ fn reprint_a_stored_draft() {
             .write_to_dir(std::path::Path::new(&out))
             .expect("pack writes");
     }
+}
+
+#[test]
+fn a_short_sentence_alone_under_its_heading_is_reported_and_page_furniture_is_not() {
+    let mut src = String::from(
+        "## Lamp Lists\n\nThese lists hold every lamp spell.\n\n## Wicks\n\nTrim.\n\n",
+    );
+    for page in 1..=6 {
+        src.push_str(&format!(
+            "## Page {page}\n\nNot to be sold. Printed for your own table only, all rights kept by the maker.\n\nLAMP BOOK | {page}!\n\n"
+        ));
+        src.push_str(&"Filler line of the page body.\n".repeat(10));
+        src.push('\n');
+    }
+    let d = draft(&src, vec![], &[]);
+    let entries = uncovered_prose(&d);
+    let sources: Vec<&str> = entries.iter().map(|e| e.source.as_str()).collect();
+    assert!(sources.contains(&"Lamp Lists"), "{sources:?}");
+    assert!(
+        !sources.contains(&"Wicks"),
+        "one word is no prose: {sources:?}"
+    );
+    assert!(
+        !entries.iter().any(|e| e.note.contains("Not to be sold")),
+        "a footer is no prose: {entries:?}"
+    );
 }

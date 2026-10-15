@@ -22,6 +22,9 @@ const VERBATIM: f64 = 0.9;
 const MULTICLASS_LINES: usize = 60;
 /// Fewest words of a source paragraph the uncovered-prose check looks at.
 const MIN_PARAGRAPH_WORDS: usize = 12;
+/// Fewest words of a shorter paragraph it still looks at: a sentence that is the whole body of
+/// its heading.
+const MIN_SHORT_WORDS: usize = 5;
 /// Most letters of a run-in label too short to name a report entry ("No." answering a question).
 const MIN_LABEL_CHARS: usize = 3;
 /// Most paragraphs quoted per uncovered-prose entry (by their first words).
@@ -338,10 +341,13 @@ pub(crate) fn drop_unprinted_row_text(draft: &mut ImportDraft) -> Vec<String> {
     changed
 }
 
-/// One headed sub-section: its title and its lines (heading left out).
+/// One headed sub-section: its title and its lines (heading left out), and where it is printed
+/// (0-based heading line, exclusive end).
 pub(crate) struct SubSection {
     pub title: String,
     pub lines: Vec<String>,
+    pub at: usize,
+    pub end: usize,
 }
 
 fn norm(s: &str) -> String {
@@ -382,18 +388,28 @@ fn planned_text(plan: &ImportPlan, line_idx: usize, title: &str) -> bool {
 }
 
 /// The headed prose sub-sections inside a class or subclass root's section that no element is
-/// planned for (a planned heading's own sub-headings included), each up to the next heading;
-/// with flat headings, also the root-level headings before its first feature.
+/// planned for (a planned heading's own sub-headings left to it), each up to the next heading;
+/// with flat headings, also the root-level headings before its first feature (a planned lore
+/// section among them left out).
 /// A class's hit point, proficiency and multiclassing headings are left to its rules.
 pub(crate) fn unplanned_sections(
     source: &str,
     planned: &PlannedElement,
     plan: &ImportPlan,
 ) -> Vec<SubSection> {
+    let lines: Vec<&str> = source.lines().collect();
+    unplanned_sections_in(&lines, planned, plan)
+}
+
+/// [`unplanned_sections`] of the source `lines`.
+pub(crate) fn unplanned_sections_in(
+    lines: &[&str],
+    planned: &PlannedElement,
+    plan: &ImportPlan,
+) -> Vec<SubSection> {
     let Some(ex) = planned.excerpt.as_ref() else {
         return Vec::new();
     };
-    let lines: Vec<&str> = source.lines().collect();
     let start = ex.start_line.saturating_sub(1);
     let Some(depth) = lines.get(start).and_then(|l| heading(l)) else {
         return Vec::new();
@@ -421,8 +437,8 @@ pub(crate) fn unplanned_sections(
             break;
         }
         let title = heading_title(lines[i]);
-        // A rules or lore section planned on its own inside the root's flat intro is printed
-        // as part of the root too; any other planned heading there ends the intro.
+        // A rules or lore section planned on its own inside the root's flat intro does not end
+        // the intro (its text is its own); any other planned heading there does.
         let text_here = flat && planned_text(plan, i, &title);
         if flat && !text_here && planned_heading(plan, &planned.id, i, &title) {
             break;
@@ -434,7 +450,8 @@ pub(crate) fn unplanned_sections(
         skip_below = None;
         let low = title.to_lowercase();
         let block = planned.role == Role::Class && CLASS_BLOCK.iter().any(|b| low.contains(b));
-        if (!text_here && planned_heading(plan, &planned.id, i, &title)) || block {
+        // A planned lore section in the flat intro carries its own text: the intro goes on.
+        if planned_heading(plan, &planned.id, i, &title) || block {
             skip_below = Some(h);
             i += 1;
             continue;
@@ -447,7 +464,12 @@ pub(crate) fn unplanned_sections(
             !l.trim().is_empty() && !l.trim_start().starts_with('|') && !l.contains(" | ")
         });
         if prose {
-            out.push(SubSection { title, lines: body });
+            out.push(SubSection {
+                title,
+                lines: body,
+                at: i,
+                end,
+            });
         }
         i = end;
     }
@@ -741,9 +763,10 @@ pub(crate) fn multiclass_section(source: &str, planned: &PlannedElement) -> Opti
     Some(lines[at..end].join("\n"))
 }
 
-/// Source paragraphs (blank-line or heading separated) with the line of the heading they are
-/// under.
+/// Source paragraphs (blank-line or heading separated, page furniture left out) with the line
+/// of the heading they are under.
 fn paragraphs(source: &str) -> Vec<(usize, Option<usize>, String)> {
+    let furniture = super::furniture::furniture(source);
     let mut out = Vec::new();
     let mut under: Option<usize> = None;
     let mut cur: Vec<&str> = Vec::new();
@@ -756,7 +779,8 @@ fn paragraphs(source: &str) -> Vec<(usize, Option<usize>, String)> {
         }
     };
     for (i, l) in lines.iter().enumerate() {
-        if heading(l).is_some() || l.trim().is_empty() || l.contains(" | ") {
+        // Page furniture is no prose; it ends a paragraph like a blank line.
+        if heading(l).is_some() || l.trim().is_empty() || l.contains(" | ") || furniture.has(i) {
             flush(&mut cur, under, first);
             if heading(l).is_some() {
                 under = Some(i);
@@ -810,8 +834,21 @@ fn report_heading(lines: &[&str], at: usize, planned: &[usize]) -> String {
     heading_title(lines[best])
 }
 
+/// A short paragraph that is still real prose: a sentence of [`MIN_SHORT_WORDS`] words or more
+/// (a capital first, a full stop last), not a label or a list line.
+fn short_prose(text: &str, words: usize) -> bool {
+    let t = text.trim();
+    words >= MIN_SHORT_WORDS
+        && t.starts_with(|c: char| c.is_uppercase())
+        && t.ends_with(['.', '!', '?'])
+        && !t
+            .lines()
+            .any(|l| l.trim_start().starts_with(['-', '*', '•']))
+}
+
 /// Report entries for source prose no element carries: a paragraph outside every planned
-/// passage whose 4-grams are mostly in no description. Consecutive ones under one heading are
+/// passage whose 4-grams are mostly in no description (a short one when it is a sentence and
+/// the whole body of its heading). Consecutive ones under one heading are
 /// one entry. Not a failure: the user decides whether it matters.
 pub(crate) fn uncovered_prose(draft: &ImportDraft) -> Vec<ReportEntry> {
     let all: String = draft
@@ -849,9 +886,13 @@ pub(crate) fn uncovered_prose(draft: &ImportDraft) -> Vec<ReportEntry> {
     let mut out: Vec<ReportEntry> = Vec::new();
     let lines: Vec<&str> = draft.source_text.lines().collect();
     let planned = starts(&draft.plan, "");
-    for (line, under, text) in paragraphs(&draft.source_text) {
-        let w = words(&text);
-        if w.len() < MIN_PARAGRAPH_WORDS || ranges.iter().any(|(s, e)| line >= *s && line < *e) {
+    let paras = paragraphs(&draft.source_text);
+    for (line, under, text) in &paras {
+        let (line, under) = (*line, *under);
+        let w = words(text);
+        let alone = under.is_some() && paras.iter().filter(|p| p.1 == under).count() == 1;
+        let short = w.len() < MIN_PARAGRAPH_WORDS && !(alone && short_prose(text, w.len()));
+        if short || ranges.iter().any(|(s, e)| line >= *s && line < *e) {
             continue;
         }
         if super::fidelity::coverage(&w, &index, &none).is_some_and(|c| c >= MIN_COVERAGE) {

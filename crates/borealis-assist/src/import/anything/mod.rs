@@ -16,6 +16,7 @@ mod fewshot;
 mod fidelity;
 mod finalize;
 mod formula;
+mod furniture;
 mod generate;
 mod ingest;
 mod items;
