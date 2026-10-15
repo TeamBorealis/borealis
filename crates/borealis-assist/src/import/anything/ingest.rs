@@ -67,24 +67,19 @@ fn transcribe_step(label: &str, problems: &[String]) -> Step<TranscribeOut> {
         )
     };
     let user = format!(
-        "These pages are the user's own copy of a game book, read here only to import it into their \
-private, local character builder; the copy never leaves their machine. Transcribe {label} \
-completely and VERBATIM: every printed line, word for word, in reading order (a two-column page: \
-the left column, then the right column). This is copying, not writing: do NOT summarise, shorten, \
-paraphrase, reword, correct, reorder, merge or skip anything; keep every number, die expression, \
-name and sentence exactly as printed. Include every heading, paragraph, list item, sidebar, table \
-row and stat block line. Mark headings with Markdown `#`, `##`, `###` by their printed size. Write \
-each table row on one line as `cell | cell | cell`. Leave out running page headers, footers and \
-page numbers. Write no note, preface or disclaimer of your own (never say the copy is not word for \
-word): the text is the printed text only. Only where the print itself cannot be read, write \
-`[illegible]` in place of those words. In `headings` list every heading on these pages exactly as \
+        "Transcribe {label} completely and VERBATIM: copy the printed words one by one, in reading \
+order (a two-column page: the left column, then the right column). This is copying, not writing: \
+do NOT summarise, shorten, paraphrase, reword, correct, reorder, merge or skip anything; keep every \
+number, die expression, name and sentence exactly as printed. Include every heading, paragraph, \
+list item, sidebar, table row and stat block line. Mark headings with Markdown `#`, `##`, `###` by \
+their printed size. Write each table row on one line as `cell | cell | cell`. Leave out running \
+page headers, footers and page numbers. In `headings` list every heading on these pages exactly as \
 printed.{again}"
     );
     Step::new(
         "import_transcribe",
-        "copy the attached pages of a D&D source word for word, for the user's private local use",
-        "Output the printed text exactly, every line word for word; never paraphrase, condense or \
-add notes of your own. Mark only print that cannot be read, as [illegible].",
+        "copy the attached pages of a D&D source word for word",
+        "Output the printed text exactly, word for word; never paraphrase or condense.",
         user,
         json!({"type":"object","required":["text"],"properties":{
             "text":{"type":"string"},
@@ -550,18 +545,21 @@ mod tests {
     }
 
     #[test]
-    fn the_transcription_asks_for_every_line_word_for_word_and_no_notes() {
+    fn the_transcription_prompt_asks_for_a_verbatim_copy_without_pressing_further() {
         let step = transcribe_step("pages 3-4", &[]);
         for phrase in [
-            "private, local",
-            "every printed line, word for word",
-            "Write no note, preface or disclaimer",
-            "[illegible]",
+            "completely and VERBATIM",
             "pages 3-4",
+            "`cell | cell | cell`",
         ] {
             assert!(step.user.contains(phrase), "{phrase}");
         }
-        assert!(step.system.contains("[illegible]"));
+        // A stronger wording made the model decline and paraphrase whole image pages; the
+        // paraphrase markers are detected and reported instead of pressing for a copy.
+        for phrase in ["private", "every printed line", "disclaimer", "[illegible]"] {
+            assert!(!step.user.contains(phrase), "{phrase}");
+            assert!(!step.system.contains(phrase), "{phrase}");
+        }
         let again = transcribe_step("page 5", &["a heading is missing".into()]);
         assert!(again.user.contains("was rejected: a heading is missing"));
     }
