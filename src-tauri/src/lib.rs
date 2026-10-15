@@ -233,6 +233,14 @@ pub fn run() {
     let builder = builder.manage(std::sync::Arc::new(
         import_bug_report::ReportOutbox::default(),
     ));
+    // Phones: `open_download_page` hands the page to the system browser through the opener plugin's
+    // Rust API. No capability grants the web view an opener permission, and link interception is off.
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    let builder = builder.plugin(
+        tauri_plugin_opener::Builder::new()
+            .open_js_links_on_click(false)
+            .build(),
+    );
     builder
         .plugin(tauri_plugin_dialog::init())
         .on_window_event(|window, event| {

@@ -100,7 +100,7 @@ export async function checkAppUpdateNow(api: Api): Promise<AppUpdateStatus> {
   return s;
 }
 
-/** Open the download page: the backend opens the browser on desktop; phones open it from the web view. */
+/** Open the download page: the backend opens the system browser (desktop and phones); `window.open` is only a fallback. */
 export async function openDownload(api: Api, url: string = DOWNLOAD_PAGE): Promise<void> {
   try { await api.openDownloadPage(); } catch { window.open(url, "_blank", "noopener,noreferrer"); }
 }

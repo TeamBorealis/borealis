@@ -2,7 +2,7 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MockApi } from "../api/mock";
-import { checkWithFetch, isNewer, parseVersion, resetAppUpdate } from "../state/appUpdate";
+import { checkWithFetch, isNewer, openDownload, parseVersion, resetAppUpdate } from "../state/appUpdate";
 import { openBorealisSettings, renderApp } from "./utils";
 
 const NEWER = { state: "done", current: "1.0.0", latest: "1.0.1", newer: true, url: "https://borealisbuilder.com/#download", releaseUrl: null, checkedAt: "2026-10-15T09:00:00Z" } as const;
@@ -67,6 +67,28 @@ describe("update banner", () => {
     renderApp("/characters", { api: fast() });
     await screen.findByRole("contentinfo", { name: "Status" });
     expect(screen.queryByRole("region", { name: "Update available" })).toBeNull();
+  });
+});
+
+describe("opening the download page", () => {
+  it("leaves the web view alone when the backend opens the browser (desktop and phones)", async () => {
+    const api = fast();
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    try {
+      await openDownload(api);
+      expect(api.appUpdate.opened).toBe(1);
+      expect(open).not.toHaveBeenCalled();
+    } finally { open.mockRestore(); }
+  });
+
+  it("falls back to window.open only when the backend cannot open it", async () => {
+    const api = fast();
+    vi.spyOn(api, "openDownloadPage").mockRejectedValue(new Error("no opener"));
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    try {
+      await openDownload(api);
+      expect(open).toHaveBeenCalledWith("https://borealisbuilder.com/#download", "_blank", "noopener,noreferrer");
+    } finally { open.mockRestore(); }
   });
 });
 
