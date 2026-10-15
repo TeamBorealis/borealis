@@ -22,6 +22,9 @@
 //! the settle invariants (`borealis_engine::invariants::check`), reported as `invariant.*`
 //! problems.
 
+#[path = "../../../tools/regression-gate/outcome.rs"]
+mod outcome;
+
 use borealis_content::{ContentStore, ContentStoreBuilder, Element, PackOrigin, Rule, Ruleset};
 use borealis_engine::commands::{self, slot_key};
 use borealis_engine::{invariants, CharacterSnapshot, CharacterState, Choice, Engine, Severity};
@@ -142,6 +145,12 @@ impl Tally {
     fn record(&mut self, kind: &'static str, id: &str, mut problems: Vec<String>) {
         problems.sort();
         problems.dedup();
+        outcome::record(
+            "aurora_sweep",
+            &format!("{kind}/{id}"),
+            problems.is_empty(),
+            &problems.join("; "),
+        );
         *self.tried.entry(kind).or_default() += 1;
         if !problems.is_empty() {
             *self.failed.entry(kind).or_default() += 1;
@@ -1009,6 +1018,12 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
             }
             problems
         });
+        outcome::record(
+            "aurora_sweep",
+            &format!("feat_offered/{}", el.id),
+            found,
+            "not offered on the hosts",
+        );
         if !found {
             let why = if el.requirements.trim().is_empty() {
                 "feat not offered: no requirements"

@@ -13,6 +13,9 @@
 //!     --test fivetools_casters -- --nocapture
 //! ```
 
+#[path = "../../tools/regression-gate/outcome.rs"]
+mod outcome;
+
 use borealis_content::{ContentStoreBuilder, Element, Ruleset};
 use borealis_engine::commands::{self, slot_key};
 use borealis_engine::{CharacterSnapshot, CharacterState, Choice, Engine};
@@ -335,11 +338,25 @@ fn run(data: &Path) {
             s = fill(&engine, s, c.sub_id.as_deref());
             if CHECK_LEVELS.contains(&level) {
                 let snap = engine.derive(&s);
-                problems.extend(check(c, &snap, level));
+                let found = check(c, &snap, level);
+                let who = c.sub_id.as_deref().unwrap_or(&c.class_id);
+                let at = format!("{who}/level{level}");
+                outcome::record(
+                    "fivetools_casters",
+                    &at,
+                    found.is_empty(),
+                    &found.join("; "),
+                );
+                problems.extend(found);
                 slots_checked += c.expected_slots(level);
-                if level == 20 && !acquires_spells(c, &snap) {
-                    without_spells += 1;
-                    problems.push(format!("{} acquires no spells", c.class_id));
+                if level == 20 {
+                    let acquires = acquires_spells(c, &snap);
+                    let at = format!("{who}/acquires_spells");
+                    outcome::record("fivetools_casters", &at, acquires, "acquires no spells");
+                    if !acquires {
+                        without_spells += 1;
+                        problems.push(format!("{} acquires no spells", c.class_id));
+                    }
                 }
             }
         }

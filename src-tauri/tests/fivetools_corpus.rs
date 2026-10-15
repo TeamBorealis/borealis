@@ -13,6 +13,9 @@
 //! kind must have zero failures, and a full folder must hold at least 25 classes and 300
 //! subclasses (thresholds set from a full 2026-10 5etools checkout).
 
+#[path = "../../tools/regression-gate/outcome.rs"]
+mod outcome;
+
 use borealis_content::{ContentStoreBuilder, Element, Rule, Ruleset};
 use borealis_engine::commands::{self, slot_key};
 use borealis_engine::{invariants, CharacterSnapshot, CharacterState, Choice, Engine, Severity};
@@ -304,7 +307,13 @@ fn run(data: &Path) {
     let mut causes: BTreeMap<&str, Counts> = BTreeMap::new();
     let mut failed: BTreeMap<&str, usize> = BTreeMap::new();
     let mut tried: BTreeMap<&str, usize> = BTreeMap::new();
-    let mut record = |kind: &'static str, problems: Vec<String>| {
+    let mut record = |kind: &'static str, id: &str, problems: Vec<String>| {
+        outcome::record(
+            "fivetools_corpus",
+            &format!("{kind}/{id}"),
+            problems.is_empty(),
+            &problems.join("; "),
+        );
         *tried.entry(kind).or_default() += 1;
         if !problems.is_empty() {
             *failed.entry(kind).or_default() += 1;
@@ -315,7 +324,7 @@ fn run(data: &Path) {
     };
     let classes = of_type("Class");
     for (class, rs) in &classes {
-        record("class", sw.sweep(class, None, *rs));
+        record("class", &class.id, sw.sweep(class, None, *rs));
     }
     for (sub, _) in of_type("Archetype") {
         // a subclass is swept on its parent class's edition (5etools attaches 2014 subclasses
@@ -325,10 +334,14 @@ fn run(data: &Path) {
             .first()
             .and_then(|c| by_id.get(c.as_str()).copied())
         else {
-            record("subclass", vec!["parent class not imported".into()]);
+            record(
+                "subclass",
+                &sub.id,
+                vec!["parent class not imported".into()],
+            );
             continue;
         };
-        record("subclass", sw.sweep(class, Some(&sub.id), *rs));
+        record("subclass", &sub.id, sw.sweep(class, Some(&sub.id), *rs));
     }
 
     // origins and feats on a level-1 character of a fixed class
@@ -366,7 +379,7 @@ fn run(data: &Path) {
             }
             problems.sort();
             problems.dedup();
-            record(kind, problems);
+            record(kind, &el.id, problems);
         }
     }
 
@@ -380,6 +393,12 @@ fn run(data: &Path) {
     for (el, rs) in of_type("Feat") {
         let mut problems = Vec::new();
         let picked = hosts[rs].iter().find_map(|h| sw.pick(h, &el.id));
+        outcome::record(
+            "fivetools_corpus",
+            &format!("feat_offered/{}", el.id),
+            picked.is_some(),
+            "not offered to the test fighter",
+        );
         match picked {
             None => {
                 // `data.prerequisite` is the structured feature check (Spellcasting, ...)
@@ -405,7 +424,7 @@ fn run(data: &Path) {
         }
         problems.sort();
         problems.dedup();
-        record("feat", problems);
+        record("feat", &el.id, problems);
     }
 
     // gear: add and equip every weapon and armor
@@ -431,7 +450,7 @@ fn run(data: &Path) {
                     }
                 }
             }
-            record("equip", problems);
+            record("equip", &el.id, problems);
         }
     }
 

@@ -189,6 +189,9 @@ npm run tauri -- android init && npm run tauri -- android dev
 
 `npm run tauri` proxies to the CLI in `ui/node_modules`. Run all of it from the repository root.
 
+Before pushing changes to importers or the engine, run the local regression gate over your private
+corpora: see [docs/regression-gate.md](docs/regression-gate.md).
+
 </details>
 
 ### Notes
