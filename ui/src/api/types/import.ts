@@ -56,6 +56,8 @@ export interface ImportElementReview {
 }
 /** Where an element comes from in the draft's source text: 1-based inclusive line numbers into `ImportDraft.sourceLines`. */
 export interface ImportSourcePassage { startLine: number; endLine: number; text: string }
+/** A failed check on the whole import (not one element), e.g. headings of the source that were not imported. */
+export interface ImportLevelNote { code: string; summary: string; items: string[] }
 export interface ImportReviewCounts { ok: number; check: number; notImported: number; textOnly: number; accepted: number }
 
 export interface ImportElement {
@@ -109,6 +111,8 @@ export interface ImportDraft {
   /** The source text split into lines (the transcript for images/PDFs). */
   sourceLines: string[];
   reviewCounts: ImportReviewCounts;
+  /** Failed import-level source checks, one note per check (empty when none). Show as a short banner with the list. */
+  importNotes: ImportLevelNote[];
 }
 
 /**

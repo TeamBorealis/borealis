@@ -119,6 +119,7 @@ pub async fn import_revise(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)] // a Tauri command: one argument per wire field
 pub async fn import_relocate_element(
     app: AppHandle,
     state: S<'_>,
@@ -148,6 +149,33 @@ pub async fn import_relocate_element(
                 (start_line, end_line),
                 sink(&handle),
             )
+            .await;
+    });
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn import_regenerate_element(
+    app: AppHandle,
+    state: S<'_>,
+    ai: A<'_>,
+    draft_id: String,
+    element_id: String,
+    allow_untrusted_with_codex: Option<bool>,
+) -> ApiResult<()> {
+    ai.import_authorize(
+        &state,
+        &draft_id,
+        allow_untrusted_with_codex.unwrap_or(false),
+    )
+    .await?;
+    state.import_begin_regenerate(&draft_id, &element_id)?;
+    let handle = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let state = handle.state::<AppState>();
+        let ai = handle.state::<Arc<AiService>>();
+        state
+            .run_import_regenerate(&ai, &draft_id, &element_id, sink(&handle))
             .await;
     });
     Ok(())

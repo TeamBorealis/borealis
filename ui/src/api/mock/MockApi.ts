@@ -639,6 +639,11 @@ export class MockApi implements Api {
     if (allowUntrustedWithCodex) this.consented.add(draftId);
     return this.imp.relocate(draftId, elementId, startLine, endLine);
   }
+  async importRegenerateElement({ draftId, elementId, allowUntrustedWithCodex }: { draftId: string; elementId: string; allowUntrustedWithCodex?: boolean }) {
+    await this.tick(); this.requireConsent(allowUntrustedWithCodex || this.consented.has(draftId));
+    if (allowUntrustedWithCodex) this.consented.add(draftId);
+    return this.imp.regenerate(draftId, elementId);
+  }
   async importFinalize({ draftId, packName, prefix }: { draftId: string; packName: string; prefix: string }) {
     await this.tick();
     const r = this.imp.finalize(draftId, packName, prefix);

@@ -18,6 +18,25 @@ function SweepBanner({ draft }: { draft: ImportDraft }) {
   return <Alert tone="success">Engine check passed ✓</Alert>;
 }
 
+const NOTE_ITEMS_SHOWN = 8;
+
+/** Failed checks on the import as a whole, e.g. headings of the source that were not imported. */
+function ImportNotes({ draft }: { draft: ImportDraft }) {
+  if (!draft.importNotes.length) return null;
+  return (
+    <>
+      {draft.importNotes.map((n) => {
+        const more = n.items.length - NOTE_ITEMS_SHOWN;
+        return (
+          <Alert key={n.code} tone="warning">
+            {n.summary}: {n.items.slice(0, NOTE_ITEMS_SHOWN).join(", ")}{more > 0 ? ` and ${more} more` : ""}.
+          </Alert>
+        );
+      })}
+    </>
+  );
+}
+
 function ParentChooser({ draft, onChoose }: { draft: ImportDraft; onChoose: (id: string) => void }) {
   const [picked, setPicked] = useState("");
   if (!draft.parentChoice) return null;
@@ -70,6 +89,7 @@ export function ReviewStep({ run, draft, bar }: { run: ImportRun; draft: ImportD
   const list = (
     <>
       <SweepBanner draft={draft} />
+      <ImportNotes draft={draft} />
       {checksFailed && (
         <div className="imp-report-band">
           <Alert tone="warning">The self-checks found problems with this import. A report helps fix the importer; you see exactly what is sent.</Alert>
@@ -97,7 +117,7 @@ export function ReviewStep({ run, draft, bar }: { run: ImportRun; draft: ImportD
               error={run.elementError?.elementId === e.id ? run.elementError.message : null}
               onRevise={(i) => { setPicked(e.id); void run.revise(i, e.id); }} onSaveJson={(j) => run.updateElement(e.id, j)}
               onAccept={(a) => { setPicked(e.id); void run.accept(e.id, a); }} onTextOnly={(v) => { setPicked(e.id); void run.setTextOnly(e.id, v); }}
-              onRelocate={(a, b) => { setPicked(e.id); void run.relocate(e.id, a, b); }} onReport={() => setReporting([e.id])} />
+              onRelocate={(a, b) => { setPicked(e.id); void run.relocate(e.id, a, b); }} onRegenerate={() => { setPicked(e.id); void run.regenerate(e.id); }} onReport={() => setReporting([e.id])} />
           ))}
         </ul>
       )}

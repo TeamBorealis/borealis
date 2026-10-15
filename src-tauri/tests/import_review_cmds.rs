@@ -170,7 +170,7 @@ fn relocate_checks_the_range_then_rebuilds_the_element_on_those_lines() {
         );
     }
     h.reply(
-        "revise",
+        "generate",
         &json!({"element":{"id":"X","name":"Stonewall Stance","type":"Feat",
         "description":"<p>You plant your feet.</p>"},"notes":[]}),
     );
@@ -189,5 +189,137 @@ fn relocate_checks_the_range_then_rebuilds_the_element_on_those_lines() {
     assert_eq!(
         (p.start_line, p.end_line, p.text.as_str()),
         (3, 3, "You plant your feet.")
+    );
+    // Rebuilt by the generation task from the passage, not revised from the current JSON.
+    let sent = std::fs::read_to_string(h.bin.path().join("stdin_generate.log")).unwrap();
+    assert!(sent.contains("You plant your feet."), "{sent}");
+    assert!(!sent.contains("previous_output"), "{sent}");
+    assert!(!h.bin.path().join("stdin_revise.log").exists());
+}
+
+#[test]
+fn regenerate_rebuilds_one_element_from_its_current_passage() {
+    let (h, id) = ready_draft();
+    let el = h.state.import_get_draft(&id).unwrap().elements[0]
+        .id
+        .clone();
+    assert_eq!(
+        h.state
+            .import_begin_regenerate(&id, "ID_NOPE")
+            .unwrap_err()
+            .code,
+        ErrorCode::NotFound
+    );
+    h.reply(
+        "generate",
+        &json!({"element":{"id":"X","name":"Stonewall Stance","type":"Feat",
+        "description":"<p>You plant your feet and hold the line.</p>"},"notes":[]}),
+    );
+    h.state.import_begin_regenerate(&id, &el).unwrap();
+    // The draft is claimed while the run is going.
+    assert!(h.state.import_begin_regenerate(&id, &el).is_err());
+    let rec = Arc::new(Rec::default());
+    tauri::async_runtime::block_on(h.state.run_import_regenerate(&h.svc, &id, &el, rec.clone()));
+    assert_eq!(rec.0.lock().unwrap().last().unwrap().stage, "ready");
+    let dto = h.state.import_get_draft(&id).unwrap();
+    assert!(
+        serde_json::to_string(&dto.elements[0].json)
+            .unwrap()
+            .contains("hold the line"),
+        "{:?}",
+        dto.elements[0].json
+    );
+    assert!(!h.bin.path().join("stdin_revise.log").exists());
+}
+
+fn find_file(dir: &Path, name: &str) -> Option<PathBuf> {
+    for entry in std::fs::read_dir(dir).ok()?.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            if let Some(found) = find_file(&path, name) {
+                return Some(found);
+            }
+        } else if path.file_name().is_some_and(|n| n == name) {
+            return Some(path);
+        }
+    }
+    None
+}
+
+#[test]
+fn finalize_leaves_out_not_imported_elements_and_lists_them_in_the_report() {
+    // Arrange: a second element that was never generated (failed, no output), stored by hand.
+    let (h, id) = ready_draft();
+    let file = h
+        ._data
+        .path()
+        .join("import-drafts")
+        .join(format!("{id}.json"));
+    let mut stored: Value = serde_json::from_str(&std::fs::read_to_string(&file).unwrap()).unwrap();
+    let mut lost = stored["draft"]["elements"][0].clone();
+    lost["id"] = json!("ID_IMP_FEAT_LOST_THING");
+    lost["name"] = json!("Lost Thing");
+    lost["status"] = json!("failed");
+    lost["json"] = Value::Null;
+    lost["issues"] = json!(["generation failed: the model gave up"]);
+    let mut planned = stored["draft"]["plan"]["elements"][0].clone();
+    planned["id"] = json!("ID_IMP_FEAT_LOST_THING");
+    planned["name"] = json!("Lost Thing");
+    stored["draft"]["elements"]
+        .as_array_mut()
+        .unwrap()
+        .push(lost);
+    stored["draft"]["plan"]["elements"]
+        .as_array_mut()
+        .unwrap()
+        .push(planned);
+    std::fs::write(&file, stored.to_string()).unwrap();
+    let state = AppState::new(paths(h._data.path())).unwrap();
+    let dto = state.import_get_draft(&id).unwrap();
+    assert_eq!(dto.review_counts.not_imported, 1);
+    // Act
+    let pack = state
+        .import_finalize(
+            &id,
+            "Lost Pack",
+            "lost",
+            &borealis_lib::content_packs::NullSink,
+        )
+        .expect("a not-imported element does not block the pack");
+    // Assert: only the generated element is in the pack, and the report says what was left out.
+    assert_eq!(pack.element_count, 1);
+    let report = find_file(h._data.path(), "report.json").expect("the pack has a report");
+    let report: Value = serde_json::from_str(&std::fs::read_to_string(report).unwrap()).unwrap();
+    let dropped: Vec<&Value> = report["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| e["outcome"] == "dropped")
+        .collect();
+    assert_eq!(dropped.len(), 1, "{report}");
+    assert_eq!(dropped[0]["source"], "Lost Thing");
+    assert_eq!(report["review"]["not_imported"], 1, "{report}");
+}
+
+#[test]
+fn failed_import_level_checks_reach_the_draft_as_notes() {
+    let (h, id) = ready_draft();
+    let file = h
+        ._data
+        .path()
+        .join("import-drafts")
+        .join(format!("{id}.json"));
+    let mut stored: Value = serde_json::from_str(&std::fs::read_to_string(&file).unwrap()).unwrap();
+    stored["draft"]["source_checks"] = json!([
+        {"code": "heading_uncovered", "message": "The section \"Camp Rules\" was not imported", "failed": true},
+        {"code": "heading_uncovered", "message": "The section \"Fine\" was imported", "failed": false}
+    ]);
+    std::fs::write(&file, stored.to_string()).unwrap();
+    let state = AppState::new(paths(h._data.path())).unwrap();
+    let dto = serde_json::to_value(state.import_get_draft(&id).unwrap()).unwrap();
+    assert_eq!(
+        dto["importNotes"],
+        json!([{"code": "heading_uncovered", "summary": "These headings weren't imported",
+                "items": ["Camp Rules"]}])
     );
 }

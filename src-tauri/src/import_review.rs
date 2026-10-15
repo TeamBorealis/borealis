@@ -201,10 +201,12 @@ impl AppState {
         if draft.elements.is_empty() {
             return Err(ApiError::requirement("There is nothing to add yet."));
         }
+        // An element with no output ("not imported") is left out of the pack and listed in the
+        // report; one the engine rejects but that has output must be fixed first.
         if draft
             .elements
             .iter()
-            .any(|e| e.status == ElementStatus::Failed)
+            .any(|e| e.status == ElementStatus::Failed && !e.json.is_null())
         {
             return Err(ApiError::requirement(
                 "Fix or revise the failed elements first.",

@@ -363,6 +363,7 @@ pub fn run() {
             commands_import::import_update_element,
             #[cfg(desktop)]
             commands_import::import_relocate_element,
+            commands_import::import_regenerate_element,
             #[cfg(desktop)]
             commands_import::import_accept_element,
             #[cfg(desktop)]

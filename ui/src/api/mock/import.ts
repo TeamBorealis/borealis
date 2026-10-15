@@ -186,7 +186,7 @@ export class MockImport {
     const draft: ImportDraft = {
       draftId, stage: "detect", detected, elements: [], sweep: { levelsPassed: 0, errors: [] },
       suggestedPackName: `${detected.names[0]} (imported)`, suggestedPrefix: "imp",
-      sourceLines: sourceFor(kind, detected.names[0]!), reviewCounts: countReviews([]),
+      sourceLines: sourceFor(kind, detected.names[0]!), reviewCounts: countReviews([]), importNotes: [],
       ...(needsParent ? { parentChoice: { candidates: PARENTS } } : {}),
       ...(req.hint?.parentClassId ? { parentClassId: req.hint.parentClassId } : {}),
     };
@@ -221,7 +221,8 @@ export class MockImport {
     await sleep(this.stepMs);
     const levels = kind === "class" ? 20 : 0;
     this.send(draftId, "validate", 0.85, kind === "class" ? "Playing a test character from level 1 to 20" : "Checking against the rules engine");
-    this.put(draftId, { sweep: { levelsPassed: levels, errors: [] } });
+    const notes = kind === "class" ? [{ code: "heading_uncovered", summary: "These headings weren't imported", items: ["Camp Rules", "Road Lore"] }] : [];
+    this.put(draftId, { sweep: { levelsPassed: levels, errors: [] }, importNotes: notes });
     if (els.some((e) => e.status === "repaired")) { await sleep(this.stepMs); this.send(draftId, "repair", 0.93, "Fixed a small mistake automatically"); }
     await sleep(this.stepMs);
     this.send(draftId, "ready", 1, "Ready for your review");
@@ -320,6 +321,15 @@ export class MockImport {
       await sleep(this.stepMs);
       this.send(draftId, "ready", 1, "Ready for your review");
     })();
+  }
+
+  /** Generate the element again from its current passage (mock: same result as relocating onto the lines it already has). */
+  async regenerate(draftId: string, elementId: string): Promise<void> {
+    const target = this.get(draftId).elements.find((e) => e.id === elementId);
+    if (!target) throw apiError("not_found", "Unknown element.");
+    const p = target.sourcePassage;
+    if (!p) throw apiError("invalid_argument", "This element has no source passage yet. Pick one in the source first.");
+    return this.relocate(draftId, elementId, p.startLine, p.endLine);
   }
 
   finalize(draftId: string, packName: string, prefix: string): { name: string; count: number; prefix: string } {

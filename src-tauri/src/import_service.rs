@@ -11,7 +11,9 @@ use crate::import_sources::{prepare_sources, ImportSourceDto, PickedFiles, Prepa
 use crate::picked_paths::PickPurpose;
 use crate::state::AppState;
 use borealis_ai::task::RunOptions;
-use borealis_assist::import::anything::{ImportProgress, Role, SourceExcerpt, Stage};
+use borealis_assist::import::anything::{
+    point_element_at, regenerate_element, ImportProgress, Role, Stage,
+};
 use borealis_assist::{
     choose_parent, continue_draft, import_anything, revise_draft, AnythingRequest, ImportDraft,
     ImportStep, VisionRunner,
@@ -22,8 +24,6 @@ use std::sync::{Arc, Mutex};
 const MAX_REPAIRS: u32 = 2;
 /// Longest revise instruction.
 const MAX_INSTRUCTION_CHARS: usize = 2000;
-/// Longest snippet stored with a re-located passage.
-const SNIPPET_CHARS: usize = 400;
 /// Prefix of ids until the user picks one.
 const DEFAULT_PREFIX: &str = "imp";
 
@@ -313,7 +313,32 @@ impl AppState {
         self.drafts.claim(id)
     }
 
-    /// Re-locate one element on the lines the user selected and rebuild it from them.
+    /// Claim a draft to regenerate one element from its current passage.
+    ///
+    /// # Errors
+    /// `not_found`, `invalid_argument` (unknown or generated element), `requirement_failed`
+    /// (busy, no draft, open parent choice).
+    pub fn import_begin_regenerate(&self, id: &str, element_id: &str) -> ApiResult<()> {
+        let stored = self.drafts.get(&self.paths, id)?;
+        let draft = stored
+            .draft
+            .ok_or_else(|| ApiError::requirement("This import has no draft yet."))?;
+        if !draft.plan.open_choices().is_empty() {
+            return Err(ApiError::requirement("Pick the parent class first."));
+        }
+        let el = draft
+            .element(element_id)
+            .ok_or_else(|| ApiError::not_found("That element is not in this import."))?;
+        if el.role == Role::SubclassGate {
+            return Err(ApiError::invalid(
+                "The subclass choice is built from the class; regenerate the class instead.",
+            ));
+        }
+        self.drafts.claim(id)
+    }
+
+    /// Re-locate one element on the lines the user selected and generate it again from them
+    /// (the generation path, not a revision of its current JSON).
     pub async fn run_import_relocate(
         &self,
         ai: &AiService,
@@ -322,13 +347,57 @@ impl AppState {
         lines: (usize, usize),
         sink: Arc<dyn ImportSink>,
     ) {
-        let instruction = format!(
-            "The user selected lines {}-{} of the source as this element's passage. Rebuild the element \
-from that passage: its description in the printed wording and every rule it states.",
-            lines.0, lines.1
-        );
-        self.revise_inner(ai, id, &instruction, Some(element_id), Some(lines), sink)
+        self.regenerate_inner(ai, id, element_id, Some(lines), sink)
             .await;
+    }
+
+    /// Generate one element again from its current passage.
+    pub async fn run_import_regenerate(
+        &self,
+        ai: &AiService,
+        id: &str,
+        element_id: &str,
+        sink: Arc<dyn ImportSink>,
+    ) {
+        self.regenerate_inner(ai, id, element_id, None, sink).await;
+    }
+
+    async fn regenerate_inner(
+        &self,
+        ai: &AiService,
+        id: &str,
+        element_id: &str,
+        lines: Option<(usize, usize)>,
+        sink: Arc<dyn ImportSink>,
+    ) {
+        let em = Emitter::new(id, sink);
+        let previous = self.drafts.get(&self.paths, id).ok();
+        let result = async {
+            let draft = previous
+                .as_ref()
+                .and_then(|p| p.draft.clone())
+                .ok_or_else(|| ApiError::not_found("That import no longer exists."))?;
+            let runner = ai.import_runner(self, id).await?;
+            let base = self.hub()?.builder.clone();
+            let opts = RunOptions {
+                max_repairs: MAX_REPAIRS,
+                sink: None,
+            };
+            let cb = |p: ImportProgress| em.on_progress(&p);
+            regenerate_element(
+                runner.as_ref(),
+                &base,
+                &draft,
+                element_id,
+                lines,
+                &opts,
+                Some(&cb),
+            )
+            .await
+            .map_err(|e| assist_err(&e))
+        }
+        .await;
+        self.finish(id, &em, result, previous);
     }
 
     /// Apply a revision with the model and re-validate.
@@ -340,7 +409,7 @@ from that passage: its description in the printed wording and every rule it stat
         element_id: Option<&str>,
         sink: Arc<dyn ImportSink>,
     ) {
-        self.revise_inner(ai, id, instruction, element_id, None, sink)
+        self.revise_inner(ai, id, instruction, element_id, sink)
             .await;
     }
 
@@ -350,7 +419,6 @@ from that passage: its description in the printed wording and every rule it stat
         id: &str,
         instruction: &str,
         element_id: Option<&str>,
-        relocate: Option<(usize, usize)>,
         sink: Arc<dyn ImportSink>,
     ) {
         let em = Emitter::new(id, sink);
@@ -360,10 +428,6 @@ from that passage: its description in the printed wording and every rule it stat
                 .as_ref()
                 .and_then(|p| p.draft.clone())
                 .ok_or_else(|| ApiError::not_found("That import no longer exists."))?;
-            let draft = match (relocate, element_id) {
-                (Some((start, end)), Some(el)) => relocated(&draft, el, start, end)?,
-                _ => draft,
-            };
             let runner = ai.import_runner(self, id).await?;
             let base = self.hub()?.builder.clone();
             let opts = RunOptions {
@@ -439,46 +503,20 @@ from that passage: its description in the printed wording and every rule it stat
 }
 
 /// `draft` with element `element_id` (and its plan entry) pointing at source lines
-/// `start..=end` (1-based, inclusive).
+/// `start..=end` (1-based, inclusive): the range check of a relocate, before the run claims
+/// the draft.
 ///
 /// # Errors
-/// `invalid_argument` for a range outside the source, an unknown element, or the generated
-/// subclass choice feature.
+/// `not_found` for an unknown element, `invalid_argument` for a range outside the source or the
+/// generated subclass choice feature.
 pub(crate) fn relocated(
     draft: &ImportDraft,
     element_id: &str,
     start: usize,
     end: usize,
 ) -> ApiResult<ImportDraft> {
-    let lines: Vec<&str> = draft.source_text.lines().collect();
-    if start == 0 || start > end || end > lines.len() {
-        return Err(ApiError::invalid(
-            "Select a passage inside the source text.",
-        ));
+    if draft.element(element_id).is_none() {
+        return Err(ApiError::not_found("That element is not in this import."));
     }
-    let el = draft
-        .element(element_id)
-        .ok_or_else(|| ApiError::not_found("That element is not in this import."))?;
-    if el.role == Role::SubclassGate {
-        return Err(ApiError::invalid(
-            "The subclass choice is built from the class; re-locate the class instead.",
-        ));
-    }
-    let excerpt = SourceExcerpt {
-        start_line: start,
-        end_line: end,
-        snippet: lines[start - 1..end]
-            .join("\n")
-            .chars()
-            .take(SNIPPET_CHARS)
-            .collect(),
-    };
-    let mut next = draft.clone();
-    for e in next.elements.iter_mut().filter(|e| e.id == element_id) {
-        e.excerpt = Some(excerpt.clone());
-    }
-    for p in next.plan.elements.iter_mut().filter(|p| p.id == element_id) {
-        p.excerpt = Some(excerpt.clone());
-    }
-    Ok(next)
+    point_element_at(draft, element_id, start, end).map_err(|e| ApiError::invalid(e.to_string()))
 }

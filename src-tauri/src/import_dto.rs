@@ -3,7 +3,8 @@
 
 use crate::import_check::balance_lines;
 use borealis_assist::import::anything::review::{
-    review_all, source_passage, ReviewCounts, ReviewLevel, ReviewOverrides, ReviewState,
+    import_level_notes, review_all, source_passage, ReviewCounts, ReviewLevel, ReviewOverrides,
+    ReviewState,
 };
 use borealis_assist::import::anything::{DraftElement, ElementStatus, ImportKind, Role};
 use borealis_assist::{Edition, ImportDraft};
@@ -125,6 +126,14 @@ impl From<ReviewCounts> for ReviewCountsDto {
     }
 }
 
+/// A failed check on the import as a whole, for a banner above the list.
+#[derive(Debug, Clone, Serialize)]
+pub struct ImportNoteDto {
+    pub code: String,
+    pub summary: String,
+    pub items: Vec<String>,
+}
+
 /// A parent class the user can pick.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -167,6 +176,8 @@ pub struct ImportDraftDto {
     pub suggested_prefix: String,
     pub source_lines: Vec<String>,
     pub review_counts: ReviewCountsDto,
+    /// Failed import-level source checks (e.g. headings that were not imported); empty when none.
+    pub import_notes: Vec<ImportNoteDto>,
 }
 
 /// Open parent choice.
@@ -335,5 +346,13 @@ pub fn draft_dto(
         suggested_prefix: d.id_prefix.clone(),
         source_lines: d.source_text.lines().map(str::to_string).collect(),
         review_counts: counts.into(),
+        import_notes: import_level_notes(d)
+            .into_iter()
+            .map(|n| ImportNoteDto {
+                code: n.code,
+                summary: n.summary,
+                items: n.items,
+            })
+            .collect(),
     }
 }

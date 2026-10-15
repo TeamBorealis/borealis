@@ -322,8 +322,10 @@ export interface ApiMethods {
   importAcceptElement(args: { draftId: string; elementId: string; accepted: boolean }): Promise<ImportDraft>;
   /** Force an element to text only (true), to full rules (false), or back to automatic (null). */
   importSetTextOnly(args: { draftId: string; elementId: string; textOnly: boolean | null }): Promise<ImportDraft>;
-  /** Streams like importRevise (ends with stage "ready" or "error"; then call importGetDraft): regenerate the element from the given source lines. */
+  /** Streams like importRevise (ends with stage "ready" or "error"; then call importGetDraft): generate the element again from the given source lines (the generation path, not a revision). */
   importRelocateElement(args: { draftId: string; elementId: string; startLine: number; endLine: number; allowUntrustedWithCodex?: boolean }): Promise<void>;
+  /** Streams like importRelocateElement: generate the element again from its current passage. The draft is unchanged when the model call fails. */
+  importRegenerateElement(args: { draftId: string; elementId: string; allowUntrustedWithCodex?: boolean }): Promise<void>;
   importFinalize(args: { draftId: string } & ImportFinalizeRequest): Promise<ContentPack>;
   importDiscard(args: { draftId: string }): Promise<void>;
   /** Builds the opt-in bug report and keeps it for sending; sends nothing. */
@@ -464,6 +466,7 @@ export const COMMANDS = {
   importAcceptElement: "import_accept_element",
   importSetTextOnly: "import_set_text_only",
   importRelocateElement: "import_relocate_element",
+  importRegenerateElement: "import_regenerate_element",
   importFinalize: "import_finalize",
   importDiscard: "import_discard",
   importReportPreview: "import_report_preview",

@@ -27,6 +27,8 @@ export interface ImportRun {
   setTextOnly: (elementId: string, textOnly: boolean | null) => Promise<boolean>;
   /** Rebuild one element from the given 1-based inclusive source lines (streams like revise). */
   relocate: (elementId: string, startLine: number, endLine: number) => Promise<void>;
+  /** Generate one element again from its current passage (streams like revise). */
+  regenerate: (elementId: string) => Promise<void>;
   /** The last failed per-element action, shown next to that element. */
   elementError: { elementId: string; message: string } | null;
   finalize: (req: ImportFinalizeRequest) => Promise<ContentPack | null>;
@@ -131,6 +133,15 @@ export function useImport(): ImportRun {
     catch (e) { failElement(elementId, "rebuild this element from those lines", e); setRevising(new Set()); }
   }, [api, withConsent, failElement]);
 
+  const regenerate = useCallback(async (elementId: string) => {
+    if (!idRef.current) return;
+    setElementError(null);
+    setRevising((cur) => new Set(cur).add(elementId));
+    const draftId = idRef.current;
+    try { await withConsent((allow) => api.importRegenerateElement({ draftId, elementId, ...(allow ? { allowUntrustedWithCodex: true } : {}) })); }
+    catch (e) { failElement(elementId, "regenerate this element", e); setRevising(new Set()); }
+  }, [api, withConsent, failElement]);
+
   const finalize = useCallback(async (req: ImportFinalizeRequest) => {
     if (!idRef.current) return null;
     setBusy(true); setError(null);
@@ -149,5 +160,5 @@ export function useImport(): ImportRun {
   }, [api]);
 
   const liveElements = events.flatMap((e) => (e.element ? [e.element] : []));
-  return { phase, events, liveElements, draft, error, revising, pack, busy, start, choosePar, revise, updateElement, accept, setTextOnly, relocate, elementError, finalize, discard };
+  return { phase, events, liveElements, draft, error, revising, pack, busy, start, choosePar, revise, updateElement, accept, setTextOnly, relocate, regenerate, elementError, finalize, discard };
 }

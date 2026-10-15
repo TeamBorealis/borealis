@@ -603,6 +603,17 @@
     "name": "ImportPackResult"
    }
   },
+  "import_regenerate_element": {
+   "args": {
+    "allowUntrustedWithCodex": true,
+    "draftId": false,
+    "elementId": false
+   },
+   "method": "importRegenerateElement",
+   "response": {
+    "k": "nil"
+   }
+  },
   "import_relocate_element": {
    "args": {
     "allowUntrustedWithCodex": true,
@@ -4532,6 +4543,16 @@
       }
      }
     },
+    "importNotes": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "ImportLevelNote"
+      }
+     }
+    },
     "parentChoice": {
      "opt": true,
      "t": {
@@ -4766,6 +4787,32 @@
      }
     },
     "stage": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ImportLevelNote": {
+   "k": "object",
+   "props": {
+    "code": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "items": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "summary": {
      "opt": false,
      "t": {
       "k": "prim"

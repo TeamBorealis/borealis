@@ -95,11 +95,21 @@ describe("import review screen (HB2)", () => {
     const user = userEvent.setup();
     const api = mock();
     const calls: unknown[] = [];
-    const original = api.importRelocateElement.bind(api);
-    api.importRelocateElement = (a) => { calls.push(a); return original(a); };
+    const relocated: unknown[] = [];
+    const original = api.importRegenerateElement.bind(api);
+    api.importRegenerateElement = (a) => { calls.push(a); return original(a); };
+    api.importRelocateElement = (a) => { relocated.push(a); return Promise.resolve(); };
     await reviewClass(user, api);
     await user.click(within(region("Master Runebinder")).getByRole("button", { name: "Regenerate" }));
-    expect(calls).toEqual([expect.objectContaining({ elementId: "master-runebinder", startLine: 16, endLine: 17 })]);
+    expect(calls).toEqual([expect.objectContaining({ elementId: "master-runebinder" })]);
+    expect(relocated).toEqual([]);
+    await waitFor(() => expect(within(region("Master Runebinder")).getByText("OK")).toBeTruthy());
+  });
+
+  it("lists the headings that were not imported in a banner above the elements", async () => {
+    const user = userEvent.setup();
+    await reviewClass(user);
+    expect(screen.getByText(/These headings weren't imported: Camp Rules, Road Lore\./)).toBeTruthy();
   });
 
   it("accepts a flagged element with Looks right and updates the counts", async () => {
@@ -121,7 +131,7 @@ describe("import review screen (HB2)", () => {
     };
     const calls: string[] = [];
     const props = { element, selected: true, busy: false, sourceLines: ["x"], error: null, onSelect: () => undefined, onSaveJson: async () => true,
-      onAccept: () => calls.push("accept"), onRelocate: () => calls.push("relocate"), onRevise: () => calls.push("revise"), onTextOnly: () => calls.push("textonly") };
+      onAccept: () => calls.push("accept"), onRelocate: () => calls.push("relocate"), onRegenerate: () => calls.push("regenerate"), onRevise: () => calls.push("revise"), onTextOnly: () => calls.push("textonly") };
     const off = render(<ElementRow {...props} aiEnabled={false} />);
     expect(screen.queryByLabelText(/with AI/)).toBeNull();
     expect(screen.queryByRole("button", { name: "Fix with AI" })).toBeNull();
@@ -158,7 +168,7 @@ describe("import review screen (HB2)", () => {
     const user = userEvent.setup();
     const api = mock();
     api.importAcceptElement = () => Promise.reject(apiError("internal", "The disk is full."));
-    api.importRelocateElement = () => Promise.reject(apiError("internal", "The model is not reachable."));
+    api.importRegenerateElement = () => Promise.reject(apiError("internal", "The model is not reachable."));
     await reviewClass(user, api);
     await user.click(within(region("Master Runebinder")).getByRole("button", { name: "Looks right" }));
     const alert = await within(region("Master Runebinder")).findByRole("alert");

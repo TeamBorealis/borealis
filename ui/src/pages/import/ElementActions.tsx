@@ -6,6 +6,7 @@ import type { LineRange } from "./SourcePane";
 export interface ActionHandlers {
   onAccept: (accepted: boolean) => void;
   onRelocate: (startLine: number, endLine: number) => void;
+  onRegenerate: () => void;
   onRevise: (instruction: string) => void;
   onTextOnly: (value: boolean | null) => void;
 }
@@ -25,7 +26,7 @@ const toChoice = (o: boolean | null) => (o === null ? "auto" : o ? "text" : "rul
 const fromChoice = (c: string): boolean | null => (c === "auto" ? null : c === "text");
 
 /** Point-and-fix for one element. Everything except "Fix with AI" works without the optional assistant. */
-export function ElementActions({ element, busy, aiEnabled, picked, onPicked, onAccept, onRelocate, onRevise, onTextOnly }: Props) {
+export function ElementActions({ element, busy, aiEnabled, picked, onPicked, onAccept, onRelocate, onRegenerate, onRevise, onTextOnly }: Props) {
   const [instruction, setInstruction] = useState("");
   const r = element.review;
   const passage = element.sourcePassage;
@@ -40,7 +41,7 @@ export function ElementActions({ element, busy, aiEnabled, picked, onPicked, onA
           title={picked ? undefined : "Pick lines in the source first"}>
           Use this passage{picked ? ` (${picked.start === picked.end ? `line ${picked.start}` : `lines ${picked.start} to ${picked.end}`})` : ""}
         </Button>
-        <Button small disabled={busy || !passage} onClick={() => passage && onRelocate(passage.startLine, passage.endLine)}
+        <Button small disabled={busy || !passage} onClick={onRegenerate}
           title={passage ? "Build this element again from its current passage" : "Pick a passage first"}>Regenerate</Button>
       </div>
       {r.state !== "not_imported" && (
