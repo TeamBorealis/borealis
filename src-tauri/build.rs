@@ -141,6 +141,7 @@ const COMMANDS: &[&str] = &[
     "check_app_update",
     "open_download_page",
     "open_app_folder",
+    "get_recent_logs",
     "restart_app",
 ];
 
