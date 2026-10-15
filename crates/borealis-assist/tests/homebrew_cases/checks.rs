@@ -2,7 +2,9 @@
 
 use std::collections::BTreeSet;
 
-use borealis_engine::snapshot::{CharacterSnapshot, SlotSnapshot, SpellcastingSnapshot};
+use borealis_engine::snapshot::{
+    CharacterSnapshot, FreeCastSnapshot, SlotSnapshot, SpellcastingSnapshot,
+};
 use borealis_engine::Severity;
 
 use crate::character::Built;
@@ -146,8 +148,30 @@ fn granted(s: &CharacterSnapshot, check: &CharCheck) -> Result<(), String> {
     collect(errs)
 }
 
-/// The max of the resource or stat named like `name`.
-fn resource_max(s: &CharacterSnapshot, name: &str) -> Option<i32> {
+/// Uses per rest of a free cast (`grant_spell.free_cast`) named like `name`: the spell's own name
+/// or the name of the element that grants it. `element_name` resolves a granting element id.
+fn free_cast_max(
+    casts: &[FreeCastSnapshot],
+    name: &str,
+    element_name: &dyn Fn(&str) -> Option<String>,
+) -> Option<i32> {
+    let n = norm(name);
+    casts
+        .iter()
+        .filter(|f| {
+            norm(&f.name) == n
+                || norm(&f.source) == n
+                || element_name(&f.source).is_some_and(|e| norm(&e) == n)
+        })
+        .find_map(|f| f.uses)
+}
+
+/// The max of the resource or stat named like `name`; a per-rest free cast counts as a resource.
+fn resource_max(
+    s: &CharacterSnapshot,
+    name: &str,
+    element_name: &dyn Fn(&str) -> Option<String>,
+) -> Option<i32> {
     let n = norm(name);
     // an exact resource or stat name first: "ac" is the stat, not a resource whose name merely
     // contains the letters ("Face of ...")
@@ -163,28 +187,34 @@ fn resource_max(s: &CharacterSnapshot, name: &str) -> Option<i32> {
                 .find(|(k, _)| norm(k) == n)
                 .map(|(_, v)| v.value)
         });
-    exact.or_else(|| {
-        s.resources
-            .iter()
-            .find(|r| norm(&r.name).contains(&n) || norm(&r.id).contains(&n))
-            .map(|r| r.max)
-            .or_else(|| {
-                s.stats
-                    .iter()
-                    .find(|(k, _)| norm(k).contains(&n))
-                    .map(|(_, v)| v.value)
-            })
-    })
+    exact
+        .or_else(|| free_cast_max(&s.free_casts, name, element_name))
+        .or_else(|| {
+            s.resources
+                .iter()
+                .find(|r| norm(&r.name).contains(&n) || norm(&r.id).contains(&n))
+                .map(|r| r.max)
+                .or_else(|| {
+                    s.stats
+                        .iter()
+                        .find(|(k, _)| norm(k).contains(&n))
+                        .map(|(_, v)| v.value)
+                })
+        })
 }
 
 fn resource(
+    l: &Loaded,
     s: &CharacterSnapshot,
     name: &str,
     max: Option<i32>,
     absent: Option<bool>,
 ) -> Result<(), String> {
     // `a|b`: the pool may be printed under either name
-    let got = name.split('|').find_map(|alt| resource_max(s, alt));
+    let element_name = |id: &str| l.store.element(id).map(|e| e.name.clone());
+    let got = name
+        .split('|')
+        .find_map(|alt| resource_max(s, alt, &element_name));
     match (got, absent == Some(true)) {
         (Some(v), true) => Err(format!("{name:?} exists (max {v}), expected none")),
         (None, true) => Ok(()),
@@ -635,7 +665,7 @@ pub fn check(l: &Loaded, b: &Built, c: &CharCheck) -> Result<(), String> {
             ))
         }
         CharCheck::Granted { .. } => granted(s, c),
-        CharCheck::Resource { name, max, absent } => resource(s, name, *max, *absent),
+        CharCheck::Resource { name, max, absent } => resource(l, s, name, *max, *absent),
         CharCheck::SaveDc { name, value } => save_dc(l, s, name, *value),
         CharCheck::Choice { .. } => choice(s, c),
         CharCheck::Attack { .. } => attack(b, c),
@@ -670,5 +700,38 @@ pub fn check(l: &Loaded, b: &Built, c: &CharCheck) -> Result<(), String> {
             }
             Err(format!("no alternative passes: {}", why.join(" | ")))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn cast(spell_name: &str, source: &str, uses: Option<i32>) -> FreeCastSnapshot {
+        FreeCastSnapshot {
+            spell: "ID_SPELL_X".into(),
+            name: spell_name.into(),
+            uses,
+            uses_rule: "1".into(),
+            recharge: "long_rest".into(),
+            also_with_slots: false,
+            cast_level: None,
+            source: source.into(),
+        }
+    }
+
+    #[test]
+    fn a_free_cast_is_found_by_its_granting_element_name() {
+        let casts = [cast("Glow Orb", "ID_TRAIT_EMBER_CALL", Some(1))];
+        let names = |id: &str| (id == "ID_TRAIT_EMBER_CALL").then(|| "Ember-Call".to_string());
+        assert_eq!(free_cast_max(&casts, "ember-call", &names), Some(1));
+        assert_eq!(free_cast_max(&casts, "glow orb", &names), Some(1));
+        assert_eq!(free_cast_max(&casts, "other", &names), None);
+    }
+
+    #[test]
+    fn a_free_cast_with_unresolved_uses_is_not_a_count() {
+        let casts = [cast("Glow Orb", "ID_T", None)];
+        assert_eq!(free_cast_max(&casts, "glow orb", &|_| None), None);
     }
 }

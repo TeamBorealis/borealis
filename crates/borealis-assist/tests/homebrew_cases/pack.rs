@@ -526,12 +526,34 @@ fn supports_name(l: &Loaded, e: &Element, n: &str) -> bool {
 }
 
 /// A `rules_include` entry: an object (JSON subset of one rule) or an array of such objects,
-/// any of which may match.
+/// any of which may match. A wanted `resource` with a `recharge` list is also met by a
+/// `grant_spell` whose `free_cast` recharges on one of those rests (a spell cast without a
+/// slot once per rest is that spell's own limited use, not a separate resource).
 fn rule_included(want: &Value, rules: &[Value]) -> bool {
     match want {
         Value::Array(alts) => alts.iter().any(|a| rule_included(a, rules)),
-        w => rules.iter().any(|r| subset(w, r)),
+        w => {
+            rules.iter().any(|r| subset(w, r))
+                || free_cast_alternatives(w)
+                    .iter()
+                    .any(|alt| rules.iter().any(|r| subset(alt, r)))
+        }
     }
+}
+
+/// The `grant_spell` free-cast forms of a wanted per-rest `resource` rule: one per listed rest.
+fn free_cast_alternatives(want: &Value) -> Vec<Value> {
+    if want.get("kind").and_then(Value::as_str) != Some("resource") {
+        return Vec::new();
+    }
+    let Some(rests) = want.get("recharge").and_then(Value::as_array) else {
+        return Vec::new();
+    };
+    rests
+        .iter()
+        .filter(|r| r.is_string())
+        .map(|r| serde_json::json!({"kind": "grant_spell", "free_cast": {"recharge": r}}))
+        .collect()
 }
 
 /// The element and, when `follow`, every pack element it grants (transitively), in grant order.
@@ -790,6 +812,24 @@ mod tests {
             "<ul><li>fire</li><li>ice &amp; frost</li></ul>",
         ));
         assert_eq!(t, "fire ice & frost");
+    }
+
+    #[test]
+    fn a_per_rest_free_cast_meets_a_wanted_resource() {
+        let want = serde_json::json!({"kind": "resource", "recharge": ["long_rest"]});
+        let cast = |rest: &str| {
+            serde_json::json!({"kind": "grant_spell", "spell": "ID_X", "mode": "always_prepared",
+                "free_cast": {"uses": 1, "recharge": rest}})
+        };
+        assert!(rule_included(&want, &[cast("long_rest")]));
+        assert!(!rule_included(&want, &[cast("short_rest")]));
+        let plain = serde_json::json!({"kind": "grant_spell", "spell": "ID_X"});
+        assert!(!rule_included(&want, &[plain]));
+        let real = serde_json::json!({"kind": "resource", "recharge": ["long_rest"]});
+        assert!(rule_included(&want, &[real]));
+        // only a resource want is widened
+        let other = serde_json::json!({"kind": "grant", "recharge": ["long_rest"]});
+        assert!(!rule_included(&other, &[cast("long_rest")]));
     }
 
     #[test]
