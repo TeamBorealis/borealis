@@ -221,8 +221,16 @@ pub fn run() {
     for arg in std::env::args_os().skip(1) {
         content_preview::push_opened_file(std::path::Path::new(&arg));
     }
-    tauri::Builder::default()
-        .plugin(tauri_plugin_dialog::init())
+    let builder = tauri::Builder::default().plugin(tauri_plugin_dialog::init());
+    // Phones: `open_download_page` hands the page to the system browser through the opener plugin's
+    // Rust API. No capability grants the web view an opener permission, and link interception is off.
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    let builder = builder.plugin(
+        tauri_plugin_opener::Builder::new()
+            .open_js_links_on_click(false)
+            .build(),
+    );
+    builder
         .on_window_event(|window, event| {
             startup_boot::on_window_event(window, event);
             #[cfg(desktop)]

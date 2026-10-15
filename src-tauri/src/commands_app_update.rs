@@ -38,33 +38,40 @@ pub async fn check_app_update() -> ApiResult<AppUpdateStatus> {
 }
 
 /// Open the official download page in the default browser. Takes no address: only the built-in
-/// constant is ever opened. On mobile this answers an error and the UI opens the page itself.
+/// constant is ever opened.
 ///
 /// # Errors
-/// `io` when the OS opener cannot start; `invalid_argument` on mobile.
+/// `io` when the OS opener cannot start.
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[tauri::command(async)]
 pub fn open_download_page() -> ApiResult<()> {
-    #[cfg(not(any(target_os = "android", target_os = "ios")))]
-    {
-        let opener = if cfg!(target_os = "macos") {
-            "open"
-        } else if cfg!(target_os = "windows") {
-            "explorer"
-        } else {
-            "xdg-open"
-        };
-        std::process::Command::new(opener)
-            .arg(app_update::DOWNLOAD_PAGE)
-            .spawn()
-            .map(|_| ())
-            .map_err(|e| crate::error::ApiError::io("open the download page", e))
-    }
-    #[cfg(any(target_os = "android", target_os = "ios"))]
-    {
-        Err(crate::error::ApiError::invalid(
-            "Open the download page in your browser.",
-        ))
-    }
+    let opener = if cfg!(target_os = "macos") {
+        "open"
+    } else if cfg!(target_os = "windows") {
+        "explorer"
+    } else {
+        "xdg-open"
+    };
+    std::process::Command::new(opener)
+        .arg(app_update::DOWNLOAD_PAGE)
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| crate::error::ApiError::io("open the download page", e))
+}
+
+/// Phones: hand the built-in download page to the system browser through the opener plugin's
+/// Rust API (an Android `ACTION_VIEW` intent, `UIApplication.open` on iOS). The web view gets no
+/// opener permission, so it cannot open any other address, and the page never loads inside the app.
+///
+/// # Errors
+/// `io` when the system cannot open the page.
+#[cfg(any(target_os = "android", target_os = "ios"))]
+#[tauri::command(async)]
+pub fn open_download_page(app: tauri::AppHandle) -> ApiResult<()> {
+    use tauri_plugin_opener::OpenerExt;
+    app.opener()
+        .open_url(app_update::DOWNLOAD_PAGE, None::<&str>)
+        .map_err(|e| crate::error::ApiError::io("open the download page", e))
 }
 
 /// Desktop startup: after [`app_update::STARTUP_CHECK_DELAY`], on a background thread, ask GitHub

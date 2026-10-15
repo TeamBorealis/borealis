@@ -82,3 +82,28 @@ fn the_webview_gets_no_dialog_fs_or_shell_plugin_access() {
         );
     }
 }
+
+/// Phones open the download page through the opener plugin's Rust API. The plugin must stay a
+/// phone-only dependency (desktop spawns the OS opener itself), must not intercept web view links,
+/// and the web view must get none of its permissions (checked above: only `allow-*` app commands).
+#[test]
+fn the_opener_plugin_is_phone_only_and_backend_only() {
+    let cargo = std::fs::read_to_string(manifest_dir().join("Cargo.toml")).expect("Cargo.toml");
+    let dep_at = cargo
+        .find("tauri-plugin-opener")
+        .expect("opener dependency");
+    let table = cargo[..dep_at].rfind('[').expect("dependency table");
+    assert!(
+        cargo[table..dep_at].starts_with(
+            r#"[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]"#
+        ),
+        "tauri-plugin-opener must be a phone-only dependency"
+    );
+    assert_eq!(cargo.matches("tauri-plugin-opener").count(), 1);
+    let lib = std::fs::read_to_string(manifest_dir().join("src/lib.rs")).expect("lib.rs");
+    assert!(lib.contains(".open_js_links_on_click(false)"));
+    assert!(!lib.contains("tauri_plugin_opener::init()"));
+    assert!(capability_permissions()
+        .iter()
+        .all(|p| !p.contains("opener")));
+}
