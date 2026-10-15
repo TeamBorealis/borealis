@@ -137,6 +137,9 @@ const COMMANDS: &[&str] = &[
     "restore_default_settings",
     "clear_caches",
     "content_update_status",
+    "app_update_status",
+    "check_app_update",
+    "open_download_page",
     "open_app_folder",
     "restart_app",
 ];

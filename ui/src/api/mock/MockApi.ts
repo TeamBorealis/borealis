@@ -10,6 +10,7 @@ import { MockImport } from "./import";
 import { MockPicks } from "./picks";
 import { MockImportPreview } from "./import-preview";
 import { MockImportReports } from "./import-report";
+import { MockAppUpdate } from "./app-update";
 import { MockDataFiles } from "./data-files";
 import { validateHomebrew } from "./ai";
 import { ContentService } from "./content-service";
@@ -74,6 +75,7 @@ export class MockApi implements Api {
   /** Opt-in import bug reports; tests read `reports.sent` or set `reports.failSend`. */
   readonly reports = new MockImportReports();
   private dataFiles = new MockDataFiles(this.picks);
+  readonly appUpdate = new MockAppUpdate();
   private rng: () => number;
   private latency: number;
   private codexOnly: boolean;
@@ -576,6 +578,9 @@ export class MockApi implements Api {
   async restoreDefaultSettings() { await this.tick(); this.settings = this.dataFiles.restore(this.settings); return this.settings; }
   async clearCaches() { await this.tick(); return this.dataFiles.clearCaches(); }
   async contentUpdateStatus() { await this.tick(); return { ...this.dataFiles.status }; }
+  async appUpdateStatus() { await this.tick(); return { ...this.appUpdate.status }; }
+  async checkAppUpdate() { await this.tick(); this.appUpdate.requests += 1; this.emit("appupdate:status", { ...this.appUpdate.status }); return { ...this.appUpdate.status }; }
+  async openDownloadPage() { await this.tick(); this.appUpdate.opened += 1; }
   async openAppFolder() { await this.tick(); }
   async restartApp() { await this.tick(); }
 

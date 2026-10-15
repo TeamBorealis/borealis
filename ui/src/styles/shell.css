@@ -185,3 +185,10 @@
     linear-gradient(to left, rgb(255 255 255 / 0.45), transparent) right center / 18px 100% no-repeat scroll;
 }
 .aur-window.narrow .aur-subband .tabs.sub .tab { flex: none; white-space: nowrap; font-size: 11px; padding: 2px 8px 0; }
+
+/* "New version available" bar: the status bar's chrome colours, one slim row under the sub-tab band. */
+.aur-update { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 4px; min-height: var(--status-h); padding: 0 5px; background: var(--chrome); color: var(--gray-6); border-bottom: 1px solid rgb(255 255 255 / 0.08); font-size: var(--fs-xs); text-transform: uppercase; }
+.aur-update .update-msg { margin: 0 5px; flex: 1 1 auto; min-width: 0; }
+.aur-update button { height: var(--status-h); padding: 1px 8px; background: transparent; border: 0; color: var(--gray-5); font-size: var(--fs-xs); text-transform: uppercase; cursor: pointer; }
+.aur-update button:hover { background: rgb(255 255 255 / 0.05); }
+.aur-update .update-go { color: var(--gold); }

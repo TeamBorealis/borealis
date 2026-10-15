@@ -70,6 +70,8 @@ export interface AppSettings {
   secondaryContentDir: string | null;
   /** Classic builder "Automatic Updates": check the user's indexes at startup (default on, desktop only). */
   autoContentUpdate: boolean;
+  /** "Check for new versions of Borealis" (default on): at startup ask GitHub for the latest version number, nothing else. */
+  checkAppUpdates: boolean;
   rowHeight: RowHeight;
   /** Classic builder "Skills Panel Expanded" (default on). */
   skillsPanelExpanded: boolean;
@@ -115,6 +117,25 @@ export interface ClearCachesResult {
   tempFoldersRemoved: number;
   aiTempFoldersRemoved: number;
   indexesReset: number;
+}
+
+/** `idle` = not asked yet, `disabled` = setting off, `unsupported` = the UI asks GitHub itself (phones), `failed` = offline or rate limited. */
+export type AppUpdateState = "idle" | "disabled" | "done" | "failed" | "unsupported";
+
+/** Whether a newer Borealis release exists (`appUpdateStatus`, `checkAppUpdate`, event `appupdate:status`). */
+export interface AppUpdateStatus {
+  state: AppUpdateState;
+  /** This build's version. */
+  current: string;
+  /** Latest release version without a leading "v". */
+  latest: string | null;
+  newer: boolean;
+  /** Where to download: the website download page. */
+  url: string | null;
+  /** The GitHub release page, when GitHub gave one. */
+  releaseUrl: string | null;
+  /** RFC 3339. */
+  checkedAt: string | null;
 }
 
 export type ContentUpdateState = "idle" | "disabled" | "pending" | "running" | "done" | "failed";

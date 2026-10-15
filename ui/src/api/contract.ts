@@ -27,6 +27,7 @@ import type {
   AiTaskHandle,
   AiTaskRequest,
   AppSettings,
+  AppUpdateStatus,
   AppFolder,
   ClearCachesResult,
   ContentUpdateStatus,
@@ -274,6 +275,12 @@ export interface ApiMethods {
   clearCaches(): Promise<ClearCachesResult>;
   /** Outcome of the automatic content update at startup. */
   contentUpdateStatus(): Promise<ContentUpdateStatus>;
+  /** Outcome of the startup "new version available" check (`unsupported` on phones, where the UI asks GitHub itself). */
+  appUpdateStatus(): Promise<AppUpdateStatus>;
+  /** "Check now": ask GitHub for the latest Borealis version right away (desktop; `unsupported` on phones). */
+  checkAppUpdate(): Promise<AppUpdateStatus>;
+  /** Open the official download page in the default browser (desktop; phones fail and the UI opens it). */
+  openDownloadPage(): Promise<void>;
   /** Open an app-owned folder in the OS file manager. The backend resolves the path; the UI never sends one. */
   openAppFolder(args: { folder: AppFolder }): Promise<void>;
   /** Restart the application so new content loads. */
@@ -438,6 +445,9 @@ export const COMMANDS = {
   restoreDefaultSettings: "restore_default_settings",
   clearCaches: "clear_caches",
   contentUpdateStatus: "content_update_status",
+  appUpdateStatus: "app_update_status",
+  checkAppUpdate: "check_app_update",
+  openDownloadPage: "open_download_page",
   openAppFolder: "open_app_folder",
   restartApp: "restart_app",
   aiStatus: "ai_status",
@@ -479,6 +489,8 @@ export interface ApiEvents {
   "aisetup:event": AiSetupEvent;
   "import:event": ImportEvent;
   "content:progress": ContentProgress;
+  /** The "new version available" check finished. */
+  "appupdate:status": AppUpdateStatus;
   /** 5etools import progress (`import_5etools_progress`). */
   "import5etools:progress": ContentProgress;
   /** Content store hot-reloaded: UI should refetch packs, catalogues and open slot options. */
@@ -496,6 +508,7 @@ export const EVENTS = {
   "aisetup:event": "borealis://ai-setup-event",
   "import:event": "borealis://import-event",
   "content:progress": "borealis://content-progress",
+  "appupdate:status": "borealis://app-update",
   "import5etools:progress": "borealis://import_5etools_progress",
   "content:reloaded": "borealis://content-reloaded",
   "content:open-file": "borealis://open-file",

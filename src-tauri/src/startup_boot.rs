@@ -127,6 +127,8 @@ fn load(handle: &AppHandle, startup: &Startup) -> Result<(), String> {
     handle.manage(ai);
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     crate::commands_settings::spawn_startup_content_tasks(handle);
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    crate::commands_app_update::spawn_startup_update_check(handle);
     Ok(())
 }
 

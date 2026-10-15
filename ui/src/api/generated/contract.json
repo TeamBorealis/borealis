@@ -187,6 +187,14 @@
     "name": "ValidationReport"
    }
   },
+  "app_update_status": {
+   "args": {},
+   "method": "appUpdateStatus",
+   "response": {
+    "k": "ref",
+    "name": "AppUpdateStatus"
+   }
+  },
   "app_version": {
    "args": {},
    "method": "appVersion",
@@ -247,6 +255,14 @@
    "method": "cancelImportPreview",
    "response": {
     "k": "nil"
+   }
+  },
+  "check_app_update": {
+   "args": {},
+   "method": "checkAppUpdate",
+   "response": {
+    "k": "ref",
+    "name": "AppUpdateStatus"
    }
   },
   "choose_equipment_package": {
@@ -830,6 +846,13 @@
     "folder": false
    },
    "method": "openAppFolder",
+   "response": {
+    "k": "nil"
+   }
+  },
+  "open_download_page": {
+   "args": {},
+   "method": "openDownloadPage",
    "response": {
     "k": "nil"
    }
@@ -2227,6 +2250,12 @@
       "k": "prim"
      }
     },
+    "checkAppUpdates": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "confirmEquipWeaponNotInAttacks": {
      "opt": false,
      "t": {
@@ -2337,6 +2366,53 @@
      }
     },
     "tileSize": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "AppUpdateStatus": {
+   "k": "object",
+   "props": {
+    "checkedAt": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "current": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "latest": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "newer": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "releaseUrl": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "state": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "url": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -8622,6 +8698,10 @@
      }
     }
    ]
+  },
+  "appupdate:status": {
+   "k": "ref",
+   "name": "AppUpdateStatus"
   },
   "content:open-file": {
    "k": "record",
