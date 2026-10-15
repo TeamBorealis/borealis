@@ -262,10 +262,7 @@ No, you cannot take reactions yet.\n\n#### Can I reload twice?\n\nYes.\n";
     assert_eq!(ex.start_line, 5, "{ex:?}");
     // A name only glued to a longer word is not its run-in.
     assert!(!glued_run_in("Lampdraws are fast", "lampdraw"));
-    assert!(glued_run_in(
-        "Lamp and WickWhen you fall",
-        "lamp and wick"
-    ));
+    assert!(glued_run_in("Lamp and WickWhen you fall", "lamp and wick"));
 }
 
 #[test]

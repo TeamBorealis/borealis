@@ -588,7 +588,9 @@ mod tests {
         assert!(s.contains(&("warlock:spellcasting:slots:count".into(), "1".into(), 2)));
         assert!(s.contains(&("warlock:spellcasting:slot".into(), "1".into(), 1)));
         assert!(s.contains(&("warlock:spellcasting:slot".into(), "1".into(), 3)));
-        assert!(!s.iter().any(|x| x.0 == "warlock:spellcasting:slot" && x.2 == 2));
+        assert!(!s
+            .iter()
+            .any(|x| x.0 == "warlock:spellcasting:slot" && x.2 == 2));
         assert!(s.contains(&("warlock:spellcasting:cantrips known".into(), "2".into(), 1)));
         assert!(s.contains(&("warlock:spellcasting:spells known".into(), "1".into(), 2)));
         assert!(warlock
