@@ -16,3 +16,28 @@
 .import-page .imp-report-band { display: flex; flex-direction: column; gap: 6px; margin: 6px 16px 10px 14px; }
 .imp-report-dlg .imp-report-lead { margin: 0; }
 .imp-report-dlg .imp-report-json { max-height: 320px; overflow: auto; margin: 0; padding: 6px 8px; font-size: 12px; white-space: pre; background: var(--description-bg, #1e1e1e); border: 1px solid #333333; }
+
+/* Review: filter band, badges beside reasons, element beside its source passage (stacked when narrow). */
+.import-page .imp-filter-band { margin: 6px 16px 10px 14px; display: flex; flex-direction: column; gap: 6px; }
+.import-page .imp-filter-band p { margin: 0; }
+.import-page .imp-clean { color: var(--ok, inherit); font-weight: 600; }
+.import-page .imp-flagged { color: var(--warning); font-weight: 600; }
+.import-page .imp-panel { container-type: inline-size; }
+.import-page .imp-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+@container (min-width: 560px) { .import-page .imp-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.import-page .imp-side-title { margin: 0 0 4px; font-size: 13px; text-transform: uppercase; color: var(--desc-head); }
+.import-page .imp-summary { margin: 0 0 6px; white-space: pre-wrap; }
+.import-page .imp-textonly { margin: 0 0 6px; padding: 4px 8px; border-left: 3px solid var(--warning); background: var(--warning-soft); }
+.import-page .imp-hint { margin: 2px 0 6px; font-size: 12px; opacity: 0.85; }
+.import-page .imp-details summary, .import-page .imp-source-box > summary { cursor: pointer; font-weight: 600; }
+.import-page .imp-source-lines { max-height: 260px; overflow: auto; border: 1px solid #333333; background: var(--description-bg, #1e1e1e); }
+.import-page .imp-lines { list-style: none; margin: 0; padding: 0; }
+.import-page .imp-line { display: flex; gap: 6px; padding: 0 6px 0 0; font-size: 12px; line-height: 1.5; border-left: 3px solid transparent; }
+.import-page .imp-line.is-passage { background: var(--warning-soft); border-left-color: var(--warning); }
+.import-page .imp-line.is-picked { outline: 1px solid var(--focus); outline-offset: -1px; background: var(--accent-base); }
+.import-page .imp-line-no { flex: 0 0 3.2em; text-align: right; padding: 0 4px; border: 0; background: transparent; color: inherit; opacity: 0.7; font: inherit; cursor: pointer; }
+.import-page .imp-line-no:focus-visible { outline: var(--focus-w) solid var(--focus); }
+.import-page .imp-line-text { white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }
+.import-page .imp-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.import-page .imp-textonly-choice { border: 0; padding: 0; margin: 0; }
+.import-page .imp-textonly-choice legend { font-size: 12px; font-weight: 600; }

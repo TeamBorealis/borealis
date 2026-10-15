@@ -21,6 +21,14 @@ export interface ImportRun {
   choosePar: (classId: string) => Promise<void>;
   revise: (instruction: string, elementId?: string) => Promise<void>;
   updateElement: (elementId: string, json: Record<string, unknown>) => Promise<boolean>;
+  /** Mark a flagged element as fine (or undo it). The draft is kept on failure. */
+  accept: (elementId: string, accepted: boolean) => Promise<boolean>;
+  /** Manual text-only override: true/false, or null to go back to automatic. */
+  setTextOnly: (elementId: string, textOnly: boolean | null) => Promise<boolean>;
+  /** Rebuild one element from the given 1-based inclusive source lines (streams like revise). */
+  relocate: (elementId: string, startLine: number, endLine: number) => Promise<void>;
+  /** The last failed per-element action, shown next to that element. */
+  elementError: { elementId: string; message: string } | null;
   finalize: (req: ImportFinalizeRequest) => Promise<ContentPack | null>;
   discard: () => Promise<void>;
 }
@@ -34,6 +42,7 @@ export function useImport(): ImportRun {
   const [draft, setDraft] = useState<ImportDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revising, setRevising] = useState<ReadonlySet<string>>(new Set());
+  const [elementError, setElementError] = useState<ImportRun["elementError"]>(null);
   const [pack, setPack] = useState<ContentPack | null>(null);
   const [busy, setBusy] = useState(false);
   const idRef = useRef<string | null>(null);
@@ -95,6 +104,33 @@ export function useImport(): ImportRun {
     catch (e) { setError(errorMessage(e)); return false; }
   }, [api]);
 
+  const failElement = useCallback((elementId: string, what: string, e: unknown) => {
+    setElementError({ elementId, message: `Could not ${what}. Your draft is unchanged. ${errorMessage(e)}` });
+  }, []);
+
+  const accept = useCallback(async (elementId: string, accepted: boolean) => {
+    if (!idRef.current) return false;
+    setElementError(null);
+    try { setDraft(await api.importAcceptElement({ draftId: idRef.current, elementId, accepted })); return true; }
+    catch (e) { failElement(elementId, accepted ? "mark this as fine" : "undo that", e); return false; }
+  }, [api, failElement]);
+
+  const setTextOnly = useCallback(async (elementId: string, textOnly: boolean | null) => {
+    if (!idRef.current) return false;
+    setElementError(null);
+    try { setDraft(await api.importSetTextOnly({ draftId: idRef.current, elementId, textOnly })); return true; }
+    catch (e) { failElement(elementId, "change the text-only setting", e); return false; }
+  }, [api, failElement]);
+
+  const relocate = useCallback(async (elementId: string, startLine: number, endLine: number) => {
+    if (!idRef.current) return;
+    setElementError(null);
+    setRevising((cur) => new Set(cur).add(elementId));
+    const draftId = idRef.current;
+    try { await withConsent((allow) => api.importRelocateElement({ draftId, elementId, startLine, endLine, ...(allow ? { allowUntrustedWithCodex: true } : {}) })); }
+    catch (e) { failElement(elementId, "rebuild this element from those lines", e); setRevising(new Set()); }
+  }, [api, withConsent, failElement]);
+
   const finalize = useCallback(async (req: ImportFinalizeRequest) => {
     if (!idRef.current) return null;
     setBusy(true); setError(null);
@@ -108,10 +144,10 @@ export function useImport(): ImportRun {
   const discard = useCallback(async () => {
     const id = idRef.current;
     idRef.current = null;
-    setPhase("source"); setDraft(null); setEvents([]); setError(null); setPack(null); setRevising(new Set());
+    setPhase("source"); setDraft(null); setEvents([]); setError(null); setElementError(null); setPack(null); setRevising(new Set());
     if (id) await api.importDiscard({ draftId: id }).catch(() => undefined);
   }, [api]);
 
   const liveElements = events.flatMap((e) => (e.element ? [e.element] : []));
-  return { phase, events, liveElements, draft, error, revising, pack, busy, start, choosePar, revise, updateElement, finalize, discard };
+  return { phase, events, liveElements, draft, error, revising, pack, busy, start, choosePar, revise, updateElement, accept, setTextOnly, relocate, elementError, finalize, discard };
 }

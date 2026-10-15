@@ -16,9 +16,9 @@ describe("import anything", () => {
     expect(await screen.findByText("Level 1–20 test passed ✓", {}, { timeout: 3000 })).toBeTruthy();
 
     const capstone = screen.getByRole("region", { name: "Master Runebinder" });
-    expect(within(capstone).getByText("Needs review")).toBeTruthy();
-    expect(within(capstone).getByText(/Balance: Capstone/)).toBeTruthy();
-    expect(within(screen.getByRole("region", { name: "Rune Etching" })).getByText("Auto-fixed")).toBeTruthy();
+    expect(within(capstone).getByText("Check this")).toBeTruthy();
+    expect(within(capstone).getByText(/Capstone has no cost/)).toBeTruthy();
+    expect(within(screen.getByRole("region", { name: "Rune Etching" })).getByText("OK")).toBeTruthy();
 
     await user.type(within(capstone).getByLabelText("Fix Master Runebinder with AI"), "limit to once per long rest");
     await user.click(within(capstone).getByRole("button", { name: "Fix with AI" }));

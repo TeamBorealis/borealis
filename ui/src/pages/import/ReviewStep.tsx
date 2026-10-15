@@ -1,20 +1,13 @@
 import { type ReactNode, useState } from "react";
-import type { ImportDraft, ImportElement } from "../../api/contract";
+import type { ImportDraft } from "../../api/contract";
 import { Alert, Button, TextField } from "../../components";
 import { Expander } from "../../components/controls";
+import { usePlatform } from "../../state/platform";
 import { DescHead, PaneSplit, Tag } from "../ai/Panes";
 import { ElementDetail, ElementRow } from "./ElementCard";
 import { ReportDialog, selfChecksFailed } from "./ReportDialog";
+import { FILTER_LABEL, FILTER_ORDER, type ReviewFilter, isFlagged, totalsOf, visibleElements } from "./reviewModel";
 import type { ImportRun } from "./useImport";
-
-function groupByLevel(elements: ImportElement[]): { key: string; title: string; items: ImportElement[] }[] {
-  const top = elements.filter((e) => !e.level);
-  const levels = [...new Set(elements.filter((e) => e.level).map((e) => e.level as number))].sort((a, b) => a - b);
-  return [
-    ...(top.length ? [{ key: "top", title: "Overview", items: top }] : []),
-    ...levels.map((l) => ({ key: `l${l}`, title: `Level ${l}`, items: elements.filter((e) => e.level === l) })),
-  ];
-}
 
 function SweepBanner({ draft }: { draft: ImportDraft }) {
   const isClass = draft.detected.kinds.some((k) => k === "class" || k === "subclass");
@@ -40,18 +33,39 @@ function ParentChooser({ draft, onChoose }: { draft: ImportDraft; onChoose: (id:
   );
 }
 
+function ReviewSummary({ totals, flagged, filter, onFilter }: { totals: ReturnType<typeof totalsOf>; flagged: number; filter: ReviewFilter; onFilter: (f: ReviewFilter) => void }) {
+  return (
+    <div className="v5-inline imp-filter-band">
+      {flagged === 0
+        ? <p className="imp-clean" role="status">Nothing needs your attention: all {totals.all} element{totals.all === 1 ? "" : "s"} imported cleanly{totals.textOnly ? `, ${totals.textOnly} shown as text only` : ""}.</p>
+        : <p className="imp-flagged" role="status">{flagged} of {totals.all} element{totals.all === 1 ? "" : "s"} need{flagged === 1 ? "s" : ""} a look. The rest look fine.</p>}
+      <div className="v5-foot" role="group" aria-label="Filter elements">
+        {FILTER_ORDER.map((f) => (
+          <Button key={f} small variant={filter === f ? "primary" : "default"} aria-pressed={filter === f} onClick={() => onFilter(f)}>
+            {FILTER_LABEL[f]} ({f === "all" ? totals.all : totals[f]})
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ReviewStep({ run, draft, bar }: { run: ImportRun; draft: ImportDraft; bar: ReactNode }) {
   const [instruction, setInstruction] = useState("");
   const [packName, setPackName] = useState(draft.suggestedPackName);
   const [prefix, setPrefix] = useState(draft.suggestedPrefix);
   const [picked, setPicked] = useState<string | null>(null);
   const [reporting, setReporting] = useState<string[] | null>(null);
+  const { aiEnabled } = usePlatform();
+  const [filter, setFilter] = useState<ReviewFilter>("all");
   const checksFailed = selfChecksFailed(draft);
-  const failed = draft.elements.filter((e) => e.status === "failed").length;
-  const review = draft.elements.filter((e) => e.status === "needs_review").length;
-  const blocked = !!draft.parentChoice || failed > 0 || !packName.trim() || !prefix.trim();
-  const fallback = draft.elements.find((e) => e.status === "failed" || e.status === "needs_review") ?? draft.elements[0];
-  const selected = draft.elements.find((e) => e.id === picked) ?? fallback;
+  const totals = totalsOf(draft.elements);
+  const flagged = totals.check + totals.not_imported;
+  const blocked = !!draft.parentChoice || draft.elements.some((e) => e.status === "failed" && e.review.state !== "not_imported") || !packName.trim() || !prefix.trim();
+  const failed = draft.elements.filter((e) => e.status === "failed" && e.review.state !== "not_imported").length;
+  const shown = visibleElements(draft.elements, filter);
+  const fallback = shown.find(isFlagged) ?? shown[0];
+  const selected = shown.find((e) => e.id === picked) ?? fallback;
 
   const list = (
     <>
@@ -66,32 +80,32 @@ export function ReviewStep({ run, draft, bar }: { run: ImportRun; draft: ImportD
         <Tag tone="info">{draft.detected.kinds.join(", ")}</Tag>
         <Tag>{draft.detected.edition === "dnd2024" ? "2024 rules" : "2014 rules"}</Tag>
         <Tag>{Math.round(draft.detected.confidence * 100)}% sure</Tag>
-        {review > 0 && <Tag tone="warn">{review} to review</Tag>}
-        {failed > 0 && <Tag tone="bad">{failed} failed</Tag>}
       </div>
       <ParentChooser draft={draft} onChoose={(id) => void run.choosePar(id)} />
-      <Expander title="Ask the AI to change anything">
+      {aiEnabled && <Expander title="Ask the AI to change anything">
         <form className="v5-inline" onSubmit={(e) => { e.preventDefault(); if (instruction.trim()) { void run.revise(instruction.trim()); setInstruction(""); } }}>
           <TextField label="Ask the AI to change anything" value={instruction} onChange={(e) => setInstruction(e.target.value)} placeholder="e.g. make the capstone weaker" />
           <div><Button type="submit" icon="sparkles" disabled={!instruction.trim() || run.revising.has("*")}>{run.revising.has("*") ? "Working..." : "Apply"}</Button></div>
         </form>
-      </Expander>
-      {groupByLevel(draft.elements).map((g) => (
-        <Expander key={g.key} title={g.title} headerExtra={<span>{g.items.length}</span>}>
-          <ul className="v5-list" aria-label={g.title}>
-            {g.items.map((e) => (
-              <ElementRow key={e.id} element={e} selected={e.id === selected?.id} onSelect={() => setPicked(e.id)}
-                revising={run.revising.has(e.id) || run.revising.has("*")}
-                onRevise={(i) => void run.revise(i, e.id)} onSaveJson={(j) => run.updateElement(e.id, j)}
-                onReport={() => setReporting([e.id])} />
-            ))}
-          </ul>
-        </Expander>
-      ))}
+      </Expander>}
+      <ReviewSummary totals={totals} flagged={flagged} filter={filter} onFilter={setFilter} />
+      {shown.length === 0 ? <p className="v5-inline imp-empty">Nothing in "{FILTER_LABEL[filter]}".</p> : (
+        <ul className="v5-list" aria-label="Imported elements">
+          {shown.map((e) => (
+            <ElementRow key={e.id} element={e} selected={e.id === selected?.id} onSelect={() => setPicked(e.id)}
+              busy={run.revising.has(e.id) || run.revising.has("*")} sourceLines={draft.sourceLines} aiEnabled={aiEnabled}
+              error={run.elementError?.elementId === e.id ? run.elementError.message : null}
+              onRevise={(i) => { setPicked(e.id); void run.revise(i, e.id); }} onSaveJson={(j) => run.updateElement(e.id, j)}
+              onAccept={(a) => { setPicked(e.id); void run.accept(e.id, a); }} onTextOnly={(v) => { setPicked(e.id); void run.setTextOnly(e.id, v); }}
+              onRelocate={(a, b) => { setPicked(e.id); void run.relocate(e.id, a, b); }} onReport={() => setReporting([e.id])} />
+          ))}
+        </ul>
+      )}
       <Expander title="Add to your library" footer={
         <div className="v5-inline">
           {draft.parentChoice && <Alert tone="warning">Choose the parent class above first.</Alert>}
           {failed > 0 && <Alert tone="danger">Fix the failed elements before adding.</Alert>}
+          {totals.not_imported > 0 && <Alert tone="info">{totals.not_imported} not-imported element{totals.not_imported > 1 ? "s are" : " is"} left out of the pack.</Alert>}
           <div className="v5-foot">
             <Button variant="primary" icon="save" disabled={blocked || run.busy} onClick={() => void run.finalize({ packName: packName.trim(), prefix: prefix.trim() })}>Add to Library</Button>
             <Button variant="ghost" onClick={() => void run.discard()}>Discard</Button>
