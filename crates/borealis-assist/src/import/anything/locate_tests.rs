@@ -252,3 +252,51 @@ Languages. Common.\n\nWing Shape\n\n| Shape | Speed |\n\n|---|---|\n\n| Narrow |
     assert_eq!(line("Rules Glossary Entry"), 9, "the table's title");
     assert_eq!(line("Racial Trait"), 5, "the trait's run-in");
 }
+
+#[test]
+fn a_run_in_glued_to_its_text_beats_a_question_heading_naming_it() {
+    let src = "#### Gunner\n\nGunners shoot.\n\nLampdrawWhen you roll initiative, you can draw \
+a pistol and fire once.\n\n#### Rules FAQ\n\n#### Can I use lampdraw if I am surprised?\n\n\
+No, you cannot take reactions yet.\n\n#### Can I reload twice?\n\nYes.\n";
+    let ex = locate_section(src, "", "Lampdraw").expect("found");
+    assert_eq!(ex.start_line, 5, "{ex:?}");
+    // A name only glued to a longer word is not its run-in.
+    assert!(!glued_run_in("Lampdraws are fast", "lampdraw"));
+    assert!(glued_run_in(
+        "Lamp and WickWhen you fall",
+        "lamp and wick"
+    ));
+}
+
+#[test]
+fn a_name_line_beats_a_sentence_that_only_uses_the_word() {
+    let src = "#### Lamp Items\n\nA lamp item's description gives its name and its magical \
+properties, and a saving throw it calls for uses your spell save DC.\n\n#### Lamp Tags\n\n\
+Glassy\nSilvered\n\nMagical\n\nRifled\n";
+    let ex = locate_section(src, "", "Magical").expect("found");
+    assert_eq!(
+        src.lines().nth(ex.start_line - 1),
+        Some("Magical"),
+        "{ex:?}"
+    );
+}
+
+#[test]
+fn a_heading_printing_a_glyph_for_its_hyphen_is_found() {
+    let src = "## Cursed Lamp Properties\n\nRoll on a table.\n\n#### Cursed'Non4Lamp Wearable \
+Properties'\n\nd6 | Curse\n1 | Dim\n2 | Smoky\n\n#### Cursed'Wick'Properties'\n\nd4 | Curse\n1 | Short\n";
+    let ex = locate_section(src, "", "Cursed Non-Lamp Wearable Properties").expect("found");
+    assert_eq!(ex.start_line, 5, "{ex:?}");
+    assert_eq!(unglyphed("a nonFmagical lamp"), "a non magical lamp");
+    assert_eq!(unglyphed("Roll 1d4 For it"), "Roll 1d4 For it");
+}
+
+#[test]
+fn an_index_caption_with_its_column_header_glued_on_is_the_table_heading() {
+    let src =
+        "## Lamps by Type\n\n#### Hanging Lamps Item\n\nChain lamp*\nHook lamp\nRope lamp\n\n\
+## Lamp Catalogue\n\n### Common Hanging Lamps\n\nThe following hanging lamps are common.\n\n\
+#### Common%Hanging%Lamps%\n\nd6 | Item\n1 | Chain lamp\n";
+    let ex = locate_section(src, "", "Hanging Lamps").expect("found");
+    assert_eq!(ex.start_line, 3, "{ex:?}");
+}

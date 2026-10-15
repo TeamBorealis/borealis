@@ -173,6 +173,72 @@ fn run_in_head(t: &str) -> Option<&str> {
     title.then_some(head)
 }
 
+/// Column header words an extraction glues onto a table's caption ("Armor Item").
+const COLUMN_WORDS: [&str; 6] = ["item", "items", "name", "rarity", "type", "cost"];
+
+/// `title` is the name with its table's column header glued on ("<Name> Item").
+fn header_glued(title: &str, name: &str) -> bool {
+    let t = norm_words(title);
+    t.strip_prefix(name)
+        .and_then(|rest| rest.strip_prefix(' '))
+        .is_some_and(|w| COLUMN_WORDS.contains(&w))
+}
+
+/// A source line with the glyphs an extraction prints for a hyphen between two words made a
+/// word break ("Non4Armor", "nonFmagical"), so the words match the name's.
+fn unglyphed(line: &str) -> std::borrow::Cow<'_, str> {
+    let c: Vec<char> = line.chars().collect();
+    let hyphen = |i: usize| {
+        let (prev, next) = (c[i - 1], c[i + 1]);
+        (c[i] == '4' && prev.is_alphabetic() && next.is_alphabetic())
+            || (c[i] == 'F' && prev.is_lowercase() && next.is_lowercase())
+    };
+    if !(1..c.len().saturating_sub(1)).any(hyphen) {
+        return std::borrow::Cow::Borrowed(line);
+    }
+    let out: String = (0..c.len())
+        .map(|i| {
+            if i > 0 && i + 1 < c.len() && hyphen(i) {
+                ' '
+            } else {
+                c[i]
+            }
+        })
+        .collect();
+    std::borrow::Cow::Owned(out)
+}
+
+/// The line opens with `name` (normalised) glued to its text, the extraction having lost the
+/// run-in's stop and space ("NameWhen you ..."): the name's last word runs into a capital.
+fn glued_run_in(t: &str, name: &str) -> bool {
+    let words: Vec<&str> = name.split(' ').filter(|w| !w.is_empty()).collect();
+    let tokens: Vec<&str> = strip_marks(t).split_whitespace().collect();
+    let Some((last, before)) = words.split_last() else {
+        return false;
+    };
+    if tokens.len() < words.len() + 1 {
+        return false;
+    }
+    let lead = before
+        .iter()
+        .zip(&tokens)
+        .all(|(w, tok)| norm_words(tok) == *w);
+    let tok = tokens[before.len()];
+    let Some(prefix) = tok.get(..last.len()) else {
+        return false;
+    };
+    let rest: Vec<char> = tok[last.len()..].chars().collect();
+    lead && prefix.to_lowercase() == *last
+        && rest.first().is_some_and(|c| c.is_uppercase())
+        && rest.iter().skip(1).any(|c| c.is_lowercase())
+}
+
+/// The line starts with `name` (normalised): a name line, a run-in or a sentence about it, not
+/// a sentence that merely uses the word.
+fn starts_with_name(t: &str, name: &str) -> bool {
+    !name.is_empty() && format!("{} ", norm_words(strip_marks(t))).starts_with(&format!("{name} "))
+}
+
 /// "Name. Text" (a run-in head followed by its text): a paragraph even without a final stop.
 fn run_in_paragraph(t: &str) -> bool {
     let body = strip_marks(t);
@@ -482,13 +548,28 @@ impl Doc<'_> {
     fn candidates(&self, name: &str) -> Vec<Candidate> {
         let mut out = Vec::new();
         for (i, raw) in self.lines.iter().enumerate() {
-            if self.index[i] || !contains_name(raw, name) {
+            if self.index[i] {
+                continue;
+            }
+            if self.heading_at(i).is_none() && glued_run_in(raw, name) {
+                let end = self.paragraph_end(i, true, name);
+                out.push(Candidate {
+                    line: i,
+                    kind: Kind::RunIn,
+                    end,
+                });
+                continue;
+            }
+            if !contains_name(raw, name) {
                 continue;
             }
             let t = strip_marks(raw);
             let (kind, end) =
                 if let Some(h) = self.heading_at(i).filter(|_| self.section_heading(i)) {
-                    let kind = if same_name(&h.title, name) || self.glued_title(&h.title, name) {
+                    let kind = if same_name(&h.title, name)
+                        || self.glued_title(&h.title, name)
+                        || header_glued(&h.title, name)
+                    {
                         Kind::Heading
                     } else {
                         Kind::PartHeading
@@ -656,6 +737,8 @@ pub(crate) fn locate_section_as(
     name: &str,
     ty: &str,
 ) -> Option<SourceExcerpt> {
+    let clean: String = source.lines().map(unglyphed).collect::<Vec<_>>().join("\n");
+    let source = clean.as_str();
     let lines: Vec<&str> = source.lines().collect();
     let marked = lines
         .iter()
@@ -720,8 +803,13 @@ fn find(doc: &Doc, name: &str, quote: &str) -> Option<(SourceExcerpt, bool)> {
     // The quote first, then an exact heading, run-in head or name line that can be a
     // definition (not a bare name in a list, an index row or a line with nothing under it),
     // then a match opening an entry body, then any that can be a definition, then the kind.
+    // A line printing the name alone (or opening with it) outranks a sentence that only uses
+    // the word ("its magical properties" against the "Magical" line of a list of tags).
+    let named = found.iter().any(|c| c.kind >= Kind::ExactLine);
     let key = |c: &Candidate| {
-        let definition = !doc.not_a_definition(c, name);
+        let in_passing =
+            named && c.kind == Kind::Mention && !starts_with_name(doc.lines[c.line], name);
+        let definition = !doc.not_a_definition(c, name) && !in_passing;
         let opens = doc.opens_entry(c.line);
         // Equipment: its stat row, or a heading opening an entry, first.
         let stats = doc.rows_define
