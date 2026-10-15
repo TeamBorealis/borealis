@@ -134,7 +134,7 @@ pub(crate) fn element_window(source: &str, planned: &PlannedElement) -> String {
 /// `blocks` (0-based line ranges) in source order, overlapping ones merged, apart ones joined
 /// by a `...` line; the page furniture of `source` left out.
 fn joined(source: &str, lines: &[&str], mut blocks: Vec<(usize, usize)>) -> String {
-    let furniture = super::furniture::furniture(source);
+    let furniture = super::passage::page_marks::page_furniture(source);
     blocks.sort_unstable();
     let mut merged: Vec<(usize, usize)> = Vec::new();
     for (s, e) in blocks {

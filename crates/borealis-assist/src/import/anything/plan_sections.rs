@@ -7,8 +7,11 @@
 //! category heading or a row inside another planned table is folded into that table.
 
 use super::super::caster::is_caster_part;
-use super::super::furniture::{furniture, Furniture};
-use super::super::types::{ImportKind, Outline, OutlinePart, PlanGroup, PlannedElement, Role};
+use super::super::passage::page_marks::{page_furniture as furniture, PageFurniture as Furniture};
+use super::super::passage::unplanned_sections_in;
+use super::super::types::{
+    Edition, ImportKind, ImportPlan, Outline, OutlinePart, PlanGroup, PlannedElement, Role,
+};
 use super::{norm, text_group};
 
 /// Fewest printed sections a merged name must stand for before it is split.
@@ -345,6 +348,57 @@ pub(crate) fn fold_table_headings(
         .collect()
 }
 
+/// Text-only entries planned on a prose section a class or subclass root prints as its own
+/// (a lore heading in its intro, or a sub-heading of its section that no feature claims; see
+/// `passage::unplanned_sections_in`): the root keeps that text, so the section is no entry of its
+/// own. Conditions stay entries. Returns each folded entry's id and a plan note.
+pub(crate) fn fold_nested_lore(
+    elements: &[PlannedElement],
+    edition: Edition,
+    source: &str,
+) -> Vec<(String, String)> {
+    let lines: Vec<&str> = source.lines().collect();
+    // What each root would print with no text-only entries planned at all.
+    let bare = ImportPlan {
+        edition,
+        groups: Vec::new(),
+        elements: elements
+            .iter()
+            .filter(|e| e.role != Role::Text)
+            .cloned()
+            .collect(),
+        notes: Vec::new(),
+    };
+    let condition = ImportKind::Condition.element_type();
+    let mut out: Vec<(String, String)> = Vec::new();
+    for root in elements
+        .iter()
+        .filter(|e| matches!(e.role, Role::Class | Role::Subclass))
+    {
+        for sub in unplanned_sections_in(&lines, root, &bare) {
+            let found: Vec<&PlannedElement> = elements
+                .iter()
+                .filter(|t| {
+                    t.role == Role::Text
+                        && t.ty != condition
+                        && span(t).is_some_and(|(s, _)| s == sub.at)
+                        && !out.iter().any(|(id, _)| *id == t.id)
+                })
+                .collect();
+            out.extend(found.into_iter().map(|t| {
+                (
+                    t.id.clone(),
+                    format!(
+                        "{}: a section printed inside {}, kept in its text (not an entry of its own)",
+                        t.name, root.name
+                    ),
+                )
+            }));
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -427,6 +481,76 @@ Charms\nA running header line.\n\n## Woven Charms\n\nCloth charms.\n";
             .map(|(id, _)| id)
             .collect();
         assert_eq!(folded, ["t1", "t2", "t4", "t7"]);
+    }
+
+    #[test]
+    fn lore_printed_inside_a_class_or_subclass_is_left_to_it() {
+        use crate::import::anything::fidelity::tests::planned;
+        let lines = [
+            "#### Lamplighter",                       // 1 class
+            "A lighter of lamps.",                    // 2
+            "#### Creating a Lamplighter",            // 3 lore in the flat intro: folded
+            "Think about where your lamp came from.", // 4
+            "#### Multiclassing",                     // 5 the class's rules block: kept
+            "You need Wisdom 13.",                    // 6
+            "#### Lamp Chart",                        // 7 a table only: kept
+            "Level | Wicks",                          // 8
+            "1st | 2",                                // 9
+            "#### Wick Trim",                         // 10 class feature
+            "You trim wicks.",                        // 11
+            "#### Keeper of Flames",                  // 12 subclass
+            "Keepers guard the flame.",               // 13
+            "#### Vows of Flames",                    // 14 lore in the subclass intro: folded
+            "Keepers vow to never let a flame die.",  // 15
+            "#### Soot Sick",                         // 16 a condition: kept
+            "A soot-sick creature coughs.",           // 17
+            "#### Keeper Spells",                     // 18 subclass feature
+            "You know light.",                        // 19
+            "#### Old Roads",                         // 20 after the features: kept
+            "Roads were older then.",                 // 21
+        ];
+        let src = lines.join("\n");
+        let mut feature = planned(
+            "f",
+            "Wick Trim",
+            "Class Feature",
+            Role::ClassFeature,
+            Some(10),
+        );
+        feature.owner = Some("c".into());
+        let mut spells = planned(
+            "s1",
+            "Keeper Spells",
+            "Archetype Feature",
+            Role::SubclassFeature,
+            Some(18),
+        );
+        spells.owner = Some("s".into());
+        let text = |id: &str, name: &str, line: usize| {
+            planned(id, name, "Rules Glossary Entry", Role::Text, Some(line))
+        };
+        let elements = vec![
+            planned("c", "Lamplighter", "Class", Role::Class, Some(1)),
+            text("t1", "Creating a Lamplighter", 3),
+            text("t2", "Multiclassing", 5),
+            text("t3", "Lamp Chart", 7),
+            feature,
+            planned(
+                "s",
+                "Keeper of Flames",
+                "Archetype",
+                Role::Subclass,
+                Some(12),
+            ),
+            text("t4", "Vows of Flames", 14),
+            planned("t5", "Soot Sick", "Condition", Role::Text, Some(16)),
+            spells,
+            text("t6", "Old Roads", 20),
+        ];
+        let folded = fold_nested_lore(&elements, Edition::Y2014, &src);
+        let ids: Vec<&str> = folded.iter().map(|(id, _)| id.as_str()).collect();
+        assert_eq!(ids, ["t1", "t4"]);
+        assert!(folded[1].1.contains("printed inside Keeper of Flames"));
     }
 
     #[test]

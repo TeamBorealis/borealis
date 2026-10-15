@@ -641,8 +641,13 @@ fn reprint_a_stored_draft() {
     // BOREALIS_PRINTED_FOLD: drop the text-only entries a rebuilt plan folds into a table or
     // leaves to an outlined feature.
     if std::env::var("BOREALIS_PRINTED_FOLD").is_ok() {
-        let folded =
+        let mut folded =
             super::super::plan::sections::fold_table_headings(&d.plan.elements, &d.source_text);
+        folded.extend(super::super::plan::sections::fold_nested_lore(
+            &d.plan.elements,
+            d.plan.edition,
+            &d.source_text,
+        ));
         let ids: Vec<&String> = folded.iter().map(|(id, _)| id).collect();
         for (_, n) in &folded {
             println!("folded: {n}");
@@ -736,4 +741,52 @@ fn a_short_sentence_alone_under_its_heading_is_reported_and_page_furniture_is_no
         !entries.iter().any(|e| e.note.contains("Not to be sold")),
         "a footer is no prose: {entries:?}"
     );
+}
+
+#[test]
+fn opening_lore_a_generated_root_left_out_is_put_back_as_printed() {
+    let src = "MOSSFOLK\n\nThe oldest of the bog peoples, mossfolk tend the drowned groves and \
+remember every tree that ever fell into the water.\n\nMossfolk Traits\n\nYour mossfolk \
+character has the following traits in common with other mossfolk of the deep bogs.\n\n\
+Age. Mossfolk reach adulthood at twenty and live for about three hundred years in the bogs.\n\n\
+REEDKIN\n\nReedkin are a quiet people of the riverbanks who sing to the reeds at dawn every \
+single day of the year.\n\nYour reedkin character has the following traits in common with \
+other reedkin of the rivers.\n\nGLOW WORD\n\nCasting Time: 1 action Range: Touch Components: \
+V, S Duration: Instantaneous Classes: Druid\n\nYou touch one object no larger than ten feet \
+in any dimension and it sheds a soft green light.\n";
+    let mut d = draft(
+        src,
+        vec![
+            planned("r1", "Mossfolk", "Race", Role::Standalone, Some(1)),
+            planned("r2", "Reedkin", "Race", Role::Standalone, Some(11)),
+            planned("s1", "Glow Word", "Spell", Role::Standalone, Some(17)),
+        ],
+        &[
+            "<p>Your mossfolk character has the following traits in common with other mossfolk \
+of the deep bogs.</p><p><strong>Age.</strong> Mossfolk reach adulthood at twenty and live for \
+about three hundred years in the bogs.</p>",
+            // Its lore reworded, not left out: kept as written.
+            "<p>A quiet riverbank people, reedkin sing to the reeds each dawn of every year.</p>\
+<p>Your reedkin character has the following traits in common with other reedkin of the \
+rivers.</p>",
+            // The stat line is the spell's data, not lore.
+            "<p>You touch one object no larger than ten feet in any dimension and it sheds a soft \
+green light.</p>",
+        ],
+    );
+    for (i, end) in [(0, 10), (1, 16), (2, 22)] {
+        d.plan.elements[i].excerpt.as_mut().unwrap().end_line = end;
+    }
+    let changed = add_sub_sections(&mut d);
+    assert_eq!(changed, ["r1"]);
+    let desc = d.elements[0].json["description"].as_str().unwrap();
+    assert!(
+        desc.starts_with("<p>The oldest of the bog peoples"),
+        "{desc}"
+    );
+    assert!(desc.contains("<p>Your mossfolk character"));
+    assert!(d.elements[0]
+        .normalised
+        .iter()
+        .any(|n| n.contains("1 printed opening paragraph")));
 }

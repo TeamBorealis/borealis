@@ -839,7 +839,12 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
         };
         g.root_id = Some(standalone_group(&mut b, g, ty));
     }
-    let folded = sections::fold_table_headings(&b.out, source);
+    let mut folded = sections::fold_table_headings(&b.out, source);
+    let nested: Vec<(String, String)> = sections::fold_nested_lore(&b.out, plan.edition, source)
+        .into_iter()
+        .filter(|(id, _)| !folded.iter().any(|(f, _)| f == id))
+        .collect();
+    folded.extend(nested);
     if !folded.is_empty() {
         let ids: Vec<&String> = folded.iter().map(|(id, _)| id).collect();
         b.out.retain(|e| !ids.contains(&&e.id));

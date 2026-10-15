@@ -668,7 +668,7 @@ pub(crate) fn section_lines<'a>(
     plan: &ImportPlan,
 ) -> Vec<&'a str> {
     let lines: Vec<&str> = source.lines().collect();
-    let furniture = super::furniture::furniture(source);
+    let furniture = super::passage::page_marks::page_furniture(source);
     let mut out = Vec::new();
     for (s, e) in section_blocks(source, planned, plan) {
         if !out.is_empty() {

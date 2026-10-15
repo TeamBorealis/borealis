@@ -11,6 +11,11 @@ use super::fidelity::{pipeline_paragraph, plain, words, Index, MIN_COVERAGE};
 use super::types::{ImportDraft, ImportPlan, PlannedElement, Role};
 use crate::import::report::ReportEntry;
 
+#[path = "passage_lore.rs"]
+mod lore;
+#[path = "page_marks.rs"]
+pub(crate) mod page_marks;
+
 /// Most lines of one passage or sub-section.
 const MAX_LINES: usize = 400;
 /// Share of content words a description and a passage must have in common both ways to be the
@@ -401,12 +406,32 @@ pub(crate) fn unplanned_sections(
     unplanned_sections_in(&lines, planned, plan)
 }
 
-/// [`unplanned_sections`] of the source `lines`.
+/// [`unplanned_sections`] of the source `lines`. A section another class or subclass root
+/// that starts later prints as its own (a subclass's lore inside its class's section) is that
+/// innermost root's, not this one's.
 pub(crate) fn unplanned_sections_in(
     lines: &[&str],
     planned: &PlannedElement,
     plan: &ImportPlan,
 ) -> Vec<SubSection> {
+    let mut out = own_sections(lines, planned, plan);
+    let Some(start) = planned.excerpt.as_ref().map(|x| x.start_line) else {
+        return out;
+    };
+    let inner: Vec<usize> = plan
+        .elements
+        .iter()
+        .filter(|e| e.id != planned.id && matches!(e.role, Role::Class | Role::Subclass))
+        .filter(|e| e.excerpt.as_ref().is_some_and(|x| x.start_line > start))
+        .flat_map(|e| own_sections(lines, e, plan))
+        .map(|s| s.at)
+        .collect();
+    out.retain(|s| !inner.contains(&s.at));
+    out
+}
+
+/// The unplanned sub-sections in one root's section (see [`unplanned_sections_in`]).
+fn own_sections(lines: &[&str], planned: &PlannedElement, plan: &ImportPlan) -> Vec<SubSection> {
     let Some(ex) = planned.excerpt.as_ref() else {
         return Vec::new();
     };
@@ -739,6 +764,11 @@ pub(crate) fn add_sub_sections(draft: &mut ImportDraft) -> Vec<String> {
         ));
         changed.push(e.id.clone());
     }
+    for id in lore::restore_opening_lore(draft) {
+        if !changed.contains(&id) {
+            changed.push(id);
+        }
+    }
     changed
 }
 
@@ -766,7 +796,7 @@ pub(crate) fn multiclass_section(source: &str, planned: &PlannedElement) -> Opti
 /// Source paragraphs (blank-line or heading separated, page furniture left out) with the line
 /// of the heading they are under.
 fn paragraphs(source: &str) -> Vec<(usize, Option<usize>, String)> {
-    let furniture = super::furniture::furniture(source);
+    let furniture = page_marks::page_furniture(source);
     let mut out = Vec::new();
     let mut under: Option<usize> = None;
     let mut cur: Vec<&str> = Vec::new();
