@@ -42,6 +42,18 @@ resource rule per step with the same `id`, each later one with `level` and `repl
         "resource_cost spends uses: {\"kind\":\"resource_cost\",\"resource\":\"<resource id>\",\"cost\":1}.",
     ),
     (
+        "grant_spell",
+        &["spell", "mode", "free_cast", "also_with_slots", "cast_level", "resource_cost"],
+        "grant_spell grants a spell cast in a special way (the bundled shape): `spell` is its id and `mode` one of \
+always_prepared | known | known_cantrip | at_will_no_slot | ritual_only. A spell cast without a slot a limited number of \
+times (\"once per long rest\", \"three times per day\") keeps mode always_prepared and adds \
+\"free_cast\":{\"uses\":1,\"recharge\":\"long_rest\"} (uses may be an ability name for its modifier, or \"proficiency\"), \
+\"also_with_slots\":true when it can also be cast with slots, and \"cast_level\":3 when it is cast as a higher-level \
+spell; a spell cast by spending points adds \"resource_cost\":{\"resource\":\"<resource id>\",\"cost\":2}; at will \
+without a slot is mode at_will_no_slot, only as a ritual is mode ritual_only. Never a separate `resource` for a spell's \
+free casts.",
+    ),
+    (
         "ability_increase",
         &["name", "options", "cap"],
         "ability_increase lets the player choose ability score increases: `options` is a list of OBJECTS, each one way to \
@@ -65,7 +77,7 @@ const STAT_SHAPES: &str = "Write every mechanic the text states as a rule, never
 a fixed ability score increase is {\"kind\":\"stat\",\"name\":\"strength\",\"value\":\"2\"}; a species' walking speed \
 is {\"kind\":\"stat\",\"name\":\"innate speed\",\"value\":\"30\",\"bonus\":\"base\"} and another lasting speed \
 {\"kind\":\"stat\",\"name\":\"speed:fly\",\"value\":\"30\"}; a lasting bonus (\"+1 to AC\") is a `stat` rule. \
-a limited use (\"once per long rest\", \"three times per day\") is a `resource` named as the feature (max {\"type\":\"fixed\",\"value\":1}, recharge [\"long_rest\"]) next to the grant it limits; a count of things tied to an ability modifier (\"one companion per point of your Charisma modifier\") is a `stat` counter named for what it counts, {\"kind\":\"stat\",\"name\":\"companions\",\"value\":\"charisma:modifier\"}; a choice of damage resistance is a `select` of type Condition over the resistance ids ({\"kind\":\"select\",\"type\":\"Condition\",\"name\":\"<Feature> Resistance\",\"supports\":\"ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FIRE|ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_COLD\"}). mystic_arcanum (spells cast once per rest at higher tiers) always comes with ONE Spell `select` per slot, \
+a limited use of a feature that is not a spell (\"once per long rest\", \"three times per day\") is a `resource` named as the feature (max {\"type\":\"fixed\",\"value\":1}, recharge [\"long_rest\"]), while a spell's limited casts are its `grant_spell` free_cast; a count of things tied to an ability modifier (\"one companion per point of your Charisma modifier\") is a `stat` counter named for what it counts, {\"kind\":\"stat\",\"name\":\"companions\",\"value\":\"charisma:modifier\"}; a choice of damage resistance is a `select` of type Condition over the resistance ids ({\"kind\":\"select\",\"type\":\"Condition\",\"name\":\"<Feature> Resistance\",\"supports\":\"ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_FIRE|ID_INTERNAL_CONDITION_DAMAGE_RESISTANCE_COLD\"}). mystic_arcanum (spells cast once per rest at higher tiers) always comes with ONE Spell `select` per slot, \
 {\"kind\":\"select\",\"type\":\"Spell\",\"name\":\"<Feature> (level 6)\",\"level\":11,\"supports\":\"<Class>,6\",\"spellcasting\":\"<Class>\"}. \
 In descriptions keep every number, game term and name as printed (\"fly speed of 30 feet\", \"six hours\", the \
 classes an item's attunement names).";

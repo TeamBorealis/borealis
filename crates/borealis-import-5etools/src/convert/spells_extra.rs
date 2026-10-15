@@ -8,7 +8,8 @@
 //! `will`, `ritual`, `resource`); `expanded` adds spells to the spell list of a class.
 //!
 //! Mapping: fixed spells become `Spell` grants (always prepared unless `known`); limited or
-//! special casting becomes a `grant_spell` rule with `free_cast` / `cast`; choices become
+//! special casting becomes a `grant_spell` rule with a `mode` and `free_cast` / `resource_cost`
+//! / `cast_level` (the bundled representation); choices become
 //! `Spell` selects (with a `spell_free_cast` rule when the pick has limited uses); expanded
 //! lists and slot-keyed always-prepared spells become spellcasting *extensions*
 //! ([`Casting::expanded`], placed by [`super::spell_blocks`]).
@@ -234,8 +235,22 @@ struct Cast<'a> {
     cost: Option<u32>,
 }
 
+/// The `grant_spell.mode` (bundled representation, `GRANT_SPELL_MODES`): at-will and innate
+/// spells without a frequency are cast at will without a slot (an innate cantrip is a known
+/// cantrip), ritual spells only as rituals; limited and resource casts keep the owner's mode and
+/// say the rest in `free_cast` / `resource_cost`.
+fn grant_mode(kind: Kind, how: Option<&str>, cantrip: bool) -> &'static str {
+    match how {
+        Some("innate") if cantrip => "known_cantrip",
+        Some("at_will" | "innate") => "at_will_no_slot",
+        Some("ritual") => "ritual_only",
+        _ if kind == Kind::Known => "known",
+        _ => "always_prepared",
+    }
+}
+
 /// Uses of a frequency key: `"2"` / `"2e"` (each) is a number, `"cha"` the ability modifier.
-fn uses_value(key: &str) -> Option<Value> {
+pub(crate) fn uses_value(key: &str) -> Option<Value> {
     if let Ok(n) = key.trim_end_matches('e').parse::<u32>() {
         return Some(json!(n));
     }
@@ -264,17 +279,21 @@ struct Ctx<'a> {
     expanded: Vec<(u32, SpellcastingList)>,
 }
 
+/// The id of a referenced spell: the linked element, else the id its import gets.
+pub(crate) fn spell_ref_id(sh: &Shared, r: &SpellRef) -> String {
+    sh.link(RefKind::Spell, &r.name, &r.source)
+        .unwrap_or_else(|| {
+            format!(
+                "ID_5ET_{}_SPELL_{}",
+                id_fragment(&r.source),
+                id_fragment(&r.name)
+            )
+        })
+}
+
 impl Ctx<'_> {
     fn spell_id(&self, r: &SpellRef) -> String {
-        self.sh
-            .link(RefKind::Spell, &r.name, &r.source)
-            .unwrap_or_else(|| {
-                format!(
-                    "ID_5ET_{}_SPELL_{}",
-                    id_fragment(&r.source),
-                    id_fragment(&r.name)
-                )
-            })
+        spell_ref_id(self.sh, r)
     }
 
     /// Ids of the imported spells of the sources named by a `source=A;B` filter.
@@ -316,11 +335,7 @@ impl Ctx<'_> {
                 ..GrantRule::default()
             });
         }
-        let mode = if kind == Kind::Known {
-            "known"
-        } else {
-            "always_prepared"
-        };
+        let mode = grant_mode(kind, cast.map(|c| c.how), r.cantrip);
         let mut f = Map::new();
         f.insert("spell".into(), json!(id));
         if level > 1 {
@@ -328,9 +343,6 @@ impl Ctx<'_> {
         }
         f.insert("mode".into(), json!(mode));
         f.insert("spell_list".into(), json!(self.label));
-        if let Some(c) = cast {
-            f.insert("cast".into(), json!(c.how));
-        }
         if let Some(fc) = Self::free_cast(cast) {
             f.insert("free_cast".into(), fc);
         }
@@ -683,6 +695,7 @@ fn merge_duplicate_grants(rules: Vec<Rule>) -> Vec<Rule> {
             });
             if let Some(c) = twin {
                 lower_level(&mut c.fields, g.level.unwrap_or(1));
+                widen_ritual_only(&mut c.fields, g);
                 continue;
             }
         }
@@ -694,6 +707,7 @@ fn merge_duplicate_grants(rules: Vec<Rule>) -> Vec<Rule> {
                 out.retain(|r| match r {
                     Rule::Grant(g) if c.fields["spell"] == g.id.as_str() => {
                         lowest = lowest.min(g.level.unwrap_or(1));
+                        widen_ritual_only(&mut c.fields, g);
                         false
                     }
                     _ => true,
@@ -706,6 +720,19 @@ fn merge_duplicate_grants(rules: Vec<Rule>) -> Vec<Rule> {
         out.push(rule);
     }
     out
+}
+
+/// A ritual-only spell that is also granted plainly is cast normally as well: the plain grant's
+/// mode wins.
+fn widen_ritual_only(fields: &mut Map<String, Value>, plain: &GrantRule) {
+    if fields.get("mode").and_then(Value::as_str) == Some("ritual_only") {
+        let mode = if plain.prepared == Some(true) {
+            "always_prepared"
+        } else {
+            "known"
+        };
+        fields.insert("mode".into(), json!(mode));
+    }
 }
 
 fn lower_level(fields: &mut Map<String, Value>, level: u32) {
@@ -1041,7 +1068,8 @@ mod tests {
                 "resourceName": "Focus",
                 "prepared": {"_": {"will": [{"choose": "level=1|school=A"}], "daily": {"1": [{"choose": "level=1;2|school=A"}]}}},
                 "innate": {"_": {"ritual": ["detect magic"], "daily": {"2e": ["bless", "bane"], "1": ["fog cloud", "sleep"], "wis": ["guidance"]}},
-                           "6": {"resource": {"2": ["darkness"]}}, "9": ["augury"]},
+                           "6": {"resource": {"2": ["darkness"]}}, "9": ["augury", "light#c"],
+                           "11": {"rest": {"1": ["shatter#3"]}}},
                 "known": {"_": [{"choose": "level=0|class=Cleric", "count": 2}, {"choose": "level=!0"},
                                 {"choose": {"from": ["shield", "mage armor"], "count": 1}}, {"choose": ""}]},
             })],
@@ -1053,7 +1081,33 @@ mod tests {
                 .find(|g| g["spell"].as_str().unwrap().ends_with(suffix))
                 .unwrap()
         };
-        assert_eq!(by("DETECT_MAGIC")["cast"], "ritual");
+        assert!(
+            gs.iter().all(|g| g.get("cast").is_none()),
+            "no field the engine ignores"
+        );
+        let problems: Vec<_> = r
+            .direct
+            .iter()
+            .filter_map(|x| match x {
+                Rule::Custom(c) if c.kind == "grant_spell" => Some(c),
+                _ => None,
+            })
+            .flat_map(|c| {
+                let spec = borealis_content::rule_kinds::spec("grant_spell").unwrap();
+                let mut p: Vec<String> = borealis_content::rule_kinds::check_custom(c)
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect();
+                p.extend(spec.shape_problems(&c.fields));
+                p
+            })
+            .collect();
+        assert!(problems.is_empty(), "{problems:?}");
+        assert_eq!(by("DETECT_MAGIC")["mode"], "ritual_only");
+        assert_eq!(by("BLESS")["mode"], "always_prepared");
+        assert_eq!(by("LIGHT")["mode"], "known_cantrip");
+        assert_eq!(by("SHATTER")["cast_level"], 3);
+        assert_eq!(by("SHATTER")["free_cast"]["recharge"], "short_rest");
         assert_eq!(
             by("BLESS")["free_cast"],
             json!({"uses": 2, "recharge": "long_rest"})
@@ -1069,7 +1123,11 @@ mod tests {
             json!({"resource": "Focus", "cost": 2})
         );
         assert_eq!(by("DARKNESS")["level"], 6);
-        assert_eq!(by("AUGURY")["cast"], "innate");
+        assert_eq!(
+            by("AUGURY")["mode"],
+            "at_will_no_slot",
+            "innate without a frequency"
+        );
         let selects: Vec<_> = r
             .direct
             .iter()
@@ -1097,6 +1155,20 @@ mod tests {
         assert_eq!(fc[0]["recharge"], "long_rest");
         assert_eq!(r.partial.len(), 1, "{:?}", r.partial);
         assert!(r.partial[0].contains("level=!0"));
+    }
+
+    #[test]
+    fn a_ritual_only_spell_also_granted_plainly_is_cast_normally() {
+        let sh = shared();
+        let r = convert(
+            &sh,
+            "Feat",
+            &[json!({"prepared": {"_": ["alarm"]}, "innate": {"_": {"ritual": ["alarm"]}}})],
+            false,
+        );
+        let gs = customs(&r.direct, "grant_spell");
+        assert_eq!(r.direct.len(), 1, "{:?}", r.direct);
+        assert_eq!(gs[0]["mode"], "always_prepared");
     }
 
     #[test]

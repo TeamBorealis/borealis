@@ -36,6 +36,11 @@ pub const X_SPELL_MODE: &str = "x-spell-mode";
 pub const X_ALSO_WITH_SLOTS: &str = "x-also-with-slots";
 /// Grant attribute (`grant_spell`): the spellcasting ability (id or JSON object).
 pub const X_SPELL_ABILITY: &str = "x-spell-ability";
+/// Grant attribute (`grant_spell`): the slot level the free casts are cast at (`cast_level`).
+pub const X_CAST_LEVEL: &str = "x-cast-level";
+/// Grant attribute (`grant_spell`): JSON of the `resource_cost` object (`{resource, cost}`): the
+/// spell may be cast without a slot by spending that many points of the resource.
+pub const X_RESOURCE_COST: &str = "x-resource-cost";
 /// Grant attribute (`grant_spell`): JSON object `{param name: value}`; the grant is live only
 /// while the owning element's `select_param` values match (Circle of the Land).
 pub const X_REQ_PARAM: &str = "x-requires-param";
@@ -181,6 +186,8 @@ fn grant_spell(c: &CustomRule) -> Option<GrantRule> {
         ("free_cast", X_FREE_CAST),
         ("ability", X_SPELL_ABILITY),
         ("also_with_slots", X_ALSO_WITH_SLOTS),
+        ("cast_level", X_CAST_LEVEL),
+        ("resource_cost", X_RESOURCE_COST),
     ] {
         if let Some(v) = c.fields.get(key) {
             let text = v.as_str().map_or_else(|| v.to_string(), str::to_string);

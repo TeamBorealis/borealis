@@ -353,6 +353,9 @@ pub struct FreeCastSnapshot {
     pub recharge: String,
     /// The spell can still be cast with slots as well.
     pub also_with_slots: bool,
+    /// Slot level the free casts are cast at, when above the spell's own (`cast_level`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cast_level: Option<u32>,
     /// Element that grants it.
     pub source: String,
 }

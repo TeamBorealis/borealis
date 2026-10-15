@@ -95,7 +95,8 @@ uses the enhancement shape of the example; a magic armor's or shield's own +N to
             Self::LimitedUse => "a limited use is a `resource` rule named as the feature ({\"kind\":\"resource\",\
 \"id\":\"<feature name, lowercase>\",\"name\":\"<Feature name>\",\"max\":{\"type\":\"fixed\",\"value\":1},\
 \"recharge\":[\"long_rest\"]}; \"per day\" is [\"long_rest\"], \"short or long rest\" [\"short_rest\",\"long_rest\"]), \
-next to the grant or spell it limits",
+next to the grant it limits; a spell cast without a slot a limited number of times is instead its `grant_spell` with \
+\"free_cast\":{\"uses\":1,\"recharge\":\"long_rest\"}",
             Self::ModifierCount => "a count of things tied to an ability modifier (\"one companion per point of your \
 Charisma modifier\") is a `stat` counter named for what it counts ({\"kind\":\"stat\",\"name\":\"<counted things, \
 e.g. companions>\",\"value\":\"charisma:modifier\"}; twice the modifier is two such rules)",

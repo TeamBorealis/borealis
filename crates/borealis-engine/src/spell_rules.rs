@@ -2,7 +2,7 @@
 //! `pact_magic`, `prepared_spell_change`, `ritual_casting`, `spell_list_extend`, the free casts of
 //! `grant_spell` and the named `save_dc` rules.
 
-use crate::custom_rules::{X_ALSO_WITH_SLOTS, X_FREE_CAST};
+use crate::custom_rules::{X_ALSO_WITH_SLOTS, X_CAST_LEVEL, X_FREE_CAST};
 use crate::graph::{Graph, Origin};
 use crate::snapshot::{FreeCastSnapshot, NamedSaveDc, SpellcastingSnapshot};
 use crate::universe::Universe;
@@ -177,7 +177,7 @@ pub fn free_casts(graph: &Graph<'_>, prof: i32, mods: &[i32; 6]) -> Vec<FreeCast
     for id in graph.preorder() {
         let n = &graph.nodes[id];
         let Some(parent) = n.parent else { continue };
-        let (v, also_with_slots) = match n.origin {
+        let (v, also_with_slots, cast_level) = match n.origin {
             Origin::Granted(ri) => {
                 let Some(Rule::Grant(g)) = graph.nodes[parent].e.el.rules.get(ri) else {
                     continue;
@@ -193,14 +193,19 @@ pub fn free_casts(graph: &Graph<'_>, prof: i32, mods: &[i32; 6]) -> Vec<FreeCast
                     .attributes
                     .get(X_ALSO_WITH_SLOTS)
                     .is_some_and(|s| s == "true");
-                (v, also)
+                let cast_level = g
+                    .extra
+                    .attributes
+                    .get(X_CAST_LEVEL)
+                    .and_then(|s| s.parse::<u32>().ok());
+                (v, also, cast_level)
             }
             Origin::Selected(si) if n.e.el.ty == "Spell" => {
                 let Some(rule) = select_free_cast(graph, parent, si) else {
                     continue;
                 };
                 let also = rule.get("also_with_slots") == Some(&Value::Bool(true));
-                (rule, also)
+                (rule, also, None)
             }
             _ => continue,
         };
@@ -212,6 +217,7 @@ pub fn free_casts(graph: &Graph<'_>, prof: i32, mods: &[i32; 6]) -> Vec<FreeCast
             uses_rule,
             recharge: text(&v, "recharge"),
             also_with_slots,
+            cast_level,
             source: graph.nodes[parent].e.el.id.clone(),
         });
     }

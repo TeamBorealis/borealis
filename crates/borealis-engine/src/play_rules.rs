@@ -609,11 +609,38 @@ pub fn resource_snapshots(
     out
 }
 
-/// Costs of options in resource points (Metamagic).
+/// The `grant_spell.resource_cost` of a granted spell node: cast without a slot for points.
+fn granted_spell_cost(graph: &Graph<'_>, id: NodeId) -> Option<ResourceCostSnapshot> {
+    let n = &graph.nodes[id];
+    let crate::graph::Origin::Granted(ri) = n.origin else {
+        return None;
+    };
+    let Some(Rule::Grant(g)) = graph.nodes[n.parent?].e.el.rules.get(ri) else {
+        return None;
+    };
+    let raw = g
+        .extra
+        .attributes
+        .get(crate::custom_rules::X_RESOURCE_COST)?;
+    let v: Value = serde_json::from_str(raw).ok()?;
+    Some(ResourceCostSnapshot {
+        option: n.e.el.name.clone(),
+        resource: v.get("resource")?.as_str()?.to_string(),
+        cost: v
+            .get("cost")
+            .and_then(Value::as_i64)
+            .and_then(|n| i32::try_from(n).ok())
+            .unwrap_or(0),
+    })
+}
+
+/// Costs of options in resource points (Metamagic), and of granted spells cast with resource
+/// points instead of a slot (`grant_spell.resource_cost`, the option named as the spell).
 #[must_use]
 pub fn resource_costs(graph: &Graph<'_>) -> Vec<ResourceCostSnapshot> {
     let mut out = Vec::new();
     for id in graph.preorder() {
+        out.extend(granted_spell_cost(graph, id));
         let el = &graph.nodes[id].e.el;
         for r in &el.rules {
             let Rule::Custom(c) = r else { continue };
@@ -775,10 +802,19 @@ pub fn attack_mastery(
     picks: &[MasteryPick],
 ) -> Option<MasteryRef> {
     let (name, text) = mastery_of(uni, weapon)?;
+    // a magic weapon of a mastered kind (`+1 Longsword` with `data.base_weapon` = a Longsword)
+    // is mastered too, whichever pack the picked Longsword comes from
+    let base = weapon.data.get("base_weapon").and_then(Value::as_str);
+    let base_name = base.and_then(|b| uni.get(b)).map(|b| b.el.name.as_str());
+    let mastered = picks.iter().any(|p| {
+        p.weapon == weapon.id
+            || base == Some(p.weapon.as_str())
+            || base_name.is_some_and(|n| n.eq_ignore_ascii_case(&p.name))
+    });
     Some(MasteryRef {
         name,
         text,
-        mastered: picks.iter().any(|p| p.weapon == weapon.id),
+        mastered,
     })
 }
 

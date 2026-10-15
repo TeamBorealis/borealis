@@ -231,6 +231,26 @@ fn prepared_formula_rules(
     true
 }
 
+/// Pact Magic as the bundled packs write it: the slot count (`slots:count`) and the slot level
+/// (`slot`) per class level, so the engine keeps the slots as their own pool.
+fn pact_rules(owner: &str, matrix: &[[i64; 9]], out: &mut Vec<Rule>) {
+    let count: Vec<i64> = matrix
+        .iter()
+        .map(|row| row.iter().copied().max().unwrap_or(0))
+        .collect();
+    let level: Vec<i64> = matrix
+        .iter()
+        .map(|row| {
+            row.iter()
+                .rposition(|n| *n > 0)
+                .and_then(|i| i64::try_from(i + 1).ok())
+                .unwrap_or(0)
+        })
+        .collect();
+    delta_rules(&format!("{owner}:spellcasting:slots:count"), &count, out);
+    delta_rules(&format!("{owner}:spellcasting:slot"), &level, out);
+}
+
 /// Build the spellcasting stat rules and `spellcasting` node.
 #[must_use]
 pub fn caster(input: &CasterInput<'_>) -> CasterOut {
@@ -253,6 +273,9 @@ pub fn caster(input: &CasterInput<'_>) -> CasterOut {
                 let name = format!("{owner}:spellcasting:slots:{}", j + 1);
                 let series: Vec<i64> = matrix.iter().map(|row| row[j]).collect();
                 delta_rules(&name, &series, &mut out.rules);
+            }
+            if progression == "pact" {
+                pact_rules(&owner, &matrix, &mut out.rules);
             }
         }
         None => out
@@ -560,6 +583,12 @@ mod tests {
         assert!(s.contains(&("warlock:spellcasting:slots:1".into(), "1".into(), 2)));
         assert!(s.contains(&("warlock:spellcasting:slots:1".into(), "-2".into(), 3)));
         assert!(s.contains(&("warlock:spellcasting:slots:2".into(), "2".into(), 3)));
+        // a separate pool: slot count and slot level per class level
+        assert!(s.contains(&("warlock:spellcasting:slots:count".into(), "1".into(), 1)));
+        assert!(s.contains(&("warlock:spellcasting:slots:count".into(), "1".into(), 2)));
+        assert!(s.contains(&("warlock:spellcasting:slot".into(), "1".into(), 1)));
+        assert!(s.contains(&("warlock:spellcasting:slot".into(), "1".into(), 3)));
+        assert!(!s.iter().any(|x| x.0 == "warlock:spellcasting:slot" && x.2 == 2));
         assert!(s.contains(&("warlock:spellcasting:cantrips known".into(), "2".into(), 1)));
         assert!(s.contains(&("warlock:spellcasting:spells known".into(), "1".into(), 2)));
         assert!(warlock

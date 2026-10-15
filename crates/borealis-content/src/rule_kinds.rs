@@ -51,6 +51,18 @@ pub const RESOURCE_RECHARGE: &[&str] = &[
     "none",
 ];
 
+/// `mode` values of a `grant_spell`: how the granted spell is cast. `always_prepared` and `known`
+/// spells use the owner's slots as usual (a `free_cast` adds slotless uses per rest, and
+/// `resource_cost` a slotless cast paid with resource points); `known_cantrip` is a cantrip;
+/// `at_will_no_slot` is cast at will without a slot; `ritual_only` only as a ritual.
+pub const GRANT_SPELL_MODES: &[&str] = &[
+    "always_prepared",
+    "known",
+    "known_cantrip",
+    "at_will_no_slot",
+    "ritual_only",
+];
+
 impl KindSpec {
     /// Does the engine accept `field` on this kind?
     #[must_use]
@@ -377,6 +389,8 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
             "free_cast",
             "also_with_slots",
             "requirements_param",
+            "cast_level",
+            "resource_cost",
             "level",
             "requirements",
         ],
@@ -390,7 +404,8 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
             ("special_forms", GAP),
             ("no_material", GAP),
         ],
-    ),
+    )
+    .shape(&[], &[("mode", GRANT_SPELL_MODES)]),
     k("healing", NOTES, true, &["name", "dice", "plus", "action"]),
     k("heroic_inspiration", PLAY, true, &["trigger"]),
     ku(
@@ -772,6 +787,26 @@ mod tests {
             fields: Map::new(),
         };
         assert!(check_rules(&[Rule::Custom(empty)]).is_empty());
+    }
+
+    #[test]
+    fn grant_spell_reads_slotless_casting_and_closes_its_modes() {
+        let g = spec("grant_spell").unwrap();
+        for f in [
+            "free_cast",
+            "also_with_slots",
+            "cast_level",
+            "resource_cost",
+        ] {
+            assert!(g.reads(f), "{f}");
+        }
+        assert!(!g.knows("cast"));
+        let ok = serde_json::json!({"spell": "ID_X", "mode": "at_will_no_slot"});
+        assert!(g.shape_problems(ok.as_object().unwrap()).is_empty());
+        let bad = serde_json::json!({"spell": "ID_X", "mode": "innate"});
+        let p = g.shape_problems(bad.as_object().unwrap());
+        assert_eq!(p.len(), 1, "{p:?}");
+        assert!(p[0].contains("`mode`"));
     }
 
     #[test]
