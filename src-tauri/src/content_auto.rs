@@ -21,6 +21,21 @@ pub const MSG_UPDATED: &str = "Your content files have been updated.";
 /// Shown when nothing changed; the UI may render "Last checked ... at <checkedAt>".
 pub const MSG_UP_TO_DATE: &str = "Your content files are up to date.";
 
+/// The one-line outcome of an update: "up to date" only when nothing was installed AND nothing
+/// failed (a failed index or file must never read as success).
+#[must_use]
+pub fn update_message(updated: usize, failed: usize) -> String {
+    match (updated, failed) {
+        (0, 0) => MSG_UP_TO_DATE.to_string(),
+        (_, 0) => MSG_UPDATED.to_string(),
+        (0, n) => format!(
+            "Your content files could not be updated: {n} download(s) failed. \
+             See Additional content > Index files for the reason."
+        ),
+        (_, n) => format!("{MSG_UPDATED} {n} could not be updated."),
+    }
+}
+
 /// Run `task` on its own thread (startup never waits for it).
 pub fn spawn_startup_task<F>(task: F) -> std::thread::JoinHandle<()>
 where
@@ -106,24 +121,13 @@ impl AppState {
         });
         sink.content_progress(&progress("checking", 0, total, MSG_CHECKING));
         let status = match self.update_indexes(fetcher, sink) {
-            Ok(r) => {
-                let mut message = if r.updated > 0 {
-                    MSG_UPDATED
-                } else {
-                    MSG_UP_TO_DATE
-                }
-                .to_string();
-                if !r.failed.is_empty() {
-                    message.push_str(&format!(" {} could not be updated.", r.failed.len()));
-                }
-                ContentUpdateStatus {
-                    state: ContentUpdateState::Done,
-                    message,
-                    updated: r.updated,
-                    failed: r.failed,
-                    checked_at: Some(rfc3339(SystemTime::now())),
-                }
-            }
+            Ok(r) => ContentUpdateStatus {
+                state: ContentUpdateState::Done,
+                message: update_message(r.updated, r.failed.len()),
+                updated: r.updated,
+                failed: r.failed,
+                checked_at: Some(rfc3339(SystemTime::now())),
+            },
             Err(e) => {
                 tracing::warn!("automatic content update failed: {}", e.message);
                 ContentUpdateStatus {

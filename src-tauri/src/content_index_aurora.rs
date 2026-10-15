@@ -11,7 +11,7 @@
 //! match dropping the same repository as a folder.
 
 use crate::content_import::{slug, stem, write_pack_meta, Scratch};
-use crate::content_index::{require_https, sha256_hex, Fetcher};
+use crate::content_index::{looks_like_html, raw_file_url, require_https, sha256_hex, Fetcher};
 use crate::content_packs::{progress, EventSink};
 use crate::content_prefs::IndexRecord;
 use crate::content_preview::convert_set;
@@ -31,6 +31,8 @@ pub const MAX_INDEX_FILES: usize = 2_000;
 pub const MAX_INDEX_BYTES: usize = 2 * 1024 * 1024;
 /// Largest content file.
 pub const MAX_FILE_BYTES: usize = 64 * 1024 * 1024;
+/// A listed address answered with an HTML page instead of the file.
+const WEB_PAGE: &str = "the address is a web page, not the file itself";
 /// Folder for files that live outside the top-level index's directory.
 const OTHER_DIR: &str = "_other";
 
@@ -150,7 +152,8 @@ impl Walk<'_> {
 
     fn entries(&mut self, index: &IndexFile, chain: &mut Vec<String>) {
         for entry in index.files.iter().filter(|e| !e.is_obsolete()) {
-            let url = entry.url.trim();
+            let url = raw_file_url(&entry.url);
+            let url = url.as_str();
             if require_https(url).is_err() {
                 self.problem(
                     url,
@@ -177,10 +180,13 @@ impl Walk<'_> {
         if !self.seen_indexes.insert(url.to_string()) {
             return;
         }
-        let parsed = self
-            .fetcher
-            .get(url, MAX_INDEX_BYTES)
-            .and_then(|bytes| parse_index(&bytes, url));
+        let parsed = self.fetcher.get(url, MAX_INDEX_BYTES).and_then(|bytes| {
+            if looks_like_html(&bytes) {
+                Err(WEB_PAGE.into())
+            } else {
+                parse_index(&bytes, url)
+            }
+        });
         match parsed {
             Ok(index) => {
                 self.crawl.indexes.push(url.to_string());
@@ -376,6 +382,9 @@ fn download_all(
             sink.content_progress(&progress("downloading", i, files.len(), label));
         }
         match fetcher.get(&listed.url, MAX_FILE_BYTES) {
+            Ok(body) if looks_like_html(&body) => {
+                problems.push((listed.url.clone(), WEB_PAGE.into()));
+            }
             Ok(body) => fetched.push((listed.clone(), body)),
             Err(why) => problems.push((listed.url.clone(), why)),
         }
