@@ -3,6 +3,7 @@
 
 use crate::error::{ApiError, ApiResult};
 use crate::state::AppPaths;
+use borealis_assist::import::anything::review::ReviewOverrides;
 use borealis_assist::ImportDraft;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -21,6 +22,13 @@ pub struct StoredDraft {
     pub draft: Option<ImportDraft>,
     /// Why the run stopped, when it did.
     pub error: Option<String>,
+    /// The user's review decisions (accepted elements, text-only overrides).
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub review: ReviewOverrides,
+}
+
+fn is_default(r: &ReviewOverrides) -> bool {
+    *r == ReviewOverrides::default()
 }
 
 impl StoredDraft {
@@ -31,6 +39,7 @@ impl StoredDraft {
             stage: "detect".into(),
             draft: None,
             error: None,
+            review: ReviewOverrides::default(),
         }
     }
 }

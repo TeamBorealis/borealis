@@ -35,6 +35,29 @@ export interface ImportHint {
   parentClassId?: string;
 }
 
+/** Per-element review state: only "check" elements need the user's eyes. */
+export type ImportReviewState = "ok" | "check" | "not_imported";
+export interface ImportElementReview {
+  state: ImportReviewState;
+  /** Machine code of the leading reason: ok, accepted, pending, failed, engine, check:<code>, rule_removed, mechanic_lost, untraced, unlocated, incomplete. */
+  code: string;
+  /** One line in plain words ("" when ok with nothing to say). */
+  reason: string;
+  /** Everything else known (other reasons, model notes, automatic fixes, balance), most important first. */
+  details: string[];
+  /** The sheet won't do the math for some of this element (shown as "text only"). */
+  textOnly: boolean;
+  /** Why it is text only ("" when not). */
+  textOnlyReason: string;
+  /** The user's manual text-only override; null = automatic. */
+  textOnlyOverride: boolean | null;
+  /** The user marked it as fine (cleared automatically when the element changes). */
+  accepted: boolean;
+}
+/** Where an element comes from in the draft's source text: 1-based inclusive line numbers into `ImportDraft.sourceLines`. */
+export interface ImportSourcePassage { startLine: number; endLine: number; text: string }
+export interface ImportReviewCounts { ok: number; check: number; notImported: number; textOnly: number; accepted: number }
+
 export interface ImportElement {
   id: string;
   /** Engine element type, e.g. class, class_feature, spellcasting, subclass, feat. */
@@ -47,6 +70,8 @@ export interface ImportElement {
   json: Record<string, unknown>;
   balanceFlags: string[];
   validationIssues: string[];
+  review: ImportElementReview;
+  sourcePassage: ImportSourcePassage | null;
 }
 
 export interface ImportEvent {
@@ -81,6 +106,9 @@ export interface ImportDraft {
   sweep: ImportSweep;
   suggestedPackName: string;
   suggestedPrefix: string;
+  /** The source text split into lines (the transcript for images/PDFs). */
+  sourceLines: string[];
+  reviewCounts: ImportReviewCounts;
 }
 
 /**

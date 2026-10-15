@@ -6,10 +6,12 @@ use crate::content_import::{slug, write_pack_meta, Scratch};
 use crate::content_packs::EventSink;
 use crate::error::{ApiError, ApiResult};
 use crate::import_check::{check_content, content_doc};
+use crate::import_drafts::StoredDraft;
 use crate::import_dto::{draft_dto, ImportDraftDto};
 use crate::import_service::assist_err;
 use crate::state::AppState;
-use borealis_assist::import::anything::ElementStatus;
+use borealis_assist::import::anything::review::{review_report, ReviewOverrides};
+use borealis_assist::import::anything::{DraftElement, ElementStatus};
 use borealis_assist::{finalize_draft, ImportDraft};
 use serde_json::{json, Value};
 use std::collections::HashSet;
@@ -69,7 +71,7 @@ impl AppState {
     pub fn import_get_draft(&self, id: &str) -> ApiResult<ImportDraftDto> {
         let stored = self.drafts.get(&self.paths, id)?;
         match stored.draft {
-            Some(d) => Ok(draft_dto(id, &stored.stage, &d)),
+            Some(d) => Ok(draft_dto(id, &stored.stage, &d, &stored.review)),
             None => Err(match stored.error {
                 Some(msg) => ApiError::invalid(msg),
                 None => ApiError::requirement("The import is still running."),
@@ -153,7 +155,8 @@ impl AppState {
         el.issues = errors;
         el.balance = check.reports.get(idx).cloned();
         el.revisions += 1;
-        let dto = draft_dto(id, &stored.stage, &draft);
+        stored.review.prune(&draft);
+        let dto = draft_dto(id, &stored.stage, &draft, &stored.review);
         stored.draft = Some(draft);
         self.drafts.put(&self.paths, id, stored)?;
         Ok(dto)
@@ -187,9 +190,9 @@ impl AppState {
                 "The AI is still working on this import.",
             ));
         }
-        let mut draft = self
-            .drafts
-            .get(&self.paths, id)?
+        let stored = self.drafts.get(&self.paths, id)?;
+        let review = stored.review;
+        let mut draft = stored
             .draft
             .ok_or_else(|| ApiError::requirement("This import has no draft yet."))?;
         if !draft.plan.open_choices().is_empty() {
@@ -222,7 +225,11 @@ impl AppState {
         draft.pack_name = name.to_string();
         draft.pack_id = pack_id.clone();
         let hub = self.hub()?;
-        let finalized = finalize_draft(&hub.builder, &draft).map_err(|e| assist_err(&e))?;
+        let mut finalized = finalize_draft(&hub.builder, &draft).map_err(|e| assist_err(&e))?;
+        // The review states and the user's overrides (text only, accepted) live in the pack.
+        if let Some(report) = finalized.pack.report.as_mut() {
+            report.review = Some(review_report(&draft, &review, &finalized.renamed));
+        }
         let scratch = Scratch::new(&self.paths.data)?;
         let out = scratch.0.join("out");
         finalized
@@ -236,6 +243,64 @@ impl AppState {
             .into_iter()
             .find(|p| p.id == pack_id)
             .ok_or_else(|| ApiError::internal("the imported pack is missing after install"))
+    }
+
+    /// Mark one element as fine as it is (`false` clears the mark). The mark lapses when the
+    /// element changes.
+    ///
+    /// # Errors
+    /// `not_found`, `requirement_failed` while a run is active or with no draft.
+    pub fn import_accept_element(
+        &self,
+        id: &str,
+        element_id: &str,
+        accepted: bool,
+    ) -> ApiResult<ImportDraftDto> {
+        self.update_review(id, element_id, |review, el| {
+            review.set_accepted(el, accepted);
+        })
+    }
+
+    /// Set (`Some`) or clear (`None`) whether the sheet computes one element's mechanics.
+    ///
+    /// # Errors
+    /// `not_found`, `requirement_failed` while a run is active or with no draft.
+    pub fn import_set_text_only(
+        &self,
+        id: &str,
+        element_id: &str,
+        text_only: Option<bool>,
+    ) -> ApiResult<ImportDraftDto> {
+        self.update_review(id, element_id, |review, el| {
+            review.set_text_only(&el.id, text_only);
+        })
+    }
+
+    fn update_review(
+        &self,
+        id: &str,
+        element_id: &str,
+        change: impl FnOnce(&mut ReviewOverrides, &DraftElement),
+    ) -> ApiResult<ImportDraftDto> {
+        if self.drafts.is_running(id) {
+            return Err(ApiError::requirement(
+                "The AI is still working on this import.",
+            ));
+        }
+        let stored = self.drafts.get(&self.paths, id)?;
+        let draft = stored
+            .draft
+            .as_ref()
+            .ok_or_else(|| ApiError::requirement("This import has no draft yet."))?;
+        let el = draft
+            .element(element_id)
+            .ok_or_else(|| ApiError::not_found("That element is not in this import."))?;
+        let mut review = stored.review.clone();
+        change(&mut review, el);
+        let dto = draft_dto(id, &stored.stage, draft, &review);
+        self.drafts
+            .put(&self.paths, id, StoredDraft { review, ..stored })?;
+        Ok(dto)
     }
 
     /// Delete a draft (a running one is left to finish and is then simply unreferenced).

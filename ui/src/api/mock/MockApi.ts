@@ -632,6 +632,13 @@ export class MockApi implements Api {
     return this.imp.revise(draftId, instruction, elementId);
   }
   async importUpdateElement({ draftId, elementId, json }: { draftId: string; elementId: string; json: Record<string, unknown> }) { await this.tick(); return this.imp.updateElement(draftId, elementId, json); }
+  async importAcceptElement({ draftId, elementId, accepted }: { draftId: string; elementId: string; accepted: boolean }) { await this.tick(); return this.imp.acceptElement(draftId, elementId, accepted); }
+  async importSetTextOnly({ draftId, elementId, textOnly }: { draftId: string; elementId: string; textOnly: boolean | null }) { await this.tick(); return this.imp.setTextOnly(draftId, elementId, textOnly); }
+  async importRelocateElement({ draftId, elementId, startLine, endLine, allowUntrustedWithCodex }: { draftId: string; elementId: string; startLine: number; endLine: number; allowUntrustedWithCodex?: boolean }) {
+    await this.tick(); this.requireConsent(allowUntrustedWithCodex || this.consented.has(draftId));
+    if (allowUntrustedWithCodex) this.consented.add(draftId);
+    return this.imp.relocate(draftId, elementId, startLine, endLine);
+  }
   async importFinalize({ draftId, packName, prefix }: { draftId: string; packName: string; prefix: string }) {
     await this.tick();
     const r = this.imp.finalize(draftId, packName, prefix);

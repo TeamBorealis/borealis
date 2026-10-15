@@ -2,6 +2,9 @@
 //! pipeline's [`ImportDraft`].
 
 use crate::import_check::balance_lines;
+use borealis_assist::import::anything::review::{
+    review_all, source_passage, ReviewCounts, ReviewLevel, ReviewOverrides, ReviewState,
+};
 use borealis_assist::import::anything::{DraftElement, ElementStatus, ImportKind, Role};
 use borealis_assist::{Edition, ImportDraft};
 use serde::{Deserialize, Serialize};
@@ -56,6 +59,70 @@ pub struct ImportElementDto {
     pub json: Value,
     pub balance_flags: Vec<String>,
     pub validation_issues: Vec<String>,
+    pub review: ElementReviewDto,
+    pub source_passage: Option<SourcePassageDto>,
+}
+
+/// The element's review state (see `borealis_assist::import::anything::review`).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ElementReviewDto {
+    /// `ok`, `check` or `not_imported`.
+    pub state: ReviewLevel,
+    pub code: String,
+    pub reason: String,
+    pub details: Vec<String>,
+    pub text_only: bool,
+    pub text_only_reason: String,
+    pub text_only_override: Option<bool>,
+    pub accepted: bool,
+}
+
+impl From<ReviewState> for ElementReviewDto {
+    fn from(s: ReviewState) -> Self {
+        Self {
+            state: s.state,
+            code: s.code,
+            reason: s.reason,
+            details: s.details,
+            text_only: s.text_only,
+            text_only_reason: s.text_only_reason,
+            text_only_override: s.text_only_override,
+            accepted: s.accepted,
+        }
+    }
+}
+
+/// Where an element comes from: 1-based inclusive lines of `ImportDraftDto::source_lines`.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SourcePassageDto {
+    pub start_line: usize,
+    pub end_line: usize,
+    pub text: String,
+}
+
+/// How many elements are in each review state.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReviewCountsDto {
+    pub ok: usize,
+    pub check: usize,
+    pub not_imported: usize,
+    pub text_only: usize,
+    pub accepted: usize,
+}
+
+impl From<ReviewCounts> for ReviewCountsDto {
+    fn from(c: ReviewCounts) -> Self {
+        Self {
+            ok: c.ok,
+            check: c.check,
+            not_imported: c.not_imported,
+            text_only: c.text_only,
+            accepted: c.accepted,
+        }
+    }
 }
 
 /// A parent class the user can pick.
@@ -98,6 +165,8 @@ pub struct ImportDraftDto {
     pub sweep: SweepDto,
     pub suggested_pack_name: String,
     pub suggested_prefix: String,
+    pub source_lines: Vec<String>,
+    pub review_counts: ReviewCountsDto,
 }
 
 /// Open parent choice.
@@ -144,9 +213,9 @@ fn flags_of(e: &DraftElement) -> Vec<String> {
     e.balance.as_ref().map(balance_lines).unwrap_or_default()
 }
 
-/// An element as shown in review.
+/// An element as shown in review, with its review state.
 #[must_use]
-pub fn element_dto(e: &DraftElement) -> ImportElementDto {
+pub fn element_dto(e: &DraftElement, d: &ImportDraft, review: ReviewState) -> ImportElementDto {
     let mut issues = e.issues.clone();
     if e.status == ElementStatus::Pending {
         issues.push("Not generated yet.".into());
@@ -165,12 +234,25 @@ pub fn element_dto(e: &DraftElement) -> ImportElementDto {
         json: e.json.clone(),
         balance_flags: flags_of(e),
         validation_issues: issues,
+        review: review.into(),
+        source_passage: source_passage(e, d).map(|(start_line, end_line, text)| SourcePassageDto {
+            start_line,
+            end_line,
+            text,
+        }),
     }
 }
 
-/// The whole draft as shown in review.
+/// The whole draft as shown in review, with the user's review decisions applied.
 #[must_use]
-pub fn draft_dto(id: &str, stage: &str, d: &ImportDraft) -> ImportDraftDto {
+pub fn draft_dto(
+    id: &str,
+    stage: &str,
+    d: &ImportDraft,
+    review: &ReviewOverrides,
+) -> ImportDraftDto {
+    let states = review_all(d, review);
+    let counts = ReviewCounts::of(&states);
     let mut kinds: Vec<String> = Vec::new();
     for item in &d.detection.items {
         let k = kind_name(item.kind);
@@ -239,12 +321,19 @@ pub fn draft_dto(id: &str, stage: &str, d: &ImportDraft) -> ImportDraftDto {
             .groups
             .iter()
             .find_map(|g| g.parent.as_ref().map(|p| p.class_id.clone())),
-        elements: d.elements.iter().map(element_dto).collect(),
+        elements: d
+            .elements
+            .iter()
+            .zip(states)
+            .map(|(e, s)| element_dto(e, d, s))
+            .collect(),
         sweep: SweepDto {
             levels_passed,
             errors: sweep_errors,
         },
         suggested_pack_name: d.pack_name.clone(),
         suggested_prefix: d.id_prefix.clone(),
+        source_lines: d.source_text.lines().map(str::to_string).collect(),
+        review_counts: counts.into(),
     }
 }

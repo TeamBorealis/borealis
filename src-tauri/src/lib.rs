@@ -362,6 +362,12 @@ pub fn run() {
             #[cfg(desktop)]
             commands_import::import_update_element,
             #[cfg(desktop)]
+            commands_import::import_relocate_element,
+            #[cfg(desktop)]
+            commands_import::import_accept_element,
+            #[cfg(desktop)]
+            commands_import::import_set_text_only,
+            #[cfg(desktop)]
             commands_import::import_finalize,
             #[cfg(desktop)]
             commands_import::import_discard,

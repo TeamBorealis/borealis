@@ -154,13 +154,13 @@ impl AppState {
         let mut options = ReportOptions {
             note: req.note,
             flagged: req.flagged,
-            source: None,
+            ..ReportOptions::default()
         };
         let (report, source_bytes) = match (req.draft_id.as_deref(), req.pack_id.as_deref()) {
             (Some(id), None) => {
-                let draft = self
-                    .drafts
-                    .get(&self.paths, id)?
+                let stored = self.drafts.get(&self.paths, id)?;
+                options.review = stored.review;
+                let draft = stored
                     .draft
                     .ok_or_else(|| ApiError::requirement("This import has no draft yet."))?;
                 let size = draft.source_text.len();

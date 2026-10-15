@@ -119,6 +119,61 @@ pub async fn import_revise(
 }
 
 #[tauri::command]
+pub async fn import_relocate_element(
+    app: AppHandle,
+    state: S<'_>,
+    ai: A<'_>,
+    draft_id: String,
+    element_id: String,
+    start_line: usize,
+    end_line: usize,
+    allow_untrusted_with_codex: Option<bool>,
+) -> ApiResult<()> {
+    ai.import_authorize(
+        &state,
+        &draft_id,
+        allow_untrusted_with_codex.unwrap_or(false),
+    )
+    .await?;
+    state.import_begin_relocate(&draft_id, &element_id, start_line, end_line)?;
+    let handle = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let state = handle.state::<AppState>();
+        let ai = handle.state::<Arc<AiService>>();
+        state
+            .run_import_relocate(
+                &ai,
+                &draft_id,
+                &element_id,
+                (start_line, end_line),
+                sink(&handle),
+            )
+            .await;
+    });
+    Ok(())
+}
+
+#[tauri::command]
+pub fn import_accept_element(
+    state: S<'_>,
+    draft_id: String,
+    element_id: String,
+    accepted: bool,
+) -> ApiResult<ImportDraftDto> {
+    state.import_accept_element(&draft_id, &element_id, accepted)
+}
+
+#[tauri::command]
+pub fn import_set_text_only(
+    state: S<'_>,
+    draft_id: String,
+    element_id: String,
+    text_only: Option<bool>,
+) -> ApiResult<ImportDraftDto> {
+    state.import_set_text_only(&draft_id, &element_id, text_only)
+}
+
+#[tauri::command]
 pub fn import_update_element(
     state: S<'_>,
     draft_id: String,

@@ -11,7 +11,7 @@ use crate::import_sources::{prepare_sources, ImportSourceDto, PickedFiles, Prepa
 use crate::picked_paths::PickPurpose;
 use crate::state::AppState;
 use borealis_ai::task::RunOptions;
-use borealis_assist::import::anything::{ImportProgress, Stage};
+use borealis_assist::import::anything::{ImportProgress, Role, SourceExcerpt, Stage};
 use borealis_assist::{
     choose_parent, continue_draft, import_anything, revise_draft, AnythingRequest, ImportDraft,
     ImportStep, VisionRunner,
@@ -22,6 +22,8 @@ use std::sync::{Arc, Mutex};
 const MAX_REPAIRS: u32 = 2;
 /// Longest revise instruction.
 const MAX_INSTRUCTION_CHARS: usize = 2000;
+/// Longest snippet stored with a re-located passage.
+const SNIPPET_CHARS: usize = 400;
 /// Prefix of ids until the user picks one.
 const DEFAULT_PREFIX: &str = "imp";
 
@@ -227,7 +229,7 @@ impl AppState {
                 let stored = StoredDraft {
                     stage: "generate".into(),
                     draft: Some(next.clone()),
-                    error: None,
+                    ..StoredDraft::started()
                 };
                 if let Err(e) = self.drafts.put(&self.paths, id, stored) {
                     self.drafts.release(id);
@@ -288,6 +290,47 @@ impl AppState {
         self.drafts.claim(id)
     }
 
+    /// Claim a draft to re-locate one element on lines `start..=end` (1-based) of its source.
+    ///
+    /// # Errors
+    /// `not_found`, `invalid_argument` (bad range, unknown or generated element),
+    /// `requirement_failed` (busy, no draft, open parent choice).
+    pub fn import_begin_relocate(
+        &self,
+        id: &str,
+        element_id: &str,
+        start: usize,
+        end: usize,
+    ) -> ApiResult<()> {
+        let stored = self.drafts.get(&self.paths, id)?;
+        let draft = stored
+            .draft
+            .ok_or_else(|| ApiError::requirement("This import has no draft yet."))?;
+        if !draft.plan.open_choices().is_empty() {
+            return Err(ApiError::requirement("Pick the parent class first."));
+        }
+        relocated(&draft, element_id, start, end)?;
+        self.drafts.claim(id)
+    }
+
+    /// Re-locate one element on the lines the user selected and rebuild it from them.
+    pub async fn run_import_relocate(
+        &self,
+        ai: &AiService,
+        id: &str,
+        element_id: &str,
+        lines: (usize, usize),
+        sink: Arc<dyn ImportSink>,
+    ) {
+        let instruction = format!(
+            "The user selected lines {}-{} of the source as this element's passage. Rebuild the element \
+from that passage: its description in the printed wording and every rule it states.",
+            lines.0, lines.1
+        );
+        self.revise_inner(ai, id, &instruction, Some(element_id), Some(lines), sink)
+            .await;
+    }
+
     /// Apply a revision with the model and re-validate.
     pub async fn run_import_revise(
         &self,
@@ -297,6 +340,19 @@ impl AppState {
         element_id: Option<&str>,
         sink: Arc<dyn ImportSink>,
     ) {
+        self.revise_inner(ai, id, instruction, element_id, None, sink)
+            .await;
+    }
+
+    async fn revise_inner(
+        &self,
+        ai: &AiService,
+        id: &str,
+        instruction: &str,
+        element_id: Option<&str>,
+        relocate: Option<(usize, usize)>,
+        sink: Arc<dyn ImportSink>,
+    ) {
         let em = Emitter::new(id, sink);
         let previous = self.drafts.get(&self.paths, id).ok();
         let result = async {
@@ -304,6 +360,10 @@ impl AppState {
                 .as_ref()
                 .and_then(|p| p.draft.clone())
                 .ok_or_else(|| ApiError::not_found("That import no longer exists."))?;
+            let draft = match (relocate, element_id) {
+                (Some((start, end)), Some(el)) => relocated(&draft, el, start, end)?,
+                _ => draft,
+            };
             let runner = ai.import_runner(self, id).await?;
             let base = self.hub()?.builder.clone();
             let opts = RunOptions {
@@ -341,10 +401,14 @@ impl AppState {
                 } else {
                     "Pick the parent class"
                 };
+                // Review decisions survive a revise; an acceptance lapses when its element changed.
+                let mut review = previous.map(|p| p.review).unwrap_or_default();
+                review.prune(&draft);
                 let stored = StoredDraft {
                     stage: "ready".into(),
                     draft: Some(draft),
                     error: None,
+                    review,
                 };
                 self.drafts
                     .put(&self.paths, id, stored)
@@ -358,8 +422,8 @@ impl AppState {
                     }
                     _ => StoredDraft {
                         stage: "error".into(),
-                        draft: None,
                         error: Some(e.message.clone()),
+                        ..StoredDraft::started()
                     },
                 };
                 let _ = self.drafts.put(&self.paths, id, stored);
@@ -372,4 +436,49 @@ impl AppState {
             Err(e) => em.send("error", 0.0, &e.message),
         }
     }
+}
+
+/// `draft` with element `element_id` (and its plan entry) pointing at source lines
+/// `start..=end` (1-based, inclusive).
+///
+/// # Errors
+/// `invalid_argument` for a range outside the source, an unknown element, or the generated
+/// subclass choice feature.
+pub(crate) fn relocated(
+    draft: &ImportDraft,
+    element_id: &str,
+    start: usize,
+    end: usize,
+) -> ApiResult<ImportDraft> {
+    let lines: Vec<&str> = draft.source_text.lines().collect();
+    if start == 0 || start > end || end > lines.len() {
+        return Err(ApiError::invalid(
+            "Select a passage inside the source text.",
+        ));
+    }
+    let el = draft
+        .element(element_id)
+        .ok_or_else(|| ApiError::not_found("That element is not in this import."))?;
+    if el.role == Role::SubclassGate {
+        return Err(ApiError::invalid(
+            "The subclass choice is built from the class; re-locate the class instead.",
+        ));
+    }
+    let excerpt = SourceExcerpt {
+        start_line: start,
+        end_line: end,
+        snippet: lines[start - 1..end]
+            .join("\n")
+            .chars()
+            .take(SNIPPET_CHARS)
+            .collect(),
+    };
+    let mut next = draft.clone();
+    for e in next.elements.iter_mut().filter(|e| e.id == element_id) {
+        e.excerpt = Some(excerpt.clone());
+    }
+    for p in next.plan.elements.iter_mut().filter(|p| p.id == element_id) {
+        p.excerpt = Some(excerpt.clone());
+    }
+    Ok(next)
 }

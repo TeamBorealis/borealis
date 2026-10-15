@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 use super::anything::{finalize_draft, Edition, ElementStatus, ImportDraft, Role};
-use super::report::{ImportReport, ReportEntry, ReportIssue};
+use super::report::{ImportReport, ReportEntry, ReportIssue, ReviewReport, ReviewReportEntry};
 use crate::error::AssistError;
 
 /// Format tag of [`BugReport`].
@@ -141,6 +141,8 @@ pub struct ReportOptions {
     pub flagged: Vec<String>,
     /// Attach the source text (`None` unless the user ticked the box).
     pub source: Option<(String, String, String)>,
+    /// The user's review decisions on the draft (accepted elements, text-only overrides).
+    pub review: super::anything::review::ReviewOverrides,
 }
 
 /// One error class and normalised message pattern, for grouping reports.
@@ -243,6 +245,14 @@ pub fn bug_report_from_draft(
         .ok()
         .and_then(|f| f.pack.report)
         .unwrap_or_else(|| draft_report(draft));
+    let report = ImportReport {
+        review: Some(super::anything::review::review_report(
+            draft,
+            &options.review,
+            &[],
+        )),
+        ..report
+    };
     let elements = draft
         .elements
         .iter()
@@ -461,6 +471,20 @@ fn clean_report(r: &ImportReport) -> ImportReport {
             .take(MAX_SOURCE_WARNINGS)
             .map(|s| clean_message(s))
             .collect(),
+        review: r.review.as_ref().map(|v| ReviewReport {
+            elements: v
+                .elements
+                .iter()
+                .take(MAX_ITEMS)
+                .map(|e| ReviewReportEntry {
+                    element: cut(&e.element, TOKEN_MAX_CHARS),
+                    state: cut(&e.state, 32),
+                    code: cut(&e.code, 64),
+                    ..e.clone()
+                })
+                .collect(),
+            ..v.clone()
+        }),
     }
 }
 

@@ -7,7 +7,7 @@
 use serde_json::Value;
 
 use super::sweep::SweepIssue;
-use super::types::{ElementStatus, ImportDraft, Role};
+use super::types::{DraftElement, ElementStatus, ImportDraft, Role};
 
 const ABILITIES: [&str; 6] = [
     "strength",
@@ -359,6 +359,83 @@ fn related<'a>(draft: &'a ImportDraft, id: &str, el: &Value) -> Vec<&'a Value> {
         })
         .map(|e| &e.json)
         .collect()
+}
+
+/// What the sheet will not compute for one element.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct ElementMechanics {
+    /// Mechanics its own text states that no rule implements (the sheet shows them as text).
+    pub text_only: Vec<String>,
+    /// Mechanics its source passage states that neither its rules nor its text carry.
+    pub gaps: Vec<String>,
+}
+
+/// [`ElementMechanics`] of `e`, whose source passage is `passage` (none when unlocated).
+pub(crate) fn element_mechanics(
+    draft: &ImportDraft,
+    e: &DraftElement,
+    passage: Option<&str>,
+) -> ElementMechanics {
+    if e.json.is_null() || e.role == Role::Text || SKIP_TYPES.contains(&str_at(&e.json, "type")) {
+        return ElementMechanics::default();
+    }
+    let granted = related(draft, &e.id, &e.json);
+    ElementMechanics {
+        text_only: unmodelled(&e.json, &granted),
+        gaps: passage.map_or_else(Vec::new, |p| passage_gaps(&e.json, &granted, p)),
+    }
+}
+
+/// Element types of a species root: every species has a walking speed.
+const SPECIES_TYPES: [&str; 2] = ["Race", "Species"];
+
+/// A species root whose rules (and its traits' rules) set no speed at all: its passage was most
+/// likely cut short (an image page not read, a lead-in with the traits missing).
+pub(crate) fn species_without_speed(draft: &ImportDraft, e: &DraftElement) -> bool {
+    if e.json.is_null() || !SPECIES_TYPES.contains(&str_at(&e.json, "type")) {
+        return false;
+    }
+    let granted = related(draft, &e.id, &e.json);
+    let mut rules = rules_of(&e.json);
+    rules.extend(granted.iter().flat_map(|g| rules_of(g)));
+    !rules
+        .iter()
+        .any(|r| str_at(r, "kind") == "stat" && str_at(r, "name").contains("speed"))
+}
+
+/// Shapes the passage states that the element neither models nor keeps in its (or a granted
+/// element's) text: those are lost, not merely text only.
+fn passage_gaps(el: &Value, granted: &[&Value], passage: &str) -> Vec<String> {
+    let enhanced = el
+        .get("setters")
+        .and_then(Value::as_array)
+        .is_some_and(|s| s.iter().any(|x| str_at(x, "name") == "enhancement"));
+    let mut rules = rules_of(el);
+    rules.extend(granted.iter().flat_map(|g| rules_of(g)));
+    let carried: Vec<Shape> = std::iter::once(el)
+        .chain(granted.iter().copied())
+        .flat_map(|g| sentences(&plain(str_at(g, "description"))))
+        .flat_map(|s| shapes_of(&s.to_lowercase()))
+        .collect();
+    let mut out = Vec::new();
+    let mut seen: Vec<Shape> = Vec::new();
+    for s in sentences(passage) {
+        for shape in shapes_of(&s.to_lowercase()) {
+            if seen.contains(&shape)
+                || carried.contains(&shape)
+                || modelled(shape, &rules)
+                || (shape == Shape::Bonus && enhanced)
+            {
+                continue;
+            }
+            seen.push(shape);
+            let quote: String = s.chars().take(QUOTE_CHARS).collect();
+            out.push(format!(
+                "the source says \"{quote}\" but this element has no rule or text for it"
+            ));
+        }
+    }
+    out
 }
 
 /// [`unmodelled`] findings of every generated element, as repairable issues.

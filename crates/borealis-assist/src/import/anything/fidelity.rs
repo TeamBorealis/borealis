@@ -244,7 +244,8 @@ fn quoted(found: &[String]) -> String {
         .join("; ")
 }
 
-fn findings(draft: &ImportDraft) -> Vec<(String, Vec<String>)> {
+/// Elements whose description has sentences the source does not, with those sentences.
+pub(crate) fn findings(draft: &ImportDraft) -> Vec<(String, Vec<String>)> {
     let index = Index::new(&draft.source_text);
     let mask = name_mask(draft);
     draft

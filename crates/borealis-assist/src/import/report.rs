@@ -30,6 +30,49 @@ pub struct ImportReport {
     /// page too large to read). [`ReportIssue::element`] is always an element id of the pack.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub source_warnings: Vec<String>,
+    /// The per-element review states when the pack was made, and the user's overrides. Codes
+    /// only, never source text (it goes into bug reports as it is).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub review: Option<ReviewReport>,
+}
+
+/// Review summary of an import (see `anything::review`).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReviewReport {
+    /// Elements per state.
+    pub ok: usize,
+    /// Elements to check.
+    pub check: usize,
+    /// Elements not imported.
+    pub not_imported: usize,
+    /// Elements whose mechanics the sheet does not (fully) compute.
+    pub text_only: usize,
+    /// Elements the user marked as fine.
+    pub accepted: usize,
+    /// One entry per element that is not plainly `ok` (check, not imported, text only, accepted
+    /// or with a text-only override).
+    #[serde(default)]
+    pub elements: Vec<ReviewReportEntry>,
+}
+
+/// One element's review state, as codes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReviewReportEntry {
+    /// Element id in the pack.
+    pub element: String,
+    /// `ok`, `check` or `not_imported`.
+    pub state: String,
+    /// Code of the leading reason.
+    pub code: String,
+    /// The sheet does not compute some of its mechanics.
+    #[serde(default)]
+    pub text_only: bool,
+    /// The user's text-only override (stored in the pack; the sheet can show it).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text_only_override: Option<bool>,
+    /// The user marked it as fine.
+    #[serde(default)]
+    pub accepted: bool,
 }
 
 impl Default for ImportReport {
@@ -41,6 +84,7 @@ impl Default for ImportReport {
             normalised: Vec::new(),
             warnings: Vec::new(),
             source_warnings: Vec::new(),
+            review: None,
         }
     }
 }

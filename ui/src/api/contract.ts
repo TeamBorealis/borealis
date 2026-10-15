@@ -314,10 +314,16 @@ export interface ApiMethods {
   importStart(args: ImportStartRequest): Promise<{ draftId: string }>;
   importGetDraft(args: { draftId: string }): Promise<ImportDraft>;
   importChooseParent(args: { draftId: string; classId: string; allowUntrustedWithCodex?: boolean }): Promise<ImportDraft>;
-  /** Streams; `elementId` limits the instruction to one element. Resolves once the revision is accepted. */
+  /** Streams; `elementId` limits the instruction to one element (the per-element "fix with AI"). Resolves once the revision is accepted. */
   importRevise(args: { draftId: string; instruction: string; elementId?: string; allowUntrustedWithCodex?: boolean }): Promise<void>;
   /** Manual JSON edit; the element is re-validated and returned inside the draft. */
   importUpdateElement(args: { draftId: string; elementId: string; json: Record<string, unknown> }): Promise<ImportDraft>;
+  /** Mark an element that needs checking as fine (or undo that). */
+  importAcceptElement(args: { draftId: string; elementId: string; accepted: boolean }): Promise<ImportDraft>;
+  /** Force an element to text only (true), to full rules (false), or back to automatic (null). */
+  importSetTextOnly(args: { draftId: string; elementId: string; textOnly: boolean | null }): Promise<ImportDraft>;
+  /** Streams like importRevise (ends with stage "ready" or "error"; then call importGetDraft): regenerate the element from the given source lines. */
+  importRelocateElement(args: { draftId: string; elementId: string; startLine: number; endLine: number; allowUntrustedWithCodex?: boolean }): Promise<void>;
   importFinalize(args: { draftId: string } & ImportFinalizeRequest): Promise<ContentPack>;
   importDiscard(args: { draftId: string }): Promise<void>;
   /** Builds the opt-in bug report and keeps it for sending; sends nothing. */
@@ -455,6 +461,9 @@ export const COMMANDS = {
   importChooseParent: "import_choose_parent",
   importRevise: "import_revise",
   importUpdateElement: "import_update_element",
+  importAcceptElement: "import_accept_element",
+  importSetTextOnly: "import_set_text_only",
+  importRelocateElement: "import_relocate_element",
   importFinalize: "import_finalize",
   importDiscard: "import_discard",
   importReportPreview: "import_report_preview",

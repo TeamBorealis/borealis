@@ -35,6 +35,7 @@ mod prepared;
 mod prereq;
 #[cfg(test)]
 mod replay_tests;
+pub mod review;
 mod rules;
 mod source;
 mod steps;

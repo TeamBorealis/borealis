@@ -527,6 +527,18 @@
     "name": "FiveToolsImportReport"
    }
   },
+  "import_accept_element": {
+   "args": {
+    "accepted": false,
+    "draftId": false,
+    "elementId": false
+   },
+   "method": "importAcceptElement",
+   "response": {
+    "k": "ref",
+    "name": "ImportDraft"
+   }
+  },
   "import_character": {
    "args": {
     "contentBase64": false,
@@ -591,6 +603,19 @@
     "name": "ImportPackResult"
    }
   },
+  "import_relocate_element": {
+   "args": {
+    "allowUntrustedWithCodex": true,
+    "draftId": false,
+    "elementId": false,
+    "endLine": false,
+    "startLine": false
+   },
+   "method": "importRelocateElement",
+   "response": {
+    "k": "nil"
+   }
+  },
   "import_report_preview": {
    "args": {
     "draftId": true,
@@ -625,6 +650,18 @@
    "method": "importRevise",
    "response": {
     "k": "nil"
+   }
+  },
+  "import_set_text_only": {
+   "args": {
+    "draftId": false,
+    "elementId": false,
+    "textOnly": false
+   },
+   "method": "importSetTextOnly",
+   "response": {
+    "k": "ref",
+    "name": "ImportDraft"
    }
   },
   "import_start": {
@@ -4519,6 +4556,22 @@
       "k": "prim"
      }
     },
+    "reviewCounts": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ImportReviewCounts"
+     }
+    },
+    "sourceLines": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
     "stage": {
      "opt": false,
      "t": {
@@ -4585,10 +4638,24 @@
       "k": "prim"
      }
     },
+    "review": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ImportElementReview"
+     }
+    },
     "sourceExcerpt": {
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    },
+    "sourcePassage": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "ImportSourcePassage"
      }
     },
     "status": {
@@ -4610,6 +4677,62 @@
       "t": {
        "k": "prim"
       }
+     }
+    }
+   }
+  },
+  "ImportElementReview": {
+   "k": "object",
+   "props": {
+    "accepted": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "code": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "details": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "reason": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "state": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "textOnly": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "textOnlyOverride": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "textOnlyReason": {
+     "opt": false,
+     "t": {
+      "k": "prim"
      }
     }
    }
@@ -4949,6 +5072,64 @@
    "k": "object",
    "props": {
     "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ImportReviewCounts": {
+   "k": "object",
+   "props": {
+    "accepted": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "check": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "notImported": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "ok": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "textOnly": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "ImportSourcePassage": {
+   "k": "object",
+   "props": {
+    "endLine": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "startLine": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "text": {
      "opt": false,
      "t": {
       "k": "prim"
