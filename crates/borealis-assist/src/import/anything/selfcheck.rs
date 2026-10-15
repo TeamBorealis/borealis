@@ -515,6 +515,29 @@ pub(crate) async fn heal(
     opts: &RunOptions<'_>,
     progress: Progress<'_>,
 ) {
+    heal_filtered(runner, ctx, draft, None, opts, progress).await;
+}
+
+/// [`heal`] for the one element `id` (a rebuilt element): the others are only re-checked.
+pub(crate) async fn heal_one(
+    runner: &dyn AiRunner,
+    ctx: &PackContext,
+    draft: &mut ImportDraft,
+    id: &str,
+    opts: &RunOptions<'_>,
+    progress: Progress<'_>,
+) {
+    heal_filtered(runner, ctx, draft, Some(id), opts, progress).await;
+}
+
+async fn heal_filtered(
+    runner: &dyn AiRunner,
+    ctx: &PackContext,
+    draft: &mut ImportDraft,
+    only: Option<&str>,
+    opts: &RunOptions<'_>,
+    progress: Progress<'_>,
+) {
     let checker = Checker::new(&ctx.base, draft);
     apply_with(&checker, &ctx.base, draft);
     let mut todo: Vec<(String, Vec<String>, usize)> = draft
@@ -528,7 +551,7 @@ pub(crate) async fn heal(
                 r.len(),
             )
         })
-        .filter(|(_, _, n)| *n > 0)
+        .filter(|(id, _, n)| *n > 0 && only.map_or(true, |o| o == id))
         .collect();
     todo.sort_by_key(|t| std::cmp::Reverse(t.2));
     todo.truncate(MAX_HEAL_REPAIRS);

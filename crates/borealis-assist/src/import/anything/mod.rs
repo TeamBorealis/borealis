@@ -33,6 +33,7 @@ mod plan_shape_tests;
 mod pools;
 mod prepared;
 mod prereq;
+mod regenerate;
 #[cfg(test)]
 mod replay_tests;
 pub mod review;
@@ -56,6 +57,7 @@ use crate::homebrew::PackContext;
 
 pub use finalize::{finalize_draft, Finalized};
 pub use generate::MAX_REPAIR_ROUNDS;
+pub use regenerate::{point_element_at, regenerate_element};
 pub use steps::VisionRunner;
 pub use sweep::{engine_sweep, SweepIssue};
 pub use types::*;
