@@ -223,6 +223,123 @@ pub(crate) fn strip_texts(html: &str, texts: &[String]) -> Option<String> {
     Some(tidy)
 }
 
+/// Most non-blank lines of a page break inside a table (a footnote, the running header or
+/// footer, a page number).
+const MAX_BREAK_PRINTED: usize = 4;
+/// Most lines of such a page break, blank lines included.
+const MAX_BREAK_LINES: usize = 12;
+
+/// The number of cells of a table row, `None` for any other line.
+fn row_width(line: &str) -> Option<usize> {
+    let t = line.trim();
+    t.contains(" | ")
+        .then(|| t.trim_matches('|').split('|').count())
+}
+
+/// The first row (0-based) of the run of rows `row` is in: rows with single blank lines
+/// between them, as an extraction prints them.
+fn run_top(lines: &[&str], row: usize) -> usize {
+    let is_row = |k: usize| lines.get(k).is_some_and(|l| row_width(l).is_some());
+    let mut top = row;
+    loop {
+        if top >= 1 && is_row(top - 1) {
+            top -= 1;
+        } else if top >= 2 && lines[top - 1].trim().is_empty() && is_row(top - 2) {
+            top -= 2;
+        } else {
+            return top;
+        }
+    }
+}
+
+/// The last row of the same table printed before a page break, for the row at `row` (0-based)
+/// on the page after it: the run of rows `row` is in opens with a data row (it prints a digit;
+/// a fresh table's header prints none), and above it, past a page break of no heading and no
+/// row (a footnote, the running header, a page number: at most [`MAX_BREAK_PRINTED`] printed
+/// lines), a row with the same number of cells ends the table on the page before. The table's
+/// header is above that row. `None` otherwise.
+pub(crate) fn row_before_break(lines: &[&str], row: usize) -> Option<usize> {
+    let first = run_top(lines, row);
+    let width = row_width(lines.get(first)?)?;
+    if !lines[first].chars().any(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    let mut printed = 0;
+    for k in (first.saturating_sub(MAX_BREAK_LINES + 1)..first).rev() {
+        let t = lines[k].trim();
+        if let Some(w) = row_width(t) {
+            return (w == width && printed > 0).then_some(k);
+        }
+        if t.starts_with('#') {
+            return None;
+        }
+        if !t.is_empty() {
+            printed += 1;
+            if printed > MAX_BREAK_PRINTED {
+                return None;
+            }
+        }
+    }
+    None
+}
+
+/// Words of a transcription marker ("(Summary)", "[Paraphrased]", "[Summary: ...]") that a
+/// page transcription puts on text it did not copy word for word.
+const MARKER_WORDS: [&str; 5] = [
+    "summary",
+    "summarised",
+    "summarized",
+    "paraphrased",
+    "paraphrase",
+];
+
+/// The marker word a bracketed text is ("Summary", "paraphrased."), with what follows a
+/// colon inside it ("Summary: text" -> "text").
+fn marker(inside: &str) -> Option<&str> {
+    let (word, rest) = match inside.split_once(':') {
+        Some((w, r)) => (w, Some(r)),
+        None => (inside, None),
+    };
+    let w = word.trim().trim_end_matches('.').to_lowercase();
+    MARKER_WORDS
+        .contains(&w.as_str())
+        .then(|| rest.map_or("", str::trim))
+}
+
+/// `html` without transcription markers: a bare marker is left out, a marker around a text
+/// ("[Summary: text]") keeps the text. `None` when there is none.
+pub(crate) fn strip_markers(html: &str) -> Option<String> {
+    let mut out = String::with_capacity(html.len());
+    let mut rest = html;
+    let mut changed = false;
+    while let Some(k) = rest.find(['(', '[']) {
+        let close = if rest[k..].starts_with('(') { ')' } else { ']' };
+        let found = rest[k + 1..]
+            .find(close)
+            .map(|e| k + 1 + e)
+            .filter(|e| !rest[k + 1..*e].contains(['<', '(', '[']));
+        let Some(text) = found.and_then(|e| marker(&rest[k + 1..e]).map(|t| (e, t))) else {
+            out.push_str(&rest[..=k]);
+            rest = &rest[k + 1..];
+            continue;
+        };
+        let (e, text) = text;
+        changed = true;
+        out.push_str(&rest[..k]);
+        out.push_str(text);
+        rest = &rest[e + 1..];
+        if text.is_empty() && (out.is_empty() || out.ends_with([' ', '>'])) {
+            rest = rest.strip_prefix(' ').unwrap_or(rest);
+        }
+    }
+    out.push_str(rest);
+    if !changed {
+        return None;
+    }
+    let tidy = out.replace(" </p>", "</p>").replace(" .", ".");
+    Some(tidy.replace("<p></p>", ""))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -281,5 +398,49 @@ mod tests {
             Some("<p>A lamp burns oil.</p><p>4 | Smoke oil</p>")
         );
         assert_eq!(strip_texts("<p>A lamp burns oil.</p>", f.texts()), None);
+    }
+
+    #[test]
+    fn a_table_split_by_a_page_break_continues_under_its_header() {
+        let lines = [
+            "Tool | Cost | DC",
+            "Awl | 1gp | 10",
+            "",
+            "Saw | 2gp | 15",
+            "",
+            "^ A saw dulls fast.",
+            "Tool Stats",
+            "",
+            "Adze | 3gp | 20",
+            "",
+            "Plane | 4gp | 25",
+        ];
+        assert_eq!(row_before_break(&lines, 10), Some(3));
+        assert_eq!(row_before_break(&lines, 8), Some(3));
+        // On the first page there is no break; a fresh header prints no digit.
+        assert_eq!(row_before_break(&lines, 3), None);
+        let fresh = ["a | b", "1 | 2", "", "Note.", "", "Name | Kind", "x | 3"];
+        assert_eq!(row_before_break(&fresh, 6), None);
+        // A heading or a table of another width in between is another table.
+        let headed = ["a | b", "1 | 2", "## Next", "3 | 4"];
+        assert_eq!(row_before_break(&headed, 3), None);
+        let wider = ["a | b | c", "1 | 2 | 3", "Note.", "4 | 5"];
+        assert_eq!(row_before_break(&wider, 3), None);
+    }
+
+    #[test]
+    fn transcription_markers_are_left_out_of_a_description() {
+        assert_eq!(
+            strip_markers(
+                "<p>(Summary) Owls hoot.</p><p><strong>Age.</strong> (Paraphrased.) Old.</p>"
+            )
+            .as_deref(),
+            Some("<p>Owls hoot.</p><p><strong>Age.</strong> Old.</p>")
+        );
+        assert_eq!(
+            strip_markers("<p>[Summary: Owls hoot at night.] They roost.</p>").as_deref(),
+            Some("<p>Owls hoot at night. They roost.</p>")
+        );
+        assert_eq!(strip_markers("<p>Owls (see summary) hoot [1].</p>"), None);
     }
 }

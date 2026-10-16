@@ -8,7 +8,9 @@
 //! * weapon groups and categories no loaded pack covers, and weapon properties no pack defines
 //!   (`groups.rs`): elements named from the source with the import's ids, the weapons tagged and
 //!   proficient through them, the classes whose proficiency text names a group granting it;
-//! * class table columns no rule reads: a counter (`resource` with its max from the table).
+//! * class table columns no rule reads: a counter (`resource` with its max from the table);
+//! * descriptions: page furniture and transcription markers left out, every version of an
+//!   item carrying the item's shared text.
 //!
 //! Every change is reported (`notes`).
 
@@ -77,12 +79,15 @@ pub(crate) fn derive_with_source(
     super::lists::class_lists(plan, store, &mut d);
     super::lists::marked_lists(source, plan, store, &mut d);
     spell_lists(plan, store, &mut d);
+    super::feature_spells::official_spells(plan, store, &mut d);
     groups::weapon_groups(plan, source, store, &mut d);
     groups::new_properties(plan, store, &mut d);
     weapon_context::unmatched_filters(store, &mut d);
     languages::languages(plan, store, &mut d);
     roll_tables::roll_tables(plan, source, &mut d);
     strip_furniture(source, &mut d);
+    strip_markers(&mut d);
+    version_texts(&mut d);
     progression::outline_columns(plan, &mut d);
     progression::table_keys(store, &mut d);
     table_counters(&mut d);
@@ -114,6 +119,37 @@ fn strip_furniture(source: &str, d: &mut Derived) {
             &id,
             "description: page furniture (running header, footer or web address) left out".into(),
         );
+    }
+}
+
+/// Transcription markers a page transcription put on text it did not copy word for word
+/// ("(Summary)", "[Paraphrased]", "[Summary: ...]") are no printed text: left out of the
+/// descriptions (the import's review keeps the transcript's own notes).
+fn strip_markers(d: &mut Derived) {
+    for i in 0..d.docs.len() {
+        let Some(clean) = d.docs[i]
+            .get("description")
+            .and_then(Value::as_str)
+            .and_then(super::furniture::strip_markers)
+        else {
+            continue;
+        };
+        d.docs[i]["description"] = json!(clean);
+        let id = str_at(&d.docs[i], "id").to_string();
+        d.note(&id, "description: transcription markers left out".into());
+    }
+}
+
+/// Every version of an item ("<Item>, <version>") carries the item's shared text the same way
+/// ([`super::items::variant::shared_text`]), whatever its generation batch wrote.
+fn version_texts(d: &mut Derived) {
+    let items = super::items::variant::item_descriptions(&d.docs);
+    for i in 0..d.docs.len() {
+        let Some(note) = super::items::variant::shared_text_fix(&mut d.docs[i], &items) else {
+            continue;
+        };
+        let id = str_at(&d.docs[i], "id").to_string();
+        d.note(&id, note);
     }
 }
 

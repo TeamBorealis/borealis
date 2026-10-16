@@ -502,11 +502,18 @@ struct Reach {
 fn reach(lines: &[&str], planned: &PlannedElement, plan: &ImportPlan) -> Option<Reach> {
     let ex = planned.excerpt.as_ref()?;
     let start = ex.start_line.saturating_sub(1).min(lines.len());
-    let next = next_start(lines, plan, &planned.id, start).unwrap_or(lines.len());
+    // Never into the document's end matter (a legal notice, thanks), its title marked as a
+    // heading or not.
+    let tail = (start + 1..lines.len())
+        .find(|&k| super::passage::end_matter_title(lines, k))
+        .unwrap_or(lines.len());
+    let next = next_start(lines, plan, &planned.id, start)
+        .unwrap_or(lines.len())
+        .min(tail);
     let own = lines.get(start).and_then(|l| is_heading(l));
     let mut end = start + 1;
     let mut own_end: Option<usize> = None;
-    let located_end = ex.end_line.min(lines.len());
+    let located_end = ex.end_line.min(lines.len()).min(tail.max(start + 1));
     while end < lines.len().min(next).min(start + MAX_SECTION_LINES) {
         // A passage without a heading of its own (a name line, a wrapped title) ends at the
         // first heading after its located passage: what follows is another section.

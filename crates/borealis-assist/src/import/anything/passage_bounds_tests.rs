@@ -127,3 +127,137 @@ d4 | Personality Trait\n\
         "{desc}"
     );
 }
+
+/// An item whose per-version effect table is printed under a caption of the item's own heading
+/// level, one blank line after each row, with two versions planned (1-based lines: item 1,
+/// caption 6, rows 8..14, next item 16).
+const CLOAK: &str = "#### Cloak of Seasons\n\
+Wondrous item, rare\n\
+This cloak of woven leaves turns with the year.\n\
+Roll on the table to find its season.\n\
+\n\
+#### Seasons of the cloak\n\
+\n\
+d3 | Season | Effect\n\
+\n\
+1 | Spring | You resist poison damage.\n\
+\n\
+2 | Summer | You resist fire damage.\n\
+\n\
+3 | Winter | You resist cold damage.\n\
+\n\
+#### Lamp of Dusk\n\
+Wondrous item, common\n\
+This lamp glows at dusk.\n";
+
+fn cloak() -> Vec<PlannedElement> {
+    let mut item = planned(
+        "c",
+        "Cloak of Seasons",
+        "Magic Item",
+        Role::Standalone,
+        Some(1),
+    );
+    item.excerpt.as_mut().unwrap().end_line = 14;
+    let spring = planned(
+        "c1",
+        "Cloak of Seasons, Spring",
+        "Magic Item",
+        Role::Standalone,
+        Some(1),
+    );
+    let winter = planned(
+        "c3",
+        "Cloak of Seasons, Winter",
+        "Magic Item",
+        Role::Standalone,
+        Some(1),
+    );
+    let caption = planned(
+        "t",
+        "Seasons of the cloak",
+        "Rules Glossary Entry",
+        Role::Text,
+        Some(6),
+    );
+    let lamp = planned(
+        "l",
+        "Lamp of Dusk",
+        "Magic Item",
+        Role::Standalone,
+        Some(16),
+    );
+    vec![item, spring, winter, caption, lamp]
+}
+
+#[test]
+fn a_per_version_table_under_a_caption_of_the_items_level_is_the_items() {
+    // Arrange: the item's text left the table out; a text entry was planned on its caption.
+    let item_desc = "<p>This cloak of woven leaves turns with the year. Roll on the table to find its season.</p>";
+    let mut d = draft(
+        CLOAK,
+        cloak(),
+        &[
+            item_desc,
+            item_desc,
+            item_desc,
+            "<p>d3 Season Effect</p>",
+            "<p>This lamp glows at dusk.</p>",
+        ],
+    );
+    // Act
+    let folded = tables::owner_table_entries(&d.plan, CLOAK);
+    let changed = tables::add_owner_tables(&mut d);
+    // Assert: the caption entry is a piece of the item, the item gets the whole table (one
+    // table, under its caption); the versions keep their text (their row comes from the item).
+    assert_eq!(folded.len(), 1, "{folded:?}");
+    assert_eq!(folded[0].0, "t");
+    assert!(
+        folded[0].1.contains("row of Cloak of Seasons, kept"),
+        "{folded:?}"
+    );
+    assert_eq!(changed, ["c"]);
+    let desc = d.elements[0].json["description"].as_str().unwrap();
+    assert_eq!(desc.matches("<table>").count(), 1, "{desc}");
+    assert!(
+        desc.contains("<p><strong>Seasons of the cloak</strong></p><table>"),
+        "{desc}"
+    );
+    assert!(
+        desc.contains("<td>Summer</td>") && desc.contains("<td>Winter</td>"),
+        "{desc}"
+    );
+    assert_eq!(d.elements[1].json["description"], item_desc);
+}
+
+/// A text document (no heading marks): a closing section, then the legal notice and thanks as
+/// plain title lines (1-based: 1, 5, 9).
+const PLAIN_END: &str = "More to Follow\n\nThe author hopes to add the sky mirefolk and the salt \
+mirefolk to a later edition of this book.\n\nLegal Information\n\nAll names are trademarks of \
+their owners and are used here with their kind permission today.\n\nSpecial Thanks To\n\n\
+Thanks to the frog choir for their patience with every single draft of this little book.\n";
+
+#[test]
+fn the_end_matter_of_a_document_without_heading_marks_is_no_part_of_the_last_entry() {
+    // Arrange
+    let mut more = planned(
+        "m",
+        "More to Follow",
+        "Rules Glossary Entry",
+        Role::Text,
+        Some(1),
+    );
+    more.excerpt.as_mut().unwrap().end_line = 3;
+    let mut d = draft(PLAIN_END, vec![more], &[]);
+    let el = crate::import::anything::parts::text_element(&d.plan.elements[0], &d.plan, PLAIN_END);
+    // Assert: the entry stops at the legal notice; the end matter is reported under its titles.
+    let desc = el["description"].as_str().unwrap();
+    assert!(
+        desc.contains("salt mirefolk") && !desc.contains("trademarks"),
+        "{desc}"
+    );
+    assert!(!desc.contains("frog choir"), "{desc}");
+    d.elements[0].json = el;
+    let sources: Vec<String> = uncovered_prose(&d).into_iter().map(|e| e.source).collect();
+    assert_eq!(sources, ["Legal Information", "Special Thanks To"]);
+}

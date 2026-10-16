@@ -193,6 +193,75 @@ pub(crate) fn own_row(desc: &str, name: &str, item_desc: Option<&str>) -> Option
     ))
 }
 
+/// The paragraphs (`<p>` blocks: byte range in `html`) an item prints before its first table
+/// and that table's caption; all of its paragraphs when it prints no table.
+fn intro(html: &str) -> Vec<(usize, usize)> {
+    let lead = blocks(html, "<table", "</table>")
+        .first()
+        .map_or(html.len(), |(s, _)| caption_before(html, *s).unwrap_or(*s));
+    blocks(&html[..lead], "<p", "</p>")
+        .into_iter()
+        .filter(|(s, e)| {
+            let tag = &html[*s..*e];
+            tag.starts_with("<p>") || tag.starts_with("<p ")
+        })
+        .collect()
+}
+
+/// A version's description with the item's shared text it left out: every paragraph the item
+/// prints before its table (its description, the lead-in to the table of versions) that the
+/// version lacks is put back in the item's order, so every version carries the same shared
+/// text whatever its generation batch wrote. Only for a version built from that text (it
+/// prints the item's first paragraph). `None` when nothing is missing.
+pub(crate) fn shared_text(desc: &str, item_desc: &str) -> Option<String> {
+    let paras: Vec<&str> = intro(item_desc)
+        .into_iter()
+        .map(|(s, e)| &item_desc[s..e])
+        .collect();
+    let has = |out: &str, p: &str| {
+        let v = visible(p);
+        !v.is_empty() && visible(out).contains(&v)
+    };
+    if paras.len() < 2 || !has(desc, paras[0]) {
+        return None;
+    }
+    let mut out = desc.to_string();
+    for (i, p) in paras.iter().enumerate().skip(1) {
+        if has(&out, p) {
+            continue;
+        }
+        // After the item's paragraph before it, else before the version's table, else at
+        // the end.
+        let after_prev = paras[..i]
+            .iter()
+            .rev()
+            .find_map(|q| out.find(q).map(|k| k + q.len()));
+        let at = after_prev
+            .or_else(|| {
+                blocks(&out, "<table", "</table>")
+                    .first()
+                    .map(|(s, _)| caption_before(&out, *s).unwrap_or(*s))
+            })
+            .unwrap_or(out.len());
+        out.insert_str(at, p);
+    }
+    (out != desc).then_some(out)
+}
+
+/// [`shared_text`] on an element: `items` maps item names (visible text) to their descriptions.
+pub(crate) fn shared_text_fix(el: &mut Value, items: &[(String, String)]) -> Option<String> {
+    let name = el.get("name").and_then(Value::as_str)?.to_string();
+    let item = visible(name.rsplit_once(", ")?.0);
+    let item_desc = items
+        .iter()
+        .find(|(n, _)| *n == item)
+        .map(|(_, d)| d.as_str())?;
+    let desc = el.get("description").and_then(Value::as_str).unwrap_or("");
+    let out = shared_text(desc, item_desc)?;
+    super::obj(el).insert("description".into(), json!(out));
+    Some("description: the item's shared text all its versions print put back".into())
+}
+
 /// [`own_row`] on an element: `items` maps item names (visible text) to their descriptions.
 pub(crate) fn own_row_fix(el: &mut Value, items: &[(String, String)]) -> Option<String> {
     let name = el.get("name").and_then(Value::as_str)?.to_string();
@@ -216,4 +285,45 @@ pub(crate) fn item_descriptions(raw: &[Value]) -> Vec<(String, String)> {
             Some((visible(name), desc.to_string()))
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const ITEM: &str = "<p>A carved charm.</p><p>Roll on the table.</p><h5>Charm animals</h5>\
+<table><thead><tr><th>d2</th><th>Animal</th></tr></thead><tbody><tr><td>1</td><td>Otter</td></tr>\
+<tr><td>2</td><td>Heron</td></tr></tbody></table><p>Use it once.</p>";
+
+    #[test]
+    fn every_version_carries_the_items_shared_text() {
+        // One batch wrote the lead-in, another left it out: both end the same.
+        let with = "<p>A carved charm.</p><p>Roll on the table.</p><h5>Charm animals</h5>\
+<table><tbody><tr><td>1</td><td>Otter</td></tr></tbody></table><p>Use it once.</p>";
+        let without = "<p>A carved charm.</p><h5>Charm animals</h5>\
+<table><tbody><tr><td>1</td><td>Otter</td></tr></tbody></table><p>Use it once.</p>";
+        assert_eq!(shared_text(with, ITEM), None);
+        assert_eq!(shared_text(without, ITEM).as_deref(), Some(with));
+        // Without a table of its own the lead-in follows the opening paragraph.
+        assert_eq!(
+            shared_text("<p>A carved charm.</p><p>Use it once.</p>", ITEM).as_deref(),
+            Some("<p>A carved charm.</p><p>Roll on the table.</p><p>Use it once.</p>")
+        );
+        // A version written apart from the item's text (no shared opening) is left alone.
+        assert_eq!(shared_text("<p>An otter charm.</p>", ITEM), None);
+    }
+
+    #[test]
+    fn the_fix_finds_the_item_by_the_versions_name() {
+        let items = vec![("charm of the wild".to_string(), ITEM.to_string())];
+        let mut el =
+            json!({"name": "Charm of the Wild, Otter", "description": "<p>A carved charm.</p>"});
+        assert!(shared_text_fix(&mut el, &items).is_some());
+        assert_eq!(
+            el["description"],
+            "<p>A carved charm.</p><p>Roll on the table.</p>"
+        );
+        let mut base = json!({"name": "Charm of the Wild", "description": ITEM});
+        assert_eq!(shared_text_fix(&mut base, &items), None);
+    }
 }

@@ -191,4 +191,25 @@ Double fare after dark.\n\n## The Drowned Mill\n\nRead aloud: the wheel creaks i
         // Without the narrative note the unplanned heading is read as a flattened sub-rule.
         assert!(all.contains("the wheel creaks"), "{all}");
     }
+
+    #[test]
+    fn a_text_section_of_a_document_without_heading_marks_stops_at_its_end_matter() {
+        // A text document: titles are plain lines between blank lines (1-based: 1, 5, 9).
+        let src = "Ferry Rules\n\nThe ferry costs a copper, paid to the ferryman before the crossing.\n\n\
+Legal Information\n\nAll names are the property of their owners and used with leave.\n\n\
+Special Thanks To\n\nThe river folk, for every crossing.\n";
+        let d = draft(src, vec![text("t0", "Ferry Rules", 1, 3)], &[]);
+        let own = section_lines(src, &d.plan.elements[0], &d.plan).join("\n");
+        assert!(own.contains("The ferry costs a copper"), "{own}");
+        assert!(
+            !own.contains("Legal") && !own.contains("river folk"),
+            "{own}"
+        );
+        // A rules sentence that merely names the word is no end matter.
+        let plain =
+            "Ferry Rules\n\nThe ferry costs a copper.\n\nThanks are owed to the ferryman.\n";
+        let d = draft(plain, vec![text("t0", "Ferry Rules", 1, 3)], &[]);
+        let own = section_lines(plain, &d.plan.elements[0], &d.plan).join("\n");
+        assert!(own.contains("Thanks are owed"), "{own}");
+    }
 }

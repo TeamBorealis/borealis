@@ -159,8 +159,36 @@ impl Block {
     }
 }
 
+/// `lines` without the blank lines between two rows of one table (rows with the same number of
+/// cells, a wrapped cell allowed after the upper one): an extraction that prints a blank line
+/// after every row still printed one table, not a table per row.
+fn rows_together<'a>(lines: &[&'a str]) -> Vec<&'a str> {
+    let width = |l: &str| table_cells(l).map(|c| c.len());
+    let mut out = Vec::with_capacity(lines.len());
+    let mut open: Option<usize> = None;
+    for (i, l) in lines.iter().enumerate() {
+        if l.trim().is_empty() {
+            let next = lines[i + 1..]
+                .iter()
+                .find(|n| !n.trim().is_empty())
+                .and_then(|n| width(n));
+            if open.is_some() && next == open {
+                continue;
+            }
+            open = None;
+        } else if let Some(w) = width(l) {
+            open = Some(w);
+        } else if !l.trim_start().starts_with(char::is_lowercase) {
+            open = None;
+        }
+        out.push(*l);
+    }
+    out
+}
+
 /// See the module doc.
 pub(crate) fn to_html(lines: &[&str]) -> String {
+    let lines = rows_together(lines);
     let mut out = String::new();
     for block in lines.split(|l| l.trim().is_empty()) {
         if block.is_empty() {
@@ -207,6 +235,38 @@ mod tests {
             to_html(&lines),
             "<table><thead><tr><th>a</th><th>b</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr></tbody></table><p>Roll again.</p>"
         );
+    }
+
+    #[test]
+    fn rows_printed_with_a_blank_line_after_each_are_one_table() {
+        let lines = [
+            "d4 | Hide | Ground",
+            "",
+            "1 | Newt | Marsh, bog",
+            "",
+            "2 | Stag | Forest",
+            "and glade",
+            "",
+            "3 | Goat | Hills",
+            "",
+            "Roll again on a 4.",
+            "",
+            "a | b",
+        ];
+        let html = to_html(&lines);
+        assert_eq!(html.matches("<table>").count(), 2, "{html}");
+        assert!(html.starts_with(
+            "<table><thead><tr><th>d4</th><th>Hide</th><th>Ground</th></tr></thead><tbody>\
+             <tr><td>1</td><td>Newt</td><td>Marsh, bog</td></tr>\
+             <tr><td>2</td><td>Stag</td><td>Forest and glade</td></tr>\
+             <tr><td>3</td><td>Goat</td><td>Hills</td></tr></tbody></table><p>Roll again on a 4.</p>"
+        ));
+    }
+
+    #[test]
+    fn tables_of_different_widths_stay_apart() {
+        let lines = ["a | b", "1 | 2", "", "x | y | z", "3 | 4 | 5"];
+        assert_eq!(to_html(&lines).matches("<table>").count(), 2);
     }
 
     #[test]

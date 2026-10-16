@@ -51,9 +51,39 @@ fn cells_of(line: &str) -> Vec<String> {
     cells
 }
 
+/// Most page breaks a table's rows are followed across to its header.
+const MAX_PAGES: usize = 8;
+
+/// The column labels of the table the row at `row` (0-based, `width` cells, naming `name`) is
+/// in: its table's header line, found across the page breaks that split the table (rows
+/// continued on a new page under the running header keep the header printed over the first
+/// page's rows).
+fn header(lines: &[&str], row: usize, width: usize, name: &str) -> Option<Vec<String>> {
+    let labels_of = |at: usize| {
+        let (start, end) = super::super::source::table_head(lines, at)?;
+        let header = lines[start..end].iter().rev().find(|l| l.contains('|'))?;
+        let labels = cells_of(header);
+        let is_header = labels.len() >= MIN_COLUMNS
+            && labels.len() >= width
+            && !labels.iter().any(|l| l.is_empty())
+            && !header.chars().any(|c| c.is_ascii_digit())
+            && !norm(&labels[0]).contains(name);
+        is_header.then_some(labels)
+    };
+    let mut at = row;
+    for _ in 0..MAX_PAGES {
+        if let Some(labels) = labels_of(at) {
+            return Some(labels);
+        }
+        at = super::super::furniture::row_before_break(lines, at)?;
+    }
+    None
+}
+
 /// The printed row of `planned` in `source`: its located line is a table row whose first cell
-/// names it, under a header line of column labels. `None` for anything else (prose, a row
-/// without a header, a row with more cells than its header).
+/// names it, under a header line of column labels (over the table's first page when a page
+/// break splits it). `None` for anything else (prose, a row without a header, a row with more
+/// cells than its header).
 pub(crate) fn printed_row(source: &str, planned: &PlannedElement) -> Option<PrintedRow> {
     let ex = planned.excerpt.as_ref()?;
     let lines: Vec<&str> = source.lines().collect();
@@ -64,17 +94,7 @@ pub(crate) fn printed_row(source: &str, planned: &PlannedElement) -> Option<Prin
     if cells.len() < MIN_COLUMNS || name.is_empty() || !norm(&cells[0]).contains(&name) {
         return None;
     }
-    let (start, end) = super::super::source::table_head(&lines, row)?;
-    let header = lines[start..end].iter().rev().find(|l| l.contains('|'))?;
-    let labels = cells_of(header);
-    let is_header = labels.len() >= MIN_COLUMNS
-        && labels.len() >= cells.len()
-        && !labels.iter().any(|l| l.is_empty())
-        && !header.chars().any(|c| c.is_ascii_digit())
-        && !norm(&labels[0]).contains(&name);
-    if !is_header {
-        return None;
-    }
+    let labels = header(&lines, row, cells.len(), &name)?;
     let after = lines[row + 1..]
         .iter()
         .take(WRAP_LINES)
@@ -241,4 +261,40 @@ pub(crate) fn keep_printed_row(
         super::data_mut(el).insert("columns".into(), Value::Object(columns));
     }
     notes
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::import::anything::fidelity::tests::planned;
+    use crate::import::anything::types::Role;
+
+    /// A gear table split by a page break: a footnote and the running header between the rows
+    /// (1-based lines: header 3, first page rows 5 and 7, second page rows 12 and 14).
+    const SPLIT: &str = "## Gear\n\nName | Cost | DC | Materials\n\nAwl | 1gp | 10 | 1 Metal\n\n\
+Saw | 2gp | 15 | 1 Metal\n\n^ A saw dulls fast.\nGear Stats\n\nAdze | 3gp | 20 | 1 Wood\n\n\
+Plane | 4gp | 25 | 2 Wood\n";
+
+    #[test]
+    fn rows_after_a_page_break_keep_the_tables_printed_header() {
+        // Arrange
+        let plane = planned("p", "Plane", "Weapon", Role::Standalone, Some(14));
+        let awl = planned("a", "Awl", "Weapon", Role::Standalone, Some(5));
+        // Act
+        let row = printed_row(SPLIT, &plane).expect("the row past the page break");
+        // Assert: the first page's header labels the cells, no generic column name.
+        let labels: Vec<&str> = row.cells.iter().map(|c| c.label.as_str()).collect();
+        assert_eq!(labels, ["Name", "Cost", "DC", "Materials"]);
+        assert_eq!(row.cells[2].text.as_deref(), Some("25"));
+        assert!(printed_row(SPLIT, &awl).is_some());
+        // The model's made-up "Column 3" line gives way to the printed DC cell.
+        let mut el = serde_json::json!({"name": "Plane", "data": {"columns": {"Column 3": "25"}},
+            "description": "<p><strong>Column 3:</strong> 25</p>"});
+        keep_printed_row(&mut el, "Plane", &[], &row);
+        let desc = el["description"].as_str().unwrap();
+        assert!(
+            desc.contains("<strong>DC:</strong> 25") && !desc.contains("Column 3"),
+            "{desc}"
+        );
+    }
 }

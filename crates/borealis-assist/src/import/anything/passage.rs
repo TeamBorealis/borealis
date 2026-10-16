@@ -476,24 +476,43 @@ pub(crate) fn end_matter(title: &str) -> bool {
 }
 
 /// The first line (0-based) of the end matter after the last planned passage: the first
-/// end-matter heading after it, or the first heading of that level or higher between them (an
+/// end-matter heading after it (an unmarked title line in a text document), or the first heading of that level or higher between them (an
 /// unplanned closing section printed right before the legal notice is no part of the last
 /// element either). `None` without end matter there.
 pub(crate) fn end_matter_start(lines: &[&str], plan: &ImportPlan) -> Option<usize> {
-    let at_end_matter = |l: usize| {
-        lines
-            .get(l)
-            .is_some_and(|t| heading(t).is_some() && end_matter(&heading_title(t)))
-    };
+    let at_end_matter = |l: usize| lines.get(l).is_some() && end_matter_title(lines, l);
     let last = starts(plan, "")
         .into_iter()
         .filter(|l| !at_end_matter(*l))
         .max()?;
     let e = (last + 1..lines.len()).find(|&k| at_end_matter(k))?;
-    let level = heading(lines[e])?;
+    // A source without heading marks (a text document) has no levels to compare.
+    let Some(level) = heading(lines[e]) else {
+        return Some(e);
+    };
     (last + 1..e)
         .find(|&k| heading(lines[k]).is_some_and(|h| h <= level))
         .or(Some(e))
+}
+
+/// Most words of an unmarked title line.
+const TITLE_WORDS: usize = 6;
+
+/// The line at `k` titles end matter: a heading with an end-matter title, or, in a source
+/// without heading marks, a short line of its own (blank lines around it, no closing
+/// punctuation) with one ("Legal Information" alone on its line).
+pub(crate) fn end_matter_title(lines: &[&str], k: usize) -> bool {
+    let t = lines[k].trim();
+    if heading(t).is_some() {
+        return end_matter(&heading_title(t));
+    }
+    let blank = |i: usize| lines.get(i).map_or(true, |l| l.trim().is_empty());
+    let alone = (k == 0 || blank(k - 1)) && blank(k + 1);
+    alone
+        && !t.is_empty()
+        && t.split_whitespace().count() <= TITLE_WORDS
+        && !t.ends_with(['.', ',', ';', ':', '!', '?'])
+        && end_matter(t)
 }
 
 /// The unplanned sub-sections in one root's section (see [`unplanned_sections_in`]). Page
@@ -1131,7 +1150,16 @@ pub(crate) fn uncovered_prose(draft: &ImportDraft) -> Vec<ReportEntry> {
             .filter(|l| !l.contains(',') && l.chars().count() > MIN_LABEL_CHARS);
         let source = label.unwrap_or_else(|| {
             under.map_or_else(
-                || "source text before the first heading".to_string(),
+                // A source without heading marks: under its end-matter title line, if any.
+                || {
+                    (0..line)
+                        .rev()
+                        .find(|&k| end_matter_title(&lines, k))
+                        .map_or_else(
+                            || "source text before the first heading".to_string(),
+                            |k| lines[k].trim().to_string(),
+                        )
+                },
                 |h| report_heading(&lines, h, &planned),
             )
         });

@@ -20,6 +20,16 @@ fn owner_role(role: Role) -> bool {
     )
 }
 
+/// `p` is a version ("<Item>, <version>") of another planned element: the item owns the
+/// printed table, the version keeps only its own row of it (`items::variant::own_row`).
+fn is_version(p: &PlannedElement, plan: &ImportPlan) -> bool {
+    super::super::variants::base_name(&p.name).is_some_and(|base| {
+        plan.elements
+            .iter()
+            .any(|o| o.id != p.id && o.name.trim().eq_ignore_ascii_case(base))
+    })
+}
+
 fn table_line(line: &str) -> bool {
     let t = line.trim();
     t.contains(" | ") || (t.starts_with('|') && t.len() > 1)
@@ -32,9 +42,10 @@ fn start(p: &PlannedElement) -> Option<usize> {
 /// The 0-based lines `[from, to)` an owner's own passage spans: its heading's section (or its
 /// located passage without a heading), never past the next element generated on its own (a
 /// part or feature inside it carries its own tables) or the document's end matter. `None` for
-/// a non-owner role, an unlocated element, or a row element (its passage is a table row).
+/// a non-owner role, an unlocated element, a version of a planned item, or a row element (its
+/// passage is a table row).
 fn owner_range(lines: &[&str], p: &PlannedElement, plan: &ImportPlan) -> Option<(usize, usize)> {
-    if !owner_role(p.role) {
+    if !owner_role(p.role) || is_version(p, plan) {
         return None;
     }
     let s = start(p).filter(|s| *s < lines.len())?;
@@ -49,16 +60,53 @@ fn owner_range(lines: &[&str], p: &PlannedElement, plan: &ImportPlan) -> Option<
         .filter(|l| *l > s)
         .min()
         .unwrap_or(lines.len());
+    let located = p.excerpt.as_ref().map_or(s + 1, |x| x.end_line);
     let end = match heading(lines[s]) {
-        Some(h) => (s + 1..lines.len())
-            .find(|&k| heading(lines[k]).is_some_and(|k| k <= h))
-            .unwrap_or(lines.len()),
-        None => p.excerpt.as_ref().map_or(s + 1, |x| x.end_line),
+        Some(h) => {
+            let mut end = section_end(lines, s, h);
+            // A caption of the owner's level over a table the located passage reaches into
+            // ("Types of <item>" printed as a heading of its own) is still the owner's.
+            while end < located.min(lines.len()) && caption_section(lines, end).is_some() {
+                end = section_end(lines, end, h);
+            }
+            end
+        }
+        None => located,
     };
     let tail = end_matter_start(lines, plan)
         .filter(|t| *t > s)
         .unwrap_or(lines.len());
     Some((s, end.min(next).min(tail).min(lines.len())))
+}
+
+/// The end (exclusive, 0-based) of the section of the heading of level `level` at `at`.
+fn section_end(lines: &[&str], at: usize, level: usize) -> usize {
+    (at + 1..lines.len())
+        .find(|&k| heading(lines[k]).is_some_and(|k| k <= level))
+        .unwrap_or(lines.len())
+}
+
+/// The cells of a table line.
+fn width(line: &str) -> usize {
+    line.trim().trim_matches('|').split('|').count()
+}
+
+/// The heading at `at` is a table's caption: under it, up to the next heading, only one
+/// table (blank lines and wrapped cells allowed). The table's line range.
+fn caption_section(lines: &[&str], at: usize) -> Option<(usize, usize)> {
+    heading(lines[at])?;
+    let end = (at + 1..lines.len())
+        .find(|&k| heading(lines[k]).is_some())
+        .unwrap_or(lines.len());
+    let first = (at + 1..end).find(|&k| !lines[k].trim().is_empty())?;
+    let t = tables(lines, first, end);
+    let last = (first..end).rev().find(|&k| !lines[k].trim().is_empty())?;
+    (t.len() == 1 && t[0].0 == first && t[0].1 > last).then(|| t[0])
+}
+
+/// The next line (0-based) after `k` that is not blank, before `to`.
+fn next_printed(lines: &[&str], k: usize, to: usize) -> Option<usize> {
+    (k..to).find(|&i| !lines[i].trim().is_empty())
 }
 
 /// The tables in `[from, to)`: each one's 0-based first and end (exclusive) line, a wrapped
@@ -74,10 +122,22 @@ fn tables(lines: &[&str], from: usize, to: usize) -> Vec<(usize, usize)> {
         }
         let first = k;
         k += 1;
-        while k < to
-            && (table_line(lines[k]) || lines[k].trim_start().starts_with(char::is_lowercase))
-        {
-            k += 1;
+        loop {
+            if k < to
+                && (table_line(lines[k]) || lines[k].trim_start().starts_with(char::is_lowercase))
+            {
+                k += 1;
+                continue;
+            }
+            // Rows printed with a blank line after each are still one table.
+            match next_printed(lines, k, to) {
+                Some(n)
+                    if n > k && table_line(lines[n]) && width(lines[n]) == width(lines[first]) =>
+                {
+                    k = n;
+                }
+                _ => break,
+            }
         }
         if (first..k).filter(|&i| table_line(lines[i])).count() >= 2 {
             out.push((first, k));
@@ -123,7 +183,13 @@ pub(crate) fn add_owner_tables(draft: &mut ImportDraft) -> Vec<String> {
             if missing == 0 {
                 continue;
             }
-            let rows: Vec<String> = lines[t.0..t.1].iter().map(|l| l.to_string()).collect();
+            // With its caption heading right over it.
+            let from = (s + 1..t.0)
+                .rev()
+                .find(|&k| !lines[k].trim().is_empty())
+                .filter(|&k| heading(lines[k]).is_some())
+                .unwrap_or(t.0);
+            let rows: Vec<String> = lines[from..t.1].iter().map(|l| l.to_string()).collect();
             desc.push_str(&html_of(&rows));
             added += missing;
         }
