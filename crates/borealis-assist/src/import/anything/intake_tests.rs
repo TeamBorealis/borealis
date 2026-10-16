@@ -133,6 +133,7 @@ fn named_options_in_one_table_belong_to_the_heading_that_prints_it() {
                 "High Feint".into(),
                 "Shield Bash".into()
             ],
+            count: Some(2),
         }]
     );
     // The rule the detection names wins over the heading; plain table rows are no options.
@@ -141,11 +142,39 @@ fn named_options_in_one_table_belong_to_the_heading_that_prints_it() {
         .map(|n| other(n, "option of Martial Tricks"))
         .collect();
     assert_eq!(option_tables(&named, TRICKS)[0].owner, "Martial Tricks");
+    // Plain table rows are options when the rule prints a pick count, else not.
     let plain: Vec<OtherItem> = ["Low Sweep", "High Feint", "Shield Bash"]
         .iter()
         .map(|n| other(n, "table row"))
         .collect();
-    assert!(option_tables(&plain, TRICKS).is_empty());
+    assert_eq!(option_tables(&plain, TRICKS)[0].count, Some(2));
+    let no_pick = TRICKS.replace(
+        "can learn two tricks from the table below and use",
+        "may use",
+    );
+    assert!(option_tables(&plain, &no_pick).is_empty());
+}
+
+#[test]
+fn options_of_a_table_flattened_into_lines_are_found_by_their_names() {
+    let flat = "# Battle Tricks
+
+Choose three tricks.
+
+Low Sweep The target falls prone.
+High Feint You gain advantage.
+Shield Bash The target is pushed.
+
+# Notes
+";
+    let rows: Vec<OtherItem> = ["Low Sweep", "High Feint", "Shield Bash"]
+        .iter()
+        .map(|n| other(n, "option"))
+        .collect();
+    let tables = option_tables(&rows, flat);
+    assert_eq!(tables.len(), 1);
+    assert_eq!(tables[0].owner, "Battle Tricks");
+    assert_eq!(tables[0].count, Some(3));
 }
 
 fn option_plan() -> ImportPlan {
@@ -371,4 +400,45 @@ async fn options_named_only_in_an_options_table_are_planned_as_options() {
         .count();
     assert_eq!(options, 3);
     assert!(plan.notes.iter().any(|n| n.contains("options it offers")));
+}
+
+const BOOK: &str = "# Book of Embers\n\n## Table of Contents\n\nForeword..........pg.2\n\
+Ember Rules . . . . . . 5\nAppendix… 9\n\
+Dear reader, this book was written over many long winters by a tired author who wanted \
+to share every rule he ever made with the world, and he hopes you enjoy reading it.\n\n\
+## Ember Rules\n\nAn ember burns for one minute and sheds dim light in a 5-foot radius.\n\n\
+## Appendix\n\nA closing note on the embers and where they came from in the old days.\n";
+
+#[tokio::test]
+async fn a_contents_page_is_not_imported_and_the_text_after_it_is_the_entry_it_lists() {
+    let draft = import(
+        BOOK,
+        json!([{"name": "Table of Contents", "what": "table of contents"},
+               {"name": "Foreword", "what": "lore section"},
+               {"name": "Ember Rules", "what": "rules section"},
+               {"name": "Appendix", "what": "lore section"}]),
+    )
+    .await;
+    let names: Vec<&str> = draft.elements.iter().map(|e| e.name.as_str()).collect();
+    assert!(!names.contains(&"Table of Contents"), "{names:?}");
+    let foreword = draft
+        .elements
+        .iter()
+        .find(|e| e.name == "Foreword")
+        .unwrap_or_else(|| panic!("{names:?} {:?}", draft.plan.notes));
+    let text = foreword.json["description"].as_str().unwrap();
+    assert!(text.contains("Dear reader"), "{text}");
+    assert!(
+        !text.contains("pg.2") && !text.contains("embers and where"),
+        "{text}"
+    );
+    let done = finalize_draft(&library_builder(), &draft).expect("finalizes");
+    let report = done.pack.report.expect("a report");
+    let toc = report
+        .entries
+        .iter()
+        .find(|e| e.source == "Table of Contents")
+        .expect("the contents page is reported");
+    assert_eq!(toc.outcome, "skipped");
+    assert!(toc.note.starts_with("a contents page"), "{}", toc.note);
 }

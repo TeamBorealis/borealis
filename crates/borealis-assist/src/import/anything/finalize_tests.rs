@@ -305,3 +305,57 @@ fn a_section_whose_prose_is_already_reported_is_not_reported_twice() {
         "Some Book"
     ));
 }
+
+/// A species whose description carries its lore sections (one with "&" in its name, one under
+/// no heading of its own), a contents page, a narrative section with a reward, and a section no
+/// element carries.
+fn lore_draft() -> ImportDraft {
+    let source = "# Ashborn\n\n## Contents\n\nAshborn..........pg.2\nKeys . . . . . 3\nLater… 4\n\n\
+## The Ashborn\n\nThe ashborn rise from cold hearths and wander the roads alone for many long years.\n\n\
+## Hearth & Home\n\nThey keep no homes but carry a coal from the fire that woke them, wrapped in cloth.\n\n\
+## The Burned Mill\n\nThe miller's chest holds a +1 dagger and 120 gp under the floor. Rats nest in the walls.\n\n\
+## Old Customs\n\nTravellers leave a stone at every crossroads they pass, one for each friend they lost.\n\n\
+## Omens\n\nd4 | Omen\n1 | A crow lands on your shoulder.\n";
+    let description = "<p>A crow lands on your shoulder.</p><p>The ashborn rise from cold hearths and wander the roads alone for many long years.</p><h4>Hearth &amp; Home</h4><p>They keep no homes but carry a coal from the fire that woke them, wrapped in cloth.</p>";
+    let race = serde_json::json!({"id": "ID_T_RACE_ASHBORN", "name": "Ashborn", "type": "Race",
+        "source": "T", "description": description, "rules": []});
+    let other = |name: &str, what: &str| serde_json::json!({"name": name, "what": what});
+    serde_json::from_value(serde_json::json!({
+        "edition": "2024", "id_prefix": "ID_T", "source_name": "T", "pack_id": "t",
+        "pack_name": "T", "source_kind": "text", "source_text": source,
+        "detection": {"kind": "species", "edition": "2024", "confidence": 1.0, "items": [],
+            "other": [other("Contents", "table of contents"), other("The Ashborn", "lore section"),
+                other("Hearth & Home", "lore section"), other("Keys", "lore section"),
+                other("The Burned Mill", "narrative (keyed area)"),
+                other("Old Customs", "lore section"),
+                other("A crow lands on your shoulder.", "option of Omens")]},
+        "plan": {"edition": "2024", "groups": [], "elements": [],
+            "notes": ["contents page: Contents"]},
+        "elements": [element("ID_T_RACE_ASHBORN", "Race", "ok", race)], "sweep_issues": []}))
+    .expect("draft")
+}
+
+#[test]
+fn a_report_says_not_imported_only_for_text_no_element_carries() {
+    let report = build_report(&lore_draft(), &[], &HashSet::new());
+    let about = |name: &str| -> Vec<&ReportEntry> {
+        report.entries.iter().filter(|e| e.source == name).collect()
+    };
+    // Carried by the species (one name printed as "&amp;", one under the species heading).
+    assert!(about("The Ashborn").is_empty(), "{:?}", report.entries);
+    assert!(about("Hearth & Home").is_empty(), "{:?}", report.entries);
+    // A row printing a sentence as its name, carried by the species.
+    assert!(about("A crow lands on your shoulder.").is_empty());
+    // Really not imported.
+    assert_eq!(about("Old Customs")[0].outcome, "unsupported");
+    assert_eq!(about("Contents")[0].outcome, "skipped");
+    assert!(about("Contents")[0].note.starts_with("a contents page"));
+    assert!(about("Keys")[0]
+        .note
+        .starts_with("listed only on a contents page"));
+    // A skipped narrative section keeps its reward as a line of its own.
+    let mill = about("The Burned Mill");
+    assert!(mill[0].note.starts_with("narrative text"));
+    assert_eq!(mill.len(), 2, "{mill:?}");
+    assert!(mill[1].note.contains("+1 dagger and 120 gp"));
+}

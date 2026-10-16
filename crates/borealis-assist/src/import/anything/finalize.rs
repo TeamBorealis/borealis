@@ -53,6 +53,9 @@ pub fn finalize_draft(
             pending.join(", ")
         )));
     }
+    // Options described by their own table row, the rule's pick, no legal notice in a text.
+    let fixed = super::text_fixes::prepare(draft);
+    let draft = &fixed;
     let mut left_out: HashSet<String> = draft
         .elements
         .iter()
@@ -496,6 +499,8 @@ fn text_runs(html: &str) -> Vec<&str> {
 /// column header glued on) or as a table row's first cell ("Name | ...", or a `<td>`).
 fn printed_in(html: &str, name: &str, headers: &HashSet<String>) -> bool {
     text_runs(html).into_iter().any(|run| {
+        // "Appearance &amp; Voice" prints "Appearance & Voice".
+        let run = super::fidelity::plain(run);
         let line = run.trim().trim_end_matches(['.', ':']).trim_end();
         let first = run.split('|').next().unwrap_or("");
         captions(line, name, headers) || (run.contains('|') && same_name(first.trim(), name))
@@ -619,22 +624,34 @@ pub(crate) fn build_report(
         .entries
         .extend(super::parts::report_entries(draft, &final_id));
     let headers = header_words(&draft.source_text);
+    let carried = super::report_cover::carried_index(draft, left_out);
+    // A section whose text an element carries (under another name) was imported: a report
+    // entry saying otherwise would be false.
     let missing: Vec<_> = draft
         .detection
         .other
         .iter()
         .filter(|o| !imported_as_named(draft, left_out, &headers, &o.name))
+        .filter(|o| {
+            // A contents page is navigation whatever text follows it.
+            super::plan::is_contents_note(&draft.plan, &o.name)
+                || !super::report_cover::carried(draft, &carried, &o.name)
+        })
         .collect();
     for o in missing {
-        // Narrative is said to be narrative, in place of the generic note on its prose.
-        if super::intake::is_narrative(&o.what) {
+        let contents = super::plan::is_contents_note(&draft.plan, &o.name);
+        // Narrative and contents pages are said to be what they are, in place of the generic
+        // note on their prose.
+        if contents || super::intake::is_narrative(&o.what) {
             report
                 .entries
                 .retain(|e| !(e.outcome == "skipped" && same_name(&e.source, &o.name)));
         } else if reported_as_prose(&report.entries, &o.name) {
             continue;
         }
-        report.entries.push(super::intake::not_imported(o));
+        report
+            .entries
+            .extend(super::intake::not_imported(o, &draft.source_text, contents));
     }
     report
         .entries

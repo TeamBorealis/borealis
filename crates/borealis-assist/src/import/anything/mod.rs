@@ -9,6 +9,7 @@ mod arcanum;
 mod batch;
 pub mod caster;
 mod choices;
+mod contents;
 mod derived;
 mod fallback;
 mod feature_spells;
@@ -27,6 +28,7 @@ mod lists;
 mod locate;
 mod mechanics;
 mod normalize;
+mod option_rows;
 mod parts;
 mod passage;
 mod plan;
@@ -38,6 +40,7 @@ mod prereq;
 mod regenerate;
 #[cfg(test)]
 mod replay_tests;
+mod report_cover;
 pub mod review;
 mod rule_terms;
 mod rules;
@@ -48,6 +51,7 @@ mod steps;
 mod structure_tests;
 mod sweep;
 mod targets;
+mod text_fixes;
 mod types;
 mod units;
 mod variants;
@@ -263,7 +267,7 @@ pub async fn plan_import(
         }
         plan.groups.push(group);
     }
-    add_text_groups(&mut plan.groups, detection);
+    add_text_groups(&mut plan.groups, detection, source_text);
     let all: Vec<_> = wanted.iter().chain(&parted).cloned().collect();
     if let [(gi, item, levels)] = all.as_slice() {
         let step = outline_step(item, detection.edition, source_text, levels.as_deref());
@@ -304,6 +308,7 @@ pub async fn plan_import(
     );
     plan.notes.extend(intake_notes);
     plan.notes.extend(plan::narrative_notes(&detection.other));
+    plan.notes.extend(plan::contents_notes(&detection.other, source_text));
     let own = plan::planned_class_links(&plan);
     for choice in plan.groups.iter_mut().filter_map(|g| g.choice.as_mut()) {
         choice
@@ -317,12 +322,14 @@ pub async fn plan_import(
 }
 
 /// Rules and lore the detection could not type keep their text as text-only groups; narrative
-/// sections (see [`intake::is_narrative`]) are reported, never imported as rules.
-fn add_text_groups(groups: &mut Vec<PlanGroup>, detection: &Detection) {
+/// sections (see [`intake::is_narrative`]) and contents pages are reported, never imported as
+/// rules.
+fn add_text_groups(groups: &mut Vec<PlanGroup>, detection: &Detection, source: &str) {
     let texts: Vec<PlanGroup> = detection
         .other
         .iter()
         .filter(|o| !intake::is_narrative(&o.what))
+        .filter(|o| !contents::is_contents(source, &o.name))
         .filter(|o| !detection.items.iter().any(|i| same_name(&i.name, &o.name)))
         .map(|o| plan::text_group(&o.name, &o.what, &o.note))
         .collect();

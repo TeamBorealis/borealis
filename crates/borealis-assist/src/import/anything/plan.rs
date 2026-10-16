@@ -778,7 +778,11 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
     let references: Vec<String> = plan
         .notes
         .iter()
-        .filter(|n| n.starts_with(super::intake::LIBRARY_NOTE) || n.starts_with(NARRATIVE_NOTE))
+        .filter(|n| {
+            [super::intake::LIBRARY_NOTE, NARRATIVE_NOTE, CONTENTS_NOTE]
+                .iter()
+                .any(|p| n.starts_with(p))
+        })
         .cloned()
         .collect();
     let mut split_notes = sections::drop_outlined_texts(&mut plan.groups);
@@ -880,6 +884,11 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
             .retain(|g| !g.root_id.as_ref().is_some_and(|r| ids.contains(&r)));
         b.notes.extend(folded.iter().map(|(_, n)| n.clone()));
     }
+    // Entries a contents page names: the untitled text after it, or nothing.
+    let (listed, dropped) = super::contents::place_listed(&mut b.out, source);
+    plan.groups
+        .retain(|g| !g.root_id.as_ref().is_some_and(|r| dropped.contains(r)));
+    b.notes.extend(listed);
     super::variants::link_briefs(&mut b.out);
     b.notes.extend(super::feature_spells::resolve(
         &mut b.out,
@@ -1118,11 +1127,36 @@ pub(crate) fn narrative_notes(other: &[OtherItem]) -> Vec<String> {
         .collect()
 }
 
-/// The narrative section names the plan's notes carry (see [`narrative_notes`]).
-pub(crate) fn narrative_sections(plan: &ImportPlan) -> impl Iterator<Item = &str> {
+/// Plan note prefix of a section the detection listed that is a contents page (navigation,
+/// not imported; a boundary of the sections around it).
+pub(crate) const CONTENTS_NOTE: &str = "contents page: ";
+
+/// The plan notes of the detection's entries that are contents pages (see
+/// `contents::is_contents`).
+pub(crate) fn contents_notes(other: &[OtherItem], source: &str) -> Vec<String> {
+    other
+        .iter()
+        .filter(|o| !o.name.trim().is_empty() && super::contents::is_contents(source, &o.name))
+        .map(|o| format!("{CONTENTS_NOTE}{}", o.name.trim()))
+        .collect()
+}
+
+/// The plan names a contents page `name` (see [`contents_notes`]).
+pub(crate) fn is_contents_note(plan: &ImportPlan, name: &str) -> bool {
     plan.notes
         .iter()
-        .filter_map(|n| n.strip_prefix(NARRATIVE_NOTE))
+        .filter_map(|n| n.strip_prefix(CONTENTS_NOTE))
+        .any(|n| same(n, name))
+}
+
+/// The names of the sections that are not rules and bound the sections around them: the
+/// narrative sections and the contents pages the plan's notes carry (see [`narrative_notes`],
+/// [`contents_notes`]).
+pub(crate) fn narrative_sections(plan: &ImportPlan) -> impl Iterator<Item = &str> {
+    plan.notes.iter().filter_map(|n| {
+        n.strip_prefix(NARRATIVE_NOTE)
+            .or_else(|| n.strip_prefix(CONTENTS_NOTE))
+    })
 }
 
 /// A text-only group for a rules or lore section the detection listed in `other`.

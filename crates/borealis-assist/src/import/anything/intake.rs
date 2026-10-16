@@ -12,7 +12,7 @@ use std::collections::HashSet;
 
 use super::types::{
     DetectedItem, DraftElement, Edition, ImportDraft, ImportKind, OtherItem, OutlineFeature,
-    OutlinePart, PlanGroup, PlannedElement, Role,
+    OutlinePart, PickCount, PlanGroup, PlannedElement, Role,
 };
 use crate::import::report::ReportEntry;
 
@@ -168,24 +168,8 @@ pub(crate) struct OptionTable {
     pub owner: String,
     /// The options, as the detection named them, in table order.
     pub rows: Vec<String>,
-}
-
-/// 0-based `[start, end)` line ranges of the source's tables (runs of `|` lines).
-fn tables(lines: &[&str]) -> Vec<(usize, usize)> {
-    let mut out = Vec::new();
-    let mut k = 0;
-    while k < lines.len() {
-        if first_cell(lines[k]).is_none() {
-            k += 1;
-            continue;
-        }
-        let start = k;
-        while k < lines.len() && first_cell(lines[k]).is_some() {
-            k += 1;
-        }
-        out.push((start, k));
-    }
-    out
+    /// How many the rule lets a character pick, as printed above the table.
+    pub count: Option<u32>,
 }
 
 /// The title of the nearest heading above line `at`.
@@ -198,41 +182,36 @@ fn heading_above(lines: &[&str], at: usize) -> Option<String> {
     })
 }
 
-/// The `other` entries the detection calls options that are rows of one printed table, at
-/// least [`MIN_OPTION_ROWS`] of them, with the rule that offers them: the entry their `what`
-/// names ("option of <rule>"), else the heading the table is printed under. A table with no
-/// owner keeps its rows as they are.
+/// The `other` entries that are the named rows of one printed table (a pipe table, or a table
+/// flattened into lines that start with the names), at least [`MIN_OPTION_ROWS`] of them, with
+/// the rule that offers them: the entry their `what` names ("option of <rule>"), else the
+/// heading the table is printed under. The rows are options when the detection calls one of
+/// them an option or the rule prints a pick count above the table ("learn two of the
+/// following"); a table with no owner keeps its rows as they are.
 pub(crate) fn option_tables(other: &[OtherItem], source: &str) -> Vec<OptionTable> {
     let lines: Vec<&str> = source.lines().collect();
-    let blocks = tables(&lines);
-    let mut found: Vec<(usize, Vec<&OtherItem>)> = Vec::new();
-    for o in other.iter().filter(|o| is_option(&o.what)) {
-        let key = norm(&o.name);
-        let Some(b) = blocks.iter().position(|(s, e)| {
-            lines[*s..*e]
-                .iter()
-                .any(|l| first_cell(l).is_some_and(|c| norm(c) == key))
-        }) else {
-            continue;
-        };
-        match found.iter_mut().find(|(x, _)| *x == b) {
-            Some((_, rows)) => rows.push(o),
-            None => found.push((b, vec![o])),
-        }
-    }
-    found
+    let cands: Vec<&OtherItem> = other.iter().filter(|o| !is_narrative(&o.what)).collect();
+    let names: Vec<String> = cands.iter().map(|o| o.name.clone()).collect();
+    let rows = super::option_rows::find_rows(source, &names);
+    super::option_rows::blocks(source, &rows)
         .into_iter()
-        .filter(|(_, rows)| rows.len() >= MIN_OPTION_ROWS)
-        .filter_map(|(b, rows)| {
-            let named = rows.iter().find_map(|o| named_owner(&o.what)).map(|n| {
+        .filter_map(|b| {
+            let first = rows[*b.first()?].as_ref()?.line;
+            let members: Vec<&OtherItem> = b.iter().map(|k| cands[*k]).collect();
+            let count = super::option_rows::lead_count(source, first);
+            let options = members.iter().any(|o| is_option(&o.what)) || count.is_some();
+            if members.len() < MIN_OPTION_ROWS || !options {
+                return None;
+            }
+            let named = members.iter().find_map(|o| named_owner(&o.what)).map(|n| {
                 other
                     .iter()
                     .find(|o| norm(&o.name) == norm(&n))
                     .map_or(n, |o| o.name.clone())
             });
-            let owner = named.or_else(|| heading_above(&lines, blocks[b].0))?;
-            let rows = rows.iter().map(|o| o.name.clone()).collect();
-            Some(OptionTable { owner, rows })
+            let owner = named.or_else(|| heading_above(&lines, first))?;
+            let rows = members.iter().map(|o| o.name.clone()).collect();
+            Some(OptionTable { owner, rows, count })
         })
         .collect()
 }
@@ -295,7 +274,10 @@ pub(crate) fn attach_option_tables(
             quote: String::new(),
             parts: Vec::new(),
             options: rows.iter().map(|r| part(r)).collect(),
-            choose: Vec::new(),
+            choose: t
+                .count
+                .map(|count| vec![PickCount { level: 1, count }])
+                .unwrap_or_default(),
             spells: Vec::new(),
         };
         if let Some(o) = groups[at].outline.as_mut() {
@@ -319,34 +301,58 @@ fn part(name: &str) -> OutlinePart {
     }
 }
 
-/// The report entry of a detected `other` entry with no element: narrative is skipped as
-/// such (it is not rules), anything else has no element kind.
-pub(crate) fn not_imported(o: &OtherItem) -> ReportEntry {
-    let (outcome, note) = if super::intake::is_narrative(&o.what) {
-        (
+/// The report entries of a detected `other` entry with no element: a contents page is
+/// navigation, an entry only a contents page names has no section, narrative is skipped as
+/// such (it is not rules; the amounts a game needs that it prints, a magic bonus, a reward,
+/// XP, get a line each), anything else has no element kind.
+pub(crate) fn not_imported(o: &OtherItem, source: &str, contents_page: bool) -> Vec<ReportEntry> {
+    let entry = |outcome: &str, note: String| ReportEntry {
+        source: o.name.clone(),
+        outcome: outcome.into(),
+        elements: Vec::new(),
+        note: note.trim().to_string(),
+    };
+    if contents_page {
+        return vec![entry(
+            "skipped",
+            "a contents page (navigation), not rules: not imported".into(),
+        )];
+    }
+    if super::contents::listed_only(source, &o.name) {
+        return vec![entry(
+            "skipped",
+            "listed only on a contents page; the source prints no section of its own for it".into(),
+        )];
+    }
+    if is_narrative(&o.what) {
+        let mut out = vec![entry(
             "skipped",
             format!(
                 "narrative text ({}), not rules: not imported. {}",
                 o.what, o.note
             ),
-        )
-    } else {
-        let what = if o.what.is_empty() {
-            "this"
-        } else {
-            o.what.as_str()
-        };
-        (
-            "unsupported",
-            format!("no element kind for {what}; not imported. {}", o.note),
-        )
-    };
-    ReportEntry {
-        source: o.name.clone(),
-        outcome: outcome.into(),
-        elements: Vec::new(),
-        note: note.trim().to_string(),
+        )];
+        out.extend(
+            super::report_cover::amounts(source, &o.name)
+                .into_iter()
+                .map(|a| {
+                    entry(
+                        "skipped",
+                        format!("amount printed in this narrative section: \"{a}\""),
+                    )
+                }),
+        );
+        return out;
     }
+    let what = if o.what.is_empty() {
+        "this"
+    } else {
+        o.what.as_str()
+    };
+    vec![entry(
+        "unsupported",
+        format!("no element kind for {what}; not imported. {}", o.note),
+    )]
 }
 
 /// Report entries for what the intake decided: items the source only mentions that the library
@@ -391,8 +397,9 @@ pub(crate) fn intake_entries(
                     .map(|e| final_id(&e.id))
                     .collect(),
                 note: format!(
-                    "a rule offering {} options, kept as text; the options are {} elements with supports \"{}\", offered by no element yet (add a select of that supports to the class, feat or species that gets the rule)",
+                    "a rule offering {} options as a select of {} (its text kept as is); the options are {} elements with supports \"{}\", and no class, feat or species grants the rule yet (grant it, or add that select, where the rule applies)",
                     options.len(),
+                    picks.choose.first().map_or(1, |c| c.count),
                     picks.ty,
                     picks.key
                 ),
