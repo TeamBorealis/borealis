@@ -613,9 +613,19 @@ fn squash(v: &str) -> String {
     norm(v).replace(' ', "")
 }
 
+/// The engine's reading of an `attunement` setter: set and not false, so a restriction text
+/// ("by a spellcaster") means attunement is required just like `true`.
+fn requires_attunement(v: &str) -> bool {
+    let v = v.trim().to_lowercase();
+    !v.is_empty() && v != "false" && v != "0"
+}
+
 /// Exact (normalised) compare; `want` may list `A|B` alternatives.
 fn setter_ok(e: &Element, key: &str, want: &str) -> Result<(), String> {
     let got = setter_value(e, key)?;
+    if key == "attunement" && squash(want) == "true" && requires_attunement(got) {
+        return Ok(());
+    }
     if want.split('|').any(|w| squash(got) == squash(w)) {
         Ok(())
     } else {
@@ -1083,5 +1093,27 @@ mod tests {
         assert!(!heading_names("Rest", "Forest Rules"));
         assert!(!heading_names("", "Anything"));
         assert!(!heading_names("Rest Rules", "Rest Cycles"));
+    }
+
+    #[test]
+    fn an_attunement_restriction_text_satisfies_attunement_true() {
+        let item = |v: &str| {
+            let mut e = Element {
+                id: "ID_I".into(),
+                name: "Ring".into(),
+                ty: "Magic Item".into(),
+                ..Element::default()
+            };
+            e.setters
+                .push(borealis_content::Setter::new("attunement", v));
+            e
+        };
+        assert!(setter_ok(&item("true"), "attunement", "true").is_ok());
+        assert!(setter_ok(&item("by a spellcaster"), "attunement", "true").is_ok());
+        assert!(setter_ok(&item("false"), "attunement", "true").is_err());
+        assert!(setter_ok(&item(""), "attunement", "true").is_err());
+        // other keys and wanted values keep the exact comparison
+        assert!(setter_ok(&item("by a spellcaster"), "attunement", "false").is_err());
+        assert!(setter_ok(&item("by a spellcaster"), "rarity", "true").is_err());
     }
 }
