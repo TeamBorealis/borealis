@@ -368,3 +368,132 @@ fn a_version_whose_table_already_prints_only_its_row_is_left_alone() {
     assert_eq!(variant::own_row_fix(&mut el, &items), None);
     assert_eq!(el["description"], own);
 }
+
+#[test]
+fn a_magic_armors_enhancement_setter_without_an_ac_rule_becomes_its_ac_rule() {
+    let item = |addition: &str, n: &str, rules: Value| {
+        json!({"type": "Magic Item", "rules": rules, "setters": [
+            {"name": "type", "value": "Armor", "attributes": {"addition": addition}},
+            {"name": "enhancement", "value": n}]})
+    };
+    let mut armor = item("breastplate", "2", json!([{"kind": "resource", "id": "x"}]));
+    assert!(armor_enhancement(&mut armor).is_some());
+    assert_eq!(
+        armor["rules"][1],
+        json!({"kind": "stat", "name": "ac:armored:enhancement", "value": "2",
+            "bonus": "enhancement"})
+    );
+    assert!(armor_enhancement(&mut armor).is_none(), "idempotent");
+    let mut shield = json!({"type": "Magic Item", "setters": [
+        {"name": "type", "value": "Armor"}, {"name": "armor", "value": "Shield"},
+        {"name": "enhancement", "value": "+1"}]});
+    armor_enhancement(&mut shield);
+    assert_eq!(shield["rules"][0]["bonus"], "enhancement:shield");
+    assert_eq!(shield["rules"][0]["value"], "1");
+    // An AC rule the model wrote (conditional or not) is left alone; so are other items.
+    let mut cond = item(
+        "hide",
+        "1",
+        json!([{"kind": "stat", "name": "ac", "value": "1", "equipped": "[armor:none]"}]),
+    );
+    assert!(armor_enhancement(&mut cond).is_none());
+    let mut zero = item("hide", "0", json!([]));
+    assert!(armor_enhancement(&mut zero).is_none());
+    let mut weapon = json!({"type": "Magic Item", "setters": [
+        {"name": "type", "value": "Weapon"}, {"name": "enhancement", "value": "1"}]});
+    assert!(armor_enhancement(&mut weapon).is_none());
+}
+
+/// The sheet of a level-1 fighter of `ruleset` (base scores `scores`) with `extra` content
+/// loaded next to the bundled packs, wearing each of `wear` (ids).
+pub(crate) fn fighter_sheet(
+    ruleset: borealis_content::Ruleset,
+    extra: &[Value],
+    wear: &[&str],
+    scores: [i32; 6],
+) -> borealis_engine::snapshot::CharacterSnapshot {
+    use borealis_content::{file::ContentFile, file::PackOrigin, ContentStoreBuilder};
+    use borealis_engine::{commands, Choice, Engine};
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+    let mut b = ContentStoreBuilder::new();
+    for pack in ["core", "srd-5.1", "srd-5.2.1"] {
+        b = b.add_pack_dir(&root.join(pack)).expect("pack loads");
+    }
+    let doc = json!({"format": borealis_content::file::ContentFormat::ID, "elements": extra});
+    let file = ContentFile::from_json_str(&doc.to_string()).expect("items load");
+    let store = b.add_file("t", PackOrigin::Custom, file).build();
+    let engine = Engine::new(&store);
+    let fighter = if ruleset == borealis_content::Ruleset::Dnd2014 {
+        "ID_WOTC_PHB_CLASS_FIGHTER"
+    } else {
+        "ID_2024_CLASS_FIGHTER"
+    };
+    let mut s = commands::new_character(&engine, ruleset);
+    let key = commands::slot_key(&engine.derive(&s), "ID_LEVEL_1", "Class", 1).expect("slot");
+    s = commands::select(&engine, &s, &key, Choice::Element(fighter.into()))
+        .expect("fighter")
+        .state;
+    s = commands::set_base_scores(&engine, &s, scores)
+        .expect("scores")
+        .state;
+    for id in wear {
+        s = commands::add_item(&engine, &s, id, 1).expect("adds").state;
+        let uid = s.inventory.items.last().expect("added").uid.clone();
+        s = commands::equip(&engine, &s, &uid, None)
+            .expect("equips")
+            .state;
+    }
+    engine.derive(&s)
+}
+
+/// Armor class of a level-1 fighter (Dex 10) wearing each of `wear`.
+fn fighter_ac(ruleset: borealis_content::Ruleset, extra: &[Value], wear: &[&str]) -> i32 {
+    fighter_sheet(ruleset, extra, wear, [16, 10, 14, 10, 14, 8]).armor_class
+}
+
+#[test]
+fn a_fighter_wearing_setter_only_magic_armor_and_shield_gets_their_ac() {
+    use borealis_content::Ruleset;
+    for (ruleset, tag, hide, shield) in [
+        (
+            Ruleset::Dnd2014,
+            "dnd2014",
+            "ID_WOTC_ARMOR_MEDIUM_HIDE_ARMOR",
+            "ID_WOTC_GEAR_SHIELD",
+        ),
+        (
+            Ruleset::Dnd2024,
+            "dnd2024",
+            "ID_2024_ARMOR_HIDE_ARMOR",
+            "ID_2024_ARMOR_SHIELD",
+        ),
+    ] {
+        let magic = |id: &str, name: &str, base: &str, n: &str| {
+            let mut el = json!({"id": id, "name": name, "type": "Magic Item",
+                "source": "Test", "ruleset": tag, "rules": [], "setters": [
+                {"name": "category", "value": "Magic Armor"},
+                {"name": "type", "value": "Armor", "attributes": {"addition": base}},
+                {"name": "rarity", "value": "Rare"}, {"name": "armor", "value": base},
+                {"name": "enhancement", "value": n}]});
+            armor_enhancement(&mut el).expect("gets its AC rule");
+            el
+        };
+        let items = [
+            magic("ID_T_MAGIC_ITEM_MOSS_HIDE", "Moss Hide", "Hide", "2"),
+            magic(
+                "ID_T_MAGIC_ITEM_BARK_BUCKLER",
+                "Bark Buckler",
+                "Shield",
+                "1",
+            ),
+        ];
+        let plain = fighter_ac(ruleset, &items, &[hide, shield]);
+        assert_eq!(plain, 14, "{tag}: hide 12 + shield 2");
+        let magic_ac = fighter_ac(
+            ruleset,
+            &items,
+            &["ID_T_MAGIC_ITEM_MOSS_HIDE", "ID_T_MAGIC_ITEM_BARK_BUCKLER"],
+        );
+        assert_eq!(magic_ac, plain + 3, "{tag}: +2 armor and +1 shield");
+    }
+}

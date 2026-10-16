@@ -168,20 +168,63 @@ fn listed_before(words: &[&str], end: usize) -> Vec<String> {
     }
 }
 
-/// The choice a lower-case sentence states, if any.
+/// Words after an ability list that make it a bonus to rolls of the ability, not to its score.
+const ROLL_WORDS: [&str; 10] = [
+    "check", "checks", "saving", "save", "saves", "throw", "throws", "attack", "attacks",
+    "modifier",
+];
+
+/// True when the sentence speaks of raising a score: "increase", a "bonus", or a signed "+N".
+fn speaks_of_increase(words: &[&str]) -> bool {
+    words
+        .iter()
+        .any(|w| w.starts_with("increase") || w.starts_with("bonus") || signed(w).is_some())
+}
+
+/// A signed amount written "+2".
+fn signed(w: &str) -> Option<i64> {
+    let w = w.trim_matches(|c: char| !(c.is_alphanumeric() || c == '+'));
+    w.strip_prefix('+')?.parse::<i64>().ok().filter(|n| *n > 0)
+}
+
+/// The amount a sentence gives from `from` on: "by N", else the first signed "+N" anywhere.
+fn amount_in(words: &[&str], from: usize) -> Option<i64> {
+    amount_after(words, from).or_else(|| words.iter().find_map(|w| signed(w)))
+}
+
+/// The lower-case words of `sentence` with ability abbreviations ("Str", "dex.") spelled out.
+fn words_of(sentence: &str) -> Vec<String> {
+    sentence
+        .split_whitespace()
+        .map(|w| {
+            let core = w.trim_matches(|c: char| !c.is_alphanumeric());
+            match core {
+                "str" | "dex" | "con" | "int" | "wis" | "cha" => ability(core).to_string(),
+                _ => w.to_string(),
+            }
+        })
+        .collect()
+}
+
+/// The choice a lower-case sentence states, if any: "your Strength or Dexterity score increases
+/// by 1", "+1 to Strength or Dexterity", "one ability score of your choice increases by 1".
 fn choice_in(sentence: &str) -> Option<Choice> {
-    if !sentence.contains("increase") {
+    let owned = words_of(sentence);
+    let words: Vec<&str> = owned.iter().map(String::as_str).collect();
+    if !speaks_of_increase(&words) {
         return None;
     }
-    let words: Vec<&str> = sentence.split_whitespace().collect();
     let cap = stated_cap(&words).unwrap_or(DEFAULT_CAP);
-    for (i, w) in words.iter().enumerate() {
-        if !w.starts_with("score") {
+    for i in 0..words.len() {
+        let w = words[i].trim_matches(',');
+        let next = words.get(i + 1).map(|n| n.trim_matches(',')).unwrap_or("");
+        let ends_list = ABILITIES.contains(&w) && !ABILITIES.contains(&next) && next != "or";
+        if !ends_list || ROLL_WORDS.contains(&next) {
             continue;
         }
-        let pool = listed_before(&words, i);
+        let pool = listed_before(&words, i + 1);
         if !pool.is_empty() {
-            let amount = amount_after(&words, i)?;
+            let amount = amount_in(&words, i)?;
             return Some(Choice {
                 pool,
                 count: 1,
@@ -194,7 +237,7 @@ fn choice_in(sentence: &str) -> Option<Choice> {
     Some(Choice {
         pool: Vec::new(),
         count: count_before(&words, at),
-        amount: amount_after(&words, at)?,
+        amount: amount_in(&words, at)?,
         cap,
     })
 }
@@ -249,9 +292,112 @@ fn increase_rule(c: &Choice) -> Value {
         "options": [option], "cap": c.cap})
 }
 
+/// The description's ability score increases, read against the model's fixed `stat`s: a capped
+/// fixed increase ([`fixed_caps`]) and a choice ([`choices`]). Returns one message per change.
+pub(crate) fn ability_choice(el: &mut Value) -> Vec<String> {
+    let mut out = fixed_caps(el);
+    out.extend(choices(el));
+    out
+}
+
+/// Phrases saying a fixed increase also raises the score's maximum by the same amount.
+const RAISES_MAX: [&str; 4] = [
+    "as does your maximum",
+    "maximum for that score",
+    "maximum for those scores",
+    "maximum for the score",
+];
+
+/// The fixed ability `stat` rule on `a` with `amount` (no bonus type), if any.
+fn fixed_stat(rules: &[Value], a: &str, amount: i64) -> Option<usize> {
+    rules.iter().position(|r| {
+        r.get("kind").and_then(Value::as_str) == Some("stat")
+            && r.get("bonus").is_none()
+            && r.get("name").and_then(Value::as_str) == Some(a)
+            && stat_amount(r) == Some(amount)
+    })
+}
+
+/// `r` with another stat `name` / `value` (its other keys, such as a condition, kept).
+fn restat(r: &Value, name: String, value: i64, bonus: Option<&str>) -> Value {
+    let mut out = r.clone();
+    if let Some(o) = out.as_object_mut() {
+        o.insert("name".into(), json!(name));
+        o.insert("value".into(), json!(value.to_string()));
+        if let Some(b) = bonus {
+            o.insert("bonus".into(), json!(b));
+        }
+    }
+    out
+}
+
+/// A fixed increase the text gives a maximum other than the ordinary one ("your Strength score
+/// increases by 2, to a maximum of 22"), written as a plain `stat`, becomes the engine's capped
+/// increase: `<ability>:boon` N with its cap in `<ability>:boon:cap` (applied after the ordinary
+/// maximum, so the score can pass 20 up to the stated maximum and no further; the shape the
+/// engine gives an `ability_increase` with a cap). One that also raises the score's maximum
+/// ("..., as does your maximum for that score") gets `<ability>:max` N next to it. A choice is
+/// left to [`choices`]. Returns one message per change.
+fn fixed_caps(el: &mut Value) -> Vec<String> {
+    let text = super::fidelity::plain(el.get("description").and_then(Value::as_str).unwrap_or(""))
+        .to_lowercase();
+    let Some(rules) = el.get_mut("rules").and_then(Value::as_array_mut) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for sentence in text.split(['.', ';', '\n']) {
+        let spaced = sentence.replace(',', " , ");
+        if choice_in(&spaced).is_some() || !spaced.contains("increase") {
+            continue;
+        }
+        let owned = words_of(&spaced);
+        let words: Vec<&str> = owned.iter().map(String::as_str).collect();
+        let Some(amount) = amount_after(&words, 0) else {
+            continue;
+        };
+        let cap = stated_cap(&words).filter(|c| *c != DEFAULT_CAP);
+        let raises = RAISES_MAX.iter().any(|p| spaced.contains(p));
+        let named: Vec<&str> = ABILITIES
+            .iter()
+            .copied()
+            .filter(|a| words.iter().any(|w| w.trim_matches(',') == *a))
+            .collect();
+        for a in named {
+            let Some(i) = fixed_stat(rules, a, amount) else {
+                continue;
+            };
+            if let Some(m) = cap {
+                let base = rules[i].clone();
+                rules[i] = restat(&base, format!("{a}:boon"), amount, None);
+                rules.insert(
+                    i + 1,
+                    restat(&base, format!("{a}:boon:cap"), m, Some("base")),
+                );
+                out.push(format!(
+                    "stat {a} +{amount} read as the capped increase the text states ({a}:boon, maximum {m})"
+                ));
+            } else if raises {
+                let max = format!("{a}:max");
+                if rules
+                    .iter()
+                    .any(|r| r.get("name").and_then(Value::as_str) == Some(max.as_str()))
+                {
+                    continue;
+                }
+                let raised = restat(&rules[i], max.clone(), amount, None);
+                rules.insert(i + 1, raised);
+                out.push(format!(
+                    "stat {max} +{amount} added: the text raises the score's maximum with it"
+                ));
+            }
+        }
+    }
+    out
+}
+
 /// An ability score choice the description states but the rules fix on one ability (a `stat`)
 /// becomes the `ability_increase` the player chooses with. Returns one message per change.
-pub(crate) fn ability_choice(el: &mut Value) -> Vec<String> {
+fn choices(el: &mut Value) -> Vec<String> {
     let text = super::fidelity::plain(el.get("description").and_then(Value::as_str).unwrap_or(""))
         .to_lowercase();
     let Some(rules) = el.get_mut("rules").and_then(Value::as_array_mut) else {

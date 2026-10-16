@@ -147,3 +147,106 @@ fn a_choice_of_several_abilities_counts_them() {
         json!([{"abilities": 2, "amount": 1}])
     );
 }
+
+#[test]
+fn choice_wordings_without_score_or_increase_become_ability_increases() {
+    for text in [
+        "<p>While you wear it, you gain +1 to your Str or Dex score.</p>",
+        "<p>Increase your Strength or Dexterity by 1.</p>",
+        "<p>You gain a +1 bonus to Strength, Dexterity, or Constitution.</p>",
+    ] {
+        let mut el = json!({"description": text,
+            "rules": [{"kind": "stat", "name": "dexterity", "value": "1"}]});
+        let notes = super::super::rules::normalise_abilities(&mut el);
+        assert_eq!(notes.len(), 1, "{text}: {notes:?}");
+        assert_eq!(rules(&el)[0]["kind"], "ability_increase", "{text}");
+        assert_eq!(rules(&el)[0]["options"][0]["pick"], 1, "{text}");
+    }
+    // A bonus to rolls of the abilities is no score choice.
+    let mut saves = json!({"description":
+        "<p>You gain a +1 bonus to Strength or Dexterity saving throws.</p>",
+        "rules": [{"kind": "stat", "name": "strength", "value": "1"}]});
+    assert!(super::super::rules::normalise_abilities(&mut saves).is_empty());
+}
+
+/// A wondrous item worn by a fighter, its rules normalised as finalize does.
+fn worn_item(tag: &str, text: &str, rules: Value) -> Value {
+    let mut el = json!({"id": "ID_T_MAGIC_ITEM_OAK_GIRDLE", "name": "Oak Girdle",
+        "type": "Magic Item", "source": "Test", "ruleset": tag,
+        "description": text, "rules": rules, "setters": [
+        {"name": "category", "value": "Wondrous Items"},
+        {"name": "type", "value": "Wondrous item"}, {"name": "rarity", "value": "Rare"}]});
+    super::super::rules::normalise_abilities(&mut el);
+    el
+}
+
+#[test]
+fn a_fixed_increase_with_a_stated_maximum_passes_twenty_up_to_it_in_both_editions() {
+    use borealis_content::Ruleset;
+    let strength = |el: &Value, ruleset: Ruleset| {
+        let snap = super::super::items::tests::fighter_sheet(
+            ruleset,
+            std::slice::from_ref(el),
+            &["ID_T_MAGIC_ITEM_OAK_GIRDLE"],
+            [18, 10, 14, 10, 14, 8],
+        );
+        snap.abilities[0].score
+    };
+    let fixed = json!([{"kind": "stat", "name": "strength", "value": "4"}]);
+    for (ruleset, tag) in [(Ruleset::Dnd2014, "dnd2014"), (Ruleset::Dnd2024, "dnd2024")] {
+        let capped = worn_item(
+            tag,
+            "<p>While you wear this girdle, your Strength score increases by 4, to a maximum of 21.</p>",
+            fixed.clone(),
+        );
+        assert_eq!(
+            rules(&capped).as_slice(),
+            [
+                json!({"kind": "stat", "name": "strength:boon", "value": "4"}),
+                json!({"kind": "stat", "name": "strength:boon:cap", "value": "21", "bonus": "base"})
+            ],
+            "{tag}"
+        );
+        assert_eq!(
+            strength(&capped, ruleset),
+            21,
+            "{tag}: 18 + 4, stopped at 21"
+        );
+        let raised = worn_item(
+            tag,
+            "<p>Your Strength score increases by 4, as does your maximum for that score.</p>",
+            fixed.clone(),
+        );
+        assert_eq!(rules(&raised)[1]["name"], "strength:max", "{tag}");
+        assert_eq!(
+            strength(&raised, ruleset),
+            22,
+            "{tag}: the maximum rose to 24"
+        );
+        // The ordinary maximum stays the plain stat (and the ordinary cap of 20).
+        let plain = worn_item(
+            tag,
+            "<p>Your Strength score increases by 4, to a maximum of 20.</p>",
+            fixed.clone(),
+        );
+        assert_eq!(
+            rules(&plain).as_slice(),
+            fixed.as_array().unwrap().as_slice()
+        );
+        assert_eq!(strength(&plain, ruleset), 20, "{tag}");
+    }
+    // Idempotent, and a stated choice is left to the choice reading.
+    let mut again = worn_item(
+        "dnd2024",
+        "<p>Your Strength score increases by 2, to a maximum of 22.</p>",
+        json!([{"kind": "stat", "name": "strength", "value": "2"}]),
+    );
+    assert!(super::super::rules::normalise_abilities(&mut again).is_empty());
+    let choice = worn_item(
+        "dnd2024",
+        "<p>Your Strength or Constitution score increases by 2, to a maximum of 22.</p>",
+        json!([{"kind": "stat", "name": "strength", "value": "2"}]),
+    );
+    assert_eq!(rules(&choice)[0]["kind"], "ability_increase");
+    assert_eq!(rules(&choice)[0]["cap"], 22);
+}

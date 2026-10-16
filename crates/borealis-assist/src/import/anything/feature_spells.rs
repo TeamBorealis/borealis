@@ -22,6 +22,10 @@ use super::types::{
 
 #[path = "feature_spells_text.rs"]
 mod text;
+
+#[path = "official_spells.rs"]
+pub(crate) mod official;
+pub(crate) use official::official_spells;
 pub(crate) use text::SpellBook;
 use text::{key, level_rows, members, named_cantrips, own_lines};
 
@@ -184,7 +188,7 @@ pub(crate) fn resolve(
         }
         if !missing.is_empty() {
             notes.push(format!(
-                "{}: {} spell(s) of its spell table are neither in the library nor in this import, so they are not granted: {}",
+                "{}: {} spell(s) of its spell table are neither in the library nor in this import; finalize grants them as placeholders that keep the printed names (official content to install): {}",
                 e.name,
                 missing.len(),
                 missing.join(", ")
@@ -220,19 +224,28 @@ pub(crate) fn grant_spells(el: &mut Value, planned: &PlannedElement, edition: Ed
         return;
     };
     rules.retain(|r| !is_spell_grant_of(r, &ids));
-    rules.extend(grants.iter().map(|g| match (edition, g.level == CANTRIP) {
+    rules.extend(
+        grants
+            .iter()
+            .filter_map(|g| Some(grant_rule(edition, g, g.id.as_deref()?))),
+    );
+}
+
+/// The rule granting spell `id` as grant `g` of a feature's spell table, in the bundled shape.
+pub(crate) fn grant_rule(edition: Edition, g: &SpellGrant, id: &str) -> Value {
+    match (edition, g.level == CANTRIP) {
         // A named cantrip: known from the feature on, as the bundled species grant theirs.
         (Edition::Y2014, true) => {
-            json!({"kind": "grant", "id": g.id, "type": "Spell", "spellcasting": g.class})
+            json!({"kind": "grant", "id": id, "type": "Spell", "spellcasting": g.class})
         }
-        (Edition::Y2024, true) => json!({"kind": "grant_spell", "spell": g.id,
+        (Edition::Y2024, true) => json!({"kind": "grant_spell", "spell": id,
             "mode": "known_cantrip", "spell_list": g.class}),
-        (Edition::Y2014, false) => json!({"kind": "grant", "id": g.id, "type": "Spell",
+        (Edition::Y2014, false) => json!({"kind": "grant", "id": id, "type": "Spell",
             "level": g.level, "spellcasting": g.class, "prepared": true}),
         (Edition::Y2024, false) => json!({"kind": "grant_spell", "level": g.level,
-            "spell": g.id, "mode": "always_prepared", "counts_against_prepared": false,
+            "spell": id, "mode": "always_prepared", "counts_against_prepared": false,
             "spell_list": g.class}),
-    }));
+    }
 }
 
 /// `data.progression` key of a column heading.

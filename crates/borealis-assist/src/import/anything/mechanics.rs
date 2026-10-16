@@ -289,6 +289,16 @@ fn modelled(shape: Shape, rules: &[&Value]) -> bool {
     })
 }
 
+/// An `enhancement` setter models the item's `+N`: the engine reads it for a weapon's attack and
+/// damage, not for armor or a shield, whose `+N` to AC needs its AC rule (see
+/// [`super::items::armor_enhancement`]).
+fn enhancement_modelled(el: &Value) -> bool {
+    el.get("setters")
+        .and_then(Value::as_array)
+        .is_some_and(|s| s.iter().any(|x| str_at(x, "name") == "enhancement"))
+        && !super::items::is_magic_armor(el)
+}
+
 fn rules_of(el: &Value) -> Vec<&Value> {
     ["/rules", "/multiclass/rules"]
         .iter()
@@ -303,10 +313,7 @@ pub(crate) fn unmodelled(el: &Value, granted: &[&Value]) -> Vec<String> {
     if SKIP_TYPES.contains(&str_at(el, "type")) {
         return Vec::new();
     }
-    let enhanced = el
-        .get("setters")
-        .and_then(Value::as_array)
-        .is_some_and(|s| s.iter().any(|x| str_at(x, "name") == "enhancement"));
+    let enhanced = enhancement_modelled(el);
     let mut rules = rules_of(el);
     rules.extend(granted.iter().flat_map(|g| rules_of(g)));
     // A shape a granted element's own text states is that element's finding, not this one's.
@@ -406,10 +413,7 @@ pub(crate) fn species_without_speed(draft: &ImportDraft, e: &DraftElement) -> bo
 /// Shapes the passage states that the element neither models nor keeps in its (or a granted
 /// element's) text: those are lost, not merely text only.
 fn passage_gaps(el: &Value, granted: &[&Value], passage: &str) -> Vec<String> {
-    let enhanced = el
-        .get("setters")
-        .and_then(Value::as_array)
-        .is_some_and(|s| s.iter().any(|x| str_at(x, "name") == "enhancement"));
+    let enhanced = enhancement_modelled(el);
     let mut rules = rules_of(el);
     rules.extend(granted.iter().flat_map(|g| rules_of(g)));
     let carried: Vec<Shape> = std::iter::once(el)
@@ -618,6 +622,26 @@ have a swimming speed of 40 feet and a +1 bonus to AC.</p>", "rules": []});
         }
         let spell = json!({"type": "Spell", "description": "<p>Your AC equals 13 + your Dexterity modifier.</p>"});
         assert!(unmodelled(&spell, &[]).is_empty());
+    }
+
+    #[test]
+    fn an_enhancement_setter_models_a_weapons_bonus_but_not_an_armors_ac() {
+        let setters = |ty: &str| json!([{"name": "type", "value": ty}, {"name": "enhancement", "value": "2"}]);
+        let text = "<p>You have a +2 bonus to AC while wearing this armor.</p>";
+        let armor = json!({"type": "Magic Item", "description": text, "rules": [],
+            "setters": setters("Armor")});
+        assert_eq!(
+            unmodelled(&armor, &[]).len(),
+            1,
+            "setter-only armor is not modelled"
+        );
+        let mut fixed = armor.clone();
+        fixed["rules"] = json!([{"kind": "stat", "name": "ac:armored:enhancement",
+            "value": "2", "bonus": "enhancement"}]);
+        assert!(unmodelled(&fixed, &[]).is_empty());
+        let weapon = json!({"type": "Magic Item", "rules": [], "setters": setters("Weapon"),
+            "description": "<p>You have a +2 bonus to attack and damage rolls made with it.</p>"});
+        assert!(unmodelled(&weapon, &[]).is_empty());
     }
 
     #[test]

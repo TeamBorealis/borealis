@@ -73,6 +73,11 @@ pub fn required_setters(ty: &str) -> &'static [&'static str] {
     }
 }
 
+/// Custom rule fields that name a spell element by id, as `(kind, field)`: a grant of a spell the
+/// pack does not have never reaches the sheet, so it is a dangling reference like a `grant`'s.
+const CUSTOM_SPELL_REFS: [(&str, &str); 2] =
+    [("grant_spell", "spell"), ("spell_cast_alt_cost", "spell")];
+
 struct Ctx<'a> {
     store: &'a ContentStore,
     stored: &'a StoredElement,
@@ -167,7 +172,18 @@ impl Ctx<'_> {
                     }
                 }
             }
-            Rule::Unknown(_) | Rule::Custom(_) => {}
+            Rule::Custom(c) => {
+                for field in CUSTOM_SPELL_REFS
+                    .iter()
+                    .filter(|(kind, _)| *kind == c.kind)
+                    .map(|(_, field)| *field)
+                {
+                    if let Some(id) = c.fields.get(field).and_then(serde_json::Value::as_str) {
+                        self.check_ref(id, path, &c.kind);
+                    }
+                }
+            }
+            Rule::Unknown(_) => {}
         }
     }
 
@@ -403,6 +419,36 @@ mod tests {
             .iter()
             .any(|i| i.path.as_deref() == Some("rules[2]")));
         assert!(dangling.iter().all(|i| i.severity == Severity::Warning));
+    }
+
+    #[test]
+    fn custom_spell_grants_to_unknown_spells_are_dangling() {
+        let custom = |kind: &str, spell: &str| {
+            Rule::Custom(crate::rules::CustomRule {
+                kind: kind.into(),
+                fields: serde_json::json!({"spell": spell, "mode": "known_cantrip"})
+                    .as_object()
+                    .cloned()
+                    .unwrap_or_default(),
+            })
+        };
+        let spell = Element::new("ID_S", "S", "Spell", "Core");
+        let mut e = Element::new("ID_A", "A", "Magic Item", "Core");
+        e.rules = vec![
+            custom("grant_spell", "ID_S"),
+            custom("grant_spell", "ID_GUESSED_SPELL_X"),
+            custom("spell_cast_alt_cost", "ID_GUESSED_SPELL_Y"),
+            custom("roll_advantage", "ID_NOT_A_REFERENCE"),
+        ];
+        let issues = store(vec![spell, e]).validate();
+        let dangling: Vec<&str> = issues
+            .iter()
+            .filter(|i| i.code == IssueCode::DanglingReference)
+            .map(|i| i.message.as_str())
+            .collect();
+        assert_eq!(dangling.len(), 2, "{issues:#?}");
+        assert!(dangling[0].contains("ID_GUESSED_SPELL_X"));
+        assert!(dangling[1].starts_with("spell_cast_alt_cost"));
     }
 
     #[test]

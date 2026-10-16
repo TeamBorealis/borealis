@@ -783,19 +783,45 @@ pub(crate) fn printed_row_fixes(
 /// Shield"): the armored enhancement bonus. The model sometimes writes it as a plain `ac` stat.
 const ENHANCEMENT_STAT: &str = "ac:armored:enhancement";
 
-/// A Magic Item whose `type` setter is Armor and whose one AC rule is a bare `stat ac N`
-/// (no condition) gets the SRD enhancement rule instead (bonus `enhancement`, a shield's
-/// `enhancement:shield`). Returns a note when it changed.
+/// True for a Magic Item whose `type` setter is Armor (magic armor or a magic shield).
+pub(crate) fn is_magic_armor(el: &Value) -> bool {
+    el.get("type").and_then(Value::as_str) == Some("Magic Item")
+        && setter(el, "type")
+            .and_then(|t| str_of(t.get("value")))
+            .is_some_and(|v| v.eq_ignore_ascii_case("armor"))
+}
+
+/// A magic armor's `enhancement` setter (`+N`), when positive.
+fn enhancement_setter(el: &Value) -> Option<i64> {
+    int_of(setter(el, "enhancement")?.get("value")).filter(|n| *n > 0)
+}
+
+/// A Magic Item whose `type` setter is Armor gets the SRD enhancement rule (bonus
+/// `enhancement`, a shield's `enhancement:shield`) when its one AC rule is a bare `stat ac N`
+/// (no condition), or when it has no AC rule at all and only an `enhancement` setter states its
+/// `+N` (the engine reads that setter for weapons only, so the armor's AC would not change).
+/// Returns a note when it changed.
 pub(crate) fn armor_enhancement(el: &mut Value) -> Option<String> {
-    let ty = setter(el, "type")?;
-    if str_of(ty.get("value"))?.to_lowercase() != "armor" {
+    if setter(el, "type")
+        .and_then(|t| str_of(t.get("value")))?
+        .to_lowercase()
+        != "armor"
+    {
         return None;
     }
+    let ty = setter(el, "type")?;
     let shield = str_of(ty.pointer("/attributes/addition"))
         .into_iter()
         .chain(setter_value(el, "armor"))
         .any(|v| v.to_lowercase().contains("shield"));
-    let rules = el.get("rules")?.as_array()?;
+    let bonus = if shield {
+        "enhancement:shield"
+    } else {
+        "enhancement"
+    };
+    let rule = |n: i64| json!({"kind": "stat", "name": ENHANCEMENT_STAT, "value": n.to_string(), "bonus": bonus});
+    let empty = Vec::new();
+    let rules = el.get("rules").and_then(Value::as_array).unwrap_or(&empty);
     if rules
         .iter()
         .any(|r| r.get("name").and_then(Value::as_str) == Some(ENHANCEMENT_STAT))
@@ -810,21 +836,29 @@ pub(crate) fn armor_enhancement(el: &mut Value) -> Option<String> {
                     .all(|k| matches!(k.as_str(), "kind" | "name" | "value"))
             })
     };
+    let any_ac = rules
+        .iter()
+        .any(|r| is_ac_rule(r) || r.get("name").and_then(Value::as_str) == Some("ac"));
     let found: Vec<usize> = (0..rules.len()).filter(|&i| bare(&rules[i])).collect();
-    let [i] = found[..] else {
+    if let [i] = found[..] {
+        let n = int_of(rules[i].get("value")).filter(|n| *n > 0)?;
+        el.get_mut("rules")?.as_array_mut()?[i] = rule(n);
+        return Some(format!(
+            "rules: the armor's +{n} to AC is its {ENHANCEMENT_STAT} bonus"
+        ));
+    }
+    if any_ac {
         return None;
-    };
-    let n = int_of(rules[i].get("value")).filter(|n| *n > 0)?;
-    let bonus = if shield {
-        "enhancement:shield"
-    } else {
-        "enhancement"
-    };
-    let rule =
-        json!({"kind": "stat", "name": ENHANCEMENT_STAT, "value": n.to_string(), "bonus": bonus});
-    el.get_mut("rules")?.as_array_mut()?[i] = rule;
+    }
+    let n = enhancement_setter(el)?;
+    let o = obj(el);
+    let list = o.entry("rules").or_insert_with(|| json!([]));
+    if !list.is_array() {
+        *list = json!([]);
+    }
+    list.as_array_mut()?.push(rule(n));
     Some(format!(
-        "rules: the armor's +{n} to AC is its {ENHANCEMENT_STAT} bonus"
+        "rules: the armor's enhancement setter +{n} is its {ENHANCEMENT_STAT} bonus (it had no AC rule)"
     ))
 }
 
@@ -861,4 +895,4 @@ pub(crate) fn normalize_item(
 
 #[cfg(test)]
 #[path = "items_tests.rs"]
-mod tests;
+pub(crate) mod tests;
