@@ -92,8 +92,24 @@ pub(crate) fn section_text(source: &str, p: &PlannedElement) -> Option<String> {
     let end = ex.end_line.max(ex.start_line).min(lines.len());
     let mut blocks = vec![(start, end)];
     blocks.extend(table_head(&lines, start));
-    Some(joined(source, &lines, blocks))
+    Some(own_block(p, joined(source, &lines, blocks)))
 }
+
+/// A monster's passage cut to its own stat block when the passage prints several (a rider and
+/// its mount in one block, variants one after the other): the lines before the first stat
+/// block, then the stat block under the sub-heading that names the monster.
+fn own_block(p: &PlannedElement, text: String) -> String {
+    if p.ty != MONSTER {
+        return text;
+    }
+    shared::own_stat_block(&text, &p.name).unwrap_or(text)
+}
+
+/// Element type of a monster.
+const MONSTER: &str = "Monster";
+
+#[path = "shared_blocks.rs"]
+mod shared;
 
 /// Fewest lines sent for a located element (a one-line excerpt still gets its context).
 const MIN_WINDOW_LINES: usize = 12;
@@ -123,7 +139,7 @@ pub(crate) fn element_window(source: &str, planned: &PlannedElement) -> String {
         let mut blocks = vec![(start, (start + short).min(lines.len()))];
         // A table row also gets the table's caption, header and category rows above it.
         blocks.extend(table_head(&lines, start));
-        return joined(source, &lines, blocks);
+        return own_block(planned, joined(source, &lines, blocks));
     }
     let mut blocks = vec![(start, end)];
     blocks.extend(progression_table(&lines, start));

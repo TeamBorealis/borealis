@@ -15,7 +15,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use super::super::steps::{Attaching, Step, VisionRunner};
-use super::{strip_paraphrase, Ingested, MAX_PART_BYTES, READING_NOTE, VISUAL_PAGES_PER_CALL};
+use super::transcript;
+use super::{Ingested, MAX_PART_BYTES, READING_NOTE, VISUAL_PAGES_PER_CALL};
 use crate::error::AssistError;
 use crate::import::chunk::norm_words;
 use crate::import::pdf_fonts::FontCache;
@@ -42,6 +43,18 @@ const ECHO_SHARE: f32 = 0.9;
 const ECHO_MIN_WORDS: usize = 3;
 /// Longest anchor prefix tried when the whole anchor line is not found.
 const ANCHOR_PREFIX_CHARS: usize = 40;
+/// Fewest words a picture's text has to be kept: a logo or a lone label is no printed rules text.
+const MIN_BLOCK_WORDS: usize = 3;
+/// Points from the page's edge within which an image bleeds off the page (art and banners do;
+/// text sits inside the page's margins).
+const EDGE_BLEED: f32 = 18.0;
+/// A small picture (below this share of the page) centred on a page of little text is a logo or
+/// an ornament (a title page's emblem), not a pasted stat block or table.
+const LOGO_SHARE: f32 = 0.08;
+/// Text-layer words below which a page is a title or cover page.
+const SPARSE_PAGE_WORDS: usize = 250;
+/// Share of the page width a centred picture's middle is within of the page's middle.
+const CENTRED: f32 = 0.05;
 
 /// Pictures copied for one call: the pages, their text layers and the attachment.
 pub(super) struct PicturePart {
@@ -66,7 +79,20 @@ struct PicturesOut {
     blocks: Vec<Inset>,
 }
 
-/// A picture: large, not the page's background, and no text-layer text over it.
+/// Decoration, not a picture that may print text: an image bleeding off the page's edge (art,
+/// a banner), or a small one centred on a page of little text (a title page's logo).
+fn is_decoration(b: &ImageBox, runs: &[Run], size: (f32, f32)) -> bool {
+    let (w, h) = size;
+    let bleeds =
+        b.x0 < EDGE_BLEED || b.y0 < EDGE_BLEED || b.x1 > w - EDGE_BLEED || b.y1 > h - EDGE_BLEED;
+    let share = b.width() * b.height() / (w * h).max(1.0);
+    let centred = ((b.x0 + b.x1) / 2.0 - w / 2.0).abs() <= CENTRED * w;
+    let words: usize = runs.iter().map(|r| r.text.split_whitespace().count()).sum();
+    bleeds || (share < LOGO_SHARE && centred && words < SPARSE_PAGE_WORDS)
+}
+
+/// A picture: large, not the page's background, no text-layer text over it, and not
+/// decoration.
 fn is_picture(b: &ImageBox, runs: &[Run], size: (f32, f32)) -> bool {
     let area = b.width() * b.height();
     let page = (size.0 * size.1).max(1.0);
@@ -74,6 +100,7 @@ fn is_picture(b: &ImageBox, runs: &[Run], size: (f32, f32)) -> bool {
         || b.height() < MIN_PICTURE_SIDE
         || area < MIN_PICTURE_SHARE * page
         || area >= BACKGROUND_SHARE * page
+        || is_decoration(b, runs, size)
     {
         return false;
     }
@@ -220,7 +247,8 @@ text layer, and pictures that print no text (art, maps, portraits, ornaments): t
 block per picture: `page` (its page number), `after` (the last line of the text layer, copied exactly, \
 that comes before the picture in reading order; empty when the picture comes first on its page) and \
 `text` (the picture's text: a stat block's name as a Markdown `###` heading, each line of the stat \
-block on its own line, table rows as `cell | cell | cell`). No pictures with text: an empty `blocks`.\n\n{}",
+block on its own line, table rows as `cell | cell | cell`). Where the print itself cannot be read, write [illegible] in place of those words. No pictures \
+with text: an empty `blocks`.\n\n{}",
         part.label,
         fence("user_input", &layers.join("\n\n"))
     );
@@ -283,6 +311,7 @@ pub(super) async fn transcribe_pictures(
     };
     let first = part.pages.first().map_or(0, |(n, _)| *n);
     let mut paraphrased = false;
+    let mut spans: Vec<String> = Vec::new();
     let mut kept = Vec::new();
     for b in reply.blocks {
         let page = if part.pages.iter().any(|(n, _)| *n == b.page) {
@@ -290,26 +319,34 @@ pub(super) async fn transcribe_pictures(
         } else {
             first
         };
-        let (text, marked) = strip_paraphrase(b.text.trim());
-        paraphrased |= marked;
+        // Transcriber notes and paraphrase markers go; reworded passages are recorded.
+        let read = transcript::read(b.text.trim());
+        let text = read.text.trim().to_string();
         let layer = part
             .pages
             .iter()
             .find(|(n, _)| *n == page)
             .map_or("", |(_, t)| t.as_str());
-        if text.trim().is_empty() || echoes(&text, layer) {
+        if text.split_whitespace().count() < MIN_BLOCK_WORDS || echoes(&text, layer) {
             continue;
         }
+        paraphrased |= read.paraphrased;
+        out.notes.extend(transcript::span_notes(
+            &format!("{} (page {page})", part.label),
+            &read.spans,
+        ));
+        spans.extend(read.spans);
         kept.push(Inset {
             page,
             after: b.after,
-            text: text.trim().to_string(),
+            text,
         });
     }
-    if paraphrased {
+    if paraphrased || !spans.is_empty() {
         out.notes.push(format!(
-            "{READING_NOTE}{}: the transcription says it is not a word-for-word copy, so text taken from these pictures is not the printed text",
-            part.label
+            "{READING_NOTE}{}: the transcription did not copy {} passage(s) word for word (reworded, or print it could not read), so text taken from them is not the printed text",
+            part.label,
+            spans.len().max(1)
         ));
     }
     kept

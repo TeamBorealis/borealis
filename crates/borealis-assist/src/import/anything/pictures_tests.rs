@@ -276,3 +276,23 @@ fn probe_pictured_pages() {
         );
     }
 }
+
+#[test]
+fn art_bleeding_off_the_page_and_a_title_pages_logo_are_decoration() {
+    let title = vec![
+        (200.0, 700.0, 24.0, "The Lantern Almanac"),
+        (230.0, 120.0, 10.0, "by A. Writer"),
+    ];
+    let bytes = pdf(&[
+        // Art bleeding off the right and bottom edges of a text page.
+        (lore(), Some([420.0, -6.0, 200.0, 280.0])),
+        // A small emblem centred on a title page.
+        (title.clone(), Some([246.0, 330.0, 120.0, 190.0])),
+        // A banner along the bottom edge.
+        (lore(), Some([12.0, 4.0, 580.0, 80.0])),
+    ]);
+    assert!(pictured_pages(&bytes, &all_pages(3)).is_empty());
+    // A stat-block-sized picture centred on the same sparse page is still read.
+    let bytes = pdf(&[(title, Some([156.0, 200.0, 300.0, 380.0]))]);
+    assert_eq!(pictured_pages(&bytes, &all_pages(1)), BTreeSet::from([1]));
+}

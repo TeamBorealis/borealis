@@ -252,3 +252,51 @@ async fn a_failed_pictures_call_is_reported_and_the_import_goes_on() {
         "{note}"
     );
 }
+
+#[tokio::test]
+async fn logo_words_and_transcriber_notes_are_dropped_and_reworded_passages_are_recorded() {
+    // Arrange: besides the stat block, the reply holds a lone logo word and a note of the
+    // model's own; one trait of the stat block is marked as reworded.
+    let marked = format!(
+        "{STAT_BLOCK}\n[Paraphrased] Dusk Hum. The gloomwing hums and every creature within 30 feet must make a Wisdom saving throw."
+    );
+    let blocks = json!({"blocks": [
+        {"page": 1, "after": "", "text": "EMBLEM"},
+        {"page": 1, "after": "", "text": "[Note: the picture on this page shows a heron in the reeds.]"},
+        {"page": 1, "after": "Gloomwings roost under old bridges and hum at dusk.", "text": marked},
+    ]})
+    .to_string();
+    let fake = Fake::default()
+        .on(
+            "import_transcribe_pictures",
+            "the pictures on page 1 of",
+            &[blocks],
+        )
+        .on("import_detect", "Classify", &[detected()]);
+    // Act
+    let (detection, text) = detect_source(&fake, &attachment(bestiary()), Edition::Y2014, &opts())
+        .await
+        .unwrap();
+    // Assert: only printed text enters the source; the reworded trait is recorded for review.
+    assert!(
+        !text.contains("EMBLEM") && !text.contains("heron"),
+        "{text}"
+    );
+    assert!(!text.to_lowercase().contains("paraphrased"), "{text}");
+    assert!(text.contains("Dusk Hum. The gloomwing hums"), "{text}");
+    let recorded: Vec<&String> = detection
+        .notes
+        .iter()
+        .filter(|n| n.starts_with("Reading the source: paraphrased passage: "))
+        .collect();
+    assert_eq!(recorded.len(), 1, "{:?}", detection.notes);
+    assert!(
+        recorded[0].ends_with("\"Dusk Hum. The gloomwing hums and every creature within 30 feet must make a Wisdom saving throw.\" (the pictures on page 1 of `bestiary.pdf` (page 1))"),
+        "{}",
+        recorded[0]
+    );
+    assert!(detection
+        .notes
+        .iter()
+        .any(|n| n.starts_with("Reading the source") && n.contains("1 passage(s)")));
+}

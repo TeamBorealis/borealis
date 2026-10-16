@@ -5,6 +5,10 @@
 use super::pdf::Fragment;
 use super::pdf_walk::Run;
 
+// A child of this module so the import module list stays as it is.
+#[path = "pdf_table_headed.rs"]
+pub(crate) mod headed;
+
 /// A run starting this many points from a stop starts at it.
 const STOP_SLACK: f32 = 1.0;
 /// Baselines on which a left edge must recur to be a tab stop.
@@ -467,13 +471,25 @@ fn baseline_rows(frags: &[Fragment]) -> Vec<Vec<&Fragment>> {
     rows
 }
 
+/// A table across a column gutter: its first and last baselines, and whether it opens with a
+/// header row and has one side of one cell a row (read by [`headed::rows`]).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct Span {
+    pub top: f32,
+    pub bottom: f32,
+    pub headed: bool,
+}
+
 /// The y ranges (top, bottom baseline) of tables whose columns lie on both sides of a gutter:
 /// at least [`SPAN_MIN_ROWS`] close rows of [`SPAN_MIN_CELLS`] cells or more on both sides,
 /// unless one side is a column of prose going on above or below them at the same left edge (a
 /// table in the other column), both sides start at their columns' margins (a table in each
 /// column) or both sides have one format (a table continued in the next column). Such a table
-/// is read row by row, not split into columns.
-pub(crate) fn spanning_tables(frags: &[Fragment], side: SideOf) -> Vec<(f32, f32)> {
+/// is read row by row, not split into columns. Rows whose gap is filled by the lines of a
+/// wrapped cell stay one table however long the cell, and a table that opens with a header row
+/// (every cell bold) over a side of one cell a row is a table even where that side starts at
+/// its column's margin like prose ([`headed`]).
+pub(crate) fn spanning_tables(frags: &[Fragment], side: SideOf) -> Vec<Span> {
     let rows = baseline_rows(frags);
     let qualifies = |r: &[&Fragment]| {
         let l = r.iter().filter(|f| side(f) == Some(true)).count();
@@ -483,9 +499,10 @@ pub(crate) fn spanning_tables(frags: &[Fragment], side: SideOf) -> Vec<(f32, f32
     let mut out = Vec::new();
     let mut run: Vec<&[&Fragment]> = Vec::new();
     for r in rows.iter().filter(|r| qualifies(r)) {
-        let close = run
-            .last()
-            .is_some_and(|p| p[0].y - r[0].y <= SPAN_ROW_GAP * p[0].size.max(1.0));
+        let close = run.last().is_some_and(|p| {
+            let size = p[0].size.max(1.0);
+            p[0].y - r[0].y <= SPAN_ROW_GAP * size || headed::filled(frags, p[0].y, r[0].y, size)
+        });
         if !close {
             push_span(&mut out, &run, frags, side);
             run.clear();
@@ -564,22 +581,35 @@ fn headed_lists(all: &[Fragment], run: &[&[&Fragment]]) -> bool {
     edges.len() >= 2
 }
 
-fn push_span(out: &mut Vec<(f32, f32)>, run: &[&[&Fragment]], all: &[Fragment], side: SideOf) {
+fn push_span(out: &mut Vec<Span>, run: &[&[&Fragment]], all: &[Fragment], side: SideOf) {
     let (Some(first), Some(last)) = (run.first(), run.last()) else {
         return;
     };
     let (top, bottom) = (first[0].y, last[0].y);
-    if run.len() < SPAN_MIN_ROWS
-        || headed_lists(all, run)
-        || continues_column(all, top, bottom, true, side)
-        || continues_column(all, top, bottom, false, side)
-        || side_by_side(all, top, bottom, side)
-        || (column_edge(all, top, bottom, true, side).is_some_and(|at| at)
-            && column_edge(all, top, bottom, false, side).is_some_and(|at| at))
+    if run.len() < SPAN_MIN_ROWS || headed_lists(all, run) || side_by_side(all, top, bottom, side) {
+        return;
+    }
+    // A header row over a side of single cells: that side is the table's last column, not a
+    // column of prose, though it starts at the column's margin.
+    let headed = headed::is_headed(run, all, top, bottom, side);
+    if !headed
+        && (continues_column(all, top, bottom, true, side)
+            || continues_column(all, top, bottom, false, side)
+            || (column_edge(all, top, bottom, true, side).is_some_and(|at| at)
+                && column_edge(all, top, bottom, false, side).is_some_and(|at| at)))
     {
         return;
     }
-    out.push((top, bottom));
+    let bottom = if headed {
+        headed::wrapped_bottom(all, run, bottom)
+    } else {
+        bottom
+    };
+    out.push(Span {
+        top,
+        bottom,
+        headed,
+    });
 }
 
 fn within(f: &Fragment, top: f32, bottom: f32) -> bool {

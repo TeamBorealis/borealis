@@ -352,6 +352,15 @@ fn superscript_of(a: &Run, b: &Run) -> bool {
         && (small.x - big.end).abs().min((big.x - small.end).abs()) <= WORD_GAP * em
 }
 
+/// List bullet glyphs.
+const BULLETS: [char; 9] = ['•', '●', '◦', '▪', '■', '‣', '⁃', '∙', '·'];
+
+/// `t` is a lone list bullet.
+fn is_bullet(t: &str) -> bool {
+    let mut chars = t.trim().chars();
+    chars.next().is_some_and(|c| BULLETS.contains(&c)) && chars.next().is_none()
+}
+
 fn fragments(mut runs: Vec<Run>) -> Vec<Fragment> {
     runs.sort_by(|a, b| b.y.total_cmp(&a.y).then(a.x.total_cmp(&b.x)));
     let stops = super::pdf_table::tab_stops(&runs);
@@ -373,9 +382,11 @@ fn fragments(mut runs: Vec<Run>) -> Vec<Fragment> {
             if let Some(b) = cur.as_mut() {
                 let gap = r.x - b.frag.end;
                 let em = b.frag.size.max(r.size);
+                // A list bullet set apart from its item's text is not a cell of its own.
                 let cell = gap >= super::pdf_table::CELL_GAP * em
                     && super::pdf_table::at_stop(&stops, r.x)
-                    && (b.frag.x - r.x).abs() > 1.0;
+                    && (b.frag.x - r.x).abs() > 1.0
+                    && !is_bullet(&b.frag.text);
                 if gap <= SPLIT_GAP * em && !cell {
                     if gap > WORD_GAP * em
                         && !b.frag.text.ends_with(' ')
@@ -640,5 +651,33 @@ mod tests {
         assert!(!t.contains("ALMANAC"), "{t}");
         assert!(!t.lines().any(|l| l.trim() == "3"), "{t}");
         assert_eq!(t.matches("Body text").count(), 4);
+    }
+
+    #[test]
+    fn a_list_bullet_stays_with_its_item_at_a_tab_stop() {
+        let run = |x: f32, y: f32, text: &str| Run {
+            x,
+            y,
+            end: x + 4.5 * text.chars().count() as f32,
+            size: 9.0,
+            bold: false,
+            text: text.into(),
+            font: b"F1".to_vec(),
+        };
+        // Four lines start at x 329 (a tab stop): two bullet items, each wrapped once.
+        let runs = vec![
+            run(320.0, 700.0, "\u{2022}"),
+            run(329.0, 700.0, "First rule of the lamp"),
+            run(329.0, 689.0, "keeps the wick trimmed."),
+            run(320.0, 678.0, "\u{2022}"),
+            run(329.0, 678.0, "Second rule of the lamp"),
+            run(329.0, 667.0, "wraps here too."),
+        ];
+        let texts: Vec<String> = fragments(runs).into_iter().map(|f| f.text).collect();
+        assert_eq!(texts[0], "\u{2022} First rule of the lamp", "{texts:?}");
+        assert_eq!(texts[2], "\u{2022} Second rule of the lamp", "{texts:?}");
+        assert!(
+            is_bullet(" \u{25aa} ") && !is_bullet("\u{2014}") && !is_bullet("\u{2022}\u{2022}")
+        );
     }
 }

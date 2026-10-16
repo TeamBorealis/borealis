@@ -32,6 +32,8 @@ pub(crate) async fn generate_single_once(
     generate_single(runner, g, planned, opts, progress, &mut Retries::default()).await
 }
 
+#[path = "printed_terms.rs"]
+mod printed_terms;
 #[path = "retry.rs"]
 mod retry;
 #[path = "stat_blocks.rs"]
@@ -48,7 +50,7 @@ pub const MAX_REPAIR_ROUNDS: u32 = 2;
 /// How a generated description keeps the source (a literal, for `concat!`).
 macro_rules! printed {
     () => {
-        "`description` in HTML paragraphs with the source's own text kept as printed (its sentences word for word: no rewording, no summary, lead-in or sentence of your own; game terms exactly as printed)"
+        "`description` in HTML paragraphs with the source's own text kept as printed (its sentences word for word: no rewording, no summary, lead-in or sentence of your own; game terms exactly as printed, a check, saving throw or sense worded as printed and never turned into a standard phrasing)"
     };
 }
 
@@ -58,6 +60,9 @@ pub(crate) const FEATURE_BATCH_EACH: &str = concat!(
     printed!(),
     ", and `rules` that implement it (resources, grants, selects, stat changes); a feature with no mechanics may have no rules. Reuse existing core ids. The class's own spell slots, cantrip and spell choices and preparation are generated for you: describe them in prose only. Spells a feature grants (a spell table) and counters from class table columns are added from the outline; every other mechanic of the feature is yours to write."
 );
+
+/// The guidance for a monster: its printed stat block, as printed.
+pub(crate) const MONSTER_GUIDANCE: &str = "A monster: the stat block in `data` as in the example, every number as printed (XP and proficiency bonus included: never put the standard value for the challenge rating in place of a printed one; a printed value that differs from it goes in notes), traits, actions and senses in their printed wording. When the passage prints several creatures in one block (a rider and its mount), this creature gets only the lines under its own sub-heading.";
 
 /// The plan's summary of an element only orients the model; it never removes source content.
 pub(crate) const BRIEF_NEVER_OMITS: &str = "The summary under \"What the source says\" only orients you and never removes source content: write every line of the source passage (ability score, size, speed, language and proficiency lines included) as text and as rules, even where a summary or note says to leave lines out.";
@@ -94,7 +99,7 @@ pub(crate) fn guidance(planned: &PlannedElement, edition: Edition) -> &'static s
         (_, "Feat") => concat!("A feat: `prerequisite` with the COMPLETE printed prerequisite (every part: level, ability score, another feat or feature, proficiency, spellcasting), rules (stat/grant/select), and ", printed!(), ". Requirements for a prerequisite on another feat or feature are added for you."),
         (_, "Spell") => if edition == Edition::Y2024 { concat!("A spell with setters level, school, time, range, duration, components and `supports` listing EVERY class the source names for it, as printed (a class from another source or outside the core rules included, never dropped) (2024 rules), and the text after the stat block as ", printed!(), ".") } else { concat!("A spell with setters level, school, time, range, duration, components and `supports` listing EVERY class the source names for it, as printed (a class from another source or outside the core rules included, never dropped), and the text after the stat block as ", printed!(), ".") },
         (_, "Magic Item") => concat!("A magic item with rarity and attunement setters, a `type` setter (Wondrous item, Ring, Rod, Staff, Wand, Potion, Scroll, or Weapon/Armor with the base item as addition, like the example), rules for bonuses, and ", printed!(), "; never a placeholder or a note about the source in it (doubts go in notes)."),
-        (_, "Monster") => "A monster: the stat block in `data` as in the example.",
+        (_, "Monster") => MONSTER_GUIDANCE,
         _ => "A content element as in the example.",
     }
 }

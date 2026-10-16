@@ -182,3 +182,37 @@ fn an_invented_stat_block_is_dropped_and_the_creature_kept_as_text() {
     assert_eq!(e.issues, vec![STAT_BLOCK_ABSENT.to_string()]);
     assert!(d.sweep_issues.is_empty());
 }
+
+#[test]
+fn an_xp_other_than_the_printed_one_is_said_and_marked_for_review() {
+    // Arrange: the printed block says 200 XP.
+    assert_eq!(
+        printed_xp("Challenge 4 (1,100 XP) | Proficiency"),
+        vec![1100]
+    );
+    assert_eq!(printed_xp(SOURCE), vec![200]);
+    let mut d = draft();
+    let mut json = generated(14, 22, [14, 15, 12, 3, 12, 6]);
+    json["data"]["xp"] = json!(450);
+    with(&mut d, "M2", json);
+    // Act
+    settle(&mut d);
+    // Assert: the printed XP is named, the element stays a monster and needs review.
+    let e = d.element("M2").unwrap();
+    assert_eq!(e.ty, MONSTER);
+    assert_eq!(e.status, ElementStatus::NeedsReview);
+    assert!(
+        e.issues.iter().any(|i| i.starts_with(XP_NOT_AS_PRINTED)
+            && i.contains("prints 200 XP")
+            && i.contains("has 450 XP")),
+        "{:?}",
+        e.issues
+    );
+    // The printed XP itself raises nothing.
+    let mut d = draft();
+    let mut json = generated(14, 22, [14, 15, 12, 3, 12, 6]);
+    json["data"]["xp"] = json!(200);
+    with(&mut d, "M2", json);
+    settle(&mut d);
+    assert_eq!(d.element("M2").unwrap().status, ElementStatus::Ok);
+}

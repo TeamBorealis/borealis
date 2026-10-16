@@ -135,13 +135,47 @@ pub(crate) async fn validate_rounds(
     super::super::mechanics::note_leftovers(draft);
     keep_printed(draft);
     super::super::fidelity::note_leftovers(draft);
+    note_not_verbatim(draft);
     attach_balance(ctx, &store, draft);
 }
 
-/// Deterministic description fixes: a description that only rewords its element's own printed
+/// Start of the issue on an element whose text holds a passage the transcription did not copy
+/// word for word.
+pub(crate) const TEXT_NOT_VERBATIM: &str = "text not copied word for word from the source";
+/// Characters of the passage quoted in the issue.
+const QUOTE_CHARS: usize = 60;
+
+/// Elements whose text holds a passage a visual transcription reworded or could not read are
+/// marked for review: their wording is the transcription's, not the printed one.
+fn note_not_verbatim(draft: &mut ImportDraft) {
+    use super::super::ingest::transcript::{holds_not_verbatim, not_verbatim_spans};
+    let spans = not_verbatim_spans(&draft.detection.notes);
+    if spans.is_empty() {
+        return;
+    }
+    for e in draft.elements.iter_mut().filter(|e| !e.json.is_null()) {
+        let Some(passage) = holds_not_verbatim(&e.json.to_string(), &spans) else {
+            continue;
+        };
+        let quote: String = passage.chars().take(QUOTE_CHARS).collect();
+        push_new(
+            &mut e.issues,
+            vec![format!(
+                "{TEXT_NOT_VERBATIM}: the transcription reworded or could not read \"{quote}...\"; check it against the page"
+            )],
+        );
+        if matches!(e.status, ElementStatus::Ok | ElementStatus::Repaired) {
+            e.status = ElementStatus::NeedsReview;
+        }
+    }
+}
+
+/// Deterministic description fixes: a standard check or distance phrasing the passage does not
+/// print goes back to the printed one, a description that only rewords its element's own printed
 /// passage becomes the passage, a class or subclass root gets its unplanned prose
 /// sub-sections, and a table row loses sentences the source does not print.
 pub(crate) fn keep_printed(draft: &mut ImportDraft) {
+    super::printed_terms::restore(draft);
     super::super::passage::restore(draft);
     super::super::passage::add_sub_sections(draft);
     super::super::passage::drop_unprinted_row_text(draft);

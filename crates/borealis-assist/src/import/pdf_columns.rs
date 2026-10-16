@@ -2,6 +2,7 @@
 //! (two levels: up to four columns), tables across a gutter read row by row, and two-column
 //! tables inside a column of prose read row by row.
 
+use super::super::pdf_table::headed::rows as headed_rows;
 use super::super::pdf_table::{paired_rows, row_label, spanning_tables, tables};
 use super::{Fragment, SAME_LINE};
 
@@ -104,12 +105,13 @@ fn order_columns(frags: Vec<Fragment>, x0: f32, x1: f32, depth: usize) -> Vec<Fr
         Side::Full => None,
     };
     let spans = spanning_tables(&frags, &side_of);
-    let in_span = |f: &Fragment| {
+    let span_of = |f: &Fragment| {
         let slack = SAME_LINE * f.size.max(1.0);
         spans
             .iter()
-            .any(|(top, bottom)| f.y <= top + slack && f.y >= bottom - slack)
+            .position(|s| f.y <= s.top + slack && f.y >= s.bottom - slack)
     };
+    let in_span = |f: &Fragment| span_of(f).is_some();
     let count = |s: Side| frags.iter().filter(|f| !in_span(f) && side(f) == s).count();
     // Inside a column, a left side of numbers ("1", "01-50", "d20") is a table's first column.
     let lefts: Vec<&Fragment> = frags.iter().filter(|f| side(f) == Side::Left).collect();
@@ -127,6 +129,15 @@ fn order_columns(frags: Vec<Fragment>, x0: f32, x1: f32, depth: usize) -> Vec<Fr
     }
     let mut out = Vec::new();
     let (mut left, mut right, mut table) = (Vec::new(), Vec::new(), Vec::new());
+    // A headed table is rebuilt row by row from its first column; other tables by tab stops.
+    let read_table = |table: Vec<Fragment>, at: Option<usize>| {
+        if at.is_some_and(|k| spans[k].headed) {
+            headed_rows(table)
+        } else {
+            merge_rows(tables(table))
+        }
+    };
+    let mut table_span: Option<usize> = None;
     let flush = |out: &mut Vec<Fragment>, left: &mut Vec<Fragment>, right: &mut Vec<Fragment>| {
         // A two-column table in a column of prose: its sides pair up line by line.
         if in_column && paired_rows(left, right) {
@@ -141,15 +152,18 @@ fn order_columns(frags: Vec<Fragment>, x0: f32, x1: f32, depth: usize) -> Vec<Fr
     };
     for f in frags {
         // A table across the gutter is read row by row, after the columns above it.
-        if in_span(&f) {
+        if let Some(k) = span_of(&f) {
             if table.is_empty() {
                 flush(&mut out, &mut left, &mut right);
+            } else if table_span != Some(k) {
+                out.extend(read_table(std::mem::take(&mut table), table_span));
             }
+            table_span = Some(k);
             table.push(f);
             continue;
         }
         if !table.is_empty() {
-            out.extend(merge_rows(tables(std::mem::take(&mut table))));
+            out.extend(read_table(std::mem::take(&mut table), table_span));
         }
         match side(&f) {
             Side::Left => left.push(f),
@@ -160,7 +174,7 @@ fn order_columns(frags: Vec<Fragment>, x0: f32, x1: f32, depth: usize) -> Vec<Fr
             }
         }
     }
-    out.extend(merge_rows(tables(table)));
+    out.extend(read_table(table, table_span));
     flush(&mut out, &mut left, &mut right);
     out
 }

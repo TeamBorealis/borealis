@@ -21,6 +21,8 @@ use crate::import::{read_pdf_layout, split_pdf, PdfLayout};
 
 #[path = "pictures.rs"]
 mod pictures;
+#[path = "transcript.rs"]
+pub(crate) mod transcript;
 
 /// Pages (or images) the model transcribes per call: few enough to copy verbatim.
 pub(crate) const VISUAL_PAGES_PER_CALL: usize = 4;
@@ -76,8 +78,8 @@ do NOT summarise, shorten, paraphrase, reword, correct, reorder, merge or skip a
 number, die expression, name and sentence exactly as printed. Include every heading, paragraph, \
 list item, sidebar, table row and stat block line. Mark headings with Markdown `#`, `##`, `###` by \
 their printed size. Write each table row on one line as `cell | cell | cell`. Leave out running \
-page headers, footers and page numbers. In `headings` list every heading on these pages exactly as \
-printed.{again}"
+page headers, footers and page numbers. Where the print itself cannot be read, write [illegible] in \
+place of those words. In `headings` list every heading on these pages exactly as printed.{again}"
     );
     Step::new(
         "import_transcribe",
@@ -205,7 +207,21 @@ async fn transcribe(
             ));
         }
         found.extend(v.expect.problems(&reply.text));
-        let score = gaps.len() + found.len();
+        // Reworded passages are asked for once more, word for word; the copy with the fewest
+        // reworded passages is kept (a copy disclaimed as a whole counts as fully reworded).
+        let read = transcript::read(&reply.text);
+        let reworded = if read.paraphrased {
+            read.spans.len().max(1)
+        } else {
+            0
+        };
+        if reworded > 0 {
+            found.push(format!(
+                "{reworded} passage(s) were reworded instead of copied: copy them word for word as printed, and write {} only where the print itself cannot be read",
+                transcript::ILLEGIBLE
+            ));
+        }
+        let score = gaps.len() + found.len() + reworded;
         if best.as_ref().map_or(true, |(n, _, _)| score < *n) {
             best = Some((score, found.clone(), reply.text));
         }
@@ -223,65 +239,22 @@ async fn transcribe(
             kept.join("; ")
         ));
     }
-    let (text, paraphrased) = strip_paraphrase(&best.map(|(_, _, t)| t).unwrap_or_default());
-    if paraphrased {
+    let read = transcript::read(&best.map(|(_, _, t)| t).unwrap_or_default());
+    if read.paraphrased || !read.spans.is_empty() {
         out.notes.push(format!(
-            "{READING_NOTE}{}: the visual transcription says it is not a word-for-word copy (paraphrased passages), so descriptions from these pages are not the printed text; import a text export of the source (ODT or DOCX) to keep the printed wording",
-            v.label
+            "{READING_NOTE}{}: the visual transcription did not copy {} passage(s) word for word (reworded, or print it could not read), so descriptions holding them are not the printed text; import a text export of the source (ODT or DOCX) to keep the printed wording",
+            v.label,
+            read.spans.len().max(1)
         ));
     }
+    out.notes
+        .extend(transcript::span_notes(&v.label, &read.spans));
+    let text = read.text;
     if text.trim().is_empty() {
         out.notes
             .push(format!("{READING_NOTE}{}: no text could be read", v.label));
     }
     Ok(text)
-}
-
-/// Phrases of a transcription's own disclaimer that it did not copy the page word for word.
-const DISCLAIMER_MARKS: [&str; 6] = [
-    "word-for-word",
-    "word for word",
-    "not verbatim",
-    "can't reproduce",
-    "cannot reproduce",
-    "paraphrased",
-];
-/// Paragraphs at the start of a transcription searched for its disclaimer.
-const DISCLAIMER_PARAGRAPHS: usize = 2;
-/// Inline markers a transcription puts on passages it reworded.
-const PARAPHRASE_MARKS: [&str; 4] = [
-    "[paraphrased]",
-    "[paraphrased.]",
-    "(paraphrased)",
-    "(paraphrased.)",
-];
-
-/// A transcription without its "not a word-for-word copy" disclaimer paragraph and its
-/// "(Paraphrased.)" passage markers, and whether it had either (its text is then not the
-/// printed text). Headings are never a disclaimer.
-fn strip_paraphrase(text: &str) -> (String, bool) {
-    let paragraphs: Vec<&str> = text.split("\n\n").collect();
-    let disclaimer = paragraphs.iter().take(DISCLAIMER_PARAGRAPHS).position(|p| {
-        let lower = p.to_lowercase();
-        !p.trim_start().starts_with('#') && DISCLAIMER_MARKS.iter().any(|m| lower.contains(m))
-    });
-    let kept: Vec<&str> = paragraphs
-        .iter()
-        .enumerate()
-        .filter(|(i, _)| Some(*i) != disclaimer)
-        .map(|(_, p)| *p)
-        .collect();
-    let mut out = kept.join("\n\n");
-    let mut marked = false;
-    for mark in PARAPHRASE_MARKS {
-        while let Some(at) = out.to_lowercase().find(mark) {
-            let end = at + mark.len();
-            let skip = out[end..].len() - out[end..].trim_start_matches([' ', '\t']).len();
-            out.replace_range(at..end + skip, "");
-            marked = true;
-        }
-    }
-    (out, marked || disclaimer.is_some())
 }
 
 fn page_label(name: &str, first: u32, last: u32) -> String {
@@ -595,30 +568,17 @@ mod tests {
         ] {
             assert!(step.user.contains(phrase), "{phrase}");
         }
-        // A stronger wording made the model decline and paraphrase whole image pages; the
-        // paraphrase markers are detected and reported instead of pressing for a copy.
-        for phrase in ["private", "every printed line", "disclaimer", "[illegible]"] {
+        // A stronger framing (private use, every printed line, no disclaimer) made the model
+        // decline and paraphrase whole image pages; only the [illegible] marker is asked for.
+        assert!(step
+            .user
+            .contains("write [illegible] in place of those words"));
+        for phrase in ["private", "every printed line", "disclaimer"] {
             assert!(!step.user.contains(phrase), "{phrase}");
             assert!(!step.system.contains(phrase), "{phrase}");
         }
         let again = transcribe_step("page 5", &["a heading is missing".into()]);
         assert!(again.user.contains("was rejected: a heading is missing"));
-    }
-
-    #[test]
-    fn a_paraphrase_disclaimer_and_markers_are_stripped_and_flagged() {
-        let t = "> **Note:** This is not a word-for-word copy of the pages.\n\n# Mossfolk\n[Paraphrased] Mossfolk live in bogs.\n\n**Age.** Adult at 20. (Paraphrased.)";
-        let (text, flagged) = strip_paraphrase(t);
-        assert!(flagged);
-        assert_eq!(
-            text,
-            "# Mossfolk\nMossfolk live in bogs.\n\n**Age.** Adult at 20. "
-        );
-        // A heading's paragraph is never the disclaimer.
-        let (_, flagged) = strip_paraphrase("# Mossfolk\nThey repeat oaths word for word.");
-        assert!(!flagged);
-        let plain = "# Mossfolk\n\nMossfolk live in bogs.";
-        assert_eq!(strip_paraphrase(plain), (plain.to_string(), false));
     }
 
     #[test]

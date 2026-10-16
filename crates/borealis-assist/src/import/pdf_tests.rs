@@ -579,3 +579,117 @@ fn a_numbered_table_with_running_text_cells_keeps_each_row_whole() {
         assert!(desc.iter().all(|d| row.contains(d)), "{row}\n{t}");
     }
 }
+
+#[test]
+fn a_headed_table_across_the_gutter_with_wrapping_cells_is_read_row_by_row() {
+    use crate::import::testing::{synthetic_pdf, Piece};
+    // Arrange: two columns of prose, then a table across
+    // the gutter: a bold header row, a tier row, name and requirement cells left of the gutter
+    // and an effect column right of it that starts near the right column's margin and wraps
+    // (one effect over four lines, the last row's after the row).
+    let mut page: Vec<Piece> = Vec::new();
+    for i in 0..6 {
+        let y = 740.0 - 11.0 * i as f32;
+        page.push((
+            72.0,
+            y,
+            9.0,
+            false,
+            "the hollow lantern road winds on and on",
+        ));
+    }
+    for i in 0..6 {
+        let y = 740.0 - 11.0 * i as f32;
+        page.push((
+            320.0,
+            y,
+            9.0,
+            false,
+            "a quiet bell rings over the moor at dusk",
+        ));
+    }
+    // (baseline, cells as (x, text), bold)
+    type Row<'a> = (f32, &'a [(f32, &'a str)], bool);
+    let rows: [Row; 13] = [
+        (
+            600.0,
+            &[(72.0, "Mark"), (180.0, "Requires"), (322.0, "Effect")],
+            true,
+        ),
+        (587.8, &[(72.0, "Ember tier (50 gp each)")], false),
+        (
+            575.6,
+            &[
+                (80.0, "Glow wick"),
+                (180.0, "A lantern"),
+                (322.0, "The light reaches twice as far as normal."),
+            ],
+            false,
+        ),
+        (
+            563.4,
+            &[
+                (80.0, "Moth ward"),
+                (180.0, "Any lantern"),
+                (322.0, "Moths that see the light must succeed on a"),
+            ],
+            false,
+        ),
+        (
+            553.2,
+            &[(322.0, "Wisdom saving throw or fly away from it and")],
+            false,
+        ),
+        (
+            543.0,
+            &[(322.0, "stay away for one minute, or until the light")],
+            false,
+        ),
+        (532.8, &[(322.0, "goes out.")], false),
+        (
+            520.6,
+            &[
+                (80.0, "Dim glass"),
+                (180.0, "Any lantern except"),
+                (322.0, "You can dim the light as a bonus action."),
+            ],
+            false,
+        ),
+        (510.4, &[(180.0, "hooded ones")], false),
+        (
+            498.2,
+            &[
+                (80.0, "Bell hook"),
+                (180.0, "A lantern"),
+                (322.0, "A bell can hang from this lantern."),
+            ],
+            false,
+        ),
+        (488.0, &[(322.0, "It rings when the lantern moves.")], false),
+        (440.0, &[(72.0, "After the table the road goes on.")], false),
+        (429.0, &[(72.0, "The moor is quiet again tonight.")], false),
+    ];
+    for (y, cells, bold) in rows {
+        for (x, text) in cells {
+            page.push((*x, y, 8.5, bold, *text));
+        }
+    }
+    // Act
+    let t = extract_pdf_text(&synthetic_pdf(&[page], 0)).unwrap().text;
+    // Assert: one line per row, every cell beside its row's name, wrapped cells joined.
+    for row in [
+        "Mark | Requires | Effect",
+        "Ember tier (50 gp each)",
+        "Glow wick | A lantern | The light reaches twice as far as normal.",
+        "Moth ward | Any lantern | Moths that see the light must succeed on a Wisdom saving throw or fly away from it and stay away for one minute, or until the light goes out.",
+        "Dim glass | Any lantern except hooded ones | You can dim the light as a bonus action.",
+        "Bell hook | A lantern | A bell can hang from this lantern. It rings when the lantern moves.",
+    ] {
+        assert!(t.lines().any(|l| l == row), "{row}\n{t}");
+    }
+    assert!(!t.contains("# Requires") && !t.contains("# Effect"), "{t}");
+    // The columns above are read first, the prose below after the table.
+    let at = |s: &str| t.find(s).unwrap_or_else(|| panic!("{s} missing:\n{t}"));
+    assert!(at("winds on and on") < at("a quiet bell") && at("a quiet bell") < at("Mark |"));
+    assert!(at("Bell hook |") < at("After the table"), "{t}");
+}

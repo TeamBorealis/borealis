@@ -32,6 +32,37 @@ pub(crate) const STAT_BLOCK_ABSENT: &str = "stat block not found in the source t
 /// Why a generated stat block was dropped.
 const STAT_BLOCK_UNPRINTED: &str = "most numbers of the generated stat block are not printed in the source passage: kept as a text entry with its printed passage; no armor class, hit points or ability scores were kept";
 
+/// Start of the issue on a monster whose XP is not the XP its stat block prints.
+pub(crate) const XP_NOT_AS_PRINTED: &str = "XP not as printed";
+
+/// The XP values `passage` prints ("Challenge 3 (1,100 XP)").
+fn printed_xp(passage: &str) -> Vec<u64> {
+    let tokens: Vec<&str> = passage
+        .split(|c: char| c.is_whitespace() || matches!(c, '(' | ')' | ';' | '|'))
+        .filter(|t| !t.is_empty())
+        .collect();
+    let mut out: Vec<u64> = tokens
+        .windows(2)
+        .filter(|w| w[1].trim_end_matches(['.', ',']).eq_ignore_ascii_case("xp"))
+        .filter_map(|w| w[0].replace(',', "").parse().ok())
+        .collect();
+    out.dedup();
+    out
+}
+
+/// A generated monster whose XP differs from the one XP value its passage prints: the issue
+/// (the engine checks XP against the challenge rating, so a printed value it rejects is
+/// replaced; the mismatch is said, never hidden).
+fn xp_mismatch(data: &Value, passage: &str) -> Option<String> {
+    let xp = data.get("xp").and_then(Value::as_u64)?;
+    let [printed] = printed_xp(passage)[..] else {
+        return None;
+    };
+    (printed != xp).then(|| {
+        format!("{XP_NOT_AS_PRINTED}: the stat block prints {printed} XP, the element has {xp} XP")
+    })
+}
+
 fn is_number(t: &str) -> bool {
     !t.is_empty() && t.chars().all(|c| c.is_ascii_digit())
 }
@@ -228,6 +259,16 @@ pub(crate) fn settle(draft: &mut ImportDraft) {
         if !has_stat_block(&passage) {
             keep_as_text(draft, &id, STAT_BLOCK_ABSENT);
             continue;
+        }
+        if let Some(msg) = xp_mismatch(&data, &passage) {
+            if let Some(e) = draft.elements.iter_mut().find(|e| e.id == id) {
+                if !e.issues.contains(&msg) {
+                    e.issues.push(msg);
+                }
+                if matches!(e.status, ElementStatus::Ok | ElementStatus::Repaired) {
+                    e.status = ElementStatus::NeedsReview;
+                }
+            }
         }
         let (missing, total) = unprinted(&data, &passage);
         if total == 0 {
