@@ -184,8 +184,20 @@ pub(super) fn piece_rows(
             .map(|(o, _)| o)
             .filter(|o| *o > s)
             .min()
-            .unwrap_or(e);
-        let end = section_end(lines, s, e.min(next_element));
+            .unwrap_or(lines.len());
+        // The owner's heading section, even past its located passage (a passage located up
+        // to its own text leaves out the table the split entries hold), never past the next
+        // non-text element.
+        let headed = lines.get(s).is_some_and(|l| heading(l).is_some());
+        let end = section_end(
+            lines,
+            s,
+            if headed {
+                next_element
+            } else {
+                e.min(next_element)
+            },
+        );
         let rows: Vec<usize> = text_starts
             .iter()
             .filter(|(_, t)| *t > s && *t < end)
@@ -201,8 +213,10 @@ pub(super) fn piece_rows(
     out
 }
 
-/// First cells of the rows of `rows` with less than [`ROW_COVERED`] of their words in `el`.
-fn missing_rows(el: &Value, name: &str, rows: &[usize], lines: &[String]) -> Vec<String> {
+/// The rows of `rows` with less than [`ROW_COVERED`] of their words in `el`: their first
+/// cells, and whether that first cell is carried (only the other cells are lost: the table was
+/// flattened into text).
+fn missing_rows(el: &Value, name: &str, rows: &[usize], lines: &[String]) -> Vec<MissingRow> {
     let mut have = HashSet::new();
     carried(el, &mut have);
     have.extend(split_words(name));
@@ -212,8 +226,20 @@ fn missing_rows(el: &Value, name: &str, rows: &[usize], lines: &[String]) -> Vec
             let found = w.iter().filter(|t| have.contains(*t)).count();
             !w.is_empty() && (found as f64) < ROW_COVERED * w.len() as f64
         })
-        .map(|i| cells(&lines[*i])[0].to_string())
+        .map(|i| {
+            let first = cells(&lines[*i])[0];
+            let head = row_words(first);
+            let kept = !head.is_empty() && head.iter().all(|t| have.contains(t));
+            (first.to_string(), kept)
+        })
         .collect()
+}
+
+/// A missing row: its first cell, and whether that cell is carried (see [`missing_rows`]).
+type MissingRow = (String, bool);
+
+fn first_cells(rows: &[MissingRow]) -> Vec<String> {
+    rows.iter().map(|(c, _)| c.clone()).collect()
 }
 
 /// A level cell of a progression table ("1st", "Level 3", "3").
@@ -321,22 +347,37 @@ pub(super) fn row_checks(
             format!(
                 "{} of its own table's rows are separate entries, not in it: {}",
                 split.len(),
-                quoted_list(&split)
+                quoted_list(&first_cells(&split))
             ),
         ));
     }
     let missing = missing_rows(json, &e.name, rows, &c.lines);
-    if !missing.is_empty() {
-        let message = if missing.len() == 1 {
-            format!("The table row {} is missing", quoted_list(&missing))
+    let (flattened, lost): (Vec<MissingRow>, Vec<MissingRow>) =
+        missing.into_iter().partition(|(_, kept)| *kept);
+    if !lost.is_empty() {
+        let lost = first_cells(&lost);
+        let message = if lost.len() == 1 {
+            format!("The table row {} is missing", quoted_list(&lost))
         } else {
             format!(
                 "{} table rows are missing: {}",
-                missing.len(),
-                quoted_list(&missing)
+                lost.len(),
+                quoted_list(&lost)
             )
         };
         out.push(failed(TABLE_ROW_MISSING, message));
+    }
+    if !flattened.is_empty() {
+        let names = first_cells(&flattened);
+        out.push(failed(
+            TABLE_ROW_MISSING,
+            format!(
+                "Its table was flattened into text: {} {} only by {} first cell, the other columns are lost. Keep the table's rows and columns",
+                quoted_list(&names),
+                if names.len() == 1 { "is kept" } else { "are kept" },
+                if names.len() == 1 { "its" } else { "their" }
+            ),
+        ));
     }
     let mut features = 0;
     if let Some(p) = root {

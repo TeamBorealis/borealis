@@ -84,6 +84,83 @@ fn taught<'a>(line: &str, spells: &'a HashMap<String, Vec<String>>) -> Vec<&'a s
         .collect()
 }
 
+/// Most words of a list member named in the list (longer pieces are prose around the list).
+const MAX_MEMBER_WORDS: usize = 4;
+/// Words joining the last members of a list.
+const LIST_JOINS: [&str; 2] = [" or ", " and "];
+
+/// A piece of a list line that names a member: short, no digits, a capitalised or italic name.
+fn member_name(piece: &str) -> Option<String> {
+    let raw = piece.trim().trim_end_matches(['.', ':']);
+    let marked = raw.starts_with(['*', '_']);
+    let name = raw.trim_matches(|c: char| c == '*' || c == '_' || c.is_whitespace());
+    let words: Vec<&str> = name.split_whitespace().collect();
+    let plain_words = name
+        .chars()
+        .all(|c| c.is_alphabetic() || c.is_whitespace() || matches!(c, '\'' | '\u{2019}' | '-'));
+    let capital = name.chars().next().is_some_and(char::is_uppercase);
+    ((1..=MAX_MEMBER_WORDS).contains(&words.len()) && plain_words && (capital || marked))
+        .then(|| name.to_string())
+}
+
+/// The parts of a line that are a list of names: each cell of a table row, else the text after
+/// a colon ("Learn one of these cantrips: A, B or C"), up to the sentence's end; only parts
+/// with two or more comma-separated pieces. Prose around spell names is no list of members.
+fn list_regions(line: &str) -> Vec<&str> {
+    let parts: Vec<&str> = if super::is_row(line) {
+        line.split(" | ").collect()
+    } else {
+        line.split_once(':')
+            .map(|(_, after)| after)
+            .into_iter()
+            .collect()
+    };
+    parts
+        .into_iter()
+        .map(|p| p.split_once(". ").map_or(p, |(head, _)| head))
+        .map(|p| p.trim_end().trim_end_matches('.'))
+        .filter(|p| p.matches(',').count() >= 1)
+        .collect()
+}
+
+/// The members a list line names that are no spell the checker knows and that the element
+/// does not grant (a spell outside the rules library, silently left out): only for a line that
+/// is a list of spells (see [`list_checks`]).
+fn unknown_members(
+    line: &str,
+    spells: &HashMap<String, Vec<String>>,
+    carried: &HashSet<String>,
+) -> Vec<String> {
+    let joined = |n: &str| norm(n).replace(' ', "");
+    let known: HashSet<String> = spells.keys().map(|k| k.replace(' ', "")).collect();
+    let tails: Vec<String> = carried
+        .iter()
+        .filter_map(|id| {
+            id.split_once("_SPELL_")
+                .map(|(_, t)| t.replace('_', "").to_lowercase())
+        })
+        .collect();
+    let mut out = Vec::new();
+    for region in list_regions(line) {
+        for piece in region.split([',', ';']) {
+            let mut parts = vec![piece.to_string()];
+            for j in LIST_JOINS {
+                parts = parts
+                    .iter()
+                    .flat_map(|p| p.split(j).map(str::to_string).collect::<Vec<_>>())
+                    .collect();
+            }
+            for name in parts.iter().filter_map(|p| member_name(p)) {
+                let key = joined(&name);
+                if !known.contains(&key) && !tails.contains(&key) && !out.contains(&name) {
+                    out.push(name);
+                }
+            }
+        }
+    }
+    out
+}
+
 /// Lines of `e`'s own passage: its located lines without those of other non-text elements
 /// that start inside it (a child's list is the child's).
 fn own_lines<'a>(c: &'a Checker, draft: &ImportDraft, e: &DraftElement) -> Vec<&'a str> {
@@ -142,6 +219,7 @@ pub(super) fn list_checks(c: &Checker, draft: &ImportDraft, e: &DraftElement) ->
         ids(&k.json, &mut carried);
     }
     let mut missing: Vec<String> = Vec::new();
+    let mut unknown: Vec<String> = Vec::new();
     let mut listed = false;
     for line in own_lines(c, draft, e) {
         let names = named_in(line, &spells);
@@ -156,6 +234,11 @@ pub(super) fn list_checks(c: &Checker, draft: &ImportDraft, e: &DraftElement) ->
                     missing.push(n.to_string());
                 }
             }
+            for n in unknown_members(line, &spells, &carried) {
+                if !unknown.contains(&n) {
+                    unknown.push(n);
+                }
+            }
         }
         for n in taught(line, &spells) {
             listed = true;
@@ -164,7 +247,23 @@ pub(super) fn list_checks(c: &Checker, draft: &ImportDraft, e: &DraftElement) ->
             }
         }
     }
+    let mut out = Vec::new();
+    if !unknown.is_empty() {
+        out.push(failed(
+            LIST_MEMBER_MISSING,
+            format!(
+                "Its source lists {} but it does not grant {}: neither your rules nor this import {} {}. Add that content or the grant",
+                quoted_list(&unknown),
+                if unknown.len() == 1 { "it" } else { "them" },
+                if unknown.len() == 1 { "has" } else { "have" },
+                if unknown.len() == 1 { "it" } else { "them" }
+            ),
+        ));
+    }
     if missing.is_empty() {
+        if !out.is_empty() {
+            return out;
+        }
         return if listed {
             vec![passed(
                 LIST_MEMBER_MISSING,
@@ -174,12 +273,16 @@ pub(super) fn list_checks(c: &Checker, draft: &ImportDraft, e: &DraftElement) ->
             Vec::new()
         };
     }
-    vec![failed(
-        LIST_MEMBER_MISSING,
-        format!(
-            "Its source lists {} but it does not grant {}",
-            quoted_list(&missing),
-            if missing.len() == 1 { "it" } else { "them" }
+    out.insert(
+        0,
+        failed(
+            LIST_MEMBER_MISSING,
+            format!(
+                "Its source lists {} but it does not grant {}",
+                quoted_list(&missing),
+                if missing.len() == 1 { "it" } else { "them" }
+            ),
         ),
-    )]
+    );
+    out
 }

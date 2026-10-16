@@ -12,9 +12,11 @@
 //! Stable codes (the review state maps them): [`HEADING_UNCOVERED`] and [`TEXT_UNCOVERED`]
 //! (import level), [`TABLE_ROW_MISSING`], [`NUMBER_NOT_IN_SOURCE`], [`REFERENCE_UNRESOLVED`],
 //! [`DESCRIPTION_UNTRACED`], [`STAT_BLOCK_ABSENT`], [`LIST_MEMBER_MISSING`], [`RULE_MISSING`],
-//! [`DESCRIPTION_EMPTY`], [`NARRATIVE_TEXT`], [`LIBRARY_DUPLICATE`]. A passed check is
-//! recorded once per code the element was checked for, so "checked and fine" differs from "not
-//! checked" (the last three record failures only: they apply to every element). Only the
+//! [`DESCRIPTION_EMPTY`], [`NARRATIVE_TEXT`], [`LIBRARY_DUPLICATE`], [`GRANT_UNRESOLVED`],
+//! [`RECHARGE_MISSING`], [`ATTUNEMENT_MISMATCH`], [`DESCRIPTION_SHARED`], [`END_MATTER_TEXT`],
+//! [`TRANSCRIPTION_PARAPHRASE`], [`PRINTED_NUMBER_DIFFERS`]. A passed check is recorded once
+//! per code the element was checked for, so "checked and fine" differs from "not checked"
+//! (codes that apply to every element, or to a rare shape, record failures only). Only the
 //! numbers, rows and references checks are repaired by a model call; the others are the
 //! user's to decide.
 
@@ -38,6 +40,10 @@ use crate::homebrew::PackContext;
 
 #[path = "selfcheck_content.rs"]
 mod content;
+#[path = "selfcheck_entries.rs"]
+mod entries;
+#[path = "selfcheck_grants.rs"]
+pub(crate) mod grants;
 #[path = "selfcheck_lists.rs"]
 mod lists;
 #[path = "selfcheck_monsters.rs"]
@@ -76,6 +82,23 @@ pub(crate) const DESCRIPTION_EMPTY: &str = "description_empty";
 pub(crate) const NARRATIVE_TEXT: &str = "narrative_text";
 /// An item the rules library already has that the source only mentions.
 pub(crate) const LIBRARY_DUPLICATE: &str = "library_duplicate";
+/// A spell the element grants or offers that neither the import nor the library has.
+pub(crate) const GRANT_UNRESOLVED: &str = "grant_unresolved";
+/// A pool the element's passage says is regained on a rest that has no recharge.
+pub(crate) const RECHARGE_MISSING: &str = "recharge_missing";
+/// An item whose attunement is stored as a restriction text, or missing while its source says
+/// it requires attunement.
+pub(crate) const ATTUNEMENT_MISMATCH: &str = "attunement_mismatch";
+/// A description that is the same text as other entries' and names them (a whole table or
+/// section copied into each of its rows).
+pub(crate) const DESCRIPTION_SHARED: &str = "description_shared";
+/// A description carrying the publication's legal notice or credits.
+pub(crate) const END_MATTER_TEXT: &str = "end_matter_text";
+/// Description text a picture transcription summarised instead of copying.
+pub(crate) const TRANSCRIPTION_PARAPHRASE: &str = "transcription_paraphrase";
+/// A stat block number (armor class, hit points, XP) other than the one printed beside its
+/// label.
+pub(crate) const PRINTED_NUMBER_DIFFERS: &str = "printed_number_differs";
 
 /// Fewest words of a heading's own body that make it a content heading.
 const MIN_BODY_WORDS: usize = 12;
@@ -419,13 +442,12 @@ fn readable_id(id: &str, prefix: &str) -> String {
         .join(" ")
 }
 
-/// Unresolved references per element id: the draft (with its derived fixes, as finalized)
-/// loaded over the library and validated by the content store.
-fn reference_failures(
-    base: &ContentStoreBuilder,
+/// The live elements of the draft as the pack will hold them (the derived fixes applied, as
+/// finalized), in draft order, with their ids.
+fn derived_docs(
     library: &ContentStore,
     draft: &ImportDraft,
-) -> HashMap<String, Vec<String>> {
+) -> (Vec<String>, super::derived::Derived) {
     let live: Vec<&DraftElement> = draft
         .elements
         .iter()
@@ -434,7 +456,17 @@ fn reference_failures(
     let docs: Vec<Value> = live.iter().map(|e| e.json.clone()).collect();
     let derived =
         super::derived::derive_with_source(&draft.plan, &docs, library, &draft.source_text);
-    let doc = super::derived::content_doc(&derived);
+    (live.iter().map(|e| e.id.clone()).collect(), derived)
+}
+
+/// Unresolved references per element id: the derived draft loaded over the library and
+/// validated by the content store.
+fn reference_failures(
+    base: &ContentStoreBuilder,
+    draft: &ImportDraft,
+    (live, derived): &(Vec<String>, super::derived::Derived),
+) -> HashMap<String, Vec<String>> {
+    let doc = super::derived::content_doc(derived);
     let Ok(file) = ContentFile::from_json_str(&doc.to_string()) else {
         return HashMap::new();
     };
@@ -442,7 +474,7 @@ fn reference_failures(
         .clone()
         .add_file("import-selfcheck", PackOrigin::Custom, file)
         .build();
-    let ids: HashSet<&str> = live.iter().map(|e| e.id.as_str()).collect();
+    let ids: HashSet<&str> = live.iter().map(String::as_str).collect();
     let mut out: HashMap<String, Vec<String>> = HashMap::new();
     for issue in store.validate() {
         if issue.code != IssueCode::DanglingReference {
@@ -522,7 +554,17 @@ pub(crate) fn apply(base: &ContentStoreBuilder, draft: &mut ImportDraft) {
 }
 
 fn apply_with(checker: &Checker, base: &ContentStoreBuilder, draft: &mut ImportDraft) {
-    let refs = reference_failures(base, &checker.library, draft);
+    let derived = derived_docs(&checker.library, draft);
+    let refs = reference_failures(base, draft, &derived);
+    let pools = grants::unrecharged(&derived.1.docs);
+    let extra: HashSet<String> = derived
+        .1
+        .extra
+        .iter()
+        .filter_map(|x| x.get("id").and_then(Value::as_str))
+        .map(str::to_string)
+        .collect();
+    let shared = entries::shared_descriptions(draft);
     let index = Index::new(&draft.source_text);
     let mask = name_mask(draft);
     let checks: Vec<Vec<ElementCheck>> = draft
@@ -540,6 +582,25 @@ fn apply_with(checker: &Checker, base: &ContentStoreBuilder, draft: &mut ImportD
             }
             out.extend(lists::list_checks(checker, draft, e));
             out.extend(content::content_checks(checker, draft, e));
+            let view = grants::GrantView {
+                doc: derived
+                    .0
+                    .iter()
+                    .position(|id| *id == e.id)
+                    .and_then(|k| derived.1.docs.get(k))
+                    .unwrap_or(&e.json),
+                extra: &extra,
+                notes: derived
+                    .1
+                    .notes
+                    .iter()
+                    .filter(|(id, _)| *id == e.id)
+                    .map(|(_, m)| m.as_str())
+                    .collect(),
+            };
+            out.extend(grants::grant_checks(&checker.library, draft, e, &view));
+            out.extend(grants::recharge_checks(draft, &checker.lines, &pools, e));
+            out.extend(entries::entry_checks(draft, &checker.lines, &shared, e));
             out
         })
         .collect();
@@ -727,3 +788,7 @@ mod tests;
 #[cfg(test)]
 #[path = "selfcheck_content_tests.rs"]
 mod content_tests;
+
+#[cfg(test)]
+#[path = "selfcheck_entries_tests.rs"]
+mod entries_tests;

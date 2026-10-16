@@ -7,7 +7,7 @@ use super::*;
 use crate::import::anything::fidelity::tests::{draft, planned};
 use crate::import::anything::types::{Edition, OtherItem, SourceExcerpt};
 
-fn located(mut p: PlannedElement, start: usize, end: usize) -> PlannedElement {
+pub(super) fn located(mut p: PlannedElement, start: usize, end: usize) -> PlannedElement {
     p.excerpt = Some(SourceExcerpt {
         start_line: start,
         end_line: end,
@@ -16,16 +16,16 @@ fn located(mut p: PlannedElement, start: usize, end: usize) -> PlannedElement {
     p
 }
 
-fn empty() -> ContentStoreBuilder {
+pub(super) fn empty() -> ContentStoreBuilder {
     ContentStoreBuilder::new()
 }
 
-fn checked(mut d: ImportDraft) -> ImportDraft {
+pub(super) fn checked(mut d: ImportDraft) -> ImportDraft {
     apply(&empty(), &mut d);
     d
 }
 
-fn failed_of<'a>(d: &'a ImportDraft, id: &str, code: &str) -> Vec<&'a str> {
+pub(super) fn failed_of<'a>(d: &'a ImportDraft, id: &str, code: &str) -> Vec<&'a str> {
     d.element(id)
         .expect("element")
         .checks
@@ -35,7 +35,7 @@ fn failed_of<'a>(d: &'a ImportDraft, id: &str, code: &str) -> Vec<&'a str> {
         .collect()
 }
 
-fn passed_of(d: &ImportDraft, id: &str, code: &str) -> bool {
+pub(super) fn passed_of(d: &ImportDraft, id: &str, code: &str) -> bool {
     d.element(id)
         .expect("element")
         .checks
@@ -43,7 +43,7 @@ fn passed_of(d: &ImportDraft, id: &str, code: &str) -> bool {
         .any(|c| !c.failed && c.code == code)
 }
 
-fn set(d: &mut ImportDraft, id: &str, key: &str, v: Value) {
+pub(super) fn set(d: &mut ImportDraft, id: &str, key: &str, v: Value) {
     let e = d.elements.iter_mut().find(|e| e.id == id).expect("element");
     e.json[key] = v;
 }
@@ -362,7 +362,7 @@ fn an_items_mechanic_carried_by_a_rule_or_spent_as_a_charge_passes() {
 // description_empty
 
 #[test]
-fn a_description_that_is_only_the_name_fails_unless_it_heads_sub_entries() {
+fn a_description_that_is_only_the_name_fails_and_a_heading_only_text_entry_too() {
     // Arrange: a list of names read away from their text, under a heading with deeper entries.
     let src = "### Stock Fittings\n\n#### Reed Sight\n\nReed Sight\n\nShort Stock\n\nThe stock is cut down for close quarters.\n";
     let plan = vec![
@@ -412,7 +412,15 @@ fn a_description_that_is_only_the_name_fails_unless_it_heads_sub_entries() {
     // Act
     let d = checked(d);
     // Assert
-    assert!(failed_of(&d, "ID_T_FITTINGS", DESCRIPTION_EMPTY).is_empty());
+    // The heading over the two entries is a text entry made of its heading only: it shows
+    // nothing and is flagged with its own wording.
+    let heading_only = failed_of(&d, "ID_T_FITTINGS", DESCRIPTION_EMPTY);
+    assert_eq!(heading_only.len(), 1);
+    assert!(
+        heading_only[0].starts_with("Its text is only its heading"),
+        "{}",
+        heading_only[0]
+    );
     assert_eq!(failed_of(&d, "ID_T_REED_SIGHT", DESCRIPTION_EMPTY).len(), 1);
     assert!(failed_of(&d, "ID_T_SHORT", DESCRIPTION_EMPTY).is_empty());
 }
