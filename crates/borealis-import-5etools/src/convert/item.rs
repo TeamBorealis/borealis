@@ -482,7 +482,10 @@ fn weapon(it: &Item, code: &str, base_name: &str, el: &mut Element) {
     }
     let mut two_handed = false;
     for p in &it.property {
-        let Some(raw) = p.as_str() else { continue };
+        // `{"uid": "2H|XPHB", "note": "unless mounted"}` (the 2024 Lance) is the property too
+        let Some(raw) = p.as_str().or_else(|| p.get("uid").and_then(Value::as_str)) else {
+            continue;
+        };
         let code = strip_source(raw);
         if code == "2H" {
             two_handed = true;
@@ -1029,6 +1032,21 @@ mod tests {
         assert_eq!(el.ruleset, Some(Ruleset::Dnd2024));
         assert_eq!(setter(el, "mastery").value, "Sap");
         assert!(el.supports.contains(&"Mastery Sap".to_string()));
+    }
+
+    #[test]
+    fn object_form_property_is_read() {
+        let sh = Shared::default();
+        let mut st = State::default();
+        let lance = json!({"name": "Lance", "source": "XPHB", "type": "M|XPHB", "rarity": "none",
+            "weaponCategory": "martial", "dmg1": "1d10", "dmgType": "P", "weapon": true,
+            "property": ["H|XPHB", "R|XPHB", {"uid": "2H|XPHB", "note": "unless mounted"}],
+            "edition": "one"});
+        let el = &convert(&sh, &mut st, &ent(lance)).elements[0];
+        assert!(el
+            .supports
+            .contains(&"ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED".to_string()));
+        assert_eq!(setter(el, "slot").value, "twohand");
     }
 
     #[test]

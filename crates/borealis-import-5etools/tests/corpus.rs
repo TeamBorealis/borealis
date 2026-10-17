@@ -28,8 +28,9 @@ const MIN_CONVERTED_PERCENT: usize = 97;
 const MAX_SKIPPED: usize = 260;
 /// Highest acceptable number of partial-conversion notes (412 on the 2026-10 corpus before
 /// additional spells were mapped, 324 after, 104 after prerequisites, 49 after 5etools-gaps-1,
-/// 152 after fix-w9d made item gaps that used to drop silently report a note: 111 of them items).
-const MAX_PARTIAL: usize = 160;
+/// 152 after fix-w9d made item gaps that used to drop silently report a note: 111 of them items;
+/// 149 after det-5e-1, 130 after det-5e-2, every one with a reason code).
+const MAX_PARTIAL: usize = 135;
 /// Notes that must not appear any more (closed by 5etools-gaps-1): (starts with, contains).
 const CLOSED_GAPS: &[(&str, &str)] = &[
     ("ability score maximum", ""),
@@ -208,6 +209,22 @@ fn five_etools_corpus() {
         r.partial.len() <= MAX_PARTIAL,
         "partial notes {}",
         r.partial.len()
+    );
+    // every remaining loss has a reason code (what the engine / core / data lacks)
+    let mut codes = Counts::new();
+    for n in &r.partial {
+        bump(&mut codes, n.code.clone());
+    }
+    table("partial notes by reason code", &codes, 30);
+    let unclassified: Vec<&str> = r
+        .partial
+        .iter()
+        .filter(|n| n.code == borealis_import_5etools::report::code::UNCLASSIFIED)
+        .map(|n| n.reason.as_str())
+        .collect();
+    assert!(
+        unclassified.is_empty(),
+        "partial notes without a reason code: {unclassified:?}"
     );
     for (prefix, needle) in CLOSED_GAPS {
         let open = r

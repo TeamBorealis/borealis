@@ -13,6 +13,9 @@ use serde_json::{json, Map, Value};
 use std::collections::BTreeMap;
 
 mod ability;
+mod weapon_filter;
+
+pub use weapon_filter::{weapon_filter_matches, weapon_filter_supports};
 
 /// Where an ability increase comes from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -152,9 +155,12 @@ impl<'a> Mech<'a> {
 
     // ------------------------------------------------------------- languages
 
+    /// Tags of "any language".
+    const ANY_LANGUAGE: &'static str = "Standard||Exotic";
+
     fn language_tags(key: &str) -> Option<&'static str> {
         Some(match key {
-            "any" | "anyLanguage" | "other" | "otherLanguage" => "Standard||Exotic",
+            "any" | "anyLanguage" | "other" | "otherLanguage" => Self::ANY_LANGUAGE,
             "anyStandard" | "anyStandardLanguage" => "Standard",
             "anyExotic" | "anyExoticLanguage" => "Exotic",
             "anyRare" | "anyRareLanguage" => "Exotic||Secret",
@@ -176,12 +182,15 @@ impl<'a> Mech<'a> {
                     let from = string_list(v.get("from"));
                     let count = count_of(v.get("count").unwrap_or(&json!(1)));
                     // "other" / "anyStandard" in the list means any language of that kind; a
-                    // select is either an id list or a tag filter, so the choice is widened.
+                    // select is either an id list or a tag filter. "Other" (any language)
+                    // already contains the named ones, so only a narrower kind widens.
                     if let Some(tags) = from.iter().find_map(|n| Self::language_tags(n)) {
-                        self.note(
-                            "language",
-                            "a language choice mixing named languages and \"any\" was widened to any language".into(),
-                        );
+                        if tags != Self::ANY_LANGUAGE {
+                            self.note(
+                                "language",
+                                "a language choice mixing named languages and \"any\" was widened to any language".into(),
+                            );
+                        }
                         self.pick_tag("Language", "Language", tags, count);
                     } else {
                         let ids: Vec<String> =
@@ -235,9 +244,29 @@ impl<'a> Mech<'a> {
         }
     }
 
+    /// A category named in a `choose` list ("musical instrument"); alone it is also the
+    /// core generic proficiency of that name.
+    fn tool_category_name(name: &str) -> Option<&'static str> {
+        Some(match name {
+            "artisan's tools" => "Artisan tools",
+            "gaming set" => "Gaming Set",
+            "musical instrument" => "Musical Instrument",
+            _ => return None,
+        })
+    }
+
     fn tool_choose(&mut self, v: &Value) {
         let from = string_list(v.get("from"));
         let count = count_of(v.get("count").unwrap_or(&json!(1)));
+        // only categories ("any artisan's tool or a musical instrument"): one tag choice
+        let categories: Option<Vec<&str>> = from
+            .iter()
+            .map(|s| Self::tool_choice_tag(s).or_else(|| Self::tool_category_name(s)))
+            .collect();
+        if let Some(tags) = categories.filter(|t| !t.is_empty()) {
+            self.pick_tag("Proficiency", "Tool Proficiency", &tags.join("||"), count);
+            return;
+        }
         let specials: Vec<&String> = from
             .iter()
             .filter(|s| Self::tool_choice_tag(s).is_some())
@@ -273,6 +302,17 @@ impl<'a> Mech<'a> {
                         // a whole category ("two martial weapons") stays a note: a character
                         // proficient with the category is offered nothing (an empty choice)
                         let narrowed = filter.contains("property=");
+                        let all = (k == "all")
+                            .then(|| weapon_filter_matches(filter))
+                            .flatten()
+                            .filter(|ids| !ids.is_empty());
+                        if let Some(ids) = all {
+                            // "martial weapons that have the Light property": every one
+                            for id in ids {
+                                self.push(grant(&id, "Proficiency"));
+                            }
+                            continue;
+                        }
                         match (k.as_str(), weapon_filter_supports(filter)) {
                             ("choose", Some(supports)) if narrowed => self.pick_tag(
                                 "Proficiency",
@@ -680,44 +720,6 @@ impl<'a> Mech<'a> {
     }
 }
 
-/// The supports expression of the core weapon proficiencies a 5etools item filter
-/// (`type=martial weapon|property=light;finesse|miscellaneous=mundane`) selects: categories and
-/// properties are tags of the core `Proficiency` elements (`Martial`, `Melee`,
-/// `ID_INTERNAL_WEAPON_PROPERTY_LIGHT`); `;` is "or", `!` is "not". Mundane/rarity filters are
-/// always true of core proficiencies. `None` for a filter with other parts.
-#[must_use]
-pub fn weapon_filter_supports(filter: &str) -> Option<String> {
-    let mut parts: Vec<String> = vec!["Weapon".into()];
-    for clause in filter.split('|') {
-        let (key, values) = clause.split_once('=')?;
-        let mut alts: Vec<String> = Vec::new();
-        for raw in values.split(';') {
-            let (neg, value) = raw.strip_prefix('!').map_or((false, raw), |v| (true, v));
-            let tag = match (key.trim(), value.trim()) {
-                ("type", "martial weapon") => "Martial".to_string(),
-                ("type", "simple weapon") => "Simple".to_string(),
-                ("type", "melee weapon") => "Melee".to_string(),
-                ("type", "ranged weapon") => "Ranged".to_string(),
-                ("type", "mundane weapon") | ("miscellaneous", "mundane") | ("rarity", "none") => {
-                    continue
-                }
-                ("property", p) => format!(
-                    "ID_INTERNAL_WEAPON_PROPERTY_{}",
-                    p.replace(['-', ' '], "").to_uppercase()
-                ),
-                _ => return None,
-            };
-            alts.push(if neg { format!("!{tag}") } else { tag });
-        }
-        match alts.len() {
-            0 => {}
-            1 => parts.push(alts.remove(0)),
-            _ => parts.push(format!("({})", alts.join("||"))),
-        }
-    }
-    Some(parts.join("&&"))
-}
-
 /// Plain strings of an optional JSON array.
 #[must_use]
 pub fn string_list(v: Option<&Value>) -> Vec<String> {
@@ -834,6 +836,9 @@ mod tests {
         ));
         assert!(ids.contains(&"select:Language:Language 3 (L):Exotic||Secret".to_string()));
         assert!(ids.contains(&"select:Language:Language 4 (L):Standard||Exotic".to_string()));
+        // "elvish or any other": any language already holds Elvish, nothing is lost
+        assert!(!m.partial.iter().any(|p| p.contains("widened")));
+        m.languages(&[json!({"choose": {"from": ["elvish", "anyStandard"]}})]);
         assert!(m.partial.iter().any(|p| p.contains("widened")));
     }
 
@@ -847,6 +852,20 @@ mod tests {
             json!({"choose": {"from": ["anyArtisansTool", "anyMusicalInstrument"], "count": 2}}),
             json!({"vehicles (air)": true}),
         ]);
+        // a category named in a choice list is the category, not a single tool
+        let mut named = Mech::new(&sh, "N");
+        named.tools(&[json!({"choose": {"from": ["anyArtisansTool", "musical instrument"]}})]);
+        assert!(ids_of(&named)
+            .iter()
+            .any(|i| i.ends_with(":Artisan tools||Musical Instrument")));
+        assert!(named.partial.is_empty(), "{:?}", named.partial);
+        // with a single tool next to it, the named category stays its core generic element
+        let mut single = Mech::new(&sh, "S");
+        single.tools(&[json!({"choose": {"from": ["disguise kit", "musical instrument"]}})]);
+        assert!(ids_of(&single).iter().any(|i| i.ends_with(
+            ":ID_PROFICIENCY_TOOL_PROFICIENCY_DISGUISE_KIT|ID_PROFICIENCY_TOOL_PROFICIENCY_MUSICAL_INSTRUMENT"
+        )));
+        assert!(single.partial.is_empty(), "{:?}", single.partial);
         m.weapons(&[
             json!({"simple": true, "martial": true, "battleaxe|phb": true, "light crossbow|phb": true}),
             json!({"choose": {"fromFilter": "type=martial weapon", "count": 1}}),
@@ -866,11 +885,12 @@ mod tests {
         assert!(ids.contains(&"grant:ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_LIGHT".to_string()));
         assert!(!ids.iter().any(|i| i.ends_with(":Weapon&&Martial")));
         assert!(ids.contains(&"select:Proficiency:Weapon Proficiency (T):Weapon&&Melee&&!ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED".to_string()));
-        assert_eq!(
-            weapon_filter_supports("type=martial weapon;mundane weapon|property=light;finesse|miscellaneous=mundane").as_deref(),
-            Some("Weapon&&Martial&&(ID_INTERNAL_WEAPON_PROPERTY_LIGHT||ID_INTERNAL_WEAPON_PROPERTY_FINESSE)")
-        );
-        assert!(weapon_filter_supports("source=phb").is_none());
+        // `all` by filter (XPHB Monk): every matching core weapon, no note
+        for w in ["SCIMITAR", "SHORTSWORD", "CROSSBOW_HAND"] {
+            assert!(ids.contains(&format!("grant:ID_PROFICIENCY_WEAPON_PROFICIENCY_{w}")));
+        }
+        assert!(!ids.contains(&"grant:ID_PROFICIENCY_WEAPON_PROFICIENCY_RAPIER".to_string()));
+        assert!(!m.partial.iter().any(|p| p.contains("property=light\"")));
         assert!(ids.contains(&"grant:ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS".to_string()));
         assert!(ids.contains(&"grant:ID_PROFICIENCY_SAVINGTHROW_CONSTITUTION".to_string()));
         assert!(m.unmapped.contains_key("weapon"));

@@ -14,6 +14,74 @@ pub struct ReportNote {
     pub file: String,
     /// What was lost or why the entry was skipped.
     pub reason: String,
+    /// Why a partial conversion could not be complete ([`reason_code`]); empty for skips.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub code: String,
+}
+
+/// Reason codes of partial-conversion notes: what is missing, and where (`ENGINE_` = a rule
+/// kind or behaviour the engine lacks, `CORE_` = an element the core pack lacks, `DATA_` =
+/// the 5etools data itself cannot be mapped exactly).
+pub mod code {
+    /// A rolled charge count (`{@dice 1d4 - 1}`) or none at all: resources need a fixed max.
+    pub const ROLLED_CHARGES: &str = "ENGINE_RESOURCE_ROLLED_MAX";
+    /// A proficiency (firearms, improvised weapons, air / space vehicles) the core pack lacks.
+    pub const NO_CORE_PROFICIENCY: &str = "CORE_NO_PROFICIENCY_ELEMENT";
+    /// A weapon category choice: a character already proficient gets an empty select.
+    pub const EMPTY_CHOICE: &str = "ENGINE_EMPTY_CHOICE";
+    /// A choice of named elements and categories at once: a select is ids or tags.
+    pub const MIXED_CHOICE: &str = "ENGINE_MIXED_ID_TAG_CHOICE";
+    /// A spell choice whose filter matches no spell of the data.
+    pub const NO_MATCHING_SPELL: &str = "DATA_NO_MATCHING_SPELL";
+    /// A pack content entry that is plain text, not an item.
+    pub const NOT_AN_ITEM: &str = "DATA_PACK_CONTENT_NOT_AN_ITEM";
+    /// A speed multiplier (Boots of Speed).
+    pub const SPEED_MULTIPLIER: &str = "ENGINE_SPEED_MULTIPLIER";
+    /// A bonus to every speed the character has.
+    pub const ALL_SPEEDS: &str = "ENGINE_BONUS_TO_EVERY_SPEED";
+    /// Item proficiencies that are random, in a table, or "proficient with this item".
+    pub const ITEM_PROFICIENCY: &str = "ENGINE_ITEM_PROFICIENCY_TEXT";
+    /// A prerequisite the requirement grammar cannot test (house renown).
+    pub const UNCHECKED_PREREQUISITE: &str = "ENGINE_UNCHECKED_PREREQUISITE";
+    /// A progression key that is neither a level nor `*`.
+    pub const UNKNOWN_PROGRESSION: &str = "DATA_UNKNOWN_PROGRESSION_KEY";
+    /// An emitted rule the engine would ignore (an unknown custom rule kind).
+    pub const IGNORED_RULE: &str = "ENGINE_UNKNOWN_RULE_KIND";
+    /// No code matches the note (a new kind of loss: classify it).
+    pub const UNCLASSIFIED: &str = "UNCLASSIFIED";
+}
+
+/// The reason code of a partial-conversion note (see [`code`]).
+#[must_use]
+pub fn reason_code(reason: &str) -> &'static str {
+    let has = |needle: &str| reason.contains(needle);
+    if (reason.starts_with("charges ") && has("were not converted"))
+        || has("but the item has no charge count")
+    {
+        code::ROLLED_CHARGES
+    } else if has("has no core element") {
+        code::NO_CORE_PROFICIENCY
+    } else if reason.starts_with("weapon proficiency chosen by filter") {
+        code::EMPTY_CHOICE
+    } else if has("was widened to") || has("some tools in a tool choice") {
+        code::MIXED_CHOICE
+    } else if has("matches no imported spell") {
+        code::NO_MATCHING_SPELL
+    } else if reason.starts_with("pack content") && has("is not an item") {
+        code::NOT_AN_ITEM
+    } else if reason.starts_with("speed change multiply") {
+        code::SPEED_MULTIPLIER
+    } else if has("applied to the walking speed only") {
+        code::ALL_SPEEDS
+    } else if has("the proficiencies the item grants were not found") {
+        code::ITEM_PROFICIENCY
+    } else if reason.starts_with("prerequisite not enforced") {
+        code::UNCHECKED_PREREQUISITE
+    } else if reason.starts_with("progression key") {
+        code::UNKNOWN_PROGRESSION
+    } else {
+        code::UNCLASSIFIED
+    }
 }
 
 /// Counts for one kind of entity.
@@ -160,6 +228,7 @@ impl ReportBuilder {
                 kind: kind.to_string(),
                 file: file.to_string(),
                 reason: reason.clone(),
+                code: reason_code(reason).to_string(),
             });
         }
     }
@@ -174,6 +243,7 @@ impl ReportBuilder {
             kind: kind.to_string(),
             file: file.to_string(),
             reason: reason.to_string(),
+            code: String::new(),
         });
     }
 
@@ -244,5 +314,72 @@ mod tests {
         assert!(json.ends_with("}\n"));
         let back: ImportReport = serde_json::from_str(&json).unwrap();
         assert_eq!(back, r);
+        assert_eq!(r.partial[0].code, code::UNCLASSIFIED);
+        assert!(r.skipped[0].code.is_empty());
+        assert!(
+            !json.contains("\"code\": \"\""),
+            "empty codes are not written"
+        );
+    }
+
+    #[test]
+    fn reason_codes_of_the_known_losses() {
+        for (reason, expected) in [
+            (
+                "charges \"{@dice 1d3}\" were not converted",
+                code::ROLLED_CHARGES,
+            ),
+            (
+                "wish costs 1 charges but the item has no charge count",
+                code::ROLLED_CHARGES,
+            ),
+            (
+                "weapon proficiency \"firearms\" has no core element",
+                code::NO_CORE_PROFICIENCY,
+            ),
+            (
+                "tool proficiency \"vehicles (air)\" has no core element",
+                code::NO_CORE_PROFICIENCY,
+            ),
+            (
+                "weapon proficiency chosen by filter \"type=martial weapon\" not converted",
+                code::EMPTY_CHOICE,
+            ),
+            (
+                "a tool choice mixing categories and single tools was widened to the categories",
+                code::MIXED_CHOICE,
+            ),
+            (
+                "spell choice filter \"level=0\" matches no imported spell (nothing to offer)",
+                code::NO_MATCHING_SPELL,
+            ),
+            (
+                "pack content \"censer\" is not an item and was not converted",
+                code::NOT_AN_ITEM,
+            ),
+            (
+                "speed change multiply walk was not converted",
+                code::SPEED_MULTIPLIER,
+            ),
+            (
+                "speed bonus applied to the walking speed only",
+                code::ALL_SPEEDS,
+            ),
+            (
+                "the proficiencies the item grants were not found in its text",
+                code::ITEM_PROFICIENCY,
+            ),
+            (
+                "prerequisite not enforced: Renown 3+",
+                code::UNCHECKED_PREREQUISITE,
+            ),
+            (
+                "progression key \"x\" was applied at level 1",
+                code::UNKNOWN_PROGRESSION,
+            ),
+            ("something new", code::UNCLASSIFIED),
+        ] {
+            assert_eq!(reason_code(reason), expected, "{reason}");
+        }
     }
 }

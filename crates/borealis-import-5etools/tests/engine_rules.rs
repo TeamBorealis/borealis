@@ -51,7 +51,8 @@ fn invented(dir: &Path) {
         "backgrounds.json",
         &json!({"background": [
             {"name": "Traveller", "source": "ZZZ", "skillProficiencies": [{"insight": true}],
-             "weaponProficiencies": [{"choose": {"fromFilter": "type=martial weapon|property=finesse", "count": 1}}],
+             "weaponProficiencies": [{"choose": {"fromFilter": "type=martial weapon|property=finesse", "count": 1}},
+                                     {"all": {"fromFilter": "type=martial weapon|property=light"}}],
              "startingEquipment": [
                 {"_": [{"item": "spark wand|zzz"}, {"value": 1000}]},
                 {"a": [{"special": "walking stick"}], "b": [{"value": 500}]}
@@ -159,6 +160,26 @@ fn converted_rules_apply_on_a_built_character() {
     );
     assert!(!offered.contains(&"ID_PROFICIENCY_WEAPON_PROFICIENCY_LONGSWORD"));
     assert!(!offered.contains(&"ID_PROFICIENCY_WEAPON_PROFICIENCY_DAGGER"));
+
+    // "martial weapons that have the Light property" (XPHB Monk): each one is granted, so a
+    // scimitar attack adds the proficiency bonus; a rapier (not Light) is still a choice
+    for w in ["SCIMITAR", "SHORTSWORD", "CROSSBOW_HAND"] {
+        assert!(
+            has_element(&base, &format!("ID_PROFICIENCY_WEAPON_PROFICIENCY_{w}")),
+            "{w}"
+        );
+    }
+    assert!(!has_element(
+        &base,
+        "ID_PROFICIENCY_WEAPON_PROFICIENCY_RAPIER"
+    ));
+    let (_, armed) = equipped(&e, &s, "ID_WOTC_PHB_WEAPON_SCIMITAR");
+    let scimitar = armed
+        .attacks
+        .iter()
+        .find(|a| a.name == "Scimitar")
+        .expect("scimitar attack");
+    assert!(scimitar.proficient, "wizard proficient with the scimitar");
 
     // spell attack +2 and save DC +1 on the wizard's block while the wand is equipped
     let (_, wand) = equipped(&e, &s, "ID_5ET_ZZZ_ITEM_SPARK_WAND");

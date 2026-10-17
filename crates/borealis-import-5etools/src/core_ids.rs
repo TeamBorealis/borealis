@@ -85,6 +85,81 @@ pub fn armor_prof_id(kind: &str) -> Option<&'static str> {
     })
 }
 
+/// The core weapon proficiencies that carry tags, with their category (`Simple` / `Martial`),
+/// `Melee` / `Ranged` and property tags (`LIGHT` = `ID_INTERNAL_WEAPON_PROPERTY_LIGHT`), as in
+/// `content/core/proficiencies.json` (a unit test keeps them equal).
+pub const WEAPON_TAGS: &[(&str, &[&str])] = &[
+    ("CLUB", &["Simple", "Melee", "LIGHT"]),
+    ("DAGGER", &["Simple", "Melee", "FINESSE", "LIGHT", "THROWN"]),
+    ("GREATCLUB", &["Simple", "Melee", "TWOHANDED"]),
+    ("HANDAXE", &["Simple", "Melee", "LIGHT", "THROWN"]),
+    ("JAVELIN", &["Simple", "Melee", "THROWN"]),
+    ("LIGHT_HAMMER", &["Simple", "Melee", "LIGHT", "THROWN"]),
+    ("MACE", &["Simple", "Melee"]),
+    ("QUARTERSTAFF", &["Simple", "Melee", "VERSATILE"]),
+    ("SICKLE", &["Simple", "Melee", "LIGHT"]),
+    ("SPEAR", &["Simple", "Melee", "THROWN", "VERSATILE"]),
+    ("UNARMED_STRIKE", &["Simple", "Melee"]),
+    (
+        "CROSSBOW_LIGHT",
+        &["Simple", "Ranged", "AMMUNITION", "LOADING", "TWOHANDED"],
+    ),
+    ("DART", &["Simple", "Ranged", "FINESSE", "THROWN"]),
+    ("SHORTBOW", &["Simple", "Ranged", "AMMUNITION", "TWOHANDED"]),
+    ("SLING", &["Simple", "Ranged", "AMMUNITION"]),
+    ("BATTLEAXE", &["Martial", "Melee", "VERSATILE"]),
+    ("FLAIL", &["Martial", "Melee"]),
+    (
+        "GLAIVE",
+        &["Martial", "Melee", "HEAVY", "REACH", "TWOHANDED"],
+    ),
+    ("GREATAXE", &["Martial", "Melee", "HEAVY", "TWOHANDED"]),
+    ("GREATSWORD", &["Martial", "Melee", "HEAVY", "TWOHANDED"]),
+    (
+        "HALBERD",
+        &["Martial", "Melee", "HEAVY", "REACH", "TWOHANDED"],
+    ),
+    (
+        "LANCE",
+        &["Martial", "Melee", "REACH", "SPECIAL", "SPECIAL_LANCE"],
+    ),
+    ("LONGSWORD", &["Martial", "Melee", "VERSATILE"]),
+    ("MAUL", &["Martial", "Melee", "HEAVY", "TWOHANDED"]),
+    ("MORNINGSTAR", &["Martial", "Melee"]),
+    ("PIKE", &["Martial", "Melee", "HEAVY", "REACH", "TWOHANDED"]),
+    ("RAPIER", &["Martial", "Melee", "FINESSE"]),
+    ("SCIMITAR", &["Martial", "Melee", "FINESSE", "LIGHT"]),
+    ("SHORTSWORD", &["Martial", "Melee", "FINESSE", "LIGHT"]),
+    ("TRIDENT", &["Martial", "Melee", "THROWN", "VERSATILE"]),
+    ("WAR_PICK", &["Martial", "Melee"]),
+    ("WARHAMMER", &["Martial", "Melee", "VERSATILE"]),
+    ("WHIP", &["Martial", "Melee", "FINESSE", "REACH"]),
+    ("BLOWGUN", &["Martial", "Ranged", "AMMUNITION", "LOADING"]),
+    (
+        "CROSSBOW_HAND",
+        &["Martial", "Ranged", "AMMUNITION", "LIGHT", "LOADING"],
+    ),
+    (
+        "CROSSBOW_HEAVY",
+        &[
+            "Martial",
+            "Ranged",
+            "AMMUNITION",
+            "HEAVY",
+            "LOADING",
+            "TWOHANDED",
+        ],
+    ),
+    (
+        "LONGBOW",
+        &["Martial", "Ranged", "AMMUNITION", "HEAVY", "TWOHANDED"],
+    ),
+    (
+        "NET",
+        &["Martial", "Ranged", "SPECIAL", "SPECIAL_NET", "THROWN"],
+    ),
+];
+
 const WEAPON_PROFS: &[&str] = &[
     "BATTLEAXE",
     "BLOWGUN",

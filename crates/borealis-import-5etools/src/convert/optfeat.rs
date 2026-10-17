@@ -72,6 +72,8 @@ fn progression_levels(progression: &Value, partial: &mut Vec<String>) -> Vec<(u3
                 };
                 match k.parse::<u32>() {
                     Ok(level) => totals.push((level, n)),
+                    // "*": from whenever the owner (a feat) is gained, which a level-1 gate is
+                    Err(_) if k == "*" => totals.push((1, n)),
                     Err(_) => {
                         partial.push(format!("progression key {k:?} was applied at level 1"));
                         totals.push((1, n));
@@ -266,6 +268,7 @@ mod tests {
                 json!({"name": "Fighting Style", "featureType": ["FS:F", "FS:P"], "progression": {"1": 1, "10": 2}}),
                 json!({"name": "Maneuvers", "featureType": ["MV:B"], "progression": {"3": 3, "7": 5, "10": 7, "15": 9}}),
                 json!({"name": "Odd", "featureType": ["OTH"], "progression": {"*": 1}}),
+                json!({"name": "Odder", "featureType": ["OTH"], "progression": {"x": 1}}),
                 json!({"name": "None", "featureType": [], "progression": {"1": 1}}),
             ],
             &mut partial,
@@ -301,7 +304,11 @@ mod tests {
             .map(|s| (s.1, s.2))
             .collect();
         assert_eq!(maneuvers, vec![(3, 3), (7, 2), (10, 2), (15, 2)]);
-        assert_eq!(partial.len(), 1);
+        // "*" (whenever the feat is gained) is exact; only the unknown key is reported
+        assert_eq!(
+            partial,
+            vec!["progression key \"x\" was applied at level 1".to_string()]
+        );
         assert!(!sel.iter().any(|s| s.0 == "None"));
     }
 

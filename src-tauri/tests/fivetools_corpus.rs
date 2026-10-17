@@ -16,7 +16,8 @@
 #[path = "../../tools/regression-gate/outcome.rs"]
 mod outcome;
 
-use borealis_content::{ContentStoreBuilder, Element, Rule, Ruleset};
+use borealis_content::expr::{BoolExpr, RequirementLeaf, RequirementsExpr};
+use borealis_content::{ContentStore, ContentStoreBuilder, Element, Rule, Ruleset};
 use borealis_engine::commands::{self, slot_key};
 use borealis_engine::{invariants, CharacterSnapshot, CharacterState, Choice, Engine, Severity};
 use borealis_import_5etools::{import_folder, ImportOptions};
@@ -75,6 +76,7 @@ fn cause(message: &str) -> String {
 
 struct Sweeper<'a> {
     engine: &'a Engine,
+    store: &'a ContentStore,
     ours: &'a HashMap<String, Ruleset>,
 }
 
@@ -295,6 +297,7 @@ fn run(data: &Path) {
     let engine = Engine::new(&store);
     let sw = Sweeper {
         engine: &engine,
+        store: &store,
         ours: &ours,
     };
     let by_id: HashMap<&str, &(Element, Ruleset)> =
@@ -392,18 +395,24 @@ fn run(data: &Path) {
     let mut unoffered = Counts::new();
     for (el, rs) in of_type("Feat") {
         let mut problems = Vec::new();
-        let picked = hosts[rs].iter().find_map(|h| sw.pick(h, &el.id));
+        // the shared hosts first; a feat with prerequisites they lack gets a host that meets
+        // them (its race, a caster class, the ability score, the prior feat, the level)
+        let mut why = String::new();
+        let picked = hosts[rs]
+            .iter()
+            .find_map(|h| sw.pick(h, &el.id))
+            .or_else(|| eligible_host(&sw, *rs, el, &mut why));
         outcome::record(
             "fivetools_corpus",
             &format!("feat_offered/{}", el.id),
             picked.is_some(),
-            "not offered to the test fighter",
+            &format!("not offered: {why}; requirements {:?}", el.requirements),
         );
         match picked {
             None => {
                 // `data.prerequisite` is the structured feature check (Spellcasting, ...)
                 let why = if !el.requirements.is_empty() || el.data.contains_key("prerequisite") {
-                    "has requirements the test fighter does not meet"
+                    "has requirements no test host meets"
                 } else {
                     "no requirements"
                 };
@@ -473,7 +482,7 @@ fn run(data: &Path) {
     for (kind, c) in &causes {
         table(&format!("{kind} problems by cause"), c);
     }
-    table("feats not offered to the test fighter", &unoffered);
+    table("feats not offered to any test host", &unoffered);
     let unoffered_plain: usize = unoffered
         .iter()
         .filter(|(k, _)| k.ends_with("no requirements") && !k.contains("parent feat"))
@@ -533,4 +542,260 @@ fn feat_hosts(sw: &Sweeper<'_>, rs: Ruleset, class: &str) -> Vec<CharacterState>
         out.push(host);
     }
     out
+}
+
+/// Ability keys of requirement tests, in score order.
+const ABILITY_KEYS: [&str; 6] = ["str", "dex", "con", "int", "wis", "cha"];
+/// How deep prior-feat prerequisites are followed (a feat needing a feat needing a feat).
+const MAX_PRIOR_FEATS: usize = 3;
+
+/// What a feat's requirements ask of a character: the first buildable alternative of every
+/// OR, negations ignored (a fresh character has none of the excluded elements).
+#[derive(Debug, Default)]
+struct Needs {
+    level: u32,
+    caster: bool,
+    class: Option<String>,
+    race: Option<String>,
+    feats: Vec<String>,
+    scores: Vec<(usize, i32)>,
+}
+
+impl Sweeper<'_> {
+    fn class_id(rs: Ruleset, name: &str) -> String {
+        let book = if rs == Ruleset::Dnd2024 {
+            "XPHB"
+        } else {
+            "PHB"
+        };
+        format!(
+            "ID_5ET_{book}_CLASS_{}",
+            name.to_uppercase().replace(' ', "_")
+        )
+    }
+
+    /// An id a host can use: it exists and, for origins, is of the feat's edition.
+    fn usable(&self, rs: Ruleset, id: &str) -> bool {
+        self.store.element(id).is_some_and(|e| {
+            !matches!(e.ty.as_str(), "Race" | "Species" | "Sub Race")
+                || e.ruleset.or_else(|| self.ours.get(id).copied()) == Some(rs)
+        })
+    }
+
+    fn buildable(&self, rs: Ruleset, expr: &BoolExpr<RequirementLeaf>) -> bool {
+        match expr {
+            BoolExpr::Leaf(RequirementLeaf::Id(id)) => self.usable(rs, id),
+            BoolExpr::Leaf(RequirementLeaf::Test(_)) | BoolExpr::Not(_) => true,
+            BoolExpr::And(items) => items.iter().all(|e| self.buildable(rs, e)),
+            BoolExpr::Or(items) => items.iter().any(|e| self.buildable(rs, e)),
+        }
+    }
+
+    fn collect(&self, rs: Ruleset, expr: &BoolExpr<RequirementLeaf>, needs: &mut Needs) {
+        match expr {
+            BoolExpr::Not(_) => {}
+            BoolExpr::And(items) => items.iter().for_each(|e| self.collect(rs, e, needs)),
+            BoolExpr::Or(items) => {
+                if let Some(first) = items
+                    .iter()
+                    .find(|e| self.buildable(rs, e))
+                    .or(items.first())
+                {
+                    self.collect(rs, first, needs);
+                }
+            }
+            BoolExpr::Leaf(RequirementLeaf::Id(id)) => {
+                match self.store.element(id).map(|e| e.ty.as_str()) {
+                    Some("Race" | "Species" | "Sub Race") => {
+                        needs.race.get_or_insert_with(|| id.clone());
+                    }
+                    Some("Feat") => needs.feats.push(id.clone()),
+                    Some("Class") => {
+                        needs.class.get_or_insert_with(|| id.clone());
+                    }
+                    _ => {}
+                }
+            }
+            BoolExpr::Leaf(RequirementLeaf::Test(t)) => {
+                let key = t.normalized_key();
+                let n = match &t.value {
+                    borealis_content::expr::TestValue::Number(n) => u32::try_from(*n).unwrap_or(0),
+                    borealis_content::expr::TestValue::Text(_) => 0,
+                };
+                let feature = key.strip_prefix("feature:").map(str::to_string);
+                match (key.as_str(), feature.as_deref()) {
+                    ("character" | "level", _) => needs.level = needs.level.max(n),
+                    ("spellcasting", _) => needs.caster = true,
+                    (_, Some("spellcasting" | "pact magic")) => needs.caster = true,
+                    (k, _) if ABILITY_KEYS.contains(&k) => {
+                        let i = ABILITY_KEYS.iter().position(|a| *a == k).unwrap_or(0);
+                        needs.scores.push((i, i32::try_from(n).unwrap_or(0)));
+                    }
+                    (k, None) if self.store.element(&Self::class_id(rs, k)).is_some() => {
+                        needs.class.get_or_insert_with(|| Self::class_id(rs, k));
+                        needs.level = needs.level.max(n);
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    /// The needs of an element's requirements, prior feats' own needs included.
+    fn needs(&self, rs: Ruleset, el: &Element, depth: usize, needs: &mut Needs) {
+        let Ok(Some(expr)) = RequirementsExpr::parse(&el.requirements) else {
+            return;
+        };
+        let before = needs.feats.len();
+        self.collect(rs, expr.root(), needs);
+        if depth >= MAX_PRIOR_FEATS {
+            return;
+        }
+        // a prior feat's own prerequisites come first
+        let prior: Vec<String> = needs.feats[before..].to_vec();
+        for id in prior {
+            if let Some(feat) = self.store.element(&id) {
+                let mut inner = Needs::default();
+                self.needs(rs, feat, depth + 1, &mut inner);
+                needs.level = needs.level.max(inner.level);
+                needs.caster |= inner.caster;
+                needs.class = needs.class.take().or(inner.class);
+                needs.race = needs.race.take().or(inner.race);
+                needs.scores.extend(inner.scores);
+                let at = needs.feats.iter().position(|f| *f == id).unwrap_or(0);
+                for f in inner.feats.into_iter().rev() {
+                    if !needs.feats.contains(&f) {
+                        needs.feats.insert(at, f);
+                    }
+                }
+            }
+        }
+    }
+
+    /// A level-1 character of the class, species and scores the needs ask for.
+    fn start(&self, rs: Ruleset, needs: &Needs, fighter: &str) -> Option<CharacterState> {
+        let wizard = Self::class_id(rs, "wizard");
+        let class = needs.class.clone().unwrap_or_else(|| {
+            if needs.caster {
+                wizard
+            } else {
+                fighter.to_string()
+            }
+        });
+        let mut scores = TEST_SCORES;
+        for (i, v) in &needs.scores {
+            scores[*i] = scores[*i].max(*v);
+        }
+        let state = commands::new_character(self.engine, rs);
+        let state = commands::set_base_scores(self.engine, &state, scores)
+            .ok()?
+            .state;
+        let snap = self.engine.derive(&state);
+        let key = slot_key(&snap, "ID_LEVEL_1", "Class", 1)?;
+        let state = commands::select(self.engine, &state, &key, Choice::Element(class))
+            .ok()?
+            .state;
+        let mut state = self.fill(state);
+        let human = match rs {
+            Ruleset::Dnd2024 => "ID_5ET_XPHB_SPECIES_HUMAN",
+            _ => "ID_5ET_PHB_RACE_HUMAN",
+        };
+        let race = needs.race.clone().unwrap_or_else(|| human.to_string());
+        let mut chain = Vec::new();
+        if let Some(parent) = self
+            .store
+            .element(&race)
+            .filter(|e| e.ty == "Sub Race")
+            .and_then(|e| e.supports.first())
+        {
+            chain.push(parent.clone());
+        }
+        chain.push(race);
+        if needs.race.is_none() {
+            chain.push("ID_5ET_PHB_SUBRACE_HUMAN_VARIANT".into());
+        }
+        for id in chain {
+            if let Some(Ok(s)) = self.pick(&state, &id) {
+                state = s;
+            }
+        }
+        Some(self.fill(state))
+    }
+
+    /// Take the 2014 "Feat" option of open improvement selects so the feat select opens.
+    fn open_feat_selects(&self, mut state: CharacterState) -> CharacterState {
+        loop {
+            let snap = self.engine.derive(&state);
+            let feat_option = snap.slots.iter().find_map(|s| {
+                let o = s.options.iter().find(|o| o.name == "Feat")?;
+                (s.chosen.is_none() && s.ty == "Class Feature")
+                    .then(|| (s.key.clone(), o.id.clone()))
+            });
+            let Some((key, id)) = feat_option else {
+                return state;
+            };
+            match commands::select(self.engine, &state, &key, Choice::Element(id)) {
+                Ok(o) => state = o.state,
+                Err(_) => return state,
+            }
+        }
+    }
+}
+
+/// A character that meets a feat's requirements, levelled until the feat is offered; the
+/// result of picking it (as [`Sweeper::pick`]), or `None` when no such host offers it.
+fn eligible_host(
+    sw: &Sweeper<'_>,
+    rs: Ruleset,
+    el: &Element,
+    why: &mut String,
+) -> Option<Result<CharacterState, String>> {
+    let mut needs = Needs::default();
+    sw.needs(rs, el, 0, &mut needs);
+    *why = format!("host {needs:?} could not be built");
+    let fighter = match rs {
+        Ruleset::Dnd2024 => "ID_5ET_XPHB_CLASS_FIGHTER",
+        _ => "ID_5ET_PHB_CLASS_FIGHTER",
+    };
+    let mut state = sw.start(rs, &needs, fighter)?;
+    let mut pending = needs.feats.clone();
+    loop {
+        state = sw.open_feat_selects(state);
+        // prior feats, in order, wherever a feat slot offers them
+        while let Some(next) = pending.first() {
+            match sw.pick(&state, next) {
+                Some(Ok(s)) => {
+                    state = sw.fill(s);
+                    pending.remove(0);
+                }
+                _ => break,
+            }
+        }
+        let snap = sw.engine.derive(&state);
+        if pending.is_empty() && snap.level >= needs.level {
+            if let Some(r) = sw.pick(&state, &el.id) {
+                return Some(r);
+            }
+        }
+        let open: Vec<&str> = snap
+            .slots
+            .iter()
+            .filter(|s| s.chosen.is_none() && s.list_choice.is_none())
+            .map(|s| s.ty.as_str())
+            .collect();
+        *why = format!(
+            "host {needs:?} reached level {} (prior feats not placed {pending:?}, open slots {open:?})",
+            snap.level
+        );
+        if snap.level >= MAX_LEVEL {
+            return None;
+        }
+        match commands::level_up_main(sw.engine, &state, None) {
+            Ok(o) => state = o.state,
+            Err(e) => {
+                why.push_str(&format!("; level-up refused: {e}"));
+                return None;
+            }
+        }
+    }
 }

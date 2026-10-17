@@ -8,7 +8,9 @@ use crate::ids::IdKind;
 use crate::model::Item;
 use crate::util::id_fragment;
 use borealis_content::{Element, Rule};
+use regex::Regex;
 use serde_json::{json, Value};
+use std::sync::OnceLock;
 
 use super::signed_value;
 
@@ -193,14 +195,23 @@ fn amount_text(v: &Value) -> Option<String> {
 
 /// `charges` -> a `resource` the size of the charges; `recharge` / `rechargeAmount` set how it
 /// comes back (a full daily recharge counts as a long rest, a partial one is described).
+/// Without a `charges` field the printed count is used ("expend 1 of its 3 charges").
 pub fn charges_rule(it: &Item, el: &Element, partial: &mut Vec<String>) -> Option<Rule> {
-    let raw = it.extra.get("charges")?;
-    let Some(max) = raw.as_i64().filter(|n| *n > 0) else {
-        partial.push(format!("charges {raw} were not converted"));
-        return None;
+    let (max, when, amount) = match it.extra.get("charges") {
+        Some(raw) => {
+            let Some(max) = raw.as_i64().filter(|n| *n > 0) else {
+                partial.push(format!("charges {raw} were not converted"));
+                return None;
+            };
+            let when = it.extra.get("recharge").and_then(Value::as_str);
+            (
+                max,
+                when,
+                it.extra.get("rechargeAmount").and_then(amount_text),
+            )
+        }
+        None => printed_charges(&it.entries)?,
     };
-    let when = it.extra.get("recharge").and_then(Value::as_str);
-    let amount = it.extra.get("rechargeAmount").and_then(amount_text);
     let moment = match when {
         Some("dawn") => Some("daily at dawn"),
         Some("dusk") => Some("daily at dusk"),
@@ -229,6 +240,36 @@ pub fn charges_rule(it: &Item, el: &Element, partial: &mut Vec<String>) -> Optio
         fields["alt_regain"] = json!(text);
     }
     Some(custom("resource", fields))
+}
+
+/// A fixed charge count printed in an item's text, with a printed dawn / dusk regain.
+fn printed_charges(entries: &[Value]) -> Option<(i64, Option<&'static str>, Option<String>)> {
+    static COUNT: OnceLock<Regex> = OnceLock::new();
+    static REGAIN: OnceLock<Regex> = OnceLock::new();
+    let count = COUNT.get_or_init(|| {
+        Regex::new(r"(?i)\b(?:has|of its) (\d+) charges\b").expect("charge count regex")
+    });
+    let regain = REGAIN.get_or_init(|| {
+        Regex::new(
+            r"(?i)regains (all(?: of its)?|\d+d\d+(?: ?[+-] ?\d+)?|\d+) (?:expended )?charges (?:daily )?at (dawn|dusk)",
+        )
+        .expect("charge regain regex")
+    });
+    let text = crate::text::Renderer::plain(entries);
+    let max = count.captures(&text)?[1]
+        .parse::<i64>()
+        .ok()
+        .filter(|n| *n > 0)?;
+    let (when, amount) = regain.captures(&text).map_or((None, None), |c| {
+        let when = if c[2].eq_ignore_ascii_case("dusk") {
+            "dusk"
+        } else {
+            "dawn"
+        };
+        let amount = (!c[1].to_lowercase().starts_with("all")).then(|| c[1].to_string());
+        (Some(when), amount)
+    });
+    Some((max, when, amount))
 }
 
 #[cfg(test)]
@@ -405,6 +446,32 @@ mod tests {
         assert!(r.is_none());
         assert_eq!(partial.len(), 1);
         assert!(resource(json!({"name": "W", "source": "ZZZ"})).0.is_none());
+    }
+
+    #[test]
+    fn printed_charge_counts_without_a_charges_field() {
+        // "1 of its 3 charges", nothing regained
+        let f = fields(
+            resource(json!({"name": "W", "source": "ZZZ", "entries": [
+                "You can expend 1 of its 3 charges to cast {@spell wish} from it."]}))
+            .0,
+        );
+        assert_eq!(f["max"], json!({"type": "fixed", "value": 3}));
+        assert_eq!(f["recharge"], json!(["none"]));
+        // a printed count and a rolled dawn regain
+        let f = fields(
+            resource(json!({"name": "W", "source": "ZZZ", "entries": [
+                "You can expend 1 of its 10 charges to cast a spell.",
+                "The staff regains {@dice 1d8 + 2} expended charges daily at dawn."]}))
+            .0,
+        );
+        assert_eq!(f["max"], json!({"type": "fixed", "value": 10}));
+        assert_eq!(f["alt_regain"], "Regains 1d8 + 2 charges daily at dawn");
+        // a rolled starting count is not a fixed one
+        let (r, partial) = resource(json!({"name": "W", "source": "ZZZ", "entries": [
+            "It begins existence with {@dice 1d4 + 1} charges."]}));
+        assert!(r.is_none());
+        assert!(partial.is_empty());
     }
 
     fn convert(raw: Value) -> (Element, Vec<String>) {

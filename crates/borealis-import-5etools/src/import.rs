@@ -622,6 +622,7 @@ fn ignored_rules(packs: &[ImportedPack]) -> Vec<ReportNote> {
                     kind: el.ty.clone(),
                     file: pack.manifest.id.clone(),
                     reason: format!("{}: {problem}", problem.code()),
+                    code: crate::report::code::IGNORED_RULE.to_string(),
                 });
             }
         }
