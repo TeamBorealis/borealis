@@ -5,7 +5,7 @@ use borealis_content::{ContentStore, ContentStoreBuilder};
 use serde_json::{json, Value};
 
 use super::super::finalize_draft;
-use super::super::intake::{attach_option_tables, option_tables};
+use super::super::intake::{attach_option_tables, option_tables, printed_apart};
 use super::super::plan::{rebuild, text_group};
 use super::super::types::{Edition, ImportDraft, ImportPlan, OtherItem, PlanGroup, Role};
 use super::*;
@@ -224,4 +224,224 @@ fn text_entries_that_are_rows_of_one_table_carry_their_own_row_only() {
         pale.json["description"],
         "<table><tr><th>Omen</th><th>Meaning</th></tr><tr><td>Pale Sun</td><td>A long winter.</td></tr></table>"
     );
+}
+
+/// A rule offering metals from a price table: two metals are printed again with a section or a
+/// paragraph of their own, one only as its row.
+const METALS: &str = "# Forge Metals\n\n\
+A smith chooses one metal from the table below for each piece.\n\n\
+| Metal | Cost |\n|---|---|\n| Bright Iron | 5 gp |\n| Moon Silver | 10 gp |\n| Ember Bronze | 7 gp |\n\n\
+### Bright Iron\n\nBright iron never rusts. A blade of it ignores the first notch each day.\n\n\
+**Moon Silver.** Moon silver glows faintly under the open sky and harms shapechangers.\n\n\
+# Afterword\n\nThanks for reading.\n";
+
+/// What generation wrote for each metal: its own passage (a row-only one gets the whole table).
+fn metals_draft() -> ImportDraft {
+    let rows: Vec<OtherItem> = ["Bright Iron", "Moon Silver", "Ember Bronze"]
+        .iter()
+        .map(|n| OtherItem {
+            name: n.to_string(),
+            what: "option".into(),
+            note: String::new(),
+        })
+        .collect();
+    let mut groups: Vec<PlanGroup> = rows
+        .iter()
+        .map(|o| text_group(&o.name, &o.what, ""))
+        .collect();
+    let tables = option_tables(&rows, METALS);
+    assert_eq!(
+        tables.len(),
+        1,
+        "the rule says choose: the rows are options"
+    );
+    attach_option_tables(&mut groups, &tables);
+    let mut plan = ImportPlan {
+        edition: Edition::Y2014,
+        groups,
+        elements: Vec::new(),
+        notes: Vec::new(),
+    };
+    rebuild(&mut plan, &library(), "HB", METALS);
+    let own = |name: &str| {
+        match name {
+        "Bright Iron" => "<p>Bright iron never rusts. A blade of it ignores the first notch each day.</p>",
+        "Moon Silver" => "<p>Moon silver glows faintly under the open sky and harms shapechangers.</p>",
+        _ => "<table><tr><td>Bright Iron</td><td>5 gp</td></tr><tr><td>Ember Bronze</td><td>7 gp</td></tr></table>",
+    }
+    };
+    let elements: Vec<Value> = plan
+        .elements
+        .iter()
+        .map(|p| {
+            json!({"id": p.id, "name": p.name, "ty": p.ty, "role": p.role, "level": null,
+                "json": {"id": p.id, "name": p.name, "type": p.ty, "source": "T",
+                    "description": own(&p.name), "rules": []},
+                "status": "ok", "issues": [], "excerpt": null, "balance": null,
+                "repair_rounds": 0, "revisions": 0})
+        })
+        .collect();
+    serde_json::from_value(json!({
+        "edition": "2014", "id_prefix": "HB", "source_name": "T", "pack_id": "t",
+        "pack_name": "T", "source_kind": "text", "source_text": METALS,
+        "detection": {"kind": "rules", "edition": "2014", "confidence": 1.0, "items": []},
+        "plan": plan, "elements": elements, "sweep_issues": []}))
+    .expect("draft")
+}
+
+#[test]
+fn an_option_with_a_section_or_paragraph_of_its_own_keeps_it_over_its_row() {
+    // Arrange
+    let draft = metals_draft();
+    let options = draft
+        .plan
+        .elements
+        .iter()
+        .filter(|p| p.role == Role::Option)
+        .count();
+    assert_eq!(options, 3, "every row is an option of the rule");
+
+    // Act
+    let fixed = prepare(&draft);
+
+    // Assert
+    let desc = |n: &str| {
+        let e = fixed
+            .elements
+            .iter()
+            .find(|e| e.name == n)
+            .expect("planned");
+        (
+            e.json["description"].as_str().unwrap_or("").to_string(),
+            e.normalised.clone(),
+        )
+    };
+    let (iron, iron_notes) = desc("Bright Iron");
+    assert!(iron.contains("never rusts"), "its section wins: {iron}");
+    assert!(!iron_notes.iter().any(|n| n.contains("row")));
+    let (silver, _) = desc("Moon Silver");
+    assert!(
+        silver.contains("harms shapechangers"),
+        "its paragraph wins: {silver}"
+    );
+    let (bronze, notes) = desc("Ember Bronze");
+    assert_eq!(
+        bronze,
+        "<table><tr><th>Metal</th><th>Cost</th></tr><tr><td>Ember Bronze</td><td>7 gp</td></tr></table>",
+        "the row is all the source prints for it"
+    );
+    assert!(notes.iter().any(|n| n.contains("its own row")));
+}
+
+#[test]
+fn a_list_of_names_a_bullet_or_another_table_row_is_no_passage_of_its_own() {
+    let src = "Bright Iron\nMoon Silver\n\n- Bright Iron\n\n| Bright Iron | 5 gp |\n\n\
+Bright Iron | 6 gp\n\nThe bright iron of the north is rare.\n";
+    assert!(!printed_apart(src, "Bright Iron", 5, 6));
+    assert!(printed_apart(
+        "### Bright Iron\n\nIt shines.\n\n| Bright Iron | 5 gp |\n",
+        "Bright Iron",
+        4,
+        5
+    ));
+    assert!(printed_apart(
+        "Bright Iron: it never rusts.\n\n| Bright Iron | 5 gp |\n",
+        "Bright Iron",
+        2,
+        3
+    ));
+}
+
+#[test]
+fn an_emphasised_marker_leaves_with_its_emphasis() {
+    let cases = [
+        (
+            "<p><strong>Owls</strong></p><p>*(Summary)* Owls hoot at night.</p>",
+            "<p><strong>Owls</strong></p><p>Owls hoot at night.</p>",
+        ),
+        (
+            "<p>Owls hoot. **[Paraphrased.]**</p><p><em>(summary)</em> They roost.</p>",
+            "<p>Owls hoot.</p><p>They roost.</p>",
+        ),
+        ("<p>_(Paraphrased)_</p><p>Rest.</p>", "<p>Rest.</p>"),
+    ];
+    for (html, want) in cases {
+        assert_eq!(
+            without_wrapped_markers(html).as_deref(),
+            Some(want),
+            "{html}"
+        );
+    }
+    // Not a marker, or a marker around text (its text keeps the emphasis), or no emphasis.
+    for html in [
+        "<p>Owls *(see below)* hoot.</p>",
+        "<p>*[Summary: Owls hoot.]*</p>",
+        "<p>(Summary) Owls hoot.</p>",
+        "<p>Three **Metal** and *(two)* cloth.</p>",
+    ] {
+        assert_eq!(without_wrapped_markers(html), None, "{html}");
+    }
+}
+
+#[test]
+fn a_marker_strip_through_finalize_leaves_no_orphan_emphasis() {
+    let mut d = draft();
+    d.elements[0].json["description"] =
+        json!("<p>*(Summary)* A duelist learns two stances from the table below.</p>");
+    let done = finalize_draft(&library_builder(), &d).expect("finalizes");
+    let text = serde_json::to_string(&done.pack.content).unwrap();
+    assert!(!text.contains("**"), "no empty emphasis left");
+    assert!(!text.contains("Summary"));
+}
+
+#[test]
+fn imprint_lines_printed_with_the_notice_leave_with_it() {
+    let mut d = draft();
+    let e = &mut d.elements[0];
+    e.name = "Welcome".into();
+    // Arrange: notice + manufacturer + representative (glued to the next heading's text).
+    e.json["description"] = json!(
+        "<p>Welcome to the forge.</p><p>\u{a9}2020 Example Press LLC, PO Box 12, Lakeside, \
+         XY 10101. Manufactured by Example Works, 4 Mill Road, Townsville, ZZ. Represented by \
+         Example Europe, 1 The Square, Lakeside.s Next Rules</p><p>Then rest.</p>"
+    );
+    // Act
+    strip_legal(e);
+    // Assert
+    assert_eq!(
+        e.json["description"],
+        "<p>Welcome to the forge.</p><p>Then rest.</p>"
+    );
+    // A paragraph of imprint alone next to a notice paragraph goes too.
+    e.json["description"] = json!(
+        "<p>All rights reserved.</p><p>Published by Example Press, 12 Elm Street.</p><p>Rules.</p>"
+    );
+    strip_legal(e);
+    assert_eq!(e.json["description"], "<p>Rules.</p>");
+    // Without a notice nothing is cut, imprint words or not.
+    let rules = "<p>Published by the guild, the edict binds every smith.</p><p>Rules.</p>";
+    e.json["description"] = json!(rules);
+    strip_legal(e);
+    assert_eq!(e.json["description"], rules);
+}
+
+#[test]
+fn emphasis_a_marker_strip_emptied_is_left_out() {
+    // Arrange: "*(Paraphrased)* These ..." whose marker an earlier step took out alone.
+    let html = "<p><strong>Owl Folk</strong></p><p>** These folk hoot at night.</p>\
+<table><tr><td>__ Roost</td></tr></table>";
+    // Act / Assert
+    assert_eq!(
+        without_orphan_emphasis(html).as_deref(),
+        Some("<p><strong>Owl Folk</strong></p><p>These folk hoot at night.</p><table><tr><td>Roost</td></tr></table>")
+    );
+    // Closed emphasis, a delimiter inside a text, or after an inline tag stays.
+    for html in [
+        "<p>**Bold** words.</p>",
+        "<p>** Bold ** words.</p>",
+        "<p>Three Metal** and cloth.</p>",
+        "<p><em>Owl</em>** hoot</p>",
+    ] {
+        assert_eq!(without_orphan_emphasis(html), None, "{html}");
+    }
 }

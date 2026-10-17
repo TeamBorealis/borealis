@@ -1,11 +1,14 @@
 //! Deterministic text fixes made before a draft becomes a pack: the options of a rule printed
-//! as table rows carry their own row and nothing else, the rule carries the pick of them, and
-//! the publication's legal or trademark notice is no part of a rules or element text.
+//! only as table rows carry their own row and nothing else (an option printed with a passage of
+//! its own keeps it), the rule carries the pick of them, an emphasised transcription marker
+//! leaves whole, and the publication's legal or trademark notice, with the imprint printed
+//! with it, is no part of a rules or element text.
 
 use serde_json::{json, Value};
 
 use super::fidelity::plain;
-use super::option_rows::{blocks as row_blocks, find_rows, row_html};
+use super::intake::printed_apart;
+use super::option_rows::{blocks as row_blocks, find_rows, row_html, Row};
 use super::types::{DraftElement, ImportDraft, PlannedElement, Role};
 
 /// Phrases of a legal or trademark notice (lowercase); a paragraph with one is the notice.
@@ -27,6 +30,7 @@ pub(crate) fn prepare(draft: &ImportDraft) -> ImportDraft {
     row_options(&mut out);
     rule_selects(&mut out);
     for e in out.elements.iter_mut() {
+        strip_wrapped_markers(e);
         strip_legal(e);
     }
     out
@@ -60,9 +64,15 @@ fn rule_options(draft: &ImportDraft) -> Vec<(String, String, Vec<String>)> {
 /// Fewest text entries printed as the rows of one table that are described row by row.
 const MIN_ROW_ENTRIES: usize = 3;
 
+/// The row is all the source prints for `name`: no passage of its own elsewhere (a section
+/// or a paragraph, see [`printed_apart`]), which always wins over the row.
+fn row_only(source: &str, name: &str, row: &Row) -> bool {
+    !printed_apart(source, name, row.line, row.end)
+}
+
 /// Text entries that are the named rows of one printed table (at least [`MIN_ROW_ENTRIES`],
-/// each located on its own row or nowhere) are described by their own row, never by the rest
-/// of the table and whatever follows it up to the next heading.
+/// each located on its own row or nowhere, and printed nowhere else) are described by their
+/// own row, never by the rest of the table and whatever follows it up to the next heading.
 fn row_entries(draft: &mut ImportDraft) {
     let texts: Vec<(String, String, Option<usize>)> = draft
         .plan
@@ -84,7 +94,7 @@ fn row_entries(draft: &mut ImportDraft) {
             let (Some(row), (id, name, at)) = (rows[k].as_ref(), &texts[k]) else {
                 continue;
             };
-            if at.is_some_and(|a| a != row.line) {
+            if at.is_some_and(|a| a != row.line) || !row_only(&draft.source_text, name, row) {
                 continue;
             }
             let (html, _) = row_html(&draft.source_text, name, row);
@@ -104,14 +114,17 @@ fn row_entries(draft: &mut ImportDraft) {
     }
 }
 
-/// Each option of a rule's options table is described by its own row only: never the whole
-/// table, never effect text the source does not print (a row printing only the name gets no
-/// rules either).
+/// Each option of a rule's options table that the source prints only as its row is described
+/// by that row only: never the whole table, never effect text the source does not print (a
+/// row printing only the name gets no rules either). An option with a passage of its own (its
+/// section or paragraph) keeps its description from that passage.
 fn row_options(draft: &mut ImportDraft) {
     for (owner, _, names) in rule_options(draft) {
         let rows = find_rows(&draft.source_text, &names);
         for (name, row) in names.iter().zip(rows) {
-            let Some(row) = row else { continue };
+            let Some(row) = row.filter(|r| row_only(&draft.source_text, name, r)) else {
+                continue;
+            };
             let (html, effect) = row_html(&draft.source_text, name, &row);
             let Some(e) = draft.elements.iter_mut().find(|e| {
                 e.name == *name
@@ -193,6 +206,121 @@ fn rule_selects(draft: &mut ImportDraft) {
     }
 }
 
+/// Emphasis a transcription wraps a whole marker in ("*(Summary)*", "<em>[Paraphrased]</em>"),
+/// longest first.
+const MARKER_WRAPS: [(&str, &str); 9] = [
+    ("***", "***"),
+    ("**", "**"),
+    ("__", "__"),
+    ("*", "*"),
+    ("_", "_"),
+    ("<strong>", "</strong>"),
+    ("<em>", "</em>"),
+    ("<b>", "</b>"),
+    ("<i>", "</i>"),
+];
+
+/// `html` without the bare transcription markers ("(Summary)", "[Paraphrased]") printed inside
+/// emphasis of their own: the marker and its emphasis go together, so no empty emphasis
+/// ("** ") is left behind. A marker around text ("[Summary: text]") keeps the text, and so its
+/// emphasis (`furniture::strip_markers` takes those). `None` when there is none.
+fn without_wrapped_markers(html: &str) -> Option<String> {
+    let (mut out, mut rest, mut changed) = (String::with_capacity(html.len()), html, false);
+    while let Some(k) = rest.find(['(', '[']) {
+        let close = if rest[k..].starts_with('(') { ')' } else { ']' };
+        let wrapped = rest[k + 1..]
+            .find(close)
+            .map(|e| k + 1 + e)
+            .filter(|e| !rest[k + 1..*e].contains(['<', '(', '[']))
+            .filter(|e| super::furniture::strip_markers(&rest[k..=*e]).as_deref() == Some(""))
+            .and_then(|e| {
+                MARKER_WRAPS
+                    .iter()
+                    .find(|(o, c)| rest[..k].ends_with(o) && rest[e + 1..].starts_with(c))
+                    .map(|(o, c)| (k - o.len(), e + 1 + c.len()))
+            });
+        let Some((from, to)) = wrapped else {
+            out.push_str(&rest[..=k]);
+            rest = &rest[k + 1..];
+            continue;
+        };
+        out.push_str(&rest[..from]);
+        rest = &rest[to..];
+        if out.is_empty() || out.ends_with([' ', '>']) {
+            rest = rest.strip_prefix(' ').unwrap_or(rest);
+        }
+        changed = true;
+    }
+    out.push_str(rest);
+    changed.then(|| out.replace(" </p>", "</p>").replace("<p></p>", ""))
+}
+
+/// Markdown emphasis delimiters a stripped marker leaves at the start of a text, longest first.
+const ORPHAN_DELIMITERS: [&str; 3] = ["***", "**", "__"];
+
+/// Tags that open a text of their own (a paragraph, item, cell, heading or line break).
+const BLOCK_OPENERS: [&str; 10] = [
+    "<p", "<li", "<td", "<th", "<h1", "<h2", "<h3", "<h4", "<h5", "<br",
+];
+
+/// `html` without emphasis delimiters left with nothing to emphasise: a delimiter opening a
+/// text (at the start, or after a tag of [`BLOCK_OPENERS`]) followed by a space, and never closed in that run
+/// ("<p>** These races ...</p>", what a transcription's "*(Paraphrased)*" becomes when only
+/// the marker is taken out). `None` when there is none.
+fn without_orphan_emphasis(html: &str) -> Option<String> {
+    let mut out = String::with_capacity(html.len());
+    let (mut rest, mut changed, mut at_start) = (html, false, true);
+    loop {
+        let run_end = rest.find('<').unwrap_or(rest.len());
+        let run = &rest[..run_end];
+        let orphan = ORPHAN_DELIMITERS.iter().find(|d| {
+            at_start
+                && run
+                    .strip_prefix(**d)
+                    .is_some_and(|r| r.starts_with(' ') && !r.contains(**d))
+        });
+        match orphan {
+            Some(d) => {
+                out.push_str(run[d.len()..].trim_start());
+                changed = true;
+            }
+            None => out.push_str(run),
+        }
+        rest = &rest[run_end..];
+        let Some(tag_end) = rest.find('>') else {
+            out.push_str(rest);
+            break;
+        };
+        let tag = &rest[..=tag_end];
+        at_start = BLOCK_OPENERS.iter().any(|o| {
+            tag.strip_prefix(o)
+                .is_some_and(|r| r.starts_with(['>', ' ', '/']))
+        });
+        out.push_str(tag);
+        rest = &rest[tag_end + 1..];
+    }
+    changed.then_some(out)
+}
+
+/// Emphasised transcription markers leave an element's description whole (see
+/// [`without_wrapped_markers`]), and no emphasis a marker strip emptied is left (see
+/// [`without_orphan_emphasis`]).
+fn strip_wrapped_markers(e: &mut DraftElement) {
+    let Some(d) = e.json.get("description").and_then(Value::as_str) else {
+        return;
+    };
+    let markers = without_wrapped_markers(d);
+    let base = markers.as_deref().unwrap_or(d);
+    let orphans = without_orphan_emphasis(base);
+    let Some(clean) = orphans.or(markers) else {
+        return;
+    };
+    e.json["description"] = json!(clean);
+    e.normalised.push(
+        "description: transcription markers, and the emphasis they leave empty, left out".into(),
+    );
+}
+
 /// A paragraph of the publication's legal or trademark notice.
 fn legal(paragraph: &str) -> bool {
     let low = plain(paragraph).to_lowercase();
@@ -241,6 +369,37 @@ const CREDIT_WORDS: [&str; 12] = [
 fn credit(sentence: &str) -> bool {
     let low = plain(sentence).to_lowercase();
     CREDIT_WORDS.iter().any(|w| low.contains(w))
+}
+
+/// Words of an imprint line printed with the legal notice: who publishes, makes or
+/// distributes the book, a postal address, a way to contact them.
+const IMPRINT_WORDS: [&str; 14] = [
+    "published by",
+    "publisher:",
+    "manufactured by",
+    "represented by",
+    "distributed by",
+    "printed in ",
+    "printed by",
+    "po box",
+    "p.o. box",
+    "p. o. box",
+    "contact us",
+    "e-mail:",
+    "email:",
+    "registered office",
+];
+
+/// A sentence of an imprint line (publisher, manufacturer, address or contact): end matter,
+/// like the notice it is printed with.
+fn imprint(sentence: &str) -> bool {
+    let low = plain(sentence).to_lowercase();
+    IMPRINT_WORDS.iter().any(|w| low.contains(w))
+}
+
+/// End matter printed with a legal notice: a credits or imprint sentence.
+fn notice_matter(sentence: &str) -> bool {
+    credit(sentence) || imprint(sentence)
 }
 
 /// `before` ends in an initial ("by A" of "by A. Penn"): a stop after it ends no sentence.
@@ -297,22 +456,32 @@ fn after_notice(block: &str) -> Option<String> {
     let before: Vec<&str> = parts[..first]
         .iter()
         .copied()
-        .filter(|s| !credit(s))
+        .filter(|s| !notice_matter(s))
         .collect();
     let after: Vec<&str> = parts[last + 1..]
         .iter()
         .copied()
-        .filter(|s| !credit(s))
+        .filter(|s| !notice_matter(s))
         .collect();
     let kept = [before, after].concat().concat();
     let kept = kept.trim();
     (!plain(kept).trim().is_empty()).then(|| format!("{open}{kept}{end}"))
 }
 
+/// A paragraph whose every sentence is an imprint line (see [`imprint`]).
+fn imprint_only(block: &str) -> bool {
+    let inner = plain(block);
+    let parts = sentences(&inner);
+    !parts.is_empty()
+        && parts.iter().all(|s| s.trim().is_empty() || imprint(s))
+        && parts.iter().any(|s| imprint(s))
+}
+
 /// The legal or trademark notice leaves an element's description, unless the element is that
 /// notice (end matter by name, or nothing but the notice): a paragraph that is only the notice
 /// goes whole; one that goes on with other text (the notice and an intro printed as one
-/// paragraph) keeps that text.
+/// paragraph) keeps that text. Credits and imprint sentences printed with the notice go with
+/// it, and so does a paragraph of imprint only next to a notice paragraph.
 fn strip_legal(e: &mut DraftElement) {
     if super::passage::end_matter(&e.name) {
         return;
@@ -321,16 +490,25 @@ fn strip_legal(e: &mut DraftElement) {
         return;
     };
     let Some(parts) = blocks(d) else { return };
-    let kept: Vec<String> = parts
-        .iter()
-        .filter_map(|p| {
-            if !legal(p) {
-                return Some((*p).to_string());
-            }
-            after_notice(p)
+    let notice = |k: usize| parts.get(k).is_some_and(|p| legal(p));
+    let gone: Vec<bool> = (0..parts.len())
+        .map(|k| {
+            notice(k)
+                || (imprint_only(parts[k])
+                    && (notice(k + 1) || k.checked_sub(1).is_some_and(notice)))
         })
         .collect();
-    let dropped = parts.iter().filter(|p| legal(p)).count();
+    let kept: Vec<String> = parts
+        .iter()
+        .zip(&gone)
+        .filter_map(|(p, &gone)| {
+            if !gone {
+                return Some((*p).to_string());
+            }
+            legal(p).then(|| after_notice(p)).flatten()
+        })
+        .collect();
+    let dropped = gone.iter().filter(|g| **g).count();
     if dropped == 0 || kept.iter().all(|p| plain(p).trim().is_empty()) {
         return;
     }

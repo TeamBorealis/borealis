@@ -124,6 +124,26 @@ pub(crate) fn defines(source: &str, name: &str) -> bool {
     !key.is_empty() && source.lines().any(|l| defining_line(l, &key))
 }
 
+/// The source prints `name` as a passage of its own outside lines `from..to` (its table row):
+/// a heading or emphasised title naming it, or a run-in label ("Name. Text") that opens a
+/// paragraph. Another table row, a bullet or a bare line that only repeats the name (a list
+/// of names) is no passage.
+pub(crate) fn printed_apart(source: &str, name: &str, from: usize, to: usize) -> bool {
+    let key = norm(name);
+    if key.is_empty() {
+        return false;
+    }
+    source.lines().enumerate().any(|(k, l)| {
+        let t = l.trim();
+        let titled = t.starts_with(['#', '*', '_']);
+        let bare = norm(t.split(" (").next().unwrap_or(t)) == key;
+        !(from..to).contains(&k)
+            && first_cell(l).is_none()
+            && (titled || !bare)
+            && defining_line(l, &key)
+    })
+}
+
 /// The library item of `edition` named `name`.
 fn library_item<'a>(store: &'a ContentStore, edition: Edition, name: &str) -> Option<&'a Element> {
     let key = norm(name);
