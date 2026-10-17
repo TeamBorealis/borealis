@@ -189,7 +189,13 @@ fn own_lines<'a>(c: &'a Checker, draft: &ImportDraft, e: &DraftElement) -> Vec<&
 
 /// The list members check of `e` (an element granting spells, never a class or subclass root,
 /// whose lists are its features').
-pub(super) fn list_checks(c: &Checker, draft: &ImportDraft, e: &DraftElement) -> Vec<ElementCheck> {
+/// `doc` is the element as finalize derives it (grants and placeholders it adds count).
+pub(super) fn list_checks(
+    c: &Checker,
+    draft: &ImportDraft,
+    e: &DraftElement,
+    doc: &Value,
+) -> Vec<ElementCheck> {
     if matches!(
         e.role,
         Role::Class | Role::Subclass | Role::SubclassGate | Role::Text
@@ -199,6 +205,7 @@ pub(super) fn list_checks(c: &Checker, draft: &ImportDraft, e: &DraftElement) ->
     let spells = known_spells(c, draft);
     let mut carried = HashSet::new();
     ids(&e.json, &mut carried);
+    ids(doc, &mut carried);
     // Its planned children and its parent may carry the grant.
     let kin = draft.plan.elements.iter().find(|p| p.id == e.id).map(|p| {
         draft

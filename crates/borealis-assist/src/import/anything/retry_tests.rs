@@ -273,3 +273,64 @@ fn retries_follow_the_kind_of_failure() {
     r.succeeded();
     assert_eq!(r.after_batch(&AiError::Cancelled, 8, false), Next::GiveUp);
 }
+
+impl crate::import::anything::steps::VisionRunner for Fake {}
+
+fn session_limit() -> AiError {
+    AiError::Cli {
+        message: "You've hit your session limit \u{b7} resets 4:10am (Europe/Paris)".into(),
+        stderr_tail: String::new(),
+        exit_code: Some(1),
+    }
+}
+
+async fn continue_import(runner: &Fake, d: ImportDraft) -> Result<ImportDraft, String> {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+    let base = borealis_content::ContentStoreBuilder::new()
+        .add_pack_dir(&root.join("core"))
+        .unwrap();
+    let opts = RunOptions {
+        max_repairs: 0,
+        sink: None,
+    };
+    crate::import::anything::continue_draft(runner, &base, d, &opts, None)
+        .await
+        .map(|step| step.draft().clone())
+        .map_err(|e| e.to_string())
+}
+
+#[tokio::test]
+async fn a_session_limit_mid_import_stops_every_call_and_fails_the_import() {
+    // Arrange: the first call answers, every later one hits the session limit.
+    let runner = Fake::new(|_, n| (n > 1).then(session_limit));
+    let d = draft(24);
+    // Act
+    let result = continue_import(&runner, d).await;
+    // Assert: no draft that looks complete, the user's message names the reset, one more call.
+    let msg = result.expect_err("the import must fail");
+    assert!(
+        msg.contains("usage limit") && msg.contains("4:10am"),
+        "{msg}"
+    );
+    assert_eq!(runner.calls(), 2, "no call after the limit");
+}
+
+#[tokio::test]
+async fn an_ordinary_failure_mid_import_still_never_aborts() {
+    // Arrange: the second call fails with a transport error (retried, then passes).
+    let runner = Fake::new(|_, n| (n == 2).then(cli_error));
+    let d = draft(24);
+    // Act
+    let result = continue_import(&runner, d).await;
+    // Assert
+    let d = result.expect("a draft");
+    assert_eq!(failed(&d), Vec::<&str>::new());
+}
+
+#[test]
+fn an_account_block_is_never_retried() {
+    let mut r = Retries::default();
+    assert_eq!(r.after_batch(&session_limit(), 8, false), Next::GiveUp);
+    assert_eq!(r.after_single(&session_limit(), false), Next::GiveUp);
+    assert!(refused(&session_limit()));
+}

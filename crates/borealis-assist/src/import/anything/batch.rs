@@ -360,6 +360,93 @@ pub(crate) fn batch_parent(
     parent_of(draft, &batch[0])
 }
 
+/// Stops every model call of an import once the AI account refuses one for good (a session,
+/// usage, rate or quota limit, a lost sign-in: [`AiError::account_block`]): every later call
+/// would fail the same way, so none is made, and [`AccountGuard::check`] fails the import with
+/// the user's message (when the limit resets) instead of a draft that looks complete with half
+/// its elements failed. Any other failure passes through (one bad call never costs the import).
+pub(crate) struct AccountGuard<'a> {
+    inner: &'a dyn super::steps::VisionRunner,
+    blocked: std::sync::Mutex<Option<borealis_ai::AccountBlock>>,
+}
+
+impl<'a> AccountGuard<'a> {
+    pub(crate) fn new(inner: &'a dyn super::steps::VisionRunner) -> Self {
+        Self {
+            inner,
+            blocked: std::sync::Mutex::new(None),
+        }
+    }
+
+    fn blocked(&self) -> Option<borealis_ai::AccountBlock> {
+        self.blocked.lock().map_or(None, |b| b.clone())
+    }
+
+    /// The call's result, with an account block recorded and turned into
+    /// [`AiError::AccountBlocked`] (never retried, see `retry`).
+    fn watch(
+        &self,
+        result: Result<borealis_ai::AiOutcome, AiError>,
+    ) -> Result<borealis_ai::AiOutcome, AiError> {
+        let err = match result {
+            Ok(out) => return Ok(out),
+            Err(err) => err,
+        };
+        let Some(block) = err.account_block() else {
+            return Err(err);
+        };
+        tracing::warn!(kind = ?block.kind, "import: the AI account refuses calls; stopping");
+        if let Ok(mut b) = self.blocked.lock() {
+            b.get_or_insert(block.clone());
+        }
+        Err(AiError::AccountBlocked(block))
+    }
+
+    /// The import's result: an error once the account refused a call.
+    ///
+    /// # Errors
+    /// [`AiError::AccountBlocked`] when a call hit an account block.
+    pub(crate) fn check(&self) -> Result<(), crate::error::AssistError> {
+        match self.blocked() {
+            Some(b) => Err(AiError::AccountBlocked(b).into()),
+            None => Ok(()),
+        }
+    }
+}
+
+impl AiRunner for AccountGuard<'_> {
+    fn run<'a>(
+        &'a self,
+        req: &'a borealis_ai::AiRequest,
+        sink: Option<&'a tokio::sync::mpsc::UnboundedSender<borealis_ai::AiEvent>>,
+    ) -> borealis_ai::task::BoxFuture<'a, Result<borealis_ai::AiOutcome, AiError>> {
+        Box::pin(async move {
+            if let Some(b) = self.blocked() {
+                return Err(AiError::AccountBlocked(b));
+            }
+            let result = self.inner.run(req, sink).await;
+            self.watch(result)
+        })
+    }
+}
+
+impl super::steps::VisionRunner for AccountGuard<'_> {
+    fn run_with<'a>(
+        &'a self,
+        req: &'a borealis_ai::AiRequest,
+        attachments: &'a [borealis_ai::Attachment],
+        sink: Option<&'a tokio::sync::mpsc::UnboundedSender<borealis_ai::AiEvent>>,
+    ) -> borealis_ai::task::BoxFuture<'a, Result<borealis_ai::AiOutcome, AiError>> {
+        Box::pin(async move {
+            if let Some(b) = self.blocked() {
+                return Err(AiError::AccountBlocked(b));
+            }
+            let result = self.inner.run_with(req, attachments, sink).await;
+            self.watch(result)
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

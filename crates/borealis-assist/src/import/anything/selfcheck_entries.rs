@@ -137,7 +137,7 @@ fn shared_check(shared: &HashMap<String, Vec<String>>, e: &DraftElement) -> Vec<
 
 /// The description carries the publication's legal notice or credits (end matter appended to
 /// the entry before it, or a cover's legal block read into a root).
-fn end_matter_check(e: &DraftElement) -> Vec<ElementCheck> {
+pub(super) fn end_matter_check(e: &DraftElement) -> Vec<ElementCheck> {
     if super::super::passage::end_matter(&e.name) {
         return Vec::new();
     }
@@ -184,7 +184,11 @@ fn phrase(text: &str, last: bool) -> Option<String> {
 
 /// Lines of `e`'s located passage without those of the other planned elements starting
 /// inside it (their text is theirs).
-fn own_lines<'a>(draft: &ImportDraft, lines: &'a [String], e: &DraftElement) -> Vec<&'a str> {
+pub(super) fn own_lines<'a>(
+    draft: &ImportDraft,
+    lines: &'a [String],
+    e: &DraftElement,
+) -> Vec<&'a str> {
     let Some((s, end)) = draft
         .plan
         .elements

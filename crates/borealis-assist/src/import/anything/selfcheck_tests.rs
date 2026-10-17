@@ -744,3 +744,48 @@ Any lamp except a broken one\nA lantern\nA candle stub\nAny lamp\n";
     apply(&core(), &mut d);
     assert!(failed_headings(&d).is_empty(), "{:?}", d.source_checks);
 }
+
+#[test]
+fn a_table_after_a_childs_short_passage_belongs_to_the_root_holding_it() {
+    // Arrange: a background whose first feature is short; its table follows the feature.
+    let src = "## Tinker\n\n### Spare Parts\n\nYou carry spare parts.\n\nd4 | Trinket\n\
+1 | A brass cog that hums at night\n2 | A copper spring that never rusts\n";
+    let root = located(
+        planned(
+            "ID_T_BACKGROUND_TINKER",
+            "Tinker",
+            "Background",
+            Role::Standalone,
+            None,
+        ),
+        1,
+        9,
+    );
+    let mut part = located(
+        planned(
+            "ID_T_PARTS",
+            "Spare Parts",
+            "Background Feature",
+            Role::Part,
+            None,
+        ),
+        3,
+        5,
+    );
+    part.parent = Some("ID_T_BACKGROUND_TINKER".into());
+    let mut d = draft(
+        src,
+        vec![root, part],
+        &["<p>A tinker.</p>", "<p>You carry spare parts.</p>"],
+    );
+    // Act
+    apply(&core(), &mut d);
+    // Assert: the root is row-checked and misses its table.
+    assert!(
+        failed_codes(&d.elements[0])
+            .iter()
+            .any(|(code, _)| *code == TABLE_ROW_MISSING),
+        "{:?}",
+        d.elements[0].checks
+    );
+}

@@ -38,7 +38,7 @@ fn str_at<'a>(v: &'a Value, key: &str) -> &'a str {
 }
 
 /// The spell ids an element's rules grant or offer.
-fn spell_targets(el: &Value) -> Vec<String> {
+pub(super) fn spell_targets(el: &Value) -> Vec<String> {
     let mut out = Vec::new();
     for r in el
         .get("rules")
@@ -100,16 +100,20 @@ pub(super) fn grant_checks(
     view: &GrantView,
 ) -> Vec<ElementCheck> {
     let targets = spell_targets(view.doc);
-    let noted: Vec<String> = view
+    let all: Vec<&str> = view
         .notes
         .iter()
         .copied()
         .chain(e.issues.iter().map(String::as_str))
         .filter_map(|n| n.strip_prefix(GRANT_NOTE_PREFIX))
-        .map(quoted)
         .collect();
+    // A note that its text names a spell no rule grants is its own finding.
+    let (ungranted, noted): (Vec<&str>, Vec<&str>) =
+        all.into_iter().partition(|n| n.contains(NOT_GRANTED_NOTE));
+    let noted: Vec<String> = noted.into_iter().map(quoted).collect();
+    let mut out = ungranted_checks(&ungranted);
     if targets.is_empty() && noted.is_empty() {
-        return Vec::new();
+        return out;
     }
     let import: HashSet<&str> = draft.elements.iter().map(|x| x.id.as_str()).collect();
     let mut missing: Vec<String> = Vec::new();
@@ -129,14 +133,42 @@ pub(super) fn grant_checks(
         }
     }
     if missing.is_empty() {
-        return vec![passed(GRANT_UNRESOLVED, "Every spell it grants exists")];
+        out.push(passed(GRANT_UNRESOLVED, "Every spell it grants exists"));
+        return out;
     }
-    vec![failed(
+    out.push(failed(
         GRANT_UNRESOLVED,
         format!(
             "It grants {}, which neither this import nor your rules have: the sheet shows {} only as a name or not at all. Install that content or change the grant",
             quoted_list(&missing),
             if missing.len() == 1 { "it" } else { "them" }
+        ),
+    ));
+    out
+}
+
+/// Words of the derive note (`official_spells::NOT_GRANTED`) on an element whose text names a
+/// spell it gives that no rule grants.
+const NOT_GRANTED_NOTE: &str = "no rule grants it";
+
+/// `spell_not_granted` for the derive notes saying the text names a spell no rule grants.
+fn ungranted_checks(notes: &[&str]) -> Vec<ElementCheck> {
+    let mut names: Vec<String> = Vec::new();
+    for n in notes.iter().map(|n| quoted(n)) {
+        if !names.contains(&n) {
+            names.push(n);
+        }
+    }
+    if names.is_empty() {
+        return Vec::new();
+    }
+    vec![failed(
+        super::losses::SPELL_NOT_GRANTED,
+        format!(
+            "Its text names {} as a spell it gives, but no rule grants {}: the sheet will not list {}. Add the grant",
+            quoted_list(&names),
+            if names.len() == 1 { "it" } else { "them" },
+            if names.len() == 1 { "it" } else { "them" }
         ),
     )]
 }

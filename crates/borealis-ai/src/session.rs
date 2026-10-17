@@ -590,7 +590,8 @@ impl Driver {
         }
         if !status.success() {
             let msg = format!(
-                "the CLI exited with status {}",
+                "{} {}",
+                crate::error::EXIT_STATUS_MESSAGE,
                 code.map_or("unknown".to_string(), |c| c.to_string())
             );
             return Err(AiError::cli(&msg, &stderr_tail, code));

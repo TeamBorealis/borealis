@@ -626,3 +626,36 @@ fn probe_review_states() {
         }
     }
 }
+
+#[test]
+fn a_creature_whose_stat_block_was_never_read_is_not_imported() {
+    // Arrange: a detected creature kept as text with only its name line.
+    let p = crate::import::anything::fidelity::tests::planned(
+        "ID_T_GLOOM",
+        "Gloom Stalker",
+        "Monster",
+        Role::Standalone,
+        Some(1),
+    );
+    let mut d = crate::import::anything::fidelity::tests::draft(
+        "# Gloom Stalker\n",
+        vec![p],
+        &["<p>A gloom stalker.</p>"],
+    );
+    let absent = crate::import::anything::types::ElementCheck {
+        code: "stat_block_absent".into(),
+        message: "No printed stat block was found for this creature in the source text".into(),
+        failed: true,
+    };
+    d.elements[0].checks = vec![absent.clone()];
+    let mut long = d.clone();
+    long.elements[0].json["description"] =
+        serde_json::json!("<p>It hunts at dusk. It never leaves the marsh. Its eyes glow.</p>");
+    // Act
+    let short = review_state(&d.elements[0], &d);
+    let lore = review_state(&long.elements[0], &long);
+    // Assert
+    assert_eq!(short.state, ReviewLevel::NotImported);
+    assert_eq!(short.code, code::STAT_BLOCK_NOT_READ);
+    assert_eq!(lore.state, ReviewLevel::Check);
+}

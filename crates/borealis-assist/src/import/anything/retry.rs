@@ -3,10 +3,11 @@
 //! error, no result, I/O) is retried once as it was and then split; an answer that still failed
 //! validation after its repairs (an empty or partial answer) is split. A batch of one element
 //! goes to the single-element path, which retries a transient failure once. A refused call (the
-//! import's call budget, a cancel, a missing CLI) is never retried, and after
-//! [`MAX_FAILURES_IN_A_ROW`] calls in a row failed on time or transport, nothing is retried any
-//! more (the model or its connection is down): every planned call is still made once, as
-//! without retries, and the queued retries fail without a call.
+//! import's call budget, a cancel, a missing CLI, a usage limit or a lost sign-in) is never
+//! retried, and after [`MAX_FAILURES_IN_A_ROW`] calls in a row failed on time or transport,
+//! nothing is retried any more (the model or its connection is down): every planned call is
+//! still made once, as without retries, and the queued retries fail without a call. An account
+//! block also stops every later call and fails the import (`batch::AccountGuard`).
 
 use borealis_ai::task::{AiRunner, RunOptions};
 use borealis_ai::AiError;
@@ -100,6 +101,10 @@ enum Kind {
 }
 
 fn kind(err: &AiError) -> Kind {
+    // A usage limit or a lost sign-in fails every later call too.
+    if err.account_block().is_some() {
+        return Kind::Refused;
+    }
     match err {
         AiError::Cli { .. } | AiError::NoResult | AiError::Io(_) => Kind::Transient,
         AiError::Timeout { .. } | AiError::OutputTooLarge { .. } => Kind::TooBig,
@@ -109,7 +114,7 @@ fn kind(err: &AiError) -> Kind {
 }
 
 /// The call was refused before or outside the model (the import's call budget, a cancel, a
-/// missing CLI): no later call of the import will pass either.
+/// missing CLI, a usage limit or lost sign-in): no later call of the import will pass either.
 pub(crate) fn refused(err: &AiError) -> bool {
     kind(err) == Kind::Refused
 }

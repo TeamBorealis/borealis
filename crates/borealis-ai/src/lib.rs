@@ -38,7 +38,7 @@ pub mod host;
 pub mod remote;
 
 pub use attachment::{Attachment, AttachmentKind};
-pub use error::{redact_paths, AiError};
+pub use error::{redact_paths, AccountBlock, AccountBlockKind, AiError};
 pub use event::{AiEvent, ToolUseInfo, Usage};
 pub use profile::{McpCommand, ProfileConfig, ProfileStatus};
 pub use provider::{DetectConfig, ProviderInfo};

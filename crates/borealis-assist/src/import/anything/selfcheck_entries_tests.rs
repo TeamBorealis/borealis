@@ -30,16 +30,35 @@ fn item(id: &str, name: &str, start: usize, end: usize) -> PlannedElement {
 
 const OPTIONS: &str = "## Stance Options\n\nStance | Effect\nIron Root | You can't be pushed while you stand still this turn.\nWillow Sway | Attacks of opportunity against you have disadvantage.\nRiver Step | Your speed rises by 10 feet until the end of the turn.\n";
 
+const WHOLE: &str = "<p>Stance Effect Iron Root You can't be pushed while you stand still this turn. Willow Sway Attacks of opportunity against you have disadvantage. River Step Your speed rises by 10 feet until the end of the turn.</p>";
+
 #[test]
-fn entries_each_holding_the_whole_table_that_names_them_fail_description_shared() {
-    // Arrange: every row's entry got the whole table as its text.
-    let whole = "<p>Stance Effect Iron Root You can't be pushed while you stand still this turn. Willow Sway Attacks of opportunity against you have disadvantage. River Step Your speed rises by 10 feet until the end of the turn.</p>";
+fn entries_finalize_cuts_to_their_own_rows_are_checked_as_cut() {
+    // Arrange: each entry located on its own row; finalize describes it by that row.
     let plan = vec![
         text("ID_T_IRON", "Iron Root", 4, 4),
         text("ID_T_WILLOW", "Willow Sway", 5, 5),
         text("ID_T_RIVER", "River Step", 6, 6),
     ];
-    let d = draft(OPTIONS, plan, &[whole, whole, whole]);
+    let d = draft(OPTIONS, plan, &[WHOLE, WHOLE, WHOLE]);
+    // Act
+    let d = checked(d);
+    // Assert: the pack holds each row only, so nothing is shared.
+    for id in ["ID_T_IRON", "ID_T_WILLOW", "ID_T_RIVER"] {
+        assert!(failed_of(&d, id, DESCRIPTION_SHARED).is_empty(), "{id}");
+    }
+}
+
+#[test]
+fn entries_each_holding_the_whole_table_that_names_them_fail_description_shared() {
+    // Arrange: every row's entry got the whole table as its text, and each is located on the
+    // whole table (so finalize cannot cut it to its own row).
+    let plan = vec![
+        text("ID_T_IRON", "Iron Root", 1, 6),
+        text("ID_T_WILLOW", "Willow Sway", 1, 6),
+        text("ID_T_RIVER", "River Step", 1, 6),
+    ];
+    let d = draft(OPTIONS, plan, &[WHOLE, WHOLE, WHOLE]);
     // Act
     let d = checked(d);
     // Assert
@@ -94,24 +113,44 @@ fn legal_text_appended_to_an_entry_fails_but_the_legal_entry_itself_does_not() {
         text("ID_T_LEGAL", "Legal Information", 5, 7),
         text("ID_T_CURSE", "Copyright Curse", 1, 1),
     ];
-    let appended = format!("<p>More adventures will follow.</p>{legal}");
+    let appended = "<p>More adventures will follow. This work is published under the community content agreement. All rights reserved.</p>";
     let d = draft(
         src,
         plan,
         &[
-            &appended,
+            appended,
             legal,
             "<p>A copyright on your soul: you owe a favour.</p>",
         ],
     );
+    // Act: the check itself, on the text as given (the pipeline runs it on finalize's text).
+    let flags = |id: &str| super::entries::end_matter_check(d.element(id).expect("element"));
+    // Assert
+    let f = flags("ID_T_CLOSING");
+    assert_eq!(f.len(), 1);
+    assert!(
+        f[0].message.contains("legal or credits text"),
+        "{}",
+        f[0].message
+    );
+    assert!(flags("ID_T_LEGAL").is_empty());
+    assert!(flags("ID_T_CURSE").is_empty());
+}
+
+#[test]
+fn a_legal_paragraph_finalize_cuts_is_not_flagged() {
+    // Arrange: the notice is its own paragraph, which finalize leaves out of the pack.
+    let src = "## Closing Words\n\nMore adventures will follow.\n\nAll rights reserved.\n";
+    let plan = vec![text("ID_T_CLOSING", "Closing Words", 1, 5)];
+    let d = draft(
+        src,
+        plan,
+        &["<p>More adventures will follow.</p><p>This work is published under the community content agreement. All rights reserved.</p>"],
+    );
     // Act
     let d = checked(d);
     // Assert
-    let f = failed_of(&d, "ID_T_CLOSING", END_MATTER_TEXT);
-    assert_eq!(f.len(), 1);
-    assert!(f[0].contains("legal or credits text"), "{}", f[0]);
-    assert!(failed_of(&d, "ID_T_LEGAL", END_MATTER_TEXT).is_empty());
-    assert!(failed_of(&d, "ID_T_CURSE", END_MATTER_TEXT).is_empty());
+    assert!(failed_of(&d, "ID_T_CLOSING", END_MATTER_TEXT).is_empty());
 }
 
 #[test]
@@ -245,6 +284,26 @@ fn a_grant_of_an_imported_spell_passes_and_a_noted_target_fails() {
     let f = failed_of(&noted, "ID_T_CHARM", GRANT_UNRESOLVED);
     assert_eq!(f.len(), 1);
     assert!(f[0].starts_with("It grants \"Spark Wisp\""), "{}", f[0]);
+}
+
+#[test]
+fn a_note_that_the_text_names_an_ungranted_spell_says_so_in_its_own_words() {
+    // Arrange
+    let mut d = charm(json!([]), Vec::new());
+    d.elements[0].issues.push(format!(
+        "{}\"Spark Wisp\" is named in its text, but no rule grants it",
+        grants::GRANT_NOTE_PREFIX
+    ));
+    // Act
+    let d = checked(d);
+    // Assert
+    let f = failed_of(&d, "ID_T_CHARM", "spell_not_granted");
+    assert_eq!(f.len(), 1);
+    assert!(
+        f[0].starts_with("Its text names \"Spark Wisp\""),
+        "{}",
+        f[0]
+    );
 }
 
 #[test]

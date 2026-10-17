@@ -407,6 +407,9 @@ pub async fn continue_draft(
     progress: Progress<'_>,
 ) -> Result<ImportStep, AssistError> {
     let mut draft = draft;
+    // A usage limit or lost sign-in stops every call and fails the import (no partial draft).
+    let guard = batch::AccountGuard::new(runner);
+    let runner: &dyn VisionRunner = &guard;
     if !draft.plan.open_choices().is_empty() {
         return Ok(ImportStep::NeedsChoice(Box::new(draft)));
     }
@@ -421,6 +424,7 @@ pub async fn continue_draft(
     fill_pending(&adapter, &ctx, &mut draft, opts, progress).await;
     validate_and_repair(&adapter, &ctx, &mut draft, opts, progress).await;
     selfcheck::heal(&adapter, &ctx, &mut draft, opts, progress).await;
+    guard.check()?;
     Ok(ImportStep::Draft(Box::new(draft)))
 }
 
@@ -436,10 +440,13 @@ pub async fn import_anything(
     opts: &RunOptions<'_>,
     progress: Progress<'_>,
 ) -> Result<ImportStep, AssistError> {
+    let guard = batch::AccountGuard::new(runner);
+    let runner: &dyn VisionRunner = &guard;
     emit(progress, Stage::Detect, 0, 1, "reading the source");
     let (detection, text) = detect_source(runner, &req.source, req.edition_hint, opts).await?;
     emit(progress, Stage::Plan, 0, detection.items.len(), "planning");
     let plan = plan_import(runner, base, &detection, &text, &req.id_prefix, opts).await?;
+    guard.check()?;
     let draft = ImportDraft {
         edition: detection.edition,
         id_prefix: req.id_prefix.clone(),

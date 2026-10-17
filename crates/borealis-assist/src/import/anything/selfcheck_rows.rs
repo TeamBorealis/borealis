@@ -134,12 +134,48 @@ pub(super) fn row_owners(draft: &ImportDraft, lines: &[String]) -> HashMap<Strin
                 .iter()
                 .filter(|(_, s, _)| *s <= i)
                 .max_by_key(|(_, s, e)| (*s, usize::MAX - *e));
-            if let Some((id, _, _)) = nearest.filter(|(_, _, e)| i < *e) {
-                out.entry((*id).to_string()).or_default().push(i);
+            let Some(&(near, _, near_end)) = nearest else {
+                continue;
+            };
+            let owner = if i < near_end {
+                Some(near)
+            } else {
+                enclosing_ancestor(draft, &spans, near, i)
+            };
+            if let Some(id) = owner {
+                out.entry(id.to_string()).or_default().push(i);
             }
         }
     }
     out
+}
+
+/// Most ancestors walked from an element to its owner.
+const MAX_ANCESTORS: usize = 8;
+
+/// A row after the short passage of the element starting nearest above it belongs to the
+/// nearest of that element's planned ancestors (parent, else owner) whose passage holds it: a
+/// table printed after a background's or class's first feature is the root's, never a
+/// sibling's whose passage was located too long.
+fn enclosing_ancestor<'a>(
+    draft: &'a ImportDraft,
+    spans: &[(&'a str, usize, usize)],
+    from: &str,
+    row: usize,
+) -> Option<&'a str> {
+    let mut id = from;
+    for _ in 0..MAX_ANCESTORS {
+        let p = draft.plan.elements.iter().find(|p| p.id == id)?;
+        let up = p.parent.as_deref().or(p.owner.as_deref())?;
+        let holds = spans
+            .iter()
+            .any(|&(sid, s, e)| sid == up && s <= row && row < e);
+        if holds {
+            return Some(up);
+        }
+        id = up;
+    }
+    None
 }
 
 /// End (exclusive) of the section a passage starting at `s` heads: the next heading of its

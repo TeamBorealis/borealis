@@ -56,6 +56,9 @@ pub mod code {
     pub const INCOMPLETE: &str = "incomplete";
     /// Its source passage was never found.
     pub const UNLOCATED: &str = "unlocated";
+    /// A detected creature whose stat block is not in the source text (often a picture that
+    /// was not read): nothing usable but its name.
+    pub const STAT_BLOCK_NOT_READ: &str = "stat_block_not_read";
 }
 
 /// What the review screen shows for one element.
@@ -303,6 +306,38 @@ fn check_reasons(el: &DraftElement, draft: &ImportDraft, found: &DraftFindings) 
     out
 }
 
+/// Most description words of a creature kept as text that still count as "its name and a line".
+const MAX_UNREAD_CREATURE_WORDS: usize = 30;
+
+/// A detected creature with no stat block in the source text (the `stat_block_absent` check
+/// says it was kept as text) whose text is empty or one short line: nothing of it was read, so
+/// it is reported as not imported rather than offered as an empty text entry.
+#[must_use]
+pub fn unread_creature(el: &DraftElement) -> Option<&'static str> {
+    let absent = el.checks.iter().any(|c| {
+        c.failed
+            && c.code == super::selfcheck::STAT_BLOCK_ABSENT
+            && c.message.starts_with("No printed stat block")
+    });
+    if !absent {
+        return None;
+    }
+    let text = super::fidelity::plain(
+        el.json
+            .get("description")
+            .and_then(Value::as_str)
+            .unwrap_or(""),
+    );
+    let sentences = text
+        .split(['.', '!', '?'])
+        .filter(|s| !s.trim().is_empty())
+        .count();
+    let short = sentences <= 1 && super::fidelity::words(&text).len() <= MAX_UNREAD_CREATURE_WORDS;
+    short.then_some(
+        "Not imported: its stat block is not in the source text (it may be a picture that was not read). Point to its stat block or add it.",
+    )
+}
+
 /// Fewest description words beyond the name that make a traced description evidence that the
 /// element was read from the source, wherever its passage is.
 const MIN_TRACED_WORDS: usize = 12;
@@ -497,6 +532,15 @@ fn state_of(
             } else {
                 format!("Not imported: {}", short(first))
             },
+            details,
+            ..base
+        };
+    }
+    if let Some(why) = unread_creature(el) {
+        return ReviewState {
+            state: ReviewLevel::NotImported,
+            code: code::STAT_BLOCK_NOT_READ.into(),
+            reason: why.into(),
             details,
             ..base
         };

@@ -14,7 +14,9 @@
 //! [`DESCRIPTION_UNTRACED`], [`STAT_BLOCK_ABSENT`], [`LIST_MEMBER_MISSING`], [`RULE_MISSING`],
 //! [`DESCRIPTION_EMPTY`], [`NARRATIVE_TEXT`], [`LIBRARY_DUPLICATE`], [`GRANT_UNRESOLVED`],
 //! [`RECHARGE_MISSING`], [`ATTUNEMENT_MISMATCH`], [`DESCRIPTION_SHARED`], [`END_MATTER_TEXT`],
-//! [`TRANSCRIPTION_PARAPHRASE`], [`PRINTED_NUMBER_DIFFERS`]. A passed check is recorded once
+//! [`TRANSCRIPTION_PARAPHRASE`], [`PRINTED_NUMBER_DIFFERS`], and the loss checks of
+//! `selfcheck_losses` (`condensed_notes`, `creature_type_missing`, `spell_not_granted`,
+//! `roll_table_option`). The checks run on finalize's text (see `apply_with`). A passed check is recorded once
 //! per code the element was checked for, so "checked and fine" differs from "not checked"
 //! (codes that apply to every element, or to a rare shape, record failures only). Only the
 //! numbers, rows and references checks are repaired by a model call; the others are the
@@ -46,6 +48,8 @@ mod entries;
 pub(crate) mod grants;
 #[path = "selfcheck_lists.rs"]
 mod lists;
+#[path = "selfcheck_losses.rs"]
+mod losses;
 #[path = "selfcheck_monsters.rs"]
 mod monsters;
 #[path = "selfcheck_numbers.rs"]
@@ -553,7 +557,24 @@ pub(crate) fn apply(base: &ContentStoreBuilder, draft: &mut ImportDraft) {
     apply_with(&checker, base, draft);
 }
 
+/// The checks run on the text the pack will hold: finalize's text fixes (options described by
+/// their own row, legal notices cut) are applied first, so a flag never describes text the pack
+/// no longer has, and a loss those fixes cause is seen.
 fn apply_with(checker: &Checker, base: &ContentStoreBuilder, draft: &mut ImportDraft) {
+    let view = super::text_fixes::prepare(draft);
+    let checks = element_checks(checker, base, &view);
+    for e in draft.elements.iter_mut() {
+        e.checks = checks.get(&e.id).cloned().unwrap_or_default();
+    }
+    draft.source_checks = heading_checks(&view);
+}
+
+/// The checks of every generated element of `draft`, by element id.
+fn element_checks(
+    checker: &Checker,
+    base: &ContentStoreBuilder,
+    draft: &ImportDraft,
+) -> HashMap<String, Vec<ElementCheck>> {
     let derived = derived_docs(&checker.library, draft);
     let refs = reference_failures(base, draft, &derived);
     let pools = grants::unrecharged(&derived.1.docs);
@@ -567,12 +588,35 @@ fn apply_with(checker: &Checker, base: &ContentStoreBuilder, draft: &mut ImportD
     let shared = entries::shared_descriptions(draft);
     let index = Index::new(&draft.source_text);
     let mask = name_mask(draft);
-    let checks: Vec<Vec<ElementCheck>> = draft
+    let mut known = checker.spells.clone();
+    known.extend(
+        draft
+            .elements
+            .iter()
+            .filter(|e| e.ty == "Spell")
+            .map(|e| (norm(&e.name), e.id.clone())),
+    );
+    // The spells an element grants or offers, from its derived doc (else its own JSON).
+    let targets_of = |id: &str| -> Vec<String> {
+        let doc = derived
+            .0
+            .iter()
+            .position(|d| d == id)
+            .and_then(|k| derived.1.docs.get(k))
+            .or_else(|| draft.element(id).map(|e| &e.json));
+        doc.map(|d| {
+            let mut t = grants::spell_targets(d);
+            t.extend(losses::spell_grant_ids(d));
+            t
+        })
+        .unwrap_or_default()
+    };
+    draft
         .elements
         .iter()
         .map(|e| {
             if e.json.is_null() || e.status == ElementStatus::Failed {
-                return Vec::new();
+                return (e.id.clone(), Vec::new());
             }
             let mut out = monsters::stat_block_checks(draft, e);
             out.extend(checker.element(draft, e, &e.json));
@@ -580,7 +624,6 @@ fn apply_with(checker: &Checker, base: &ContentStoreBuilder, draft: &mut ImportD
             if fidelity_checked(draft, e) {
                 out.extend(description_checks(e, &index, &mask));
             }
-            out.extend(lists::list_checks(checker, draft, e));
             out.extend(content::content_checks(checker, draft, e));
             let view = grants::GrantView {
                 doc: derived
@@ -598,16 +641,21 @@ fn apply_with(checker: &Checker, base: &ContentStoreBuilder, draft: &mut ImportD
                     .map(|(_, m)| m.as_str())
                     .collect(),
             };
+            out.extend(lists::list_checks(checker, draft, e, view.doc));
             out.extend(grants::grant_checks(&checker.library, draft, e, &view));
             out.extend(grants::recharge_checks(draft, &checker.lines, &pools, e));
             out.extend(entries::entry_checks(draft, &checker.lines, &shared, e));
-            out
+            out.extend(losses::loss_checks(draft, &checker.lines, e));
+            out.extend(losses::spell_grant_check(
+                draft,
+                e,
+                &known,
+                &targets_of,
+                &view.notes,
+            ));
+            (e.id.clone(), out)
         })
-        .collect();
-    for (e, c) in draft.elements.iter_mut().zip(checks) {
-        e.checks = c;
-    }
-    draft.source_checks = heading_checks(draft);
+        .collect()
 }
 
 // ---------------------------------------------------------------------------------------------
