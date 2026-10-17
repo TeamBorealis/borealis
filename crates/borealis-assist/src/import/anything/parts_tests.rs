@@ -212,4 +212,31 @@ Special Thanks To\n\nThe river folk, for every crossing.\n";
         let own = section_lines(plain, &d.plan.elements[0], &d.plan).join("\n");
         assert!(own.contains("Thanks are owed"), "{own}");
     }
+
+    #[test]
+    fn a_text_section_stops_at_a_contents_page_and_never_takes_the_letter_after_it() {
+        // The plan's located passage runs over the contents page and the letter after it.
+        let mut src = String::from("## On the Lid\n\nThe lid shows a heron in flight.\n\n");
+        src.push_str("## Table of Contents\n\n");
+        for (t, pg) in [("Foreword", 3), ("Herons", 5), ("Reeds", 9), ("Index", 12)] {
+            src.push_str(&format!("{t}.................pg.{pg}\n"));
+        }
+        src.push_str("\nDear Reader,\n\nThis book took me ten winters to write.\n\n# Herons\n\nTall birds.\n");
+        let lid = text("t0", "On the Lid", 1, 18);
+        let d = draft(&src, vec![lid], &[]);
+        let own = section_lines(&src, &d.plan.elements[0], &d.plan).join("\n");
+        assert!(own.contains("a heron in flight"), "{own}");
+        assert!(
+            !own.contains("pg.") && !own.contains("ten winters") && !own.contains("Contents"),
+            "{own}"
+        );
+        // A run of contents lines with no heading over it ends the section too.
+        let bare = src.replace("## Table of Contents\n\n", "");
+        let d = draft(&bare, vec![text("t0", "On the Lid", 1, 16)], &[]);
+        let own = section_lines(&bare, &d.plan.elements[0], &d.plan).join("\n");
+        assert!(
+            own.contains("a heron in flight") && !own.contains("pg."),
+            "{own}"
+        );
+    }
 }

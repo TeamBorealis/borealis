@@ -302,6 +302,13 @@ const STRUCTURE_WORDS: [&str; 12] = [
 
 /// A structural sub-heading: it numbers a part ("Tier 1", "Stage II") or names a table or an
 /// example, so it belongs to the section above it.
+/// Titles of a contents page, which ends any section printed before it (navigation).
+const CONTENTS_HEADINGS: [&str; 2] = ["contents", "table of contents"];
+
+fn contents_heading(title: &str) -> bool {
+    CONTENTS_HEADINGS.contains(&norm_words(title).trim())
+}
+
 fn structural_heading(title: &str) -> bool {
     let t = norm_words(title);
     let words: Vec<&str> = t.split(' ').filter(|w| !w.is_empty()).collect();
@@ -353,7 +360,8 @@ impl Doc<'_> {
     /// End (exclusive) of the section of the heading at `line` with `level`. A section that is
     /// itself a table (its heading directly over a table row) has no caption below it: a
     /// same-level table title after it is a sibling table ("Medium Armor" after "Light Armor").
-    /// The document's end matter (a legal notice, credits) ends any section it is printed in.
+    /// The document's end matter (a legal notice, credits) and a contents page end any section
+    /// they are printed in.
     fn heading_end(&self, line: usize, level: u8, name: &str) -> usize {
         let own_table = self.table_follows(line);
         self.heads
@@ -362,6 +370,7 @@ impl Doc<'_> {
                 h.line > line
                     && (h.level < level
                         || super::passage::end_matter(&h.title)
+                        || contents_heading(&h.title)
                         || (h.level == level
                             && !is_sub_part(&h.title, name)
                             && !structural_heading(&h.title)

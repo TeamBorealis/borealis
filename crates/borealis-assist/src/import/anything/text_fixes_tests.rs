@@ -149,6 +149,29 @@ fn a_legal_notice_is_left_out_unless_it_is_the_whole_text() {
     assert!(e.normalised.last().unwrap().contains("legal"));
 }
 
+#[test]
+fn a_notice_printed_in_one_paragraph_with_the_intro_leaves_only_the_intro() {
+    let mut d = draft();
+    let e = &mut d.elements[0];
+    e.name = "Welcome".into();
+    e.json["description"] = json!(
+        "<p><strong>Welcome</strong></p><p>Writing and layout by A. Penn. Wyrmforge is a \
+         trademark of Example Press. All rights reserved. This book adds <em>new rules.</em> \
+         Use them with care.</p>"
+    );
+    strip_legal(e);
+    assert_eq!(
+        e.json["description"],
+        "<p><strong>Welcome</strong></p><p>This book adds <em>new rules.</em> Use them with care.</p>"
+    );
+    // A rules sentence before the notice stays; a paragraph of the notice alone goes.
+    e.json["description"] = json!(
+        "<p>Roll twice. All rights reserved.</p><p>\u{a9} 2020 Example Press.</p><p>Then rest.</p>"
+    );
+    strip_legal(e);
+    assert_eq!(e.json["description"], "<p>Roll twice.</p><p>Then rest.</p>");
+}
+
 /// Three text entries printed as the rows of one table (no pick: not options).
 const OMENS: &str = "# Omens\n\nThe sky shows one of these.\n\n\
 | Omen | Meaning |\n|---|---|\n| Red Moon | War comes. |\n| Pale Sun | A long winter. |\n\

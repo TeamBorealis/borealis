@@ -324,3 +324,15 @@ fn the_last_section_stops_at_the_end_matter() {
         "{s:?}"
     );
 }
+
+#[test]
+fn a_section_stops_at_a_contents_heading_of_its_level() {
+    let src = "## On the Lid\n\nThe lid shows a heron in flight.\n\n## Table of Contents\n\nForeword ........ 3\nHerons ........ 5\nReeds ........ 9\n\nDear Reader, this book took me ten winters.\n\n# Herons\n\nTall birds.\n";
+    let s = section(src, "On the Lid", "");
+    assert!(s.contains(&"The lid shows a heron in flight."), "{s:?}");
+    assert!(
+        !s.iter()
+            .any(|l| l.contains("Contents") || l.contains("winters")),
+        "{s:?}"
+    );
+}

@@ -72,7 +72,9 @@ impl SpellBook {
     }
 }
 
-fn candidates(printed: &str) -> Vec<String> {
+/// The names `printed` can stand for: as printed (marks and a closing stop trimmed), without a
+/// parenthetical note, without a marker glued to its last word.
+pub(super) fn candidates(printed: &str) -> Vec<String> {
     let t = printed
         .trim()
         .trim_matches(|c: char| MARKS.contains(&c) || c.is_whitespace() || c == '.');
@@ -100,7 +102,7 @@ fn glued_marker(t: &str) -> Option<usize> {
         .then(|| base + chars[at].0)
 }
 
-fn strip_join(piece: &str) -> &str {
+pub(super) fn strip_join(piece: &str) -> &str {
     let mut p = piece.trim();
     loop {
         let next = ["and ", "or ", "& "]
@@ -198,14 +200,15 @@ pub(crate) fn level_rows(lines: &[&str]) -> Vec<(u32, String)> {
 
 /// The printed lists of cantrips `lines` say you gain: "you learn the a, b, and c cantrips",
 /// "you know the d cantrip" (a verb of [`GRANT_VERBS`], then "the", then the names, in one
-/// sentence).
+/// sentence). The lists keep their printed case when lower-casing keeps the text's length.
 pub(crate) fn named_cantrips(lines: &[&str]) -> Vec<String> {
-    let text = lines
+    let printed = lines
         .iter()
         .flat_map(|l| l.split_whitespace())
         .collect::<Vec<_>>()
-        .join(" ")
-        .to_lowercase();
+        .join(" ");
+    let text = printed.to_lowercase();
+    let cased = printed.len() == text.len();
     let mut out = Vec::new();
     for (at, _) in text.match_indices("cantrip") {
         if !text[..at].ends_with(' ') {
@@ -221,9 +224,16 @@ pub(crate) fn named_cantrips(lines: &[&str]) -> Vec<String> {
             continue;
         };
         let list = words[the + 1..].join(" ");
-        if !list.is_empty() {
-            out.push(list);
+        if list.is_empty() {
+            continue;
         }
+        // The list ends right before "cantrip": its printed text is the same span of `printed`.
+        let from = at - 1 - list.len();
+        out.push(if cased && printed.is_char_boundary(from) {
+            printed[from..at - 1].to_string()
+        } else {
+            list
+        });
     }
     out
 }

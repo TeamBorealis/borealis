@@ -506,7 +506,8 @@ fn reach(lines: &[&str], planned: &PlannedElement, plan: &ImportPlan) -> Option<
     // heading or not.
     let tail = (start + 1..lines.len())
         .find(|&k| super::passage::end_matter_title(lines, k))
-        .unwrap_or(lines.len());
+        .unwrap_or(lines.len())
+        .min(contents_after(lines, start).unwrap_or(lines.len()));
     let next = next_start(lines, plan, &planned.id, start)
         .unwrap_or(lines.len())
         .min(tail);
@@ -536,6 +537,28 @@ fn reach(lines: &[&str], planned: &PlannedElement, plan: &ImportPlan) -> Option<
         own_end: end.min(lines.len()),
         located_end,
     })
+}
+
+/// The first line (0-based) of a contents page after `start`: the heading right over a run of
+/// contents lines (only blank lines between), else the run's first line. A contents page is
+/// navigation: no section reaches over it into the text printed after it.
+fn contents_after(lines: &[&str], start: usize) -> Option<usize> {
+    super::contents::runs(lines)
+        .into_iter()
+        .map(|(s, _)| s)
+        .filter(|&s| s > start)
+        .map(|s| {
+            let mut k = s;
+            while k > start + 1 && lines[k - 1].trim().is_empty() {
+                k -= 1;
+            }
+            if k > start + 1 && is_heading(lines[k - 1]).is_some() {
+                k - 1
+            } else {
+                s
+            }
+        })
+        .min()
 }
 
 /// The first line (0-based) of the next planned passage after `start`, `except` left out; a

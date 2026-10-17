@@ -306,12 +306,65 @@ fn marker(inside: &str) -> Option<&str> {
         .then(|| rest.map_or("", str::trim))
 }
 
+/// Emphasis a transcription wraps a marker label in ("*Summary:*", "<em>Summary</em>:").
+const LABEL_WRAPS: [(&str, &str); 6] = [
+    ("**", "**"),
+    ("__", "__"),
+    ("*", "*"),
+    ("_", "_"),
+    ("<em>", "</em>"),
+    ("<i>", "</i>"),
+];
+
+/// Every emphasised marker label ("*summary:*", "*summary*:", lower case), longest first.
+fn label_forms() -> Vec<String> {
+    let mut out: Vec<String> = MARKER_WORDS
+        .iter()
+        .flat_map(|w| {
+            LABEL_WRAPS
+                .iter()
+                .flat_map(move |(o, c)| [format!("{o}{w}:{c}"), format!("{o}{w}{c}:")])
+        })
+        .collect();
+    out.sort_by_key(|f| std::cmp::Reverse(f.len()));
+    out
+}
+
+/// `html` without emphasised marker labels a transcription opens a text with ("*Summary:* The
+/// races ..." -> "The races ..."): a label at the start, after a tag or after a space. `None`
+/// when there is none.
+fn strip_labels(html: &str) -> Option<String> {
+    let forms = label_forms();
+    let mut out = html.to_string();
+    let mut changed = false;
+    loop {
+        let low = out.to_ascii_lowercase();
+        let found = forms.iter().find_map(|f| {
+            low.match_indices(f.as_str())
+                .map(|(k, _)| k)
+                .find(|&k| k == 0 || low[..k].ends_with(['>', ' ']))
+                .map(|k| (k, f.len()))
+        });
+        let Some((k, len)) = found else { break };
+        let mut end = k + len;
+        if out[end..].starts_with(' ') {
+            end += 1;
+        }
+        out.replace_range(k..end, "");
+        changed = true;
+    }
+    changed.then_some(out)
+}
+
 /// `html` without transcription markers: a bare marker is left out, a marker around a text
-/// ("[Summary: text]") keeps the text. `None` when there is none.
+/// ("[Summary: text]") keeps the text, an emphasised label ("*Summary:*") is left out. `None`
+/// when there is none.
 pub(crate) fn strip_markers(html: &str) -> Option<String> {
+    let labelled = strip_labels(html);
+    let html = labelled.as_deref().unwrap_or(html);
     let mut out = String::with_capacity(html.len());
     let mut rest = html;
-    let mut changed = false;
+    let mut changed = labelled.is_some();
     while let Some(k) = rest.find(['(', '[']) {
         let close = if rest[k..].starts_with('(') { ')' } else { ']' };
         let found = rest[k + 1..]
@@ -442,5 +495,26 @@ mod tests {
             Some("<p>Owls hoot at night. They roost.</p>")
         );
         assert_eq!(strip_markers("<p>Owls (see summary) hoot [1].</p>"), None);
+    }
+
+    #[test]
+    fn emphasised_marker_labels_are_left_out_but_a_plain_word_stays() {
+        assert_eq!(
+            strip_markers("<p><strong>Owls</strong></p><p>*Summary:* Owls hoot.</p>").as_deref(),
+            Some("<p><strong>Owls</strong></p><p>Owls hoot.</p>")
+        );
+        assert_eq!(
+            strip_markers("<p>**Paraphrased:** Owls hoot. <em>Summary</em>: They roost.</p>")
+                .as_deref(),
+            Some("<p>Owls hoot. They roost.</p>")
+        );
+        assert_eq!(
+            strip_markers("<p>*Summary:*</p><p>Owls.</p>").as_deref(),
+            Some("<p>Owls.</p>")
+        );
+        assert_eq!(
+            strip_markers("<p>Summary: owls hoot. A summary*: no.</p>"),
+            None
+        );
     }
 }
