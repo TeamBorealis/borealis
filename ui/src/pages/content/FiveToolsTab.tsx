@@ -1,16 +1,26 @@
-import { useEffect, useState } from "react";
-import type { ContentProgress, FiveToolsImportReport, FiveToolsSource } from "../../api/contract";
+import { useEffect, useRef, useState } from "react";
+import type { ContentProgress, FiveToolsImportReport, FiveToolsSource, PickedPath } from "../../api/contract";
 import { Button, Check, ProgressBar, TextField, useImportNotice } from "../../components";
+import { filesToInputs } from "../../lib/files";
 import { useApi } from "../../state/ApiContext";
+import { usePlatform } from "../../state/platform";
 import { errorMessage } from "../../state/useAsync";
 import { FiveToolsReport } from "./FiveToolsReport";
 import { FiveToolsSources } from "./FiveToolsSources";
 import { Section } from "./Section";
 
-/** Convert the user's own local 5etools `data/` folder. Nothing is downloaded and no default URL exists. */
+/** The phone route (no folder picker there); desktop offers it next to the folder scan. */
+export const ZIP_BUTTON = "Choose a .zip of your 5etools data/ folder";
+
+/** Convert the user's own local 5etools `data/` folder, picked as a folder (desktop) or handed over
+ *  as a `.zip` of it (every platform). Nothing is downloaded and no default URL exists. */
 export function FiveToolsTab() {
   const api = useApi();
   const notice = useImportNotice();
+  const { mobile } = usePlatform();
+  const zipRef = useRef<HTMLInputElement>(null);
+  /** True once the notice was accepted for the chooser just opened, so choosing a file does not ask twice. */
+  const acknowledged = useRef(false);
   const [path, setPath] = useState("");
   /** Token for the folder confirmed in the backend's native dialog (raw paths are never sent). */
   const [folder, setFolder] = useState<string | null>(null);
@@ -23,17 +33,33 @@ export function FiveToolsTab() {
   const [report, setReport] = useState<FiveToolsImportReport | null>(null);
   useEffect(() => api.subscribe("import5etools:progress", setProgress), [api]);
 
+  /** Scan the folder behind a `5etools-folder` token (a picked folder or an unpacked zip). */
+  const scanPick = async (pick: PickedPath) => {
+    setPath(pick.path);
+    setFolder(pick.token);
+    const r = await api.scan5etoolsFolder({ folder: pick.token });
+    setSources(r.sources);
+    setPicked(r.sources.map((s) => s.abbr));
+  };
   const scan = async () => {
     if (!(await notice.ensure())) return;
     setError(null); setReport(null);
     try {
       const [pick] = await api.pickPath({ purpose: "5etools-folder", ...(path ? { startDir: path } : {}) });
-      if (!pick) return;
-      setPath(pick.path);
-      setFolder(pick.token);
-      const r = await api.scan5etoolsFolder({ folder: pick.token });
-      setSources(r.sources);
-      setPicked(r.sources.map((s) => s.abbr));
+      if (pick) await scanPick(pick);
+    } catch (e) { setSources(null); setError(errorMessage(e)); }
+  };
+  const chooseZip = async () => { if (!(await notice.ensure())) return; acknowledged.current = true; zipRef.current?.click(); };
+  const onZip = async (list: FileList | null) => {
+    const [file] = Array.from(list ?? []);
+    if (zipRef.current) zipRef.current.value = "";
+    const ok = acknowledged.current || (!!file && await notice.ensure());
+    acknowledged.current = false;
+    if (!ok || !file) return;
+    setError(null); setReport(null); setSources(null); setPath(file.name);
+    try {
+      const inputs = await filesToInputs([file]);
+      for (const input of inputs) await scanPick(await api.stage5etoolsZip({ file: input }));
     } catch (e) { setSources(null); setError(errorMessage(e)); }
   };
   const run = async () => {
@@ -46,9 +72,15 @@ export function FiveToolsTab() {
     <>
       <Section title="5etools import">
         <div className="stack">
-          <p className="muted">Choose your own local 5etools <code>data/</code> folder. Files are read from disk and converted on this device; nothing is downloaded, and converted packs are for your personal use only.</p>
-          <TextField label="Data folder" value={path} readOnly placeholder="No folder chosen" error={error} />
-          <div><Button aria-label="Scan folder…" variant="primary" onClick={() => void scan()}>Scan folder...</Button></div>
+          <p className="muted">{mobile
+            ? <>Choose a .zip of your own 5etools <code>data/</code> folder.</>
+            : <>Choose your own local 5etools <code>data/</code> folder, or a .zip of it.</>} Files are converted on this device; nothing is downloaded, and converted packs are for your personal use only.</p>
+          <TextField label={mobile ? "Data folder .zip" : "Data folder"} value={path} readOnly placeholder={mobile ? "No file chosen" : "No folder chosen"} error={error} />
+          <div className="v4-content-cmds">
+            {!mobile && <Button aria-label="Scan folder…" variant="primary" onClick={() => void scan()}>Scan folder...</Button>}
+            <Button icon="upload" variant={mobile ? "primary" : undefined} onClick={() => void chooseZip()}>{ZIP_BUTTON}</Button>
+          </div>
+          <input ref={zipRef} type="file" accept=".zip,application/zip" hidden aria-label="Choose a 5etools .zip" onChange={(e) => void onZip(e.target.files)} />
         </div>
       </Section>
       {sources && (

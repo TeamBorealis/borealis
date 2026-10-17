@@ -160,7 +160,6 @@ pub fn redirect_refusal(scheme: &str, hops_so_far: usize) -> Option<String> {
 }
 
 /// An error and its causes on one line (reqwest hides the redirect refusal in the source chain).
-#[cfg(not(any(target_os = "android", target_os = "ios")))]
 fn error_chain(e: &dyn std::error::Error) -> String {
     let mut text = e.to_string();
     let mut cause = e.source();
@@ -172,11 +171,12 @@ fn error_chain(e: &dyn std::error::Error) -> String {
     text
 }
 
-/// The real network client (desktop only).
+/// The real network client. Desktop verifies TLS with the OS trust store; phones use the Mozilla
+/// root set compiled into the app ([`crate::content_fetch_tls`]). The rules are the same on every
+/// platform: https only (redirects included), a timeout, and a size cap.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct HttpsFetcher;
 
-#[cfg(not(any(target_os = "android", target_os = "ios")))]
 impl Fetcher for HttpsFetcher {
     fn get(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, String> {
         use std::io::Read;
@@ -187,11 +187,11 @@ impl Fetcher for HttpsFetcher {
                 Some(why) => a.error(why),
             }
         });
-        let client = reqwest::blocking::Client::builder()
+        let client = crate::content_fetch_tls::client_builder()?
             .timeout(std::time::Duration::from_secs(FETCH_TIMEOUT_SECS))
             .redirect(policy)
             .build()
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| error_chain(&e))?;
         let response = client.get(url).send().map_err(|e| error_chain(&e))?;
         if !response.status().is_success() {
             return Err(format!("the server answered {}", response.status()));
@@ -205,13 +205,6 @@ impl Fetcher for HttpsFetcher {
             return Err("the file is too large".into());
         }
         Ok(body)
-    }
-}
-
-#[cfg(any(target_os = "android", target_os = "ios"))]
-impl Fetcher for HttpsFetcher {
-    fn get(&self, _: &str, _: usize) -> Result<Vec<u8>, String> {
-        Err("downloads are not available on this device".into())
     }
 }
 

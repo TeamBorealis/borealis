@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { AppFolder, ContentProgress } from "../../api/contract";
 import { Button, ProgressBar, useConfirm, useToast } from "../../components";
 import { useApi } from "../../state/ApiContext";
+import { usePlatform } from "../../state/platform";
 import { errorMessage, useAsync } from "../../state/useAsync";
 import { describeIndexUpdate } from "./indexUpdateText";
 import { Section } from "./Section";
@@ -18,6 +19,8 @@ export function IndexesTab() {
   const api = useApi();
   const toast = useToast();
   const confirm = useConfirm();
+  /** Phones have no file manager to open the content folders in. */
+  const { mobile } = usePlatform();
   const indexes = useAsync(() => api.listIndexes(), [api]);
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -92,8 +95,8 @@ export function IndexesTab() {
         <Button onClick={() => void update()} disabled={busy}>Update</Button>
         <Button onClick={() => void api.restartApp().catch((e) => toast.push(errorMessage(e), "error"))}>Restart{pending > 0 && <span className="v4-badge" aria-label={`${pending} updated`}>{pending}</span>}</Button>
         <Button onClick={() => void clear()}>Clear</Button>
-        <Button onClick={() => openFolder("content")}>Open</Button>
-        <Button onClick={() => openFolder("user-content")}>Open user</Button>
+        {!mobile && <Button onClick={() => openFolder("content")}>Open</Button>}
+        {!mobile && <Button onClick={() => openFolder("user-content")}>Open user</Button>}
       </div>
       {progress && progress.phase !== "done" && <div style={{ marginTop: "var(--sp-3)" }}><ProgressBar label="Update progress" value={progress.done} max={Math.max(1, progress.total)} /><span className="small muted" role="status">{progress.message}</span></div>}
       {status && <p className="v4-status" role="status">{status}</p>}

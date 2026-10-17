@@ -171,6 +171,9 @@ fn content_import_sources_never_reference_ai() {
         "content_index.rs",
         "content_index_aurora.rs",
         "content_packs.rs",
+        "content_fivetools_zip.rs",
+        "content_fetch_tls.rs",
+        "zip_read.rs",
     ] {
         assert!(
             names.contains(must),

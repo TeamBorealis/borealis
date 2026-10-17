@@ -88,6 +88,7 @@
     "allow-update-indexes",
     "allow-clear-downloaded-content",
     "allow-scan-5etools-folder",
+    "allow-stage-5etools-zip",
     "allow-import-5etools",
     "allow-ai-status",
     "allow-ai-start-task",

@@ -1341,6 +1341,16 @@
     "name": "CharacterSnapshot"
    }
   },
+  "stage_5etools_zip": {
+   "args": {
+    "file": false
+   },
+   "method": "stage5etoolsZip",
+   "response": {
+    "k": "ref",
+    "name": "PickedPath"
+   }
+  },
   "store_item": {
    "args": {
     "characterId": false,

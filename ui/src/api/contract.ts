@@ -34,6 +34,7 @@ import type {
   DataDirs,
   SecondaryContentResult,
   FileDrop,
+  ImportFileInput,
   PickPurpose,
   PickedPath,
   CharacterDetails,
@@ -245,6 +246,8 @@ export interface ApiMethods {
   clearDownloadedContent(): Promise<ContentPack[]>;
   /** Read-only scan of the user's own 5etools `data/` folder; lists the source books found. */
   scan5etoolsFolder(args: { folder: string }): Promise<FiveToolsScan>;
+  /** Unpack a `.zip` of the user's 5etools `data/` folder (phones have no folder picker; desktop accepts it too). Returns a `5etools-folder` token for `scan5etoolsFolder` and `import5etools`. */
+  stage5etoolsZip(args: { file: ImportFileInput }): Promise<PickedPath>;
   /** Convert the chosen books and install the packs; emits `content:progress`. */
   import5etools(args: { request: FiveToolsImportRequest }): Promise<FiveToolsImportReport>;
 
@@ -434,6 +437,7 @@ export const COMMANDS = {
   updateIndexes: "update_indexes",
   clearDownloadedContent: "clear_downloaded_content",
   scan5etoolsFolder: "scan_5etools_folder",
+  stage5etoolsZip: "stage_5etools_zip",
   import5etools: "import_5etools",
   getSettings: "get_settings",
   saveSettings: "save_settings",

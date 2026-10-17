@@ -83,6 +83,7 @@ const COMMANDS: &[&str] = &[
     "update_indexes",
     "clear_downloaded_content",
     "scan_5etools_folder",
+    "stage_5etools_zip",
     "import_5etools",
     "ai_status",
     "ai_start_task",

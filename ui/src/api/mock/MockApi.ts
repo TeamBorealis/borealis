@@ -518,6 +518,7 @@ export class MockApi implements Api {
   async removeIndex({ url }: { url: string }) { await this.tick(); return this.content.removeIndex(url); }
   async updateIndexes() { await this.tick(); return this.content.update(); }
   async scan5etoolsFolder({ folder }: { folder: string }) { await this.tick(); return this.content.scan5etools(this.picks.resolve(folder, "5etools-folder")); }
+  async stage5etoolsZip({ file }: Parameters<Api["stage5etoolsZip"]>[0]) { await this.tick(); return this.picks.stageZip(file); }
   async import5etools({ request }: Parameters<Api["import5etools"]>[0]) {
     await this.tick();
     return this.content.import5etools(this.picks.resolve(request.folder, "5etools-folder"), request);

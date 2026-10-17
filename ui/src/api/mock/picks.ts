@@ -59,6 +59,15 @@ export class MockPicks {
     return out;
   }
 
+  /** `stage_5etools_zip`: a `.zip` becomes a `5etools-folder` token (the mock does not unpack it). */
+  stageZip(file: { fileName: string; contentBase64: string }): PickedPath {
+    if (ext(file.fileName) !== "zip") throw apiError("invalid_argument", "Choose a .zip of your 5etools data/ folder.");
+    if (!file.contentBase64) throw apiError("invalid_argument", "That .zip file is empty or too large to import.");
+    const token = `pick_mock_${++this.seq}`;
+    this.picks.set(token, { path: `/home/me/.zip/${file.fileName}/data`, purpose: "5etools-folder" });
+    return { token, name: file.fileName, path: file.fileName };
+  }
+
   /** `take_picked_files`: all tokens are checked before any is consumed. */
   read(purpose: PickPurpose, tokens: string[]): OpenedFile[] {
     const allowed = READABLE[purpose];

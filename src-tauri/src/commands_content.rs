@@ -8,9 +8,10 @@ use crate::content_dto::{
 };
 use crate::content_index::HttpsFetcher;
 use crate::content_packs::EventSink;
-use crate::content_preview::{ImportPreview, OpenedFile, PreviewImportRequest};
+use crate::content_preview::{ImportFileInput, ImportPreview, OpenedFile, PreviewImportRequest};
 use crate::dto::CharacterSnapshot;
 use crate::error::{ApiError, ApiResult};
+use crate::picked_paths::PickedPathDto;
 use crate::state::AppState;
 use serde_json::Value;
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -241,6 +242,13 @@ pub fn clear_downloaded_content(app: AppHandle, state: S<'_>) -> ApiResult<Vec<C
 #[tauri::command(async)]
 pub fn scan_5etools_folder(state: S<'_>, folder: String) -> ApiResult<FiveToolsScan> {
     state.scan_5etools_folder(&folder)
+}
+
+/// Unpack a `.zip` of a 5etools `data/` folder (phones have no folder picker; desktop accepts it
+/// too) and return a `5etools-folder` token for `scan_5etools_folder` and `import_5etools`.
+#[tauri::command(async)]
+pub fn stage_5etools_zip(state: S<'_>, file: ImportFileInput) -> ApiResult<PickedPathDto> {
+    state.stage_5etools_zip(&file)
 }
 
 #[tauri::command]
