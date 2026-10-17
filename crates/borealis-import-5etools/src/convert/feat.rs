@@ -1,6 +1,6 @@
 //! Feats and prerequisites.
 
-use super::mech::{feat_category_label, AbilitySource, Mech};
+use super::mech::{feat_category_also, feat_category_label, AbilitySource, Mech};
 use super::optfeat::optional_feature_selects;
 use super::prereq::apply_prerequisites;
 use super::spell_blocks::{self, Carrier};
@@ -44,6 +44,9 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
 
     if let Some(cat) = &feat.category {
         el.supports.push(feat_category_label(cat).to_string());
+        if let Some(also) = feat_category_also(cat) {
+            el.supports.push(also.to_string());
+        }
         el.data
             .insert("category".into(), Value::String(cat.clone()));
     }

@@ -279,12 +279,24 @@ impl<'a> Mech<'a> {
             }
             self.pick_from("Proficiency", "Tool Proficiency", &ids, count);
         } else {
-            let tags: Vec<&str> = specials
+            let mut terms: Vec<String> = specials
                 .iter()
                 .filter_map(|s| Self::tool_choice_tag(s))
+                .map(str::to_string)
                 .collect();
-            self.pick_tag("Proficiency", "Tool Proficiency", &tags.join("||"), count);
-            if specials.len() != from.len() {
+            // single tools join the categories as element ids (`Artisan tools||ID_...`)
+            let singles: Vec<&String> = from
+                .iter()
+                .filter(|s| Self::tool_choice_tag(s).is_none())
+                .collect();
+            let ids: Vec<String> = singles
+                .iter()
+                .filter_map(|s| core::tool_prof_id(s))
+                .collect();
+            let complete = ids.len() == singles.len();
+            terms.extend(ids);
+            self.pick_tag("Proficiency", "Tool Proficiency", &terms.join("||"), count);
+            if !complete {
                 self.partial.push("a tool choice mixing categories and single tools was widened to the categories".into());
             }
         }
@@ -299,9 +311,8 @@ impl<'a> Mech<'a> {
                 match k.as_str() {
                     "choose" | "all" => {
                         let filter = v.get("fromFilter").and_then(Value::as_str).unwrap_or("?");
-                        // a whole category ("two martial weapons") stays a note: a character
-                        // proficient with the category is offered nothing (an empty choice)
-                        let narrowed = filter.contains("property=");
+                        // a whole category ("two martial weapons") is a choice too: for a
+                        // character proficient with all of them the engine counts it as done
                         let all = (k == "all")
                             .then(|| weapon_filter_matches(filter))
                             .flatten()
@@ -314,7 +325,7 @@ impl<'a> Mech<'a> {
                             continue;
                         }
                         match (k.as_str(), weapon_filter_supports(filter)) {
-                            ("choose", Some(supports)) if narrowed => self.pick_tag(
+                            ("choose", Some(supports)) => self.pick_tag(
                                 "Proficiency",
                                 "Weapon Proficiency",
                                 &supports,
@@ -739,10 +750,23 @@ pub fn feat_category_label(code: &str) -> &'static str {
     match code {
         "O" => "Origin Feat",
         "G" => "General Feat",
-        "D" | "DG" => "Dragonmark Feat",
+        "D" => "Dragonmark Feat",
+        "DG" => "Dark Gift Feat",
         "FS" | "FS:P" | "FS:R" => "Fighting Style Feat",
         "EB" => "Epic Boon Feat",
         _ => "Other Feat",
+    }
+}
+
+/// The category whose choices also offer a feat of `code`: a Dragonmark feat (EFA) can be
+/// taken "anytime they have an unrestricted feat choice" (a General feat choice), a Dark Gift
+/// (RHW) "whenever you would gain a feat from the Origin category".
+#[must_use]
+pub fn feat_category_also(code: &str) -> Option<&'static str> {
+    match code {
+        "D" => Some("General Feat"),
+        "DG" => Some("Origin Feat"),
+        _ => None,
     }
 }
 
@@ -866,6 +890,18 @@ mod tests {
             ":ID_PROFICIENCY_TOOL_PROFICIENCY_DISGUISE_KIT|ID_PROFICIENCY_TOOL_PROFICIENCY_MUSICAL_INSTRUMENT"
         )));
         assert!(single.partial.is_empty(), "{:?}", single.partial);
+        // a category and a single tool (Guild Merchant): one choice of the tag or the id
+        let mut mixed = Mech::new(&sh, "M");
+        mixed.tools(&[json!({"choose": {"from": ["anyArtisansTool", "navigator's tools"]}})]);
+        assert!(
+            ids_of(&mixed)
+                .iter()
+                .any(|i| i
+                    .ends_with(":Artisan tools||ID_PROFICIENCY_TOOL_PROFICIENCY_NAVIGATORS_TOOLS")),
+            "{:?}",
+            ids_of(&mixed)
+        );
+        assert!(mixed.partial.is_empty(), "{:?}", mixed.partial);
         m.weapons(&[
             json!({"simple": true, "martial": true, "battleaxe|phb": true, "light crossbow|phb": true}),
             json!({"choose": {"fromFilter": "type=martial weapon", "count": 1}}),
@@ -883,8 +919,9 @@ mod tests {
             .any(|i| i.contains("Artisan tools||Musical Instrument")));
         assert!(ids.contains(&"grant:ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS".to_string()));
         assert!(ids.contains(&"grant:ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_LIGHT".to_string()));
-        assert!(!ids.iter().any(|i| i.ends_with(":Weapon&&Martial")));
-        assert!(ids.contains(&"select:Proficiency:Weapon Proficiency (T):Weapon&&Melee&&!ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED".to_string()));
+        // a whole category: a tag choice the engine counts as done when all are known
+        assert!(ids.iter().any(|i| i.ends_with(":Weapon&&Martial")));
+        assert!(ids.contains(&"select:Proficiency:Weapon Proficiency 2 (T):Weapon&&Melee&&!ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED".to_string()));
         // `all` by filter (XPHB Monk): every matching core weapon, no note
         for w in ["SCIMITAR", "SHORTSWORD", "CROSSBOW_HAND"] {
             assert!(ids.contains(&format!("grant:ID_PROFICIENCY_WEAPON_PROFICIENCY_{w}")));
@@ -893,7 +930,7 @@ mod tests {
         assert!(!m.partial.iter().any(|p| p.contains("property=light\"")));
         assert!(ids.contains(&"grant:ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS".to_string()));
         assert!(ids.contains(&"grant:ID_PROFICIENCY_SAVINGTHROW_CONSTITUTION".to_string()));
-        assert!(m.unmapped.contains_key("weapon"));
+        assert!(!m.unmapped.contains_key("weapon"), "{:?}", m.unmapped);
         assert!(m.unmapped.contains_key("tool"));
         assert!(m.unmapped.contains_key("armor"));
         assert!(m.unmapped.contains_key("saving throw"));
@@ -1017,5 +1054,9 @@ mod tests {
         assert!(ids.iter().any(|i| i.starts_with("select:Language")));
         assert_eq!(feat_category_label("EB"), "Epic Boon Feat");
         assert_eq!(feat_category_label("zz"), "Other Feat");
+        assert_eq!(feat_category_label("DG"), "Dark Gift Feat");
+        assert_eq!(feat_category_also("D"), Some("General Feat"));
+        assert_eq!(feat_category_also("DG"), Some("Origin Feat"));
+        assert_eq!(feat_category_also("G"), None);
     }
 }

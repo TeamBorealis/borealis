@@ -149,6 +149,69 @@ pub fn convert_condition(sh: &Shared, st: &mut State, ent: &Ent, tag: &str) -> C
     }
 }
 
+/// Label of a 5etools character creation option type.
+fn char_option_label(code: &str) -> &'static str {
+    match code {
+        "CS" => "Character Secret",
+        "SG" => "Supernatural Gift",
+        "DG" => "Dark Gift",
+        "RF:B" => "Background Feature Option",
+        _ => "Character Option",
+    }
+}
+
+/// A character creation option (`charoption`): an IDRotF character secret, a MOT/EGW
+/// supernatural gift, a VRGR dark gift, a replacement background feature. Kept as rules text
+/// (`Rules Glossary Entry`, tagged with its kind); a secret is text by nature, the others
+/// have rules no builder choice offers yet, and say so.
+pub fn convert_char_option(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
+    let r: Reference = match model::parse(&ent.raw) {
+        Ok(r) => r,
+        Err(e) => {
+            st.report.skipped(
+                &ent.file,
+                "charoption",
+                &ent.label(),
+                &format!("invalid shape: {e}"),
+            );
+            return Conv::default();
+        }
+    };
+    let resolver = |k: RefKind, n: &str, s: &str| sh.link(k, n, s);
+    let mut renderer = Renderer::new(&resolver);
+    let id = st.ids.named(IdKind::CharOption, &ent.source, &r.name);
+    let mut el = new_element(
+        &id,
+        &r.name,
+        "Rules Glossary Entry",
+        &sh.source_display(&ent.source),
+        ent.ruleset,
+    );
+    let codes: Vec<&str> = r
+        .extra
+        .get("optionType")
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default();
+    let labels: Vec<&str> = codes.iter().map(|c| char_option_label(c)).collect();
+    el.supports = std::iter::once("Character Option")
+        .chain(labels.iter().copied())
+        .map(str::to_string)
+        .collect();
+    el.description = renderer.entries(&r.entries);
+    drain_renderer(st, &renderer, &ent.file, &r.name);
+    let partial = labels
+        .iter()
+        .filter(|l| **l != "Character Secret")
+        .map(|l| format!("character option ({l}) kept as text: no builder choice offers it"))
+        .take(1)
+        .collect();
+    Conv {
+        elements: vec![el],
+        partial,
+    }
+}
+
 /// Catalog entries the core pack already covers are reported as skipped.
 pub fn skip_catalog(st: &mut State, ent: &Ent, kind: &str) {
     st.report.skipped(
@@ -177,6 +240,37 @@ mod tests {
             file: "languages.json".into(),
             raw,
         }
+    }
+
+    #[test]
+    fn character_options_are_kept_as_tagged_text() {
+        let sh = Shared::default();
+        let mut st = State::default();
+        let gift = ent(
+            json!({"name": "Lucky Star", "source": "ZZZ", "optionType": ["SG"],
+            "entries": ["You were born under a lucky star."]}),
+        );
+        let conv = convert_char_option(&sh, &mut st, &gift);
+        let el = &conv.elements[0];
+        assert_eq!(el.id, "ID_5ET_ZZZ_CHAROPTION_LUCKY_STAR");
+        assert_eq!(el.ty, "Rules Glossary Entry");
+        assert_eq!(el.supports, ["Character Option", "Supernatural Gift"]);
+        assert_eq!(
+            conv.partial,
+            ["character option (Supernatural Gift) kept as text: no builder choice offers it"]
+        );
+        assert_eq!(
+            crate::report::reason_code(&conv.partial[0]),
+            crate::report::code::CHARACTER_OPTION
+        );
+        // a secret is only text: nothing is lost
+        let secret = ent(
+            json!({"name": "Hidden Heir", "source": "ZZZ", "optionType": ["CS"],
+            "entries": ["I am the heir."]}),
+        );
+        assert!(convert_char_option(&sh, &mut st, &secret)
+            .partial
+            .is_empty());
     }
 
     #[test]

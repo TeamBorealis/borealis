@@ -3,6 +3,7 @@ pub mod cli;
 pub mod convert;
 pub mod copy;
 pub mod core_ids;
+pub mod editions;
 pub mod error;
 pub mod folder;
 pub mod ids;

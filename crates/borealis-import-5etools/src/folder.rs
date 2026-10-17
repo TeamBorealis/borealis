@@ -10,7 +10,8 @@ use std::path::{Path, PathBuf};
 pub struct RawEntry {
     /// Path relative to the data folder, `/` separated.
     pub file: String,
-    /// The entry exactly as in the file.
+    /// The entry as in the file (an unflagged entry of a book published since the 2024
+    /// Player's Handbook gains `edition: "one"`, [`crate::editions`]).
     pub value: Value,
 }
 
@@ -28,6 +29,9 @@ pub struct Loaded {
     /// Catalog of each source by upper-case id: `book` (`books.json`), `adventure`
     /// (`adventures.json`) or `homebrew` (a homebrew file's `_meta`).
     pub categories: BTreeMap<String, String>,
+    /// Publication date (`YYYY-MM-DD`) of each source by upper-case id, from the `published`
+    /// field of `books.json` / `adventures.json` (IM8, [`crate::editions`]).
+    pub published: BTreeMap<String, String>,
     /// Relative paths of every file that was read, sorted.
     pub files: Vec<String>,
     /// Files that could not be read or parsed: `(path, reason)`.
@@ -60,6 +64,7 @@ const PROPS: &[&str] = &[
     "classFeature",
     "subclassFeature",
     "spell",
+    "charoption",
 ];
 
 /// Fluff properties and the entity property they belong to.
@@ -88,6 +93,7 @@ const ROOT_FILES: &[&str] = &[
     "skills.json",
     "senses.json",
     "conditionsdiseases.json",
+    "charcreationoptions.json",
     "books.json",
     "adventures.json",
     "fluff-races.json",
@@ -211,6 +217,7 @@ pub fn load(
         loaded.files.push(rel.clone());
         absorb(&mut loaded, rel, value);
     }
+    crate::editions::mark_late_entries(&mut loaded);
     Ok(loaded)
 }
 
@@ -260,6 +267,9 @@ fn absorb(loaded: &mut Loaded, rel: &str, value: Value) {
                     .or_else(|| b.get("id"))
                     .and_then(Value::as_str);
                 let name = b.get("name").and_then(Value::as_str);
+                if let (Some(id), Some(date)) = (id, b.get("published").and_then(Value::as_str)) {
+                    loaded.published.insert(id.to_uppercase(), date.to_string());
+                }
                 if let (Some(id), Some(name)) = (id, name) {
                     loaded.books.insert(id.to_uppercase(), name.to_string());
                     loaded

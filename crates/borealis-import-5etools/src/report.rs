@@ -49,6 +49,10 @@ pub mod code {
     pub const IGNORED_RULE: &str = "ENGINE_UNKNOWN_RULE_KIND";
     /// No code matches the note (a new kind of loss: classify it).
     pub const UNCLASSIFIED: &str = "UNCLASSIFIED";
+    /// A character creation option kept as text: no builder choice offers it.
+    pub const CHARACTER_OPTION: &str = "ENGINE_NO_CHARACTER_OPTION_SLOT";
+    /// A sidekick class (TCE): it levels a companion creature, not a character.
+    pub const SIDEKICK_CLASS: &str = "OUT_OF_SCOPE_SIDEKICK_CLASS";
 }
 
 /// The reason code of a partial-conversion note (see [`code`]).
@@ -79,8 +83,22 @@ pub fn reason_code(reason: &str) -> &'static str {
         code::UNCHECKED_PREREQUISITE
     } else if reason.starts_with("progression key") {
         code::UNKNOWN_PROGRESSION
+    } else if reason.starts_with("character option") {
+        code::CHARACTER_OPTION
+    } else if reason.starts_with("sidekick class") {
+        code::SIDEKICK_CLASS
     } else {
         code::UNCLASSIFIED
+    }
+}
+
+/// Reason code of a skip note, when the skip is classified (empty otherwise).
+#[must_use]
+pub fn skip_code(reason: &str) -> &'static str {
+    if reason.starts_with("sidekick class") {
+        code::SIDEKICK_CLASS
+    } else {
+        ""
     }
 }
 
@@ -243,7 +261,7 @@ impl ReportBuilder {
             kind: kind.to_string(),
             file: file.to_string(),
             reason: reason.to_string(),
-            code: String::new(),
+            code: skip_code(reason).to_string(),
         });
     }
 
@@ -285,6 +303,16 @@ impl ReportBuilder {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn a_sidekick_class_skip_carries_its_code() {
+        assert_eq!(
+            skip_code("sidekick class: it levels a companion creature, not a character"),
+            code::SIDEKICK_CLASS
+        );
+        assert_eq!(skip_code("class has no hit die"), "");
+    }
+
     use super::*;
 
     #[test]

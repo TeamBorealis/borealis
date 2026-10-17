@@ -50,6 +50,8 @@ pub enum IdKind {
     ItemProperty,
     /// Condition, disease or status.
     Condition,
+    /// Character creation option (`charoption`: secrets, supernatural gifts, dark gifts).
+    CharOption,
 }
 
 impl IdKind {
@@ -77,6 +79,7 @@ impl IdKind {
             Self::Source => "SOURCE",
             Self::ItemProperty => "ITEMPROP",
             Self::Condition => "CONDITION",
+            Self::CharOption => "CHAROPTION",
         }
     }
 }

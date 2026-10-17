@@ -268,7 +268,13 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
         }
         mech.push(rule);
     }
-    if !sub {
+    if sub {
+        // a subclass feature states no choices, but may grant half proficiency (Champion)
+        let plain = Renderer::plain(&f.entries).to_lowercase();
+        for r in super::feature_rules::half_proficiency(&plain) {
+            mech.push(r);
+        }
+    } else {
         let plain = Renderer::plain(&f.entries);
         let stated = super::feature_rules::feature_rules(&super::feature_rules::FeatureText {
             name: &f.name,

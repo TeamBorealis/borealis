@@ -28,6 +28,10 @@ pub fn bonus_stats(it: &Item, mech: &mut Mech<'_>) {
         ("bonusSpellAttack", "spellcasting:attack"),
         ("bonusSpellSaveDc", "spellcasting:dc"),
         ("bonusProficiencyBonus", "proficiency"),
+        // built-in groups: every ability check (skills, passives, initiative) and the
+        // Constitution save to keep concentration
+        ("bonusAbilityCheck", "ability checks"),
+        ("bonusSavingThrowConcentration", "concentration:save"),
     ] {
         let n = match it.extra.get(key) {
             Some(Value::String(s)) => signed_value(s),
@@ -95,8 +99,10 @@ fn languages_in(sh: &Shared, text: &str) -> Vec<String> {
 fn proficiency_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r"\b[Yy]ou (?:have|gain) proficiency (?:with|in) ([^.;]*)")
-            .expect("proficiency pattern")
+        Regex::new(
+            r"\b(?:[Yy]ou (?:have|gain) proficiency (?:with|in)|considered proficient in) ([^.;]*)",
+        )
+        .expect("proficiency pattern")
     })
 }
 
@@ -140,8 +146,17 @@ fn proficiencies_in(text: &str) -> Granted {
                 .extend(skills.into_iter().map(|s| json!({ s: true })));
         }
         if !named {
-            // "proficiency with greatswords": one plain weapon name
-            let word = strip_tags(rest).trim().to_lowercase();
+            // "proficiency with greatswords, and ...": one plain weapon name
+            let plain = strip_tags(rest).to_lowercase();
+            let word = plain
+                .split([',', '('])
+                .next()
+                .unwrap_or("")
+                .split(" and ")
+                .next()
+                .unwrap_or("")
+                .trim()
+                .to_string();
             let single = word.strip_suffix('s').unwrap_or(&word);
             if core_ids::weapon_prof_id(single).is_some() {
                 g.weapons.push(json!({ single: true }));
@@ -149,6 +164,22 @@ fn proficiencies_in(text: &str) -> Granted {
         }
     }
     g
+}
+
+/// "You are considered proficient with this armor", "you have proficiency with it": the item
+/// makes its wearer or wielder proficient with itself (setter `proficient`).
+#[must_use]
+pub fn proficient_with_itself(it: &Item) -> bool {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    let re = RE.get_or_init(|| {
+        Regex::new(
+            r"(?i)\b(?:considered (?:proficient|trained) with|you have proficiency with|you are proficient with) (?:this (?:armor|weapon|item|tool)|it|the sword)\b",
+        )
+        .expect("self proficiency pattern")
+    });
+    let mut texts = Vec::new();
+    strings(&Value::Array(it.entries.clone()), &mut texts);
+    texts.iter().any(|t| re.is_match(&strip_tags(t)))
 }
 
 /// Languages and proficiencies of items flagged `grantsLanguage` / `grantsProficiency`.
@@ -185,7 +216,7 @@ pub fn granted_rules(sh: &Shared, it: &Item, mech: &mut Mech<'_>, partial: &mut 
             all.tools.extend(g.tools);
             all.weapons.extend(g.weapons);
         }
-        if all == Granted::default() {
+        if all == Granted::default() && !proficient_with_itself(it) {
             partial.push("the proficiencies the item grants were not found in its text".into());
         }
         mech.skills(&all.skills);
@@ -200,6 +231,41 @@ mod tests {
 
     fn item(raw: Value) -> Item {
         crate::model::parse(&raw).unwrap()
+    }
+
+    #[test]
+    fn items_that_make_you_proficient_with_themselves() {
+        for text in [
+            "You are considered proficient with this armor even if you lack proficiency with medium armor.",
+            "You are considered trained with this armor even if you lack training with Medium armor.",
+            "You have proficiency with it, and it deals 1d8 slashing damage on a hit.",
+            "You are considered proficient with the sword, and you have a +1 bonus.",
+        ] {
+            let it = item(json!({"name": "T", "source": "ZZZ", "entries": [text]}));
+            assert!(proficient_with_itself(&it), "{text}");
+        }
+        let deck = item(json!({"name": "D", "source": "ZZZ",
+            "entries": ["A magic weapon with which you are proficient appears."]}));
+        assert!(!proficient_with_itself(&deck));
+        // the wielder's own proficiencies, named in the text
+        let (rules, partial) = rules_of(json!({"name": "Blade", "source": "ZZZ",
+            "grantsProficiency": true, "entries": [
+            "While attuned to it, you have proficiency with greatswords, and you can use Charisma."]}));
+        assert!(partial.is_empty(), "{partial:?}");
+        assert!(
+            rules.iter().any(|r| matches!(r, Rule::Grant(g)
+            if g.id == "ID_PROFICIENCY_WEAPON_PROFICIENCY_GREATSWORD")),
+            "{rules:?}"
+        );
+        let (rules, partial) = rules_of(json!({"name": "Key", "source": "ZZZ",
+            "grantsProficiency": true, "entries": [
+            "When using the key, you are considered proficient in {@item thieves' tools|PHB}."]}));
+        assert!(partial.is_empty(), "{partial:?}");
+        assert!(
+            rules.iter().any(|r| matches!(r, Rule::Grant(g)
+            if g.id == "ID_PROFICIENCY_TOOL_PROFICIENCY_THIEVES_TOOLS")),
+            "{rules:?}"
+        );
     }
 
     fn rules_of(raw: Value) -> (Vec<Rule>, Vec<String>) {

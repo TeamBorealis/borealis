@@ -10,7 +10,7 @@
 //!   table's "Weapon Mastery" column ([`MASTERY_KEY`] in `Class.data.progression`) or the number
 //!   the text states.
 
-use super::build::{custom, select};
+use super::build::{custom, select, stat};
 use crate::core_ids;
 use borealis_content::Rule;
 use regex::Regex;
@@ -54,7 +54,66 @@ pub fn feature_rules(f: &FeatureText<'_>) -> Vec<Rule> {
     rules.extend(skill_expertise(f, &lower));
     rules.extend(spellbook_choices(f, &lower));
     rules.extend(weapon_mastery(&lower));
+    rules.extend(half_proficiency(&lower));
     rules
+}
+
+/// Skills by the ability they use (Constitution has none).
+const SKILL_ABILITIES: [(&str, &[&str]); 5] = [
+    ("strength", &["athletics"]),
+    ("dexterity", &["acrobatics", "sleight of hand", "stealth"]),
+    (
+        "intelligence",
+        &["arcana", "history", "investigation", "nature", "religion"],
+    ),
+    (
+        "wisdom",
+        &[
+            "animal handling",
+            "insight",
+            "medicine",
+            "perception",
+            "survival",
+        ],
+    ),
+    (
+        "charisma",
+        &["deception", "intimidation", "performance", "persuasion"],
+    ),
+];
+
+/// "add half your proficiency bonus (round up) to any Strength, Dexterity, or Constitution
+/// check you make that doesn't already use your proficiency bonus" (Remarkable Athlete; Jack of
+/// All Trades says "any ability check"): half proficiency on each skill of those abilities the
+/// character is not proficient in, the shape of the bundled SRD classes. `lower` is the
+/// lower-cased plain text.
+#[must_use]
+pub fn half_proficiency(lower: &str) -> Vec<Rule> {
+    let re = Regex::new(
+        r"add half your proficiency bonus,? \(?(round(?:ed)? (?:up|down))?\)?,? to any ([a-z, ]+?) checks? you make that doesn['’]t already (?:use|include) your proficiency bonus",
+    );
+    let Some(caps) = re.ok().and_then(|re| re.captures(lower)) else {
+        return Vec::new();
+    };
+    let value = if caps.get(1).is_some_and(|m| m.as_str().ends_with("up")) {
+        "proficiency:half:up"
+    } else {
+        "proficiency:half"
+    };
+    let phrase = &caps[2];
+    let every = phrase.trim() == "ability";
+    SKILL_ABILITIES
+        .iter()
+        .filter(|(ability, _)| every || phrase.contains(ability))
+        .flat_map(|(_, skills)| skills.iter())
+        .filter_map(|skill| {
+            let id = core_ids::skill_id(skill)?;
+            Some(Rule::Stat(borealis_content::StatRule {
+                requirements: Some(format!("!{id}")),
+                ..stat(&format!("{skill}:misc"), value)
+            }))
+        })
+        .collect()
 }
 
 /// "Choose one of the following skills in which you have proficiency: A, B, or C. You have
@@ -191,6 +250,38 @@ pub fn table_progression(groups: &[Value]) -> Option<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn stats(rules: &[Rule]) -> Vec<(String, String, Option<String>)> {
+        rules
+            .iter()
+            .filter_map(|r| match r {
+                Rule::Stat(s) => Some((s.name.clone(), s.value.clone(), s.requirements.clone())),
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn half_proficiency_on_the_skills_of_the_named_abilities() {
+        let athlete = half_proficiency(
+            "starting at 7th level, you can add half your proficiency bonus (round up) to any strength, dexterity, or constitution check you make that doesn't already use your proficiency bonus.",
+        );
+        let got = stats(&athlete);
+        assert_eq!(got.len(), 4, "{got:?}");
+        assert!(got.contains(&(
+            "athletics:misc".into(),
+            "proficiency:half:up".into(),
+            Some("!ID_PROFICIENCY_SKILL_ATHLETICS".into())
+        )));
+        assert!(got.iter().any(|(n, _, _)| n == "sleight of hand:misc"));
+        let jack = half_proficiency(
+            "you can add half your proficiency bonus, rounded down, to any ability check you make that doesn't already include your proficiency bonus.",
+        );
+        let got = stats(&jack);
+        assert_eq!(got.len(), 18);
+        assert!(got.iter().all(|(_, v, _)| v == "proficiency:half"));
+        assert!(half_proficiency("you gain proficiency in athletics.").is_empty());
+    }
 
     fn rules(name: &str, level: u32, text: &str) -> Vec<Rule> {
         feature_rules(&FeatureText {

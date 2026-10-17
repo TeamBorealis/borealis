@@ -85,6 +85,21 @@ pub fn weapon_filter_matches(filter: &str) -> Option<Vec<String>> {
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn a_whole_category_is_a_tag_choice() {
+        for f in [
+            "type=martial weapon|miscellaneous=mundane",
+            "type=martial weapon;mundane weapon|miscellaneous=mundane",
+        ] {
+            assert_eq!(
+                weapon_filter_supports(f).as_deref(),
+                Some("Weapon&&Martial"),
+                "{f}"
+            );
+        }
+    }
+
     use super::*;
     use serde_json::Value;
     use std::collections::BTreeSet;

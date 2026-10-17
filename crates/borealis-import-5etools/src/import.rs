@@ -49,6 +49,7 @@ struct Ents {
     groups: Vec<Ent>,
     masteries: Vec<Ent>,
     languages: Vec<Ent>,
+    charoptions: Vec<Ent>,
     conditions: Vec<(&'static str, Ent)>,
     catalog: Vec<(&'static str, Ent)>,
 }
@@ -69,6 +70,7 @@ impl Ents {
             + self.groups.len()
             + self.masteries.len()
             + self.languages.len()
+            + self.charoptions.len()
             + self.conditions.len()
             + self.catalog.len()
     }
@@ -181,8 +183,10 @@ fn to_ents(
 ) -> Vec<Ent> {
     let mut out = Vec::new();
     for (raw, file) in items {
+        // item properties have no name of their own, only an abbreviation (`2H`, `V`)
         let name = raw
             .get("name")
+            .or_else(|| raw.get("abbreviation"))
             .and_then(Value::as_str)
             .unwrap_or("")
             .to_string();
@@ -245,6 +249,7 @@ fn select_entities(
         groups: get("itemGroup", "itemGroup", st),
         masteries: get("itemMastery", "itemMastery", st),
         languages: get("language", "language", st),
+        charoptions: get("charoption", "charoption", st),
         ..Ents::default()
     };
     e.conditions = tagged(get("condition", "condition", st), "condition");
@@ -561,6 +566,9 @@ fn convert_all(sh: &Shared, e: &Ents, st: &mut State, prog: &mut Progress<'_, '_
     run_group("language", &e.languages, st, prog, |st, ent| {
         misc::convert_language(sh, st, ent)
     });
+    run_group("charoption", &e.charoptions, st, prog, |st, ent| {
+        misc::convert_char_option(sh, st, ent)
+    });
     for (tag, ent) in &e.conditions {
         let conv = misc::convert_condition(sh, st, ent, tag);
         if !conv.elements.is_empty() {
@@ -586,11 +594,14 @@ fn ids_in(value: &Value, re: &Regex, out: &mut BTreeSet<String>) {
             out.extend(re.find_iter(s).map(|m| m.as_str().to_string()));
         }
         Value::Array(a) => a.iter().for_each(|v| ids_in(v, re, out)),
-        // `renamed_from` names a former id of the element itself, not a reference
-        Value::Object(m) => m
-            .iter()
-            .filter(|(k, _)| k.as_str() != "renamed_from")
-            .for_each(|(_, v)| ids_in(v, re, out)),
+        // `renamed_from` names a former id of the element itself, and a toggle's `id` names
+        // the toggle (`<ITEM>_SPEED`): neither is a reference
+        Value::Object(m) => {
+            let toggle = m.get("kind").and_then(Value::as_str) == Some("toggle");
+            m.iter()
+                .filter(|(k, _)| k.as_str() != "renamed_from" && !(toggle && k.as_str() == "id"))
+                .for_each(|(_, v)| ids_in(v, re, out));
+        }
         _ => {}
     }
 }

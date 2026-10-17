@@ -19,6 +19,9 @@ const BUNDLED_MASTERIES: [&str; 8] = [
     "cleave", "graze", "nick", "push", "sap", "slow", "topple", "vex",
 ];
 
+/// Built-in statistic group added to every speed a character has.
+const ALL_SPEEDS: &str = "speed:all";
+
 const SPEED_MODES: [&str; 5] = ["walk", "fly", "climb", "swim", "burrow"];
 
 fn int_of(v: &Value) -> Option<i64> {
@@ -150,15 +153,31 @@ fn misc_group(mode: &str) -> String {
     }
 }
 
+/// Activation of an item's speed toggle (Boots of Speed: a bonus action).
+const SPEED_TOGGLE_ACTIVATION: &str = "bonus action";
+
 /// `modifySpeed`: `static` (the speed becomes at least n), `equal` (a mode equals another),
-/// `bonus` (+n).
-pub fn speed_rules(it: &Item, mech: &mut Mech<'_>, partial: &mut Vec<String>) {
+/// `bonus` (+n), and `multiply` (a toggle of the item that multiplies the speed while on; an
+/// `equal` of the same mode is the speed multiplied: Eagle Whistle flies at twice the walk).
+pub fn speed_rules(it: &Item, id: &str, mech: &mut Mech<'_>, partial: &mut Vec<String>) {
     let Some(Value::Object(how_map)) = it.extra.get("modifySpeed") else {
         return;
     };
+    let known = |m: &str| SPEED_MODES.contains(&m);
+    let multiply = how_map.get("multiply").and_then(Value::as_object);
+    let equal = how_map.get("equal").and_then(Value::as_object);
+    // `equal` read into the toggle (`of`), not a speed of its own
+    let folded = |mode: &str, other: &Value| {
+        multiply.is_some_and(|m| m.contains_key(mode)) && other.as_str().is_some_and(known)
+    };
     for (how, modes) in how_map {
+        if how == "multiply" {
+            continue;
+        }
         for (mode, v) in modes.as_object().into_iter().flatten() {
-            let known = |m: &str| SPEED_MODES.contains(&m);
+            if how == "equal" && folded(mode, v) {
+                continue;
+            }
             let rule = match (how.as_str(), v) {
                 ("static", n) if known(mode) => {
                     int_of(n).map(|n| stat_bonus(&innate_group(mode), n, "base"))
@@ -169,11 +188,8 @@ pub fn speed_rules(it: &Item, mech: &mut Mech<'_>, partial: &mut Vec<String>) {
                 ("bonus", n) if known(mode) => {
                     int_of(n).map(|n| Rule::Stat(stat(&misc_group(mode), n)))
                 }
-                // every speed the character has: the walking speed is the one always present
-                ("bonus", n) if mode == "*" => {
-                    partial.push("speed bonus applied to the walking speed only".into());
-                    int_of(n).map(|n| Rule::Stat(stat(&misc_group("walk"), n)))
-                }
+                // every speed the character has (the built-in group never creates a speed)
+                ("bonus", n) if mode == "*" => int_of(n).map(|n| Rule::Stat(stat(ALL_SPEEDS, n))),
                 _ => None,
             };
             match rule {
@@ -181,6 +197,44 @@ pub fn speed_rules(it: &Item, mech: &mut Mech<'_>, partial: &mut Vec<String>) {
                 None => partial.push(format!("speed change {how} {mode} was not converted")),
             }
         }
+    }
+    if let Some(m) = multiply {
+        speed_toggle(it, id, m, equal, mech, partial);
+    }
+}
+
+/// The `toggle` rule of `modifySpeed.multiply`: one `speed_multiply` effect per mode.
+fn speed_toggle(
+    it: &Item,
+    id: &str,
+    multiply: &serde_json::Map<String, Value>,
+    equal: Option<&serde_json::Map<String, Value>>,
+    mech: &mut Mech<'_>,
+    partial: &mut Vec<String>,
+) {
+    let mut effects = Vec::new();
+    for (mode, v) in multiply {
+        let factor = int_of(v).filter(|n| *n > 1);
+        let (Some(factor), true) = (factor, SPEED_MODES.contains(&mode.as_str())) else {
+            partial.push(format!("speed change multiply {mode} was not converted"));
+            continue;
+        };
+        let mut effect = json!({"kind": "speed_multiply", "speed": mode, "factor": factor});
+        let of = equal
+            .and_then(|e| e.get(mode))
+            .and_then(Value::as_str)
+            .filter(|o| SPEED_MODES.contains(o));
+        if let Some(of) = of {
+            effect["of"] = json!(of);
+        }
+        effects.push(effect);
+    }
+    if !effects.is_empty() {
+        mech.push(custom(
+            "toggle",
+            json!({"id": format!("{id}_SPEED"), "name": it.name,
+                   "activation": SPEED_TOGGLE_ACTIVATION, "effects": effects}),
+        ));
     }
 }
 
@@ -199,7 +253,7 @@ fn amount_text(v: &Value) -> Option<String> {
 pub fn charges_rule(it: &Item, el: &Element, partial: &mut Vec<String>) -> Option<Rule> {
     let (max, when, amount) = match it.extra.get("charges") {
         Some(raw) => {
-            let Some(max) = raw.as_i64().filter(|n| *n > 0) else {
+            let Some(max) = charge_max(raw) else {
                 partial.push(format!("charges {raw} were not converted"));
                 return None;
             };
@@ -233,7 +287,7 @@ pub fn charges_rule(it: &Item, el: &Element, partial: &mut Vec<String>) -> Optio
     let mut fields = json!({
         "id": el.id,
         "name": format!("{} charges", el.name),
-        "max": {"type": "fixed", "value": max},
+        "max": max,
         "recharge": [recharge],
     });
     if let Some(text) = alt {
@@ -242,12 +296,34 @@ pub fn charges_rule(it: &Item, el: &Element, partial: &mut Vec<String>) -> Optio
     Some(custom("resource", fields))
 }
 
-/// A fixed charge count printed in an item's text, with a printed dawn / dusk regain.
-fn printed_charges(entries: &[Value]) -> Option<(i64, Option<&'static str>, Option<String>)> {
+/// The `max` of a `charges` field: a count is fixed; dice (`{@dice 1d8 + 1}`, Nine Lives
+/// Stealer) are rolled once per item by the engine.
+fn charge_max(raw: &Value) -> Option<Value> {
+    static DICE: OnceLock<Regex> = OnceLock::new();
+    if let Some(n) = raw.as_i64() {
+        return (n > 0).then(|| json!({"type": "fixed", "value": n}));
+    }
+    let text = crate::text::strip_tags(raw.as_str()?);
+    let text = text.trim();
+    let dice = DICE.get_or_init(|| {
+        Regex::new(r"^(?:\d*d\d+(?: ?[+-] ?\d+)?|\d+)$").expect("charge dice regex")
+    });
+    dice.is_match(text)
+        .then(|| json!({"type": "rolled", "dice": text}))
+}
+
+/// A charge count printed in an item's text (fixed, or rolled: "begins existence with
+/// {@dice 1d4 + 1} charges"), with a printed dawn / dusk regain.
+fn printed_charges(entries: &[Value]) -> Option<(Value, Option<&'static str>, Option<String>)> {
     static COUNT: OnceLock<Regex> = OnceLock::new();
+    static ROLLED: OnceLock<Regex> = OnceLock::new();
     static REGAIN: OnceLock<Regex> = OnceLock::new();
     let count = COUNT.get_or_init(|| {
         Regex::new(r"(?i)\b(?:has|of its) (\d+) charges\b").expect("charge count regex")
+    });
+    let rolled = ROLLED.get_or_init(|| {
+        Regex::new(r"(?i)\b(?:has|with) (\d*d\d+(?: ?[+-] ?\d+)?) charges\b")
+            .expect("rolled charge count regex")
     });
     let regain = REGAIN.get_or_init(|| {
         Regex::new(
@@ -256,10 +332,16 @@ fn printed_charges(entries: &[Value]) -> Option<(i64, Option<&'static str>, Opti
         .expect("charge regain regex")
     });
     let text = crate::text::Renderer::plain(entries);
-    let max = count.captures(&text)?[1]
-        .parse::<i64>()
-        .ok()
-        .filter(|n| *n > 0)?;
+    let fixed = count
+        .captures(&text)
+        .and_then(|c| c[1].parse::<i64>().ok())
+        .filter(|n| *n > 0)
+        .map(|n| json!({"type": "fixed", "value": n}));
+    let max = fixed.or_else(|| {
+        rolled
+            .captures(&text)
+            .map(|c| json!({"type": "rolled", "dice": &c[1]}))
+    })?;
     let (when, amount) = regain.captures(&text).map_or((None, None), |c| {
         let when = if c[2].eq_ignore_ascii_case("dusk") {
             "dusk"
@@ -388,17 +470,52 @@ mod tests {
         let it = item(json!({"name": "Fins", "source": "ZZZ", "modifySpeed": {
             "static": {"fly": 60, "walk": 30}, "equal": {"climb": "walk"},
             "bonus": {"swim": 10, "*": 5}, "multiply": {"walk": 2}}}));
-        speed_rules(&it, &mut mech, &mut partial);
+        speed_rules(&it, "ID_T_FINS", &mut mech, &mut partial);
         let got = stats(&mech.rules);
         let base = Some("base".to_string());
         assert!(got.contains(&("innate speed:fly".into(), "60".into(), base.clone())));
         assert!(got.contains(&("innate speed".into(), "30".into(), base.clone())));
         assert!(got.contains(&("innate speed:climb".into(), "innate speed".into(), base)));
         assert!(got.contains(&("speed:swim:misc".into(), "10".into(), None)));
-        assert!(got.contains(&("speed:misc".into(), "5".into(), None)));
+        assert!(got.contains(&("speed:all".into(), "5".into(), None)));
         assert_eq!(got.len(), 5);
-        // `*` is applied to walking only; `multiply` is not converted
-        assert_eq!(partial.len(), 2);
+        assert!(partial.is_empty(), "{partial:?}");
+        // `multiply` is the item's toggle
+        let toggle = toggle_of(&mech.rules);
+        assert_eq!(toggle["id"], "ID_T_FINS_SPEED");
+        assert_eq!(toggle["name"], "Fins");
+        assert_eq!(toggle["activation"], "bonus action");
+        assert_eq!(
+            toggle["effects"],
+            json!([{"kind": "speed_multiply", "speed": "walk", "factor": 2}])
+        );
+    }
+
+    fn toggle_of(rules: &[Rule]) -> serde_json::Map<String, Value> {
+        rules
+            .iter()
+            .find_map(|r| match r {
+                Rule::Custom(c) if c.kind == "toggle" => Some(c.fields.clone()),
+                _ => None,
+            })
+            .expect("a toggle rule")
+    }
+
+    #[test]
+    fn an_equal_speed_that_is_multiplied_is_the_toggle_of_that_speed() {
+        let sh = Shared::default();
+        let mut mech = Mech::new(&sh, "x");
+        let mut partial = Vec::new();
+        let it = item(json!({"name": "Whistle", "source": "ZZZ", "modifySpeed": {
+            "equal": {"fly": "walk"}, "multiply": {"fly": 2, "swim": "x"}}}));
+        speed_rules(&it, "ID_T_WHISTLE", &mut mech, &mut partial);
+        // no lasting fly speed: it flies only while the toggle is on
+        assert!(stats(&mech.rules).is_empty(), "{:?}", mech.rules);
+        assert_eq!(
+            toggle_of(&mech.rules)["effects"],
+            json!([{"kind": "speed_multiply", "speed": "fly", "factor": 2, "of": "walk"}])
+        );
+        assert_eq!(partial, ["speed change multiply swim was not converted"]);
     }
 
     fn resource(raw: Value) -> (Option<Rule>, Vec<String>) {
@@ -443,8 +560,8 @@ mod tests {
         assert_eq!(f["recharge"], json!(["none"]));
         let (r, partial) =
             resource(json!({"name": "W", "source": "ZZZ", "charges": "{@dice 1d4}"}));
-        assert!(r.is_none());
-        assert_eq!(partial.len(), 1);
+        assert_eq!(fields(r)["max"], json!({"type": "rolled", "dice": "1d4"}));
+        assert!(partial.is_empty());
         assert!(resource(json!({"name": "W", "source": "ZZZ"})).0.is_none());
     }
 
@@ -467,11 +584,31 @@ mod tests {
         );
         assert_eq!(f["max"], json!({"type": "fixed", "value": 10}));
         assert_eq!(f["alt_regain"], "Regains 1d8 + 2 charges daily at dawn");
-        // a rolled starting count is not a fixed one
+        // a rolled starting count is rolled once by the engine
         let (r, partial) = resource(json!({"name": "W", "source": "ZZZ", "entries": [
             "It begins existence with {@dice 1d4 + 1} charges."]}));
-        assert!(r.is_none());
+        assert_eq!(
+            fields(r)["max"],
+            json!({"type": "rolled", "dice": "1d4 + 1"})
+        );
         assert!(partial.is_empty());
+    }
+
+    #[test]
+    fn dice_charges_are_rolled_once_by_the_engine() {
+        let (r, partial) = resource(json!({"name": "W", "source": "ZZZ",
+            "charges": "{@dice 1d8 + 1}", "entries": ["It has charges."]}));
+        assert!(partial.is_empty(), "{partial:?}");
+        let f = fields(r);
+        assert_eq!(f["max"], json!({"type": "rolled", "dice": "1d8 + 1"}));
+        assert_eq!(f["id"], "ID_TEST_WAND");
+        for (raw, want) in [("{@dice 1d4 - 1}", "1d4 - 1"), ("d3", "d3"), ("2d4", "2d4")] {
+            let f = fields(resource(json!({"name": "W", "source": "ZZZ", "charges": raw})).0);
+            assert_eq!(f["max"], json!({"type": "rolled", "dice": want}), "{raw}");
+        }
+        let (r, partial) = resource(json!({"name": "W", "source": "ZZZ", "charges": "lots"}));
+        assert!(r.is_none());
+        assert_eq!(partial, [r#"charges "lots" were not converted"#]);
     }
 
     fn convert(raw: Value) -> (Element, Vec<String>) {

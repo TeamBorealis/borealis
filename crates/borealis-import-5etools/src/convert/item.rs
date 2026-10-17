@@ -9,13 +9,15 @@ use crate::model::{self, Item, ItemGroup};
 use crate::srd::SrdKind;
 use crate::text::{RefKind, Renderer};
 use crate::util::{id_fragment, title_case};
-use borealis_content::{Element, ExtractItem, Rule, Setter};
+use borealis_content::{Element, ExtractItem, Rule, Ruleset, Setter};
 use serde_json::{json, Map, Value};
 
 #[path = "item_extras.rs"]
 mod item_extras;
 #[path = "item_mech.rs"]
 mod item_mech;
+#[path = "item_shapes.rs"]
+mod item_shapes;
 #[path = "item_spells.rs"]
 mod item_spells;
 
@@ -97,9 +99,12 @@ fn damage_type_name(code: &str) -> Option<&'static str> {
     })
 }
 
+/// Supports tag of the Ammunition weapon property.
+const AMMUNITION_PROPERTY: &str = "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION";
+
 fn property_id(code: &str) -> Option<&'static str> {
     Some(match code {
-        "A" => "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",
+        "A" => AMMUNITION_PROPERTY,
         "F" => "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
         "H" => "ID_INTERNAL_WEAPON_PROPERTY_HEAVY",
         "L" => "ID_INTERNAL_WEAPON_PROPERTY_LIGHT",
@@ -352,6 +357,14 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     if flag(&it, "ammo") || code == "A" || code == "AF" {
         el.setters.push(Setter::new("stackable", "true"));
     }
+    let ammo_kind = if ty == "Weapon" {
+        item_shapes::weapon_ammo_kind(&it)
+    } else {
+        item_shapes::ammo_item_kind(&it, &code)
+    };
+    if let Some(kind) = ammo_kind {
+        el.setters.push(Setter::new("ammunition", kind));
+    }
 
     match ty {
         "Weapon" => weapon(&it, &code, &base_name, &mut el),
@@ -370,16 +383,21 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         el.setters
             .push(Setter::new("type", magic_type_header(&code)));
     }
-    match &it.req_attune {
-        Some(Value::Bool(true)) => el.setters.push(Setter::new("attunement", "true")),
-        Some(Value::String(s)) => {
-            el.setters.push(setter_with(
-                "attunement",
-                "true",
-                &[("addition", &crate::text::strip_tags(s))],
-            ));
+    let attune = match &it.req_attune {
+        Some(Value::Bool(true)) => Some(Setter::new("attunement", "true")),
+        Some(Value::String(s)) => Some(setter_with(
+            "attunement",
+            "true",
+            &[("addition", &crate::text::strip_tags(s))],
+        )),
+        _ => None,
+    };
+    if let Some(mut setter) = attune {
+        // the tags decide when the engine can test them; the text is shown either way
+        if let Some(req) = item_shapes::attune_requirements(&it) {
+            setter.attributes.insert("requirements".into(), req);
         }
-        _ => {}
+        el.setters.push(setter);
     }
     if let Some(bonus) = it.bonus_weapon.as_deref().and_then(signed_value) {
         el.setters
@@ -393,11 +411,17 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         }
     }
     magic_rules(&it, ty, &code, &mut mech, &mut el);
+    if let Some(rule) = item_shapes::crit_rule(&it, ty == "Weapon") {
+        mech.push(rule);
+    }
     item_mech::ability_bonus_rules(&it, &mut mech, &mut partial);
-    item_mech::speed_rules(&it, &mut mech, &mut partial);
+    item_mech::speed_rules(&it, &el.id, &mut mech, &mut partial);
     item_extras::bonus_stats(&it, &mut mech);
     item_extras::dex_cap(&ent.raw, &code, &mut mech);
     item_extras::granted_rules(sh, &it, &mut mech, &mut partial);
+    if item_extras::proficient_with_itself(&it) {
+        el.setters.push(Setter::new("proficient", "true"));
+    }
     let charges = item_mech::charges_rule(&it, &el, &mut partial);
     let has_charges = charges.is_some();
     mech.rules.extend(charges);
@@ -492,6 +516,11 @@ fn weapon(it: &Item, code: &str, base_name: &str, el: &mut Element) {
         }
         if let Some(id) = property_id(code) {
             el.supports.push(id.to_string());
+        }
+        // `AF` is the Ammunition property of firearms (DMG 2014 pistol, musket, revolver):
+        // the weapon fires ammunition like any other with the property
+        if code == "AF" && !el.supports.iter().any(|s| s == AMMUNITION_PROPERTY) {
+            el.supports.push(AMMUNITION_PROPERTY.to_string());
         }
     }
     for (k, id) in GROUP_FLAGS {
@@ -880,10 +909,15 @@ pub fn generate_variant_items(variants: &[Value], bases: &[Value]) -> Vec<Value>
             variant_source,
             variant.get("edition").and_then(Value::as_str),
         );
+        // a variant of a book dated after the 2024 handbook (IM8) also fits the 2014 bases
+        // that were never reprinted
+        let by_date = variant.get(crate::editions::EDITION_BY_DATE) == Some(&Value::Bool(true));
         for base in bases {
             let Some(bm) = base.as_object() else { continue };
             // A 2014 variant applies to 2014 base items only, and a 2024 one to 2024 ones.
-            if crate::source::ruleset_of_entry(base) != variant_rs {
+            let base_rs = crate::source::ruleset_of_entry(base);
+            let unreprinted = base_rs == Ruleset::Dnd2014 && !bm.contains_key("reprintedAs");
+            if base_rs != variant_rs && !(by_date && unreprinted) {
                 continue;
             }
             if !requires.iter().any(|r| requirement_matches(bm, r)) {
@@ -1245,6 +1279,40 @@ mod tests {
             vec![
                 ("DMG".to_string(), "longsword|phb".to_string()),
                 ("XDMG".to_string(), "longsword|xphb".to_string())
+            ]
+        );
+    }
+
+    #[test]
+    fn a_variant_2024_by_date_also_fits_unreprinted_2014_bases() {
+        let bases = vec![
+            json!({"name": "Longsword", "source": "PHB", "edition": "classic", "type": "M",
+                "weapon": true, "reprintedAs": ["Longsword|XPHB"]}),
+            json!({"name": "Longsword", "source": "XPHB", "edition": "one", "type": "M|XPHB", "weapon": true}),
+            json!({"name": "Hoopak", "source": "DSotDQ", "type": "M", "weapon": true}),
+        ];
+        let dated = json!({"name": "Dazzling Weapon", "edition": "one", "_editionByDate": true,
+            "requires": [{"weapon": true}],
+            "inherits": {"namePrefix": "Dazzling ", "source": "EFA", "edition": "one"}});
+        let flagged = json!({"name": "+1 Weapon", "requires": [{"weapon": true}],
+            "inherits": {"namePrefix": "+1 ", "source": "XDMG"}});
+        let items = generate_variant_items(&[dated, flagged], &bases);
+        let made: Vec<(&str, &str, &str)> = items
+            .iter()
+            .map(|i| {
+                (
+                    i["source"].as_str().unwrap(),
+                    i["baseItem"].as_str().unwrap(),
+                    i["edition"].as_str().unwrap_or("-"),
+                )
+            })
+            .collect();
+        assert_eq!(
+            made,
+            vec![
+                ("EFA", "longsword|xphb", "one"),
+                ("EFA", "hoopak|dsotdq", "one"),
+                ("XDMG", "longsword|xphb", "-"),
             ]
         );
     }

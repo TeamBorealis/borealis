@@ -261,8 +261,13 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         }
     };
     let Some(hd) = class.hd.filter(|h| h.faces > 0) else {
-        st.report
-            .skipped(&ent.file, "class", &ent.label(), "class has no hit die");
+        // a sidekick class (TCE) levels a companion creature and has no hit die of its own
+        let reason = if ent.raw.get("isSidekick") == Some(&Value::Bool(true)) {
+            "sidekick class: it levels a companion creature, not a character"
+        } else {
+            "class has no hit die"
+        };
+        st.report.skipped(&ent.file, "class", &ent.label(), reason);
         return Conv::default();
     };
     let is_2024 = ent.ruleset == borealis_content::Ruleset::Dnd2024;
