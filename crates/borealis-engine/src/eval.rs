@@ -329,7 +329,10 @@ impl DynamicSupports for NoDynamics {
     }
 }
 
-/// Evaluate a supports expression against a candidate element.
+/// Evaluate a supports expression against a candidate element. In ID-range mode (`ID_A|ID_B`)
+/// an `ID_` term names an element; otherwise an `ID_` term matches an element of that id or a
+/// support tag of that name, so one choice may mix single elements and categories
+/// (`Artisan tools||ID_..._NAVIGATORS_TOOLS`).
 #[must_use]
 pub fn supports_match(
     expr: &SupportsExpr,
@@ -339,10 +342,11 @@ pub fn supports_match(
     let range = expr.is_id_range_mode();
     eval_bool(expr.root(), &|leaf| match leaf {
         SupportsLeaf::Tag(t) => {
-            if range && t.starts_with("ID_") {
+            let is_id = t.starts_with("ID_");
+            if range && is_id {
                 element.el.id == *t
             } else {
-                element.supports.iter().any(|s| s == t)
+                (is_id && element.el.id == *t) || element.supports.iter().any(|s| s == t)
             }
         }
         SupportsLeaf::Dynamic(d) => dynamics.matches(d, element),
@@ -717,5 +721,15 @@ mod tests {
         assert!(m("Skill,Cleric") && !m("Skill,Rogue") && m("Skill||Rogue"));
         assert!(!m("!Ritual") && m("Skill,!Rogue") && m("(Cleric||Wizard),0"));
         assert!(m("ID_X|ID_Y|ID_Z") && !m("ID_Y|ID_Z"), "id range mode");
+        // a choice mixing single elements and a category (Guild Merchant: any artisan's tool
+        // or navigator's tools): an `ID_` term names the element, a plain term is a tag
+        assert!(
+            m("Rogue||ID_X") && m("ID_X||Rogue") && m("ID_Y|Cleric"),
+            "id and tag mixed"
+        );
+        assert!(
+            !m("Rogue||ID_Y") && !m("ID_X,Rogue"),
+            "the other terms still decide"
+        );
     }
 }

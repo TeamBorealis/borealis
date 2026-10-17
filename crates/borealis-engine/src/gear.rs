@@ -83,6 +83,7 @@ pub fn inventory_snapshot(
                 || adorner.is_some_and(|a| item_facts(a).requires_attunement),
             attunement_restriction: restriction.map(|r| r.text).filter(|t| !t.is_empty()),
             attunement_barred: barred,
+            proficient_by_item: crate::item_prof::self_proficient(graph, &it.uid, e, adorner),
             weight: item_weight(uni, it),
             cost_gp: inventory::item_cost_gp(e),
             storage: it.storage.clone(),
@@ -209,7 +210,8 @@ pub fn attacks_with(
             + loaded.as_ref().map_or(0, |l| l.enhancement);
         let proficient =
             e.el.setter_value("proficiency")
-                .is_some_and(|p| graph.has(p));
+                .is_some_and(|p| graph.has(p))
+                || crate::item_prof::self_proficient(graph, &it.uid, e, adorner);
         let lname = e.el.name.to_lowercase();
         let group = if melee { "melee" } else { "ranged" };
         let two_handed = has("ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED") || it.versatile;

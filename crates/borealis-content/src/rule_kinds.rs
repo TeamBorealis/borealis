@@ -40,8 +40,9 @@ pub struct KindSpec {
     pub enums: &'static [(&'static str, &'static [&'static str])],
 }
 
-/// `max.type` values a `resource` understands.
-pub const RESOURCE_MAX_TYPES: &[&str] = &["fixed", "stat", "table", "formula"];
+/// `max.type` values a `resource` understands (`rolled`: `dice` such as `1d6+1`, rolled once
+/// when the item is gained and stored on the inventory line).
+pub const RESOURCE_MAX_TYPES: &[&str] = &["fixed", "stat", "table", "formula", "rolled"];
 /// `recharge` tokens of a `resource` (`short_rest`/`long_rest` drive rests).
 pub const RESOURCE_RECHARGE: &[&str] = &[
     "short_rest",

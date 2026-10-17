@@ -141,8 +141,12 @@ pub struct SlotSnapshot {
     pub list_choice: Option<i64>,
     /// Entries of a `List` rule.
     pub list_items: Vec<(i64, String)>,
-    /// Required and still empty.
+    /// Required and still empty (a slot whose every option is already known is done, not open).
     pub requires_selection: bool,
+    /// Empty, but every element the slot would offer is already known (Hobgoblin's martial
+    /// weapons on a fighter): the choice counts as made.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub all_known: bool,
     /// The only option can be applied automatically.
     pub locked: bool,
     /// Rule default element, if any.
@@ -406,6 +410,10 @@ pub struct ItemSnapshot {
     /// attune it and attuning is refused.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub attunement_barred: bool,
+    /// The item makes the character proficient with it (setter `proficient`, see
+    /// [`crate::item_prof`]).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub proficient_by_item: bool,
     /// Weight of the line in pounds.
     pub weight: f64,
     /// Price of one piece in gold pieces.
@@ -515,6 +523,24 @@ pub struct ResourceSnapshot {
     /// Free text about other ways to regain uses.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub other_regain: Vec<String>,
+    /// The maximum is rolled with dice once, when the item is gained ("1d6 + 1 charges").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rolled: Option<RolledMaxSnapshot>,
+}
+
+/// A dice-valued resource maximum ([`crate::rolled`]).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RolledMaxSnapshot {
+    /// The dice as the content prints them (`1d6+1`).
+    pub dice: String,
+    /// Inventory uid of the item that holds the roll (re-roll / edit target).
+    pub item_uid: Option<String>,
+    /// A roll is stored; `false` = none yet, `max` shows the average.
+    pub rolled: bool,
+    /// Lowest possible maximum.
+    pub min: u32,
+    /// Highest possible maximum.
+    pub max: u32,
 }
 
 /// A switchable state such as Rage.

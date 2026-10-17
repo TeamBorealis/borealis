@@ -149,6 +149,8 @@ pub struct Graph<'u> {
     pub(crate) allow_cross_edition: bool,
     /// Play-time state (toggles, exhaustion).
     pub(crate) runtime: crate::runtime::Runtime,
+    /// Rolled resource maximums per inventory uid (`InventoryItem.rolled_max`).
+    pub(crate) rolled_max: HashMap<String, std::collections::BTreeMap<String, u32>>,
 }
 
 const MAX_PASSES: usize = 60;
@@ -206,6 +208,13 @@ impl<'u> Graph<'u> {
                 crate::profile::profile_for(state.ruleset).default_allow_cross_edition()
             }),
             runtime: crate::runtime::Runtime::from_state(state),
+            rolled_max: state
+                .inventory
+                .items
+                .iter()
+                .filter(|i| !i.rolled_max.is_empty())
+                .map(|i| (i.uid.clone(), i.rolled_max.clone()))
+                .collect(),
         };
         for opt in &state.options {
             match uni.get(opt) {
@@ -310,6 +319,26 @@ impl<'u> Graph<'u> {
         }
         self.roots.push(id);
         id
+    }
+
+    /// Inventory uid of the item a node belongs to (the item root or one of its grants).
+    #[must_use]
+    pub fn item_uid_of(&self, node: NodeId) -> Option<&str> {
+        let mut at = Some(node);
+        while let Some(id) = at {
+            if let Some(uid) = self.nodes[id].item_uid.as_deref() {
+                return Some(uid);
+            }
+            at = self.nodes[id].parent;
+        }
+        None
+    }
+
+    /// The stored rolled maximum of resource `resource` on the item of `node`.
+    #[must_use]
+    pub fn rolled_max_of(&self, node: NodeId, resource: &str) -> Option<u32> {
+        let uid = self.item_uid_of(node)?;
+        self.rolled_max.get(uid)?.get(resource).copied()
     }
 
     fn add_child(&mut self, parent: NodeId, e: &'u UElem, origin: Origin, mgr: Mgr) -> NodeId {
@@ -930,6 +959,20 @@ impl<'u> Graph<'u> {
         existing: bool,
         dyns: &SpellDynamics<'_, 'u>,
     ) -> bool {
+        self.choice_allowed_inner(owner, rule_index, cand, existing, dyns, false)
+    }
+
+    /// [`Self::choice_allowed_with`]; `held_ok` lets an element the character already has pass
+    /// the duplicate check (what the slot would offer to a character without it).
+    pub(crate) fn choice_allowed_inner(
+        &self,
+        owner: NodeId,
+        rule_index: usize,
+        cand: &UElem,
+        existing: bool,
+        dyns: &SpellDynamics<'_, 'u>,
+        held_ok: bool,
+    ) -> bool {
         let n = &self.nodes[owner];
         let (Rule::Select(s), URule::Select { supports, .. }) =
             (&n.e.el.rules[rule_index], &n.e.rules[rule_index])
@@ -951,6 +994,7 @@ impl<'u> Graph<'u> {
             }
             let mastery = crate::custom_rules::kind_of(s) == Some("mastery");
             if !mastery
+                && !held_ok
                 && !cand.allow_duplicate
                 && self.ids.count(&cand.el.id) > 0
                 && !self.repicks_known_spell(s, cand)

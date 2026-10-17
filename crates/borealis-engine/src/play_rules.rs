@@ -6,7 +6,7 @@ use crate::graph::{Graph, NodeId};
 use crate::profile::ExhaustionModel;
 use crate::snapshot::{
     ExhaustionSnapshot, InspirationSource, MartialArtsSnapshot, MasteryPick, MasteryRef,
-    ResourceCostSnapshot, ResourceSnapshot, ToggleSnapshot,
+    ResourceCostSnapshot, ResourceSnapshot, RolledMaxSnapshot, ToggleSnapshot,
 };
 use crate::spell_rules::progression;
 use crate::stats::StatSet;
@@ -454,6 +454,33 @@ fn class_name(el: &Element) -> Option<&str> {
     el.data.get("class").and_then(Value::as_str)
 }
 
+/// A rolled `max` of the resource `rid` declared on `node`: the stored roll of its item, else
+/// the average.
+fn rolled_max(
+    graph: &Graph<'_>,
+    node: NodeId,
+    rid: &str,
+    max: &Value,
+) -> Option<(i32, RolledMaxSnapshot)> {
+    let dice = crate::rolled::dice_of(max)?;
+    let stored = graph.rolled_max_of(node, rid);
+    let value = stored.unwrap_or_else(|| dice.average());
+    Some((
+        i32::try_from(value).unwrap_or(i32::MAX),
+        RolledMaxSnapshot {
+            dice: max
+                .get("dice")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string(),
+            item_uid: graph.item_uid_of(node).map(str::to_string),
+            rolled: stored.is_some(),
+            min: dice.min(),
+            max: dice.max(),
+        },
+    ))
+}
+
 /// Evaluate a `max` descriptor.
 fn resource_max(c: &CustomRule, el: &Element, cx: &ExprCtx<'_>) -> i32 {
     let Some(m) = c.fields.get("max") else {
@@ -570,7 +597,14 @@ pub fn resource_snapshots(
             let Some(rid) = field_str(c, "id") else {
                 continue;
             };
-            let max = resource_max(c, el, &cx).max(0);
+            let rolled = c
+                .fields
+                .get("max")
+                .and_then(|m| rolled_max(graph, id, rid, m));
+            let max = rolled
+                .as_ref()
+                .map_or_else(|| resource_max(c, el, &cx), |(n, _)| *n)
+                .max(0);
             let recharge = strings(c.fields.get("recharge"));
             let reg = c.fields.get("regain").filter(|v| !v.is_null());
             let short_listed = recharge.iter().any(|x| x == "short_rest");
@@ -605,6 +639,7 @@ pub fn resource_snapshots(
                 recharge,
                 short_rest_regain: short,
                 other_regain: other,
+                rolled: rolled.map(|(_, r)| r),
             };
             if c.fields
                 .get("replaces")

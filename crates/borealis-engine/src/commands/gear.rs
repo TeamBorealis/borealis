@@ -5,6 +5,7 @@ use super::{CmdResult, CommandError, CommandOutcome};
 use crate::engine::Engine;
 use crate::inventory::{item_facts, ItemFacts};
 use crate::money::Coin;
+use crate::rolled;
 use crate::state::{CharacterState, EquipSlot, InventoryItem};
 use std::collections::HashMap;
 
@@ -43,7 +44,66 @@ pub fn add_item(engine: &Engine, state: &CharacterState, item: &str, amount: u32
     let mut next = state.clone();
     let mut it = InventoryItem::new(next_uid(state), item);
     it.amount = amount.max(1);
-    next.inventory.items.push(it);
+    next.inventory
+        .items
+        .push(rolled::with_rolls(engine.universe(state.ruleset), &it));
+    Ok(CommandOutcome::new(next))
+}
+
+/// The rolled resource `resource` of inventory line `uid` and its dice.
+fn rolled_line(
+    engine: &Engine,
+    state: &CharacterState,
+    uid: &str,
+    resource: &str,
+) -> Result<(usize, rolled::Dice), CommandError> {
+    let i = index_of(state, uid)?;
+    let line = &state.inventory.items[i];
+    rolled::line_resources(engine.universe(state.ruleset), line)
+        .into_iter()
+        .find(|(id, _)| id == resource)
+        .map(|(_, d)| (i, d))
+        .ok_or_else(|| {
+            CommandError::Inventory(format!("{} has no rolled resource {resource}", line.item))
+        })
+}
+
+/// Enter the maximum of a dice-valued resource of an item (the player rolled it at the table).
+///
+/// # Errors
+/// [`CommandError::Inventory`] for unknown lines or resources, or a value the dice cannot roll.
+pub fn set_rolled_max(
+    engine: &Engine,
+    state: &CharacterState,
+    uid: &str,
+    resource: &str,
+    value: u32,
+) -> CmdResult {
+    let (i, dice) = rolled_line(engine, state, uid, resource)?;
+    if !(dice.min()..=dice.max()).contains(&value) {
+        return Err(CommandError::Inventory(format!(
+            "{value} is outside {}..{} for {resource}",
+            dice.min(),
+            dice.max()
+        )));
+    }
+    let mut next = state.clone();
+    next.inventory.items[i]
+        .rolled_max
+        .insert(resource.to_string(), value);
+    Ok(CommandOutcome::new(next))
+}
+
+/// Roll the maximum of a dice-valued resource of an item again.
+///
+/// # Errors
+/// [`CommandError::Inventory`] for unknown lines or resources.
+pub fn reroll_max(engine: &Engine, state: &CharacterState, uid: &str, resource: &str) -> CmdResult {
+    let (i, dice) = rolled_line(engine, state, uid, resource)?;
+    let mut next = state.clone();
+    next.inventory.items[i]
+        .rolled_max
+        .insert(resource.to_string(), dice.roll());
     Ok(CommandOutcome::new(next))
 }
 
@@ -76,6 +136,8 @@ pub fn set_adorner(
     }
     let mut next = state.clone();
     next.inventory.items[i].adorner = adorner.map(String::from);
+    next.inventory.items[i] =
+        rolled::with_rolls(engine.universe(state.ruleset), &next.inventory.items[i]);
     Ok(CommandOutcome::new(prune(engine, &next)))
 }
 

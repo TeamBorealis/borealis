@@ -115,6 +115,9 @@ pub const ABILITY_CHECKS_GROUP: &str = "ability checks";
 /// Bonus to Constitution saves to keep concentration (Borealis), on top of the Constitution
 /// save: `CharacterSnapshot::concentration_save`.
 pub const CONCENTRATION_SAVE_GROUP: &str = "concentration:save";
+/// Bonus to every speed the character has (Borealis): added to the walking speed and to each
+/// other speed that is above 0; it never creates a speed the character lacks.
+pub const SPEED_ALL_GROUP: &str = "speed:all";
 
 /// Names of the groups that are always present.
 #[must_use]
@@ -187,6 +190,7 @@ pub fn builtin_groups() -> HashSet<String> {
         "attunement:current",
         ABILITY_CHECKS_GROUP,
         CONCENTRATION_SAVE_GROUP,
+        SPEED_ALL_GROUP,
     ] {
         s.insert(n.to_string());
     }

@@ -100,7 +100,10 @@ pub fn choose_equipment_package(
         uid += 1;
         item.amount = it.qty.max(1);
         item.acquired_from = Some(pkg.name.clone());
-        next.inventory.items.push(item);
+        next.inventory.items.push(crate::rolled::with_rolls(
+            engine.universe(state.ruleset),
+            &item,
+        ));
     }
     next.inventory.coins = add_coins(&next, opt.coins);
     next.play

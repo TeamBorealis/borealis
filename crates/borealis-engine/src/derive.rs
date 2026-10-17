@@ -400,6 +400,15 @@ impl<'u> Evaluation<'u> {
                 let optional = rule.optional.unwrap_or(false);
                 let default = rule.default_id.clone();
                 let locked = include_options && !satisfied && options.len() == 1;
+                let all_known = !satisfied
+                    && !optional
+                    && !rule.is_list()
+                    && (if include_options {
+                        options.is_empty()
+                    } else {
+                        self.graph.slot_options(id, si).is_empty()
+                    })
+                    && self.graph.slot_all_known(id, si);
                 let retrain = self.retrain_info(state, casters, slot, rule);
                 out.push(SlotSnapshot {
                     key: slot.key.clone(),
@@ -420,7 +429,8 @@ impl<'u> Evaluation<'u> {
                         })
                         .map(|i| (i.id, i.text.clone()))
                         .collect(),
-                    requires_selection: !optional && !satisfied,
+                    requires_selection: !optional && !satisfied && !all_known,
+                    all_known,
                     locked,
                     default,
                     rejected: slot.rejected.clone(),
@@ -644,16 +654,7 @@ impl<'u> Evaluation<'u> {
             skills: self.skills(&mods, prof),
             armor_class: self.stats.sum("ac"),
             initiative: self.stats.sum("initiative") + self.stats.sum(crate::play_rules::D20_GROUP),
-            speed: crate::speed_toggles::apply(
-                &self.graph,
-                Speeds {
-                    walk: self.stats.sum("speed").max(0),
-                    fly: self.reduced_speed("speed:fly"),
-                    climb: self.reduced_speed("speed:climb"),
-                    swim: self.reduced_speed("speed:swim"),
-                    burrow: self.reduced_speed("speed:burrow"),
-                },
-            ),
+            speed: crate::speed_toggles::apply(&self.graph, self.speeds()),
             hit_points: total_hp,
             classes,
             origin,
@@ -691,6 +692,27 @@ impl<'u> Evaluation<'u> {
             features,
             sheet_summary,
             provenance: prov,
+        }
+    }
+
+    /// The speeds before toggles, with the bonus to every speed the character has
+    /// ([`crate::stats::SPEED_ALL_GROUP`], never a new speed).
+    fn speeds(&self) -> Speeds {
+        let all = self.stats.sum(crate::stats::SPEED_ALL_GROUP);
+        let other = |group: &str| {
+            let v = self.reduced_speed(group);
+            if v > 0 {
+                (v + all).max(0)
+            } else {
+                v
+            }
+        };
+        Speeds {
+            walk: (self.stats.sum("speed") + all).max(0),
+            fly: other("speed:fly"),
+            climb: other("speed:climb"),
+            swim: other("speed:swim"),
+            burrow: other("speed:burrow"),
         }
     }
 

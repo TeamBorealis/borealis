@@ -200,6 +200,10 @@ pub struct InventoryItem {
     /// Free notes.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
+    /// Rolled (or entered) maximum of each dice-valued resource of the item, by resource id
+    /// ("1d6 + 1 charges"): rolled once when the item is gained, see [`crate::rolled`].
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub rolled_max: BTreeMap<String, u32>,
 }
 
 fn yes() -> bool {
@@ -229,6 +233,7 @@ impl InventoryItem {
             card: true,
             alt_name: None,
             notes: None,
+            rolled_max: BTreeMap::new(),
         }
     }
 }

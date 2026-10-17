@@ -55,6 +55,33 @@ impl<'u> Graph<'u> {
         out
     }
 
+    /// The slot offers nothing only because the character already has every element it would
+    /// offer (Hobgoblin's two martial weapons, Weapon Master on a fighter): the choice is done.
+    /// Call it for a slot whose option list is empty; a slot that matches nothing at all (a
+    /// content error) is not "all known".
+    #[must_use]
+    pub fn slot_all_known(&self, owner: NodeId, slot_index: usize) -> bool {
+        let n = &self.nodes[owner];
+        let slot = &n.slots[slot_index];
+        let Rule::Select(rule) = &n.e.el.rules[slot.rule] else {
+            return false;
+        };
+        if rule.is_list() {
+            return false;
+        }
+        let uni = self.uni;
+        let dyns = SpellDynamics::new(self, owner, slot.rule);
+        let held = |c: &UElem| {
+            self.ids.count(&c.el.id) > 0
+                && self.choice_allowed_inner(owner, slot.rule, c, false, &dyns, true)
+        };
+        uni.candidates_for(&rule.ty).any(held)
+            || crate::custom_rules::alternatives_of(rule)
+                .into_iter()
+                .filter_map(|a| uni.get(a))
+                .any(held)
+    }
+
     /// Dynamic spell token context for a node's rule (exposed for the snapshot builder).
     #[must_use]
     pub fn spell_dynamics(&self, owner: NodeId, rule_index: usize) -> SpellDynamics<'_, 'u> {
