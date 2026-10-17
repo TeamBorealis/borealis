@@ -25,8 +25,10 @@
 #[path = "../../../tools/regression-gate/outcome.rs"]
 mod outcome;
 
+use borealis_content::expr::RequirementsExpr;
 use borealis_content::{ContentStore, ContentStoreBuilder, Element, PackOrigin, Rule, Ruleset};
 use borealis_engine::commands::{self, slot_key};
+use borealis_engine::state::SlotKey;
 use borealis_engine::{invariants, CharacterSnapshot, CharacterState, Choice, Engine, Severity};
 use borealis_migrate::{migrate_path, write_output, MigrateOptions};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
@@ -192,10 +194,29 @@ impl Tally {
     }
 }
 
+/// Lower-cased spellcasting names that receive slot stats from some element of the store.
+fn slot_lists(store: &ContentStore) -> HashSet<String> {
+    store
+        .iter()
+        .flat_map(|se| se.element.rules.iter())
+        .filter_map(|r| match r {
+            Rule::Stat(st) => st
+                .name
+                .to_lowercase()
+                .split_once(":spellcasting:slots")
+                .map(|(list, _)| list.to_string()),
+            _ => None,
+        })
+        .collect()
+}
+
 struct Sweeper<'a> {
     engine: &'a Engine,
     store: &'a ContentStore,
     ours: &'a HashSet<String>,
+    /// Lower-cased spellcasting names some loaded element gives slot stats
+    /// (`<name>:spellcasting:slots:<n>`): only these must end with slots.
+    slot_lists: HashSet<String>,
     /// Diagnostics on elements that are not part of the build (option lists, global rules),
     /// keyed by element: they show on every character, so they are reported once.
     unattributed: std::cell::RefCell<BTreeMap<String, String>>,
@@ -517,8 +538,12 @@ impl Sweeper<'_> {
                 .map(|s| s.options.len())
                 .max()
                 .unwrap_or(0);
-            if slots == 0 {
-                out.push("spellcasting with no slots at 20".into());
+            // Aurora gives slots only through `<name>:spellcasting:slots:<n>` stats; a block the
+            // content gives none (Mystic disciplines, cantrip-only subclasses) has none in Aurora too
+            if slots == 0 && self.slot_lists.contains(&sc.name.to_lowercase()) {
+                out.push(
+                    "spellcasting with no slots at 20 although the content declares slots".into(),
+                );
             }
             if sc.spells.is_empty() && choosable == 0 {
                 out.push("spellcasting offers and knows no spells at 20".into());
@@ -751,6 +776,7 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
         engine: &engine,
         store: &store,
         ours: &ours,
+        slot_lists: slot_lists(&store),
         unattributed: std::cell::RefCell::default(),
     };
     let of_type = |ty: &str| -> Vec<&Element> {
@@ -1005,6 +1031,36 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
                 });
                 extra.extend(hs.iter().cloned());
             }
+            // prerequisites the default hosts lack: a class the feat names, the feats it chains on
+            let mut class_hosts: Vec<CharacterState> = sw
+                .with_class(Ruleset::Dnd2014, FIGHTER)
+                .into_iter()
+                .collect();
+            class_hosts.extend(sw.caster());
+            for class in required_of_type(sw.store, &el.requirements, "Class") {
+                if let Ok(h) = sw.with_class(Ruleset::Dnd2014, &class) {
+                    extra.extend(feat_hosts(&sw, &h));
+                    class_hosts.push(h);
+                }
+            }
+            // an archetype feature the feat needs: the archetype's class, levelled until granted
+            for feature in required_of_type(sw.store, &el.requirements, "Archetype Feature") {
+                let Some((arch, level)) = granted_by(sw.store, "Archetype", &feature) else {
+                    continue;
+                };
+                if let Some(h) = parent
+                    .get(&arch)
+                    .and_then(|(class, _)| archetype_host(&sw, class, &arch, level))
+                {
+                    class_hosts.push(h);
+                }
+            }
+            let chain = feat_chain(sw.store, &el.id);
+            extra.extend(
+                class_hosts
+                    .iter()
+                    .filter_map(|h| chain_host(&sw, h, &chain)),
+            );
         }
         guarded(&mut t, "feat", &el.id, &mut || {
             let mut problems = Vec::new();
@@ -1152,16 +1208,8 @@ fn feat_hosts(sw: &Sweeper<'_>, class_host: &CharacterState) -> Vec<CharacterSta
                 Err(_) => return out,
             }
         }
-        let snap = sw.engine.derive(&state);
-        let feat_option = snap.slots.iter().find_map(|s| {
-            let o = s
-                .options
-                .iter()
-                .find(|o| o.name == "Feat" || o.name.starts_with("Feat ("))?;
-            (s.chosen.is_none() && s.ty == "Class Feature").then(|| (s.key.clone(), o.id.clone()))
-        });
         let mut host = state.clone();
-        if let Some((key, id)) = feat_option {
+        if let Some((key, id)) = feat_option(&sw.engine.derive(&state)) {
             if let Ok(o) = commands::select(sw.engine, &host, &key, Choice::Element(id)) {
                 host = o.state;
             }
@@ -1169,4 +1217,139 @@ fn feat_hosts(sw: &Sweeper<'_>, class_host: &CharacterState) -> Vec<CharacterSta
         out.push(host);
     }
     out
+}
+
+/// The open "Feat" option of an ability score improvement select, if any.
+fn feat_option(snap: &CharacterSnapshot) -> Option<(SlotKey, String)> {
+    snap.slots.iter().find_map(|s| {
+        let o = s
+            .options
+            .iter()
+            .find(|o| o.name == "Feat" || o.name.starts_with("Feat ("))?;
+        (s.chosen.is_none() && s.ty == "Class Feature").then(|| (s.key.clone(), o.id.clone()))
+    })
+}
+
+/// Elements of type `ty` a requirements string names, each once, in order.
+fn required_of_type(store: &ContentStore, requirements: &str, ty: &str) -> Vec<String> {
+    let Ok(Some(expr)) = RequirementsExpr::parse(requirements) else {
+        return Vec::new();
+    };
+    let mut out: Vec<String> = Vec::new();
+    for id in expr.referenced_ids() {
+        if store.element(id).is_some_and(|e| e.ty == ty) && !out.iter().any(|o| o == id) {
+            out.push(id.to_string());
+        }
+    }
+    out
+}
+
+/// The feats a feat's requirements name, prerequisites first (feat chains such as Elemental
+/// Adept 1-5 or Rune Knowledge 1-3), each once.
+fn feat_chain(store: &ContentStore, id: &str) -> Vec<String> {
+    fn walk(store: &ContentStore, id: &str, depth: usize, out: &mut Vec<String>) {
+        let Some(el) = store.element(id) else { return };
+        if depth > MAX_CHAIN {
+            return;
+        }
+        for req in required_of_type(store, &el.requirements, "Feat") {
+            if !out.contains(&req) {
+                walk(store, &req, depth + 1, out);
+                if !out.contains(&req) {
+                    out.push(req);
+                }
+            }
+        }
+    }
+    let mut out = Vec::new();
+    walk(store, id, 0, &mut out);
+    out.retain(|f| f != id);
+    out
+}
+
+/// Longest feat prerequisite chain followed.
+const MAX_CHAIN: usize = 6;
+
+/// Level up until an ability score improvement offers "Feat" and choose it (the feat slot stays
+/// open). `None` when level 20 offers none.
+fn open_feat_slot(sw: &Sweeper<'_>, mut state: CharacterState) -> Option<CharacterState> {
+    loop {
+        let snap = sw.engine.derive(&state);
+        if let Some((key, id)) = feat_option(&snap) {
+            return commands::select(sw.engine, &state, &key, Choice::Element(id))
+                .ok()
+                .map(|o| o.state);
+        }
+        if snap.level >= MAX_LEVEL {
+            return None;
+        }
+        state = commands::level_up_main(sw.engine, &state, None).ok()?.state;
+    }
+}
+
+/// A variant human on `class_host` who took every feat of `chain` in order (the level-1 feat,
+/// then the Feat option of later improvements), with one more feat slot open after the last.
+fn chain_host(
+    sw: &Sweeper<'_>,
+    class_host: &CharacterState,
+    chain: &[String],
+) -> Option<CharacterState> {
+    let mut state = class_host.clone();
+    for race in [HUMAN, HUMAN_VARIANT] {
+        if let Some(Ok(s)) = sw.pick(&state, race) {
+            state = s;
+        }
+    }
+    let mut next = 0;
+    loop {
+        while let Some(Ok(s)) = chain.get(next).and_then(|id| sw.pick(&state, id)) {
+            state = s;
+            next += 1;
+        }
+        state = open_feat_slot(sw, sw.fill(state, Pick::First))?;
+        if next == chain.len() {
+            return Some(state);
+        }
+    }
+}
+
+/// The first element of type `ty` that grants `id`, with the grant's level.
+fn granted_by(store: &ContentStore, ty: &str, id: &str) -> Option<(String, u32)> {
+    store.by_type(ty).find_map(|se| {
+        se.element.rules.iter().find_map(|r| match r {
+            Rule::Grant(g) if g.id == id => Some((se.element.id.clone(), g.level.unwrap_or(1))),
+            _ => None,
+        })
+    })
+}
+
+/// A variant human `class` who took `archetype` and reached `level` (filling every other
+/// choice with its first option).
+fn archetype_host(
+    sw: &Sweeper<'_>,
+    class: &str,
+    archetype: &str,
+    level: u32,
+) -> Option<CharacterState> {
+    let mut state = sw.with_class(Ruleset::Dnd2014, class).ok()?;
+    for race in [HUMAN, HUMAN_VARIANT] {
+        if let Some(Ok(s)) = sw.pick(&state, race) {
+            state = s;
+        }
+    }
+    loop {
+        if let Some(Ok(s)) = sw.pick(&state, archetype) {
+            state = s;
+        }
+        state = sw.fill(state, Pick::First);
+        let snap = sw.engine.derive(&state);
+        let has = snap.elements.iter().any(|r| r.element.id == archetype);
+        if has && snap.level >= level {
+            return Some(state);
+        }
+        if snap.level >= MAX_LEVEL {
+            return None;
+        }
+        state = commands::level_up_main(sw.engine, &state, None).ok()?.state;
+    }
 }
