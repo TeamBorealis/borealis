@@ -288,8 +288,8 @@ pub(super) fn find_rule(ctx: &Ctx<'_>, w: &SlotNode) -> Option<usize> {
         [one] => Some(one.0),
         many => {
             let owners = [owner.to_string(), original_class_id(ctx, owner)];
-            let hit = w.checksum.as_deref().and_then(|wanted| {
-                many.iter().find(|(_, s)| {
+            let matches = |s: &borealis_content::SelectRule| {
+                w.checksum.as_deref().is_some_and(|wanted| {
                     owners.iter().any(|o| {
                         !o.is_empty()
                             && slot_checksum(
@@ -302,10 +302,36 @@ pub(super) fn find_rule(ctx: &Ctx<'_>, w: &SlotNode) -> Option<usize> {
                             ) == wanted
                     })
                 })
-            });
-            hit.or_else(|| many.first()).map(|(i, _)| *i)
+            };
+            let hits: Vec<usize> = many
+                .iter()
+                .filter(|(_, s)| matches(s))
+                .map(|(i, _)| *i)
+                .collect();
+            let pool: Vec<usize> = if hits.is_empty() {
+                many.iter().map(|(i, _)| *i).collect()
+            } else {
+                hits
+            };
+            // selects nothing tells apart (same name, type, level, supports) share a checksum:
+            // fill them in order instead of letting a later choice overwrite an earlier one
+            pool.iter()
+                .copied()
+                .find(|&i| !slot_taken(ctx, w, i))
+                .or_else(|| pool.first().copied())
         }
     }
+}
+
+/// True when the import already placed a choice in this slot of rule `rule`.
+fn slot_taken(ctx: &Ctx<'_>, w: &SlotNode, rule: usize) -> bool {
+    let rule = u32::try_from(rule).unwrap_or(u32::MAX);
+    ctx.state.selections.iter().any(|s| {
+        s.slot.owner == w.owner
+            && s.slot.rule == rule
+            && s.slot.ordinal == w.ordinal
+            && s.slot.instance == w.instance
+    })
 }
 
 /// For a generated multiclass element, the id of the class it was derived from.

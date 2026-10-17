@@ -6,8 +6,8 @@
 //! documented on [`IssueCode`](crate::issue::IssueCode).
 
 use crate::element::Element;
-use crate::expr::{RequirementsExpr, SupportsExpr};
-use crate::issue::{Issue, IssueCode};
+use crate::expr::{BoolExpr, RequirementLeaf, RequirementsExpr, SupportsExpr};
+use crate::issue::{Issue, IssueCode, Severity};
 use crate::monster::MonsterData;
 use crate::rules::Rule;
 use crate::setter;
@@ -31,6 +31,52 @@ pub fn is_synthesized_id(id: &str) -> bool {
     SYNTHESIZED_PREFIXES.iter().any(|p| id.starts_with(p))
         || id.ends_with("_IGNORE")
         || (id.contains("_INTERNAL_ITEM_") && id.contains("_PROXY"))
+}
+
+/// Unknown ids that sit directly in an `||` beside an operand whose ids are all known: the
+/// requirement still holds through that operand, so the unknown alternative is merely never met
+/// (e.g. a class that cannot multiclass, named with its would-be multiclass id).
+fn optional_alternatives<'e>(
+    expr: &'e BoolExpr<RequirementLeaf>,
+    known: &dyn Fn(&str) -> bool,
+) -> HashSet<&'e str> {
+    let mut out = HashSet::new();
+    collect_optional(expr, known, &mut out);
+    out
+}
+
+fn collect_optional<'e>(
+    expr: &'e BoolExpr<RequirementLeaf>,
+    known: &dyn Fn(&str) -> bool,
+    out: &mut HashSet<&'e str>,
+) {
+    let resolves = |e: &BoolExpr<RequirementLeaf>| {
+        e.leaves().into_iter().all(|l| match l {
+            RequirementLeaf::Id(id) => known(id),
+            RequirementLeaf::Test(_) => true,
+        })
+    };
+    match expr {
+        BoolExpr::Leaf(_) => {}
+        BoolExpr::Not(inner) => collect_optional(inner, known, out),
+        BoolExpr::And(items) => items.iter().for_each(|i| collect_optional(i, known, out)),
+        BoolExpr::Or(items) => {
+            for (i, item) in items.iter().enumerate() {
+                match item {
+                    BoolExpr::Leaf(RequirementLeaf::Id(id))
+                        if !known(id)
+                            && items
+                                .iter()
+                                .enumerate()
+                                .any(|(j, other)| j != i && resolves(other)) =>
+                    {
+                        out.insert(id.as_str());
+                    }
+                    _ => collect_optional(item, known, out),
+                }
+            }
+        }
+    }
 }
 
 /// Setters a type's parser refuses to load without.
@@ -109,8 +155,24 @@ impl Ctx<'_> {
     fn check_requirements(&mut self, text: &str, path: &str) {
         match RequirementsExpr::parse(text) {
             Ok(Some(expr)) => {
+                let store = self.store;
+                let known = |id: &str| store.contains_id(id) || is_synthesized_id(id);
+                let optional = optional_alternatives(expr.root(), &known);
                 for id in expr.referenced_ids() {
-                    self.check_ref(id, path, "requirements");
+                    if optional.contains(id) {
+                        self.push(
+                            Issue::new(
+                                Severity::Info,
+                                IssueCode::DanglingReference,
+                                format!(
+                                    "requirements alternative is never met (the other alternatives still apply), references unknown element {id}"
+                                ),
+                            )
+                            .at_path(path),
+                        );
+                    } else {
+                        self.check_ref(id, path, "requirements");
+                    }
                 }
             }
             Ok(None) => {}
@@ -188,16 +250,27 @@ impl Ctx<'_> {
     }
 
     fn check_rules<'r>(&mut self, rules: impl Iterator<Item = &'r Rule>, base: &str) {
+        // Choices are keyed by rule index; an imported Aurora save finds its select by name, type,
+        // level and a checksum over the supports, and fills selects that agree on all of those in
+        // order. Only such indistinguishable selects are noted (Info): Aurora's own Arcane
+        // Trickster repeats a name with different supports.
         let mut select_names = BTreeSet::new();
         for (i, rule) in rules.enumerate() {
             let path = format!("{base}[{i}]");
             if let Rule::Select(s) = rule {
-                if !select_names.insert((s.name.clone(), s.level.unwrap_or(1))) {
+                let key = (
+                    s.name.clone(),
+                    s.ty.clone(),
+                    s.level.unwrap_or(1),
+                    s.supports.clone().unwrap_or_default(),
+                );
+                if !select_names.insert(key) {
                     self.push(
-                        Issue::warning(
+                        Issue::new(
+                            Severity::Info,
                             IssueCode::DuplicateSelectName,
                             format!(
-                                "select name {:?} is used more than once at level {}; saved choices are keyed by name",
+                                "select name {:?} is used more than once at level {} with the same type and supports; the choices fill these selects in order",
                                 s.name,
                                 s.level.unwrap_or(1)
                             ),
@@ -526,7 +599,7 @@ mod tests {
                 ..SelectRule::default()
             })
         };
-        e.rules = vec![sel("Smith’s Tools"), sel("Ok")];
+        e.rules = vec![sel("Smith’s Tools"), sel("Ok"), sel("Ok")];
         let issues = store(vec![e]).validate();
         let c = codes(&issues);
         assert_eq!(
@@ -535,7 +608,82 @@ mod tests {
                 .count(),
             2
         );
-        assert!(c.contains(&IssueCode::DuplicateSelectName));
+        // only the two selects nothing tells apart (same name, type, level and supports), as a
+        // note: the importer fills them in order
+        let dup: Vec<_> = issues
+            .iter()
+            .filter(|i| i.code == IssueCode::DuplicateSelectName)
+            .collect();
+        assert_eq!(dup.len(), 1, "{issues:#?}");
+        assert_eq!(dup[0].severity, Severity::Info);
+    }
+
+    #[test]
+    fn same_named_selects_told_apart_by_supports_are_not_flagged() {
+        // Aurora's own Arcane Trickster: two "Spell (Arcane Trickster)" selects at level 3, one
+        // limited to enchantment/illusion. Choices are keyed by rule index and an Aurora save is
+        // matched by its select checksum, which includes the supports.
+        let mut e = Element::new("ID_A", "A", "Archetype", "Core");
+        let sel = |supports: &str, number: u32| {
+            Rule::Select(SelectRule {
+                ty: "Spell".into(),
+                name: "Spell (Arcane Trickster)".into(),
+                supports: Some(supports.into()),
+                level: Some(3),
+                number: Some(number),
+                ..SelectRule::default()
+            })
+        };
+        e.rules = vec![sel("Wizard, 1", 1), sel("Wizard, 1, Enchantment", 2)];
+        let issues = store(vec![e]).validate();
+        assert!(
+            !codes(&issues).contains(&IssueCode::DuplicateSelectName),
+            "{issues:#?}"
+        );
+    }
+
+    #[test]
+    fn an_unknown_alternative_beside_a_known_one_is_info_not_warning() {
+        // a class that cannot multiclass (its multiclass block is commented out) still names
+        // the multiclass id as an alternative: the requirement holds through the class
+        let class = Element::new("ID_C_CLASS_X", "X", "Class", "Core");
+        let mut e = Element::new("ID_C_DISCIPLINE", "D", "Feat", "Core");
+        e.requirements = "ID_C_CLASS_X||ID_C_MULTICLASS_X".into();
+        let mut lone = Element::new("ID_C_LONE", "L", "Feat", "Core");
+        lone.requirements = "ID_GONE_A||ID_GONE_B".into();
+        let issues = store(vec![class, e, lone]).validate();
+        let dangling = |el: &str| -> Vec<Severity> {
+            issues
+                .iter()
+                .filter(|i| {
+                    i.code == IssueCode::DanglingReference && i.element.as_deref() == Some(el)
+                })
+                .map(|i| i.severity)
+                .collect()
+        };
+        assert_eq!(
+            dangling("ID_C_DISCIPLINE"),
+            vec![Severity::Info],
+            "{issues:#?}"
+        );
+        let alt = issues
+            .iter()
+            .find(|i| {
+                i.code == IssueCode::DanglingReference
+                    && i.element.as_deref() == Some("ID_C_DISCIPLINE")
+            })
+            .expect("issue");
+        // the preview reads the unresolved target from the message's last word
+        assert!(
+            alt.message.ends_with(" ID_C_MULTICLASS_X"),
+            "{}",
+            alt.message
+        );
+        // no alternative resolves: still a warning for each
+        assert_eq!(
+            dangling("ID_C_LONE"),
+            vec![Severity::Warning, Severity::Warning]
+        );
     }
 
     #[test]
