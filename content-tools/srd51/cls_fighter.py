@@ -84,6 +84,18 @@ def build():
                              sheet_=sheet(usage='{{indomitable:usage}}/Long Rest', text='You can reroll a saving throw that you fail. If you do so, you must use the new roll.')))
 
     # ---- Champion
+    # Improved / Superior Critical: the engine's per-attack critical threshold (weapon attacks and
+    # unarmed strikes); Remarkable Athlete: half proficiency (rounded up) on the STR/DEX/CON skills
+    # the fighter is not proficient in (the Aurora rules).
+    def critical_range(n):
+        return {'kind': 'critical_range', 'min': n, 'applies_to': ['weapon attacks', 'unarmed strikes']}
+
+    def remarkable_athlete_rules():
+        skills = [('acrobatics', 'ACROBATICS'), ('athletics', 'ATHLETICS'),
+                  ('sleight of hand', 'SLEIGHTOFHAND'), ('stealth', 'STEALTH')]
+        return [stat(f'{k}:misc', 'proficiency:half:up', requirements=f'!ID_PROFICIENCY_SKILL_{i}')
+                for k, i in skills]
+
     ar = find_in(R, 'Champion', 21)
     ARC = lambda t: feature_html(find_in(R, t, 18, ar))
     ch_id = cid(CLS, 'Archetype', 'Champion')
@@ -92,12 +104,13 @@ def build():
           (15, af('Superior Critical')), (18, af('Survivor'))]
     els.append(archetype_element(CLS, 'Champion', TAG, feature_html(ar), cg))
     els.append(class_feature(CLS, 'Improved Critical', html=ARC('Improved Critical'), ty='Archetype Feature',
-                             rules=[stat('critical hit:range', 19, bonus='critical range')]))
-    els.append(class_feature(CLS, 'Remarkable Athlete', html=ARC('Remarkable Athlete'), ty='Archetype Feature'))
+                             rules=[critical_range(19)]))
+    els.append(class_feature(CLS, 'Remarkable Athlete', html=ARC('Remarkable Athlete'), ty='Archetype Feature',
+                             rules=remarkable_athlete_rules()))
     els.append(class_feature(CLS, 'Additional Fighting Style', html=ARC('Additional Fighting Style'), ty='Archetype Feature',
                              rules=[select('Class Feature', 'Additional Fighting Style (Champion)', supports='Fighting Style,Fighter', level=10)]))
     els.append(class_feature(CLS, 'Superior Critical', html=ARC('Superior Critical'), ty='Archetype Feature',
-                             rules=[stat('critical hit:range', 18, bonus='critical range')]))
+                             rules=[critical_range(18)]))
     els.append(class_feature(CLS, 'Survivor', html=ARC('Survivor'), ty='Archetype Feature'))
     return els
 

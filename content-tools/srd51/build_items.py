@@ -605,7 +605,8 @@ def build_magic():
                 elif base == 'Shield':
                     el = mk(nm, i, 'Armor', desc, BONUS_RARITY[n], False, None, param='shield',
                             extra_sets=[setter('enhancement', n), setter('armor', 'ID_INTERNAL_ARMOR_GROUP_SHIELD'), setter('name-format', '{{parent}} +{{enhancement}}')],
-                            rules=[stat('ac:armored:enhancement', n, bonus='enhancement:shield')], slot=None)
+                            # ac:shield (the Aurora DMG shape): the bonus applies without body armor
+                            rules=[stat('ac:shield', n, bonus='enhancement')], slot=None)
                     put('Armor', el)
                 elif base == 'Weapon':
                     el = mk(nm, i, 'Weapon', desc, BONUS_RARITY[n], False, None, param='any',
