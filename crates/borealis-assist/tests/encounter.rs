@@ -11,7 +11,7 @@ use borealis_assist::{
     EncounterOptions, Method, MonsterEntry, Party,
 };
 use borealis_content::{ContentStore, ContentStoreBuilder, Ruleset};
-use borealis_encounter::{Band, Cr, Ruleset as MathRuleset, Tables2014};
+use borealis_encounter::{Band, Cr, MonsterGroup, Ruleset as MathRuleset, Tables2014};
 use common::FakeRunner;
 use serde_json::json;
 
@@ -143,7 +143,15 @@ fn party_of_four_level_five_hits_each_band_budget_2024() {
         );
         assert!(s.report.monster_count <= 8);
         // The reported report is what the evaluator says about those exact groups.
-        let groups: Vec<_> = s.monsters.iter().map(|m| (m.cr, m.count)).collect();
+        let groups: Vec<_> = s
+            .monsters
+            .iter()
+            .map(|m| MonsterGroup {
+                cr: m.cr,
+                xp: m.xp_each,
+                count: m.count,
+            })
+            .collect();
         assert_eq!(
             evaluate(&PARTY, &groups, &Method::Srd521).unwrap(),
             s.report
@@ -191,7 +199,7 @@ fn method_2014_needs_user_tables() {
     };
     assert!(Method::classic(Some(&bad)).is_err());
     // The default is the SRD method for both editions.
-    let g = [(Cr::Whole(3), 2)];
+    let g = [MonsterGroup::new(Cr::Whole(3), 2)];
     let default = evaluate(&PARTY, &g, &Method::Srd521).unwrap();
     assert_eq!(default.ruleset, MathRuleset::Edition2024);
     // With tables, 2014 works end to end, including suggestions.

@@ -23,8 +23,50 @@ pub use edition2014::{
 pub use error::EncounterError;
 pub use report::{Band, EncounterReport, Remaining, Ruleset, Thresholds, Warning};
 
-/// A monster group: challenge rating and how many of them.
-pub type MonsterGroup = (Cr, u32);
+/// A monster group: challenge rating, the XP of one of them, and how many.
+///
+/// Decision HB5: the XP is the monster's stored XP (the printed value for homebrew), so a
+/// stat block printed off the CR table counts as printed. Without a stored XP the CR table is
+/// used. The CR still drives the warnings (a creature above the party's level, CR 0 creatures).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MonsterGroup {
+    /// Challenge rating.
+    pub cr: Cr,
+    /// XP of one creature.
+    pub xp: u64,
+    /// How many.
+    pub count: u32,
+}
+
+impl MonsterGroup {
+    /// `count` creatures of `cr` at the table XP (no stored XP).
+    #[must_use]
+    pub fn new(cr: Cr, count: u32) -> Self {
+        Self::with_stored_xp(cr, None, count)
+    }
+
+    /// `count` creatures of `cr` at their stored XP (see [`Cr::encounter_xp`]).
+    #[must_use]
+    pub fn with_stored_xp(cr: Cr, stored: Option<u64>, count: u32) -> Self {
+        Self {
+            cr,
+            xp: cr.encounter_xp(stored),
+            count,
+        }
+    }
+
+    /// XP of the whole group (saturating).
+    #[must_use]
+    pub fn total_xp(&self) -> u64 {
+        self.xp.saturating_mul(u64::from(self.count))
+    }
+}
+
+impl From<(Cr, u32)> for MonsterGroup {
+    fn from((cr, count): (Cr, u32)) -> Self {
+        Self::new(cr, count)
+    }
+}
 
 /// Highest character level accepted.
 pub const MAX_LEVEL: u8 = 20;
@@ -65,13 +107,13 @@ pub(crate) fn validate_party(party: &[u8]) -> Result<(), EncounterError> {
 pub(crate) fn raw_xp(monsters: &[MonsterGroup]) -> u64 {
     monsters
         .iter()
-        .map(|(cr, n)| cr.xp().saturating_mul(u64::from(*n)))
+        .map(MonsterGroup::total_xp)
         .fold(0, u64::saturating_add)
 }
 
 pub(crate) fn monster_count(monsters: &[MonsterGroup]) -> u32 {
     monsters
         .iter()
-        .map(|(_, n)| *n)
+        .map(|g| g.count)
         .fold(0, u32::saturating_add)
 }

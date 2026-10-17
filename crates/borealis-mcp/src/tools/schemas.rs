@@ -88,7 +88,7 @@ fn all_tools() -> Value {
                 "monsters": {"type": "array", "items": {
                     "type": "object",
                     "properties": {
-                        "id": {"type": "string", "description": "Monster element id (uses its CR)."},
+                        "id": {"type": "string", "description": "Monster element id (uses its stored XP, the printed value for homebrew, and its CR)."},
                         "cr": {"type": ["string", "number"], "description": "Challenge rating such as \"1/4\" or 3."},
                         "count": {"type": "integer", "minimum": 1, "default": 1}
                     },

@@ -110,7 +110,8 @@ pub struct MonsterEntry {
     pub name: String,
     /// Challenge rating.
     pub cr: Cr,
-    /// XP award from the SRD table for that CR.
+    /// XP of one in an encounter: the stored XP (the printed value for homebrew, decision HB5),
+    /// see [`Cr::encounter_xp`].
     pub xp: u64,
     /// Creature type (`beast`, `undead`, ...).
     pub creature_type: String,
@@ -128,6 +129,16 @@ pub struct MonsterEntry {
 }
 
 impl MonsterEntry {
+    /// `count` of this monster as an encounter group, at [`MonsterEntry::xp`] each.
+    #[must_use]
+    pub fn group(&self, count: u32) -> MonsterGroup {
+        MonsterGroup {
+            cr: self.cr,
+            xp: self.xp,
+            count,
+        }
+    }
+
     /// True when `tag` (case-insensitive) names the type, a tag, an environment, or a word of the name.
     #[must_use]
     pub fn matches_theme(&self, tag: &str) -> bool {
@@ -163,7 +174,7 @@ pub fn monster_index(store: &ContentStore, ruleset: Ruleset) -> Vec<MonsterEntry
                 id: e.id.clone(),
                 name: e.name.clone(),
                 cr,
-                xp: cr.xp(),
+                xp: cr.encounter_xp(Some(u64::from(data.xp))),
                 creature_type: data.creature_type.as_str().to_string(),
                 size: data.size.iter().map(|s| s.as_str().to_string()).collect(),
                 tags: data.tags.iter().map(|t| t.to_lowercase()).collect(),
@@ -284,7 +295,7 @@ pub(crate) fn monster_lines(
     for (id, &n) in counts {
         if let Some(m) = pool.get(id.as_str()) {
             lines.push(EncounterMonster::new(m, n));
-            groups.push((m.cr, n));
+            groups.push(m.group(n));
         }
     }
     (lines, groups)
@@ -344,7 +355,7 @@ pub fn suggest_deterministic(
         let mut best: Option<(&MonsterEntry, u64, bool)> = None;
         for m in &cands {
             let mut g = current.clone();
-            g.push((m.cr, 1));
+            g.push(m.group(1));
             let r = evaluate(party, &g, method)?;
             if r.band > band {
                 continue;
@@ -389,6 +400,6 @@ pub fn suggest_deterministic(
 fn groups_of(counts: &BTreeMap<&str, u32>, cands: &[&MonsterEntry]) -> Vec<MonsterGroup> {
     counts
         .iter()
-        .filter_map(|(id, &n)| cands.iter().find(|m| m.id == *id).map(|m| (m.cr, n)))
+        .filter_map(|(id, &n)| cands.iter().find(|m| m.id == *id).map(|m| m.group(n)))
         .collect()
 }

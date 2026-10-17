@@ -22,9 +22,17 @@ pub struct Session {
 
 impl Session {
     pub fn start() -> Self {
-        let mut child = Command::new(env!("CARGO_BIN_EXE_borealis-mcp"))
-            .arg("--content")
-            .arg(content_root())
+        Self::start_with_library(None)
+    }
+
+    /// Start with the bundled content plus, when given, a user library directory.
+    pub fn start_with_library(library: Option<&std::path::Path>) -> Self {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_borealis-mcp"));
+        command.arg("--content").arg(content_root());
+        if let Some(dir) = library {
+            command.arg("--library").arg(dir);
+        }
+        let mut child = command
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())

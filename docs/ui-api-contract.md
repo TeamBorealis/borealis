@@ -365,7 +365,9 @@ ids as keys are untouched).
 
 Provider detection: `ai_status.providers` lists installed CLIs, preferred first. `settings.ai.provider` (`claude`,
 `codex`; `none` = whichever is installed, claude first) picks the preference and `settings.ai.overridePath` is an explicit
-executable for that backend. Encounter math uses the SRD 5.2.1 budget for both editions (the 2014 DMG tables are not shipped).
+executable for that backend. Encounter math uses the SRD 5.2.1 budget for both editions (the 2014 DMG tables are not shipped). Each monster counts
+its stored XP (`xpEach`; the printed value for homebrew, decision HB5), not the table XP of its CR; a CR 0 monster
+stored at 10 XP counts 0.
 `apply_plan` is atomic: a plan the engine refuses (`requirement_failed`) leaves the character unchanged.
 
 AI host (desktop, LAN): `ai_host_enable` starts the host and opens a pairing window (needs an installed provider);

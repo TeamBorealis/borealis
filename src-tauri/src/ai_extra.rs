@@ -76,7 +76,7 @@ impl AppState {
                     "Unknown monster or count for '{id}'."
                 )));
             };
-            groups.push((e.cr, n));
+            groups.push(e.group(n));
             lines.push(json!({"id": e.id, "name": e.name, "cr": e.cr, "count": n, "xpEach": e.xp}));
         }
         if groups.is_empty() {

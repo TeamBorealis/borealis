@@ -5,6 +5,11 @@ fn cr(s: &str) -> Cr {
     s.parse().unwrap()
 }
 
+/// `count` creatures of challenge rating `s` at the table XP.
+fn g(s: &str, count: u32) -> MonsterGroup {
+    MonsterGroup::new(cr(s), count)
+}
+
 /// SYNTHETIC fixture (not DMG numbers): exercises the algorithm only.
 fn fixture() -> Tables2014 {
     Tables2014 {
@@ -84,7 +89,7 @@ fn srd_examples_2024() {
         suggest_budget(Ruleset::Edition2024, &[15; 6], Band::High).unwrap(),
         46_800
     );
-    let r = evaluate_encounter(Ruleset::Edition2024, &[1; 4], &[(cr("1"), 1)]).unwrap();
+    let r = evaluate_encounter(Ruleset::Edition2024, &[1; 4], &[g("1", 1)]).unwrap();
     assert_eq!((r.total_xp, r.band, r.remaining.low), (200, Band::Low, 0));
 }
 
@@ -97,26 +102,14 @@ fn band_edges_2024() {
             .band
     };
     assert_eq!(band(&[]), Band::Trivial);
-    assert_eq!(band(&[(cr("1/2"), 7), (cr("1/4"), 1)]), Band::Low); // 750
-    assert_eq!(
-        band(&[(cr("1/2"), 7), (cr("1/4"), 1), (cr("0"), 1)]),
-        Band::Low
-    );
-    assert_eq!(band(&[(cr("1/2"), 7), (cr("1/4"), 2)]), Band::Moderate); // 800
-    assert_eq!(band(&[(cr("3"), 1), (cr("1"), 2)]), Band::Moderate); // 1100
-    assert_eq!(
-        band(&[(cr("3"), 1), (cr("1"), 2), (cr("1/8"), 1)]),
-        Band::Moderate
-    ); // 1125
-    assert_eq!(
-        band(&[(cr("3"), 1), (cr("1"), 2), (cr("1/4"), 1)]),
-        Band::High
-    ); // 1150
-    assert_eq!(band(&[(cr("5"), 1), (cr("1"), 1)]), Band::High); // 2000
-    assert_eq!(
-        band(&[(cr("5"), 1), (cr("1"), 1), (cr("1/8"), 1)]),
-        Band::Extreme
-    );
+    assert_eq!(band(&[g("1/2", 7), g("1/4", 1)]), Band::Low); // 750
+    assert_eq!(band(&[g("1/2", 7), g("1/4", 1), g("0", 1)]), Band::Low);
+    assert_eq!(band(&[g("1/2", 7), g("1/4", 2)]), Band::Moderate); // 800
+    assert_eq!(band(&[g("3", 1), g("1", 2)]), Band::Moderate); // 1100
+    assert_eq!(band(&[g("3", 1), g("1", 2), g("1/8", 1)]), Band::Moderate); // 1125
+    assert_eq!(band(&[g("3", 1), g("1", 2), g("1/4", 1)]), Band::High); // 1150
+    assert_eq!(band(&[g("5", 1), g("1", 1)]), Band::High); // 2000
+    assert_eq!(band(&[g("5", 1), g("1", 1), g("1/8", 1)]), Band::Extreme);
 }
 
 #[test]
@@ -130,7 +123,7 @@ fn mixed_party_sums() {
 
 #[test]
 fn input_validation() {
-    let m = [(cr("1"), 1)];
+    let m = [g("1", 1)];
     assert_eq!(
         evaluate_encounter(Ruleset::Edition2024, &[], &m),
         Err(EncounterError::EmptyParty)
@@ -155,19 +148,14 @@ fn input_validation() {
 
 #[test]
 fn warnings() {
-    let r = evaluate_encounter(Ruleset::Edition2024, &[1; 4], &[(cr("2"), 1)]).unwrap();
+    let r = evaluate_encounter(Ruleset::Edition2024, &[1; 4], &[g("2", 1)]).unwrap();
     assert!(r.warnings.contains(&Warning::MonsterAbovePartyLevel {
         cr: Cr::Whole(2),
         highest_level: 1
     }));
     // 1 monster vs 4 PCs is not lopsided by the 1:2 rule; 1 vs 4 -> 2 < 4 is.
     assert!(r.warnings.iter().any(|w| w.is_heuristic()));
-    let r = evaluate_encounter(
-        Ruleset::Edition2024,
-        &[5; 2],
-        &[(cr("1/4"), 5), (cr("0"), 1)],
-    )
-    .unwrap();
+    let r = evaluate_encounter(Ruleset::Edition2024, &[5; 2], &[g("1/4", 5), g("0", 1)]).unwrap();
     assert!(r
         .warnings
         .iter()
@@ -176,7 +164,7 @@ fn warnings() {
     let r = evaluate_encounter(
         Ruleset::Edition2024,
         &[5; 4],
-        &[(cr("1"), 1), (cr("2"), 1), (cr("3"), 1), (cr("4"), 1)],
+        &[g("1", 1), g("2", 1), g("3", 1), g("4", 1)],
     )
     .unwrap();
     assert!(r.warnings.contains(&Warning::ManyStatBlocks { groups: 4 }));
@@ -204,7 +192,7 @@ fn multiplier_steps_2014() {
 #[test]
 fn band_edges_2014() {
     let t = fixture(); // L1 x4: 40/80/120/160
-    let r = evaluate_encounter_2014(&t, &[1; 4], &[(cr("1"), 1)]).unwrap();
+    let r = evaluate_encounter_2014(&t, &[1; 4], &[g("1", 1)]).unwrap();
     assert_eq!(
         (r.total_xp, r.multiplier_tenths, r.adjusted_xp),
         (200, Some(10), 200)
@@ -214,9 +202,9 @@ fn band_edges_2014() {
     assert_eq!(r.remaining.extreme, Some(-40));
     // below easy -> trivial, exactly at thresholds -> that band
     let p = [20u8]; // 200/400/600/800 solo; small party shift +1 for 1 monster => x1.5
-    let r = evaluate_encounter_2014(&t, &p, &[(cr("1/2"), 1)]).unwrap();
+    let r = evaluate_encounter_2014(&t, &p, &[g("1/2", 1)]).unwrap();
     assert_eq!((r.adjusted_xp, r.band), (150, Band::Trivial));
-    let r = evaluate_encounter_2014(&t, &p, &[(cr("1"), 1)]).unwrap();
+    let r = evaluate_encounter_2014(&t, &p, &[g("1", 1)]).unwrap();
     assert_eq!((r.adjusted_xp, r.band), (300, Band::Low));
 }
 
@@ -243,18 +231,13 @@ fn suggest_budget_2014_and_errors() {
 
 #[test]
 fn serde_round_trips() {
-    let r = evaluate_encounter(
-        Ruleset::Edition2024,
-        &[3; 4],
-        &[(cr("1/4"), 3), (cr("2"), 1)],
-    )
-    .unwrap();
+    let r = evaluate_encounter(Ruleset::Edition2024, &[3; 4], &[g("1/4", 3), g("2", 1)]).unwrap();
     let j = serde_json::to_string(&r).unwrap();
     assert_eq!(serde_json::from_str::<EncounterReport>(&j).unwrap(), r);
     let t = fixture();
     let j = serde_json::to_string(&t).unwrap();
     assert_eq!(serde_json::from_str::<Tables2014>(&j).unwrap(), t);
-    let r = evaluate_encounter_2014(&t, &[4; 4], &[(cr("1"), 2)]).unwrap();
+    let r = evaluate_encounter_2014(&t, &[4; 4], &[g("1", 2)]).unwrap();
     let j = serde_json::to_string(&r).unwrap();
     assert_eq!(serde_json::from_str::<EncounterReport>(&j).unwrap(), r);
 }

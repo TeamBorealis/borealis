@@ -1,7 +1,7 @@
 //! `encounter_evaluate`.
 
 use borealis_content::MonsterData;
-use borealis_encounter::{evaluate_encounter, Cr, Ruleset};
+use borealis_encounter::{evaluate_encounter, Cr, MonsterGroup, Ruleset};
 use serde::Deserialize;
 use serde_json::{json, Value};
 
@@ -28,7 +28,10 @@ struct Args {
     ruleset: String,
 }
 
-fn resolve_cr(tools: &Tools, group: &Group) -> Result<Cr, String> {
+/// The group at its stored XP (decision HB5): a monster given by `id` counts the XP its element
+/// stores (the printed value for homebrew); a bare `cr` has none and uses the table.
+fn resolve_group(tools: &Tools, group: &Group) -> Result<MonsterGroup, String> {
+    let count = group.count.unwrap_or(1);
     if let Some(id) = &group.id {
         let element = tools
             .store
@@ -37,7 +40,12 @@ fn resolve_cr(tools: &Tools, group: &Group) -> Result<Cr, String> {
         let data = MonsterData::from_element(element)
             .map_err(|e| format!("{id} is not a readable monster: {e}"))?;
         let as_json = serde_json::to_value(data.cr).map_err(|e| e.to_string())?;
-        return serde_json::from_value(as_json).map_err(|e| format!("{id}: {e}"));
+        let cr: Cr = serde_json::from_value(as_json).map_err(|e| format!("{id}: {e}"))?;
+        return Ok(MonsterGroup::with_stored_xp(
+            cr,
+            Some(u64::from(data.xp)),
+            count,
+        ));
     }
     let cr = group
         .cr
@@ -48,7 +56,8 @@ fn resolve_cr(tools: &Tools, group: &Group) -> Result<Cr, String> {
         Value::Number(n) => Value::String(n.to_string()),
         other => other,
     };
-    serde_json::from_value(cr).map_err(|e| format!("invalid cr: {e}"))
+    let cr: Cr = serde_json::from_value(cr).map_err(|e| format!("invalid cr: {e}"))?;
+    Ok(MonsterGroup::new(cr, count))
 }
 
 pub fn run(tools: &Tools, args: &Value) -> Result<Value, String> {
@@ -67,7 +76,7 @@ pub fn run(tools: &Tools, args: &Value) -> Result<Value, String> {
     };
     let mut groups = Vec::with_capacity(a.monsters.len());
     for g in &a.monsters {
-        groups.push((resolve_cr(tools, g)?, g.count.unwrap_or(1)));
+        groups.push(resolve_group(tools, g)?);
     }
     let report =
         evaluate_encounter(ruleset, &a.party_levels, &groups).map_err(|e| e.to_string())?;
@@ -81,7 +90,7 @@ pub fn run(tools: &Tools, args: &Value) -> Result<Value, String> {
             "monsters".into(),
             json!(groups
                 .iter()
-                .map(|(cr, n)| json!({"cr": cr.to_string(), "count": n}))
+                .map(|g| json!({"cr": g.cr.to_string(), "count": g.count, "xp_each": g.xp}))
                 .collect::<Vec<_>>()),
         );
     }

@@ -3,6 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::cr::Cr;
+use crate::MonsterGroup;
 
 /// Which edition's maths to use.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -135,12 +136,12 @@ pub struct EncounterReport {
 }
 
 /// Warnings common to both rulesets.
-pub(crate) fn common_warnings(party: &[u8], monsters: &[(Cr, u32)], count: u32) -> Vec<Warning> {
+pub(crate) fn common_warnings(party: &[u8], monsters: &[MonsterGroup], count: u32) -> Vec<Warning> {
     let size = party.len();
     let highest = party.iter().copied().max().unwrap_or(1);
     let mut out = Vec::new();
     let mut seen = Vec::new();
-    for (cr, _) in monsters.iter().filter(|(_, n)| *n > 0) {
+    for MonsterGroup { cr, .. } in monsters.iter().filter(|g| g.count > 0) {
         if cr.exceeds_level(highest) && !seen.contains(cr) {
             seen.push(*cr);
             out.push(Warning::MonsterAbovePartyLevel {
@@ -155,11 +156,11 @@ pub(crate) fn common_warnings(party: &[u8], monsters: &[(Cr, u32)], count: u32) 
             party_size: size,
         });
     }
-    let groups = monsters.iter().filter(|(_, n)| *n > 0).count();
+    let groups = monsters.iter().filter(|g| g.count > 0).count();
     if groups > 3 {
         out.push(Warning::ManyStatBlocks { groups });
     }
-    if monsters.iter().any(|(cr, n)| *cr == Cr::Zero && *n > 0) {
+    if monsters.iter().any(|g| g.cr == Cr::Zero && g.count > 0) {
         out.push(Warning::ZeroCrCreatures);
     }
     // Heuristic: fewer than half as many monsters as PCs, or more than twice.

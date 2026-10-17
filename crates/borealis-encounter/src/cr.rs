@@ -59,6 +59,20 @@ impl Cr {
         }
     }
 
+    /// XP one creature of this CR is worth in an encounter, given the XP stored for it
+    /// (decision HB5: the printed value for homebrew). `None` falls back to [`Cr::xp`].
+    ///
+    /// A CR 0 creature stored at [`CR0_ALT_XP`] (the SRD prints CR 0 as "0 or 10 XP") counts as
+    /// [`Cr::xp`] = 0, so official CR 0 monsters keep their encounter value.
+    #[must_use]
+    pub fn encounter_xp(self, stored: Option<u64>) -> u64 {
+        match stored {
+            Some(CR0_ALT_XP) if self == Self::Zero => self.xp(),
+            Some(xp) => xp,
+            None => self.xp(),
+        }
+    }
+
     /// Value in eighths, for comparisons with character levels.
     pub fn eighths(self) -> u32 {
         match self {
