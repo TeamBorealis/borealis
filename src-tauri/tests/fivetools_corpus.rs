@@ -133,6 +133,8 @@ impl Sweeper<'_> {
                 && s.ty != "Archetype"
                 && s.options.is_empty()
                 && s.list_items.is_empty()
+                // every option is already held (a fighter's martial weapon choice): done
+                && !s.all_known
             {
                 out.push(format!("select of type {} offers no options", s.ty));
             }
@@ -168,7 +170,11 @@ impl Sweeper<'_> {
                     continue;
                 };
                 for s in &self.engine.derive(&next.state).slots {
-                    if s.owner.id == o.id && s.options.is_empty() && s.list_items.is_empty() {
+                    if s.owner.id == o.id
+                        && s.options.is_empty()
+                        && s.list_items.is_empty()
+                        && !s.all_known
+                    {
                         out.push(format!(
                             "option {} of a {} select opens a {} select that offers no options",
                             o.id, slot.ty, s.ty

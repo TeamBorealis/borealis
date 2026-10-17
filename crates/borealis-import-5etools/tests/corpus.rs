@@ -23,9 +23,10 @@ type Counts = BTreeMap<String, usize>;
 
 /// Lowest acceptable share of converted entries (converted / total), in percent.
 const MIN_CONVERTED_PERCENT: usize = 97;
-/// Highest acceptable number of skipped entries for the whole folder (243 on the 2026-10
-/// corpus, nearly all catalog entries and languages the core pack already defines).
-const MAX_SKIPPED: usize = 260;
+/// Highest acceptable number of skipped entries for the whole folder (263 on the 2026-10
+/// corpus, nearly all catalog entries and languages the core pack already defines; the 27
+/// item properties are counted one by one).
+const MAX_SKIPPED: usize = 280;
 /// Highest acceptable number of partial-conversion notes (412 on the 2026-10 corpus before
 /// additional spells were mapped, 324 after, 104 after prerequisites, 49 after 5etools-gaps-1,
 /// 152 after fix-w9d made item gaps that used to drop silently report a note: 111 of them items;
