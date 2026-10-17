@@ -2,7 +2,7 @@
 //! `critical_range`, `damage_die_floor`, `extra_attack_damage_modifier`, `skill_bonus`,
 //! `skill_bonus_unproficient`.
 use crate::graph::Graph;
-use crate::rule_view::{eval_value, live_rules};
+use crate::rule_view::{eval_value, live_rules, Live};
 use serde_json::Value;
 
 /// The default critical hit threshold.
@@ -10,7 +10,9 @@ pub const DEFAULT_CRIT: u8 = 20;
 
 /// What the attack rules say about one weapon.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct AttackFacts {
+pub struct AttackFacts<'a> {
+    /// Inventory uid and element id of the weapon (`None` for the Unarmed Strike).
+    pub item: Option<(&'a str, &'a str)>,
     /// Melee (otherwise ranged).
     pub melee: bool,
     /// Unarmed Strike.
@@ -34,13 +36,13 @@ pub struct AttackMods {
     pub offhand_modifier: bool,
 }
 
-fn targets(applies: &[String], f: &AttackFacts) -> bool {
+fn targets(applies: &[String], f: &AttackFacts<'_>) -> bool {
     let all = applies.is_empty();
     let hit = |key: &str| applies.iter().any(|a| a.contains(key));
     all || (f.unarmed && hit("unarmed")) || (!f.unarmed && hit("weapon"))
 }
 
-fn weapon_filter(filter: &str, f: &AttackFacts) -> bool {
+fn weapon_filter(filter: &str, f: &AttackFacts<'_>) -> bool {
     let want = filter.to_lowercase();
     if want.contains("two-handed") || want.contains("versatile") {
         return f.melee && f.two_handed;
@@ -52,9 +54,26 @@ fn weapon_filter(filter: &str, f: &AttackFacts) -> bool {
     }
 }
 
+/// A rule with an `item` field applies only to that weapon: `self` = the item whose element
+/// carries the rule (while attuned, when it requires attunement), else a weapon element id.
+fn item_bound_ok(graph: &Graph<'_>, l: &Live<'_>, f: &AttackFacts<'_>) -> bool {
+    let Some(want) = l.str("item").map(str::trim).filter(|w| !w.is_empty()) else {
+        return true;
+    };
+    let Some((uid, id)) = f.item else {
+        return false;
+    };
+    if !want.eq_ignore_ascii_case("self") {
+        return want.eq_ignore_ascii_case(id);
+    }
+    let node = &graph.nodes[l.node];
+    node.item_uid.as_deref() == Some(uid)
+        && (node.attuned || !crate::inventory::item_facts(node.e).requires_attunement)
+}
+
 /// Collect the modifiers that apply to a weapon.
 #[must_use]
-pub fn attack_mods(graph: &Graph<'_>, f: &AttackFacts) -> AttackMods {
+pub fn attack_mods(graph: &Graph<'_>, f: &AttackFacts<'_>) -> AttackMods {
     let mut m = AttackMods {
         attack: 0,
         crit: DEFAULT_CRIT,
@@ -73,7 +92,9 @@ pub fn attack_mods(graph: &Graph<'_>, f: &AttackFacts) -> AttackMods {
                 let v = l.c.fields.get("value").and_then(Value::as_i64).unwrap_or(0);
                 m.attack += i32::try_from(v).unwrap_or(0);
             }
-            "critical_range" if targets(&l.list("applies_to"), f) => {
+            "critical_range"
+                if targets(&l.list("applies_to"), f) && item_bound_ok(graph, &l, f) =>
+            {
                 let min = l.c.fields.get("min").and_then(Value::as_u64).unwrap_or(20);
                 m.crit = m.crit.min(u8::try_from(min).unwrap_or(DEFAULT_CRIT));
             }

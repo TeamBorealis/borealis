@@ -5,7 +5,7 @@ use crate::support::{self, ids, Base, RawItem, Tally, Verdict};
 use crate::Ctx;
 use borealis_content::{Element, Rule, Ruleset};
 use borealis_engine::commands;
-use borealis_engine::CharacterSnapshot;
+use borealis_engine::{CharacterSnapshot, CharacterState};
 use serde_json::Value;
 
 /// One equipped item on the test character, with its 5etools entry.
@@ -16,7 +16,13 @@ pub struct Check<'a> {
     pub el: &'a Element,
     pub raw: &'a RawItem,
     pub snap: &'a CharacterSnapshot,
+    /// The state of `snap`.
+    pub state: &'a CharacterState,
     pub uid: &'a str,
+    /// The item attuned on the level-5 fighter (for a barred item `snap` is an eligible host).
+    pub fighter_attuned: bool,
+    /// The item's attack line on the level-5 fighter (the proficiency check is a fighter's).
+    pub fighter_proficient: Option<bool>,
 }
 
 impl Check<'_> {
@@ -121,7 +127,7 @@ impl Check<'_> {
             .setter("attunement")
             .and_then(|s| s.attribute("addition"))
             .is_some();
-        let v = if !line.attuned {
+        let v = if !self.fighter_attuned {
             Verdict::Correct
         } else if text_kept {
             Verdict::NotModelled
@@ -190,6 +196,7 @@ impl Check<'_> {
             },
         );
         let category = self.raw.str("weaponCategory").unwrap_or("");
+        let proficient = self.fighter_proficient.unwrap_or(atk.proficient);
         if matches!(category, "simple" | "martial") && !self.raw.flag("firearm") {
             let why = || match self.el.setter_value("proficiency") {
                 None => format!(
@@ -206,7 +213,7 @@ impl Check<'_> {
             t.record(
                 "weapon proficiency (fighter, simple/martial)",
                 id,
-                verdict(atk.proficient, why),
+                verdict(proficient, why),
             );
         }
         if let Some(c) = self.raw.int("critThreshold") {
@@ -464,6 +471,10 @@ impl Check<'_> {
                 let mode = if mode == "*" { "walk" } else { mode.as_str() };
                 let before = get(&self.base.snap, mode);
                 let got = get(self.snap, mode);
+                if how == "multiply" {
+                    self.speed_multiply(t, m, mode, v);
+                    continue;
+                }
                 let want = match (how.as_str(), v) {
                     ("static", n) => v_i32(n).map(|n| before.max(n)),
                     ("equal", Value::String(other)) => Some(get(self.snap, other)),
@@ -486,6 +497,57 @@ impl Check<'_> {
                 );
             }
         }
+    }
+
+    /// `multiply` (Boots of Speed, Eagle Whistle): a toggle of the item; switched on, the speed
+    /// becomes `factor` times itself, or times the speed an `equal` entry names.
+    fn speed_multiply(
+        &self,
+        t: &mut Tally,
+        m: &serde_json::Map<String, Value>,
+        mode: &str,
+        v: &Value,
+    ) {
+        let id = self.el.id.as_str();
+        let cat = "speed change (other form)";
+        let Some(factor) = v_i32(v) else {
+            t.record(cat, id, Verdict::NotModelled);
+            return;
+        };
+        let get = |s: &CharacterSnapshot, mode: &str| match mode {
+            "walk" => s.speed.walk,
+            "fly" => s.speed.fly,
+            "climb" => s.speed.climb,
+            "swim" => s.speed.swim,
+            "burrow" => s.speed.burrow,
+            _ => -1,
+        };
+        let of = m
+            .get("equal")
+            .and_then(|e| e.get(mode))
+            .and_then(Value::as_str)
+            .unwrap_or(mode);
+        let toggle = self
+            .snap
+            .toggles
+            .iter()
+            .find(|tg| tg.source == self.el.name || tg.id.contains(&self.el.id));
+        let on = toggle
+            .and_then(|tg| commands::set_toggle(self.cx.engine, self.state, &tg.id, true).ok());
+        let Some(on) = on else {
+            t.record(cat, id, Verdict::NotModelled);
+            return;
+        };
+        let toggled = self.cx.engine.derive(&on.state);
+        let want = factor * get(self.snap, of);
+        let got = get(&toggled, mode);
+        t.record(
+            cat,
+            id,
+            verdict_nm(got == want, got == get(self.snap, mode), || {
+                format!("{mode} {got} want {want}")
+            }),
+        );
     }
 
     fn charges(&self, t: &mut Tally) {
@@ -580,19 +642,50 @@ impl Check<'_> {
         let Some(n) = self.raw.int("bonusWeapon") else {
             return;
         };
-        let bow = &self.base.with_bow;
-        let Ok(o) = commands::add_item(self.cx.engine, &bow.state, &self.el.id, 1) else {
+        let Some(launcher) = self.launcher() else {
+            t.record("+N ammunition", id, Verdict::Wrong("no launcher".into()));
+            return;
+        };
+        let Ok(o) = commands::add_item(self.cx.engine, &launcher.state, &self.el.id, 1) else {
             return;
         };
         let snap = self.cx.engine.derive(&o.state);
         let atk = |s: &CharacterSnapshot| s.attacks.first().map(|a| (a.attack, a.damage.clone()));
-        let (before, after) = (atk(&bow.snap), atk(&snap));
+        let (before, after) = (atk(&launcher.snap), atk(&snap));
         let v = match (before, after) {
             (Some((a0, _)), Some((a1, _))) if a1 == a0 + n => Verdict::Correct,
             (Some((a0, _)), Some((a1, _))) if a1 == a0 => Verdict::NotModelled,
             other => Verdict::Wrong(format!("{other:?}")),
         };
         t.record("+N ammunition", id, v);
+    }
+}
+
+impl Check<'_> {
+    /// The fighter with the weapon that fires this ammunition equipped (a bow for arrows and
+    /// unnamed ammunition, a crossbow for bolts, a sling for sling bullets, a pistol for other
+    /// bullets, a blowgun for needles).
+    fn launcher(&self) -> Option<support::Sub> {
+        let name = self.el.name.to_lowercase();
+        let weapon = if name.contains("bolt") {
+            ids::light_crossbow(self.rs)
+        } else if name.contains("sling") {
+            ids::sling(self.rs)
+        } else if name.contains("bullet") {
+            ids::pistol(self.rs)
+        } else if name.contains("needle") {
+            ids::blowgun(self.rs)
+        } else {
+            return Some(support::Sub {
+                state: self.base.with_bow.state.clone(),
+                snap: self.base.with_bow.snap.clone(),
+            });
+        };
+        let state = support::equip_state(self.cx.engine, &self.base.state, weapon, None)?;
+        Some(support::Sub {
+            snap: self.cx.engine.derive(&state),
+            state,
+        })
     }
 }
 

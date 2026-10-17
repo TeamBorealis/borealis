@@ -422,7 +422,7 @@ fn tv15_armor_swap_and_dex_cap() {
 
 #[test]
 fn tv17_champion_remarkable_athlete() {
-    each_variant("tv17", |e, v| {
+    each_variant("tv17", |e, _| {
         let mut h = Hero::new(e, true);
         h.base([15, 12, 14, 10, 10, 8])
             .race_class(RACE_HUMAN, &class("Fighter"));
@@ -437,18 +437,6 @@ fn tv17_champion_remarkable_athlete() {
         h.level_to(7);
         let s = h.snap();
         assert_eq!((s.proficiency_bonus, s.hit_points), (3, 60));
-        if v == Variant::Bundled {
-            // Known content gap (det-aurora-1 handoff): the bundled SRD 5.1 Remarkable Athlete
-            // (ID_WOTC_PHB_ARCHETYPE_FEATURE_REMARKABLEATHLETE) carries no rules, so no half
-            // proficiency applies. Pinned so the fix of content/srd-5.1 flips this test: then
-            // delete this branch and let the bundled variant run the full vector.
-            assert_eq!(
-                (sk(&s, "athletics"), s.skill("athletics").unwrap().misc),
-                (3, 0),
-                "bundled Remarkable Athlete now has rules: remove the known-gap branch"
-            );
-            return;
-        }
         assert_eq!(
             (
                 sk(&s, "athletics"),

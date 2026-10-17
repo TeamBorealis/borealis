@@ -167,8 +167,18 @@ pub fn equip(
     next.inventory.items[i].attuned = false;
     let mut warnings = Vec::new();
     if facts.requires_attunement || adorner_requires {
-        let used = engine.derive_with(&next, false).inventory.attuned;
-        if used < limit {
+        let inv = engine.derive_with(&next, false).inventory;
+        let used = inv.attuned;
+        let restricted = inv
+            .items
+            .iter()
+            .find(|l| l.uid == uid && l.attunement_barred);
+        if let Some(line) = restricted {
+            warnings.push(format!(
+                "{}: the item is equipped but not attuned",
+                barred_message(line)
+            ));
+        } else if used < limit {
             next.inventory.items[i].attuned = true;
         } else {
             warnings.push(format!(
@@ -179,6 +189,17 @@ pub fn equip(
     let mut out = CommandOutcome::new(prune(engine, &next));
     out.warnings = warnings;
     Ok(out)
+}
+
+/// "Moonblade requires attunement by an elf or half-elf of neutral good alignment".
+fn barred_message(line: &crate::snapshot::ItemSnapshot) -> String {
+    format!(
+        "{} requires attunement {}",
+        line.name,
+        line.attunement_restriction
+            .as_deref()
+            .unwrap_or("by someone else")
+    )
 }
 
 fn clear_equipped(it: &mut InventoryItem) {
@@ -221,6 +242,9 @@ pub fn attune(engine: &Engine, state: &CharacterState, uid: &str) -> CmdResult {
         return Err(CommandError::Inventory(
             "this item does not require attunement".into(),
         ));
+    }
+    if line.attunement_barred && !line.attuned {
+        return Err(CommandError::Inventory(barred_message(line)));
     }
     if snap.inventory.attuned >= snap.inventory.attunement_limit && !line.attuned {
         return Err(CommandError::Inventory(format!(

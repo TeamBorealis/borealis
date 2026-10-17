@@ -21,12 +21,14 @@
 
 #[path = "fivetools_items/checks.rs"]
 mod checks;
+#[path = "fivetools_items/hosts.rs"]
+mod hosts;
 #[path = "fivetools_items/support.rs"]
 mod support;
 
 use borealis_content::{ContentStoreBuilder, Element, Ruleset};
 use borealis_engine::commands;
-use borealis_engine::{invariants, Engine};
+use borealis_engine::{invariants, CharacterState, Engine};
 use borealis_import_5etools::{import_folder, ImportOptions};
 use checks::{verdict, verdict_nm, Check};
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -56,6 +58,8 @@ fn five_etools_item_audit() {
 struct Ctx<'a> {
     engine: &'a Engine,
     bases: HashMap<Ruleset, Base>,
+    /// Eligible hosts of items with an attunement restriction.
+    hosts: hosts::Hosts,
     /// Imported elements by id.
     ours: &'a HashMap<String, (Element, Ruleset)>,
 }
@@ -110,6 +114,7 @@ fn run(data: &Path) {
     let cx = Ctx {
         engine: &engine,
         bases,
+        hosts: hosts::Hosts::default(),
         ours: &ours,
     };
     println!(
@@ -166,6 +171,8 @@ fn run(data: &Path) {
     let t_rest = t2.elapsed();
 
     print_pass(&pass);
+    let (hosts_ok, hosts_failed) = cx.hosts.counts();
+    println!("eligible attunement hosts: {hosts_ok} built, {hosts_failed} could not be built");
     tally.print();
     let item_errors = result
         .report
@@ -269,7 +276,9 @@ fn first(ids: &[String]) -> Vec<&str> {
     ids.iter().take(8).map(String::as_str).collect()
 }
 
-/// Add, equip and settle one item; then run every value check that applies to it.
+/// Add, equip and settle one item; then run every value check that applies to it. An item
+/// whose attunement restriction bars the fighter is checked as barred there and then audited
+/// on an eligible host (`hosts`).
 fn audit_item(
     cx: &Ctx<'_>,
     el: &Element,
@@ -279,27 +288,42 @@ fn audit_item(
     pass: &mut Pass,
     tally: &mut Tally,
 ) {
-    let base = &cx.bases[&rs];
-    let added = commands::add_item(cx.engine, &base.state, &el.id, 1).expect("add item");
-    let uid = added.state.inventory.items.last().unwrap().uid.clone();
-    let state = match commands::equip(cx.engine, &added.state, &uid, None) {
-        Ok(o) => {
-            support::bump(&mut pass.equipped, category);
-            o.state
-        }
-        Err(e) => {
+    let fighter = &cx.bases[&rs];
+    let Equipped {
+        state,
+        uid,
+        warnings,
+        refused,
+    } = equip_on(cx, &fighter.state, el);
+    match refused {
+        None => support::bump(&mut pass.equipped, category),
+        Some(cause) => {
             if matches!(el.ty.as_str(), "Weapon" | "Armor") {
-                let cause = e.to_string();
                 pass.equip_refused
                     .entry(cause)
                     .or_default()
                     .push(el.id.clone());
             }
             support::bump(&mut pass.carried_only, category);
-            added.state
         }
-    };
+    }
     let snap = cx.engine.derive(&state);
+    let line = snap.inventory.items.iter().find(|l| l.uid == uid);
+    let fighter_attuned = line.is_some_and(|l| l.attuned);
+    let fighter_proficient = snap
+        .attacks
+        .iter()
+        .find(|a| a.uid == uid)
+        .map(|a| a.proficient);
+    let host = if line.is_some_and(|l| l.attunement_barred) {
+        barred_and_host(cx, el, rs, fighter_attuned, &warnings, tally)
+    } else {
+        None
+    };
+    let (base, state, uid, snap): (&Base, _, _, _) = match &host {
+        Some((h, st, u)) => (h, st.clone(), u.clone(), cx.engine.derive(st)),
+        None => (fighter, state, uid, snap),
+    };
     for v in invariants::check(cx.engine, &state, &snap) {
         let text = v.to_string();
         if base.violations.contains(&text) {
@@ -321,9 +345,94 @@ fn audit_item(
         el,
         raw,
         snap: &snap,
+        state: &state,
         uid: &uid,
+        fighter_attuned,
+        fighter_proficient,
     };
     ck.all(tally);
+}
+
+/// An item added to a character and, when it can be, equipped.
+struct Equipped {
+    state: CharacterState,
+    uid: String,
+    warnings: Vec<String>,
+    /// Why equipping was refused (the item is only carried).
+    refused: Option<String>,
+}
+
+/// Add `el` to `state` and equip it.
+fn equip_on(cx: &Ctx<'_>, state: &CharacterState, el: &Element) -> Equipped {
+    let added = commands::add_item(cx.engine, state, &el.id, 1).expect("add item");
+    let uid = added.state.inventory.items.last().unwrap().uid.clone();
+    match commands::equip(cx.engine, &added.state, &uid, None) {
+        Ok(o) => Equipped {
+            state: o.state,
+            uid,
+            warnings: o.warnings,
+            refused: None,
+        },
+        Err(e) => Equipped {
+            state: added.state,
+            uid,
+            warnings: Vec::new(),
+            refused: Some(e.to_string()),
+        },
+    }
+}
+
+/// The fighter is barred by `el`'s attunement restriction: check that equipping left it
+/// unattuned with a warning, then equip it on an eligible host, which must attune it. Returns
+/// the host and its state when one could be built.
+fn barred_and_host(
+    cx: &Ctx<'_>,
+    el: &Element,
+    rs: Ruleset,
+    fighter_attuned: bool,
+    warnings: &[String],
+    tally: &mut Tally,
+) -> Option<(std::rc::Rc<Base>, CharacterState, String)> {
+    let warned = warnings.iter().any(|w| w.contains("requires attunement"));
+    tally.record(
+        "attunement barred on an ineligible character",
+        &el.id,
+        verdict(!fighter_attuned && warned, || {
+            format!("attuned {fighter_attuned} warned {warned}")
+        }),
+    );
+    let host = hosts::spec_for(cx.engine, rs, el).and_then(|s| cx.hosts.get(cx.engine, rs, &s));
+    let Some(host) = host else {
+        tally.record(
+            "attunement on an eligible host",
+            &el.id,
+            Verdict::NotModelled,
+        );
+        return None;
+    };
+    let Equipped {
+        state,
+        uid,
+        refused: None,
+        ..
+    } = equip_on(cx, &host.state, el)
+    else {
+        tally.record(
+            "attunement on an eligible host",
+            &el.id,
+            Verdict::Wrong("cannot equip".into()),
+        );
+        return None;
+    };
+    let snap = cx.engine.derive(&state);
+    let line = snap.inventory.items.iter().find(|l| l.uid == uid);
+    let ok = line.is_some_and(|l| l.attuned && !l.attunement_barred);
+    tally.record(
+        "attunement on an eligible host",
+        &el.id,
+        verdict(ok, || "still barred".into()),
+    );
+    Some((host, state, uid))
 }
 
 /// Packs and item groups resolve to installed items with the source's quantities; opening a

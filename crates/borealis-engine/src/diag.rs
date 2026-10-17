@@ -36,6 +36,8 @@ pub mod code {
     pub const SELECTION_INVALID: &str = "selection.invalid";
     pub const SELECTION_MISSING_CONTENT: &str = "selection.missing_content";
     pub const ATTUNEMENT_OVER_LIMIT: &str = "attunement.over_limit";
+    /// An attuned item whose attunement restriction the character does not meet.
+    pub const ATTUNEMENT_RESTRICTED: &str = "attunement.restricted";
     pub const EVAL_NOT_CONVERGED: &str = "eval.not_converged";
     pub const MULTICLASS_NO_SLOT_TABLE: &str = "multiclass.no_slot_table";
 }

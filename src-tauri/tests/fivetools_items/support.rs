@@ -21,10 +21,10 @@ pub type Counts = BTreeMap<String, usize>;
 /// Element types that are items.
 pub const ITEM_TYPES: &[&str] = &["Weapon", "Armor", "Magic Item", "Item"];
 /// Str 15, Dex 18: finesse and ranged weapons use Dex, medium armor caps Dex.
-const SCORES: [i32; 6] = [15, 18, 14, 12, 12, 10];
+pub const SCORES: [i32; 6] = [15, 18, 14, 12, 12, 10];
 /// Str below every armor's strength requirement.
-const WEAK_SCORES: [i32; 6] = [8, 18, 14, 12, 12, 10];
-const LEVEL: u32 = 5;
+pub const WEAK_SCORES: [i32; 6] = [8, 18, 14, 12, 12, 10];
+pub const LEVEL: u32 = 5;
 
 pub fn bump(map: &mut Counts, key: impl Into<String>) {
     *map.entry(key.into()).or_default() += 1;
@@ -56,6 +56,22 @@ pub mod ids {
     }
     pub fn longbow(rs: Ruleset) -> &'static str {
         by(rs, "ID_5ET_PHB_ITEM_LONGBOW", "ID_5ET_XPHB_ITEM_LONGBOW")
+    }
+    pub fn light_crossbow(rs: Ruleset) -> &'static str {
+        by(
+            rs,
+            "ID_5ET_PHB_ITEM_LIGHT_CROSSBOW",
+            "ID_5ET_XPHB_ITEM_LIGHT_CROSSBOW",
+        )
+    }
+    pub fn sling(rs: Ruleset) -> &'static str {
+        by(rs, "ID_5ET_PHB_ITEM_SLING", "ID_5ET_XPHB_ITEM_SLING")
+    }
+    pub fn pistol(rs: Ruleset) -> &'static str {
+        by(rs, "ID_5ET_DMG_ITEM_PISTOL", "ID_5ET_XPHB_ITEM_PISTOL")
+    }
+    pub fn blowgun(rs: Ruleset) -> &'static str {
+        by(rs, "ID_5ET_PHB_ITEM_BLOWGUN", "ID_5ET_XPHB_ITEM_BLOWGUN")
     }
     pub fn breastplate(rs: Ruleset) -> &'static str {
         by(
@@ -430,7 +446,7 @@ pub struct Base {
     pub with_bow: Sub,
 }
 
-fn pick(engine: &Engine, state: &CharacterState, target: &str) -> Option<CharacterState> {
+pub fn pick(engine: &Engine, state: &CharacterState, target: &str) -> Option<CharacterState> {
     let snap = engine.derive(state);
     let slot = snap
         .slots
@@ -441,7 +457,7 @@ fn pick(engine: &Engine, state: &CharacterState, target: &str) -> Option<Charact
         .map(|o| o.state)
 }
 
-fn with_class(engine: &Engine, rs: Ruleset, class: &str, scores: [i32; 6]) -> CharacterState {
+pub fn with_class(engine: &Engine, rs: Ruleset, class: &str, scores: [i32; 6]) -> CharacterState {
     let state = commands::new_character(engine, rs);
     let state = commands::set_ability_method(&state, AbilityMethod::Manual);
     let state = commands::set_base_scores(engine, &state, scores)
@@ -476,6 +492,17 @@ impl Base {
             assert!(engine.has_element(rs, id), "{id} missing");
         }
         let state = fighter(engine, rs, SCORES);
+        let weak_state = fighter(engine, rs, WEAK_SCORES);
+        Self::from_states(engine, rs, state, weak_state)
+    }
+
+    /// A test character from its state and its weak (Str 8) twin.
+    pub fn from_states(
+        engine: &Engine,
+        rs: Ruleset,
+        state: CharacterState,
+        weak_state: CharacterState,
+    ) -> Self {
         let snap = engine.derive(&state);
         assert_eq!(snap.level, LEVEL);
         let found = invariants::check(engine, &state, &snap);
@@ -491,7 +518,6 @@ impl Base {
             mods[i] = snap.abilities[i].modifier;
             scores[i] = snap.abilities[i].score;
         }
-        let weak_state = fighter(engine, rs, WEAK_SCORES);
         let weak = Sub {
             snap: engine.derive(&weak_state),
             state: weak_state,

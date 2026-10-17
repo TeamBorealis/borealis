@@ -1,6 +1,7 @@
 //! Inventory snapshot and weapon attacks.
 
-use crate::diag::DiagSink;
+use crate::attunement;
+use crate::diag::{code, DiagSink, Diagnostic, Severity};
 use crate::graph::Graph;
 use crate::ids;
 use crate::inventory::{self, item_facts, item_weight};
@@ -32,7 +33,7 @@ pub fn inventory_snapshot(
     state: &CharacterState,
     limit: u32,
     strength: i32,
-    _diags: &mut DiagSink,
+    diags: &mut DiagSink,
 ) -> InventorySnapshot {
     let inv = &state.inventory;
     let mut items = Vec::new();
@@ -51,6 +52,22 @@ pub fn inventory_snapshot(
             attuned_total += 1;
         }
         let adorner = it.adorner.as_deref().and_then(|a| uni.get(a));
+        let (restriction, barred) =
+            attunement::line_restriction(uni, graph, &e.el, adorner.map(|a| &a.el));
+        if att && barred {
+            diags.push(
+                Diagnostic::new(
+                    code::ATTUNEMENT_RESTRICTED,
+                    Severity::Warning,
+                    format!(
+                        "{} is attuned although it requires attunement {}",
+                        e.el.name,
+                        restriction.as_ref().map_or("", |r| r.text.as_str())
+                    ),
+                )
+                .at(e.el.id.clone()),
+            );
+        }
         let name = it.alt_name.clone().unwrap_or_else(|| match adorner {
             Some(a) => format!("{} ({})", e.el.name, a.el.name),
             None => e.el.name.clone(),
@@ -64,6 +81,8 @@ pub fn inventory_snapshot(
             attuned: att,
             requires_attunement: f.requires_attunement
                 || adorner.is_some_and(|a| item_facts(a).requires_attunement),
+            attunement_restriction: restriction.map(|r| r.text).filter(|t| !t.is_empty()),
+            attunement_barred: barred,
             weight: item_weight(uni, it),
             cost_gp: inventory::item_cost_gp(e),
             storage: it.storage.clone(),
@@ -185,7 +204,9 @@ pub fn attacks_with(
                     && has("ID_INTERNAL_WEAPON_PROPERTY_LIGHT")));
         let dexterous = (finesse || (arts.is_some() && monk_weapon)) && mods[1] > mods[0];
         let ability = if ranged || dexterous { 1 } else { 0 };
-        let enh = weapon_enhancement(&e.el, adorner.map(|a| &a.el));
+        let loaded = crate::ammo::loaded(uni, state, e);
+        let enh = weapon_enhancement(&e.el, adorner.map(|a| &a.el))
+            + loaded.as_ref().map_or(0, |l| l.enhancement);
         let proficient =
             e.el.setter_value("proficiency")
                 .is_some_and(|p| graph.has(p));
@@ -195,6 +216,7 @@ pub fn attacks_with(
         let am = crate::attack_rules::attack_mods(
             graph,
             &crate::attack_rules::AttackFacts {
+                item: Some((it.uid.as_str(), e.el.id.as_str())),
                 melee,
                 unarmed: false,
                 light: has("ID_INTERNAL_WEAPON_PROPERTY_LIGHT"),
@@ -262,17 +284,13 @@ pub fn attacks_with(
             ability: ids::ABILITIES[ability].to_string(),
             proficient,
             mastery: crate::play_rules::attack_mastery(uni, &e.el, cx.masteries),
+            ammunition: loaded.map(|l| l.name),
         });
     }
     if state.ruleset == borealis_content::Ruleset::Dnd2024 {
         out.push(unarmed_strike(cx, arts, proficiency, mods, d20));
     }
     out
-}
-
-fn enhancement_of(el: &borealis_content::Element) -> Option<i32> {
-    el.setter_value("enhancement")
-        .and_then(|v| v.trim().trim_start_matches('+').parse::<i32>().ok())
 }
 
 /// The `+N` of a weapon: its adorner's enhancement when the adorner has one (a `+1 Weapon`
@@ -282,8 +300,8 @@ fn weapon_enhancement(
     adorner: Option<&borealis_content::Element>,
 ) -> i32 {
     adorner
-        .and_then(enhancement_of)
-        .or_else(|| enhancement_of(weapon))
+        .and_then(crate::ammo::enhancement_of)
+        .or_else(|| crate::ammo::enhancement_of(weapon))
         .unwrap_or(0)
 }
 
@@ -316,6 +334,7 @@ fn unarmed_strike(
     let am = crate::attack_rules::attack_mods(
         cx.graph,
         &crate::attack_rules::AttackFacts {
+            item: None,
             melee: true,
             unarmed: true,
             light: false,
@@ -334,6 +353,7 @@ fn unarmed_strike(
         ability: ids::ABILITIES[ability].to_string(),
         proficient: true,
         mastery: None,
+        ammunition: None,
     }
 }
 

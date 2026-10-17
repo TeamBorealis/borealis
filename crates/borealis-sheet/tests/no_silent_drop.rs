@@ -77,6 +77,8 @@ fn grow(
             equipped: None,
             attuned: false,
             requires_attunement: false,
+            attunement_restriction: None,
+            attunement_barred: false,
             weight: 1.0,
             cost_gp: 1.0,
             storage: None,

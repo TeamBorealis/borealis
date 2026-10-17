@@ -621,6 +621,7 @@ impl<'u> Evaluation<'u> {
                 remaining,
             }
         });
+        let abilities = self.abilities(state, prof);
         CharacterSnapshot {
             ruleset: state.ruleset,
             profile: ProfileInfo {
@@ -637,17 +638,22 @@ impl<'u> Evaluation<'u> {
             next_level_xp: next_xp,
             level_up_available: next_xp.is_some_and(|x| state.experience >= x),
             proficiency_bonus: prof,
-            abilities: self.abilities(state, prof),
+            concentration_save: abilities[2].save
+                + self.stats.sum(crate::stats::CONCENTRATION_SAVE_GROUP),
+            abilities,
             skills: self.skills(&mods, prof),
             armor_class: self.stats.sum("ac"),
             initiative: self.stats.sum("initiative") + self.stats.sum(crate::play_rules::D20_GROUP),
-            speed: Speeds {
-                walk: self.stats.sum("speed").max(0),
-                fly: self.reduced_speed("speed:fly"),
-                climb: self.reduced_speed("speed:climb"),
-                swim: self.reduced_speed("speed:swim"),
-                burrow: self.reduced_speed("speed:burrow"),
-            },
+            speed: crate::speed_toggles::apply(
+                &self.graph,
+                Speeds {
+                    walk: self.stats.sum("speed").max(0),
+                    fly: self.reduced_speed("speed:fly"),
+                    climb: self.reduced_speed("speed:climb"),
+                    swim: self.reduced_speed("speed:swim"),
+                    burrow: self.reduced_speed("speed:burrow"),
+                },
+            ),
             hit_points: total_hp,
             classes,
             origin,

@@ -276,7 +276,12 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
         &["from", "to", "table", "amount", "action"],
         &[("expires", GAP)],
     ),
-    k("critical_range", ATTACK, true, &["min", "applies_to"]),
+    k(
+        "critical_range",
+        ATTACK,
+        true,
+        &["min", "applies_to", "item"],
+    ),
     k("cunning_effect", NOTES, true, &["cost_dice", "save"]),
     k("cunning_strike", NOTES, true, &["save_dc", "max_effects"]),
     ku(

@@ -205,7 +205,11 @@ pub fn toggle_stat_effects(el: &Element) -> Vec<ToggleEffects> {
     out
 }
 
-fn worn_blocker(graph: &Graph<'_>, requires_not_wearing: Option<&str>) -> Option<String> {
+/// Why a toggle that needs "not wearing ..." is blocked now, if it is.
+pub(crate) fn worn_blocker(
+    graph: &Graph<'_>,
+    requires_not_wearing: Option<&str>,
+) -> Option<String> {
     let want = requires_not_wearing?.to_lowercase();
     let armor = graph.equip.armor.as_ref()?;
     let kind = armor.armor_kind.as_str();
@@ -265,6 +269,13 @@ fn describe_effect(eff: &Value, stats: &StatSet) -> String {
                 .parse::<i32>()
                 .unwrap_or_else(|_| stats.sum(&v.to_lowercase()));
             format!("{} {n:+}", s("name"))
+        }
+        crate::speed_toggles::SPEED_MULTIPLY => {
+            let factor = eff.get("factor").and_then(Value::as_i64).unwrap_or(1);
+            match eff.get("of").and_then(Value::as_str) {
+                Some(of) => format!("{} speed {factor}x {of} speed", title_case(s("speed"))),
+                None => format!("{} speed x{factor}", title_case(s("speed"))),
+            }
         }
         other => title_case(other),
     }

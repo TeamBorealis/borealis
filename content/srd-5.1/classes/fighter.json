@@ -595,10 +595,12 @@
       },
       "rules": [
         {
-          "kind": "stat",
-          "name": "critical hit:range",
-          "value": "19",
-          "bonus": "critical range"
+          "kind": "critical_range",
+          "min": 19,
+          "applies_to": [
+            "weapon attacks",
+            "unarmed strikes"
+          ]
         }
       ]
     },
@@ -614,7 +616,33 @@
             "text": "Starting at 7th level, you can add half your proficiency bonus (round up) to any Strength, Dexterity, or Constitution check you make that doesn’t already use your proficiency bonus. In addition, when you make a running long jump, the distance you can cover increases by a number of feet equal to your Strength modifier."
           }
         ]
-      }
+      },
+      "rules": [
+        {
+          "kind": "stat",
+          "name": "acrobatics:misc",
+          "value": "proficiency:half:up",
+          "requirements": "!ID_PROFICIENCY_SKILL_ACROBATICS"
+        },
+        {
+          "kind": "stat",
+          "name": "athletics:misc",
+          "value": "proficiency:half:up",
+          "requirements": "!ID_PROFICIENCY_SKILL_ATHLETICS"
+        },
+        {
+          "kind": "stat",
+          "name": "sleight of hand:misc",
+          "value": "proficiency:half:up",
+          "requirements": "!ID_PROFICIENCY_SKILL_SLEIGHTOFHAND"
+        },
+        {
+          "kind": "stat",
+          "name": "stealth:misc",
+          "value": "proficiency:half:up",
+          "requirements": "!ID_PROFICIENCY_SKILL_STEALTH"
+        }
+      ]
     },
     {
       "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_ADDITIONALFIGHTINGSTYLE",
@@ -654,10 +682,12 @@
       },
       "rules": [
         {
-          "kind": "stat",
-          "name": "critical hit:range",
-          "value": "18",
-          "bonus": "critical range"
+          "kind": "critical_range",
+          "min": 18,
+          "applies_to": [
+            "weapon attacks",
+            "unarmed strikes"
+          ]
         }
       ]
     },

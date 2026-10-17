@@ -399,6 +399,13 @@ pub struct ItemSnapshot {
     pub attuned: bool,
     /// Needs attunement.
     pub requires_attunement: bool,
+    /// Printed attunement restriction ("by a cleric, druid, or warlock").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attunement_restriction: Option<String>,
+    /// The character does not meet the (enforced) attunement restriction: equipping does not
+    /// attune it and attuning is refused.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub attunement_barred: bool,
     /// Weight of the line in pounds.
     pub weight: f64,
     /// Price of one piece in gold pieces.
@@ -466,6 +473,9 @@ pub struct AttackSnapshot {
     /// Two-Weapon Fighting).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub offhand_damage: Option<String>,
+    /// Carried `+N` ammunition the weapon fires (its bonus is in `attack` and `damage`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ammunition: Option<String>,
 }
 
 fn default_crit_range() -> u8 {
@@ -650,6 +660,9 @@ pub struct CharacterSnapshot {
     pub armor_class: i32,
     /// Initiative.
     pub initiative: i32,
+    /// Constitution saving throw to keep concentration (the save plus `concentration:save`).
+    #[serde(default)]
+    pub concentration_save: i32,
     /// Speeds.
     pub speed: Speeds,
     /// Maximum hit points.

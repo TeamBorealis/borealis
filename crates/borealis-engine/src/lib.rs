@@ -2,7 +2,9 @@
 //! multiclass and spellcasting, with ruleset profile hooks.
 
 pub mod adapter;
+pub mod ammo;
 pub mod attack_rules;
+pub mod attunement;
 pub mod cantrips;
 pub mod combat;
 pub mod commands;
@@ -32,6 +34,7 @@ pub mod rule_view;
 pub mod runtime;
 pub mod settings;
 pub mod snapshot;
+pub mod speed_toggles;
 pub mod spell_rules;
 pub mod spells;
 pub mod state;

@@ -109,6 +109,13 @@ pub fn modifier(score: i32) -> i32 {
     (score - 10).div_euclid(2)
 }
 
+/// Bonus to every ability check (Borealis): merged into each skill's `:misc` (so passives) and
+/// into initiative.
+pub const ABILITY_CHECKS_GROUP: &str = "ability checks";
+/// Bonus to Constitution saves to keep concentration (Borealis), on top of the Constitution
+/// save: `CharacterSnapshot::concentration_save`.
+pub const CONCENTRATION_SAVE_GROUP: &str = "concentration:save";
+
 /// Names of the groups that are always present.
 #[must_use]
 pub fn builtin_groups() -> HashSet<String> {
@@ -178,6 +185,8 @@ pub fn builtin_groups() -> HashSet<String> {
         "ac:shield",
         "ac:misc",
         "attunement:current",
+        ABILITY_CHECKS_GROUP,
+        CONCENTRATION_SAVE_GROUP,
     ] {
         s.insert(n.to_string());
     }
@@ -235,7 +244,13 @@ impl<'a, 'u> Eval<'a, 'u> {
                 "ac:misc".into(),
             ],
         );
-        merges.insert("initiative".into(), vec!["initiative:misc".into()]);
+        merges.insert(
+            "initiative".into(),
+            vec!["initiative:misc".into(), ABILITY_CHECKS_GROUP.into()],
+        );
+        for (k, _) in SKILLS {
+            merges.insert(format!("{k}:misc"), vec![ABILITY_CHECKS_GROUP.into()]);
+        }
         for (t, s) in &inp.merges {
             merges.entry(t.clone()).or_default().push(s.clone());
         }
