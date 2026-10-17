@@ -133,6 +133,13 @@ pub struct MigrationReport {
     pub files: Vec<FileReport>,
     /// Every issue in processing order.
     pub issues: Vec<Issue>,
+    /// Source element type by id, for every `<element>` read (converted or dropped; a renamed
+    /// element under both ids). Not part of the `--report` JSON.
+    #[serde(skip)]
+    pub element_types: BTreeMap<String, String>,
+    /// Ids that had to be renamed (source id -> new id); the source id stays an alias.
+    #[serde(skip)]
+    pub renamed: BTreeMap<String, String>,
 }
 
 impl MigrationReport {
@@ -160,7 +167,27 @@ impl MigrationReport {
             totals,
             files,
             issues,
+            element_types: BTreeMap::new(),
+            renamed: BTreeMap::new(),
         }
+    }
+
+    /// Attach the element types and renames gathered during the run.
+    #[must_use]
+    pub fn with_elements(
+        mut self,
+        types: BTreeMap<String, String>,
+        renamed: BTreeMap<String, String>,
+    ) -> Self {
+        self.element_types = types;
+        self.renamed = renamed;
+        self
+    }
+
+    /// The source type of element `id` (`None` when no `<element>` with that id was read).
+    #[must_use]
+    pub fn element_type(&self, id: &str) -> Option<&str> {
+        self.element_types.get(id).map(String::as_str)
     }
 
     /// True when the run is clean: no errors, and (if `strict`) no warnings either.

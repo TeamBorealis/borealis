@@ -471,6 +471,12 @@ pub struct InventoryItem {
     pub equipped: Option<String>,
     pub attuned: bool,
     pub requires_attunement: bool,
+    /// Printed attunement restriction ("by a cleric, druid, or warlock").
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attunement_restriction: Option<String>,
+    /// The character does not meet the enforced restriction: attuning is refused.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub attunement_barred: bool,
     pub storage: u8,
     pub notes: String,
     pub list_in_inventory: bool,
@@ -482,6 +488,28 @@ pub struct InventoryItem {
     pub weapon: Option<WeaponInfo>,
     /// Armor columns.
     pub armor: Option<crate::gear_facts::ArmorFacts>,
+    /// Dice-valued charge maximums of this item (enter or re-roll with `set_rolled_max` /
+    /// `reroll_max`).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub rolled_charges: Vec<RolledCharges>,
+}
+
+/// A resource of an item whose maximum is rolled on dice (Nine Lives Stealer: `1d8+1` charges).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RolledCharges {
+    /// Resource id (the argument of `set_rolled_max` / `reroll_max`).
+    pub resource_id: String,
+    pub name: String,
+    /// The dice as the content prints them (`1d8+1`).
+    pub dice: String,
+    /// The maximum in use: the stored roll, or the average (rounded down) when none is stored.
+    pub value: i32,
+    /// A roll (or an entered value) is stored; `false` = the average is shown.
+    pub rolled: bool,
+    /// Lowest and highest maximum the dice can give (an entered value must lie between them).
+    pub min: u32,
+    pub max: u32,
 }
 
 /// Coin purse.
@@ -570,6 +598,9 @@ pub struct Attack {
     pub die_floor: Option<u8>,
     /// Damage of the off-hand attack when it differs (Light weapons).
     pub offhand_damage: Option<String>,
+    /// Carried +N ammunition this weapon fires (its bonus is already in attack and damage).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ammunition: Option<String>,
 }
 
 /// The complete character view, returned by every mutation.
@@ -703,4 +734,96 @@ pub struct ExportResult {
     pub mime: String,
     pub path: Option<String>,
     pub data_base64: Option<String>,
+}
+
+#[cfg(test)]
+mod gear_dto_tests {
+    use super::*;
+
+    fn attack(ammunition: Option<&str>) -> Attack {
+        Attack {
+            id: "w1".into(),
+            name: "Longbow".into(),
+            range: "150/600".into(),
+            attack_bonus: "+6".into(),
+            damage: "1d8+4".into(),
+            description: String::new(),
+            ability: Some("dex".into()),
+            auto: true,
+            show_in_combat: true,
+            card: true,
+            mastery: None,
+            crit_range: 20,
+            die_floor: None,
+            offhand_damage: None,
+            ammunition: ammunition.map(str::to_string),
+        }
+    }
+
+    fn item(restriction: Option<&str>, barred: bool) -> InventoryItem {
+        InventoryItem {
+            id: "i1".into(),
+            item_id: "ID_STAFF".into(),
+            name: "Staff".into(),
+            display_name: "Staff".into(),
+            category: "Staff".into(),
+            quantity: 1,
+            weight: 4.0,
+            value_cp: 0,
+            equipped: None,
+            attuned: false,
+            requires_attunement: true,
+            attunement_restriction: restriction.map(str::to_string),
+            attunement_barred: barred,
+            storage: 0,
+            notes: String::new(),
+            list_in_inventory: true,
+            show_card: None,
+            is_pack: false,
+            pack_contents: Vec::new(),
+            is_weapon: false,
+            weapon: None,
+            armor: None,
+            rolled_charges: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn attack_sends_ammunition_only_when_set() {
+        let with = serde_json::to_value(attack(Some("Arrow +1"))).unwrap();
+        assert_eq!(with["ammunition"], "Arrow +1");
+        let without = serde_json::to_value(attack(None)).unwrap();
+        assert!(without.get("ammunition").is_none());
+    }
+
+    #[test]
+    fn inventory_item_sends_attunement_restriction_and_barred_in_camel_case() {
+        let v = serde_json::to_value(item(Some("by a cleric or druid"), true)).unwrap();
+        assert_eq!(v["attunementRestriction"], "by a cleric or druid");
+        assert_eq!(v["attunementBarred"], true);
+        let plain = serde_json::to_value(item(None, false)).unwrap();
+        assert!(plain.get("attunementRestriction").is_none());
+        assert!(plain.get("attunementBarred").is_none());
+        assert!(plain.get("rolledCharges").is_none());
+    }
+
+    #[test]
+    fn inventory_item_sends_rolled_charges_in_camel_case() {
+        let mut it = item(None, false);
+        it.rolled_charges.push(RolledCharges {
+            resource_id: "ID_NINE_LIVES".into(),
+            name: "Nine Lives Stealer charges".into(),
+            dice: "1d8+1".into(),
+            value: 5,
+            rolled: false,
+            min: 2,
+            max: 9,
+        });
+        let v = serde_json::to_value(it).unwrap();
+        assert_eq!(
+            v["rolledCharges"][0],
+            serde_json::json!({"resourceId": "ID_NINE_LIVES", "name": "Nine Lives Stealer charges",
+                "dice": "1d8+1", "value": 5, "rolled": false, "min": 2, "max": 9})
+        );
+    }
 }

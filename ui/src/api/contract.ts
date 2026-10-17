@@ -197,6 +197,10 @@ export interface ApiMethods {
   equipItem(args: Cid & { inventoryId: string; slot: EquipRequest }): Promise<CharacterSnapshot>;
   unequipItem(args: Cid & { inventoryId: string }): Promise<CharacterSnapshot>;
   setAttuned(args: Cid & { inventoryId: string; attuned: boolean }): Promise<CharacterSnapshot>;
+  /** Enter the maximum of a dice-valued charge resource (`InventoryItem.rolledCharges`); refused outside min..max. */
+  setRolledMax(args: Cid & { inventoryId: string; resourceId: string; value: number }): Promise<CharacterSnapshot>;
+  /** Roll that maximum again. */
+  rerollMax(args: Cid & { inventoryId: string; resourceId: string }): Promise<CharacterSnapshot>;
   storeItem(args: Cid & { inventoryId: string; storage: 0 | 1 | 2 }): Promise<CharacterSnapshot>;
   moveItem(args: Cid & { inventoryId: string; direction: "up" | "down" }): Promise<CharacterSnapshot>;
   updateItemDetails(
@@ -414,6 +418,8 @@ export const COMMANDS = {
   equipItem: "equip_item",
   unequipItem: "unequip_item",
   setAttuned: "set_attuned",
+  setRolledMax: "set_rolled_max",
+  rerollMax: "reroll_max",
   storeItem: "store_item",
   moveItem: "move_item",
   updateItemDetails: "update_item_details",

@@ -280,6 +280,42 @@ impl AppState {
         })
     }
 
+    /// Enter the maximum of a dice-valued charge resource of an item (rolled at the table).
+    ///
+    /// # Errors
+    /// `invalid_argument` for an unknown line or resource, or a value the dice cannot give.
+    pub fn set_rolled_max(
+        &self,
+        id: &str,
+        uid: &str,
+        resource: &str,
+        value: u32,
+    ) -> ApiResult<CharacterSnapshot> {
+        self.mutate(id, |ctx, d| {
+            let out = commands::set_rolled_max(
+                &ctx.hub.engine,
+                &d.character.build,
+                uid,
+                resource,
+                value,
+            )?;
+            apply(d, out);
+            Ok(())
+        })
+    }
+
+    /// Roll the maximum of a dice-valued charge resource of an item again.
+    ///
+    /// # Errors
+    /// `invalid_argument` for an unknown line or resource.
+    pub fn reroll_max(&self, id: &str, uid: &str, resource: &str) -> ApiResult<CharacterSnapshot> {
+        self.mutate(id, |ctx, d| {
+            let out = commands::reroll_max(&ctx.hub.engine, &d.character.build, uid, resource)?;
+            apply(d, out);
+            Ok(())
+        })
+    }
+
     /// Move an item to storage 1 or 2, or back to being carried (0).
     ///
     /// # Errors
@@ -518,3 +554,7 @@ fn hold_with_both_hands(d: &mut Draft, uid: &str) {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "rolled_charges_tests.rs"]
+mod rolled_charges_tests;

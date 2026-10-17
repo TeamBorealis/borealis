@@ -14,7 +14,7 @@ use borealis_content::{
     ContentStoreBuilder, Issue, IssueCode, PackFile, PackFileKind, PackFormat, PackManifest,
     PackOrigin, Ruleset, Severity,
 };
-use std::collections::{BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::path::{Component, Path, PathBuf};
 
 /// Options for a migration run.
@@ -100,6 +100,11 @@ fn safe_relative(name: &str) -> bool {
             .all(|c| matches!(c, Component::Normal(_) | Component::CurDir))
 }
 
+/// macOS metadata beside real files (`._name` resource forks, `__MACOSX` in unpacked zips).
+fn is_os_metadata(name: &str) -> bool {
+    name.starts_with("._") || name == "__MACOSX"
+}
+
 fn walk(root: &Path, dir: &Path, out: &mut Vec<String>) -> Result<(), MigrateError> {
     let mut entries: Vec<_> = std::fs::read_dir(dir)
         .map_err(|e| MigrateError::io(dir, e))?
@@ -109,7 +114,7 @@ fn walk(root: &Path, dir: &Path, out: &mut Vec<String>) -> Result<(), MigrateErr
     for entry in entries {
         let path = entry.path();
         let kind = entry.file_type().map_err(|e| MigrateError::io(&path, e))?;
-        if kind.is_symlink() {
+        if kind.is_symlink() || is_os_metadata(&entry.file_name().to_string_lossy()) {
             continue;
         }
         if kind.is_dir() {
@@ -163,6 +168,10 @@ struct Run<'a> {
     converted: Vec<(String, borealis_content::ContentFile)>,
     manifest_files: Vec<(String, PackFileKind, String)>,
     output_names: BTreeSet<String>,
+    /// Source element types by id (later files override earlier ones, as the store does).
+    types: BTreeMap<String, String>,
+    /// Ids renamed by [`crate::idnorm`] (source id -> new id).
+    renamed: BTreeMap<String, String>,
 }
 
 impl Run<'_> {
@@ -201,6 +210,7 @@ impl Run<'_> {
         };
         let conv = convert_xml(&text, rel);
         self.issues.extend(conv.issues);
+        self.types.extend(conv.element_types);
         let out_name = output_name(rel);
         let mut followed = Vec::new();
         let (kind, written) = match conv.document {
@@ -355,6 +365,8 @@ pub fn migrate_path(input: &Path, opts: &MigrateOptions) -> Result<MigrateOutput
         converted: Vec::new(),
         manifest_files: Vec::new(),
         output_names: BTreeSet::new(),
+        types: BTreeMap::new(),
+        renamed: BTreeMap::new(),
     };
 
     if follow_index {
@@ -417,14 +429,21 @@ pub fn migrate_path(input: &Path, opts: &MigrateOptions) -> Result<MigrateOutput
         contents: manifest.to_json_pretty()?,
     });
     files.sort_by(|a, b| a.path.cmp(&b.path));
-    let report = MigrationReport::new(run.reports, run.issues);
+    let report =
+        MigrationReport::new(run.reports, run.issues).with_elements(run.types, run.renamed);
     Ok(MigrateOutput { files, report })
 }
 
 /// Rewrite ids that Borealis rejects (see [`crate::idnorm`]) and re-serialise the touched files.
 fn normalise_ids(run: &mut Run<'_>) -> Result<(), MigrateError> {
-    let (changed, issues) = crate::idnorm::normalise(&mut run.converted)?;
+    let (changed, issues, renamed) = crate::idnorm::normalise(&mut run.converted)?;
     run.issues.extend(issues);
+    for (old, new) in &renamed {
+        if let Some(ty) = run.types.get(old).cloned() {
+            run.types.insert(new.clone(), ty);
+        }
+    }
+    run.renamed = renamed;
     for i in changed {
         let (rel, file) = &run.converted[i];
         let name = output_name(rel);
@@ -445,16 +464,20 @@ fn validate_output(run: &mut Run<'_>) -> Result<(), MigrateError> {
     run.issues.extend(issues);
 
     for out in &run.outputs {
-        let kind = if out.path.ends_with(".index.json") {
-            DocumentKind::Index
-        } else {
-            DocumentKind::Content
+        // An `<index>` root saved as `.xml` is an index too: the manifest knows the real kind.
+        let entry = run.manifest_files.iter().find(|(_, _, o)| *o == out.path);
+        let source = entry.map_or_else(|| out.path.clone(), |(rel, _, _)| rel.clone());
+        let kind = match entry {
+            Some((_, PackFileKind::Index, _)) => DocumentKind::Index,
+            Some(_) => DocumentKind::Content,
+            None if out.path.ends_with(".index.json") => DocumentKind::Index,
+            None => DocumentKind::Content,
         };
         let value: serde_json::Value = serde_json::from_str(&out.contents)?;
         for v in validate_document(kind, &value)? {
             run.issues.push(
                 Issue::new(Severity::Error, IssueCode::SchemaViolation, v.to_string())
-                    .in_file(out.path.clone()),
+                    .in_file(source.clone()),
             );
         }
     }
@@ -489,6 +512,19 @@ mod tests {
         assert_eq!(slug("!!!"), "migrated-pack");
         assert_eq!(index_content_dir("core.index"), "core");
         assert_eq!(index_content_dir("a/core.index"), "a/core");
+    }
+
+    #[test]
+    fn os_metadata_is_not_content() {
+        let tmp = std::env::temp_dir().join(format!("bm-walk-{}", std::process::id()));
+        std::fs::create_dir_all(tmp.join("__MACOSX")).unwrap();
+        std::fs::write(tmp.join("a.xml"), "<elements/>").unwrap();
+        std::fs::write(tmp.join("._a.xml"), [0u8, 5, 22, 7]).unwrap();
+        std::fs::write(tmp.join("__MACOSX/._a.xml"), [0u8]).unwrap();
+        let mut found = Vec::new();
+        walk(&tmp, &tmp, &mut found).unwrap();
+        std::fs::remove_dir_all(&tmp).unwrap();
+        assert_eq!(found, ["a.xml"]);
     }
 
     #[test]

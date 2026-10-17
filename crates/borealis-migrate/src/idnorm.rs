@@ -100,20 +100,24 @@ fn rewrite(value: &mut Value, key: Option<&str>, order: &[(&String, &String)]) {
     }
 }
 
-/// Normalise ids across a conversion set. Returns the files that changed (index into
-/// `files`) plus one Info issue per renamed element. No-op when every id is valid.
+/// What [`normalise`] did: changed files (index into the input), one Info issue per renamed
+/// element, and every rename applied (source id -> new id).
+pub(crate) type Normalised = (Vec<usize>, Vec<Issue>, BTreeMap<String, String>);
+
+/// Normalise ids across a conversion set. No-op when every id is valid.
 pub(crate) fn normalise(
     files: &mut [(String, ContentFile)],
-) -> Result<(Vec<usize>, Vec<Issue>), serde_json::Error> {
+) -> Result<Normalised, serde_json::Error> {
     let map = build_map(files);
     if map.is_empty() {
-        return Ok((Vec::new(), Vec::new()));
+        return Ok((Vec::new(), Vec::new(), BTreeMap::new()));
     }
     // Longest originals first so a shorter id never clobbers part of a longer one.
     let mut order: Vec<(&String, &String)> = map.iter().collect();
     order.sort_by(|a, b| b.0.len().cmp(&a.0.len()).then_with(|| a.0.cmp(b.0)));
     let mut changed = Vec::new();
     let mut issues = Vec::new();
+    let mut renamed = BTreeMap::new();
     for (i, (rel, file)) in files.iter_mut().enumerate() {
         let mut value = serde_json::to_value(&*file)?;
         rewrite(&mut value, None, &order);
@@ -129,21 +133,23 @@ pub(crate) fn normalise(
                     .attributes
                     .insert("legacy-id".into(), old.id.clone());
             }
+            // Named by the source id (what the file says); the message gives the new id.
             issues.push(
                 Issue::info(
                     IssueCode::Normalized,
                     format!("id normalised: {:?} -> {:?}", old.id, el.id),
                 )
                 .in_file(rel.clone())
-                .at_element(el.id.clone()),
+                .at_element(old.id.clone()),
             );
+            renamed.insert(old.id.clone(), el.id.clone());
         }
         if new_file != *file {
             *file = new_file;
             changed.push(i);
         }
     }
-    Ok((changed, issues))
+    Ok((changed, issues, renamed))
 }
 
 #[cfg(test)]

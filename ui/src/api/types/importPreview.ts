@@ -1,5 +1,7 @@
 /** Rules-based content import with a preview (no AI). Mirrors `content_preview.rs`. */
 
+import type { MigrationIssueCode } from "./content";
+
 export interface ImportFileInput {
   fileName: string;
   /** File bytes, base64 encoded. */
@@ -21,8 +23,13 @@ export interface PreviewDiagnostic {
   severity: "info" | "warning" | "error";
   message: string;
   element: string | null;
-  /** File name only. */
+  /** Path of the source file inside the imported set (e.g. "classes/wizard.xml"). */
   file: string | null;
+  /** Always sent by the app; optional only for older mocks. */
+  code?: MigrationIssueCode;
+  /** The element's type in the source ("Spell", "Class Feature", ...). */
+  elementType?: string | null;
+  line?: number | null;
 }
 
 /** An id that is neither in the imported set nor in the installed content. */

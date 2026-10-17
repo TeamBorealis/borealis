@@ -293,6 +293,8 @@ export interface InventoryItem {
   attunementRestriction?: string | null;
   /** The character does not meet the restriction: equipping leaves it unattuned and Attune is refused. */
   attunementBarred?: boolean;
+  /** Dice-valued charge maximums of this item (enter with `setRolledMax`, re-roll with `rerollMax`). */
+  rolledCharges?: RolledCharges[];
   /** 0 = carried, 1/2 = stored in the named storage containers. */
   storage: 0 | 1 | 2;
   notes: string;
@@ -505,4 +507,20 @@ export interface RecheckReport {
   updated: RecheckEntry[];
   /** Characters that still have missing content. */
   outstanding: RecheckEntry[];
+}
+
+/** A resource of an item whose maximum is rolled on dice (e.g. `1d8+1` charges). */
+export interface RolledCharges {
+  /** The `resourceId` argument of `setRolledMax` / `rerollMax`. */
+  resourceId: string;
+  name: string;
+  /** The dice as printed (`1d8+1`). */
+  dice: string;
+  /** The maximum in use: the stored roll, or the average (rounded down) while none is stored. */
+  value: number;
+  /** A roll or an entered value is stored; false = the average is shown. */
+  rolled: boolean;
+  /** Lowest and highest maximum the dice can give. */
+  min: number;
+  max: number;
 }

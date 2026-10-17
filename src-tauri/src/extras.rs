@@ -3,7 +3,7 @@
 
 use crate::dto::{
     Attack, Attunement, CharacterDetails, CharacterOptions, ClassSpellcasting, Coins,
-    InventoryItem, InventoryState, OptionDef, PactSlotRow, SpellEntry, SpellSlotRow,
+    InventoryItem, InventoryState, OptionDef, PactSlotRow, RolledCharges, SpellEntry, SpellSlotRow,
     SpellcastingState, WeaponInfo,
 };
 use crate::elements::plain_text;
@@ -400,6 +400,8 @@ pub fn inventory(input: &MapInput<'_>, snap: &Engine) -> InventoryState {
                 equipped: i.equipped.map(|e| equip_name(e, both_hands).to_string()),
                 attuned: i.attuned,
                 requires_attunement: i.requires_attunement,
+                attunement_restriction: i.attunement_restriction.clone(),
+                attunement_barred: i.attunement_barred,
                 storage: i
                     .storage
                     .as_ref()
@@ -413,6 +415,7 @@ pub fn inventory(input: &MapInput<'_>, snap: &Engine) -> InventoryState {
                 is_weapon,
                 weapon: is_weapon.then(|| weapon_info(el, snap)),
                 armor: el.and_then(crate::gear_facts::armor_facts),
+                rolled_charges: rolled_charges(snap, &i.uid),
             }
         })
         .collect();
@@ -439,6 +442,25 @@ pub fn inventory(input: &MapInput<'_>, snap: &Engine) -> InventoryState {
         ],
         warnings: input.warnings.to_vec(),
     }
+}
+
+/// The dice-valued charge maximums held by inventory line `uid`.
+fn rolled_charges(snap: &Engine, uid: &str) -> Vec<RolledCharges> {
+    snap.resources
+        .iter()
+        .filter_map(|r| {
+            let roll = r.rolled.as_ref()?;
+            (roll.item_uid.as_deref() == Some(uid)).then(|| RolledCharges {
+                resource_id: r.id.clone(),
+                name: r.name.clone(),
+                dice: roll.dice.clone(),
+                value: r.max,
+                rolled: roll.rolled,
+                min: roll.min,
+                max: roll.max,
+            })
+        })
+        .collect()
 }
 
 #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
@@ -513,6 +535,7 @@ pub fn attacks(c: &Character, snap: &Engine) -> Vec<Attack> {
         crit_range: a.crit_range,
         die_floor: a.die_floor,
         offhand_damage: a.offhand_damage.clone(),
+        ammunition: a.ammunition.clone(),
     });
     let manual = c.details.attacks.iter().enumerate().map(|(i, a)| Attack {
         id: format!("manual-{i}"),
@@ -529,6 +552,7 @@ pub fn attacks(c: &Character, snap: &Engine) -> Vec<Attack> {
         crit_range: 20,
         die_floor: None,
         offhand_damage: None,
+        ammunition: None,
     });
     auto.chain(manual).collect()
 }

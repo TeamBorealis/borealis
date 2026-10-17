@@ -1013,6 +1013,18 @@
     "name": "CharacterSnapshot"
    }
   },
+  "reroll_max": {
+   "args": {
+    "characterId": false,
+    "inventoryId": false,
+    "resourceId": false
+   },
+   "method": "rerollMax",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
   "reset_abilities": {
    "args": {
     "characterId": false
@@ -1259,6 +1271,19 @@
     "dataUrl": false
    },
    "method": "setPortrait",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "set_rolled_max": {
+   "args": {
+    "characterId": false,
+    "inventoryId": false,
+    "resourceId": false,
+    "value": false
+   },
+   "method": "setRolledMax",
    "response": {
     "k": "ref",
     "name": "CharacterSnapshot"
@@ -5544,6 +5569,16 @@
       "k": "prim"
      }
     },
+    "rolledCharges": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "RolledCharges"
+      }
+     }
+    },
     "showCard": {
      "opt": true,
      "t": {
@@ -5886,8 +5921,32 @@
   "MigrationIssue": {
    "k": "object",
    "props": {
+    "code": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "element": {
      "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "elementType": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "file": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "line": {
+     "opt": true,
      "t": {
       "k": "prim"
      }
@@ -7099,14 +7158,32 @@
   "PreviewDiagnostic": {
    "k": "object",
    "props": {
+    "code": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "element": {
      "opt": false,
      "t": {
       "k": "prim"
      }
     },
+    "elementType": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "file": {
      "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "line": {
+     "opt": true,
      "t": {
       "k": "prim"
      }
@@ -7275,6 +7352,53 @@
      }
     },
     "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "RolledCharges": {
+   "k": "object",
+   "props": {
+    "dice": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "max": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "min": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "resourceId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "rolled": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "value": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -8483,6 +8607,16 @@
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    },
+    "reports": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "MigrationReport"
+      }
      }
     },
     "updated": {

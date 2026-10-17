@@ -48,6 +48,10 @@ const ATTR_ALIASES: &[(&str, &str, &str)] = &[
 
 /// Repair misspellings in place and return the number of repairs.
 pub(crate) fn repair(ctx: &mut Ctx, el: &mut XmlElement) -> usize {
+    let id = matches!(el.name.as_str(), "element" | "append")
+        .then(|| el.attr("id").map(|i| i.trim().to_string()))
+        .flatten();
+    let outer = id.map(|i| ctx.current.replace(i));
     let mut repaired = 0;
     for (tag, bad, good) in ATTR_ALIASES {
         if el.name != *tag {
@@ -78,6 +82,9 @@ pub(crate) fn repair(ctx: &mut Ctx, el: &mut XmlElement) -> usize {
             repaired += 1;
         }
         repaired += repair(ctx, child);
+    }
+    if let Some(outer) = outer {
+        ctx.current = outer;
     }
     repaired
 }

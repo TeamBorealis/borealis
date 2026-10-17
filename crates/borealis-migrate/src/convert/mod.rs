@@ -3,6 +3,7 @@
 mod info;
 mod parts;
 mod rules;
+mod salvage;
 mod typos;
 mod util;
 
@@ -14,7 +15,7 @@ use borealis_content::{
     Append, ContentFile, Element, Extra, IndexFile, Issue, IssueCode, Multiclass, Severity, Version,
 };
 use rules::{convert_rules, Owner};
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use util::{bool_attr, opt_attr, required_attr, split_tags, CResult};
 
 /// The converted document.
@@ -36,6 +37,8 @@ pub struct FileConversion {
     pub issues: Vec<Issue>,
     /// Counters for the report.
     pub stats: Stats,
+    /// The `type` of every `<element>` in the file (converted or dropped), by source id.
+    pub element_types: BTreeMap<String, String>,
 }
 
 /// Convert the text of one Aurora XML file. `file_name` is used for diagnostics, and a
@@ -44,8 +47,15 @@ pub struct FileConversion {
 pub fn convert_xml(text: &str, file_name: &str) -> FileConversion {
     let mut ctx = Ctx::new(file_name);
     if text.trim().is_empty() {
+        // An empty content file holds no elements, so nothing is lost (a note); an empty index
+        // usually means a broken download (a warning).
+        let severity = if file_name.to_lowercase().ends_with(".index") {
+            Severity::Warning
+        } else {
+            Severity::Info
+        };
         ctx.report(
-            Severity::Warning,
+            severity,
             IssueCode::FileSkipped,
             "file is empty; skipped",
             None,
@@ -55,6 +65,7 @@ pub fn convert_xml(text: &str, file_name: &str) -> FileConversion {
             document: None,
             issues: ctx.issues,
             stats: ctx.stats,
+            element_types: ctx.types,
         };
     }
     let document = match parse_document(text) {
@@ -66,6 +77,9 @@ pub fn convert_xml(text: &str, file_name: &str) -> FileConversion {
                 None,
                 Some(e.line),
             );
+            if !file_name.to_lowercase().ends_with(".index") {
+                salvage::report_unparsed_elements(&mut ctx, text);
+            }
             None
         }
         Ok(root) if !is_aurora_root(&root, file_name) => {
@@ -102,6 +116,7 @@ pub fn convert_xml(text: &str, file_name: &str) -> FileConversion {
         document,
         issues: ctx.issues,
         stats: ctx.stats,
+        element_types: ctx.types,
     }
 }
 
@@ -128,7 +143,10 @@ fn content_file(ctx: &mut Ctx, root: &XmlElement) -> CResult<ContentFile> {
             }
             "element" => {
                 let label = child.attr("id").map(|s| s.trim().to_string());
-                match element(ctx, child) {
+                if let (Some(id), Some(ty)) = (&label, child.attr("type")) {
+                    ctx.types.insert(id.clone(), ty.trim().to_string());
+                }
+                match ctx.within(label.clone(), |ctx| element(ctx, child)) {
                     Ok(e) => file.elements.push(e),
                     Err(err) => {
                         ctx.stats.dropped_elements += 1;
@@ -148,7 +166,9 @@ fn content_file(ctx: &mut Ctx, root: &XmlElement) -> CResult<ContentFile> {
                     }
                 }
             }
-            "append" => match append(ctx, child) {
+            "append" => match ctx.within(child.attr("id").map(|i| i.trim().to_string()), |ctx| {
+                append(ctx, child)
+            }) {
                 Ok(Some(a)) => file.appends.push(a),
                 Ok(None) => {}
                 Err(err) => ctx.report(

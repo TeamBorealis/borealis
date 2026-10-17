@@ -118,6 +118,27 @@ pub fn set_attuned(
 }
 
 #[tauri::command(async)]
+pub fn set_rolled_max(
+    state: S<'_>,
+    character_id: String,
+    inventory_id: String,
+    resource_id: String,
+    value: u32,
+) -> ApiResult<CharacterSnapshot> {
+    state.set_rolled_max(&character_id, &inventory_id, &resource_id, value)
+}
+
+#[tauri::command(async)]
+pub fn reroll_max(
+    state: S<'_>,
+    character_id: String,
+    inventory_id: String,
+    resource_id: String,
+) -> ApiResult<CharacterSnapshot> {
+    state.reroll_max(&character_id, &inventory_id, &resource_id)
+}
+
+#[tauri::command(async)]
 pub fn store_item(
     state: S<'_>,
     character_id: String,

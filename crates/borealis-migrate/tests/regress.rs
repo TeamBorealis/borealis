@@ -127,7 +127,7 @@ fn repeated_support_tags_are_info_and_repeated_sheets_keep_the_first() {
 fn empty_and_foreign_files_are_skipped_cleanly() {
     for (name, text, severity) in [
         ("e.index", "", Severity::Warning),
-        ("e.xml", "  \n\t", Severity::Warning),
+        ("e.xml", "  \n\t", Severity::Info),
         (
             "m.xml",
             "<manifest><uses-permission/></manifest>",

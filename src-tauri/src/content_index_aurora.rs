@@ -10,6 +10,7 @@
 //! path ([`crate::content_preview::convert_set`]), so cross-file references and replacement order
 //! match dropping the same repository as a folder.
 
+use crate::content_dto::MigrationReport;
 use crate::content_import::{slug, stem, write_pack_meta, Scratch};
 use crate::content_index::{looks_like_html, raw_file_url, require_https, sha256_hex, Fetcher};
 use crate::content_packs::{progress, EventSink};
@@ -45,6 +46,8 @@ pub struct AuroraOutcome {
     pub changed: Vec<String>,
     /// Hosts that appeared for the first time.
     pub new_hosts: Vec<String>,
+    /// The conversion report of every pack converted in this update.
+    pub reports: Vec<MigrationReport>,
 }
 
 /// A content file listed by an index tree.
@@ -354,6 +357,8 @@ impl AppState {
         }
         sink.content_progress(&progress("converting", 0, 1, &name));
         let converted = convert_set(&in_dir, &out_dir, &pack_id, &name).map_err(|e| e.message)?;
+        let found = self.findings(&converted, &out_dir).map_err(|e| e.message)?;
+        outcome.reports.push(found.report(url, &converted));
         if converted.converted == 0 {
             return Err("no elements could be converted from this index".into());
         }

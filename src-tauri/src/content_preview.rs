@@ -9,6 +9,7 @@ use crate::content_import::{
     import_pack_id, is_reserved_pack_id, slug, stem, write_pack_meta, Scratch, MAX_PACK_BYTES,
 };
 use crate::content_packs::{progress, EventSink};
+use crate::content_report::{name_scratch_file, MAX_DIAGNOSTICS};
 use crate::error::{ApiError, ApiResult};
 use crate::picked_paths::PickPurpose;
 use crate::session::new_id;
@@ -16,7 +17,7 @@ use crate::state::AppState;
 use crate::zip_read::read_zip;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
-use borealis_content::{IssueCode, PackOrigin, Severity};
+use borealis_content::PackOrigin;
 use borealis_migrate::{convert_xml, migrate_path, write_output, Document, MigrateOptions};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -25,12 +26,8 @@ use std::sync::Mutex;
 
 /// Most previews kept while the user decides (the oldest is discarded).
 const MAX_STAGED: usize = 3;
-/// Most diagnostics sent to the UI.
-const MAX_DIAGNOSTICS: usize = 2_000;
-/// Most distinct unresolved targets sent to the UI.
-const MAX_UNRESOLVED: usize = 200;
-/// Referencing elements named per unresolved target.
-const REFERENCED_BY_SAMPLE: usize = 3;
+/// Scratch copy of a single uploaded XML file.
+pub(crate) const SCRATCH_XML: &str = "input.xml";
 /// Name used when several loose files have no common name.
 const SET_SUFFIX: &str = "more";
 
@@ -61,14 +58,9 @@ pub struct TypeCount {
     pub count: usize,
 }
 
-/// One finding. `file` is a file name only.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct PreviewDiagnostic {
-    pub severity: &'static str,
-    pub message: String,
-    pub element: Option<String>,
-    pub file: Option<String>,
-}
+/// One finding of a preview: the same precise shape as an install report issue (`file` is the
+/// path inside the imported set).
+pub type PreviewDiagnostic = MigrationIssue;
 
 /// A referenced id that is neither in the imported set nor in the installed content.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -268,35 +260,11 @@ impl AppState {
             }
             Inputs::Files(files) => stage_files(&scratch, &out_dir, files, format)?,
         };
-        let hub = self.hub()?;
-        let (mut diagnostics, unresolved, unresolved_total, summary) =
-            classify(&conv.raw, |t| hub.store.contains_id(t));
-        if conv.converted > 0 {
-            if let Some(issue) = self.bundled_override_warning(&out_dir) {
-                diagnostics.push(PreviewDiagnostic {
-                    severity: issue.severity,
-                    message: issue.message,
-                    element: issue.element,
-                    file: None,
-                });
-            }
-        }
-        let truncated = diagnostics.len() > MAX_DIAGNOSTICS;
+        let found = self.findings(&conv, &out_dir)?;
+        let report = found.report(&file_name, &conv);
+        let truncated = found.diagnostics.len() > MAX_DIAGNOSTICS;
+        let mut diagnostics = found.diagnostics;
         diagnostics.truncate(MAX_DIAGNOSTICS);
-        let report = MigrationReport {
-            file_name: file_name.clone(),
-            format: conv.format.clone(),
-            converted: conv.converted,
-            skipped: conv.skipped,
-            issues: diagnostics
-                .iter()
-                .map(|d| MigrationIssue {
-                    severity: d.severity,
-                    element: d.element.clone(),
-                    message: d.message.clone(),
-                })
-                .collect(),
-        };
         let preview = ImportPreview {
             preview_id: format!("prev_{}", new_id()),
             pack_name: display,
@@ -306,14 +274,15 @@ impl AppState {
             skipped: conv.skipped,
             counts: conv
                 .counts
+                .clone()
                 .into_iter()
                 .map(|(ty, count)| TypeCount { ty, count })
                 .collect(),
-            summary,
+            summary: found.summary,
             diagnostics,
             diagnostics_truncated: truncated,
-            unresolved,
-            unresolved_total,
+            unresolved: found.unresolved,
+            unresolved_total: found.unresolved_total,
             replaces_existing: self.paths.library().join(&id).exists(),
         };
         Ok(Staged {
@@ -330,10 +299,12 @@ impl AppState {
 /// The outcome of converting one input set.
 pub(crate) struct Converted {
     pub(crate) converted: usize,
-    skipped: usize,
-    format: String,
+    pub(crate) skipped: usize,
+    pub(crate) format: String,
     counts: BTreeMap<String, usize>,
-    raw: Vec<borealis_content::Issue>,
+    pub(crate) raw: Vec<borealis_content::Issue>,
+    /// Source element type by id (converted, dropped and renamed elements).
+    pub(crate) types: BTreeMap<String, String>,
 }
 
 fn decode_files(files: &[ImportFileInput]) -> ApiResult<Vec<(String, Vec<u8>)>> {
@@ -420,9 +391,11 @@ fn stage_files(
         let id = import_pack_id(&first);
         let name = stem(&first).to_string();
         let conv = if xml {
-            let input = scratch.0.join("input.xml");
+            let input = scratch.0.join(SCRATCH_XML);
             std::fs::write(&input, bytes).map_err(|e| ApiError::io("read the file", e))?;
-            convert_set(&input, out_dir, &id, &name)?
+            let mut conv = convert_set(&input, out_dir, &id, &name)?;
+            name_scratch_file(&mut conv.raw, SCRATCH_XML, &first);
+            conv
         } else {
             convert_json_single(out_dir, &first, &id, bytes)?
         };
@@ -433,7 +406,11 @@ fn stage_files(
     for (name, bytes) in files {
         if name.to_lowercase().ends_with(".zip") {
             zip_names.push(name);
-            entries.extend(read_zip(&bytes, is_content_name)?);
+            entries.extend(
+                read_zip(&bytes, is_content_name)?
+                    .into_iter()
+                    .filter(|(n, _)| !is_archive_junk(n)),
+            );
         } else if is_content_name(&name.to_lowercase()) {
             entries.push((name, bytes));
         }
@@ -444,8 +421,13 @@ fn stage_files(
         ));
     }
     let display = set_name(&entries, &zip_names);
+    // A zip or dropped folder that keeps its top folder converts exactly like that folder picked.
+    let (entries, as_folder) = match common_folder(&entries).map(str::to_string) {
+        Some(top) => (strip_folder(entries, &top), true),
+        None => (entries, !zip_names.is_empty()),
+    };
     let in_dir = scratch.0.join("in");
-    lay_out(&in_dir, &entries)?;
+    lay_out(&in_dir, &entries, !as_folder)?;
     let id = set_id(&display);
     let conv = convert_set(&in_dir, out_dir, &id, &display)?;
     let source = zip_names
@@ -474,11 +456,32 @@ fn set_name(entries: &[(String, Vec<u8>)], zips: &[String]) -> String {
     }
 }
 
-/// Write the entries under `dir`. A loose XML file named by a loose `.index` goes in that index's
-/// content folder, so the index finds it exactly as it would on disk.
-fn lay_out(dir: &Path, entries: &[(String, Vec<u8>)]) -> ApiResult<()> {
+/// macOS archive metadata (`__MACOSX/`, `._name` resource forks), never content.
+fn is_archive_junk(name: &str) -> bool {
+    name.split('/')
+        .any(|part| part == "__MACOSX" || part.starts_with("._"))
+}
+
+/// The entries with the leading `top/` removed.
+fn strip_folder(entries: Vec<(String, Vec<u8>)>, top: &str) -> Vec<(String, Vec<u8>)> {
+    let prefix = format!("{top}/");
+    entries
+        .into_iter()
+        .map(|(name, bytes)| {
+            let rel = name
+                .strip_prefix(&prefix)
+                .map_or(name.clone(), str::to_string);
+            (rel, bytes)
+        })
+        .collect()
+}
+
+/// Write the entries under `dir`. With `place_loose`, a loose XML file named by a loose `.index`
+/// goes in that index's content folder, so the index finds it exactly as it would on disk (a
+/// folder or archive keeps its own layout, as a picked folder does).
+fn lay_out(dir: &Path, entries: &[(String, Vec<u8>)], place_loose: bool) -> ApiResult<()> {
     let mut place: BTreeMap<String, String> = BTreeMap::new();
-    for (name, bytes) in entries {
+    for (name, bytes) in entries.iter().filter(|_| place_loose) {
         if name.contains('/') || !name.to_lowercase().ends_with(".index") {
             continue;
         }
@@ -538,6 +541,7 @@ pub(crate) fn convert_set(
         format: "xml".into(),
         counts: totals.elements_by_type.clone(),
         raw: output.report.issues.clone(),
+        types: output.report.element_types.clone(),
     })
 }
 
@@ -569,69 +573,8 @@ fn convert_json_single(
         format: report.format,
         counts,
         raw: Vec::new(),
+        types: BTreeMap::new(),
     })
-}
-
-const fn severity(s: Severity) -> &'static str {
-    match s {
-        Severity::Info => "info",
-        Severity::Warning => "warning",
-        Severity::Error => "error",
-    }
-}
-
-type Classified = (
-    Vec<PreviewDiagnostic>,
-    Vec<UnresolvedRef>,
-    usize,
-    SeverityCounts,
-);
-
-/// Split issues into diagnostics and unresolved references. A reference the installed content
-/// already defines (`is_installed`) is not a problem and is dropped.
-fn classify(raw: &[borealis_content::Issue], is_installed: impl Fn(&str) -> bool) -> Classified {
-    let mut diagnostics = Vec::new();
-    let mut summary = SeverityCounts::default();
-    let mut refs: BTreeMap<String, (usize, Vec<String>)> = BTreeMap::new();
-    for issue in raw {
-        if issue.code == IssueCode::DanglingReference {
-            let target = issue.message.rsplit(' ').next().unwrap_or_default();
-            if target.is_empty() || is_installed(target) {
-                continue;
-            }
-            let slot = refs.entry(target.to_string()).or_default();
-            slot.0 += 1;
-            if let Some(e) = &issue.element {
-                if slot.1.len() < REFERENCED_BY_SAMPLE && !slot.1.contains(e) {
-                    slot.1.push(e.clone());
-                }
-            }
-            continue;
-        }
-        match issue.severity {
-            Severity::Error => summary.errors += 1,
-            Severity::Warning => summary.warnings += 1,
-            Severity::Info => summary.infos += 1,
-        }
-        diagnostics.push(PreviewDiagnostic {
-            severity: severity(issue.severity),
-            message: issue.message.clone(),
-            element: issue.element.clone(),
-            file: issue.file.as_deref().map(|f| base_name(f).to_string()),
-        });
-    }
-    let total = refs.len();
-    let mut unresolved: Vec<UnresolvedRef> = refs
-        .into_iter()
-        .map(|(target, (count, referenced_by))| UnresolvedRef {
-            target,
-            count,
-            referenced_by,
-        })
-        .collect();
-    unresolved.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.target.cmp(&b.target)));
-    unresolved.truncate(MAX_UNRESOLVED);
-    (diagnostics, unresolved, total, summary)
 }
 
 /// Park a file the OS opened with Borealis until the UI asks for it.

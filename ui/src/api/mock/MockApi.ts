@@ -408,6 +408,9 @@ export class MockApi implements Api {
   async removeItem(a: { characterId: string; inventoryId: string; all: boolean }) { return this.mutate(a.characterId, (c) => eq.removeItem(c, a.inventoryId, a.all)); }
   async equipItem(a: { characterId: string; inventoryId: string; slot: Parameters<typeof eq.equipItem>[2] }) { return this.mutate(a.characterId, (c) => eq.equipItem(c, a.inventoryId, a.slot)); }
   async unequipItem(a: { characterId: string; inventoryId: string }) { return this.mutate(a.characterId, (c) => eq.unequipItem(c, a.inventoryId)); }
+  // Mock items carry no dice-valued charges (InventoryItem.rolledCharges), so both are refused like the app does.
+  async setRolledMax(a: { characterId: string; inventoryId: string; resourceId: string; value: number }): Promise<CharacterSnapshot> { this.get(a.characterId); throw apiError("invalid_argument", `No rolled charges ${a.resourceId} on ${a.inventoryId}`); }
+  async rerollMax(a: { characterId: string; inventoryId: string; resourceId: string }): Promise<CharacterSnapshot> { this.get(a.characterId); throw apiError("invalid_argument", `No rolled charges ${a.resourceId} on ${a.inventoryId}`); }
   async setAttuned(a: { characterId: string; inventoryId: string; attuned: boolean }) { return this.mutate(a.characterId, (c) => eq.setAttuned(c, a.inventoryId, a.attuned)); }
   async storeItem(a: { characterId: string; inventoryId: string; storage: 0 | 1 | 2 }) { return this.mutate(a.characterId, (c) => eq.storeItem(c, a.inventoryId, a.storage)); }
   async moveItem(a: { characterId: string; inventoryId: string; direction: "up" | "down" }) { return this.mutate(a.characterId, (c) => eq.moveItem(c, a.inventoryId, a.direction)); }

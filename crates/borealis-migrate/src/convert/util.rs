@@ -42,6 +42,11 @@ pub struct Ctx {
     pub(crate) file: String,
     pub(crate) issues: Vec<Issue>,
     pub(crate) stats: Stats,
+    /// Id of the `<element>` (or `<append>` target) being converted: issues raised inside it
+    /// name it even when the reporting helper does not know it.
+    pub(crate) current: Option<String>,
+    /// Type of every `<element>` met (converted or dropped), by source id.
+    pub(crate) types: BTreeMap<String, String>,
 }
 
 impl Ctx {
@@ -61,7 +66,7 @@ impl Ctx {
         line: Option<u32>,
     ) {
         let mut issue = Issue::new(severity, code, message).in_file(self.file.clone());
-        if let Some(id) = element {
+        if let Some(id) = element.or(self.current.as_deref()) {
             issue = issue.at_element(id);
         }
         if let Some(line) = line {
@@ -76,6 +81,14 @@ impl Ctx {
 
     pub(crate) fn warn_line(&mut self, code: IssueCode, message: impl Into<String>, line: u32) {
         self.report(Severity::Warning, code, message, None, Some(line));
+    }
+
+    /// Run `f` with `id` as the element that issues are attributed to.
+    pub(crate) fn within<T>(&mut self, id: Option<String>, f: impl FnOnce(&mut Self) -> T) -> T {
+        let outer = std::mem::replace(&mut self.current, id);
+        let out = f(self);
+        self.current = outer;
+        out
     }
 
     pub(crate) fn note_normalized(&mut self, what: &str) {

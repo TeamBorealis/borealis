@@ -4,7 +4,7 @@
 //! Nothing is fetched until the user adds an index and asks for an update; no default URLs exist.
 
 use crate::content_auto::update_message;
-use crate::content_dto::{ContentIndex, ImportPackRequest, UpdateIndexesResult};
+use crate::content_dto::{ContentIndex, ImportPackRequest, MigrationReport, UpdateIndexesResult};
 use crate::content_import::{slug, stem, write_pack_meta, Scratch};
 use crate::content_index_aurora::{looks_like_xml, AuroraOutcome, MAX_FILE_BYTES, MAX_INDEX_BYTES};
 use crate::content_packs::{progress, EventSink, PACK_META_FILE};
@@ -384,6 +384,7 @@ impl AppState {
             reloaded: updated > 0,
             changed: outcome.changed,
             new_hosts: outcome.new_hosts,
+            reports: outcome.reports,
         })
     }
 
@@ -408,8 +409,16 @@ impl AppState {
                 fetcher, sink, url, &bytes, previous, staged, scratches, outcome,
             );
         }
-        let (mut record, failed) =
-            self.check_json_index(fetcher, sink, url, &bytes, previous, staged, scratches)?;
+        let (mut record, failed) = self.check_json_index(
+            fetcher,
+            sink,
+            url,
+            &bytes,
+            previous,
+            staged,
+            scratches,
+            &mut outcome.reports,
+        )?;
         if !failed.is_empty() {
             record.problem = Some(format!(
                 "{} file(s) were refused or could not be downloaded",
@@ -431,6 +440,7 @@ impl AppState {
         previous: &IndexRecord,
         staged: &mut Vec<(PathBuf, String)>,
         scratches: &mut Vec<Scratch>,
+        reports: &mut Vec<MigrationReport>,
     ) -> Result<(IndexRecord, Vec<String>), String> {
         let mut failed = Vec::new();
         let sig = fetcher
@@ -489,9 +499,10 @@ impl AppState {
                 url,
             );
             match outcome {
-                Ok(Some(done)) => {
+                Ok(Some((done, report))) => {
                     staged.push((done.0.join("out"), pack_id));
                     scratches.push(done);
+                    reports.push(report);
                 }
                 Ok(None) => {}
                 Err(()) => {
@@ -514,7 +525,7 @@ impl AppState {
         expected: &str,
         installed: Option<&str>,
         index_url: &str,
-    ) -> Result<Option<Scratch>, ()> {
+    ) -> Result<Option<(Scratch, MigrationReport)>, ()> {
         require_https(file_url).map_err(|_| ())?;
         let bytes = fetcher.get(file_url, MAX_FILE_BYTES).map_err(|_| ())?;
         let actual = sha256_hex(&bytes);
@@ -547,6 +558,6 @@ impl AppState {
             "downloaded",
             &serde_json::json!({ "sha256": actual, "indexUrl": index_url, "fileUrl": file_url }),
         );
-        Ok(Some(scratch))
+        Ok(Some((scratch, report)))
     }
 }

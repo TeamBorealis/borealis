@@ -54,6 +54,7 @@ pub mod content_index_aurora;
 pub mod content_packs;
 pub mod content_prefs;
 pub mod content_preview;
+pub mod content_report;
 pub mod data_dirs;
 pub mod dto;
 pub mod dto_ext;
@@ -297,6 +298,8 @@ pub fn run() {
             commands_gear::equip_item,
             commands_gear::unequip_item,
             commands_gear::set_attuned,
+            commands_gear::set_rolled_max,
+            commands_gear::reroll_max,
             commands_gear::store_item,
             commands_gear::move_item,
             commands_gear::update_item_details,

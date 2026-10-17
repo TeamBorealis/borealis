@@ -5,13 +5,15 @@ use crate::content_dto::{
     ImportNote, ImportPackRequest, ImportPackResult, MigrationIssue, MigrationReport,
 };
 use crate::content_packs::{progress, EventSink, PACK_META_FILE};
+use crate::content_preview::SCRATCH_XML;
+use crate::content_report::{issue_dto, name_scratch_file};
 use crate::error::{ApiError, ApiResult, ErrorCode};
 use crate::session::new_id;
 use crate::state::{AppState, BUNDLED_PACKS};
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
 use borealis_content::{
-    ContentFile, PackFile, PackFileKind, PackFormat, PackManifest, PackOrigin, Ruleset, Severity,
+    ContentFile, IssueCode, PackFile, PackFileKind, PackFormat, PackManifest, PackOrigin, Ruleset,
 };
 use borealis_import_5etools::{import_folder_with_progress, ImportOptions, Phase};
 use borealis_migrate::{migrate_path, write_output, MigrateOptions};
@@ -65,14 +67,6 @@ pub fn slug(text: &str) -> String {
 pub(crate) fn stem(file_name: &str) -> &str {
     let base = file_name.rsplit(['/', '\\']).next().unwrap_or(file_name);
     base.rsplit_once('.').map_or(base, |(s, _)| s)
-}
-
-fn severity(s: Severity) -> &'static str {
-    match s {
-        Severity::Info => "info",
-        Severity::Warning => "warning",
-        Severity::Error => "error",
-    }
 }
 
 /// A scratch folder inside the data directory, deleted on drop.
@@ -191,7 +185,7 @@ impl AppState {
         let manifest =
             PackManifest::from_json_str(&std::fs::read_to_string(out_dir.join("pack.json")).ok()?)
                 .ok()?;
-        let mut hits: Vec<String> = Vec::new();
+        let mut hits: Vec<(String, String)> = Vec::new();
         for file in manifest
             .files
             .iter()
@@ -218,25 +212,27 @@ impl AppState {
                                 .is_some_and(|pack| BUNDLED_PACKS.contains(&pack))
                         })
                     })
-                    .map(|e| e.id.clone()),
+                    .map(|e| (e.id.clone(), e.ty.clone())),
             );
         }
-        if hits.is_empty() {
-            return None;
-        }
+        let (first_id, first_ty) = hits.first().cloned()?;
         let sample = hits
             .iter()
             .take(OVERRIDE_SAMPLE)
-            .cloned()
+            .map(|(id, _)| id.as_str())
             .collect::<Vec<_>>();
         Some(MigrationIssue {
             severity: "warning",
-            element: sample.first().cloned(),
+            code: IssueCode::ElementReplaced,
             message: format!(
                 "This pack overrides {} element(s) from the bundled rules (for example {}).",
                 hits.len(),
                 sample.join(", ")
             ),
+            element: Some(first_id),
+            element_type: Some(first_ty),
+            file: None,
+            line: None,
         })
     }
 
@@ -247,7 +243,7 @@ impl AppState {
         id: &str,
         bytes: &[u8],
     ) -> ApiResult<MigrationReport> {
-        let input = scratch.join("input.xml");
+        let input = scratch.join(SCRATCH_XML);
         std::fs::write(&input, bytes).map_err(|e| ApiError::io("read the file", e))?;
         let opts = MigrateOptions {
             pack_id: Some(id.to_string()),
@@ -255,8 +251,9 @@ impl AppState {
             origin: PackOrigin::Custom,
             ..MigrateOptions::default()
         };
-        let output = migrate_path(&input, &opts)
+        let mut output = migrate_path(&input, &opts)
             .map_err(|e| ApiError::invalid(format!("Cannot convert this file: {e}")))?;
+        name_scratch_file(&mut output.report.issues, SCRATCH_XML, &request.file_name);
         let report = &output.report;
         let converted = report.totals.elements;
         if converted > 0 {
@@ -271,11 +268,7 @@ impl AppState {
             issues: report
                 .issues
                 .iter()
-                .map(|i| MigrationIssue {
-                    severity: severity(i.severity),
-                    element: i.element.clone(),
-                    message: i.message.clone(),
-                })
+                .map(|i| issue_dto(i, &report.element_types))
                 .collect(),
         })
     }

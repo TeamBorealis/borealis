@@ -71,10 +71,27 @@ export interface ImportPackRequest {
   format?: ContentFormat;
 }
 
+/** Closed set of conversion issue codes (Rust `borealis_content::IssueCode`, snake_case). */
+export type MigrationIssueCode =
+  | "xml_parse" | "missing_attribute" | "invalid_integer" | "invalid_boolean" | "invalid_version"
+  | "unknown_rule_tag" | "unsupported_construct" | "element_dropped" | "duplicate_child" | "normalized"
+  | "index_entry_missing" | "file_skipped" | "duplicate_id" | "element_replaced" | "invalid_id"
+  | "non_standard_id" | "missing_required_setter" | "dangling_reference" | "invalid_expression"
+  | "multiclass_id_same_as_class" | "append_target_missing" | "duplicate_select_name" | "undefined_source"
+  | "schema_violation" | "invalid_monster_data" | "non_standard_monster_xp";
+
+/** One conversion finding, located: source file (path inside the imported set), element id and type, line, code. */
 export interface MigrationIssue {
   severity: "info" | "warning" | "error";
   element: string | null;
   message: string;
+  /** Always sent by the app; optional only for older mocks. */
+  code?: MigrationIssueCode;
+  /** The element's type in the source ("Spell", "Class Feature", ...). */
+  elementType?: string | null;
+  /** Path of the source file inside the imported set (e.g. "classes/wizard.xml"). */
+  file?: string | null;
+  line?: number | null;
 }
 
 export interface MigrationReport {
@@ -111,6 +128,8 @@ export interface UpdateIndexesResult {
   changed: string[];
   /** Hosts an index downloaded from for the first time. */
   newHosts: string[];
+  /** One conversion report per pack this update converted (same shape as a file import's report). */
+  reports?: MigrationReport[];
 }
 
 export interface ContentProgress {

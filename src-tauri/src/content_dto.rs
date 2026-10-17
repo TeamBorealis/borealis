@@ -1,6 +1,7 @@
 //! Contract DTOs of the Content, Manage and compatibility commands.
 
 use crate::dto::{ElementRef, Ruleset};
+use borealis_content::IssueCode;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -65,12 +66,20 @@ pub struct ImportPackRequest {
     pub format: Option<String>,
 }
 
-/// One migration finding.
+/// One conversion finding, located precisely: the source file (path inside the imported set),
+/// the element id and type it concerns, the source line, and a closed code
+/// ([`IssueCode`], snake_case on the wire).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MigrationIssue {
     pub severity: &'static str,
-    pub element: Option<String>,
+    pub code: IssueCode,
     pub message: String,
+    pub element: Option<String>,
+    /// The element's `type` in the source (`Spell`, `Class Feature`, ...).
+    pub element_type: Option<String>,
+    pub file: Option<String>,
+    pub line: Option<u32>,
 }
 
 /// Outcome of converting one file.
@@ -118,6 +127,8 @@ pub struct UpdateIndexesResult {
     pub changed: Vec<String>,
     /// Hosts an index downloaded from for the first time.
     pub new_hosts: Vec<String>,
+    /// One conversion report per pack this update converted (as a file import returns).
+    pub reports: Vec<MigrationReport>,
 }
 
 /// Progress of a long content operation.
