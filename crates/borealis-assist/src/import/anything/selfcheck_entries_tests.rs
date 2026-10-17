@@ -124,7 +124,7 @@ fn legal_text_appended_to_an_entry_fails_but_the_legal_entry_itself_does_not() {
         ],
     );
     // Act: the check itself, on the text as given (the pipeline runs it on finalize's text).
-    let flags = |id: &str| super::entries::end_matter_check(d.element(id).expect("element"));
+    let flags = |id: &str| super::entries::end_matter_check(d.element(id).expect("element"), &[]);
     // Assert
     let f = flags("ID_T_CLOSING");
     assert_eq!(f.len(), 1);
@@ -411,10 +411,13 @@ fn armor(setters: serde_json::Value) -> ImportDraft {
 }
 
 #[test]
-fn attunement_stored_as_its_restriction_or_missing_fails_attunement_mismatch() {
-    // Arrange
-    let restriction = armor(json!([{"name": "attunement", "value": "by a paladin"}]));
+fn attunement_stored_as_an_unreadable_value_fails_attunement_mismatch() {
+    // Arrange: a value that is neither required nor a restriction cannot be repaired; a
+    // restriction value and a missing setter are repaired from the printed header
+    // (`selfcheck_fixes`), so the check passes on them.
+    let restriction = armor(json!([{"name": "attunement", "value": "only by moonlight"}]));
     let missing = armor(json!([{"name": "rarity", "value": "Rare"}]));
+    let repaired = armor(json!([{"name": "attunement", "value": "by a paladin"}]));
     let right = armor(
         json!([{"name": "attunement", "value": "true", "attributes": {"addition": "by a paladin"}}]),
     );
@@ -425,10 +428,10 @@ fn attunement_stored_as_its_restriction_or_missing_fails_attunement_mismatch() {
     // Assert
     let f = failed_of(&restriction, "ID_T_MAIL", ATTUNEMENT_MISMATCH);
     assert_eq!(f.len(), 1);
-    assert!(f[0].contains("\"by a paladin\""), "{}", f[0]);
-    let f = failed_of(&missing, "ID_T_MAIL", ATTUNEMENT_MISMATCH);
-    assert_eq!(f.len(), 1);
-    assert!(f[0].contains("requires attunement"), "{}", f[0]);
+    assert!(f[0].contains("\"only by moonlight\""), "{}", f[0]);
+    assert!(failed_of(&missing, "ID_T_MAIL", ATTUNEMENT_MISMATCH).is_empty());
+    let repaired = checked(repaired);
+    assert!(failed_of(&repaired, "ID_T_MAIL", ATTUNEMENT_MISMATCH).is_empty());
     assert!(failed_of(&right, "ID_T_MAIL", ATTUNEMENT_MISMATCH).is_empty());
 }
 

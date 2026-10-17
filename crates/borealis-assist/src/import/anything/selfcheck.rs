@@ -16,7 +16,8 @@
 //! [`RECHARGE_MISSING`], [`ATTUNEMENT_MISMATCH`], [`DESCRIPTION_SHARED`], [`END_MATTER_TEXT`],
 //! [`TRANSCRIPTION_PARAPHRASE`], [`PRINTED_NUMBER_DIFFERS`], and the loss checks of
 //! `selfcheck_losses` (`condensed_notes`, `creature_type_missing`, `spell_not_granted`,
-//! `roll_table_option`). The checks run on finalize's text (see `apply_with`). A passed check is recorded once
+//! `roll_table_option`) and `selfcheck_choices` (`choice_empty`). Unambiguous repairs are made
+//! before the checks (`selfcheck_fixes`). The checks run on finalize's text (see `apply_with`). A passed check is recorded once
 //! per code the element was checked for, so "checked and fine" differs from "not checked"
 //! (codes that apply to every element, or to a rare shape, record failures only). Only the
 //! numbers, rows and references checks are repaired by a model call; the others are the
@@ -28,6 +29,7 @@ use borealis_ai::task::{AiRunner, RunOptions};
 use borealis_content::file::{ContentFile, PackOrigin};
 use borealis_content::issue::IssueCode;
 use borealis_content::{ContentStore, ContentStoreBuilder};
+use borealis_engine::universe::Universe;
 use serde_json::Value;
 
 use super::fidelity::{coverage, name_mask, plain, untraced, words, Index};
@@ -40,10 +42,14 @@ use super::types::{
 };
 use crate::homebrew::PackContext;
 
+#[path = "selfcheck_choices.rs"]
+mod choices;
 #[path = "selfcheck_content.rs"]
 mod content;
 #[path = "selfcheck_entries.rs"]
 mod entries;
+#[path = "selfcheck_fixes.rs"]
+mod fixes;
 #[path = "selfcheck_grants.rs"]
 pub(crate) mod grants;
 #[path = "selfcheck_lists.rs"]
@@ -236,7 +242,11 @@ struct Checker {
     /// Rows of an element's own table that text entries of their own carry.
     pieces: HashMap<String, Vec<usize>>,
     library: ContentStore,
+    /// The library as the engine reads it, in the import's edition (names, tags, editions).
+    universe: Universe,
     spells: Vec<(String, String)>,
+    /// The source's page furniture texts (running headers and footers) the pack leaves out.
+    furniture: Vec<String>,
 }
 
 impl Checker {
@@ -248,6 +258,10 @@ impl Checker {
             pieces: rows::piece_rows(draft, &lines, &owners),
             rows: owners,
             spells: numbers::spell_names(&library),
+            universe: Universe::new(&library, draft.edition.ruleset()),
+            furniture: super::furniture::furniture(&draft.source_text)
+                .texts()
+                .to_vec(),
             lines,
             library,
         }
@@ -463,21 +477,27 @@ fn derived_docs(
     (live.iter().map(|e| e.id.clone()).collect(), derived)
 }
 
-/// Unresolved references per element id: the derived draft loaded over the library and
-/// validated by the content store.
-fn reference_failures(
+/// The library with the derived draft loaded over it (`None` when the draft does not load).
+fn import_store(
     base: &ContentStoreBuilder,
-    draft: &ImportDraft,
-    (live, derived): &(Vec<String>, super::derived::Derived),
-) -> HashMap<String, Vec<String>> {
+    derived: &super::derived::Derived,
+) -> Option<ContentStore> {
     let doc = super::derived::content_doc(derived);
-    let Ok(file) = ContentFile::from_json_str(&doc.to_string()) else {
-        return HashMap::new();
-    };
-    let store = base
-        .clone()
-        .add_file("import-selfcheck", PackOrigin::Custom, file)
-        .build();
+    let file = ContentFile::from_json_str(&doc.to_string()).ok()?;
+    Some(
+        base.clone()
+            .add_file("import-selfcheck", PackOrigin::Custom, file)
+            .build(),
+    )
+}
+
+/// Unresolved references per element id: the derived draft loaded over the library
+/// ([`import_store`]) and validated by the content store.
+fn reference_failures(
+    store: &ContentStore,
+    draft: &ImportDraft,
+    live: &[String],
+) -> HashMap<String, Vec<String>> {
     let ids: HashSet<&str> = live.iter().map(String::as_str).collect();
     let mut out: HashMap<String, Vec<String>> = HashMap::new();
     for issue in store.validate() {
@@ -557,10 +577,12 @@ pub(crate) fn apply(base: &ContentStoreBuilder, draft: &mut ImportDraft) {
     apply_with(&checker, base, draft);
 }
 
-/// The checks run on the text the pack will hold: finalize's text fixes (options described by
-/// their own row, legal notices cut) are applied first, so a flag never describes text the pack
-/// no longer has, and a loss those fixes cause is seen.
+/// The checks run on the text the pack will hold: the self-check's own repairs
+/// (`selfcheck_fixes`) are made on the draft first, then finalize's text fixes (options
+/// described by their own row, legal notices cut) are applied to a copy, so a flag never
+/// describes text the pack no longer has, and a loss those fixes cause is seen.
 fn apply_with(checker: &Checker, base: &ContentStoreBuilder, draft: &mut ImportDraft) {
+    fixes::apply(&checker.universe, draft);
     let view = super::text_fixes::prepare(draft);
     let checks = element_checks(checker, base, &view);
     for e in draft.elements.iter_mut() {
@@ -576,7 +598,21 @@ fn element_checks(
     draft: &ImportDraft,
 ) -> HashMap<String, Vec<ElementCheck>> {
     let derived = derived_docs(&checker.library, draft);
-    let refs = reference_failures(base, draft, &derived);
+    let store = import_store(base, &derived.1);
+    let refs = store
+        .as_ref()
+        .map(|s| reference_failures(s, draft, &derived.0))
+        .unwrap_or_default();
+    let by_id: HashMap<&str, &Value> = derived
+        .0
+        .iter()
+        .map(String::as_str)
+        .zip(derived.1.docs.iter())
+        .collect();
+    let mut empty = store
+        .as_ref()
+        .map(|s| choices::empty_choices(s, draft, &by_id))
+        .unwrap_or_default();
     let pools = grants::unrecharged(&derived.1.docs);
     let extra: HashSet<String> = derived
         .1
@@ -621,6 +657,7 @@ fn element_checks(
             let mut out = monsters::stat_block_checks(draft, e);
             out.extend(checker.element(draft, e, &e.json));
             out.extend(reference_checks(refs.get(&e.id)));
+            out.extend(empty.remove(&e.id).unwrap_or_default());
             if fidelity_checked(draft, e) {
                 out.extend(description_checks(e, &index, &mask));
             }
@@ -644,7 +681,13 @@ fn element_checks(
             out.extend(lists::list_checks(checker, draft, e, view.doc));
             out.extend(grants::grant_checks(&checker.library, draft, e, &view));
             out.extend(grants::recharge_checks(draft, &checker.lines, &pools, e));
-            out.extend(entries::entry_checks(draft, &checker.lines, &shared, e));
+            out.extend(entries::entry_checks(
+                draft,
+                &checker.lines,
+                &shared,
+                &checker.furniture,
+                e,
+            ));
             out.extend(losses::loss_checks(draft, &checker.lines, e));
             out.extend(losses::spell_grant_check(
                 draft,
@@ -668,6 +711,9 @@ fn feedback(c: &ElementCheck) -> String {
             "use only the numbers the element's source text prints (dice, DCs, ranges, durations, uses, bonuses)"
         }
         TABLE_ROW_MISSING => "carry every row of the source's table, cell by cell",
+        choices::CHOICE_EMPTY => {
+            "write the choice's options in the form its kind takes: size names for select_size, ids of this import or of the rules for a select"
+        }
         _ => "point only at ids of this import or of the rules, or leave the reference out",
     };
     format!("source check failed: {} ({how})", c.message)
@@ -691,7 +737,10 @@ fn repairable(e: &DraftElement) -> Vec<&ElementCheck> {
             c.failed
                 && matches!(
                     c.code.as_str(),
-                    NUMBER_NOT_IN_SOURCE | TABLE_ROW_MISSING | REFERENCE_UNRESOLVED
+                    NUMBER_NOT_IN_SOURCE
+                        | TABLE_ROW_MISSING
+                        | REFERENCE_UNRESOLVED
+                        | choices::CHOICE_EMPTY
                 )
         })
         .collect()
@@ -840,3 +889,7 @@ mod content_tests;
 #[cfg(test)]
 #[path = "selfcheck_entries_tests.rs"]
 mod entries_tests;
+
+#[cfg(test)]
+#[path = "selfcheck_fixes_tests.rs"]
+mod fixes_tests;

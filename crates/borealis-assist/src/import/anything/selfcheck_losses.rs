@@ -3,12 +3,15 @@
 //! species lost, a spell the text names as learned that no rule grants, and the rows of a roll
 //! table imported as options to choose. Each fails only on a shape that holds on any layout.
 
+use std::collections::HashSet;
+
 use serde_json::Value;
 
 use super::super::fidelity::{plain, words};
 use super::{cells, failed, span, DraftElement, ElementCheck, ImportDraft, Role};
 
-/// Code: the element's passage is short "Label: fragment" notes, not printed prose.
+/// Code: the element's passage is short "Label: fragment" (or "**Label.** fragment") notes,
+/// not printed prose.
 pub(crate) const CONDENSED_NOTES: &str = "condensed_notes";
 /// Code: the source prints a creature type the species does not carry.
 pub(crate) const CREATURE_TYPE_MISSING: &str = "creature_type_missing";
@@ -16,6 +19,15 @@ pub(crate) const CREATURE_TYPE_MISSING: &str = "creature_type_missing";
 pub(crate) const SPELL_NOT_GRANTED: &str = "spell_not_granted";
 /// Code: a roll table's result imported as an option to choose.
 pub(crate) const ROLL_TABLE_OPTION: &str = "roll_table_option";
+/// Code: the text the pack keeps is a small part of the prose its own section prints.
+pub(crate) const DESCRIPTION_CUT: &str = "description_cut";
+
+/// Fewest prose words of an element's own section for [`DESCRIPTION_CUT`] to judge it.
+const MIN_CUT_PROSE_WORDS: usize = 30;
+/// Share of the section's prose (as 4-word runs) the kept text must hold.
+const CUT_KEPT_SHARE: f64 = 0.5;
+/// Words in a run compared by [`DESCRIPTION_CUT`].
+const CUT_GRAM: usize = 4;
 
 /// Fewest "Label: fragment" bullets that make a passage notes.
 const MIN_NOTE_BULLETS: usize = 4;
@@ -26,13 +38,30 @@ const MAX_LABEL_WORDS: usize = 5;
 /// Words of printed rules text addressing the reader; notes leave them out.
 const SECOND_PERSON: [&str; 4] = ["you", "your", "yours", "youre"];
 
-/// A "- Label: fragment" line: `Some(fragment)`.
+/// The (label, fragment) of a bullet whose label is emphasised and closed by a period or a
+/// colon: "**Label.** fragment", "**Label:** fragment", "__Label__. fragment".
+fn emphasised_label(rest: &str) -> Option<(&str, &str)> {
+    let mark = ["**", "__", "*", "_"]
+        .into_iter()
+        .find(|m| rest.starts_with(m))?;
+    let inner = &rest[mark.len()..];
+    let close = inner.find(mark)?;
+    let label = &inner[..close];
+    let after = &inner[close + mark.len()..];
+    if let Some(l) = label.strip_suffix(['.', ':']) {
+        return Some((l, after));
+    }
+    let fragment = after.strip_prefix(['.', ':'])?;
+    Some((label, fragment))
+}
+
+/// A "- Label: fragment" or "- **Label.** fragment" line: `Some(fragment)`.
 fn note_bullet(line: &str) -> Option<&str> {
     let t = line.trim_start();
     let rest = ["- ", "* ", "\u{2022} "]
         .iter()
         .find_map(|b| t.strip_prefix(b))?;
-    let (label, fragment) = rest.split_once(':')?;
+    let (label, fragment) = emphasised_label(rest).or_else(|| rest.split_once(':'))?;
     let label = label.trim_matches(|c: char| c == '*' || c == '_' || c.is_whitespace());
     let n = label.split_whitespace().count();
     let capital = label.chars().next().is_some_and(char::is_uppercase);
@@ -216,6 +245,90 @@ fn learned_spells(text: &str, known: &[(String, String)]) -> Vec<String> {
     out
 }
 
+/// Words that end a spell name after "can cast" ("cast web on yourself", "cast haste as a
+/// reaction").
+const CAST_STOPS: [&str; 30] = [
+    "on",
+    "as",
+    "at",
+    "with",
+    "using",
+    "without",
+    "centered",
+    "centred",
+    "targeting",
+    "once",
+    "again",
+    "from",
+    "through",
+    "upon",
+    "while",
+    "when",
+    "if",
+    "for",
+    "but",
+    "and",
+    "or",
+    "to",
+    "in",
+    "into",
+    "by",
+    "spending",
+    "expending",
+    "per",
+    "each",
+    "until",
+];
+/// First words of what follows "can cast" that name no spell ("cast it", "cast spells",
+/// "cast one of the following").
+const CAST_NOT_A_NAME: [&str; 31] = [
+    "a", "an", "it", "its", "this", "that", "these", "those", "them", "spell", "spells", "cantrip",
+    "cantrips", "one", "two", "three", "any", "each", "either", "your", "all", "some", "no",
+    "only", "both", "another", "other", "such", "said", "every", "up",
+];
+
+/// Names after "can cast" that no known spell matches ("you can cast blade ward."): the words
+/// up to the end of the clause or a word that ends a name, without a leading "the" or a
+/// trailing "spell"; one to [`MAX_SPELL_WORDS`] plain words, none of them a generic word.
+pub(super) fn cast_names(text: &str) -> Vec<String> {
+    let lower = text.to_lowercase();
+    let mut out = Vec::new();
+    for (at, _) in lower.match_indices("can cast ") {
+        let rest = &lower[at + "can cast ".len()..];
+        let clause = rest
+            .split(['.', ',', ';', ':', '(', ')', '\n', '!', '?'])
+            .next()
+            .unwrap_or("");
+        let mut w: Vec<&str> = clause
+            .split_whitespace()
+            .take_while(|w| !CAST_STOPS.contains(w))
+            .collect();
+        if w.first() == Some(&"the") {
+            w.remove(0);
+        }
+        if w.last() == Some(&"spell") {
+            w.pop();
+        }
+        let plain = w.iter().all(|x| {
+            x.chars()
+                .all(|c| c.is_alphabetic() || c == '\'' || c == '\u{2019}' || c == '-')
+        });
+        if w.is_empty()
+            || w.len() > MAX_SPELL_WORDS
+            || !plain
+            || w.iter()
+                .any(|x| CAST_NOT_A_NAME.contains(x) || NOT_A_NAME.contains(x))
+        {
+            continue;
+        }
+        let name = words(&w.join(" ")).join(" ");
+        if !name.is_empty() && !out.contains(&name) {
+            out.push(name);
+        }
+    }
+    out
+}
+
 /// Spell ids of `{"kind": "grant", "type": "Spell", "id": ...}` rules (the grant form the
 /// `spell`-field reading of `selfcheck_grants` does not see).
 pub(super) fn spell_grant_ids(doc: &Value) -> Vec<String> {
@@ -259,7 +372,7 @@ pub(super) fn spell_grant_check(
             .unwrap_or(""),
     );
     let named = learned_spells(&text, known);
-    if named.is_empty() {
+    if named.is_empty() && !text.to_lowercase().contains("can cast ") {
         return Vec::new();
     }
     let p = draft.plan.elements.iter().find(|p| p.id == e.id);
@@ -278,8 +391,19 @@ pub(super) fn spell_grant_check(
         .flat_map(|id| granted_names(&targets_of(id)))
         .collect();
     let noted = |n: &str| notes.iter().any(|m| words(m).join(" ").contains(n));
+    // A name no known spell matches counts only when nothing of the family grants a spell
+    // (then the words are surely not one of its granted spells written another way).
+    let unknown: Vec<String> = if granted.is_empty() {
+        cast_names(&text)
+            .into_iter()
+            .filter(|n| !named.iter().any(|k| n.starts_with(k.as_str())))
+            .collect()
+    } else {
+        Vec::new()
+    };
     let missing: Vec<&String> = named
         .iter()
+        .chain(&unknown)
         .filter(|n| !granted.iter().any(|g| g.ends_with(n.as_str())) && !noted(n))
         .collect();
     let Some(first) = missing.first() else {
@@ -353,12 +477,75 @@ fn roll_option_check(draft: &ImportDraft, lines: &[String], e: &DraftElement) ->
 
 /// The wave-13 loss checks of `e` (the spell grant check runs with the grant views, see
 /// `selfcheck::element_checks`).
+/// The 4-word runs of `w` (the words themselves when there are fewer).
+fn runs(w: &[String]) -> HashSet<String> {
+    if w.len() < CUT_GRAM {
+        return w.iter().cloned().collect();
+    }
+    w.windows(CUT_GRAM).map(|g| g.join(" ")).collect()
+}
+
+/// `kept` is one table row of the source: its runs are all in a single row line.
+fn is_a_row(kept: &[String], lines: &[String]) -> bool {
+    let want = runs(kept);
+    !want.is_empty()
+        && lines.iter().filter(|l| cells(l).len() >= 2).any(|l| {
+            let row = runs(&words(l));
+            want.iter().all(|r| row.contains(r))
+        })
+}
+
+/// [`DESCRIPTION_CUT`]: an option whose final text is only a row of a table while its own
+/// section (its heading's text up to the next heading) prints prose that the text lacks:
+/// the description was cut to the option's row of a table and the section was lost.
+fn cut_check(draft: &ImportDraft, lines: &[String], e: &DraftElement) -> Vec<ElementCheck> {
+    if e.role != Role::Option {
+        return Vec::new();
+    }
+    let kept = words(&plain(
+        e.json
+            .get("description")
+            .and_then(Value::as_str)
+            .unwrap_or(""),
+    ));
+    if kept.is_empty() || !is_a_row(&kept, lines) {
+        return Vec::new();
+    }
+    let own = super::entries::own_lines(draft, lines, e);
+    let section = own
+        .iter()
+        .skip(1)
+        .take_while(|l| !l.trim_start().starts_with('#'));
+    let prose: Vec<String> = section
+        .filter(|l| cells(l).len() < 2)
+        .flat_map(|l| words(l))
+        .collect();
+    if prose.len() < MIN_CUT_PROSE_WORDS {
+        return Vec::new();
+    }
+    let held = runs(&kept);
+    let all = runs(&prose);
+    let share = all.iter().filter(|r| held.contains(*r)).count() as f64 / all.len() as f64;
+    if share >= CUT_KEPT_SHARE {
+        return Vec::new();
+    }
+    vec![failed(
+        DESCRIPTION_CUT,
+        format!(
+            "Its text is only its row of a table ({} words), but its own section prints {} words of text that are not imported. Point it to its whole section",
+            kept.len(),
+            prose.len()
+        ),
+    )]
+}
+
 pub(super) fn loss_checks(
     draft: &ImportDraft,
     lines: &[String],
     e: &DraftElement,
 ) -> Vec<ElementCheck> {
     let mut out = condensed_check(draft, lines, e);
+    out.extend(cut_check(draft, lines, e));
     out.extend(creature_type_check(draft, lines, e));
     out.extend(roll_option_check(draft, lines, e));
     out

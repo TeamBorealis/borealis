@@ -520,6 +520,53 @@ pub(crate) fn caster_save_dc(el: &mut Value) -> Option<String> {
     ))
 }
 
+/// Values of an `attunement` setter that only say the item needs attunement.
+const ATTUNED_WORDS: [&str; 4] = ["yes", "required", "requires attunement", "attunement"];
+
+/// An `attunement` setter whose value is the printed requirement instead of `true`: a bare
+/// "required"/"yes" becomes `true`; a restriction ("by a paladin", "requires attunement by a
+/// paladin") becomes `true` with the restriction as the setter's `addition` (kept when it has
+/// one). Any other value is left for the review to show. Returns a note when it changed.
+fn attunement_value(el: &mut Value) -> Option<String> {
+    let att = el
+        .get_mut("setters")?
+        .as_array_mut()?
+        .iter_mut()
+        .find(|s| str_at(s, "name") == "attunement")?;
+    let value = att.get("value")?.as_str()?.trim().to_string();
+    let lower = value.to_lowercase();
+    if lower == "true" || lower == "false" {
+        return None;
+    }
+    const LEAD: &str = "requires attunement ";
+    let rest = if lower.starts_with(LEAD) {
+        value[LEAD.len()..].trim()
+    } else {
+        value.as_str()
+    };
+    let addition = if rest.to_lowercase().starts_with("by ") {
+        Some(rest.trim_end_matches(['.', ')']).trim().to_string())
+    } else if ATTUNED_WORDS.contains(&lower.trim_matches(['(', ')', '.'])) {
+        None
+    } else {
+        return None;
+    };
+    att["value"] = Value::String("true".into());
+    let has_addition = att.pointer("/attributes/addition").is_some();
+    if let (Some(a), false) = (&addition, has_addition) {
+        match att.get_mut("attributes").and_then(Value::as_object_mut) {
+            Some(attrs) => {
+                attrs.insert("addition".into(), Value::String(a.clone()));
+            }
+            None => att["attributes"] = serde_json::json!({"addition": a}),
+        }
+    }
+    Some(format!(
+        "attunement setter: \"{value}\" became required{}",
+        addition.map_or_else(String::new, |a| format!(" \"{a}\""))
+    ))
+}
+
 /// `requires attunement by a/an ...` printed in the text and the `attunement` setter's
 /// `addition` describe the same restriction: the setter gets the printed words when it has
 /// none, the text gets the setter's when it lacks them. An item's rule conditions that only
@@ -528,6 +575,7 @@ pub(crate) fn caster_save_dc(el: &mut Value) -> Option<String> {
 /// finalize run, before the armor enhancement rewrite). Returns a note per change.
 pub(crate) fn attunement_by(el: &mut Value) -> Vec<String> {
     let mut notes = super::rule_terms::item_self_conditions(el);
+    notes.extend(attunement_value(el));
     let text = plain(str_at(el, "description"));
     let lower = text.to_lowercase();
     let printed = lower.find("attunement by ").map(|i| {
@@ -738,5 +786,46 @@ spell save DC.</p>", "rules": [{"kind": "resource", "id": "mind spike", "name": 
             printed["setters"][0]["attributes"]["addition"],
             "by a spellcaster"
         );
+    }
+
+    #[test]
+    fn an_attunement_stored_as_its_restriction_becomes_required_with_that_restriction() {
+        // Arrange
+        let mut by = json!({"description": "<p>It hums with a low note.</p>", "setters": [
+            {"name": "attunement", "value": "by a warden"}]});
+        let mut full = json!({"description": "<p>It hums.</p>", "setters": [
+            {"name": "attunement", "value": "Requires attunement by a creature of good alignment."}]});
+        let mut bare = json!({"description": "<p>It hums.</p>", "setters": [
+            {"name": "attunement", "value": "required"}]});
+        let mut odd = json!({"description": "<p>It hums.</p>", "setters": [
+            {"name": "attunement", "value": "only at night"}]});
+        // Act
+        let by_notes = attunement_by(&mut by);
+        let full_notes = attunement_by(&mut full);
+        let bare_notes = attunement_by(&mut bare);
+        let odd_notes = attunement_by(&mut odd);
+        // Assert
+        assert_eq!(by["setters"][0]["value"], "true");
+        assert_eq!(by["setters"][0]["attributes"]["addition"], "by a warden");
+        assert!(by_notes[0].contains("became required"), "{by_notes:?}");
+        assert!(by["description"]
+            .as_str()
+            .unwrap()
+            .contains("Requires attunement by a warden"));
+        assert_eq!(full["setters"][0]["value"], "true");
+        assert_eq!(
+            full["setters"][0]["attributes"]["addition"],
+            "by a creature of good alignment"
+        );
+        assert!(!full_notes.is_empty());
+        assert_eq!(bare["setters"][0]["value"], "true");
+        assert!(bare["setters"][0].get("attributes").is_none());
+        assert_eq!(bare_notes.len(), 1);
+        assert_eq!(
+            odd["setters"][0]["value"], "only at night",
+            "not a restriction: left to review"
+        );
+        assert!(odd_notes.is_empty());
+        assert!(attunement_by(&mut by).is_empty(), "idempotent");
     }
 }

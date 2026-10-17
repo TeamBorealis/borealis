@@ -294,3 +294,43 @@ fn unknown_fields_of_a_complete_rule_are_removed_before_validation() {
     assert!(rule_problems(&el).iter().all(|p| p.contains("rule 3")));
     assert!(strip_unknown_fields(&mut el).is_empty(), "idempotent");
 }
+
+#[test]
+fn size_options_written_as_ids_become_size_names_the_engine_prefixes() {
+    // Arrange: the engine turns each option into `ID_SIZE_<OPTION>`, so an id-form option
+    // would be prefixed twice and the choice would offer nothing.
+    let mut el = json!({"rules": [
+        {"kind": "select_size", "name": "Size", "options": ["ID_SIZE_MEDIUM", "id_size_small"]}
+    ]});
+    let mut named = json!({"rules": [
+        {"kind": "select_size", "name": "Size", "options": ["Small", "Medium"]}
+    ]});
+    // Act
+    let notes = normalise_resources(&mut el);
+    let again = normalise_abilities(&mut el);
+    let untouched = normalise_abilities(&mut named);
+    // Assert
+    assert_eq!(el["rules"][0]["options"], json!(["Medium", "Small"]));
+    assert_eq!(notes.len(), 1, "{notes:?}");
+    assert!(
+        notes[0].contains("ID_SIZE_MEDIUM -> Medium"),
+        "{}",
+        notes[0]
+    );
+    assert!(again.is_empty(), "idempotent: {again:?}");
+    assert!(untouched.is_empty());
+    assert_eq!(named["rules"][0]["options"], json!(["Small", "Medium"]));
+}
+
+#[test]
+fn finalize_repairs_size_options_of_drafts_generated_before() {
+    // Arrange
+    let mut el = json!({"rules": [
+        {"kind": "select_size", "name": "Size", "options": ["ID_SIZE_LARGE"]}
+    ]});
+    // Act
+    let notes = normalise_abilities(&mut el);
+    // Assert
+    assert_eq!(el["rules"][0]["options"], json!(["Large"]));
+    assert_eq!(notes.len(), 1);
+}

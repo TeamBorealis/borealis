@@ -141,7 +141,7 @@ fn a_cantrip_the_text_teaches_with_no_grant_fails_spell_not_granted() {
 }
 
 #[test]
-fn a_spell_the_text_lets_you_cast_is_only_read_when_known() {
+fn a_spell_the_text_lets_you_cast_is_read_when_known_or_when_nothing_grants_a_spell() {
     let desc = "<p>Once per day you can cast frost lance with it.</p>";
     let known = [(
         "frost lance".to_string(),
@@ -153,7 +153,12 @@ fn a_spell_the_text_lets_you_cast_is_only_read_when_known() {
         spell_grant_check(&d, e, &known, &|_| Vec::new(), &[]).len(),
         1
     );
-    assert!(spell_grant_check(&d, e, &[], &|_| Vec::new(), &[]).is_empty());
+    // Not a known spell: read only while nothing of the family grants a spell.
+    let unknown = spell_grant_check(&d, e, &[], &|_| Vec::new(), &[]);
+    assert_eq!(unknown.len(), 1);
+    assert!(unknown[0].message.contains("\"frost lance\""));
+    let grants = |_: &str| vec!["ID_T_SPELL_RIME_DART".to_string()];
+    assert!(spell_grant_check(&d, e, &[], &grants, &[]).is_empty());
 }
 
 #[test]

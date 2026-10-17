@@ -137,11 +137,18 @@ fn shared_check(shared: &HashMap<String, Vec<String>>, e: &DraftElement) -> Vec<
 
 /// The description carries the publication's legal notice or credits (end matter appended to
 /// the entry before it, or a cover's legal block read into a root).
-pub(super) fn end_matter_check(e: &DraftElement) -> Vec<ElementCheck> {
+pub(super) fn end_matter_check(e: &DraftElement, furniture: &[String]) -> Vec<ElementCheck> {
     if super::super::passage::end_matter(&e.name) {
         return Vec::new();
     }
-    let low = description(e).to_lowercase();
+    // The page furniture (a running footer repeating a notice) the pack leaves out.
+    let html = e
+        .json
+        .get("description")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let clean = super::super::furniture::strip_texts(html, furniture);
+    let low = plain(clean.as_deref().unwrap_or(html)).to_lowercase();
     let found: Vec<&str> = LEGAL_PHRASES
         .iter()
         .copied()
@@ -262,10 +269,11 @@ pub(super) fn entry_checks(
     draft: &ImportDraft,
     lines: &[String],
     shared: &HashMap<String, Vec<String>>,
+    furniture: &[String],
     e: &DraftElement,
 ) -> Vec<ElementCheck> {
     let mut out = shared_check(shared, e);
-    out.extend(end_matter_check(e));
+    out.extend(end_matter_check(e, furniture));
     out.extend(paraphrase_check(draft, lines, e));
     out
 }

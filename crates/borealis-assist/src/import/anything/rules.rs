@@ -449,7 +449,7 @@ fn for_each_rule(el: &mut Value, mut f: impl FnMut(&mut Map<String, Value>)) {
 /// cannot read such as a bare `dexterity`, rest names as tokens), `ability_increase` options
 /// written as a flat list of ability names, lasting `movement_mode` speeds as stats,
 /// save-DC shorthands ("Con mod", "PB") as engine terms, damage-resistance choices written
-/// as a free `select_param`, and the spelling fixes of [`super::rule_terms`] (roll kinds,
+/// as a free `select_param`, `select_size` options written as size ids, and the spelling fixes of [`super::rule_terms`] (roll kinds,
 /// condition and skill ids, a stated ability choice written as a fixed `stat`). Returns one
 /// message per change.
 pub(crate) fn normalise_resources(el: &mut Value) -> Vec<String> {
@@ -465,10 +465,65 @@ pub(crate) fn normalise_resources(el: &mut Value) -> Vec<String> {
         Some("movement_mode") => out.extend(normalise_movement_mode(r)),
         Some("save_dc") => out.extend(normalise_save_dc(r)),
         Some("select_param") => out.extend(normalise_resistance_choice(r, resistance)),
+        Some("select_size") => out.extend(normalise_size_options(r)),
         _ => out.extend(super::rule_terms::normalise_rule(r)),
     });
     out.extend(super::rule_terms::ability_choice(el));
     out
+}
+
+/// Id prefix of the size elements; `select_size` options are the names after it (the engine
+/// adds the prefix itself).
+const SIZE_PREFIX: &str = "ID_SIZE_";
+
+/// `select_size` options written as size ids (`ID_SIZE_MEDIUM`) as the size names the kind
+/// takes (`Medium`): the engine prefixes every option, so an id-form option would match no
+/// size and the choice would offer nothing. Returns a message when it changed.
+fn normalise_size_options(rule: &mut Map<String, Value>) -> Option<String> {
+    let options = rule.get("options")?.as_array()?;
+    let mut changed = Vec::new();
+    let fixed: Vec<Value> = options
+        .iter()
+        .map(|o| {
+            let Some(text) = o.as_str() else {
+                return o.clone();
+            };
+            let t = text.trim();
+            let Some(rest) = t
+                .get(..SIZE_PREFIX.len())
+                .filter(|p| p.eq_ignore_ascii_case(SIZE_PREFIX))
+                .map(|_| &t[SIZE_PREFIX.len()..])
+                .filter(|r| !r.is_empty())
+            else {
+                return o.clone();
+            };
+            let name = title_words(&rest.replace('_', " "));
+            changed.push(format!("{t} -> {name}"));
+            Value::String(name)
+        })
+        .collect();
+    if changed.is_empty() {
+        return None;
+    }
+    rule.insert("options".into(), Value::Array(fixed));
+    Some(format!(
+        "select_size options written as ids became size names ({})",
+        changed.join(", ")
+    ))
+}
+
+/// "MEDIUM" / "medium" -> "Medium", word by word.
+fn title_words(text: &str) -> String {
+    text.split_whitespace()
+        .map(|w| {
+            let low = w.to_lowercase();
+            let mut c = low.chars();
+            c.next()
+                .map(|f| f.to_uppercase().chain(c).collect())
+                .unwrap_or_default()
+        })
+        .collect::<Vec<String>>()
+        .join(" ")
 }
 
 /// Damage types a resistance choice may list (the core resistance conditions).
@@ -574,8 +629,8 @@ fn normalise_movement_mode(rule: &mut Map<String, Value>) -> Option<String> {
     ))
 }
 
-/// The `ability_increase`, lasting `movement_mode`, `save_dc`, resistance-choice and rule-term
-/// parts of [`normalise_resources`] (finalize re-applies them to drafts generated before they
+/// The `ability_increase`, lasting `movement_mode`, `save_dc`, resistance-choice, size-option
+/// and rule-term parts of [`normalise_resources`] (finalize re-applies them to drafts generated before they
 /// existed).
 pub(crate) fn normalise_abilities(el: &mut Value) -> Vec<String> {
     let mut out = Vec::new();
@@ -585,6 +640,7 @@ pub(crate) fn normalise_abilities(el: &mut Value) -> Vec<String> {
         Some("movement_mode") => out.extend(normalise_movement_mode(r)),
         Some("save_dc") => out.extend(normalise_save_dc(r)),
         Some("select_param") => out.extend(normalise_resistance_choice(r, resistance)),
+        Some("select_size") => out.extend(normalise_size_options(r)),
         _ => out.extend(super::rule_terms::normalise_rule(r)),
     });
     out.extend(super::rule_terms::ability_choice(el));
