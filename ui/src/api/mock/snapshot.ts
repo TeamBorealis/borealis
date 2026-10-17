@@ -41,11 +41,21 @@ function progress(slots: SelectionSlot[]): SelectionProgress {
   return { total: required.length, remaining: pending.length, nextSlotId: next?.id ?? null, byTab };
 }
 
+/** Carried +N ammunition a weapon attack fires (engine `AttackSnapshot.ammunition`): the line's name and bonus. */
+function ammunitionFor(c: MockCharacter, a: Attack): { name: string; bonus: number } | null {
+  const weapon = c.items.find((i) => i.displayName === a.name && getItem(i.itemId)?.weapon);
+  if (!weapon || !/ammunition/i.test(getItem(weapon.itemId)?.weapon?.properties ?? "")) return null;
+  const ammo = c.items.find((i) => i.storage === 0 && getItem(i.itemId)?.ammoBonus);
+  return ammo ? { name: ammo.displayName, bonus: getItem(ammo.itemId)?.ammoBonus ?? 0 } : null;
+}
+
 function resolveAttacks(c: MockCharacter, mods: Record<string, number>, prof: number): Attack[] {
-  return c.attacks.map((a) => {
+  return c.attacks.map(({ ammunition: _stale, ...a }) => {
     if (!a.auto || !a.ability) return a;
-    const m = mods[a.ability] ?? 0;
-    return { ...a, attackBonus: signed(m + prof), damage: a.damage.replace(/([+-]\d+)?$/, "") + (m ? signed(m) : "") };
+    const ammo = ammunitionFor(c, a);
+    const m = (mods[a.ability] ?? 0) + (ammo?.bonus ?? 0);
+    const resolved = { ...a, attackBonus: signed(m + prof), damage: a.damage.replace(/([+-]\d+)?$/, "") + (m ? signed(m) : "") };
+    return ammo ? { ...resolved, ammunition: ammo.name } : resolved;
   });
 }
 

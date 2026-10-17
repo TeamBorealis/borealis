@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import type { AppFolder, ContentProgress } from "../../api/contract";
+import type { AppFolder, ContentProgress, MigrationReport } from "../../api/contract";
 import { Button, ProgressBar, useConfirm, useToast } from "../../components";
 import { useApi } from "../../state/ApiContext";
 import { usePlatform } from "../../state/platform";
 import { errorMessage, useAsync } from "../../state/useAsync";
 import { describeIndexUpdate } from "./indexUpdateText";
+import { ImportReportDialog } from "./ImportReportDialog";
 import { Section } from "./Section";
 
 /** First-fetch consent: shown before an index is added (nothing is verified until it is fetched). */
@@ -45,12 +46,16 @@ export function IndexesTab() {
     void api.contentUpdateStatus().then((s) => { if (s.checkedAt) setStatus(checkedText(s.checkedAt)); setPending(s.updated); }).catch(() => undefined);
   }, [api]);
   const [busy, setBusy] = useState(false);
+  /** The conversion reports of the last update (one per converted pack), shown like a file import's report. */
+  const [reports, setReports] = useState<MigrationReport[]>([]);
+  const [reportOpen, setReportOpen] = useState(false);
   const update = async () => {
     if (busy) return;
     setBusy(true);
     setStatus("Checking...");
     try {
       const r = await api.updateIndexes();
+      setReports(r.reports);
       setPending((n) => n + r.updated);
       const list = await api.listIndexes().catch(() => indexes.data ?? []);
       const text = describeIndexUpdate(r, list, checkedText(new Date().toISOString()));
@@ -101,6 +106,8 @@ export function IndexesTab() {
       </div>
       {progress && progress.phase !== "done" && <div style={{ marginTop: "var(--sp-3)" }}><ProgressBar label="Update progress" value={progress.done} max={Math.max(1, progress.total)} /><span className="small muted" role="status">{progress.message}</span></div>}
       {status && <p className="v4-status" role="status">{status}</p>}
+      {reports.length > 0 && <div className="v4-content-cmds"><Button onClick={() => setReportOpen(true)}>View report</Button></div>}
+      {reportOpen && <ImportReportDialog title="Update report" reports={reports} onClose={() => setReportOpen(false)} />}
     </Section>
     </>
   );

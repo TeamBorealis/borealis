@@ -1,7 +1,8 @@
 import type {
   CompendiumFacets, FiveToolsImportReport, FiveToolsImportRequest, FiveToolsScan, CompendiumQuery, ContentIndex, ContentPack, ContentProgress, ContentSource, ElementDetail, ElementSummary,
-  ImportPackRequest, ImportPackResult, ItemQuery, ItemSummary, MigrationIssue, Page, UpdateIndexesResult,
+  ImportPackRequest, ImportPackResult, ItemQuery, ItemSummary, MigrationIssue, MigrationReport, Page, UpdateIndexesResult,
 } from "../types";
+import { issue, scanElements, xmlIssues } from "./import-issues";
 import { ELEMENTS, ITEMS, getElement } from "./content";
 import type { MockElement } from "./data-types";
 import { apiError } from "./errors";
@@ -14,6 +15,17 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const stripHtml = (s: string): string => s.replace(/<[^>]+>/g, "");
+
+/**
+ * The conversion report of one index the mock update downloaded (the real one is per converted pack, named by the index
+ * URL): its files converted, one located warning so the report has something to show.
+ */
+const indexReport = (i: ContentIndex): MigrationReport => ({
+  fileName: i.url, format: "xml", converted: i.updatesAvailable, skipped: 0,
+  issues: [issue("warning", "dangling_reference", "grants ID_MOCK_MISSING_FEAT, which no installed content defines", {
+    element: `ID_MOCK_${i.name.toUpperCase().replace(/[^A-Z0-9]+/g, "_")}_FEAT`, elementType: "Feat", file: `${i.name}/feats.xml`, line: 12,
+  })],
+});
 
 /** Compendium, packs, sources and content indexes for the mock backend. */
 export class ContentService {
@@ -115,17 +127,17 @@ export class ContentService {
     const format = req.format ?? (req.fileName.toLowerCase().endsWith(".xml") ? "xml" : "json");
     const issues: MigrationIssue[] = [];
     let names: string[] = [];
+    const file = req.fileName;
     if (format === "xml") {
-      names = [...text.matchAll(/<element\s+[^>]*name="([^"]+)"/g)].map((m) => m[1]!);
-      if (!names.length) issues.push({ severity: "error", element: null, message: "No <element> records were found." });
-      if (/<spellcasting/i.test(text)) issues.push({ severity: "warning", element: null, message: "Spellcasting blocks were converted with default progression." });
+      names = scanElements(text).map((e) => e.name);
+      issues.push(...xmlIssues(text, file));
     } else {
       try {
         const doc = JSON.parse(text) as { elements?: { name?: string }[] };
         names = (doc.elements ?? []).map((e) => e.name ?? "Unnamed");
-        if (!doc.elements) issues.push({ severity: "error", element: null, message: 'Expected a top-level "elements" array.' });
+        if (!doc.elements) issues.push(issue("error", "schema_violation", 'Expected a top-level "elements" array.', { file, line: 1 }));
       } catch (e) {
-        issues.push({ severity: "error", element: null, message: `Invalid JSON: ${(e as Error).message}` });
+        issues.push(issue("error", "xml_parse", `Invalid JSON: ${(e as Error).message}`, { file }));
       }
     }
     const report = { fileName: req.fileName, format, converted: names.length, skipped: 0, issues };
@@ -175,11 +187,12 @@ export class ContentService {
     const total = this.indexes.reduce((s, i) => s + i.updatesAvailable, 0);
     this.emit({ phase: "checking", done: 0, total, message: "Checking indexes" });
     for (let i = 1; i <= total; i++) this.emit({ phase: "downloading", done: i, total, message: `Downloading file ${i} of ${total}` });
+    const reports = this.indexes.filter((i) => i.updatesAvailable > 0).map((i) => indexReport(i));
     this.indexes = this.indexes.map((i) => ({ ...i, updatesAvailable: 0, lastChecked: new Date().toISOString() }));
     this.emit({ phase: "reloading", done: total, total, message: "Reloading content" });
     this.reloaded();
     this.emit({ phase: "done", done: total, total, message: "Content is up to date" });
-    return { updated: total, failed: [], reloaded: true, changed: [], newHosts: [] };
+    return { updated: total, failed: [], reloaded: true, changed: [], newHosts: [], reports };
   }
 
   scan5etools(path: string): FiveToolsScan {

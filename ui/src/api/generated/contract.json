@@ -5922,7 +5922,7 @@
    "k": "object",
    "props": {
     "code": {
-     "opt": true,
+     "opt": false,
      "t": {
       "k": "prim"
      }
@@ -5934,19 +5934,19 @@
      }
     },
     "elementType": {
-     "opt": true,
+     "opt": false,
      "t": {
       "k": "prim"
      }
     },
     "file": {
-     "opt": true,
+     "opt": false,
      "t": {
       "k": "prim"
      }
     },
     "line": {
-     "opt": true,
+     "opt": false,
      "t": {
       "k": "prim"
      }
@@ -7159,7 +7159,7 @@
    "k": "object",
    "props": {
     "code": {
-     "opt": true,
+     "opt": false,
      "t": {
       "k": "prim"
      }
@@ -7171,7 +7171,7 @@
      }
     },
     "elementType": {
-     "opt": true,
+     "opt": false,
      "t": {
       "k": "prim"
      }
@@ -7183,7 +7183,7 @@
      }
     },
     "line": {
-     "opt": true,
+     "opt": false,
      "t": {
       "k": "prim"
      }
@@ -8610,7 +8610,7 @@
      }
     },
     "reports": {
-     "opt": true,
+     "opt": false,
      "t": {
       "k": "array",
       "t": {

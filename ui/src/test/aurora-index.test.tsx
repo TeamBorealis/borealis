@@ -41,7 +41,7 @@ describe("adding an index file asks for consent first", () => {
 });
 
 const result = (over: Partial<UpdateIndexesResult> = {}): UpdateIndexesResult =>
-  ({ updated: 0, failed: [], reloaded: false, changed: [], newHosts: [], ...over });
+  ({ updated: 0, failed: [], reloaded: false, changed: [], newHosts: [], reports: [], ...over });
 const record = (over: Partial<ContentIndex> = {}): ContentIndex =>
   ({ url: URL, name: "Core", lastChecked: "2026-10-15T10:00:00Z", fileCount: 238, updatesAvailable: 0, requiresNewerApp: false, verified: false, problem: null, ...over });
 const CHECKED = "Last checked at 10:00";

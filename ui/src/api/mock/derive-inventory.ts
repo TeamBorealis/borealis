@@ -1,6 +1,7 @@
 import type { AbilityState, Coins, InventoryState } from "../types";
 import type { MockCharacter } from "./state";
 import { withAttunementFacts } from "./attunement";
+import { withRolledCharges } from "./rolled-charges";
 
 export const COIN_VALUE_CP: Record<keyof Coins, number> = { cp: 1, sp: 10, ep: 50, gp: 100, pp: 1000 };
 export const COIN_ORDER: (keyof Coins)[] = ["pp", "gp", "ep", "sp", "cp"];
@@ -43,7 +44,7 @@ export function pay(coins: Coins, cost: number): Coins | null {
 export function deriveInventory(c: MockCharacter, ab: AbilityState): InventoryState {
   const carried = c.items.filter((i) => i.storage === 0).reduce((s, i) => s + i.weight * i.quantity, 0);
   return {
-    items: c.items.map((i) => withAttunementFacts(c, i)),
+    items: c.items.map((i) => withRolledCharges(c, withAttunementFacts(c, i))),
     coins: c.coins,
     totalGp: totalCp(c.coins) / 100,
     carriedWeight: Math.round(carried * 10) / 10,

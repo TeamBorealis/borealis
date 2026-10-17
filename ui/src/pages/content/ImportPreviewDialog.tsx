@@ -1,27 +1,14 @@
 import { useNavigate } from "react-router-dom";
-import type { ImportPreview, PreviewDiagnostic } from "../../api/contract";
+import type { ImportPreview } from "../../api/contract";
 import { Alert, Button, Modal, useToast } from "../../components";
 import { Expander } from "../../components/controls";
 import { useApi } from "../../state/ApiContext";
-import { closeImportPreview, dismissImportPreview, setImportBusy, useImportPreviewState } from "../../state/importPreview";
+import { closeInstallReport, dismissImportPreview, setImportBusy, showInstallReport, useImportPreviewState } from "../../state/importPreview";
 import { errorMessage } from "../../state/useAsync";
+import { ImportIssues } from "./ImportIssues";
+import { ImportReportDialog } from "./ImportReportDialog";
 
-const SEVERITIES = [["error", "Errors"], ["warning", "Warnings"], ["info", "Notes"]] as const;
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
-
-function Diagnostics({ list, severity, label }: { list: PreviewDiagnostic[]; severity: string; label: string }) {
-  const rows = list.filter((d) => d.severity === severity);
-  if (!rows.length) return null;
-  return (
-    <Expander title={`${label} (${rows.length})`} defaultOpen={false}>
-      <ul className="v4-impdiag" aria-label={label}>
-        {rows.map((d, n) => (
-          <li key={n}>{d.message}{(d.element || d.file) && <span className="muted small"> ({[d.element, d.file].filter(Boolean).join(" in ")})</span>}</li>
-        ))}
-      </ul>
-    </Expander>
-  );
-}
 
 /** What an import would add, shown before anything is installed: counts by type, grouped problems, unresolved references. */
 export function ImportPreviewDialog({ preview }: { preview: ImportPreview }) {
@@ -35,7 +22,7 @@ export function ImportPreviewDialog({ preview }: { preview: ImportPreview }) {
     try {
       const r = await api.installImportPreview({ previewId: preview.previewId });
       toast.push(r.pack ? `Imported "${r.pack.name}" (${plural(r.report.converted, "element")}).` : "Nothing was imported.", r.pack ? "info" : "error");
-      closeImportPreview();
+      showInstallReport(r.report);
       navigate("/content");
     } catch (e) { setImportBusy(false); toast.push(errorMessage(e), "error"); }
   };
@@ -59,7 +46,7 @@ export function ImportPreviewDialog({ preview }: { preview: ImportPreview }) {
         {(errors > 0 || warnings > 0 || preview.summary.infos > 0) && (
           <p className="muted" role="status">{plural(errors, "error")}, {plural(warnings, "warning")}, {plural(preview.summary.infos, "note")}.</p>
         )}
-        {SEVERITIES.map(([s, label]) => <Diagnostics key={s} list={preview.diagnostics} severity={s} label={label} />)}
+        <ImportIssues issues={preview.diagnostics} />
         {preview.diagnosticsTruncated && <p className="muted small">Only the first problems are listed.</p>}
         {preview.unresolvedTotal > 0 && (
           <Expander title={`Unresolved references (${preview.unresolvedTotal})`} defaultOpen>
@@ -76,8 +63,9 @@ export function ImportPreviewDialog({ preview }: { preview: ImportPreview }) {
   );
 }
 
-/** Mounted once (by GlobalImport) so every entry point opens the same dialog. */
+/** Mounted once (by GlobalImport) so every entry point opens the same dialog; then the install report when it has issues. */
 export function ImportPreviewHost() {
-  const { preview } = useImportPreviewState();
-  return preview ? <ImportPreviewDialog preview={preview} /> : null;
+  const { preview, report } = useImportPreviewState();
+  if (preview) return <ImportPreviewDialog preview={preview} />;
+  return report ? <ImportReportDialog title="Import report" reports={[report]} onClose={closeInstallReport} /> : null;
 }

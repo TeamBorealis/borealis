@@ -1,5 +1,6 @@
 import type { ImportFileInput, ImportPackResult, ImportPreview, PreviewDiagnostic, PreviewImportRequest, UnresolvedRef } from "../types";
 import { apiError } from "./errors";
+import { issue, scanElements, xmlIssues } from "./import-issues";
 
 /** Ids the mock treats as already installed (the real backend checks the loaded content store). */
 const INSTALLED = /^ID_(PHB|WOTC|INTERNAL)_/;
@@ -26,26 +27,23 @@ export class MockImportPreview {
     for (const f of files) {
       let text: string;
       try { text = atob(f.contentBase64); } catch { throw apiError("invalid_argument", "The file content is not valid base64."); }
-      const file = f.fileName.split("/").pop() ?? f.fileName;
+      // The real backend names the path inside the imported set ("classes/wizard.xml").
+      const file = f.fileName;
       if (/\.index$/i.test(file)) {
         for (const m of text.matchAll(/<file\s[^>]*>/g)) { const n = attr(m[0], "name"); if (n) listed.push({ index: file, name: n }); }
         continue;
       }
-      const tags = [...text.matchAll(/<element\s[^>]*>/g)].map((m) => m[0]);
-      if (!tags.length) { skipped++; diagnostics.push({ severity: "error", message: "No <element> records were found.", element: null, file }); continue; }
+      const els = scanElements(text);
+      diagnostics.push(...xmlIssues(text, file));
+      if (!els.length) { skipped++; continue; }
       texts.push(text);
-      if (/<spellcasting/i.test(text)) diagnostics.push({ severity: "warning", message: "Spellcasting blocks were converted with default progression.", element: null, file });
-      for (const t of tags) {
-        const id = attr(t, "id") ?? ""; const ty = attr(t, "type") ?? "Unknown";
-        defined.add(id); counts.set(ty, (counts.get(ty) ?? 0) + 1);
-      }
-      for (const el of text.split(/<element\s/).slice(1)) {
-        const from = attr(`<element ${el}`, "id") ?? "";
-        for (const g of el.matchAll(/<grant\s[^>]*>/g)) { const target = attr(g[0], "id"); if (target) grants.push({ from, target }); }
+      for (const e of els) {
+        defined.add(e.id); counts.set(e.type, (counts.get(e.type) ?? 0) + 1);
+        for (const g of e.body.matchAll(/<grant\s[^>]*>/g)) { const target = attr(g[0], "id"); if (target) grants.push({ from: e.id, target }); }
       }
     }
     const present = new Set(files.map((f) => (f.fileName.split("/").pop() ?? f.fileName).toLowerCase()));
-    for (const l of listed) if (!present.has(l.name.toLowerCase())) diagnostics.push({ severity: "info", message: `index entry ${l.name} is not present locally`, element: null, file: l.index });
+    for (const l of listed) if (!present.has(l.name.toLowerCase())) diagnostics.push(issue("info", "index_entry_missing", `index entry ${l.name} is not present locally`, { file: l.index }));
     const byTarget = new Map<string, UnresolvedRef>();
     for (const g of grants) {
       if (defined.has(g.target) || INSTALLED.test(g.target)) continue;

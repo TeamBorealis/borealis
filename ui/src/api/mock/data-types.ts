@@ -35,6 +35,9 @@ export interface BackgroundDef {
   originFeat: string;
 }
 
+/** `count`d`sides` + `bonus`, printed as `dice`. */
+export interface ChargeDice { dice: string; count: number; sides: number; bonus: number }
+
 export interface ItemDef {
   id: string;
   category: string;
@@ -45,6 +48,10 @@ export interface ItemDef {
   attuneBy?: { text: string; classes: string[] };
   /** A switchable state while the item is equipped and attuned that multiplies the walking speed (Boots of Speed). */
   speedToggle?: number;
+  /** Charges given as dice, rolled once when the item is gained (Necklace of Beads: 1d6 + 3 beads). */
+  charges?: ChargeDice;
+  /** +N ammunition: added to the attack and damage of a carried weapon that fires it (engine `ammunition` kind). */
+  ammoBonus?: number;
   armor?: { base: number; dexCap: number | null; shield?: boolean; strength?: number; stealth?: boolean };
   weapon?: { damage: string; mastery?: string; properties: string; range?: string; martial?: boolean };
   bonusAc?: number;

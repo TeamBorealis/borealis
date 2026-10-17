@@ -36,6 +36,8 @@ export interface MockCharacter {
   slotHistory?: Record<string, { id: string; level: number }[]>;
   prepared: Record<string, string[]>;
   items: InventoryItem[];
+  /** Stored dice-valued charge maximums by `${inventoryId}|${resourceId}` (engine `InventoryItem.rolled_max`). */
+  rolledMax?: Record<string, number>;
   coins: Coins;
   storageNames: [string, string];
   details: CharacterDetails;

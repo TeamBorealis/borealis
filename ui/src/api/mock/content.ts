@@ -208,6 +208,8 @@ export const ITEMS: ItemDef[] = [
   { id: "wand-of-sparks", category: "Magic Items", costCp: 0, weight: 1, attune: true, description: "Crackling wand with 7 charges." },
   { id: "staff-of-healing", category: "Staffs", costCp: 0, weight: 4, attune: true, attuneBy: { text: "by a bard, cleric, or druid", classes: ["bard", "cleric", "druid"] }, description: "Spend its charges to restore hit points." },
   { id: "boots-of-speed", category: "Wondrous Items", costCp: 0, weight: 1, attune: true, speedToggle: 2, description: "Click the heels together to double your walking speed." },
+  { id: "magic-arrows", category: "Ammunition", costCp: 0, weight: 1, ammoBonus: 1, description: "Twenty +1 arrows: +1 to attack and damage rolls made with them." },
+  { id: "necklace-of-beads", category: "Wondrous Items", costCp: 0, weight: 0, charges: { dice: "1d6 + 3", count: 1, sides: 6, bonus: 3 }, description: "Its beads (1d6 + 3) are counted when it is found; detach one and throw it." },
   { id: "potion-of-healing", category: "Magic Items", costCp: 5000, weight: 0.5, description: "Restore 2d4+2 hit points." },
 ];
 

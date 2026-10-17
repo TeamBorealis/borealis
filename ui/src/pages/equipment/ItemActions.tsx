@@ -5,6 +5,7 @@ import { Button, Chip, Modal, TextArea, TextField, useConfirm } from "../../comp
 import { useCharacter } from "../../state/CharacterContext";
 import { useSettings } from "../../state/SettingsContext";
 import { attuneBlocked, restrictionText, weaponsFiring } from "./attunement";
+import { RolledChargesEditor } from "./RolledCharges";
 
 /** Equips an item; for weapons missing from the attacks list it offers to add one (per setting). */
 export function useEquipItem() {
@@ -66,6 +67,7 @@ export function ItemActionsDialog({ item, index, count, onClose }: { item: Inven
         </div>
         {restriction && <p className={item.attunementBarred ? "error-text" : "muted"}>{restriction}{attuneBlocked(item) ? ". You do not meet this requirement." : ""}</p>}
         {firedBy.length > 0 && <p className="muted">Fired from {firedBy.join(", ")}: its bonus is added to the attack and damage.</p>}
+        {item.rolledCharges?.map((r) => <RolledChargesEditor key={r.resourceId} item={item} charge={r} />)}
         <div className="row">
           {canWear && !item.equipped && <Button variant="primary" onClick={() => void equip("auto")}>Equip</Button>}
           {item.isWeapon && !item.equipped && <><Button onClick={() => void equip("primary")}>Primary hand</Button><Button onClick={() => void equip("secondary")}>Off hand</Button><Button onClick={() => void equip("versatile")}>Two-handed</Button></>}

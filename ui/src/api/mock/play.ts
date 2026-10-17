@@ -1,6 +1,7 @@
 import type { ConversionPreview, PlayResource, PlayState, PlayToggle, PlayWildShape } from "../types";
 import { getClass, getElement, getItem } from "./content";
 import { apiError } from "./errors";
+import { chargeResources } from "./rolled-charges";
 import { classIdOf } from "./slots";
 import { type MockCharacter, totalLevel } from "./state";
 
@@ -25,7 +26,7 @@ const masteryCapacity = (c: MockCharacter): number =>
 const resourcesFor = (c: MockCharacter): PlayResource[] => {
   const level = Math.max(1, totalLevel(c));
   const base = { source: "Mock class", recharge: ["short_rest", "long_rest"], shortRestRegain: 1, longRestRegainAll: true };
-  return [{ ...base, id: "rage", name: "Rage", max: 2 + Math.floor(level / 4), current: 0 }];
+  return [{ ...base, id: "rage", name: "Rage", max: 2 + Math.floor(level / 4), current: 0 }, ...chargeResources(c)];
 };
 
 const TOGGLES: Omit<PlayToggle, "on" | "active">[] = [

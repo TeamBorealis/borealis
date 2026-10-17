@@ -11,6 +11,7 @@ import { MockPicks } from "./picks";
 import { MockFiveToolsUrls } from "./fivetools-urls";
 import { MockImportPreview } from "./import-preview";
 import { MockImportReports } from "./import-report";
+import * as rolled from "./rolled-charges";
 import { MockAppUpdate } from "./app-update";
 import { MockDataFiles } from "./data-files";
 import { validateHomebrew } from "./ai";
@@ -404,13 +405,12 @@ export class MockApi implements Api {
   /* ---------- equipment ---------- */
 
   async searchItems(q: Parameters<Api["searchItems"]>[0]) { await this.tick(); return this.content.items(q); }
-  async addItem(a: { characterId: string; itemId: string; quantity: number; buy: boolean }) { return this.mutate(a.characterId, (c) => eq.addItem(c, a.itemId, a.quantity, a.buy)); }
+  async addItem(a: { characterId: string; itemId: string; quantity: number; buy: boolean }) { return this.mutate(a.characterId, (c) => rolled.rollGained(c, eq.addItem(c, a.itemId, a.quantity, a.buy), this.rng)); }
   async removeItem(a: { characterId: string; inventoryId: string; all: boolean }) { return this.mutate(a.characterId, (c) => eq.removeItem(c, a.inventoryId, a.all)); }
   async equipItem(a: { characterId: string; inventoryId: string; slot: Parameters<typeof eq.equipItem>[2] }) { return this.mutate(a.characterId, (c) => eq.equipItem(c, a.inventoryId, a.slot)); }
   async unequipItem(a: { characterId: string; inventoryId: string }) { return this.mutate(a.characterId, (c) => eq.unequipItem(c, a.inventoryId)); }
-  // Mock items carry no dice-valued charges (InventoryItem.rolledCharges), so both are refused like the app does.
-  async setRolledMax(a: { characterId: string; inventoryId: string; resourceId: string; value: number }): Promise<CharacterSnapshot> { this.get(a.characterId); throw apiError("invalid_argument", `No rolled charges ${a.resourceId} on ${a.inventoryId}`); }
-  async rerollMax(a: { characterId: string; inventoryId: string; resourceId: string }): Promise<CharacterSnapshot> { this.get(a.characterId); throw apiError("invalid_argument", `No rolled charges ${a.resourceId} on ${a.inventoryId}`); }
+  async setRolledMax(a: { characterId: string; inventoryId: string; resourceId: string; value: number }) { return this.mutate(a.characterId, (c) => rolled.setRolledMax(c, a.inventoryId, a.resourceId, a.value)); }
+  async rerollMax(a: { characterId: string; inventoryId: string; resourceId: string }) { return this.mutate(a.characterId, (c) => rolled.rerollMax(c, a.inventoryId, a.resourceId, this.rng)); }
   async setAttuned(a: { characterId: string; inventoryId: string; attuned: boolean }) { return this.mutate(a.characterId, (c) => eq.setAttuned(c, a.inventoryId, a.attuned)); }
   async storeItem(a: { characterId: string; inventoryId: string; storage: 0 | 1 | 2 }) { return this.mutate(a.characterId, (c) => eq.storeItem(c, a.inventoryId, a.storage)); }
   async moveItem(a: { characterId: string; inventoryId: string; direction: "up" | "down" }) { return this.mutate(a.characterId, (c) => eq.moveItem(c, a.inventoryId, a.direction)); }
@@ -511,7 +511,8 @@ export class MockApi implements Api {
     if (!preview.converted) throw apiError("invalid_argument", "Nothing could be imported.");
     const installed = await this.content.import({ fileName: `${preview.packName}.xml`, contentBase64: btoa(texts.join("\n")) });
     this.makeMissingContentAvailable(); // the real backend re-resolves missing content after every install
-    return installed;
+    // The install report lists every issue of the staged conversion (the preview's list, uncapped there).
+    return { ...installed, report: { ...installed.report, issues: preview.diagnostics } };
   }
   async cancelImportPreview({ previewId }: { previewId: string }) { await this.tick(); this.previews.cancel(previewId); }
   async takeOpenedFiles() { await this.tick(); const out = this.openedFiles; this.openedFiles = []; return out; }

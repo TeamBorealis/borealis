@@ -3,6 +3,7 @@ import { Button, EmptyState, IconButton, Switch } from "../../components";
 import { Expander } from "../../components/controls";
 import { Tag } from "../ai/Panes";
 import { useCharacter } from "../../state/CharacterContext";
+import { RolledChargesEditor, chargesLabel, rolledChargeOf } from "../equipment/RolledCharges";
 
 const RECHARGE_LABEL: Record<string, string> = { short_rest: "Short Rest", long_rest: "Long Rest", initiative: "Initiative", dawn: "Dawn" };
 export const rechargeText = (r: PlayResource): string => r.recharge.map((x) => RECHARGE_LABEL[x] ?? x.replace(/_/g, " ")).join(" / ");
@@ -20,7 +21,8 @@ export type PlaySelection = { kind: "resource" | "toggle"; id: string } | null;
 interface Pickable { selected: PlaySelection; onSelect: (s: PlaySelection) => void }
 
 function ResourceRow({ r, selected, onSelect }: { r: PlayResource } & Pickable) {
-  const { mutate } = useCharacter();
+  const { snapshot, mutate } = useCharacter();
+  const rolled = snapshot ? rolledChargeOf(snapshot, r.id) : null;
   const spend = () => void mutate((api, id) => api.spendResource({ characterId: id, resourceId: r.id }));
   const restore = () => void mutate((api, id) => api.restoreResource({ characterId: id, resourceId: r.id }));
   const on = selected?.kind === "resource" && selected.id === r.id;
@@ -28,7 +30,7 @@ function ResourceRow({ r, selected, onSelect }: { r: PlayResource } & Pickable) 
     <li className={`v5-line ${on ? "is-selected" : ""}`}>
       <button type="button" className="v5-row grow" aria-current={on} onClick={() => onSelect({ kind: "resource", id: r.id })}>
         <span className="grow">{r.name}</span>
-        <span className="meta">{r.source}</span>
+        <span className="meta">{rolled ? `${r.source} · max ${chargesLabel(rolled.charge)}` : r.source}</span>
       </button>
       <Pips r={r} />
       <span className="v5-count" role="status" aria-label={`${r.name}: ${r.current} of ${r.max} uses left`}>{r.current}/{r.max}</span>
@@ -82,10 +84,13 @@ export function TogglesCard({ toggles, selected, onSelect }: { toggles: PlayTogg
 
 /** Description pane body for the selected resource or state. */
 export function PlayDetail({ selected, resources, toggles }: { selected: PlaySelection; resources: PlayResource[]; toggles: PlayToggle[] }) {
+  const { snapshot } = useCharacter();
   const r = selected?.kind === "resource" ? resources.find((x) => x.id === selected.id) : undefined;
+  const rolled = r && snapshot ? rolledChargeOf(snapshot, r.id) : null;
   const t = selected?.kind === "toggle" ? toggles.find((x) => x.id === selected.id) : undefined;
   if (r) return (<><h1 className="v5-desc-title">{r.name}</h1><p className="v5-lead">{r.source}</p>
-    <h2>Uses</h2><p>{r.current} of {r.max} left{r.recharge.length ? `. Resets on ${rechargeText(r)}.` : "."}</p></>);
+    <h2>Uses</h2><p>{r.current} of {r.max} left{r.recharge.length ? `. Resets on ${rechargeText(r)}.` : "."}</p>
+    {rolled && <><h2>Maximum</h2><RolledChargesEditor item={rolled.item} charge={rolled.charge} /></>}</>);
   if (t) return (<><h1 className="v5-desc-title">{t.name}</h1><p className="v5-lead">{[t.activation, t.duration].filter(Boolean).join(" · ") || "State"}</p>
     {t.effects.length > 0 && <><h2>Effects</h2><ul>{t.effects.map((e) => <li key={e}>{e}</li>)}</ul></>}
     {t.on && t.blockedBy && <p className="error-text">No effect: {t.blockedBy}</p>}</>);

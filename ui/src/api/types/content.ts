@@ -85,13 +85,12 @@ export interface MigrationIssue {
   severity: "info" | "warning" | "error";
   element: string | null;
   message: string;
-  /** Always sent by the app; optional only for older mocks. */
-  code?: MigrationIssueCode;
+  code: MigrationIssueCode;
   /** The element's type in the source ("Spell", "Class Feature", ...). */
-  elementType?: string | null;
+  elementType: string | null;
   /** Path of the source file inside the imported set (e.g. "classes/wizard.xml"). */
-  file?: string | null;
-  line?: number | null;
+  file: string | null;
+  line: number | null;
 }
 
 export interface MigrationReport {
@@ -129,7 +128,7 @@ export interface UpdateIndexesResult {
   /** Hosts an index downloaded from for the first time. */
   newHosts: string[];
   /** One conversion report per pack this update converted (same shape as a file import's report). */
-  reports?: MigrationReport[];
+  reports: MigrationReport[];
 }
 
 export interface ContentProgress {
