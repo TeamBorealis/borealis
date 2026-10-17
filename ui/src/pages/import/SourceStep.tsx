@@ -4,7 +4,8 @@ import { Alert, Button, Icon, TextArea, useImportNotice } from "../../components
 import { Expander } from "../../components/controls";
 import { DescHead, PaneSplit, Picker } from "../ai/Panes";
 import { useApi } from "../../state/ApiContext";
-import { browseNative, fileToSource, hasNativeDialog, problemWith, type NativePick } from "./readSources";
+import { browseNative, fileToSource, hasNativeDialog, problemWith, rulesContentInFile, type NativePick } from "./readSources";
+import { PASTED_SUBJECT, rulesContentProblem } from "./rulesContent";
 
 type KindChoice = ImportKind | "auto";
 type EditionChoice = Ruleset | "auto";
@@ -32,10 +33,15 @@ export function SourceStep({ initialFiles, busy, onStart, bar }: { initialFiles:
   /** The content-import notice comes before any picker opens; Cancel leaves everything as it was. */
   const choose = async (input: React.RefObject<HTMLInputElement | null>) => { if (await notice.ensure()) input.current?.click(); };
 
-  const add = (list: FileList | File[] | null) => {
+  /** Aurora, 5etools and Borealis content is refused (it never goes to AI); null when every file may be imported. */
+  const rulesContentIn = async (list: File[]): Promise<string | null> => {
+    try { return (await Promise.all(list.map(rulesContentInFile))).find((p) => p) ?? null; }
+    catch { return "One of the files could not be read. Remove it and try again."; }
+  };
+  const add = async (list: FileList | File[] | null) => {
     if (!list || !list.length) return;
     const incoming = Array.from(list);
-    const bad = incoming.map(problemWith).find((p) => p);
+    const bad = incoming.map(problemWith).find((p) => p) ?? (await rulesContentIn(incoming));
     setProblem(bad ?? (files.length + native.length + incoming.length > IMPORT_LIMITS.maxSources ? `Too many files at once (the limit is ${IMPORT_LIMITS.maxSources}).` : null));
     if (!bad) setFiles((cur) => [...cur, ...incoming]);
   };
@@ -44,7 +50,7 @@ export function SourceStep({ initialFiles, busy, onStart, bar }: { initialFiles:
     try { const picked = await browseNative(api); if (picked.length) setNative((cur) => [...cur, ...picked]); }
     catch (e) { setProblem(e instanceof Error ? e.message : String(e)); }
   };
-  const onDrop = (e: DragEvent) => { e.preventDefault(); e.stopPropagation(); setOver(false); add(e.dataTransfer.files); };
+  const onDrop = (e: DragEvent) => { e.preventDefault(); e.stopPropagation(); setOver(false); void add(Array.from(e.dataTransfer.files)); };
   const hasFiles = files.length > 0 || native.length > 0;
   const notesLength = (pasted.trim() + described.trim()).length;
   const notesTooLong = hasFiles && notesLength > IMPORT_LIMITS.maxNotesChars;
@@ -52,6 +58,9 @@ export function SourceStep({ initialFiles, busy, onStart, bar }: { initialFiles:
 
   const submit = async () => {
     if (!(await notice.ensure())) return;
+    // Files parked by a window-wide drop skip `add`, so everything is checked again here.
+    const refused = [pasted, described].map((t) => rulesContentProblem(t, PASTED_SUBJECT)).find((p) => p) ?? (await rulesContentIn(files));
+    if (refused) { setProblem(refused); return; }
     setReading(true);
     let read: ImportSource[];
     try { read = await Promise.all(files.map(fileToSource)); }
@@ -82,10 +91,10 @@ export function SourceStep({ initialFiles, busy, onStart, bar }: { initialFiles:
             <strong>Drop a PDF, a photo or a text file</strong>
             <span className="v5-note">or click to choose. Scans and screenshots are fine.</span>
           </div>
-          <input ref={picker} className="sr-only" type="file" multiple accept=".pdf,.docx,.odt,.txt,.md,.json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,image/*,text/*" aria-label="Choose files" tabIndex={-1} onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
+          <input ref={picker} className="sr-only" type="file" multiple accept=".pdf,.docx,.odt,.txt,.md,.json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,image/*,text/*" aria-label="Choose files" tabIndex={-1} onChange={(e) => { void add(e.target.files ? Array.from(e.target.files) : null); e.target.value = ""; }} />
           <div className="v5-foot">
             <Button className="camera-btn" icon="plus" onClick={() => void choose(camera)}>Take photo</Button>
-            <input ref={camera} className="sr-only" type="file" accept="image/*" capture="environment" aria-label="Take photo" tabIndex={-1} onChange={(e) => { add(e.target.files); e.target.value = ""; }} />
+            <input ref={camera} className="sr-only" type="file" accept="image/*" capture="environment" aria-label="Take photo" tabIndex={-1} onChange={(e) => { void add(e.target.files ? Array.from(e.target.files) : null); e.target.value = ""; }} />
             <Button icon="upload" onClick={() => void choose(picker)}>Choose files</Button>
             {hasNativeDialog() && <Button aria-label="Browse…" icon="scroll" onClick={() => void browse()}>Browse...</Button>}
           </div>

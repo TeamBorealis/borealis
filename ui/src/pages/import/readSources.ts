@@ -1,4 +1,5 @@
 import { IMPORT_LIMITS, type Api, type ImportSource } from "../../api/contract";
+import { rulesContentProblem } from "./rulesContent";
 
 /** Bytes to base64 without building one huge string through String.fromCharCode(...). */
 export function bytesToBase64(bytes: Uint8Array): string {
@@ -38,6 +39,16 @@ const readBuffer = (f: Blob): Promise<ArrayBuffer> =>
     reader.onerror = () => reject(reader.error ?? new Error("read failed"));
     reader.readAsArrayBuffer(f);
   });
+
+/**
+ * The refusal for a text file holding Aurora, 5etools or Borealis content (those imports never use
+ * AI), or null. Only text files are read here; the backend checks Word and OpenDocument text too.
+ */
+export async function rulesContentInFile(f: File): Promise<string | null> {
+  if (kindOf(f) !== "text") return null;
+  const text = new TextDecoder().decode(await readBuffer(f));
+  return rulesContentProblem(text, `"${f.name}"`);
+}
 
 /** Read the contents the webview has (drop, picker, camera) into `bytes` sources. */
 export async function fileToSource(f: File): Promise<ImportSource> {

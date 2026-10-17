@@ -12,6 +12,9 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+#[path = "import_rules_content.rs"]
+pub mod rules_content;
+
 /// Most sources in one import.
 pub const MAX_SOURCES: usize = 12;
 /// A raw image may exceed the 5 MiB the model gets because it is downscaled first; this caps what
@@ -152,16 +155,12 @@ impl Collected {
             return Err(too_big("these files", MAX_TOTAL_BYTES));
         }
         match kind {
-            Kind::Text => {
-                self.add_text(&String::from_utf8_lossy(&bytes));
-                Ok(())
-            }
+            Kind::Text => self.add_text(&String::from_utf8_lossy(&bytes), &quoted(name)),
             Kind::Document(format) => {
                 let text = office_text(format, &bytes).map_err(|e| {
                     ApiError::invalid(format!("\"{}\" could not be read: {e}", base_name(name)))
                 })?;
-                self.add_text(&text);
-                Ok(())
+                self.add_text(&text, &quoted(name))
             }
             Kind::Image => {
                 self.attachments.push(Attachment {
@@ -184,13 +183,27 @@ impl Collected {
         }
     }
 
-    fn add_text(&mut self, text: &str) {
+    /// Add one text source. Aurora, 5etools and Borealis content is refused here, before any
+    /// model sees it: those imports are deterministic (Additional Content), never AI.
+    fn add_text(&mut self, text: &str, subject: &str) -> ApiResult<()> {
+        if let Some(kind) = rules_content::detect(text) {
+            return Err(ApiError::invalid(rules_content::refusal(kind, subject)));
+        }
         if !self.text.is_empty() {
             self.text.push_str("\n\n");
         }
         self.text.push_str(text.trim());
+        Ok(())
     }
 }
+
+/// A file name as the refusals quote it.
+fn quoted(name: &str) -> String {
+    format!("\"{}\"", base_name(name))
+}
+
+/// How refusals name pasted or typed text.
+const PASTED: &str = "The pasted text";
 
 /// MIME type for a picked file, from its extension (the webview does not get to say).
 fn mime_for(name: &str) -> &'static str {
@@ -287,7 +300,7 @@ pub fn prepare_sources(
         match s {
             ImportSourceDto::Text { text } => {
                 acc.total += text.len();
-                acc.add_text(text);
+                acc.add_text(text, PASTED)?;
                 names.push("Pasted text".to_string());
             }
             ImportSourceDto::File { token } => {
@@ -331,4 +344,102 @@ pub fn prepare_sources(
         source_name,
         notes,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const AURORA: &str = r#"<?xml version="1.0" encoding="utf-8"?>
+<elements>
+  <element name="Test Spark" type="Spell" source="Synthetic" id="ID_SYN_SPELL_TEST_SPARK" />
+</elements>"#;
+    const FIVETOOLS: &str =
+        r#"{"spell":[{"name":"Test Spark","source":"SYN","page":1,"entries":["A spark."]}]}"#;
+    const BOREALIS: &str = r#"{"format":"borealis-content/1","elements":[]}"#;
+
+    fn bytes(name: &str, mime: &str, text: &str) -> ImportSourceDto {
+        ImportSourceDto::Bytes {
+            name: name.into(),
+            mime: mime.into(),
+            base64: STANDARD.encode(text),
+        }
+    }
+
+    fn refused(sources: &[ImportSourceDto]) -> String {
+        match prepare_sources(sources, &PickedFiles::new()) {
+            Ok(_) => panic!("rules content reached the AI importer"),
+            Err(e) => e.to_string(),
+        }
+    }
+
+    #[test]
+    fn pasted_aurora_xml_is_refused_with_a_pointer_to_custom_content() {
+        let msg = refused(&[ImportSourceDto::Text {
+            text: AURORA.into(),
+        }]);
+        assert!(msg.contains("The pasted text is Aurora content."), "{msg}");
+        assert!(msg.contains("Additional Content > Custom content"), "{msg}");
+    }
+
+    #[test]
+    fn aurora_xml_in_a_text_file_is_refused() {
+        let msg = refused(&[bytes("my class.txt", "text/plain", AURORA)]);
+        assert!(msg.contains("\"my class.txt\" is Aurora content."), "{msg}");
+    }
+
+    #[test]
+    fn fivetools_json_is_refused_with_a_pointer_to_5etools_import() {
+        let msg = refused(&[bytes("spells-syn.json", "application/json", FIVETOOLS)]);
+        assert!(
+            msg.contains("\"spells-syn.json\" is 5etools data."),
+            "{msg}"
+        );
+        assert!(msg.contains("Additional Content > 5etools import"), "{msg}");
+        let pasted = refused(&[ImportSourceDto::Text {
+            text: FIVETOOLS.into(),
+        }]);
+        assert!(pasted.contains("5etools import"), "{pasted}");
+    }
+
+    #[test]
+    fn a_borealis_pack_is_refused() {
+        let msg = refused(&[bytes("pack.json", "", BOREALIS)]);
+        assert!(msg.contains("Borealis content pack"), "{msg}");
+    }
+
+    #[test]
+    fn notes_beside_an_image_are_checked_too() {
+        let png = ImportSourceDto::Bytes {
+            name: "page.png".into(),
+            mime: "image/png".into(),
+            base64: STANDARD.encode([137u8, 80, 78, 71]),
+        };
+        let msg = refused(&[
+            png,
+            ImportSourceDto::Text {
+                text: AURORA.into(),
+            },
+        ]);
+        assert!(msg.contains("Aurora content"), "{msg}");
+    }
+
+    #[test]
+    fn ordinary_text_and_json_still_import() {
+        let ok = prepare_sources(
+            &[
+                ImportSourceDto::Text {
+                    text: "Test Spark. Cantrip, evocation. A tiny spark.".into(),
+                },
+                bytes(
+                    "notes.json",
+                    "application/json",
+                    r#"{"name":"Test Spark","level":0}"#,
+                ),
+            ],
+            &PickedFiles::new(),
+        )
+        .expect("ordinary sources");
+        assert!(matches!(ok.source, ImportSource::Text(t) if t.contains("Test Spark")));
+    }
 }
