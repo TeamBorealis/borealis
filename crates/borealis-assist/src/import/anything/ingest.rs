@@ -27,8 +27,6 @@ mod reread;
 pub(crate) mod stat_lines;
 #[path = "transcript.rs"]
 pub(crate) mod transcript;
-// Called by `detect_source` once detection has named the creatures (see the w13a handoff).
-#[allow(unused_imports)]
 pub(crate) use reread::reread_missing_stat_blocks;
 
 /// Pages (or images) the model transcribes per call: few enough to copy verbatim.

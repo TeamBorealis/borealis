@@ -159,6 +159,21 @@ pub async fn detect_source(
         .into_iter()
         .partition(|i| i.kind != ImportKind::Mixed);
     let items = variants::with_bases(variants::split(items, out.edition));
+    // A named creature whose stat block is not in the text gets its page read once more as a
+    // picture (pasted stat blocks the first pass took for decoration).
+    let monsters: Vec<String> = items
+        .iter()
+        .filter(|i| i.kind == ImportKind::Monster)
+        .map(|i| i.name.clone())
+        .collect();
+    let text = if attachments.is_empty() || monsters.is_empty() {
+        text
+    } else {
+        let again =
+            ingest::reread_missing_stat_blocks(runner, attachments, &text, &monsters, opts).await;
+        out.notes.extend(again.notes);
+        again.text
+    };
     let other: Vec<OtherItem> = out
         .other
         .into_iter()

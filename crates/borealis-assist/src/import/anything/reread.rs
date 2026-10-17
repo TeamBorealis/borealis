@@ -47,7 +47,6 @@ fn missing_stat_blocks(text: &str, creatures: &[String]) -> Vec<String> {
 /// [`MAX_REREAD_PAGES`] pages; the first failed call ends the second look (the import's call
 /// budget may be spent). Returns the new text (unchanged when nothing was read) with its notes
 /// and calls.
-#[cfg_attr(not(test), allow(dead_code))]
 pub(crate) async fn reread_missing_stat_blocks(
     runner: &dyn VisionRunner,
     attachments: &[Attachment],
