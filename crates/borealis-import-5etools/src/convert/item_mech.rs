@@ -106,19 +106,29 @@ pub fn ability_bonus_rules(it: &Item, mech: &mut Mech<'_>, partial: &mut Vec<Str
     let Some(Value::Object(map)) = it.extra.get("ability") else {
         return;
     };
-    let mut chosen = false;
+    // a chosen ability: `choose: [{from, count, amount}]`, or the object itself (`from`, ...)
+    let mut choices: Vec<Value> = match map.get("choose") {
+        Some(Value::Array(list)) => list.clone(),
+        Some(one) => vec![one.clone()],
+        None => Vec::new(),
+    };
+    if map.contains_key("from") {
+        choices.push(Value::Object(map.clone()));
+    }
+    for c in choices {
+        mech.ability(
+            &[json!({ "choose": c })],
+            super::super::mech::AbilitySource::Feat,
+        );
+    }
     for (key, v) in map {
         match key.as_str() {
-            "static" => {}
-            "choose" | "from" | "count" | "amount" => chosen = true,
+            "static" | "choose" | "from" | "count" | "amount" => {}
             _ => match (core_ids::ability_stat(key), int_of(v)) {
                 (Some(name), Some(n)) => mech.push(Rule::Stat(stat(&name, n))),
                 _ => partial.push(format!("ability entry {key:?} was not converted")),
             },
         }
-    }
-    if chosen {
-        partial.push("ability bonus to a chosen ability was not converted".into());
     }
 }
 
@@ -308,7 +318,25 @@ mod tests {
             stats(&mech.rules),
             vec![("constitution".into(), "2".into(), None)]
         );
-        assert_eq!(partial.len(), 1);
+        assert!(partial.is_empty(), "{partial:?}");
+        assert!(mech
+            .rules
+            .iter()
+            .any(|r| matches!(r, Rule::Select(s) if s.ty == "Ability Score Improvement")));
+        // +2 to one ability of your choice, written at the top level or under `choose`
+        for ability in [
+            json!({"from": ["str", "dex", "con", "int", "wis", "cha"], "count": 1, "amount": 2}),
+            json!({"choose": [{"from": ["str", "dex", "con", "int", "wis", "cha"], "count": 1, "amount": 2}]}),
+        ] {
+            let mut mech = Mech::new(&sh, "x");
+            let it = item(json!({"name": "Tome", "source": "ZZZ", "ability": ability}));
+            ability_bonus_rules(&it, &mut mech, &mut partial);
+            assert!(
+                matches!(&mech.rules[..], [Rule::Custom(c)] if c.kind == "ability_increase"),
+                "{:?}",
+                mech.rules
+            );
+        }
     }
 
     #[test]

@@ -3,7 +3,7 @@
 //! A [`Mech`] accumulates the rules of one element. Anything that cannot be expressed as a
 //! rule is recorded in `partial` (for the report) and `unmapped` (kept on the element).
 
-use super::build::{gate, grant, select, setter_with, stat_bonus};
+use super::build::{custom, gate, grant, select, setter_with, stat_bonus};
 use super::Shared;
 use crate::core_ids::{self as core, DamageRelation};
 use crate::text::RefKind;
@@ -270,10 +270,23 @@ impl<'a> Mech<'a> {
                 match k.as_str() {
                     "choose" | "all" => {
                         let filter = v.get("fromFilter").and_then(Value::as_str).unwrap_or("?");
-                        self.note(
-                            "weapon",
-                            format!("weapon proficiency chosen by filter {filter:?} not converted"),
-                        );
+                        // a whole category ("two martial weapons") stays a note: a character
+                        // proficient with the category is offered nothing (an empty choice)
+                        let narrowed = filter.contains("property=");
+                        match (k.as_str(), weapon_filter_supports(filter)) {
+                            ("choose", Some(supports)) if narrowed => self.pick_tag(
+                                "Proficiency",
+                                "Weapon Proficiency",
+                                &supports,
+                                count_of(v.get("count").unwrap_or(&json!(1))),
+                            ),
+                            _ => self.note(
+                                "weapon",
+                                format!(
+                                    "weapon proficiency chosen by filter {filter:?} not converted"
+                                ),
+                            ),
+                        }
                     }
                     name if v == &Value::Bool(true) => {
                         let base = name.split('|').next().unwrap_or(name);
@@ -473,15 +486,20 @@ impl<'a> Mech<'a> {
         self.damage_list(DamageRelation::Resistance, resist, "resistance");
         self.damage_list(DamageRelation::Immunity, immune, "immunity");
         self.damage_list(DamageRelation::Vulnerability, vulnerable, "vulnerability");
+        // `condition_immunity` takes condition names (the engine matches them to condition
+        // elements, as the bundled SRD 5.2.1 Nature's Ward does)
+        let mut names: Vec<String> = Vec::new();
         for c in cond_immune {
-            let text = match c {
-                Value::String(s) => s.clone(),
-                other => other.to_string(),
-            };
-            self.note(
-                "condition immunity",
-                format!("condition immunity {text} has no core element"),
-            );
+            match c {
+                Value::String(s) => names.push(s.to_lowercase()),
+                other => self.note(
+                    "condition immunity",
+                    format!("condition immunity {other} was not converted"),
+                ),
+            }
+        }
+        if !names.is_empty() {
+            self.push(custom("condition_immunity", json!({"conditions": names})));
         }
     }
 
@@ -662,6 +680,44 @@ impl<'a> Mech<'a> {
     }
 }
 
+/// The supports expression of the core weapon proficiencies a 5etools item filter
+/// (`type=martial weapon|property=light;finesse|miscellaneous=mundane`) selects: categories and
+/// properties are tags of the core `Proficiency` elements (`Martial`, `Melee`,
+/// `ID_INTERNAL_WEAPON_PROPERTY_LIGHT`); `;` is "or", `!` is "not". Mundane/rarity filters are
+/// always true of core proficiencies. `None` for a filter with other parts.
+#[must_use]
+pub fn weapon_filter_supports(filter: &str) -> Option<String> {
+    let mut parts: Vec<String> = vec!["Weapon".into()];
+    for clause in filter.split('|') {
+        let (key, values) = clause.split_once('=')?;
+        let mut alts: Vec<String> = Vec::new();
+        for raw in values.split(';') {
+            let (neg, value) = raw.strip_prefix('!').map_or((false, raw), |v| (true, v));
+            let tag = match (key.trim(), value.trim()) {
+                ("type", "martial weapon") => "Martial".to_string(),
+                ("type", "simple weapon") => "Simple".to_string(),
+                ("type", "melee weapon") => "Melee".to_string(),
+                ("type", "ranged weapon") => "Ranged".to_string(),
+                ("type", "mundane weapon") | ("miscellaneous", "mundane") | ("rarity", "none") => {
+                    continue
+                }
+                ("property", p) => format!(
+                    "ID_INTERNAL_WEAPON_PROPERTY_{}",
+                    p.replace(['-', ' '], "").to_uppercase()
+                ),
+                _ => return None,
+            };
+            alts.push(if neg { format!("!{tag}") } else { tag });
+        }
+        match alts.len() {
+            0 => {}
+            1 => parts.push(alts.remove(0)),
+            _ => parts.push(format!("({})", alts.join("||"))),
+        }
+    }
+    Some(parts.join("&&"))
+}
+
 /// Plain strings of an optional JSON array.
 #[must_use]
 pub fn string_list(v: Option<&Value>) -> Vec<String> {
@@ -794,6 +850,8 @@ mod tests {
         m.weapons(&[
             json!({"simple": true, "martial": true, "battleaxe|phb": true, "light crossbow|phb": true}),
             json!({"choose": {"fromFilter": "type=martial weapon", "count": 1}}),
+            json!({"choose": {"fromFilter": "type=melee weapon|property=!two-handed|rarity=none"}}),
+            json!({"all": {"fromFilter": "type=martial weapon|property=light"}}),
         ]);
         m.armor(&[json!({"light": true, "shield": true, "plate|phb": true})]);
         m.saving_throws(&["str".into(), "con".into(), "zzz".into()]);
@@ -806,6 +864,13 @@ mod tests {
             .any(|i| i.contains("Artisan tools||Musical Instrument")));
         assert!(ids.contains(&"grant:ID_PROFICIENCY_WEAPON_PROFICIENCY_SIMPLE_WEAPONS".to_string()));
         assert!(ids.contains(&"grant:ID_PROFICIENCY_WEAPON_PROFICIENCY_CROSSBOW_LIGHT".to_string()));
+        assert!(!ids.iter().any(|i| i.ends_with(":Weapon&&Martial")));
+        assert!(ids.contains(&"select:Proficiency:Weapon Proficiency (T):Weapon&&Melee&&!ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED".to_string()));
+        assert_eq!(
+            weapon_filter_supports("type=martial weapon;mundane weapon|property=light;finesse|miscellaneous=mundane").as_deref(),
+            Some("Weapon&&Martial&&(ID_INTERNAL_WEAPON_PROPERTY_LIGHT||ID_INTERNAL_WEAPON_PROPERTY_FINESSE)")
+        );
+        assert!(weapon_filter_supports("source=phb").is_none());
         assert!(ids.contains(&"grant:ID_PROFICIENCY_ARMOR_PROFICIENCY_SHIELDS".to_string()));
         assert!(ids.contains(&"grant:ID_PROFICIENCY_SAVINGTHROW_CONSTITUTION".to_string()));
         assert!(m.unmapped.contains_key("weapon"));
@@ -852,7 +917,18 @@ mod tests {
         assert!(ids.contains(&"stat:innate speed:swim=40".to_string()));
         assert!(ids.contains(&"stat:innate speed=25".to_string()));
         assert!(m.partial.iter().any(|p| p.contains("swim speed condition")));
-        assert!(m.partial.iter().any(|p| p.contains("charmed")));
+        assert!(ids.contains(&"custom:condition_immunity".to_string()));
+        let cond = m.rules.iter().find_map(|r| match r {
+            Rule::Custom(c) if c.kind == "condition_immunity" => {
+                Some(c.fields["conditions"].clone())
+            }
+            _ => None,
+        });
+        assert!(cond
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .contains(&json!("charmed")));
         assert!(m.partial.iter().any(|p| p.contains("Varies")));
         let mut one = Mech::new(&sh, "D");
         one.senses(Some(60), None, &[]);

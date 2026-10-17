@@ -12,6 +12,8 @@ use crate::util::{id_fragment, title_case};
 use borealis_content::{Element, ExtractItem, Rule, Setter};
 use serde_json::{json, Map, Value};
 
+#[path = "item_extras.rs"]
+mod item_extras;
 #[path = "item_mech.rs"]
 mod item_mech;
 #[path = "item_spells.rs"]
@@ -393,6 +395,9 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     magic_rules(&it, ty, &code, &mut mech, &mut el);
     item_mech::ability_bonus_rules(&it, &mut mech, &mut partial);
     item_mech::speed_rules(&it, &mut mech, &mut partial);
+    item_extras::bonus_stats(&it, &mut mech);
+    item_extras::dex_cap(&ent.raw, &code, &mut mech);
+    item_extras::granted_rules(sh, &it, &mut mech, &mut partial);
     let charges = item_mech::charges_rule(&it, &el, &mut partial);
     let has_charges = charges.is_some();
     mech.rules.extend(charges);
@@ -595,9 +600,14 @@ fn magic_rules(it: &Item, ty: &str, code: &str, mech: &mut Mech<'_>, el: &mut El
             .cloned()
             .unwrap_or_default()
     };
-    let (resist, immune, vulnerable) = (list("resist"), list("immune"), list("vulnerable"));
-    if !resist.is_empty() || !immune.is_empty() || !vulnerable.is_empty() {
-        mech.resistances(&resist, &immune, &vulnerable, &[]);
+    let (resist, immune, vulnerable, cond) = (
+        list("resist"),
+        list("immune"),
+        list("vulnerable"),
+        list("conditionImmune"),
+    );
+    if !resist.is_empty() || !immune.is_empty() || !vulnerable.is_empty() || !cond.is_empty() {
+        mech.resistances(&resist, &immune, &vulnerable, &cond);
     }
     if let Some(Value::Object(stat_map)) = it.extra.get("ability").and_then(|a| a.get("static")) {
         for (abbr, v) in stat_map {
@@ -606,7 +616,7 @@ fn magic_rules(it: &Item, ty: &str, code: &str, mech: &mut Mech<'_>, el: &mut El
             }
         }
     }
-    for key in ["conditionImmune", "senses", "speed"] {
+    for key in ["senses", "speed"] {
         if it.extra.contains_key(key) {
             note_unmapped(el, key, "item property kept in data only");
             el.data.insert(key.to_string(), it.extra[key].clone());

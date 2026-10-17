@@ -457,7 +457,21 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
             Value::Array(class.primary_ability.clone()),
         );
     }
+    let mut packages = super::equipment::Packages::default();
     if let Some(se) = &class.starting_equipment {
+        packages = super::equipment::packages(
+            sh,
+            &super::equipment::Owner {
+                id: &id,
+                name: &class.name,
+                source: &el.source,
+                ruleset: ent.ruleset,
+                gate: Some(&not_multiclass),
+            },
+            &super::equipment::groups_of(se),
+        );
+        el.rules.append(&mut packages.rules);
+        partial.append(&mut packages.partial);
         el.data.insert("starting_equipment".into(), se.clone());
     }
 
@@ -481,6 +495,7 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     partial.dedup();
     let mut elements = vec![el];
     elements.extend(spell_helpers);
+    elements.append(&mut packages.elements);
     Conv { elements, partial }
 }
 

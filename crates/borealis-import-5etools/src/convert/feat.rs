@@ -50,7 +50,20 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     apply_prerequisites(sh, st, &feat.prerequisite, &mut el, &mut partial);
 
     let mut mech = Mech::new(sh, &feat.name);
-    mech.ability(&feat.ability, AbilitySource::Feat);
+    let source_display = sh.source_display(&ent.source);
+    let linked = super::feat_saves::linked_choice(
+        st,
+        &feat,
+        &super::feat_saves::FeatRef {
+            id: &id,
+            source: &ent.source,
+            source_display: &source_display,
+            ruleset: ent.ruleset,
+        },
+    );
+    if linked.is_none() {
+        mech.ability(&feat.ability, AbilitySource::Feat);
+    }
     mech.skills(&feat.skill_proficiencies);
     mech.tools(&feat.tool_proficiencies);
     mech.languages(&feat.language_proficiencies);
@@ -70,7 +83,7 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
             for (k, v) in map {
                 if v == &Value::Bool(true) {
                     mech.saving_throws(std::slice::from_ref(k));
-                } else if k == "choose" {
+                } else if k == "choose" && linked.is_none() {
                     partial.push("saving throw choice was not converted".into());
                 }
             }
@@ -83,7 +96,6 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         true,
         &spells_extra::inherited_abilities(&feat.ability),
     );
-    let source_display = sh.source_display(&ent.source);
     let placed = spell_blocks::place(
         &Carrier {
             id: &id,
@@ -101,6 +113,10 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     }
     el.spellcasting = placed.spellcasting;
     let mut elements_extra = placed.elements;
+    if let Some(l) = linked {
+        mech.push(l.rule);
+        elements_extra.extend(l.options);
+    }
     partial.extend(spells.partial);
     if !spells.options.is_empty() {
         for opt in spells.options {

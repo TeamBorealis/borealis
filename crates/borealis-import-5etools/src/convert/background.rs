@@ -260,7 +260,22 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         note_unmapped(&mut el, k, &vs.join("; "));
     }
     partial.extend(std::mem::take(&mut mech.partial));
+    let mut packages = super::equipment::Packages::default();
     if !bg.starting_equipment.is_empty() {
+        let groups = super::equipment::groups_of(&Value::Array(bg.starting_equipment.clone()));
+        packages = super::equipment::packages(
+            sh,
+            &super::equipment::Owner {
+                id: &id,
+                name: &bg.name,
+                source: &source_display,
+                ruleset: ent.ruleset,
+                gate: None,
+            },
+            &groups,
+        );
+        el.rules.append(&mut packages.rules);
+        partial.append(&mut packages.partial);
         el.data.insert(
             "starting_equipment".into(),
             Value::Array(bg.starting_equipment.clone()),
@@ -286,6 +301,7 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     let mut elements = vec![el];
     elements.extend(features);
     elements.extend(spell_helpers);
+    elements.append(&mut packages.elements);
     Conv { elements, partial }
 }
 
