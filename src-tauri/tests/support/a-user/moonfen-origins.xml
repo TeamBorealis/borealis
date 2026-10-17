@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Invented test content (acceptance A-user): no published game text. -->
+<elements>
+  <element name="Moonfen Pack" type="Source" source="Moonfen Pack" id="ID_SOURCE_MOONFEN_PACK">
+    <description><p>An invented test source.</p></description>
+    <setters><set name="abbreviation">MFP</set><set name="url">https://example.invalid/moonfen</set></setters>
+  </element>
+  <element name="Bogling" type="Race" source="Moonfen Pack" id="ID_MOONFEN_RACE_BOGLING">
+    <description><p>Small folk of an invented marsh.</p></description>
+    <setters><set name="names" type="male">Reed, Moss</set></setters>
+    <rules>
+      <stat name="dexterity" value="2" />
+      <stat name="innate speed" value="30" bonus="base" />
+      <select type="Sub Race" name="Subrace" supports="Bogling" />
+    </rules>
+  </element>
+  <element name="Reed Bogling" type="Sub Race" source="Moonfen Pack" id="ID_MOONFEN_SUB_RACE_REED_BOGLING">
+    <supports>Bogling</supports>
+    <description><p>Invented.</p></description>
+    <rules><stat name="wisdom" value="1" /></rules>
+  </element>
+  <element name="Fen Guide" type="Background" source="Moonfen Pack" id="ID_MOONFEN_BACKGROUND_FEN_GUIDE">
+    <description><p>Invented.</p></description>
+    <rules><grant type="Proficiency" id="ID_PROFICIENCY_SKILL_SURVIVAL" /></rules>
+  </element>
+  <element name="Lantern Ward" type="Feat" source="Moonfen Pack" id="ID_MOONFEN_FEAT_LANTERN_WARD">
+    <description><p>Invented.</p></description>
+    <rules><stat name="ac" value="1" /></rules>
+  </element>
+  <element name="Marsh Stride" type="Feat" source="Moonfen Pack" id="ID_MOONFEN_FEAT_MARSH_STRIDE">
+    <prerequisite>Lantern Ward</prerequisite>
+    <requirements>ID_MOONFEN_FEAT_LANTERN_WARD</requirements>
+    <description><p>Invented.</p></description>
+    <rules><stat name="speed" value="5" /></rules>
+  </element>
+  <element name="Bog Sage" type="Feat" source="Moonfen Pack" id="ID_MOONFEN_FEAT_BOG_SAGE">
+    <prerequisite>Intelligence 13 or higher</prerequisite>
+    <requirements>[int:13]</requirements>
+    <description><p>Invented.</p></description>
+    <rules><stat name="intelligence" value="1" /></rules>
+  </element>
+</elements>

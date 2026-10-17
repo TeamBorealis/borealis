@@ -15,14 +15,16 @@
 
 #[path = "../../tools/regression-gate/outcome.rs"]
 mod outcome;
+#[path = "support/prereq.rs"]
+mod prereq;
 
-use borealis_content::expr::{BoolExpr, RequirementLeaf, RequirementsExpr};
 use borealis_content::{ContentStore, ContentStoreBuilder, Element, Rule, Ruleset};
 use borealis_engine::commands::{self, slot_key};
 use borealis_engine::{
     invariants, CharacterSnapshot, CharacterState, Choice, Engine, Severity, SlotKey,
 };
 use borealis_import_5etools::{import_folder, ImportOptions};
+use prereq::{Needs, NeedsReader};
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 
@@ -577,152 +579,29 @@ fn feat_hosts(sw: &Sweeper<'_>, rs: Ruleset, class: &str) -> Vec<CharacterState>
     out
 }
 
-/// Id prefix of the engine's generated "Feat (n)" improvement options (`universe.rs`
-/// `generate_improvements`: `ID_INTERNAL_CLASS_FEATURE_FEAT_<n>_<CLASS>`, named "Feat (4)").
-const FEAT_OPTION_PREFIX: &str = "ID_INTERNAL_CLASS_FEATURE_FEAT_";
-
 /// The first open 2014 improvement select and its "Feat (n)" option.
 fn feat_option(snap: &CharacterSnapshot) -> Option<(SlotKey, String)> {
     snap.slots.iter().find_map(|s| {
         let o = s
             .options
             .iter()
-            .find(|o| o.id.starts_with(FEAT_OPTION_PREFIX) || o.name == "Feat")?;
+            .find(|o| prereq::is_feat_option_5et(&o.id, &o.name))?;
         (s.chosen.is_none() && s.ty == "Class Feature").then(|| (s.key.clone(), o.id.clone()))
     })
 }
 
-/// Ability keys of requirement tests, in score order.
-const ABILITY_KEYS: [&str; 6] = ["str", "dex", "con", "int", "wis", "cha"];
-/// How deep prior-feat prerequisites are followed (a feat needing a feat needing a feat).
-const MAX_PRIOR_FEATS: usize = 3;
-
-/// What a feat's requirements ask of a character: the first buildable alternative of every
-/// OR, negations ignored (a fresh character has none of the excluded elements).
-#[derive(Debug, Default)]
-struct Needs {
-    level: u32,
-    caster: bool,
-    class: Option<String>,
-    race: Option<String>,
-    feats: Vec<String>,
-    scores: Vec<(usize, i32)>,
-}
-
 impl Sweeper<'_> {
-    fn class_id(rs: Ruleset, name: &str) -> String {
-        let book = if rs == Ruleset::Dnd2024 {
-            "XPHB"
-        } else {
-            "PHB"
-        };
-        format!(
-            "ID_5ET_{book}_CLASS_{}",
-            name.to_uppercase().replace(' ', "_")
-        )
-    }
-
-    /// An id a host can use: it exists and, for origins, is of the feat's edition.
-    fn usable(&self, rs: Ruleset, id: &str) -> bool {
-        self.store.element(id).is_some_and(|e| {
-            !matches!(e.ty.as_str(), "Race" | "Species" | "Sub Race")
-                || e.ruleset.or_else(|| self.ours.get(id).copied()) == Some(rs)
-        })
-    }
-
-    fn buildable(&self, rs: Ruleset, expr: &BoolExpr<RequirementLeaf>) -> bool {
-        match expr {
-            BoolExpr::Leaf(RequirementLeaf::Id(id)) => self.usable(rs, id),
-            BoolExpr::Leaf(RequirementLeaf::Test(_)) | BoolExpr::Not(_) => true,
-            BoolExpr::And(items) => items.iter().all(|e| self.buildable(rs, e)),
-            BoolExpr::Or(items) => items.iter().any(|e| self.buildable(rs, e)),
-        }
-    }
-
-    fn collect(&self, rs: Ruleset, expr: &BoolExpr<RequirementLeaf>, needs: &mut Needs) {
-        match expr {
-            BoolExpr::Not(_) => {}
-            BoolExpr::And(items) => items.iter().for_each(|e| self.collect(rs, e, needs)),
-            BoolExpr::Or(items) => {
-                if let Some(first) = items
-                    .iter()
-                    .find(|e| self.buildable(rs, e))
-                    .or(items.first())
-                {
-                    self.collect(rs, first, needs);
-                }
-            }
-            BoolExpr::Leaf(RequirementLeaf::Id(id)) => {
-                match self.store.element(id).map(|e| e.ty.as_str()) {
-                    Some("Race" | "Species" | "Sub Race") => {
-                        needs.race.get_or_insert_with(|| id.clone());
-                    }
-                    Some("Feat") => needs.feats.push(id.clone()),
-                    Some("Class") => {
-                        needs.class.get_or_insert_with(|| id.clone());
-                    }
-                    _ => {}
-                }
-            }
-            BoolExpr::Leaf(RequirementLeaf::Test(t)) => {
-                let key = t.normalized_key();
-                let n = match &t.value {
-                    borealis_content::expr::TestValue::Number(n) => u32::try_from(*n).unwrap_or(0),
-                    borealis_content::expr::TestValue::Text(_) => 0,
-                };
-                let feature = key.strip_prefix("feature:").map(str::to_string);
-                match (key.as_str(), feature.as_deref()) {
-                    ("character" | "level", _) => needs.level = needs.level.max(n),
-                    ("spellcasting", _) => needs.caster = true,
-                    (_, Some("spellcasting" | "pact magic")) => needs.caster = true,
-                    (k, _) if ABILITY_KEYS.contains(&k) => {
-                        let i = ABILITY_KEYS.iter().position(|a| *a == k).unwrap_or(0);
-                        needs.scores.push((i, i32::try_from(n).unwrap_or(0)));
-                    }
-                    (k, None) if self.store.element(&Self::class_id(rs, k)).is_some() => {
-                        needs.class.get_or_insert_with(|| Self::class_id(rs, k));
-                        needs.level = needs.level.max(n);
-                    }
-                    _ => {}
-                }
-            }
-        }
-    }
-
-    /// The needs of an element's requirements, prior feats' own needs included.
-    fn needs(&self, rs: Ruleset, el: &Element, depth: usize, needs: &mut Needs) {
-        let Ok(Some(expr)) = RequirementsExpr::parse(&el.requirements) else {
-            return;
-        };
-        let before = needs.feats.len();
-        self.collect(rs, expr.root(), needs);
-        if depth >= MAX_PRIOR_FEATS {
-            return;
-        }
-        // a prior feat's own prerequisites come first
-        let prior: Vec<String> = needs.feats[before..].to_vec();
-        for id in prior {
-            if let Some(feat) = self.store.element(&id) {
-                let mut inner = Needs::default();
-                self.needs(rs, feat, depth + 1, &mut inner);
-                needs.level = needs.level.max(inner.level);
-                needs.caster |= inner.caster;
-                needs.class = needs.class.take().or(inner.class);
-                needs.race = needs.race.take().or(inner.race);
-                needs.scores.extend(inner.scores);
-                let at = needs.feats.iter().position(|f| *f == id).unwrap_or(0);
-                for f in inner.feats.into_iter().rev() {
-                    if !needs.feats.contains(&f) {
-                        needs.feats.insert(at, f);
-                    }
-                }
-            }
+    fn reader(&self) -> NeedsReader<'_> {
+        NeedsReader {
+            store: self.store,
+            ours: self.ours,
+            class_id: prereq::class_id_5et,
         }
     }
 
     /// A level-1 character of the class, species and scores the needs ask for.
     fn start(&self, rs: Ruleset, needs: &Needs, fighter: &str) -> Option<CharacterState> {
-        let wizard = Self::class_id(rs, "wizard");
+        let wizard = prereq::class_id_5et(rs, "wizard");
         let class = needs.class.clone().unwrap_or_else(|| {
             if needs.caster {
                 wizard
@@ -794,7 +673,7 @@ fn eligible_host(
     why: &mut String,
 ) -> Option<Result<CharacterState, String>> {
     let mut needs = Needs::default();
-    sw.needs(rs, el, 0, &mut needs);
+    sw.reader().needs(rs, el, 0, &mut needs);
     *why = format!("host {needs:?} could not be built");
     let fighter = match rs {
         Ruleset::Dnd2024 => "ID_5ET_XPHB_CLASS_FIGHTER",

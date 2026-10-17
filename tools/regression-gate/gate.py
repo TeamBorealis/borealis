@@ -45,7 +45,7 @@ def corpus_repos():
 def suites():
     five = {"BOREALIS_5ETOOLS_DIR": str(FIVE)}
     root = {"BOREALIS_CORPUS_DIR": str(CORPUS)}
-    return {
+    table = {
         "5etools-import": ("5etools converter over the corpus", FIVE, [
             ("borealis-import-5etools", t, five) for t in ("corpus", "corpus_spells")]),
         "5etools-engine": ("5etools engine sweep, casters, gaps, prerequisites, spells", FIVE, [
@@ -63,6 +63,18 @@ def suites():
             ("borealis-character", "aurora_corpus_sweep", root)]),
         "import-cases": ("stored AI-import drafts re-finalized offline + judged", CASES, None),
     }
+    # IM4 acceptance (specs/acceptance-imports-1.md): the app-level harness (stages 1-2: source vs
+    # imported accounting, offered in the builder) for every source whose input is available, then
+    # the deeper engine checks. Opt-in (--only acceptance): it re-runs the suites above.
+    acc_env = {**five, **root}
+    for var in ("BOREALIS_LIVE_INDEX_URL", "BOREALIS_LIVE_5ETOOLS_URL", "BOREALIS_ACCEPT_LIMIT"):
+        if os.environ.get(var):
+            acc_env[var] = os.environ[var]
+    deeper = [t for n in ("5etools-import", "5etools-engine", "5etools-items", "aurora-corpus",
+                          "aurora-sweep") for t in table[n][2]]
+    table["acceptance"] = ("IM4 end-to-end acceptance, per source x stage x type (slow, opt-in)",
+                           CORPUS, [("borealis", "acceptance", acc_env)] + deeper)
+    return table
 
 
 def cargo(args, env_extra, out_base):
@@ -97,6 +109,9 @@ class Outcomes:
             parts = line.split("\t")
             if len(parts) >= 3 and parts[0] == "OUTCOME":
                 self.add(parts[2], parts[1] == "PASS", parts[3] if len(parts) > 3 else "")
+            elif len(parts) == 6 and parts[0] == "METRIC" and parts[5].lstrip("-").isdigit():
+                # acceptance numbers: source / stage / type / metric -> n
+                self.metrics["/".join(parts[1:5])] = int(parts[5])
 
     def as_json(self):
         return {"outcomes": self.status, "details": self.detail, "metrics": self.metrics}
@@ -217,8 +232,20 @@ def run(selected, run_dir):
         passed = sum(1 for v in oc.status.values() if v == "PASS")
         print(f"    {passed}/{len(oc.status)} checks pass ({entry['seconds']} s)")
         results["suites"][name] = entry
+        if name == "acceptance":
+            write_acceptance_report(run_dir / "acceptance-report.json", oc.metrics)
     results["finished"] = datetime.datetime.now().isoformat(timespec="seconds")
     return results
+
+
+def write_acceptance_report(path, metrics):
+    """source -> stage -> type -> {metric: n} (numbers only, no ids)."""
+    table = {}
+    for key, n in sorted(metrics.items()):
+        src, stage, ty, name = key.split("/", 3)
+        table.setdefault(src, {}).setdefault(stage, {}).setdefault(ty, {})[name] = n
+    path.write_text(json.dumps(table, indent=1, sort_keys=True) + "\n")
+    print(f"    acceptance report: {path}")
 
 
 def compare(base, cur, allow_new):
@@ -303,7 +330,9 @@ def main():
     if unknown:
         print(f"unknown suite(s): {unknown}; see --list", file=sys.stderr)
         return 2
-    selected = [n for n in table if (not only or n in only) and n not in skip]
+    # acceptance re-runs the other corpus suites: only when asked for by name
+    selected = [n for n in table if (not only or n in only) and n not in skip
+                and (n != "acceptance" or n in only)]
     PRIVATE.mkdir(parents=True, exist_ok=True)
     run_dir, prev = PRIVATE / "last-run", PRIVATE / "prev-run"
     base_file = PRIVATE / "baseline.json"

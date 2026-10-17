@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Invented test content (acceptance A-user): no published game text. -->
+<elements>
+  <element name="Will-o-Lantern" type="Spell" source="Moonfen Pack" id="ID_MOONFEN_SPELL_WILL_O_LANTERN">
+    <supports>Wizard, Sorcerer</supports>
+    <description><p>Invented.</p></description>
+    <setters>
+      <set name="level">1</set>
+      <set name="school">Evocation</set>
+      <set name="time">1 action</set>
+      <set name="duration">1 minute</set>
+      <set name="range">60 feet</set>
+      <set name="hasVerbalComponent">true</set>
+      <set name="hasSomaticComponent">true</set>
+    </setters>
+  </element>
+  <element name="Bog Lantern" type="Item" source="Moonfen Pack" id="ID_MOONFEN_ITEM_BOG_LANTERN">
+    <description><p>Invented.</p></description>
+    <setters>
+      <set name="category">Adventuring Gear</set>
+      <set name="cost" currency="gp">3</set>
+      <set name="weight" lb="1">1 lb.</set>
+    </setters>
+  </element>
+</elements>

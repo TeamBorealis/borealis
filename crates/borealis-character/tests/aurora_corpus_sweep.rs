@@ -24,13 +24,15 @@
 
 #[path = "../../../tools/regression-gate/outcome.rs"]
 mod outcome;
+#[path = "../../../src-tauri/tests/support/prereq.rs"]
+mod prereq;
 
-use borealis_content::expr::RequirementsExpr;
 use borealis_content::{ContentStore, ContentStoreBuilder, Element, PackOrigin, Rule, Ruleset};
 use borealis_engine::commands::{self, slot_key};
 use borealis_engine::state::SlotKey;
 use borealis_engine::{invariants, CharacterSnapshot, CharacterState, Choice, Engine, Severity};
 use borealis_migrate::{migrate_path, write_output, MigrateOptions};
+use prereq::{feat_chain, required_of_type};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
@@ -1225,50 +1227,10 @@ fn feat_option(snap: &CharacterSnapshot) -> Option<(SlotKey, String)> {
         let o = s
             .options
             .iter()
-            .find(|o| o.name == "Feat" || o.name.starts_with("Feat ("))?;
+            .find(|o| prereq::is_feat_option_aurora(&o.name))?;
         (s.chosen.is_none() && s.ty == "Class Feature").then(|| (s.key.clone(), o.id.clone()))
     })
 }
-
-/// Elements of type `ty` a requirements string names, each once, in order.
-fn required_of_type(store: &ContentStore, requirements: &str, ty: &str) -> Vec<String> {
-    let Ok(Some(expr)) = RequirementsExpr::parse(requirements) else {
-        return Vec::new();
-    };
-    let mut out: Vec<String> = Vec::new();
-    for id in expr.referenced_ids() {
-        if store.element(id).is_some_and(|e| e.ty == ty) && !out.iter().any(|o| o == id) {
-            out.push(id.to_string());
-        }
-    }
-    out
-}
-
-/// The feats a feat's requirements name, prerequisites first (feat chains such as Elemental
-/// Adept 1-5 or Rune Knowledge 1-3), each once.
-fn feat_chain(store: &ContentStore, id: &str) -> Vec<String> {
-    fn walk(store: &ContentStore, id: &str, depth: usize, out: &mut Vec<String>) {
-        let Some(el) = store.element(id) else { return };
-        if depth > MAX_CHAIN {
-            return;
-        }
-        for req in required_of_type(store, &el.requirements, "Feat") {
-            if !out.contains(&req) {
-                walk(store, &req, depth + 1, out);
-                if !out.contains(&req) {
-                    out.push(req);
-                }
-            }
-        }
-    }
-    let mut out = Vec::new();
-    walk(store, id, 0, &mut out);
-    out.retain(|f| f != id);
-    out
-}
-
-/// Longest feat prerequisite chain followed.
-const MAX_CHAIN: usize = 6;
 
 /// Level up until an ability score improvement offers "Feat" and choose it (the feat slot stays
 /// open). `None` when level 20 offers none.
