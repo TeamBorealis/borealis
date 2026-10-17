@@ -29,6 +29,8 @@ pub struct SpellRow {
     pub attacks: Vec<String>,
     /// Element id.
     pub id: String,
+    /// Edition of the spell entry (`None` when unknown).
+    pub ruleset: Option<Ruleset>,
 }
 
 /// A class or subclass feature.
@@ -238,6 +240,7 @@ pub fn spell_rows(sh: &Shared, spells: &[Ent]) -> Vec<SpellRow> {
                 .is_some_and(|a| !a.is_empty()),
             attacks,
             id,
+            ruleset: Some(ent.ruleset),
         });
     }
     rows

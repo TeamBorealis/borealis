@@ -91,6 +91,7 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     }
     let spells = spells_extra::convert_inheriting(
         sh,
+        ent.ruleset,
         &feat.name,
         &feat.additional_spells,
         true,

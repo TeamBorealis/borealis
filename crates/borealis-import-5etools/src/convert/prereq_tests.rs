@@ -78,6 +78,7 @@ fn index() -> PrereqIndex {
         damage,
         attacks: attacks.iter().map(|a| (*a).to_string()).collect(),
         id: id.into(),
+        ruleset: None,
     };
     ix.spells = vec![
         spell("salt bolt", 0, true, &["R"], "ID_SPELL_SALT_BOLT"),

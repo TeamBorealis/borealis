@@ -308,6 +308,7 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent, is_subrace: bool) -> Conv
     // Additional spells: unnamed groups apply directly, named groups become options.
     let spells = spells_extra::convert_inheriting(
         sh,
+        ent.ruleset,
         &display_name,
         &race.additional_spells,
         true,

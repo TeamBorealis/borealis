@@ -208,7 +208,7 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     el.data
         .insert("feature_types".into(), serde_json::json!(of.feature_type));
     let (label, own_block) = spell_label(sh, &of.feature_type);
-    let spells = spells_extra::convert(sh, &label, &of.additional_spells, own_block);
+    let spells = spells_extra::convert(sh, ent.ruleset, &label, &of.additional_spells, own_block);
     partial.extend(spells.partial);
     if !spells.options.is_empty() {
         partial.push(

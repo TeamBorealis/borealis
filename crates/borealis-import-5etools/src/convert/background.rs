@@ -183,6 +183,7 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     mech.skill_tool_language(&bg.skill_tool_language_proficiencies);
     let spells = spells_extra::convert_inheriting(
         sh,
+        ent.ruleset,
         &bg.name,
         &bg.additional_spells,
         true,

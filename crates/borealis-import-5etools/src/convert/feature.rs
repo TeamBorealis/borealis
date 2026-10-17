@@ -508,7 +508,7 @@ pub fn convert_subclass(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         sc.name.clone()
     };
     let own_block = !class_casts;
-    let spells = spells_extra::convert(sh, &label, &sc.additional_spells, own_block);
+    let spells = spells_extra::convert(sh, ent.ruleset, &label, &sc.additional_spells, own_block);
     for r in &spells.direct {
         mech.push(r.clone());
     }

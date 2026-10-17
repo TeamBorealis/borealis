@@ -19,7 +19,9 @@ mod outcome;
 use borealis_content::expr::{BoolExpr, RequirementLeaf, RequirementsExpr};
 use borealis_content::{ContentStore, ContentStoreBuilder, Element, Rule, Ruleset};
 use borealis_engine::commands::{self, slot_key};
-use borealis_engine::{invariants, CharacterSnapshot, CharacterState, Choice, Engine, Severity};
+use borealis_engine::{
+    invariants, CharacterSnapshot, CharacterState, Choice, Engine, Severity, SlotKey,
+};
 use borealis_import_5etools::{import_folder, ImportOptions};
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
@@ -131,6 +133,46 @@ impl Sweeper<'_> {
                 && s.list_items.is_empty()
             {
                 out.push(format!("select of type {} offers no options", s.ty));
+            }
+        }
+    }
+
+    /// Choose, one at a time, every option of the open selects an imported element owns whose
+    /// option carries its own selects (feat options, species traits, ...), and report the
+    /// selects that then offer nothing: the character qualifies for the option, so an empty
+    /// choice is an import defect (PHB Spell Sniper's bard option once opened an empty spell
+    /// select). `fill` only ever tries the first option.
+    fn alternatives(&self, state: &CharacterState, out: &mut Vec<String>) {
+        let snap = self.engine.derive(state);
+        for slot in &snap.slots {
+            if slot.chosen.is_some()
+                || slot.list_choice.is_some()
+                || !self.ours.contains_key(&slot.owner.id)
+                || NOT_FILLED.contains(&slot.ty.as_str())
+            {
+                continue;
+            }
+            for o in &slot.options {
+                let has_selects = self
+                    .store
+                    .element(&o.id)
+                    .is_some_and(|e| e.rules.iter().any(|r| matches!(r, Rule::Select(_))));
+                if !has_selects {
+                    continue;
+                }
+                let Ok(next) =
+                    commands::select(self.engine, state, &slot.key, Choice::Element(o.id.clone()))
+                else {
+                    continue;
+                };
+                for s in &self.engine.derive(&next.state).slots {
+                    if s.owner.id == o.id && s.options.is_empty() && s.list_items.is_empty() {
+                        out.push(format!(
+                            "option {} of a {} select opens a {} select that offers no options",
+                            o.id, slot.ty, s.ty
+                        ));
+                    }
+                }
             }
         }
     }
@@ -374,6 +416,7 @@ fn run(data: &Path) {
                         None => problems.push(format!("{ty} is not offered")),
                         Some(Err(e)) => problems.push(e),
                         Some(Ok(s)) => {
+                            sw.alternatives(&s, &mut problems);
                             let s = sw.fill(s);
                             sw.problems(&s, &sw.engine.derive(&s), &mut problems);
                         }
@@ -427,6 +470,7 @@ fn run(data: &Path) {
             }
             Some(Err(e)) => problems.push(e),
             Some(Ok(s)) => {
+                sw.alternatives(&s, &mut problems);
                 let s = sw.fill(s);
                 sw.problems(&s, &sw.engine.derive(&s), &mut problems);
             }
@@ -528,20 +572,24 @@ fn feat_hosts(sw: &Sweeper<'_>, rs: Ruleset, class: &str) -> Vec<CharacterState>
             }
         }
         // 2014: take the "Feat" improvement option so the feat select opens
-        let snap = sw.engine.derive(&state);
-        let feat_option = snap.slots.iter().find_map(|s| {
-            let o = s.options.iter().find(|o| o.name == "Feat")?;
-            (s.chosen.is_none() && s.ty == "Class Feature").then(|| (s.key.clone(), o.id.clone()))
-        });
-        let mut host = state.clone();
-        if let Some((key, id)) = feat_option {
-            if let Ok(o) = commands::select(sw.engine, &host, &key, Choice::Element(id)) {
-                host = o.state;
-            }
-        }
-        out.push(host);
+        out.push(sw.open_feat_selects(state.clone()));
     }
     out
+}
+
+/// Id prefix of the engine's generated "Feat (n)" improvement options (`universe.rs`
+/// `generate_improvements`: `ID_INTERNAL_CLASS_FEATURE_FEAT_<n>_<CLASS>`, named "Feat (4)").
+const FEAT_OPTION_PREFIX: &str = "ID_INTERNAL_CLASS_FEATURE_FEAT_";
+
+/// The first open 2014 improvement select and its "Feat (n)" option.
+fn feat_option(snap: &CharacterSnapshot) -> Option<(SlotKey, String)> {
+    snap.slots.iter().find_map(|s| {
+        let o = s
+            .options
+            .iter()
+            .find(|o| o.id.starts_with(FEAT_OPTION_PREFIX) || o.name == "Feat")?;
+        (s.chosen.is_none() && s.ty == "Class Feature").then(|| (s.key.clone(), o.id.clone()))
+    })
 }
 
 /// Ability keys of requirement tests, in score order.
@@ -726,12 +774,7 @@ impl Sweeper<'_> {
     fn open_feat_selects(&self, mut state: CharacterState) -> CharacterState {
         loop {
             let snap = self.engine.derive(&state);
-            let feat_option = snap.slots.iter().find_map(|s| {
-                let o = s.options.iter().find(|o| o.name == "Feat")?;
-                (s.chosen.is_none() && s.ty == "Class Feature")
-                    .then(|| (s.key.clone(), o.id.clone()))
-            });
-            let Some((key, id)) = feat_option else {
+            let Some((key, id)) = feat_option(&snap) else {
                 return state;
             };
             match commands::select(self.engine, &state, &key, Choice::Element(id)) {

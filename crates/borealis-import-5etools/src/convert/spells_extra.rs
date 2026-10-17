@@ -19,7 +19,7 @@ use super::Shared;
 use crate::core_ids;
 use crate::text::RefKind;
 use crate::util::{id_fragment, title_case};
-use borealis_content::{GrantRule, Rule, SpellcastingList};
+use borealis_content::{GrantRule, Rule, Ruleset, SpellcastingList};
 use serde_json::{json, Map, Value};
 
 /// The spellcasting ability of a group.
@@ -148,12 +148,27 @@ fn component_tag(value: &str) -> Option<&'static str> {
     })
 }
 
-/// Ids of the imported spells a filter selects, for filters the supports grammar cannot
-/// express (`spell attack=m;r`): an ID-range supports, as Aurora lists explicit spells.
-/// `None` when a key is not understood, an empty string when nothing matches.
+/// Whether a spell of `spell` edition is offered to an owner of `owner` edition by default:
+/// 2024 characters take 2014 spells, 2014 characters do not take 2024 spells (the engine
+/// profiles' default cross-edition setting), so a 2014 owner's explicit list keeps only them.
+fn offered_to(owner: Ruleset, spell: Option<Ruleset>) -> bool {
+    owner == Ruleset::Dnd2024 || spell != Some(Ruleset::Dnd2024)
+}
+
+/// Ids of the imported spells a filter selects for an owner of edition `owner`, for filters
+/// the supports grammar cannot express (`spell attack=m;r`): an ID-range supports, as Aurora
+/// lists explicit spells. `None` when a key is not understood, an empty string when nothing
+/// matches.
 #[must_use]
-pub fn filter_to_ids(filter: &str, rows: &[super::prereq_index::SpellRow]) -> Option<String> {
-    let mut rows: Vec<_> = rows.iter().collect();
+pub fn filter_to_ids(
+    filter: &str,
+    rows: &[super::prereq_index::SpellRow],
+    owner: Ruleset,
+) -> Option<String> {
+    let mut rows: Vec<_> = rows
+        .iter()
+        .filter(|s| offered_to(owner, s.ruleset))
+        .collect();
     for clause in filter.split('|') {
         let (k, v) = clause.split_once('=')?;
         let values: Vec<String> = v.split(';').map(|x| x.trim().to_lowercase()).collect();
@@ -272,11 +287,15 @@ const ALL_SPELL_LEVELS: &str = "(0||1||2||3||4||5||6||7||8||9)";
 
 struct Ctx<'a> {
     sh: &'a Shared,
+    /// Edition of the owner (feat, race, ...), for explicit spell lists.
+    ruleset: Ruleset,
     label: String,
     ability: Option<String>,
     resource: Option<String>,
     partial: Vec<String>,
     expanded: Vec<(u32, SpellcastingList)>,
+    /// Choices dropped because no imported spell of the owner's edition matches them.
+    empty_choices: usize,
 }
 
 /// The id of a referenced spell: the linked element, else the id its import gets.
@@ -389,7 +408,8 @@ impl Ctx<'_> {
                 (Some(ALL_SPELL_LEVELS.to_string()), "any spell".to_string())
             }
             Value::String(f) => (
-                filter_to_supports(f).or_else(|| filter_to_ids(f, &self.sh.spell_rows)),
+                filter_to_supports(f)
+                    .or_else(|| filter_to_ids(f, &self.sh.spell_rows, self.ruleset)),
                 f.replace('|', ", "),
             ),
             Value::Object(o) => {
@@ -421,6 +441,7 @@ impl Ctx<'_> {
             return;
         };
         if supports.is_empty() {
+            self.empty_choices += 1;
             self.partial.push(format!(
                 "spell choice filter {choose} matches no imported spell (nothing to offer)"
             ));
@@ -778,15 +799,26 @@ fn option_name(group: &Value, index: usize) -> String {
     }
 }
 
+/// One converted group: its rules, casting and partial notes; `offers_nothing` when its only
+/// content was a choice no imported spell of the owner's edition matches.
+struct Group {
+    rules: Vec<Rule>,
+    casting: Casting,
+    partial: Vec<String>,
+    offers_nothing: bool,
+}
+
 fn convert_group(
     sh: &Shared,
+    ruleset: Ruleset,
     label: String,
     group: &Value,
     inherit: &[String],
-) -> (Vec<Rule>, Casting, Vec<String>) {
+) -> Group {
     let ability = group_ability(group, inherit);
     let mut ctx = Ctx {
         sh,
+        ruleset,
         label: label.clone(),
         ability: match &ability {
             SpellAbility::Fixed(a) => Some(a.clone()),
@@ -798,6 +830,7 @@ fn convert_group(
             .map(str::to_string),
         partial: Vec::new(),
         expanded: Vec::new(),
+        empty_choices: 0,
     };
     let mut rules = Vec::new();
     for (key, kind) in [
@@ -813,27 +846,43 @@ fn convert_group(
         ctx.expanded(v);
     }
     let rules = merge_duplicate_grants(rules);
-    let casting = Casting {
-        label,
-        ability,
-        expanded: ctx.expanded,
-    };
-    (rules, casting, ctx.partial)
+    let offers_nothing = ctx.empty_choices > 0 && rules.is_empty() && ctx.expanded.is_empty();
+    Group {
+        rules,
+        casting: Casting {
+            label,
+            ability,
+            expanded: ctx.expanded,
+        },
+        partial: ctx.partial,
+        offers_nothing,
+    }
 }
 
-/// Convert an `additionalSpells` array. `label` names the spellcasting source: the class for
-/// class spells (`own_label == false`), otherwise the owner (race, feat, ...); options of an
-/// owner with its own label are labelled `<label>: <option>`.
+/// Convert an `additionalSpells` array of an owner of edition `ruleset`. `label` names the
+/// spellcasting source: the class for class spells (`own_label == false`), otherwise the owner
+/// (race, feat, ...); options of an owner with its own label are labelled `<label>: <option>`.
 #[must_use]
-pub fn convert(sh: &Shared, label: &str, groups: &[Value], own_label: bool) -> SpellRules {
-    convert_inheriting(sh, label, groups, own_label, &[])
+pub fn convert(
+    sh: &Shared,
+    ruleset: Ruleset,
+    label: &str,
+    groups: &[Value],
+    own_label: bool,
+) -> SpellRules {
+    convert_inheriting(sh, ruleset, label, groups, own_label, &[])
 }
 
 /// [`convert`] for an owner whose ability increase also sets the spellcasting ability
 /// (`"ability": "inherit"`): `inherit` lists the abilities the owner lets the player raise.
+///
+/// An alternative whose only content is a choice that no imported spell of the owner's
+/// edition matches (PHB Spell Sniper's cleric and bard cantrips) is not offered, as long as
+/// another alternative is: picking it would open an empty choice.
 #[must_use]
 pub fn convert_inheriting(
     sh: &Shared,
+    ruleset: Ruleset,
     label: &str,
     groups: &[Value],
     own_label: bool,
@@ -841,28 +890,39 @@ pub fn convert_inheriting(
 ) -> SpellRules {
     let mut out = SpellRules::default();
     if let [group] = groups {
-        let (rules, casting, partial) = convert_group(sh, label.to_string(), group, inherit);
-        out.direct = rules;
-        out.casting = casting;
-        out.partial = partial;
+        let g = convert_group(sh, ruleset, label.to_string(), group, inherit);
+        out.direct = g.rules;
+        out.casting = g.casting;
+        out.partial = g.partial;
         return out;
     }
-    for (i, group) in groups.iter().enumerate() {
-        let name = group
-            .get("name")
-            .and_then(Value::as_str)
-            .map_or_else(|| option_name(group, i), title_case);
-        let group_label = if own_label {
-            format!("{label}: {name}")
-        } else {
-            label.to_string()
-        };
-        let (rules, casting, partial) = convert_group(sh, group_label, group, inherit);
-        out.partial.extend(partial);
+    let converted: Vec<(String, Group)> = groups
+        .iter()
+        .enumerate()
+        .map(|(i, group)| {
+            let name = group
+                .get("name")
+                .and_then(Value::as_str)
+                .map_or_else(|| option_name(group, i), title_case);
+            let group_label = if own_label {
+                format!("{label}: {name}")
+            } else {
+                label.to_string()
+            };
+            let g = convert_group(sh, ruleset, group_label, group, inherit);
+            (name, g)
+        })
+        .collect();
+    let any_offered = converted.iter().any(|(_, g)| !g.offers_nothing);
+    for (name, g) in converted {
+        if any_offered && g.offers_nothing {
+            continue;
+        }
+        out.partial.extend(g.partial);
         out.options.push(SpellOption {
             name,
-            rules,
-            casting,
+            rules: g.rules,
+            casting: g.casting,
         });
     }
     out
@@ -936,6 +996,7 @@ mod tests {
                 damage: true,
                 attacks: attacks.iter().map(|a| (*a).to_string()).collect(),
                 id: id.into(),
+                ruleset: None,
             }
         };
         let rows = vec![
@@ -946,18 +1007,28 @@ mod tests {
             row("ID_E", 0, "cleric", &["R"]),
         ];
         assert_eq!(
-            filter_to_ids("level=0|class=Wizard|spell attack=m;r;o", &rows).as_deref(),
+            filter_to_ids(
+                "level=0|class=Wizard|spell attack=m;r;o",
+                &rows,
+                Ruleset::Dnd2014
+            )
+            .as_deref(),
             Some("ID_A|ID_B")
         );
         assert_eq!(
-            filter_to_ids("level=0|class=Wizard|spell attack=o", &rows).as_deref(),
+            filter_to_ids(
+                "level=0|class=Wizard|spell attack=o",
+                &rows,
+                Ruleset::Dnd2014
+            )
+            .as_deref(),
             Some("")
         );
         assert_eq!(
-            filter_to_ids("level=1|spell attack=r", &rows).as_deref(),
+            filter_to_ids("level=1|spell attack=r", &rows, Ruleset::Dnd2014).as_deref(),
             Some("ID_D|ID_D")
         );
-        assert!(filter_to_ids("level=0|range=touch", &rows).is_none());
+        assert!(filter_to_ids("level=0|range=touch", &rows, Ruleset::Dnd2014).is_none());
         assert_eq!(school_name("V"), "Evocation");
         assert_eq!(school_name("?"), "Unknown");
     }
@@ -977,6 +1048,7 @@ mod tests {
         let sh = shared();
         let r = convert(
             &sh,
+            Ruleset::Dnd2014,
             "Hornfolk",
             &[
                 json!({"ability": "cha", "known": {"1": ["thaumaturgy|xphb#c"]},
@@ -1015,6 +1087,7 @@ mod tests {
         let sh = shared();
         let r = convert(
             &sh,
+            Ruleset::Dnd2014,
             "Elf",
             &[
                 json!({"name": "Night Elf", "ability": {"choose": ["int", "wis", "cha"]},
@@ -1048,6 +1121,7 @@ mod tests {
         // class spells keep the class label in every option
         let r = convert(
             &sh,
+            Ruleset::Dnd2014,
             "Druid",
             &[
                 json!({"name": "A", "prepared": {"3": ["x"]}}),
@@ -1063,6 +1137,7 @@ mod tests {
         let sh = shared();
         let r = convert(
             &sh,
+            Ruleset::Dnd2014,
             "Feat",
             &[json!({
                 "resourceName": "Focus",
@@ -1162,6 +1237,7 @@ mod tests {
         let sh = shared();
         let r = convert(
             &sh,
+            Ruleset::Dnd2014,
             "Feat",
             &[json!({"prepared": {"_": ["alarm"]}, "innate": {"_": {"ritual": ["alarm"]}}})],
             false,
@@ -1176,6 +1252,7 @@ mod tests {
         let sh = shared();
         let r = convert(
             &sh,
+            Ruleset::Dnd2014,
             "Warlock",
             &[
                 json!({"prepared": {"3": ["misty step"]}, "innate": {"_": {"daily": {"cha": ["misty step"]}}}}),
@@ -1188,6 +1265,7 @@ mod tests {
         assert!(gs[0].get("level").is_none(), "the lower level wins");
         let r = convert(
             &sh,
+            Ruleset::Dnd2014,
             "Warlock",
             &[json!({"innate": {"5": {"daily": {"1": ["fly"]}}}, "prepared": {"3": ["fly"]}})],
             false,
@@ -1204,9 +1282,9 @@ mod tests {
         assert_eq!(raised, vec!["Intelligence", "Wisdom", "Charisma"]);
         assert_eq!(inherited_abilities(&[json!({"wis": 1})]), vec!["Wisdom"]);
         let group = [json!({"ability": "inherit", "known": {"_": ["light"]}})];
-        let r = convert_inheriting(&sh, "Feat", &group, true, &raised);
+        let r = convert_inheriting(&sh, Ruleset::Dnd2014, "Feat", &group, true, &raised);
         assert_eq!(r.casting.ability, SpellAbility::Choose(raised.clone()));
-        let r = convert_inheriting(&sh, "Feat", &group, true, &raised[1..2]);
+        let r = convert_inheriting(&sh, Ruleset::Dnd2014, "Feat", &group, true, &raised[1..2]);
         assert_eq!(r.casting.ability, SpellAbility::Fixed("Wisdom".into()));
     }
 
@@ -1215,6 +1293,7 @@ mod tests {
         let sh = shared();
         let r = convert(
             &sh,
+            Ruleset::Dnd2014,
             "Adept",
             &[json!({
                 "prepared": {"s1": ["shield"], "s2": ["blur"]},
@@ -1232,11 +1311,18 @@ mod tests {
         assert!(e.contains(&(1, SpellcastingList::new("ID_5ET_PHB_SPELL_BURNING_HANDS"))));
         assert!(e.contains(&(10, SpellcastingList::new("(1||2)&&Cleric"))));
         assert_eq!(r.partial.len(), 1);
-        let r = convert(&sh, "X", &[json!({"innate": {"s1": ["shield"]}})], true);
+        let r = convert(
+            &sh,
+            Ruleset::Dnd2014,
+            "X",
+            &[json!({"innate": {"s1": ["shield"]}})],
+            true,
+        );
         assert_eq!(r.partial.len(), 1);
         // cantrips (s0) and whole-source lists
         let r = convert(
             &sh,
+            Ruleset::Dnd2014,
             "X",
             &[json!({"expanded": {"s0": ["light#c"], "1": [{"all": "source=xphb"}]}})],
             false,
@@ -1250,5 +1336,71 @@ mod tests {
             .casting
             .expanded
             .contains(&(1, SpellcastingList::new("ID_5ET_XPHB_SPELL_THAUMATURGY"))));
+    }
+
+    fn edition_row(
+        id: &str,
+        class: &str,
+        ruleset: Ruleset,
+    ) -> super::super::prereq_index::SpellRow {
+        super::super::prereq_index::SpellRow {
+            name: id.to_lowercase(),
+            level: 0,
+            classes: vec![class.into()],
+            damage: true,
+            attacks: vec!["R".into()],
+            id: id.into(),
+            ruleset: Some(ruleset),
+        }
+    }
+
+    #[test]
+    fn explicit_spell_lists_keep_the_spells_the_owner_edition_is_offered() {
+        let rows = vec![
+            edition_row("ID_OLD", "wizard", Ruleset::Dnd2014),
+            edition_row("ID_NEW", "wizard", Ruleset::Dnd2024),
+            edition_row("ID_NEW_BARD", "bard", Ruleset::Dnd2024),
+        ];
+        let f = "level=0|class=Wizard|spell attack=r";
+        assert_eq!(
+            filter_to_ids(f, &rows, Ruleset::Dnd2014).as_deref(),
+            Some("ID_OLD|ID_OLD")
+        );
+        assert_eq!(
+            filter_to_ids(f, &rows, Ruleset::Dnd2024).as_deref(),
+            Some("ID_OLD|ID_NEW")
+        );
+        assert_eq!(
+            filter_to_ids("level=0|class=Bard|spell attack=r", &rows, Ruleset::Dnd2014).as_deref(),
+            Some("")
+        );
+    }
+
+    /// PHB Spell Sniper: per-class cantrip alternatives; the bard list holds only a 2024
+    /// cantrip and the cleric list none, so a 2014 owner is not offered either.
+    #[test]
+    fn alternatives_with_nothing_to_choose_are_not_offered() {
+        let mut sh = shared();
+        sh.spell_rows = vec![
+            edition_row("ID_FIRE_BOLT", "wizard", Ruleset::Dnd2014),
+            edition_row("ID_STARRY_WISP", "bard", Ruleset::Dnd2024),
+        ];
+        let pick = |class: &str| {
+            json!({"name": format!("{class} Spells"),
+                   "known": {"_": [{"choose": format!("level=0|class={class}|spell attack=m;r;o")}]}})
+        };
+        let groups = [pick("Bard"), pick("Cleric"), pick("Wizard")];
+        let r = convert(&sh, Ruleset::Dnd2014, "Spell Sniper", &groups, true);
+        let names: Vec<&str> = r.options.iter().map(|o| o.name.as_str()).collect();
+        assert_eq!(names, ["Wizard Spells"]);
+        assert!(r.partial.is_empty(), "{:?}", r.partial);
+        // a 2024 owner is offered the 2024 bard cantrip
+        let r = convert(&sh, Ruleset::Dnd2024, "Spell Sniper", &groups, true);
+        let names: Vec<&str> = r.options.iter().map(|o| o.name.as_str()).collect();
+        assert_eq!(names, ["Bard Spells", "Wizard Spells"]);
+        // nothing offered at all: the alternatives stay, with their notes
+        let r = convert(&sh, Ruleset::Dnd2014, "X", &groups[..2], true);
+        assert_eq!(r.options.len(), 2);
+        assert_eq!(r.partial.len(), 2);
     }
 }

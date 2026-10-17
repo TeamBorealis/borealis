@@ -510,7 +510,13 @@ fn spells_extra_class(
         return (Vec::new(), Vec::new(), Vec::new());
     }
     let own_block = el.spellcasting.is_none();
-    let r = super::spells_extra::convert(sh, &class.name, &class.additional_spells, own_block);
+    let r = super::spells_extra::convert(
+        sh,
+        el.ruleset.unwrap_or(borealis_content::Ruleset::Dnd2014),
+        &class.name,
+        &class.additional_spells,
+        own_block,
+    );
     let mut partial = r.partial;
     if !r.options.is_empty() {
         partial.push("alternative additional spell groups of a class were not converted".into());
