@@ -1,5 +1,8 @@
 //! Shared fixtures for the golden tests. Aurora XML fixtures are migrated on the fly and are
-//! never copied into the repository; tests are skipped (with a notice) when they are absent.
+//! never copied into the repository; their variants are skipped (with a notice) when they are
+//! absent. Every test also runs on the bundled, licence-clean `content/core` + `content/srd-5.1`
+//! packs (same element ids), so public CI exercises the vectors. Under CI (`CI` set and not
+//! `0`/`false`) a test that runs no variant, or a missing bundled pack, fails instead of passing.
 //! Every full derive of a test that uses these helpers is checked against the settle invariants
 //! (`borealis_engine::invariants`).
 #![allow(dead_code)]
@@ -20,6 +23,22 @@ pub enum Variant {
     Fixture,
     /// Our core pack plus the fixture SRD elements.
     CorePack,
+    /// Our core pack plus the bundled SRD 5.1 pack: in the repository, always available.
+    Bundled,
+}
+
+/// Every variant, in run order.
+pub const VARIANTS: [Variant; 3] = [Variant::Fixture, Variant::CorePack, Variant::Bundled];
+
+/// True on a CI runner (`CI` set to anything but empty, `0` or `false`).
+pub fn on_ci() -> bool {
+    std::env::var("CI").map(|v| ci_flag(&v)).unwrap_or(false)
+}
+
+/// How a `CI` value reads: anything but empty, `0` or `false` (any case) means CI.
+pub fn ci_flag(value: &str) -> bool {
+    let v = value.trim();
+    !(v.is_empty() || v == "0" || v.eq_ignore_ascii_case("false"))
 }
 
 pub fn fixtures_dir() -> Option<PathBuf> {
@@ -40,6 +59,10 @@ pub fn fixtures_dir() -> Option<PathBuf> {
 
 pub fn core_pack_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content/core")
+}
+
+pub fn srd51_pack_dir() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content/srd-5.1")
 }
 
 fn migrated() -> Option<Vec<(String, ContentFile)>> {
@@ -67,11 +90,29 @@ fn migrated() -> Option<Vec<(String, ContentFile)>> {
 
 static FIXTURE: OnceLock<Option<(ContentStore, Engine)>> = OnceLock::new();
 static COREPACK: OnceLock<Option<(ContentStore, Engine)>> = OnceLock::new();
+static BUNDLED: OnceLock<Option<(ContentStore, Engine)>> = OnceLock::new();
+
+/// The bundled packs (core + SRD 5.1), `None` when either directory is missing.
+fn bundled() -> Option<(ContentStore, Engine)> {
+    let (core, srd) = (core_pack_dir(), srd51_pack_dir());
+    if !core.is_dir() || !srd.is_dir() {
+        return None;
+    }
+    let store = ContentStoreBuilder::new()
+        .add_pack_dir(&core)
+        .expect("core pack loads")
+        .add_pack_dir(&srd)
+        .expect("SRD 5.1 pack loads")
+        .build();
+    let engine = Engine::new(&store);
+    Some((store, engine))
+}
 
 pub fn engine(v: Variant) -> Option<&'static Engine> {
     let cell = match v {
         Variant::Fixture => &FIXTURE,
         Variant::CorePack => &COREPACK,
+        Variant::Bundled => return BUNDLED.get_or_init(bundled).as_ref().map(|(_, e)| e),
     };
     cell.get_or_init(|| {
         let files = migrated()?;
@@ -88,6 +129,7 @@ pub fn engine(v: Variant) -> Option<&'static Engine> {
                     b = b.add_file(n, PackOrigin::Core, f);
                 }
             }
+            Variant::Bundled => unreachable!("bundled packs load in `bundled`"),
         }
         let store = b.build();
         let engine = Engine::new(&store);
@@ -97,20 +139,35 @@ pub fn engine(v: Variant) -> Option<&'static Engine> {
     .map(|(_, e)| e)
 }
 
-/// Run a test body against both content variants (skips with a notice without fixtures).
+/// Run a test body against every available content variant. The Aurora fixture variants are
+/// skipped with a notice when `fixtures/aurora-xml` is absent; the bundled variant always runs.
+/// Under CI a missing bundled pack, or a run of no variant at all, fails the test.
 pub fn each_variant(name: &str, body: impl Fn(&Engine, Variant)) {
     borealis_engine::invariants::enable_for_thread();
-    let mut ran = false;
-    for v in [Variant::Fixture, Variant::CorePack] {
+    let mut ran = Vec::new();
+    for v in VARIANTS {
         match engine(v) {
             Some(e) => {
                 body(e, v);
-                ran = true;
+                ran.push(v);
             }
-            None => eprintln!("SKIPPED {name}: fixtures/aurora-xml not found"),
+            None => {
+                let what = match v {
+                    Variant::Bundled => "content/core + content/srd-5.1 not found",
+                    _ => "fixtures/aurora-xml not found",
+                };
+                assert!(
+                    !(on_ci() && v == Variant::Bundled),
+                    "{name}: {what}; CI must run the bundled vectors"
+                );
+                eprintln!("SKIPPED {name} ({v:?}): {what}");
+            }
         }
     }
-    let _ = ran;
+    assert!(
+        !(on_ci() && ran.is_empty()),
+        "{name}: no content variant ran under CI"
+    );
 }
 
 /// A character under construction with the same operations a user would perform.
