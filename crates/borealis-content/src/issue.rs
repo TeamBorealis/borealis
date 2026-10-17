@@ -70,6 +70,8 @@ pub enum IssueCode {
     SchemaViolation,
     /// A Monster element's `data` is unreadable or internally inconsistent.
     InvalidMonsterData,
+    /// A Monster's XP differs from the standard XP of its challenge rating (kept as printed).
+    NonStandardMonsterXp,
 }
 
 /// One diagnostic with enough context to locate it.

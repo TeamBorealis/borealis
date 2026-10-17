@@ -183,38 +183,94 @@ fn an_invented_stat_block_is_dropped_and_the_creature_kept_as_text() {
     assert!(d.sweep_issues.is_empty());
 }
 
+/// A stat block with these core numbers, challenge rating and XP.
+fn rated(cr: &str, xp: u64) -> Value {
+    let mut json = generated(14, 22, [14, 15, 12, 3, 12, 6]);
+    json["data"]["cr"] = json!(cr);
+    json["data"]["xp"] = json!(xp);
+    json
+}
+
+/// [`draft`] over a source whose Reed Stalker prints `printed` XP at challenge rating 1.
+fn draft_printing(printed: &str) -> ImportDraft {
+    let mut d = draft();
+    d.source_text = SOURCE.replace("(200 XP)", &format!("({printed} XP)"));
+    d
+}
+
 #[test]
-fn an_xp_other_than_the_printed_one_is_said_and_marked_for_review() {
-    // Arrange: the printed block says 200 XP.
+fn an_xp_other_than_the_printed_one_goes_back_to_the_printed_xp() {
+    // Arrange: the printed block says 200 XP; generation wrote 450.
     assert_eq!(
         printed_xp("Challenge 4 (1,100 XP) | Proficiency"),
         vec![1100]
     );
     assert_eq!(printed_xp(SOURCE), vec![200]);
     let mut d = draft();
-    let mut json = generated(14, 22, [14, 15, 12, 3, 12, 6]);
-    json["data"]["xp"] = json!(450);
-    with(&mut d, "M2", json);
+    with(&mut d, "M2", rated("1", 450));
     // Act
     settle(&mut d);
-    // Assert: the printed XP is named, the element stays a monster and needs review.
+    // Assert: the printed XP is back and the change is said; 200 is the standard for CR 1.
     let e = d.element("M2").unwrap();
     assert_eq!(e.ty, MONSTER);
-    assert_eq!(e.status, ElementStatus::NeedsReview);
+    assert_eq!(e.json["data"]["xp"], json!(200));
     assert!(
         e.issues.iter().any(|i| i.starts_with(XP_NOT_AS_PRINTED)
             && i.contains("prints 200 XP")
-            && i.contains("has 450 XP")),
+            && i.contains("had 450 XP")),
         "{:?}",
         e.issues
     );
-    // The printed XP itself raises nothing.
-    let mut d = draft();
-    let mut json = generated(14, 22, [14, 15, 12, 3, 12, 6]);
-    json["data"]["xp"] = json!(200);
-    with(&mut d, "M2", json);
+    assert!(!e.issues.iter().any(|i| i.starts_with(XP_NOT_STANDARD)));
+}
+
+#[test]
+fn a_printed_xp_off_the_table_is_kept_and_flagged_for_review() {
+    // Arrange: CR 1 (standard 200 XP) printed with 250 XP, generated as printed.
+    let mut d = draft_printing("250");
+    with(&mut d, "M2", rated("1", 250));
+    // Act
     settle(&mut d);
-    assert_eq!(d.element("M2").unwrap().status, ElementStatus::Ok);
+    // Assert: the printed XP stays, the review says it differs from the standard value.
+    let e = d.element("M2").unwrap();
+    assert_eq!(e.json["data"]["xp"], json!(250));
+    assert_eq!(e.status, ElementStatus::NeedsReview);
+    assert!(
+        e.issues.iter().any(|i| i.starts_with(XP_NOT_STANDARD)
+            && i.contains("250 XP")
+            && i.contains("200 XP")),
+        "{:?}",
+        e.issues
+    );
+    assert!(!e.issues.iter().any(|i| i.starts_with(XP_NOT_AS_PRINTED)));
+}
+
+#[test]
+fn a_printed_xp_replaced_by_the_standard_one_is_put_back_and_flagged() {
+    // Arrange: printed 250 XP, generation "normalised" it to the standard 200.
+    let mut d = draft_printing("250");
+    with(&mut d, "M2", rated("1", 200));
+    // Act
+    settle(&mut d);
+    // Assert
+    let e = d.element("M2").unwrap();
+    assert_eq!(e.json["data"]["xp"], json!(250));
+    assert_eq!(e.status, ElementStatus::NeedsReview);
+    assert!(
+        e.issues.iter().any(|i| i.starts_with(XP_NOT_STANDARD)),
+        "{:?}",
+        e.issues
+    );
+}
+
+#[test]
+fn a_printed_standard_xp_raises_nothing() {
+    let mut d = draft();
+    with(&mut d, "M2", rated("1", 200));
+    settle(&mut d);
+    let e = d.element("M2").unwrap();
+    assert_eq!(e.status, ElementStatus::Ok);
+    assert!(e.issues.is_empty(), "{:?}", e.issues);
 }
 
 #[test]

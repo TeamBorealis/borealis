@@ -38,7 +38,7 @@ The store reports every `validate()` problem as `Severity::Error` / `IssueCode::
 | `senses` | `{blindsight?, darkvision?, tremorsense?, truesight?, deafened_range?, blind_beyond?, passive_perception, notes?}` | feet |
 | `languages` | `[string]` | one per comma item, verbatim; `telepathy` (feet) is split out |
 | `cr` | string | `"0" "1/8" "1/4" "1/2" "1".."30"`; integers also deserialize; never a float (`Cr` type) |
-| `xp`, `proficiency_bonus` | numbers | both stored; `validate()` checks them against `cr` |
+| `xp`, `proficiency_bonus` | numbers | both stored as printed; `validate()` checks the bonus against `cr`, `warnings()` the XP |
 | `xp_lair` | number | 2024 `XP 18,000, or 20,000 in lair`; must not be below `xp` |
 | `traits` / `actions` / `bonus_actions` / `reactions` | `[Feature]` | printed order |
 | `legendary` | `{per_round?, lair_uses?, preamble, actions[]}` | `per_round` parsed from "can take 3 legendary actions" (5.1) or `Legendary Action Uses: 3` (5.2.1); `lair_uses` from `(4 in Lair)` |
@@ -63,9 +63,12 @@ and `renamed_from` (5.1 name) when the 2024 name differs.
 ## Validation
 
 Hard (`validate`): sizes non-empty; AC > 0; HP > 0 and formula `NdS[+-M]`; ability scores 1..=30; at least one speed;
-no empty damage clause; `proficiency_bonus` equals the CR's bonus (2, +1 per four CR above 4); `xp` equals the CR to XP
-table (`Cr::XP_TABLE`, identical in SRD 5.1 and 5.2.1; CR 0 accepts 0 or 10); non-empty feature names/text; recharge is a
-d6 range; legendary actions need `per_round`.
+no empty damage clause; `proficiency_bonus` equals the CR's bonus (2, +1 per four CR above 4); non-empty feature
+names/text; recharge is a d6 range; legendary actions need `per_round`.
+
+Warning (`warnings`, reported by the store as `non_standard_monster_xp` warnings, decision HB4): `xp` differs from the CR
+to XP table (`Cr::XP_TABLE`, identical in SRD 5.1 and 5.2.1; CR 0 accepts 0 or 10). Homebrew prints such XP; the stored
+value is kept as printed and never recomputed.
 
 Soft (`soft_checks`, not run by the store): HP average equals floor of the formula average; passive Perception equals
 10 + Perception bonus (or the Wis modifier); each parsed attack damage average equals its dice average.

@@ -4,6 +4,7 @@
 //! and ability scores are never guessed. A generated stat block whose core numbers are not in
 //! the passage is repaired once and, when most of them are still missing, dropped the same way.
 
+use borealis_content::Cr;
 use serde_json::Value;
 
 use super::super::ingest::READING_NOTE;
@@ -32,8 +33,13 @@ const MIN_OWN_WORDS: usize = 15;
 /// Why a generated stat block was dropped.
 const STAT_BLOCK_UNPRINTED: &str = "most numbers of the generated stat block are not printed in the source passage: kept as a text entry with its printed passage; no armor class, hit points or ability scores were kept";
 
-/// Start of the issue on a monster whose XP is not the XP its stat block prints.
+/// Start of the issue on a monster whose generated XP was not the XP its stat block prints
+/// (the printed XP is put back).
 pub(crate) const XP_NOT_AS_PRINTED: &str = "XP not as printed";
+/// Start of the review flag on a monster whose XP differs from the standard XP of its
+/// challenge rating (decision HB4: homebrew prints such numbers; the XP is kept as printed,
+/// the content store warns, a human checks it).
+pub(crate) const XP_NOT_STANDARD: &str = "printed XP differs from the standard value";
 
 /// The XP values `passage` prints ("Challenge 3 (1,100 XP)").
 fn printed_xp(passage: &str) -> Vec<u64> {
@@ -50,17 +56,61 @@ fn printed_xp(passage: &str) -> Vec<u64> {
     out
 }
 
-/// A generated monster whose XP differs from the one XP value its passage prints: the issue
-/// (the engine checks XP against the challenge rating, so a printed value it rejects is
-/// replaced; the mismatch is said, never hidden).
-fn xp_mismatch(data: &Value, passage: &str) -> Option<String> {
+/// `(printed, generated)` when a generated monster's XP differs from the one XP value its
+/// passage prints.
+fn xp_mismatch(data: &Value, passage: &str) -> Option<(u64, u64)> {
     let xp = data.get("xp").and_then(Value::as_u64)?;
     let [printed] = printed_xp(passage)[..] else {
         return None;
     };
-    (printed != xp).then(|| {
-        format!("{XP_NOT_AS_PRINTED}: the stat block prints {printed} XP, the element has {xp} XP")
+    (printed != xp).then_some((printed, xp))
+}
+
+/// The review flag of a monster whose XP is not the standard XP of its challenge rating.
+fn xp_off_table(data: &Value) -> Option<String> {
+    let xp = u32::try_from(data.get("xp").and_then(Value::as_u64)?).ok()?;
+    let cr: Cr = serde_json::from_value(data.get("cr")?.clone()).ok()?;
+    (!cr.accepts_xp(xp)).then(|| {
+        format!(
+            "{XP_NOT_STANDARD}: {xp} XP is kept as given; the standard for challenge rating {cr} is {} XP. Check it against the printed stat block",
+            cr.standard_xp()
+        )
     })
+}
+
+/// `msg` on the element `id` (once); with `review`, an Ok or Repaired element needs review.
+fn note(draft: &mut ImportDraft, id: &str, msg: String, review: bool) {
+    let Some(e) = draft.elements.iter_mut().find(|e| e.id == id) else {
+        return;
+    };
+    if !e.issues.contains(&msg) {
+        e.issues.push(msg);
+    }
+    if review && matches!(e.status, ElementStatus::Ok | ElementStatus::Repaired) {
+        e.status = ElementStatus::NeedsReview;
+    }
+}
+
+/// The monster `id` with the XP its passage prints (the one printed value put back where
+/// generation wrote another, said on the element); its stat block data afterwards.
+fn keep_printed_xp(draft: &mut ImportDraft, id: &str, data: Value, passage: &str) -> Value {
+    let Some((printed, had)) = xp_mismatch(&data, passage) else {
+        return data;
+    };
+    let Some(e) = draft.elements.iter_mut().find(|e| e.id == id) else {
+        return data;
+    };
+    if let Some(xp) = e.json.pointer_mut("/data/xp") {
+        *xp = Value::from(printed);
+    }
+    let kept = e.json.get("data").cloned().unwrap_or(data);
+    note(
+        draft,
+        id,
+        format!("{XP_NOT_AS_PRINTED}: the stat block prints {printed} XP, the element had {had} XP; the printed XP is kept"),
+        false,
+    );
+    kept
 }
 
 pub(crate) use super::super::ingest::stat_lines::has_stat_block;
@@ -265,21 +315,17 @@ pub(crate) fn sweep(draft: &ImportDraft) -> Vec<SweepIssue> {
 
 /// After the repairs: a monster without a printed stat block, or whose stat block is mostly
 /// not printed, becomes a text entry; one with a few unprinted numbers is marked for review.
+/// A monster keeps the XP its stat block prints; one off the standard XP of its challenge
+/// rating is marked for review (decision HB4).
 pub(crate) fn settle(draft: &mut ImportDraft) {
     for (id, passage, data) in generated(draft) {
         if !has_stat_block(&passage) {
             keep_as_text(draft, &id, STAT_BLOCK_ABSENT);
             continue;
         }
-        if let Some(msg) = xp_mismatch(&data, &passage) {
-            if let Some(e) = draft.elements.iter_mut().find(|e| e.id == id) {
-                if !e.issues.contains(&msg) {
-                    e.issues.push(msg);
-                }
-                if matches!(e.status, ElementStatus::Ok | ElementStatus::Repaired) {
-                    e.status = ElementStatus::NeedsReview;
-                }
-            }
+        let data = keep_printed_xp(draft, &id, data, &passage);
+        if let Some(msg) = xp_off_table(&data) {
+            note(draft, &id, msg, true);
         }
         let (missing, total) = unprinted(&data, &passage);
         if total == 0 {
@@ -289,18 +335,11 @@ pub(crate) fn settle(draft: &mut ImportDraft) {
         if missing.len() * 2 > total {
             keep_as_text(draft, &id, STAT_BLOCK_UNPRINTED);
         } else if !missing.is_empty() {
-            if let Some(e) = draft.elements.iter_mut().find(|e| e.id == id) {
-                let msg = format!(
-                    "stat block numbers not printed in the source passage: {}",
-                    missing.join(", ")
-                );
-                if !e.issues.contains(&msg) {
-                    e.issues.push(msg);
-                }
-                if matches!(e.status, ElementStatus::Ok | ElementStatus::Repaired) {
-                    e.status = ElementStatus::NeedsReview;
-                }
-            }
+            let msg = format!(
+                "stat block numbers not printed in the source passage: {}",
+                missing.join(", ")
+            );
+            note(draft, &id, msg, true);
         }
     }
 }

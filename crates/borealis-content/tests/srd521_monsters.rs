@@ -161,6 +161,7 @@ fn every_monster_validates_and_round_trips() {
         assert!(id.starts_with(PACK_ID_PREFIX), "{id}");
         assert_eq!(m.ruleset, Ruleset::Dnd2024, "{id}");
         assert_eq!(m.validate(), vec![], "{id}");
+        assert_eq!(m.warnings(), vec![], "{id}");
         assert!(m.initiative.is_some(), "{id} has no initiative");
         let e = m.to_element(&id, &name, "SRD 5.2.1 Monsters");
         assert_eq!(MonsterData::from_element(&e).unwrap(), m, "{id}");

@@ -359,3 +359,48 @@ fn a_report_says_not_imported_only_for_text_no_element_carries() {
     assert_eq!(mill.len(), 2, "{mill:?}");
     assert!(mill[1].note.contains("+1 dagger and 120 gp"));
 }
+
+/// A synthetic CR 1/4 creature (the bundled goblin's stat block) as draft element JSON, with
+/// `xp` XP.
+fn quillback_json(xp: u64) -> Value {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+    let store = ContentStoreBuilder::new()
+        .add_pack_dir(&root.join("srd-5.1-monsters"))
+        .expect("monsters load")
+        .build();
+    let mut e = store
+        .by_type("Monster")
+        .find(|s| s.element.name == "Goblin")
+        .expect("goblin")
+        .element
+        .clone();
+    e.id = "ID_T_MONSTER_FEN_QUILLBACK".into();
+    e.name = "Fen Quillback".into();
+    e.source = "T".into();
+    e.data.insert("xp".into(), Value::from(xp));
+    serde_json::to_value(&e).expect("element json")
+}
+
+#[test]
+fn a_printed_xp_off_the_table_is_committed_as_printed() {
+    // Arrange: CR 1/4 (standard 50 XP) printed with 75 XP (decision HB4).
+    let mut draft = draft_with_failures();
+    draft.elements = serde_json::from_value(serde_json::json!([element(
+        "ID_T_MONSTER_FEN_QUILLBACK",
+        "Monster",
+        "ok",
+        quillback_json(75)
+    )]))
+    .expect("elements");
+    // Act
+    let done = finalize_draft(&library(), &draft).expect("commits");
+    // Assert: the content warning does not block the commit, the printed XP is kept.
+    let kept = done
+        .pack
+        .content
+        .elements
+        .iter()
+        .find(|e| e.id == "ID_T_MONSTER_FEN_QUILLBACK")
+        .expect("monster committed");
+    assert_eq!(kept.data["xp"], Value::from(75));
+}

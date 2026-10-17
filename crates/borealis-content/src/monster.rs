@@ -2,7 +2,8 @@
 //!
 //! A Monster element carries its stat block in the element `data` map (see `docs/monster-model.md`).
 //! [`MonsterData::from_element`] / [`MonsterData::to_element`] convert between the two, and
-//! [`MonsterData::validate`] returns the hard consistency problems the content store reports.
+//! [`MonsterData::validate`] returns the hard consistency problems the content store reports,
+//! [`MonsterData::warnings`] the printed numbers it keeps but reports (a non-standard XP).
 //! Softer checks that may legitimately differ in the printed source live in [`MonsterData::soft_checks`].
 
 use crate::element::Element;
@@ -194,6 +195,14 @@ impl MonsterData {
     #[must_use]
     pub fn validate(&self) -> Vec<MonsterIssue> {
         crate::monster_validate::validate(self)
+    }
+
+    /// Numbers kept as given that differ from the standard tables (the content store reports these
+    /// as warnings): an XP other than the standard XP of the challenge rating. Nothing recomputes
+    /// or replaces the stored value.
+    #[must_use]
+    pub fn warnings(&self) -> Vec<MonsterIssue> {
+        crate::monster_validate::warnings(self)
     }
 
     /// Checks the printed source may legitimately violate (HP average vs formula, passive Perception,

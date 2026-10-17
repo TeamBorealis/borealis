@@ -90,19 +90,8 @@ pub(crate) fn validate(m: &MonsterData) -> Vec<MonsterIssue> {
             ),
         );
     }
-    if !m.cr.accepts_xp(m.xp) {
-        bad(
-            "xp",
-            format!(
-                "{} XP does not match CR {} (expected {})",
-                m.xp,
-                m.cr,
-                m.cr.standard_xp()
-            ),
-        );
-    }
     if m.xp_lair.is_some_and(|lair| lair < m.xp) {
-        bad("xp_lair", "lair XP is below the standard XP".into());
+        bad("xp_lair", "lair XP is below the XP outside the lair".into());
     }
     if m.gear.iter().any(|g| g.trim().is_empty()) {
         bad("gear", "empty gear entry".into());
@@ -176,6 +165,23 @@ fn check_features(section: &str, list: &[Feature], out: &mut Vec<MonsterIssue>) 
             }
         }
     }
+}
+
+/// Numbers a printed stat block may set apart from the standard tables, kept as given and
+/// reported (decision HB4): an XP other than the standard XP of the challenge rating.
+pub(crate) fn warnings(m: &MonsterData) -> Vec<MonsterIssue> {
+    if m.cr.accepts_xp(m.xp) {
+        return Vec::new();
+    }
+    vec![MonsterIssue::new(
+        "xp",
+        format!(
+            "printed XP {} differs from the standard {} XP for CR {}; the printed value is kept",
+            m.xp,
+            m.cr.standard_xp(),
+            m.cr
+        ),
+    )]
 }
 
 pub(crate) fn soft_checks(m: &MonsterData) -> Vec<MonsterIssue> {

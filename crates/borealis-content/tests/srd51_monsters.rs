@@ -98,6 +98,7 @@ fn every_monster_validates_and_round_trips() {
         assert!(id.starts_with("ID_SRD51_MONSTER_"), "{id}");
         assert_eq!(m.ruleset, Ruleset::Dnd2014, "{id}");
         assert_eq!(m.validate(), vec![], "{id}");
+        assert_eq!(m.warnings(), vec![], "{id}");
         let e = m.to_element(&id, "x", "SRD 5.1 Monsters");
         assert_eq!(MonsterData::from_element(&e).unwrap(), m, "{id}");
     }
@@ -513,9 +514,15 @@ fn broken_monsters_are_reported_by_the_store_validator() {
     bad.abilities.str = 0;
     let issues = bad.validate();
     let fields: Vec<&str> = issues.iter().map(|i| i.field.as_str()).collect();
-    assert!(
-        fields.contains(&"xp") && fields.contains(&"proficiency_bonus"),
-        "{fields:?}"
+    assert!(fields.contains(&"proficiency_bonus"), "{fields:?}");
+    // A printed XP off the table is a warning (decision HB4), not a hard problem.
+    assert!(!fields.contains(&"xp"), "{fields:?}");
+    assert_eq!(
+        bad.warnings()
+            .iter()
+            .map(|i| i.field.as_str())
+            .collect::<Vec<_>>(),
+        vec!["xp"]
     );
     assert!(
         fields.contains(&"hp.formula") && fields.contains(&"abilities.str"),

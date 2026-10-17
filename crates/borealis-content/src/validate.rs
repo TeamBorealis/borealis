@@ -249,6 +249,12 @@ impl Ctx<'_> {
                             .at_path(format!("data.{}", i.field)),
                     );
                 }
+                for i in m.warnings() {
+                    self.push(
+                        Issue::warning(IssueCode::NonStandardMonsterXp, i.message.clone())
+                            .at_path(format!("data.{}", i.field)),
+                    );
+                }
             }
         }
         true
