@@ -16,19 +16,19 @@ use crate::import::chunk::norm_words;
 const MONSTER: &str = "Monster";
 /// Element type a creature without a stat block is kept as.
 const TEXT_TYPE: &str = "Rules Glossary Entry";
-/// Different stat-block lines (armor class, hit points, speed, challenge, ability header) a
-/// passage needs before it is a stat block.
-const MIN_STAT_LINES: usize = 2;
-/// Ability header abbreviations, as printed.
-const ABILITIES: [&str; 6] = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
-/// Of them, fewest that make an ability header.
-const MIN_ABILITY_HEADS: usize = 4;
 /// Ability score keys of a stat block's `data.abilities`.
 const ABILITY_KEYS: [&str; 6] = ["str", "dex", "con", "int", "wis", "cha"];
 
 /// Why a creature is kept as text (element issue; the import report states it as a source
 /// warning).
 pub(crate) const STAT_BLOCK_ABSENT: &str = "stat block not found in the source text: kept as a text entry with its printed passage; no armor class, hit points or ability scores were generated";
+/// Why a creature whose passage prints neither a stat block nor text of its own is not
+/// imported (a text entry would hold nothing but its name). Starts like
+/// [`STAT_BLOCK_ABSENT`], so checks reading that start read both.
+pub(crate) const STAT_BLOCK_NOT_READ: &str = "stat block not found in the source text, and the source prints no other text for this creature: not imported (its stat block may be a picture that could not be read)";
+/// Fewest words of its own (beyond its name and headings) a creature's passage needs before it
+/// is kept as a text entry.
+const MIN_OWN_WORDS: usize = 15;
 /// Why a generated stat block was dropped.
 const STAT_BLOCK_UNPRINTED: &str = "most numbers of the generated stat block are not printed in the source passage: kept as a text entry with its printed passage; no armor class, hit points or ability scores were kept";
 
@@ -63,37 +63,7 @@ fn xp_mismatch(data: &Value, passage: &str) -> Option<String> {
     })
 }
 
-fn is_number(t: &str) -> bool {
-    !t.is_empty() && t.chars().all(|c| c.is_ascii_digit())
-}
-
-/// `text` prints a stat block: at least [`MIN_STAT_LINES`] of an armor class, hit points,
-/// a speed in feet, a challenge rating, and an ability header (STR DEX CON ...).
-pub(crate) fn has_stat_block(text: &str) -> bool {
-    let words = norm_words(text);
-    let t: Vec<&str> = words.split(' ').collect();
-    let at = |i: usize| t.get(i).copied().unwrap_or("");
-    let mut kinds = [false; 5];
-    for (i, word) in t.iter().enumerate() {
-        match *word {
-            "armor" | "armour" if at(i + 1) == "class" && is_number(at(i + 2)) => kinds[0] = true,
-            "ac" if is_number(at(i + 1)) => kinds[0] = true,
-            "hit" if at(i + 1) == "points" && is_number(at(i + 2)) => kinds[1] = true,
-            "hp" if is_number(at(i + 1)) => kinds[1] = true,
-            "speed" if is_number(at(i + 1)) && matches!(at(i + 2), "ft" | "feet") => {
-                kinds[2] = true;
-            }
-            "challenge" | "cr" if is_number(at(i + 1)) => kinds[3] = true,
-            _ => {}
-        }
-    }
-    let heads: std::collections::HashSet<&str> = text
-        .split(|c: char| !c.is_ascii_alphanumeric())
-        .filter(|w| ABILITIES.contains(w))
-        .collect();
-    kinds[4] = heads.len() >= MIN_ABILITY_HEADS;
-    kinds.iter().filter(|k| **k).count() >= MIN_STAT_LINES
-}
+pub(crate) use super::super::ingest::stat_lines::has_stat_block;
 
 /// The core numbers of a generated stat block (armor class, average hit points, ability
 /// scores), labelled.
@@ -153,12 +123,53 @@ fn window(draft: &ImportDraft, p: &PlannedElement) -> String {
     own.unwrap_or_else(|| super::source_window(&draft.source_text, p))
 }
 
+/// Words of `passage` beyond its headings, bold lines and lines that only name `name`.
+fn own_words(passage: &str, name: &str) -> usize {
+    let name = norm_words(name);
+    passage
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.starts_with('#') && !(l.starts_with("**") && l.ends_with("**")))
+        .filter(|l| norm_words(l) != name)
+        .map(|l| l.split_whitespace().count())
+        .sum()
+}
+
+/// The monster `id`, whose passage holds no text of its own, left out: no output, status
+/// failed with [`STAT_BLOCK_NOT_READ`] (review shows it not imported, the report as left out)
+/// and a source warning naming it.
+fn not_imported(draft: &mut ImportDraft, id: &str) {
+    let Some(e) = draft.elements.iter_mut().find(|e| e.id == id) else {
+        return;
+    };
+    e.json = Value::Null;
+    e.status = ElementStatus::Failed;
+    e.issues = vec![STAT_BLOCK_NOT_READ.to_string()];
+    e.rule_errors.clear();
+    e.balance = None;
+    let name = e.name.clone();
+    draft
+        .sweep_issues
+        .retain(|i| i.element_id.as_deref() != Some(id));
+    let note = format!(
+        "{READING_NOTE}the stat block of \"{name}\" was not found in the source text and the source prints nothing else for it (it may be a picture that could not be read); it was not imported"
+    );
+    if !draft.detection.notes.contains(&note) {
+        draft.detection.notes.push(note);
+    }
+}
+
 /// Turn the monster `id` into a text entry with its printed passage (plan, group and draft
-/// element), with `why` on the element and a source warning naming it.
+/// element), with `why` on the element and a source warning naming it; a passage with no
+/// text of its own beyond the creature's name is not imported instead.
 fn keep_as_text(draft: &mut ImportDraft, id: &str, why: &str) {
     let Some(planned) = draft.plan.elements.iter().find(|p| p.id == id).cloned() else {
         return;
     };
+    if own_words(&window(draft, &planned), &planned.name) < MIN_OWN_WORDS {
+        not_imported(draft, id);
+        return;
+    }
     let text = PlannedElement {
         ty: TEXT_TYPE.into(),
         role: Role::Text,

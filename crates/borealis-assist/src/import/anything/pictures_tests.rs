@@ -6,23 +6,39 @@ use lopdf::{dictionary, Document, Object, Stream};
 use super::*;
 
 /// Text at (x, y, size).
-type Line<'a> = (f32, f32, f32, &'a str);
+pub(crate) type Line<'a> = (f32, f32, f32, &'a str);
 
-/// A PDF of letter pages, each with its text and an optional picture `[x, y, width, height]`.
-fn pdf(pages: &[(Vec<Line<'_>>, Option<[f32; 4]>)]) -> Vec<u8> {
+/// A PDF of letter pages, each with its text and an optional picture `[x, y, width, height]`
+/// (a 2 x 2 image: too few pixels to judge, so only its place and size count).
+pub(crate) fn pdf(pages: &[(Vec<Line<'_>>, Option<[f32; 4]>)]) -> Vec<u8> {
+    let image = Stream::new(
+        dictionary! {"Type" => "XObject", "Subtype" => "Image", "Width" => 2, "Height" => 2,
+        "ColorSpace" => "DeviceRGB", "BitsPerComponent" => 8},
+        vec![200u8; 12],
+    )
+    .with_compression(false);
+    pdf_with(pages, image)
+}
+
+/// A gray image of `w` x `h` pixels, Flate-compressed.
+fn gray_image(w: usize, h: usize, px: &[u8]) -> Stream {
+    let mut s = Stream::new(
+        dictionary! {"Type" => "XObject", "Subtype" => "Image", "Width" => w as i64,
+        "Height" => h as i64, "ColorSpace" => "DeviceGray", "BitsPerComponent" => 8},
+        px.to_vec(),
+    );
+    s.compress().unwrap();
+    s
+}
+
+/// Pages as [`pdf`], every picture painting `image`.
+fn pdf_with(pages: &[(Vec<Line<'_>>, Option<[f32; 4]>)], image: Stream) -> Vec<u8> {
     let mut doc = Document::with_version("1.5");
     let pages_id = doc.new_object_id();
     let font = doc.add_object(
         dictionary! {"Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Helvetica"},
     );
-    let img = doc.add_object(
-        Stream::new(
-            dictionary! {"Type" => "XObject", "Subtype" => "Image", "Width" => 2, "Height" => 2,
-            "ColorSpace" => "DeviceRGB", "BitsPerComponent" => 8},
-            vec![200u8; 12],
-        )
-        .with_compression(false),
-    );
+    let img = doc.add_object(image);
     let mut kids = Vec::new();
     for (lines, picture) in pages {
         let mut ops = Vec::new();
@@ -76,7 +92,7 @@ fn pdf(pages: &[(Vec<Line<'_>>, Option<[f32; 4]>)]) -> Vec<u8> {
     out
 }
 
-fn lore<'a>() -> Vec<Line<'a>> {
+pub(crate) fn lore<'a>() -> Vec<Line<'a>> {
     vec![
         (72.0, 720.0, 18.0, "Gloomwing"),
         (
@@ -274,25 +290,187 @@ fn probe_pictured_pages() {
             found.len(),
             found
         );
+        probe_boxes(&bytes, &text);
     }
 }
 
+/// One line per image that may be a picture: page, box, its pixels' verdict, decoration.
+fn probe_boxes(bytes: &[u8], text: &BTreeSet<u32>) {
+    let doc = Document::load_mem(bytes).unwrap();
+    let mut cache = FontCache::default();
+    let mut budget = WALK_BUDGET;
+    let mut memo = std::collections::HashMap::new();
+    for (n, id) in doc.get_pages() {
+        if !text.contains(&n) {
+            continue;
+        }
+        let painted = paint_page(&doc, id, &mut cache, &mut budget);
+        let size = page_size(&doc, id);
+        let images = page_images(&doc, id);
+        for b in painted
+            .images
+            .iter()
+            .filter(|b| may_be_picture(b, &painted.runs, size))
+        {
+            let ink = ink_of_box(&doc, b, &images, &mut memo);
+            let near = b.x0 < 18.0 || b.y0 < 18.0 || b.x1 > size.0 - 18.0 || b.y1 > size.1 - 18.0;
+            println!(
+                "  p{n} box {:.0},{:.0} {:.0}x{:.0} share {:.2} edge {near} ink {ink:?} decoration {}",
+                b.x0,
+                b.y0,
+                b.width(),
+                b.height(),
+                b.width() * b.height() / (size.0 * size.1),
+                is_decoration(b, &painted.runs, size, n == 1, ink)
+            );
+        }
+    }
+}
+
+/// Pixels of a pasted text picture: `lines` lines of dark word marks on a light ground, with
+/// a portrait-like dark block over the left `portrait` share of the width.
+fn text_pixels(w: usize, h: usize, lines: usize, portrait: f32) -> Vec<u8> {
+    let mut px = vec![235u8; w * h];
+    let pitch = h / (lines + 1);
+    for line in 0..lines {
+        let top = pitch / 2 + line * pitch;
+        for y in top..top + pitch / 2 {
+            for x in 4..w - 4 {
+                // Words of 9 marks, a space of 3.
+                if x % 12 < 9 && x % 2 == 0 {
+                    px[y * w + x] = 30;
+                }
+            }
+        }
+    }
+    let art = (w as f32 * portrait) as usize;
+    for y in 0..h {
+        for x in 0..art {
+            px[y * w + x] = ((x * 7 + y * 13) % 200) as u8;
+        }
+    }
+    px
+}
+
+/// Pixels of a table: a dark header band and rows of cells split by rules.
+fn table_pixels(w: usize, h: usize, rows: usize) -> Vec<u8> {
+    let mut px = text_pixels(w, h, rows, 0.0);
+    for y in 0..h / (rows + 1) / 2 {
+        for x in 0..w {
+            px[y * w + x] = 60;
+        }
+    }
+    px
+}
+
+/// Pixels of painted art: tones everywhere, no flat ground.
+fn art_pixels(w: usize, h: usize) -> Vec<u8> {
+    let mut seed: u32 = 7;
+    (0..w * h)
+        .map(|i| {
+            seed = seed.wrapping_mul(1_103_515_245).wrapping_add(12_345);
+            let shade = (i % w + i / w) * 255 / (w + h);
+            ((shade as u32 + (seed >> 24) % 90) % 256) as u8
+        })
+        .collect()
+}
+
+fn judged(w: usize, h: usize, px: Vec<u8>) -> Ink {
+    picture_ink::judge(&picture_ink::Pixels {
+        width: w,
+        height: h,
+        gray: px,
+        alpha: None,
+    })
+}
+
 #[test]
-fn art_bleeding_off_the_page_and_a_title_pages_logo_are_decoration() {
+fn pixels_tell_printed_lines_from_art() {
+    assert_eq!(judged(300, 400, text_pixels(300, 400, 14, 0.0)), Ink::Text);
+    // A portrait beside the stat block fills every row, not every strip.
+    assert_eq!(judged(400, 300, text_pixels(400, 300, 10, 0.4)), Ink::Text);
+    assert_eq!(judged(400, 160, table_pixels(400, 160, 4)), Ink::Text);
+    assert_eq!(judged(300, 300, art_pixels(300, 300)), Ink::NoText);
+    // A logo word: one line of marks.
+    assert_eq!(judged(300, 100, text_pixels(300, 100, 1, 0.0)), Ink::NoText);
+    // Too few pixels to say.
+    assert_eq!(judged(8, 8, vec![0; 64]), Ink::Unknown);
+}
+
+#[test]
+fn transparent_pixels_are_ground() {
+    // Cut-out art: opaque tones inside a transparent frame, no lines of text.
+    let (w, h) = (200, 200);
+    let alpha: Vec<u8> = (0..w * h)
+        .map(|i| {
+            if (40..160).contains(&(i % w)) && (30..170).contains(&(i / w)) {
+                255
+            } else {
+                0
+            }
+        })
+        .collect();
+    let p = picture_ink::Pixels {
+        width: w,
+        height: h,
+        gray: art_pixels(w, h),
+        alpha: Some(alpha),
+    };
+    assert_eq!(picture_ink::judge(&p), Ink::NoText);
+}
+
+#[test]
+fn pasted_stat_blocks_and_tables_are_read_wherever_they_sit() {
+    let (w, h) = (600, 480);
+    let block = || gray_image(w, h, &text_pixels(w, h, 16, 0.0));
+    // Full width, touching both side edges and the bottom edge.
+    let full = pdf_with(&[(lore(), Some([0.0, 0.0, 612.0, 490.0]))], block());
+    assert_eq!(pictured_pages(&full, &all_pages(1)), BTreeSet::from([1]));
+    // Bleeding off the right edge.
+    let bleeding = pdf_with(&[(lore(), Some([330.0, 120.0, 290.0, 232.0]))], block());
+    assert_eq!(
+        pictured_pages(&bleeding, &all_pages(1)),
+        BTreeSet::from([1])
+    );
+    // A wide table along the bottom edge.
+    let (tw, th) = (600, 150);
+    let table = gray_image(tw, th, &table_pixels(tw, th, 4));
+    let tabled = pdf_with(&[(lore(), Some([6.0, 2.0, 600.0, 150.0]))], table);
+    assert_eq!(pictured_pages(&tabled, &all_pages(1)), BTreeSet::from([1]));
+    // Pixels that cannot be judged: the edge alone never makes it decoration.
+    let unknown = pdf(&[(lore(), Some([0.0, 0.0, 612.0, 300.0]))]);
+    assert_eq!(pictured_pages(&unknown, &all_pages(1)), BTreeSet::from([1]));
+}
+
+#[test]
+fn art_and_a_title_pages_logo_are_decoration() {
     let title = vec![
         (200.0, 700.0, 24.0, "The Lantern Almanac"),
         (230.0, 120.0, 10.0, "by A. Writer"),
     ];
-    let bytes = pdf(&[
-        // Art bleeding off the right and bottom edges of a text page.
-        (lore(), Some([420.0, -6.0, 200.0, 280.0])),
-        // A small emblem centred on a title page.
+    let (w, h) = (300, 420);
+    let art = || gray_image(w, h, &art_pixels(w, h));
+    // Art bleeding off the right and bottom edges of a text page, and the same art inside.
+    let bytes = pdf_with(
+        &[
+            (lore(), Some([420.0, -6.0, 200.0, 280.0])),
+            (lore(), Some([150.0, 200.0, 200.0, 280.0])),
+        ],
+        art(),
+    );
+    assert!(pictured_pages(&bytes, &all_pages(2)).is_empty());
+    // A small emblem centred on a file's title page; the same emblem on a later page is read.
+    let emblem = pdf(&[
         (title.clone(), Some([246.0, 330.0, 120.0, 190.0])),
-        // A banner along the bottom edge.
-        (lore(), Some([12.0, 4.0, 580.0, 80.0])),
+        (title.clone(), Some([246.0, 330.0, 120.0, 190.0])),
     ]);
-    assert!(pictured_pages(&bytes, &all_pages(3)).is_empty());
-    // A stat-block-sized picture centred on the same sparse page is still read.
-    let bytes = pdf(&[(title, Some([156.0, 200.0, 300.0, 380.0]))]);
+    assert_eq!(pictured_pages(&emblem, &all_pages(2)), BTreeSet::from([2]));
+    // A small pasted stat block centred on a title page shows its lines: read.
+    let (sw, sh) = (240, 380);
+    let small = gray_image(sw, sh, &text_pixels(sw, sh, 18, 0.0));
+    let bytes = pdf_with(&[(title, Some([246.0, 330.0, 120.0, 190.0]))], small);
     assert_eq!(pictured_pages(&bytes, &all_pages(1)), BTreeSet::from([1]));
+    // A second look at a page takes decoration too.
+    let bytes = pdf_with(&[(lore(), Some([150.0, 200.0, 200.0, 280.0]))], art());
+    assert_eq!(imaged_pages(&bytes, &all_pages(1)), BTreeSet::from([1]));
 }

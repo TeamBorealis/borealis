@@ -22,6 +22,7 @@ use crate::import::chunk::norm_words;
 use crate::import::pdf_fonts::FontCache;
 use crate::import::pdf_walk::{paint_page, ImageBox, Run};
 use crate::import::{split_pdf, PdfLayout};
+use picture_ink::Ink;
 
 /// Smallest share of the page a picture covers (a small stat block in one column is ~8%).
 const MIN_PICTURE_SHARE: f32 = 0.04;
@@ -45,16 +46,21 @@ const ECHO_MIN_WORDS: usize = 3;
 const ANCHOR_PREFIX_CHARS: usize = 40;
 /// Fewest words a picture's text has to be kept: a logo or a lone label is no printed rules text.
 const MIN_BLOCK_WORDS: usize = 3;
-/// Points from the page's edge within which an image bleeds off the page (art and banners do;
-/// text sits inside the page's margins).
-const EDGE_BLEED: f32 = 18.0;
-/// A small picture (below this share of the page) centred on a page of little text is a logo or
-/// an ornament (a title page's emblem), not a pasted stat block or table.
+/// A small picture (below this share of the page) centred on the first page of a file with
+/// little text is that title page's logo or emblem, unless its pixels show lines of text.
 const LOGO_SHARE: f32 = 0.08;
-/// Text-layer words below which a page is a title or cover page.
+/// Text-layer words below which a first page is a title or cover page.
 const SPARSE_PAGE_WORDS: usize = 250;
+/// How far apart (relative) an image's pixel aspect and the painted box's aspect may be when the
+/// box is matched to the image it paints.
+const ASPECT_MATCH: f32 = 0.03;
+/// Deepest form nesting searched for a page's images.
+const MAX_FORM_DEPTH: usize = 3;
 /// Share of the page width a centred picture's middle is within of the page's middle.
 const CENTRED: f32 = 0.05;
+
+#[path = "picture_ink.rs"]
+mod picture_ink;
 
 /// Pictures copied for one call: the pages, their text layers and the attachment.
 pub(super) struct PicturePart {
@@ -79,28 +85,29 @@ struct PicturesOut {
     blocks: Vec<Inset>,
 }
 
-/// Decoration, not a picture that may print text: an image bleeding off the page's edge (art,
-/// a banner), or a small one centred on a page of little text (a title page's logo).
-fn is_decoration(b: &ImageBox, runs: &[Run], size: (f32, f32)) -> bool {
+/// Decoration, not a picture that may print text: an image whose pixels show no lines of
+/// text (art, an ornament), or a small one centred on a file's first page of little text (a
+/// title page's logo) whose pixels do not show text. Where an image sits on the page (at its
+/// edge, bleeding off it) is never evidence: a pasted stat block or table can span the page.
+fn is_decoration(b: &ImageBox, runs: &[Run], size: (f32, f32), first: bool, ink: Ink) -> bool {
+    if ink != Ink::Unknown {
+        return ink == Ink::NoText;
+    }
     let (w, h) = size;
-    let bleeds =
-        b.x0 < EDGE_BLEED || b.y0 < EDGE_BLEED || b.x1 > w - EDGE_BLEED || b.y1 > h - EDGE_BLEED;
     let share = b.width() * b.height() / (w * h).max(1.0);
     let centred = ((b.x0 + b.x1) / 2.0 - w / 2.0).abs() <= CENTRED * w;
     let words: usize = runs.iter().map(|r| r.text.split_whitespace().count()).sum();
-    bleeds || (share < LOGO_SHARE && centred && words < SPARSE_PAGE_WORDS)
+    first && share < LOGO_SHARE && centred && words < SPARSE_PAGE_WORDS
 }
 
-/// A picture: large, not the page's background, no text-layer text over it, and not
-/// decoration.
-fn is_picture(b: &ImageBox, runs: &[Run], size: (f32, f32)) -> bool {
+/// Large enough to print text, not the page's background, and no text-layer text over it.
+fn may_be_picture(b: &ImageBox, runs: &[Run], size: (f32, f32)) -> bool {
     let area = b.width() * b.height();
     let page = (size.0 * size.1).max(1.0);
     if b.width() < MIN_PICTURE_SIDE
         || b.height() < MIN_PICTURE_SIDE
         || area < MIN_PICTURE_SHARE * page
         || area >= BACKGROUND_SHARE * page
-        || is_decoration(b, runs, size)
     {
         return false;
     }
@@ -112,6 +119,104 @@ fn is_picture(b: &ImageBox, runs: &[Run], size: (f32, f32)) -> bool {
             && r.y > b.y0 + OVERLAP_MARGIN
             && r.y < b.y1 - OVERLAP_MARGIN
     })
+}
+
+/// The image streams a page can paint (its resources and those of its forms), with their
+/// pixel aspect (width / height).
+fn page_images(doc: &Document, page: ObjectId) -> Vec<(ObjectId, f32)> {
+    fn resources_of(doc: &Document, dict: &lopdf::Dictionary) -> Option<lopdf::Dictionary> {
+        let r = dict.get(b"Resources").ok()?;
+        doc.dereference(r).ok()?.1.as_dict().ok().cloned()
+    }
+    fn walk(
+        doc: &Document,
+        res: &lopdf::Dictionary,
+        depth: usize,
+        seen: &mut BTreeSet<ObjectId>,
+        out: &mut Vec<(ObjectId, f32)>,
+    ) {
+        let Some(xs) = res
+            .get(b"XObject")
+            .ok()
+            .and_then(|o| doc.dereference(o).ok())
+            .and_then(|(_, o)| o.as_dict().ok())
+        else {
+            return;
+        };
+        for (_, o) in xs.iter() {
+            let Ok(id) = o.as_reference() else { continue };
+            let Some(s) = doc.get_object(id).ok().and_then(|o| o.as_stream().ok()) else {
+                continue;
+            };
+            if !seen.insert(id) {
+                continue;
+            }
+            match s.dict.get(b"Subtype").and_then(Object::as_name).ok() {
+                Some(b"Image") => {
+                    let side = |k: &[u8]| s.dict.get(k).ok().map(num).unwrap_or(0.0);
+                    let (w, h) = (side(b"Width"), side(b"Height"));
+                    if w > 0.0 && h > 0.0 {
+                        out.push((id, w / h));
+                    }
+                }
+                Some(b"Form") if depth < MAX_FORM_DEPTH => {
+                    if let Some(r) = resources_of(doc, &s.dict) {
+                        walk(doc, &r, depth + 1, seen, out);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    let mut id = Some(page);
+    let mut res = None;
+    for _ in 0..32 {
+        let Some(dict) = id.and_then(|i| doc.get_dictionary(i).ok()) else {
+            break;
+        };
+        if let Some(r) = resources_of(doc, dict) {
+            res = Some(r);
+            break;
+        }
+        id = dict.get(b"Parent").and_then(Object::as_reference).ok();
+    }
+    let mut out = Vec::new();
+    if let Some(r) = res {
+        walk(doc, &r, 0, &mut BTreeSet::new(), &mut out);
+    }
+    out
+}
+
+/// What the pixels of the image `b` paints say about text: the images of the page whose
+/// aspect matches the box (either way round) are judged; text in any of them is text, no text
+/// in all of them is no text, anything else (none matched, unreadable pixels) unknown.
+fn ink_of_box(
+    doc: &Document,
+    b: &ImageBox,
+    images: &[(ObjectId, f32)],
+    memo: &mut std::collections::HashMap<ObjectId, Ink>,
+) -> Ink {
+    let aspect = b.width() / b.height().max(f32::EPSILON);
+    let close = |a: f32| (a - aspect).abs() <= ASPECT_MATCH * aspect;
+    let inks: Vec<Ink> = images
+        .iter()
+        .filter(|(_, a)| close(*a) || close(1.0 / a))
+        .map(|(id, _)| {
+            *memo.entry(*id).or_insert_with(|| {
+                doc.get_object(*id)
+                    .ok()
+                    .and_then(|o| o.as_stream().ok())
+                    .map_or(Ink::Unknown, |s| picture_ink::ink_of(doc, s))
+            })
+        })
+        .collect();
+    if inks.contains(&Ink::Text) {
+        Ink::Text
+    } else if !inks.is_empty() && inks.iter().all(|i| *i == Ink::NoText) {
+        Ink::NoText
+    } else {
+        Ink::Unknown
+    }
 }
 
 fn num(o: &Object) -> f32 {
@@ -148,6 +253,16 @@ fn page_size(doc: &Document, page: ObjectId) -> (f32, f32) {
 /// The pages of `wanted` (1-based) that show at least one picture; none when the PDF cannot be
 /// walked (its text layer was read, so the import goes on without the pictures).
 pub(super) fn pictured_pages(bytes: &[u8], wanted: &BTreeSet<u32>) -> BTreeSet<u32> {
+    pages_with(bytes, wanted, false)
+}
+
+/// The pages of `wanted` that show an image large enough to print text with no text over it,
+/// decoration included (a page looked at again because something printed on it is missing).
+pub(super) fn imaged_pages(bytes: &[u8], wanted: &BTreeSet<u32>) -> BTreeSet<u32> {
+    pages_with(bytes, wanted, true)
+}
+
+fn pages_with(bytes: &[u8], wanted: &BTreeSet<u32>, with_decoration: bool) -> BTreeSet<u32> {
     if wanted.is_empty() {
         return BTreeSet::new();
     }
@@ -159,16 +274,21 @@ pub(super) fn pictured_pages(bytes: &[u8], wanted: &BTreeSet<u32>) -> BTreeSet<u
         };
         let mut cache = FontCache::default();
         let mut budget = WALK_BUDGET;
+        let mut memo = std::collections::HashMap::new();
         doc.get_pages()
             .into_iter()
             .filter(|(n, _)| wanted.contains(n))
-            .filter(|(_, id)| {
+            .filter(|(n, id)| {
                 let painted = paint_page(&doc, *id, &mut cache, &mut budget);
                 let size = page_size(&doc, *id);
-                painted
-                    .images
-                    .iter()
-                    .any(|b| is_picture(b, &painted.runs, size))
+                let images = page_images(&doc, *id);
+                painted.images.iter().any(|b| {
+                    may_be_picture(b, &painted.runs, size)
+                        && (with_decoration || {
+                            let ink = ink_of_box(&doc, b, &images, &mut memo);
+                            !is_decoration(b, &painted.runs, size, *n == 1, ink)
+                        })
+                })
             })
             .map(|(n, _)| n)
             .collect()
@@ -286,13 +406,14 @@ fn echoes(block: &str, layer: &str) -> bool {
     found as f32 >= ECHO_SHARE * words.len() as f32
 }
 
-/// Copy the pictures of `part`. A failed call is reported, never fatal: the text layer stands.
+/// Copy the pictures of `part`. A failed call is reported, never fatal: the text layer stands
+/// (`None`: the call failed).
 pub(super) async fn transcribe_pictures(
     runner: &dyn VisionRunner,
     part: &PicturePart,
     opts: &RunOptions<'_>,
     out: &mut Ingested,
-) -> Vec<Inset> {
+) -> Option<Vec<Inset>> {
     let attachments = [part.attachment.clone()];
     let adapter = Attaching {
         inner: runner,
@@ -306,7 +427,7 @@ pub(super) async fn transcribe_pictures(
                 "{READING_NOTE}{} could not be read ({e}); text printed in them (such as a stat block) is not in the source",
                 part.label
             ));
-            return Vec::new();
+            return None;
         }
     };
     let first = part.pages.first().map_or(0, |(n, _)| *n);
@@ -349,7 +470,7 @@ pub(super) async fn transcribe_pictures(
             spans.len().max(1)
         ));
     }
-    kept
+    Some(kept)
 }
 
 /// Byte offset of the start of the line holding `at`.
@@ -483,4 +604,4 @@ pub(super) fn splice(text: &str, pages: &[(u32, String)], insets: &[Inset]) -> S
 
 #[cfg(test)]
 #[path = "pictures_tests.rs"]
-mod tests;
+pub(super) mod tests;

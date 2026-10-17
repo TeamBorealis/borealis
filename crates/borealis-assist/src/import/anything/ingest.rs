@@ -21,8 +21,15 @@ use crate::import::{read_pdf_layout, split_pdf, PdfLayout};
 
 #[path = "pictures.rs"]
 mod pictures;
+#[path = "reread.rs"]
+mod reread;
+#[path = "stat_lines.rs"]
+pub(crate) mod stat_lines;
 #[path = "transcript.rs"]
 pub(crate) mod transcript;
+// Called by `detect_source` once detection has named the creatures (see the w13a handoff).
+#[allow(unused_imports)]
+pub(crate) use reread::reread_missing_stat_blocks;
 
 /// Pages (or images) the model transcribes per call: few enough to copy verbatim.
 pub(crate) const VISUAL_PAGES_PER_CALL: usize = 4;
@@ -417,8 +424,8 @@ pub(crate) async fn read_attachments(
             Piece::Pictured { text, pages, parts } => {
                 let mut insets = Vec::new();
                 for part in parts {
-                    insets
-                        .extend(pictures::transcribe_pictures(runner, part, opts, &mut out).await);
+                    let read = pictures::transcribe_pictures(runner, part, opts, &mut out).await;
+                    insets.extend(read.unwrap_or_default());
                 }
                 pictures::splice(text, pages, &insets)
             }

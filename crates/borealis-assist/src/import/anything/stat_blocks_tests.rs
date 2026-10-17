@@ -216,3 +216,37 @@ fn an_xp_other_than_the_printed_one_is_said_and_marked_for_review() {
     settle(&mut d);
     assert_eq!(d.element("M2").unwrap().status, ElementStatus::Ok);
 }
+
+#[test]
+fn a_creature_with_only_its_name_in_the_source_is_not_imported() {
+    // Arrange: the creature's section is its heading and one stat-like line, its stat block
+    // was a picture nobody read.
+    let source =
+        "# Gloomwing\n\nTiny beast\n\n# Reed Stalker\n\nReed stalkers wait in the shallows.";
+    let mut d = draft();
+    d.source_text = source.into();
+    d.plan.elements = vec![monster("M1", "Gloomwing", 1, 3)];
+    d.elements = pending(&d.plan);
+    // Act
+    keep_unprinted_as_text(&mut d);
+    // Assert: no output, failed with the reason (review: not imported; report: left out),
+    // the group and type stay a monster's, and the report's source warnings name it.
+    let e = d.element("M1").unwrap();
+    assert!(e.json.is_null());
+    assert_eq!(e.status, ElementStatus::Failed);
+    assert_eq!(e.issues, vec![STAT_BLOCK_NOT_READ.to_string()]);
+    assert!(STAT_BLOCK_NOT_READ.starts_with("stat block not found in the source text"));
+    assert_eq!(e.ty, MONSTER);
+    assert_eq!(d.plan.groups[0].kind, ImportKind::Monster);
+    assert!(d
+        .detection
+        .notes
+        .iter()
+        .any(|n| n.contains("\"Gloomwing\"") && n.ends_with("it was not imported")));
+}
+
+#[test]
+fn own_words_leave_out_headings_bold_names_and_name_lines() {
+    let passage = "# Gloomwing\n**Gloomwing**\nGloomwing\nTiny beast, unaligned";
+    assert_eq!(own_words(passage, "Gloomwing"), 3);
+}
