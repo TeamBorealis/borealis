@@ -1716,9 +1716,9 @@
       "rules": [
         {
           "kind": "stat",
-          "name": "ac:armored:enhancement",
+          "name": "ac:shield",
           "value": "1",
-          "bonus": "enhancement:shield"
+          "bonus": "enhancement"
         }
       ]
     },
@@ -1760,9 +1760,9 @@
       "rules": [
         {
           "kind": "stat",
-          "name": "ac:armored:enhancement",
+          "name": "ac:shield",
           "value": "2",
-          "bonus": "enhancement:shield"
+          "bonus": "enhancement"
         }
       ]
     },
@@ -1804,9 +1804,9 @@
       "rules": [
         {
           "kind": "stat",
-          "name": "ac:armored:enhancement",
+          "name": "ac:shield",
           "value": "3",
-          "bonus": "enhancement:shield"
+          "bonus": "enhancement"
         }
       ]
     },

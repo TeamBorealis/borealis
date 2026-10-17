@@ -85,3 +85,19 @@ fn slotless_magic_items_can_be_used_and_attuned() {
     let stone = wear(&e, &s, "ID_T_MAGIC_ITEM_LUCKY_STONE", None);
     assert_eq!(e.derive(&stone).armor_class, base + 1);
 }
+
+#[test]
+fn a_magic_shield_adds_its_enhancement_without_body_armor() {
+    let e = engine();
+    let s = fighter(&e);
+    let plain = e
+        .derive(&wear(&e, &s, "ID_WOTC_GEAR_SHIELD", None))
+        .armor_class;
+    let magic = wear(
+        &e,
+        &s,
+        "ID_WOTC_GEAR_SHIELD",
+        Some("ID_WOTC_DMG_MAGIC_ITEM_SHIELD_1"),
+    );
+    assert_eq!(e.derive(&magic).armor_class, plain + 1);
+}
