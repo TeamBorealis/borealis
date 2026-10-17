@@ -19,7 +19,7 @@ export function IndexesTab() {
   const api = useApi();
   const toast = useToast();
   const confirm = useConfirm();
-  /** Phones have no file manager to open the content folders in. */
+  /** Phones have no file manager to open the content folders in, and cannot relaunch the app. */
   const { mobile } = usePlatform();
   const indexes = useAsync(() => api.listIndexes(), [api]);
   const [url, setUrl] = useState("");
@@ -90,10 +90,11 @@ export function IndexesTab() {
       )}
     </Section>
     <Section title="Update content files">
-      <p>Check the index files for newer content and download it. Restart the application to load updated files.</p>
+      {/* Phones load downloaded content right away, and an app cannot relaunch itself there. */}
+      <p>Check the index files for newer content and download it.{mobile ? "" : " Restart the application to load updated files."}</p>
       <div className="v4-content-cmds">
         <Button onClick={() => void update()} disabled={busy}>Update</Button>
-        <Button onClick={() => void api.restartApp().catch((e) => toast.push(errorMessage(e), "error"))}>Restart{pending > 0 && <span className="v4-badge" aria-label={`${pending} updated`}>{pending}</span>}</Button>
+        {!mobile && <Button onClick={() => void api.restartApp().catch((e) => toast.push(errorMessage(e), "error"))}>Restart{pending > 0 && <span className="v4-badge" aria-label={`${pending} updated`}>{pending}</span>}</Button>}
         <Button onClick={() => void clear()}>Clear</Button>
         {!mobile && <Button onClick={() => openFolder("content")}>Open</Button>}
         {!mobile && <Button onClick={() => openFolder("user-content")}>Open user</Button>}

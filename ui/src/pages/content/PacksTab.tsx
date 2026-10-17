@@ -10,6 +10,11 @@ import { ImportLink } from "../import/ImportLink";
 import { CheckBox } from "../../components/controls";
 import { Section } from "./Section";
 
+const CONTENT_ACCEPT = ".xml,.index,.zip,.json,application/json,text/xml,application/zip";
+/** Android's chooser filters by MIME type and has none for `.index`; files without a known type are
+ *  `application/octet-stream`, so phones also accept that (the backend still checks every file). */
+const UNTYPED_FILE = "application/octet-stream";
+
 export function PacksTab() {
   const api = useApi();
   const toast = useToast();
@@ -49,7 +54,7 @@ export function PacksTab() {
         <Button icon="upload" onClick={() => void chooseFiles()}>Import files</Button>
       </>}>
         <p className="muted">Import XML files, .index files, a .zip{mobile ? "" : " or your whole custom content folder"}. A preview lists what will be added before you install it. <Button small variant="clear" onClick={notice.read}>Content import notice</Button></p>
-        <input ref={fileRef} type="file" multiple accept=".xml,.index,.zip,.json,application/json,text/xml,application/zip" hidden aria-label="Choose content files" onChange={(e) => void onFiles(e.target.files)} />
+        <input ref={fileRef} type="file" multiple accept={mobile ? `${CONTENT_ACCEPT},${UNTYPED_FILE}` : CONTENT_ACCEPT} hidden aria-label="Choose content files" onChange={(e) => void onFiles(e.target.files)} />
       </Section>
       <Section title="Installed packs">
         <ul className="list" aria-label="Content packs">
