@@ -15,6 +15,7 @@ import { mdiFileFind } from "@mdi/js";
 import { MgIcon } from "../manage/mgIcons";
 import { framePreviewHtml } from "./previewFrame";
 import { displayPath } from "../../lib/displayPath";
+import { attunementWarnings } from "../equipment/attunement";
 
 function Body() {
   const api = useApi();
@@ -62,6 +63,7 @@ function Body() {
           <button type="button" className="sh-btn" style={{ padding: "0 3px 0 6px", gap: 7 }} onClick={() => void generate()} disabled={loading}><svg className="icon" viewBox="6 2 12 20" style={{ width: 13, height: 17 }} aria-hidden focusable="false"><path d={mdiFileFind} /></svg>{loading ? "Generating..." : "Generate Preview"}</button>
           <button type="button" className="sh-btn" style={{ marginLeft: -1, paddingLeft: 6, paddingRight: 5 }} onClick={() => void exportSheet()}><MgIcon name="pdf" />Save Character Sheet</button>
         </div>
+        {snapshot && attunementWarnings(snapshot).map((w) => <Alert key={w} tone="warning">{w}</Alert>)}
         <div className="v4-sheet-sec">
           <h2>Additional fields</h2>
           <p className="lead">A few sheet fields cannot be filled in for you yet. Whatever you type below appears on the sheet unchanged.</p>

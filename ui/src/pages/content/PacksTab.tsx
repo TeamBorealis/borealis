@@ -8,6 +8,7 @@ import { useApi } from "../../state/ApiContext";
 import { errorMessage, useAsync } from "../../state/useAsync";
 import { ImportLink } from "../import/ImportLink";
 import { CheckBox } from "../../components/controls";
+import { PackGroups } from "./PackGroups";
 import { Section } from "./Section";
 
 const CONTENT_ACCEPT = ".xml,.index,.zip,.json,application/json,text/xml,application/zip";
@@ -46,6 +47,20 @@ export function PacksTab() {
     const r = await confirm({ title: "Remove pack", body: `Remove "${p.name}"? Characters using its content may lose selections.`, confirmLabel: "Remove", danger: true });
     if (r === "confirm") { await api.removePack({ packId: p.id }).catch((e) => toast.push(errorMessage(e), "error")); packs.reload(); }
   };
+  const row = (p: ContentPack) => (
+    <li key={p.id}>
+      <div className="v4-pack-row">
+        <CheckBox aria-label={`Enable ${p.name}`} checked={p.enabled} onChange={(e) => void api.setPackEnabled({ packId: p.id, enabled: e.target.checked }).then(packs.reload)} />
+        <span style={{ flex: 1, minWidth: "10rem" }}>
+          <strong>{p.name}</strong> <span className="muted small">v{p.version}</span>
+          <span className="muted small" style={{ display: "block" }}>{p.kind} · {p.rulesets.map((r) => (r === "dnd2024" ? "2024" : "2014")).join(", ")} · {p.elementCount} elements · {p.license}</span>
+          {p.redistributable === false && <span className="chip warning">Local import — not redistributable</span>}
+          {p.attribution && <span className="muted small" style={{ display: "block" }}>{p.attribution}</span>}
+        </span>
+        {p.kind !== "bundled" && <Button small variant="danger" onClick={() => void remove(p)}>Remove</Button>}
+      </div>
+    </li>
+  );
   return (
     <>
       <Section title="Custom content" actions={<>
@@ -57,22 +72,9 @@ export function PacksTab() {
         <input ref={fileRef} type="file" multiple accept={mobile ? `${CONTENT_ACCEPT},${UNTYPED_FILE}` : CONTENT_ACCEPT} hidden aria-label="Choose content files" onChange={(e) => void onFiles(e.target.files)} />
       </Section>
       <Section title="Installed packs">
-        <ul className="list" aria-label="Content packs">
-          {(packs.data ?? []).map((p) => (
-            <li key={p.id}>
-              <div className="v4-pack-row">
-                <CheckBox aria-label={`Enable ${p.name}`} checked={p.enabled} onChange={(e) => void api.setPackEnabled({ packId: p.id, enabled: e.target.checked }).then(packs.reload)} />
-                <span style={{ flex: 1, minWidth: "10rem" }}>
-                  <strong>{p.name}</strong> <span className="muted small">v{p.version}</span>
-                  <span className="muted small" style={{ display: "block" }}>{p.kind} · {p.rulesets.map((r) => (r === "dnd2024" ? "2024" : "2014")).join(", ")} · {p.elementCount} elements · {p.license}</span>
-                  {p.redistributable === false && <span className="chip warning">Local import — not redistributable</span>}
-                  {p.attribution && <span className="muted small" style={{ display: "block" }}>{p.attribution}</span>}
-                </span>
-                {p.kind !== "bundled" && <Button small variant="danger" onClick={() => void remove(p)}>Remove</Button>}
-              </div>
-            </li>
-          ))}
-        </ul>
+        {mobile
+          ? <PackGroups packs={packs.data ?? []} row={row} />
+          : <ul className="list" aria-label="Content packs">{(packs.data ?? []).map(row)}</ul>}
       </Section>
     </>
   );

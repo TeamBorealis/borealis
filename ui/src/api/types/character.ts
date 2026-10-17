@@ -289,6 +289,10 @@ export interface InventoryItem {
   equipped: EquipSlot | null;
   attuned: boolean;
   requiresAttunement: boolean;
+  /** Printed attunement restriction such as "by a cleric, druid, or warlock"; absent when there is none. */
+  attunementRestriction?: string | null;
+  /** The character does not meet the restriction: equipping leaves it unattuned and Attune is refused. */
+  attunementBarred?: boolean;
   /** 0 = carried, 1/2 = stored in the named storage containers. */
   storage: 0 | 1 | 2;
   notes: string;
@@ -378,6 +382,8 @@ export interface Attack {
   dieFloor?: number | null;
   /** Off-hand damage when it differs (Light weapons). */
   offhandDamage?: string | null;
+  /** Carried +N ammunition this weapon fires (its bonus is already in the attack and damage). */
+  ammunition?: string | null;
 }
 
 export interface CompanionState {

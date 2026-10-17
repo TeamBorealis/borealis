@@ -206,6 +206,8 @@ export const ITEMS: ItemDef[] = [
   { id: "cloak-of-protection", category: "Magic Items", costCp: 0, weight: 1, attune: true, bonusAc: 1, description: "+1 to AC and saving throws." },
   { id: "amulet-of-vigor", category: "Magic Items", costCp: 0, weight: 1, attune: true, description: "Warm to the touch; steadies the heart." },
   { id: "wand-of-sparks", category: "Magic Items", costCp: 0, weight: 1, attune: true, description: "Crackling wand with 7 charges." },
+  { id: "staff-of-healing", category: "Staffs", costCp: 0, weight: 4, attune: true, attuneBy: { text: "by a bard, cleric, or druid", classes: ["bard", "cleric", "druid"] }, description: "Spend its charges to restore hit points." },
+  { id: "boots-of-speed", category: "Wondrous Items", costCp: 0, weight: 1, attune: true, speedToggle: 2, description: "Click the heels together to double your walking speed." },
   { id: "potion-of-healing", category: "Magic Items", costCp: 5000, weight: 0.5, description: "Restore 2d4+2 hit points." },
 ];
 

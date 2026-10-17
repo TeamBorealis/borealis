@@ -39,6 +39,22 @@ function IconAct({ icon, label, onClick, disabled, pressed }: { icon: MgIconName
   return <button type="button" aria-label={label} title={label} disabled={disabled} aria-pressed={pressed} onClick={(e) => { e.stopPropagation(); onClick(); }}><MgIcon name={icon} /></button>;
 }
 
+/** The tag row under an attack line: auto, mastery, this weapon's critical range, ammunition, card, hidden. */
+export function AttackTags({ attack: a }: { attack: Attack }) {
+  return (
+    <span className="ap-tags">
+      {a.auto && <span className="ap-tag">Auto</span>}
+      {a.mastery && <span className={`ap-tag ${a.mastery.mastered ? "" : "warn"}`} title={a.mastery.text}>{a.mastery.name}{a.mastery.mastered ? "" : " (not mastered)"}</span>}
+      {a.critRange !== undefined && a.critRange < 20 && <span className="ap-tag" title="Critical hit range">Crit {a.critRange}-20</span>}
+      {a.dieFloor ? <span className="ap-tag" title="Minimum on each damage die">Die min {a.dieFloor}</span> : null}
+      {a.offhandDamage && <span className="ap-tag" title="Damage when used off-hand">Off-hand {a.offhandDamage}</span>}
+      {a.ammunition && <span className="ap-tag" title="Ammunition bonus included in attack and damage">Ammunition: {a.ammunition}</span>}
+      {a.card && a.showInCombat && <span className="ap-tag" title="Printed as an attack card after the sheet pages">Card</span>}
+      {!a.showInCombat && <span className="ap-tag">Hidden</span>}
+    </span>
+  );
+}
+
 export function AttacksTab() {
   const { snapshot, mutate } = useCharacter();
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -67,15 +83,7 @@ export function AttacksTab() {
                     <p>Range: {a.range}</p>
                     <p>Attack: {a.attackBonus} vs AC</p>
                     <p>Damage: {a.damage}{a.description ? ` ${a.description}` : ""}</p>
-                    <span className="ap-tags">
-                      {a.auto && <span className="ap-tag">Auto</span>}
-                      {a.mastery && <span className={`ap-tag ${a.mastery.mastered ? "" : "warn"}`} title={a.mastery.text}>{a.mastery.name}{a.mastery.mastered ? "" : " (not mastered)"}</span>}
-                      {a.critRange !== undefined && a.critRange < 20 && <span className="ap-tag" title="Critical hit range">Crit {a.critRange}-20</span>}
-                      {a.dieFloor ? <span className="ap-tag" title="Minimum on each damage die">Die min {a.dieFloor}</span> : null}
-                      {a.offhandDamage && <span className="ap-tag" title="Damage when used off-hand">Off-hand {a.offhandDamage}</span>}
-                      {a.card && a.showInCombat && <span className="ap-tag" title="Printed as an attack card after the sheet pages">Card</span>}
-                      {!a.showInCombat && <span className="ap-tag">Hidden</span>}
-                    </span>
+<AttackTags attack={a} />
                   </div>
                   <span className="btns">
                     <IconAct icon="list" label={a.showInCombat ? `Hide ${a.name} from the sheet` : `Show ${a.name} on the sheet`} pressed={a.showInCombat}

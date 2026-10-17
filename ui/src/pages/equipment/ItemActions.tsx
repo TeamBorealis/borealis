@@ -4,6 +4,7 @@ import type { InventoryItem } from "../../api/contract";
 import { Button, Chip, Modal, TextArea, TextField, useConfirm } from "../../components";
 import { useCharacter } from "../../state/CharacterContext";
 import { useSettings } from "../../state/SettingsContext";
+import { attuneBlocked, restrictionText, weaponsFiring } from "./attunement";
 
 /** Equips an item; for weapons missing from the attacks list it offers to add one (per setting). */
 export function useEquipItem() {
@@ -52,6 +53,8 @@ export function ItemActionsDialog({ item, index, count, onClose }: { item: Inven
     );
   }
   const canWear = item.isWeapon || item.category === "Armor" || item.category === "Magic Items";
+  const restriction = restrictionText(item);
+  const firedBy = weaponsFiring(item, snapshot.attacks);
   return (
     <Modal title={item.displayName} onClose={onClose}>
       <div className="stack">
@@ -61,11 +64,13 @@ export function ItemActionsDialog({ item, index, count, onClose }: { item: Inven
           {item.storage > 0 && <Chip>Stored: {names[item.storage - 1]}</Chip>}
           <Chip>x{item.quantity}</Chip>
         </div>
+        {restriction && <p className={item.attunementBarred ? "error-text" : "muted"}>{restriction}{attuneBlocked(item) ? ". You do not meet this requirement." : ""}</p>}
+        {firedBy.length > 0 && <p className="muted">Fired from {firedBy.join(", ")}: its bonus is added to the attack and damage.</p>}
         <div className="row">
           {canWear && !item.equipped && <Button variant="primary" onClick={() => void equip("auto")}>Equip</Button>}
           {item.isWeapon && !item.equipped && <><Button onClick={() => void equip("primary")}>Primary hand</Button><Button onClick={() => void equip("secondary")}>Off hand</Button><Button onClick={() => void equip("versatile")}>Two-handed</Button></>}
           {item.equipped && <Button onClick={() => run((api, id) => api.unequipItem({ characterId: id, inventoryId: item.id }))}>Unequip</Button>}
-          {item.requiresAttunement && <Button onClick={() => run((api, id) => api.setAttuned({ characterId: id, inventoryId: item.id, attuned: !item.attuned }))}>{item.attuned ? "End attunement" : "Attune"}</Button>}
+          {item.requiresAttunement && <Button disabled={attuneBlocked(item)} onClick={() => run((api, id) => api.setAttuned({ characterId: id, inventoryId: item.id, attuned: !item.attuned }))}>{item.attuned ? "End attunement" : "Attune"}</Button>}
         </div>
         <div className="row">
           {item.storage !== 0 && <Button onClick={() => run((api, id) => api.storeItem({ characterId: id, inventoryId: item.id, storage: 0 }))}>Retrieve</Button>}

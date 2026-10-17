@@ -82,6 +82,8 @@
 .eq-inv-actions button:hover:not(:disabled) { color: #fff; }
 .eq-inv-actions button:disabled { color: #4a4a4a; cursor: default; }
 .eq-stored { font-weight: 400; color: var(--text-muted); font-size: var(--fs-sm); margin-left: 6px; }
+.eq-stored.eq-barred { color: var(--warning); }
+.eq-eqbtn:disabled { opacity: 0.4; cursor: default; }
 @media (max-width: 899px) {
   .eq-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
   .eq-cats { display: none; }

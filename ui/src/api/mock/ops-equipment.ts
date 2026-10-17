@@ -3,6 +3,7 @@ import { getElement, getItem } from "./content";
 import { COIN_VALUE_CP, breakdown, pay, totalCp } from "./derive-inventory";
 import { armorFacts } from "./facts";
 import { apiError } from "./errors";
+import { barredMessage, isBarred, withAttunementFacts } from "./attunement";
 import type { MockCharacter } from "./state";
 
 const weaponInfo = (itemId: string): InventoryItem["weapon"] => {
@@ -73,7 +74,9 @@ export function equipItem(c: MockCharacter, id: string, req: EquipRequest): Mock
   const warnings: string[] = [];
   let attuned = item.attuned;
   if (item.requiresAttunement && !attuned) {
-    if (items.filter((i) => i.attuned).length >= c.options.attunementLimit) {
+    if (isBarred(c, item.itemId)) {
+      warnings.push(barredMessage(withAttunementFacts(c, item)));
+    } else if (items.filter((i) => i.attuned).length >= c.options.attunementLimit) {
       warnings.push(`Attunement limit (${c.options.attunementLimit}) reached: ${item.displayName} was equipped unattuned.`);
     } else attuned = true;
   }
@@ -89,6 +92,7 @@ export function setAttuned(c: MockCharacter, id: string, attuned: boolean): Mock
   const item = c.items.find((i) => i.id === id);
   if (!item) throw apiError("not_found", "No such inventory item.");
   if (!item.requiresAttunement) throw apiError("invalid_argument", "This item does not require attunement.");
+  if (attuned && isBarred(c, item.itemId)) throw apiError("requirement_failed", barredMessage(withAttunementFacts(c, item)));
   if (attuned && c.items.filter((i) => i.attuned).length >= c.options.attunementLimit) {
     throw apiError("requirement_failed", `Attunement limit (${c.options.attunementLimit}) reached.`);
   }

@@ -2538,6 +2538,12 @@
       "k": "prim"
      }
     },
+    "ammunition": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "attackBonus": {
      "opt": false,
      "t": {
@@ -5441,6 +5447,18 @@
     },
     "attuned": {
      "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "attunementBarred": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "attunementRestriction": {
+     "opt": true,
      "t": {
       "k": "prim"
      }

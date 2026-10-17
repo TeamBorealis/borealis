@@ -52,6 +52,9 @@ export function ResourcesCard({ resources, selected, onSelect }: { resources: Pl
   );
 }
 
+/** Speed effects of a state ("Walk speed x2", "Fly speed 2x walk speed"), shown on its row. */
+export const speedEffects = (t: PlayToggle): string[] => t.effects.filter((e) => /\bspeed\b/i.test(e));
+
 export function TogglesCard({ toggles, selected, onSelect }: { toggles: PlayToggle[] } & Pickable) {
   const { mutate } = useCharacter();
   if (toggles.length === 0) return null;
@@ -64,6 +67,7 @@ export function TogglesCard({ toggles, selected, onSelect }: { toggles: PlayTogg
             <li key={t.id} className={`v5-line ${on ? "is-selected" : ""}`}>
               <button type="button" className="v5-row grow" aria-current={on} onClick={() => onSelect({ kind: "toggle", id: t.id })}>
                 <span className="grow">{t.name}</span>
+                {speedEffects(t).length > 0 && <span className="meta">{speedEffects(t).join(", ")}</span>}
                 {t.on && t.blockedBy && <Tag tone="bad">No effect</Tag>}
                 {t.active && <Tag tone="ok">Active</Tag>}
               </button>

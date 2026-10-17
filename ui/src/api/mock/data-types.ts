@@ -41,6 +41,10 @@ export interface ItemDef {
   costCp: number;
   weight: number;
   attune?: boolean;
+  /** Attunement restriction: printed text and the classes that qualify (the engine's `attunement` requirements). */
+  attuneBy?: { text: string; classes: string[] };
+  /** A switchable state while the item is equipped and attuned that multiplies the walking speed (Boots of Speed). */
+  speedToggle?: number;
   armor?: { base: number; dexCap: number | null; shield?: boolean; strength?: number; stealth?: boolean };
   weapon?: { damage: string; mastery?: string; properties: string; range?: string; martial?: boolean };
   bonusAc?: number;

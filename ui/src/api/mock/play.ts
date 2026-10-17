@@ -1,5 +1,5 @@
 import type { ConversionPreview, PlayResource, PlayState, PlayToggle, PlayWildShape } from "../types";
-import { getClass } from "./content";
+import { getClass, getElement, getItem } from "./content";
 import { apiError } from "./errors";
 import { classIdOf } from "./slots";
 import { type MockCharacter, totalLevel } from "./state";
@@ -32,13 +32,24 @@ const TOGGLES: Omit<PlayToggle, "on" | "active">[] = [
   { id: "rage", name: "Rage", activation: "Bonus Action", duration: "1 minute", blocks: ["spellcasting"], effects: ["Resistance to Bludgeoning, Piercing and Slashing damage"], source: "Mock class" },
 ];
 
+/** Item states (Boots of Speed): equipped and attuned items with a `speedToggle`, as the engine's `speed_multiply` toggle. */
+function itemToggles(c: MockCharacter): (Omit<PlayToggle, "on" | "active"> & { factor: number })[] {
+  return c.items.flatMap((i) => {
+    const factor = getItem(i.itemId)?.speedToggle;
+    if (!factor || !i.equipped || !i.attuned) return [];
+    const name = getElement(i.itemId)?.name ?? i.name;
+    return [{ id: `${i.itemId}_SPEED`, name, activation: "bonus action", duration: "", blocks: [], effects: [`Walk speed x${factor}`], source: name, factor }];
+  });
+}
+const togglesOf = (c: MockCharacter) => [...TOGGLES.map((t) => ({ ...t, factor: 1 })), ...itemToggles(c)];
+
 /** The mock's `CharacterSnapshot.play`. */
 export function buildPlay(c: MockCharacter): PlayState {
   const p = playOf(c);
   const resources = resourcesFor(c).map((r) => ({ ...r, current: Math.max(0, r.max - (p.used[r.id] ?? 0)) }));
-  const toggles = TOGGLES.map((t) => ({ ...t, on: p.toggles.includes(t.id), active: p.toggles.includes(t.id) }));
+  const toggles = togglesOf(c).map(({ factor: _factor, ...t }) => ({ ...t, on: p.toggles.includes(t.id), active: p.toggles.includes(t.id) }));
   const raging = toggles.some((t) => t.id === "rage" && t.active);
-  const walk = 30;
+  const walk = togglesOf(c).filter((t) => p.toggles.includes(t.id)).reduce((w, t) => w * t.factor, 30);
   return {
     speeds: { walk: walk - 5 * p.exhaustion, fly: 0, climb: 0, swim: 0, burrow: 0 },
     resources, resourceCosts: [], toggles,
@@ -88,7 +99,7 @@ export const longRest = (c: MockCharacter): MockCharacter =>
   withPlay(c, (p) => ({ ...p, toggles: [], used: {}, exhaustion: c.ruleset === "dnd2024" ? Math.max(0, p.exhaustion - 1) : p.exhaustion }));
 
 export function setToggle(c: MockCharacter, id: string, on: boolean): MockCharacter {
-  if (!TOGGLES.some((t) => t.id === id)) throw apiError("not_found", "Unknown toggle.");
+  if (!togglesOf(c).some((t) => t.id === id)) throw apiError("not_found", "Unknown toggle.");
   return withPlay(c, (p) => ({ ...p, toggles: on ? [...new Set([...p.toggles, id])] : p.toggles.filter((t) => t !== id) }));
 }
 

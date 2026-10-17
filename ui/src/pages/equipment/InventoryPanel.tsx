@@ -5,6 +5,7 @@ import { useCharacter } from "../../state/CharacterContext";
 import { Band } from "../spells/TwoPane";
 import { Glyph, type GlyphName } from "./Glyph";
 import { ItemActionsDialog, useEquipItem } from "./ItemActions";
+import { attuneBlocked, attunementWarnings, restrictionText } from "./attunement";
 
 const SLOT_LABEL: Record<EquipSlot, string> = { worn: "Worn", primary: "Primary Hand", secondary: "Secondary Hand", "two-handed": "Two-Handed" };
 const WEARABLE = /armor|wondrous|ring|rod|staff|wand|focus|magic/i;
@@ -56,6 +57,7 @@ export function InventoryPanel({ onSelectElement }: { onSelectElement: (itemId: 
                   <td className="eq-ic">
                     {i.requiresAttunement && (
                       <button type="button" className={`eq-eqbtn eq-link ${i.attuned ? "on" : ""}`} aria-pressed={i.attuned} aria-label={`${i.attuned ? "End attunement to" : "Attune to"} ${i.displayName}`}
+                        disabled={attuneBlocked(i)} title={restrictionText(i) ?? undefined}
                         onClick={() => void mutate((api, id) => api.setAttuned({ characterId: id, inventoryId: i.id, attuned: !i.attuned }))}><Glyph name="link" /></button>
                     )}
                   </td>
@@ -63,6 +65,7 @@ export function InventoryPanel({ onSelectElement }: { onSelectElement: (itemId: 
                     <button type="button" className="ap-name" aria-label={`Select ${i.displayName}`} aria-pressed={i.id === selId} onClick={() => pick(i)}>{i.displayName}</button>
                     {i.quantity > 1 && <span className="muted"> x{i.quantity}</span>}
                     {i.storage > 0 && <span className="eq-stored">Stored: {inv.storageNames[i.storage - 1]}</span>}
+                    {i.attunementBarred && <span className="eq-stored eq-barred">{restrictionText(i)}</span>}
                   </td>
                   <td className="eq-slot">{slotLabel(i)}</td>
                 </tr>
@@ -71,7 +74,7 @@ export function InventoryPanel({ onSelectElement }: { onSelectElement: (itemId: 
           </table>
         </div>
       </div>
-      {inv.warnings.map((w) => <Alert key={w} tone="warning">{w}</Alert>)}
+      {[...new Set([...inv.warnings, ...attunementWarnings(snapshot)])].map((w) => <Alert key={w} tone="warning">{w}</Alert>)}
       <div className="eq-inv-actions" role="toolbar" aria-label="Inventory actions">
         {sel?.isPack && <Act icon="extract" label={`Extract ${sel.displayName}`} onClick={() => void mutate((api, id) => api.extractPack({ characterId: id, inventoryId: sel.id }))} />}
         <Act icon="details" label="Details" disabled={!sel} onClick={() => setDetails(true)} />
