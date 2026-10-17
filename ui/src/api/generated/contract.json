@@ -761,6 +761,17 @@
     "name": "CharacterSnapshot"
    }
   },
+  "list_5etools_urls": {
+   "args": {},
+   "method": "list5etoolsUrls",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "FiveToolsUrl"
+    }
+   }
+  },
   "list_characters": {
    "args": {},
    "method": "listCharacters",
@@ -916,6 +927,19 @@
    "response": {
     "k": "ref",
     "name": "RecheckReport"
+   }
+  },
+  "remove_5etools_url": {
+   "args": {
+    "url": false
+   },
+   "method": "remove5etoolsUrl",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "FiveToolsUrl"
+    }
    }
   },
   "remove_attack": {
@@ -1341,6 +1365,16 @@
     "name": "CharacterSnapshot"
    }
   },
+  "stage_5etools_url": {
+   "args": {
+    "url": false
+   },
+   "method": "stage5etoolsUrl",
+   "response": {
+    "k": "ref",
+    "name": "PickedPath"
+   }
+  },
   "stage_5etools_zip": {
    "args": {
     "file": false
@@ -1405,6 +1439,16 @@
    "response": {
     "k": "ref",
     "name": "SecondaryContentResult"
+   }
+  },
+  "update_5etools_url": {
+   "args": {
+    "url": false
+   },
+   "method": "update5etoolsUrl",
+   "response": {
+    "k": "ref",
+    "name": "FiveToolsUrlUpdate"
    }
   },
   "update_character_meta": {
@@ -4552,6 +4596,87 @@
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    }
+   }
+  },
+  "FiveToolsUrl": {
+   "k": "object",
+   "props": {
+    "lastChecked": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "lastImported": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "packs": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "problem": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "revision": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sources": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "url": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "FiveToolsUrlUpdate": {
+   "k": "object",
+   "props": {
+    "report": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "FiveToolsImportReport"
+     }
+    },
+    "upToDate": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "urls": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "FiveToolsUrl"
+      }
      }
     }
    }

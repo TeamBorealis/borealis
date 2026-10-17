@@ -160,7 +160,7 @@ pub fn redirect_refusal(scheme: &str, hops_so_far: usize) -> Option<String> {
 }
 
 /// An error and its causes on one line (reqwest hides the redirect refusal in the source chain).
-fn error_chain(e: &dyn std::error::Error) -> String {
+pub(crate) fn error_chain(e: &dyn std::error::Error) -> String {
     let mut text = e.to_string();
     let mut cause = e.source();
     while let Some(c) = cause {
@@ -169,6 +169,25 @@ fn error_chain(e: &dyn std::error::Error) -> String {
         cause = c.source();
     }
     text
+}
+
+/// The download client every content fetch uses: https only (redirects included, at most
+/// [`MAX_REDIRECTS`] hops) and a timeout, with the platform's TLS setup.
+///
+/// # Errors
+/// The reason the client could not be built.
+pub(crate) fn https_client() -> Result<reqwest::blocking::Client, String> {
+    let policy = reqwest::redirect::Policy::custom(|a| {
+        match redirect_refusal(a.url().scheme(), a.previous().len()) {
+            None => a.follow(),
+            Some(why) => a.error(why),
+        }
+    });
+    crate::content_fetch_tls::client_builder()?
+        .timeout(std::time::Duration::from_secs(FETCH_TIMEOUT_SECS))
+        .redirect(policy)
+        .build()
+        .map_err(|e| error_chain(&e))
 }
 
 /// The real network client. Desktop verifies TLS with the OS trust store; phones use the Mozilla
@@ -181,17 +200,7 @@ impl Fetcher for HttpsFetcher {
     fn get(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, String> {
         use std::io::Read;
         require_https(url).map_err(|e| e.message)?;
-        let policy = reqwest::redirect::Policy::custom(|a| {
-            match redirect_refusal(a.url().scheme(), a.previous().len()) {
-                None => a.follow(),
-                Some(why) => a.error(why),
-            }
-        });
-        let client = crate::content_fetch_tls::client_builder()?
-            .timeout(std::time::Duration::from_secs(FETCH_TIMEOUT_SECS))
-            .redirect(policy)
-            .build()
-            .map_err(|e| error_chain(&e))?;
+        let client = https_client()?;
         let response = client.get(url).send().map_err(|e| error_chain(&e))?;
         if !response.status().is_success() {
             return Err(format!("the server answered {}", response.status()));

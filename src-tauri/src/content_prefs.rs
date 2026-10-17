@@ -42,6 +42,30 @@ pub struct ContentPrefs {
     pub disabled_packs: BTreeSet<String>,
     /// Update indexes added by the user.
     pub indexes: Vec<IndexRecord>,
+    /// 5etools data folders imported from an address the user pasted.
+    pub fivetools_urls: Vec<FiveToolsUrlRecord>,
+}
+
+/// A 5etools data folder imported from an address (GitHub repository or folder URL).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct FiveToolsUrlRecord {
+    /// The address as the user pasted it (trimmed).
+    pub url: String,
+    /// What was imported: the commit SHA (GitHub) or a digest of every file (folder address).
+    pub revision: String,
+    /// Folder addresses: every downloaded file with its ETag and SHA-256 (for Update).
+    pub files: BTreeMap<String, crate::content_fivetools_remote::FileTag>,
+    /// Source books the user chose; Update imports the same ones.
+    pub sources: Vec<String>,
+    pub include_fluff: bool,
+    /// Packs the last import wrote.
+    pub packs: Vec<String>,
+    /// RFC 3339 times of the last check and the last import.
+    pub last_checked: Option<String>,
+    pub last_imported: Option<String>,
+    /// Why the last Update failed.
+    pub problem: Option<String>,
 }
 
 impl ContentPrefs {

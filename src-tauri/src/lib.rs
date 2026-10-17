@@ -45,6 +45,8 @@ pub mod compendium;
 pub mod content_auto;
 pub mod content_dto;
 pub mod content_fetch_tls;
+pub mod content_fivetools_remote;
+pub mod content_fivetools_url;
 pub mod content_fivetools_zip;
 pub mod content_import;
 pub mod content_index;
@@ -332,6 +334,10 @@ pub fn run() {
             commands_content::clear_downloaded_content,
             commands_content::scan_5etools_folder,
             commands_content::stage_5etools_zip,
+            commands_content::stage_5etools_url,
+            commands_content::list_5etools_urls,
+            commands_content::remove_5etools_url,
+            commands_content::update_5etools_url,
             commands_content::import_5etools,
             #[cfg(desktop)]
             commands_ai::ai_status,

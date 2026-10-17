@@ -6,6 +6,7 @@ use crate::content_dto::{
     FiveToolsImportReport, FiveToolsImportRequest, FiveToolsScan, ImportPackRequest,
     ImportPackResult, MoveDirection, RestrictionPreview, UpdateIndexesResult,
 };
+use crate::content_fivetools_url::{FiveToolsUrl, FiveToolsUrlUpdate};
 use crate::content_index::HttpsFetcher;
 use crate::content_packs::EventSink;
 use crate::content_preview::{ImportFileInput, ImportPreview, OpenedFile, PreviewImportRequest};
@@ -249,6 +250,35 @@ pub fn scan_5etools_folder(state: S<'_>, folder: String) -> ApiResult<FiveToolsS
 #[tauri::command(async)]
 pub fn stage_5etools_zip(state: S<'_>, file: ImportFileInput) -> ApiResult<PickedPathDto> {
     state.stage_5etools_zip(&file)
+}
+
+/// Download the 5etools `data/` folder at an address the user pasted (GitHub repository or folder
+/// URL) and return a `5etools-folder` token for `scan_5etools_folder` and `import_5etools`.
+#[tauri::command]
+pub async fn stage_5etools_url(app: AppHandle, url: String) -> ApiResult<PickedPathDto> {
+    blocking(app, move |state, sink| {
+        state.stage_5etools_url(&HttpsFetcher, &url, sink)
+    })
+    .await
+}
+
+#[tauri::command(async)]
+pub fn list_5etools_urls(state: S<'_>) -> Vec<FiveToolsUrl> {
+    state.list_5etools_urls()
+}
+
+#[tauri::command(async)]
+pub fn remove_5etools_url(state: S<'_>, url: String) -> ApiResult<Vec<FiveToolsUrl>> {
+    state.remove_5etools_url(&url)
+}
+
+/// Re-import an address's books when it changed since the last import.
+#[tauri::command]
+pub async fn update_5etools_url(app: AppHandle, url: String) -> ApiResult<FiveToolsUrlUpdate> {
+    blocking(app, move |state, sink| {
+        state.update_5etools_url(&HttpsFetcher, &url, sink)
+    })
+    .await
 }
 
 #[tauri::command]

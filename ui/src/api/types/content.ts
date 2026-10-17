@@ -169,3 +169,26 @@ export interface FiveToolsImportReport {
   /** Packs installed into the user's library (kind "local-import", redistributable false). */
   packs: ContentPack[];
 }
+
+/** A 5etools data folder imported from an address the user pasted (`list_5etools_urls`). */
+export interface FiveToolsUrl {
+  /** GitHub repository or `data/` folder address, as pasted. */
+  url: string;
+  /** Short commit SHA (GitHub) or file digest (folder address) of the last import. */
+  revision: string;
+  /** Books chosen at the last import; Update imports the same ones. */
+  sources: string[];
+  packs: string[];
+  lastChecked: string | null;
+  lastImported: string | null;
+  /** Why the last Update failed. */
+  problem: string | null;
+}
+
+export interface FiveToolsUrlUpdate {
+  /** The address has not changed; nothing was imported. */
+  upToDate: boolean;
+  /** The re-import, when it changed. */
+  report: FiveToolsImportReport | null;
+  urls: FiveToolsUrl[];
+}

@@ -7,13 +7,15 @@ import { usePlatform } from "../../state/platform";
 import { errorMessage } from "../../state/useAsync";
 import { FiveToolsReport } from "./FiveToolsReport";
 import { FiveToolsSources } from "./FiveToolsSources";
+import { FiveToolsUrlSection } from "./FiveToolsUrlSection";
 import { Section } from "./Section";
 
 /** The phone route (no folder picker there); desktop offers it next to the folder scan. */
 export const ZIP_BUTTON = "Choose a .zip of your 5etools data/ folder";
 
-/** Convert the user's own local 5etools `data/` folder, picked as a folder (desktop) or handed over
- *  as a `.zip` of it (every platform). Nothing is downloaded and no default URL exists. */
+/** Convert the user's own 5etools `data/` folder, picked as a folder (desktop), handed over as a
+ *  `.zip` of it, or downloaded from an address the user pastes (every platform). No default
+ *  address exists. */
 export function FiveToolsTab() {
   const api = useApi();
   const notice = useImportNotice();
@@ -31,6 +33,8 @@ export function FiveToolsTab() {
   const [progress, setProgress] = useState<ContentProgress | null>(null);
   const [running, setRunning] = useState(false);
   const [report, setReport] = useState<FiveToolsImportReport | null>(null);
+  /** Counts finished imports, so the address list picks up a newly remembered address. */
+  const [imports, setImports] = useState(0);
   useEffect(() => api.subscribe("import5etools:progress", setProgress), [api]);
 
   /** Scan the folder behind a `5etools-folder` token (a picked folder or an unpacked zip). */
@@ -64,7 +68,7 @@ export function FiveToolsTab() {
   };
   const run = async () => {
     setRunning(true); setError(null); setProgress(null);
-    try { setReport(await api.import5etools({ request: { folder: folder ?? "", sources: picked, includeFluff: fluff } })); }
+    try { setReport(await api.import5etools({ request: { folder: folder ?? "", sources: picked, includeFluff: fluff } })); setImports((n) => n + 1); }
     catch (e) { setError(errorMessage(e)); }
     finally { setRunning(false); }
   };
@@ -74,7 +78,7 @@ export function FiveToolsTab() {
         <div className="stack">
           <p className="muted">{mobile
             ? <>Choose a .zip of your own 5etools <code>data/</code> folder.</>
-            : <>Choose your own local 5etools <code>data/</code> folder, or a .zip of it.</>} Files are converted on this device; nothing is downloaded, and converted packs are for your personal use only.</p>
+            : <>Choose your own local 5etools <code>data/</code> folder, or a .zip of it.</>} Files are converted on this device without downloading anything, and converted packs are for your personal use only.</p>
           <TextField label={mobile ? "Data folder .zip" : "Data folder"} value={path} readOnly placeholder={mobile ? "No file chosen" : "No folder chosen"} error={error} />
           <div className="v4-content-cmds">
             {!mobile && <Button aria-label="Scan folder…" variant="primary" onClick={() => void scan()}>Scan folder...</Button>}
@@ -83,6 +87,11 @@ export function FiveToolsTab() {
           <input ref={zipRef} type="file" accept=".zip,application/zip" hidden aria-label="Choose a 5etools .zip" onChange={(e) => void onZip(e.target.files)} />
         </div>
       </Section>
+      <FiveToolsUrlSection
+        onStaged={async (pick) => { setReport(null); setSources(null); await scanPick(pick); }}
+        onReport={(r) => { setSources(null); setReport(r); }}
+        refresh={imports}
+      />
       {sources && (
         <Section title="Source books found" actions={<Button variant="primary" disabled={running || picked.length === 0} onClick={() => void run()}>Import {picked.length} book(s)</Button>}>
           <div className="stack">

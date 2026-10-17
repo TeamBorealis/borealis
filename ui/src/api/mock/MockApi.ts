@@ -8,6 +8,7 @@ import { MockAi } from "./ai";
 import { MockAiSetup, type MockSetupInit } from "./ai-setup";
 import { MockImport } from "./import";
 import { MockPicks } from "./picks";
+import { MockFiveToolsUrls } from "./fivetools-urls";
 import { MockImportPreview } from "./import-preview";
 import { MockImportReports } from "./import-report";
 import { MockAppUpdate } from "./app-update";
@@ -72,6 +73,7 @@ export class MockApi implements Api {
   private imp: MockImport;
   /** Mock native dialogs (`pickPath`); tests may set `picks.next`. */
   readonly picks = new MockPicks();
+  readonly fivetoolsUrls = new MockFiveToolsUrls();
   /** Opt-in import bug reports; tests read `reports.sent` or set `reports.failSend`. */
   readonly reports = new MockImportReports();
   private dataFiles = new MockDataFiles(this.picks);
@@ -521,7 +523,26 @@ export class MockApi implements Api {
   async stage5etoolsZip({ file }: Parameters<Api["stage5etoolsZip"]>[0]) { await this.tick(); return this.picks.stageZip(file); }
   async import5etools({ request }: Parameters<Api["import5etools"]>[0]) {
     await this.tick();
-    return this.content.import5etools(this.picks.resolve(request.folder, "5etools-folder"), request);
+    const report = this.content.import5etools(this.picks.resolve(request.folder, "5etools-folder"), request);
+    this.fivetoolsUrls.remember(request.folder, request.sources, report);
+    return report;
+  }
+  async stage5etoolsUrl({ url }: Parameters<Api["stage5etoolsUrl"]>[0]) {
+    await this.tick();
+    const address = this.fivetoolsUrls.check(url);
+    this.emit("import5etools:progress", { phase: "downloading", done: 1, total: 1, message: "books.json" });
+    const pick = this.picks.stageUrl(address);
+    this.fivetoolsUrls.stage(pick.token, address);
+    return pick;
+  }
+  async list5etoolsUrls() { await this.tick(); return this.fivetoolsUrls.list(); }
+  async remove5etoolsUrl({ url }: Parameters<Api["remove5etoolsUrl"]>[0]) { await this.tick(); return this.fivetoolsUrls.remove(url); }
+  async update5etoolsUrl({ url }: Parameters<Api["update5etoolsUrl"]>[0]) {
+    await this.tick();
+    return this.fivetoolsUrls.update(url, (sources) => {
+      const pick = this.picks.stageUrl(url);
+      return this.content.import5etools(this.picks.resolve(pick.token, "5etools-folder"), { folder: pick.token, sources, includeFluff: false });
+    });
   }
   async clearDownloadedContent() { await this.tick(); return this.content.clearDownloaded(); }
 

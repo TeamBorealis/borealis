@@ -49,6 +49,8 @@ import type {
   ContentPack,
   ContentProgress,
   FiveToolsImportReport,
+  FiveToolsUrl,
+  FiveToolsUrlUpdate,
   ImportDraft,
   ImportEvent,
   ImportFinalizeRequest,
@@ -248,6 +250,14 @@ export interface ApiMethods {
   scan5etoolsFolder(args: { folder: string }): Promise<FiveToolsScan>;
   /** Unpack a `.zip` of the user's 5etools `data/` folder (phones have no folder picker; desktop accepts it too). Returns a `5etools-folder` token for `scan5etoolsFolder` and `import5etools`. */
   stage5etoolsZip(args: { file: ImportFileInput }): Promise<PickedPath>;
+  /** Download the 5etools `data/` folder at an address the user pasted (a GitHub repository or any https:// folder address; none ships with the app). Emits `import5etools:progress` while downloading. Returns a `5etools-folder` token for `scan5etoolsFolder` and `import5etools`; importing from it remembers the address. */
+  stage5etoolsUrl(args: { url: string }): Promise<PickedPath>;
+  /** Addresses 5etools data was imported from. */
+  list5etoolsUrls(): Promise<FiveToolsUrl[]>;
+  /** Forget an address; its packs stay installed. */
+  remove5etoolsUrl(args: { url: string }): Promise<FiveToolsUrl[]>;
+  /** Check an address and re-import the same books only when it changed. */
+  update5etoolsUrl(args: { url: string }): Promise<FiveToolsUrlUpdate>;
   /** Convert the chosen books and install the packs; emits `content:progress`. */
   import5etools(args: { request: FiveToolsImportRequest }): Promise<FiveToolsImportReport>;
 
@@ -438,6 +448,10 @@ export const COMMANDS = {
   clearDownloadedContent: "clear_downloaded_content",
   scan5etoolsFolder: "scan_5etools_folder",
   stage5etoolsZip: "stage_5etools_zip",
+  stage5etoolsUrl: "stage_5etools_url",
+  list5etoolsUrls: "list_5etools_urls",
+  remove5etoolsUrl: "remove_5etools_url",
+  update5etoolsUrl: "update_5etools_url",
   import5etools: "import_5etools",
   getSettings: "get_settings",
   saveSettings: "save_settings",

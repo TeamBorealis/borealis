@@ -410,6 +410,8 @@ impl AppState {
             skipped = result.report.skipped.len(),
             "5etools import finished"
         );
+        let pack_ids: Vec<String> = staged.iter().map(|(_, id)| id.clone()).collect();
+        self.remember_5etools_url(&dir, request, &pack_ids)?;
         let ids: Vec<&String> = staged.iter().map(|(_, id)| id).collect();
         let packs: Vec<ContentPack> = self
             .list_packs()?
