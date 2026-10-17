@@ -497,3 +497,28 @@ fn a_fighter_wearing_setter_only_magic_armor_and_shield_gets_their_ac() {
         assert_eq!(magic_ac, plain + 3, "{tag}: +2 armor and +1 shield");
     }
 }
+
+#[test]
+fn a_magic_weapon_printing_one_bonus_gets_its_enhancement_setter() {
+    let weapon = |desc: &str| {
+        json!({"type": "Magic Item", "name": "Ember Blade", "description": desc,
+            "setters": [{"name": "type", "value": "Weapon"}]})
+    };
+    let mut one =
+        weapon("<p>You have a +1 bonus to attack and damage rolls made with this weapon.</p>");
+    assert!(weapon_enhancement(&mut one).is_some());
+    assert_eq!(
+        setter(&one, "enhancement").and_then(|s| int_of(s.get("value"))),
+        Some(1)
+    );
+    assert!(weapon_enhancement(&mut one).is_none(), "idempotent");
+    // A family printing several tiers in one item, and an item printing none, get nothing.
+    let mut tiers = weapon("<p>+1 bonus to attack and damage rolls (uncommon), +2 bonus to attack and damage rolls (rare).</p>");
+    assert!(weapon_enhancement(&mut tiers).is_none());
+    let mut none = weapon("<p>It glows.</p>");
+    assert!(weapon_enhancement(&mut none).is_none());
+    // Not a weapon: nothing.
+    let mut ring = json!({"type": "Magic Item", "description": "<p>+1 bonus to attack and damage rolls.</p>",
+        "setters": [{"name": "type", "value": "Ring"}]});
+    assert!(weapon_enhancement(&mut ring).is_none());
+}

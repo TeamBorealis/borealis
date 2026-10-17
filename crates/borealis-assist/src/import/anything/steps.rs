@@ -227,7 +227,8 @@ defines with its own rules text is kind weapon_property. A condition the source 
 is in, like the SRD's Poisoned or Prone) is an `other` entry whose `what` is exactly \"condition\". Set `kind` to the single kind, or \"mixed\" when there are several. List in `other` (name as printed, \
 `what` it is) every other thing the source defines that is none of these kinds: rules, weapon properties, \
 conditions, variant or optional rules, upgrades, tables, and lore or setting sections with a heading; each named \
-row of a table of options is its own `other` entry whose `what` is \"option of <the rule or section that offers \
+row of a table of options (a table a character picks from; never a roll table, nor an item's table of versions, \
+which are the item's versions below) is its own `other` entry whose `what` is \"option of <the rule or section that offers \
 the table, as printed>\". Narrative sections of an adventure or story (keyed areas and rooms, read-aloud text, \
 encounters, NPC and location descriptions) are `other` entries whose `what` starts with \"narrative\". Each printed section with a heading of its own is its own \
 entry, named as printed: never merge several sections into one (three sections \"Minor Charms\", \"Major Charms\" \

@@ -8,6 +8,7 @@
 use borealis_content::{ContentStore, Element};
 
 use super::fewshot::in_edition;
+use super::option_rows::{printed_count, says_pick, says_roll};
 use std::collections::HashSet;
 
 use super::types::{
@@ -21,6 +22,8 @@ use crate::import::report::ReportEntry;
 pub(crate) const LIBRARY_NOTE: &str = "library reference: ";
 /// Fewest named rows that make a table of options element material.
 const MIN_OPTION_ROWS: usize = 3;
+/// Lines of a governing rule's own section read for its pick wording.
+const LEAD_SPAN: usize = 15;
 /// Element types of the library an item mention can stand for.
 const ITEM_TYPES: [&str; 4] = ["Magic Item", "Item", "Weapon", "Armor"];
 /// Words of a detection's `what` that mark a section as narrative, not rules.
@@ -170,24 +173,41 @@ pub(crate) struct OptionTable {
     pub rows: Vec<String>,
     /// How many the rule lets a character pick, as printed above the table.
     pub count: Option<u32>,
+    /// A roll table (a die column, or "roll"/"determine" above it, and no pick count): never
+    /// options; only the versions of an item it is printed with.
+    pub rolled: bool,
+    /// The title of the nearest heading above the table (its caption or its section).
+    pub heading: Option<String>,
 }
 
-/// The title of the nearest heading above line `at`.
-fn heading_above(lines: &[&str], at: usize) -> Option<String> {
-    lines[..at].iter().rev().find_map(|l| {
-        let t = l.trim_start();
+/// Line and title of the nearest heading above line `at`.
+fn heading_above(lines: &[&str], at: usize) -> Option<(usize, String)> {
+    (0..at.min(lines.len())).rev().find_map(|k| {
+        let t = lines[k].trim_start();
         let n = t.chars().take_while(|c| *c == '#').count();
         let title = t[n..].trim();
-        (n > 0 && t[n..].starts_with(' ') && !title.is_empty()).then(|| title.to_string())
+        (n > 0 && t[n..].starts_with(' ') && !title.is_empty()).then(|| (k, title.to_string()))
     })
 }
 
-/// The `other` entries that are the named rows of one printed table (a pipe table, or a table
-/// flattened into lines that start with the names), at least [`MIN_OPTION_ROWS`] of them, with
-/// the rule that offers them: the entry their `what` names ("option of <rule>"), else the
-/// heading the table is printed under. The rows are options when the detection calls one of
-/// them an option or the rule prints a pick count above the table ("learn two of the
-/// following"); a table with no owner keeps its rows as they are.
+/// Line of a heading whose title is `name`.
+fn heading_of(lines: &[&str], name: &str) -> Option<usize> {
+    let key = norm(name);
+    lines.iter().position(|l| {
+        let t = l.trim_start();
+        let n = t.chars().take_while(|c| *c == '#').count();
+        n > 0 && t[n..].starts_with(' ') && norm(&t[n..]) == key
+    })
+}
+
+/// The `other` entries that are the named rows of one printed table (a pipe table naming them
+/// in any cell, or a table flattened into lines that start with the names), at least
+/// [`MIN_OPTION_ROWS`] of them, with the rule that offers them: the entry their `what` names
+/// ("option of <rule>"), else the heading the table is printed under. The rows are options
+/// when the detection calls one of them an option, or the rule says a character picks
+/// ("learn two of the following", "of your choice") above the table or in its own section
+/// (a glossary entry printed elsewhere). A roll table is returned flagged (it can only be an
+/// item's versions); a table with no owner keeps its rows as they are.
 pub(crate) fn option_tables(other: &[OtherItem], source: &str) -> Vec<OptionTable> {
     let lines: Vec<&str> = source.lines().collect();
     let cands: Vec<&OtherItem> = other.iter().filter(|o| !is_narrative(&o.what)).collect();
@@ -195,25 +215,137 @@ pub(crate) fn option_tables(other: &[OtherItem], source: &str) -> Vec<OptionTabl
     let rows = super::option_rows::find_rows(source, &names);
     super::option_rows::blocks(source, &rows)
         .into_iter()
+        .filter(|b| b.len() >= MIN_OPTION_ROWS)
         .filter_map(|b| {
-            let first = rows[*b.first()?].as_ref()?.line;
+            let printed: Vec<&super::option_rows::Row> =
+                b.iter().filter_map(|k| rows[*k].as_ref()).collect();
+            let first = printed.first()?.line;
             let members: Vec<&OtherItem> = b.iter().map(|k| cands[*k]).collect();
-            let count = super::option_rows::lead_count(source, first);
-            let options = members.iter().any(|o| is_option(&o.what)) || count.is_some();
-            if members.len() < MIN_OPTION_ROWS || !options {
+            let heading = heading_above(&lines, first);
+            // A rule the detection names but the source never prints (nor lists) is no owner.
+            let named = members
+                .iter()
+                .find_map(|o| named_owner(&o.what))
+                .and_then(|n| match other.iter().find(|o| norm(&o.name) == norm(&n)) {
+                    Some(o) => Some(o.name.clone()),
+                    None => defines(source, &n).then_some(n),
+                });
+            let lead = super::option_rows::lead_text(source, None, first);
+            // The rules that may govern the table, each with its own section's opening.
+            let rules: Vec<(String, String)> = named
+                .iter()
+                .cloned()
+                .chain(governing_rules(other, &lines, &members, heading.as_ref()))
+                .map(|r| {
+                    let own = rule_section(&lines, source, &r, first, heading.as_ref());
+                    (r, own)
+                })
+                .collect();
+            let picker = rules.iter().find(|(_, own)| says_pick(own));
+            let owner = named
+                .clone()
+                .or_else(|| picker.filter(|_| !says_pick(&lead)).map(|(r, _)| r.clone()))
+                .or_else(|| heading.as_ref().map(|(_, t)| t.clone()))?;
+            let count = printed_count(&lead).or_else(|| {
+                rules
+                    .iter()
+                    .filter(|(r, _)| norm(r) == norm(&owner))
+                    .chain(picker)
+                    .find_map(|(_, own)| printed_count(own))
+            });
+            let picked = says_pick(&lead) || picker.is_some();
+            let rolled = count.is_none()
+                && (super::option_rows::rolled_rows(source, &printed) || says_roll(&lead));
+            let options = members.iter().any(|o| is_option(&o.what)) || picked;
+            if !(options || rolled) {
                 return None;
             }
-            let named = members.iter().find_map(|o| named_owner(&o.what)).map(|n| {
-                other
-                    .iter()
-                    .find(|o| norm(&o.name) == norm(&n))
-                    .map_or(n, |o| o.name.clone())
-            });
-            let owner = named.or_else(|| heading_above(&lines, first))?;
-            let rows = members.iter().map(|o| o.name.clone()).collect();
-            Some(OptionTable { owner, rows, count })
+            Some(OptionTable {
+                owner,
+                rows: members.iter().map(|o| o.name.clone()).collect(),
+                count,
+                rolled,
+                heading: heading.map(|(_, t)| t),
+            })
         })
         .collect()
+}
+
+/// Most enclosing headings above a table read as its possible rule.
+const MAX_ENCLOSING: usize = 2;
+
+/// Listed entries the table's caption or its rows' `what` names ("Gambit Table" and rows that
+/// are "a gambit" belong to "Gambits").
+fn listed_rules(
+    other: &[OtherItem],
+    members: &[&OtherItem],
+    heading: Option<&(usize, String)>,
+) -> Vec<String> {
+    let named: Vec<Vec<String>> = heading
+        .map(|(_, t)| stems(t))
+        .into_iter()
+        .chain(members.iter().map(|o| stems(&o.what)))
+        .collect();
+    let rows: Vec<String> = members.iter().map(|o| norm(&o.name)).collect();
+    other
+        .iter()
+        .filter(|o| !is_narrative(&o.what) && !rows.contains(&norm(&o.name)))
+        .filter(|o| heading.map_or(true, |(_, t)| norm(t) != norm(&o.name)))
+        .filter(|o| {
+            let rule = stems(&o.name);
+            named.iter().any(|n| holds(n, &rule))
+        })
+        .map(|o| o.name.clone())
+        .collect()
+}
+
+/// Rules that may govern a table besides the one its rows name: the listed entries its caption
+/// or its rows' `what` names (see [`listed_rules`]), then the sections enclosing the table's
+/// own heading (up to [`MAX_ENCLOSING`] levels).
+fn governing_rules(
+    other: &[OtherItem],
+    lines: &[&str],
+    members: &[&OtherItem],
+    heading: Option<&(usize, String)>,
+) -> Vec<String> {
+    let depth = |l: &str| l.trim_start().chars().take_while(|c| *c == '#').count();
+    let mut out = listed_rules(other, members, heading);
+    if let Some((k, _)) = heading {
+        let mut d = depth(lines[*k]);
+        for j in (0..*k).rev() {
+            if out.len() >= MAX_ENCLOSING || d <= 1 {
+                break;
+            }
+            let n = depth(lines[j]);
+            if n > 0 && n < d && super::option_rows::is_heading(lines[j]) {
+                d = n;
+                out.push(lines[j].trim_start()[n..].trim().to_string());
+            }
+        }
+    }
+    out
+}
+
+/// The opening of the governing rule's own section when the source prints it under a heading
+/// of its own above the table, apart from the table's section (a glossary entry that the
+/// table's rows belong to); empty otherwise.
+fn rule_section(
+    lines: &[&str],
+    source: &str,
+    owner: &str,
+    first: usize,
+    heading: Option<&(usize, String)>,
+) -> String {
+    heading_of(lines, owner)
+        .filter(|&h| h < first && heading.map_or(true, |(k, _)| *k != h))
+        .map(|h| {
+            // Its opening only: to its first sub-heading at most.
+            let end = (h + 1..first.min(h + 1 + LEAD_SPAN))
+                .find(|&k| super::option_rows::is_heading(lines[k]))
+                .unwrap_or(first.min(h + 1 + LEAD_SPAN));
+            super::option_rows::lead_text(source, Some(h), end)
+        })
+        .unwrap_or_default()
 }
 
 /// Names a non-text group stands for: its own and those its outline plans (features, parts,
@@ -236,58 +368,240 @@ fn outlined(groups: &[PlanGroup]) -> Vec<String> {
         .collect()
 }
 
-/// Make each option table's rows the options of its owner's text group (created when the
-/// detection listed no such entry): the rows' own text groups go, the owner keeps its text
-/// (the rule paragraph and the table) and offers them. Rows an outline already plans, and
-/// tables whose owner is planned as another kind, are left as they are. Returns a plan note
-/// per table.
+/// Tables of the same rule (one table split by a page break or a tier caption) as one.
+fn merged(tables: &[OptionTable]) -> Vec<OptionTable> {
+    let mut out: Vec<OptionTable> = Vec::new();
+    for t in tables {
+        match out.iter_mut().find(|o| norm(&o.owner) == norm(&t.owner)) {
+            Some(o) => {
+                let fresh: Vec<String> = t
+                    .rows
+                    .iter()
+                    .filter(|r| !o.rows.iter().any(|x| norm(x) == norm(r)))
+                    .cloned()
+                    .collect();
+                o.rows.extend(fresh);
+                o.count = o.count.or(t.count);
+                o.rolled = o.rolled && t.rolled;
+            }
+            None => out.push(t.clone()),
+        }
+    }
+    out
+}
+
+/// Word stems of a name (lowercase, a plural "s" left out): "Rings of the Beast" and "ring of
+/// the beast" are the same.
+fn stems(s: &str) -> Vec<String> {
+    norm(s)
+        .split(' ')
+        .filter(|w| !w.is_empty())
+        .map(|w| {
+            if w.len() > 3 && w.ends_with('s') && !w.ends_with("ss") {
+                w[..w.len() - 1].to_string()
+            } else {
+                w.to_string()
+            }
+        })
+        .collect()
+}
+
+/// `outer` holds the words of `inner` in a row.
+fn holds(outer: &[String], inner: &[String]) -> bool {
+    !inner.is_empty() && outer.windows(inner.len()).any(|w| w == inner)
+}
+
+/// The planned item a table belongs to: the table's rule or caption names it ("Types of rings
+/// of the beast"), or the table is printed in the item's own section.
+fn owning_item(groups: &[PlanGroup], t: &OptionTable) -> Option<usize> {
+    let names: Vec<Vec<String>> = std::iter::once(&t.owner)
+        .chain(t.heading.as_ref())
+        .map(|n| stems(n))
+        .collect();
+    groups
+        .iter()
+        .enumerate()
+        .filter(|(_, g)| g.kind == ImportKind::Item)
+        .find(|(_, g)| {
+            let item = stems(&g.name);
+            names.iter().any(|n| holds(n, &item))
+        })
+        .map(|(k, _)| k)
+}
+
+/// Drop the text groups of `rows` (they are planned as something else now).
+fn drop_row_texts(groups: &mut Vec<PlanGroup>, rows: &[&String]) {
+    let keys: Vec<String> = rows.iter().map(|r| norm(r)).collect();
+    groups.retain(|g| !(g.kind == ImportKind::Rules && keys.contains(&norm(&g.name))));
+}
+
+/// The rows of a table printed with an item are the item's versions ("<Item>, <row>", the way
+/// the bundled packs list them), never options; versions the plan already has are kept.
+fn attach_versions(groups: &mut Vec<PlanGroup>, at: usize, t: &OptionTable) -> String {
+    let item = groups[at].name.clone();
+    let item_type = groups[at].item_type;
+    let rows: Vec<&String> = t.rows.iter().collect();
+    drop_row_texts(groups, &rows);
+    let mut added = 0;
+    for r in &rows {
+        let name = format!("{item}, {}", r.trim());
+        if groups.iter().any(|g| norm(&g.name) == norm(&name)) {
+            continue;
+        }
+        let pos = groups
+            .iter()
+            .rposition(|g| {
+                norm(&g.name) == norm(&item)
+                    || norm(&g.name).starts_with(&norm(&format!("{item} ")))
+            })
+            .map_or(groups.len(), |k| k + 1);
+        groups.insert(
+            pos,
+            super::plan::standalone(ImportKind::Item, &name, item_type),
+        );
+        added += 1;
+    }
+    format!(
+        "{item}: its table of {} rows is imported as {added} versions of the item, not as options",
+        rows.len()
+    )
+}
+
+/// The outline feature of a class, subclass, species, background or feat named `owner`, as
+/// (group, feature) indexes.
+fn feature_named(groups: &[PlanGroup], owner: &str) -> Option<(usize, usize)> {
+    groups.iter().enumerate().find_map(|(gi, g)| {
+        if matches!(g.kind, ImportKind::Rules | ImportKind::Condition) {
+            return None;
+        }
+        let o = g.outline.as_ref()?;
+        o.features
+            .iter()
+            .position(|f| norm(&f.name) == norm(owner))
+            .map(|fi| (gi, fi))
+    })
+}
+
+/// A table of a planned feature is that feature's options: the rows it does not list yet are
+/// added, typed like the feature's own options; the printed count is its pick when it has none.
+fn attach_to_feature(
+    groups: &mut Vec<PlanGroup>,
+    (gi, fi): (usize, usize),
+    t: &OptionTable,
+) -> Option<String> {
+    let rows: Vec<&String> = t.rows.iter().collect();
+    let f = groups[gi].outline.as_ref()?.features.get(fi)?;
+    let listed: Vec<String> = f
+        .options
+        .iter()
+        .chain(&f.parts)
+        .map(|p| norm(&p.name))
+        .collect();
+    let fresh: Vec<OutlinePart> = rows
+        .iter()
+        .filter(|r| !listed.contains(&norm(r)))
+        .map(|r| part(r))
+        .collect();
+    let feature = f.name.clone();
+    drop_row_texts(groups, &rows);
+    let gi = groups.iter().position(|g| {
+        g.outline
+            .as_ref()
+            .is_some_and(|o| o.features.iter().any(|x| x.name == feature))
+    })?;
+    let f = groups[gi]
+        .outline
+        .as_mut()?
+        .features
+        .iter_mut()
+        .find(|x| x.name == feature)?;
+    let added = fresh.len();
+    f.options.extend(fresh);
+    if f.choose.is_empty() {
+        if let Some(count) = t.count {
+            f.choose = vec![PickCount {
+                level: f.level,
+                count,
+            }];
+        }
+    }
+    Some(format!(
+        "{feature}: its table of {} options is imported as options of the feature ({added} added to its outline)",
+        rows.len()
+    ))
+}
+
+/// A table of a rules entry is the options the entry offers (its text group is created when
+/// the detection listed no such entry); the rows' own text groups go. Rows an outline already
+/// plans are left as they are; so is a table whose rule is planned as another kind.
+fn attach_to_rule(groups: &mut Vec<PlanGroup>, t: &OptionTable) -> Option<String> {
+    let planned = outlined(groups);
+    let rows: Vec<&String> = t
+        .rows
+        .iter()
+        .filter(|r| !planned.contains(&norm(r)) && norm(r) != norm(&t.owner))
+        .collect();
+    let owner_at = groups.iter().position(|g| norm(&g.name) == norm(&t.owner));
+    let text_owner = owner_at.map_or(true, |k| {
+        matches!(groups[k].kind, ImportKind::Rules | ImportKind::Condition)
+    });
+    if rows.len() < MIN_OPTION_ROWS || !text_owner {
+        return None;
+    }
+    drop_row_texts(groups, &rows);
+    let at = match groups.iter().position(|g| norm(&g.name) == norm(&t.owner)) {
+        Some(k) => k,
+        None => {
+            groups.push(super::plan::text_group(&t.owner, "rules option", ""));
+            groups.len() - 1
+        }
+    };
+    let feature = OutlineFeature {
+        level: 1,
+        name: groups[at].name.clone(),
+        summary: String::new(),
+        quote: String::new(),
+        parts: Vec::new(),
+        options: rows.iter().map(|r| part(r)).collect(),
+        choose: t
+            .count
+            .map(|count| vec![PickCount { level: 1, count }])
+            .unwrap_or_default(),
+        spells: Vec::new(),
+    };
+    if let Some(o) = groups[at].outline.as_mut() {
+        o.features = vec![feature];
+    }
+    Some(format!(
+        "{}: its table of {} options is imported as options it offers",
+        groups[at].name,
+        rows.len()
+    ))
+}
+
+/// Place each table found by [`option_tables`] (tables of one rule taken together): a table
+/// printed with a planned item gives the item's versions; a roll table is nothing more; a
+/// table of a planned feature gives that feature's options (typed like its other options); a
+/// table of a rules entry gives the options the entry offers. Returns a plan note per table
+/// placed.
 pub(crate) fn attach_option_tables(
     groups: &mut Vec<PlanGroup>,
     tables: &[OptionTable],
 ) -> Vec<String> {
     let mut notes = Vec::new();
-    for t in tables {
-        let planned = outlined(groups);
-        let rows: Vec<&String> = t
-            .rows
-            .iter()
-            .filter(|r| !planned.contains(&norm(r)) && norm(r) != norm(&t.owner))
-            .collect();
-        let owner_at = groups.iter().position(|g| norm(&g.name) == norm(&t.owner));
-        let text_owner = owner_at.map_or(true, |k| groups[k].kind == ImportKind::Rules);
-        if rows.len() < MIN_OPTION_ROWS || !text_owner {
+    for t in merged(tables) {
+        if let Some(at) = owning_item(groups, &t) {
+            notes.push(attach_versions(groups, at, &t));
             continue;
         }
-        let keys: Vec<String> = rows.iter().map(|r| norm(r)).collect();
-        groups.retain(|g| !(matches!(g.kind, ImportKind::Rules) && keys.contains(&norm(&g.name))));
-        let at = match groups.iter().position(|g| norm(&g.name) == norm(&t.owner)) {
-            Some(k) => k,
-            None => {
-                groups.push(super::plan::text_group(&t.owner, "rules option", ""));
-                groups.len() - 1
-            }
-        };
-        let feature = OutlineFeature {
-            level: 1,
-            name: groups[at].name.clone(),
-            summary: String::new(),
-            quote: String::new(),
-            parts: Vec::new(),
-            options: rows.iter().map(|r| part(r)).collect(),
-            choose: t
-                .count
-                .map(|count| vec![PickCount { level: 1, count }])
-                .unwrap_or_default(),
-            spells: Vec::new(),
-        };
-        if let Some(o) = groups[at].outline.as_mut() {
-            o.features = vec![feature];
+        if t.rolled {
+            continue;
         }
-        notes.push(format!(
-            "{}: its table of {} options is imported as options it offers",
-            groups[at].name,
-            rows.len()
-        ));
+        let note = match feature_named(groups, &t.owner) {
+            Some(at) => attach_to_feature(groups, at, &t),
+            None => attach_to_rule(groups, &t),
+        };
+        notes.extend(note);
     }
     notes
 }

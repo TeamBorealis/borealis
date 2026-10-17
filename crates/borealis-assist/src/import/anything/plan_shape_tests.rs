@@ -273,6 +273,30 @@ fn narrative_sections_are_plan_notes_that_outlive_a_rebuild() {
     assert_eq!(names, ["The Drowned Mill"]);
 }
 
+#[test]
+fn a_contents_page_is_a_boundary_and_never_an_entry_listed_or_not() {
+    let src = "## On the Cover\n\nThe cover shows a tome.\n\n## Contents List\n\n\
+Foreword..........pg.2\nSpells.........pg.5\nAppendix.........pg.9\n\n\
+Dear reader, this letter was written long ago.\n\n## Spells\n\nFirst spell.\n";
+    let mut plan = ImportPlan {
+        edition: Edition::Y2014,
+        groups: vec![
+            super::plan::text_group("On the Cover", "lore section", ""),
+            super::plan::text_group("Contents List", "table", ""),
+        ],
+        elements: Vec::new(),
+        notes: Vec::new(),
+    };
+    super::plan::rebuild(&mut plan, &library(), "ID_T", src);
+    let names: Vec<&str> = plan.elements.iter().map(|e| e.name.as_str()).collect();
+    assert_eq!(names, ["On the Cover"]);
+    let bounds: Vec<&str> = super::plan::narrative_sections(&plan).collect();
+    assert_eq!(bounds, ["Contents List"]);
+    // A second rebuild keeps one note.
+    super::plan::rebuild(&mut plan, &library(), "ID_T", src);
+    assert_eq!(super::plan::narrative_sections(&plan).count(), 1);
+}
+
 const REEDS: &str = "## Circle of Reeds\n\nDruids of the marsh.\n\n### Reed Cantrips\n\n\
 When you join this circle at 2nd level, you learn the druidcraft,\nguidance, and mending \
 cantrips.\n\n### Reed Spells\n\nDruid Level | Reed Spells\n3rd | fog cloud, misty step\n\

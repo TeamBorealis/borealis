@@ -404,6 +404,8 @@ pub(crate) fn part_type(parent_ty: &str) -> &'static str {
         "Class" | "Class Feature" => "Class Feature",
         "Archetype" | "Archetype Feature" => "Archetype Feature",
         "Background" | "Background Feature" => "Background Feature",
+        // The options of a rules entry or a condition are rules entries too.
+        "Rules Glossary Entry" | "Condition" => RULE_OPTION_TYPE,
         _ => "Racial Trait",
     }
 }
@@ -785,6 +787,8 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
         })
         .cloned()
         .collect();
+    let mut references = references;
+    references.extend(contents_pages(&mut plan.groups, &references, source));
     let mut split_notes = sections::drop_outlined_texts(&mut plan.groups);
     split_notes.extend(sections::split_merged(&mut plan.groups, source));
     let mut b = Builder {
@@ -876,7 +880,11 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
         };
         g.root_id = Some(standalone_group(&mut b, g, ty));
     }
-    let folded = folded_entries(&b.out, plan.edition, source);
+    // An entry offering options is the rule they belong to, never folded into another.
+    let folded: Vec<(String, String)> = folded_entries(&b.out, plan.edition, source)
+        .into_iter()
+        .filter(|(id, _)| !b.out.iter().any(|e| e.id == *id && e.picks.is_some()))
+        .collect();
     if !folded.is_empty() {
         let ids: Vec<&String> = folded.iter().map(|(id, _)| id).collect();
         b.out.retain(|e| !ids.contains(&&e.id));
@@ -889,6 +897,7 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
     plan.groups
         .retain(|g| !g.root_id.as_ref().is_some_and(|r| dropped.contains(r)));
     b.notes.extend(listed);
+    b.notes.extend(drop_orphans(&mut b.out));
     super::variants::link_briefs(&mut b.out);
     b.notes.extend(super::feature_spells::resolve(
         &mut b.out,
@@ -899,6 +908,30 @@ pub(crate) fn rebuild(plan: &mut ImportPlan, store: &ContentStore, prefix: &str,
     plan.notes = b.notes;
     plan.notes.extend(split_notes);
     plan.notes.extend(references);
+}
+
+/// Parts and options whose parent is no longer planned (a dropped contents entry): they are
+/// left out with a note each, never planned under a parent that does not exist.
+fn drop_orphans(elements: &mut Vec<PlannedElement>) -> Vec<String> {
+    let mut notes = Vec::new();
+    loop {
+        let ids: HashSet<String> = elements.iter().map(|e| e.id.clone()).collect();
+        let orphans: Vec<String> = elements
+            .iter()
+            .filter(|e| e.parent.as_ref().is_some_and(|p| !ids.contains(p)))
+            .map(|e| e.id.clone())
+            .collect();
+        if orphans.is_empty() {
+            return notes;
+        }
+        for e in elements.iter().filter(|e| orphans.contains(&e.id)) {
+            notes.push(format!(
+                "{}: the entry offering it is not imported, so it is left out",
+                e.name
+            ));
+        }
+        elements.retain(|e| !orphans.contains(&e.id));
+    }
 }
 
 /// Text-only entries that are pieces of another element, each with a plan note: a category
@@ -1004,9 +1037,9 @@ fn standalone_group(b: &mut Builder, g: &PlanGroup, ty: &str) -> String {
 }
 
 /// Element type of the options a rules entry offers (a table of options printed with a rule):
-/// selectable like a feature's options, offered by whatever class, feat or species takes the
-/// rule's `supports` key.
-pub(crate) const RULE_OPTION_TYPE: &str = "Class Feature";
+/// rules entries like the rule itself, selectable by the rule's `supports` key from whatever
+/// class, feat or species takes the rule.
+pub(crate) const RULE_OPTION_TYPE: &str = "Rules Glossary Entry";
 
 /// The options of a text-only rules entry (see `intake::attach_option_tables`): each its own
 /// element with the entry's `supports` key; the entry keeps the rule's text.
@@ -1134,10 +1167,34 @@ pub(crate) const CONTENTS_NOTE: &str = "contents page: ";
 /// The plan notes of the detection's entries that are contents pages (see
 /// `contents::is_contents`).
 pub(crate) fn contents_notes(other: &[OtherItem], source: &str) -> Vec<String> {
+    // The headings that open a contents run get their note at every rebuild already.
+    let pages = super::contents::pages(source);
     other
         .iter()
         .filter(|o| !o.name.trim().is_empty() && super::contents::is_contents(source, &o.name))
+        .filter(|o| !pages.iter().any(|p| same(p, &o.name)))
         .map(|o| format!("{CONTENTS_NOTE}{}", o.name.trim()))
+        .collect()
+}
+
+/// The source's contents pages (headings opening a contents run, listed by the detection or
+/// not) are navigation: their text groups go, and each gets a contents note (unless `notes`
+/// has it), so the sections around them end there.
+fn contents_pages(groups: &mut Vec<PlanGroup>, notes: &[String], source: &str) -> Vec<String> {
+    let pages = super::contents::pages(source);
+    groups.retain(|g| {
+        !(matches!(g.kind, ImportKind::Rules | ImportKind::Condition)
+            && pages.iter().any(|p| same(p, &g.name)))
+    });
+    pages
+        .iter()
+        .filter(|p| {
+            !notes
+                .iter()
+                .filter_map(|n| n.strip_prefix(CONTENTS_NOTE))
+                .any(|n| same(n, p))
+        })
+        .map(|p| format!("{CONTENTS_NOTE}{p}"))
         .collect()
 }
 

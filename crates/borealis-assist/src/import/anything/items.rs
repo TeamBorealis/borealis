@@ -862,6 +862,51 @@ pub(crate) fn armor_enhancement(el: &mut Value) -> Option<String> {
     ))
 }
 
+/// Phrases after a printed `+N` that make it a weapon's enhancement ("+1 bonus to attack and
+/// damage rolls", "+2 to attack and damage rolls").
+const WEAPON_BONUS_TAILS: [&str; 2] = [
+    " bonus to attack and damage rolls",
+    " to attack and damage rolls",
+];
+
+/// The distinct `+N` bonuses to attack and damage rolls a description prints.
+fn printed_weapon_bonuses(desc: &str) -> Vec<i64> {
+    let text = desc.to_lowercase();
+    let mut out: Vec<i64> = Vec::new();
+    for (at, _) in text.match_indices('+') {
+        let digits: String = text[at + 1..]
+            .chars()
+            .take_while(char::is_ascii_digit)
+            .collect();
+        let rest = &text[at + 1 + digits.len()..];
+        let Ok(n) = digits.parse::<i64>() else {
+            continue;
+        };
+        if n > 0 && WEAPON_BONUS_TAILS.iter().any(|t| rest.starts_with(t)) && !out.contains(&n) {
+            out.push(n);
+        }
+    }
+    out
+}
+
+/// A Magic Item whose `type` setter is Weapon and that has no `enhancement` setter gets one
+/// when its own text prints exactly one `+N` bonus to attack and damage rolls (a family
+/// printing several tiers in one item cannot take one). Returns a note when it changed.
+pub(crate) fn weapon_enhancement(el: &mut Value) -> Option<String> {
+    let ty = setter(el, "type").and_then(|t| str_of(t.get("value")))?;
+    if !ty.eq_ignore_ascii_case("weapon") || setter(el, "enhancement").is_some() {
+        return None;
+    }
+    let desc = el.get("description").and_then(Value::as_str)?;
+    let [n] = printed_weapon_bonuses(desc)[..] else {
+        return None;
+    };
+    put_setter(el, "enhancement", &n.to_string(), None);
+    Some(format!(
+        "setters: enhancement {n}, the +{n} to attack and damage rolls the item prints"
+    ))
+}
+
 /// Apply the equipment shape to a standalone element of type `ty`.
 pub(crate) fn normalize_item(
     el: &mut Value,
@@ -888,6 +933,7 @@ pub(crate) fn normalize_item(
         "Magic Item" => {
             magic_item_type(el, name, plan);
             armor_enhancement(el);
+            weapon_enhancement(el);
         }
         _ => {}
     }

@@ -13,6 +13,8 @@ use super::types::ImportDraft;
 
 /// Share of a section body's 4-grams found in the elements' text that counts it as carried.
 const CARRIED: f64 = 0.5;
+/// Fewest table rows naming elements that make a table section carried.
+const MIN_ELEMENT_ROWS: usize = 2;
 /// Fewest words of a body measured (shorter ones are left to the name tests).
 const MIN_BODY_WORDS: usize = 6;
 /// Fewest words of a name that is measured as text of its own (a sentence printed as a row).
@@ -52,7 +54,20 @@ pub(crate) fn section_body(source: &str, name: &str) -> Option<String> {
         return None;
     }
     let title = |l: &str| key_words(l.trim_start().trim_start_matches('#'));
-    if let Some(k) = (0..lines.len()).find(|&k| is_heading(lines[k]) && title(lines[k]) == key) {
+    // A note in brackets after the title ("Ranged Weapons (Cont.)") is no part of it.
+    let bare = |l: &str| {
+        key_words(
+            l.trim_start()
+                .trim_start_matches('#')
+                .split(" (")
+                .next()
+                .unwrap_or(""),
+        )
+    };
+    let headed = (0..lines.len())
+        .find(|&k| is_heading(lines[k]) && title(lines[k]) == key)
+        .or_else(|| (0..lines.len()).find(|&k| is_heading(lines[k]) && bare(lines[k]) == key));
+    if let Some(k) = headed {
         let d = depth(lines[k]);
         let end = (k + 1..lines.len())
             .find(|&j| is_heading(lines[j]) && depth(lines[j]) <= d)
@@ -115,6 +130,9 @@ pub(crate) fn carried(draft: &ImportDraft, index: &Index, name: &str) -> bool {
     let Some(body) = section_body(&draft.source_text, name) else {
         return false;
     };
+    if rows_are_elements(&element_names(draft), &body) {
+        return true;
+    }
     let mut w = words(&body);
     // A short body (a table row printing a sentence as its name) is measured with its name.
     if w.len() < MIN_BODY_WORDS {
@@ -125,6 +143,38 @@ pub(crate) fn carried(draft: &ImportDraft, index: &Index, name: &str) -> bool {
         w = named.into_iter().chain(w).collect();
     }
     coverage(&w, index, &HashSet::new()).is_some_and(|c| c >= CARRIED)
+}
+
+/// The names of the draft's generated elements, as key words.
+fn element_names(draft: &ImportDraft) -> HashSet<Vec<String>> {
+    draft
+        .elements
+        .iter()
+        .filter(|e| !e.json.is_null())
+        .filter_map(|e| e.json.get("name").and_then(Value::as_str))
+        .map(key_words)
+        .collect()
+}
+
+/// The body is a table whose rows (header and separator left out) mostly name elements of
+/// the pack: its rows were imported as those elements (a weapon table continued under a
+/// "(Cont.)" caption), whatever their text.
+fn rows_are_elements(names: &HashSet<Vec<String>>, body: &str) -> bool {
+    let rows: Vec<Vec<&str>> = body
+        .lines()
+        .filter_map(cells)
+        .filter(|c| c.len() > 1)
+        .collect();
+    let named = rows
+        .iter()
+        .filter(|c| {
+            let first = c[0].split(" (").next().unwrap_or(c[0]);
+            names.contains(&key_words(first))
+        })
+        .count();
+    // The header row names no element; every other row is measured.
+    let measured = rows.len().saturating_sub(1).max(1);
+    named >= MIN_ELEMENT_ROWS && named as f64 >= CARRIED * measured as f64
 }
 
 /// A token printing a magic bonus ("+1", "+2").
@@ -212,5 +262,25 @@ mod tests {
             vec!["Ten 5gp coins.".to_string()]
         );
         assert!(amounts(SRC, "Bell").is_empty());
+    }
+
+    const CONT: &str = "# Arms\n\n## Thrown Arms\n\nName | Cost\n\nStone | 1 cp\n\n\
+## Thrown Arms (Cont.)\n\nName | Cost | Weight\n\nBola Cord | 1 gp | 2 lb.\n\n\
+Dart Pack (5) | 5 cp | 1 lb.\n\nHand Axe | 5 gp | 2 lb.\n";
+
+    #[test]
+    fn a_continued_table_whose_rows_are_elements_was_imported() {
+        // The caption's note is no part of its name; the first heading of the name wins.
+        assert!(section_body(CONT, "Thrown Arms").unwrap().contains("Stone"));
+        let cont = CONT.replace("## Thrown Arms\n\nName | Cost\n\nStone | 1 cp\n\n", "");
+        let body = section_body(&cont, "Thrown Arms").expect("the continued caption");
+        assert!(body.contains("Bola Cord"));
+        let names: HashSet<Vec<String>> = ["Bola Cord", "Dart Pack", "Hand Axe"]
+            .iter()
+            .map(|n| key_words(n))
+            .collect();
+        assert!(rows_are_elements(&names, &body));
+        let one: HashSet<Vec<String>> = std::iter::once(key_words("Hand Axe")).collect();
+        assert!(!rows_are_elements(&one, &body));
     }
 }
