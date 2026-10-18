@@ -7,6 +7,7 @@
 pub mod cli;
 pub mod convert;
 pub mod dom;
+pub mod edition;
 pub mod error;
 pub mod idnorm;
 pub mod load_reject;

@@ -408,6 +408,8 @@ pub fn migrate_path(input: &Path, opts: &MigrateOptions) -> Result<MigrateOutput
     }
 
     normalise_ids(&mut run)?;
+    let tagged = crate::edition::tag_2024(&mut run.converted, opts.ruleset);
+    reserialise(&mut run, tagged)?;
     if opts.validate {
         validate_output(&mut run)?;
     }
@@ -427,7 +429,7 @@ pub fn migrate_path(input: &Path, opts: &MigrateOptions) -> Result<MigrateOutput
         name: opts.pack_name.clone().unwrap_or_else(|| pack_id.clone()),
         version: opts.pack_version.clone(),
         origin: opts.origin,
-        rulesets: vec![opts.ruleset],
+        rulesets: pack_rulesets(opts.ruleset, &run.converted),
         license: opts.license.clone(),
         attribution: opts.attribution.clone(),
         description: Some("Migrated from Aurora XML by borealis-migrate".into()),
@@ -460,6 +462,11 @@ fn normalise_ids(run: &mut Run<'_>) -> Result<(), MigrateError> {
         }
     }
     run.renamed = renamed;
+    reserialise(run, changed)
+}
+
+/// Write the converted files at `changed` (indices into `run.converted`) to their outputs again.
+fn reserialise(run: &mut Run<'_>, changed: Vec<usize>) -> Result<(), MigrateError> {
     for i in changed {
         let (rel, file) = &run.converted[i];
         let name = output_name(rel);
@@ -469,6 +476,20 @@ fn normalise_ids(run: &mut Run<'_>) -> Result<(), MigrateError> {
         }
     }
     Ok(())
+}
+
+/// The run's ruleset first, then any other ruleset its files or elements were tagged with.
+fn pack_rulesets(run: Ruleset, files: &[(String, borealis_content::ContentFile)]) -> Vec<Ruleset> {
+    let mut out = vec![run];
+    let tags = files
+        .iter()
+        .flat_map(|(_, f)| std::iter::once(f.ruleset).chain(f.elements.iter().map(|e| e.ruleset)));
+    for r in tags.flatten() {
+        if !out.contains(&r) {
+            out.push(r);
+        }
+    }
+    out
 }
 
 fn validate_output(run: &mut Run<'_>) -> Result<(), MigrateError> {
