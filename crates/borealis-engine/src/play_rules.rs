@@ -454,16 +454,60 @@ fn class_name(el: &Element) -> Option<&str> {
     el.data.get("class").and_then(Value::as_str)
 }
 
-/// A rolled `max` of the resource `rid` declared on `node`: the stored roll of its item, else
+/// Where a resource rule is read: a live graph node, or a carried item without an equip slot
+/// (its charges run while it is carried; it is no node, so none of its other rules apply).
+#[derive(Clone, Copy)]
+enum RuleHost<'g> {
+    Node(NodeId),
+    Carried(&'g str),
+}
+
+impl<'g> RuleHost<'g> {
+    fn live(self, graph: &Graph<'_>, c: &CustomRule) -> bool {
+        match self {
+            Self::Node(id) => crate::rule_view::rule_live(graph, id, c),
+            Self::Carried(_) => crate::rule_view::carried_rule_live(graph, c),
+        }
+    }
+
+    fn item_uid<'a>(self, graph: &'a Graph<'_>) -> Option<&'a str>
+    where
+        'g: 'a,
+    {
+        match self {
+            Self::Node(id) => graph.item_uid_of(id),
+            Self::Carried(uid) => Some(uid),
+        }
+    }
+}
+
+/// The elements whose resource rules are read, in order: live nodes, then carried gear.
+fn resource_hosts<'g, 'u>(graph: &'g Graph<'u>) -> Vec<(&'u Element, RuleHost<'g>)> {
+    let mut out: Vec<(&'u Element, RuleHost<'g>)> = graph
+        .preorder()
+        .into_iter()
+        .map(|id| (&graph.nodes[id].e.el, RuleHost::Node(id)))
+        .collect();
+    out.extend(
+        graph
+            .carried_items()
+            .iter()
+            .map(|c| (&c.e.el, RuleHost::Carried(c.uid.as_str()))),
+    );
+    out
+}
+
+/// A rolled `max` of the resource `rid` declared on `host`: the stored roll of its item, else
 /// the average.
 fn rolled_max(
     graph: &Graph<'_>,
-    node: NodeId,
+    host: RuleHost<'_>,
     rid: &str,
     max: &Value,
 ) -> Option<(i32, RolledMaxSnapshot)> {
     let dice = crate::rolled::dice_of(max)?;
-    let stored = graph.rolled_max_of(node, rid);
+    let uid = host.item_uid(graph);
+    let stored = uid.and_then(|u| graph.rolled_max_of_item(u, rid));
     let value = stored.unwrap_or_else(|| dice.average());
     Some((
         i32::try_from(value).unwrap_or(i32::MAX),
@@ -473,7 +517,7 @@ fn rolled_max(
                 .and_then(Value::as_str)
                 .unwrap_or("")
                 .to_string(),
-            item_uid: graph.item_uid_of(node).map(str::to_string),
+            item_uid: uid.map(str::to_string),
             rolled: stored.is_some(),
             min: dice.min(),
             max: dice.max(),
@@ -539,10 +583,10 @@ struct RegainRule {
 
 fn regain_rules(graph: &Graph<'_>) -> Vec<RegainRule> {
     let mut out = Vec::new();
-    for id in graph.preorder() {
-        for r in &graph.nodes[id].e.el.rules {
+    for (el, host) in resource_hosts(graph) {
+        for r in &el.rules {
             let Rule::Custom(c) = r else { continue };
-            if c.kind != "resource_regain" || !crate::rule_view::rule_live(graph, id, c) {
+            if c.kind != "resource_regain" || !host.live(graph, c) {
                 continue;
             }
             out.push(RegainRule {
@@ -587,11 +631,10 @@ pub fn resource_snapshots(
     let cx = ExprCtx { graph, stats, mods };
     let regains = regain_rules(graph);
     let mut out: Vec<ResourceSnapshot> = Vec::new();
-    for id in graph.preorder() {
-        let el = &graph.nodes[id].e.el;
+    for (el, host) in resource_hosts(graph) {
         for r in &el.rules {
             let Rule::Custom(c) = r else { continue };
-            if c.kind != "resource" || !crate::rule_view::rule_live(graph, id, c) {
+            if c.kind != "resource" || !host.live(graph, c) {
                 continue;
             }
             let Some(rid) = field_str(c, "id") else {
@@ -600,7 +643,7 @@ pub fn resource_snapshots(
             let rolled = c
                 .fields
                 .get("max")
-                .and_then(|m| rolled_max(graph, id, rid, m));
+                .and_then(|m| rolled_max(graph, host, rid, m));
             let max = rolled
                 .as_ref()
                 .map_or_else(|| resource_max(c, el, &cx), |(n, _)| *n)

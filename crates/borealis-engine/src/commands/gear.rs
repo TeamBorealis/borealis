@@ -33,6 +33,14 @@ fn next_uid(state: &CharacterState) -> String {
     format!("item-{}", n + 1)
 }
 
+/// Can inventory line `i` be equipped (an unknown item counts as equippable)?
+fn can_equip(engine: &Engine, state: &CharacterState, i: usize) -> bool {
+    let uni = engine.universe(state.ruleset);
+    uni.get(&state.inventory.items[i].item).map_or(true, |e| {
+        crate::item_base::effective_facts(uni, e).equippable
+    })
+}
+
 /// Add an item with a generated uid.
 ///
 /// # Errors
@@ -290,7 +298,8 @@ pub fn unequip(engine: &Engine, state: &CharacterState, uid: &str) -> CmdResult 
 /// [`CommandError::Inventory`] if not equipped, not attunable, or the limit is reached.
 pub fn attune(engine: &Engine, state: &CharacterState, uid: &str) -> CmdResult {
     let i = index_of(state, uid)?;
-    if state.inventory.items[i].equipped.is_none() {
+    // gear without an equip slot is attuned while carried; anything else is equipped first
+    if state.inventory.items[i].equipped.is_none() && can_equip(engine, state, i) {
         return Err(CommandError::Inventory("equip the item first".into()));
     }
     let snap = engine.derive_with(state, false);

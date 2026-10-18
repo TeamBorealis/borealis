@@ -213,6 +213,10 @@ pub struct UElem {
     pub superseded: bool,
     /// Stat rules of each `toggle` rule, applied only while the toggle is on.
     pub toggle_effects: Vec<crate::play_rules::ToggleEffects>,
+    /// Foreign element the profile accepts only as its `legacy_alias` type (a 2024 species
+    /// that was a race, in a 2014 character). The foreign options of its own selects are
+    /// accepted with it (`Graph::inherits_legacy_acceptance`).
+    pub legacy_accepted: bool,
 }
 
 impl UElem {
@@ -254,6 +258,7 @@ impl UElem {
             repeatable,
             superseded: false,
             toggle_effects,
+            legacy_accepted: false,
         }
     }
 
@@ -382,6 +387,17 @@ pub struct Universe {
     exhaustion: crate::play_rules::ExhaustionRules,
 }
 
+/// The former type an element names (`legacy_alias`, `Race` on a 2024 `Species`) when the
+/// profile rejects its own type but accepts it as that former type; `None` otherwise.
+fn legacy_alias_accepted<'e>(el: &'e Element, profile: &dyn RulesetProfile) -> Option<&'e str> {
+    let from = el
+        .ruleset
+        .filter(|r| !r.compatible_with(profile.ruleset()))?;
+    let alias = el.legacy_alias.as_deref().filter(|a| !a.is_empty())?;
+    (!profile.accepts_foreign(&el.ty, from) && profile.accepts_legacy_alias(alias, from))
+        .then_some(alias)
+}
+
 /// Decides how an element relates to the profile's edition and applies the adapter.
 fn classify(
     el: &Element,
@@ -398,7 +414,8 @@ fn classify(
         converted: false,
         notes: vec![reason],
     };
-    if !profile.accepts_foreign(&el.ty, from) {
+    let alias = legacy_alias_accepted(el, profile);
+    if !profile.accepts_foreign(&el.ty, from) && alias.is_none() {
         let reason = format!(
             "{} content of type {} is not usable in {}",
             from.as_str(),
@@ -414,7 +431,9 @@ fn classify(
                 from,
                 accepted: true,
                 converted: false,
-                notes: vec![USED_AS_WRITTEN.to_string()],
+                notes: std::iter::once(USED_AS_WRITTEN.to_string())
+                    .chain(alias.map(|a| format!("{} used as a {a} (its former type)", el.ty)))
+                    .collect(),
             },
         ),
         Adaptation::Converted { element, notes } => (
@@ -599,7 +618,10 @@ impl Universe {
                 }
             }
             let supports = eff(&el);
-            uni.push(UElem::build(el, 0, false, edition, supports));
+            let legacy = legacy_alias_accepted(&stored.element, profile).is_some();
+            let mut u = UElem::build(el, 0, false, edition, supports);
+            u.legacy_accepted = legacy && u.edition.is_accepted();
+            uni.push(u);
         }
         // fix copied_rules of multiclass elements: class rules before patching
         // (computed again below for clarity)

@@ -52,9 +52,18 @@ pub fn level_met(graph: &Graph<'_>, node: NodeId, level: Option<u64>) -> bool {
 #[must_use]
 pub fn rule_live(graph: &Graph<'_>, node: NodeId, c: &CustomRule) -> bool {
     let level = c.fields.get("level").and_then(Value::as_u64);
-    if !level_met(graph, node, level) {
-        return false;
-    }
+    level_met(graph, node, level) && requirements_met(graph, c)
+}
+
+/// [`rule_live`] for a rule of a carried item that is no graph node (gear without an equip
+/// slot): its `level` gate reads the character level.
+#[must_use]
+pub fn carried_rule_live(graph: &Graph<'_>, c: &CustomRule) -> bool {
+    let level = c.fields.get("level").and_then(Value::as_u64);
+    level.map_or(true, |l| u64::from(graph.total_level()) >= l) && requirements_met(graph, c)
+}
+
+fn requirements_met(graph: &Graph<'_>, c: &CustomRule) -> bool {
     match c.fields.get("requirements").and_then(Value::as_str) {
         Some(t) if !t.trim().is_empty() => {
             let cond = Cond::from_parse(RequirementsExpr::parse(t), |e| e);

@@ -176,6 +176,7 @@ impl<'u> Evaluation<'u> {
                     stat_sums: stat_sums.clone(),
                     items: active.roots.clone(),
                     equip: active.equip.clone(),
+                    carried: active.carried.clone(),
                 },
             );
             let mut classes = class_managers(&graph, state);

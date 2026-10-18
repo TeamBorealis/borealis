@@ -43,6 +43,13 @@ pub fn inventory_snapshot(
         .iter()
         .filter(|n| n.alive && n.attuned)
         .filter_map(|n| n.item_uid.clone())
+        .chain(
+            graph
+                .carried_items()
+                .iter()
+                .filter(|c| c.attuned)
+                .map(|c| c.uid.clone()),
+        )
         .collect();
     for it in &inv.items {
         let Some(e) = uni.get(&it.item) else { continue };

@@ -8,7 +8,7 @@ use crate::eval::{
 };
 use crate::ids;
 use crate::state::{CharacterState, Choice, ClassSlot, SlotKey};
-use crate::universe::{Cond, UElem, URule, UStat, Universe};
+use crate::universe::{Cond, EditionStatus, UElem, URule, UStat, Universe};
 use borealis_content::expr::{Dynamic, SupportsExpr};
 use borealis_content::{Rule, SourceRestriction};
 use std::cell::{OnceCell, RefCell};
@@ -111,6 +111,8 @@ pub struct GraphInputs<'u> {
     pub items: Vec<ItemRoot<'u>>,
     /// Equipment facts for equipped conditions.
     pub equip: EquipState,
+    /// Carried items without an equip slot, whose resources run while carried.
+    pub carried: Vec<ItemRoot<'u>>,
 }
 
 /// The graph.
@@ -151,6 +153,9 @@ pub struct Graph<'u> {
     pub(crate) runtime: crate::runtime::Runtime,
     /// Rolled resource maximums per inventory uid (`InventoryItem.rolled_max`).
     pub(crate) rolled_max: HashMap<String, std::collections::BTreeMap<String, u32>>,
+    /// Carried items without an equip slot: not nodes, only their resource rules are read
+    /// (`play_rules::resource_snapshots`).
+    pub(crate) carried: Vec<ItemRoot<'u>>,
 }
 
 const MAX_PASSES: usize = 60;
@@ -215,6 +220,7 @@ impl<'u> Graph<'u> {
                 .filter(|i| !i.rolled_max.is_empty())
                 .map(|i| (i.uid.clone(), i.rolled_max.clone()))
                 .collect(),
+            carried: inputs.carried,
         };
         for opt in &state.options {
             match uni.get(opt) {
@@ -337,8 +343,19 @@ impl<'u> Graph<'u> {
     /// The stored rolled maximum of resource `resource` on the item of `node`.
     #[must_use]
     pub fn rolled_max_of(&self, node: NodeId, resource: &str) -> Option<u32> {
-        let uid = self.item_uid_of(node)?;
+        self.rolled_max_of_item(self.item_uid_of(node)?, resource)
+    }
+
+    /// The stored rolled maximum of resource `resource` on inventory line `uid`.
+    #[must_use]
+    pub fn rolled_max_of_item(&self, uid: &str, resource: &str) -> Option<u32> {
         self.rolled_max.get(uid)?.get(resource).copied()
+    }
+
+    /// Carried items without an equip slot whose resources run while carried.
+    #[must_use]
+    pub fn carried_items(&self) -> &[ItemRoot<'u>] {
+        &self.carried
     }
 
     fn add_child(&mut self, parent: NodeId, e: &'u UElem, origin: Origin, mgr: Mgr) -> NodeId {
@@ -934,6 +951,30 @@ impl<'u> Graph<'u> {
             && (self.allow_cross_edition || !cand.edition.is_foreign())
     }
 
+    /// Is `cand` a foreign option the profile rejects on its own, chosen by a select of (or
+    /// below) an element accepted through its `legacy_alias` from the same edition (the
+    /// spellcasting-ability choice of a 2024 species used as a 2014 race)? It belongs to that
+    /// element and is accepted with it.
+    fn inherits_legacy_acceptance(&self, owner: NodeId, cand: &UElem) -> bool {
+        let EditionStatus::Foreign {
+            from,
+            accepted: false,
+            ..
+        } = &cand.edition
+        else {
+            return false;
+        };
+        let mut at = Some(owner);
+        while let Some(n) = at {
+            let e = self.nodes[n].e;
+            if e.legacy_accepted {
+                return matches!(&e.edition, EditionStatus::Foreign { from: f, .. } if f == from);
+            }
+            at = self.nodes[n].parent;
+        }
+        false
+    }
+
     /// Does the candidate pass the slot's option filter (`engine.md` 6.2)? `existing` skips the
     /// source restriction and duplicate removal: stored choices are replayed as they are (a
     /// restricted source or a duplicate granted elsewhere never unregisters a choice, only the
@@ -980,13 +1021,20 @@ impl<'u> Graph<'u> {
             return false;
         };
         let alternative = crate::custom_rules::alternatives_of(s).contains(&cand.el.id.as_str());
-        if !(alternative || crate::universe::type_fits(&s.ty, &cand.el.ty))
-            || !cand.edition.is_accepted()
-        {
+        let inherited = self.inherits_legacy_acceptance(owner, cand);
+        let type_ok = alternative
+            || crate::universe::type_fits(&s.ty, &cand.el.ty)
+            || cand.el.legacy_alias.as_deref() == Some(s.ty.as_str());
+        if !type_ok || !(cand.edition.is_accepted() || inherited) {
             return false;
         }
         if !existing {
-            if !self.offers_edition(cand) {
+            let offered = if inherited {
+                !cand.superseded
+            } else {
+                self.offers_edition(cand)
+            };
+            if !offered {
                 return false;
             }
             if self.restricted.is_restricted(&cand.el.source) {

@@ -170,6 +170,11 @@ pub trait RulesetProfile: std::fmt::Debug + Send + Sync {
     fn default_allow_cross_edition(&self) -> bool;
     /// May an element of type `ty` authored for `from` be used by this profile at all?
     fn accepts_foreign(&self, ty: &str, from: Ruleset) -> bool;
+    /// May a `from` element whose `legacy_alias` names its former type `alias` (a 2024 `Species`
+    /// that was a `Race`) be used as that type? Defaults to [`Self::accepts_foreign`] of `alias`.
+    fn accepts_legacy_alias(&self, alias: &str, from: Ruleset) -> bool {
+        self.accepts_foreign(alias, from)
+    }
     /// Standard languages chosen at character creation besides Common (0 = languages come from
     /// content, 2014).
     fn creation_languages(&self) -> u32 {
@@ -243,6 +248,11 @@ impl RulesetProfile for Dnd2014 {
         // In 2014 characters 2024 content is limited to spells and items.
         from != Ruleset::Dnd2024
             || matches!(ty, "Spell" | "Magic Item" | "Weapon" | "Armor" | "Item")
+    }
+    fn accepts_legacy_alias(&self, alias: &str, from: Ruleset) -> bool {
+        // A 2024 species that was a race (a renamed 5etools race a 2014 character was saved
+        // with) still fills the 2014 Race slot.
+        alias == "Race" || self.accepts_foreign(alias, from)
     }
 }
 
@@ -399,6 +409,10 @@ mod tests {
         assert!(b.accepts_foreign("Race", Ruleset::Dnd2014));
         assert!(!a.accepts_foreign("Class", Ruleset::Dnd2024));
         assert!(a.accepts_foreign("Spell", Ruleset::Dnd2024));
+        assert!(!a.accepts_foreign("Species", Ruleset::Dnd2024));
+        assert!(a.accepts_legacy_alias("Race", Ruleset::Dnd2024));
+        assert!(!a.accepts_legacy_alias("Feat", Ruleset::Dnd2024));
+        assert!(b.accepts_legacy_alias("Race", Ruleset::Dnd2014));
         assert!(a.unimplemented_areas().is_empty());
         assert!(b.unimplemented_areas().is_empty());
     }

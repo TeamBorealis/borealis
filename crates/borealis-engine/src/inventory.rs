@@ -78,6 +78,39 @@ pub struct ActiveItems<'u> {
     pub equip: EquipState,
     /// Attuned items counted (after the limit is applied).
     pub attuned_count: u32,
+    /// Carried items that cannot be equipped (adventuring gear with charges): only their
+    /// resources run, while they are carried (and attuned when they require it).
+    pub carried: Vec<ItemRoot<'u>>,
+}
+
+/// Attune an item that asks for it unless `limit` is reached (then warn and leave it unattuned).
+fn take_attunement(
+    wanted: bool,
+    base: &UElem,
+    verb: &str,
+    count: &mut u32,
+    limit: u32,
+    diags: &mut DiagSink,
+) -> bool {
+    if !wanted {
+        return false;
+    }
+    if *count >= limit {
+        diags.push(
+            Diagnostic::new(
+                code::ATTUNEMENT_OVER_LIMIT,
+                Severity::Warning,
+                format!(
+                    "{} is {verb} but not attuned: the limit of {limit} is reached",
+                    base.el.name
+                ),
+            )
+            .at(base.el.id.clone()),
+        );
+        return false;
+    }
+    *count += 1;
+    true
 }
 
 /// Decide which items are registered. Attunement beyond `limit` is ignored in inventory order
@@ -92,6 +125,7 @@ pub fn active_items<'u>(
     let mut roots = Vec::new();
     let mut eq = EquipState::default();
     let mut attuned_count = 0u32;
+    let mut carried = Vec::new();
     for it in &inv.items {
         let Some((base, adorner)) = crate::item_base::resolve(uni, it) else {
             diags.push(
@@ -104,30 +138,41 @@ pub fn active_items<'u>(
             );
             continue;
         };
-        let Some(slot) = it.equipped else { continue };
         let bf = item_facts(base);
         let af = adorner.map(item_facts);
         let needs_att =
             bf.requires_attunement || af.as_ref().is_some_and(|f| f.requires_attunement);
-        let mut attuned = it.attuned && needs_att;
-        if attuned {
-            if attuned_count >= limit {
-                attuned = false;
-                diags.push(
-                    Diagnostic::new(
-                        code::ATTUNEMENT_OVER_LIMIT,
-                        Severity::Warning,
-                        format!(
-                            "{} is equipped but not attuned: the limit of {limit} is reached",
-                            base.el.name
-                        ),
-                    )
-                    .at(base.el.id.clone()),
+        let Some(slot) = it.equipped else {
+            if !bf.equippable {
+                let attuned = take_attunement(
+                    it.attuned && needs_att,
+                    base,
+                    "carried",
+                    &mut attuned_count,
+                    limit,
+                    diags,
                 );
-            } else {
-                attuned_count += 1;
+                let registered = |f: &ItemFacts| !f.requires_attunement || attuned;
+                for (e, f) in std::iter::once((base, &bf)).chain(adorner.zip(af.as_ref())) {
+                    if registered(f) {
+                        carried.push(ItemRoot {
+                            e,
+                            uid: it.uid.clone(),
+                            attuned,
+                        });
+                    }
+                }
             }
-        }
+            continue;
+        };
+        let attuned = take_attunement(
+            it.attuned && needs_att,
+            base,
+            "equipped",
+            &mut attuned_count,
+            limit,
+            diags,
+        );
         let base_registered =
             bf.body_armor || bf.weapon || bf.shield || !bf.requires_attunement || attuned;
         let adorner_registered =
@@ -174,6 +219,7 @@ pub fn active_items<'u>(
         roots,
         equip: eq,
         attuned_count,
+        carried,
     }
 }
 
