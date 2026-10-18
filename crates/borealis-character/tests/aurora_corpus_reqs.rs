@@ -104,14 +104,20 @@ struct Host<'a> {
 
 impl Host<'_> {
     fn new_char(&self, class: &str) -> CharacterState {
-        borealis_engine::invariants::enable_for_thread();
         let e = self.engine;
-        let s = commands::new_character(e, Ruleset::Dnd2014);
-        let s = commands::set_base_scores(e, &s, SCORES).map_or(s, |o| o.state);
+        let s = self.blank(Ruleset::Dnd2014);
         let key = slot_key(&e.derive(&s), "ID_LEVEL_1", "Class", 1).expect("class slot");
         commands::select(e, &s, &key, Choice::Element(class.into()))
             .expect("class")
             .state
+    }
+
+    /// A level-1 character of `ruleset` with the test scores and no class.
+    fn blank(&self, ruleset: Ruleset) -> CharacterState {
+        borealis_engine::invariants::enable_for_thread();
+        let e = self.engine;
+        let s = commands::new_character(e, ruleset);
+        commands::set_base_scores(e, &s, SCORES).map_or(s, |o| o.state)
     }
 
     fn pick(&self, s: &CharacterState, target: &str) -> Option<CharacterState> {
@@ -413,12 +419,19 @@ fn partnered_content_resolves_newer_aurora_ids() {
     let engine = Engine::new(&store);
     let h = Host { engine: &engine };
     let fighter = h.new_char(FIGHTER);
+    // races of 5.5e-marked sources are 2024 content (A3): probed on a 2024 character
+    let host24 = h.blank(Ruleset::Dnd2024);
     for race in store
         .by_type("Race")
         .filter(|r| ours.contains(&r.element.id))
     {
         let id = &race.element.id;
-        let Some(s) = h.pick(&fighter, id) else {
+        let host = if race.element.ruleset == Some(Ruleset::Dnd2024) {
+            &host24
+        } else {
+            &fighter
+        };
+        let Some(s) = h.pick(host, id) else {
             failures.push(format!("{id} not offered"));
             continue;
         };
