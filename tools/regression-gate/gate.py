@@ -35,6 +35,7 @@ SUMMARY = re.compile(r"^summary: (\d+) rows, must (\d+)/(\d+) pass, should (\d+)
 PINNED = PRIVATE / "pinned-drafts"  # the drafts the gate re-finalizes (live ones move during live runs)
 STALE_RUN = re.compile(r"-(prev|rerun\d*)$")
 REPLAY_TEST = "import::anything::replay_tests::refinalize_a_stored_draft"
+OPT_IN = ("acceptance", "dnd5e-truth")  # suites run only when named in --only
 
 
 def corpus_repos():
@@ -80,6 +81,13 @@ def suites():
     comm_env = {**acc_env, "BOREALIS_ACCEPT_ONLY": "a-comm", "BOREALIS_ACCEPT_COMM_S2": "1"}
     table["acceptance-comm"] = ("IM4 acceptance stage 2 per community repo on A-core (very slow, opt-in)",
                                 CORPUS, [("borealis", "acceptance", comm_env)])
+    # IM4 stage 3c: values Aurora wrote into .dnd5e files vs Borealis (opt-in: --only dnd5e-truth).
+    truth_env = dict(root)
+    for var in ("BOREALIS_DND5E_DIR", "BOREALIS_DND5E_PRIVATE"):
+        if os.environ.get(var):
+            truth_env[var] = os.environ[var]
+    table["dnd5e-truth"] = ("IM4 stage 3c: Aurora .dnd5e ground truth vs Borealis values (opt-in)",
+                            CORPUS, [("borealis-character", "dnd5e_truth", truth_env)])
     return table
 
 
@@ -336,9 +344,9 @@ def main():
     if unknown:
         print(f"unknown suite(s): {unknown}; see --list", file=sys.stderr)
         return 2
-    # acceptance re-runs the other corpus suites: only when asked for by name
+    # acceptance re-runs the other corpus suites, dnd5e-truth is new: only when asked for by name
     selected = [n for n in table if (not only or n in only) and n not in skip
-                and (not n.startswith("acceptance") or n in only)]
+                and (not n.startswith(OPT_IN) or n in only)]
     PRIVATE.mkdir(parents=True, exist_ok=True)
     run_dir, prev = PRIVATE / "last-run", PRIVATE / "prev-run"
     base_file = PRIVATE / "baseline.json"
