@@ -224,16 +224,28 @@ impl Check<'_> {
                 verdict_nm(crit == c, crit == 20, || format!("{crit} want {c}")),
             );
         }
-        let missing: Vec<String> = props
+        // a core property is its tag; a book's own (`Evo|AU`) must be an imported Weapon
+        // Property element the weapon supports
+        let raw_props = self.raw.raw_properties();
+        let held = |tag: &str| {
+            self.el.supports.iter().any(|s| s == tag)
+                && (tag.starts_with("ID_INTERNAL_")
+                    || self
+                        .cx
+                        .ours
+                        .get(tag)
+                        .is_some_and(|(e, _)| e.ty == "Weapon Property"))
+        };
+        let missing: Vec<String> = raw_props
             .iter()
-            .filter(|p| match support::property_id(p) {
-                Some(pid) => !self.el.supports.iter().any(|s| s == pid),
+            .filter(|p| match support::property_tag(p) {
+                Some(tag) => !held(&tag),
                 None => true,
             })
             .cloned()
             .collect();
         if !props.is_empty() {
-            let unmapped = missing.iter().all(|p| support::property_id(p).is_none());
+            let unmapped = missing.iter().all(|p| support::property_tag(p).is_none());
             t.record(
                 "weapon properties",
                 id,
@@ -475,6 +487,19 @@ impl Check<'_> {
                     self.speed_multiply(t, m, mode, v);
                     continue;
                 }
+                // `equal` + `multiply` of one mode (Eagle Whistle: fly at twice the walk while
+                // blowing): the toggle's speed (on: `speed_multiply`); off, no speed of its own
+                let multiplied = m.get("multiply").and_then(|x| x.get(mode)).is_some();
+                if how == "equal" && multiplied {
+                    t.record(
+                        "speed change (modifySpeed)",
+                        id,
+                        verdict(got == before, || {
+                            format!("{mode} {got} with the toggle off, want {before}")
+                        }),
+                    );
+                    continue;
+                }
                 let want = match (how.as_str(), v) {
                     ("static", n) => v_i32(n).map(|n| before.max(n)),
                     ("equal", Value::String(other)) => Some(get(self.snap, other)),
@@ -621,6 +646,23 @@ impl Check<'_> {
             ),
             ("grantsLanguage", "grants language", granted("Language")),
         ] {
+            let by_item = key == "grantsProficiency"
+                && !ok
+                && self.raw.0.contains_key(key)
+                && self.el.setter_value("proficient") == Some("true");
+            if by_item {
+                // "proficient with this item": the worn line itself must be proficient
+                let line = self.snap.inventory.items.iter().find(|l| l.uid == self.uid);
+                let applied = line.is_some_and(|l| l.proficient_by_item);
+                t.record(
+                    cat,
+                    id,
+                    verdict(applied, || {
+                        "proficient setter not applied to the line".into()
+                    }),
+                );
+                continue;
+            }
             if self.raw.0.contains_key(key) {
                 t.record(
                     cat,
@@ -664,7 +706,7 @@ impl Check<'_> {
 impl Check<'_> {
     /// The fighter with the weapon that fires this ammunition equipped (a bow for arrows and
     /// unnamed ammunition, a crossbow for bolts, a sling for sling bullets, a pistol for other
-    /// bullets, a blowgun for needles).
+    /// bullets, a blowgun for needles, a laser pistol for energy cells).
     fn launcher(&self) -> Option<support::Sub> {
         let name = self.el.name.to_lowercase();
         let weapon = if name.contains("bolt") {
@@ -675,6 +717,8 @@ impl Check<'_> {
             ids::pistol(self.rs)
         } else if name.contains("needle") {
             ids::blowgun(self.rs)
+        } else if name.contains("energy cell") {
+            ids::laser_pistol(self.rs)
         } else {
             return Some(support::Sub {
                 state: self.base.with_bow.state.clone(),

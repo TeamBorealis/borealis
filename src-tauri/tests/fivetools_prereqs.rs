@@ -252,9 +252,26 @@ fn run(data: &Path) {
         &dwarf,
     );
 
-    // feat requires feat (and level 4)
-    let chain = "ID_5ET_AU_FEAT_ELEMENTAL_FAMILIAR";
-    let with = w.pick(&low, "ID_5ET_AU_FEAT_FAMILIAR_FRIEND");
+    // Arcana Unleashed (2026) is 2024 content (IM8): a 2014 character is not offered its feats
+    let au = result
+        .packs
+        .iter()
+        .find_map(|p| {
+            let e = p
+                .elements()
+                .find(|e| e.id == "ID_5ET_AU_FEAT_FAMILIAR_FRIEND")?;
+            Some(e.ruleset.or(p.ruleset))
+        })
+        .expect("AU feat imported");
+    assert_eq!(au, Some(Ruleset::Dnd2024), "AU is 2024 content");
+    assert!(
+        !w.offered(&low, "ID_5ET_AU_FEAT_FAMILIAR_FRIEND"),
+        "AU feat offered to a 2014 character"
+    );
+
+    // feat requires feat (and level 4), within 2014 content
+    let chain = "ID_5ET_DSOTDQ_FEAT_KNIGHT_OF_THE_CROWN";
+    let with = w.pick(&low, "ID_5ET_DSOTDQ_FEAT_SQUIRE_OF_SOLAMNIA");
     let without = w.pick(&low, "ID_5ET_PHB_FEAT_ALERT");
     assert!(
         !w.offered(&with, chain),

@@ -8,6 +8,12 @@ use serde_json::Value;
 /// no explicit `edition` field.
 const SOURCES_2024: &[&str] = &["XPHB", "XDMG", "XMM"];
 
+/// True for the 2024 core books, whose content was 2024 before any publication date was read.
+#[must_use]
+pub fn is_2024_core_book(source: &str) -> bool {
+    SOURCES_2024.iter().any(|s| s.eq_ignore_ascii_case(source))
+}
+
 /// Flags 5etools sets on entries that are part of a freely licensed document. `srd` is the
 /// 5.1 SRD, `srd52` the 5.2 SRD. The Basic Rules flags (`basicRules`, `basicRules2024`,
 /// `freeRules2024`) mark free-to-read but not openly licensed material.

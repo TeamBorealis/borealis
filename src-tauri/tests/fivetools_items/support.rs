@@ -70,6 +70,13 @@ pub mod ids {
     pub fn pistol(rs: Ruleset) -> &'static str {
         by(rs, "ID_5ET_DMG_ITEM_PISTOL", "ID_5ET_XPHB_ITEM_PISTOL")
     }
+    pub fn laser_pistol(rs: Ruleset) -> &'static str {
+        by(
+            rs,
+            "ID_5ET_DMG_ITEM_LASER_PISTOL",
+            "ID_5ET_XDMG_ITEM_LASER_PISTOL",
+        )
+    }
     pub fn blowgun(rs: Ruleset) -> &'static str {
         by(rs, "ID_5ET_PHB_ITEM_BLOWGUN", "ID_5ET_XPHB_ITEM_BLOWGUN")
     }
@@ -241,9 +248,20 @@ impl RawItem {
             .unwrap_or_default()
     }
     pub fn properties(&self) -> Vec<String> {
+        self.raw_properties()
+            .iter()
+            .map(|s| strip(s).to_string())
+            .collect()
+    }
+    /// Property codes with their book (`Evo|AU`); a `{"uid": ...}` object is its uid.
+    pub fn raw_properties(&self) -> Vec<String> {
         self.list("property")
             .iter()
-            .filter_map(|p| p.as_str().map(|s| strip(s).to_string()))
+            .filter_map(|p| {
+                p.as_str()
+                    .or_else(|| p.get("uid").and_then(Value::as_str))
+                    .map(str::to_string)
+            })
             .collect()
     }
     pub fn mastery(&self) -> Option<String> {
@@ -635,6 +653,22 @@ pub fn dice_with_bonus(dice: &str, bonus: i32, ty: &str) -> String {
 }
 
 /// The core weapon-property tag of a 5etools property code.
+/// The supports tag a weapon property code (`F`, or `Evo|AU` with its book) must give: a core
+/// property tag, or the Weapon Property element the import makes of a book's own property
+/// (`ID_5ET_AU_ITEMPROP_EVO`).
+pub fn property_tag(raw: &str) -> Option<String> {
+    let (code, source) = raw.split_once('|').unwrap_or((raw, ""));
+    property_id(code).map(str::to_string).or_else(|| {
+        let frag = |s: &str| {
+            s.trim()
+                .to_uppercase()
+                .replace(|c: char| !c.is_ascii_alphanumeric(), "_")
+        };
+        (!source.trim().is_empty())
+            .then(|| format!("ID_5ET_{}_ITEMPROP_{}", frag(source), frag(code)))
+    })
+}
+
 pub fn property_id(code: &str) -> Option<&'static str> {
     Some(match code {
         "A" => "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION",

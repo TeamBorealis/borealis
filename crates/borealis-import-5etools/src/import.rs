@@ -133,9 +133,10 @@ pub fn import_folder_with_progress(
     let mut case = BTreeMap::new();
     let ents = select_entities(&loaded, options, &mut st, &mut case);
     prog.total = ents.total();
+    let late = crate::editions::late_sources(&loaded.published);
     let sh = build_shared(&mut loaded, &ents, options, &mut st);
     convert_all(&sh, &ents, &mut st, &mut prog);
-    let result = finish(&sh, st, &case);
+    let result = finish(&sh, st, &case, &late);
     prog.send(Phase::Done, prog.total, prog.total, "done");
     Ok(result)
 }
@@ -576,7 +577,17 @@ fn convert_all(sh: &Shared, e: &Ents, st: &mut State, prog: &mut Progress<'_, '_
         }
     }
     for (tag, ent) in &e.catalog {
-        misc::skip_catalog(st, ent, tag);
+        let abbreviation = ent.raw.get("abbreviation").and_then(Value::as_str);
+        let own_property = *tag == "itemProperty"
+            && abbreviation.is_some_and(|a| convert::item::property_id(a).is_none());
+        if own_property {
+            let conv = misc::convert_item_property(sh, st, ent);
+            if !conv.elements.is_empty() {
+                st.emit(ent, tag, conv);
+            }
+        } else {
+            misc::skip_catalog(st, ent, tag);
+        }
     }
     prog.group_done(
         "conditions and catalogs",
@@ -653,9 +664,38 @@ fn source_ruleset(abbr: &str, elements: &[Element]) -> Ruleset {
     ruleset_for(abbr, None)
 }
 
-fn finish(sh: &Shared, mut st: State, case: &BTreeMap<String, String>) -> ImportResult {
+/// IM8 turned the races of books dated after the 2024 handbook into species
+/// (`ID_5ET_LFL_RACE_BOGGART` -> `ID_5ET_LFL_SPECIES_BOGGART`, its `..._SPELLCASTING_CHA`
+/// grants too): each keeps its former id as `renamed_from` (the app rewrites a saved character's
+/// ids through it, `src-tauri/src/renamed_ids.rs`), and a species its former type as `legacy_alias`.
+fn alias_former_race_ids(abbr: &str, elements: &mut [Element]) {
+    let frag = crate::util::id_fragment(abbr);
+    let species = format!("ID_5ET_{frag}_SPECIES_");
+    let race = format!("ID_5ET_{frag}_RACE_");
+    for el in elements.iter_mut() {
+        if el.renamed_from.is_none() {
+            if let Some(rest) = el.id.strip_prefix(&species) {
+                el.renamed_from = Some(format!("{race}{rest}"));
+                // it was a Race: a 2014 character saved with it names a Race slot
+                if el.ty == "Species" && el.legacy_alias.is_none() {
+                    el.legacy_alias = Some("Race".into());
+                }
+            }
+        }
+    }
+}
+
+fn finish(
+    sh: &Shared,
+    mut st: State,
+    case: &BTreeMap<String, String>,
+    late: &BTreeSet<String>,
+) -> ImportResult {
     let mut packs = Vec::new();
     for (upper, mut elements) in std::mem::take(&mut st.out) {
+        if late.contains(&upper) && !crate::source::is_2024_core_book(&upper) {
+            alias_former_race_ids(&upper, &mut elements);
+        }
         let abbr = case.get(&upper).cloned().unwrap_or(upper);
         let ruleset = source_ruleset(&abbr, &elements);
         elements.push(convert::misc::source_element(sh, &mut st, &abbr, ruleset));

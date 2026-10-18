@@ -106,6 +106,13 @@ fn plain_id(kind: IdKind, source: &str, parts: &[&str]) -> String {
     id
 }
 
+/// Id of a weapon property a book defines (`Evo|AU` -> `ID_5ET_AU_ITEMPROP_EVO`): the same
+/// for the property element and for the weapons that carry it.
+#[must_use]
+pub fn source_property_id(code: &str, source: &str) -> String {
+    plain_id(IdKind::ItemProperty, source, &[code])
+}
+
 fn hashed(id: &str, full_key: &str) -> String {
     format!("{id}_{:08X}", fnv1a(full_key) & 0xFFFF_FFFF)
 }

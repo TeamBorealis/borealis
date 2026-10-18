@@ -11,6 +11,7 @@ use crate::text::{RefKind, Renderer};
 use crate::util::{id_fragment, title_case};
 use borealis_content::{Element, ExtractItem, Rule, Ruleset, Setter};
 use serde_json::{json, Map, Value};
+use std::collections::BTreeSet;
 
 #[path = "item_extras.rs"]
 mod item_extras;
@@ -102,7 +103,9 @@ fn damage_type_name(code: &str) -> Option<&'static str> {
 /// Supports tag of the Ammunition weapon property.
 const AMMUNITION_PROPERTY: &str = "ID_INTERNAL_WEAPON_PROPERTY_AMMUNITION";
 
-fn property_id(code: &str) -> Option<&'static str> {
+/// Supports tag of a core weapon property code (`F`, `2H`, ...).
+#[must_use]
+pub fn property_id(code: &str) -> Option<&'static str> {
     Some(match code {
         "A" => AMMUNITION_PROPERTY,
         "F" => "ID_INTERNAL_WEAPON_PROPERTY_FINESSE",
@@ -516,6 +519,10 @@ fn weapon(it: &Item, code: &str, base_name: &str, el: &mut Element) {
         }
         if let Some(id) = property_id(code) {
             el.supports.push(id.to_string());
+        } else if let Some((_, source)) = raw.split_once('|') {
+            // a property of the book's own (`Evo|AU`, `Vst|EGW`): its imported element
+            el.supports
+                .push(crate::ids::source_property_id(code, source.trim()));
         }
         // `AF` is the Ammunition property of firearms (DMG 2014 pistol, musket, revolver):
         // the weapon fires ammunition like any other with the property
@@ -909,15 +916,16 @@ pub fn generate_variant_items(variants: &[Value], bases: &[Value]) -> Vec<Value>
             variant_source,
             variant.get("edition").and_then(Value::as_str),
         );
-        // a variant of a book dated after the 2024 handbook (IM8) also fits the 2014 bases
-        // that were never reprinted
+        // a variant of a book dated after the 2024 handbook (IM8) fits the 2014 bases too, as
+        // it did before its edition was known: the items it made keep their ids (a hoopak, a
+        // crossbow bolt); a 2014 base yields nothing its 2024 reprint already yields by name
         let by_date = variant.get(crate::editions::EDITION_BY_DATE) == Some(&Value::Bool(true));
+        let mut made: Vec<(bool, Value)> = Vec::new();
         for base in bases {
             let Some(bm) = base.as_object() else { continue };
             // A 2014 variant applies to 2014 base items only, and a 2024 one to 2024 ones.
             let base_rs = crate::source::ruleset_of_entry(base);
-            let unreprinted = base_rs == Ruleset::Dnd2014 && !bm.contains_key("reprintedAs");
-            if base_rs != variant_rs && !(by_date && unreprinted) {
+            if base_rs != variant_rs && !(by_date && base_rs == Ruleset::Dnd2014) {
                 continue;
             }
             if !requires.iter().any(|r| requirement_matches(bm, r)) {
@@ -1001,8 +1009,17 @@ pub fn generate_variant_items(variants: &[Value], bases: &[Value]) -> Vec<Value>
             if let Some(Value::Bool(true)) = variant.get("ammo") {
                 item.insert("ammo".into(), Value::Bool(true));
             }
-            out.push(Value::Object(item));
+            made.push((base_rs == variant_rs, Value::Object(item)));
         }
+        let name_of = |v: &Value| v.get("name").and_then(Value::as_str).map(str::to_lowercase);
+        let own: BTreeSet<String> = made
+            .iter()
+            .filter(|(own_edition, _)| *own_edition)
+            .filter_map(|(_, v)| name_of(v))
+            .collect();
+        out.extend(made.into_iter().filter_map(|(own_edition, v)| {
+            (own_edition || !name_of(&v).is_some_and(|n| own.contains(&n))).then_some(v)
+        }));
     }
     out
 }
@@ -1081,6 +1098,15 @@ mod tests {
             .supports
             .contains(&"ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED".to_string()));
         assert_eq!(setter(el, "slot").value, "twohand");
+        // a property of the book's own is its imported Weapon Property element
+        let blade = json!({"name": "Odd Blade", "source": "AU", "type": "M", "rarity": "rare",
+            "weaponCategory": "martial", "dmg1": "1d8", "dmgType": "S", "property": ["V", "Evo|AU"]});
+        let el = &convert(&sh, &mut st, &ent(blade)).elements[0];
+        assert!(
+            el.supports.contains(&"ID_5ET_AU_ITEMPROP_EVO".to_string()),
+            "{:?}",
+            el.supports
+        );
     }
 
     #[test]
@@ -1307,6 +1333,7 @@ mod tests {
                 )
             })
             .collect();
+        // the PHB longsword yields "Dazzling Longsword" as the XPHB one does: only once
         assert_eq!(
             made,
             vec![
@@ -1315,6 +1342,20 @@ mod tests {
                 ("XDMG", "longsword|xphb", "-"),
             ]
         );
+        // a reprint under another name (Crossbow Bolt -> Bolt) keeps the 2014 item too
+        let bases = vec![
+            json!({"name": "Crossbow Bolt", "source": "PHB", "edition": "classic", "type": "A",
+                "reprintedAs": ["Bolt|XPHB"]}),
+            json!({"name": "Bolt", "source": "XPHB", "edition": "one", "type": "A|XPHB"}),
+        ];
+        let dated = json!({"name": "Goading Ammunition", "edition": "one", "_editionByDate": true,
+            "requires": [{"type": "A"}],
+            "inherits": {"namePrefix": "Goading ", "source": "AU", "edition": "one"}});
+        let names: Vec<String> = generate_variant_items(&[dated], &bases)
+            .iter()
+            .map(|i| i["name"].as_str().unwrap().to_string())
+            .collect();
+        assert_eq!(names, ["Goading Crossbow Bolt", "Goading Bolt"]);
     }
 
     #[test]

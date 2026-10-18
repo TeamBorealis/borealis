@@ -81,7 +81,8 @@ pub fn spec_for(engine: &Engine, rs: Ruleset, el: &Element) -> Option<HostSpec> 
         if key.eq_ignore_ascii_case("feature") && value.eq_ignore_ascii_case("spellcasting") {
             class = class.or_else(|| named(uni, &["Class"], "Wizard"));
         } else if key.eq_ignore_ascii_case("feature") {
-            race = race.or_else(|| named(uni, &["Race", "Sub Race"], value));
+            // a 2024 dwarf is a Species
+            race = race.or_else(|| named(uni, &["Race", "Sub Race", "Species"], value));
         } else if value.parse::<i64>().is_ok() {
             class = class.or_else(|| named(uni, &["Class"], key));
         }

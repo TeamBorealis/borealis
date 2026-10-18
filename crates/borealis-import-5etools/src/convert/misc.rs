@@ -149,6 +149,52 @@ pub fn convert_condition(sh: &Shared, st: &mut State, ent: &Ent, tag: &str) -> C
     }
 }
 
+/// A weapon property a book defines (`Evo|AU` Evolving Item, `Vst|EGW` Vestige of
+/// Divergence): a `Weapon Property` element the weapons with that code support. Core codes
+/// are covered by the core pack.
+pub fn convert_item_property(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
+    let r: Reference = match model::parse(&ent.raw) {
+        Ok(r) => r,
+        Err(e) => {
+            st.report.skipped(
+                &ent.file,
+                "itemProperty",
+                &ent.label(),
+                &format!("invalid shape: {e}"),
+            );
+            return Conv::default();
+        }
+    };
+    let code = r.abbreviation.clone().unwrap_or_else(|| ent.name.clone());
+    // the printed name and text sit in the first entries block
+    let block = r.entries.first().and_then(Value::as_object);
+    let name = block
+        .and_then(|b| b.get("name"))
+        .and_then(Value::as_str)
+        .map_or_else(|| code.clone(), str::to_string);
+    let body: Vec<Value> = block
+        .and_then(|b| b.get("entries"))
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_else(|| r.entries.clone());
+    let resolver = |k: RefKind, n: &str, s: &str| sh.link(k, n, s);
+    let mut renderer = Renderer::new(&resolver);
+    let id = crate::ids::source_property_id(&code, &ent.source);
+    let mut el = new_element(
+        &id,
+        &name,
+        "Weapon Property",
+        &sh.source_display(&ent.source),
+        ent.ruleset,
+    );
+    el.description = renderer.entries(&body);
+    drain_renderer(st, &renderer, &ent.file, &name);
+    Conv {
+        elements: vec![el],
+        partial: Vec::new(),
+    }
+}
+
 /// Label of a 5etools character creation option type.
 fn char_option_label(code: &str) -> &'static str {
     match code {
@@ -240,6 +286,22 @@ mod tests {
             file: "languages.json".into(),
             raw,
         }
+    }
+
+    #[test]
+    fn a_book_weapon_property_is_an_element() {
+        let sh = Shared::default();
+        let mut st = State::default();
+        let evo = ent(json!({"abbreviation": "Evo", "source": "AU", "entries": [
+            {"type": "entries", "name": "Evolving Item", "entries": ["It grows with you."]}]}));
+        let conv = convert_item_property(&sh, &mut st, &evo);
+        let el = &conv.elements[0];
+        assert_eq!(el.id, "ID_5ET_AU_ITEMPROP_EVO");
+        assert_eq!(
+            (el.ty.as_str(), el.name.as_str()),
+            ("Weapon Property", "Evolving Item")
+        );
+        assert!(conv.partial.is_empty());
     }
 
     #[test]
