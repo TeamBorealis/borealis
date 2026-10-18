@@ -817,7 +817,7 @@ pub fn feat_category_also(code: &str) -> Option<&'static str> {
 }
 
 #[cfg(test)]
-mod tests_support {
+pub(crate) mod tests_support {
     use super::*;
     use crate::source::default_source_name;
 

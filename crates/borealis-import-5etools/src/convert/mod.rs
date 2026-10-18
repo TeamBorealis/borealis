@@ -22,6 +22,7 @@ pub mod spell;
 pub mod spell_blocks;
 pub mod spell_choices;
 pub mod spells_extra;
+pub mod stated_choices;
 
 use crate::ids::IdAlloc;
 use crate::options::ImportOptions;

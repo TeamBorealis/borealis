@@ -269,6 +269,7 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
         mech.push(rule);
     }
     let srd = srd_rules(sh, &f, ent.ruleset, sub);
+    let took_srd = srd.is_some();
     let mut book_options = Vec::new();
     if let Some((srd_id, mut rules)) = srd {
         // the SRD's option selects offer the book's own list (PHB Underdark terrain)
@@ -329,6 +330,11 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
         for r in rituals {
             mech.push(r);
         }
+    }
+    if !took_srd {
+        // proficiency choices the feature states only in its prose
+        let stated = super::stated_choices::read(&f.entries);
+        super::stated_choices::apply(&mut mech, &stated);
     }
     el.rules = std::mem::take(&mut mech.rules);
     if let Some((rules, block)) = (!sub).then(|| st.feature_casting.remove(&id)).flatten() {
