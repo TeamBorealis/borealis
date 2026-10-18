@@ -92,6 +92,12 @@ def suites():
                             CORPUS, [("borealis-character", "dnd5e_truth", truth_env)])
     # It passes on every gated file (det-char-1) and runs in seconds: also part of acceptance.
     table["acceptance"][2].append(("borealis-character", "dnd5e_truth", truth_env))
+    # IM7 stage 3e: the 26 SRD golden characters, built from the bundled SRD packs only (no corpus,
+    # about 30 s): one outcome per expected fact (golden/<id>/<fact>) and per build problem.
+    goldens = APP / "src-tauri" / "tests" / "goldens"
+    table["golden"] = ("IM7 stage 3e: SRD golden characters vs hand-derived expected sheets", goldens,
+                       [("borealis", "golden_characters", {})])
+    table["acceptance"][2].append(("borealis", "golden_characters", {}))
     return table
 
 
