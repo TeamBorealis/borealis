@@ -486,6 +486,7 @@ pub fn spellcasting_snapshots(
         let _ = abbr;
     }
     crate::item_spells::add_item_blocks(graph, stats, &mut out);
+    crate::granted_casting::add_granted_blocks(graph, stats, &mut out);
     out
 }
 

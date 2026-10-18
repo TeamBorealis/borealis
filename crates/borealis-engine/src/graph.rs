@@ -1045,7 +1045,9 @@ impl<'u> Graph<'u> {
         let inherited = self.inherits_legacy_acceptance(owner, cand);
         let type_ok = alternative
             || crate::universe::type_fits(&s.ty, &cand.el.ty)
-            || cand.el.legacy_alias.as_deref() == Some(s.ty.as_str());
+            || cand.el.legacy_alias.as_deref() == Some(s.ty.as_str())
+            || (cand.edition.is_foreign()
+                && crate::universe::cross_edition_types(&s.ty).contains(&cand.el.ty.as_str()));
         if !type_ok || !(cand.edition.is_accepted() || inherited) {
             return false;
         }
@@ -1076,7 +1078,10 @@ impl<'u> Graph<'u> {
         {
             return false;
         }
-        if !alternative && !supports_cond_match(supports, cand, dyns) {
+        let supported = dyns
+            .replaced_known_spell(s, cand)
+            .unwrap_or_else(|| supports_cond_match(supports, cand, dyns));
+        if !alternative && !supported {
             return false;
         }
         if !self.prereq_holds(cand) {
@@ -1300,6 +1305,8 @@ pub struct SpellDynamics<'g, 'u> {
     graph: &'g Graph<'u>,
     class: Option<String>,
     level: u32,
+    /// A slot of the rule was reopened by a spell replacement (`replace_spell`).
+    retrained: bool,
     owner: Option<NodeId>,
     slot_level: OnceCell<u32>,
     lists: OnceCell<ClassSpellLists<'u>>,
@@ -1337,6 +1344,7 @@ impl<'g, 'u> SpellDynamics<'g, 'u> {
             graph,
             class,
             level,
+            retrained,
             owner: Some(owner),
             slot_level: OnceCell::new(),
             lists: OnceCell::new(),
@@ -1350,6 +1358,7 @@ impl<'g, 'u> SpellDynamics<'g, 'u> {
             graph,
             class,
             level,
+            retrained: false,
             owner: None,
             slot_level: OnceCell::new(),
             lists: OnceCell::new(),
@@ -1388,6 +1397,28 @@ impl<'g, 'u> SpellDynamics<'g, 'u> {
         })
     }
 
+    /// A replaced known spell of a select authored as `$(spellcasting:list),<spell levels>`
+    /// (the SRD packs write the level filter out, Aurora writes `$(spellcasting:slots)`): the
+    /// new spell may be of any level the class has slots for at its current level (SRD 5.1
+    /// Warlock, Sorcerer, Bard, Ranger: "another spell ... which also must be of a level for
+    /// which you have spell slots"), as Aurora's `$(spellcasting:slots)` evaluates. `None` when
+    /// the select is not such a reopened slot (the authored supports apply).
+    fn replaced_known_spell(
+        &self,
+        rule: &borealis_content::SelectRule,
+        element: &UElem,
+    ) -> Option<bool> {
+        if !self.retrained || !literal_level_spell_select(rule.supports.as_deref().unwrap_or("")) {
+            return None;
+        }
+        let class = self.class.as_ref()?;
+        let h = self.slot_level(class);
+        Some(
+            self.list_matches(element)
+                && element.spell_level().is_some_and(|l| (1..=h).contains(&l)),
+        )
+    }
+
     fn list_matches(&self, element: &UElem) -> bool {
         let Some(class) = &self.class else {
             return false;
@@ -1404,6 +1435,26 @@ impl<'g, 'u> SpellDynamics<'g, 'u> {
             .iter()
             .any(|e| crate::eval::supports_match(e, element, &crate::eval::NoDynamics))
     }
+}
+
+/// `$(spellcasting:list),1` / `$(spellcasting:list),(1||2)`: a class list and leveled spell
+/// levels only (no cantrips, no other terms).
+fn literal_level_spell_select(supports: &str) -> bool {
+    let mut parts = supports.split(',');
+    if parts.next().map(str::trim) != Some("$(spellcasting:list)") {
+        return false;
+    }
+    let rest: Vec<&str> = parts.collect();
+    !rest.is_empty()
+        && rest.iter().all(|p| {
+            let levels: Vec<&str> = p
+                .split("||")
+                .map(|t| t.trim().trim_matches(|c| c == '(' || c == ')').trim())
+                .collect();
+            levels
+                .iter()
+                .all(|t| t.parse::<u32>().is_ok_and(|n| (1..=9).contains(&n)))
+        })
 }
 
 impl DynamicSupports for SpellDynamics<'_, '_> {
@@ -1435,6 +1486,18 @@ impl DynamicSupports for SpellDynamics<'_, '_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn literal_level_spell_selects() {
+        assert!(literal_level_spell_select("$(spellcasting:list),1"));
+        assert!(literal_level_spell_select("$(spellcasting:list),(1||2||3)"));
+        assert!(!literal_level_spell_select("$(spellcasting:list),0"));
+        assert!(!literal_level_spell_select(
+            "$(spellcasting:list),$(spellcasting:slots)"
+        ));
+        assert!(!literal_level_spell_select("$(spellcasting:list)"));
+        assert!(!literal_level_spell_select("Warlock,1"));
+    }
 
     #[test]
     fn mgr_equality() {

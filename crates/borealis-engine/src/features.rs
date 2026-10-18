@@ -41,22 +41,55 @@ impl Evaluation<'_> {
                     lines.push(format!("{}: {t}", el.name));
                 }
             }
-            out.push(FeatureDetail {
+            let level = self.granted_level(id);
+            let detail = FeatureDetail {
                 id: el.id.clone(),
                 name: el.name.clone(),
                 ty: el.ty.clone(),
                 source: el.source.clone(),
-                level: self.granted_level(id),
+                level,
                 granted_by: node.parent.map(|p| self.graph.nodes[p].e.el.name.clone()),
                 description: sanitize_html(&el.description),
                 sheet_summary: summary,
                 displayed,
-            });
+            };
+            let again: Vec<FeatureDetail> = self
+                .feat_select_levels(id, level)
+                .into_iter()
+                .map(|l| FeatureDetail {
+                    level: l,
+                    ..detail.clone()
+                })
+                .collect();
+            out.push(detail);
+            out.extend(again);
         }
         (out, lines.join("\n"))
     }
 
-    /// Level of the rule that granted or offered a node (1 when unrestricted).
+    /// Later levels at which a feature opens another feat select (a 2024 class's one Ability
+    /// Score Improvement feature with a `select_feat` per level): the feature is listed again
+    /// at each, as Aurora lists one granted Ability Score Improvement feature per level.
+    fn feat_select_levels(&self, id: NodeId, base: u32) -> Vec<u32> {
+        let node = &self.graph.nodes[id];
+        let mut levels: Vec<u32> = node
+            .slots
+            .iter()
+            .filter_map(|sl| match node.e.el.rules.get(sl.rule) {
+                Some(Rule::Select(s)) if s.ty == "Feat" => s.level,
+                _ => None,
+            })
+            .filter(|l| *l > base && *l <= self.graph.mgr_level(node.mgr))
+            .collect();
+        levels.sort_unstable();
+        levels.dedup();
+        levels
+    }
+
+    /// Level of the rule that granted or offered a node; a rule without a level inherits the
+    /// level its owner was gained at (a Fighting Style feat picked by the Paladin's level-2
+    /// Fighting Style feature is gained at 2); a root, and an unlevelled grant of a class,
+    /// count as level 1.
     fn granted_level(&self, id: NodeId) -> u32 {
         let node = &self.graph.nodes[id];
         let Some(parent) = node.parent else { return 1 };
@@ -66,11 +99,20 @@ impl Evaluation<'_> {
             Origin::Selected(si) => p.slots.get(si).map(|s| s.rule),
             _ => None,
         };
-        match rule_index.and_then(|ri| p.e.el.rules.get(ri)) {
-            Some(Rule::Grant(g)) => g.level.unwrap_or(1),
-            Some(Rule::Select(s)) => s.level.unwrap_or(1),
-            _ => 1,
-        }
+        let own = match rule_index.and_then(|ri| p.e.el.rules.get(ri)) {
+            Some(Rule::Grant(g)) => g.level,
+            Some(Rule::Select(s)) => s.level,
+            _ => None,
+        };
+        // a class grants its unlevelled features at class level 1, whatever character level
+        // the class (a multiclass) was taken at
+        own.unwrap_or_else(|| {
+            if matches!(p.e.el.ty.as_str(), "Class" | "Multiclass") {
+                1
+            } else {
+                self.granted_level(parent)
+            }
+        })
     }
 
     /// The sheet entries that apply at the node's current level, placeholders resolved.

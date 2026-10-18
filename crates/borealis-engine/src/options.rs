@@ -24,7 +24,7 @@ impl<'u> Graph<'u> {
         let dyns = SpellDynamics::new(self, owner, slot.rule);
         let allowed = |c: &UElem| self.choice_allowed_with(owner, slot.rule, c, false, &dyns);
         let mut out: Vec<&'u UElem> = uni
-            .candidates_for(&rule.ty)
+            .select_candidates(&rule.ty, self.allow_cross_edition)
             .filter(|c| current == Some(c.el.id.as_str()) || allowed(c))
             .collect();
         for alt in crate::custom_rules::alternatives_of(rule) {
@@ -75,7 +75,8 @@ impl<'u> Graph<'u> {
             self.ids.count(&c.el.id) > 0
                 && self.choice_allowed_inner(owner, slot.rule, c, false, &dyns, true)
         };
-        uni.candidates_for(&rule.ty).any(held)
+        uni.select_candidates(&rule.ty, self.allow_cross_edition)
+            .any(held)
             || crate::custom_rules::alternatives_of(rule)
                 .into_iter()
                 .filter_map(|a| uni.get(a))
@@ -184,7 +185,7 @@ mod tests {
                     .collect();
                 let current = slot.chosen.map(|c| g.nodes[c].e.el.id.as_str());
                 let mut slow: Vec<&str> = uni
-                    .candidates_for(&rule.ty)
+                    .select_candidates(&rule.ty, true)
                     .filter(|c| {
                         current == Some(c.el.id.as_str())
                             || g.choice_allowed(id, slot.rule, c, false)

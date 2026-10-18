@@ -40,7 +40,7 @@ fn grant_ability(graph: &Graph<'_>, node: &Node<'_>) -> Option<String> {
         .then(|| crate::ids::ABILITIES[first].to_string())
 }
 
-fn entry(graph: &Graph<'_>, node: &Node<'_>) -> SpellEntry {
+pub(crate) fn entry(graph: &Graph<'_>, node: &Node<'_>) -> SpellEntry {
     SpellEntry {
         id: node.e.el.id.clone(),
         name: node.e.el.name.clone(),
@@ -53,7 +53,11 @@ fn entry(graph: &Graph<'_>, node: &Node<'_>) -> SpellEntry {
     }
 }
 
-fn block(name: String, ability: Option<String>, stats: &StatSet) -> SpellcastingSnapshot {
+pub(crate) fn block(
+    name: String,
+    ability: Option<String>,
+    stats: &StatSet,
+) -> SpellcastingSnapshot {
     let (dc, attack) = ability.as_deref().map_or((0, 0), |a| {
         let m = stats.sum(&format!("{a}:modifier")) + stats.sum("proficiency");
         (8 + m, m)

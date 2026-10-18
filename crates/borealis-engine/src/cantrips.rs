@@ -32,9 +32,17 @@ fn dice_at(text: &str, from: usize) -> Option<(usize, usize)> {
 }
 
 /// Base dice and damage type of the first `NdM Type damage` phrase.
+const CHOSEN_TYPE_WORDING: &str = "damage of a type you choose";
+/// Damage type text of a cantrip whose caster picks the type.
+const CHOSEN_TYPE: &str = "(chosen type)";
+
 fn base_damage(text: &str) -> Option<(String, String)> {
     let mut from = 0;
     while let Some((s, e)) = dice_at(text, from) {
+        // SRD 5.2.1 Sorcerous Burst: "1d8 damage of a type you choose"
+        if text[e..].trim_start().starts_with(CHOSEN_TYPE_WORDING) {
+            return Some((text[s..e].to_string(), CHOSEN_TYPE.to_string()));
+        }
         let mut words = text[e..].split_whitespace();
         let (ty, damage) = (words.next(), words.next());
         if damage.is_some_and(|d| d.starts_with("damage")) {
@@ -147,6 +155,15 @@ mod tests {
         assert_eq!(scaled_damage(FIRE_BOLT, 5).as_deref(), Some("2d10 Fire"));
         assert_eq!(scaled_damage(FIRE_BOLT, 11).as_deref(), Some("3d10 Fire"));
         assert_eq!(scaled_damage(FIRE_BOLT, 20).as_deref(), Some("4d10 Fire"));
+    }
+
+    #[test]
+    fn a_chosen_damage_type_scales() {
+        let t = "<p>Make a ranged spell attack against the target. On a hit, the target takes 1d8 \
+                 damage of a type you choose: Acid, Cold, or Fire.</p><p><b>Cantrip Upgrade.</b> \
+                 The damage increases by 1d8 when you reach levels 5 (2d8), 11 (3d8), and 17 (4d8).</p>";
+        assert_eq!(scaled_damage(t, 1).as_deref(), Some("1d8 (chosen type)"));
+        assert_eq!(scaled_damage(t, 5).as_deref(), Some("2d8 (chosen type)"));
     }
 
     #[test]

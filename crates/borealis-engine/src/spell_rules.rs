@@ -151,6 +151,23 @@ fn free_cast_uses(v: &Value, prof: i32, mods: &[i32; 6]) -> (Option<i32>, String
     }
 }
 
+/// Uses read from a column of the owning class's progression table (`{"type": "table", "key":
+/// "favored_enemy"}`: SRD 5.2.1 Ranger Favored Enemy, 2 casts at Ranger 1 to 4 at Ranger 17) at
+/// that class's level.
+fn table_uses(graph: &Graph<'_>, granter: usize, v: &Value) -> Option<i32> {
+    let uses = v.get("uses")?;
+    if uses.get("type").and_then(Value::as_str) != Some("table") {
+        return None;
+    }
+    let key = uses.get("key").and_then(Value::as_str)?;
+    let class = std::iter::successors(Some(granter), |id| graph.nodes[*id].parent)
+        .map(|id| &graph.nodes[id].e.el)
+        .find(|el| matches!(el.ty.as_str(), "Class" | "Multiclass"))
+        .map(|el| el.name.clone())?;
+    let level = graph.class_levels.get(&class.to_lowercase()).copied()?;
+    progression(graph.uni, &class, key, u32::try_from(level).ok()?)
+}
+
 /// The `spell_free_cast` rule of `parent` bound to the Spell select that filled slot `si`.
 fn select_free_cast(graph: &Graph<'_>, parent: usize, si: usize) -> Option<Value> {
     let p = &graph.nodes[parent];
@@ -209,7 +226,10 @@ pub fn free_casts(graph: &Graph<'_>, prof: i32, mods: &[i32; 6]) -> Vec<FreeCast
             }
             _ => continue,
         };
-        let (uses, uses_rule) = free_cast_uses(&v, prof, mods);
+        let (uses, uses_rule) = match free_cast_uses(&v, prof, mods) {
+            (None, rule) => (table_uses(graph, parent, &v), rule),
+            known => known,
+        };
         out.push(FreeCastSnapshot {
             spell: n.e.el.id.clone(),
             name: n.e.el.name.clone(),

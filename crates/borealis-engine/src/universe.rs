@@ -359,6 +359,19 @@ pub fn type_fits(wanted: &str, candidate: &str) -> bool {
     wanted == candidate || type_family(wanted).contains(&candidate)
 }
 
+/// Types that fill a select of type `wanted` only when the candidate comes from the other
+/// edition (IM8): 2024 optional features (invocations, metamagic, maneuvers) are typed `Option`
+/// while the 2014 class selects that offer them are `Class Feature` selects, and the other way
+/// round. A same-edition candidate never crosses types this way.
+#[must_use]
+pub fn cross_edition_types(wanted: &str) -> &'static [&'static str] {
+    match wanted {
+        "Class Feature" => &["Option"],
+        "Option" => &["Class Feature"],
+        _ => &[],
+    }
+}
+
 /// Upper-case, id-safe form of a class name.
 #[must_use]
 pub fn sanitize_id(name: &str) -> String {
@@ -947,6 +960,21 @@ impl Universe {
             fam.to_vec()
         };
         tys.into_iter().flat_map(move |t| self.by_type(t))
+    }
+
+    /// [`Self::candidates_for`] plus the other-edition elements of a crossing type
+    /// ([`cross_edition_types`]); `cross` = the character allows content from the other edition.
+    pub fn select_candidates<'a>(
+        &'a self,
+        ty: &'a str,
+        cross: bool,
+    ) -> impl Iterator<Item = &'a UElem> + 'a {
+        let extra: &'static [&'static str] = if cross { cross_edition_types(ty) } else { &[] };
+        self.candidates_for(ty).chain(
+            extra
+                .iter()
+                .flat_map(move |t| self.by_type(t).filter(|c| c.edition.is_foreign())),
+        )
     }
 
     /// All elements of a type, in load order (derived ones after their class).

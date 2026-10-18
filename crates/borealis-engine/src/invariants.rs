@@ -471,7 +471,7 @@ fn oracle(
     let mut slow: BTreeMap<&crate::state::SlotKey, BTreeSet<&str>> = BTreeMap::new();
     for (id, slot, rule) in open.into_iter().take(ORACLE_OPEN_SLOTS) {
         let mut allowed: BTreeSet<&str> = uni
-            .candidates_for(&rule.ty)
+            .select_candidates(&rule.ty, true)
             .filter(|c| g.choice_allowed(id, slot.rule, c, false))
             .map(|c| c.el.id.as_str())
             .collect();

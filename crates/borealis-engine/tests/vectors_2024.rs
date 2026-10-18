@@ -891,7 +891,7 @@ fn b1_level3_ranger_half_caster_slots() {
     assert_eq!(c.prepare_limit, Some(4));
     assert_eq!((c.dc, c.attack), (13, 5));
     assert!(snap.multiclass_slots.is_none(), "one caster class: no pool");
-    // Hunter's Mark: free casts come from the Favored Enemy table, which the engine does not resolve
+    // Hunter's Mark: free casts come from the Favored Enemy column of the class table (2 at 3)
     let mark = snap
         .free_casts
         .iter()
@@ -899,7 +899,7 @@ fn b1_level3_ranger_half_caster_slots() {
         .expect("Hunter's Mark free casts");
     assert_eq!(
         (mark.uses, mark.uses_rule.as_str(), mark.recharge.as_str()),
-        (None, "table:favored_enemy", "long_rest")
+        (Some(2), "table:favored_enemy", "long_rest")
     );
 }
 

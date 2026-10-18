@@ -36,3 +36,47 @@ pub fn self_proficient(
         .filter(|e| flagged(e))
         .any(|e| !item_facts(e).requires_attunement || attuned())
 }
+
+/// Rule kind: proficiency with every weapon of a category that has one of the listed properties
+/// (2024 Rogue: "Martial weapons that have the Finesse or Light property"; Monk: Light).
+pub const FILTER_KIND: &str = "proficiency_filter";
+
+/// Support tag of a weapon property (`Finesse` -> `ID_INTERNAL_WEAPON_PROPERTY_FINESSE`).
+fn property_tag(name: &str) -> String {
+    format!(
+        "ID_INTERNAL_WEAPON_PROPERTY_{}",
+        crate::universe::sanitize_id(name.trim()).replace('_', "")
+    )
+}
+
+/// Does weapon `e` fall under a `proficiency_filter` rule (`weapon_category` Simple/Martial,
+/// optional `properties_any`)?
+fn filter_matches(filter: &crate::rule_view::Live<'_>, e: &UElem) -> bool {
+    let has = |tag: &str| e.supports.iter().any(|s| s == tag);
+    let category_ok = filter.str("weapon_category").map_or(true, |c| {
+        let c = crate::universe::sanitize_id(c.trim());
+        ["MELEE", "RANGED"]
+            .iter()
+            .any(|k| has(&format!("ID_INTERNAL_WEAPON_CATEGORY_{c}_{k}")))
+    });
+    let props = filter.list("properties_any");
+    category_ok && (props.is_empty() || props.iter().any(|p| has(&property_tag(p))))
+}
+
+/// Is the character proficient with weapon `e` through a live `proficiency_filter` rule?
+#[must_use]
+pub fn filter_proficient(graph: &Graph<'_>, e: &UElem) -> bool {
+    item_facts(e).weapon
+        && crate::rule_view::live_rules(graph, &[FILTER_KIND])
+            .iter()
+            .any(|f| filter_matches(f, e))
+}
+
+/// Is the character proficient with weapon `e`: its proficiency element is held, or a live
+/// `proficiency_filter` rule covers it?
+#[must_use]
+pub fn weapon_proficient(graph: &Graph<'_>, e: &UElem) -> bool {
+    e.el.setter_value("proficiency")
+        .is_some_and(|p| graph.has(p))
+        || filter_proficient(graph, e)
+}

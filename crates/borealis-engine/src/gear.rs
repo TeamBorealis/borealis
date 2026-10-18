@@ -195,6 +195,7 @@ pub fn attacks_with(
     let (uni, graph, stats) = (cx.uni, cx.graph, cx.stats);
     let d20 = stats.sum(crate::play_rules::D20_GROUP);
     let arts = cx.martial_arts.filter(|m| m.active);
+    let bond = crate::pact_weapon::bond(uni, graph, state);
     let mut out = Vec::new();
     for it in &state.inventory.items {
         let Some((e, adorner)) = crate::item_base::resolve(uni, it) else {
@@ -220,14 +221,21 @@ pub fn attacks_with(
                 || (has("ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_MELEE")
                     && has("ID_INTERNAL_WEAPON_PROPERTY_LIGHT")));
         let dexterous = (finesse || (arts.is_some() && monk_weapon)) && mods[1] > mods[0];
-        let ability = if ranged || dexterous { 1 } else { 0 };
+        let own_ability = if ranged || dexterous { 1 } else { 0 };
+        let pact = bond
+            .as_ref()
+            .filter(|(uid, _)| *uid == it.uid)
+            .map(|(_, a)| *a);
+        let ability = match pact {
+            Some(a) if mods[a] > mods[own_ability] => a,
+            _ => own_ability,
+        };
         let loaded = crate::ammo::loaded(uni, state, e);
         let enh = weapon_enhancement(&e.el, adorner.map(|a| &a.el))
             + loaded.as_ref().map_or(0, |l| l.enhancement);
-        let proficient =
-            e.el.setter_value("proficiency")
-                .is_some_and(|p| graph.has(p))
-                || crate::item_prof::self_proficient(graph, &it.uid, e, adorner);
+        let proficient = pact.is_some()
+            || crate::item_prof::weapon_proficient(graph, e)
+            || crate::item_prof::self_proficient(graph, &it.uid, e, adorner);
         let lname = e.el.name.to_lowercase();
         let group = if melee { "melee" } else { "ranged" };
         let two_handed = has("ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED") || versatile;

@@ -552,6 +552,11 @@ impl<'u> Evaluation<'u> {
             &mods,
             &spellcasting,
         ));
+        attacks.extend(crate::breath::breath_attacks(
+            &self.graph,
+            &self.stats,
+            &mods,
+        ));
         let resources = crate::play_rules::resource_snapshots(&self.graph, &self.stats, &mods);
         let resource_costs = crate::play_rules::resource_costs(&self.graph);
         let toggles = crate::play_rules::toggle_snapshots(&self.graph, &self.stats);

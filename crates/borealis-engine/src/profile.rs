@@ -245,9 +245,15 @@ impl RulesetProfile for Dnd2014 {
         false
     }
     fn accepts_foreign(&self, ty: &str, from: Ruleset) -> bool {
-        // In 2014 characters 2024 content is limited to spells and items.
+        // In 2014 characters 2024 content is limited to spells and items (R4), plus the 2024
+        // optional features a 2014 class select can offer (invocations, metamagic, maneuvers:
+        // type `Option`), so books dated after the 2024 handbook stay pickable (IM8). All of it
+        // is offered only with the other edition allowed (`Graph::offers_edition`).
         from != Ruleset::Dnd2024
-            || matches!(ty, "Spell" | "Magic Item" | "Weapon" | "Armor" | "Item")
+            || matches!(
+                ty,
+                "Spell" | "Magic Item" | "Weapon" | "Armor" | "Item" | "Option"
+            )
     }
     fn accepts_legacy_alias(&self, alias: &str, from: Ruleset) -> bool {
         // A 2024 species that was a race (a renamed 5etools race a 2014 character was saved
@@ -409,6 +415,8 @@ mod tests {
         assert!(b.accepts_foreign("Race", Ruleset::Dnd2014));
         assert!(!a.accepts_foreign("Class", Ruleset::Dnd2024));
         assert!(a.accepts_foreign("Spell", Ruleset::Dnd2024));
+        assert!(a.accepts_foreign("Option", Ruleset::Dnd2024));
+        assert!(!a.accepts_foreign("Class Feature", Ruleset::Dnd2024));
         assert!(!a.accepts_foreign("Species", Ruleset::Dnd2024));
         assert!(a.accepts_legacy_alias("Race", Ruleset::Dnd2024));
         assert!(!a.accepts_legacy_alias("Feat", Ruleset::Dnd2024));

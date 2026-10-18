@@ -985,6 +985,9 @@ pub fn mastery_allows(
         .and_then(Value::as_bool)
         .unwrap_or(false);
     if needs_prof {
+        if crate::item_prof::filter_proficient(graph, cand) {
+            return true;
+        }
         if let Some(p) = cand.el.setter_value("proficiency") {
             return graph.has(p);
         }
