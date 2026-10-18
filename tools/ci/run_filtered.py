@@ -7,8 +7,11 @@ This wrapper passes through only lines whose shape is known to carry no content:
   - libtest `running N tests`, `test <name> ... ok|FAILED|ignored`, `test result: ...`
   - `METRIC<TAB>source<TAB>stage<TAB>type<TAB>metric<TAB>n` lines (acceptance.rs, numbers only)
   - fixed `SKIPPED <source>: <reason>` lines
-`OUTCOME` lines (tools/regression-gate/outcome.rs) are counted per `<suite>/<source>`, never
-printed: their ids name elements. Everything else is withheld and only counted. With
+`OUTCOME` lines (tools/regression-gate/outcome.rs) are counted per `<suite>/<source>`; their ids
+name elements, so only a fingerprint is printed: `OUTCOME_HASH <group> <PASS|FAIL> <hash>`, the
+first 12 hex digits of sha256(OUTCOME_SALT + id). The salt is a fixed public constant (the ids are
+public-content ids; the hash only keeps names out of the log), so tools/ci/match_hashes.py can
+match CI rows against a local gate's OUTCOME lines. Everything else is withheld and only counted. With
 GITHUB_STEP_SUMMARY set, a counts-only table is appended there. Nothing is written to disk.
 
 Usage: run_filtered.py --label NAME [--fail-on-outcome-fail] -- <cargo test args>
@@ -16,6 +19,7 @@ Exit status: cargo's (1 also when --fail-on-outcome-fail and an OUTCOME failed),
 Python 3.9+, stdlib only.
 """
 import argparse
+import hashlib
 import os
 import re
 import subprocess
@@ -30,6 +34,13 @@ TEST_LINE = re.compile(r"^test ([A-Za-z0-9_:]+) \.\.\. (ok|FAILED|ignored)$")
 RESULT_LINE = re.compile(r"^test result: (ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored;")
 RUNNING_LINE = re.compile(r"^running \d+ tests?$")
 SKIP_LINE = re.compile(r"^SKIPPED(?: [a-z0-9-]+)?: [A-Za-z0-9_ ]{1,96}$")
+OUTCOME_SALT = "borealis-outcome-v1:"
+HASH_HEX = 12
+
+
+def outcome_hash(check_id):
+    """Privacy-safe fingerprint of an OUTCOME id (first HASH_HEX hex digits of the salted sha256)."""
+    return hashlib.sha256((OUTCOME_SALT + check_id).encode("utf-8")).hexdigest()[:HASH_HEX]
 
 
 class Tally:
@@ -56,8 +67,9 @@ class Tally:
             return line
         parts = line.split("\t")
         if parts[0] == "OUTCOME" and len(parts) >= 3 and parts[1] in ("PASS", "FAIL"):
-            self.outcomes[(outcome_group(parts[2]), parts[1])] += 1
-            return None
+            group = outcome_group(parts[2])
+            self.outcomes[(group, parts[1])] += 1
+            return f"OUTCOME_HASH {group} {parts[1]} {outcome_hash(parts[2])}"
         if (parts[0] == "METRIC" and len(parts) == 6 and re.fullmatch(r"-?\d+", parts[5])
                 and all(SAFE.match(p) for p in parts[1:5])):
             self.metrics.append(parts[1:])

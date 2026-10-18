@@ -7,6 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import fetch_aurora_corpus as fetch  # noqa: E402
+import match_hashes as mh  # noqa: E402
 import run_filtered as rf  # noqa: E402
 
 
@@ -31,10 +32,23 @@ class FilterTests(unittest.TestCase):
         self.assertEqual(self.t.withheld, 2)
 
     def test_counts_outcomes_by_group_and_never_prints_ids(self):
-        self.assertIsNone(self.t.take("OUTCOME\tPASS\tacceptance/f-url/s2/ID_5ET_SOME_FEAT\t"))
-        self.assertIsNone(self.t.take("OUTCOME\tFAIL\tacceptance/f-url/s1/class\tU=2"))
+        ident = "acceptance/f-url/s2/ID_5ET_SOME_FEAT"
+        printed = self.t.take(f"OUTCOME\tPASS\t{ident}\t")
+        self.assertEqual(printed, f"OUTCOME_HASH acceptance/f-url PASS {rf.outcome_hash(ident)}")
+        self.assertNotIn("ID_5ET", printed)
+        self.assertNotIn("s2", printed)
+        failed = self.t.take("OUTCOME\tFAIL\tacceptance/f-url/s1/class\tU=2")
+        self.assertRegex(failed, r"^OUTCOME_HASH acceptance/f-url FAIL [0-9a-f]{12}$")
+        self.assertNotIn("U=2", failed)
         self.assertEqual(self.t.outcomes[("acceptance/f-url", "PASS")], 1)
         self.assertEqual(self.t.outcomes[("acceptance/f-url", "FAIL")], 1)
+
+    def test_outcome_hash_is_the_salted_sha256_prefix(self):
+        import hashlib
+        ident = "acceptance/a-core/s1/Class"
+        want = hashlib.sha256((rf.OUTCOME_SALT + ident).encode()).hexdigest()[:12]
+        self.assertEqual(rf.outcome_hash(ident), want)
+        self.assertNotEqual(rf.outcome_hash(ident), rf.outcome_hash(ident + "x"))
 
     def test_withholds_content_bearing_lines(self):
         for line in ("      3  skipped: Fireball needs a material component",
@@ -61,6 +75,61 @@ class FilterTests(unittest.TestCase):
         self.assertIn("tests ok 1", head)
         self.assertIn("FAIL 1", head)
         self.assertEqual(rows, [("acceptance/a-core", 0, 1)])
+
+
+class MatchTests(unittest.TestCase):
+    LOCAL = ["noise line\n",
+             "OUTCOME\tPASS\tacceptance/a-core/s1/Class\tU=0\n",
+             "OUTCOME\tFAIL\tacceptance/a-core/s2/Feat/ID_X\tnot offered\n",
+             "OUTCOME\tPASS\tacceptance/a-core/s2/Feat/ID_LOCAL_ONLY\t\n",
+             "OUTCOME\tPASS\tacceptance/f-url/s1/class\tU=0\n"]
+
+    def ci_log(self, rows):
+        """CI log text as run_filtered prints it, with a GitHub timestamp prefix."""
+        t = rf.Tally()
+        out = ["2026-10-18T08:00:00.0000000Z running 1 test\n"]
+        for line in rows:
+            text = t.take(line)
+            if text is not None:
+                out.append(f"2026-10-18T08:00:01.0000000Z {text}\n")
+        return out
+
+    def test_identical_sides_match(self):
+        local = mh.local_rows(self.LOCAL)
+        self.assertEqual(mh.compare(local, mh.ci_rows(self.ci_log(self.LOCAL))), {})
+
+    def test_lists_rows_on_one_side_and_verdict_changes_per_group(self):
+        ci_side = [self.LOCAL[1],
+                   "OUTCOME\tPASS\tacceptance/a-core/s2/Feat/ID_X\t\n",
+                   "OUTCOME\tFAIL\tacceptance/a-core/s2/Feat/ID_CI_ONLY\t\n",
+                   self.LOCAL[4]]
+        diffs = mh.compare(mh.local_rows(self.LOCAL), mh.ci_rows(self.ci_log(ci_side)))
+        self.assertEqual(list(diffs), ["acceptance/a-core"])
+        d = diffs["acceptance/a-core"]
+        self.assertEqual(d["only_local"], [("acceptance/a-core/s2/Feat/ID_LOCAL_ONLY", "PASS")])
+        self.assertEqual(d["only_ci"],
+                         [(rf.outcome_hash("acceptance/a-core/s2/Feat/ID_CI_ONLY"), "FAIL")])
+        self.assertEqual(d["differs"], [("acceptance/a-core/s2/Feat/ID_X", "FAIL", "PASS")])
+        text = "\n".join(mh.report(diffs))
+        self.assertIn("only local 1, only CI 1, verdict differs 1", text)
+        self.assertNotIn("ID_CI_ONLY", text)
+
+    def test_a_group_missing_on_one_side_is_reported(self):
+        diffs = mh.compare(mh.local_rows(self.LOCAL), mh.ci_rows(self.ci_log(self.LOCAL[:4])))
+        self.assertEqual(list(diffs), ["acceptance/f-url"])
+        self.assertEqual(diffs["acceptance/f-url"]["ci"], 0)
+
+    def test_main_exit_codes(self):
+        with tempfile.TemporaryDirectory() as d:
+            local, ci, empty = Path(d) / "local.txt", Path(d) / "ci.log", Path(d) / "e.txt"
+            local.write_text("".join(self.LOCAL), encoding="utf-8")
+            empty.write_text("nothing\n", encoding="utf-8")
+            ci.write_text("".join(self.ci_log(self.LOCAL)), encoding="utf-8")
+            self.assertEqual(mh.main([str(local), str(ci)]), 0)
+            ci.write_text("".join(self.ci_log(self.LOCAL[:3])), encoding="utf-8")
+            self.assertEqual(mh.main([str(local), str(ci)]), 1)
+            self.assertEqual(mh.main([str(empty), str(ci)]), 2)
+            self.assertEqual(mh.main([str(local), str(Path(d) / "missing.log")]), 2)
 
 
 class FetchTests(unittest.TestCase):
