@@ -1,0 +1,117 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd51-cleric-1",
+  "ruleset": "SRD 5.1",
+  "edition": "2014",
+  "summary": "Hill Dwarf Cleric 1 (Life Domain), Acolyte",
+  "character_level": 1,
+  "race": {
+    "name": "Dwarf",
+    "subrace": "Hill Dwarf",
+    "ability_score_increases": {
+      "Constitution": 2,
+      "Wisdom": 1
+    },
+    "languages": [
+      "Common",
+      "Dwarvish"
+    ],
+    "choices": {
+      "Tool Proficiency": "Smith's tools"
+    }
+  },
+  "background": {
+    "name": "Acolyte",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "languages": [
+      "Elvish",
+      "Celestial"
+    ],
+    "tool_proficiencies": [],
+    "equipment": [
+      "Holy symbol",
+      "Prayer book",
+      "5 sticks of incense",
+      "Vestments",
+      "Common clothes",
+      "Belt pouch with 15 gp"
+    ],
+    "feature": "Shelter of the Faithful"
+  },
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 14,
+      "Dexterity": 10,
+      "Constitution": 13,
+      "Intelligence": 8,
+      "Wisdom": 15,
+      "Charisma": 12
+    }
+  },
+  "hit_points": "fixed_average: level 1 = maximum of the first class's hit die + Con modifier; every later level = the class's fixed value from its Hit Points at Higher Levels line (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Cleric",
+      "level": 1,
+      "subclass": "Life Domain"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Cleric",
+      "class_level": 1,
+      "hit_points": "8 (max d8) + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "History",
+            "Medicine"
+          ]
+        },
+        {
+          "feature": "Divine Domain",
+          "choice": "Life Domain"
+        }
+      ]
+    }
+  ],
+  "spells": {
+    "Cleric": {
+      "ability": "Wisdom",
+      "cantrips": [
+        "Sacred Flame",
+        "Guidance",
+        "Spare the Dying"
+      ],
+      "prepared": [
+        "Healing Word",
+        "Guiding Bolt",
+        "Shield of Faith",
+        "Sanctuary"
+      ]
+    }
+  },
+  "equipment": {
+    "class_choices": [
+      "(b) a warhammer (proficient via Dwarven Combat Training)",
+      "(c) chain mail (proficient via Life Domain Bonus Proficiency)",
+      "(a) a light crossbow and 20 bolts",
+      "(a) a priest's pack",
+      "a shield and a holy symbol"
+    ],
+    "background": "Acolyte equipment",
+    "worn_armor": "Chain mail",
+    "shield": "Shield",
+    "wielded": "Warhammer (one hand) + shield",
+    "carried_weapons": [
+      "Warhammer",
+      "Light crossbow"
+    ]
+  }
+}

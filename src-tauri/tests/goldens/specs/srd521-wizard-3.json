@@ -1,0 +1,205 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd521-wizard-3",
+  "ruleset": "SRD 5.2.1",
+  "edition": "2024",
+  "summary": "Gnome (Rock Gnome) Wizard 3 (Evoker), Sage",
+  "character_level": 3,
+  "species": {
+    "name": "Gnome",
+    "size": "Small",
+    "choices": {
+      "Gnomish Lineage": "Rock Gnome",
+      "spellcasting_ability": "Intelligence"
+    }
+  },
+  "background": {
+    "name": "Sage",
+    "ability_scores_listed": [
+      "Constitution",
+      "Intelligence",
+      "Wisdom"
+    ],
+    "origin_feat": "Magic Initiate (Wizard)",
+    "skill_proficiencies": [
+      "Arcana",
+      "History"
+    ],
+    "tool_proficiency": "Calligrapher's Supplies",
+    "equipment_A": [
+      "Quarterstaff",
+      "Calligrapher's Supplies",
+      "Book (history)",
+      "Parchment (8 sheets)",
+      "Robe",
+      "8 GP"
+    ],
+    "ability_score_increases": {
+      "Intelligence": 2,
+      "Constitution": 1
+    },
+    "equipment_option": "A",
+    "origin_feat_choices": {
+      "spellcasting_ability": "Intelligence",
+      "cantrips": [
+        "Mage Hand",
+        "Minor Illusion"
+      ],
+      "level_1_spell": "Find Familiar"
+    }
+  },
+  "languages": [
+    "Common",
+    "Gnomish",
+    "Draconic"
+  ],
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 8,
+      "Dexterity": 12,
+      "Constitution": 13,
+      "Intelligence": 15,
+      "Wisdom": 14,
+      "Charisma": 10
+    }
+  },
+  "hit_points": "fixed_average: level 1 = the Level 1 Hit Points by Class value (max hit die) + Con modifier; every later level = the Fixed Hit Points by Class value (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Wizard",
+      "level": 3,
+      "subclass": "Evoker"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Wizard",
+      "class_level": 1,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Investigation",
+            "Religion"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Wizard",
+      "class_level": 2,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Scholar",
+          "expertise": "Arcana"
+        }
+      ]
+    },
+    {
+      "character_level": 3,
+      "class": "Wizard",
+      "class_level": 3,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Wizard Subclass",
+          "choice": "Evoker"
+        },
+        {
+          "feature": "Evocation Savant",
+          "spells": [
+            "Scorching Ray",
+            "Shatter"
+          ]
+        }
+      ]
+    }
+  ],
+  "spells": {
+    "Wizard": {
+      "ability": "Intelligence",
+      "cantrips": [
+        "Fire Bolt",
+        "Light",
+        "Ray of Frost"
+      ],
+      "spellbook": [
+        "Detect Magic",
+        "Feather Fall",
+        "Mage Armor",
+        "Magic Missile",
+        "Shield",
+        "Sleep",
+        "Thunderwave",
+        "Silent Image",
+        "Misty Step",
+        "Invisibility",
+        "Scorching Ray",
+        "Shatter"
+      ],
+      "spellbook_by_level_gained": {
+        "1": [
+          "Detect Magic",
+          "Feather Fall",
+          "Mage Armor",
+          "Magic Missile",
+          "Shield",
+          "Sleep"
+        ],
+        "2": [
+          "Thunderwave",
+          "Silent Image"
+        ],
+        "3": [
+          "Misty Step",
+          "Invisibility"
+        ],
+        "3 (Evocation Savant)": [
+          "Scorching Ray",
+          "Shatter"
+        ]
+      },
+      "prepared": [
+        "Shield",
+        "Mage Armor",
+        "Magic Missile",
+        "Sleep",
+        "Misty Step",
+        "Scorching Ray"
+      ]
+    },
+    "Rock Gnome": {
+      "ability": "Intelligence",
+      "cantrips": [
+        "Mending",
+        "Prestidigitation"
+      ]
+    },
+    "Magic Initiate (Wizard)": {
+      "ability": "Intelligence",
+      "cantrips": [
+        "Mage Hand",
+        "Minor Illusion"
+      ],
+      "level_1": [
+        "Find Familiar"
+      ]
+    }
+  },
+  "equipment": {
+    "class_option": "A: 2 Daggers, Arcane Focus (Quarterstaff), Robe, Spellbook, Scholar's Pack, 5 GP",
+    "background_option": "A (Sage)",
+    "worn_armor": null,
+    "shield": null,
+    "wielded": "Quarterstaff (arcane focus)",
+    "carried_weapons": [
+      "Dagger (x2)",
+      "Quarterstaff (x2: arcane focus and Sage's)"
+    ]
+  }
+}

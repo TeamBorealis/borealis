@@ -1,0 +1,290 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd521-bard-11",
+  "ruleset": "SRD 5.2.1",
+  "edition": "2024",
+  "summary": "Human Bard 11 (College of Lore), Acolyte",
+  "character_level": 11,
+  "species": {
+    "name": "Human",
+    "size": "Medium",
+    "choices": {
+      "Skillful": "Perception",
+      "Versatile (Origin feat)": "Skilled",
+      "Skilled proficiencies": [
+        "Arcana",
+        "History",
+        "Stealth"
+      ]
+    }
+  },
+  "background": {
+    "name": "Acolyte",
+    "ability_scores_listed": [
+      "Intelligence",
+      "Wisdom",
+      "Charisma"
+    ],
+    "origin_feat": "Magic Initiate (Cleric)",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "tool_proficiency": "Calligrapher's Supplies",
+    "equipment_A": [
+      "Calligrapher's Supplies",
+      "Book (prayers)",
+      "Holy Symbol",
+      "Parchment (10 sheets)",
+      "Robe",
+      "8 GP"
+    ],
+    "ability_score_increases": {
+      "Charisma": 2,
+      "Wisdom": 1
+    },
+    "equipment_option": "A",
+    "origin_feat_choices": {
+      "spellcasting_ability": "Charisma",
+      "cantrips": [
+        "Guidance",
+        "Sacred Flame"
+      ],
+      "level_1_spell": "Bless"
+    }
+  },
+  "languages": [
+    "Common",
+    "Elvish",
+    "Dwarvish"
+  ],
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 8,
+      "Dexterity": 14,
+      "Constitution": 12,
+      "Intelligence": 13,
+      "Wisdom": 10,
+      "Charisma": 15
+    }
+  },
+  "hit_points": "fixed_average: level 1 = the Level 1 Hit Points by Class value (max hit die) + Con modifier; every later level = the Fixed Hit Points by Class value (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Bard",
+      "level": 11,
+      "subclass": "College of Lore"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Bard",
+      "class_level": 1,
+      "hit_points": "8 + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Performance",
+            "Persuasion",
+            "Deception"
+          ],
+          "musical_instruments": [
+            "Lute",
+            "Flute",
+            "Drum"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Bard",
+      "class_level": 2,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Expertise",
+          "skills": [
+            "Performance",
+            "Persuasion"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 3,
+      "class": "Bard",
+      "class_level": 3,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Bard Subclass",
+          "choice": "College of Lore"
+        },
+        {
+          "feature": "Bonus Proficiencies",
+          "skills": [
+            "Investigation",
+            "Sleight of Hand",
+            "Acrobatics"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Bard",
+      "class_level": 4,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Charisma": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Bard",
+      "class_level": 5,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 6,
+      "class": "Bard",
+      "class_level": 6,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Magical Discoveries",
+          "spells": [
+            "Shield (Wizard)",
+            "Spiritual Weapon (Cleric)"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 7,
+      "class": "Bard",
+      "class_level": 7,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 8,
+      "class": "Bard",
+      "class_level": 8,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Charisma": 1,
+            "Dexterity": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 9,
+      "class": "Bard",
+      "class_level": 9,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Expertise",
+          "skills": [
+            "Deception",
+            "Perception"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 10,
+      "class": "Bard",
+      "class_level": 10,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Magical Secrets",
+          "note": "Counterspell (Wizard list) taken as the new prepared spell at Bard 10"
+        }
+      ]
+    },
+    {
+      "character_level": 11,
+      "class": "Bard",
+      "class_level": 11,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Magical Secrets",
+          "note": "Fireball (Wizard list) taken as the new prepared spell at Bard 11"
+        }
+      ]
+    }
+  ],
+  "spells": {
+    "Bard": {
+      "ability": "Charisma",
+      "cantrips": [
+        "Vicious Mockery",
+        "Mage Hand",
+        "Minor Illusion",
+        "Light"
+      ],
+      "prepared": [
+        "Healing Word",
+        "Dissonant Whispers",
+        "Faerie Fire",
+        "Invisibility",
+        "Hold Person",
+        "Suggestion",
+        "Hypnotic Pattern",
+        "Dispel Magic",
+        "Counterspell",
+        "Fireball",
+        "Greater Invisibility",
+        "Dimension Door",
+        "Polymorph",
+        "Mass Cure Wounds",
+        "Hold Monster",
+        "Mass Suggestion"
+      ],
+      "magical_discoveries": [
+        "Shield",
+        "Spiritual Weapon"
+      ]
+    },
+    "Magic Initiate (Cleric)": {
+      "ability": "Charisma",
+      "cantrips": [
+        "Guidance",
+        "Sacred Flame"
+      ],
+      "level_1": [
+        "Bless"
+      ]
+    }
+  },
+  "equipment": {
+    "class_option": "A: Leather Armor, 2 Daggers, Musical Instrument (Lute), Entertainer's Pack, 19 GP",
+    "background_option": "A (Acolyte)",
+    "worn_armor": "Leather Armor",
+    "shield": null,
+    "wielded": "Dagger",
+    "carried_weapons": [
+      "Dagger (x2)"
+    ]
+  }
+}

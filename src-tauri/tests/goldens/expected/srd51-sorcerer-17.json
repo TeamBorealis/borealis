@@ -1,0 +1,412 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd51-sorcerer-17",
+  "ruleset": "SRD 5.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 17,
+  "abilities": {
+    "Strength": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 standard array"
+    },
+    "Dexterity": {
+      "score": 14,
+      "modifier": 2,
+      "why": "13 standard array +1 ASI (Sorcerer 12)"
+    },
+    "Constitution": {
+      "score": 16,
+      "modifier": 3,
+      "why": "14 standard array +1 ASI (Sorcerer 4) +1 ASI (Sorcerer 12)"
+    },
+    "Intelligence": {
+      "score": 11,
+      "modifier": 0,
+      "why": "10 standard array +1 Tiefling"
+    },
+    "Wisdom": {
+      "score": 14,
+      "modifier": 2,
+      "why": "12 standard array +2 ASI (Sorcerer 16)"
+    },
+    "Charisma": {
+      "score": 20,
+      "modifier": 5,
+      "why": "15 standard array +2 Tiefling +1 ASI (Sorcerer 4) +2 ASI (Sorcerer 8)"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 6,
+    "why": "character level 17 -> +6 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 138,
+    "why": "6 Sorcerer 1 (max d6) + 64 Sorcerer 2-17 fixed (16 x 4) + 51 Con mod x 17 levels (3 x 17) + 17 Draconic Resilience (+1 per sorcerer level)"
+  },
+  "armor_class": {
+    "value": 15,
+    "source": "Draconic Resilience, no armor",
+    "why": "13 Draconic Resilience base (unarmored) + 2 Dex mod"
+  },
+  "initiative": {
+    "value": 2,
+    "why": "2 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 30,
+      "why": "30 Tiefling base walking speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Str mod"
+    },
+    "Dexterity": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Dex mod"
+    },
+    "Constitution": {
+      "value": 9,
+      "proficient": true,
+      "why": "3 Con mod + 6 proficiency (Sorcerer)"
+    },
+    "Intelligence": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Int mod"
+    },
+    "Wisdom": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Wis mod"
+    },
+    "Charisma": {
+      "value": 11,
+      "proficient": true,
+      "why": "5 Cha mod + 6 proficiency (Sorcerer)"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Animal Handling": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Wis mod"
+    },
+    "Arcana": {
+      "value": 6,
+      "proficiency": "proficient",
+      "why": "0 Int mod + 6 proficiency (Sorcerer)"
+    },
+    "Athletics": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Str mod"
+    },
+    "Deception": {
+      "value": 5,
+      "proficiency": "none",
+      "why": "5 Cha mod"
+    },
+    "History": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Insight": {
+      "value": 8,
+      "proficiency": "proficient",
+      "why": "2 Wis mod + 6 proficiency (Acolyte)"
+    },
+    "Intimidation": {
+      "value": 5,
+      "proficiency": "none",
+      "why": "5 Cha mod"
+    },
+    "Investigation": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Medicine": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Wis mod"
+    },
+    "Nature": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Perception": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Wis mod"
+    },
+    "Performance": {
+      "value": 5,
+      "proficiency": "none",
+      "why": "5 Cha mod"
+    },
+    "Persuasion": {
+      "value": 11,
+      "proficiency": "proficient",
+      "why": "5 Cha mod + 6 proficiency (Sorcerer)"
+    },
+    "Religion": {
+      "value": 6,
+      "proficiency": "proficient",
+      "why": "0 Int mod + 6 proficiency (Acolyte)"
+    },
+    "Sleight of Hand": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Stealth": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Survival": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 12,
+    "why": "10 + Perception total 2"
+  },
+  "spellcasting": [
+    {
+      "source": "Sorcerer",
+      "ability": "Charisma",
+      "spell_save_dc": {
+        "value": 19,
+        "why": "8 + 5 Cha mod + 6 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 11,
+        "why": "5 Cha mod + 6 proficiency"
+      }
+    },
+    {
+      "source": "Infernal Legacy",
+      "ability": "Charisma",
+      "spell_save_dc": {
+        "value": 19,
+        "why": "8 + 5 Cha mod + 6 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 11,
+        "why": "5 Cha mod + 6 proficiency"
+      }
+    }
+  ],
+  "spell_slots": {
+    "value": {
+      "1": 4,
+      "2": 3,
+      "3": 3,
+      "4": 3,
+      "5": 2,
+      "6": 1,
+      "7": 1,
+      "8": 1,
+      "9": 1
+    },
+    "why": "Sorcerer table, level 17"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Fire Bolt",
+      "kind": "cantrip (ranged spell attack)",
+      "to_hit": {
+        "value": 11,
+        "why": "5 Cha mod + 6 proficiency"
+      },
+      "damage": {
+        "value": "4d10+5 fire",
+        "why": "4d10 at character level 17 + 5 Cha mod from Elemental Affinity (fire)"
+      }
+    },
+    {
+      "name": "Shocking Grasp",
+      "kind": "cantrip (melee spell attack)",
+      "to_hit": {
+        "value": 11,
+        "why": "5 Cha mod + 6 proficiency"
+      },
+      "damage": {
+        "value": "4d8 lightning",
+        "why": "4d8 at character level 17"
+      }
+    },
+    {
+      "name": "Ray of Frost",
+      "kind": "cantrip (ranged spell attack)",
+      "to_hit": {
+        "value": 11,
+        "why": "5 Cha mod + 6 proficiency"
+      },
+      "damage": {
+        "value": "4d8 cold",
+        "why": "4d8 at character level 17"
+      }
+    },
+    {
+      "name": "Light crossbow",
+      "kind": "ranged weapon (80/320)",
+      "to_hit": {
+        "value": 8,
+        "why": "2 Dex mod + 6 proficiency"
+      },
+      "damage": {
+        "value": "1d8+2 piercing",
+        "why": "1d8 weapon die +2 Dex mod"
+      }
+    },
+    {
+      "name": "Dagger",
+      "kind": "melee weapon (finesse, light, thrown 20/60)",
+      "to_hit": {
+        "value": 8,
+        "why": "2 Dex mod + 6 proficiency"
+      },
+      "damage": {
+        "value": "1d4+2 piercing",
+        "why": "1d4 weapon die +2 Dex mod"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Sorcery Points",
+      "max": 17,
+      "recharge": "long rest",
+      "why": "Sorcery Points column, Sorcerer 17"
+    },
+    {
+      "name": "Hellish Rebuke (Infernal Legacy)",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Tiefling Infernal Legacy, cast as 2nd level"
+    },
+    {
+      "name": "Darkness (Infernal Legacy)",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Tiefling Infernal Legacy"
+    }
+  ],
+  "class_values": [],
+  "features": {
+    "class": {
+      "Sorcerer": [
+        {
+          "name": "Spellcasting",
+          "level": 1
+        },
+        {
+          "name": "Sorcerous Origin",
+          "level": 1,
+          "choice": "Draconic Bloodline"
+        },
+        {
+          "name": "Font of Magic",
+          "level": 2
+        },
+        {
+          "name": "Metamagic",
+          "level": 3,
+          "choice": [
+            "Quickened Spell",
+            "Twinned Spell",
+            "Careful Spell",
+            "Subtle Spell"
+          ]
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 8
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 12
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 16
+        }
+      ]
+    },
+    "subclass": {
+      "Draconic Bloodline": [
+        {
+          "name": "Dragon Ancestor",
+          "level": 1,
+          "choice": "Red"
+        },
+        {
+          "name": "Draconic Resilience",
+          "level": 1
+        },
+        {
+          "name": "Elemental Affinity",
+          "level": 6,
+          "choice": "fire"
+        },
+        {
+          "name": "Dragon Wings",
+          "level": 14
+        }
+      ]
+    },
+    "race": [
+      {
+        "name": "Darkvision",
+        "level": 1
+      },
+      {
+        "name": "Hellish Resistance",
+        "level": 1
+      },
+      {
+        "name": "Infernal Legacy",
+        "level": 1
+      }
+    ],
+    "background": [
+      {
+        "name": "Shelter of the Faithful",
+        "level": 1
+      }
+    ],
+    "feats": []
+  },
+  "spells": {
+    "Sorcerer": {
+      "cantrips_known_max": 6,
+      "spells_known_max": 15,
+      "always_prepared": []
+    },
+    "Infernal Legacy": {
+      "cantrips_known_max": 1
+    }
+  }
+}

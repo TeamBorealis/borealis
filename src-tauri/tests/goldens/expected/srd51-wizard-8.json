@@ -1,0 +1,353 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd51-wizard-8",
+  "ruleset": "SRD 5.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 8,
+  "abilities": {
+    "Strength": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 standard array"
+    },
+    "Dexterity": {
+      "score": 13,
+      "modifier": 1,
+      "why": "13 standard array"
+    },
+    "Constitution": {
+      "score": 16,
+      "modifier": 3,
+      "why": "14 standard array +1 Rock Gnome +1 ASI (Wizard 4)"
+    },
+    "Intelligence": {
+      "score": 20,
+      "modifier": 5,
+      "why": "15 standard array +2 Gnome +1 ASI (Wizard 4) +2 ASI (Wizard 8)"
+    },
+    "Wisdom": {
+      "score": 12,
+      "modifier": 1,
+      "why": "12 standard array"
+    },
+    "Charisma": {
+      "score": 10,
+      "modifier": 0,
+      "why": "10 standard array"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 3,
+    "why": "character level 8 -> +3 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 58,
+    "why": "6 Wizard 1 (max d6) + 28 Wizard 2-8 fixed (7 x 4) + 24 Con mod x 8 levels (3 x 8)"
+  },
+  "armor_class": {
+    "value": 11,
+    "source": "No armor (10 + Dex)",
+    "why": "10 Unarmored base + 1 Dex mod"
+  },
+  "initiative": {
+    "value": 1,
+    "why": "1 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 25,
+      "why": "25 Gnome base walking speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Str mod"
+    },
+    "Dexterity": {
+      "value": 1,
+      "proficient": false,
+      "why": "1 Dex mod"
+    },
+    "Constitution": {
+      "value": 3,
+      "proficient": false,
+      "why": "3 Con mod"
+    },
+    "Intelligence": {
+      "value": 8,
+      "proficient": true,
+      "why": "5 Int mod + 3 proficiency (Wizard)"
+    },
+    "Wisdom": {
+      "value": 4,
+      "proficient": true,
+      "why": "1 Wis mod + 3 proficiency (Wizard)"
+    },
+    "Charisma": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Cha mod"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Dex mod"
+    },
+    "Animal Handling": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Arcana": {
+      "value": 8,
+      "proficiency": "proficient",
+      "why": "5 Int mod + 3 proficiency (Wizard)"
+    },
+    "Athletics": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Str mod"
+    },
+    "Deception": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "History": {
+      "value": 5,
+      "proficiency": "none",
+      "why": "5 Int mod"
+    },
+    "Insight": {
+      "value": 4,
+      "proficiency": "proficient",
+      "why": "1 Wis mod + 3 proficiency (Acolyte)"
+    },
+    "Intimidation": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Investigation": {
+      "value": 8,
+      "proficiency": "proficient",
+      "why": "5 Int mod + 3 proficiency (Wizard)"
+    },
+    "Medicine": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Nature": {
+      "value": 5,
+      "proficiency": "none",
+      "why": "5 Int mod"
+    },
+    "Perception": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Performance": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Persuasion": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Religion": {
+      "value": 8,
+      "proficiency": "proficient",
+      "why": "5 Int mod + 3 proficiency (Acolyte)"
+    },
+    "Sleight of Hand": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Dex mod"
+    },
+    "Stealth": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Dex mod"
+    },
+    "Survival": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 11,
+    "why": "10 + Perception total 1"
+  },
+  "spellcasting": [
+    {
+      "source": "Wizard",
+      "ability": "Intelligence",
+      "spell_save_dc": {
+        "value": 16,
+        "why": "8 + 5 Int mod + 3 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 8,
+        "why": "5 Int mod + 3 proficiency"
+      }
+    }
+  ],
+  "spell_slots": {
+    "value": {
+      "1": 4,
+      "2": 3,
+      "3": 3,
+      "4": 2
+    },
+    "why": "Wizard table, level 8"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Fire Bolt",
+      "kind": "cantrip (ranged spell attack)",
+      "to_hit": {
+        "value": 8,
+        "why": "5 Int mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "2d10 fire",
+        "why": "1d10, +1d10 at character level 5"
+      }
+    },
+    {
+      "name": "Ray of Frost",
+      "kind": "cantrip (ranged spell attack)",
+      "to_hit": {
+        "value": 8,
+        "why": "5 Int mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "2d8 cold",
+        "why": "1d8, +1d8 at character level 5"
+      }
+    },
+    {
+      "name": "Quarterstaff",
+      "kind": "melee weapon",
+      "to_hit": {
+        "value": 2,
+        "why": "-1 Str mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d6-1 bludgeoning",
+        "why": "1d6 weapon die -1 Str mod"
+      },
+      "damage_two_handed": {
+        "value": "1d8-1 bludgeoning",
+        "why": "Versatile: two-handed die, same modifier"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Arcane Recovery",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "once per day after a short rest; slot levels up to 4 (half of 8)"
+    }
+  ],
+  "class_values": [
+    {
+      "name": "Arcane Recovery slot levels",
+      "value": 4,
+      "why": "half wizard level 8, rounded up"
+    }
+  ],
+  "features": {
+    "class": {
+      "Wizard": [
+        {
+          "name": "Spellcasting",
+          "level": 1
+        },
+        {
+          "name": "Arcane Recovery",
+          "level": 1
+        },
+        {
+          "name": "Arcane Tradition",
+          "level": 2,
+          "choice": "School of Evocation"
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 8
+        }
+      ]
+    },
+    "subclass": {
+      "School of Evocation": [
+        {
+          "name": "Evocation Savant",
+          "level": 2
+        },
+        {
+          "name": "Sculpt Spells",
+          "level": 2
+        },
+        {
+          "name": "Potent Cantrip",
+          "level": 6
+        }
+      ]
+    },
+    "race": [
+      {
+        "name": "Darkvision",
+        "level": 1
+      },
+      {
+        "name": "Gnome Cunning",
+        "level": 1
+      },
+      {
+        "name": "Artificer's Lore",
+        "level": 1
+      },
+      {
+        "name": "Tinker",
+        "level": 1
+      }
+    ],
+    "background": [
+      {
+        "name": "Shelter of the Faithful",
+        "level": 1
+      }
+    ],
+    "feats": []
+  },
+  "spells": {
+    "Wizard": {
+      "cantrips_known_max": 4,
+      "prepared_max": {
+        "value": 13,
+        "why": "Int mod 5 + wizard level 8"
+      },
+      "spellbook_size": {
+        "value": 20,
+        "why": "6 at level 1 + 2 per level for levels 2-8 (7 x 2)"
+      },
+      "always_prepared": []
+    }
+  }
+}

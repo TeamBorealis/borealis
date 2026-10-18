@@ -1,0 +1,345 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd51-druid-8",
+  "ruleset": "SRD 5.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 8,
+  "abilities": {
+    "Strength": {
+      "score": 9,
+      "modifier": -1,
+      "why": "8 standard array +1 Human"
+    },
+    "Dexterity": {
+      "score": 14,
+      "modifier": 2,
+      "why": "13 standard array +1 Human"
+    },
+    "Constitution": {
+      "score": 16,
+      "modifier": 3,
+      "why": "14 standard array +1 Human +1 ASI (Druid 8)"
+    },
+    "Intelligence": {
+      "score": 13,
+      "modifier": 1,
+      "why": "12 standard array +1 Human"
+    },
+    "Wisdom": {
+      "score": 19,
+      "modifier": 4,
+      "why": "15 standard array +1 Human +2 ASI (Druid 4) +1 ASI (Druid 8)"
+    },
+    "Charisma": {
+      "score": 11,
+      "modifier": 0,
+      "why": "10 standard array +1 Human"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 3,
+    "why": "character level 8 -> +3 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 67,
+    "why": "8 Druid 1 (max d8) + 35 Druid 2-8 fixed (7 x 5) + 24 Con mod x 8 levels (3 x 8)"
+  },
+  "armor_class": {
+    "value": 15,
+    "source": "Leather armor + wooden shield",
+    "why": "11 Leather armor + 2 Dex mod + 2 Wooden shield"
+  },
+  "initiative": {
+    "value": 2,
+    "why": "2 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 30,
+      "why": "30 Human base walking speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Str mod"
+    },
+    "Dexterity": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Dex mod"
+    },
+    "Constitution": {
+      "value": 3,
+      "proficient": false,
+      "why": "3 Con mod"
+    },
+    "Intelligence": {
+      "value": 4,
+      "proficient": true,
+      "why": "1 Int mod + 3 proficiency (Druid)"
+    },
+    "Wisdom": {
+      "value": 7,
+      "proficient": true,
+      "why": "4 Wis mod + 3 proficiency (Druid)"
+    },
+    "Charisma": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Cha mod"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Animal Handling": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Wis mod"
+    },
+    "Arcana": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Int mod"
+    },
+    "Athletics": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Str mod"
+    },
+    "Deception": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "History": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Int mod"
+    },
+    "Insight": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "4 Wis mod + 3 proficiency (Acolyte)"
+    },
+    "Intimidation": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Investigation": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Int mod"
+    },
+    "Medicine": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Wis mod"
+    },
+    "Nature": {
+      "value": 4,
+      "proficiency": "proficient",
+      "why": "1 Int mod + 3 proficiency (Druid)"
+    },
+    "Perception": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "4 Wis mod + 3 proficiency (Druid)"
+    },
+    "Performance": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Persuasion": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Religion": {
+      "value": 4,
+      "proficiency": "proficient",
+      "why": "1 Int mod + 3 proficiency (Acolyte)"
+    },
+    "Sleight of Hand": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Stealth": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Survival": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 17,
+    "why": "10 + Perception total 7"
+  },
+  "spellcasting": [
+    {
+      "source": "Druid",
+      "ability": "Wisdom",
+      "spell_save_dc": {
+        "value": 15,
+        "why": "8 + 4 Wis mod + 3 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 7,
+        "why": "4 Wis mod + 3 proficiency"
+      }
+    }
+  ],
+  "spell_slots": {
+    "value": {
+      "1": 4,
+      "2": 3,
+      "3": 3,
+      "4": 2
+    },
+    "why": "Druid table, level 8"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Scimitar",
+      "kind": "melee weapon (finesse, light)",
+      "to_hit": {
+        "value": 5,
+        "why": "2 Dex mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d6+2 slashing",
+        "why": "1d6 weapon die +2 Dex mod"
+      }
+    },
+    {
+      "name": "Produce Flame",
+      "kind": "cantrip (ranged spell attack)",
+      "to_hit": {
+        "value": 7,
+        "why": "4 Wis mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "2d8 fire",
+        "why": "1d8, +1d8 at character level 5"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Wild Shape",
+      "max": 2,
+      "recharge": "short or long rest",
+      "why": "Wild Shape: twice, regain on a short or long rest"
+    },
+    {
+      "name": "Natural Recovery",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "once per day; recovers slots with combined level up to 4 (half of 8)"
+    }
+  ],
+  "class_values": [
+    {
+      "name": "Wild Shape max CR",
+      "value": "1",
+      "why": "Beast Shapes table, level 8 (no flying/swimming limitation)"
+    },
+    {
+      "name": "Natural Recovery slot levels",
+      "value": 4,
+      "why": "half druid level 8, rounded up"
+    }
+  ],
+  "features": {
+    "class": {
+      "Druid": [
+        {
+          "name": "Druidic",
+          "level": 1
+        },
+        {
+          "name": "Spellcasting",
+          "level": 1
+        },
+        {
+          "name": "Wild Shape",
+          "level": 2
+        },
+        {
+          "name": "Druid Circle",
+          "level": 2,
+          "choice": "Circle of the Land"
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 8
+        }
+      ]
+    },
+    "subclass": {
+      "Circle of the Land": [
+        {
+          "name": "Bonus Cantrip",
+          "level": 2,
+          "choice": "Guidance"
+        },
+        {
+          "name": "Natural Recovery",
+          "level": 2
+        },
+        {
+          "name": "Circle Spells",
+          "level": 3,
+          "choice": "Forest"
+        },
+        {
+          "name": "Land's Stride",
+          "level": 6
+        }
+      ]
+    },
+    "race": [],
+    "background": [
+      {
+        "name": "Shelter of the Faithful",
+        "level": 1
+      }
+    ],
+    "feats": []
+  },
+  "spells": {
+    "Druid": {
+      "cantrips_known_max": 4,
+      "cantrips_why": "3 (Druid table, level 8) + 1 Bonus Cantrip (Circle of the Land)",
+      "prepared_max": {
+        "value": 12,
+        "why": "Wis mod 4 + druid level 8"
+      },
+      "always_prepared": [
+        "Barkskin",
+        "Spider Climb",
+        "Call Lightning",
+        "Plant Growth",
+        "Divination",
+        "Freedom of Movement"
+      ]
+    }
+  }
+}

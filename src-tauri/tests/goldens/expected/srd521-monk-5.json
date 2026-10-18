@@ -1,0 +1,353 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd521-monk-5",
+  "ruleset": "SRD 5.2.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 5,
+  "abilities": {
+    "Strength": {
+      "score": 12,
+      "modifier": 1,
+      "why": "12 standard array"
+    },
+    "Dexterity": {
+      "score": 18,
+      "modifier": 4,
+      "why": "15 standard array +2 Criminal background +1 ASI feat (Monk 4)"
+    },
+    "Constitution": {
+      "score": 14,
+      "modifier": 2,
+      "why": "13 standard array +1 Criminal background"
+    },
+    "Intelligence": {
+      "score": 10,
+      "modifier": 0,
+      "why": "10 standard array"
+    },
+    "Wisdom": {
+      "score": 15,
+      "modifier": 2,
+      "why": "14 standard array +1 ASI feat (Monk 4)"
+    },
+    "Charisma": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 standard array"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 3,
+    "why": "character level 5 -> +3 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 38,
+    "why": "8 Monk 1 (8) + 20 Monk 2-5 fixed (4 x 5) + 10 Con mod x 5 levels (2 x 5)"
+  },
+  "armor_class": {
+    "value": 16,
+    "source": "Unarmored Defense (Monk), no armor, no shield",
+    "why": "10 Unarmored Defense base + 4 Dex mod + 2 Wis mod"
+  },
+  "initiative": {
+    "value": 7,
+    "why": "4 Dex mod + 3 Alert: Initiative Proficiency"
+  },
+  "speeds": {
+    "walk": {
+      "value": 40,
+      "why": "30 Halfling speed + 10 Unarmored Movement, Monk 5"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": 4,
+      "proficient": true,
+      "why": "1 Str mod + 3 proficiency (Monk)"
+    },
+    "Dexterity": {
+      "value": 7,
+      "proficient": true,
+      "why": "4 Dex mod + 3 proficiency (Monk)"
+    },
+    "Constitution": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Con mod"
+    },
+    "Intelligence": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Int mod"
+    },
+    "Wisdom": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Wis mod"
+    },
+    "Charisma": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Cha mod"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "4 Dex mod + 3 proficiency (Monk)"
+    },
+    "Animal Handling": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Wis mod"
+    },
+    "Arcana": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Athletics": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Str mod"
+    },
+    "Deception": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "History": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Insight": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "2 Wis mod + 3 proficiency (Monk)"
+    },
+    "Intimidation": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "Investigation": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Medicine": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Wis mod"
+    },
+    "Nature": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Perception": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Wis mod"
+    },
+    "Performance": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "Persuasion": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "Religion": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Sleight of Hand": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "4 Dex mod + 3 proficiency (Criminal)"
+    },
+    "Stealth": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "4 Dex mod + 3 proficiency (Criminal)"
+    },
+    "Survival": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 12,
+    "why": "10 + Perception total 2"
+  },
+  "spellcasting": [],
+  "spell_slots": {
+    "value": {},
+    "why": "no Spellcasting feature"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Unarmed Strike",
+      "kind": "melee (monk)",
+      "to_hit": {
+        "value": 7,
+        "why": "4 Dex mod (Dexterous Attacks) + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d8+4 bludgeoning",
+        "why": "Martial Arts die d8 at Monk 5 + 4 Dex mod"
+      }
+    },
+    {
+      "name": "Spear",
+      "kind": "melee weapon (monk weapon, thrown 20/60)",
+      "to_hit": {
+        "value": 7,
+        "why": "4 Dex mod (Dexterous Attacks) + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d8+4 piercing",
+        "why": "Martial Arts die d8 replaces 1d6 (equal to the 1d8 versatile die) + 4 Dex mod"
+      }
+    },
+    {
+      "name": "Dagger",
+      "kind": "melee weapon (monk weapon, finesse, light, thrown 20/60)",
+      "to_hit": {
+        "value": 7,
+        "why": "4 Dex mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d8+4 piercing",
+        "why": "Martial Arts die d8 replaces 1d4 + 4 Dex mod"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Focus Points",
+      "max": 5,
+      "recharge": "short or long rest",
+      "why": "Focus Points column, Monk 5"
+    },
+    {
+      "name": "Uncanny Metabolism",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Monk 2"
+    }
+  ],
+  "class_values": [
+    {
+      "name": "Martial Arts die",
+      "value": "d8",
+      "why": "Martial Arts column, Monk 5"
+    },
+    {
+      "name": "Focus save DC",
+      "value": 13,
+      "why": "8 + 2 Wis mod + 3 proficiency"
+    },
+    {
+      "name": "Attacks per Attack action",
+      "value": 2,
+      "why": "Extra Attack (Monk 5)"
+    }
+  ],
+  "features": {
+    "class": {
+      "Monk": [
+        {
+          "name": "Martial Arts",
+          "level": 1
+        },
+        {
+          "name": "Unarmored Defense",
+          "level": 1
+        },
+        {
+          "name": "Monk's Focus",
+          "level": 2
+        },
+        {
+          "name": "Unarmored Movement",
+          "level": 2
+        },
+        {
+          "name": "Uncanny Metabolism",
+          "level": 2
+        },
+        {
+          "name": "Deflect Attacks",
+          "level": 3
+        },
+        {
+          "name": "Monk Subclass",
+          "level": 3,
+          "choice": "Warrior of the Open Hand"
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Slow Fall",
+          "level": 4
+        },
+        {
+          "name": "Extra Attack",
+          "level": 5
+        },
+        {
+          "name": "Stunning Strike",
+          "level": 5
+        }
+      ]
+    },
+    "subclass": {
+      "Warrior of the Open Hand": [
+        {
+          "name": "Open Hand Technique",
+          "level": 3
+        }
+      ]
+    },
+    "species": [
+      {
+        "name": "Brave",
+        "level": 1
+      },
+      {
+        "name": "Halfling Nimbleness",
+        "level": 1
+      },
+      {
+        "name": "Luck",
+        "level": 1
+      },
+      {
+        "name": "Naturally Stealthy",
+        "level": 1
+      }
+    ],
+    "background": [],
+    "feats": [
+      {
+        "name": "Alert",
+        "level": 1
+      },
+      {
+        "name": "Ability Score Improvement",
+        "level": 4
+      }
+    ]
+  }
+}

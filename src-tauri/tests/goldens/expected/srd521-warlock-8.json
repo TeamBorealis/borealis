@@ -1,0 +1,476 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd521-warlock-8",
+  "ruleset": "SRD 5.2.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 8,
+  "abilities": {
+    "Strength": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 point buy"
+    },
+    "Dexterity": {
+      "score": 15,
+      "modifier": 2,
+      "why": "14 point buy +1 Soldier background"
+    },
+    "Constitution": {
+      "score": 16,
+      "modifier": 3,
+      "why": "14 point buy +2 Soldier background"
+    },
+    "Intelligence": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 point buy"
+    },
+    "Wisdom": {
+      "score": 13,
+      "modifier": 1,
+      "why": "12 point buy +1 ASI feat (Warlock 8)"
+    },
+    "Charisma": {
+      "score": 18,
+      "modifier": 4,
+      "why": "15 point buy +2 ASI feat (Warlock 4) +1 ASI feat (Warlock 8)"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 3,
+    "why": "character level 8 -> +3 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 67,
+    "why": "8 Warlock 1 (8) + 35 Warlock 2-8 fixed (7 x 5) + 24 Con mod x 8 levels (3 x 8)"
+  },
+  "armor_class": {
+    "value": 13,
+    "source": "Leather Armor",
+    "why": "11 Leather Armor + 2 Dex mod"
+  },
+  "initiative": {
+    "value": 5,
+    "why": "2 Dex mod + 3 Alert: Initiative Proficiency (via Lessons of the First Ones)"
+  },
+  "speeds": {
+    "walk": {
+      "value": 30,
+      "why": "30 Elf speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Str mod"
+    },
+    "Dexterity": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Dex mod"
+    },
+    "Constitution": {
+      "value": 3,
+      "proficient": false,
+      "why": "3 Con mod"
+    },
+    "Intelligence": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Int mod"
+    },
+    "Wisdom": {
+      "value": 4,
+      "proficient": true,
+      "why": "1 Wis mod + 3 proficiency (Warlock)"
+    },
+    "Charisma": {
+      "value": 7,
+      "proficient": true,
+      "why": "4 Cha mod + 3 proficiency (Warlock)"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Animal Handling": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Arcana": {
+      "value": 2,
+      "proficiency": "proficient",
+      "why": "-1 Int mod + 3 proficiency (Warlock)"
+    },
+    "Athletics": {
+      "value": 2,
+      "proficiency": "proficient",
+      "why": "-1 Str mod + 3 proficiency (Soldier)"
+    },
+    "Deception": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "4 Cha mod + 3 proficiency (Warlock)"
+    },
+    "History": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Insight": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Intimidation": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "4 Cha mod + 3 proficiency (Soldier)"
+    },
+    "Investigation": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Medicine": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Nature": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Perception": {
+      "value": 4,
+      "proficiency": "proficient",
+      "why": "1 Wis mod + 3 proficiency (Elf Keen Senses)"
+    },
+    "Performance": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Cha mod"
+    },
+    "Persuasion": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Cha mod"
+    },
+    "Religion": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Sleight of Hand": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Stealth": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Survival": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 14,
+    "why": "10 + Perception total 4"
+  },
+  "spellcasting": [
+    {
+      "source": "Warlock",
+      "ability": "Charisma",
+      "spell_save_dc": {
+        "value": 15,
+        "why": "8 + 4 Cha mod + 3 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 7,
+        "why": "4 Cha mod + 3 proficiency"
+      }
+    },
+    {
+      "source": "High Elf",
+      "ability": "Charisma",
+      "spell_save_dc": {
+        "value": 15,
+        "why": "8 + 4 Cha mod + 3 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 7,
+        "why": "4 Cha mod + 3 proficiency"
+      }
+    }
+  ],
+  "spell_slots": {
+    "value": {},
+    "why": "no Spellcasting feature"
+  },
+  "pact_slots": {
+    "count": 2,
+    "slot_level": 4,
+    "recharge": "short or long rest",
+    "why": "Warlock Features table, level 8"
+  },
+  "attacks": [
+    {
+      "name": "Longsword (pact weapon)",
+      "kind": "melee weapon (Pact of the Blade)",
+      "to_hit": {
+        "value": 7,
+        "why": "4 Cha mod (Pact of the Blade) + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d8+4 slashing",
+        "why": "1d8 weapon die + 4 Cha mod (Pact of the Blade)"
+      },
+      "damage_two_handed": {
+        "value": "1d10+4 slashing",
+        "why": "Versatile: two-handed die, same modifier"
+      }
+    },
+    {
+      "name": "Eldritch Blast",
+      "kind": "cantrip (ranged spell attack)",
+      "to_hit": {
+        "value": 7,
+        "why": "4 Cha mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d10+4 force",
+        "why": "per beam; 2 beams at level 5; + 4 Cha mod from Agonizing Blast"
+      },
+      "beams": 2
+    },
+    {
+      "name": "Sickle",
+      "kind": "melee weapon (light)",
+      "to_hit": {
+        "value": 2,
+        "why": "-1 Str mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d4-1 slashing",
+        "why": "1d4 weapon die -1 Str mod"
+      }
+    },
+    {
+      "name": "Dagger",
+      "kind": "melee weapon (finesse, light, thrown 20/60)",
+      "to_hit": {
+        "value": 5,
+        "why": "2 Dex mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d4+2 piercing",
+        "why": "1d4 weapon die +2 Dex mod"
+      }
+    },
+    {
+      "name": "Spear",
+      "kind": "melee weapon (thrown 20/60)",
+      "to_hit": {
+        "value": 2,
+        "why": "-1 Str mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d6-1 piercing",
+        "why": "1d6 weapon die -1 Str mod"
+      },
+      "damage_two_handed": {
+        "value": "1d8-1 piercing",
+        "why": "Versatile: two-handed die, same modifier"
+      }
+    },
+    {
+      "name": "Shortbow",
+      "kind": "ranged weapon (80/320)",
+      "to_hit": {
+        "value": 5,
+        "why": "2 Dex mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d6+2 piercing",
+        "why": "1d6 weapon die +2 Dex mod"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Magical Cunning",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Warlock 2: regain up to 1 Pact slot (half of 2, rounded up)"
+    },
+    {
+      "name": "Dark One's Own Luck",
+      "max": 4,
+      "recharge": "long rest",
+      "why": "Cha mod uses"
+    },
+    {
+      "name": "High Elf: Detect Magic (free cast)",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Elven Lineage level 3 spell"
+    },
+    {
+      "name": "High Elf: Misty Step (free cast)",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Elven Lineage level 5 spell"
+    }
+  ],
+  "class_values": [
+    {
+      "name": "Dark One's Blessing temporary hit points",
+      "value": 12,
+      "why": "Cha mod 4 + warlock level 8"
+    },
+    {
+      "name": "Attacks per Attack action (pact weapon)",
+      "value": 2,
+      "why": "Thirsting Blade"
+    },
+    {
+      "name": "Eldritch Invocations known",
+      "value": 6,
+      "why": "Eldritch Invocations column, Warlock 8"
+    }
+  ],
+  "features": {
+    "class": {
+      "Warlock": [
+        {
+          "name": "Eldritch Invocations",
+          "level": 1,
+          "choice": [
+            "Pact of the Blade",
+            "Agonizing Blast",
+            "Devil's Sight",
+            "Thirsting Blade",
+            "Eldritch Smite",
+            "Lessons of the First Ones"
+          ]
+        },
+        {
+          "name": "Pact Magic",
+          "level": 1
+        },
+        {
+          "name": "Magical Cunning",
+          "level": 2
+        },
+        {
+          "name": "Warlock Subclass",
+          "level": 3,
+          "choice": "Fiend Patron"
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 8
+        }
+      ]
+    },
+    "subclass": {
+      "Fiend Patron": [
+        {
+          "name": "Dark One's Blessing",
+          "level": 3
+        },
+        {
+          "name": "Fiend Spells",
+          "level": 3
+        },
+        {
+          "name": "Dark One's Own Luck",
+          "level": 6
+        }
+      ]
+    },
+    "species": [
+      {
+        "name": "Darkvision",
+        "level": 1
+      },
+      {
+        "name": "Elven Lineage",
+        "level": 1,
+        "choice": "High Elf"
+      },
+      {
+        "name": "Fey Ancestry",
+        "level": 1
+      },
+      {
+        "name": "Keen Senses",
+        "level": 1,
+        "choice": "Perception"
+      },
+      {
+        "name": "Trance",
+        "level": 1
+      }
+    ],
+    "background": [],
+    "feats": [
+      {
+        "name": "Savage Attacker",
+        "level": 1
+      },
+      {
+        "name": "Ability Score Improvement",
+        "level": 4
+      },
+      {
+        "name": "Alert",
+        "level": 7
+      },
+      {
+        "name": "Ability Score Improvement",
+        "level": 8
+      }
+    ]
+  },
+  "spells": {
+    "Warlock": {
+      "cantrips_known_max": 3,
+      "prepared_max": {
+        "value": 9,
+        "why": "Prepared Spells column, Warlock 8"
+      },
+      "always_prepared": [
+        "Burning Hands",
+        "Command",
+        "Scorching Ray",
+        "Suggestion",
+        "Fireball",
+        "Stinking Cloud",
+        "Fire Shield",
+        "Wall of Fire"
+      ]
+    },
+    "High Elf": {
+      "cantrips_known_max": 1,
+      "always_prepared": [
+        "Detect Magic",
+        "Misty Step"
+      ]
+    }
+  }
+}

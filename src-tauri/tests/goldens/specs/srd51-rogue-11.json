@@ -1,0 +1,219 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd51-rogue-11",
+  "ruleset": "SRD 5.1",
+  "edition": "2014",
+  "summary": "Lightfoot Halfling Rogue 11 (Thief), Acolyte",
+  "character_level": 11,
+  "race": {
+    "name": "Halfling",
+    "subrace": "Lightfoot",
+    "ability_score_increases": {
+      "Dexterity": 2,
+      "Charisma": 1
+    },
+    "languages": [
+      "Common",
+      "Halfling"
+    ],
+    "choices": {}
+  },
+  "background": {
+    "name": "Acolyte",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "languages": [
+      "Elvish",
+      "Dwarvish"
+    ],
+    "tool_proficiencies": [],
+    "equipment": [
+      "Holy symbol",
+      "Prayer book",
+      "5 sticks of incense",
+      "Vestments",
+      "Common clothes",
+      "Belt pouch with 15 gp"
+    ],
+    "feature": "Shelter of the Faithful"
+  },
+  "ability_scores": {
+    "method": "point buy (27 points; costs 8=0, 9=1, 10=2, 11=3, 12=4, 13=5, 14=7, 15=9)",
+    "assignment": {
+      "Strength": 8,
+      "Dexterity": 15,
+      "Constitution": 15,
+      "Intelligence": 10,
+      "Wisdom": 14,
+      "Charisma": 8
+    },
+    "points_spent": {
+      "Strength": 0,
+      "Dexterity": 9,
+      "Constitution": 9,
+      "Intelligence": 2,
+      "Wisdom": 7,
+      "Charisma": 0
+    }
+  },
+  "hit_points": "fixed_average: level 1 = maximum of the first class's hit die + Con modifier; every later level = the class's fixed value from its Hit Points at Higher Levels line (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Rogue",
+      "level": 11,
+      "subclass": "Thief"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Rogue",
+      "class_level": 1,
+      "hit_points": "8 (max d8) + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Stealth",
+            "Sleight of Hand",
+            "Perception",
+            "Acrobatics"
+          ]
+        },
+        {
+          "feature": "Expertise",
+          "skills": [
+            "Stealth",
+            "Sleight of Hand"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Rogue",
+      "class_level": 2,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 3,
+      "class": "Rogue",
+      "class_level": 3,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Roguish Archetype",
+          "choice": "Thief"
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Rogue",
+      "class_level": 4,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Dexterity": 1,
+            "Constitution": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Rogue",
+      "class_level": 5,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 6,
+      "class": "Rogue",
+      "class_level": 6,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Expertise",
+          "skills": [
+            "Perception",
+            "Acrobatics"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 7,
+      "class": "Rogue",
+      "class_level": 7,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 8,
+      "class": "Rogue",
+      "class_level": 8,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Dexterity": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 9,
+      "class": "Rogue",
+      "class_level": 9,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 10,
+      "class": "Rogue",
+      "class_level": 10,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Wisdom": 1,
+            "Constitution": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 11,
+      "class": "Rogue",
+      "class_level": 11,
+      "hit_points": "5 + Con",
+      "choices": []
+    }
+  ],
+  "spells": null,
+  "equipment": {
+    "class_choices": [
+      "(a) a rapier",
+      "(a) a shortbow and quiver of 20 arrows",
+      "(a) a burglar's pack",
+      "leather armor, two daggers, and thieves' tools"
+    ],
+    "background": "Acolyte equipment",
+    "worn_armor": "Leather armor",
+    "shield": null,
+    "wielded": "Rapier",
+    "carried_weapons": [
+      "Rapier",
+      "Shortbow",
+      "Dagger (x2)"
+    ]
+  }
+}

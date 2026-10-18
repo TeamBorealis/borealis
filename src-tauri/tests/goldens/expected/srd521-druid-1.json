@@ -1,0 +1,371 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd521-druid-1",
+  "ruleset": "SRD 5.2.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 1,
+  "abilities": {
+    "Strength": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 standard array"
+    },
+    "Dexterity": {
+      "score": 12,
+      "modifier": 1,
+      "why": "12 standard array"
+    },
+    "Constitution": {
+      "score": 14,
+      "modifier": 2,
+      "why": "14 standard array"
+    },
+    "Intelligence": {
+      "score": 14,
+      "modifier": 2,
+      "why": "13 standard array +1 Sage background"
+    },
+    "Wisdom": {
+      "score": 17,
+      "modifier": 3,
+      "why": "15 standard array +2 Sage background"
+    },
+    "Charisma": {
+      "score": 10,
+      "modifier": 0,
+      "why": "10 standard array"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 2,
+    "why": "character level 1 -> +2 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 10,
+    "why": "8 Druid 1 (8) + 2 Con mod x 1 level"
+  },
+  "armor_class": {
+    "value": 14,
+    "source": "Leather Armor + Shield",
+    "why": "11 Leather Armor + 1 Dex mod + 2 Shield"
+  },
+  "initiative": {
+    "value": 1,
+    "why": "1 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 30,
+      "why": "30 Gnome speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Str mod"
+    },
+    "Dexterity": {
+      "value": 1,
+      "proficient": false,
+      "why": "1 Dex mod"
+    },
+    "Constitution": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Con mod"
+    },
+    "Intelligence": {
+      "value": 4,
+      "proficient": true,
+      "why": "2 Int mod + 2 proficiency (Druid)"
+    },
+    "Wisdom": {
+      "value": 5,
+      "proficient": true,
+      "why": "3 Wis mod + 2 proficiency (Druid)"
+    },
+    "Charisma": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Cha mod"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Dex mod"
+    },
+    "Animal Handling": {
+      "value": 3,
+      "proficiency": "none",
+      "why": "3 Wis mod"
+    },
+    "Arcana": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "2 Int mod + 2 proficiency (Sage) + 3 Primal Order: Magician (Wis mod, min 1)"
+    },
+    "Athletics": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Str mod"
+    },
+    "Deception": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "History": {
+      "value": 4,
+      "proficiency": "proficient",
+      "why": "2 Int mod + 2 proficiency (Sage)"
+    },
+    "Insight": {
+      "value": 3,
+      "proficiency": "none",
+      "why": "3 Wis mod"
+    },
+    "Intimidation": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Investigation": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Int mod"
+    },
+    "Medicine": {
+      "value": 3,
+      "proficiency": "none",
+      "why": "3 Wis mod"
+    },
+    "Nature": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "2 Int mod + 2 proficiency (Druid) + 3 Primal Order: Magician (Wis mod, min 1)"
+    },
+    "Perception": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "3 Wis mod + 2 proficiency (Druid)"
+    },
+    "Performance": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Persuasion": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Religion": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Int mod"
+    },
+    "Sleight of Hand": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Dex mod"
+    },
+    "Stealth": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Dex mod"
+    },
+    "Survival": {
+      "value": 3,
+      "proficiency": "none",
+      "why": "3 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 15,
+    "why": "10 + Perception total 5"
+  },
+  "spellcasting": [
+    {
+      "source": "Druid",
+      "ability": "Wisdom",
+      "spell_save_dc": {
+        "value": 13,
+        "why": "8 + 3 Wis mod + 2 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 5,
+        "why": "3 Wis mod + 2 proficiency"
+      }
+    },
+    {
+      "source": "Forest Gnome",
+      "ability": "Wisdom",
+      "spell_save_dc": {
+        "value": 13,
+        "why": "8 + 3 Wis mod + 2 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 5,
+        "why": "3 Wis mod + 2 proficiency"
+      }
+    },
+    {
+      "source": "Magic Initiate (Wizard)",
+      "ability": "Wisdom",
+      "spell_save_dc": {
+        "value": 13,
+        "why": "8 + 3 Wis mod + 2 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 5,
+        "why": "3 Wis mod + 2 proficiency"
+      }
+    }
+  ],
+  "spell_slots": {
+    "value": {
+      "1": 2
+    },
+    "why": "Druid Features table, level 1"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Sickle",
+      "kind": "melee weapon (light)",
+      "to_hit": {
+        "value": 1,
+        "why": "-1 Str mod + 2 proficiency"
+      },
+      "damage": {
+        "value": "1d4-1 slashing",
+        "why": "1d4 weapon die -1 Str mod"
+      }
+    },
+    {
+      "name": "Quarterstaff",
+      "kind": "melee weapon",
+      "to_hit": {
+        "value": 1,
+        "why": "-1 Str mod + 2 proficiency"
+      },
+      "damage": {
+        "value": "1d6-1 bludgeoning",
+        "why": "1d6 weapon die -1 Str mod"
+      },
+      "damage_two_handed": {
+        "value": "1d8-1 bludgeoning",
+        "why": "Versatile: two-handed die, same modifier"
+      }
+    },
+    {
+      "name": "Produce Flame",
+      "kind": "cantrip (ranged spell attack)",
+      "to_hit": {
+        "value": 5,
+        "why": "3 Wis mod + 2 proficiency"
+      },
+      "damage": {
+        "value": "1d8 fire",
+        "why": "base die at level 1"
+      }
+    },
+    {
+      "name": "Fire Bolt",
+      "kind": "cantrip (ranged spell attack, Magic Initiate)",
+      "to_hit": {
+        "value": 5,
+        "why": "3 Wis mod + 2 proficiency"
+      },
+      "damage": {
+        "value": "1d10 fire",
+        "why": "base die at level 1"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Forest Gnome: Speak with Animals (free casts)",
+      "max": 2,
+      "recharge": "long rest",
+      "why": "Proficiency Bonus uses"
+    },
+    {
+      "name": "Magic Initiate: Sleep (free cast)",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Magic Initiate level 1 spell"
+    }
+  ],
+  "class_values": [],
+  "features": {
+    "class": {
+      "Druid": [
+        {
+          "name": "Spellcasting",
+          "level": 1
+        },
+        {
+          "name": "Druidic",
+          "level": 1
+        },
+        {
+          "name": "Primal Order",
+          "level": 1,
+          "choice": "Magician"
+        }
+      ]
+    },
+    "subclass": {},
+    "species": [
+      {
+        "name": "Darkvision",
+        "level": 1
+      },
+      {
+        "name": "Gnomish Cunning",
+        "level": 1
+      },
+      {
+        "name": "Gnomish Lineage",
+        "level": 1,
+        "choice": "Forest Gnome"
+      }
+    ],
+    "background": [],
+    "feats": [
+      {
+        "name": "Magic Initiate (Wizard)",
+        "level": 1
+      }
+    ]
+  },
+  "spells": {
+    "Druid": {
+      "cantrips_known_max": 3,
+      "cantrips_why": "2 (Druid Features table, level 1) + 1 Magician",
+      "prepared_max": {
+        "value": 4,
+        "why": "Prepared Spells column, Druid 1"
+      },
+      "always_prepared": [
+        "Speak with Animals"
+      ]
+    },
+    "Forest Gnome": {
+      "cantrips_known_max": 1,
+      "always_prepared": [
+        "Speak with Animals"
+      ]
+    },
+    "Magic Initiate (Wizard)": {
+      "cantrips_known_max": 2,
+      "always_prepared": [
+        "Sleep"
+      ]
+    }
+  }
+}

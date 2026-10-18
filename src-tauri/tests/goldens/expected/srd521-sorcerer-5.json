@@ -1,0 +1,462 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd521-sorcerer-5",
+  "ruleset": "SRD 5.2.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 5,
+  "abilities": {
+    "Strength": {
+      "score": 10,
+      "modifier": 0,
+      "why": "10 standard array"
+    },
+    "Dexterity": {
+      "score": 14,
+      "modifier": 2,
+      "why": "13 standard array +1 ASI feat (Sorcerer 4)"
+    },
+    "Constitution": {
+      "score": 14,
+      "modifier": 2,
+      "why": "14 standard array"
+    },
+    "Intelligence": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 standard array"
+    },
+    "Wisdom": {
+      "score": 13,
+      "modifier": 1,
+      "why": "12 standard array +1 Acolyte background"
+    },
+    "Charisma": {
+      "score": 18,
+      "modifier": 4,
+      "why": "15 standard array +2 Acolyte background +1 ASI feat (Sorcerer 4)"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 3,
+    "why": "character level 5 -> +3 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 37,
+    "why": "6 Sorcerer 1 (6) + 16 Sorcerer 2-5 fixed (4 x 4) + 10 Con mod x 5 levels (2 x 5) + 5 Draconic Resilience (+3 at Sorcerer 3, +1 at 4 and 5)"
+  },
+  "armor_class": {
+    "value": 16,
+    "source": "Draconic Resilience, no armor",
+    "why": "10 Draconic Resilience base (no armor) + 2 Dex mod + 4 Cha mod"
+  },
+  "initiative": {
+    "value": 2,
+    "why": "2 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 30,
+      "why": "30 Tiefling speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Str mod"
+    },
+    "Dexterity": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Dex mod"
+    },
+    "Constitution": {
+      "value": 5,
+      "proficient": true,
+      "why": "2 Con mod + 3 proficiency (Sorcerer)"
+    },
+    "Intelligence": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Int mod"
+    },
+    "Wisdom": {
+      "value": 1,
+      "proficient": false,
+      "why": "1 Wis mod"
+    },
+    "Charisma": {
+      "value": 7,
+      "proficient": true,
+      "why": "4 Cha mod + 3 proficiency (Sorcerer)"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Animal Handling": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Arcana": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Athletics": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Str mod"
+    },
+    "Deception": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "4 Cha mod + 3 proficiency (Sorcerer)"
+    },
+    "History": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Insight": {
+      "value": 4,
+      "proficiency": "proficient",
+      "why": "1 Wis mod + 3 proficiency (Acolyte)"
+    },
+    "Intimidation": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Cha mod"
+    },
+    "Investigation": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Medicine": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Nature": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Perception": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Performance": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Cha mod"
+    },
+    "Persuasion": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "4 Cha mod + 3 proficiency (Sorcerer)"
+    },
+    "Religion": {
+      "value": 2,
+      "proficiency": "proficient",
+      "why": "-1 Int mod + 3 proficiency (Acolyte)"
+    },
+    "Sleight of Hand": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Stealth": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Survival": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 11,
+    "why": "10 + Perception total 1"
+  },
+  "spellcasting": [
+    {
+      "source": "Sorcerer",
+      "ability": "Charisma",
+      "spell_save_dc": {
+        "value": 15,
+        "why": "8 + 4 Cha mod + 3 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 7,
+        "why": "4 Cha mod + 3 proficiency"
+      }
+    },
+    {
+      "source": "Infernal Legacy",
+      "ability": "Charisma",
+      "spell_save_dc": {
+        "value": 15,
+        "why": "8 + 4 Cha mod + 3 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 7,
+        "why": "4 Cha mod + 3 proficiency"
+      }
+    },
+    {
+      "source": "Magic Initiate (Cleric)",
+      "ability": "Charisma",
+      "spell_save_dc": {
+        "value": 15,
+        "why": "8 + 4 Cha mod + 3 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 7,
+        "why": "4 Cha mod + 3 proficiency"
+      }
+    }
+  ],
+  "spell_slots": {
+    "value": {
+      "1": 4,
+      "2": 3,
+      "3": 2
+    },
+    "why": "Sorcerer Features table, level 5"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Fire Bolt",
+      "kind": "cantrip (ranged spell attack, Infernal Legacy)",
+      "to_hit": {
+        "value": 7,
+        "why": "4 Cha mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "2d10 fire",
+        "why": "1d10, +1d10 at level 5"
+      }
+    },
+    {
+      "name": "Sorcerous Burst",
+      "kind": "cantrip (ranged spell attack)",
+      "to_hit": {
+        "value": 7,
+        "why": "4 Cha mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "2d8 (chosen type)",
+        "why": "1d8, +1d8 at level 5; type chosen on cast from Acid, Cold, Fire, Lightning, Poison, Psychic, Thunder"
+      }
+    },
+    {
+      "name": "Shocking Grasp",
+      "kind": "cantrip (melee spell attack)",
+      "to_hit": {
+        "value": 7,
+        "why": "4 Cha mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "2d8 lightning",
+        "why": "1d8, +1d8 at level 5"
+      }
+    },
+    {
+      "name": "Sacred Flame",
+      "kind": "cantrip (save, Magic Initiate)",
+      "save": {
+        "ability": "Dexterity",
+        "dc": 15,
+        "why": "equals the spell save DC of the casting source (see spellcasting)"
+      },
+      "damage": {
+        "value": "2d8 radiant",
+        "why": "1d8, +1d8 at level 5"
+      }
+    },
+    {
+      "name": "Spear",
+      "kind": "melee weapon (thrown 20/60)",
+      "to_hit": {
+        "value": 3,
+        "why": "0 Str mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d6 piercing",
+        "why": "1d6 weapon die +0 Str mod"
+      },
+      "damage_two_handed": {
+        "value": "1d8 piercing",
+        "why": "Versatile: two-handed die, same modifier"
+      }
+    },
+    {
+      "name": "Dagger",
+      "kind": "melee weapon (finesse, light, thrown 20/60)",
+      "to_hit": {
+        "value": 5,
+        "why": "2 Dex mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d4+2 piercing",
+        "why": "1d4 weapon die +2 Dex mod"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Sorcery Points",
+      "max": 5,
+      "recharge": "long rest",
+      "why": "Sorcery Points column, Sorcerer 5"
+    },
+    {
+      "name": "Innate Sorcery",
+      "max": 2,
+      "recharge": "long rest",
+      "why": "Sorcerer 1"
+    },
+    {
+      "name": "Sorcerous Restoration",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "regain up to 2 Sorcery Points (half of 5) on a short rest"
+    },
+    {
+      "name": "Infernal Legacy: Hellish Rebuke (free cast)",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Fiendish Legacy level 3 spell"
+    },
+    {
+      "name": "Infernal Legacy: Darkness (free cast)",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Fiendish Legacy level 5 spell"
+    },
+    {
+      "name": "Magic Initiate: Bless (free cast)",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Magic Initiate level 1 spell"
+    }
+  ],
+  "class_values": [],
+  "features": {
+    "class": {
+      "Sorcerer": [
+        {
+          "name": "Spellcasting",
+          "level": 1
+        },
+        {
+          "name": "Innate Sorcery",
+          "level": 1
+        },
+        {
+          "name": "Font of Magic",
+          "level": 2
+        },
+        {
+          "name": "Metamagic",
+          "level": 2,
+          "choice": [
+            "Quickened Spell",
+            "Twinned Spell"
+          ]
+        },
+        {
+          "name": "Sorcerer Subclass",
+          "level": 3,
+          "choice": "Draconic Sorcery"
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Sorcerous Restoration",
+          "level": 5
+        }
+      ]
+    },
+    "subclass": {
+      "Draconic Sorcery": [
+        {
+          "name": "Draconic Resilience",
+          "level": 3
+        },
+        {
+          "name": "Draconic Spells",
+          "level": 3
+        }
+      ]
+    },
+    "species": [
+      {
+        "name": "Darkvision",
+        "level": 1
+      },
+      {
+        "name": "Fiendish Legacy",
+        "level": 1,
+        "choice": "Infernal"
+      },
+      {
+        "name": "Otherworldly Presence",
+        "level": 1
+      }
+    ],
+    "background": [],
+    "feats": [
+      {
+        "name": "Magic Initiate (Cleric)",
+        "level": 1
+      },
+      {
+        "name": "Ability Score Improvement",
+        "level": 4
+      }
+    ]
+  },
+  "spells": {
+    "Sorcerer": {
+      "cantrips_known_max": 5,
+      "prepared_max": {
+        "value": 9,
+        "why": "Prepared Spells column, Sorcerer 5"
+      },
+      "always_prepared": [
+        "Alter Self",
+        "Chromatic Orb",
+        "Command",
+        "Dragon's Breath",
+        "Fear",
+        "Fly"
+      ]
+    },
+    "Infernal Legacy": {
+      "cantrips_known_max": 2,
+      "always_prepared": [
+        "Hellish Rebuke",
+        "Darkness"
+      ]
+    },
+    "Magic Initiate (Cleric)": {
+      "cantrips_known_max": 2,
+      "always_prepared": [
+        "Bless"
+      ]
+    }
+  }
+}

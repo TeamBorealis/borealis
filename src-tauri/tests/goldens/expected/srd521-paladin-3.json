@@ -1,0 +1,408 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd521-paladin-3",
+  "ruleset": "SRD 5.2.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 3,
+  "abilities": {
+    "Strength": {
+      "score": 17,
+      "modifier": 3,
+      "why": "15 standard array +2 Soldier background"
+    },
+    "Dexterity": {
+      "score": 10,
+      "modifier": 0,
+      "why": "10 standard array"
+    },
+    "Constitution": {
+      "score": 14,
+      "modifier": 2,
+      "why": "13 standard array +1 Soldier background"
+    },
+    "Intelligence": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 standard array"
+    },
+    "Wisdom": {
+      "score": 12,
+      "modifier": 1,
+      "why": "12 standard array"
+    },
+    "Charisma": {
+      "score": 14,
+      "modifier": 2,
+      "why": "14 standard array"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 2,
+    "why": "character level 3 -> +2 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 28,
+    "why": "10 Paladin 1 (10) + 12 Paladin 2-3 fixed (2 x 6) + 6 Con mod x 3 levels (2 x 3)"
+  },
+  "armor_class": {
+    "value": 19,
+    "source": "Chain Mail + Shield + Defense",
+    "why": "16 Chain Mail + 2 Shield + 1 Defense feat (wearing armor)"
+  },
+  "initiative": {
+    "value": 0,
+    "why": "0 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 30,
+      "why": "30 Dragonborn speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": 3,
+      "proficient": false,
+      "why": "3 Str mod"
+    },
+    "Dexterity": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Dex mod"
+    },
+    "Constitution": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Con mod"
+    },
+    "Intelligence": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Int mod"
+    },
+    "Wisdom": {
+      "value": 3,
+      "proficient": true,
+      "why": "1 Wis mod + 2 proficiency (Paladin)"
+    },
+    "Charisma": {
+      "value": 4,
+      "proficient": true,
+      "why": "2 Cha mod + 2 proficiency (Paladin)"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Dex mod"
+    },
+    "Animal Handling": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Arcana": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Athletics": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "3 Str mod + 2 proficiency (Soldier)"
+    },
+    "Deception": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Cha mod"
+    },
+    "History": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Insight": {
+      "value": 3,
+      "proficiency": "proficient",
+      "why": "1 Wis mod + 2 proficiency (Paladin)"
+    },
+    "Intimidation": {
+      "value": 4,
+      "proficiency": "proficient",
+      "why": "2 Cha mod + 2 proficiency (Soldier)"
+    },
+    "Investigation": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Medicine": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Nature": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Perception": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Performance": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Cha mod"
+    },
+    "Persuasion": {
+      "value": 4,
+      "proficiency": "proficient",
+      "why": "2 Cha mod + 2 proficiency (Paladin)"
+    },
+    "Religion": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Sleight of Hand": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Dex mod"
+    },
+    "Stealth": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Dex mod"
+    },
+    "Survival": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 11,
+    "why": "10 + Perception total 1"
+  },
+  "spellcasting": [
+    {
+      "source": "Paladin",
+      "ability": "Charisma",
+      "spell_save_dc": {
+        "value": 12,
+        "why": "8 + 2 Cha mod + 2 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 4,
+        "why": "2 Cha mod + 2 proficiency"
+      }
+    }
+  ],
+  "spell_slots": {
+    "value": {
+      "1": 3
+    },
+    "why": "Paladin Features table, level 3"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Longsword",
+      "kind": "melee weapon (mastery Sap)",
+      "to_hit": {
+        "value": 5,
+        "why": "3 Str mod + 2 proficiency"
+      },
+      "damage": {
+        "value": "1d8+3 slashing",
+        "why": "1d8 weapon die +3 Str mod"
+      },
+      "damage_two_handed": {
+        "value": "1d10+3 slashing",
+        "why": "Versatile: two-handed die, same modifier"
+      },
+      "notes": "one-handed while the shield is carried"
+    },
+    {
+      "name": "Javelin",
+      "kind": "melee weapon (thrown 30/120; mastery Slow)",
+      "to_hit": {
+        "value": 5,
+        "why": "3 Str mod + 2 proficiency"
+      },
+      "damage": {
+        "value": "1d6+3 piercing",
+        "why": "1d6 weapon die +3 Str mod"
+      }
+    },
+    {
+      "name": "Spear",
+      "kind": "melee weapon (thrown 20/60; no mastery chosen)",
+      "to_hit": {
+        "value": 5,
+        "why": "3 Str mod + 2 proficiency"
+      },
+      "damage": {
+        "value": "1d6+3 piercing",
+        "why": "1d6 weapon die +3 Str mod"
+      },
+      "damage_two_handed": {
+        "value": "1d8+3 piercing",
+        "why": "Versatile: two-handed die, same modifier"
+      }
+    },
+    {
+      "name": "Shortbow",
+      "kind": "ranged weapon (80/320; no mastery chosen)",
+      "to_hit": {
+        "value": 2,
+        "why": "0 Dex mod + 2 proficiency"
+      },
+      "damage": {
+        "value": "1d6 piercing",
+        "why": "1d6 weapon die +0 Dex mod"
+      }
+    },
+    {
+      "name": "Breath Weapon",
+      "kind": "species (save)",
+      "save": {
+        "ability": "Dexterity",
+        "dc": 12,
+        "why": "8 + 2 Con mod + 2 proficiency"
+      },
+      "damage": {
+        "value": "1d10 fire",
+        "why": "1d10 below character level 5; Gold = Fire; 15 ft. Cone or 30 ft. Line"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Lay On Hands",
+      "max": 15,
+      "recharge": "long rest",
+      "why": "pool = 5 x paladin level 3"
+    },
+    {
+      "name": "Channel Divinity",
+      "max": 2,
+      "recharge": "long rest (regain one use on a short rest)",
+      "why": "Channel Divinity column, Paladin 3"
+    },
+    {
+      "name": "Paladin's Smite (free Divine Smite)",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Paladin 2"
+    },
+    {
+      "name": "Breath Weapon",
+      "max": 2,
+      "recharge": "long rest",
+      "why": "Proficiency Bonus uses"
+    }
+  ],
+  "class_values": [
+    {
+      "name": "Weapon Mastery kinds",
+      "value": 2,
+      "why": "Paladin Weapon Mastery"
+    }
+  ],
+  "features": {
+    "class": {
+      "Paladin": [
+        {
+          "name": "Lay On Hands",
+          "level": 1
+        },
+        {
+          "name": "Spellcasting",
+          "level": 1
+        },
+        {
+          "name": "Weapon Mastery",
+          "level": 1
+        },
+        {
+          "name": "Fighting Style",
+          "level": 2,
+          "choice": "Defense"
+        },
+        {
+          "name": "Paladin's Smite",
+          "level": 2
+        },
+        {
+          "name": "Channel Divinity",
+          "level": 3
+        },
+        {
+          "name": "Paladin Subclass",
+          "level": 3,
+          "choice": "Oath of Devotion"
+        }
+      ]
+    },
+    "subclass": {
+      "Oath of Devotion": [
+        {
+          "name": "Oath of Devotion Spells",
+          "level": 3
+        },
+        {
+          "name": "Sacred Weapon",
+          "level": 3
+        }
+      ]
+    },
+    "species": [
+      {
+        "name": "Draconic Ancestry",
+        "level": 1,
+        "choice": "Gold"
+      },
+      {
+        "name": "Breath Weapon",
+        "level": 1
+      },
+      {
+        "name": "Damage Resistance",
+        "level": 1,
+        "choice": "Fire"
+      },
+      {
+        "name": "Darkvision",
+        "level": 1
+      }
+    ],
+    "background": [],
+    "feats": [
+      {
+        "name": "Savage Attacker",
+        "level": 1
+      },
+      {
+        "name": "Defense",
+        "level": 2
+      }
+    ]
+  },
+  "spells": {
+    "Paladin": {
+      "prepared_max": {
+        "value": 4,
+        "why": "Prepared Spells column, Paladin 3"
+      },
+      "always_prepared": [
+        "Divine Smite",
+        "Protection from Evil and Good",
+        "Shield of Faith"
+      ]
+    }
+  }
+}

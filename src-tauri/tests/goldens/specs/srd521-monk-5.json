@@ -1,0 +1,136 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd521-monk-5",
+  "ruleset": "SRD 5.2.1",
+  "edition": "2024",
+  "summary": "Halfling Monk 5 (Warrior of the Open Hand), Criminal",
+  "character_level": 5,
+  "species": {
+    "name": "Halfling",
+    "size": "Small",
+    "choices": {}
+  },
+  "background": {
+    "name": "Criminal",
+    "ability_scores_listed": [
+      "Dexterity",
+      "Constitution",
+      "Intelligence"
+    ],
+    "origin_feat": "Alert",
+    "skill_proficiencies": [
+      "Sleight of Hand",
+      "Stealth"
+    ],
+    "tool_proficiency": "Thieves' Tools",
+    "equipment_A": [
+      "2 Daggers",
+      "Thieves' Tools",
+      "Crowbar",
+      "2 Pouches",
+      "Traveler's Clothes",
+      "16 GP"
+    ],
+    "ability_score_increases": {
+      "Dexterity": 2,
+      "Constitution": 1
+    },
+    "equipment_option": "A"
+  },
+  "languages": [
+    "Common",
+    "Halfling",
+    "Elvish"
+  ],
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 12,
+      "Dexterity": 15,
+      "Constitution": 13,
+      "Intelligence": 10,
+      "Wisdom": 14,
+      "Charisma": 8
+    }
+  },
+  "hit_points": "fixed_average: level 1 = the Level 1 Hit Points by Class value (max hit die) + Con modifier; every later level = the Fixed Hit Points by Class value (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Monk",
+      "level": 5,
+      "subclass": "Warrior of the Open Hand"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Monk",
+      "class_level": 1,
+      "hit_points": "8 + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Acrobatics",
+            "Insight"
+          ],
+          "tool": "Flute (Musical Instrument)"
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Monk",
+      "class_level": 2,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 3,
+      "class": "Monk",
+      "class_level": 3,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Monk Subclass",
+          "choice": "Warrior of the Open Hand"
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Monk",
+      "class_level": 4,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Dexterity": 1,
+            "Wisdom": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Monk",
+      "class_level": 5,
+      "hit_points": "5 + Con",
+      "choices": []
+    }
+  ],
+  "spells": null,
+  "equipment": {
+    "class_option": "A: Spear, 5 Daggers, Flute, Explorer's Pack, 11 GP",
+    "background_option": "A (Criminal)",
+    "worn_armor": null,
+    "shield": null,
+    "wielded": "Spear",
+    "carried_weapons": [
+      "Spear",
+      "Dagger (x7)"
+    ]
+  }
+}

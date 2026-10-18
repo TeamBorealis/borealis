@@ -1,0 +1,500 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd521-ranger-11",
+  "ruleset": "SRD 5.2.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 11,
+  "abilities": {
+    "Strength": {
+      "score": 12,
+      "modifier": 1,
+      "why": "12 standard array"
+    },
+    "Dexterity": {
+      "score": 18,
+      "modifier": 4,
+      "why": "15 standard array +2 ASI feat (Ranger 4) +1 ASI feat (Ranger 8)"
+    },
+    "Constitution": {
+      "score": 14,
+      "modifier": 2,
+      "why": "13 standard array +1 Sage background"
+    },
+    "Intelligence": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 standard array"
+    },
+    "Wisdom": {
+      "score": 17,
+      "modifier": 3,
+      "why": "14 standard array +2 Sage background +1 ASI feat (Ranger 8)"
+    },
+    "Charisma": {
+      "score": 10,
+      "modifier": 0,
+      "why": "10 standard array"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 4,
+    "why": "character level 11 -> +4 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 92,
+    "why": "10 Ranger 1 (10) + 60 Ranger 2-11 fixed (10 x 6) + 22 Con mod x 11 levels (2 x 11)"
+  },
+  "armor_class": {
+    "value": 16,
+    "source": "Studded Leather Armor",
+    "why": "12 Studded Leather Armor + 4 Dex mod"
+  },
+  "initiative": {
+    "value": 4,
+    "why": "4 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 45,
+      "why": "35 Wood Elf speed + 10 Roving (not in heavy armor)"
+    },
+    "climb": {
+      "value": 45,
+      "why": "45 Roving: equal to Speed"
+    },
+    "swim": {
+      "value": 45,
+      "why": "45 Roving: equal to Speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": 5,
+      "proficient": true,
+      "why": "1 Str mod + 4 proficiency (Ranger)"
+    },
+    "Dexterity": {
+      "value": 8,
+      "proficient": true,
+      "why": "4 Dex mod + 4 proficiency (Ranger)"
+    },
+    "Constitution": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Con mod"
+    },
+    "Intelligence": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Int mod"
+    },
+    "Wisdom": {
+      "value": 3,
+      "proficient": false,
+      "why": "3 Wis mod"
+    },
+    "Charisma": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Cha mod"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Dex mod"
+    },
+    "Animal Handling": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "3 Wis mod + 4 proficiency (Ranger)"
+    },
+    "Arcana": {
+      "value": 3,
+      "proficiency": "proficient",
+      "why": "-1 Int mod + 4 proficiency (Sage)"
+    },
+    "Athletics": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Str mod"
+    },
+    "Deception": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "History": {
+      "value": 3,
+      "proficiency": "proficient",
+      "why": "-1 Int mod + 4 proficiency (Sage)"
+    },
+    "Insight": {
+      "value": 3,
+      "proficiency": "none",
+      "why": "3 Wis mod"
+    },
+    "Intimidation": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Investigation": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Medicine": {
+      "value": 3,
+      "proficiency": "none",
+      "why": "3 Wis mod"
+    },
+    "Nature": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Perception": {
+      "value": 11,
+      "proficiency": "expertise",
+      "why": "3 Wis mod + 8 expertise, 2x proficiency (Expertise (Ranger 9))"
+    },
+    "Performance": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Persuasion": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Religion": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Sleight of Hand": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Dex mod"
+    },
+    "Stealth": {
+      "value": 12,
+      "proficiency": "expertise",
+      "why": "4 Dex mod + 8 expertise, 2x proficiency (Deft Explorer (Ranger 2))"
+    },
+    "Survival": {
+      "value": 11,
+      "proficiency": "expertise",
+      "why": "3 Wis mod + 8 expertise, 2x proficiency (Expertise (Ranger 9))"
+    }
+  },
+  "passive_perception": {
+    "value": 21,
+    "why": "10 + Perception total 11"
+  },
+  "spellcasting": [
+    {
+      "source": "Ranger",
+      "ability": "Wisdom",
+      "spell_save_dc": {
+        "value": 15,
+        "why": "8 + 3 Wis mod + 4 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 7,
+        "why": "3 Wis mod + 4 proficiency"
+      }
+    },
+    {
+      "source": "Wood Elf",
+      "ability": "Wisdom",
+      "spell_save_dc": {
+        "value": 15,
+        "why": "8 + 3 Wis mod + 4 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 7,
+        "why": "3 Wis mod + 4 proficiency"
+      }
+    },
+    {
+      "source": "Magic Initiate (Wizard)",
+      "ability": "Wisdom",
+      "spell_save_dc": {
+        "value": 15,
+        "why": "8 + 3 Wis mod + 4 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 7,
+        "why": "3 Wis mod + 4 proficiency"
+      }
+    }
+  ],
+  "spell_slots": {
+    "value": {
+      "1": 4,
+      "2": 3,
+      "3": 3
+    },
+    "why": "Ranger Features table, level 11"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Longbow",
+      "kind": "ranged weapon (150/600; mastery Slow)",
+      "to_hit": {
+        "value": 10,
+        "why": "4 Dex mod + 4 proficiency + 2 Archery feat (ranged weapon)"
+      },
+      "damage": {
+        "value": "1d8+4 piercing",
+        "why": "1d8 weapon die +4 Dex mod"
+      }
+    },
+    {
+      "name": "Scimitar",
+      "kind": "melee weapon (finesse, light; no mastery chosen)",
+      "to_hit": {
+        "value": 8,
+        "why": "4 Dex mod + 4 proficiency"
+      },
+      "damage": {
+        "value": "1d6+4 slashing",
+        "why": "1d6 weapon die +4 Dex mod"
+      }
+    },
+    {
+      "name": "Shortsword",
+      "kind": "melee weapon (finesse, light; mastery Vex)",
+      "to_hit": {
+        "value": 8,
+        "why": "4 Dex mod + 4 proficiency"
+      },
+      "damage": {
+        "value": "1d6+4 piercing",
+        "why": "1d6 weapon die +4 Dex mod"
+      }
+    },
+    {
+      "name": "Quarterstaff",
+      "kind": "melee weapon (no mastery chosen)",
+      "to_hit": {
+        "value": 5,
+        "why": "1 Str mod + 4 proficiency"
+      },
+      "damage": {
+        "value": "1d6+1 bludgeoning",
+        "why": "1d6 weapon die +1 Str mod"
+      },
+      "damage_two_handed": {
+        "value": "1d8+1 bludgeoning",
+        "why": "Versatile: two-handed die, same modifier"
+      }
+    },
+    {
+      "name": "Ray of Frost",
+      "kind": "cantrip (ranged spell attack, Magic Initiate)",
+      "to_hit": {
+        "value": 7,
+        "why": "3 Wis mod + 4 proficiency"
+      },
+      "damage": {
+        "value": "3d8 cold",
+        "why": "1d8, +1d8 at levels 5 and 11"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Favored Enemy (Hunter's Mark without a slot)",
+      "max": 4,
+      "recharge": "long rest",
+      "why": "Favored Enemy column, Ranger 11"
+    },
+    {
+      "name": "Tireless: Temporary Hit Points",
+      "max": 3,
+      "recharge": "long rest",
+      "why": "Wis mod uses"
+    },
+    {
+      "name": "Wood Elf: Longstrider (free cast)",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Elven Lineage level 3 spell"
+    },
+    {
+      "name": "Wood Elf: Pass without Trace (free cast)",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Elven Lineage level 5 spell"
+    },
+    {
+      "name": "Magic Initiate: Shield (free cast)",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Magic Initiate level 1 spell"
+    }
+  ],
+  "class_values": [
+    {
+      "name": "Weapon Mastery kinds",
+      "value": 2,
+      "why": "Ranger Weapon Mastery"
+    },
+    {
+      "name": "Attacks per Attack action",
+      "value": 2,
+      "why": "Extra Attack (Ranger 5)"
+    }
+  ],
+  "features": {
+    "class": {
+      "Ranger": [
+        {
+          "name": "Spellcasting",
+          "level": 1
+        },
+        {
+          "name": "Favored Enemy",
+          "level": 1
+        },
+        {
+          "name": "Weapon Mastery",
+          "level": 1
+        },
+        {
+          "name": "Deft Explorer",
+          "level": 2
+        },
+        {
+          "name": "Fighting Style",
+          "level": 2,
+          "choice": "Archery"
+        },
+        {
+          "name": "Ranger Subclass",
+          "level": 3,
+          "choice": "Hunter"
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Extra Attack",
+          "level": 5
+        },
+        {
+          "name": "Roving",
+          "level": 6
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 8
+        },
+        {
+          "name": "Expertise",
+          "level": 9
+        },
+        {
+          "name": "Tireless",
+          "level": 10
+        }
+      ]
+    },
+    "subclass": {
+      "Hunter": [
+        {
+          "name": "Hunter's Lore",
+          "level": 3
+        },
+        {
+          "name": "Hunter's Prey",
+          "level": 3,
+          "choice": "Colossus Slayer"
+        },
+        {
+          "name": "Defensive Tactics",
+          "level": 7,
+          "choice": "Multiattack Defense"
+        },
+        {
+          "name": "Superior Hunter's Prey",
+          "level": 11
+        }
+      ]
+    },
+    "species": [
+      {
+        "name": "Darkvision",
+        "level": 1
+      },
+      {
+        "name": "Elven Lineage",
+        "level": 1,
+        "choice": "Wood Elf"
+      },
+      {
+        "name": "Fey Ancestry",
+        "level": 1
+      },
+      {
+        "name": "Keen Senses",
+        "level": 1,
+        "choice": "Perception"
+      },
+      {
+        "name": "Trance",
+        "level": 1
+      }
+    ],
+    "background": [],
+    "feats": [
+      {
+        "name": "Magic Initiate (Wizard)",
+        "level": 1
+      },
+      {
+        "name": "Archery",
+        "level": 2
+      },
+      {
+        "name": "Ability Score Improvement",
+        "level": 4
+      },
+      {
+        "name": "Ability Score Improvement",
+        "level": 8
+      }
+    ]
+  },
+  "spells": {
+    "Ranger": {
+      "prepared_max": {
+        "value": 10,
+        "why": "Prepared Spells column, Ranger 11"
+      },
+      "always_prepared": [
+        "Hunter's Mark"
+      ]
+    },
+    "Wood Elf": {
+      "cantrips_known_max": 1,
+      "always_prepared": [
+        "Longstrider",
+        "Pass without Trace"
+      ]
+    },
+    "Magic Initiate (Wizard)": {
+      "cantrips_known_max": 2,
+      "always_prepared": [
+        "Shield"
+      ]
+    }
+  }
+}

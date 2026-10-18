@@ -1,0 +1,210 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd51-wizard-8",
+  "ruleset": "SRD 5.1",
+  "edition": "2014",
+  "summary": "Rock Gnome Wizard 8 (School of Evocation), Acolyte",
+  "character_level": 8,
+  "race": {
+    "name": "Gnome",
+    "subrace": "Rock Gnome",
+    "ability_score_increases": {
+      "Intelligence": 2,
+      "Constitution": 1
+    },
+    "languages": [
+      "Common",
+      "Gnomish"
+    ],
+    "choices": {}
+  },
+  "background": {
+    "name": "Acolyte",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "languages": [
+      "Elvish",
+      "Draconic"
+    ],
+    "tool_proficiencies": [],
+    "equipment": [
+      "Holy symbol",
+      "Prayer book",
+      "5 sticks of incense",
+      "Vestments",
+      "Common clothes",
+      "Belt pouch with 15 gp"
+    ],
+    "feature": "Shelter of the Faithful"
+  },
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 8,
+      "Dexterity": 13,
+      "Constitution": 14,
+      "Intelligence": 15,
+      "Wisdom": 12,
+      "Charisma": 10
+    }
+  },
+  "hit_points": "fixed_average: level 1 = maximum of the first class's hit die + Con modifier; every later level = the class's fixed value from its Hit Points at Higher Levels line (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Wizard",
+      "level": 8,
+      "subclass": "School of Evocation"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Wizard",
+      "class_level": 1,
+      "hit_points": "6 (max d6) + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Arcana",
+            "Investigation"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Wizard",
+      "class_level": 2,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Arcane Tradition",
+          "choice": "School of Evocation"
+        }
+      ]
+    },
+    {
+      "character_level": 3,
+      "class": "Wizard",
+      "class_level": 3,
+      "hit_points": "4 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 4,
+      "class": "Wizard",
+      "class_level": 4,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Intelligence": 1,
+            "Constitution": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Wizard",
+      "class_level": 5,
+      "hit_points": "4 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 6,
+      "class": "Wizard",
+      "class_level": 6,
+      "hit_points": "4 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 7,
+      "class": "Wizard",
+      "class_level": 7,
+      "hit_points": "4 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 8,
+      "class": "Wizard",
+      "class_level": 8,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Intelligence": 2
+          }
+        }
+      ]
+    }
+  ],
+  "spells": {
+    "Wizard": {
+      "ability": "Intelligence",
+      "cantrips": [
+        "Fire Bolt",
+        "Ray of Frost",
+        "Mage Hand",
+        "Light"
+      ],
+      "spellbook": [
+        "Shield",
+        "Magic Missile",
+        "Mage Armor",
+        "Detect Magic",
+        "Sleep",
+        "Thunderwave",
+        "Burning Hands",
+        "Feather Fall",
+        "Misty Step",
+        "Scorching Ray",
+        "Web",
+        "Shatter",
+        "Fireball",
+        "Counterspell",
+        "Lightning Bolt",
+        "Fly",
+        "Ice Storm",
+        "Greater Invisibility",
+        "Dimension Door",
+        "Wall of Fire"
+      ],
+      "prepared": [
+        "Shield",
+        "Magic Missile",
+        "Mage Armor",
+        "Thunderwave",
+        "Misty Step",
+        "Scorching Ray",
+        "Web",
+        "Fireball",
+        "Counterspell",
+        "Lightning Bolt",
+        "Fly",
+        "Ice Storm",
+        "Greater Invisibility"
+      ]
+    }
+  },
+  "equipment": {
+    "class_choices": [
+      "(a) a quarterstaff",
+      "(a) a component pouch",
+      "(a) a scholar's pack",
+      "a spellbook"
+    ],
+    "background": "Acolyte equipment",
+    "worn_armor": null,
+    "shield": null,
+    "wielded": "Quarterstaff",
+    "carried_weapons": [
+      "Quarterstaff"
+    ]
+  }
+}

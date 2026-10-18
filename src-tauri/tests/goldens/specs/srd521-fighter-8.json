@@ -1,0 +1,200 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd521-fighter-8",
+  "ruleset": "SRD 5.2.1",
+  "edition": "2024",
+  "summary": "Orc Fighter 8 (Champion), Soldier, Grappler",
+  "character_level": 8,
+  "species": {
+    "name": "Orc",
+    "size": "Medium",
+    "choices": {}
+  },
+  "background": {
+    "name": "Soldier",
+    "ability_scores_listed": [
+      "Strength",
+      "Dexterity",
+      "Constitution"
+    ],
+    "origin_feat": "Savage Attacker",
+    "skill_proficiencies": [
+      "Athletics",
+      "Intimidation"
+    ],
+    "tool_proficiency": "Dice Set",
+    "equipment_A": [
+      "Spear",
+      "Shortbow",
+      "20 Arrows",
+      "Gaming Set: Dice Set",
+      "Healer's Kit",
+      "Quiver",
+      "Traveler's Clothes",
+      "14 GP"
+    ],
+    "ability_score_increases": {
+      "Strength": 2,
+      "Constitution": 1
+    },
+    "equipment_option": "A"
+  },
+  "languages": [
+    "Common",
+    "Orc",
+    "Giant"
+  ],
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 15,
+      "Dexterity": 14,
+      "Constitution": 13,
+      "Intelligence": 8,
+      "Wisdom": 10,
+      "Charisma": 12
+    }
+  },
+  "hit_points": "fixed_average: level 1 = the Level 1 Hit Points by Class value (max hit die) + Con modifier; every later level = the Fixed Hit Points by Class value (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Fighter",
+      "level": 8,
+      "subclass": "Champion"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Fighter",
+      "class_level": 1,
+      "hit_points": "10 + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Perception",
+            "Insight"
+          ]
+        },
+        {
+          "feature": "Fighting Style",
+          "feat": "Defense"
+        },
+        {
+          "feature": "Weapon Mastery",
+          "choice": [
+            "Greatsword",
+            "Flail",
+            "Javelin"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Fighter",
+      "class_level": 2,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 3,
+      "class": "Fighter",
+      "class_level": 3,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Fighter Subclass",
+          "choice": "Champion"
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Fighter",
+      "class_level": 4,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Strength": 1,
+            "Constitution": 1
+          }
+        },
+        {
+          "feature": "Weapon Mastery",
+          "add": [
+            "Spear"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Fighter",
+      "class_level": 5,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 6,
+      "class": "Fighter",
+      "class_level": 6,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Strength": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 7,
+      "class": "Fighter",
+      "class_level": 7,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Additional Fighting Style",
+          "feat": "Great Weapon Fighting"
+        }
+      ]
+    },
+    {
+      "character_level": 8,
+      "class": "Fighter",
+      "class_level": 8,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Grappler",
+          "increases": {
+            "Dexterity": 1
+          }
+        }
+      ]
+    }
+  ],
+  "spells": null,
+  "equipment": {
+    "class_option": "A: Chain Mail, Greatsword, Flail, 8 Javelins, Dungeoneer's Pack, 4 GP",
+    "background_option": "A (Soldier)",
+    "worn_armor": "Chain Mail",
+    "shield": null,
+    "wielded": "Greatsword (two hands)",
+    "carried_weapons": [
+      "Greatsword",
+      "Flail",
+      "Javelin (x8)",
+      "Spear",
+      "Shortbow"
+    ]
+  }
+}

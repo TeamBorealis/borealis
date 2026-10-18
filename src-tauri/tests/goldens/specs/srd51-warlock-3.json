@@ -1,0 +1,163 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd51-warlock-3",
+  "ruleset": "SRD 5.1",
+  "edition": "2014",
+  "summary": "Half-Elf Warlock 3 (The Fiend, Pact of the Tome), Acolyte",
+  "character_level": 3,
+  "race": {
+    "name": "Half-Elf",
+    "subrace": null,
+    "ability_score_increases": {
+      "Charisma": 2,
+      "Constitution": 1,
+      "Dexterity": 1
+    },
+    "languages": [
+      "Common",
+      "Elvish",
+      "Infernal"
+    ],
+    "choices": {
+      "Ability Score Increase (two other scores +1)": [
+        "Constitution",
+        "Dexterity"
+      ],
+      "Skill Versatility": [
+        "Persuasion",
+        "Perception"
+      ],
+      "extra language": "Infernal"
+    }
+  },
+  "background": {
+    "name": "Acolyte",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "languages": [
+      "Celestial",
+      "Abyssal"
+    ],
+    "tool_proficiencies": [],
+    "equipment": [
+      "Holy symbol",
+      "Prayer book",
+      "5 sticks of incense",
+      "Vestments",
+      "Common clothes",
+      "Belt pouch with 15 gp"
+    ],
+    "feature": "Shelter of the Faithful"
+  },
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 8,
+      "Dexterity": 13,
+      "Constitution": 14,
+      "Intelligence": 10,
+      "Wisdom": 12,
+      "Charisma": 15
+    }
+  },
+  "hit_points": "fixed_average: level 1 = maximum of the first class's hit die + Con modifier; every later level = the class's fixed value from its Hit Points at Higher Levels line (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Warlock",
+      "level": 3,
+      "subclass": "The Fiend"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Warlock",
+      "class_level": 1,
+      "hit_points": "8 (max d8) + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Arcana",
+            "Deception"
+          ]
+        },
+        {
+          "feature": "Otherworldly Patron",
+          "choice": "The Fiend"
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Warlock",
+      "class_level": 2,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Eldritch Invocations",
+          "choice": [
+            "Agonizing Blast",
+            "Devil's Sight"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 3,
+      "class": "Warlock",
+      "class_level": 3,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Pact Boon",
+          "choice": "Pact of the Tome",
+          "book_of_shadows_cantrips": [
+            "Guidance",
+            "Sacred Flame",
+            "Shocking Grasp"
+          ]
+        }
+      ]
+    }
+  ],
+  "spells": {
+    "Warlock": {
+      "ability": "Charisma",
+      "cantrips": [
+        "Eldritch Blast",
+        "Minor Illusion"
+      ],
+      "pact_of_the_tome_cantrips": [
+        "Guidance",
+        "Sacred Flame",
+        "Shocking Grasp"
+      ],
+      "known": [
+        "Burning Hands",
+        "Hellish Rebuke",
+        "Scorching Ray",
+        "Hold Person"
+      ]
+    }
+  },
+  "equipment": {
+    "class_choices": [
+      "(a) a light crossbow and 20 bolts",
+      "(b) an arcane focus",
+      "(a) a scholar's pack",
+      "leather armor, any simple weapon (quarterstaff), and two daggers"
+    ],
+    "background": "Acolyte equipment",
+    "worn_armor": "Leather armor",
+    "shield": null,
+    "wielded": "Arcane focus",
+    "carried_weapons": [
+      "Light crossbow",
+      "Quarterstaff",
+      "Dagger (x2)"
+    ]
+  }
+}

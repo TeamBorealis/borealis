@@ -1,0 +1,466 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd521-barbarian-20",
+  "ruleset": "SRD 5.2.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 20,
+  "abilities": {
+    "Strength": {
+      "score": 25,
+      "modifier": 7,
+      "why": "15 standard array +2 Soldier background +1 ASI feat (Barbarian 4) +2 ASI feat (Barbarian 8) +1 Boon of Irresistible Offense (Barbarian 19) +4 Primal Champion (Barbarian 20, max 25)"
+    },
+    "Dexterity": {
+      "score": 13,
+      "modifier": 1,
+      "why": "13 standard array"
+    },
+    "Constitution": {
+      "score": 24,
+      "modifier": 7,
+      "why": "14 standard array +1 Soldier background +1 ASI feat (Barbarian 4) +2 ASI feat (Barbarian 12) +2 ASI feat (Barbarian 16) +4 Primal Champion (Barbarian 20, max 25)"
+    },
+    "Intelligence": {
+      "score": 10,
+      "modifier": 0,
+      "why": "10 standard array"
+    },
+    "Wisdom": {
+      "score": 12,
+      "modifier": 1,
+      "why": "12 standard array"
+    },
+    "Charisma": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 standard array"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 6,
+    "why": "character level 20 -> +6 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 285,
+    "why": "12 Barbarian 1 (12) + 133 Barbarian 2-20 fixed (19 x 7) + 140 Con mod x 20 levels (7 x 20)"
+  },
+  "armor_class": {
+    "value": 18,
+    "source": "Unarmored Defense (Barbarian), no armor, no shield",
+    "why": "10 Unarmored Defense base + 1 Dex mod + 7 Con mod"
+  },
+  "initiative": {
+    "value": 1,
+    "why": "1 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 45,
+      "why": "35 Goliath speed + 10 Fast Movement (not in heavy armor)"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": 13,
+      "proficient": true,
+      "why": "7 Str mod + 6 proficiency (Barbarian)"
+    },
+    "Dexterity": {
+      "value": 1,
+      "proficient": false,
+      "why": "1 Dex mod"
+    },
+    "Constitution": {
+      "value": 13,
+      "proficient": true,
+      "why": "7 Con mod + 6 proficiency (Barbarian)"
+    },
+    "Intelligence": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Int mod"
+    },
+    "Wisdom": {
+      "value": 1,
+      "proficient": false,
+      "why": "1 Wis mod"
+    },
+    "Charisma": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Cha mod"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Dex mod"
+    },
+    "Animal Handling": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Arcana": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Athletics": {
+      "value": 13,
+      "proficiency": "proficient",
+      "why": "7 Str mod + 6 proficiency (Soldier)"
+    },
+    "Deception": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "History": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Insight": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Intimidation": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "-1 Cha mod + 6 proficiency (Soldier)"
+    },
+    "Investigation": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Medicine": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Nature": {
+      "value": 6,
+      "proficiency": "proficient",
+      "why": "0 Int mod + 6 proficiency (Primal Knowledge)"
+    },
+    "Perception": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "1 Wis mod + 6 proficiency (Barbarian)"
+    },
+    "Performance": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "Persuasion": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "Religion": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Sleight of Hand": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Dex mod"
+    },
+    "Stealth": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Dex mod"
+    },
+    "Survival": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "1 Wis mod + 6 proficiency (Barbarian)"
+    }
+  },
+  "passive_perception": {
+    "value": 17,
+    "why": "10 + Perception total 7"
+  },
+  "spellcasting": [],
+  "spell_slots": {
+    "value": {},
+    "why": "no Spellcasting feature"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Greataxe",
+      "kind": "melee weapon (heavy, two-handed; mastery Cleave)",
+      "to_hit": {
+        "value": 13,
+        "why": "7 Str mod + 6 proficiency"
+      },
+      "damage": {
+        "value": "1d12+7 slashing",
+        "why": "1d12 weapon die +7 Str mod"
+      }
+    },
+    {
+      "name": "Handaxe",
+      "kind": "melee weapon (light, thrown 20/60; mastery Vex)",
+      "to_hit": {
+        "value": 13,
+        "why": "7 Str mod + 6 proficiency"
+      },
+      "damage": {
+        "value": "1d6+7 slashing",
+        "why": "1d6 weapon die +7 Str mod"
+      }
+    },
+    {
+      "name": "Spear",
+      "kind": "melee weapon (thrown 20/60; mastery Sap)",
+      "to_hit": {
+        "value": 13,
+        "why": "7 Str mod + 6 proficiency"
+      },
+      "damage": {
+        "value": "1d6+7 piercing",
+        "why": "1d6 weapon die +7 Str mod"
+      },
+      "damage_two_handed": {
+        "value": "1d8+7 piercing",
+        "why": "Versatile: two-handed die, same modifier"
+      }
+    },
+    {
+      "name": "Shortbow",
+      "kind": "ranged weapon (80/320; no mastery: Barbarian masteries are melee only)",
+      "to_hit": {
+        "value": 7,
+        "why": "1 Dex mod + 6 proficiency"
+      },
+      "damage": {
+        "value": "1d6+1 piercing",
+        "why": "1d6 weapon die +1 Dex mod"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Rage",
+      "max": 6,
+      "recharge": "long rest (regain one use on a short rest)",
+      "why": "Rages column, Barbarian 20"
+    },
+    {
+      "name": "Giant Ancestry: Stone's Endurance",
+      "max": 6,
+      "recharge": "long rest",
+      "why": "Proficiency Bonus uses"
+    },
+    {
+      "name": "Large Form",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Goliath, character level 5+"
+    },
+    {
+      "name": "Persistent Rage (regain all Rage on Initiative)",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Barbarian 15"
+    },
+    {
+      "name": "Intimidating Presence",
+      "max": 1,
+      "recharge": "long rest (or expend a Rage use)",
+      "why": "Berserker 14"
+    }
+  ],
+  "class_values": [
+    {
+      "name": "Rage Damage",
+      "value": "+4",
+      "why": "Rage Damage column, Barbarian 20 (not in attack lines)"
+    },
+    {
+      "name": "Weapon Mastery kinds",
+      "value": 4,
+      "why": "Weapon Mastery column, Barbarian 20"
+    },
+    {
+      "name": "Brutal Strike extra damage",
+      "value": "2d10",
+      "why": "Improved Brutal Strike (Barbarian 17)"
+    },
+    {
+      "name": "Intimidating Presence save DC",
+      "value": 21,
+      "why": "8 + 7 Str mod + 6 proficiency"
+    },
+    {
+      "name": "Attacks per Attack action",
+      "value": 2,
+      "why": "Extra Attack (Barbarian 5)"
+    }
+  ],
+  "features": {
+    "class": {
+      "Barbarian": [
+        {
+          "name": "Rage",
+          "level": 1
+        },
+        {
+          "name": "Unarmored Defense",
+          "level": 1
+        },
+        {
+          "name": "Weapon Mastery",
+          "level": 1
+        },
+        {
+          "name": "Danger Sense",
+          "level": 2
+        },
+        {
+          "name": "Reckless Attack",
+          "level": 2
+        },
+        {
+          "name": "Barbarian Subclass",
+          "level": 3,
+          "choice": "Path of the Berserker"
+        },
+        {
+          "name": "Primal Knowledge",
+          "level": 3
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Extra Attack",
+          "level": 5
+        },
+        {
+          "name": "Fast Movement",
+          "level": 5
+        },
+        {
+          "name": "Feral Instinct",
+          "level": 7
+        },
+        {
+          "name": "Instinctive Pounce",
+          "level": 7
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 8
+        },
+        {
+          "name": "Brutal Strike",
+          "level": 9
+        },
+        {
+          "name": "Relentless Rage",
+          "level": 11
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 12
+        },
+        {
+          "name": "Improved Brutal Strike",
+          "level": 13
+        },
+        {
+          "name": "Persistent Rage",
+          "level": 15
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 16
+        },
+        {
+          "name": "Indomitable Might",
+          "level": 18
+        },
+        {
+          "name": "Epic Boon",
+          "level": 19
+        },
+        {
+          "name": "Primal Champion",
+          "level": 20
+        }
+      ]
+    },
+    "subclass": {
+      "Path of the Berserker": [
+        {
+          "name": "Frenzy",
+          "level": 3
+        },
+        {
+          "name": "Mindless Rage",
+          "level": 6
+        },
+        {
+          "name": "Retaliation",
+          "level": 10
+        },
+        {
+          "name": "Intimidating Presence",
+          "level": 14
+        }
+      ]
+    },
+    "species": [
+      {
+        "name": "Giant Ancestry",
+        "level": 1,
+        "choice": "Stone's Endurance"
+      },
+      {
+        "name": "Large Form",
+        "level": 5
+      },
+      {
+        "name": "Powerful Build",
+        "level": 1
+      }
+    ],
+    "background": [],
+    "feats": [
+      {
+        "name": "Savage Attacker",
+        "level": 1
+      },
+      {
+        "name": "Ability Score Improvement",
+        "level": 4
+      },
+      {
+        "name": "Ability Score Improvement",
+        "level": 8
+      },
+      {
+        "name": "Ability Score Improvement",
+        "level": 12
+      },
+      {
+        "name": "Ability Score Improvement",
+        "level": 16
+      },
+      {
+        "name": "Boon of Irresistible Offense",
+        "level": 19
+      }
+    ]
+  }
+}

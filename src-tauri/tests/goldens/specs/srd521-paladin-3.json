@@ -1,0 +1,140 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd521-paladin-3",
+  "ruleset": "SRD 5.2.1",
+  "edition": "2024",
+  "summary": "Dragonborn (Gold) Paladin 3 (Oath of Devotion), Soldier",
+  "character_level": 3,
+  "species": {
+    "name": "Dragonborn",
+    "size": "Medium",
+    "choices": {
+      "Draconic Ancestry": "Gold (Fire)"
+    }
+  },
+  "background": {
+    "name": "Soldier",
+    "ability_scores_listed": [
+      "Strength",
+      "Dexterity",
+      "Constitution"
+    ],
+    "origin_feat": "Savage Attacker",
+    "skill_proficiencies": [
+      "Athletics",
+      "Intimidation"
+    ],
+    "tool_proficiency": "Playing Cards",
+    "equipment_A": [
+      "Spear",
+      "Shortbow",
+      "20 Arrows",
+      "Gaming Set: Playing Cards",
+      "Healer's Kit",
+      "Quiver",
+      "Traveler's Clothes",
+      "14 GP"
+    ],
+    "ability_score_increases": {
+      "Strength": 2,
+      "Constitution": 1
+    },
+    "equipment_option": "A"
+  },
+  "languages": [
+    "Common",
+    "Draconic",
+    "Dwarvish"
+  ],
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 15,
+      "Dexterity": 10,
+      "Constitution": 13,
+      "Intelligence": 8,
+      "Wisdom": 12,
+      "Charisma": 14
+    }
+  },
+  "hit_points": "fixed_average: level 1 = the Level 1 Hit Points by Class value (max hit die) + Con modifier; every later level = the Fixed Hit Points by Class value (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Paladin",
+      "level": 3,
+      "subclass": "Oath of Devotion"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Paladin",
+      "class_level": 1,
+      "hit_points": "10 + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Insight",
+            "Persuasion"
+          ]
+        },
+        {
+          "feature": "Weapon Mastery",
+          "choice": [
+            "Longsword",
+            "Javelin"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Paladin",
+      "class_level": 2,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Fighting Style",
+          "feat": "Defense"
+        }
+      ]
+    },
+    {
+      "character_level": 3,
+      "class": "Paladin",
+      "class_level": 3,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Paladin Subclass",
+          "choice": "Oath of Devotion"
+        }
+      ]
+    }
+  ],
+  "spells": {
+    "Paladin": {
+      "ability": "Charisma",
+      "prepared": [
+        "Bless",
+        "Command",
+        "Cure Wounds",
+        "Heroism"
+      ]
+    }
+  },
+  "equipment": {
+    "class_option": "A: Chain Mail, Shield, Longsword, 6 Javelins, Holy Symbol, Priest's Pack, 9 GP",
+    "background_option": "A (Soldier)",
+    "worn_armor": "Chain Mail",
+    "shield": "Shield",
+    "wielded": "Longsword (one hand) + Shield",
+    "carried_weapons": [
+      "Longsword",
+      "Javelin (x6)",
+      "Spear",
+      "Shortbow"
+    ]
+  }
+}

@@ -1,0 +1,371 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd51-warlock-3",
+  "ruleset": "SRD 5.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 3,
+  "abilities": {
+    "Strength": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 standard array"
+    },
+    "Dexterity": {
+      "score": 14,
+      "modifier": 2,
+      "why": "13 standard array +1 Half-Elf"
+    },
+    "Constitution": {
+      "score": 15,
+      "modifier": 2,
+      "why": "14 standard array +1 Half-Elf"
+    },
+    "Intelligence": {
+      "score": 10,
+      "modifier": 0,
+      "why": "10 standard array"
+    },
+    "Wisdom": {
+      "score": 12,
+      "modifier": 1,
+      "why": "12 standard array"
+    },
+    "Charisma": {
+      "score": 17,
+      "modifier": 3,
+      "why": "15 standard array +2 Half-Elf"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 2,
+    "why": "character level 3 -> +2 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 24,
+    "why": "8 Warlock 1 (max d8) + 10 Warlock 2-3 fixed (2 x 5) + 6 Con mod x 3 levels (2 x 3)"
+  },
+  "armor_class": {
+    "value": 13,
+    "source": "Leather armor",
+    "why": "11 Leather armor + 2 Dex mod"
+  },
+  "initiative": {
+    "value": 2,
+    "why": "2 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 30,
+      "why": "30 Half-Elf base walking speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Str mod"
+    },
+    "Dexterity": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Dex mod"
+    },
+    "Constitution": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Con mod"
+    },
+    "Intelligence": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Int mod"
+    },
+    "Wisdom": {
+      "value": 3,
+      "proficient": true,
+      "why": "1 Wis mod + 2 proficiency (Warlock)"
+    },
+    "Charisma": {
+      "value": 5,
+      "proficient": true,
+      "why": "3 Cha mod + 2 proficiency (Warlock)"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Animal Handling": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Arcana": {
+      "value": 2,
+      "proficiency": "proficient",
+      "why": "0 Int mod + 2 proficiency (Warlock)"
+    },
+    "Athletics": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Str mod"
+    },
+    "Deception": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "3 Cha mod + 2 proficiency (Warlock)"
+    },
+    "History": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Insight": {
+      "value": 3,
+      "proficiency": "proficient",
+      "why": "1 Wis mod + 2 proficiency (Acolyte)"
+    },
+    "Intimidation": {
+      "value": 3,
+      "proficiency": "none",
+      "why": "3 Cha mod"
+    },
+    "Investigation": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Medicine": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Nature": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Perception": {
+      "value": 3,
+      "proficiency": "proficient",
+      "why": "1 Wis mod + 2 proficiency (Half-Elf Skill Versatility)"
+    },
+    "Performance": {
+      "value": 3,
+      "proficiency": "none",
+      "why": "3 Cha mod"
+    },
+    "Persuasion": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "3 Cha mod + 2 proficiency (Half-Elf Skill Versatility)"
+    },
+    "Religion": {
+      "value": 2,
+      "proficiency": "proficient",
+      "why": "0 Int mod + 2 proficiency (Acolyte)"
+    },
+    "Sleight of Hand": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Stealth": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Survival": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 13,
+    "why": "10 + Perception total 3"
+  },
+  "spellcasting": [
+    {
+      "source": "Warlock",
+      "ability": "Charisma",
+      "spell_save_dc": {
+        "value": 13,
+        "why": "8 + 3 Cha mod + 2 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 5,
+        "why": "3 Cha mod + 2 proficiency"
+      }
+    }
+  ],
+  "spell_slots": {
+    "value": {},
+    "why": "no Spellcasting feature"
+  },
+  "pact_slots": {
+    "count": 2,
+    "slot_level": 2,
+    "recharge": "short or long rest",
+    "why": "Warlock table, level 3"
+  },
+  "attacks": [
+    {
+      "name": "Eldritch Blast",
+      "kind": "cantrip (ranged spell attack)",
+      "to_hit": {
+        "value": 5,
+        "why": "3 Cha mod + 2 proficiency"
+      },
+      "damage": {
+        "value": "1d10+3 force",
+        "why": "1 beam below character level 5; + 3 Cha mod from Agonizing Blast"
+      },
+      "beams": 1
+    },
+    {
+      "name": "Shocking Grasp",
+      "kind": "cantrip (melee spell attack, Pact of the Tome)",
+      "to_hit": {
+        "value": 5,
+        "why": "3 Cha mod + 2 proficiency"
+      },
+      "damage": {
+        "value": "1d8 lightning",
+        "why": "base die below character level 5"
+      }
+    },
+    {
+      "name": "Sacred Flame",
+      "kind": "cantrip (save, Pact of the Tome)",
+      "save": {
+        "ability": "Dexterity",
+        "dc": 13,
+        "why": "equals the spell save DC of the casting source (see spellcasting)"
+      },
+      "damage": {
+        "value": "1d8 radiant",
+        "why": "base die below character level 5"
+      }
+    },
+    {
+      "name": "Light crossbow",
+      "kind": "ranged weapon (80/320)",
+      "to_hit": {
+        "value": 4,
+        "why": "2 Dex mod + 2 proficiency"
+      },
+      "damage": {
+        "value": "1d8+2 piercing",
+        "why": "1d8 weapon die +2 Dex mod"
+      }
+    },
+    {
+      "name": "Quarterstaff",
+      "kind": "melee weapon",
+      "to_hit": {
+        "value": 1,
+        "why": "-1 Str mod + 2 proficiency"
+      },
+      "damage": {
+        "value": "1d6-1 bludgeoning",
+        "why": "1d6 weapon die -1 Str mod"
+      },
+      "damage_two_handed": {
+        "value": "1d8-1 bludgeoning",
+        "why": "Versatile: two-handed die, same modifier"
+      }
+    },
+    {
+      "name": "Dagger",
+      "kind": "melee weapon (finesse, light, thrown 20/60)",
+      "to_hit": {
+        "value": 4,
+        "why": "2 Dex mod + 2 proficiency"
+      },
+      "damage": {
+        "value": "1d4+2 piercing",
+        "why": "1d4 weapon die +2 Dex mod"
+      }
+    }
+  ],
+  "resources": [],
+  "class_values": [
+    {
+      "name": "Dark One's Blessing temporary hit points",
+      "value": 6,
+      "why": "Cha mod 3 + warlock level 3"
+    }
+  ],
+  "features": {
+    "class": {
+      "Warlock": [
+        {
+          "name": "Otherworldly Patron",
+          "level": 1,
+          "choice": "The Fiend"
+        },
+        {
+          "name": "Pact Magic",
+          "level": 1
+        },
+        {
+          "name": "Eldritch Invocations",
+          "level": 2,
+          "choice": [
+            "Agonizing Blast",
+            "Devil's Sight"
+          ]
+        },
+        {
+          "name": "Pact Boon",
+          "level": 3,
+          "choice": "Pact of the Tome"
+        }
+      ]
+    },
+    "subclass": {
+      "The Fiend": [
+        {
+          "name": "Expanded Spell List",
+          "level": 1
+        },
+        {
+          "name": "Dark One's Blessing",
+          "level": 1
+        }
+      ]
+    },
+    "race": [
+      {
+        "name": "Darkvision",
+        "level": 1
+      },
+      {
+        "name": "Fey Ancestry",
+        "level": 1
+      },
+      {
+        "name": "Skill Versatility",
+        "level": 1
+      }
+    ],
+    "background": [
+      {
+        "name": "Shelter of the Faithful",
+        "level": 1
+      }
+    ],
+    "feats": []
+  },
+  "spells": {
+    "Warlock": {
+      "cantrips_known_max": 2,
+      "pact_of_the_tome_cantrips": 3,
+      "spells_known_max": 4,
+      "always_prepared": []
+    }
+  }
+}

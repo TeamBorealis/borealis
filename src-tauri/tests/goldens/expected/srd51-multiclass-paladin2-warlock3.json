@@ -1,0 +1,383 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd51-multiclass-paladin2-warlock3",
+  "ruleset": "SRD 5.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 5,
+  "abilities": {
+    "Strength": {
+      "score": 15,
+      "modifier": 2,
+      "why": "14 standard array +1 Human"
+    },
+    "Dexterity": {
+      "score": 11,
+      "modifier": 0,
+      "why": "10 standard array +1 Human"
+    },
+    "Constitution": {
+      "score": 14,
+      "modifier": 2,
+      "why": "13 standard array +1 Human"
+    },
+    "Intelligence": {
+      "score": 9,
+      "modifier": -1,
+      "why": "8 standard array +1 Human"
+    },
+    "Wisdom": {
+      "score": 13,
+      "modifier": 1,
+      "why": "12 standard array +1 Human"
+    },
+    "Charisma": {
+      "score": 16,
+      "modifier": 3,
+      "why": "15 standard array +1 Human"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 3,
+    "why": "total character level 5 -> +3 (multiclass: proficiency bonus uses total level)"
+  },
+  "hit_points_max": {
+    "value": 41,
+    "why": "10 Paladin 1 (max d10) + 6 Paladin 2 fixed + 15 Warlock 1-3 fixed (3 x 5) + 10 Con mod x 5 levels (2 x 5)"
+  },
+  "armor_class": {
+    "value": 19,
+    "source": "Chain mail + shield + Defense",
+    "why": "16 Chain mail + 2 Shield + 1 Defense fighting style (wearing armor)"
+  },
+  "initiative": {
+    "value": 0,
+    "why": "0 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 30,
+      "why": "30 Human base walking speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Str mod"
+    },
+    "Dexterity": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Dex mod"
+    },
+    "Constitution": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Con mod"
+    },
+    "Intelligence": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Int mod"
+    },
+    "Wisdom": {
+      "value": 4,
+      "proficient": true,
+      "why": "1 Wis mod + 3 proficiency (Paladin (first class))"
+    },
+    "Charisma": {
+      "value": 6,
+      "proficient": true,
+      "why": "3 Cha mod + 3 proficiency (Paladin (first class))"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Dex mod"
+    },
+    "Animal Handling": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Arcana": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Athletics": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "2 Str mod + 3 proficiency (Paladin)"
+    },
+    "Deception": {
+      "value": 3,
+      "proficiency": "none",
+      "why": "3 Cha mod"
+    },
+    "History": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Insight": {
+      "value": 4,
+      "proficiency": "proficient",
+      "why": "1 Wis mod + 3 proficiency (Acolyte)"
+    },
+    "Intimidation": {
+      "value": 6,
+      "proficiency": "proficient",
+      "why": "3 Cha mod + 3 proficiency (Paladin)"
+    },
+    "Investigation": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Medicine": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Nature": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Perception": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Performance": {
+      "value": 3,
+      "proficiency": "none",
+      "why": "3 Cha mod"
+    },
+    "Persuasion": {
+      "value": 3,
+      "proficiency": "none",
+      "why": "3 Cha mod"
+    },
+    "Religion": {
+      "value": 2,
+      "proficiency": "proficient",
+      "why": "-1 Int mod + 3 proficiency (Acolyte)"
+    },
+    "Sleight of Hand": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Dex mod"
+    },
+    "Stealth": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Dex mod"
+    },
+    "Survival": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 11,
+    "why": "10 + Perception total 1"
+  },
+  "spellcasting": [
+    {
+      "source": "Paladin",
+      "ability": "Charisma",
+      "spell_save_dc": {
+        "value": 14,
+        "why": "8 + 3 Cha mod + 3 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 6,
+        "why": "3 Cha mod + 3 proficiency"
+      }
+    },
+    {
+      "source": "Warlock",
+      "ability": "Charisma",
+      "spell_save_dc": {
+        "value": 14,
+        "why": "8 + 3 Cha mod + 3 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 6,
+        "why": "3 Cha mod + 3 proficiency"
+      }
+    }
+  ],
+  "spell_slots": {
+    "value": {
+      "1": 2
+    },
+    "why": "Multiclass Spellcaster table at caster level 1 (half of 2 paladin levels, rounded down; warlock levels do not count)"
+  },
+  "pact_slots": {
+    "count": 2,
+    "slot_level": 2,
+    "recharge": "short or long rest",
+    "why": "Warlock table, warlock level 3 (separate from Spellcasting slots)"
+  },
+  "attacks": [
+    {
+      "name": "Longsword",
+      "kind": "melee weapon",
+      "to_hit": {
+        "value": 5,
+        "why": "2 Str mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d8+2 slashing",
+        "why": "1d8 weapon die +2 Str mod"
+      },
+      "damage_two_handed": {
+        "value": "1d10+2 slashing",
+        "why": "Versatile: two-handed die, same modifier"
+      },
+      "notes": "one-handed while the shield is carried"
+    },
+    {
+      "name": "Javelin",
+      "kind": "melee weapon (thrown 30/120)",
+      "to_hit": {
+        "value": 5,
+        "why": "2 Str mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d6+2 piercing",
+        "why": "1d6 weapon die +2 Str mod"
+      }
+    },
+    {
+      "name": "Eldritch Blast",
+      "kind": "cantrip (ranged spell attack)",
+      "to_hit": {
+        "value": 6,
+        "why": "3 Cha mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d10+3 force",
+        "why": "per beam; 2 beams at character level 5; + 3 Cha mod from Agonizing Blast"
+      },
+      "beams": 2
+    }
+  ],
+  "resources": [
+    {
+      "name": "Divine Sense",
+      "max": 4,
+      "recharge": "long rest",
+      "why": "1 + Cha mod 3"
+    },
+    {
+      "name": "Lay on Hands",
+      "max": 10,
+      "recharge": "long rest",
+      "why": "pool = 5 x paladin level 2"
+    }
+  ],
+  "class_values": [
+    {
+      "name": "Dark One's Blessing temporary hit points",
+      "value": 6,
+      "why": "Cha mod 3 + warlock level 3"
+    },
+    {
+      "name": "Attacks per Attack action",
+      "value": 1,
+      "why": "no Extra Attack (paladin 2, warlock 3)"
+    }
+  ],
+  "features": {
+    "class": {
+      "Paladin": [
+        {
+          "name": "Divine Sense",
+          "level": 1
+        },
+        {
+          "name": "Lay on Hands",
+          "level": 1
+        },
+        {
+          "name": "Fighting Style",
+          "level": 2,
+          "choice": "Defense"
+        },
+        {
+          "name": "Spellcasting",
+          "level": 2
+        },
+        {
+          "name": "Divine Smite",
+          "level": 2
+        }
+      ],
+      "Warlock": [
+        {
+          "name": "Otherworldly Patron",
+          "level": 1,
+          "choice": "The Fiend"
+        },
+        {
+          "name": "Pact Magic",
+          "level": 1
+        },
+        {
+          "name": "Eldritch Invocations",
+          "level": 2,
+          "choice": [
+            "Agonizing Blast",
+            "Devil's Sight"
+          ]
+        },
+        {
+          "name": "Pact Boon",
+          "level": 3,
+          "choice": "Pact of the Blade"
+        }
+      ]
+    },
+    "subclass": {
+      "The Fiend": [
+        {
+          "name": "Expanded Spell List",
+          "level": 1
+        },
+        {
+          "name": "Dark One's Blessing",
+          "level": 1
+        }
+      ]
+    },
+    "race": [],
+    "background": [
+      {
+        "name": "Shelter of the Faithful",
+        "level": 1
+      }
+    ],
+    "feats": []
+  },
+  "spells": {
+    "Paladin": {
+      "prepared_max": {
+        "value": 4,
+        "why": "Cha mod 3 + half paladin level (2 / 2 = 1)"
+      },
+      "always_prepared": []
+    },
+    "Warlock": {
+      "cantrips_known_max": 2,
+      "spells_known_max": 4,
+      "always_prepared": []
+    }
+  }
+}

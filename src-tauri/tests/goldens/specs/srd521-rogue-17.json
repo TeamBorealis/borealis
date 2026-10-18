@@ -1,0 +1,291 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd521-rogue-17",
+  "ruleset": "SRD 5.2.1",
+  "edition": "2024",
+  "summary": "Human Rogue 17 (Thief), Criminal",
+  "character_level": 17,
+  "species": {
+    "name": "Human",
+    "size": "Medium",
+    "choices": {
+      "Skillful": "Insight",
+      "Versatile (Origin feat)": "Skilled",
+      "Skilled proficiencies": [
+        "Athletics",
+        "Persuasion",
+        "Poisoner's Kit"
+      ]
+    }
+  },
+  "background": {
+    "name": "Criminal",
+    "ability_scores_listed": [
+      "Dexterity",
+      "Constitution",
+      "Intelligence"
+    ],
+    "origin_feat": "Alert",
+    "skill_proficiencies": [
+      "Sleight of Hand",
+      "Stealth"
+    ],
+    "tool_proficiency": "Thieves' Tools",
+    "equipment_A": [
+      "2 Daggers",
+      "Thieves' Tools",
+      "Crowbar",
+      "2 Pouches",
+      "Traveler's Clothes",
+      "16 GP"
+    ],
+    "ability_score_increases": {
+      "Dexterity": 2,
+      "Constitution": 1
+    },
+    "equipment_option": "A"
+  },
+  "languages": [
+    "Common",
+    "Halfling",
+    "Elvish",
+    "Thieves' Cant",
+    "Dwarvish"
+  ],
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 12,
+      "Dexterity": 15,
+      "Constitution": 13,
+      "Intelligence": 14,
+      "Wisdom": 10,
+      "Charisma": 8
+    }
+  },
+  "hit_points": "fixed_average: level 1 = the Level 1 Hit Points by Class value (max hit die) + Con modifier; every later level = the Fixed Hit Points by Class value (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Rogue",
+      "level": 17,
+      "subclass": "Thief"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Rogue",
+      "class_level": 1,
+      "hit_points": "8 + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Acrobatics",
+            "Perception",
+            "Investigation",
+            "Deception"
+          ],
+          "note": "Thieves' Tools from both Rogue and Criminal; no replacement proficiency is taken"
+        },
+        {
+          "feature": "Expertise",
+          "skills": [
+            "Stealth",
+            "Sleight of Hand"
+          ]
+        },
+        {
+          "feature": "Thieves' Cant",
+          "extra_language": "Dwarvish"
+        },
+        {
+          "feature": "Weapon Mastery",
+          "choice": [
+            "Shortsword",
+            "Shortbow"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Rogue",
+      "class_level": 2,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 3,
+      "class": "Rogue",
+      "class_level": 3,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Rogue Subclass",
+          "choice": "Thief"
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Rogue",
+      "class_level": 4,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Dexterity": 1,
+            "Wisdom": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Rogue",
+      "class_level": 5,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 6,
+      "class": "Rogue",
+      "class_level": 6,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Expertise",
+          "skills": [
+            "Perception",
+            "Investigation"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 7,
+      "class": "Rogue",
+      "class_level": 7,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 8,
+      "class": "Rogue",
+      "class_level": 8,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Dexterity": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 9,
+      "class": "Rogue",
+      "class_level": 9,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 10,
+      "class": "Rogue",
+      "class_level": 10,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Constitution": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 11,
+      "class": "Rogue",
+      "class_level": 11,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 12,
+      "class": "Rogue",
+      "class_level": 12,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Wisdom": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 13,
+      "class": "Rogue",
+      "class_level": 13,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 14,
+      "class": "Rogue",
+      "class_level": 14,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 15,
+      "class": "Rogue",
+      "class_level": 15,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 16,
+      "class": "Rogue",
+      "class_level": 16,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Intelligence": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 17,
+      "class": "Rogue",
+      "class_level": 17,
+      "hit_points": "5 + Con",
+      "choices": []
+    }
+  ],
+  "spells": null,
+  "equipment": {
+    "class_option": "A: Leather Armor, 2 Daggers, Shortsword, Shortbow, 20 Arrows, Quiver, Thieves' Tools, Burglar's Pack, 8 GP",
+    "background_option": "A (Criminal)",
+    "worn_armor": "Leather Armor",
+    "shield": null,
+    "wielded": "Shortsword",
+    "carried_weapons": [
+      "Shortsword",
+      "Shortbow",
+      "Dagger (x4)"
+    ]
+  }
+}

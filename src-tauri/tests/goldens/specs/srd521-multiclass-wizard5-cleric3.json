@@ -1,0 +1,310 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd521-multiclass-wizard5-cleric3",
+  "ruleset": "SRD 5.2.1",
+  "edition": "2024",
+  "summary": "Human Wizard 5 (Evoker) / Cleric 3 (Life Domain, Thaumaturge), Acolyte",
+  "character_level": 8,
+  "species": {
+    "name": "Human",
+    "size": "Medium",
+    "choices": {
+      "Skillful": "Perception",
+      "Versatile (Origin feat)": "Alert"
+    }
+  },
+  "background": {
+    "name": "Acolyte",
+    "ability_scores_listed": [
+      "Intelligence",
+      "Wisdom",
+      "Charisma"
+    ],
+    "origin_feat": "Magic Initiate (Cleric)",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "tool_proficiency": "Calligrapher's Supplies",
+    "equipment_A": [
+      "Calligrapher's Supplies",
+      "Book (prayers)",
+      "Holy Symbol",
+      "Parchment (10 sheets)",
+      "Robe",
+      "8 GP"
+    ],
+    "ability_score_increases": {
+      "Intelligence": 2,
+      "Wisdom": 1
+    },
+    "equipment_option": "B",
+    "origin_feat_choices": {
+      "spellcasting_ability": "Wisdom",
+      "cantrips": [
+        "Mending",
+        "Resistance"
+      ],
+      "level_1_spell": "Command"
+    }
+  },
+  "languages": [
+    "Common",
+    "Elvish",
+    "Dwarvish"
+  ],
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 8,
+      "Dexterity": 13,
+      "Constitution": 14,
+      "Intelligence": 15,
+      "Wisdom": 12,
+      "Charisma": 10
+    }
+  },
+  "hit_points": "fixed_average: level 1 = the Level 1 Hit Points by Class value (max hit die) + Con modifier; every later level = the Fixed Hit Points by Class value (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Wizard",
+      "level": 5,
+      "subclass": "Evoker",
+      "order": 1
+    },
+    {
+      "class": "Cleric",
+      "level": 3,
+      "subclass": "Life Domain",
+      "order": 2
+    }
+  ],
+  "multiclass_prerequisites": "Wizard: Intelligence 13; Cleric: Wisdom 13 (both met when the first Cleric level is taken)",
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Wizard",
+      "class_level": 1,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Arcana",
+            "Investigation"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Wizard",
+      "class_level": 2,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Scholar",
+          "expertise": "Arcana"
+        }
+      ]
+    },
+    {
+      "character_level": 3,
+      "class": "Wizard",
+      "class_level": 3,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Wizard Subclass",
+          "choice": "Evoker"
+        },
+        {
+          "feature": "Evocation Savant",
+          "spells": [
+            "Scorching Ray",
+            "Shatter"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Wizard",
+      "class_level": 4,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Intelligence": 1,
+            "Wisdom": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Wizard",
+      "class_level": 5,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Evocation Savant",
+          "spells": [
+            "Lightning Bolt"
+          ],
+          "note": "new level of spell slots in this class (level 3)"
+        }
+      ]
+    },
+    {
+      "character_level": 6,
+      "class": "Cleric",
+      "class_level": 1,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Multiclass traits",
+          "note": "Cleric multiclass: Hit Point Die, Light and Medium armor and Shield training; no skill"
+        },
+        {
+          "feature": "Divine Order",
+          "choice": "Thaumaturge",
+          "extra_cantrip": "Spare the Dying"
+        }
+      ]
+    },
+    {
+      "character_level": 7,
+      "class": "Cleric",
+      "class_level": 2,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 8,
+      "class": "Cleric",
+      "class_level": 3,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Cleric Subclass",
+          "choice": "Life Domain"
+        }
+      ]
+    }
+  ],
+  "spells": {
+    "Wizard": {
+      "ability": "Intelligence",
+      "cantrips": [
+        "Fire Bolt",
+        "Light",
+        "Mage Hand",
+        "Ray of Frost"
+      ],
+      "spellbook": [
+        "Detect Magic",
+        "Feather Fall",
+        "Mage Armor",
+        "Magic Missile",
+        "Shield",
+        "Sleep",
+        "Thunderwave",
+        "Silent Image",
+        "Misty Step",
+        "Invisibility",
+        "Scorching Ray",
+        "Shatter",
+        "Hold Person",
+        "Web",
+        "Fireball",
+        "Counterspell",
+        "Lightning Bolt"
+      ],
+      "spellbook_by_level_gained": {
+        "1": [
+          "Detect Magic",
+          "Feather Fall",
+          "Mage Armor",
+          "Magic Missile",
+          "Shield",
+          "Sleep"
+        ],
+        "2": [
+          "Thunderwave",
+          "Silent Image"
+        ],
+        "3": [
+          "Misty Step",
+          "Invisibility"
+        ],
+        "3 (Evocation Savant)": [
+          "Scorching Ray",
+          "Shatter"
+        ],
+        "4": [
+          "Hold Person",
+          "Web"
+        ],
+        "5": [
+          "Fireball",
+          "Counterspell"
+        ],
+        "5 (Evocation Savant)": [
+          "Lightning Bolt"
+        ]
+      },
+      "prepared": [
+        "Shield",
+        "Mage Armor",
+        "Magic Missile",
+        "Misty Step",
+        "Scorching Ray",
+        "Web",
+        "Fireball",
+        "Counterspell",
+        "Lightning Bolt"
+      ]
+    },
+    "Cleric": {
+      "ability": "Wisdom",
+      "cantrips": [
+        "Guidance",
+        "Sacred Flame",
+        "Thaumaturgy",
+        "Spare the Dying"
+      ],
+      "prepared": [
+        "Healing Word",
+        "Guiding Bolt",
+        "Shield of Faith",
+        "Sanctuary",
+        "Spiritual Weapon",
+        "Prayer of Healing"
+      ]
+    },
+    "Magic Initiate (Cleric)": {
+      "ability": "Wisdom",
+      "cantrips": [
+        "Mending",
+        "Resistance"
+      ],
+      "level_1": [
+        "Command"
+      ]
+    }
+  },
+  "equipment": {
+    "class_option": "Wizard (first class) A: 2 Daggers, Arcane Focus (Quarterstaff), Robe, Spellbook, Scholar's Pack, 5 GP",
+    "background_option": "B: 50 GP, spent on Leather Armor (10 GP), Shield (10 GP), Holy Symbol: Amulet (5 GP); 25 GP left",
+    "worn_armor": "Leather Armor",
+    "shield": "Shield",
+    "wielded": "Quarterstaff (arcane focus) + Shield",
+    "carried_weapons": [
+      "Dagger (x2)",
+      "Quarterstaff"
+    ]
+  }
+}

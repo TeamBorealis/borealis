@@ -1,0 +1,201 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd51-druid-8",
+  "ruleset": "SRD 5.1",
+  "edition": "2014",
+  "summary": "Human Druid 8 (Circle of the Land, Forest), Acolyte",
+  "character_level": 8,
+  "race": {
+    "name": "Human",
+    "subrace": null,
+    "ability_score_increases": {
+      "Strength": 1,
+      "Dexterity": 1,
+      "Constitution": 1,
+      "Intelligence": 1,
+      "Wisdom": 1,
+      "Charisma": 1
+    },
+    "languages": [
+      "Common",
+      "Elvish"
+    ],
+    "choices": {
+      "extra language": "Elvish"
+    }
+  },
+  "background": {
+    "name": "Acolyte",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "languages": [
+      "Sylvan",
+      "Celestial"
+    ],
+    "tool_proficiencies": [],
+    "equipment": [
+      "Holy symbol",
+      "Prayer book",
+      "5 sticks of incense",
+      "Vestments",
+      "Common clothes",
+      "Belt pouch with 15 gp"
+    ],
+    "feature": "Shelter of the Faithful"
+  },
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 8,
+      "Dexterity": 13,
+      "Constitution": 14,
+      "Intelligence": 12,
+      "Wisdom": 15,
+      "Charisma": 10
+    }
+  },
+  "hit_points": "fixed_average: level 1 = maximum of the first class's hit die + Con modifier; every later level = the class's fixed value from its Hit Points at Higher Levels line (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Druid",
+      "level": 8,
+      "subclass": "Circle of the Land"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Druid",
+      "class_level": 1,
+      "hit_points": "8 (max d8) + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Perception",
+            "Nature"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Druid",
+      "class_level": 2,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Druid Circle",
+          "choice": "Circle of the Land"
+        },
+        {
+          "feature": "Bonus Cantrip",
+          "choice": "Guidance"
+        }
+      ]
+    },
+    {
+      "character_level": 3,
+      "class": "Druid",
+      "class_level": 3,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Circle Spells",
+          "choice": "Forest"
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Druid",
+      "class_level": 4,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Wisdom": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Druid",
+      "class_level": 5,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 6,
+      "class": "Druid",
+      "class_level": 6,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 7,
+      "class": "Druid",
+      "class_level": 7,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 8,
+      "class": "Druid",
+      "class_level": 8,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Wisdom": 1,
+            "Constitution": 1
+          }
+        }
+      ]
+    }
+  ],
+  "spells": {
+    "Druid": {
+      "ability": "Wisdom",
+      "cantrips": [
+        "Druidcraft",
+        "Produce Flame",
+        "Shillelagh"
+      ],
+      "bonus_cantrip_circle_of_the_land": "Guidance",
+      "prepared": [
+        "Cure Wounds",
+        "Entangle",
+        "Faerie Fire",
+        "Healing Word",
+        "Goodberry",
+        "Moonbeam",
+        "Pass without Trace",
+        "Lesser Restoration",
+        "Conjure Animals",
+        "Dispel Magic",
+        "Polymorph",
+        "Ice Storm"
+      ]
+    }
+  },
+  "equipment": {
+    "class_choices": [
+      "(a) a wooden shield",
+      "(a) a scimitar",
+      "leather armor, an explorer's pack, and a druidic focus"
+    ],
+    "background": "Acolyte equipment",
+    "worn_armor": "Leather armor",
+    "shield": "Wooden shield",
+    "wielded": "Scimitar + wooden shield",
+    "carried_weapons": [
+      "Scimitar"
+    ]
+  }
+}

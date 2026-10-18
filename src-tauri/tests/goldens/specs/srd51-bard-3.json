@@ -1,0 +1,163 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd51-bard-3",
+  "ruleset": "SRD 5.1",
+  "edition": "2014",
+  "summary": "Half-Elf Bard 3 (College of Lore), Acolyte",
+  "character_level": 3,
+  "race": {
+    "name": "Half-Elf",
+    "subrace": null,
+    "ability_score_increases": {
+      "Charisma": 2,
+      "Dexterity": 1,
+      "Constitution": 1
+    },
+    "languages": [
+      "Common",
+      "Elvish",
+      "Dwarvish"
+    ],
+    "choices": {
+      "Ability Score Increase (two other scores +1)": [
+        "Dexterity",
+        "Constitution"
+      ],
+      "Skill Versatility": [
+        "Perception",
+        "Stealth"
+      ],
+      "extra language": "Dwarvish"
+    }
+  },
+  "background": {
+    "name": "Acolyte",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "languages": [
+      "Celestial",
+      "Halfling"
+    ],
+    "tool_proficiencies": [],
+    "equipment": [
+      "Holy symbol",
+      "Prayer book",
+      "5 sticks of incense",
+      "Vestments",
+      "Common clothes",
+      "Belt pouch with 15 gp"
+    ],
+    "feature": "Shelter of the Faithful"
+  },
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 8,
+      "Dexterity": 14,
+      "Constitution": 13,
+      "Intelligence": 12,
+      "Wisdom": 10,
+      "Charisma": 15
+    }
+  },
+  "hit_points": "fixed_average: level 1 = maximum of the first class's hit die + Con modifier; every later level = the class's fixed value from its Hit Points at Higher Levels line (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Bard",
+      "level": 3,
+      "subclass": "College of Lore"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Bard",
+      "class_level": 1,
+      "hit_points": "8 (max d8) + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Performance",
+            "Persuasion",
+            "Deception"
+          ],
+          "tools": [
+            "Lute",
+            "Flute",
+            "Lyre"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Bard",
+      "class_level": 2,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 3,
+      "class": "Bard",
+      "class_level": 3,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Bard College",
+          "choice": "College of Lore"
+        },
+        {
+          "feature": "Bonus Proficiencies",
+          "skills": [
+            "Arcana",
+            "History",
+            "Investigation"
+          ]
+        },
+        {
+          "feature": "Expertise",
+          "skills": [
+            "Performance",
+            "Persuasion"
+          ]
+        }
+      ]
+    }
+  ],
+  "spells": {
+    "Bard": {
+      "ability": "Charisma",
+      "cantrips": [
+        "Vicious Mockery",
+        "Mage Hand"
+      ],
+      "known": [
+        "Healing Word",
+        "Faerie Fire",
+        "Sleep",
+        "Thunderwave",
+        "Hold Person",
+        "Invisibility"
+      ]
+    }
+  },
+  "equipment": {
+    "class_choices": [
+      "(a) a rapier",
+      "(a) a diplomat's pack",
+      "(a) a lute",
+      "leather armor and a dagger"
+    ],
+    "background": "Acolyte equipment",
+    "worn_armor": "Leather armor",
+    "shield": null,
+    "wielded": "Rapier",
+    "carried_weapons": [
+      "Rapier",
+      "Dagger"
+    ]
+  }
+}

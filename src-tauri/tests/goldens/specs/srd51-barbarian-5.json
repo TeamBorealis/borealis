@@ -1,0 +1,136 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd51-barbarian-5",
+  "ruleset": "SRD 5.1",
+  "edition": "2014",
+  "summary": "Half-Orc Barbarian 5 (Path of the Berserker), Acolyte",
+  "character_level": 5,
+  "race": {
+    "name": "Half-Orc",
+    "subrace": null,
+    "ability_score_increases": {
+      "Strength": 2,
+      "Constitution": 1
+    },
+    "languages": [
+      "Common",
+      "Orc"
+    ],
+    "choices": {}
+  },
+  "background": {
+    "name": "Acolyte",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "languages": [
+      "Giant",
+      "Dwarvish"
+    ],
+    "tool_proficiencies": [],
+    "equipment": [
+      "Holy symbol",
+      "Prayer book",
+      "5 sticks of incense",
+      "Vestments",
+      "Common clothes",
+      "Belt pouch with 15 gp"
+    ],
+    "feature": "Shelter of the Faithful"
+  },
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 15,
+      "Dexterity": 13,
+      "Constitution": 14,
+      "Intelligence": 8,
+      "Wisdom": 12,
+      "Charisma": 10
+    }
+  },
+  "hit_points": "fixed_average: level 1 = maximum of the first class's hit die + Con modifier; every later level = the class's fixed value from its Hit Points at Higher Levels line (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Barbarian",
+      "level": 5,
+      "subclass": "Path of the Berserker"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Barbarian",
+      "class_level": 1,
+      "hit_points": "12 (max d12) + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Athletics",
+            "Perception"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Barbarian",
+      "class_level": 2,
+      "hit_points": "7 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 3,
+      "class": "Barbarian",
+      "class_level": 3,
+      "hit_points": "7 + Con",
+      "choices": [
+        {
+          "feature": "Primal Path",
+          "choice": "Path of the Berserker"
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Barbarian",
+      "class_level": 4,
+      "hit_points": "7 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Strength": 1,
+            "Constitution": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Barbarian",
+      "class_level": 5,
+      "hit_points": "7 + Con",
+      "choices": []
+    }
+  ],
+  "spells": null,
+  "equipment": {
+    "class_choices": [
+      "(a) a greataxe",
+      "(a) two handaxes",
+      "an explorer's pack and four javelins"
+    ],
+    "background": "Acolyte equipment",
+    "worn_armor": null,
+    "shield": null,
+    "wielded": "Greataxe (two hands)",
+    "carried_weapons": [
+      "Greataxe",
+      "Handaxe (x2)",
+      "Javelin (x4)"
+    ]
+  }
+}

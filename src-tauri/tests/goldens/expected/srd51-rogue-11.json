@@ -1,0 +1,334 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd51-rogue-11",
+  "ruleset": "SRD 5.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 11,
+  "abilities": {
+    "Strength": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 point buy"
+    },
+    "Dexterity": {
+      "score": 20,
+      "modifier": 5,
+      "why": "15 point buy +2 Halfling +1 ASI (Rogue 4) +2 ASI (Rogue 8)"
+    },
+    "Constitution": {
+      "score": 17,
+      "modifier": 3,
+      "why": "15 point buy +1 ASI (Rogue 4) +1 ASI (Rogue 10)"
+    },
+    "Intelligence": {
+      "score": 10,
+      "modifier": 0,
+      "why": "10 point buy"
+    },
+    "Wisdom": {
+      "score": 15,
+      "modifier": 2,
+      "why": "14 point buy +1 ASI (Rogue 10)"
+    },
+    "Charisma": {
+      "score": 9,
+      "modifier": -1,
+      "why": "8 point buy +1 Lightfoot"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 4,
+    "why": "character level 11 -> +4 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 91,
+    "why": "8 Rogue 1 (max d8) + 50 Rogue 2-11 fixed (10 x 5) + 33 Con mod x 11 levels (3 x 11)"
+  },
+  "armor_class": {
+    "value": 16,
+    "source": "Leather armor",
+    "why": "11 Leather armor + 5 Dex mod"
+  },
+  "initiative": {
+    "value": 5,
+    "why": "5 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 25,
+      "why": "25 Halfling base walking speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Str mod"
+    },
+    "Dexterity": {
+      "value": 9,
+      "proficient": true,
+      "why": "5 Dex mod + 4 proficiency (Rogue)"
+    },
+    "Constitution": {
+      "value": 3,
+      "proficient": false,
+      "why": "3 Con mod"
+    },
+    "Intelligence": {
+      "value": 4,
+      "proficient": true,
+      "why": "0 Int mod + 4 proficiency (Rogue)"
+    },
+    "Wisdom": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Wis mod"
+    },
+    "Charisma": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Cha mod"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 13,
+      "proficiency": "expertise",
+      "why": "5 Dex mod + 8 expertise, 2x proficiency (Rogue Expertise 6)"
+    },
+    "Animal Handling": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Wis mod"
+    },
+    "Arcana": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Athletics": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Str mod"
+    },
+    "Deception": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "History": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Insight": {
+      "value": 6,
+      "proficiency": "proficient",
+      "why": "2 Wis mod + 4 proficiency (Acolyte)"
+    },
+    "Intimidation": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "Investigation": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Medicine": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Wis mod"
+    },
+    "Nature": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Perception": {
+      "value": 10,
+      "proficiency": "expertise",
+      "why": "2 Wis mod + 8 expertise, 2x proficiency (Rogue Expertise 6)"
+    },
+    "Performance": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "Persuasion": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "Religion": {
+      "value": 4,
+      "proficiency": "proficient",
+      "why": "0 Int mod + 4 proficiency (Acolyte)"
+    },
+    "Sleight of Hand": {
+      "value": 13,
+      "proficiency": "expertise",
+      "why": "5 Dex mod + 8 expertise, 2x proficiency (Rogue Expertise 1)"
+    },
+    "Stealth": {
+      "value": 13,
+      "proficiency": "expertise",
+      "why": "5 Dex mod + 8 expertise, 2x proficiency (Rogue Expertise 1)"
+    },
+    "Survival": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 20,
+    "why": "10 + Perception total 10"
+  },
+  "spellcasting": [],
+  "spell_slots": {
+    "value": {},
+    "why": "no Spellcasting feature"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Rapier",
+      "kind": "melee weapon (finesse)",
+      "to_hit": {
+        "value": 9,
+        "why": "5 Dex mod + 4 proficiency"
+      },
+      "damage": {
+        "value": "1d8+5 piercing",
+        "why": "1d8 weapon die +5 Dex mod"
+      }
+    },
+    {
+      "name": "Shortbow",
+      "kind": "ranged weapon (80/320)",
+      "to_hit": {
+        "value": 9,
+        "why": "5 Dex mod + 4 proficiency"
+      },
+      "damage": {
+        "value": "1d6+5 piercing",
+        "why": "1d6 weapon die +5 Dex mod"
+      }
+    },
+    {
+      "name": "Dagger",
+      "kind": "melee weapon (finesse, light, thrown 20/60)",
+      "to_hit": {
+        "value": 9,
+        "why": "5 Dex mod + 4 proficiency"
+      },
+      "damage": {
+        "value": "1d4+5 piercing",
+        "why": "1d4 weapon die +5 Dex mod"
+      }
+    }
+  ],
+  "resources": [],
+  "class_values": [
+    {
+      "name": "Sneak Attack",
+      "value": "6d6",
+      "why": "Rogue table, level 11 (once per turn; not in attack lines)"
+    }
+  ],
+  "features": {
+    "class": {
+      "Rogue": [
+        {
+          "name": "Expertise",
+          "level": 1
+        },
+        {
+          "name": "Sneak Attack",
+          "level": 1
+        },
+        {
+          "name": "Thieves' Cant",
+          "level": 1
+        },
+        {
+          "name": "Cunning Action",
+          "level": 2
+        },
+        {
+          "name": "Roguish Archetype",
+          "level": 3,
+          "choice": "Thief"
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Uncanny Dodge",
+          "level": 5
+        },
+        {
+          "name": "Evasion",
+          "level": 7
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 8
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 10
+        },
+        {
+          "name": "Reliable Talent",
+          "level": 11
+        }
+      ]
+    },
+    "subclass": {
+      "Thief": [
+        {
+          "name": "Fast Hands",
+          "level": 3
+        },
+        {
+          "name": "Second-Story Work",
+          "level": 3
+        },
+        {
+          "name": "Supreme Sneak",
+          "level": 9
+        }
+      ]
+    },
+    "race": [
+      {
+        "name": "Lucky",
+        "level": 1
+      },
+      {
+        "name": "Brave",
+        "level": 1
+      },
+      {
+        "name": "Halfling Nimbleness",
+        "level": 1
+      },
+      {
+        "name": "Naturally Stealthy",
+        "level": 1
+      }
+    ],
+    "background": [
+      {
+        "name": "Shelter of the Faithful",
+        "level": 1
+      }
+    ],
+    "feats": []
+  }
+}

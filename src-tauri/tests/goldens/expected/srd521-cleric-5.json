@@ -1,0 +1,389 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd521-cleric-5",
+  "ruleset": "SRD 5.2.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 5,
+  "abilities": {
+    "Strength": {
+      "score": 14,
+      "modifier": 2,
+      "why": "14 standard array"
+    },
+    "Dexterity": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 standard array"
+    },
+    "Constitution": {
+      "score": 14,
+      "modifier": 2,
+      "why": "13 standard array +1 ASI feat (Cleric 4)"
+    },
+    "Intelligence": {
+      "score": 10,
+      "modifier": 0,
+      "why": "10 standard array"
+    },
+    "Wisdom": {
+      "score": 18,
+      "modifier": 4,
+      "why": "15 standard array +2 Acolyte background +1 ASI feat (Cleric 4)"
+    },
+    "Charisma": {
+      "score": 13,
+      "modifier": 1,
+      "why": "12 standard array +1 Acolyte background"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 3,
+    "why": "character level 5 -> +3 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 43,
+    "why": "8 Cleric 1 (8) + 20 Cleric 2-5 fixed (4 x 5) + 10 Con mod x 5 levels (2 x 5) + 5 Dwarven Toughness (+1 per level)"
+  },
+  "armor_class": {
+    "value": 18,
+    "source": "Chain Mail (Heavy armor training from Protector) + Shield",
+    "why": "16 Chain Mail + 2 Shield"
+  },
+  "initiative": {
+    "value": -1,
+    "why": "-1 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 30,
+      "why": "30 Dwarf speed (Str 14 meets Chain Mail Str 13)"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Str mod"
+    },
+    "Dexterity": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Dex mod"
+    },
+    "Constitution": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Con mod"
+    },
+    "Intelligence": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Int mod"
+    },
+    "Wisdom": {
+      "value": 7,
+      "proficient": true,
+      "why": "4 Wis mod + 3 proficiency (Cleric)"
+    },
+    "Charisma": {
+      "value": 4,
+      "proficient": true,
+      "why": "1 Cha mod + 3 proficiency (Cleric)"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Dex mod"
+    },
+    "Animal Handling": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Wis mod"
+    },
+    "Arcana": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Athletics": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Str mod"
+    },
+    "Deception": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Cha mod"
+    },
+    "History": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Insight": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "4 Wis mod + 3 proficiency (Acolyte)"
+    },
+    "Intimidation": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Cha mod"
+    },
+    "Investigation": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Medicine": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "4 Wis mod + 3 proficiency (Cleric)"
+    },
+    "Nature": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Perception": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Wis mod"
+    },
+    "Performance": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Cha mod"
+    },
+    "Persuasion": {
+      "value": 4,
+      "proficiency": "proficient",
+      "why": "1 Cha mod + 3 proficiency (Cleric)"
+    },
+    "Religion": {
+      "value": 3,
+      "proficiency": "proficient",
+      "why": "0 Int mod + 3 proficiency (Acolyte)"
+    },
+    "Sleight of Hand": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Dex mod"
+    },
+    "Stealth": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Dex mod"
+    },
+    "Survival": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 14,
+    "why": "10 + Perception total 4"
+  },
+  "spellcasting": [
+    {
+      "source": "Cleric",
+      "ability": "Wisdom",
+      "spell_save_dc": {
+        "value": 15,
+        "why": "8 + 4 Wis mod + 3 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 7,
+        "why": "4 Wis mod + 3 proficiency"
+      }
+    },
+    {
+      "source": "Magic Initiate (Cleric)",
+      "ability": "Wisdom",
+      "spell_save_dc": {
+        "value": 15,
+        "why": "8 + 4 Wis mod + 3 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 7,
+        "why": "4 Wis mod + 3 proficiency"
+      }
+    }
+  ],
+  "spell_slots": {
+    "value": {
+      "1": 4,
+      "2": 3,
+      "3": 2
+    },
+    "why": "Cleric Features table, level 5"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Mace",
+      "kind": "melee weapon (mastery Sap; Clerics lack Weapon Mastery)",
+      "to_hit": {
+        "value": 5,
+        "why": "2 Str mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d6+2 bludgeoning",
+        "why": "1d6 weapon die +2 Str mod"
+      }
+    },
+    {
+      "name": "Sacred Flame",
+      "kind": "cantrip (save)",
+      "save": {
+        "ability": "Dexterity",
+        "dc": 15,
+        "why": "equals the spell save DC of the casting source (see spellcasting)"
+      },
+      "damage": {
+        "value": "2d8 radiant",
+        "why": "1d8, +1d8 at level 5"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Channel Divinity",
+      "max": 2,
+      "recharge": "long rest (regain one use on a short rest)",
+      "why": "Channel Divinity column, Cleric 5"
+    },
+    {
+      "name": "Stonecunning",
+      "max": 3,
+      "recharge": "long rest",
+      "why": "Proficiency Bonus uses"
+    },
+    {
+      "name": "Magic Initiate: Sanctuary (free cast)",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Magic Initiate level 1 spell"
+    }
+  ],
+  "class_values": [
+    {
+      "name": "Sear Undead damage",
+      "value": "4d8",
+      "why": "Wis mod 4 d8s"
+    },
+    {
+      "name": "Divine Spark",
+      "value": "1d8+4",
+      "why": "1d8 + Wis mod (below Cleric 7)"
+    },
+    {
+      "name": "Preserve Life pool",
+      "value": 25,
+      "why": "5 x cleric level 5"
+    }
+  ],
+  "features": {
+    "class": {
+      "Cleric": [
+        {
+          "name": "Spellcasting",
+          "level": 1
+        },
+        {
+          "name": "Divine Order",
+          "level": 1,
+          "choice": "Protector"
+        },
+        {
+          "name": "Channel Divinity",
+          "level": 2
+        },
+        {
+          "name": "Cleric Subclass",
+          "level": 3,
+          "choice": "Life Domain"
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Sear Undead",
+          "level": 5
+        }
+      ]
+    },
+    "subclass": {
+      "Life Domain": [
+        {
+          "name": "Disciple of Life",
+          "level": 3
+        },
+        {
+          "name": "Life Domain Spells",
+          "level": 3
+        },
+        {
+          "name": "Preserve Life",
+          "level": 3
+        }
+      ]
+    },
+    "species": [
+      {
+        "name": "Darkvision",
+        "level": 1
+      },
+      {
+        "name": "Dwarven Resilience",
+        "level": 1
+      },
+      {
+        "name": "Dwarven Toughness",
+        "level": 1
+      },
+      {
+        "name": "Stonecunning",
+        "level": 1
+      }
+    ],
+    "background": [],
+    "feats": [
+      {
+        "name": "Magic Initiate (Cleric)",
+        "level": 1
+      },
+      {
+        "name": "Ability Score Improvement",
+        "level": 4
+      }
+    ]
+  },
+  "spells": {
+    "Cleric": {
+      "cantrips_known_max": 4,
+      "prepared_max": {
+        "value": 9,
+        "why": "Prepared Spells column, Cleric 5"
+      },
+      "always_prepared": [
+        "Aid",
+        "Bless",
+        "Cure Wounds",
+        "Lesser Restoration",
+        "Mass Healing Word",
+        "Revivify"
+      ]
+    },
+    "Magic Initiate (Cleric)": {
+      "cantrips_known_max": 2,
+      "always_prepared": [
+        "Sanctuary"
+      ]
+    }
+  }
+}

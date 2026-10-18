@@ -1,0 +1,242 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd521-warlock-8",
+  "ruleset": "SRD 5.2.1",
+  "edition": "2024",
+  "summary": "Elf (High Elf) Warlock 8 (Fiend Patron, Pact of the Blade), Soldier",
+  "character_level": 8,
+  "species": {
+    "name": "Elf",
+    "size": "Medium",
+    "choices": {
+      "Elven Lineage": "High Elf",
+      "spellcasting_ability": "Charisma",
+      "Keen Senses": "Perception",
+      "High Elf cantrip": "Prestidigitation (not replaced)"
+    }
+  },
+  "background": {
+    "name": "Soldier",
+    "ability_scores_listed": [
+      "Strength",
+      "Dexterity",
+      "Constitution"
+    ],
+    "origin_feat": "Savage Attacker",
+    "skill_proficiencies": [
+      "Athletics",
+      "Intimidation"
+    ],
+    "tool_proficiency": "Dragonchess Set",
+    "equipment_A": [
+      "Spear",
+      "Shortbow",
+      "20 Arrows",
+      "Gaming Set: Dragonchess Set",
+      "Healer's Kit",
+      "Quiver",
+      "Traveler's Clothes",
+      "14 GP"
+    ],
+    "ability_score_increases": {
+      "Constitution": 2,
+      "Dexterity": 1
+    },
+    "equipment_option": "A"
+  },
+  "languages": [
+    "Common",
+    "Elvish",
+    "Draconic"
+  ],
+  "ability_scores": {
+    "method": "point buy (27 points; costs 8=0, 9=1, 10=2, 11=3, 12=4, 13=5, 14=7, 15=9)",
+    "assignment": {
+      "Strength": 8,
+      "Dexterity": 14,
+      "Constitution": 14,
+      "Intelligence": 8,
+      "Wisdom": 12,
+      "Charisma": 15
+    },
+    "points_spent": {
+      "Strength": 0,
+      "Dexterity": 7,
+      "Constitution": 7,
+      "Intelligence": 0,
+      "Wisdom": 4,
+      "Charisma": 9
+    }
+  },
+  "hit_points": "fixed_average: level 1 = the Level 1 Hit Points by Class value (max hit die) + Con modifier; every later level = the Fixed Hit Points by Class value (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Warlock",
+      "level": 8,
+      "subclass": "Fiend Patron"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Warlock",
+      "class_level": 1,
+      "hit_points": "8 + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Arcana",
+            "Deception"
+          ]
+        },
+        {
+          "feature": "Eldritch Invocations",
+          "gain": [
+            "Pact of the Blade"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Warlock",
+      "class_level": 2,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Eldritch Invocations",
+          "gain": [
+            "Agonizing Blast (Eldritch Blast)",
+            "Devil's Sight"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 3,
+      "class": "Warlock",
+      "class_level": 3,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Warlock Subclass",
+          "choice": "Fiend Patron"
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Warlock",
+      "class_level": 4,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Charisma": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Warlock",
+      "class_level": 5,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Eldritch Invocations",
+          "gain": [
+            "Thirsting Blade",
+            "Eldritch Smite"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 6,
+      "class": "Warlock",
+      "class_level": 6,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 7,
+      "class": "Warlock",
+      "class_level": 7,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Eldritch Invocations",
+          "gain": [
+            "Lessons of the First Ones (Origin feat: Alert)"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 8,
+      "class": "Warlock",
+      "class_level": 8,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Charisma": 1,
+            "Wisdom": 1
+          }
+        }
+      ]
+    }
+  ],
+  "pact_weapon": "Longsword (conjured with Pact of the Blade)",
+  "spells": {
+    "Warlock": {
+      "ability": "Charisma",
+      "cantrips": [
+        "Eldritch Blast",
+        "Mage Hand",
+        "Minor Illusion"
+      ],
+      "prepared": [
+        "Hellish Rebuke",
+        "Hex",
+        "Protection from Evil and Good",
+        "Hold Person",
+        "Invisibility",
+        "Mirror Image",
+        "Counterspell",
+        "Dimension Door",
+        "Banishment"
+      ]
+    },
+    "High Elf": {
+      "ability": "Charisma",
+      "cantrips": [
+        "Prestidigitation"
+      ],
+      "always_prepared": [
+        "Detect Magic",
+        "Misty Step"
+      ]
+    }
+  },
+  "equipment": {
+    "class_option": "A: Leather Armor, Sickle, 2 Daggers, Arcane Focus (orb), Book (occult lore), Scholar's Pack, 15 GP",
+    "background_option": "A (Soldier)",
+    "worn_armor": "Leather Armor",
+    "shield": null,
+    "wielded": "Pact weapon Longsword",
+    "carried_weapons": [
+      "Longsword (pact weapon)",
+      "Sickle",
+      "Dagger (x2)",
+      "Spear",
+      "Shortbow"
+    ]
+  }
+}

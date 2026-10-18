@@ -1,0 +1,484 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd521-multiclass-wizard5-cleric3",
+  "ruleset": "SRD 5.2.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 8,
+  "abilities": {
+    "Strength": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 standard array"
+    },
+    "Dexterity": {
+      "score": 13,
+      "modifier": 1,
+      "why": "13 standard array"
+    },
+    "Constitution": {
+      "score": 14,
+      "modifier": 2,
+      "why": "14 standard array"
+    },
+    "Intelligence": {
+      "score": 18,
+      "modifier": 4,
+      "why": "15 standard array +2 Acolyte background +1 ASI feat (Wizard 4)"
+    },
+    "Wisdom": {
+      "score": 14,
+      "modifier": 2,
+      "why": "12 standard array +1 Acolyte background +1 ASI feat (Wizard 4)"
+    },
+    "Charisma": {
+      "score": 10,
+      "modifier": 0,
+      "why": "10 standard array"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 3,
+    "why": "total character level 8 -> +3 (multiclass: proficiency bonus uses total level)"
+  },
+  "hit_points_max": {
+    "value": 53,
+    "why": "6 Wizard 1 (6) + 16 Wizard 2-5 fixed (4 x 4) + 15 Cleric 1-3 fixed (3 x 5) + 16 Con mod x 8 levels (2 x 8)"
+  },
+  "armor_class": {
+    "value": 14,
+    "source": "Leather Armor + Shield (training from the Cleric multiclass traits)",
+    "why": "11 Leather Armor + 1 Dex mod + 2 Shield"
+  },
+  "initiative": {
+    "value": 4,
+    "why": "1 Dex mod + 3 Alert: Initiative Proficiency"
+  },
+  "speeds": {
+    "walk": {
+      "value": 30,
+      "why": "30 Human speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Str mod"
+    },
+    "Dexterity": {
+      "value": 1,
+      "proficient": false,
+      "why": "1 Dex mod"
+    },
+    "Constitution": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Con mod"
+    },
+    "Intelligence": {
+      "value": 7,
+      "proficient": true,
+      "why": "4 Int mod + 3 proficiency (Wizard (first class))"
+    },
+    "Wisdom": {
+      "value": 5,
+      "proficient": true,
+      "why": "2 Wis mod + 3 proficiency (Wizard (first class))"
+    },
+    "Charisma": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Cha mod"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Dex mod"
+    },
+    "Animal Handling": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Wis mod"
+    },
+    "Arcana": {
+      "value": 12,
+      "proficiency": "expertise",
+      "why": "4 Int mod + 6 expertise, 2x proficiency (Scholar (Wizard 2)) + 2 Divine Order: Thaumaturge (Wis mod, min 1)"
+    },
+    "Athletics": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Str mod"
+    },
+    "Deception": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "History": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Int mod"
+    },
+    "Insight": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "2 Wis mod + 3 proficiency (Acolyte)"
+    },
+    "Intimidation": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Investigation": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "4 Int mod + 3 proficiency (Wizard)"
+    },
+    "Medicine": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Wis mod"
+    },
+    "Nature": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Int mod"
+    },
+    "Perception": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "2 Wis mod + 3 proficiency (Human Skillful)"
+    },
+    "Performance": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Persuasion": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Religion": {
+      "value": 9,
+      "proficiency": "proficient",
+      "why": "4 Int mod + 3 proficiency (Acolyte) + 2 Divine Order: Thaumaturge (Wis mod, min 1)"
+    },
+    "Sleight of Hand": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Dex mod"
+    },
+    "Stealth": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Dex mod"
+    },
+    "Survival": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 15,
+    "why": "10 + Perception total 5"
+  },
+  "spellcasting": [
+    {
+      "source": "Wizard",
+      "ability": "Intelligence",
+      "spell_save_dc": {
+        "value": 15,
+        "why": "8 + 4 Int mod + 3 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 7,
+        "why": "4 Int mod + 3 proficiency"
+      }
+    },
+    {
+      "source": "Cleric",
+      "ability": "Wisdom",
+      "spell_save_dc": {
+        "value": 13,
+        "why": "8 + 2 Wis mod + 3 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 5,
+        "why": "2 Wis mod + 3 proficiency"
+      }
+    },
+    {
+      "source": "Magic Initiate (Cleric)",
+      "ability": "Wisdom",
+      "spell_save_dc": {
+        "value": 13,
+        "why": "8 + 2 Wis mod + 3 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 5,
+        "why": "2 Wis mod + 3 proficiency"
+      }
+    }
+  ],
+  "spell_slots": {
+    "value": {
+      "1": 4,
+      "2": 3,
+      "3": 3,
+      "4": 2
+    },
+    "why": "Multiclass Spellcaster table at level 8 (5 wizard + 3 cleric levels)"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Fire Bolt",
+      "kind": "cantrip (ranged spell attack, Wizard)",
+      "to_hit": {
+        "value": 7,
+        "why": "4 Int mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "2d10 fire",
+        "why": "1d10, +1d10 at character level 5"
+      }
+    },
+    {
+      "name": "Ray of Frost",
+      "kind": "cantrip (ranged spell attack, Wizard)",
+      "to_hit": {
+        "value": 7,
+        "why": "4 Int mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "2d8 cold",
+        "why": "1d8, +1d8 at character level 5"
+      }
+    },
+    {
+      "name": "Sacred Flame",
+      "kind": "cantrip (save, Cleric)",
+      "save": {
+        "ability": "Dexterity",
+        "dc": 13,
+        "why": "equals the spell save DC of the casting source (see spellcasting)"
+      },
+      "damage": {
+        "value": "2d8 radiant",
+        "why": "1d8, +1d8 at character level 5"
+      }
+    },
+    {
+      "name": "Dagger",
+      "kind": "melee weapon (finesse, light, thrown 20/60)",
+      "to_hit": {
+        "value": 4,
+        "why": "1 Dex mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d4+1 piercing",
+        "why": "1d4 weapon die +1 Dex mod"
+      }
+    },
+    {
+      "name": "Quarterstaff",
+      "kind": "melee weapon",
+      "to_hit": {
+        "value": 2,
+        "why": "-1 Str mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d6-1 bludgeoning",
+        "why": "1d6 weapon die -1 Str mod"
+      },
+      "damage_two_handed": {
+        "value": "1d8-1 bludgeoning",
+        "why": "Versatile: two-handed die, same modifier"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Arcane Recovery",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Wizard: slot levels up to 3 (half of wizard level 5, rounded up)"
+    },
+    {
+      "name": "Channel Divinity",
+      "max": 2,
+      "recharge": "long rest (regain one use on a short rest)",
+      "why": "Channel Divinity column, Cleric 3"
+    },
+    {
+      "name": "Magic Initiate: Command (free cast)",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Magic Initiate level 1 spell"
+    }
+  ],
+  "class_values": [
+    {
+      "name": "Preserve Life pool",
+      "value": 15,
+      "why": "5 x cleric level 3"
+    },
+    {
+      "name": "Divine Spark",
+      "value": "1d8+2",
+      "why": "1d8 + Wis mod (cleric below 7)"
+    }
+  ],
+  "features": {
+    "class": {
+      "Wizard": [
+        {
+          "name": "Spellcasting",
+          "level": 1
+        },
+        {
+          "name": "Ritual Adept",
+          "level": 1
+        },
+        {
+          "name": "Arcane Recovery",
+          "level": 1
+        },
+        {
+          "name": "Scholar",
+          "level": 2,
+          "choice": "Arcana"
+        },
+        {
+          "name": "Wizard Subclass",
+          "level": 3,
+          "choice": "Evoker"
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Memorize Spell",
+          "level": 5
+        }
+      ],
+      "Cleric": [
+        {
+          "name": "Spellcasting",
+          "level": 1
+        },
+        {
+          "name": "Divine Order",
+          "level": 1,
+          "choice": "Thaumaturge"
+        },
+        {
+          "name": "Channel Divinity",
+          "level": 2
+        },
+        {
+          "name": "Cleric Subclass",
+          "level": 3,
+          "choice": "Life Domain"
+        }
+      ]
+    },
+    "subclass": {
+      "Evoker": [
+        {
+          "name": "Evocation Savant",
+          "level": 3
+        },
+        {
+          "name": "Potent Cantrip",
+          "level": 3
+        }
+      ],
+      "Life Domain": [
+        {
+          "name": "Disciple of Life",
+          "level": 3
+        },
+        {
+          "name": "Life Domain Spells",
+          "level": 3
+        },
+        {
+          "name": "Preserve Life",
+          "level": 3
+        }
+      ]
+    },
+    "species": [
+      {
+        "name": "Resourceful",
+        "level": 1
+      },
+      {
+        "name": "Skillful",
+        "level": 1,
+        "choice": "Perception"
+      },
+      {
+        "name": "Versatile",
+        "level": 1,
+        "choice": "Alert"
+      }
+    ],
+    "background": [],
+    "feats": [
+      {
+        "name": "Magic Initiate (Cleric)",
+        "level": 1
+      },
+      {
+        "name": "Alert",
+        "level": 1
+      },
+      {
+        "name": "Ability Score Improvement",
+        "level": 4
+      }
+    ]
+  },
+  "spells": {
+    "Wizard": {
+      "cantrips_known_max": 4,
+      "prepared_max": {
+        "value": 9,
+        "why": "Prepared Spells column, Wizard 5 (per class)"
+      },
+      "spellbook_size": {
+        "value": 17,
+        "why": "6 + 2 x 4 levels + 3 Evocation Savant"
+      },
+      "always_prepared": []
+    },
+    "Cleric": {
+      "cantrips_known_max": 4,
+      "cantrips_why": "3 (Cleric Features table, level 3) + 1 Thaumaturge",
+      "prepared_max": {
+        "value": 6,
+        "why": "Prepared Spells column, Cleric 3 (per class)"
+      },
+      "always_prepared": [
+        "Aid",
+        "Bless",
+        "Cure Wounds",
+        "Lesser Restoration"
+      ]
+    },
+    "Magic Initiate (Cleric)": {
+      "cantrips_known_max": 2,
+      "always_prepared": [
+        "Command"
+      ]
+    }
+  }
+}

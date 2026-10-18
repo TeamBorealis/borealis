@@ -1,0 +1,177 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd521-cleric-5",
+  "ruleset": "SRD 5.2.1",
+  "edition": "2024",
+  "summary": "Dwarf Cleric 5 (Life Domain, Protector), Acolyte",
+  "character_level": 5,
+  "species": {
+    "name": "Dwarf",
+    "size": "Medium",
+    "choices": {}
+  },
+  "background": {
+    "name": "Acolyte",
+    "ability_scores_listed": [
+      "Intelligence",
+      "Wisdom",
+      "Charisma"
+    ],
+    "origin_feat": "Magic Initiate (Cleric)",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "tool_proficiency": "Calligrapher's Supplies",
+    "equipment_A": [
+      "Calligrapher's Supplies",
+      "Book (prayers)",
+      "Holy Symbol",
+      "Parchment (10 sheets)",
+      "Robe",
+      "8 GP"
+    ],
+    "ability_score_increases": {
+      "Wisdom": 2,
+      "Charisma": 1
+    },
+    "equipment_option": "A",
+    "origin_feat_choices": {
+      "spellcasting_ability": "Wisdom",
+      "cantrips": [
+        "Light",
+        "Resistance"
+      ],
+      "level_1_spell": "Sanctuary"
+    }
+  },
+  "languages": [
+    "Common",
+    "Dwarvish",
+    "Elvish"
+  ],
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 14,
+      "Dexterity": 8,
+      "Constitution": 13,
+      "Intelligence": 10,
+      "Wisdom": 15,
+      "Charisma": 12
+    }
+  },
+  "hit_points": "fixed_average: level 1 = the Level 1 Hit Points by Class value (max hit die) + Con modifier; every later level = the Fixed Hit Points by Class value (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Cleric",
+      "level": 5,
+      "subclass": "Life Domain"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Cleric",
+      "class_level": 1,
+      "hit_points": "8 + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Medicine",
+            "Persuasion"
+          ]
+        },
+        {
+          "feature": "Divine Order",
+          "choice": "Protector"
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Cleric",
+      "class_level": 2,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 3,
+      "class": "Cleric",
+      "class_level": 3,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Cleric Subclass",
+          "choice": "Life Domain"
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Cleric",
+      "class_level": 4,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Wisdom": 1,
+            "Constitution": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Cleric",
+      "class_level": 5,
+      "hit_points": "5 + Con",
+      "choices": []
+    }
+  ],
+  "spells": {
+    "Cleric": {
+      "ability": "Wisdom",
+      "cantrips": [
+        "Guidance",
+        "Sacred Flame",
+        "Thaumaturgy",
+        "Mending"
+      ],
+      "prepared": [
+        "Healing Word",
+        "Guiding Bolt",
+        "Shield of Faith",
+        "Command",
+        "Spiritual Weapon",
+        "Prayer of Healing",
+        "Spirit Guardians",
+        "Dispel Magic",
+        "Beacon of Hope"
+      ]
+    },
+    "Magic Initiate (Cleric)": {
+      "ability": "Wisdom",
+      "cantrips": [
+        "Light",
+        "Resistance"
+      ],
+      "level_1": [
+        "Sanctuary"
+      ]
+    }
+  },
+  "equipment": {
+    "class_option": "B: 110 GP, spent on Chain Mail (75 GP), Shield (10 GP), Mace (5 GP), Holy Symbol: Amulet (5 GP); 15 GP left",
+    "background_option": "A (Acolyte)",
+    "worn_armor": "Chain Mail",
+    "shield": "Shield",
+    "wielded": "Mace + Shield",
+    "carried_weapons": [
+      "Mace"
+    ]
+  }
+}

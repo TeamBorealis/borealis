@@ -1,0 +1,397 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd51-monk-17",
+  "ruleset": "SRD 5.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 17,
+  "abilities": {
+    "Strength": {
+      "score": 12,
+      "modifier": 1,
+      "why": "12 standard array"
+    },
+    "Dexterity": {
+      "score": 20,
+      "modifier": 5,
+      "why": "15 standard array +2 Halfling +1 ASI (Monk 4) +2 ASI (Monk 8)"
+    },
+    "Constitution": {
+      "score": 14,
+      "modifier": 2,
+      "why": "13 standard array +1 ASI (Monk 16)"
+    },
+    "Intelligence": {
+      "score": 10,
+      "modifier": 0,
+      "why": "10 standard array"
+    },
+    "Wisdom": {
+      "score": 18,
+      "modifier": 4,
+      "why": "14 standard array +1 ASI (Monk 4) +2 ASI (Monk 12) +1 ASI (Monk 16)"
+    },
+    "Charisma": {
+      "score": 9,
+      "modifier": -1,
+      "why": "8 standard array +1 Lightfoot"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 6,
+    "why": "character level 17 -> +6 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 122,
+    "why": "8 Monk 1 (max d8) + 80 Monk 2-17 fixed (16 x 5) + 34 Con mod x 17 levels (2 x 17)"
+  },
+  "armor_class": {
+    "value": 19,
+    "source": "Unarmored Defense (Monk), no armor, no shield",
+    "why": "10 Unarmored Defense base + 5 Dex mod + 4 Wis mod"
+  },
+  "initiative": {
+    "value": 5,
+    "why": "5 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 50,
+      "why": "25 Halfling base walking speed + 25 Unarmored Movement, Monk 17"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": 7,
+      "proficient": true,
+      "why": "1 Str mod + 6 proficiency (Monk)"
+    },
+    "Dexterity": {
+      "value": 11,
+      "proficient": true,
+      "why": "5 Dex mod + 6 proficiency (Monk)"
+    },
+    "Constitution": {
+      "value": 8,
+      "proficient": true,
+      "why": "2 Con mod + 6 proficiency (Diamond Soul)"
+    },
+    "Intelligence": {
+      "value": 6,
+      "proficient": true,
+      "why": "0 Int mod + 6 proficiency (Diamond Soul)"
+    },
+    "Wisdom": {
+      "value": 10,
+      "proficient": true,
+      "why": "4 Wis mod + 6 proficiency (Diamond Soul)"
+    },
+    "Charisma": {
+      "value": 5,
+      "proficient": true,
+      "why": "-1 Cha mod + 6 proficiency (Diamond Soul)"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 11,
+      "proficiency": "proficient",
+      "why": "5 Dex mod + 6 proficiency (Monk)"
+    },
+    "Animal Handling": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Wis mod"
+    },
+    "Arcana": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Athletics": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Str mod"
+    },
+    "Deception": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "History": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Insight": {
+      "value": 10,
+      "proficiency": "proficient",
+      "why": "4 Wis mod + 6 proficiency (Acolyte)"
+    },
+    "Intimidation": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "Investigation": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Medicine": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Wis mod"
+    },
+    "Nature": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Perception": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Wis mod"
+    },
+    "Performance": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "Persuasion": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "Religion": {
+      "value": 6,
+      "proficiency": "proficient",
+      "why": "0 Int mod + 6 proficiency (Acolyte)"
+    },
+    "Sleight of Hand": {
+      "value": 5,
+      "proficiency": "none",
+      "why": "5 Dex mod"
+    },
+    "Stealth": {
+      "value": 11,
+      "proficiency": "proficient",
+      "why": "5 Dex mod + 6 proficiency (Monk)"
+    },
+    "Survival": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 14,
+    "why": "10 + Perception total 4"
+  },
+  "spellcasting": [],
+  "spell_slots": {
+    "value": {},
+    "why": "no Spellcasting feature"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Unarmed Strike",
+      "kind": "melee (monk)",
+      "to_hit": {
+        "value": 11,
+        "why": "5 Dex mod (Martial Arts) + 6 proficiency"
+      },
+      "damage": {
+        "value": "1d10+5 bludgeoning",
+        "why": "Martial Arts die d10 at Monk 17 + 5 Dex mod"
+      }
+    },
+    {
+      "name": "Shortsword",
+      "kind": "melee weapon (monk weapon)",
+      "to_hit": {
+        "value": 11,
+        "why": "5 Dex mod (finesse / Martial Arts) + 6 proficiency"
+      },
+      "damage": {
+        "value": "1d10+5 piercing",
+        "why": "Martial Arts die d10 replaces the 1d6 weapon die + 5 Dex mod"
+      }
+    },
+    {
+      "name": "Dart",
+      "kind": "ranged weapon (finesse, thrown 20/60; not a monk weapon)",
+      "to_hit": {
+        "value": 11,
+        "why": "5 Dex mod + 6 proficiency"
+      },
+      "damage": {
+        "value": "1d4+5 piercing",
+        "why": "1d4 weapon die +5 Dex mod"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Ki",
+      "max": 17,
+      "recharge": "short or long rest",
+      "why": "Ki Points column, Monk 17"
+    },
+    {
+      "name": "Wholeness of Body",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Open Hand 6: once per long rest, heals 3 x monk level (51)"
+    }
+  ],
+  "class_values": [
+    {
+      "name": "Martial Arts die",
+      "value": "d10",
+      "why": "Monk table, level 17"
+    },
+    {
+      "name": "Ki save DC",
+      "value": 18,
+      "why": "8 + 6 proficiency + 4 Wis mod"
+    },
+    {
+      "name": "Attacks per Attack action",
+      "value": 2,
+      "why": "Extra Attack (Monk 5)"
+    }
+  ],
+  "features": {
+    "class": {
+      "Monk": [
+        {
+          "name": "Unarmored Defense",
+          "level": 1
+        },
+        {
+          "name": "Martial Arts",
+          "level": 1
+        },
+        {
+          "name": "Ki",
+          "level": 2
+        },
+        {
+          "name": "Unarmored Movement",
+          "level": 2
+        },
+        {
+          "name": "Monastic Tradition",
+          "level": 3,
+          "choice": "Way of the Open Hand"
+        },
+        {
+          "name": "Deflect Missiles",
+          "level": 3
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Slow Fall",
+          "level": 4
+        },
+        {
+          "name": "Extra Attack",
+          "level": 5
+        },
+        {
+          "name": "Stunning Strike",
+          "level": 5
+        },
+        {
+          "name": "Ki-Empowered Strikes",
+          "level": 6
+        },
+        {
+          "name": "Evasion",
+          "level": 7
+        },
+        {
+          "name": "Stillness of Mind",
+          "level": 7
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 8
+        },
+        {
+          "name": "Purity of Body",
+          "level": 10
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 12
+        },
+        {
+          "name": "Tongue of the Sun and Moon",
+          "level": 13
+        },
+        {
+          "name": "Diamond Soul",
+          "level": 14
+        },
+        {
+          "name": "Timeless Body",
+          "level": 15
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 16
+        }
+      ]
+    },
+    "subclass": {
+      "Way of the Open Hand": [
+        {
+          "name": "Open Hand Technique",
+          "level": 3
+        },
+        {
+          "name": "Wholeness of Body",
+          "level": 6
+        },
+        {
+          "name": "Tranquility",
+          "level": 11
+        },
+        {
+          "name": "Quivering Palm",
+          "level": 17
+        }
+      ]
+    },
+    "race": [
+      {
+        "name": "Lucky",
+        "level": 1
+      },
+      {
+        "name": "Brave",
+        "level": 1
+      },
+      {
+        "name": "Halfling Nimbleness",
+        "level": 1
+      },
+      {
+        "name": "Naturally Stealthy",
+        "level": 1
+      }
+    ],
+    "background": [
+      {
+        "name": "Shelter of the Faithful",
+        "level": 1
+      }
+    ],
+    "feats": []
+  }
+}

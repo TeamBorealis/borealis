@@ -1,0 +1,406 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd521-bard-11",
+  "ruleset": "SRD 5.2.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 11,
+  "abilities": {
+    "Strength": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 standard array"
+    },
+    "Dexterity": {
+      "score": 15,
+      "modifier": 2,
+      "why": "14 standard array +1 ASI feat (Bard 8)"
+    },
+    "Constitution": {
+      "score": 12,
+      "modifier": 1,
+      "why": "12 standard array"
+    },
+    "Intelligence": {
+      "score": 13,
+      "modifier": 1,
+      "why": "13 standard array"
+    },
+    "Wisdom": {
+      "score": 11,
+      "modifier": 0,
+      "why": "10 standard array +1 Acolyte background"
+    },
+    "Charisma": {
+      "score": 20,
+      "modifier": 5,
+      "why": "15 standard array +2 Acolyte background +2 ASI feat (Bard 4) +1 ASI feat (Bard 8)"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 4,
+    "why": "character level 11 -> +4 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 69,
+    "why": "8 Bard 1 (8) + 50 Bard 2-11 fixed (10 x 5) + 11 Con mod x 11 levels (1 x 11)"
+  },
+  "armor_class": {
+    "value": 13,
+    "source": "Leather Armor",
+    "why": "11 Leather Armor + 2 Dex mod"
+  },
+  "initiative": {
+    "value": 2,
+    "why": "2 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 30,
+      "why": "30 Human speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Str mod"
+    },
+    "Dexterity": {
+      "value": 6,
+      "proficient": true,
+      "why": "2 Dex mod + 4 proficiency (Bard)"
+    },
+    "Constitution": {
+      "value": 1,
+      "proficient": false,
+      "why": "1 Con mod"
+    },
+    "Intelligence": {
+      "value": 1,
+      "proficient": false,
+      "why": "1 Int mod"
+    },
+    "Wisdom": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Wis mod"
+    },
+    "Charisma": {
+      "value": 9,
+      "proficient": true,
+      "why": "5 Cha mod + 4 proficiency (Bard)"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 6,
+      "proficiency": "proficient",
+      "why": "2 Dex mod + 4 proficiency (Lore Bonus Proficiencies)"
+    },
+    "Animal Handling": {
+      "value": 2,
+      "proficiency": "half",
+      "why": "0 Wis mod + 2 Jack of All Trades, half proficiency rounded down"
+    },
+    "Arcana": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "1 Int mod + 4 proficiency (Skilled)"
+    },
+    "Athletics": {
+      "value": 1,
+      "proficiency": "half",
+      "why": "-1 Str mod + 2 Jack of All Trades, half proficiency rounded down"
+    },
+    "Deception": {
+      "value": 13,
+      "proficiency": "expertise",
+      "why": "5 Cha mod + 8 expertise, 2x proficiency (Bard Expertise 9)"
+    },
+    "History": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "1 Int mod + 4 proficiency (Skilled)"
+    },
+    "Insight": {
+      "value": 4,
+      "proficiency": "proficient",
+      "why": "0 Wis mod + 4 proficiency (Acolyte)"
+    },
+    "Intimidation": {
+      "value": 7,
+      "proficiency": "half",
+      "why": "5 Cha mod + 2 Jack of All Trades, half proficiency rounded down"
+    },
+    "Investigation": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "1 Int mod + 4 proficiency (Lore Bonus Proficiencies)"
+    },
+    "Medicine": {
+      "value": 2,
+      "proficiency": "half",
+      "why": "0 Wis mod + 2 Jack of All Trades, half proficiency rounded down"
+    },
+    "Nature": {
+      "value": 3,
+      "proficiency": "half",
+      "why": "1 Int mod + 2 Jack of All Trades, half proficiency rounded down"
+    },
+    "Perception": {
+      "value": 8,
+      "proficiency": "expertise",
+      "why": "0 Wis mod + 8 expertise, 2x proficiency (Bard Expertise 9)"
+    },
+    "Performance": {
+      "value": 13,
+      "proficiency": "expertise",
+      "why": "5 Cha mod + 8 expertise, 2x proficiency (Bard Expertise 2)"
+    },
+    "Persuasion": {
+      "value": 13,
+      "proficiency": "expertise",
+      "why": "5 Cha mod + 8 expertise, 2x proficiency (Bard Expertise 2)"
+    },
+    "Religion": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "1 Int mod + 4 proficiency (Acolyte)"
+    },
+    "Sleight of Hand": {
+      "value": 6,
+      "proficiency": "proficient",
+      "why": "2 Dex mod + 4 proficiency (Lore Bonus Proficiencies)"
+    },
+    "Stealth": {
+      "value": 6,
+      "proficiency": "proficient",
+      "why": "2 Dex mod + 4 proficiency (Skilled)"
+    },
+    "Survival": {
+      "value": 2,
+      "proficiency": "half",
+      "why": "0 Wis mod + 2 Jack of All Trades, half proficiency rounded down"
+    }
+  },
+  "passive_perception": {
+    "value": 18,
+    "why": "10 + Perception total 8"
+  },
+  "spellcasting": [
+    {
+      "source": "Bard",
+      "ability": "Charisma",
+      "spell_save_dc": {
+        "value": 17,
+        "why": "8 + 5 Cha mod + 4 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 9,
+        "why": "5 Cha mod + 4 proficiency"
+      }
+    },
+    {
+      "source": "Magic Initiate (Cleric)",
+      "ability": "Charisma",
+      "spell_save_dc": {
+        "value": 17,
+        "why": "8 + 5 Cha mod + 4 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 9,
+        "why": "5 Cha mod + 4 proficiency"
+      }
+    }
+  ],
+  "spell_slots": {
+    "value": {
+      "1": 4,
+      "2": 3,
+      "3": 3,
+      "4": 3,
+      "5": 2,
+      "6": 1
+    },
+    "why": "Bard Features table, level 11"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Dagger",
+      "kind": "melee weapon (finesse, light, thrown 20/60)",
+      "to_hit": {
+        "value": 6,
+        "why": "2 Dex mod + 4 proficiency"
+      },
+      "damage": {
+        "value": "1d4+2 piercing",
+        "why": "1d4 weapon die +2 Dex mod"
+      }
+    },
+    {
+      "name": "Vicious Mockery",
+      "kind": "cantrip (save)",
+      "save": {
+        "ability": "Wisdom",
+        "dc": 17,
+        "why": "equals the spell save DC of the casting source (see spellcasting)"
+      },
+      "damage": {
+        "value": "3d6 psychic",
+        "why": "1d6, +1d6 at levels 5 and 11"
+      }
+    },
+    {
+      "name": "Sacred Flame",
+      "kind": "cantrip (save, Magic Initiate)",
+      "save": {
+        "ability": "Dexterity",
+        "dc": 17,
+        "why": "equals the spell save DC of the casting source (see spellcasting)"
+      },
+      "damage": {
+        "value": "3d8 radiant",
+        "why": "1d8, +1d8 at levels 5 and 11"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Bardic Inspiration",
+      "max": 5,
+      "recharge": "short or long rest",
+      "why": "Cha mod 5 uses; Font of Inspiration (Bard 5) adds short rest"
+    },
+    {
+      "name": "Magic Initiate: Bless (free cast)",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Magic Initiate level 1 spell"
+    }
+  ],
+  "class_values": [
+    {
+      "name": "Bardic Inspiration die",
+      "value": "d10",
+      "why": "Bardic Die column, Bard 11"
+    }
+  ],
+  "features": {
+    "class": {
+      "Bard": [
+        {
+          "name": "Bardic Inspiration",
+          "level": 1
+        },
+        {
+          "name": "Spellcasting",
+          "level": 1
+        },
+        {
+          "name": "Expertise",
+          "level": 2
+        },
+        {
+          "name": "Jack of All Trades",
+          "level": 2
+        },
+        {
+          "name": "Bard Subclass",
+          "level": 3,
+          "choice": "College of Lore"
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Font of Inspiration",
+          "level": 5
+        },
+        {
+          "name": "Countercharm",
+          "level": 7
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 8
+        },
+        {
+          "name": "Magical Secrets",
+          "level": 10
+        }
+      ]
+    },
+    "subclass": {
+      "College of Lore": [
+        {
+          "name": "Bonus Proficiencies",
+          "level": 3
+        },
+        {
+          "name": "Cutting Words",
+          "level": 3
+        },
+        {
+          "name": "Magical Discoveries",
+          "level": 6
+        }
+      ]
+    },
+    "species": [
+      {
+        "name": "Resourceful",
+        "level": 1
+      },
+      {
+        "name": "Skillful",
+        "level": 1,
+        "choice": "Perception"
+      },
+      {
+        "name": "Versatile",
+        "level": 1,
+        "choice": "Skilled"
+      }
+    ],
+    "background": [],
+    "feats": [
+      {
+        "name": "Magic Initiate (Cleric)",
+        "level": 1
+      },
+      {
+        "name": "Skilled",
+        "level": 1
+      },
+      {
+        "name": "Ability Score Improvement",
+        "level": 4
+      },
+      {
+        "name": "Ability Score Improvement",
+        "level": 8
+      }
+    ]
+  },
+  "spells": {
+    "Bard": {
+      "cantrips_known_max": 4,
+      "prepared_max": {
+        "value": 16,
+        "why": "Prepared Spells column, Bard 11"
+      },
+      "always_prepared": [
+        "Shield",
+        "Spiritual Weapon"
+      ]
+    },
+    "Magic Initiate (Cleric)": {
+      "cantrips_known_max": 2,
+      "always_prepared": [
+        "Bless"
+      ]
+    }
+  }
+}

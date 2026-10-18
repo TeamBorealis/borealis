@@ -1,0 +1,342 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd51-bard-3",
+  "ruleset": "SRD 5.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 3,
+  "abilities": {
+    "Strength": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 standard array"
+    },
+    "Dexterity": {
+      "score": 15,
+      "modifier": 2,
+      "why": "14 standard array +1 Half-Elf"
+    },
+    "Constitution": {
+      "score": 14,
+      "modifier": 2,
+      "why": "13 standard array +1 Half-Elf"
+    },
+    "Intelligence": {
+      "score": 12,
+      "modifier": 1,
+      "why": "12 standard array"
+    },
+    "Wisdom": {
+      "score": 10,
+      "modifier": 0,
+      "why": "10 standard array"
+    },
+    "Charisma": {
+      "score": 17,
+      "modifier": 3,
+      "why": "15 standard array +2 Half-Elf"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 2,
+    "why": "character level 3 -> +2 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 24,
+    "why": "8 Bard 1 (max d8) + 10 Bard 2-3 fixed (2 x 5) + 6 Con mod x 3 levels (2 x 3)"
+  },
+  "armor_class": {
+    "value": 13,
+    "source": "Leather armor",
+    "why": "11 Leather armor + 2 Dex mod"
+  },
+  "initiative": {
+    "value": 3,
+    "why": "2 Dex mod + 1 Jack of All Trades (initiative is a Dex check without proficiency)"
+  },
+  "speeds": {
+    "walk": {
+      "value": 30,
+      "why": "30 Half-Elf base walking speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Str mod"
+    },
+    "Dexterity": {
+      "value": 4,
+      "proficient": true,
+      "why": "2 Dex mod + 2 proficiency (Bard)"
+    },
+    "Constitution": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Con mod"
+    },
+    "Intelligence": {
+      "value": 1,
+      "proficient": false,
+      "why": "1 Int mod"
+    },
+    "Wisdom": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Wis mod"
+    },
+    "Charisma": {
+      "value": 5,
+      "proficient": true,
+      "why": "3 Cha mod + 2 proficiency (Bard)"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 3,
+      "proficiency": "half",
+      "why": "2 Dex mod + 1 Jack of All Trades, half proficiency rounded down"
+    },
+    "Animal Handling": {
+      "value": 1,
+      "proficiency": "half",
+      "why": "0 Wis mod + 1 Jack of All Trades, half proficiency rounded down"
+    },
+    "Arcana": {
+      "value": 3,
+      "proficiency": "proficient",
+      "why": "1 Int mod + 2 proficiency (Lore Bonus Proficiencies)"
+    },
+    "Athletics": {
+      "value": 0,
+      "proficiency": "half",
+      "why": "-1 Str mod + 1 Jack of All Trades, half proficiency rounded down"
+    },
+    "Deception": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "3 Cha mod + 2 proficiency (Bard)"
+    },
+    "History": {
+      "value": 3,
+      "proficiency": "proficient",
+      "why": "1 Int mod + 2 proficiency (Lore Bonus Proficiencies)"
+    },
+    "Insight": {
+      "value": 2,
+      "proficiency": "proficient",
+      "why": "0 Wis mod + 2 proficiency (Acolyte)"
+    },
+    "Intimidation": {
+      "value": 4,
+      "proficiency": "half",
+      "why": "3 Cha mod + 1 Jack of All Trades, half proficiency rounded down"
+    },
+    "Investigation": {
+      "value": 3,
+      "proficiency": "proficient",
+      "why": "1 Int mod + 2 proficiency (Lore Bonus Proficiencies)"
+    },
+    "Medicine": {
+      "value": 1,
+      "proficiency": "half",
+      "why": "0 Wis mod + 1 Jack of All Trades, half proficiency rounded down"
+    },
+    "Nature": {
+      "value": 2,
+      "proficiency": "half",
+      "why": "1 Int mod + 1 Jack of All Trades, half proficiency rounded down"
+    },
+    "Perception": {
+      "value": 2,
+      "proficiency": "proficient",
+      "why": "0 Wis mod + 2 proficiency (Half-Elf Skill Versatility)"
+    },
+    "Performance": {
+      "value": 7,
+      "proficiency": "expertise",
+      "why": "3 Cha mod + 4 expertise, 2x proficiency (Bard Expertise)"
+    },
+    "Persuasion": {
+      "value": 7,
+      "proficiency": "expertise",
+      "why": "3 Cha mod + 4 expertise, 2x proficiency (Bard Expertise)"
+    },
+    "Religion": {
+      "value": 3,
+      "proficiency": "proficient",
+      "why": "1 Int mod + 2 proficiency (Acolyte)"
+    },
+    "Sleight of Hand": {
+      "value": 3,
+      "proficiency": "half",
+      "why": "2 Dex mod + 1 Jack of All Trades, half proficiency rounded down"
+    },
+    "Stealth": {
+      "value": 4,
+      "proficiency": "proficient",
+      "why": "2 Dex mod + 2 proficiency (Half-Elf Skill Versatility)"
+    },
+    "Survival": {
+      "value": 1,
+      "proficiency": "half",
+      "why": "0 Wis mod + 1 Jack of All Trades, half proficiency rounded down"
+    }
+  },
+  "passive_perception": {
+    "value": 12,
+    "why": "10 + Perception total 2"
+  },
+  "spellcasting": [
+    {
+      "source": "Bard",
+      "ability": "Charisma",
+      "spell_save_dc": {
+        "value": 13,
+        "why": "8 + 3 Cha mod + 2 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 5,
+        "why": "3 Cha mod + 2 proficiency"
+      }
+    }
+  ],
+  "spell_slots": {
+    "value": {
+      "1": 4,
+      "2": 2
+    },
+    "why": "Bard table, level 3"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Rapier",
+      "kind": "melee weapon (finesse)",
+      "to_hit": {
+        "value": 4,
+        "why": "2 Dex mod + 2 proficiency"
+      },
+      "damage": {
+        "value": "1d8+2 piercing",
+        "why": "1d8 weapon die +2 Dex mod"
+      }
+    },
+    {
+      "name": "Dagger",
+      "kind": "melee weapon (finesse, thrown 20/60)",
+      "to_hit": {
+        "value": 4,
+        "why": "2 Dex mod + 2 proficiency"
+      },
+      "damage": {
+        "value": "1d4+2 piercing",
+        "why": "1d4 weapon die +2 Dex mod"
+      }
+    },
+    {
+      "name": "Vicious Mockery",
+      "kind": "cantrip (save)",
+      "save": {
+        "ability": "Wisdom",
+        "dc": 13,
+        "why": "equals the spell save DC of the casting source (see spellcasting)"
+      },
+      "damage": {
+        "value": "1d4 psychic",
+        "why": "cantrip base die below character level 5"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Bardic Inspiration",
+      "max": 3,
+      "recharge": "long rest",
+      "why": "Cha mod (3) uses; Font of Inspiration comes at 5"
+    }
+  ],
+  "class_values": [
+    {
+      "name": "Bardic Inspiration die",
+      "value": "d6",
+      "why": "Bard table, level 3"
+    },
+    {
+      "name": "Song of Rest die",
+      "value": "d6",
+      "why": "Bard table, level 3"
+    }
+  ],
+  "features": {
+    "class": {
+      "Bard": [
+        {
+          "name": "Spellcasting",
+          "level": 1
+        },
+        {
+          "name": "Bardic Inspiration",
+          "level": 1
+        },
+        {
+          "name": "Jack of All Trades",
+          "level": 2
+        },
+        {
+          "name": "Song of Rest",
+          "level": 2
+        },
+        {
+          "name": "Bard College",
+          "level": 3,
+          "choice": "College of Lore"
+        },
+        {
+          "name": "Expertise",
+          "level": 3
+        }
+      ]
+    },
+    "subclass": {
+      "College of Lore": [
+        {
+          "name": "Bonus Proficiencies",
+          "level": 3
+        },
+        {
+          "name": "Cutting Words",
+          "level": 3
+        }
+      ]
+    },
+    "race": [
+      {
+        "name": "Darkvision",
+        "level": 1
+      },
+      {
+        "name": "Fey Ancestry",
+        "level": 1
+      },
+      {
+        "name": "Skill Versatility",
+        "level": 1
+      }
+    ],
+    "background": [
+      {
+        "name": "Shelter of the Faithful",
+        "level": 1
+      }
+    ],
+    "feats": []
+  },
+  "spells": {
+    "Bard": {
+      "cantrips_known_max": 2,
+      "spells_known_max": 6,
+      "always_prepared": []
+    }
+  }
+}

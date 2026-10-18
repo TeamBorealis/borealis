@@ -1,0 +1,144 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd521-druid-1",
+  "ruleset": "SRD 5.2.1",
+  "edition": "2024",
+  "summary": "Gnome (Forest Gnome) Druid 1 (Magician), Sage",
+  "character_level": 1,
+  "species": {
+    "name": "Gnome",
+    "size": "Small",
+    "choices": {
+      "Gnomish Lineage": "Forest Gnome",
+      "spellcasting_ability": "Wisdom"
+    }
+  },
+  "background": {
+    "name": "Sage",
+    "ability_scores_listed": [
+      "Constitution",
+      "Intelligence",
+      "Wisdom"
+    ],
+    "origin_feat": "Magic Initiate (Wizard)",
+    "skill_proficiencies": [
+      "Arcana",
+      "History"
+    ],
+    "tool_proficiency": "Calligrapher's Supplies",
+    "equipment_A": [
+      "Quarterstaff",
+      "Calligrapher's Supplies",
+      "Book (history)",
+      "Parchment (8 sheets)",
+      "Robe",
+      "8 GP"
+    ],
+    "ability_score_increases": {
+      "Wisdom": 2,
+      "Intelligence": 1
+    },
+    "equipment_option": "A",
+    "origin_feat_choices": {
+      "spellcasting_ability": "Wisdom",
+      "cantrips": [
+        "Fire Bolt",
+        "Mage Hand"
+      ],
+      "level_1_spell": "Sleep"
+    }
+  },
+  "languages": [
+    "Common",
+    "Druidic",
+    "Gnomish",
+    "Elvish"
+  ],
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 8,
+      "Dexterity": 12,
+      "Constitution": 14,
+      "Intelligence": 13,
+      "Wisdom": 15,
+      "Charisma": 10
+    }
+  },
+  "hit_points": "fixed_average: level 1 = the Level 1 Hit Points by Class value (max hit die) + Con modifier; every later level = the Fixed Hit Points by Class value (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Druid",
+      "level": 1,
+      "subclass": null
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Druid",
+      "class_level": 1,
+      "hit_points": "8 + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Nature",
+            "Perception"
+          ]
+        },
+        {
+          "feature": "Primal Order",
+          "choice": "Magician",
+          "extra_cantrip": "Shillelagh"
+        }
+      ]
+    }
+  ],
+  "spells": {
+    "Druid": {
+      "ability": "Wisdom",
+      "cantrips": [
+        "Druidcraft",
+        "Produce Flame",
+        "Shillelagh"
+      ],
+      "prepared": [
+        "Cure Wounds",
+        "Faerie Fire",
+        "Thunderwave",
+        "Entangle"
+      ]
+    },
+    "Forest Gnome": {
+      "ability": "Wisdom",
+      "cantrips": [
+        "Minor Illusion"
+      ],
+      "always_prepared": [
+        "Speak with Animals"
+      ]
+    },
+    "Magic Initiate (Wizard)": {
+      "ability": "Wisdom",
+      "cantrips": [
+        "Fire Bolt",
+        "Mage Hand"
+      ],
+      "level_1": [
+        "Sleep"
+      ]
+    }
+  },
+  "equipment": {
+    "class_option": "A: Leather Armor, Shield, Sickle, Druidic Focus (Quarterstaff), Explorer's Pack, Herbalism Kit, 9 GP",
+    "background_option": "A (Sage)",
+    "worn_armor": "Leather Armor",
+    "shield": "Shield",
+    "wielded": "Sickle + Shield",
+    "carried_weapons": [
+      "Sickle",
+      "Quarterstaff (x2: druidic focus and Sage's)"
+    ]
+  }
+}

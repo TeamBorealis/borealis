@@ -1,0 +1,174 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd51-ranger-5",
+  "ruleset": "SRD 5.1",
+  "edition": "2014",
+  "summary": "High Elf Ranger 5 (Hunter), Acolyte",
+  "character_level": 5,
+  "race": {
+    "name": "Elf",
+    "subrace": "High Elf",
+    "ability_score_increases": {
+      "Dexterity": 2,
+      "Intelligence": 1
+    },
+    "languages": [
+      "Common",
+      "Elvish",
+      "Sylvan"
+    ],
+    "choices": {
+      "Cantrip (wizard, Intelligence)": "Ray of Frost",
+      "Extra Language": "Sylvan"
+    }
+  },
+  "background": {
+    "name": "Acolyte",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "languages": [
+      "Dwarvish",
+      "Gnomish"
+    ],
+    "tool_proficiencies": [],
+    "equipment": [
+      "Holy symbol",
+      "Prayer book",
+      "5 sticks of incense",
+      "Vestments",
+      "Common clothes",
+      "Belt pouch with 15 gp"
+    ],
+    "feature": "Shelter of the Faithful"
+  },
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 12,
+      "Dexterity": 15,
+      "Constitution": 13,
+      "Intelligence": 10,
+      "Wisdom": 14,
+      "Charisma": 8
+    }
+  },
+  "hit_points": "fixed_average: level 1 = maximum of the first class's hit die + Con modifier; every later level = the class's fixed value from its Hit Points at Higher Levels line (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Ranger",
+      "level": 5,
+      "subclass": "Hunter"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Ranger",
+      "class_level": 1,
+      "hit_points": "10 (max d10) + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Stealth",
+            "Survival",
+            "Animal Handling"
+          ]
+        },
+        {
+          "feature": "Favored Enemy",
+          "choice": "Beasts (no language gained: beasts speak none)"
+        },
+        {
+          "feature": "Natural Explorer",
+          "choice": "Forest"
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Ranger",
+      "class_level": 2,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Fighting Style",
+          "choice": "Archery"
+        }
+      ]
+    },
+    {
+      "character_level": 3,
+      "class": "Ranger",
+      "class_level": 3,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Ranger Archetype",
+          "choice": "Hunter"
+        },
+        {
+          "feature": "Hunter's Prey",
+          "choice": "Colossus Slayer"
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Ranger",
+      "class_level": 4,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Dexterity": 1,
+            "Wisdom": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Ranger",
+      "class_level": 5,
+      "hit_points": "6 + Con",
+      "choices": []
+    }
+  ],
+  "spells": {
+    "Ranger": {
+      "ability": "Wisdom",
+      "known": [
+        "Hunter's Mark",
+        "Cure Wounds",
+        "Goodberry",
+        "Pass without Trace"
+      ]
+    },
+    "High Elf Cantrip": {
+      "ability": "Intelligence",
+      "cantrips": [
+        "Ray of Frost"
+      ]
+    }
+  },
+  "equipment": {
+    "class_choices": [
+      "(b) leather armor",
+      "(a) two shortswords",
+      "(a) a dungeoneer's pack",
+      "a longbow and a quiver of 20 arrows"
+    ],
+    "background": "Acolyte equipment",
+    "worn_armor": "Leather armor",
+    "shield": null,
+    "wielded": "Longbow (two hands)",
+    "carried_weapons": [
+      "Longbow",
+      "Shortsword (x2)"
+    ]
+  }
+}

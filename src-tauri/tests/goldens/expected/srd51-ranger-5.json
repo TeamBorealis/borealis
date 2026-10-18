@@ -1,0 +1,369 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd51-ranger-5",
+  "ruleset": "SRD 5.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 5,
+  "abilities": {
+    "Strength": {
+      "score": 12,
+      "modifier": 1,
+      "why": "12 standard array"
+    },
+    "Dexterity": {
+      "score": 18,
+      "modifier": 4,
+      "why": "15 standard array +2 Elf +1 ASI (Ranger 4)"
+    },
+    "Constitution": {
+      "score": 13,
+      "modifier": 1,
+      "why": "13 standard array"
+    },
+    "Intelligence": {
+      "score": 11,
+      "modifier": 0,
+      "why": "10 standard array +1 High Elf"
+    },
+    "Wisdom": {
+      "score": 15,
+      "modifier": 2,
+      "why": "14 standard array +1 ASI (Ranger 4)"
+    },
+    "Charisma": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 standard array"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 3,
+    "why": "character level 5 -> +3 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 39,
+    "why": "10 Ranger 1 (max d10) + 24 Ranger 2-5 fixed (4 x 6) + 5 Con mod x 5 levels (1 x 5)"
+  },
+  "armor_class": {
+    "value": 15,
+    "source": "Leather armor",
+    "why": "11 Leather armor + 4 Dex mod"
+  },
+  "initiative": {
+    "value": 4,
+    "why": "4 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 30,
+      "why": "30 Elf base walking speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": 4,
+      "proficient": true,
+      "why": "1 Str mod + 3 proficiency (Ranger)"
+    },
+    "Dexterity": {
+      "value": 7,
+      "proficient": true,
+      "why": "4 Dex mod + 3 proficiency (Ranger)"
+    },
+    "Constitution": {
+      "value": 1,
+      "proficient": false,
+      "why": "1 Con mod"
+    },
+    "Intelligence": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Int mod"
+    },
+    "Wisdom": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Wis mod"
+    },
+    "Charisma": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Cha mod"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Dex mod"
+    },
+    "Animal Handling": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "2 Wis mod + 3 proficiency (Ranger)"
+    },
+    "Arcana": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Athletics": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Str mod"
+    },
+    "Deception": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "History": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Insight": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "2 Wis mod + 3 proficiency (Acolyte)"
+    },
+    "Intimidation": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "Investigation": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Medicine": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Wis mod"
+    },
+    "Nature": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Int mod"
+    },
+    "Perception": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "2 Wis mod + 3 proficiency (Elf Keen Senses)"
+    },
+    "Performance": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "Persuasion": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Cha mod"
+    },
+    "Religion": {
+      "value": 3,
+      "proficiency": "proficient",
+      "why": "0 Int mod + 3 proficiency (Acolyte)"
+    },
+    "Sleight of Hand": {
+      "value": 4,
+      "proficiency": "none",
+      "why": "4 Dex mod"
+    },
+    "Stealth": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "4 Dex mod + 3 proficiency (Ranger)"
+    },
+    "Survival": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "2 Wis mod + 3 proficiency (Ranger)"
+    }
+  },
+  "passive_perception": {
+    "value": 15,
+    "why": "10 + Perception total 5"
+  },
+  "spellcasting": [
+    {
+      "source": "Ranger",
+      "ability": "Wisdom",
+      "spell_save_dc": {
+        "value": 13,
+        "why": "8 + 2 Wis mod + 3 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 5,
+        "why": "2 Wis mod + 3 proficiency"
+      }
+    },
+    {
+      "source": "High Elf Cantrip",
+      "ability": "Intelligence",
+      "spell_save_dc": {
+        "value": 11,
+        "why": "8 + 0 Int mod + 3 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 3,
+        "why": "0 Int mod + 3 proficiency"
+      }
+    }
+  ],
+  "spell_slots": {
+    "value": {
+      "1": 4,
+      "2": 2
+    },
+    "why": "Ranger table, level 5"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Longbow",
+      "kind": "ranged weapon (150/600)",
+      "to_hit": {
+        "value": 9,
+        "why": "4 Dex mod + 3 proficiency + 2 Archery fighting style"
+      },
+      "damage": {
+        "value": "1d8+4 piercing",
+        "why": "1d8 weapon die +4 Dex mod"
+      }
+    },
+    {
+      "name": "Shortsword",
+      "kind": "melee weapon (finesse, light)",
+      "to_hit": {
+        "value": 7,
+        "why": "4 Dex mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d6+4 piercing",
+        "why": "1d6 weapon die +4 Dex mod"
+      }
+    },
+    {
+      "name": "Ray of Frost",
+      "kind": "cantrip (ranged spell attack, High Elf)",
+      "to_hit": {
+        "value": 3,
+        "why": "0 Int mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "2d8 cold",
+        "why": "1d8, +1d8 at character level 5"
+      }
+    }
+  ],
+  "resources": [],
+  "class_values": [
+    {
+      "name": "Attacks per Attack action",
+      "value": 2,
+      "why": "Extra Attack (Ranger 5)"
+    }
+  ],
+  "features": {
+    "class": {
+      "Ranger": [
+        {
+          "name": "Favored Enemy",
+          "level": 1,
+          "choice": "Beasts"
+        },
+        {
+          "name": "Natural Explorer",
+          "level": 1,
+          "choice": "Forest"
+        },
+        {
+          "name": "Fighting Style",
+          "level": 2,
+          "choice": "Archery"
+        },
+        {
+          "name": "Spellcasting",
+          "level": 2
+        },
+        {
+          "name": "Ranger Archetype",
+          "level": 3,
+          "choice": "Hunter"
+        },
+        {
+          "name": "Primeval Awareness",
+          "level": 3
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Extra Attack",
+          "level": 5
+        }
+      ]
+    },
+    "subclass": {
+      "Hunter": [
+        {
+          "name": "Hunter's Prey",
+          "level": 3,
+          "choice": "Colossus Slayer"
+        }
+      ]
+    },
+    "race": [
+      {
+        "name": "Darkvision",
+        "level": 1
+      },
+      {
+        "name": "Keen Senses",
+        "level": 1
+      },
+      {
+        "name": "Fey Ancestry",
+        "level": 1
+      },
+      {
+        "name": "Trance",
+        "level": 1
+      },
+      {
+        "name": "Elf Weapon Training",
+        "level": 1
+      },
+      {
+        "name": "Cantrip",
+        "level": 1,
+        "choice": "Ray of Frost"
+      },
+      {
+        "name": "Extra Language",
+        "level": 1,
+        "choice": "Sylvan"
+      }
+    ],
+    "background": [
+      {
+        "name": "Shelter of the Faithful",
+        "level": 1
+      }
+    ],
+    "feats": []
+  },
+  "spells": {
+    "Ranger": {
+      "spells_known_max": 4,
+      "always_prepared": []
+    },
+    "High Elf Cantrip": {
+      "cantrips_known_max": 1
+    }
+  }
+}

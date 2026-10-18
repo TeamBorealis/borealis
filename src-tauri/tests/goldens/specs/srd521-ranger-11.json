@@ -1,0 +1,275 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd521-ranger-11",
+  "ruleset": "SRD 5.2.1",
+  "edition": "2024",
+  "summary": "Elf (Wood Elf) Ranger 11 (Hunter), Sage",
+  "character_level": 11,
+  "species": {
+    "name": "Elf",
+    "size": "Medium",
+    "choices": {
+      "Elven Lineage": "Wood Elf",
+      "spellcasting_ability": "Wisdom",
+      "Keen Senses": "Perception"
+    }
+  },
+  "background": {
+    "name": "Sage",
+    "ability_scores_listed": [
+      "Constitution",
+      "Intelligence",
+      "Wisdom"
+    ],
+    "origin_feat": "Magic Initiate (Wizard)",
+    "skill_proficiencies": [
+      "Arcana",
+      "History"
+    ],
+    "tool_proficiency": "Calligrapher's Supplies",
+    "equipment_A": [
+      "Quarterstaff",
+      "Calligrapher's Supplies",
+      "Book (history)",
+      "Parchment (8 sheets)",
+      "Robe",
+      "8 GP"
+    ],
+    "ability_score_increases": {
+      "Wisdom": 2,
+      "Constitution": 1
+    },
+    "equipment_option": "A",
+    "origin_feat_choices": {
+      "spellcasting_ability": "Wisdom",
+      "cantrips": [
+        "Prestidigitation",
+        "Ray of Frost"
+      ],
+      "level_1_spell": "Shield"
+    }
+  },
+  "languages": [
+    "Common",
+    "Elvish",
+    "Halfling",
+    "Sylvan",
+    "Gnomish"
+  ],
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 12,
+      "Dexterity": 15,
+      "Constitution": 13,
+      "Intelligence": 8,
+      "Wisdom": 14,
+      "Charisma": 10
+    }
+  },
+  "hit_points": "fixed_average: level 1 = the Level 1 Hit Points by Class value (max hit die) + Con modifier; every later level = the Fixed Hit Points by Class value (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Ranger",
+      "level": 11,
+      "subclass": "Hunter"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Ranger",
+      "class_level": 1,
+      "hit_points": "10 + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Stealth",
+            "Survival",
+            "Animal Handling"
+          ]
+        },
+        {
+          "feature": "Weapon Mastery",
+          "choice": [
+            "Longbow",
+            "Shortsword"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Ranger",
+      "class_level": 2,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Deft Explorer",
+          "expertise": "Stealth",
+          "languages": [
+            "Sylvan",
+            "Gnomish"
+          ]
+        },
+        {
+          "feature": "Fighting Style",
+          "feat": "Archery"
+        }
+      ]
+    },
+    {
+      "character_level": 3,
+      "class": "Ranger",
+      "class_level": 3,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Ranger Subclass",
+          "choice": "Hunter"
+        },
+        {
+          "feature": "Hunter's Prey",
+          "choice": "Colossus Slayer"
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Ranger",
+      "class_level": 4,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Dexterity": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Ranger",
+      "class_level": 5,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 6,
+      "class": "Ranger",
+      "class_level": 6,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 7,
+      "class": "Ranger",
+      "class_level": 7,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Defensive Tactics",
+          "choice": "Multiattack Defense"
+        }
+      ]
+    },
+    {
+      "character_level": 8,
+      "class": "Ranger",
+      "class_level": 8,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Dexterity": 1,
+            "Wisdom": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 9,
+      "class": "Ranger",
+      "class_level": 9,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Expertise",
+          "skills": [
+            "Perception",
+            "Survival"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 10,
+      "class": "Ranger",
+      "class_level": 10,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 11,
+      "class": "Ranger",
+      "class_level": 11,
+      "hit_points": "6 + Con",
+      "choices": []
+    }
+  ],
+  "spells": {
+    "Ranger": {
+      "ability": "Wisdom",
+      "prepared": [
+        "Cure Wounds",
+        "Ensnaring Strike",
+        "Goodberry",
+        "Fog Cloud",
+        "Barkskin",
+        "Spike Growth",
+        "Lesser Restoration",
+        "Conjure Animals",
+        "Revivify",
+        "Dispel Magic"
+      ]
+    },
+    "Wood Elf": {
+      "ability": "Wisdom",
+      "cantrips": [
+        "Druidcraft"
+      ],
+      "always_prepared": [
+        "Longstrider",
+        "Pass without Trace"
+      ]
+    },
+    "Magic Initiate (Wizard)": {
+      "ability": "Wisdom",
+      "cantrips": [
+        "Prestidigitation",
+        "Ray of Frost"
+      ],
+      "level_1": [
+        "Shield"
+      ]
+    }
+  },
+  "equipment": {
+    "class_option": "A: Studded Leather Armor, Scimitar, Shortsword, Longbow, 20 Arrows, Quiver, Druidic Focus, Explorer's Pack, 7 GP",
+    "background_option": "A (Sage)",
+    "worn_armor": "Studded Leather Armor",
+    "shield": null,
+    "wielded": "Longbow (two hands)",
+    "carried_weapons": [
+      "Longbow",
+      "Scimitar",
+      "Shortsword",
+      "Quarterstaff"
+    ]
+  }
+}

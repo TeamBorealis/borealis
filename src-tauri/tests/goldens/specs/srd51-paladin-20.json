@@ -1,0 +1,297 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd51-paladin-20",
+  "ruleset": "SRD 5.1",
+  "edition": "2014",
+  "summary": "Dragonborn (Gold) Paladin 20 (Oath of Devotion), Acolyte",
+  "character_level": 20,
+  "race": {
+    "name": "Dragonborn",
+    "subrace": null,
+    "ability_score_increases": {
+      "Strength": 2,
+      "Charisma": 1
+    },
+    "languages": [
+      "Common",
+      "Draconic"
+    ],
+    "choices": {
+      "Draconic Ancestry": "Gold (fire, 15 ft. cone, Dex save)"
+    }
+  },
+  "background": {
+    "name": "Acolyte",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "languages": [
+      "Celestial",
+      "Dwarvish"
+    ],
+    "tool_proficiencies": [],
+    "equipment": [
+      "Holy symbol",
+      "Prayer book",
+      "5 sticks of incense",
+      "Vestments",
+      "Common clothes",
+      "Belt pouch with 15 gp"
+    ],
+    "feature": "Shelter of the Faithful"
+  },
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 15,
+      "Dexterity": 10,
+      "Constitution": 13,
+      "Intelligence": 8,
+      "Wisdom": 12,
+      "Charisma": 14
+    }
+  },
+  "hit_points": "fixed_average: level 1 = maximum of the first class's hit die + Con modifier; every later level = the class's fixed value from its Hit Points at Higher Levels line (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Paladin",
+      "level": 20,
+      "subclass": "Oath of Devotion"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Paladin",
+      "class_level": 1,
+      "hit_points": "10 (max d10) + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Athletics",
+            "Persuasion"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Paladin",
+      "class_level": 2,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Fighting Style",
+          "choice": "Defense"
+        }
+      ]
+    },
+    {
+      "character_level": 3,
+      "class": "Paladin",
+      "class_level": 3,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Sacred Oath",
+          "choice": "Oath of Devotion"
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Paladin",
+      "class_level": 4,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Strength": 1,
+            "Charisma": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Paladin",
+      "class_level": 5,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 6,
+      "class": "Paladin",
+      "class_level": 6,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 7,
+      "class": "Paladin",
+      "class_level": 7,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 8,
+      "class": "Paladin",
+      "class_level": 8,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Strength": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 9,
+      "class": "Paladin",
+      "class_level": 9,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 10,
+      "class": "Paladin",
+      "class_level": 10,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 11,
+      "class": "Paladin",
+      "class_level": 11,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 12,
+      "class": "Paladin",
+      "class_level": 12,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Charisma": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 13,
+      "class": "Paladin",
+      "class_level": 13,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 14,
+      "class": "Paladin",
+      "class_level": 14,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 15,
+      "class": "Paladin",
+      "class_level": 15,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 16,
+      "class": "Paladin",
+      "class_level": 16,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Charisma": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 17,
+      "class": "Paladin",
+      "class_level": 17,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 18,
+      "class": "Paladin",
+      "class_level": 18,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 19,
+      "class": "Paladin",
+      "class_level": 19,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Constitution": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 20,
+      "class": "Paladin",
+      "class_level": 20,
+      "hit_points": "6 + Con",
+      "choices": []
+    }
+  ],
+  "spells": {
+    "Paladin": {
+      "ability": "Charisma",
+      "prepared": [
+        "Bless",
+        "Command",
+        "Cure Wounds",
+        "Divine Favor",
+        "Heroism",
+        "Shield of Faith",
+        "Aid",
+        "Find Steed",
+        "Magic Weapon",
+        "Revivify",
+        "Remove Curse",
+        "Banishment",
+        "Death Ward",
+        "Dispel Evil and Good",
+        "Raise Dead"
+      ]
+    }
+  },
+  "equipment": {
+    "class_choices": [
+      "(a) a martial weapon (longsword) and a shield",
+      "(a) five javelins",
+      "(a) a priest's pack",
+      "chain mail and a holy symbol"
+    ],
+    "background": "Acolyte equipment",
+    "worn_armor": "Chain mail",
+    "shield": "Shield",
+    "wielded": "Longsword (one hand) + shield",
+    "carried_weapons": [
+      "Longsword",
+      "Javelin (x5)"
+    ]
+  }
+}

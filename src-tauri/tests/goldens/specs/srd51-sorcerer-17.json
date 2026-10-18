@@ -1,0 +1,311 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd51-sorcerer-17",
+  "ruleset": "SRD 5.1",
+  "edition": "2014",
+  "summary": "Tiefling Sorcerer 17 (Draconic Bloodline, red), Acolyte",
+  "character_level": 17,
+  "race": {
+    "name": "Tiefling",
+    "subrace": null,
+    "ability_score_increases": {
+      "Intelligence": 1,
+      "Charisma": 2
+    },
+    "languages": [
+      "Common",
+      "Infernal"
+    ],
+    "choices": {}
+  },
+  "background": {
+    "name": "Acolyte",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "languages": [
+      "Elvish",
+      "Dwarvish"
+    ],
+    "tool_proficiencies": [],
+    "equipment": [
+      "Holy symbol",
+      "Prayer book",
+      "5 sticks of incense",
+      "Vestments",
+      "Common clothes",
+      "Belt pouch with 15 gp"
+    ],
+    "feature": "Shelter of the Faithful"
+  },
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 8,
+      "Dexterity": 13,
+      "Constitution": 14,
+      "Intelligence": 10,
+      "Wisdom": 12,
+      "Charisma": 15
+    }
+  },
+  "hit_points": "fixed_average: level 1 = maximum of the first class's hit die + Con modifier; every later level = the class's fixed value from its Hit Points at Higher Levels line (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Sorcerer",
+      "level": 17,
+      "subclass": "Draconic Bloodline"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Sorcerer",
+      "class_level": 1,
+      "hit_points": "6 (max d6) + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Arcana",
+            "Persuasion"
+          ]
+        },
+        {
+          "feature": "Sorcerous Origin",
+          "choice": "Draconic Bloodline"
+        },
+        {
+          "feature": "Dragon Ancestor",
+          "choice": "Red (fire)"
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Sorcerer",
+      "class_level": 2,
+      "hit_points": "4 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 3,
+      "class": "Sorcerer",
+      "class_level": 3,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Metamagic",
+          "choice": [
+            "Quickened Spell",
+            "Twinned Spell"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Sorcerer",
+      "class_level": 4,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Charisma": 1,
+            "Constitution": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Sorcerer",
+      "class_level": 5,
+      "hit_points": "4 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 6,
+      "class": "Sorcerer",
+      "class_level": 6,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Elemental Affinity",
+          "choice": "fire (from Dragon Ancestor)"
+        }
+      ]
+    },
+    {
+      "character_level": 7,
+      "class": "Sorcerer",
+      "class_level": 7,
+      "hit_points": "4 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 8,
+      "class": "Sorcerer",
+      "class_level": 8,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Charisma": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 9,
+      "class": "Sorcerer",
+      "class_level": 9,
+      "hit_points": "4 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 10,
+      "class": "Sorcerer",
+      "class_level": 10,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Metamagic",
+          "choice": [
+            "Careful Spell"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 11,
+      "class": "Sorcerer",
+      "class_level": 11,
+      "hit_points": "4 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 12,
+      "class": "Sorcerer",
+      "class_level": 12,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Constitution": 1,
+            "Dexterity": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 13,
+      "class": "Sorcerer",
+      "class_level": 13,
+      "hit_points": "4 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 14,
+      "class": "Sorcerer",
+      "class_level": 14,
+      "hit_points": "4 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 15,
+      "class": "Sorcerer",
+      "class_level": 15,
+      "hit_points": "4 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 16,
+      "class": "Sorcerer",
+      "class_level": 16,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Wisdom": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 17,
+      "class": "Sorcerer",
+      "class_level": 17,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Metamagic",
+          "choice": [
+            "Subtle Spell"
+          ]
+        }
+      ]
+    }
+  ],
+  "spells": {
+    "Sorcerer": {
+      "ability": "Charisma",
+      "cantrips": [
+        "Fire Bolt",
+        "Mage Hand",
+        "Prestidigitation",
+        "Light",
+        "Shocking Grasp",
+        "Ray of Frost"
+      ],
+      "known": [
+        "Shield",
+        "Magic Missile",
+        "Misty Step",
+        "Scorching Ray",
+        "Hold Person",
+        "Fireball",
+        "Counterspell",
+        "Haste",
+        "Fly",
+        "Greater Invisibility",
+        "Wall of Fire",
+        "Disintegrate",
+        "Delayed Blast Fireball",
+        "Incendiary Cloud",
+        "Meteor Swarm"
+      ]
+    },
+    "Infernal Legacy": {
+      "ability": "Charisma",
+      "cantrips": [
+        "Thaumaturgy"
+      ],
+      "innate": [
+        "Hellish Rebuke (as a 2nd-level spell, 1/long rest)",
+        "Darkness (1/long rest)"
+      ]
+    }
+  },
+  "equipment": {
+    "class_choices": [
+      "(a) a light crossbow and 20 bolts",
+      "(b) an arcane focus",
+      "(a) a dungeoneer's pack",
+      "two daggers"
+    ],
+    "background": "Acolyte equipment",
+    "worn_armor": null,
+    "shield": null,
+    "wielded": "Arcane focus",
+    "carried_weapons": [
+      "Light crossbow",
+      "Dagger (x2)"
+    ]
+  }
+}

@@ -1,0 +1,244 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd51-monk-17",
+  "ruleset": "SRD 5.1",
+  "edition": "2014",
+  "summary": "Lightfoot Halfling Monk 17 (Way of the Open Hand), Acolyte",
+  "character_level": 17,
+  "race": {
+    "name": "Halfling",
+    "subrace": "Lightfoot",
+    "ability_score_increases": {
+      "Dexterity": 2,
+      "Charisma": 1
+    },
+    "languages": [
+      "Common",
+      "Halfling"
+    ],
+    "choices": {}
+  },
+  "background": {
+    "name": "Acolyte",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "languages": [
+      "Elvish",
+      "Dwarvish"
+    ],
+    "tool_proficiencies": [],
+    "equipment": [
+      "Holy symbol",
+      "Prayer book",
+      "5 sticks of incense",
+      "Vestments",
+      "Common clothes",
+      "Belt pouch with 15 gp"
+    ],
+    "feature": "Shelter of the Faithful"
+  },
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 12,
+      "Dexterity": 15,
+      "Constitution": 13,
+      "Intelligence": 10,
+      "Wisdom": 14,
+      "Charisma": 8
+    }
+  },
+  "hit_points": "fixed_average: level 1 = maximum of the first class's hit die + Con modifier; every later level = the class's fixed value from its Hit Points at Higher Levels line (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Monk",
+      "level": 17,
+      "subclass": "Way of the Open Hand"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Monk",
+      "class_level": 1,
+      "hit_points": "8 (max d8) + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Acrobatics",
+            "Stealth"
+          ],
+          "tools": [
+            "Brewer's supplies"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Monk",
+      "class_level": 2,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 3,
+      "class": "Monk",
+      "class_level": 3,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Monastic Tradition",
+          "choice": "Way of the Open Hand"
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Monk",
+      "class_level": 4,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Dexterity": 1,
+            "Wisdom": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Monk",
+      "class_level": 5,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 6,
+      "class": "Monk",
+      "class_level": 6,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 7,
+      "class": "Monk",
+      "class_level": 7,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 8,
+      "class": "Monk",
+      "class_level": 8,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Dexterity": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 9,
+      "class": "Monk",
+      "class_level": 9,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 10,
+      "class": "Monk",
+      "class_level": 10,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 11,
+      "class": "Monk",
+      "class_level": 11,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 12,
+      "class": "Monk",
+      "class_level": 12,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Wisdom": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 13,
+      "class": "Monk",
+      "class_level": 13,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 14,
+      "class": "Monk",
+      "class_level": 14,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 15,
+      "class": "Monk",
+      "class_level": 15,
+      "hit_points": "5 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 16,
+      "class": "Monk",
+      "class_level": 16,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Wisdom": 1,
+            "Constitution": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 17,
+      "class": "Monk",
+      "class_level": 17,
+      "hit_points": "5 + Con",
+      "choices": []
+    }
+  ],
+  "spells": null,
+  "equipment": {
+    "class_choices": [
+      "(a) a shortsword",
+      "(b) an explorer's pack",
+      "10 darts"
+    ],
+    "background": "Acolyte equipment",
+    "worn_armor": null,
+    "shield": null,
+    "wielded": "Shortsword",
+    "carried_weapons": [
+      "Shortsword",
+      "Dart (x10)"
+    ]
+  }
+}

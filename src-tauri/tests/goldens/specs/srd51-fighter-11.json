@@ -1,0 +1,205 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd51-fighter-11",
+  "ruleset": "SRD 5.1",
+  "edition": "2014",
+  "summary": "Human Fighter 11 (Champion), Acolyte, Grappler feat",
+  "character_level": 11,
+  "race": {
+    "name": "Human",
+    "subrace": null,
+    "ability_score_increases": {
+      "Strength": 1,
+      "Dexterity": 1,
+      "Constitution": 1,
+      "Intelligence": 1,
+      "Wisdom": 1,
+      "Charisma": 1
+    },
+    "languages": [
+      "Common",
+      "Dwarvish"
+    ],
+    "choices": {
+      "extra language": "Dwarvish"
+    }
+  },
+  "background": {
+    "name": "Acolyte",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "languages": [
+      "Elvish",
+      "Giant"
+    ],
+    "tool_proficiencies": [],
+    "equipment": [
+      "Holy symbol",
+      "Prayer book",
+      "5 sticks of incense",
+      "Vestments",
+      "Common clothes",
+      "Belt pouch with 15 gp"
+    ],
+    "feature": "Shelter of the Faithful"
+  },
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 15,
+      "Dexterity": 13,
+      "Constitution": 14,
+      "Intelligence": 8,
+      "Wisdom": 12,
+      "Charisma": 10
+    }
+  },
+  "hit_points": "fixed_average: level 1 = maximum of the first class's hit die + Con modifier; every later level = the class's fixed value from its Hit Points at Higher Levels line (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Fighter",
+      "level": 11,
+      "subclass": "Champion"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Fighter",
+      "class_level": 1,
+      "hit_points": "10 (max d10) + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Athletics",
+            "Perception"
+          ]
+        },
+        {
+          "feature": "Fighting Style",
+          "choice": "Great Weapon Fighting"
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Fighter",
+      "class_level": 2,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 3,
+      "class": "Fighter",
+      "class_level": 3,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Martial Archetype",
+          "choice": "Champion"
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Fighter",
+      "class_level": 4,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Strength": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Fighter",
+      "class_level": 5,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 6,
+      "class": "Fighter",
+      "class_level": 6,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "increases": {
+            "Strength": 2
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 7,
+      "class": "Fighter",
+      "class_level": 7,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 8,
+      "class": "Fighter",
+      "class_level": 8,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat_instead": "Grappler"
+        }
+      ]
+    },
+    {
+      "character_level": 9,
+      "class": "Fighter",
+      "class_level": 9,
+      "hit_points": "6 + Con",
+      "choices": []
+    },
+    {
+      "character_level": 10,
+      "class": "Fighter",
+      "class_level": 10,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Additional Fighting Style",
+          "choice": "Defense"
+        }
+      ]
+    },
+    {
+      "character_level": 11,
+      "class": "Fighter",
+      "class_level": 11,
+      "hit_points": "6 + Con",
+      "choices": []
+    }
+  ],
+  "spells": null,
+  "equipment": {
+    "class_choices": [
+      "(a) chain mail",
+      "(b) two martial weapons: a greatsword and a longsword",
+      "(a) a light crossbow and 20 bolts",
+      "(a) a dungeoneer's pack"
+    ],
+    "background": "Acolyte equipment",
+    "worn_armor": "Chain mail",
+    "shield": null,
+    "wielded": "Greatsword (two hands)",
+    "carried_weapons": [
+      "Greatsword",
+      "Longsword",
+      "Light crossbow"
+    ]
+  }
+}

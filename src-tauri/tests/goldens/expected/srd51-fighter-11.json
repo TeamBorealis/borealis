@@ -1,0 +1,345 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd51-fighter-11",
+  "ruleset": "SRD 5.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 11,
+  "abilities": {
+    "Strength": {
+      "score": 20,
+      "modifier": 5,
+      "why": "15 standard array +1 Human +2 ASI (Fighter 4) +2 ASI (Fighter 6)"
+    },
+    "Dexterity": {
+      "score": 14,
+      "modifier": 2,
+      "why": "13 standard array +1 Human"
+    },
+    "Constitution": {
+      "score": 15,
+      "modifier": 2,
+      "why": "14 standard array +1 Human"
+    },
+    "Intelligence": {
+      "score": 9,
+      "modifier": -1,
+      "why": "8 standard array +1 Human"
+    },
+    "Wisdom": {
+      "score": 13,
+      "modifier": 1,
+      "why": "12 standard array +1 Human"
+    },
+    "Charisma": {
+      "score": 11,
+      "modifier": 0,
+      "why": "10 standard array +1 Human"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 4,
+    "why": "character level 11 -> +4 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 92,
+    "why": "10 Fighter 1 (max d10) + 60 Fighter 2-11 fixed (10 x 6) + 22 Con mod x 11 levels (2 x 11)"
+  },
+  "armor_class": {
+    "value": 17,
+    "source": "Chain mail + Defense",
+    "why": "16 Chain mail + 1 Defense fighting style (wearing armor)"
+  },
+  "initiative": {
+    "value": 4,
+    "why": "2 Dex mod + 2 Remarkable Athlete (Dex check, half proficiency rounded up)"
+  },
+  "speeds": {
+    "walk": {
+      "value": 30,
+      "why": "30 Human base walking speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": 9,
+      "proficient": true,
+      "why": "5 Str mod + 4 proficiency (Fighter)"
+    },
+    "Dexterity": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Dex mod"
+    },
+    "Constitution": {
+      "value": 6,
+      "proficient": true,
+      "why": "2 Con mod + 4 proficiency (Fighter)"
+    },
+    "Intelligence": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Int mod"
+    },
+    "Wisdom": {
+      "value": 1,
+      "proficient": false,
+      "why": "1 Wis mod"
+    },
+    "Charisma": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Cha mod"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 4,
+      "proficiency": "half",
+      "why": "2 Dex mod + 2 Remarkable Athlete, half proficiency rounded up"
+    },
+    "Animal Handling": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Arcana": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Athletics": {
+      "value": 9,
+      "proficiency": "proficient",
+      "why": "5 Str mod + 4 proficiency (Fighter)"
+    },
+    "Deception": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "History": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Insight": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "1 Wis mod + 4 proficiency (Acolyte)"
+    },
+    "Intimidation": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Investigation": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Medicine": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Nature": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Perception": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "1 Wis mod + 4 proficiency (Fighter)"
+    },
+    "Performance": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Persuasion": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Cha mod"
+    },
+    "Religion": {
+      "value": 3,
+      "proficiency": "proficient",
+      "why": "-1 Int mod + 4 proficiency (Acolyte)"
+    },
+    "Sleight of Hand": {
+      "value": 4,
+      "proficiency": "half",
+      "why": "2 Dex mod + 2 Remarkable Athlete, half proficiency rounded up"
+    },
+    "Stealth": {
+      "value": 4,
+      "proficiency": "half",
+      "why": "2 Dex mod + 2 Remarkable Athlete, half proficiency rounded up"
+    },
+    "Survival": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 15,
+    "why": "10 + Perception total 5"
+  },
+  "spellcasting": [],
+  "spell_slots": {
+    "value": {},
+    "why": "no Spellcasting feature"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Greatsword",
+      "kind": "melee weapon (heavy, two-handed)",
+      "to_hit": {
+        "value": 9,
+        "why": "5 Str mod + 4 proficiency"
+      },
+      "damage": {
+        "value": "2d6+5 slashing",
+        "why": "2d6 weapon die +5 Str mod"
+      }
+    },
+    {
+      "name": "Longsword",
+      "kind": "melee weapon",
+      "to_hit": {
+        "value": 9,
+        "why": "5 Str mod + 4 proficiency"
+      },
+      "damage": {
+        "value": "1d8+5 slashing",
+        "why": "1d8 weapon die +5 Str mod"
+      },
+      "damage_two_handed": {
+        "value": "1d10+5 slashing",
+        "why": "Versatile: two-handed die, same modifier"
+      }
+    },
+    {
+      "name": "Light crossbow",
+      "kind": "ranged weapon (80/320)",
+      "to_hit": {
+        "value": 6,
+        "why": "2 Dex mod + 4 proficiency"
+      },
+      "damage": {
+        "value": "1d8+2 piercing",
+        "why": "1d8 weapon die +2 Dex mod"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Second Wind",
+      "max": 1,
+      "recharge": "short or long rest",
+      "why": "Second Wind: once per short or long rest (heals 1d10 + 11)"
+    },
+    {
+      "name": "Action Surge",
+      "max": 1,
+      "recharge": "short or long rest",
+      "why": "one use until level 17"
+    },
+    {
+      "name": "Indomitable",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "one use at levels 9-12"
+    }
+  ],
+  "class_values": [
+    {
+      "name": "Attacks per Attack action",
+      "value": 3,
+      "why": "Extra Attack (2) at Fighter 11"
+    },
+    {
+      "name": "Critical hit range",
+      "value": "19-20",
+      "why": "Improved Critical (Champion 3)"
+    }
+  ],
+  "features": {
+    "class": {
+      "Fighter": [
+        {
+          "name": "Fighting Style",
+          "level": 1,
+          "choice": "Great Weapon Fighting"
+        },
+        {
+          "name": "Second Wind",
+          "level": 1
+        },
+        {
+          "name": "Action Surge",
+          "level": 2
+        },
+        {
+          "name": "Martial Archetype",
+          "level": 3,
+          "choice": "Champion"
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Extra Attack",
+          "level": 5
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 6
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 8,
+          "choice": "Grappler (feat)"
+        },
+        {
+          "name": "Indomitable",
+          "level": 9
+        }
+      ]
+    },
+    "subclass": {
+      "Champion": [
+        {
+          "name": "Improved Critical",
+          "level": 3
+        },
+        {
+          "name": "Remarkable Athlete",
+          "level": 7
+        },
+        {
+          "name": "Additional Fighting Style",
+          "level": 10,
+          "choice": "Defense"
+        }
+      ]
+    },
+    "race": [],
+    "background": [
+      {
+        "name": "Shelter of the Faithful",
+        "level": 1
+      }
+    ],
+    "feats": [
+      {
+        "name": "Grappler",
+        "level": 8
+      }
+    ]
+  }
+}

@@ -1,0 +1,416 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd521-fighter-8",
+  "ruleset": "SRD 5.2.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 8,
+  "abilities": {
+    "Strength": {
+      "score": 20,
+      "modifier": 5,
+      "why": "15 standard array +2 Soldier background +1 ASI feat (Fighter 4) +2 ASI feat (Fighter 6)"
+    },
+    "Dexterity": {
+      "score": 15,
+      "modifier": 2,
+      "why": "14 standard array +1 Grappler feat (Fighter 8)"
+    },
+    "Constitution": {
+      "score": 15,
+      "modifier": 2,
+      "why": "13 standard array +1 Soldier background +1 ASI feat (Fighter 4)"
+    },
+    "Intelligence": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 standard array"
+    },
+    "Wisdom": {
+      "score": 10,
+      "modifier": 0,
+      "why": "10 standard array"
+    },
+    "Charisma": {
+      "score": 12,
+      "modifier": 1,
+      "why": "12 standard array"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 3,
+    "why": "character level 8 -> +3 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 68,
+    "why": "10 Fighter 1 (10) + 42 Fighter 2-8 fixed (7 x 6) + 16 Con mod x 8 levels (2 x 8)"
+  },
+  "armor_class": {
+    "value": 17,
+    "source": "Chain Mail + Defense",
+    "why": "16 Chain Mail + 1 Defense feat (wearing armor)"
+  },
+  "initiative": {
+    "value": 2,
+    "why": "2 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 30,
+      "why": "30 Orc speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": 8,
+      "proficient": true,
+      "why": "5 Str mod + 3 proficiency (Fighter)"
+    },
+    "Dexterity": {
+      "value": 2,
+      "proficient": false,
+      "why": "2 Dex mod"
+    },
+    "Constitution": {
+      "value": 5,
+      "proficient": true,
+      "why": "2 Con mod + 3 proficiency (Fighter)"
+    },
+    "Intelligence": {
+      "value": -1,
+      "proficient": false,
+      "why": "-1 Int mod"
+    },
+    "Wisdom": {
+      "value": 0,
+      "proficient": false,
+      "why": "0 Wis mod"
+    },
+    "Charisma": {
+      "value": 1,
+      "proficient": false,
+      "why": "1 Cha mod"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Animal Handling": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Wis mod"
+    },
+    "Arcana": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Athletics": {
+      "value": 8,
+      "proficiency": "proficient",
+      "why": "5 Str mod + 3 proficiency (Soldier)"
+    },
+    "Deception": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Cha mod"
+    },
+    "History": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Insight": {
+      "value": 3,
+      "proficiency": "proficient",
+      "why": "0 Wis mod + 3 proficiency (Fighter)"
+    },
+    "Intimidation": {
+      "value": 4,
+      "proficiency": "proficient",
+      "why": "1 Cha mod + 3 proficiency (Soldier)"
+    },
+    "Investigation": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Medicine": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Wis mod"
+    },
+    "Nature": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Perception": {
+      "value": 3,
+      "proficiency": "proficient",
+      "why": "0 Wis mod + 3 proficiency (Fighter)"
+    },
+    "Performance": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Cha mod"
+    },
+    "Persuasion": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Cha mod"
+    },
+    "Religion": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Sleight of Hand": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Stealth": {
+      "value": 2,
+      "proficiency": "none",
+      "why": "2 Dex mod"
+    },
+    "Survival": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 13,
+    "why": "10 + Perception total 3"
+  },
+  "spellcasting": [],
+  "spell_slots": {
+    "value": {},
+    "why": "no Spellcasting feature"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Greatsword",
+      "kind": "melee weapon (heavy, two-handed; mastery Graze)",
+      "to_hit": {
+        "value": 8,
+        "why": "5 Str mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "2d6+5 slashing",
+        "why": "2d6 weapon die +5 Str mod"
+      }
+    },
+    {
+      "name": "Flail",
+      "kind": "melee weapon (mastery Sap)",
+      "to_hit": {
+        "value": 8,
+        "why": "5 Str mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d8+5 bludgeoning",
+        "why": "1d8 weapon die +5 Str mod"
+      }
+    },
+    {
+      "name": "Javelin",
+      "kind": "melee weapon (thrown 30/120; mastery Slow)",
+      "to_hit": {
+        "value": 8,
+        "why": "5 Str mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d6+5 piercing",
+        "why": "1d6 weapon die +5 Str mod"
+      }
+    },
+    {
+      "name": "Spear",
+      "kind": "melee weapon (thrown 20/60; mastery Sap)",
+      "to_hit": {
+        "value": 8,
+        "why": "5 Str mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d6+5 piercing",
+        "why": "1d6 weapon die +5 Str mod"
+      },
+      "damage_two_handed": {
+        "value": "1d8+5 piercing",
+        "why": "Versatile: two-handed die, same modifier"
+      }
+    },
+    {
+      "name": "Shortbow",
+      "kind": "ranged weapon (80/320; no mastery chosen)",
+      "to_hit": {
+        "value": 5,
+        "why": "2 Dex mod + 3 proficiency"
+      },
+      "damage": {
+        "value": "1d6+2 piercing",
+        "why": "1d6 weapon die +2 Dex mod"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Second Wind",
+      "max": 3,
+      "recharge": "long rest (regain one use on a short rest)",
+      "why": "Second Wind column, Fighter 8"
+    },
+    {
+      "name": "Action Surge",
+      "max": 1,
+      "recharge": "short or long rest",
+      "why": "one use below Fighter 17"
+    },
+    {
+      "name": "Adrenaline Rush",
+      "max": 3,
+      "recharge": "short or long rest",
+      "why": "Proficiency Bonus uses"
+    },
+    {
+      "name": "Relentless Endurance",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "Orc trait"
+    }
+  ],
+  "class_values": [
+    {
+      "name": "Weapon Mastery kinds",
+      "value": 4,
+      "why": "Weapon Mastery column, Fighter 8"
+    },
+    {
+      "name": "Critical hit range",
+      "value": "19-20",
+      "why": "Improved Critical (Champion 3)"
+    },
+    {
+      "name": "Attacks per Attack action",
+      "value": 2,
+      "why": "Extra Attack (Fighter 5)"
+    }
+  ],
+  "features": {
+    "class": {
+      "Fighter": [
+        {
+          "name": "Fighting Style",
+          "level": 1,
+          "choice": "Defense"
+        },
+        {
+          "name": "Second Wind",
+          "level": 1
+        },
+        {
+          "name": "Weapon Mastery",
+          "level": 1
+        },
+        {
+          "name": "Action Surge",
+          "level": 2
+        },
+        {
+          "name": "Tactical Mind",
+          "level": 2
+        },
+        {
+          "name": "Fighter Subclass",
+          "level": 3,
+          "choice": "Champion"
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Extra Attack",
+          "level": 5
+        },
+        {
+          "name": "Tactical Shift",
+          "level": 5
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 6
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 8,
+          "choice": "Grappler"
+        }
+      ]
+    },
+    "subclass": {
+      "Champion": [
+        {
+          "name": "Improved Critical",
+          "level": 3
+        },
+        {
+          "name": "Remarkable Athlete",
+          "level": 3
+        },
+        {
+          "name": "Additional Fighting Style",
+          "level": 7,
+          "choice": "Great Weapon Fighting"
+        }
+      ]
+    },
+    "species": [
+      {
+        "name": "Adrenaline Rush",
+        "level": 1
+      },
+      {
+        "name": "Darkvision",
+        "level": 1
+      },
+      {
+        "name": "Relentless Endurance",
+        "level": 1
+      }
+    ],
+    "background": [],
+    "feats": [
+      {
+        "name": "Savage Attacker",
+        "level": 1
+      },
+      {
+        "name": "Defense",
+        "level": 1
+      },
+      {
+        "name": "Ability Score Improvement",
+        "level": 4
+      },
+      {
+        "name": "Ability Score Improvement",
+        "level": 6
+      },
+      {
+        "name": "Great Weapon Fighting",
+        "level": 7
+      },
+      {
+        "name": "Grappler",
+        "level": 8
+      }
+    ]
+  }
+}

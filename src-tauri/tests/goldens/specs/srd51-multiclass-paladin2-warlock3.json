@@ -1,0 +1,188 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd51-multiclass-paladin2-warlock3",
+  "ruleset": "SRD 5.1",
+  "edition": "2014",
+  "summary": "Human Paladin 2 / Warlock 3 (The Fiend, Pact of the Blade), Acolyte",
+  "character_level": 5,
+  "race": {
+    "name": "Human",
+    "subrace": null,
+    "ability_score_increases": {
+      "Strength": 1,
+      "Dexterity": 1,
+      "Constitution": 1,
+      "Intelligence": 1,
+      "Wisdom": 1,
+      "Charisma": 1
+    },
+    "languages": [
+      "Common",
+      "Elvish"
+    ],
+    "choices": {
+      "extra language": "Elvish"
+    }
+  },
+  "background": {
+    "name": "Acolyte",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "languages": [
+      "Celestial",
+      "Infernal"
+    ],
+    "tool_proficiencies": [],
+    "equipment": [
+      "Holy symbol",
+      "Prayer book",
+      "5 sticks of incense",
+      "Vestments",
+      "Common clothes",
+      "Belt pouch with 15 gp"
+    ],
+    "feature": "Shelter of the Faithful"
+  },
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 14,
+      "Dexterity": 10,
+      "Constitution": 13,
+      "Intelligence": 8,
+      "Wisdom": 12,
+      "Charisma": 15
+    }
+  },
+  "hit_points": "fixed_average: level 1 = maximum of the first class's hit die + Con modifier; every later level = the class's fixed value from its Hit Points at Higher Levels line (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Paladin",
+      "level": 2,
+      "subclass": null,
+      "order": 1
+    },
+    {
+      "class": "Warlock",
+      "level": 3,
+      "subclass": "The Fiend",
+      "order": 2
+    }
+  ],
+  "multiclass_prerequisites": "Paladin: Strength 13 and Charisma 13; Warlock: Charisma 13 (both met when the first Warlock level is taken)",
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Paladin",
+      "class_level": 1,
+      "hit_points": "10 (max d10) + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Athletics",
+            "Intimidation"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Paladin",
+      "class_level": 2,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Fighting Style",
+          "choice": "Defense"
+        }
+      ]
+    },
+    {
+      "character_level": 3,
+      "class": "Warlock",
+      "class_level": 1,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Otherworldly Patron",
+          "choice": "The Fiend"
+        },
+        {
+          "feature": "Multiclass proficiencies",
+          "note": "Warlock grants light armor and simple weapons (already held)"
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Warlock",
+      "class_level": 2,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Eldritch Invocations",
+          "choice": [
+            "Agonizing Blast",
+            "Devil's Sight"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Warlock",
+      "class_level": 3,
+      "hit_points": "5 + Con",
+      "choices": [
+        {
+          "feature": "Pact Boon",
+          "choice": "Pact of the Blade"
+        }
+      ]
+    }
+  ],
+  "spells": {
+    "Paladin": {
+      "ability": "Charisma",
+      "prepared": [
+        "Bless",
+        "Cure Wounds",
+        "Shield of Faith",
+        "Command"
+      ]
+    },
+    "Warlock": {
+      "ability": "Charisma",
+      "cantrips": [
+        "Eldritch Blast",
+        "Minor Illusion"
+      ],
+      "known": [
+        "Burning Hands",
+        "Hellish Rebuke",
+        "Scorching Ray",
+        "Hold Person"
+      ]
+    }
+  },
+  "equipment": {
+    "class_choices": [
+      "Paladin (first class) only: (a) a martial weapon (longsword) and a shield",
+      "(a) five javelins",
+      "(a) a priest's pack",
+      "chain mail and a holy symbol"
+    ],
+    "background": "Acolyte equipment",
+    "worn_armor": "Chain mail",
+    "shield": "Shield",
+    "wielded": "Longsword (one hand) + shield",
+    "carried_weapons": [
+      "Longsword",
+      "Javelin (x5)"
+    ],
+    "pact_weapon": "none summoned (the longsword is used as a normal weapon)"
+  }
+}

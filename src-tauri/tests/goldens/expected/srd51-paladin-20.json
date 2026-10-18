@@ -1,0 +1,452 @@
+{
+  "schema": "borealis-golden-expected/1",
+  "id": "srd51-paladin-20",
+  "ruleset": "SRD 5.1",
+  "derived_by": "agent A, by hand from the SRD rules text (no engine)",
+  "character_level": 20,
+  "abilities": {
+    "Strength": {
+      "score": 20,
+      "modifier": 5,
+      "why": "15 standard array +2 Dragonborn +1 ASI (Paladin 4) +2 ASI (Paladin 8)"
+    },
+    "Dexterity": {
+      "score": 10,
+      "modifier": 0,
+      "why": "10 standard array"
+    },
+    "Constitution": {
+      "score": 15,
+      "modifier": 2,
+      "why": "13 standard array +2 ASI (Paladin 19)"
+    },
+    "Intelligence": {
+      "score": 8,
+      "modifier": -1,
+      "why": "8 standard array"
+    },
+    "Wisdom": {
+      "score": 12,
+      "modifier": 1,
+      "why": "12 standard array"
+    },
+    "Charisma": {
+      "score": 20,
+      "modifier": 5,
+      "why": "14 standard array +1 Dragonborn +1 ASI (Paladin 4) +2 ASI (Paladin 12) +2 ASI (Paladin 16)"
+    }
+  },
+  "proficiency_bonus": {
+    "value": 6,
+    "why": "character level 20 -> +6 (proficiency bonus table)"
+  },
+  "hit_points_max": {
+    "value": 164,
+    "why": "10 Paladin 1 (max d10) + 114 Paladin 2-20 fixed (19 x 6) + 40 Con mod x 20 levels (2 x 20)"
+  },
+  "armor_class": {
+    "value": 19,
+    "source": "Chain mail + shield + Defense",
+    "why": "16 Chain mail + 2 Shield + 1 Defense fighting style (wearing armor)"
+  },
+  "initiative": {
+    "value": 0,
+    "why": "0 Dex mod"
+  },
+  "speeds": {
+    "walk": {
+      "value": 30,
+      "why": "30 Dragonborn base walking speed"
+    }
+  },
+  "saving_throws": {
+    "Strength": {
+      "value": 10,
+      "proficient": false,
+      "why": "5 Str mod + 5 Aura of Protection (Cha mod, self)"
+    },
+    "Dexterity": {
+      "value": 5,
+      "proficient": false,
+      "why": "0 Dex mod + 5 Aura of Protection (Cha mod, self)"
+    },
+    "Constitution": {
+      "value": 7,
+      "proficient": false,
+      "why": "2 Con mod + 5 Aura of Protection (Cha mod, self)"
+    },
+    "Intelligence": {
+      "value": 4,
+      "proficient": false,
+      "why": "-1 Int mod + 5 Aura of Protection (Cha mod, self)"
+    },
+    "Wisdom": {
+      "value": 12,
+      "proficient": true,
+      "why": "1 Wis mod + 6 proficiency (Paladin) + 5 Aura of Protection (Cha mod, self)"
+    },
+    "Charisma": {
+      "value": 16,
+      "proficient": true,
+      "why": "5 Cha mod + 6 proficiency (Paladin) + 5 Aura of Protection (Cha mod, self)"
+    }
+  },
+  "skills": {
+    "Acrobatics": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Dex mod"
+    },
+    "Animal Handling": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Arcana": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Athletics": {
+      "value": 11,
+      "proficiency": "proficient",
+      "why": "5 Str mod + 6 proficiency (Paladin)"
+    },
+    "Deception": {
+      "value": 5,
+      "proficiency": "none",
+      "why": "5 Cha mod"
+    },
+    "History": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Insight": {
+      "value": 7,
+      "proficiency": "proficient",
+      "why": "1 Wis mod + 6 proficiency (Acolyte)"
+    },
+    "Intimidation": {
+      "value": 5,
+      "proficiency": "none",
+      "why": "5 Cha mod"
+    },
+    "Investigation": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Medicine": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Nature": {
+      "value": -1,
+      "proficiency": "none",
+      "why": "-1 Int mod"
+    },
+    "Perception": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    },
+    "Performance": {
+      "value": 5,
+      "proficiency": "none",
+      "why": "5 Cha mod"
+    },
+    "Persuasion": {
+      "value": 11,
+      "proficiency": "proficient",
+      "why": "5 Cha mod + 6 proficiency (Paladin)"
+    },
+    "Religion": {
+      "value": 5,
+      "proficiency": "proficient",
+      "why": "-1 Int mod + 6 proficiency (Acolyte)"
+    },
+    "Sleight of Hand": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Dex mod"
+    },
+    "Stealth": {
+      "value": 0,
+      "proficiency": "none",
+      "why": "0 Dex mod"
+    },
+    "Survival": {
+      "value": 1,
+      "proficiency": "none",
+      "why": "1 Wis mod"
+    }
+  },
+  "passive_perception": {
+    "value": 11,
+    "why": "10 + Perception total 1"
+  },
+  "spellcasting": [
+    {
+      "source": "Paladin",
+      "ability": "Charisma",
+      "spell_save_dc": {
+        "value": 19,
+        "why": "8 + 5 Cha mod + 6 proficiency"
+      },
+      "spell_attack_bonus": {
+        "value": 11,
+        "why": "5 Cha mod + 6 proficiency"
+      }
+    }
+  ],
+  "spell_slots": {
+    "value": {
+      "1": 4,
+      "2": 3,
+      "3": 3,
+      "4": 3,
+      "5": 2
+    },
+    "why": "Paladin table, level 20"
+  },
+  "pact_slots": null,
+  "attacks": [
+    {
+      "name": "Longsword",
+      "kind": "melee weapon",
+      "to_hit": {
+        "value": 11,
+        "why": "5 Str mod + 6 proficiency"
+      },
+      "damage": {
+        "value": "1d8+5 slashing + 1d8 radiant",
+        "why": "1d8 weapon die +5 Str mod + 1d8 radiant Improved Divine Smite (every melee weapon hit)"
+      },
+      "damage_two_handed": {
+        "value": "1d10+5 slashing + 1d8 radiant",
+        "why": "Versatile: two-handed die, same modifier"
+      },
+      "notes": "one-handed while the shield is carried"
+    },
+    {
+      "name": "Javelin",
+      "kind": "melee weapon (thrown 30/120)",
+      "to_hit": {
+        "value": 11,
+        "why": "5 Str mod + 6 proficiency"
+      },
+      "damage": {
+        "value": "1d6+5 piercing + 1d8 radiant",
+        "why": "1d6 weapon die +5 Str mod + 1d8 radiant Improved Divine Smite (melee weapon)"
+      }
+    },
+    {
+      "name": "Breath Weapon",
+      "kind": "racial (save)",
+      "save": {
+        "ability": "Dexterity",
+        "dc": 16,
+        "why": "8 + 2 Con mod + 6 proficiency"
+      },
+      "damage": {
+        "value": "5d6 fire",
+        "why": "Dragonborn Breath Weapon: 5d6 at 16th level; Gold = fire, 15 ft. cone"
+      }
+    }
+  ],
+  "resources": [
+    {
+      "name": "Divine Sense",
+      "max": 6,
+      "recharge": "long rest",
+      "why": "1 + Cha mod 5"
+    },
+    {
+      "name": "Lay on Hands",
+      "max": 100,
+      "recharge": "long rest",
+      "why": "pool = 5 x paladin level 20"
+    },
+    {
+      "name": "Channel Divinity",
+      "max": 1,
+      "recharge": "short or long rest",
+      "why": "Oath of Devotion: one use per rest"
+    },
+    {
+      "name": "Cleansing Touch",
+      "max": 5,
+      "recharge": "long rest",
+      "why": "Cha mod 5 uses"
+    },
+    {
+      "name": "Holy Nimbus",
+      "max": 1,
+      "recharge": "long rest",
+      "why": "once per long rest"
+    },
+    {
+      "name": "Breath Weapon",
+      "max": 1,
+      "recharge": "short or long rest",
+      "why": "Dragonborn: once per short or long rest"
+    }
+  ],
+  "class_values": [
+    {
+      "name": "Aura of Protection",
+      "value": "+5 to saves, 30 ft.",
+      "why": "Cha mod 5; range 30 ft. at paladin 18"
+    },
+    {
+      "name": "Attacks per Attack action",
+      "value": 2,
+      "why": "Extra Attack (Paladin 5)"
+    }
+  ],
+  "features": {
+    "class": {
+      "Paladin": [
+        {
+          "name": "Divine Sense",
+          "level": 1
+        },
+        {
+          "name": "Lay on Hands",
+          "level": 1
+        },
+        {
+          "name": "Fighting Style",
+          "level": 2,
+          "choice": "Defense"
+        },
+        {
+          "name": "Spellcasting",
+          "level": 2
+        },
+        {
+          "name": "Divine Smite",
+          "level": 2
+        },
+        {
+          "name": "Divine Health",
+          "level": 3
+        },
+        {
+          "name": "Sacred Oath",
+          "level": 3,
+          "choice": "Oath of Devotion"
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 4
+        },
+        {
+          "name": "Extra Attack",
+          "level": 5
+        },
+        {
+          "name": "Aura of Protection",
+          "level": 6
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 8
+        },
+        {
+          "name": "Aura of Courage",
+          "level": 10
+        },
+        {
+          "name": "Improved Divine Smite",
+          "level": 11
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 12
+        },
+        {
+          "name": "Cleansing Touch",
+          "level": 14
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 16
+        },
+        {
+          "name": "Ability Score Improvement",
+          "level": 19
+        }
+      ]
+    },
+    "subclass": {
+      "Oath of Devotion": [
+        {
+          "name": "Oath Spells",
+          "level": 3
+        },
+        {
+          "name": "Channel Divinity",
+          "level": 3
+        },
+        {
+          "name": "Aura of Devotion",
+          "level": 7
+        },
+        {
+          "name": "Purity of Spirit",
+          "level": 15
+        },
+        {
+          "name": "Holy Nimbus",
+          "level": 20
+        }
+      ]
+    },
+    "race": [
+      {
+        "name": "Draconic Ancestry",
+        "level": 1,
+        "choice": "Gold"
+      },
+      {
+        "name": "Breath Weapon",
+        "level": 1
+      },
+      {
+        "name": "Damage Resistance",
+        "level": 1,
+        "choice": "fire"
+      }
+    ],
+    "background": [
+      {
+        "name": "Shelter of the Faithful",
+        "level": 1
+      }
+    ],
+    "feats": []
+  },
+  "spells": {
+    "Paladin": {
+      "prepared_max": {
+        "value": 15,
+        "why": "Cha mod 5 + half paladin level (20 / 2 = 10)"
+      },
+      "always_prepared": [
+        "Protection from Evil and Good",
+        "Sanctuary",
+        "Lesser Restoration",
+        "Zone of Truth",
+        "Beacon of Hope",
+        "Dispel Magic",
+        "Freedom of Movement",
+        "Guardian of Faith",
+        "Commune",
+        "Flame Strike"
+      ]
+    }
+  }
+}

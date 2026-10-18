@@ -1,0 +1,197 @@
+{
+  "schema": "borealis-golden-spec/1",
+  "id": "srd521-sorcerer-5",
+  "ruleset": "SRD 5.2.1",
+  "edition": "2024",
+  "summary": "Tiefling (Infernal) Sorcerer 5 (Draconic Sorcery), Acolyte",
+  "character_level": 5,
+  "species": {
+    "name": "Tiefling",
+    "size": "Medium",
+    "choices": {
+      "Fiendish Legacy": "Infernal",
+      "spellcasting_ability": "Charisma"
+    }
+  },
+  "background": {
+    "name": "Acolyte",
+    "ability_scores_listed": [
+      "Intelligence",
+      "Wisdom",
+      "Charisma"
+    ],
+    "origin_feat": "Magic Initiate (Cleric)",
+    "skill_proficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "tool_proficiency": "Calligrapher's Supplies",
+    "equipment_A": [
+      "Calligrapher's Supplies",
+      "Book (prayers)",
+      "Holy Symbol",
+      "Parchment (10 sheets)",
+      "Robe",
+      "8 GP"
+    ],
+    "ability_score_increases": {
+      "Charisma": 2,
+      "Wisdom": 1
+    },
+    "equipment_option": "A",
+    "origin_feat_choices": {
+      "spellcasting_ability": "Charisma",
+      "cantrips": [
+        "Guidance",
+        "Sacred Flame"
+      ],
+      "level_1_spell": "Bless"
+    }
+  },
+  "languages": [
+    "Common",
+    "Draconic",
+    "Dwarvish"
+  ],
+  "ability_scores": {
+    "method": "standard array (15, 14, 13, 12, 10, 8)",
+    "assignment": {
+      "Strength": 10,
+      "Dexterity": 13,
+      "Constitution": 14,
+      "Intelligence": 8,
+      "Wisdom": 12,
+      "Charisma": 15
+    }
+  },
+  "hit_points": "fixed_average: level 1 = the Level 1 Hit Points by Class value (max hit die) + Con modifier; every later level = the Fixed Hit Points by Class value (d6: 4, d8: 5, d10: 6, d12: 7) + Con modifier. Con modifier changes apply retroactively to every level.",
+  "classes": [
+    {
+      "class": "Sorcerer",
+      "level": 5,
+      "subclass": "Draconic Sorcery"
+    }
+  ],
+  "level_progression": [
+    {
+      "character_level": 1,
+      "class": "Sorcerer",
+      "class_level": 1,
+      "hit_points": "6 + Con",
+      "choices": [
+        {
+          "feature": "Proficiencies",
+          "skills": [
+            "Deception",
+            "Persuasion"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 2,
+      "class": "Sorcerer",
+      "class_level": 2,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Metamagic",
+          "choice": [
+            "Quickened Spell",
+            "Twinned Spell"
+          ]
+        }
+      ]
+    },
+    {
+      "character_level": 3,
+      "class": "Sorcerer",
+      "class_level": 3,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Sorcerer Subclass",
+          "choice": "Draconic Sorcery"
+        }
+      ]
+    },
+    {
+      "character_level": 4,
+      "class": "Sorcerer",
+      "class_level": 4,
+      "hit_points": "4 + Con",
+      "choices": [
+        {
+          "feature": "Ability Score Improvement",
+          "feat": "Ability Score Improvement",
+          "increases": {
+            "Charisma": 1,
+            "Dexterity": 1
+          }
+        }
+      ]
+    },
+    {
+      "character_level": 5,
+      "class": "Sorcerer",
+      "class_level": 5,
+      "hit_points": "4 + Con",
+      "choices": []
+    }
+  ],
+  "spells": {
+    "Sorcerer": {
+      "ability": "Charisma",
+      "cantrips": [
+        "Light",
+        "Mage Hand",
+        "Prestidigitation",
+        "Shocking Grasp",
+        "Sorcerous Burst"
+      ],
+      "prepared": [
+        "Shield",
+        "Magic Missile",
+        "Detect Magic",
+        "Misty Step",
+        "Scorching Ray",
+        "Hold Person",
+        "Fireball",
+        "Counterspell",
+        "Haste"
+      ]
+    },
+    "Infernal Legacy": {
+      "ability": "Charisma",
+      "cantrips": [
+        "Fire Bolt",
+        "Thaumaturgy"
+      ],
+      "always_prepared": [
+        "Hellish Rebuke",
+        "Darkness"
+      ]
+    },
+    "Magic Initiate (Cleric)": {
+      "ability": "Charisma",
+      "cantrips": [
+        "Guidance",
+        "Sacred Flame"
+      ],
+      "level_1": [
+        "Bless"
+      ]
+    }
+  },
+  "equipment": {
+    "class_option": "A: Spear, 2 Daggers, Arcane Focus (crystal), Dungeoneer's Pack, 28 GP",
+    "background_option": "A (Acolyte)",
+    "worn_armor": null,
+    "shield": null,
+    "wielded": "Arcane Focus",
+    "carried_weapons": [
+      "Spear",
+      "Dagger (x2)"
+    ]
+  }
+}
