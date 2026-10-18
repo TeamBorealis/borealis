@@ -420,10 +420,22 @@ fn run(data: &Path) {
                             }
                         }
                     }
-                    match sw.pick(&state, &el.id) {
-                        None => problems.push(format!("{ty} is not offered")),
-                        Some(Err(e)) => problems.push(e),
-                        Some(Ok(s)) => {
+                    match (sw.pick(&state, &el.id), legacy_base(el)) {
+                        // det-5e-6 F14: a legacy `_versions` race is kept for saved characters
+                        // only; its base race offers the version as an option
+                        (None, Some(base)) => {
+                            if sw.pick(&state, base).is_none() {
+                                problems.push(format!(
+                                    "legacy {ty} version: its base {base} is not offered either"
+                                ));
+                            }
+                        }
+                        (Some(_), Some(_)) => problems.push(format!(
+                            "legacy {ty} version is still offered for new characters"
+                        )),
+                        (None, None) => problems.push(format!("{ty} is not offered")),
+                        (Some(Err(e)), None) => problems.push(e),
+                        (Some(Ok(s)), None) => {
                             sw.alternatives(&s, &mut problems);
                             let s = sw.fill(s);
                             sw.problems(&s, &sw.engine.derive(&s), &mut problems);
@@ -550,6 +562,14 @@ fn run(data: &Path) {
         unoffered_plain, 0,
         "feats without requirements must be offered somewhere"
     );
+}
+
+/// The base race of a legacy race version (F14): the version names it in `data.version_of`
+/// and requires it, so it is no longer offered for new picks (as acceptance stage 2's
+/// `legacy_of`).
+fn legacy_base(el: &Element) -> Option<&str> {
+    let base = el.data.get("version_of")?.as_str()?;
+    (el.requirements.trim() == base).then_some(base)
 }
 
 /// Level 1 (with a species that grants a feat), 4 (feat instead of the improvement) and 19
