@@ -3,7 +3,8 @@
 //! otherwise. Refers to entities by id and numbers only.
 //!
 //! For each caster in `class/class-*.json` (both editions) a character is levelled 1 to 20; at
-//! levels 1, 3, 5, 11 and 20 the spell choice slots owned by the class (or subclass) must equal
+//! levels 1, 3, 5, 11 and 20 the spell choice slots owned by the class (or subclass), or by the
+//! class feature that carries its spellcasting (PHB Ranger, Paladin), must equal
 //! what its own progression arrays say (cantrips + spells known + spellbook pages + fixed-level
 //! spells), every one of them must be fillable, and the prepared spell limit must follow
 //! `preparedSpellsProgression`. Expected numbers are computed from the corpus, never hardcoded.
@@ -42,9 +43,19 @@ struct Caster {
     sub_id: Option<String>,
     ruleset: Ruleset,
     raw: Value,
+    /// Class features that carry this caster's spellcasting (det-5e-6 F9: a class whose first
+    /// slot comes after level 1, as the PHB Ranger, casts through its `Spellcasting` feature,
+    /// which owns the spell selects).
+    casting_features: Vec<String>,
 }
 
 impl Caster {
+    /// The class (or subclass) itself or one of its casting features.
+    fn owns(&self, id: &str) -> bool {
+        id == self.sub_id.as_deref().unwrap_or(&self.class_id)
+            || self.casting_features.iter().any(|f| f == id)
+    }
+
     fn series(&self, key: &str, level: u32) -> i64 {
         self.raw
             .get(key)
@@ -100,6 +111,21 @@ fn ruleset_of(v: &Value) -> Ruleset {
     }
 }
 
+/// Imported class features whose spellcasting block is the class's `name` (F9).
+fn casting_features(imported: &BTreeMap<String, Element>, name: &str) -> Vec<String> {
+    imported
+        .values()
+        .filter(|e| {
+            e.ty == "Class Feature"
+                && e.id.starts_with("ID_5ET_")
+                && e.spellcasting
+                    .as_ref()
+                    .is_some_and(|b| b.name.as_deref() == Some(name))
+        })
+        .map(|e| e.id.clone())
+        .collect()
+}
+
 /// Casters of the corpus that were imported (by their deterministic ids).
 fn corpus_casters(data: &Path, imported: &BTreeMap<String, Element>) -> Vec<Caster> {
     let mut out = Vec::new();
@@ -130,8 +156,10 @@ fn corpus_casters(data: &Path, imported: &BTreeMap<String, Element>) -> Vec<Cast
                 fragment(str_of(c, "name"))
             );
             if imported.contains_key(&id) {
+                let name = str_of(c, "name").to_string();
                 out.push(Caster {
-                    name: str_of(c, "name").to_string(),
+                    casting_features: casting_features(imported, &name),
+                    name,
                     class_id: id,
                     sub_id: None,
                     ruleset: ruleset_of(c),
@@ -168,6 +196,7 @@ fn corpus_casters(data: &Path, imported: &BTreeMap<String, Element>) -> Vec<Cast
             };
             if imported.contains_key(&sub_id) {
                 out.push(Caster {
+                    casting_features: Vec::new(),
                     name: str_of(sc, "name").to_string(),
                     class_id,
                     sub_id: Some(sub_id),
@@ -226,7 +255,7 @@ fn check(c: &Caster, snap: &CharacterSnapshot, level: u32) -> Vec<String> {
     let spell_slots: Vec<_> = snap
         .slots
         .iter()
-        .filter(|s| s.ty == "Spell" && s.owner.id == owner)
+        .filter(|s| s.ty == "Spell" && c.owns(&s.owner.id))
         .collect();
     let mut out = Vec::new();
     let expected = c.expected_slots(level);
@@ -263,10 +292,9 @@ fn check(c: &Caster, snap: &CharacterSnapshot, level: u32) -> Vec<String> {
 
 /// Can this caster acquire spells at all by level 20 (choice slots or a prepare limit)?
 fn acquires_spells(c: &Caster, snap: &CharacterSnapshot) -> bool {
-    let owner = c.sub_id.as_deref().unwrap_or(&c.class_id);
     snap.slots
         .iter()
-        .any(|s| s.ty == "Spell" && s.owner.id == owner)
+        .any(|s| s.ty == "Spell" && c.owns(&s.owner.id))
         || snap
             .spellcasting
             .iter()
