@@ -182,6 +182,19 @@ fn is_cantrip_slot(store: &borealis_content::ContentStore, slot: &SlotSnapshot) 
         .is_some_and(|l| l.trim() == "0")
 }
 
+/// Do the picks of this spell slot count toward its class's cantrips known (D-21)?
+fn counts_toward_cantrips(store: &borealis_content::ContentStore, slot: &SlotSnapshot) -> bool {
+    let rule = store
+        .element(&slot.key.owner)
+        .and_then(|e| e.rules.get(usize::try_from(slot.key.rule).ok()?));
+    match rule {
+        Some(borealis_content::Rule::Select(r)) => {
+            borealis_engine::cantrip_count::counts_toward_cantrips_known(r)
+        }
+        _ => true,
+    }
+}
+
 /// Class progression of the spellcasting entry named `name` (`main` when no class carries it).
 fn caster_slot(snap: &Engine, name: &str) -> ClassSlot {
     snap.classes
@@ -243,9 +256,25 @@ fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> Clas
             }
         })
         .collect();
-    let cantrips_known = u32::try_from(spells.iter().filter(|s| s.level == 0).count()).unwrap_or(0);
-    let cantrip_slots =
-        u32::try_from(own_slots().filter(|s| is_cantrip_slot(store, s)).count()).unwrap_or(0);
+    // D-21: cantrips of a select open to any class's list (Pact of the Tome) are listed but
+    // not counted toward the class's cantrips.
+    let uncounted: Vec<&str> = own_slots()
+        .filter(|s| !counts_toward_cantrips(store, s))
+        .filter_map(|s| s.chosen.as_ref().map(|c| c.id.as_str()))
+        .collect();
+    let cantrips_known = u32::try_from(
+        spells
+            .iter()
+            .filter(|s| s.level == 0 && !uncounted.contains(&s.id.as_str()))
+            .count(),
+    )
+    .unwrap_or(0);
+    let cantrip_slots = u32::try_from(
+        own_slots()
+            .filter(|s| is_cantrip_slot(store, s) && counts_toward_cantrips(store, s))
+            .count(),
+    )
+    .unwrap_or(0);
     // `prepare_from_list`: the whole class list can be prepared (cleric, druid); otherwise the
     // prepared spells come from a spellbook of learned spells (wizard).
     let model = match (c.prepare, c.prepare_from_list) {
