@@ -2,12 +2,13 @@
 //! selects shared with classes and feats, and prerequisite conversion.
 
 use super::build::{select, set_level};
-use super::mech::feat_category_label;
+use super::mech::{feat_category_label, Mech};
 use super::prereq::apply_prerequisites;
 use super::spell_blocks;
 use super::spells_extra;
 use super::{
-    append_fluff, drain_renderer, new_element, sheet_text, short_text, Conv, Ent, Shared, State,
+    append_fluff, drain_renderer, new_element, note_unmapped, sheet_text, short_text, Conv, Ent,
+    Shared, State,
 };
 use crate::ids::IdKind;
 use crate::model::{self, OptionalFeature};
@@ -220,6 +221,7 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     el.supports = supports;
     let mut partial = Vec::new();
     apply_prerequisites(sh, st, &of.prerequisite, &mut el, &mut partial);
+    el.rules = granted_rules(sh, ent, &of.name, &mut el, &mut partial);
     let mut description = renderer.entries(&of.entries);
     append_fluff(sh, "optionalfeature", ent, &mut description, &mut renderer);
     el.description = description;
@@ -239,6 +241,45 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     let mut elements = vec![el];
     elements.extend(helpers);
     Conv { elements, partial }
+}
+
+/// What an optional feature grants by field, as feats and races state it: proficiencies,
+/// expertise, saving throws, damage relations and senses (PHB Beguiling Influence: Deception
+/// and Persuasion; TCE Blind Fighting: blindsight), and the feats and optional features it lets
+/// the character choose (XPHB Lessons of the First Ones, TCE Superior Technique).
+fn granted_rules(
+    sh: &Shared,
+    ent: &Ent,
+    name: &str,
+    el: &mut borealis_content::Element,
+    partial: &mut Vec<String>,
+) -> Vec<Rule> {
+    let mut mech = Mech::new(sh, name);
+    mech.proficiency_fields(&ent.raw);
+    let progression = |key: &str| -> Vec<Value> {
+        ent.raw
+            .get(key)
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default()
+    };
+    let option_codes =
+        (ent.ruleset == borealis_content::Ruleset::Dnd2024).then_some(&sh.option_codes_2024);
+    for r in optional_feature_selects(
+        &progression("optionalfeatureProgression"),
+        option_codes,
+        partial,
+    ) {
+        mech.push(r);
+    }
+    for r in feat_selects(&progression("featProgression"), partial) {
+        mech.push(r);
+    }
+    for (k, vs) in &mech.unmapped {
+        note_unmapped(el, k, &vs.join("; "));
+    }
+    partial.append(&mut mech.partial);
+    mech.rules
 }
 
 /// The class whose spells an optional feature grants (invocations are Warlock spells), or the
@@ -390,6 +431,97 @@ mod tests {
         assert_eq!(
             (s.ty.as_str(), s.level, s.supports.as_deref()),
             ("Feat", Some(19), Some("Epic Boon Feat"))
+        );
+    }
+
+    fn converted(raw: Value, ruleset: borealis_content::Ruleset) -> Conv {
+        let sh = Shared::default();
+        let mut st = State::default();
+        let ent = Ent {
+            name: raw["name"].as_str().unwrap_or_default().into(),
+            source: raw["source"].as_str().unwrap_or_default().into(),
+            ruleset,
+            is_srd: false,
+            file: "optionalfeatures.json".into(),
+            raw,
+        };
+        convert(&sh, &mut st, &ent)
+    }
+
+    fn grant_ids(el: &borealis_content::Element) -> Vec<&str> {
+        el.rules
+            .iter()
+            .filter_map(|r| match r {
+                Rule::Grant(g) => Some(g.id.as_str()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn proficiency_fields_become_grants() {
+        // T10: PHB Beguiling Influence grants Deception and Persuasion
+        let conv = converted(
+            json!({"name": "Beguiling Influence", "source": "PHB", "featureType": ["EI"],
+                "skillProficiencies": [{"deception": true, "persuasion": true}],
+                "entries": ["You gain proficiency in the Deception and Persuasion skills."]}),
+            borealis_content::Ruleset::Dnd2014,
+        );
+        let el = &conv.elements[0];
+        assert_eq!(
+            grant_ids(el),
+            [
+                "ID_PROFICIENCY_SKILL_DECEPTION",
+                "ID_PROFICIENCY_SKILL_PERSUASION"
+            ]
+        );
+        assert!(conv.partial.is_empty(), "{:?}", conv.partial);
+        // a sense (TCE Blind Fighting) and a field it cannot state
+        let conv = converted(
+            json!({"name": "Blind Fighting", "source": "TCE", "featureType": ["FS:F"],
+                "senses": [{"blindsight": 10}],
+                "savingThrowProficiencies": [{"choose": {"from": ["str", "dex"]}}],
+                "entries": ["x"]}),
+            borealis_content::Ruleset::Dnd2014,
+        );
+        let el = &conv.elements[0];
+        assert!(
+            grant_ids(el).iter().any(|i| i.contains("BLINDSIGHT")),
+            "{:?}",
+            el.rules
+        );
+        assert!(el
+            .extra
+            .attributes
+            .contains_key("5et:savingThrowProficiencies"));
+        assert_eq!(conv.partial.len(), 1);
+    }
+
+    #[test]
+    fn progressions_of_an_optional_feature_become_selects() {
+        // XPHB Lessons of the First Ones: an Origin feat; TCE Superior Technique: one maneuver
+        let conv = converted(
+            json!({"name": "Lessons of the First Ones", "source": "XPHB", "featureType": ["EI"],
+                "featProgression": [{"name": "Origin Feat", "category": ["O"], "progression": {"*": 1}}],
+                "entries": ["x"]}),
+            borealis_content::Ruleset::Dnd2024,
+        );
+        let Some(Rule::Select(s)) = conv.elements[0].rules.first() else {
+            panic!("{:?}", conv.elements[0].rules)
+        };
+        assert_eq!((s.ty.as_str(), s.name.as_str()), ("Feat", "Origin Feat"));
+        let conv = converted(
+            json!({"name": "Superior Technique", "source": "TCE", "featureType": ["FS:F"],
+                "optionalfeatureProgression": [{"name": "Maneuvers", "featureType": ["MV:B"], "progression": {"*": 1}}],
+                "entries": ["x"]}),
+            borealis_content::Ruleset::Dnd2014,
+        );
+        let Some(Rule::Select(s)) = conv.elements[0].rules.first() else {
+            panic!("{:?}", conv.elements[0].rules)
+        };
+        assert_eq!(
+            (s.ty.as_str(), s.supports.as_deref()),
+            ("Class Feature", Some("OF_MV-B"))
         );
     }
 

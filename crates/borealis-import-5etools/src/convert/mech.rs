@@ -13,6 +13,7 @@ use serde_json::{json, Map, Value};
 use std::collections::BTreeMap;
 
 mod ability;
+mod fields;
 mod weapon_filter;
 
 pub use weapon_filter::{weapon_filter_matches, weapon_filter_supports};
