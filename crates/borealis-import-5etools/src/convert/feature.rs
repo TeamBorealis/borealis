@@ -336,6 +336,10 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
         // proficiency choices the feature states only in its prose
         let stated = super::stated_choices::read(&f.entries);
         super::stated_choices::apply(&mut mech, &stated);
+        // a creature the character chooses, stated as a bestiary filter (Ranger's Companion)
+        if let Some(rule) = super::companion::companion_select(&f.name, &f.entries) {
+            mech.push(rule);
+        }
         if let Some(choice) = stated.expertise_choice() {
             let owner = super::stated_choices::OptionOwner {
                 feature: &f.name,

@@ -5,6 +5,7 @@ pub mod book_options;
 pub mod build;
 pub mod caster;
 pub mod class;
+pub mod companion;
 pub mod equipment;
 pub mod feat;
 pub mod feat_saves;
