@@ -12,16 +12,17 @@
 //! plain file names (nothing can escape the folder), and only `https://` is ever fetched.
 //! Deterministic: no AI is involved.
 
+use crate::content_fetch_retry::FetchError;
 use crate::content_fivetools_zip::{
     is_data_file, MAX_FILE_BYTES, MAX_TAKEN_FILES, MAX_UNPACKED_BYTES,
 };
-use crate::content_index::{looks_like_html, require_https, sha256_hex, HttpsFetcher};
+use crate::content_index::{looks_like_html, require_https, sha256_hex};
 use crate::content_packs::{progress, EventSink};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Mutex;
+use std::sync::{Mutex, PoisonError};
 
 const GITHUB_WEB: [&str; 2] = ["https://github.com/", "https://www.github.com/"];
 const GITHUB_API: &str = "https://api.github.com/repos/";
@@ -32,6 +33,10 @@ const MAX_SHA_BYTES: usize = 1024;
 const MAX_REFS_BYTES: usize = 8 * 1024 * 1024;
 const MAX_MANIFEST_BYTES: usize = 1024 * 1024;
 const SHA_LEN: usize = 40;
+const HTTP_NOT_FOUND: u16 = 404;
+const HTTP_GONE: u16 = 410;
+/// Failed paths named in a download problem; the rest are counted.
+const MAX_NAMED_FAILURES: usize = 12;
 /// Parallel downloads (raw.githubusercontent.com serves small files; latency dominates).
 const WORKERS: usize = 6;
 /// The marker every 5etools `data/` folder has; also the first file fetched.
@@ -111,9 +116,24 @@ pub struct FetchResponse {
 
 /// HTTPS client for 5etools downloads (replaceable in tests).
 pub trait RemoteFetcher: Send + Sync {
+    /// One request; any HTTP status is an answer.
+    ///
     /// # Errors
     /// A user-presentable reason.
     fn fetch(&self, request: &FetchRequest<'_>) -> Result<FetchResponse, String>;
+
+    /// [`RemoteFetcher::fetch`] with a classified failure: an answer that may pass (408/425/429/
+    /// 5xx, a rate-limited 403) is an error too, with its code and `Retry-After`. The default
+    /// classifies the message; [`crate::content_index::HttpsFetcher`] answers from the response.
+    ///
+    /// # Errors
+    /// The classified reason.
+    fn fetch_classified(&self, request: &FetchRequest<'_>) -> Result<FetchResponse, FetchError> {
+        let answer = self
+            .fetch(request)
+            .map_err(|m| FetchError::from_message(&m))?;
+        crate::content_fivetools_fetch::classify_answer(answer, None)
+    }
 }
 
 /// Where a 5etools data folder lives.
@@ -274,7 +294,15 @@ fn commit_from_refs(
         "{}{owner}/{repo}.git/info/refs?service=git-upload-pack",
         GITHUB_WEB[0]
     );
-    let r = f.fetch(&FetchRequest::get(&url, MAX_REFS_BYTES))?;
+    let r = f
+        .fetch_classified(&FetchRequest::get(&url, MAX_REFS_BYTES))
+        .map_err(|e| {
+            if e.is_rate_limit() {
+                format!("{RATE_LIMITED} [{}]", e.code)
+            } else {
+                format!("the GitHub branch list could not be read [{}]", e.code)
+            }
+        })?;
     if r.rate_limited || r.status == 429 {
         return Err(RATE_LIMITED.into());
     }
@@ -362,16 +390,17 @@ struct Fetched {
     body: Option<Vec<u8>>,
 }
 
-/// One file of the folder: `Ok(None)` when it does not exist.
+/// One file of the folder: `Ok(None)` when it does not exist (404/410). Any other answer but
+/// 200 (or 304 to a conditional request) is a failure with its code.
 fn fetch_file(
     f: &dyn RemoteFetcher,
     base: &str,
     rel: &str,
     max: usize,
     etag: Option<&str>,
-) -> Result<Option<Fetched>, String> {
+) -> Result<Option<Fetched>, FetchError> {
     let url = format!("{base}{rel}");
-    let r = f.fetch(&FetchRequest {
+    let r = f.fetch_classified(&FetchRequest {
         if_none_match: etag,
         ..FetchRequest::get(&url, max)
     })?;
@@ -390,8 +419,8 @@ fn fetch_file(
             },
             body: None,
         })),
-        404 | 410 => Ok(None),
-        s => Err(format!("{rel}: the server answered {s}")),
+        HTTP_NOT_FOUND | HTTP_GONE => Ok(None),
+        s => Err(FetchError::http(s, "", None)),
     }
 }
 
@@ -413,9 +442,88 @@ fn manifest_files(dir: &str, body: &[u8]) -> Result<Vec<String>, String> {
     Ok(out)
 }
 
+/// Files of a download that could not be had, out of how many, and how many were not tried
+/// after the first failure. Its message names paths and codes only, never file contents.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct DownloadFailure {
+    /// `(path, why)` in download order.
+    pub failed: Vec<(String, FetchError)>,
+    pub total: usize,
+    pub not_tried: usize,
+}
+
+impl DownloadFailure {
+    fn one(rel: &str, e: FetchError, total: usize) -> Self {
+        Self {
+            failed: vec![(rel.to_string(), e)],
+            total,
+            not_tried: 0,
+        }
+    }
+
+    /// The problem shown in the 5etools tab and the error of the stage or Update.
+    #[must_use]
+    pub fn message(&self) -> String {
+        let mut causes: Vec<&str> = Vec::new();
+        for (_, e) in &self.failed {
+            let cause = cause_of(e);
+            if !causes.contains(&cause) {
+                causes.push(cause);
+            }
+        }
+        let named: Vec<String> = self
+            .failed
+            .iter()
+            .take(MAX_NAMED_FAILURES)
+            .map(|(rel, e)| format!("{rel} [{}]", e.code))
+            .collect();
+        let mut text = format!(
+            "Could not download the 5etools data: {} of {} files could not be downloaded ({}). Nothing was installed or changed; try again later. Failed: {}",
+            self.failed.len(),
+            self.total.max(self.failed.len()),
+            causes.join(", "),
+            named.join(", ")
+        );
+        let unnamed = self.failed.len().saturating_sub(MAX_NAMED_FAILURES);
+        if unnamed > 0 {
+            text.push_str(&format!(" and {unnamed} more"));
+        }
+        text.push('.');
+        if self.not_tried > 0 {
+            text.push_str(&format!(
+                " {} more were not tried after the failure.",
+                self.not_tried
+            ));
+        }
+        text
+    }
+}
+
+/// A few words on why a file failed, from its code.
+fn cause_of(e: &FetchError) -> &'static str {
+    match (e.status(), e.code.as_str()) {
+        (Some(429), _) | (_, crate::content_fetch_retry::CODE_RATE_LIMITED) => {
+            "the server is limiting requests"
+        }
+        (Some(408), _) | (_, crate::content_fetch_retry::CODE_TIMEOUT) => {
+            "the server did not answer in time"
+        }
+        (Some(HTTP_NOT_FOUND | HTTP_GONE), _) => "a file the folder lists is missing",
+        (Some(500..=599), _) => "the server had an error",
+        (_, crate::content_fetch_retry::CODE_NETWORK) => "the connection failed",
+        (_, crate::content_fetch_retry::CODE_TRUNCATED) => "a download ended early",
+        (_, crate::content_fetch_retry::CODE_TOO_LARGE) => "a file is too large",
+        _ => "the server refused a file",
+    }
+}
+
 /// Download the importer's files of the folder at `base` into `dest` (created if needed).
 /// With `previous` tags, files are requested conditionally; when everything matches, the result
 /// says `changed: false`. When anything changed, every file is in `dest`.
+///
+/// A root file the server does not have (404/410) is left out, as the importer skips a root file
+/// a folder lacks; a file a manifest lists is required. Any other failure (after the retries of
+/// `f`) fails the whole download: see [`DownloadFailure::message`].
 ///
 /// # Errors
 /// A user-presentable reason; `dest` may then hold partial files (the caller removes it).
@@ -426,7 +534,10 @@ pub fn download_folder(
     previous: Option<&BTreeMap<String, FileTag>>,
     sink: &dyn EventSink,
 ) -> Result<Download, String> {
-    let marker = fetch_file(f, base, MARKER, MAX_FILE_BYTES, None)?
+    let failed =
+        |rel: &str, e: FetchError, total: usize| DownloadFailure::one(rel, e, total).message();
+    let marker = fetch_file(f, base, MARKER, MAX_FILE_BYTES, None)
+        .map_err(|e| failed(MARKER, e, 1))?
         .and_then(|m| m.body.map(|b| (m.tag, b)))
         .ok_or(NO_DATA_FOLDER)?;
     if looks_like_html(&marker.1) {
@@ -438,11 +549,17 @@ pub fn download_folder(
         .filter(|r| **r != MARKER)
         .map(|r| (*r).to_string())
         .collect();
+    let mut required: BTreeSet<String> = BTreeSet::new();
     for manifest in MANIFESTS {
         let dir = manifest.split('/').next().unwrap_or_default();
-        if let Some(m) = fetch_file(f, base, manifest, MAX_MANIFEST_BYTES, None)? {
+        let got = fetch_file(f, base, manifest, MAX_MANIFEST_BYTES, None)
+            .map_err(|e| failed(manifest, e, 1 + MANIFESTS.len()))?;
+        if let Some(m) = got {
             let body = m.body.unwrap_or_default();
-            wanted.extend(manifest_files(dir, &body)?);
+            for rel in manifest_files(dir, &body)? {
+                required.insert(rel.clone());
+                wanted.push(rel);
+            }
             files.insert(manifest.to_string(), m.tag);
         }
     }
@@ -452,7 +569,14 @@ pub fn download_folder(
     write_file(dest, MARKER, &marker.1)?;
     files.insert(MARKER.into(), marker.0);
     let total = wanted.len();
-    let fetched = fetch_all(f, base, &wanted, previous, sink)?;
+    let in_download = |e: DownloadFailure| {
+        DownloadFailure {
+            total: total + files.len(),
+            ..e
+        }
+        .message()
+    };
+    let fetched = fetch_all(f, base, &wanted, previous, &required, sink).map_err(in_download)?;
     let mut bytes = marker.1.len();
     let mut stale = Vec::new();
     for (rel, got) in wanted.iter().zip(fetched) {
@@ -478,7 +602,14 @@ pub fn download_folder(
     }
     let changed = previous.map_or(true, |p| !same_content(p, &files));
     if changed && !stale.is_empty() {
-        let again = fetch_all(f, base, &stale, None, sink)?;
+        let all: BTreeSet<String> = stale.iter().cloned().collect();
+        let again = fetch_all(f, base, &stale, None, &all, sink).map_err(|e| {
+            DownloadFailure {
+                total: files.len(),
+                ..e
+            }
+            .message()
+        })?;
         for (rel, got) in stale.iter().zip(again) {
             let got = got.and_then(|g| g.body.map(|b| (g.tag, b)));
             let (tag, body) =
@@ -520,17 +651,19 @@ fn write_file(dest: &Path, rel: &str, body: &[u8]) -> Result<(), String> {
     std::fs::write(&path, body).map_err(|e| format!("could not save the download: {e}"))
 }
 
-type Slot = Mutex<Option<Result<Option<Fetched>, String>>>;
+type Slot = Mutex<Option<Result<Option<Fetched>, FetchError>>>;
 
 /// Fetch `rels` with a few parallel workers, in order (conditionally when `tags` has an ETag);
-/// progress is reported per file.
+/// progress is reported per file. A `required` file that is not there is a failure. After the
+/// first failure no new file is started; every failed path is returned with its reason.
 fn fetch_all(
     f: &dyn RemoteFetcher,
     base: &str,
     rels: &[String],
     tags: Option<&BTreeMap<String, FileTag>>,
+    required: &BTreeSet<String>,
     sink: &dyn EventSink,
-) -> Result<Vec<Option<Fetched>>, String> {
+) -> Result<Vec<Option<Fetched>>, DownloadFailure> {
     let next = AtomicUsize::new(0);
     let done = AtomicUsize::new(0);
     let slots: Vec<Slot> = rels.iter().map(|_| Mutex::new(None)).collect();
@@ -542,11 +675,14 @@ fn fetch_all(
                 let etag = tags
                     .and_then(|t| t.get(rel))
                     .and_then(|t| t.etag.as_deref());
-                let got = fetch_file(f, base, rel, MAX_FILE_BYTES, etag);
+                let got = match fetch_file(f, base, rel, MAX_FILE_BYTES, etag) {
+                    Ok(None) if required.contains(rel) => {
+                        Err(FetchError::http(HTTP_NOT_FOUND, "Not Found", None))
+                    }
+                    other => other,
+                };
                 let failed = got.is_err();
-                if let Ok(mut slot) = slots[i].lock() {
-                    *slot = Some(got);
-                }
+                *slots[i].lock().unwrap_or_else(PoisonError::into_inner) = Some(got);
                 let n = done.fetch_add(1, Ordering::SeqCst) + 1;
                 sink.import_progress(&progress("downloading", n, rels.len(), rel));
                 if failed {
@@ -555,10 +691,23 @@ fn fetch_all(
             });
         }
     });
-    slots
-        .into_iter()
-        .map(|s| s.into_inner().ok().flatten().unwrap_or(Ok(None)))
-        .collect()
+    let mut out = Vec::with_capacity(rels.len());
+    let mut failure = DownloadFailure {
+        total: rels.len(),
+        ..DownloadFailure::default()
+    };
+    for (rel, slot) in rels.iter().zip(slots) {
+        match slot.into_inner().unwrap_or_else(PoisonError::into_inner) {
+            Some(Ok(got)) => out.push(got),
+            Some(Err(e)) => failure.failed.push((rel.clone(), e)),
+            None => failure.not_tried += 1,
+        }
+    }
+    if failure.failed.is_empty() {
+        Ok(out)
+    } else {
+        Err(failure)
+    }
 }
 
 /// Decode a gzip body (RFC 1952), refusing more than `max` output bytes.
@@ -606,69 +755,6 @@ pub fn gunzip(bytes: &[u8], max: usize) -> Result<Vec<u8>, String> {
         return Err(bad());
     }
     Ok(out)
-}
-
-impl RemoteFetcher for HttpsFetcher {
-    fn fetch(&self, request: &FetchRequest<'_>) -> Result<FetchResponse, String> {
-        use std::io::Read;
-        require_https(request.url).map_err(|e| e.message)?;
-        let client = crate::content_index::shared_client()?;
-        let mut call = client
-            .get(request.url)
-            .header(
-                reqwest::header::USER_AGENT,
-                concat!("Borealis/", env!("CARGO_PKG_VERSION")),
-            )
-            .header(reqwest::header::ACCEPT_ENCODING, "gzip");
-        if let Some(accept) = request.accept {
-            call = call.header(reqwest::header::ACCEPT, accept);
-        }
-        if let Some(tag) = request.if_none_match {
-            call = call.header(reqwest::header::IF_NONE_MATCH, tag);
-        }
-        let response = call
-            .send()
-            .map_err(|e| crate::content_index::error_chain(&e))?;
-        let status = response.status().as_u16();
-        let header = |name: &str| {
-            response
-                .headers()
-                .get(name)
-                .and_then(|v| v.to_str().ok())
-                .map(str::to_string)
-        };
-        let etag = header("etag");
-        let gzip = header("content-encoding").is_some_and(|e| e.eq_ignore_ascii_case("gzip"));
-        let rate_limited = status == 429
-            || (status == 403 && header("x-ratelimit-remaining").as_deref() == Some("0"));
-        if status != 200 {
-            return Ok(FetchResponse {
-                status,
-                etag,
-                body: Vec::new(),
-                rate_limited,
-            });
-        }
-        let mut body = Vec::new();
-        response
-            .take(request.max_bytes as u64 + 1)
-            .read_to_end(&mut body)
-            .map_err(|e| e.to_string())?;
-        if body.len() > request.max_bytes {
-            return Err("the file is too large".into());
-        }
-        let body = if gzip {
-            gunzip(&body, request.max_bytes)?
-        } else {
-            body
-        };
-        Ok(FetchResponse {
-            status,
-            etag,
-            body,
-            rate_limited,
-        })
-    }
 }
 
 #[cfg(test)]

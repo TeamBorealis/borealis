@@ -31,7 +31,7 @@ const SHA256_ATTRIBUTE: &str = "sha256";
 const MAX_SIGNATURE_BYTES: usize = 4 * 1024;
 const SIGNATURE_SUFFIX: &str = ".sig";
 const RAW_GITHUB: &str = "https://raw.githubusercontent.com/";
-const USER_AGENT: &str = concat!("Borealis/", env!("CARGO_PKG_VERSION"));
+pub(crate) const USER_AGENT: &str = concat!("Borealis/", env!("CARGO_PKG_VERSION"));
 
 /// Detached signature document served at `<index url>.sig`: base64 key and signature over the
 /// exact index bytes.
@@ -222,7 +222,7 @@ pub(crate) fn shared_client() -> Result<reqwest::blocking::Client, String> {
 }
 
 /// A transport failure, classified (redirect refusals stay permanent and keep their wording).
-fn send_error(e: &reqwest::Error) -> FetchError {
+pub(crate) fn send_error(e: &reqwest::Error) -> FetchError {
     let text = error_chain(e);
     if e.is_redirect() || text.contains("redirect") {
         FetchError::new(CODE_REFUSED, text)

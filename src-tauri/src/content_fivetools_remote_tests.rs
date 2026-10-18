@@ -1,4 +1,5 @@
 use super::*;
+use crate::content_index::HttpsFetcher;
 use std::collections::BTreeSet;
 
 fn gh(owner: &str, repo: &str, git_ref: Option<&str>, path: Option<&str>) -> FiveToolsLocation {

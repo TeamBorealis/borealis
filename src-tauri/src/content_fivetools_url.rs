@@ -10,6 +10,8 @@
 //! the app. Deterministic: no AI is involved.
 
 use crate::content_dto::{FiveToolsImportReport, FiveToolsImportRequest};
+use crate::content_fetch_retry::{RetryPolicy, Sleep};
+use crate::content_fivetools_fetch::RetryingRemote;
 use crate::content_fivetools_remote::{
     download_folder, files_revision, parse_location, raw_base, resolve_commit, FileTag,
     FiveToolsLocation, RemoteFetcher, NO_DATA_FOLDER,
@@ -170,15 +172,19 @@ impl AppState {
     }
 
     /// Check `url` (against `previous`) and, when it changed or is new, download it into a fresh
-    /// stage folder and grant it as a `5etools-folder` pick.
+    /// stage folder and grant it as a `5etools-folder` pick. Every request goes through one
+    /// [`RetryingRemote`]; a file that still fails stops the download and nothing is staged.
     fn check_and_stage(
         &self,
         f: &dyn RemoteFetcher,
         url: &str,
         previous: Option<&FiveToolsUrlRecord>,
         sink: &dyn EventSink,
+        retry: (RetryPolicy, Sleep<'_>),
     ) -> ApiResult<Option<PickedPathDto>> {
         let location = parse_location(url).map_err(ApiError::invalid)?;
+        let retrying = RetryingRemote::new(f, retry.0, retry.1);
+        let f: &dyn RemoteFetcher = &retrying;
         let _guard = self.content_lock()?;
         let dir = self.url_stage()?;
         let data = dir.join("data");
@@ -215,8 +221,23 @@ impl AppState {
         url: &str,
         sink: &dyn EventSink,
     ) -> ApiResult<PickedPathDto> {
+        self.stage_5etools_url_with(f, url, sink, RetryPolicy::default(), &std::thread::sleep)
+    }
+
+    /// [`AppState::stage_5etools_url`] with an explicit retry policy and pause function (tests).
+    ///
+    /// # Errors
+    /// As [`AppState::stage_5etools_url`].
+    pub fn stage_5etools_url_with(
+        &self,
+        f: &dyn RemoteFetcher,
+        url: &str,
+        sink: &dyn EventSink,
+        policy: RetryPolicy,
+        sleep: Sleep<'_>,
+    ) -> ApiResult<PickedPathDto> {
         let picked = self
-            .check_and_stage(f, url, None, sink)?
+            .check_and_stage(f, url, None, sink, (policy, sleep))?
             .ok_or_else(|| ApiError::invalid(NO_DATA_FOLDER))?;
         Ok(PickedPathDto {
             name: key(url),
@@ -270,6 +291,23 @@ impl AppState {
         url: &str,
         sink: &dyn EventSink,
     ) -> ApiResult<FiveToolsUrlUpdate> {
+        self.update_5etools_url_with(f, url, sink, RetryPolicy::default(), &std::thread::sleep)
+    }
+
+    /// [`AppState::update_5etools_url`] with an explicit retry policy and pause function (tests).
+    /// A failed download keeps the remembered revision, files and packs (the next Update tries
+    /// again) and saves the failure as the address's problem.
+    ///
+    /// # Errors
+    /// As [`AppState::update_5etools_url`].
+    pub fn update_5etools_url_with(
+        &self,
+        f: &dyn RemoteFetcher,
+        url: &str,
+        sink: &dyn EventSink,
+        policy: RetryPolicy,
+        sleep: Sleep<'_>,
+    ) -> ApiResult<FiveToolsUrlUpdate> {
         let record = self
             .content_prefs()
             .fivetools_urls
@@ -277,19 +315,20 @@ impl AppState {
             .find(|r| r.url == key(url))
             .ok_or_else(|| ApiError::invalid("That address has not been imported yet."))?;
         tracing::info!("5etools address update started");
-        let staged = match self.check_and_stage(f, &record.url, Some(&record), sink) {
-            Ok(s) => s,
-            Err(e) => {
-                let _guard = self.content_lock()?;
-                let failed = FiveToolsUrlRecord {
-                    last_checked: Some(now()),
-                    problem: Some(e.message.clone()),
-                    ..record
-                };
-                self.save_url_record(failed)?;
-                return Err(e);
-            }
-        };
+        let staged =
+            match self.check_and_stage(f, &record.url, Some(&record), sink, (policy, sleep)) {
+                Ok(s) => s,
+                Err(e) => {
+                    let _guard = self.content_lock()?;
+                    let failed = FiveToolsUrlRecord {
+                        last_checked: Some(now()),
+                        problem: Some(e.message.clone()),
+                        ..record
+                    };
+                    self.save_url_record(failed)?;
+                    return Err(e);
+                }
+            };
         let Some(picked) = staged else {
             let _guard = self.content_lock()?;
             let checked = FiveToolsUrlRecord {

@@ -155,7 +155,9 @@ impl FetchError {
         }
     }
 
-    fn is_rate_limit(&self) -> bool {
+    /// A 429, or a 403 that says no requests are left.
+    #[must_use]
+    pub fn is_rate_limit(&self) -> bool {
         self.status() == Some(HTTP_TOO_MANY) || self.code == CODE_RATE_LIMITED
     }
 
@@ -255,21 +257,21 @@ impl RetryPolicy {
 /// How the retry layer waits (the real update sleeps; tests record).
 pub type Sleep<'a> = &'a (dyn Fn(Duration) + Send + Sync);
 
-/// A [`Fetcher`] that retries another one under a [`RetryPolicy`]. One instance per update: the
-/// pause budget and the rate-limited hosts are shared by every download of that update.
-pub struct Retrying<'a> {
-    inner: &'a dyn Fetcher,
+/// The retry state of one update: the policy, the pause function, the pause budget spent so far
+/// and the hosts that are still rate limiting. Every download of the update goes through the same
+/// instance, whatever client it uses ([`Retrying`] for index files, the 5etools
+/// [`crate::content_fivetools_fetch::RetryingRemote`] for 5etools folders).
+pub struct RetryRun<'a> {
     policy: RetryPolicy,
     sleep: Sleep<'a>,
     spent: Mutex<Duration>,
     limited: Mutex<BTreeSet<String>>,
 }
 
-impl<'a> Retrying<'a> {
+impl<'a> RetryRun<'a> {
     #[must_use]
-    pub fn new(inner: &'a dyn Fetcher, policy: RetryPolicy, sleep: Sleep<'a>) -> Self {
+    pub fn new(policy: RetryPolicy, sleep: Sleep<'a>) -> Self {
         Self {
-            inner,
             policy,
             sleep,
             spent: Mutex::new(Duration::ZERO),
@@ -283,14 +285,17 @@ impl<'a> Retrying<'a> {
             .unwrap_or_else(PoisonError::into_inner)
             .contains(host)
     }
-}
 
-impl Fetcher for Retrying<'_> {
-    fn get(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, String> {
-        self.get_classified(url, max_bytes).map_err(|e| e.wire())
-    }
-
-    fn get_classified(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, FetchError> {
+    /// Run `attempt` (one download of `url`) until it succeeds, fails for a reason that will not
+    /// pass, or the policy gives up.
+    ///
+    /// # Errors
+    /// The last failure; [`CODE_RATE_LIMITED`] without a try when `url`'s host is still limiting.
+    pub fn run<T>(
+        &self,
+        url: &str,
+        mut attempt: impl FnMut() -> Result<T, FetchError>,
+    ) -> Result<T, FetchError> {
         let host = crate::content_index_aurora::host_of(url);
         if self.host_limited(&host) {
             return Err(FetchError::new(
@@ -301,7 +306,7 @@ impl Fetcher for Retrying<'_> {
         let mut tried = 0;
         loop {
             tried += 1;
-            let e = match self.inner.get_classified(url, max_bytes) {
+            let e = match attempt() {
                 Ok(body) => return Ok(body),
                 Err(e) => e,
             };
@@ -322,6 +327,34 @@ impl Fetcher for Retrying<'_> {
             tracing::info!(url, code = %e.code, tries = tried, pause_ms = pause.as_millis() as u64, "retrying a download");
             (self.sleep)(pause);
         }
+    }
+}
+
+/// A [`Fetcher`] that retries another one under a [`RetryPolicy`]. One instance per update: the
+/// pause budget and the rate-limited hosts are shared by every download of that update.
+pub struct Retrying<'a> {
+    inner: &'a dyn Fetcher,
+    run: RetryRun<'a>,
+}
+
+impl<'a> Retrying<'a> {
+    #[must_use]
+    pub fn new(inner: &'a dyn Fetcher, policy: RetryPolicy, sleep: Sleep<'a>) -> Self {
+        Self {
+            inner,
+            run: RetryRun::new(policy, sleep),
+        }
+    }
+}
+
+impl Fetcher for Retrying<'_> {
+    fn get(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, String> {
+        self.get_classified(url, max_bytes).map_err(|e| e.wire())
+    }
+
+    fn get_classified(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, FetchError> {
+        self.run
+            .run(url, || self.inner.get_classified(url, max_bytes))
     }
 }
 
