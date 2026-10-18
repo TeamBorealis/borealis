@@ -331,10 +331,30 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
             mech.push(r);
         }
     }
+    let mut stated_options = Vec::new();
     if !took_srd {
         // proficiency choices the feature states only in its prose
         let stated = super::stated_choices::read(&f.entries);
         super::stated_choices::apply(&mut mech, &stated);
+        if let Some(choice) = stated.expertise_choice() {
+            let owner = super::stated_choices::OptionOwner {
+                feature: &f.name,
+                ty,
+                source_display: &sh.source_display(&ent.source),
+                ruleset: ent.ruleset,
+            };
+            let mut id_of = |name: &str| {
+                let r = FeatureRef {
+                    name: name.to_string(),
+                    ..fref.clone()
+                };
+                feature_id(st, &r, sub)
+            };
+            let (rule, options) =
+                super::stated_choices::expertise_options(&owner, choice, &mut id_of);
+            mech.push(rule);
+            stated_options = options;
+        }
     }
     el.rules = std::mem::take(&mut mech.rules);
     if let Some((rules, block)) = (!sub).then(|| st.feature_casting.remove(&id)).flatten() {
@@ -355,6 +375,7 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
     drain_renderer(st, &renderer, &ent.file, &f.name);
     let mut elements = vec![el];
     elements.extend(book_options);
+    elements.extend(stated_options);
     Conv {
         elements,
         partial: mech.partial,
