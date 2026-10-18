@@ -1,0 +1,242 @@
+name: Import acceptance
+
+# IM4/IM6: proves that Aurora XML and 5etools JSON imports work as content sources on Windows and
+# Linux, not just macOS. Started by hand only: Actions > Import acceptance > Run workflow, or
+# `gh workflow run acceptance.yml --ref <branch>` (needs this file on the default branch), or a
+# push to the dedicated branch ci/platform-tests. Never on pull requests or other pushes.
+# Privacy (C4/IM6): 5etools data comes only from the BOREALIS_LIVE_5ETOOLS_URL secret, is never
+# committed, cached or uploaded, and logs carry counts only (tools/ci/run_filtered.py). No
+# artifacts are uploaded.
+on:
+  workflow_dispatch:
+    inputs:
+      sources:
+        description: "Acceptance sources, comma list of a-user, a-core, a-comm, f-url"
+        type: string
+        default: a-user,a-core,a-comm,f-url
+      deeper:
+        description: "Also run the deeper Aurora corpus suites (characters, requirements, index path, migrate, engine sweep)"
+        type: boolean
+        default: true
+      limit:
+        description: "BOREALIS_ACCEPT_LIMIT: max class/subclass/feat hosts per source (empty = full run)"
+        type: string
+        default: ""
+      aurora_index_url:
+        description: "A-core index URL (live; its nested indexes follow the repository's master branch)"
+        type: string
+        default: https://raw.githubusercontent.com/AuroraLegacy/elements/master/core.index
+  push:
+    branches: [ci/platform-tests]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: acceptance-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  # Debug info makes the test binaries big enough to exhaust the runner disk (ld Bus error on ubuntu).
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+  CARGO_PROFILE_TEST_DEBUG: line-tables-only
+
+jobs:
+  deterministic:
+    # Fixture-only import tests (synthetic + SRD, committed): no corpus, no network, no secret.
+    # ci.yml runs the whole workspace on main/PRs; this covers a ci/platform-tests run too.
+    name: deterministic import tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Keep LF line endings (Windows)
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - name: Free runner disk (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+      - name: Linux webkit2gtk deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev libxdo-dev
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target"
+          shared-key: import-deterministic
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - run: npm ci
+        working-directory: ui
+      # Produces ui/dist, which the Tauri crate needs to compile.
+      - run: npm run build
+        working-directory: ui
+      - name: Importer and content crates (incl. the AI-free import guard)
+        run: cargo test -p borealis-migrate -p borealis-import-5etools -p borealis-content
+      - name: App import tests on fixtures
+        run: >-
+          cargo test -p borealis
+          --test aurora_index --test fivetools_app --test fivetools_url
+          --test fivetools_fixture_invariants --test fivetools_renamed_ids
+          --test import_preview --test import_review_cmds --test import_bug_report
+          --test file_drop --test content_security --test character_recheck --test picked_paths
+
+  acceptance:
+    name: IM4 acceptance (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    # About 42 min for the full gate suite on an M-series Mac; runners are slower and build cold.
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Git settings (Windows)
+        # LF: content files are byte-compared and digested. Long paths: community repos nest deep.
+        if: runner.os == 'Windows'
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.longpaths true
+      - uses: actions/checkout@v4
+      - name: Free runner disk (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+      - name: Linux webkit2gtk deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev libxdo-dev
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target"
+          shared-key: import-acceptance
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - run: npm ci
+        working-directory: ui
+      - run: npm run build
+        working-directory: ui
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: CI helper self-test
+        run: python -I tools/ci/test_ci_tools.py
+
+      - name: Plan sources
+        id: plan
+        env:
+          SOURCES_INPUT: ${{ inputs.sources }}
+          DEEPER_INPUT: ${{ inputs.deeper }}
+          HAS_5ETOOLS_URL: ${{ secrets.BOREALIS_LIVE_5ETOOLS_URL != '' }}
+        run: |
+          requested="${SOURCES_INPUT:-a-user,a-core,a-comm,f-url}"
+          only=""
+          for s in ${requested//,/ }; do
+            case "$s" in
+              a-user|a-core|a-comm) only="$only,$s" ;;
+              f-url)
+                if [ "$HAS_5ETOOLS_URL" = "true" ]; then
+                  only="$only,$s"
+                else
+                  echo "::notice::f-url skipped: the repository secret BOREALIS_LIVE_5ETOOLS_URL is not set"
+                fi ;;
+              f-full) echo "::notice::f-full skipped: CI has no 5etools folder (IM6: 5etools comes only from the URL secret, f-url)" ;;
+              *) echo "::error::unknown source '$s' (a-user, a-core, a-comm, f-url)"; exit 2 ;;
+            esac
+          done
+          only="${only#,}"
+          [ -n "$only" ] || { echo "::error::no source selected"; exit 2; }
+          deeper=true
+          [ "$DEEPER_INPUT" = "false" ] && deeper=false
+          echo "only=$only" >> "$GITHUB_OUTPUT"
+          echo "deeper=$deeper" >> "$GITHUB_OUTPUT"
+          {
+            echo "## IM4 import acceptance, $RUNNER_OS"
+            echo ""
+            echo "Sources: \`$only\`; deeper Aurora suites: $deeper. Counts only (IM6)."
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fetch pinned Aurora community repositories
+        run: python -I tools/ci/fetch_aurora_corpus.py "$RUNNER_TEMP/corpus" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Build release test binaries
+        # Unfiltered on purpose: compiler output only, no corpus and no secret in this step.
+        id: build
+        run: |
+          set -e
+          cargo test --release --no-run -p borealis --test acceptance
+          if [ "${{ steps.plan.outputs.deeper }}" = "true" ]; then
+            cargo test --release --no-run -p borealis --test aurora_index_path
+            cargo test --release --no-run -p borealis-character --test corpus --test aurora_corpus_reqs --test aurora_corpus_sweep
+            cargo test --release --no-run -p borealis-migrate --test corpus
+          fi
+
+      - name: Acceptance (a-user, a-core, a-comm, f-url)
+        # Same command and variables as tools/regression-gate/gate.py `--only acceptance`.
+        env:
+          BOREALIS_ACCEPT_ONLY: ${{ steps.plan.outputs.only }}
+          BOREALIS_ACCEPT_STRICT: "1"
+          BOREALIS_ACCEPT_LIMIT: ${{ inputs.limit }}
+          BOREALIS_CORPUS_DIR: ${{ runner.temp }}/corpus
+          BOREALIS_LIVE_INDEX_URL: ${{ inputs.aurora_index_url || 'https://raw.githubusercontent.com/AuroraLegacy/elements/master/core.index' }}
+          BOREALIS_LIVE_5ETOOLS_URL: ${{ secrets.BOREALIS_LIVE_5ETOOLS_URL }}
+          # Downloads and installed packs stay in a run-scoped temp dir that the last step deletes.
+          TMPDIR: ${{ runner.temp }}/acc-tmp
+          TMP: ${{ runner.temp }}/acc-tmp
+          TEMP: ${{ runner.temp }}/acc-tmp
+        run: |
+          python -I -c "import os; os.makedirs(os.environ['TMP'], exist_ok=True)"
+          [ -n "$BOREALIS_ACCEPT_LIMIT" ] || unset BOREALIS_ACCEPT_LIMIT
+          [ -n "$BOREALIS_LIVE_5ETOOLS_URL" ] || unset BOREALIS_LIVE_5ETOOLS_URL
+          python -I tools/ci/run_filtered.py --label "acceptance ($RUNNER_OS)" \
+            -- -p borealis --test acceptance -- --color never
+
+      - name: Deeper Aurora corpus suites
+        if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.plan.outputs.deeper == 'true' }}
+        env:
+          CORPUS: ${{ runner.temp }}/corpus
+          TMPDIR: ${{ runner.temp }}/acc-tmp
+          TMP: ${{ runner.temp }}/acc-tmp
+          TEMP: ${{ runner.temp }}/acc-tmp
+        run: |
+          python -I -c "import os; os.makedirs(os.environ['TMP'], exist_ok=True)"
+          rc=0
+          run() { label=$1; shift; python -I tools/ci/run_filtered.py --label "$label ($RUNNER_OS)" -- "$@" -- --color never || rc=1; }
+          export BOREALIS_CORPUS_DIR="$CORPUS"
+          run "aurora characters" -p borealis-character --test corpus
+          run "aurora requirements" -p borealis-character --test aurora_corpus_reqs
+          run "aurora index path" -p borealis --test aurora_index_path
+          run "aurora engine sweep" -p borealis-character --test aurora_corpus_sweep
+          export BOREALIS_CORPUS_DIR="$CORPUS/repos"  # the migrate sweep takes the repos folder (gate.py)
+          run "aurora migrate corpus" -p borealis-migrate --test corpus
+          exit $rc
+
+      - name: Delete downloaded and imported content
+        # Before rust-cache's post step saves target/: nothing imported may reach a cache.
+        if: always()
+        run: >-
+          python -I -c "import shutil, sys; [shutil.rmtree(p, ignore_errors=True) for p in sys.argv[1:]]"
+          "$RUNNER_TEMP/acc-tmp" "$RUNNER_TEMP/corpus" target/tmp target/release/tmp
