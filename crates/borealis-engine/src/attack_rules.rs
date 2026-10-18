@@ -139,3 +139,46 @@ pub fn skill_bonus(
     }
     total
 }
+
+/// `extra_damage` triggers that add their dice to every hit of a melee weapon attack line
+/// (`unarmed` = the trigger also covers an Unarmed Strike).
+const PER_HIT_TRIGGERS: &[(&str, bool)] = &[
+    ("melee weapon hit", false),
+    ("melee weapon or unarmed strike hit", true),
+];
+
+/// Fixed extra damage on every hit of a melee attack line (`+ 1d8 radiant`: Improved Divine
+/// Smite, Radiant Strikes). Rules limited per turn, with a cost, a requirement, a choice of
+/// effects, or replaced by another live rule stay notes only. A thrown melee weapon keeps it
+/// (golden ruling A1: the line is the melee weapon's).
+#[must_use]
+pub fn per_hit_extra_damage(graph: &Graph<'_>, unarmed: bool) -> Vec<String> {
+    let live = live_rules(graph, &["extra_damage"]);
+    let replaced: Vec<&str> = live.iter().filter_map(|l| l.str("replaces")).collect();
+    live.iter()
+        .filter(|l| {
+            l.str("trigger").is_some_and(|t| {
+                PER_HIT_TRIGGERS
+                    .iter()
+                    .any(|(name, any)| t.eq_ignore_ascii_case(name) && (*any || !unarmed))
+            })
+        })
+        .filter(|l| {
+            [
+                "once_per",
+                "cost",
+                "requires",
+                "effects_choose",
+                "per_slot_level",
+            ]
+            .iter()
+            .all(|k| !l.c.fields.contains_key(*k))
+        })
+        .filter(|l| !l.str("name").is_some_and(|n| replaced.contains(&n)))
+        .filter_map(|l| {
+            let dice = l.str("dice")?.trim();
+            let ty = l.str("damage_type").unwrap_or("").trim();
+            Some(format!("{dice} {ty}").trim().to_string())
+        })
+        .collect()
+}

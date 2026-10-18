@@ -224,3 +224,34 @@ fn static_usage_reading() {
         ("1/Turn — 1/Long Rest".to_string(), vec![false, true])
     );
 }
+
+#[test]
+fn a_2014_monk_has_an_unarmed_strike_row() {
+    let Some(snap) = hero("Monk", 1) else {
+        return;
+    };
+    assert!(snap.attacks.iter().any(|a| a.name == "Unarmed Strike"));
+    let Some(snap) = hero("Fighter", 1) else {
+        return;
+    };
+    assert!(!snap.attacks.iter().any(|a| a.name == "Unarmed Strike"));
+}
+
+#[test]
+fn improved_divine_smite_adds_its_dice_to_melee_lines() {
+    let Some(e) = common::engine(Variant::Bundled) else {
+        return;
+    };
+    let mut h = Hero::new(e, true);
+    h.base([16, 10, 14, 8, 10, 16])
+        .race_class(RACE_HUMAN, &class("Paladin"))
+        .level_to(11);
+    h.equip("ID_WOTC_PHB_WEAPON_LONGSWORD");
+    let snap = h.snap();
+    let sword = snap
+        .attacks
+        .iter()
+        .find(|a| a.name == "Longsword")
+        .expect("Longsword row");
+    assert!(sword.damage.ends_with("+ 1d8 radiant"), "{}", sword.damage);
+}

@@ -836,8 +836,14 @@ impl Universe {
             }
             return;
         };
+        // one set per class name: the ids follow Aurora's name formula, so two classes of one
+        // name (the 2014 and 2024 Wizard) share it instead of listing every option twice
+        let mut done = std::collections::HashSet::new();
         for class in classes {
             let up = sanitize_id(&class.name);
+            if !done.insert(up.clone()) {
+                continue;
+            }
             for n in ASI_LEVELS {
                 for (kind, tmpl, label, sel_label) in [
                     (

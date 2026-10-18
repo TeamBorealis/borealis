@@ -97,3 +97,41 @@ fn the_copy_is_offered_when_its_counterpart_is_restricted_and_blocks_a_second_pi
         );
     }
 }
+
+#[test]
+fn improvement_options_are_listed_once_with_both_srd_packs() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+    let store = ContentStoreBuilder::new()
+        .add_pack_dir(&root.join("core"))
+        .and_then(|b| b.add_pack_dir(&root.join("srd-5.1")))
+        .and_then(|b| b.add_pack_dir(&root.join("srd-5.2.1")))
+        .expect("bundled packs")
+        .build();
+    let e = Engine::new(&store);
+    let s = commands::new_character(&e, Ruleset::Dnd2014);
+    let key = commands::slot_key(&e.derive(&s), "ID_LEVEL_1", "Class", 1).expect("class slot");
+    let mut s = commands::select(
+        &e,
+        &s,
+        &key,
+        Choice::Element("ID_WOTC_PHB_CLASS_FIGHTER".into()),
+    )
+    .expect("fighter")
+    .state;
+    while s.level() < 4 {
+        s = commands::level_up_main(&e, &s, None)
+            .expect("level up")
+            .state;
+    }
+    let snap = e.derive(&s);
+    let slot = snap
+        .slots
+        .iter()
+        .find(|x| x.name.starts_with("Improvement Option"))
+        .expect("improvement slot at 4");
+    let mut ids: Vec<&str> = slot.options.iter().map(|o| o.id.as_str()).collect();
+    let n = ids.len();
+    ids.sort_unstable();
+    ids.dedup();
+    assert_eq!(ids.len(), n, "{ids:?}");
+}

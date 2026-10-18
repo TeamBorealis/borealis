@@ -122,6 +122,14 @@ pub fn inventory_snapshot(
     }
 }
 
+/// `damage` followed by each per-hit extra (`1d8+5 slashing + 1d8 radiant`).
+fn with_extra(damage: String, extra: Option<&Vec<String>>) -> String {
+    extra
+        .into_iter()
+        .flatten()
+        .fold(damage, |acc, x| format!("{acc} + {x}"))
+}
+
 pub(crate) fn dice_with_bonus(dice: &str, bonus: i32, ty: &str) -> String {
     let sign = if bonus < 0 { "-" } else { "+" };
     let core = if bonus == 0 {
@@ -240,6 +248,7 @@ pub fn attacks_with(
             + stats.sum(&format!("{lname}:attack"))
             + enh
             + d20;
+        let extra = crate::attack_rules::per_hit_extra_damage(graph, false);
         let dmg = e.el.setter("damage");
         let mut dice = dmg.map(|d| d.value.clone()).unwrap_or_default();
         let ty = dmg
@@ -289,7 +298,7 @@ pub fn attacks_with(
             damage: if dice.is_empty() {
                 String::new()
             } else {
-                dice_with_bonus(&dice, bonus, &ty)
+                with_extra(dice_with_bonus(&dice, bonus, &ty), melee.then_some(&extra))
             },
             ability: ids::ABILITIES[ability].to_string(),
             proficient,
@@ -298,7 +307,9 @@ pub fn attacks_with(
             save: None,
         });
     }
-    if state.ruleset == borealis_content::Ruleset::Dnd2024 {
+    // 2024: every character has the row (SRD 5.2.1 Unarmed Strike); 2014: a character with
+    // Martial Arts (SRD 5.1 Monk). Aurora lists no automatic row (its attacks are user-added).
+    if state.ruleset == borealis_content::Ruleset::Dnd2024 || cx.martial_arts.is_some() {
         out.push(unarmed_strike(cx, arts, proficiency, mods, d20));
     }
     out
@@ -342,6 +353,10 @@ fn unarmed_strike(
         Some(m) => dice_with_bonus(&m.die, bonus, "bludgeoning"),
         None => format!("{} bludgeoning", 1 + bonus),
     };
+    let damage = with_extra(
+        damage,
+        Some(&crate::attack_rules::per_hit_extra_damage(cx.graph, true)),
+    );
     let am = crate::attack_rules::attack_mods(
         cx.graph,
         &crate::attack_rules::AttackFacts {
