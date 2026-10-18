@@ -86,12 +86,12 @@ impl ImportedPack {
     }
 }
 
-fn file_for(e: &Element) -> &'static str {
+pub(crate) fn file_for(e: &Element) -> &'static str {
     match e.ty.as_str() {
         "Source" => "source.json",
         "Race" | "Species" | "Sub Race" | "Racial Trait" | "Species Trait Option" => "species.json",
         "Class" | "Archetype" | "Archetype Feature" => "classes.json",
-        "Class Feature" if e.data.contains_key("feature_types") => "options.json",
+        "Class Feature" | "Option" if e.data.contains_key("feature_types") => "options.json",
         "Class Feature" => "classes.json",
         "Background" | "Background Feature" => "backgrounds.json",
         "Feat" | "Feat Feature" => "feats.json",

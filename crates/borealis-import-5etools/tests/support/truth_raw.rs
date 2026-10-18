@@ -793,11 +793,38 @@ pub fn load(data: &Path, ours: &HashMap<String, (Element, Ruleset)>) -> Matched 
             (name_of(r).to_lowercase(), source_of(r).to_uppercase()),
             (id.clone(), expect.clone()),
         );
+        if r.contains_key(copy::VERSIONS) {
+            // a race whose versions are its options: audited through each version
+            continue;
+        }
+        // a version of such a race is the race with its option picked (the former species
+        // element, `id`, is no longer offered)
+        let option = r.contains_key(copy::VERSION_OF).then(|| {
+            ours.iter()
+                .find(|(_, (el, _))| el.data.get("former_id").and_then(Value::as_str) == Some(&id))
+                .map(|(oid, (el, _))| {
+                    (
+                        oid.clone(),
+                        el.data
+                            .get("version_of")
+                            .and_then(Value::as_str)
+                            .map(str::to_string),
+                    )
+                })
+        });
+        let (id, parent) = match option {
+            Some(Some((oid, parent))) => (oid, parent),
+            Some(None) => {
+                *out.unmatched.entry("race version option").or_default() += 1;
+                continue;
+            }
+            None => (id, None),
+        };
         out.entries.push(Entry {
             kind: "species",
             ruleset: ours[&id].1,
             id,
-            parent: None,
+            parent,
             expect,
         });
     }

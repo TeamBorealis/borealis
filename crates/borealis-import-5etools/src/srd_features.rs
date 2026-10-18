@@ -54,11 +54,13 @@ const SELECT_TYPES: [&str; 4] = ["Proficiency", "Language", "Option", "Condition
 /// Supports of the core skill Expertise options.
 const EXPERTISE_SUPPORT: &str = "ID_INTERNAL_SUPPORT_EXPERTISE";
 /// Custom rule kinds carried over (engine kinds the bundled SRD 5.2.1 classes use).
-const CUSTOM_KINDS: [&str; 4] = [
+const CUSTOM_KINDS: [&str; 5] = [
     "expertise",
     "skill_bonus_unproficient",
     "aura",
     "select_param",
+    // SRD 5.2.1 Nature's Ward (Circle of the Land): poisoned immunity
+    "condition_immunity",
 ];
 
 /// One SRD feature: its id, the class level it is gained at and its rules.
@@ -150,10 +152,41 @@ pub fn portable(feature_name: &str, rules: &[Rule]) -> bool {
             Rule::Select(s) => {
                 SELECT_TYPES.contains(&s.ty.as_str())
                     || (s.ty == "Class Feature" && s.supports.as_deref() == Some(EXPERTISE_SUPPORT))
+                    || (s.ty == "Class Feature" && srd_option_select(s.supports.as_deref()))
             }
             Rule::Custom(c) => CUSTOM_KINDS.contains(&c.kind.as_str()),
             Rule::Unknown(_) => false,
         })
+}
+
+/// Optional feature labels: the import states these choices itself (`optionalfeatureProgression`
+/// selects), so the SRD's select of them would be a second one.
+const OWN_CHOICE_LABELS: [&str; 6] = [
+    "Fighting Style",
+    "Eldritch Invocation",
+    "Metamagic",
+    "Pact Boon",
+    "Maneuver",
+    "Improvement Option",
+];
+
+/// A `Class Feature` select of the SRD's own option elements that 5etools states in prose only
+/// (SRD 5.1 Favored Enemy, Humanoid Favored Enemy, Favored Terrain): the options live in the
+/// bundled pack, so the imported feature can offer them. Not a choice the import makes itself
+/// ([`OWN_CHOICE_LABELS`], the ability score improvement) and not a select over ids (Scholar).
+fn srd_option_select(supports: Option<&str>) -> bool {
+    let Some(first) = supports
+        .and_then(|t| t.split([',', '|', '&']).next())
+        .map(str::trim)
+        .filter(|t| !t.is_empty())
+    else {
+        return false;
+    };
+    !first.starts_with("ID_")
+        && !first.starts_with('$')
+        && !OWN_CHOICE_LABELS
+            .iter()
+            .any(|l| first.eq_ignore_ascii_case(l) || first.eq_ignore_ascii_case(&format!("{l}s")))
 }
 
 fn normalize(name: &str) -> String {
@@ -360,6 +393,37 @@ mod tests {
                 {"kind":"expertise","count":2,"level":6}]"#
             )
         ));
+        // F16: the SRD 5.1 Ranger's Favored Enemy / Favored Terrain selects of its own options
+        assert!(portable(
+            "Favored Enemy",
+            &rules(
+                r#"[{"kind":"stat","name":"favored enemy:count","value":"1"},
+                {"kind":"select","type":"Class Feature","name":"Favored Enemy","level":1,"supports":"Favored Enemy"},
+                {"kind":"select","type":"Class Feature","name":"Favored Enemy, Humanoid","number":2,"supports":"Humanoid Favored Enemy","requirements":"ID_X"},
+                {"kind":"select","type":"Language","name":"Language (Favored Enemy)","optional":true}]"#
+            )
+        ));
+        // F10: XPHB Nature's Ward takes the SRD's immunity and resistance choice
+        assert!(portable(
+            "Nature's Ward",
+            &rules(
+                r#"[{"kind":"condition_immunity","conditions":["poisoned"]},
+                {"kind":"select_param","name":"Resistance","options":["Cold","Fire"]}]"#
+            )
+        ));
+        // choices the import makes itself stay out (no second Fighting Style / invocation select)
+        for supports in [
+            "Fighting Style,Fighter",
+            "Eldritch Invocation",
+            "Metamagic",
+            "Pact Boon",
+            "ID_EXPERTISE_SKILL_ARCANA|ID_X",
+        ] {
+            let json = format!(
+                r#"[{{"kind":"select","type":"Class Feature","name":"S","supports":"{supports}"}}]"#
+            );
+            assert!(!portable("S", &rules(&json)), "{supports}");
+        }
         assert!(portable(
             "Diamond Soul",
             &rules(

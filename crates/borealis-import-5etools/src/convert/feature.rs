@@ -315,6 +315,13 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
         }
     }
     el.rules = std::mem::take(&mut mech.rules);
+    if let Some((rules, block)) = (!sub).then(|| st.feature_casting.remove(&id)).flatten() {
+        // the class's spellcasting starts with this feature (class.rs)
+        el.rules.extend(rules);
+        el.spellcasting = Some(block);
+        el.data
+            .insert("class".into(), Value::String(f.class_name.clone()));
+    }
     for (k, vs) in &mech.unmapped {
         note_unmapped(&mut el, k, &vs.join("; "));
     }
@@ -391,6 +398,58 @@ fn srd_rules(
         .filter(|r| !matches!(r, Rule::Stat(s) if table.is_some_and(|t| t.contains(&s.name))))
         .collect();
     (!rules.is_empty()).then(|| (srd.id.clone(), rules))
+}
+
+/// Alternative spell groups of a 2024 subclass whose every rule is a prepared class spell (the
+/// XPHB Circle of the Land's lands) as the bundled SRD 5.2.1 writes them: one `select_param`
+/// naming the groups and each group's spells as `grant_spell` gated by `requirements_param`.
+/// `None` when a group needs more than that (its own casting ability, list extensions or other
+/// rules); the groups then stay option elements of a select.
+fn param_gated_options(param: &str, options: &[spells_extra::SpellOption]) -> Option<Vec<Rule>> {
+    if options.len() < 2 {
+        return None;
+    }
+    let mut rules = vec![super::build::custom(
+        "select_param",
+        serde_json::json!({
+            "name": param,
+            "options": options.iter().map(|o| o.name.as_str()).collect::<Vec<_>>(),
+        }),
+    )];
+    for opt in options {
+        if opt.casting.ability != spells_extra::SpellAbility::Unspecified
+            || !opt.casting.expanded.is_empty()
+            || opt.rules.is_empty()
+        {
+            return None;
+        }
+        for r in &opt.rules {
+            let Rule::Grant(g) = r else {
+                return None;
+            };
+            if g.ty.as_deref() != Some("Spell")
+                || g.prepared != Some(true)
+                || g.requirements.is_some()
+            {
+                return None;
+            }
+            let mut f = serde_json::Map::new();
+            f.insert("spell".into(), Value::String(g.id.clone()));
+            if let Some(level) = g.level {
+                f.insert("level".into(), Value::from(level));
+            }
+            f.insert("mode".into(), Value::String("always_prepared".into()));
+            if let Some(list) = &g.spellcasting {
+                f.insert("spell_list".into(), Value::String(list.clone()));
+            }
+            f.insert(
+                "requirements_param".into(),
+                serde_json::json!({ param: opt.name }),
+            );
+            rules.push(super::build::custom("grant_spell", Value::Object(f)));
+        }
+    }
+    Some(rules)
 }
 
 /// Subclass feature references of a subclass, in order.
@@ -655,7 +714,16 @@ pub fn convert_subclass(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     partial.extend(spells.partial);
     let mut spellcasting: Option<Spellcasting> = None;
     let mut extra_elements = Vec::new();
-    if !spells.options.is_empty() {
+    let param_name = format!("{} Spells", sc.name);
+    let param_rules = (ent.ruleset == borealis_content::Ruleset::Dnd2024)
+        .then(|| param_gated_options(&param_name, &spells.options))
+        .flatten();
+    if let Some(rules) = param_rules {
+        // the bundled SRD 5.2.1 Circle of the Land: a land-type parameter gates each land's spells
+        for r in rules {
+            mech.push(r);
+        }
+    } else if !spells.options.is_empty() {
         let tag = format!("SPELL_OPTION_OF_{}", id.trim_start_matches("ID_"));
         for opt in spells.options {
             let mut oe = new_element(
@@ -750,7 +818,11 @@ pub fn convert_subclass(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     if let Some(t) = table.data {
         el.data.insert("table".into(), t);
     }
-    for r in optional_feature_selects(&sc.optionalfeature_progression, &mut partial) {
+    for r in optional_feature_selects(
+        &sc.optionalfeature_progression,
+        (ent.ruleset == borealis_content::Ruleset::Dnd2024).then_some(&sh.option_codes_2024),
+        &mut partial,
+    ) {
         mech.push(r);
     }
     for r in feat_selects(&sc.feat_progression, &mut partial) {
@@ -811,6 +883,58 @@ mod tests {
     use super::*;
     use borealis_content::Ruleset;
     use serde_json::json;
+
+    #[test]
+    fn land_options_become_a_param_and_gated_spells() {
+        // F10: XPHB Circle of the Land, as the bundled SRD 5.2.1 druid
+        let grant = |id: &str, level: Option<u32>| {
+            Rule::Grant(borealis_content::GrantRule {
+                id: id.into(),
+                ty: Some("Spell".into()),
+                level,
+                spellcasting: Some("Druid".into()),
+                prepared: Some(true),
+                ..borealis_content::GrantRule::default()
+            })
+        };
+        let opt = |name: &str, rules: Vec<Rule>| spells_extra::SpellOption {
+            name: name.into(),
+            rules,
+            casting: spells_extra::Casting::default(),
+        };
+        let options = vec![
+            opt(
+                "Arid Land",
+                vec![grant("ID_BLUR", Some(3)), grant("ID_FIREBALL", Some(5))],
+            ),
+            opt("Polar Land", vec![grant("ID_FOG_CLOUD", Some(3))]),
+        ];
+        let rules = param_gated_options("Circle of the Land Spells", &options).unwrap();
+        let Rule::Custom(param) = &rules[0] else {
+            panic!()
+        };
+        assert_eq!(param.kind, "select_param");
+        assert_eq!(param.fields["options"], json!(["Arid Land", "Polar Land"]));
+        let Rule::Custom(g) = &rules[2] else { panic!() };
+        assert_eq!(g.kind, "grant_spell");
+        assert_eq!(g.fields["spell"], "ID_FIREBALL");
+        assert_eq!(g.fields["level"], 5);
+        assert_eq!(
+            g.fields["requirements_param"],
+            json!({"Circle of the Land Spells": "Arid Land"})
+        );
+        for r in &rules {
+            let Rule::Custom(c) = r else { panic!() };
+            assert!(
+                borealis_content::rule_kinds::check_custom(c).is_empty(),
+                "{c:?}"
+            );
+        }
+        // a group with its own casting ability keeps the option shape
+        let mut own = options;
+        own[1].casting.ability = spells_extra::SpellAbility::Fixed("Wisdom".into());
+        assert!(param_gated_options("P", &own).is_none());
+    }
 
     #[test]
     fn ritual_casting_follows_the_class_feature_text() {

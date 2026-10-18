@@ -189,8 +189,13 @@ pub fn resolve_array(prop: &str, raw: &[Value]) -> Resolved {
     for (i, entry) in raw.iter().enumerate() {
         match resolver.resolve(i) {
             Ok(v) => {
-                let versions = expand_versions(&v, &mut out.notes);
-                out.entries.push(strip_versions(v));
+                let mut versions = expand_versions(&v, &mut out.notes);
+                let trait_name = (prop == "race").then(|| version_trait(&v)).flatten();
+                let mut v = strip_versions(v);
+                if let Some(t) = trait_name.filter(|_| versions.len() >= 2) {
+                    mark_race_versions(&mut v, &mut versions, &t);
+                }
+                out.entries.push(v);
                 out.origins.push(i);
                 for version in versions {
                     out.entries.push(version);
@@ -205,6 +210,63 @@ pub fn resolve_array(prop: &str, raw: &[Value]) -> Resolved {
     }
     out.notes.extend(resolver.notes);
     out
+}
+
+/// Marker on a race whose `_versions` are one choice: the trait every version replaces.
+pub const VERSION_TRAIT: &str = "_borealisVersionTrait";
+/// Marker on a race whose `_versions` are one choice: the expanded versions.
+pub const VERSIONS: &str = "_borealisVersions";
+/// Marker on an expanded version of such a race: `{name, source}` of the race.
+pub const VERSION_OF: &str = "_borealisVersionOf";
+
+/// The trait every `_versions` entry of a race replaces or removes first (`Gnomish Lineage`,
+/// `Draconic Ancestry`): the versions are the options of that trait. `None` when the versions
+/// do not all name the same trait.
+fn version_trait(entry: &Value) -> Option<String> {
+    let versions = entry.get("_versions")?.as_array()?;
+    let mut common: Option<String> = None;
+    for version in versions {
+        let spec = version.get("_abstract").unwrap_or(version);
+        let ops = spec.get("_mod")?.get("entries")?;
+        let first = match ops {
+            Value::Array(a) => a.first()?,
+            other => other,
+        };
+        let named = match first.get("mode").and_then(Value::as_str)? {
+            "replaceArr" => first.get("replace"),
+            "removeArr" => first.get("names"),
+            _ => None,
+        }?;
+        let name = match named {
+            Value::Array(a) => a.first()?.as_str()?,
+            other => other.as_str()?,
+        };
+        match &common {
+            Some(c) if c != name => return None,
+            Some(_) => {}
+            None => common = Some(name.to_string()),
+        }
+    }
+    common
+}
+
+/// A race's versions become the options of `trait_name` on the race (`race.rs`): the race keeps
+/// them under [`VERSIONS`]; each stays an entry of its own marked [`VERSION_OF`] (the former
+/// species, kept for characters saved with it).
+fn mark_race_versions(base: &mut Value, versions: &mut [Value], trait_name: &str) {
+    let of = serde_json::json!({
+        "name": base.get("name").cloned().unwrap_or(Value::Null),
+        "source": base.get("source").cloned().unwrap_or(Value::Null),
+    });
+    if let Value::Object(m) = base {
+        m.insert(VERSION_TRAIT.into(), Value::String(trait_name.to_string()));
+        m.insert(VERSIONS.into(), Value::Array(versions.to_vec()));
+    }
+    for v in versions.iter_mut() {
+        if let Value::Object(m) = v {
+            m.insert(VERSION_OF.into(), of.clone());
+        }
+    }
 }
 
 fn strip_versions(mut v: Value) -> Value {

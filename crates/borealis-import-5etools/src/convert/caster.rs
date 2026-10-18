@@ -382,6 +382,24 @@ pub fn caster(input: &CasterInput<'_>) -> CasterOut {
     out
 }
 
+/// The first class level at which `owner`'s spellcasting rules give a spell slot (`None`
+/// without slots).
+#[must_use]
+pub fn first_slot_level(owner: &str, rules: &[Rule]) -> Option<u32> {
+    let prefix = format!("{}:spellcasting:slots:", owner.to_lowercase());
+    rules
+        .iter()
+        .filter_map(|r| match r {
+            Rule::Stat(s)
+                if s.name.starts_with(&prefix) && s.value.parse::<i64>().is_ok_and(|n| n > 0) =>
+            {
+                Some(s.level.unwrap_or(1))
+            }
+            _ => None,
+        })
+        .min()
+}
+
 /// Result of [`class_table`].
 #[derive(Debug, Default)]
 pub struct TableOut {

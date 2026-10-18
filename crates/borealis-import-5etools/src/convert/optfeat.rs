@@ -97,7 +97,13 @@ fn progression_levels(progression: &Value, partial: &mut Vec<String>) -> Vec<(u3
 
 /// Selects for `optionalfeatureProgression` entries.
 #[must_use]
-pub fn optional_feature_selects(progs: &[Value], partial: &mut Vec<String>) -> Vec<Rule> {
+/// `option_codes`: for a 2024 owner, the codes 2024 optional features carry
+/// ([`super::Shared::option_codes_2024`]); a select naming one of them is typed `Option`.
+pub fn optional_feature_selects(
+    progs: &[Value],
+    option_codes: Option<&std::collections::BTreeSet<String>>,
+    partial: &mut Vec<String>,
+) -> Vec<Rule> {
     let mut rules = Vec::new();
     for p in progs {
         let name = p
@@ -124,7 +130,12 @@ pub fn optional_feature_selects(progs: &[Value], partial: &mut Vec<String>) -> V
         for (level, count) in
             progression_levels(p.get("progression").unwrap_or(&Value::Null), partial)
         {
-            let mut rule = Rule::Select(select("Class Feature", name, Some(&supports), count));
+            let ty = if option_codes.is_some_and(|set| codes.iter().any(|c| set.contains(c))) {
+                OPTION_TYPE
+            } else {
+                "Class Feature"
+            };
+            let mut rule = Rule::Select(select(ty, name, Some(&supports), count));
             if let Err(e) = set_level(&mut rule, level) {
                 partial.push(e);
             }
@@ -166,6 +177,9 @@ pub fn feat_selects(progs: &[Value], partial: &mut Vec<String>) -> Vec<Rule> {
     rules
 }
 
+/// Element type of 2024 optional features and of the 2024 selects that choose them.
+pub const OPTION_TYPE: &str = "Option";
+
 /// Convert one optional feature.
 pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     let of: OptionalFeature = match model::parse(&ent.raw) {
@@ -183,10 +197,15 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     let resolver = |k: RefKind, n: &str, s: &str| sh.link(k, n, s);
     let mut renderer = Renderer::new(&resolver);
     let id = st.ids.named(IdKind::OptionalFeature, &ent.source, &of.name);
+    let ty = if ent.ruleset == borealis_content::Ruleset::Dnd2024 {
+        OPTION_TYPE
+    } else {
+        "Class Feature"
+    };
     let mut el = new_element(
         &id,
         &of.name,
-        "Class Feature",
+        ty,
         &sh.source_display(&ent.source),
         ent.ruleset,
     );
@@ -259,6 +278,49 @@ mod tests {
     }
 
     #[test]
+    fn selects_of_2024_option_codes_are_typed_option() {
+        // F13: the bundled SRD 5.2.1 types invocation / metamagic selects and options `Option`
+        let codes: std::collections::BTreeSet<String> = ["EI".to_string()].into();
+        let progs = [
+            json!({"name": "Eldritch Invocations", "featureType": ["EI"], "progression": {"1": 1}}),
+            json!({"name": "Fighting Style", "featureType": ["FS:F"], "progression": {"1": 1}}),
+        ];
+        let mut partial = Vec::new();
+        let tys = |rules: Vec<Rule>| -> Vec<String> {
+            rules
+                .into_iter()
+                .filter_map(|r| match r {
+                    Rule::Select(s) => Some(s.ty),
+                    _ => None,
+                })
+                .collect()
+        };
+        assert_eq!(
+            tys(optional_feature_selects(&progs, Some(&codes), &mut partial)),
+            ["Option", "Class Feature"]
+        );
+        assert_eq!(
+            tys(optional_feature_selects(&progs, None, &mut partial)),
+            ["Class Feature", "Class Feature"]
+        );
+        let sh = Shared::default();
+        let mut st = State::default();
+        let raw = json!({"name": "Agonizing Blast", "source": "XPHB", "edition": "one",
+            "featureType": ["EI"], "entries": ["x"]});
+        let ent = Ent {
+            name: "Agonizing Blast".into(),
+            source: "XPHB".into(),
+            ruleset: borealis_content::Ruleset::Dnd2024,
+            is_srd: false,
+            file: "optionalfeatures.json".into(),
+            raw,
+        };
+        let conv = convert(&sh, &mut st, &ent);
+        assert_eq!(conv.elements[0].ty, "Option");
+        assert_eq!(crate::pack::file_for(&conv.elements[0]), "options.json");
+    }
+
+    #[test]
     fn progression_selects_for_arrays_objects_and_wildcards() {
         let mut partial = Vec::new();
         let rules = optional_feature_selects(
@@ -271,6 +333,7 @@ mod tests {
                 json!({"name": "Odder", "featureType": ["OTH"], "progression": {"x": 1}}),
                 json!({"name": "None", "featureType": [], "progression": {"1": 1}}),
             ],
+            None,
             &mut partial,
         );
         let sel: Vec<_> = rules

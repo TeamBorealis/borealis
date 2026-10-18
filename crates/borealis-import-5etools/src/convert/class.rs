@@ -1,7 +1,7 @@
 //! Classes.
 
 use super::build::{grant, grant_at, select, set_level};
-use super::caster::{caster, class_table, CasterInput};
+use super::caster::{caster, class_table, first_slot_level, CasterInput};
 use super::feature::{class_feature_key, feature_id, parse_class_feature_uid};
 use super::mech::Mech;
 use super::optfeat::{feat_selects, optional_feature_selects};
@@ -308,6 +308,7 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
 
     // Class features.
     let mut subclass_levels: Vec<u32> = Vec::new();
+    let mut casting_features: Vec<(u32, String)> = Vec::new();
     for item in &class.class_features {
         let (uid, gains_subclass) = match item {
             Value::String(s) => (s.as_str(), false),
@@ -329,6 +330,9 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         let key = class_feature_key(&r.name, &r.class, &r.class_source, r.level, &r.source);
         if sh.class_feature_keys.contains_key(&key) {
             let fid = feature_id(st, &r, false);
+            if r.name.eq_ignore_ascii_case("Spellcasting") {
+                casting_features.push((r.level, fid.clone()));
+            }
             mech.push(grant_at(&fid, "Class Feature", r.level));
         } else if !gains_subclass {
             partial.push(format!(
@@ -348,7 +352,11 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         }
         mech.push(rule);
     }
-    for r in optional_feature_selects(&class.optionalfeature_progression, &mut partial) {
+    for r in optional_feature_selects(
+        &class.optionalfeature_progression,
+        is_2024.then_some(&sh.option_codes_2024),
+        &mut partial,
+    ) {
         mech.push(r);
     }
     for r in feat_selects(&class.feat_progression, &mut partial) {
@@ -378,11 +386,28 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         schools: None,
         is_2024,
     });
-    for r in c.rules {
-        mech.push(r);
-    }
     partial.extend(c.partial);
-    el.spellcasting = c.spellcasting;
+    let has_block = c.spellcasting.is_some();
+    // a class whose first slots come after level 1 casts from its Spellcasting feature of that
+    // level (the bundled SRD PHB Paladin / Ranger): the block and its rules move there
+    let first_slot = first_slot_level(&class.name, &c.rules).filter(|l| *l > 1);
+    let casting_feature = first_slot.and_then(|level| {
+        casting_features
+            .iter()
+            .find(|(l, _)| *l == level)
+            .map(|(_, fid)| fid.clone())
+    });
+    match (casting_feature, c.spellcasting) {
+        (Some(fid), Some(block)) => {
+            st.feature_casting.insert(fid, (c.rules, block));
+        }
+        (_, block) => {
+            for r in c.rules {
+                mech.push(r);
+            }
+            el.spellcasting = block;
+        }
+    }
     let table = class_table(&class.name, &class.class_table_groups);
     for r in table.rules {
         mech.push(r);
@@ -395,7 +420,8 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     }
 
     // Class level additional spells (Artificer's expanded lists and similar).
-    let (spell_rules, spell_partial, spell_helpers) = spells_extra_class(sh, &class, &el);
+    let (spell_rules, spell_partial, spell_helpers) =
+        spells_extra_class(sh, &class, &el, has_block);
     for r in spell_rules {
         mech.push(r);
     }
@@ -515,11 +541,12 @@ fn spells_extra_class(
     sh: &Shared,
     class: &Class,
     el: &borealis_content::Element,
+    has_block: bool,
 ) -> (Vec<Rule>, Vec<String>, Vec<borealis_content::Element>) {
     if class.additional_spells.is_empty() {
         return (Vec::new(), Vec::new(), Vec::new());
     }
-    let own_block = el.spellcasting.is_none();
+    let own_block = !has_block;
     let r = super::spells_extra::convert(
         sh,
         el.ruleset.unwrap_or(borealis_content::Ruleset::Dnd2014),
@@ -793,6 +820,46 @@ mod tests {
         assert!(el.rules.iter().any(|r| matches!(r, Rule::Custom(c) if c.kind == "spellbook" && c.fields["initial_spells"] == 6)));
         assert!(el.rules.iter().any(|r| matches!(r, Rule::Custom(c) if c.kind == "prepared_spell_change" && c.fields["count"] == "any")));
         assert_eq!(sc.allow_replace, Some(true));
+    }
+
+    #[test]
+    fn half_caster_casts_from_its_spellcasting_feature() {
+        // PHB Paladin shape: no slots at level 1, Spellcasting at level 2 (F9)
+        let feature = json!({"name": "Spellcasting", "source": "ZZZ", "className": "Paladin", "classSource": "ZZZ", "level": 2, "entries": ["x"]});
+        let sh = with_features(std::slice::from_ref(&feature));
+        let mut st = State::default();
+        let raw = json!({
+            "name": "Paladin", "source": "ZZZ", "edition": "classic", "hd": {"number": 1, "faces": 10}, "proficiency": ["wis", "cha"],
+            "casterProgression": "1/2", "spellcastingAbility": "cha", "preparedSpells": "<$level$> / 2 + <$cha_mod$>",
+            "classTableGroups": [{"title": "Spell Slots per Spell Level", "colLabels": ["1st"], "rowsSpellProgression": [[0,0,0,0,0,0,0,0,0],[2,0,0,0,0,0,0,0,0],[3,0,0,0,0,0,0,0,0]]}],
+            "classFeatures": ["Spellcasting|Paladin|ZZZ|2"]});
+        let conv = convert(&sh, &mut st, &ent(raw));
+        let el = &conv.elements[0];
+        assert!(el.spellcasting.is_none(), "no casting block on the class");
+        assert!(!el
+            .rules
+            .iter()
+            .any(|r| matches!(r, Rule::Stat(s) if s.name.starts_with("paladin:spellcasting"))));
+        let (fid, (rules, block)) = st
+            .feature_casting
+            .iter()
+            .next()
+            .expect("handed to the feature");
+        assert_eq!(block.ability.as_deref(), Some("Charisma"));
+        assert_eq!(first_slot_level("Paladin", rules), Some(2));
+        assert!(rules
+            .iter()
+            .any(|r| matches!(r, Rule::Grant(g) if g.id.ends_with("SLOTS_HALF"))));
+        let fid = fid.clone();
+        let fconv = crate::convert::feature::convert_feature(&sh, &mut st, &ent(feature), false);
+        let fe = &fconv.elements[0];
+        assert_eq!(fe.id, fid);
+        assert_eq!(
+            fe.spellcasting.as_ref().and_then(|b| b.name.as_deref()),
+            Some("Paladin")
+        );
+        assert!(fe.rules.iter().any(|r| matches!(r, Rule::Stat(s) if s.name == "paladin:spellcasting:slots:1" && s.value == "2" && s.level == Some(2))));
+        assert!(st.feature_casting.is_empty());
     }
 
     #[test]

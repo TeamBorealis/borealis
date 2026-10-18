@@ -201,7 +201,7 @@ const METADATA_KEYS: &[&str] = &[
     "traitTags",
 ];
 
-fn race_key(name: &str, source: &str) -> String {
+pub(crate) fn race_key(name: &str, source: &str) -> String {
     format!("{}|{}", name.to_lowercase(), source.to_uppercase())
 }
 
@@ -237,6 +237,20 @@ fn with_lineage(race: Race, lineage: Option<&Value>) -> Race {
 
 /// Convert one race, subrace or species.
 pub fn convert(sh: &Shared, st: &mut State, ent: &Ent, is_subrace: bool) -> Conv {
+    if !is_subrace {
+        if let Some(conv) = super::race_versions::convert(sh, st, ent) {
+            return conv;
+        }
+    }
+    let mut conv = convert_plain(sh, st, ent, is_subrace);
+    if !is_subrace {
+        super::race_versions::keep_former_version(sh, ent, &mut conv);
+    }
+    conv
+}
+
+/// Convert one race, subrace or species entry as it stands (its `_versions` not considered).
+pub(crate) fn convert_plain(sh: &Shared, st: &mut State, ent: &Ent, is_subrace: bool) -> Conv {
     let race: Race = match model::parse(&ent.raw) {
         Ok(r) => r,
         Err(e) => {

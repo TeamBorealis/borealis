@@ -16,6 +16,7 @@ pub mod optfeat;
 pub mod prereq;
 pub mod prereq_index;
 pub mod race;
+pub mod race_versions;
 pub mod spell;
 pub mod spell_blocks;
 pub mod spell_choices;
@@ -113,6 +114,10 @@ pub struct Shared {
     /// Stat names each imported class's table emits (`monk:unarmored movement`), by class
     /// `name|source` (lower-case name, source upper-case).
     pub class_table_stats: BTreeMap<String, std::collections::BTreeSet<String>>,
+    /// Optional feature type codes (`EI`, `MM`) some 2024 optional feature carries: a 2024
+    /// select of those codes is typed `Option`, the type 2024 optional features import as
+    /// (the bundled SRD 5.2.1 invocations and metamagic).
+    pub option_codes_2024: std::collections::BTreeSet<String>,
 }
 
 /// Key of [`Shared::subclass_twins`].
@@ -275,6 +280,11 @@ pub struct State {
     pub emitted: std::collections::BTreeSet<String>,
     /// Lookups for prerequisites (built before feats and optional features).
     pub prereq: prereq_index::PrereqIndex,
+    /// Spellcasting a class hands to its own `Spellcasting` feature (class feature id ->
+    /// casting rules and block): a class whose first spell slots come after level 1 (the PHB
+    /// Paladin and Ranger) casts from that feature, as the bundled SRD packs model it.
+    pub feature_casting:
+        BTreeMap<String, (Vec<borealis_content::Rule>, borealis_content::Spellcasting)>,
 }
 
 impl State {

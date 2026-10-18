@@ -162,7 +162,11 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
             1,
         )));
     }
-    for r in optional_feature_selects(&feat.optionalfeature_progression, &mut partial) {
+    for r in optional_feature_selects(
+        &feat.optionalfeature_progression,
+        (ent.ruleset == borealis_content::Ruleset::Dnd2024).then_some(&sh.option_codes_2024),
+        &mut partial,
+    ) {
         mech.push(r);
     }
     // the SRD feat's statistics 5etools states in prose only (XPHB Alert: + proficiency bonus

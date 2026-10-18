@@ -308,6 +308,16 @@ fn add_link(sh: &mut Shared, st: &mut State, link: RefKind, id: IdKind, ent: &En
 }
 
 fn register_links(sh: &mut Shared, st: &mut State, e: &Ents) {
+    for ent in e
+        .optfeatures
+        .iter()
+        .filter(|o| o.ruleset == Ruleset::Dnd2024)
+    {
+        let codes = ent.raw.get("featureType").and_then(Value::as_array);
+        for code in codes.into_iter().flatten().filter_map(Value::as_str) {
+            sh.option_codes_2024.insert(code.to_string());
+        }
+    }
     for ent in &e.races {
         let kind = if ent.ruleset == Ruleset::Dnd2024 {
             IdKind::Species
