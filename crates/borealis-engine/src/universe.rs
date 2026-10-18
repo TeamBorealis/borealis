@@ -403,8 +403,11 @@ pub struct Universe {
     /// `maps_to` kind `equivalent` pairs with both elements loaded: mapper id -> the
     /// counterpart it declares itself equal to (an imported PHB spell and its SRD copy).
     equivalents: HashMap<String, String>,
-    /// Counterpart id -> the ids that declare themselves equivalent to it.
-    equivalent_mappers: HashMap<String, Vec<String>>,
+    /// Id -> index of its equivalence class in `equivalent_classes` (every id joined to
+    /// another by an `equivalent` edge, followed through any number of hops).
+    equivalent_class: HashMap<String, usize>,
+    /// The ids of each equivalence class, in load order.
+    equivalent_classes: Vec<Vec<String>>,
 }
 
 /// The former type an element names (`legacy_alias`, `Race` on a 2024 `Species`) when the
@@ -427,6 +430,51 @@ fn legacy_alias_note<'e>(el: &'e Element, profile: &dyn RulesetProfile) -> Optio
     el.legacy_alias
         .as_deref()
         .filter(|a| !a.is_empty() && *a != el.ty && profile.accepts_legacy_alias(a, from))
+}
+
+/// Union-find over `equivalent` edges: id -> class index, and the ids of each class in the
+/// order they first appear.
+fn equivalence_classes(edges: &[(String, String)]) -> (HashMap<String, usize>, Vec<Vec<String>>) {
+    fn find(parent: &mut [usize], mut i: usize) -> usize {
+        while parent[i] != i {
+            parent[i] = parent[parent[i]];
+            i = parent[i];
+        }
+        i
+    }
+    let mut index: HashMap<&str, usize> = HashMap::new();
+    let mut ids: Vec<&str> = Vec::new();
+    for (a, b) in edges {
+        for x in [a.as_str(), b.as_str()] {
+            index.entry(x).or_insert_with(|| {
+                ids.push(x);
+                ids.len() - 1
+            });
+        }
+    }
+    let mut parent: Vec<usize> = (0..ids.len()).collect();
+    for (a, b) in edges {
+        let (ra, rb) = (
+            find(&mut parent, index[a.as_str()]),
+            find(&mut parent, index[b.as_str()]),
+        );
+        if ra != rb {
+            parent[ra.max(rb)] = ra.min(rb);
+        }
+    }
+    let mut root_class: HashMap<usize, usize> = HashMap::new();
+    let mut classes: Vec<Vec<String>> = Vec::new();
+    let mut class_of = HashMap::new();
+    for (i, id) in ids.iter().enumerate() {
+        let root = find(&mut parent, i);
+        let c = *root_class.entry(root).or_insert_with(|| {
+            classes.push(Vec::new());
+            classes.len() - 1
+        });
+        classes[c].push((*id).to_string());
+        class_of.insert((*id).to_string(), c);
+    }
+    (class_of, classes)
 }
 
 /// Decides how an element relates to the profile's edition and applies the adapter.
@@ -613,7 +661,8 @@ impl Universe {
             exhaustion: crate::play_rules::ExhaustionRules::default(),
             proxies: std::sync::OnceLock::new(),
             equivalents: HashMap::new(),
-            equivalent_mappers: HashMap::new(),
+            equivalent_class: HashMap::new(),
+            equivalent_classes: Vec::new(),
         };
         let eff = |el: &Element| -> Vec<String> {
             let mut s = el.supports.clone();
@@ -716,9 +765,12 @@ impl Universe {
     }
 
     /// Index the `maps_to` kind `equivalent` pairs whose two elements are both loaded (same
-    /// type): one rules element under two ids.
+    /// type): one rules element under two ids. Every edge of every element counts (a 5etools
+    /// reprint maps to both its 2014 and its 2024 counterpart), and the ids joined by any chain
+    /// of edges form one equivalence class.
     fn index_equivalents(&mut self) {
         let mut map = HashMap::new();
+        let mut edges: Vec<(String, String)> = Vec::new();
         for u in &self.elems {
             let Some(m) = u.el.maps_to.as_ref() else {
                 continue;
@@ -732,15 +784,14 @@ impl Universe {
                     .is_some_and(|t| t.el.id != u.el.id && t.el.ty == u.el.ty);
                 if same {
                     map.insert(u.el.id.clone(), target.clone());
+                    edges.push((u.el.id.clone(), target.clone()));
                 }
             }
         }
-        let mut mappers: HashMap<String, Vec<String>> = HashMap::new();
-        for (m, t) in &map {
-            mappers.entry(t.clone()).or_default().push(m.clone());
-        }
+        let (class_of, classes) = equivalence_classes(&edges);
         self.equivalents = map;
-        self.equivalent_mappers = mappers;
+        self.equivalent_class = class_of;
+        self.equivalent_classes = classes;
     }
 
     /// The loaded counterpart `id` declares itself equivalent to.
@@ -749,24 +800,20 @@ impl Universe {
         self.equivalents.get(id).map(String::as_str)
     }
 
-    /// Every other id of the element `id` (its counterpart and the counterpart's other
-    /// equivalents), for the duplicate check.
+    /// Every other id of the element `id` (its whole equivalence class minus itself), for the
+    /// duplicate check.
     #[must_use]
     pub fn equivalent_ids<'a>(&'a self, id: &'a str) -> Vec<&'a str> {
-        let root = self.equivalent_target(id).unwrap_or(id);
-        let mut out: Vec<&str> = self
-            .equivalent_mappers
-            .get(root)
-            .into_iter()
-            .flatten()
-            .map(String::as_str)
-            .collect();
-        if out.is_empty() {
-            return out;
-        }
-        out.push(root);
-        out.retain(|x| *x != id);
-        out
+        self.equivalent_class
+            .get(id)
+            .map(|&c| {
+                self.equivalent_classes[c]
+                    .iter()
+                    .map(String::as_str)
+                    .filter(|x| *x != id)
+                    .collect()
+            })
+            .unwrap_or_default()
     }
 
     fn load_profile_tables(&mut self) {
@@ -1095,5 +1142,26 @@ mod tests {
     fn sanitize() {
         assert_eq!(sanitize_id("Blood Hunter"), "BLOOD_HUNTER");
         assert_eq!(sanitize_id("Fighter"), "FIGHTER");
+    }
+
+    #[test]
+    fn equivalence_classes_follow_every_edge_across_hops() {
+        // T11: the 5etools copy maps to both counterparts; the 2024 one maps to the 2014 one
+        let e = |a: &str, b: &str| (a.to_string(), b.to_string());
+        let edges = [
+            e("5ET_PHB", "SRD14"),
+            e("5ET_PHB", "SRD24"),
+            e("SRD24", "SRD14"),
+            e("5ET_XPHB", "SRD24"),
+            e("OTHER_A", "OTHER_B"),
+        ];
+        let (class_of, classes) = equivalence_classes(&edges);
+        let c = class_of["5ET_PHB"];
+        for id in ["SRD14", "SRD24", "5ET_XPHB"] {
+            assert_eq!(class_of[id], c, "{id}");
+        }
+        assert_eq!(classes[c].len(), 4);
+        assert_ne!(class_of["OTHER_A"], c);
+        assert_eq!(class_of["OTHER_A"], class_of["OTHER_B"]);
     }
 }

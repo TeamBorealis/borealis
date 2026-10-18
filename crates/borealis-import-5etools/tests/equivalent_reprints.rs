@@ -1,14 +1,10 @@
-//! T11 repro (engine, not fixed here): an imported 5etools spell that is a reprint declares
-//! both counterparts, `maps_to {dnd2014: <SRD 5.1 id>, dnd2024: <SRD 5.2.1 id>, kind:
-//! equivalent}` (the importer's `Shared::maps_to`, from the SRD index and `reprintedAs`). With
-//! the bundled SRD 5.1 and 5.2.1 packs loaded (F-full), the engine's equivalence index keeps one
-//! target per element (the 2024 side overwrites the 2014 side) and follows one hop only, so the
-//! SRD 5.1 Chill Touch and the 5etools PHB Chill Touch are not seen as one element: a Warlock
-//! holding one is still offered and accepts the other in a sibling cantrip slot.
-//!
-//! Ignored until the engine fix lands (`borealis-engine/src/universe.rs index_equivalents`:
-//! equivalence classes over every `maps_to` equivalent edge, both sides, transitively). Run with
-//! `cargo test -p borealis-import-5etools --test equivalent_reprints -- --ignored`.
+//! T11 regression: an imported 5etools spell that is a reprint declares both counterparts,
+//! `maps_to {dnd2014: <SRD 5.1 id>, dnd2024: <SRD 5.2.1 id>, kind: equivalent}` (the importer's
+//! `Shared::maps_to`, from the SRD index and `reprintedAs`). With the bundled SRD 5.1 and 5.2.1
+//! packs loaded (F-full), the engine's equivalence classes (every `equivalent` edge, both sides,
+//! any number of hops: `borealis-engine/src/universe.rs index_equivalents`) make the SRD 5.1
+//! Chill Touch and the 5etools PHB Chill Touch one element: a Warlock holding one is not offered
+//! the other in a sibling cantrip slot.
 
 use borealis_content::{ContentFile, ContentStoreBuilder, PackOrigin, Ruleset};
 use borealis_engine::commands;
@@ -70,7 +66,6 @@ fn second_pick_accepted(e: &Engine, first: &str, second: &str) -> bool {
 }
 
 #[test]
-#[ignore = "T11: engine equivalence index keeps one maps_to target per element (borealis-engine owner)"]
 fn a_reprint_copy_and_its_srd_51_counterpart_are_one_cantrip() {
     let e = engine();
     assert!(
