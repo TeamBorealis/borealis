@@ -255,19 +255,70 @@ fn origin_host(
     d.drop_host(h);
 }
 
-/// Select types (lower case) and the support tokens each names (`None` = any element).
-fn select_index(store: &ContentStore) -> HashMap<String, Vec<Option<BTreeSet<String>>>> {
-    let mut out: HashMap<String, Vec<Option<BTreeSet<String>>>> = HashMap::new();
+/// Every select by type (lower case): its owner, the support tokens it names (`None` = any
+/// element) and its requirements; plus who grants each element unconditionally.
+/// One select: owner id, support tokens (`None` = any element), requirements.
+type SelectRow = (String, Option<BTreeSet<String>>, String);
+
+struct Selects {
+    by_type: HashMap<String, Vec<SelectRow>>,
+    granted_by: HashMap<String, BTreeSet<String>>,
+}
+
+fn select_index(store: &ContentStore) -> Selects {
+    let mut by_type: HashMap<String, Vec<SelectRow>> = HashMap::new();
+    let mut granted_by: HashMap<String, BTreeSet<String>> = HashMap::new();
     for se in store.iter() {
         for r in &se.element.rules {
-            if let Rule::Select(s) = r {
-                out.entry(s.ty.to_lowercase())
-                    .or_default()
-                    .push(s.supports.as_deref().map(tokens));
+            match r {
+                Rule::Select(s) => by_type.entry(s.ty.to_lowercase()).or_default().push((
+                    se.element.id.clone(),
+                    s.supports.as_deref().map(tokens),
+                    s.requirements.clone().unwrap_or_default(),
+                )),
+                // only an unconditional grant means "always held" (a grant behind `!option` is
+                // not, unless that option is not in the store at all)
+                Rule::Grant(g) if always_true(store, g.requirements.as_deref().unwrap_or("")) => {
+                    granted_by
+                        .entry(g.id.clone())
+                        .or_default()
+                        .insert(se.element.id.clone());
+                }
+                _ => {}
             }
         }
     }
-    out
+    Selects {
+        by_type,
+        granted_by,
+    }
+}
+
+impl Selects {
+    /// The selects (owner, requirements) that can offer `id`.
+    fn offering<'s>(
+        &'s self,
+        id: &str,
+        ty: &str,
+        el: Option<&borealis_content::Element>,
+    ) -> Vec<&'s SelectRow> {
+        self.by_type
+            .get(&ty.to_lowercase())
+            .map(|v| {
+                v.iter()
+                    .filter(|(_, tokens, _)| match tokens {
+                        None => true,
+                        Some(t) => {
+                            t.contains(&id.to_lowercase())
+                                || el.is_some_and(|e| {
+                                    e.supports.iter().any(|s| t.contains(&s.to_lowercase()))
+                                })
+                        }
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
 }
 
 /// The hosts the source's elements need (see [`super::plan`]).
@@ -333,6 +384,8 @@ type Found = (Offers, Vec<(String, String)>, usize, usize);
 /// Shared inputs of the hosts of one edition.
 struct Edition<'a> {
     offerers: &'a Offerers<'a>,
+    selects: &'a Selects,
+    builder_classes: &'a [String],
     ins: &'a Installed,
     rs: Ruleset,
     ids: &'a Ids,
@@ -468,8 +521,11 @@ fn edition(
     total.2 += ex.explored;
     total.3 += d.made.get();
     let offerers = Offerers::new(&ins.store);
+    let selects = select_index(&ins.store);
     let e = Edition {
         offerers: &offerers,
+        selects: &selects,
+        builder_classes: &builder_classes,
         ins,
         rs,
         ids: &ids,
@@ -519,7 +575,6 @@ fn edition(
     feats.truncate(cap);
     merge(&mut found, run_jobs(apps, &e, &feats));
     // every offerable option still not offered gets a host built for its prerequisites
-    let selects = select_index(&ins.store);
     let options: Vec<Job> = ins
         .ours
         .iter()
@@ -572,8 +627,10 @@ pub fn stage2(
 const WORKER_STACK: usize = 64 << 20;
 
 /// "host" (own host type), "select" (some select offers it) or the non-offerable reason.
+/// An element every offering select's owner also grants is "Grants": a select never offers
+/// what the character already has (Four Elements' Elemental Attunement).
 fn category<'a>(
-    selects: &HashMap<String, Vec<Option<BTreeSet<String>>>>,
+    selects: &Selects,
     id: &str,
     ty: &'a str,
     el: Option<&borealis_content::Element>,
@@ -584,19 +641,16 @@ fn category<'a>(
     if let Some((_, why)) = NON_OFFERABLE.iter().find(|(t, _)| *t == ty) {
         return why;
     }
-    let matched = selects.get(&ty.to_lowercase()).is_some_and(|v| {
-        v.iter().any(|tokens| match tokens {
-            None => true,
-            Some(t) => {
-                t.contains(&id.to_lowercase())
-                    || el.is_some_and(|e| e.supports.iter().any(|s| t.contains(&s.to_lowercase())))
-            }
-        })
-    });
-    if matched {
-        "select"
-    } else {
+    let offering = selects.offering(id, ty, el);
+    let granters = selects.granted_by.get(id);
+    let self_granted = !offering.is_empty()
+        && offering
+            .iter()
+            .all(|(owner, _, _)| granters.is_some_and(|g| g.contains(owner)));
+    if offering.is_empty() || self_granted {
         "Grants"
+    } else {
+        "select"
     }
 }
 
@@ -732,6 +786,19 @@ fn option_host(
         }
         queue = next;
     }
+    // what the selects that offer it require (a character option such as Tasha's customized
+    // proficiencies, a feature)
+    for (_, _, req) in e.selects.offering(target, &el.ty, Some(el)) {
+        if let Ok(Some(expr)) = RequirementsExpr::parse(req) {
+            let mut found = Vec::new();
+            required_groups(store, expr.root(), &mut found);
+            for g in found {
+                if !groups.contains(&g) {
+                    groups.push(g);
+                }
+            }
+        }
+    }
     // hosts the option (and each needed id) climb to; each candidate class is tried in turn
     let mut roots = Plan::default();
     e.offerers.place(target, &mut roots);
@@ -749,11 +816,23 @@ fn option_host(
     if let Some(c) = needs.class.clone() {
         add(c, None);
     }
-    for c in &roots.classes {
+    let usable = |c: &String| e.builder_classes.contains(c);
+    // the option's own select owners first (the needed ids climb to many unrelated classes)
+    let mut own = Plan::default();
+    e.offerers.place(target, &mut own);
+    for c in own.classes.iter().filter(|c| usable(c)) {
+        add(c.clone(), None);
+    }
+    for (a, cs) in &own.archetypes {
+        for c in cs.iter().filter(|c| usable(c)) {
+            add(c.clone(), Some(a.clone()));
+        }
+    }
+    for c in roots.classes.iter().filter(|c| usable(c)) {
         add(c.clone(), None);
     }
     for (a, cs) in &roots.archetypes {
-        for c in cs {
+        for c in cs.iter().filter(|c| usable(c)) {
             add(c.clone(), Some(a.clone()));
         }
     }
@@ -794,7 +873,7 @@ fn option_host(
 }
 
 /// Host configurations an option host tries (needs class, climbed classes, archetypes, fallback).
-const OPTION_HOST_CLASSES: usize = 3;
+const OPTION_HOST_CLASSES: usize = 4;
 
 /// One configuration of [`option_host`].
 #[allow(clippy::too_many_arguments)]
@@ -814,7 +893,11 @@ fn option_host_on(
         return false;
     };
     let label = format!("option:{target}");
-    d.pick(&mut h, class);
+    let trace = std::env::var("BOREALIS_ACCEPT_TRACE").is_ok_and(|t| t == target);
+    let took = d.pick(&mut h, class);
+    if trace {
+        eprintln!("TRACE {target}: class {class} {took} archetype {archetype:?} groups {groups:?}");
+    }
     for r in race
         .into_iter()
         .chain(roots.origins.iter().map(String::as_str))
@@ -822,6 +905,21 @@ fn option_host_on(
         d.pick(&mut h, r);
     }
     let mut want: Vec<Vec<String>> = archetype.map(|a| vec![a.to_string()]).into_iter().collect();
+    // a sub race or race variant on the climb path is picked like any needed id
+    let sub_origins: Vec<String> = roots
+        .path
+        .iter()
+        .filter(|p| {
+            e.ins
+                .store
+                .element(p)
+                .is_some_and(|x| matches!(x.ty.as_str(), "Sub Race" | "Race Variant"))
+        })
+        .cloned()
+        .collect();
+    if !sub_origins.is_empty() {
+        want.push(sub_origins);
+    }
     want.extend(groups.iter().cloned());
     let offered = |d: &Driver<'_>, h: &Host| {
         h.snap
@@ -845,6 +943,19 @@ fn option_host_on(
             }
         }
         d.collect(&h, &label, offers);
+        if trace {
+            let chosen: Vec<&str> = h
+                .snap
+                .slots
+                .iter()
+                .filter_map(|s| s.chosen.as_ref().map(|c| c.id.as_str()))
+                .collect();
+            eprintln!(
+                "TRACE {target}: level {} want {want:?} offered {} chosen {chosen:?}",
+                h.snap.level.total,
+                offered(d, &h)
+            );
+        }
         if offered(d, &h) {
             found = true;
             if d.pick(&mut h, target) {
@@ -860,4 +971,24 @@ fn option_host_on(
     }
     d.drop_host(h);
     found
+}
+
+/// A requirements string that holds on every character of this store: empty, or only negations
+/// of ids the store does not have (`!ID_WOTC_TCOE_OPTION_CUSTOMIZED_PROFICIENCY` without Tasha's).
+fn always_true(store: &ContentStore, requirements: &str) -> bool {
+    fn holds(store: &ContentStore, e: &BoolExpr<RequirementLeaf>) -> bool {
+        match e {
+            BoolExpr::Not(inner) => match inner.as_ref() {
+                BoolExpr::Leaf(RequirementLeaf::Id(id)) => store.element(id).is_none(),
+                _ => false,
+            },
+            BoolExpr::And(items) => items.iter().all(|x| holds(store, x)),
+            BoolExpr::Or(items) => items.iter().any(|x| holds(store, x)),
+            BoolExpr::Leaf(_) => false,
+        }
+    }
+    if requirements.trim().is_empty() {
+        return true;
+    }
+    matches!(RequirementsExpr::parse(requirements), Ok(Some(expr)) if holds(store, expr.root()))
 }
