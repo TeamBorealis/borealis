@@ -328,7 +328,8 @@ fn run(data: &Path) {
     let result = import_folder(data, &options).expect("import");
     let tmp = tempfile::tempdir().unwrap();
     let mut builder = ContentStoreBuilder::new();
-    for pack in ["core", "srd-5.1", "srd-5.2.1"] {
+    // the packs the app bundles, monster stat blocks included (they fill Companion selects)
+    for pack in borealis_lib::state::BUNDLED_PACKS {
         builder = builder.add_pack_dir(&content_dir().join(pack)).unwrap();
     }
     let mut ours: HashMap<String, Ruleset> = HashMap::new();
