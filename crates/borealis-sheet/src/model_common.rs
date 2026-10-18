@@ -11,7 +11,7 @@ use crate::model_types::{
 use crate::{model_2014, model_2024};
 use borealis_character::Character;
 use borealis_content::Ruleset;
-use borealis_engine::snapshot::{SpellEntry, SpellcastingSnapshot};
+use borealis_engine::snapshot::{RolledMaxSnapshot, SpellEntry, SpellcastingSnapshot};
 use borealis_engine::state::EquipSlot;
 use borealis_engine::CharacterSnapshot;
 
@@ -347,6 +347,13 @@ fn recharge_label(triggers: &[String]) -> String {
         .join(" or ")
 }
 
+/// A rolled maximum as the app's inventory labels it: "7 (1d6 + 3)", or "6 (1d6 + 3, average)"
+/// while no roll is stored (`ui/src/pages/equipment/RolledCharges.tsx` `chargesLabel`).
+pub(crate) fn rolled_label(value: i32, r: &RolledMaxSnapshot) -> String {
+    let average = if r.rolled { "" } else { ", average" };
+    format!("{value} ({}{average})", r.dice)
+}
+
 fn limited_uses(snap: &CharacterSnapshot) -> Vec<LimitedUse> {
     let mut out: Vec<LimitedUse> = snap
         .resources
@@ -356,6 +363,7 @@ fn limited_uses(snap: &CharacterSnapshot) -> Vec<LimitedUse> {
             name: r.name.clone(),
             max: r.max,
             recharge: recharge_label(&r.recharge),
+            rolled: r.rolled.as_ref().map(|d| rolled_label(r.max, d)),
         })
         .collect();
     out.extend(snap.free_casts.iter().filter_map(|f| {
@@ -363,6 +371,7 @@ fn limited_uses(snap: &CharacterSnapshot) -> Vec<LimitedUse> {
             name: format!("{} (free cast)", f.name),
             max: f.uses?,
             recharge: recharge_label(std::slice::from_ref(&f.recharge)),
+            rolled: None,
         })
     }));
     out.retain(|u| u.max > 0);
@@ -376,6 +385,7 @@ fn limited_uses(snap: &CharacterSnapshot) -> Vec<LimitedUse> {
                 name: f.name.clone(),
                 max: 1,
                 recharge,
+                rolled: None,
             });
         }
     }

@@ -610,3 +610,41 @@ fn cantrip_hit_dc_cell_follows_the_spell_facts() {
     );
     assert_eq!(cell("Acid Splash"), format!("DC {dc} DEX"));
 }
+
+#[test]
+fn rolled_charges_show_their_dice_as_the_app_does() {
+    use borealis_engine::snapshot::{ResourceSnapshot, RolledMaxSnapshot};
+    let (c, mut snap) = wizard_2014();
+    for (name, max, rolled) in [
+        ("Wand of Lives charges", 7, true),
+        ("Ring charges", 6, false),
+    ] {
+        snap.resources.push(ResourceSnapshot {
+            id: format!("ID_T_{max}"),
+            name: name.into(),
+            max,
+            current: max,
+            source: name.into(),
+            recharge: vec!["dawn".into()],
+            short_rest_regain: None,
+            long_rest_regain_all: false,
+            other_regain: Vec::new(),
+            rolled: Some(RolledMaxSnapshot {
+                dice: "1d6 + 3".into(),
+                item_uid: Some("item-1".into()),
+                rolled,
+                min: 4,
+                max: 9,
+            }),
+        });
+    }
+    let d = data(&(c.clone(), snap.clone()));
+    let note = |n: &str| d.limited_uses.iter().find(|u| u.name == n).unwrap().note();
+    assert_eq!(note("Wand of Lives charges"), "Dawn; max 7 (1d6 + 3)");
+    assert_eq!(note("Ring charges"), "Dawn; max 6 (1d6 + 3, average)");
+    // a fixed maximum keeps the plain recharge
+    let arcane = d.limited_uses.iter().find(|u| u.name == "Arcane Recovery");
+    assert_eq!(arcane.unwrap().note(), "Long Rest");
+    let html = crate::render_html(&c, &snap, &crate::SheetOptions::default()).expect("html");
+    assert!(html.contains("Dawn; max 7 (1d6 + 3)"), "printed sheet");
+}

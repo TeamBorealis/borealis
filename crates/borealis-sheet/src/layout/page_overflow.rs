@@ -146,7 +146,7 @@ fn uses(c: &mut Canvas, (x, y, w): (f32, f32, f32), d: &SheetData, bottom: f32) 
                 true,
             );
         }
-        c.put(rech_x, y + 8.6, &rt.within(x + w - rech_x), &u.recharge);
+        c.put(rech_x, y + 8.6, &rt.within(x + w - rech_x), &u.note());
         y += rh;
         c.hline(x, x + w, y, c.pal.rule, 0.5);
     }

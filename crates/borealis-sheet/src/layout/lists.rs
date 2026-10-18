@@ -421,7 +421,7 @@ pub(crate) fn limited_uses(
             );
         }
         let rt = Txt::new(c.s(6.8), Style::Sans, c.pal.ink2).within(x + w - rech_x);
-        c.put(rech_x, y + 8.6, &rt, &u.recharge);
+        c.put(rech_x, y + 8.6, &rt, &u.note());
         y += rh;
         c.hline(x, x + w, y, c.pal.rule, 0.5);
         c.close_group();

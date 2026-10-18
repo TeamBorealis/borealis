@@ -273,6 +273,21 @@ pub struct LimitedUse {
     pub max: i32,
     /// Recharge ("Long Rest", "Short or Long Rest").
     pub recharge: String,
+    /// A maximum rolled on dice, as the app's inventory shows it: "7 (1d6 + 3)", or
+    /// "6 (1d6 + 3, average)" while no roll is stored.
+    pub rolled: Option<String>,
+}
+
+impl LimitedUse {
+    /// The recharge column: the recharge, then "max 7 (1d6 + 3)" for a rolled maximum.
+    #[must_use]
+    pub fn note(&self) -> String {
+        match (&self.rolled, self.recharge.is_empty()) {
+            (None, _) => self.recharge.clone(),
+            (Some(r), true) => format!("Max {r}"),
+            (Some(r), false) => format!("{}; max {r}", self.recharge),
+        }
+    }
 }
 
 /// One equipment line.

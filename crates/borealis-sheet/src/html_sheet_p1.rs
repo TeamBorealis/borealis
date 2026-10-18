@@ -386,7 +386,7 @@ fn limited_uses(d: &SheetData) -> String {
         let _ = write!(
             out,
             "</span></td><td class=\"note\">{}</td></tr>",
-            esc(&u.recharge)
+            esc(&u.note())
         );
     }
     out.push_str("</table></div>");
