@@ -44,6 +44,7 @@ pub mod companion;
 pub mod compendium;
 pub mod content_auto;
 pub mod content_dto;
+pub mod content_fetch_retry;
 pub mod content_fetch_tls;
 pub mod content_fivetools_remote;
 pub mod content_fivetools_url;

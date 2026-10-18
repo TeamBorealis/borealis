@@ -6,11 +6,17 @@
 //! applied but reported), and a report of hosts that were not seen before. Such indexes are never
 //! "verified"; the UI asks for consent when one is added.
 //!
+//! A download that still fails after the retries for a passing reason (rate limit, server error,
+//! timeout, dropped connection, short body; see [`crate::content_fetch_retry`]) holds the whole
+//! index: nothing is installed or replaced, every failed address is reported with its code, and
+//! the next Update tries again. A partial pack is installed only for failures that will not pass
+//! (a missing file, a web page, a refused address), and is then reported as "N of M".
+//!
 //! All files of one top-level index are converted together as ONE pack through the folder-drop code
 //! path ([`crate::content_preview::convert_set`]), so cross-file references and replacement order
 //! match dropping the same repository as a folder.
 
-use crate::content_dto::MigrationReport;
+use crate::content_dto::{MigrationIssue, MigrationReport};
 use crate::content_import::{slug, stem, write_pack_meta, Scratch};
 use crate::content_index::{looks_like_html, raw_file_url, require_https, sha256_hex, Fetcher};
 use crate::content_packs::{progress, EventSink};
@@ -18,7 +24,7 @@ use crate::content_prefs::IndexRecord;
 use crate::content_preview::convert_set;
 use crate::ids::rfc3339;
 use crate::state::AppState;
-use borealis_content::IndexFile;
+use borealis_content::{IndexFile, IssueCode};
 use borealis_migrate::{convert_xml, Document};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
@@ -66,6 +72,10 @@ pub struct Crawl {
     pub indexes: Vec<String>,
     /// `(url, reason)` for entries that were refused or could not be read.
     pub problems: Vec<(String, String)>,
+    /// Nested indexes that could not be read for a passing reason (their files are unknown).
+    pub incomplete: Vec<String>,
+    /// Nested indexes listed (read or not).
+    pub nested: usize,
 }
 
 /// True when `bytes` look like an XML document rather than the Borealis JSON index.
@@ -183,13 +193,17 @@ impl Walk<'_> {
         if !self.seen_indexes.insert(url.to_string()) {
             return;
         }
-        let parsed = self.fetcher.get(url, MAX_INDEX_BYTES).and_then(|bytes| {
-            if looks_like_html(&bytes) {
-                Err(WEB_PAGE.into())
-            } else {
-                parse_index(&bytes, url)
+        self.crawl.nested += 1;
+        let parsed = match self.fetcher.get_classified(url, MAX_INDEX_BYTES) {
+            Ok(bytes) if looks_like_html(&bytes) => Err(WEB_PAGE.into()),
+            Ok(bytes) => parse_index(&bytes, url),
+            Err(e) => {
+                if e.is_transient() {
+                    self.crawl.incomplete.push(url.to_string());
+                }
+                Err(e.reason())
             }
-        });
+        };
         match parsed {
             Ok(index) => {
                 self.crawl.indexes.push(url.to_string());
@@ -306,8 +320,40 @@ impl AppState {
             return Ok(record);
         }
         let mut problems = crawl.problems.clone();
-        let fetched = download_all(fetcher, sink, &crawl.files, &mut problems);
+        let mut passing = crawl.incomplete.clone();
+        let fetched = download_all(fetcher, sink, &crawl.files, &mut problems, &mut passing);
         record.hosts = note_hosts(url, &crawl, previous, outcome);
+        // Entries that never became a file (refused, cycles) still count as listed.
+        let listed = (crawl.files.len() + crawl.nested).max(problems.len());
+        outcome
+            .failed
+            .extend(problems.iter().map(|(u, _)| u.clone()));
+        if !passing.is_empty() {
+            // Never install or replace a pack that misses files only because of the network.
+            tracing::warn!(
+                url,
+                failed = problems.len(),
+                listed,
+                "index held: downloads failed for a passing reason"
+            );
+            record.problem = Some(format!(
+                "{} of {listed} files could not be downloaded, so nothing was installed or \
+                 changed; run Update again. {}",
+                problems.len(),
+                summarize(&problems).unwrap_or_default()
+            ));
+            record.updates_available = record.file_count.max(1);
+            record.file_hashes.clone_from(&previous.file_hashes);
+            let nothing = MigrationReport {
+                file_name: url.to_string(),
+                format: "xml".into(),
+                converted: 0,
+                skipped: 0,
+                issues: Vec::new(),
+            };
+            outcome.reports.push(with_failures(nothing, &problems));
+            return Ok(record);
+        }
         let hashes: BTreeMap<String, String> = fetched
             .iter()
             .map(|(l, b)| (l.url.clone(), sha256_hex(b)))
@@ -325,10 +371,12 @@ impl AppState {
         let pack_id = pack_id_for(url);
         let installed = self.paths.library().join(&pack_id).is_dir();
         let failed_files = crawl.files.len() - fetched.len();
-        outcome
-            .failed
-            .extend(problems.iter().map(|(u, _)| u.clone()));
-        record.problem = summarize(&problems);
+        record.problem = summarize(&problems).map(|summary| {
+            format!(
+                "{} of {listed} files could not be used: {summary}",
+                problems.len()
+            )
+        });
         record.updates_available = failed_files;
         let lost =
             !problems.is_empty() && previous.file_hashes.keys().any(|k| !hashes.contains_key(k));
@@ -358,7 +406,9 @@ impl AppState {
         sink.content_progress(&progress("converting", 0, 1, &name));
         let converted = convert_set(&in_dir, &out_dir, &pack_id, &name).map_err(|e| e.message)?;
         let found = self.findings(&converted, &out_dir).map_err(|e| e.message)?;
-        outcome.reports.push(found.report(url, &converted));
+        outcome
+            .reports
+            .push(with_failures(found.report(url, &converted), &problems));
         if converted.converted == 0 {
             return Err("no elements could be converted from this index".into());
         }
@@ -374,11 +424,30 @@ impl AppState {
     }
 }
 
+/// `report` with one error per file that could not be used (its address, and its reason with the
+/// code) ahead of the conversion's own issues.
+fn with_failures(report: MigrationReport, problems: &[(String, String)]) -> MigrationReport {
+    let failed = problems.iter().map(|(file, why)| MigrationIssue {
+        severity: "error",
+        code: IssueCode::IndexEntryMissing,
+        message: format!("not imported: {why}"),
+        element: None,
+        element_type: None,
+        file: Some(file.clone()),
+        line: None,
+    });
+    let issues = failed.chain(report.issues).collect();
+    MigrationReport { issues, ..report }
+}
+
+/// Download every listed file; failures go to `problems`, and the addresses of those that may
+/// pass also to `passing`.
 fn download_all(
     fetcher: &dyn Fetcher,
     sink: &dyn EventSink,
     files: &[Listed],
     problems: &mut Vec<(String, String)>,
+    passing: &mut Vec<String>,
 ) -> Vec<(Listed, Vec<u8>)> {
     let mut fetched = Vec::with_capacity(files.len());
     for (i, listed) in files.iter().enumerate() {
@@ -386,12 +455,17 @@ fn download_all(
             let label = listed.rel.rsplit('/').next().unwrap_or(&listed.rel);
             sink.content_progress(&progress("downloading", i, files.len(), label));
         }
-        match fetcher.get(&listed.url, MAX_FILE_BYTES) {
+        match fetcher.get_classified(&listed.url, MAX_FILE_BYTES) {
             Ok(body) if looks_like_html(&body) => {
                 problems.push((listed.url.clone(), WEB_PAGE.into()));
             }
             Ok(body) => fetched.push((listed.clone(), body)),
-            Err(why) => problems.push((listed.url.clone(), why)),
+            Err(e) => {
+                if e.is_transient() {
+                    passing.push(listed.url.clone());
+                }
+                problems.push((listed.url.clone(), e.reason()));
+            }
         }
     }
     fetched
@@ -419,3 +493,7 @@ fn note_hosts(
     }
     hosts.into_iter().collect()
 }
+
+#[cfg(test)]
+#[path = "content_index_partial_tests.rs"]
+mod partial_tests;

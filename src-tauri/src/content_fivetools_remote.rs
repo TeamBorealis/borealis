@@ -612,7 +612,7 @@ impl RemoteFetcher for HttpsFetcher {
     fn fetch(&self, request: &FetchRequest<'_>) -> Result<FetchResponse, String> {
         use std::io::Read;
         require_https(request.url).map_err(|e| e.message)?;
-        let client = crate::content_index::https_client()?;
+        let client = crate::content_index::shared_client()?;
         let mut call = client
             .get(request.url)
             .header(

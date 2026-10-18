@@ -5,8 +5,14 @@
 
 use crate::content_auto::update_message;
 use crate::content_dto::{ContentIndex, ImportPackRequest, MigrationReport, UpdateIndexesResult};
+use crate::content_fetch_retry::{
+    check_complete, parse_retry_after, FetchError, RetryPolicy, Retrying, Sleep, CODE_OTHER,
+    CODE_REFUSED,
+};
 use crate::content_import::{slug, stem, write_pack_meta, Scratch};
-use crate::content_index_aurora::{looks_like_xml, AuroraOutcome, MAX_FILE_BYTES, MAX_INDEX_BYTES};
+use crate::content_index_aurora::{
+    looks_like_xml, summarize, AuroraOutcome, MAX_FILE_BYTES, MAX_INDEX_BYTES,
+};
 use crate::content_packs::{progress, EventSink, PACK_META_FILE};
 use crate::content_prefs::IndexRecord;
 use crate::error::{ApiError, ApiResult};
@@ -25,6 +31,7 @@ const SHA256_ATTRIBUTE: &str = "sha256";
 const MAX_SIGNATURE_BYTES: usize = 4 * 1024;
 const SIGNATURE_SUFFIX: &str = ".sig";
 const RAW_GITHUB: &str = "https://raw.githubusercontent.com/";
+const USER_AGENT: &str = concat!("Borealis/", env!("CARGO_PKG_VERSION"));
 
 /// Detached signature document served at `<index url>.sig`: base64 key and signature over the
 /// exact index bytes.
@@ -82,6 +89,16 @@ pub trait Fetcher: Send + Sync {
     /// # Errors
     /// A user-presentable message.
     fn get(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, String>;
+
+    /// [`Fetcher::get`] with a classified failure (code, `Retry-After`). The default classifies
+    /// the message; [`HttpsFetcher`] answers from the response itself.
+    ///
+    /// # Errors
+    /// The classified reason.
+    fn get_classified(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, FetchError> {
+        self.get(url, max_bytes)
+            .map_err(|m| FetchError::from_message(&m))
+    }
 }
 
 /// Reject anything but an `https://` URL with a host.
@@ -190,29 +207,81 @@ pub(crate) fn https_client() -> Result<reqwest::blocking::Client, String> {
         .map_err(|e| error_chain(&e))
 }
 
+/// The download client shared by every content fetch of the process (one connection pool, so a
+/// few hundred files of one index reuse their connections instead of opening one each).
+///
+/// # Errors
+/// The reason the client could not be built (not cached; the next call tries again).
+pub(crate) fn shared_client() -> Result<reqwest::blocking::Client, String> {
+    static CLIENT: std::sync::OnceLock<reqwest::blocking::Client> = std::sync::OnceLock::new();
+    if let Some(client) = CLIENT.get() {
+        return Ok(client.clone());
+    }
+    let built = https_client()?;
+    Ok(CLIENT.get_or_init(|| built).clone())
+}
+
+/// A transport failure, classified (redirect refusals stay permanent and keep their wording).
+fn send_error(e: &reqwest::Error) -> FetchError {
+    let text = error_chain(e);
+    if e.is_redirect() || text.contains("redirect") {
+        FetchError::new(CODE_REFUSED, text)
+    } else if e.is_timeout() {
+        FetchError::timeout(&text)
+    } else {
+        FetchError::network(&text)
+    }
+}
+
 /// The real network client. Desktop verifies TLS with the OS trust store; phones use the Mozilla
 /// root set compiled into the app ([`crate::content_fetch_tls`]). The rules are the same on every
-/// platform: https only (redirects included), a timeout, and a size cap.
+/// platform: https only (redirects included), a timeout, a size cap, and a body that must be as
+/// long as announced. Retries are not done here but by [`Retrying`] around it.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct HttpsFetcher;
 
 impl Fetcher for HttpsFetcher {
     fn get(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, String> {
+        self.get_classified(url, max_bytes).map_err(|e| e.wire())
+    }
+
+    fn get_classified(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, FetchError> {
         use std::io::Read;
-        require_https(url).map_err(|e| e.message)?;
-        let client = https_client()?;
-        let response = client.get(url).send().map_err(|e| error_chain(&e))?;
-        if !response.status().is_success() {
-            return Err(format!("the server answered {}", response.status()));
+        require_https(url).map_err(|e| FetchError::new(CODE_REFUSED, e.message))?;
+        let client = shared_client().map_err(|m| FetchError::new(CODE_OTHER, m))?;
+        let response = client
+            .get(url)
+            .header(reqwest::header::USER_AGENT, USER_AGENT)
+            .send()
+            .map_err(|e| send_error(&e))?;
+        let status = response.status();
+        if !status.is_success() {
+            let header = |name| {
+                response
+                    .headers()
+                    .get(name)
+                    .and_then(|v| v.to_str().ok())
+                    .map(str::to_string)
+            };
+            let retry_after = header(reqwest::header::RETRY_AFTER.as_str())
+                .as_deref()
+                .and_then(parse_retry_after);
+            if status.as_u16() == 403 && header("x-ratelimit-remaining").as_deref() == Some("0") {
+                return Err(FetchError::rate_limited(retry_after));
+            }
+            let reason = status.canonical_reason().unwrap_or_default();
+            return Err(FetchError::http(status.as_u16(), reason, retry_after));
         }
+        let announced = response.content_length();
         let mut body = Vec::new();
         response
             .take(max_bytes as u64 + 1)
             .read_to_end(&mut body)
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| FetchError::truncated(&e.to_string()))?;
         if body.len() > max_bytes {
-            return Err("the file is too large".into());
+            return Err(FetchError::too_large());
         }
+        check_complete(body.len(), announced)?;
         Ok(body)
     }
 }
@@ -314,7 +383,8 @@ impl AppState {
     }
 
     /// Fetch every index, download changed files (SHA-256 verified; the index is refused if any entry lacks one),
-    /// install them and hot-reload.
+    /// install them and hot-reload. Downloads that fail for a passing reason are retried
+    /// ([`RetryPolicy::default`]).
     ///
     /// # Errors
     /// `io_error` / `content_error`; per-file problems are reported in `failed`.
@@ -323,6 +393,22 @@ impl AppState {
         fetcher: &dyn Fetcher,
         sink: &dyn EventSink,
     ) -> ApiResult<UpdateIndexesResult> {
+        self.update_indexes_with(fetcher, sink, RetryPolicy::default(), &std::thread::sleep)
+    }
+
+    /// [`AppState::update_indexes`] with an explicit retry policy and pause function (tests).
+    ///
+    /// # Errors
+    /// As [`AppState::update_indexes`].
+    pub fn update_indexes_with(
+        &self,
+        fetcher: &dyn Fetcher,
+        sink: &dyn EventSink,
+        policy: RetryPolicy,
+        sleep: Sleep<'_>,
+    ) -> ApiResult<UpdateIndexesResult> {
+        let retrying = Retrying::new(fetcher, policy, sleep);
+        let fetcher: &dyn Fetcher = &retrying;
         let _guard = self.content_lock()?;
         let mut prefs = self.content_prefs();
         normalize_index_urls(&mut prefs.indexes);
@@ -419,13 +505,14 @@ impl AppState {
             scratches,
             &mut outcome.reports,
         )?;
-        if !failed.is_empty() {
+        if let Some(summary) = summarize(&failed) {
             record.problem = Some(format!(
-                "{} file(s) were refused or could not be downloaded",
-                failed.len()
+                "{} of {} file(s) were refused or could not be downloaded: {summary}",
+                failed.len(),
+                record.file_count
             ));
         }
-        outcome.failed.extend(failed);
+        outcome.failed.extend(failed.into_iter().map(|(u, _)| u));
         Ok(record)
     }
 
@@ -441,11 +528,21 @@ impl AppState {
         staged: &mut Vec<(PathBuf, String)>,
         scratches: &mut Vec<Scratch>,
         reports: &mut Vec<MigrationReport>,
-    ) -> Result<(IndexRecord, Vec<String>), String> {
+    ) -> Result<(IndexRecord, Vec<(String, String)>), String> {
         let mut failed = Vec::new();
-        let sig = fetcher
-            .get(&format!("{url}{SIGNATURE_SUFFIX}"), MAX_SIGNATURE_BYTES)
-            .ok();
+        let sig = match fetcher
+            .get_classified(&format!("{url}{SIGNATURE_SUFFIX}"), MAX_SIGNATURE_BYTES)
+        {
+            Ok(sig) => Some(sig),
+            // A signature that could not be read now must not look like "no longer signed".
+            Err(e) if e.is_transient() => {
+                return Err(format!(
+                    "the signature could not be downloaded: {}",
+                    e.reason()
+                ))
+            }
+            Err(_) => None,
+        };
         let public_key = check_trust(previous.public_key.as_deref(), bytes, sig)?;
         let text = std::str::from_utf8(bytes).map_err(|_| "the index is not UTF-8 text")?;
         let index = IndexFile::from_json_str(text)
@@ -480,7 +577,7 @@ impl AppState {
                 .filter(|h| h.len() == 64 && h.bytes().all(|b| b.is_ascii_hexdigit()))
             else {
                 tracing::warn!("rejected {}: the index gives no valid sha256", entry.url);
-                failed.push(entry.url.clone());
+                failed.push((entry.url.clone(), "the index gives no valid sha256".into()));
                 record.updates_available += 1;
                 continue;
             };
@@ -505,8 +602,9 @@ impl AppState {
                     reports.push(report);
                 }
                 Ok(None) => {}
-                Err(()) => {
-                    failed.push(entry.url.clone());
+                Err(why) => {
+                    tracing::warn!(url = %entry.url, "not updated: {why}");
+                    failed.push((entry.url.clone(), why));
                     record.updates_available += 1;
                 }
             }
@@ -514,7 +612,8 @@ impl AppState {
         Ok((record, failed))
     }
 
-    /// `Ok(None)` = already current, `Err` = rejected (bad URL, hash mismatch, bad content).
+    /// `Ok(None)` = already current, `Err` = why it was rejected (bad URL, download failure with
+    /// its code, hash mismatch, bad content).
     #[allow(clippy::too_many_arguments)]
     fn download_entry(
         &self,
@@ -525,18 +624,20 @@ impl AppState {
         expected: &str,
         installed: Option<&str>,
         index_url: &str,
-    ) -> Result<Option<(Scratch, MigrationReport)>, ()> {
-        require_https(file_url).map_err(|_| ())?;
-        let bytes = fetcher.get(file_url, MAX_FILE_BYTES).map_err(|_| ())?;
+    ) -> Result<Option<(Scratch, MigrationReport)>, String> {
+        require_https(file_url).map_err(|e| e.message)?;
+        let bytes = fetcher
+            .get_classified(file_url, MAX_FILE_BYTES)
+            .map_err(|e| e.reason())?;
         let actual = sha256_hex(&bytes);
         if expected != actual {
             tracing::warn!("rejected {file_url}: SHA-256 mismatch");
-            return Err(());
+            return Err("the SHA-256 does not match the index".into());
         }
         if installed == Some(actual.as_str()) {
             return Ok(None);
         }
-        let scratch = Scratch::new(&self.paths.data).map_err(|_| ())?;
+        let scratch = Scratch::new(&self.paths.data).map_err(|e| e.message)?;
         let out_dir = scratch.0.join("out");
         let request = ImportPackRequest {
             file_name: file_name.to_string(),
@@ -549,9 +650,9 @@ impl AppState {
         } else {
             Self::convert_json(&out_dir, &request, pack_id, &bytes)
         }
-        .map_err(|_| ())?;
+        .map_err(|e| e.message)?;
         if report.converted == 0 {
-            return Err(());
+            return Err("no elements could be converted from this file".into());
         }
         write_pack_meta(
             &out_dir,
