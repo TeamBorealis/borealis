@@ -703,8 +703,10 @@ fn a_2024_class_in_a_2014_character_is_never_offered() {
             !class_ids(&snap).contains(&"ID_T_CLASS24".to_string()),
             "{allow:?}"
         );
-        assert!(
-            !race_ids(&snap).contains(&"ID_T_SPECIES24".to_string()),
+        // IM8 (amends R4): a 2024 species is offered only with the other edition allowed
+        assert_eq!(
+            race_ids(&snap).contains(&"ID_T_SPECIES24".to_string()),
+            allow == Some(true),
             "{allow:?}"
         );
     }
@@ -750,11 +752,12 @@ fn rejected_content_stays_invalid_on_replay() {
     let mut s = hero(&e);
     s.allow_cross_edition = Some(true);
     let snap = e.derive(&s);
-    let key = slot_key(&snap, "ID_LEVEL_1", "Race", 1).unwrap();
-    // stored by an older file / hand edit: a 2024 species in a 2014 character
+    let key = slot_key(&snap, "ID_LEVEL_1", "Class", 1).unwrap();
+    // stored by an older file / hand edit: a 2024 class in a 2014 character (classes never
+    // cross editions; 2024 species do since IM8)
     s.selections.push(borealis_engine::state::Selection {
         slot: key,
-        choice: Choice::Element("ID_T_SPECIES24".into()),
+        choice: Choice::Element("ID_T_CLASS24".into()),
         replace_level: None,
     });
     let snap = e.derive(&s);

@@ -110,6 +110,25 @@ const XP_TABLE: [u32; 20] = [
     140_000, 165_000, 195_000, 225_000, 265_000, 305_000, 355_000,
 ];
 
+/// 2024 element types a 2014 character may use (R4, amended by IM8 and D-22).
+const MODERN_IN_LEGACY: &[&str] = &[
+    "Spell",
+    "Magic Item",
+    "Weapon",
+    "Armor",
+    "Item",
+    "Option",
+    "Feat",
+    "Feat Feature",
+    "Species",
+    "Race",
+    "Sub Race",
+    "Racial Trait",
+    "Species Trait Option",
+    "Background",
+    "Background Feature",
+];
+
 const ABILITY_GENERATION: AbilityGeneration = AbilityGeneration {
     point_buy_budget: 27,
     point_buy_range: (8, 15),
@@ -245,15 +264,12 @@ impl RulesetProfile for Dnd2014 {
         false
     }
     fn accepts_foreign(&self, ty: &str, from: Ruleset) -> bool {
-        // In 2014 characters 2024 content is limited to spells and items (R4), plus the 2024
-        // optional features a 2014 class select can offer (invocations, metamagic, maneuvers:
-        // type `Option`), so books dated after the 2024 handbook stay pickable (IM8). All of it
-        // is offered only with the other edition allowed (`Graph::offers_edition`).
-        from != Ruleset::Dnd2024
-            || matches!(
-                ty,
-                "Spell" | "Magic Item" | "Weapon" | "Armor" | "Item" | "Option"
-            )
+        // 2024 content usable in a 2014 character (R4 as amended by IM8 and D-22): spells and
+        // items; optional features (invocations, metamagic, maneuvers: type `Option`); feats,
+        // species (with their traits and lineage options) and backgrounds, so books dated after
+        // the 2024 handbook stay pickable. Classes, subclasses and their features never cross.
+        // All of it is offered only with the other edition allowed (`Graph::offers_edition`).
+        from != Ruleset::Dnd2024 || MODERN_IN_LEGACY.contains(&ty)
     }
     fn accepts_legacy_alias(&self, alias: &str, from: Ruleset) -> bool {
         // A 2024 species that was a race (a renamed 5etools race a 2014 character was saved
@@ -416,10 +432,21 @@ mod tests {
         assert!(!a.accepts_foreign("Class", Ruleset::Dnd2024));
         assert!(a.accepts_foreign("Spell", Ruleset::Dnd2024));
         assert!(a.accepts_foreign("Option", Ruleset::Dnd2024));
-        assert!(!a.accepts_foreign("Class Feature", Ruleset::Dnd2024));
-        assert!(!a.accepts_foreign("Species", Ruleset::Dnd2024));
+        // IM8 / D-22: 2024 feats, species and backgrounds cross into 2014; classes,
+        // subclasses and their features never do
+        for ty in ["Feat", "Species", "Species Trait Option", "Background"] {
+            assert!(a.accepts_foreign(ty, Ruleset::Dnd2024), "{ty}");
+        }
+        for ty in [
+            "Class Feature",
+            "Archetype",
+            "Archetype Feature",
+            "Multiclass",
+        ] {
+            assert!(!a.accepts_foreign(ty, Ruleset::Dnd2024), "{ty}");
+        }
         assert!(a.accepts_legacy_alias("Race", Ruleset::Dnd2024));
-        assert!(!a.accepts_legacy_alias("Feat", Ruleset::Dnd2024));
+        assert!(!a.accepts_legacy_alias("Class", Ruleset::Dnd2024));
         assert!(b.accepts_legacy_alias("Race", Ruleset::Dnd2014));
         assert!(a.unimplemented_areas().is_empty());
         assert!(b.unimplemented_areas().is_empty());

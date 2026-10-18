@@ -215,7 +215,7 @@ pub struct UElem {
     pub toggle_effects: Vec<crate::play_rules::ToggleEffects>,
     /// Foreign element the profile accepts only as its `legacy_alias` type (a 2024 species
     /// that was a race, in a 2014 character). The foreign options of its own selects are
-    /// accepted with it (`Graph::inherits_legacy_acceptance`).
+    /// accepted with it (`Graph::inherits_owner_acceptance`).
     pub legacy_accepted: bool,
 }
 
@@ -418,6 +418,17 @@ fn legacy_alias_accepted<'e>(el: &'e Element, profile: &dyn RulesetProfile) -> O
         .then_some(alias)
 }
 
+/// The former type a foreign element is also used as (`Race` for a 2024 `Species` in a 2014
+/// character), for the compatibility note; `None` when it names none or the profile refuses it.
+fn legacy_alias_note<'e>(el: &'e Element, profile: &dyn RulesetProfile) -> Option<&'e str> {
+    let from = el
+        .ruleset
+        .filter(|r| !r.compatible_with(profile.ruleset()))?;
+    el.legacy_alias
+        .as_deref()
+        .filter(|a| !a.is_empty() && *a != el.ty && profile.accepts_legacy_alias(a, from))
+}
+
 /// Decides how an element relates to the profile's edition and applies the adapter.
 fn classify(
     el: &Element,
@@ -452,7 +463,10 @@ fn classify(
                 accepted: true,
                 converted: false,
                 notes: std::iter::once(USED_AS_WRITTEN.to_string())
-                    .chain(alias.map(|a| format!("{} used as a {a} (its former type)", el.ty)))
+                    .chain(
+                        legacy_alias_note(el, profile)
+                            .map(|a| format!("{} used as a {a} (its former type)", el.ty)),
+                    )
                     .collect(),
             },
         ),

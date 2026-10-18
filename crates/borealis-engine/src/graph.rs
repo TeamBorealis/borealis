@@ -972,23 +972,19 @@ impl<'u> Graph<'u> {
             && (self.allow_cross_edition || !cand.edition.is_foreign())
     }
 
-    /// Is `cand` a foreign option the profile rejects on its own, chosen by a select of (or
-    /// below) an element accepted through its `legacy_alias` from the same edition (the
-    /// spellcasting-ability choice of a 2024 species used as a 2014 race)? It belongs to that
-    /// element and is accepted with it.
-    fn inherits_legacy_acceptance(&self, owner: NodeId, cand: &UElem) -> bool {
-        let EditionStatus::Foreign {
-            from,
-            accepted: false,
-            ..
-        } = &cand.edition
-        else {
+    /// Is `cand` a foreign option chosen by a select of (or below) a foreign element the
+    /// character already uses from the same edition (the lineage or spellcasting-ability choice
+    /// of a 2024 species in a 2014 character, accepted as a species or through its
+    /// `legacy_alias`)? It belongs to that element and is accepted and offered with it, whatever
+    /// the profile says about its own type and whether the other edition is allowed for new picks.
+    fn inherits_owner_acceptance(&self, owner: NodeId, cand: &UElem) -> bool {
+        let EditionStatus::Foreign { from, .. } = &cand.edition else {
             return false;
         };
         let mut at = Some(owner);
         while let Some(n) = at {
             let e = self.nodes[n].e;
-            if e.legacy_accepted {
+            if e.legacy_accepted || (e.edition.is_foreign() && e.edition.is_accepted()) {
                 return matches!(&e.edition, EditionStatus::Foreign { from: f, .. } if f == from);
             }
             at = self.nodes[n].parent;
@@ -1042,7 +1038,7 @@ impl<'u> Graph<'u> {
             return false;
         };
         let alternative = crate::custom_rules::alternatives_of(s).contains(&cand.el.id.as_str());
-        let inherited = self.inherits_legacy_acceptance(owner, cand);
+        let inherited = self.inherits_owner_acceptance(owner, cand);
         let type_ok = alternative
             || crate::universe::type_fits(&s.ty, &cand.el.ty)
             || cand.el.legacy_alias.as_deref() == Some(s.ty.as_str())

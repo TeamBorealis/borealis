@@ -2,8 +2,8 @@
 //! races IM8 renamed to species) still fills a 2014 character's Race slot: a character saved
 //! with the former race keeps a race that applies in full (speed, traits, its own spellcasting
 //! choice), and a new 2014 character is offered it only with "allow the other edition" on.
-//! A species without the alias (Aurora 2024 content) is never used as a 2014 race. Synthetic
-//! content on the bundled core + SRD 5.1 packs.
+//! Since IM8 a species without the alias (Aurora 2024 content) fills the slot the same way; only
+//! the "used as a Race" note differs. Synthetic content on the bundled core + SRD 5.1 packs.
 
 use borealis_content::{ContentFile, ContentStoreBuilder, PackOrigin, Ruleset};
 use borealis_engine::commands::{self, slot_key};
@@ -173,15 +173,21 @@ fn the_2014_race_slot_offers_the_species_only_with_the_other_edition_allowed() {
     for (allow, offered) in [(Some(true), true), (Some(false), false), (None, false)] {
         let options = race_options(&e.derive(&hero(&e, allow)));
         assert_eq!(options.contains(&SPECIES.to_string()), offered, "{allow:?}");
-        // a species without the alias (Aurora 2024 content) never fills a 2014 race slot
-        assert!(!options.contains(&PLAIN_SPECIES.to_string()), "{allow:?}");
+        // IM8 (amends R4): a species without the alias (Aurora 2024 content) is offered the
+        // same way, only with the other edition allowed
+        assert_eq!(
+            options.contains(&PLAIN_SPECIES.to_string()),
+            offered,
+            "{allow:?}"
+        );
         // 2014 races are offered as before
         assert!(options.contains(&OLD_RACE.to_string()), "{allow:?}");
     }
 }
 
 #[test]
-fn a_species_without_the_alias_stays_invalid_in_a_2014_race_slot() {
+fn a_species_without_the_alias_also_fills_a_2014_race_slot() {
+    // IM8 (amends R4): 2024 species are usable in 2014 characters; a stored pick holds
     let e = engine();
     let mut s = pick(&e, &hero(&e, Some(true)), "ID_LEVEL_1", "Race", OLD_RACE);
     for x in &mut s.selections {
@@ -191,13 +197,19 @@ fn a_species_without_the_alias_stays_invalid_in_a_2014_race_slot() {
     }
     let snap = e.derive(&s);
     let race = snap.slot("ID_LEVEL_1", "Race").expect("race slot");
-    assert!(race.chosen.is_none());
     assert_eq!(
-        race.rejected,
-        Some(Choice::Element(PLAIN_SPECIES.into())),
-        "a 2024 species without legacy_alias is not a 2014 race"
+        race.chosen.as_ref().map(|c| c.id.as_str()),
+        Some(PLAIN_SPECIES)
     );
-    assert_ne!(snap.speed.walk, 40);
+    assert!(race.rejected.is_none(), "{:?}", race.rejected);
+    assert_eq!(snap.speed.walk, 40);
+    let entry = snap
+        .compatibility
+        .entries
+        .iter()
+        .find(|c| c.element.id == PLAIN_SPECIES)
+        .expect("compatibility entry");
+    assert!(!entry.notes.iter().any(|n| n.contains("used as a Race")));
 }
 
 #[test]
