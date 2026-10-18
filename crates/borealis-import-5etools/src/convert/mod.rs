@@ -110,6 +110,9 @@ pub struct Shared {
     /// and the XPHB class): `source|class|short name` (lower-case, source upper-case) -> the
     /// class source of the first version in load order (it keeps the plain id).
     pub subclass_twins: BTreeMap<String, String>,
+    /// Stat names each imported class's table emits (`monk:unarmored movement`), by class
+    /// `name|source` (lower-case name, source upper-case).
+    pub class_table_stats: BTreeMap<String, std::collections::BTreeSet<String>>,
 }
 
 /// Key of [`Shared::subclass_twins`].

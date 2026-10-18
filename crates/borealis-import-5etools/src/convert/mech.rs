@@ -229,6 +229,11 @@ impl<'a> Mech<'a> {
                     }
                 } else if k == "choose" {
                     self.tool_choose(v);
+                } else if let (Some(tag), true) =
+                    (Self::tool_category_name(k), v == &Value::Bool(true))
+                {
+                    // `"gaming set": true` is one tool of that kind (Soldier), not the category
+                    self.pick_tag("Proficiency", "Tool Proficiency", tag, 1);
                 } else if v == &Value::Bool(true) {
                     match core::tool_prof_id(k) {
                         Some(id) => self.push(grant(&id, "Proficiency")),
@@ -244,8 +249,48 @@ impl<'a> Mech<'a> {
         }
     }
 
-    /// A category named in a `choose` list ("musical instrument"); alone it is also the
-    /// core generic proficiency of that name.
+    /// Alternative `toolProficiencies` arrays ("one of these") where every alternative is one
+    /// pick of the same size (a category, a single tool or `anyX: n`): one choice over all of
+    /// them (Monk: an artisan's tool or a musical instrument). False, and nothing pushed, when
+    /// an alternative holds several items (the caller offers those as options).
+    pub fn tool_alternatives(&mut self, list: &[Value]) -> bool {
+        let pick = |obj: &Value| -> Option<(String, u32)> {
+            let entries = obj_entries(obj);
+            let [(k, v)] = entries.as_slice() else {
+                return None;
+            };
+            let (k, v): (&str, &Value) = (k.as_str(), v);
+            if let Some(tag) = Self::tool_choice_tag(k) {
+                return v.is_number().then(|| (tag.to_string(), count_of(v)));
+            }
+            if v != &Value::Bool(true) {
+                return None;
+            }
+            Self::tool_category_name(k)
+                .map(str::to_string)
+                .or_else(|| core::tool_prof_id(k))
+                .map(|t| (t, 1))
+        };
+        let picks: Option<Vec<(String, u32)>> = list.iter().map(pick).collect();
+        let Some(picks) = picks.filter(|p| p.len() > 1) else {
+            return false;
+        };
+        let count = picks[0].1;
+        if picks.iter().any(|p| p.1 != count) {
+            return false;
+        }
+        let mut terms: Vec<String> = Vec::new();
+        for (t, _) in picks {
+            if !terms.contains(&t) {
+                terms.push(t);
+            }
+        }
+        self.pick_tag("Proficiency", "Tool Proficiency", &terms.join("||"), count);
+        true
+    }
+
+    /// A tool category named as a key (`"gaming set": true`, one tool of it) or in a `choose`
+    /// list ("musical instrument").
     fn tool_category_name(name: &str) -> Option<&'static str> {
         Some(match name {
             "artisan's tools" => "Artisan tools",
@@ -876,6 +921,30 @@ mod tests {
             json!({"choose": {"from": ["anyArtisansTool", "anyMusicalInstrument"], "count": 2}}),
             json!({"vehicles (air)": true}),
         ]);
+        // a category key is one tool of it, not the generic category proficiency
+        let mut key = Mech::new(&sh, "K");
+        key.tools(&[json!({"gaming set": true})]);
+        assert_eq!(
+            ids_of(&key),
+            vec!["select:Proficiency:Tool Proficiency (K):Gaming Set"]
+        );
+        // alternatives of one pick each are one choice; larger alternatives are left to the caller
+        let mut alt = Mech::new(&sh, "A");
+        assert!(alt.tool_alternatives(&[
+            json!({"anyArtisansTool": 1}),
+            json!({"anyMusicalInstrument": 1})
+        ]));
+        assert_eq!(
+            ids_of(&alt),
+            vec!["select:Proficiency:Tool Proficiency (A):Artisan tools||Musical Instrument"]
+        );
+        let mut big = Mech::new(&sh, "B");
+        assert!(!big.tool_alternatives(&[
+            json!({"alchemist's supplies": true, "tinker's tools": true}),
+            json!({"anyGamingSet": 1})
+        ]));
+        assert!(!big.tool_alternatives(&[json!({"anyGamingSet": 1})]));
+        assert!(big.rules.is_empty());
         // a category named in a choice list is the category, not a single tool
         let mut named = Mech::new(&sh, "N");
         named.tools(&[json!({"choose": {"from": ["anyArtisansTool", "musical instrument"]}})]);

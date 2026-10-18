@@ -616,6 +616,9 @@ fn run(data: &Path) {
                         *v.accepted.entry(why).or_default() += 1;
                     } else if let Some(i) = diff::classify(FINDINGS, &d) {
                         let (fid, .., owner, _) = FINDINGS[i];
+                        if std::env::var_os("BOREALIS_DIFF_ALL").is_some() {
+                            println!("  {fid}: {d}");
+                        }
                         outcome::record(
                             SUITE,
                             &id,

@@ -99,8 +99,13 @@ pub fn apply_proficiencies(mech: &mut Mech<'_>, p: &Value) {
         if !obj.is_empty() {
             mech.tools(&[Value::Object(obj)]);
         }
-    } else {
-        mech.tools(&tools);
+    } else if tools.len() == 1 || !mech.tool_alternatives(&tools) {
+        // several objects are alternatives ("one of these"); larger ones keep the first
+        if tools.len() > 1 {
+            mech.partial
+                .push("alternative tool proficiency sets: only the first was converted".into());
+        }
+        mech.tools(&tools[..1]);
     }
 }
 

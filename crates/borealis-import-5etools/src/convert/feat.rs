@@ -16,6 +16,14 @@ use crate::text::{RefKind, Renderer};
 use borealis_content::{Rule, Setter};
 use serde_json::Value;
 
+/// The 5etools book the bundled SRD of a ruleset is drawn from.
+fn srd_book(ruleset: borealis_content::Ruleset) -> &'static str {
+    match ruleset {
+        borealis_content::Ruleset::Dnd2024 => "XPHB",
+        _ => "PHB",
+    }
+}
+
 /// Convert one feat.
 pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     let feat: Feat = match model::parse(&ent.raw) {
@@ -156,6 +164,23 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     }
     for r in optional_feature_selects(&feat.optionalfeature_progression, &mut partial) {
         mech.push(r);
+    }
+    // the SRD feat's statistics 5etools states in prose only (XPHB Alert: + proficiency bonus
+    // to initiative), for the very feat the SRD prints (the PHB / XPHB copy)
+    if ent.source == srd_book(ent.ruleset) {
+        let have: Vec<String> = mech
+            .rules
+            .iter()
+            .filter_map(|r| match r {
+                Rule::Stat(s) => Some(s.name.clone()),
+                _ => None,
+            })
+            .collect();
+        for r in sh.srd.features().feat_statistics(ent.ruleset, &feat.name) {
+            if matches!(r, Rule::Stat(s) if !have.contains(&s.name)) {
+                mech.push(r.clone());
+            }
+        }
     }
     if feat.repeatable == Some(true) {
         el.setters.push(Setter::new("allow duplicate", "true"));

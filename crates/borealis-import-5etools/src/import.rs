@@ -346,6 +346,21 @@ fn register_links(sh: &mut Shared, st: &mut State, e: &Ents) {
         {
             sh.caster_classes.insert(ent.name.to_lowercase());
         }
+        let groups: Vec<Value> = ent
+            .raw
+            .get("classTableGroups")
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        let table_stats = crate::convert::caster::class_table(&ent.name, &groups)
+            .rules
+            .into_iter()
+            .filter_map(|r| match r {
+                borealis_content::Rule::Stat(s) => Some(s.name),
+                _ => None,
+            })
+            .collect();
+        sh.class_table_stats.insert(class_key.clone(), table_stats);
         sh.class_ids.insert(class_key, id);
     }
     register_subclass_twins(sh, &e.subclasses);

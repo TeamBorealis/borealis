@@ -16,6 +16,7 @@ pub mod scan;
 pub mod source;
 pub mod spell_lookup;
 pub mod srd;
+pub mod srd_features;
 pub mod text;
 pub mod util;
 

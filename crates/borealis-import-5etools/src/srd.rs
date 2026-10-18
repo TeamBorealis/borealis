@@ -60,6 +60,8 @@ pub struct SrdIndex {
     map: BTreeMap<(SrdKind, Ruleset, String), String>,
     /// Supports of each SRD class's subclass select, by `(ruleset, normalised class name)`.
     subclass_tags: BTreeMap<(Ruleset, String), String>,
+    /// Class and subclass feature mechanics.
+    features: crate::srd_features::SrdFeatures,
 }
 
 impl SrdIndex {
@@ -98,6 +100,12 @@ impl SrdIndex {
         self.subclass_tags
             .entry((ruleset, normalize(class_name)))
             .or_insert_with(|| tag.to_string());
+    }
+
+    /// The SRD class and subclass features (mechanics reused for the same 5etools features).
+    #[must_use]
+    pub fn features(&self) -> &crate::srd_features::SrdFeatures {
+        &self.features
     }
 
     /// Number of indexed elements.
@@ -180,6 +188,7 @@ impl SrdIndex {
             return;
         };
         self.index_subclass_tag(&file, pack_ruleset);
+        self.features.index_file(&file, pack_ruleset);
         for e in &file.elements {
             let ruleset = e.ruleset.or(file.ruleset).or(pack_ruleset);
             let (Some(kind), Some(ruleset)) = (SrdKind::of_type(&e.ty), ruleset) else {

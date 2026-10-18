@@ -13,7 +13,7 @@ use crate::model::{self, Race};
 use crate::srd::SrdKind;
 use crate::text::{RefKind, Renderer};
 use borealis_content::{Element, Rule, Ruleset};
-use serde_json::Value;
+use serde_json::{json, Value};
 
 /// Sections that are descriptive and stay in the race description.
 const DESCRIPTIVE_SECTIONS: &[&str] = &[
@@ -205,6 +205,36 @@ fn race_key(name: &str, source: &str) -> String {
     format!("{}|{}", name.to_lowercase(), source.to_uppercase())
 }
 
+/// A race with `lineage` set (the custom-lineage rule of MPMM / VRGR races, `lineage: "VRGR"`
+/// or `true`; the earlier UA form `"UA1"`) takes the ability increases and languages that rule
+/// gives when it lists none of its own, as 5etools fills them in: +2 / +1 or +1 / +1 / +1
+/// ("UA1": +2 / +1 only) to any scores, Common and one other standard language.
+fn with_lineage(race: Race, lineage: Option<&Value>) -> Race {
+    let all = || json!(["str", "dex", "con", "int", "wis", "cha"]);
+    let weighted = |w: Value| json!({"choose": {"weighted": {"from": all(), "weights": w}}});
+    let ability = match lineage {
+        Some(Value::Bool(true)) => vec![weighted(json!([2, 1])), weighted(json!([1, 1, 1]))],
+        Some(Value::String(s)) if s == "VRGR" => {
+            vec![weighted(json!([2, 1])), weighted(json!([1, 1, 1]))]
+        }
+        Some(Value::String(s)) if s == "UA1" => vec![weighted(json!([2, 1]))],
+        _ => return race,
+    };
+    Race {
+        ability: if race.ability.is_empty() {
+            ability
+        } else {
+            race.ability
+        },
+        language_proficiencies: if race.language_proficiencies.is_empty() {
+            vec![json!({"common": true, "anyStandard": 1})]
+        } else {
+            race.language_proficiencies
+        },
+        ..race
+    }
+}
+
 /// Convert one race, subrace or species.
 pub fn convert(sh: &Shared, st: &mut State, ent: &Ent, is_subrace: bool) -> Conv {
     let race: Race = match model::parse(&ent.raw) {
@@ -219,6 +249,7 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent, is_subrace: bool) -> Conv
             return Conv::default();
         }
     };
+    let race = with_lineage(race, ent.raw.get("lineage"));
     let resolver = |k: RefKind, n: &str, s: &str| sh.link(k, n, s);
     let mut renderer = Renderer::new(&resolver);
     let source_display = sh.source_display(&ent.source);
@@ -649,6 +680,31 @@ mod tests {
             replaced_props(&wood),
             vec!["darkvision", "skillProficiencies", "speed"]
         );
+    }
+
+    #[test]
+    fn lineage_rule_fills_ability_and_languages() {
+        let race: Race = model::parse(&json!({"name": "Kenku", "source": "ZZZ"})).unwrap();
+        let vrgr = with_lineage(race.clone(), Some(&json!("VRGR")));
+        assert_eq!(vrgr.ability.len(), 2);
+        assert_eq!(
+            vrgr.ability[1]["choose"]["weighted"]["weights"],
+            json!([1, 1, 1])
+        );
+        assert_eq!(
+            vrgr.language_proficiencies,
+            vec![json!({"common": true, "anyStandard": 1})]
+        );
+        let ua = with_lineage(race.clone(), Some(&json!("UA1")));
+        assert_eq!(ua.ability.len(), 1);
+        // a race's own fields win; no lineage changes nothing
+        let own: Race =
+            model::parse(&json!({"name": "C", "source": "ZZZ", "ability": [{"str": 1}]})).unwrap();
+        assert_eq!(
+            with_lineage(own, Some(&json!(true))).ability,
+            vec![json!({"str": 1})]
+        );
+        assert!(with_lineage(race, None).ability.is_empty());
     }
 
     #[test]

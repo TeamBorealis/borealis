@@ -51,6 +51,11 @@ const SUITE: &str = "source_truth";
 /// failure.
 const NOT_MODELLED: &[(&str, &str)] = &[
     (
+        "tool (granted)",
+        "a tool the core proficiency set has no element for (`vehicles (space)`, `vehicles (air)`): \
+         the importer cannot grant it and notes the gap; adding it is content/core's call",
+    ),
+    (
         "host",
         "the element is not offered on any test host (a feat whose prerequisites no host meets); \
          offering is acceptance stage 2's check, its fields stay unverified here",
@@ -77,38 +82,11 @@ const UNREAD_OK: &[(&str, &str)] = &[
     ),
 ];
 
-/// Wrong values found by the 2026-10-18 corpus run, classified (all Borealis bugs in
-/// `borealis-import-5etools`; per-id lists are kept locally). Printed next to the counts; the
-/// test still fails while any wrong value remains.
-const FINDINGS: &[(&str, &str)] = &[
-    (
-        "ability (choice)",
-        "importer: `lineage: \"VRGR\"` (the custom-lineage rule: +2/+1 or +1/+1/+1 to any scores) \
-         is not read, so those races offer no ability increase (75 checks); `choose` with count 2 \
-         becomes an Ability Score Improvement select whose two slots accept the same ability \
-         (PHB Half-Elf and its variants, Variant Human: +2 to one score; 42 checks, \
-         src/convert/mech/ability.rs)",
-    ),
-    (
-        "innate uses",
-        "importer: `daily: {pb: [...]}` (proficiency-bonus uses) gives the spell but no limited \
-         free casts (XPHB Forest Gnome lineage)",
-    ),
-    (
-        "proficiency (alternative arrays)",
-        "importer: alternative `toolProficiencies` arrays are all granted at once instead of \
-         offered as one-of (src/convert/mech.rs tools iterates every object)",
-    ),
-    (
-        "tool (choice)",
-        "importer: a tool category key (`gaming set: true`) grants the generic category \
-         proficiency instead of a choice of one tool of it",
-    ),
-    (
-        "tool (granted)",
-        "importer: `vehicles (space)` has no core element; the grant is dropped with a note",
-    ),
-];
+/// Wrong values found by the corpus run, classified (Borealis bugs, owner named). Printed next
+/// to the counts; the test still fails while any wrong value remains. Empty since det-5e-5
+/// (2026-10-18): the lineage rule, distinct multi-pick increases, `pb` uses, alternative tool
+/// arrays and tool category keys are imported; core-less tools are NOT_MODELLED.
+const FINDINGS: &[(&str, &str)] = &[];
 
 // ------------------------------------------------------------------------------------ tally
 
@@ -554,11 +532,14 @@ impl Audit<'_> {
         };
         let (tools, langs) = (held("Proficiency"), held("Language"));
         for s in &x.tools {
-            self.t.record(
-                "tool (granted)",
-                id,
-                verdict(tools.contains(s), || format!("{s} not granted")),
-            );
+            let v = if !tools.contains(s)
+                && borealis_import_5etools::core_ids::tool_prof_id(s).is_none()
+            {
+                Verdict::NotModelled(format!("{s} has no core proficiency element"))
+            } else {
+                verdict(tools.contains(s), || format!("{s} not granted"))
+            };
+            self.t.record("tool (granted)", id, v);
         }
         for s in &x.languages {
             let got =

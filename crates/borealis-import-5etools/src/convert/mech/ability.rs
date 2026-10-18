@@ -3,8 +3,9 @@
 //! Mapping onto the constructs the bundled packs use:
 //! - fixed `{"dex": 2}` -> `stat dexterity +2`; with a `max` above 20 (Epic Boons) the
 //!   increase goes to `<ability>:boon` with its cap in `<ability>:boon:cap`;
-//! - `choose` of +1 picks -> the classic `Ability Score Improvement` select (Aurora);
-//! - `choose` with `amount` > 1 (+2 to one ability), a raised maximum, or the hidden
+//! - `choose` of one +1 pick -> the classic `Ability Score Improvement` select (Aurora);
+//! - `choose` of several picks (+1 to two different abilities, PHB Half-Elf), with an
+//!   `amount` above 1 (+2 to one ability), a raised maximum, or the hidden
 //!   "+2 to one or +1 to two" pattern -> `ability_increase` (as bundled SRD 5.2.1 feats);
 //! - `weighted` (+2/+1 or +1/+1/+1, 2024 backgrounds) -> `ability_distribution`.
 
@@ -99,7 +100,9 @@ impl Mech<'_> {
         if c.pool.is_empty() {
             return;
         }
-        if c.amount > 1 || cap.is_some() {
+        // two or more picks are of different abilities: the engine's increase choice offers
+        // distinct combinations, where Ability Score Improvement slots accept one ability twice
+        if c.amount > 1 || c.count > 1 || cap.is_some() {
             self.ability_increase(&c, cap.unwrap_or(DEFAULT_CAP), hidden);
             return;
         }
@@ -189,8 +192,20 @@ mod tests {
         let ids = ids_of(&m);
         assert!(ids.contains(&"stat:dexterity=2".to_string()));
         assert!(ids.contains(&"stat:charisma=1".to_string()));
-        assert!(ids.iter().any(|i| i == "select:Ability Score Improvement:Ability Score Increase (Elf):Ability Score Improvement&&Race&&(Strength||Dexterity||Constitution)"));
         assert!(m.partial.is_empty(), "{:?}", m.partial);
+        // two picks are two different abilities, not two slots that accept one ability twice
+        let two = custom_rule(&m, 0);
+        assert_eq!(two.kind, "ability_increase");
+        assert_eq!(
+            two.fields["options"],
+            json!([{"abilities": ["strength", "dexterity", "constitution"], "pick": 2, "amount": 1}])
+        );
+        let mut one = Mech::new(&sh, "Elf");
+        one.ability(
+            &[json!({"choose": {"from": ["str", "dex", "con"]}})],
+            AbilitySource::Race,
+        );
+        assert!(ids_of(&one).iter().any(|i| i == "select:Ability Score Improvement:Ability Score Increase (Elf):Ability Score Improvement&&Race&&(Strength||Dexterity||Constitution)"));
         let mut multi = Mech::new(&sh, "M");
         multi.ability(&[json!({"str": 1}), json!({"dex": 1})], AbilitySource::Race);
         assert!(multi.partial.iter().any(|p| p.contains("alternative")));

@@ -173,9 +173,17 @@ pub fn choice_for(slot: &SlotSnapshot, wanted: &[&str], prefer: Prefer<'_>) -> O
     {
         return Some(Choice::Element(o.id.clone()));
     }
+    // an item naming several parts ("Strength +1, Constitution +1", one allocation of an
+    // ability increase) is compared by its parts in name order, as a select of one element
+    // per part picks the smallest names
+    let parts = |text: &str| {
+        let mut p: Vec<String> = text.split(", ").map(str::to_string).collect();
+        p.sort();
+        p
+    };
     slot.list_items
         .iter()
-        .min_by(|a, b| a.1.cmp(&b.1))
+        .min_by(|a, b| (parts(&a.1), &a.1).cmp(&(parts(&b.1), &b.1)))
         .map(|(id, _)| Choice::ListItem(*id))
 }
 

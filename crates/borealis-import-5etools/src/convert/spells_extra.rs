@@ -264,10 +264,15 @@ fn grant_mode(kind: Kind, how: Option<&str>, cantrip: bool) -> &'static str {
     }
 }
 
-/// Uses of a frequency key: `"2"` / `"2e"` (each) is a number, `"cha"` the ability modifier.
+/// Uses of a frequency key: `"2"` / `"2e"` (each) is a number, `"cha"` the ability modifier,
+/// `"pb"` the proficiency bonus (the engine's `proficiency` uses, as the bundled SRD 5.2.1
+/// gnome lineages).
 pub(crate) fn uses_value(key: &str) -> Option<Value> {
     if let Ok(n) = key.trim_end_matches('e').parse::<u32>() {
         return Some(json!(n));
+    }
+    if matches!(key, "pb" | "pbe") {
+        return Some(json!("proficiency"));
     }
     core_ids::ability_stat(key).map(Value::String)
 }
@@ -930,6 +935,15 @@ pub fn convert_inheriting(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn proficiency_bonus_uses() {
+        assert_eq!(
+            super::uses_value("pb"),
+            Some(serde_json::json!("proficiency"))
+        );
+        assert_eq!(super::uses_value("2e"), Some(serde_json::json!(2)));
+    }
+
     use super::*;
 
     fn shared() -> Shared {

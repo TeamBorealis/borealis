@@ -147,6 +147,79 @@ fn summary(bg: &Background) -> String {
     parts.join(", ")
 }
 
+/// Readable name of one tool proficiency set (`Alchemist's Supplies, Tinker's Tools`).
+fn tool_set_label(obj: &Value) -> String {
+    let Some(map) = obj.as_object() else {
+        return String::new();
+    };
+    map.iter()
+        .map(|(k, v)| {
+            let any = match k.as_str() {
+                "anyArtisansTool" => Some("artisan's tools"),
+                "anyGamingSet" => Some("gaming set"),
+                "anyMusicalInstrument" => Some("musical instrument"),
+                "any" | "anyTool" => Some("tool"),
+                _ => None,
+            };
+            match (any, v.as_u64()) {
+                (Some(what), Some(n)) if n > 1 => format!("{n} {}", crate::util::title_case(what)),
+                (Some(what), _) => format!("One {}", crate::util::title_case(what)),
+                (None, _) => crate::util::title_case(k),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+/// Alternative `toolProficiencies` sets of a background ("one of these"): one choice when
+/// every set is one pick ([`Mech::tool_alternatives`]), else one `Option` element per set
+/// (holding that set's proficiencies) and an `Option` select of one on the background.
+fn tool_alternatives(
+    sh: &Shared,
+    st: &mut State,
+    ent: &Ent,
+    bg_name: &str,
+    (owner_id, source_display): (&str, &str),
+    list: &[Value],
+    mech: &mut Mech<'_>,
+) -> Vec<borealis_content::Element> {
+    if mech.tool_alternatives(list) {
+        return Vec::new();
+    }
+    let mut options = Vec::new();
+    for (i, set) in list.iter().enumerate() {
+        let label = tool_set_label(set);
+        let oid = st.ids.id(
+            IdKind::BackgroundFeature,
+            &ent.source,
+            &[bg_name, "Tools", &(i + 1).to_string()],
+            &format!("{bg_name}|{}|tools|{i}", ent.source),
+        );
+        let mut oe = new_element(&oid, &label, "Option", source_display, ent.ruleset);
+        oe.supports = vec![owner_id.to_string()];
+        oe.description = format!(
+            "<p>Tool proficiencies option of {}.</p>",
+            crate::text::tags::esc(bg_name)
+        );
+        oe.sheet = Some(borealis_content::Sheet {
+            display: Some(false),
+            ..borealis_content::Sheet::default()
+        });
+        let mut om = Mech::new(sh, &label);
+        om.tools(std::slice::from_ref(set));
+        oe.rules = std::mem::take(&mut om.rules);
+        mech.partial.extend(om.partial);
+        options.push(oe);
+    }
+    mech.push(Rule::Select(select(
+        "Option",
+        &format!("Tool Proficiencies ({bg_name})"),
+        Some(owner_id),
+        1,
+    )));
+    options
+}
+
 /// Convert one background.
 pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     let bg: Background = match model::parse(&ent.raw) {
@@ -176,7 +249,20 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     mech.ability(&bg.ability, AbilitySource::Background);
     mech.feats(&bg.feats);
     mech.skills(&bg.skill_proficiencies);
-    mech.tools(&bg.tool_proficiencies);
+    let tool_options = if bg.tool_proficiencies.len() > 1 {
+        tool_alternatives(
+            sh,
+            st,
+            ent,
+            &bg.name,
+            (&id, &source_display),
+            &bg.tool_proficiencies,
+            &mut mech,
+        )
+    } else {
+        mech.tools(&bg.tool_proficiencies);
+        Vec::new()
+    };
     mech.languages(&bg.language_proficiencies);
     mech.weapons(&bg.weapon_proficiencies);
     mech.armor(&bg.armor_proficiencies);
@@ -301,6 +387,7 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     partial.dedup();
     let mut elements = vec![el];
     elements.extend(features);
+    elements.extend(tool_options);
     elements.extend(spell_helpers);
     elements.append(&mut packages.elements);
     Conv { elements, partial }

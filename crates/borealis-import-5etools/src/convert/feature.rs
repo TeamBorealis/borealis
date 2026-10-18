@@ -268,7 +268,21 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
         }
         mech.push(rule);
     }
-    if sub {
+    let srd = srd_rules(sh, &f, ent.ruleset, sub);
+    if let Some((srd_id, rules)) = srd {
+        // the bundled SRD models this very feature: its rules replace what the prose gives
+        el.data.insert("srd_feature".into(), Value::String(srd_id));
+        el.data
+            .insert("class".into(), Value::String(f.class_name.clone()));
+        for r in rules {
+            mech.push(r);
+        }
+        if !sub {
+            for r in ritual_rules(&f.name, &f.entries) {
+                mech.push(r);
+            }
+        }
+    } else if sub {
         // a subclass feature states no choices, but may grant half proficiency (Champion)
         let plain = Renderer::plain(&f.entries).to_lowercase();
         for r in super::feature_rules::half_proficiency(&plain) {
@@ -316,6 +330,69 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
     }
 }
 
+/// The rules of the bundled SRD feature this 5etools feature is (same ruleset, class, subclass
+/// and name, printed in its class's own book), when all of them are portable
+/// ([`crate::srd_features::portable`]), with the SRD element id. A feature 5etools prints at
+/// several levels takes the SRD rules of its own level range.
+fn srd_rules(
+    sh: &Shared,
+    f: &Feature,
+    ruleset: borealis_content::Ruleset,
+    sub: bool,
+) -> Option<(String, Vec<Rule>)> {
+    if f.source != f.class_source
+        || (sub && f.subclass_source.as_deref() != Some(f.class_source.as_str()))
+    {
+        return None;
+    }
+    let index = sh.srd.features();
+    let srd = if sub {
+        index.subclass_feature(
+            ruleset,
+            &f.class_name,
+            f.subclass_short_name.as_deref()?,
+            &f.name,
+        )?
+    } else {
+        index.class_feature(ruleset, &f.class_name, &f.name)?
+    };
+    if !crate::srd_features::portable(&f.name, &srd.rules) {
+        return None;
+    }
+    let field = |e: &Ent, k: &str| e.raw.get(k).and_then(Value::as_str).map(str::to_string);
+    let same = |e: &&Ent| {
+        field(e, "name").as_deref() == Some(f.name.as_str())
+            && field(e, "className").as_deref() == Some(f.class_name.as_str())
+            && field(e, "classSource").as_deref() == Some(f.class_source.as_str())
+            && field(e, "source").as_deref() == Some(f.source.as_str())
+            && field(e, "subclassShortName") == f.subclass_short_name
+            && field(e, "subclassSource") == f.subclass_source
+    };
+    let pool = if sub {
+        &sh.subclass_features
+    } else {
+        &sh.class_features
+    };
+    let levels: Vec<u32> = pool
+        .iter()
+        .filter(same)
+        .filter_map(|e| e.raw.get("level").and_then(Value::as_u64))
+        .filter_map(|l| u32::try_from(l).ok())
+        .collect();
+    // a stat the class table already counts (`monk:unarmored movement`) is not counted twice
+    let table = sh.class_table_stats.get(&format!(
+        "{}|{}",
+        f.class_name.to_lowercase(),
+        f.class_source.to_uppercase()
+    ));
+    let rules: Vec<Rule> = srd
+        .rules_for(f.level, &levels)
+        .into_iter()
+        .filter(|r| !matches!(r, Rule::Stat(s) if table.is_some_and(|t| t.contains(&s.name))))
+        .collect();
+    (!rules.is_empty()).then(|| (srd.id.clone(), rules))
+}
+
 /// Subclass feature references of a subclass, in order.
 fn subclass_feature_refs(sc: &Subclass) -> Vec<FeatureRef> {
     sc.subclass_features
@@ -328,6 +405,36 @@ fn subclass_feature_refs(sc: &Subclass) -> Vec<FeatureRef> {
             parse_subclass_feature_uid(uid)
         })
         .collect()
+}
+
+/// The `refSubclassFeature` entries nested (at any depth) in a feature's entries, in order.
+fn nested_subclass_refs(entries: Option<&Value>) -> Vec<FeatureRef> {
+    fn walk(v: &Value, out: &mut Vec<FeatureRef>) {
+        match v {
+            Value::Array(a) => a.iter().for_each(|x| walk(x, out)),
+            Value::Object(o) => {
+                if o.get("type").and_then(Value::as_str) == Some("refSubclassFeature") {
+                    if let Some(r) = o
+                        .get("subclassFeature")
+                        .and_then(Value::as_str)
+                        .and_then(parse_subclass_feature_uid)
+                    {
+                        if !out.contains(&r) {
+                            out.push(r);
+                        }
+                    }
+                    return;
+                }
+                o.values().for_each(|x| walk(x, out));
+            }
+            _ => {}
+        }
+    }
+    let mut out = Vec::new();
+    if let Some(e) = entries {
+        walk(e, &mut out);
+    }
+    out
 }
 
 /// Text of every feature of a subclass, nested ones included (school restrictions live in
@@ -497,6 +604,33 @@ pub fn convert_subclass(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
             }));
             if st.done_features.insert(format!("s:{key}")) {
                 st.report.converted(&fe.file, "subclassFeature");
+            }
+            // the features the introduction nests (College of Lore: Bonus Proficiencies,
+            // Cutting Words) are features of the subclass gained at their own level
+            for nested in nested_subclass_refs(fe.raw.get("entries")) {
+                // only this subclass's own features (a reprint's introduction nests the
+                // original's introduction, which is text, not a feature)
+                let own = nested
+                    .sub_short
+                    .as_deref()
+                    .is_some_and(|s| s.eq_ignore_ascii_case(&sc.short_name))
+                    && nested
+                        .sub_source
+                        .as_deref()
+                        .is_some_and(|s| s.eq_ignore_ascii_case(&sc.source));
+                let intro_like = nested.name.eq_ignore_ascii_case(&sc.name)
+                    || nested.name.eq_ignore_ascii_case(&sc.short_name);
+                if !own
+                    || intro_like
+                    || refs.contains(&nested)
+                    || !sh
+                        .subclass_feature_keys
+                        .contains_key(&subclass_feature_key(&nested))
+                {
+                    continue;
+                }
+                let fid = feature_id(st, &nested, true);
+                mech.push(grant_at(&fid, "Archetype Feature", nested.level));
             }
             continue;
         }
@@ -828,6 +962,41 @@ mod tests {
             sh.subclass_features.push(e);
         }
         sh
+    }
+
+    #[test]
+    fn features_nested_in_the_introduction_are_granted() {
+        let sh = shared_with_champion();
+        let mut st = State::default();
+        // College of Lore shape: the subclass lists only its introduction; the introduction
+        // nests the level 3 feature
+        let e = ent(
+            json!({"name": "Champion", "shortName": "Champion", "source": "ZZZ", "className": "Fighter", "classSource": "ZZZ",
+            "subclassFeatures": ["Champion|Fighter|ZZZ|Champion|ZZZ|3", "Remarkable Athlete|Fighter|ZZZ|Champion|ZZZ|7"]}),
+            "class/class-fighter.json",
+        );
+        let conv = convert_subclass(&sh, &mut st, &e);
+        let grants: Vec<(String, Option<u32>)> = conv.elements[0]
+            .rules
+            .iter()
+            .filter_map(|r| match r {
+                Rule::Grant(g) => Some((g.id.clone(), g.level)),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            grants,
+            vec![
+                (
+                    "ID_5ET_ZZZ_SUBCLASSFEATURE_FIGHTER_CHAMPION_L3_IMPROVED_CRITICAL".to_string(),
+                    Some(3)
+                ),
+                (
+                    "ID_5ET_ZZZ_SUBCLASSFEATURE_FIGHTER_CHAMPION_L7_REMARKABLE_ATHLETE".to_string(),
+                    Some(7)
+                ),
+            ]
+        );
     }
 
     #[test]
