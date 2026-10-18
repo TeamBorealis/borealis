@@ -240,6 +240,75 @@
           "name": "favored enemy:count",
           "value": "1",
           "level": 14
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Favored Enemy",
+          "level": 1,
+          "supports": "Favored Enemy"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Favored Enemy",
+          "level": 6,
+          "supports": "Favored Enemy"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Favored Enemy",
+          "level": 14,
+          "supports": "Favored Enemy"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Favored Enemy, Humanoid",
+          "number": 2,
+          "level": 1,
+          "supports": "Humanoid Favored Enemy",
+          "requirements": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOIDS_1"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Favored Enemy, Humanoid",
+          "number": 2,
+          "level": 6,
+          "supports": "Humanoid Favored Enemy",
+          "requirements": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOIDS_2"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Favored Enemy, Humanoid",
+          "number": 2,
+          "level": 14,
+          "supports": "Humanoid Favored Enemy",
+          "requirements": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOIDS_3"
+        },
+        {
+          "kind": "select",
+          "type": "Language",
+          "name": "Language (Favored Enemy)",
+          "level": 1,
+          "optional": true
+        },
+        {
+          "kind": "select",
+          "type": "Language",
+          "name": "Language (Favored Enemy)",
+          "level": 6,
+          "optional": true
+        },
+        {
+          "kind": "select",
+          "type": "Language",
+          "name": "Language (Favored Enemy)",
+          "level": 14,
+          "optional": true
         }
       ]
     },
@@ -273,8 +342,697 @@
           "name": "natural explorer:count",
           "value": "1",
           "level": 10
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Favored Terrain",
+          "level": 1,
+          "supports": "Favored Terrain"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Favored Terrain",
+          "level": 6,
+          "supports": "Favored Terrain"
+        },
+        {
+          "kind": "select",
+          "type": "Class Feature",
+          "name": "Favored Terrain",
+          "level": 10,
+          "supports": "Favored Terrain"
         }
       ]
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FAVORED_ENEMY_ABERRATIONS",
+      "name": "Aberrations",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: aberrations."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FAVORED_ENEMY_BEAST",
+      "name": "Beasts",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: beasts."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FAVORED_ENEMY_CELESTIALS",
+      "name": "Celestials",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: celestials."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FAVORED_ENEMY_CONSTRUCTS",
+      "name": "Constructs",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: constructs."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FAVORED_ENEMY_DRAGONS",
+      "name": "Dragons",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: dragons."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FAVORED_ENEMY_ELEMENTALS",
+      "name": "Elementals",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: elementals."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FAVORED_ENEMY_FEY",
+      "name": "Fey",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: fey."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FAVORED_ENEMY_FIENDS",
+      "name": "Fiends",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: fiends."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FAVORED_ENEMY_GIANTS",
+      "name": "Giants",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: giants."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FAVORED_ENEMY_BEAST_MONSTROSITIES",
+      "name": "Monstrosities",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: monstrosities."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FAVORED_ENEMY_OOZES",
+      "name": "Oozes",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: oozes."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FAVORED_ENEMY_PLANTS",
+      "name": "Plants",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: plants."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_FAVORED_ENEMY_UNDEAD",
+      "name": "Undead",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: undead."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOIDS_1",
+      "name": "Humanoids",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Enemy"
+      ],
+      "sheet": {
+        "display": false
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOIDS_2",
+      "name": "Humanoids",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Enemy"
+      ],
+      "requirements": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOIDS_1",
+      "sheet": {
+        "display": false
+      },
+      "compendium": {
+        "display": false
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOIDS_3",
+      "name": "Humanoids",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Enemy"
+      ],
+      "requirements": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOIDS_2",
+      "sheet": {
+        "display": false
+      },
+      "compendium": {
+        "display": false
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_DRAGONBORN",
+      "name": "Dragonborn",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: dragonborn (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_DWARVES",
+      "name": "Dwarves",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: dwarves (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_ELVES",
+      "name": "Elves",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: elves (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_GNOME",
+      "name": "Gnomes",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: gnomes (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_HALF_ELF",
+      "name": "Half-Elves",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: half-elves (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_HALF_ORC",
+      "name": "Half-Orcs",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: half-orcs (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_HALFLINGS",
+      "name": "Halflings",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: halflings (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_HUMAN",
+      "name": "Humans",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: humans (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_PHB_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_TIEFLING",
+      "name": "Tieflings",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: tieflings (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_MM_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_BUGBEARS",
+      "name": "Bugbears",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: bugbears (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_MM_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_GNOLLS",
+      "name": "Gnolls",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: gnolls (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_MM_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_GOBLINS",
+      "name": "Goblins",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: goblins (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_MM_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_GRIMLOCK",
+      "name": "Grimlock",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: grimlock (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_MM_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_HOBGOBLINS",
+      "name": "Hobgoblins",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: hobgoblins (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_MM_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_KOBOLDS",
+      "name": "Kobolds",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: kobolds (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_MM_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_LIZARDFOLK",
+      "name": "Lizardfolk",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: lizardfolk (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_MM_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_MERFOLK",
+      "name": "Merfolk",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: merfolk (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_MM_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_ORCS",
+      "name": "Orcs",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: orcs (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_MM_CLASS_FEATURE_RANGER_FAVORED_ENEMY_HUMANOID_SAHUAGIN",
+      "name": "Sahuagin",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Humanoid Favored Enemy"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored enemy: sahuagin (humanoid)."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_NATURAL_EXPLORER_FT_ARCTIC",
+      "name": "Arctic",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Terrain"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored terrain: arctic."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_NATURAL_EXPLORER_FT_COAST",
+      "name": "Coast",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Terrain"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored terrain: coast."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_NATURAL_EXPLORER_FT_DESERT",
+      "name": "Desert",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Terrain"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored terrain: desert."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_NATURAL_EXPLORER_FT_FOREST",
+      "name": "Forest",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Terrain"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored terrain: forest."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_NATURAL_EXPLORER_FT_GRASSLAND",
+      "name": "Grassland",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Terrain"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored terrain: grassland."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_NATURAL_EXPLORER_FT_MOUNTAIN",
+      "name": "Mountain",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Terrain"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored terrain: mountain."
+          }
+        ]
+      }
+    },
+    {
+      "id": "ID_WOTC_CLASSFEATURE_RANGER_NATURAL_EXPLORER_FT_SWAMP",
+      "name": "Swamp",
+      "type": "Class Feature",
+      "source": "SRD 5.1",
+      "supports": [
+        "Favored Terrain"
+      ],
+      "sheet": {
+        "descriptions": [
+          {
+            "text": "Favored terrain: swamp."
+          }
+        ]
+      }
     },
     {
       "id": "ID_WOTC_CLASSFEATURE_RANGER_FIGHTING_STYLE",

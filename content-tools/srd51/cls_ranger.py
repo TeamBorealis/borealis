@@ -7,6 +7,40 @@ CLS = 'Ranger'
 TAG = 'Ranger Archetype'
 KNOWN = {2: 2, 3: 3, 4: 3, 5: 4, 6: 4, 7: 5, 8: 5, 9: 6, 10: 6, 11: 7, 12: 7, 13: 8, 14: 8, 15: 9, 16: 9, 17: 10, 18: 10, 19: 11, 20: 11}
 
+# Favored Enemy / Natural Explorer options: the lists the SRD 5.1 text names. The humanoid races are the
+# SRD 5.1 player races plus the humanoid kinds of the SRD 5.1 monster stat blocks; Underdark is not an SRD
+# 5.1 terrain. Ids align with the legacy SRD data (identifiers only) so Aurora files resolve.
+FE_TAG, HUMANOID_TAG, TERRAIN_TAG = 'Favored Enemy', 'Humanoid Favored Enemy', 'Favored Terrain'
+FE_TYPES = ['Aberrations', 'Beasts', 'Celestials', 'Constructs', 'Dragons', 'Elementals', 'Fey', 'Fiends', 'Giants',
+            'Monstrosities', 'Oozes', 'Plants', 'Undead']
+HUMANOIDS = 'Humanoids'
+HUMANOID_RACES = ['Dragonborn', 'Dwarves', 'Elves', 'Gnomes', 'Half-Elves', 'Half-Orcs', 'Halflings', 'Humans', 'Tieflings',
+                  'Bugbears', 'Gnolls', 'Goblins', 'Grimlock', 'Hobgoblins', 'Kobolds', 'Lizardfolk', 'Merfolk', 'Orcs',
+                  'Sahuagin']
+TERRAINS = ['Arctic', 'Coast', 'Desert', 'Forest', 'Grassland', 'Mountain', 'Swamp']
+_LEGACY = 'elements.system_reference_document.classes.class-ranger.xml'
+
+def option_id(key):
+    """Legacy SRD id of a favored enemy/terrain option (`Humanoids_2` = the second Humanoids pick)."""
+    rows = [(i, n) for f, t, i, n in fixture_rows() if f == _LEGACY and t == 'Class Feature']
+    name, _, nth = key.partition('_')
+    hits = [i for i, n in rows if n == name and ('FAVORED_ENEMY' in i or 'NATURAL_EXPLORER_FT' in i)]
+    hits = [i for i in hits if not nth or i.endswith(f'_{nth}')]
+    if len(hits) != 1:
+        raise SystemExit(f'ranger option {key!r}: expected one legacy id, found {hits}')
+    return hits[0]
+
+def favored_options():
+    opt = lambda name, tag, id_, **kw: class_feature(CLS, name, id_=id_, supports=[tag], auto_sheet=False, **kw)
+    els = [opt(n, FE_TAG, option_id(n), sheet_=sheet(text=f'Favored enemy: {n.lower()}.')) for n in FE_TYPES]
+    for n in range(1, 4):
+        req = option_id(f'{HUMANOIDS}_{n - 1}') if n > 1 else None
+        els.append(opt(HUMANOIDS, FE_TAG, option_id(f'{HUMANOIDS}_{n}'), requirements=req,
+                       sheet_={'display': False}, compendium={'display': False} if n > 1 else None))
+    els += [opt(n, HUMANOID_TAG, option_id(n), sheet_=sheet(text=f'Favored enemy: {n.lower()} (humanoid).')) for n in HUMANOID_RACES]
+    els += [opt(n, TERRAIN_TAG, option_id(n), sheet_=sheet(text=f'Favored terrain: {n.lower()}.')) for n in TERRAINS]
+    return els
+
 def build():
     R = class_range(CLS)
     els = []
@@ -41,12 +75,20 @@ def build():
         [grant(save('strength'), 'Proficiency'), grant(save('dexterity'), 'Proficiency')],
         mc, grants, 3, 'Ranger', class_desc2(CLS, table)))
 
+    fe_levels, ne_levels = (1, 6, 14), (1, 6, 10)
     els.append(class_feature(CLS, 'Favored Enemy', html=H('Favored Enemy'),
-                             rules=[stat('favored enemy:count', 1), stat('favored enemy:count', 1, level=6), stat('favored enemy:count', 1, level=14)],
+                             rules=[stat('favored enemy:count', 1), stat('favored enemy:count', 1, level=6), stat('favored enemy:count', 1, level=14)] +
+                                   [select('Class Feature', 'Favored Enemy', supports=FE_TAG, level=l) for l in fe_levels] +
+                                   [select('Class Feature', 'Favored Enemy, Humanoid', supports=HUMANOID_TAG, number=2, level=l,
+                                           requirements=option_id(f'{HUMANOIDS}_{n}'))
+                                    for n, l in enumerate(fe_levels, 1)] +
+                                   [select('Language', 'Language (Favored Enemy)', level=l, optional=True) for l in fe_levels],
                              sheet_=sheet(text='Favored enemies: {{favored enemy:count}}. Advantage on Survival checks to track them and Intelligence checks to recall information about them.')))
     els.append(class_feature(CLS, 'Natural Explorer', html=H('Natural Explorer'),
-                             rules=[stat('natural explorer:count', 1), stat('natural explorer:count', 1, level=6), stat('natural explorer:count', 1, level=10)],
+                             rules=[stat('natural explorer:count', 1), stat('natural explorer:count', 1, level=6), stat('natural explorer:count', 1, level=10)] +
+                                   [select('Class Feature', 'Favored Terrain', supports=TERRAIN_TAG, level=l) for l in ne_levels],
                              sheet_=sheet(text='Favored terrains: {{natural explorer:count}}.')))
+    els += favored_options()
     els.append(class_feature(CLS, 'Fighting Style', html=H('Fighting Style'), sheet_={'display': False},
                              rules=[select('Class Feature', 'Fighting Style', supports='Fighting Style,Ranger', level=2)]))
     els.append(class_feature(CLS, 'Spellcasting', html=H('Spellcasting', True),
