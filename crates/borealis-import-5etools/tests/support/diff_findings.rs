@@ -15,15 +15,17 @@ const IMPORTER: Owner = Owner::Importer;
 /// Hunter's Prey, Fiendish Resilience), F11, F12 and F15 fixed by det-5e-5; F9 (half-caster
 /// Spellcasting feature), F10 (Circle of the Land land type, Nature's Ward), F14 (species
 /// `_versions` as options), F16 (Favored Enemy / Favored Terrain) and the importer half of F13
-/// fixed by det-5e-6). The test fails while any Borealis-bug entry is still observed, and when an
+/// fixed by det-5e-6; the PHB Warlock half of F13 fixed by the engine's T11 equivalence classes, 8bdb080). The test fails while any Borealis-bug entry is still observed, and when an
 /// entry goes stale.
 pub const FINDINGS: &[Finding] = &[
     ("F8", "Half-Elf", &["select.Racial Trait", "select.List"], &[], Owner::Source,
      "encoding: the PHB Half-Elf's two +1 increases (`ability choose count 2`) import as one engine choice of two different abilities (a List of the 10 pairs, as the SRD 5.2.1 feats' increases); the SRD 5.1 pack offers two picks of five Racial Trait elements. The same allocations are reachable (source_truth ability (choice): 0 wrong) and the fill takes the same abilities; only the select shape differs"),
-    ("F13", "Warlock", &["select.Class Feature", "select.Condition", "select.Option", "select.Feat", "skill.", "speed", "initiative"], &[], Owner::Engine,
-     "selects offer the same-named spell / option from several sources and editions, and accept it twice: the PHB Warlock cantrip select holds the bundled SRD and the 5etools Chill Touch (both picked, so no Eldritch Blast and no Agonizing Blast); the XPHB Warlock's invocation select holds PHB, TCE and XPHB copies (Agonizing Blast picked twice). (the importer half, the 2024 select and option type `Option`, is fixed: det-5e-6)"),
     ("F13", "Dnd2024 Sorcerer", &["select.Class Feature", "select.Option"], &[], Owner::Engine,
      "XPHB Metamagic select offers PHB and XPHB copies of each option (Careful Spell picked twice) (both sides now type it `Option`; det-5e-6)"),
+    ("F17", "Ranger/Hunter", &["select.Archetype Feature"], &[], IMPORTER,
+     "PHB Hunter's Prey, Defensive Tactics, Multiattack and Superior Hunter's Defense offer no option select (the SRD features' Archetype Feature selects are not portable, and the 5etools options are nested entries); hidden until aee461d by the stale LOSSY select.Archetype prefix"),
+    ("F18", "Sorcerer/Draconic Bloodline", &["select.Archetype Feature"], &[], IMPORTER,
+     "PHB Dragon Ancestor offers no ancestry select (the SRD feature's Archetype Feature select is not portable; 5etools states the 10 ancestries as a table); hidden until aee461d by the stale LOSSY select.Archetype prefix"),
     ("S1", "Dnd2014 Fighter/Champion Dragonborn", &["select.Condition", "select.Racial Trait"], &[], Owner::Source,
      "5etools PHB Dragonborn encodes Draconic Ancestry as `resist` choose-from-5 damage types (the 10-colour table is entry text only); the SRD pack offers the 10 ancestries"),
 ];
