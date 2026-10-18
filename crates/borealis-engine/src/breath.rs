@@ -21,7 +21,7 @@ use serde_json::Value;
 const NAME: &str = "Breath Weapon";
 
 /// Text of the first live inline statistic `name` (`draconic-ancestry:damage type` = `Fire`).
-fn inline_text(graph: &Graph<'_>, name: &str) -> Option<String> {
+pub(crate) fn inline_text(graph: &Graph<'_>, name: &str) -> Option<String> {
     graph.preorder().into_iter().find_map(|id| {
         let n = &graph.nodes[id];
         let level = graph.mgr_level(n.mgr);

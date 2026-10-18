@@ -1,6 +1,7 @@
 //! det-src-6: the last st3-golden findings, on the bundled SRD packs. SRD 5.1 usage pools
-//! (Relentless Endurance, Breath Weapon, the Paladin's Channel Divinity) and the 2014 Tiefling's
-//! Infernal Legacy free casts.
+//! (Relentless Endurance, Breath Weapon, the Paladin's Channel Divinity), the 2014 Tiefling's
+//! Infernal Legacy free casts, and Elemental Affinity (`damage_bonus_spell`) on cantrip rows in
+//! both editions.
 
 use borealis_content::{ContentStoreBuilder, Ruleset};
 use borealis_engine::commands;
@@ -8,6 +9,8 @@ use borealis_engine::snapshot::CharacterSnapshot;
 use borealis_engine::state::CharacterState;
 use borealis_engine::{Choice, Engine};
 use std::path::Path;
+
+const CHARISMA: usize = 5;
 
 fn engine(pack: &str) -> Option<Engine> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
@@ -64,6 +67,13 @@ fn hero(e: &Engine, ruleset: Ruleset, picks: &[(&str, &str)], levels: u32) -> Ch
     level_to(e, s, 1, levels)
 }
 
+/// Charisma 16 (+3), everything else 10.
+fn charismatic(e: &Engine, s: &CharacterState) -> CharacterState {
+    commands::set_base_scores(e, s, [10, 10, 10, 10, 10, 16])
+        .expect("scores")
+        .state
+}
+
 fn pool(snap: &CharacterSnapshot, name: &str) -> Option<(i32, Vec<String>)> {
     snap.resources
         .iter()
@@ -73,6 +83,15 @@ fn pool(snap: &CharacterSnapshot, name: &str) -> Option<(i32, Vec<String>)> {
 
 fn short_rest() -> Vec<String> {
     vec!["short_rest".into(), "long_rest".into()]
+}
+
+fn damage(snap: &CharacterSnapshot, name: &str) -> String {
+    snap.attacks
+        .iter()
+        .find(|a| a.name == name)
+        .unwrap_or_else(|| panic!("no {name} row"))
+        .damage
+        .clone()
 }
 
 #[test]
@@ -175,4 +194,59 @@ fn infernal_legacy_casts_hellish_rebuke_at_3_and_darkness_at_5() {
             "{spell} stays in the Tiefling block"
         );
     }
+}
+
+#[test]
+fn elemental_affinity_adds_charisma_to_cantrips_of_the_ancestry_type_2014() {
+    let Some(e) = engine("srd-5.1") else { return };
+    let mut s = hero(
+        &e,
+        Ruleset::Dnd2014,
+        &[("Race", "Human"), ("Class", "Sorcerer")],
+        1,
+    );
+    s = charismatic(&e, &s);
+    s = choose(&e, &s, "Sorcerous Origin", "Draconic Bloodline");
+    s = choose(&e, &s, "Draconic Ancestor", "Dragon Ancestor (Red)");
+    s = choose(&e, &s, "Cantrip (Sorcerer)", "Fire Bolt");
+    s = choose(&e, &s, "Cantrip (Sorcerer)", "Ray of Frost");
+    let s5 = level_to(&e, s, 1, 5);
+    let snap = e.derive(&s5);
+    assert_eq!(
+        damage(&snap, "Fire Bolt"),
+        "2d10 fire",
+        "not before 6th level"
+    );
+    let s6 = level_to(&e, s5, 5, 6);
+    let snap = e.derive(&s6);
+    let cha = snap.abilities[CHARISMA].modifier;
+    assert!(cha > 0, "Charisma 16 plus the race's increases");
+    assert_eq!(damage(&snap, "Fire Bolt"), format!("2d10+{cha} fire"));
+    assert_eq!(
+        damage(&snap, "Ray of Frost"),
+        "2d8 cold",
+        "only the ancestry's type"
+    );
+}
+
+#[test]
+fn elemental_affinity_adds_charisma_to_cantrips_of_the_chosen_type_2024() {
+    let Some(e) = engine("srd-5.2.1") else { return };
+    let mut s = hero(
+        &e,
+        Ruleset::Dnd2024,
+        &[("Race", "Human"), ("Class", "Sorcerer")],
+        1,
+    );
+    s = charismatic(&e, &s);
+    s = choose(&e, &s, "Cantrip (Sorcerer 1)", "Fire Bolt");
+    s = choose(&e, &s, "Cantrip (Sorcerer 1)", "Ray of Frost");
+    let s = level_to(&e, s, 1, 3);
+    let s = choose(&e, &s, "Sorcerous Origin", "Draconic Sorcery");
+    let s = level_to(&e, s, 3, 6);
+    let s = choose(&e, &s, "Elemental Affinity Damage Type", "Fire");
+    let snap = e.derive(&s);
+    let cha = snap.abilities[CHARISMA].modifier;
+    assert_eq!(damage(&snap, "Fire Bolt"), format!("2d10+{cha} fire"));
+    assert_eq!(damage(&snap, "Ray of Frost"), "2d8 cold");
 }

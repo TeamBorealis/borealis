@@ -9,7 +9,8 @@
 //! adds the `<spell name>:damage` statistic (Aurora's per-item convention), Agonizing Blast's
 //! `agonizing blast:damage` on Eldritch Blast, and 2024 `cantrip_damage_bonus` rules of the
 //! source's class (a `choose_cantrip` bonus only when the class has exactly one damaging
-//! cantrip, as there is no stored choice).
+//! cantrip, as there is no stored choice), and `damage_bonus_spell` rules whose damage type
+//! matches the row's (Elemental Affinity, `spell_damage_bonus.rs`).
 
 use crate::graph::Graph;
 use crate::snapshot::{AttackSave, AttackSnapshot, SpellcastingSnapshot};
@@ -122,7 +123,8 @@ pub fn cantrip_attacks(
             }
             seen.push(&s.id);
             let (dice, ty) = split_damage(damage);
-            let extra = bonus.of(&e.el.name, &sc.name, only);
+            let extra = bonus.of(&e.el.name, &sc.name, only)
+                + crate::spell_damage_bonus::bonus(graph, stats, mods, &ty);
             let (attack, save) = match roll {
                 Roll::Attack => (sc.attack, None),
                 Roll::Save(a) => (

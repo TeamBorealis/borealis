@@ -41,6 +41,7 @@ pub mod runtime;
 pub mod settings;
 pub mod snapshot;
 pub mod speed_toggles;
+pub mod spell_damage_bonus;
 pub mod spell_attacks;
 pub mod spell_rules;
 pub mod spells;

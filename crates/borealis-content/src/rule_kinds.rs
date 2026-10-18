@@ -285,12 +285,11 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
     ),
     k("cunning_effect", NOTES, true, &["cost_dice", "save"]),
     k("cunning_strike", NOTES, true, &["save_dc", "max_effects"]),
-    ku(
+    k(
         "damage_bonus_spell",
         COMBAT,
         true,
-        &["value", "once_per"],
-        &[("damage_type_param", GAP)],
+        &["value", "once_per", "damage_type_stat", "damage_type_param"],
     ),
     k("damage_die_floor", ATTACK, true, &["floor", "weapon"]),
     ku(

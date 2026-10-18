@@ -1236,7 +1236,15 @@
             "text": "Starting at 6th level, when you cast a spell that deals damage of the type associated with your draconic ancestry, you can add your Charisma modifier to one damage roll of that spell. At the same time, you can spend 1 sorcery point to gain resistance to that damage type for 1 hour."
           }
         ]
-      }
+      },
+      "rules": [
+        {
+          "kind": "damage_bonus_spell",
+          "value": "charisma:modifier",
+          "once_per": "spell",
+          "damage_type_stat": "draconic-ancestor:damage type"
+        }
+      ]
     },
     {
       "id": "ID_WOTC_PHB_ARCHETYPE_FEATURE_DRAGON_WINGS",
