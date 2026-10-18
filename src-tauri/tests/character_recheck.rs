@@ -33,7 +33,7 @@ fn install_missing_content(app: &AppState) {
   <element name="Gone Option" type="Option" source="Later" id="{OPTION}"/>
   <element name="Lost Cantrip" type="Spell" source="Later" id="{SPELL}">
     <supports>Wizard</supports>
-    <setters><set name="level">0</set><set name="school">Evocation</set></setters>
+    <setters><set name="level">0</set><set name="school">Evocation</set><set name="time">1 action</set><set name="duration">Instantaneous</set><set name="range">Self</set></setters>
   </element></elements>"#
     );
     let req = ImportPackRequest {

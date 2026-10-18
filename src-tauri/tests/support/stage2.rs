@@ -12,6 +12,7 @@ use super::app::{
 use super::plan::{tokens, Offerers, Plan};
 use super::prereq;
 use crate::{limit, metric, outcome, Installed, HOSTED, NON_OFFERABLE, SUITE};
+use borealis_content::expr::{BoolExpr, RequirementLeaf, RequirementsExpr};
 use borealis_content::{ContentStore, Rule, Ruleset};
 use borealis_lib::state::AppState;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -21,6 +22,9 @@ pub enum Scope {
     Full,
     Repo,
 }
+
+/// Option hosts per edition (each levels up to 20 at most).
+const MAX_OPTION_HOSTS: usize = 2000;
 
 /// Classes an archetype's progression is tried on before giving up.
 const MAX_ARCHETYPE_CLASSES: usize = 3;
@@ -319,6 +323,8 @@ enum Job {
     Archetype(String, Vec<String>),
     /// a prerequisite-aware feat host (explores the feat's selects when offered)
     Feat(String),
+    /// a prerequisite-aware host for an option still not offered (see [`option_host`])
+    Option(String),
 }
 
 /// What one worker found: offers, (archetype, class) pairs offered, options explored, hosts.
@@ -326,6 +332,7 @@ type Found = (Offers, Vec<(String, String)>, usize, usize);
 
 /// Shared inputs of the hosts of one edition.
 struct Edition<'a> {
+    offerers: &'a Offerers<'a>,
     ins: &'a Installed,
     rs: Ruleset,
     ids: &'a Ids,
@@ -354,6 +361,9 @@ fn run_job(d: &Driver<'_>, e: &Edition<'_>, job: &Job, ex: &mut Explore<'_>, f: 
         }
         Job::Feat(feat) => {
             needs_host(d, e.rs, e.ids, e.reader, feat, ex, offers);
+        }
+        Job::Option(id) => {
+            option_host(d, e, id, ex, offers);
         }
     }
 }
@@ -457,7 +467,9 @@ fn edition(
     d.drop_host(base);
     total.2 += ex.explored;
     total.3 += d.made.get();
+    let offerers = Offerers::new(&ins.store);
     let e = Edition {
+        offerers: &offerers,
         ins,
         rs,
         ids: &ids,
@@ -506,6 +518,23 @@ fn edition(
     }
     feats.truncate(cap);
     merge(&mut found, run_jobs(apps, &e, &feats));
+    // every offerable option still not offered gets a host built for its prerequisites
+    let selects = select_index(&ins.store);
+    let options: Vec<Job> = ins
+        .ours
+        .iter()
+        .filter(|o| {
+            o.2 == rs && !matches!(o.1.as_str(), "Item" | "Weapon" | "Armor" | "Magic Item")
+        })
+        .filter(|o| !found.0.found.contains_key(&o.0) && !total.0.found.contains_key(&o.0))
+        .filter(|o| {
+            let c = category(&selects, &o.0, &o.1, ins.store.element(&o.0));
+            c == "host" || c == "select"
+        })
+        .take(cap.min(MAX_OPTION_HOSTS))
+        .map(|o| Job::Option(o.0.clone()))
+        .collect();
+    merge(&mut found, run_jobs(apps, &e, &options));
     merge(total, vec![found]);
 }
 
@@ -542,6 +571,35 @@ pub fn stage2(
 /// Stack of a stage-2 worker (deep content recursion, as `run_big`).
 const WORKER_STACK: usize = 64 << 20;
 
+/// "host" (own host type), "select" (some select offers it) or the non-offerable reason.
+fn category<'a>(
+    selects: &HashMap<String, Vec<Option<BTreeSet<String>>>>,
+    id: &str,
+    ty: &'a str,
+    el: Option<&borealis_content::Element>,
+) -> &'a str {
+    if HOSTED.contains(&ty) {
+        return "host";
+    }
+    if let Some((_, why)) = NON_OFFERABLE.iter().find(|(t, _)| *t == ty) {
+        return why;
+    }
+    let matched = selects.get(&ty.to_lowercase()).is_some_and(|v| {
+        v.iter().any(|tokens| match tokens {
+            None => true,
+            Some(t) => {
+                t.contains(&id.to_lowercase())
+                    || el.is_some_and(|e| e.supports.iter().any(|s| t.contains(&s.to_lowercase())))
+            }
+        })
+    });
+    if matched {
+        "select"
+    } else {
+        "Grants"
+    }
+}
+
 /// Offered / offerable per type, one outcome per offerable element.
 fn record(src: &str, ins: &Installed, offers: &Offers) {
     let selects = select_index(&ins.store);
@@ -549,25 +607,7 @@ fn record(src: &str, ins: &Installed, offers: &Offers) {
     let mut seen_types: BTreeSet<&str> = BTreeSet::new();
     for (id, ty, _) in &ins.ours {
         let el = ins.store.element(id);
-        let category = if HOSTED.contains(&ty.as_str()) {
-            "host"
-        } else if let Some((_, why)) = NON_OFFERABLE.iter().find(|(t, _)| t == ty) {
-            why
-        } else if selects.get(&ty.to_lowercase()).is_some_and(|v| {
-            v.iter().any(|tokens| match tokens {
-                None => true,
-                Some(t) => {
-                    t.contains(&id.to_lowercase())
-                        || el.is_some_and(|e| {
-                            e.supports.iter().any(|s| t.contains(&s.to_lowercase()))
-                        })
-                }
-            })
-        }) {
-            "select"
-        } else {
-            "Grants"
-        };
+        let category = category(&selects, id, ty, el);
         seen_types.insert(ty);
         if category != "host" && category != "select" {
             rows.entry((ty.clone(), "nonoffer")).or_default()[0] += 1;
@@ -595,4 +635,229 @@ fn record(src: &str, ins: &Installed, offers: &Offers) {
     }
     metric(src, "s2", "*", "types", seen_types.len() as i64);
     metric(src, "s2", "*", "unmapped_types", 0);
+}
+
+/// What a requirements expression asks for, as groups of alternatives (any one id of a group
+/// satisfies it: `a||b` is one group, `a,b` two); negations and tests are left to `Needs`.
+fn required_groups(
+    store: &ContentStore,
+    expr: &BoolExpr<RequirementLeaf>,
+    out: &mut Vec<Vec<String>>,
+) {
+    match expr {
+        BoolExpr::Not(_) | BoolExpr::Leaf(RequirementLeaf::Test(_)) => {}
+        BoolExpr::Leaf(RequirementLeaf::Id(id)) => {
+            if store.element(id).is_some() {
+                out.push(vec![id.clone()]);
+            }
+        }
+        BoolExpr::And(items) => items.iter().for_each(|e| required_groups(store, e, out)),
+        BoolExpr::Or(items) => {
+            let mut any: Vec<String> = Vec::new();
+            for e in items {
+                let mut inner = Vec::new();
+                required_groups(store, e, &mut inner);
+                // an alternative that is itself one id (or one group) joins the any-of group
+                if let [g] = inner.as_slice() {
+                    any.extend(g.iter().cloned());
+                }
+            }
+            if !any.is_empty() {
+                out.push(any);
+            }
+        }
+    }
+}
+
+/// The earlier copies of a repeatable option (`X_5` needs `X`, `X_2` .. `X_4`), oldest first.
+fn earlier_copies(store: &ContentStore, id: &str) -> Vec<String> {
+    let Some((base, n)) = id.rsplit_once('_') else {
+        return Vec::new();
+    };
+    let Ok(n) = n.parse::<u32>() else {
+        return Vec::new();
+    };
+    let mut out: Vec<String> = Vec::new();
+    if store.element(base).is_some() {
+        out.push(base.to_string());
+    }
+    for k in 1..n {
+        let c = format!("{base}_{k}");
+        if store.element(&c).is_some() {
+            out.push(c);
+        }
+    }
+    out
+}
+
+/// A host built for one option still not offered: its requirements read (scores, class, level,
+/// race via `prereq::Needs`; every element id it names, the element ids those name, earlier
+/// copies of a repeatable option), the class/archetype/origin its select climbs to, then levels
+/// 1..=20 picking each needed id wherever the builder offers it. True when the option is offered.
+fn option_host(
+    d: &Driver<'_>,
+    e: &Edition<'_>,
+    target: &str,
+    ex: &mut Explore<'_>,
+    offers: &mut Offers,
+) -> bool {
+    let store = &e.ins.store;
+    let Some(el) = store.element(target) else {
+        return false;
+    };
+    let mut needs = prereq::Needs::default();
+    e.reader.needs(e.rs, el, 0, &mut needs);
+    // needed: earlier copies, then what the requirements name (and what those name), as
+    // any-of groups
+    let mut groups: Vec<Vec<String>> = earlier_copies(store, target)
+        .into_iter()
+        .map(|c| vec![c])
+        .collect();
+    let mut queue = vec![target.to_string()];
+    for _ in 0..prereq::MAX_PRIOR_FEATS {
+        let mut next = Vec::new();
+        for id in &queue {
+            let Some(x) = store.element(id) else { continue };
+            let Ok(Some(expr)) = RequirementsExpr::parse(&x.requirements) else {
+                continue;
+            };
+            let mut found = Vec::new();
+            required_groups(store, expr.root(), &mut found);
+            for g in found {
+                if !groups.contains(&g) && !g.iter().any(|i| i == target) {
+                    next.extend(g.iter().cloned());
+                    groups.insert(0, g);
+                }
+            }
+        }
+        queue = next;
+    }
+    // hosts the option (and each needed id) climb to; each candidate class is tried in turn
+    let mut roots = Plan::default();
+    e.offerers.place(target, &mut roots);
+    for g in &groups {
+        for id in g {
+            e.offerers.place(id, &mut roots);
+        }
+    }
+    let mut classes: Vec<(String, Option<String>)> = Vec::new();
+    let mut add = |c: String, a: Option<String>| {
+        if !classes.iter().any(|x| x.0 == c && x.1 == a) {
+            classes.push((c, a));
+        }
+    };
+    if let Some(c) = needs.class.clone() {
+        add(c, None);
+    }
+    for c in &roots.classes {
+        add(c.clone(), None);
+    }
+    for (a, cs) in &roots.archetypes {
+        for c in cs {
+            add(c.clone(), Some(a.clone()));
+        }
+    }
+    let fallback = if needs.caster {
+        &e.ids.wizard
+    } else {
+        &e.ids.fighter
+    };
+    if let Some(c) = fallback {
+        add(c.clone(), None);
+    }
+    let mut scores = if needs.caster {
+        CASTER_SCORES
+    } else {
+        TEST_SCORES
+    };
+    for (i, v) in &needs.scores {
+        scores[*i] = scores[*i].max(*v);
+    }
+    let race = needs.race.clone().or_else(|| e.ids.human.clone());
+    classes
+        .into_iter()
+        .take(OPTION_HOST_CLASSES)
+        .any(|(class, archetype)| {
+            option_host_on(
+                d,
+                e,
+                target,
+                ex,
+                offers,
+                (&class, archetype.as_deref()),
+                scores,
+                race.as_deref(),
+                &roots,
+                &groups,
+            )
+        })
+}
+
+/// Host configurations an option host tries (needs class, climbed classes, archetypes, fallback).
+const OPTION_HOST_CLASSES: usize = 3;
+
+/// One configuration of [`option_host`].
+#[allow(clippy::too_many_arguments)]
+fn option_host_on(
+    d: &Driver<'_>,
+    e: &Edition<'_>,
+    target: &str,
+    ex: &mut Explore<'_>,
+    offers: &mut Offers,
+    (class, archetype): (&str, Option<&str>),
+    scores: [i32; 6],
+    race: Option<&str>,
+    roots: &Plan,
+    groups: &[Vec<String>],
+) -> bool {
+    let Some(mut h) = d.create(e.rs, scores) else {
+        return false;
+    };
+    let label = format!("option:{target}");
+    d.pick(&mut h, class);
+    for r in race
+        .into_iter()
+        .chain(roots.origins.iter().map(String::as_str))
+    {
+        d.pick(&mut h, r);
+    }
+    let mut want: Vec<Vec<String>> = archetype.map(|a| vec![a.to_string()]).into_iter().collect();
+    want.extend(groups.iter().cloned());
+    let offered = |d: &Driver<'_>, h: &Host| {
+        h.snap
+            .slots
+            .iter()
+            .any(|s| s.chosen.is_none() && d.options(h, &s.id).iter().any(|(id, _)| id == target))
+    };
+    let mut found = false;
+    loop {
+        d.collect(&h, &label, offers);
+        d.open_feat_selects(&mut h);
+        // pick what is wanted wherever it is offered, until nothing more can be picked
+        let mut progress = true;
+        while progress {
+            progress = false;
+            for g in want.clone() {
+                if g.iter().any(|w| d.pick(&mut h, w)) {
+                    want.retain(|x| *x != g);
+                    progress = true;
+                }
+            }
+        }
+        d.collect(&h, &label, offers);
+        if offered(d, &h) {
+            found = true;
+            if d.pick(&mut h, target) {
+                d.collect(&h, &label, offers);
+                d.explore(&mut h, ex, &label, offers);
+            }
+            break;
+        }
+        d.fill(&mut h, &label, offers);
+        if h.snap.level.total >= MAX_LEVEL || !d.level_up(&mut h) {
+            break;
+        }
+    }
+    d.drop_host(h);
+    found
 }

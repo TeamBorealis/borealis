@@ -332,6 +332,9 @@ fn aurora_install(app: &AppState, input: &AuroraInput, t: &mut AuroraTally) -> O
     result.pack.map(|p| p.id)
 }
 
+/// Issue codes that are about a file, not an element (det-src-1/-2).
+const FILE_LEVEL_CODES: &[&str] = &["FileSkipped", "UnsupportedConstruct"];
+
 /// Folds one migration report into the tally: warnings by element id; precise = code, source
 /// file, element id and type all present; `normalized` infos record the source id as an alias.
 fn tally_report(report: &borealis_lib::content_dto::MigrationReport, t: &mut AuroraTally) {
@@ -350,8 +353,11 @@ fn tally_report(report: &borealis_lib::content_dto::MigrationReport, t: &mut Aur
         if let Some(id) = &issue.element {
             t.warned.insert(id.clone());
         }
-        let precise =
-            issue.element.is_some() && issue.file.is_some() && issue.element_type.is_some();
+        // a file-level issue (a whole file not loaded, a construct outside any element) is precise
+        // with its file and code; the elements of a skipped file each get `element_dropped`
+        let file_level = FILE_LEVEL_CODES.contains(&code.as_str()) && issue.element.is_none();
+        let precise = issue.file.is_some()
+            && (file_level || (issue.element.is_some() && issue.element_type.is_some()));
         if !precise {
             t.imprecise += 1;
             if t.imprecise <= 3 {
