@@ -174,7 +174,7 @@ const OWN_CHOICE_LABELS: [&str; 6] = [
 /// (SRD 5.1 Favored Enemy, Humanoid Favored Enemy, Favored Terrain): the options live in the
 /// bundled pack, so the imported feature can offer them. Not a choice the import makes itself
 /// ([`OWN_CHOICE_LABELS`], the ability score improvement) and not a select over ids (Scholar).
-fn srd_option_select(supports: Option<&str>) -> bool {
+pub(crate) fn srd_option_select(supports: Option<&str>) -> bool {
     let Some(first) = supports
         .and_then(|t| t.split([',', '|', '&']).next())
         .map(str::trim)
@@ -205,6 +205,9 @@ pub struct SrdFeatures {
     map: BTreeMap<Key, Option<SrdFeature>>,
     /// Statistic stats of the SRD feats, by `(ruleset, normalised name)`.
     feats: BTreeMap<(Ruleset, String), Vec<Rule>>,
+    /// Names of the SRD's `Class Feature` option elements, by `(ruleset, support tag)` (the
+    /// seven SRD 5.1 `Favored Terrain` options).
+    options: BTreeMap<(Ruleset, String), Vec<String>>,
 }
 
 impl SrdFeatures {
@@ -246,6 +249,15 @@ impl SrdFeatures {
     pub fn feat_statistics(&self, ruleset: Ruleset, name: &str) -> &[Rule] {
         self.feats
             .get(&(ruleset, normalize(name)))
+            .map_or(&[], Vec::as_slice)
+    }
+
+    /// Names of the SRD `Class Feature` options that support `tag` (the options of an
+    /// [`srd_option_select`]).
+    #[must_use]
+    pub fn option_names(&self, ruleset: Ruleset, tag: &str) -> &[String] {
+        self.options
+            .get(&(ruleset, tag.to_string()))
             .map_or(&[], Vec::as_slice)
     }
 
@@ -300,6 +312,17 @@ impl SrdFeatures {
                 .collect();
             if !stats.is_empty() {
                 self.feats.insert((ruleset, normalize(&e.name)), stats);
+            }
+        }
+        for e in file.elements.iter().filter(|e| e.ty == "Class Feature") {
+            let Some(ruleset) = e.ruleset.or(file.ruleset).or(pack_ruleset) else {
+                continue;
+            };
+            for tag in e.supports.iter().filter(|t| !t.starts_with("ID_")) {
+                self.options
+                    .entry((ruleset, tag.clone()))
+                    .or_default()
+                    .push(e.name.clone());
             }
         }
         for e in &file.elements {
@@ -566,5 +589,12 @@ mod tests {
             .class_feature(Ruleset::Dnd2014, "Paladin", "Spellcasting")
             .expect("SRD 5.1 Paladin Spellcasting");
         assert!(!portable("Spellcasting", &sc.rules));
+        // T2: the SRD 5.1 favored terrains (the PHB adds the Underdark)
+        let terrains = f.option_names(Ruleset::Dnd2014, "Favored Terrain");
+        assert_eq!(terrains.len(), 7, "{terrains:?}");
+        assert!(terrains.iter().any(|t| t == "Swamp"));
+        assert!(f
+            .option_names(Ruleset::Dnd2024, "Favored Terrain")
+            .is_empty());
     }
 }

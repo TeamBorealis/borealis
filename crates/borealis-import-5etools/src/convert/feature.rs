@@ -269,7 +269,23 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
         mech.push(rule);
     }
     let srd = srd_rules(sh, &f, ent.ruleset, sub);
-    if let Some((srd_id, rules)) = srd {
+    let mut book_options = Vec::new();
+    if let Some((srd_id, mut rules)) = srd {
+        // the SRD's option selects offer the book's own list (PHB Underdark terrain)
+        let text = Renderer::plain(&f.entries);
+        book_options = super::book_options::extend(
+            sh.srd.features(),
+            st,
+            &super::book_options::Owner {
+                feature: &f.name,
+                class: &f.class_name,
+                source: &ent.source,
+                source_display: &sh.source_display(&ent.source),
+                ruleset: ent.ruleset,
+                text: &text,
+            },
+            &mut rules,
+        );
         // the bundled SRD models this very feature: its rules replace what the prose gives
         el.data.insert("srd_feature".into(), Value::String(srd_id));
         el.data
@@ -331,8 +347,10 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
     el.sheet = Some(sheet_text(&short_text(&Renderer::plain(&f.entries), 300)));
     el.data.insert("level".into(), Value::from(f.level));
     drain_renderer(st, &renderer, &ent.file, &f.name);
+    let mut elements = vec![el];
+    elements.extend(book_options);
     Conv {
-        elements: vec![el],
+        elements,
         partial: mech.partial,
     }
 }

@@ -1,6 +1,7 @@
 //! Converters from 5etools entities to borealis-content elements.
 
 pub mod background;
+pub mod book_options;
 pub mod build;
 pub mod caster;
 pub mod class;
