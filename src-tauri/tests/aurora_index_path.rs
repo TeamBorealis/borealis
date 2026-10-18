@@ -75,13 +75,18 @@ fn app() -> (tempfile::TempDir, AppState) {
     (dir, AppState::new(paths).expect("state"))
 }
 
-/// Every loaded element by id (the store a character is built against).
+/// Every loaded element by id (the store a character is built against). `supports` is compared
+/// as a set: `<append>`s from several Aurora groups add tokens in load order, and a dropped repo
+/// loads by group (core < supplements < unearthed-arcana < third-party) while the index path
+/// loads one pack per top index; the order of supports tokens carries no meaning.
 fn store_by_id(state: &AppState) -> BTreeMap<String, String> {
     let hub = state.hub().expect("hub");
     hub.store
         .iter()
         .map(|e| {
-            let json = serde_json::to_string(&e.element).expect("element json");
+            let mut el = e.element.clone();
+            el.supports.sort();
+            let json = serde_json::to_string(&el).expect("element json");
             (e.element.id.clone(), json)
         })
         .collect()

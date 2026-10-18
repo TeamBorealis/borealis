@@ -124,6 +124,22 @@ pub fn digest_dir(dir: &Path) -> String {
     h.finalize().iter().map(|b| format!("{b:02x}")).collect()
 }
 
+/// Recursive copy of a directory tree (files and folders only).
+pub fn copy_tree(from: &Path, to: &Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(to)?;
+    let mut entries: Vec<_> = std::fs::read_dir(from)?.flatten().collect();
+    entries.sort_by_key(std::fs::DirEntry::path);
+    for e in entries {
+        let target = to.join(e.file_name());
+        if e.file_type()?.is_dir() {
+            copy_tree(&e.path(), &target)?;
+        } else {
+            std::fs::copy(e.path(), target)?;
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     #[test]

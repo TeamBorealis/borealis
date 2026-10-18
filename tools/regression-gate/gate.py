@@ -67,13 +67,19 @@ def suites():
     # imported accounting, offered in the builder) for every source whose input is available, then
     # the deeper engine checks. Opt-in (--only acceptance): it re-runs the suites above.
     acc_env = {**five, **root}
-    for var in ("BOREALIS_LIVE_INDEX_URL", "BOREALIS_LIVE_5ETOOLS_URL", "BOREALIS_ACCEPT_LIMIT"):
+    for var in ("BOREALIS_LIVE_INDEX_URL", "BOREALIS_LIVE_5ETOOLS_URL", "BOREALIS_ACCEPT_LIMIT",
+                "BOREALIS_ACCEPT_WORKERS", "BOREALIS_ACCEPT_THREADS"):
         if os.environ.get(var):
             acc_env[var] = os.environ[var]
     deeper = [t for n in ("5etools-import", "5etools-engine", "5etools-items", "aurora-corpus",
                           "aurora-sweep") for t in table[n][2]]
     table["acceptance"] = ("IM4 end-to-end acceptance, per source x stage x type (slow, opt-in)",
                            CORPUS, [("borealis", "acceptance", acc_env)] + deeper)
+    # A-comm stage 2 per community repo on A-core (about 2700 builder hosts): too slow for every
+    # acceptance run, so its own opt-in suite (--only acceptance-comm).
+    comm_env = {**acc_env, "BOREALIS_ACCEPT_ONLY": "a-comm", "BOREALIS_ACCEPT_COMM_S2": "1"}
+    table["acceptance-comm"] = ("IM4 acceptance stage 2 per community repo on A-core (very slow, opt-in)",
+                                CORPUS, [("borealis", "acceptance", comm_env)])
     return table
 
 
@@ -232,8 +238,8 @@ def run(selected, run_dir):
         passed = sum(1 for v in oc.status.values() if v == "PASS")
         print(f"    {passed}/{len(oc.status)} checks pass ({entry['seconds']} s)")
         results["suites"][name] = entry
-        if name == "acceptance":
-            write_acceptance_report(run_dir / "acceptance-report.json", oc.metrics)
+        if name in ("acceptance", "acceptance-comm"):
+            write_acceptance_report(run_dir / f"{name}-report.json", oc.metrics)
     results["finished"] = datetime.datetime.now().isoformat(timespec="seconds")
     return results
 
@@ -332,7 +338,7 @@ def main():
         return 2
     # acceptance re-runs the other corpus suites: only when asked for by name
     selected = [n for n in table if (not only or n in only) and n not in skip
-                and (n != "acceptance" or n in only)]
+                and (not n.startswith("acceptance") or n in only)]
     PRIVATE.mkdir(parents=True, exist_ok=True)
     run_dir, prev = PRIVATE / "last-run", PRIVATE / "prev-run"
     base_file = PRIVATE / "baseline.json"

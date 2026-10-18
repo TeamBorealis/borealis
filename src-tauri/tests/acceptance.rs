@@ -21,7 +21,7 @@ mod outcome;
 mod support;
 
 use base64::Engine as _;
-use borealis_content::{ContentStore, ContentStoreBuilder, Rule, Ruleset};
+use borealis_content::{ContentStore, ContentStoreBuilder, Ruleset};
 use borealis_lib::content_dto::{FiveToolsImportRequest, PackKind};
 use borealis_lib::content_index::{Fetcher, HttpsFetcher};
 use borealis_lib::content_packs::NullSink;
@@ -31,8 +31,9 @@ use borealis_lib::state::AppState;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use support::app::{app_state, Driver, Offers, CASTER_SCORES, MAX_LEVEL, TEST_SCORES};
+use support::app::{app_state, app_state_copy, Driver, TEST_SCORES};
 use support::count::{self, AuroraCount};
+use support::stage2::{stage2, Scope};
 use support::{files, prereq};
 
 const SUITE: &str = "acceptance";
@@ -117,6 +118,13 @@ fn limit() -> usize {
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(usize::MAX)
+}
+
+/// `BOREALIS_ACCEPT_ONLY=a-comm,f-full`: run only these sources (the others skip-pass).
+fn selected(src: &str) -> bool {
+    std::env::var("BOREALIS_ACCEPT_ONLY")
+        .map(|v| v.split(',').any(|s| s.trim() == src))
+        .unwrap_or(true)
 }
 
 fn skip(src: &str, why: &str) {
@@ -208,6 +216,8 @@ fn installed(app_data: &Path, wanted: &dyn Fn(&str) -> bool) -> Installed {
 struct AuroraTally {
     s: BTreeMap<String, String>,
     warned: BTreeSet<String>,
+    /// source ids the import renamed (`normalized` infos name the source id)
+    aliases: BTreeSet<String>,
     imprecise: usize,
     uncoded: usize,
     infos: usize,
@@ -215,18 +225,28 @@ struct AuroraTally {
 }
 
 fn aurora_stage1(src: &str, t: &AuroraTally, ins: &Installed) {
-    let ours: HashMap<&str, &str> = ins
+    let mut ours: HashMap<&str, &str> = ins
         .ours
         .iter()
         .map(|(id, ty, _)| (id.as_str(), ty.as_str()))
         .collect();
+    // an element the store resolves under its source id (renamed_from) is the source element
+    for (id, ty, _) in &ins.ours {
+        if let Some(old) = ins
+            .store
+            .element(id)
+            .and_then(|e| e.renamed_from.as_deref())
+        {
+            ours.entry(old).or_insert(ty.as_str());
+        }
+    }
     let mut rows: BTreeMap<&str, [i64; 5]> = BTreeMap::new();
     for (id, ty) in &t.s {
         let r = rows.entry(ty.as_str()).or_default();
         r[0] += 1;
         if t.warned.contains(id) {
             r[2] += 1;
-        } else if ours.contains_key(id.as_str()) {
+        } else if ours.contains_key(id.as_str()) || t.aliases.contains(id) {
             r[1] += 1;
         } else {
             r[4] += 1;
@@ -308,32 +328,40 @@ fn aurora_install(app: &AppState, input: &AuroraInput, t: &mut AuroraTally) -> O
             return None;
         }
     };
-    for issue in &result.report.issues {
+    tally_report(&result.report, t);
+    result.pack.map(|p| p.id)
+}
+
+/// Folds one migration report into the tally: warnings by element id; precise = code, source
+/// file, element id and type all present; `normalized` infos record the source id as an alias.
+fn tally_report(report: &borealis_lib::content_dto::MigrationReport, t: &mut AuroraTally) {
+    for issue in &report.issues {
+        let code = format!("{:?}", issue.code);
         if issue.severity == "info" {
             t.infos += 1;
+            if code == "Normalized" {
+                t.aliases.extend(issue.element.clone());
+            }
             continue;
         }
-        // the install report carries no file or code per issue: counted as uncoded
-        t.uncoded += 1;
-        match &issue.element {
-            Some(id) => {
-                t.warned.insert(id.clone());
-            }
-            None => {
-                t.imprecise += 1;
-                if t.imprecise <= 3 {
-                    let m: String = issue
-                        .message
-                        .chars()
-                        .filter(|c| !c.is_ascii_digit())
-                        .take(70)
-                        .collect();
-                    eprintln!("  issue without element ({:?}): {m}", issue.severity);
-                }
+        if matches!(code.as_str(), "Other" | "Unknown") {
+            t.uncoded += 1;
+        }
+        if let Some(id) = &issue.element {
+            t.warned.insert(id.clone());
+        }
+        let precise =
+            issue.element.is_some() && issue.file.is_some() && issue.element_type.is_some();
+        if !precise {
+            t.imprecise += 1;
+            if t.imprecise <= 3 {
+                eprintln!(
+                    "  imprecise issue ({:?}, {code}, file {:?})",
+                    issue.severity, issue.file
+                );
             }
         }
     }
-    result.pack.map(|p| p.id)
 }
 
 enum AuroraInput {
@@ -482,335 +510,6 @@ fn five_stage1(src: &str, data: &Path, sources: &[String]) {
     );
 }
 
-// ---------------------------------------------------------------- stage 2
-
-/// Hosts a source needs: per edition its fighter/wizard/human ids found by name in the builder.
-struct Ids {
-    fighter: Option<String>,
-    wizard: Option<String>,
-    human: Option<String>,
-    variant: Option<String>,
-}
-
-fn base_ids(d: &Driver<'_>, rs: Ruleset, prefix: &str) -> Ids {
-    let base = d.create(rs, TEST_SCORES).expect("create");
-    let race_ty = if rs == Ruleset::Dnd2024 {
-        "Species"
-    } else {
-        "Race"
-    };
-    let mut ids = Ids {
-        fighter: d.find_named(&base, "Class", "Fighter", prefix),
-        wizard: d.find_named(&base, "Class", "Wizard", prefix),
-        human: d.find_named(&base, race_ty, "Human", prefix),
-        variant: None,
-    };
-    let mut h = base;
-    if let Some(human) = &ids.human {
-        if d.pick(&mut h, human) {
-            ids.variant = ["Race Variant", "Sub Race"].iter().find_map(|t| {
-                d.find_named(&h, t, "Variant Human", prefix)
-                    .or_else(|| d.find_named(&h, t, "Variant", prefix))
-            });
-        }
-    }
-    d.drop_host(h);
-    eprintln!(
-        "  host ids {rs:?}: fighter {:?} wizard {:?} human {:?} variant {:?}",
-        ids.fighter, ids.wizard, ids.human, ids.variant
-    );
-    ids
-}
-
-/// A host of `class` with an origin, levelled 1..=20: collect at every level (feat options
-/// taken first), fill, level up. `archetype` is picked when offered. Returns archetypes offered.
-fn progression(
-    d: &Driver<'_>,
-    rs: Ruleset,
-    ids: &Ids,
-    class: &str,
-    archetype: Option<&str>,
-    offers: &mut Offers,
-) -> Vec<String> {
-    let mut archetypes = Vec::new();
-    let Some(mut h) = d.create(rs, CASTER_SCORES) else {
-        return archetypes;
-    };
-    let label = format!("{class}/{}", archetype.unwrap_or("-"));
-    if !d.pick(&mut h, class) {
-        d.drop_host(h);
-        return archetypes;
-    }
-    for race in [&ids.human, &ids.variant].into_iter().flatten() {
-        d.pick(&mut h, race);
-    }
-    let mut picked = archetype.is_none();
-    for level in 1..=MAX_LEVEL {
-        if level > 1 && !d.level_up(&mut h) {
-            break;
-        }
-        d.open_feat_selects(&mut h);
-        if archetype.is_none() {
-            for s in
-                h.snap.slots.iter().filter(|s| {
-                    s.element_type.eq_ignore_ascii_case("Archetype") && s.chosen.is_none()
-                })
-            {
-                archetypes.extend(d.options(&h, &s.id).into_iter().map(|o| o.0));
-            }
-        }
-        d.collect(&h, &label, offers);
-        if let (Some(a), false) = (archetype, picked) {
-            picked = d.pick(&mut h, a);
-        }
-        d.fill(&mut h);
-        d.collect(&h, &label, offers);
-    }
-    d.drop_host(h);
-    archetypes.sort();
-    archetypes.dedup();
-    archetypes
-}
-
-/// A host that meets a feat's prerequisites (shared `prereq::NeedsReader`), levelled until it
-/// reaches the needed level with the prior feats placed; true when the feat is offered there.
-fn needs_host(
-    d: &Driver<'_>,
-    rs: Ruleset,
-    ids: &Ids,
-    reader: &prereq::NeedsReader<'_>,
-    feat: &str,
-    offers: &mut Offers,
-) -> bool {
-    let Some(el) = reader.store.element(feat) else {
-        return false;
-    };
-    let mut needs = prereq::Needs::default();
-    reader.needs(rs, el, 0, &mut needs);
-    let mut scores = if needs.caster {
-        CASTER_SCORES
-    } else {
-        TEST_SCORES
-    };
-    for (i, v) in &needs.scores {
-        scores[*i] = scores[*i].max(*v);
-    }
-    let class = needs.class.clone().or_else(|| {
-        if needs.caster {
-            ids.wizard.clone()
-        } else {
-            ids.fighter.clone()
-        }
-    });
-    let (Some(class), Some(mut h)) = (class, d.create(rs, scores)) else {
-        return false;
-    };
-    d.pick(&mut h, &class);
-    let mut chain: Vec<String> = Vec::new();
-    match &needs.race {
-        Some(r) => {
-            if let Some(parent) = reader
-                .store
-                .element(r)
-                .filter(|e| e.ty == "Sub Race")
-                .and_then(|e| e.supports.first())
-            {
-                chain.push(parent.clone());
-            }
-            chain.push(r.clone());
-        }
-        None => chain.extend(
-            [ids.human.clone(), ids.variant.clone()]
-                .into_iter()
-                .flatten(),
-        ),
-    }
-    for r in &chain {
-        d.pick(&mut h, r);
-    }
-    d.fill(&mut h);
-    let mut pending = needs.feats.clone();
-    let label = format!("needs:{feat}");
-    let mut found = false;
-    loop {
-        d.open_feat_selects(&mut h);
-        while let Some(next) = pending.first().cloned() {
-            if !d.pick(&mut h, &next) {
-                break;
-            }
-            pending.remove(0);
-            d.fill(&mut h);
-            d.open_feat_selects(&mut h);
-        }
-        d.collect(&h, &label, offers);
-        if offers.found.contains_key(feat) {
-            found = true;
-            break;
-        }
-        if h.snap.level.total >= MAX_LEVEL || !d.level_up(&mut h) {
-            break;
-        }
-        // the improvement's "Feat" option before the fill takes the first option
-        d.open_feat_selects(&mut h);
-        d.fill(&mut h);
-    }
-    d.drop_host(h);
-    found
-}
-
-/// Select types (lower case) and the support tokens each names (`None` = any element).
-fn select_index(store: &ContentStore) -> HashMap<String, Vec<Option<BTreeSet<String>>>> {
-    let mut out: HashMap<String, Vec<Option<BTreeSet<String>>>> = HashMap::new();
-    for se in store.iter() {
-        for r in &se.element.rules {
-            if let Rule::Select(s) = r {
-                let tokens = s.supports.as_ref().map(|t| {
-                    t.split(['|', '&', '!', '(', ')', ','])
-                        .map(|x| x.trim().to_lowercase())
-                        .filter(|x| !x.is_empty())
-                        .collect()
-                });
-                out.entry(s.ty.to_lowercase()).or_default().push(tokens);
-            }
-        }
-    }
-    out
-}
-
-fn stage2(
-    src: &str,
-    app: &AppState,
-    ins: &Installed,
-    prefix: &str,
-    class_id: fn(Ruleset, &str) -> String,
-) {
-    let d = Driver::new(app);
-    let mut offers = Offers::default();
-    let cap = limit();
-    let editions: BTreeSet<Ruleset> = ins.ours.iter().map(|o| o.2).collect();
-    let ours_rs: HashMap<String, Ruleset> = ins.ours.iter().map(|o| (o.0.clone(), o.2)).collect();
-    let reader = prereq::NeedsReader {
-        store: &ins.store,
-        ours: &ours_rs,
-        class_id,
-    };
-    let of = |ty: &str, rs: Ruleset| -> Vec<String> {
-        ins.ours
-            .iter()
-            .filter(|o| o.1 == ty && o.2 == rs)
-            .map(|o| o.0.clone())
-            .collect()
-    };
-    for rs in editions {
-        let ids = base_ids(&d, rs, prefix);
-        let base = d.create(rs, TEST_SCORES).expect("create");
-        d.collect(&base, "L1", &mut offers);
-        d.items(&base, &mut offers, "search_items");
-        d.drop_host(base);
-        for race in ["Race", "Species"].iter().flat_map(|t| of(t, rs)) {
-            if let Some(mut h) = d.create(rs, TEST_SCORES) {
-                if d.pick(&mut h, &race) {
-                    d.collect(&h, &format!("race:{race}"), &mut offers);
-                }
-                d.drop_host(h);
-            }
-        }
-        // every class the builder offers (bundled ones too: their spell lists name our spells)
-        let mut classes = of("Class", rs);
-        if let Some(h) = d.create(rs, TEST_SCORES) {
-            if let Some(slot) = h
-                .snap
-                .slots
-                .iter()
-                .find(|s| s.element_type.eq_ignore_ascii_case("Class") && s.chosen.is_none())
-            {
-                classes.extend(d.options(&h, &slot.id).into_iter().map(|o| o.0));
-            }
-            d.drop_host(h);
-        }
-        classes.sort();
-        classes.dedup();
-        let mut subs: Vec<(String, String)> = Vec::new();
-        for class in classes.iter().take(cap) {
-            for a in progression(&d, rs, &ids, class, None, &mut offers) {
-                subs.push((class.clone(), a));
-            }
-        }
-        let ours_ids: BTreeSet<&str> = ins.ours.iter().map(|o| o.0.as_str()).collect();
-        subs.retain(|(_, a)| ours_ids.contains(a.as_str()));
-        subs.sort();
-        subs.dedup_by(|a, b| a.1 == b.1);
-        for (class, a) in subs.iter().take(cap) {
-            progression(&d, rs, &ids, class, Some(a), &mut offers);
-        }
-        let mut tried = 0;
-        for feat in of("Feat", rs) {
-            if offers.found.contains_key(&feat) || tried >= cap {
-                continue;
-            }
-            tried += 1;
-            needs_host(&d, rs, &ids, &reader, &feat, &mut offers);
-        }
-    }
-    metric(src, "s2", "*", "hosts_created", d.made.get() as i64);
-    let selects = select_index(&ins.store);
-    let mut rows: BTreeMap<(String, &str), [i64; 2]> = BTreeMap::new();
-    let mut seen_types: BTreeSet<&str> = BTreeSet::new();
-    for (id, ty, _) in &ins.ours {
-        let el = ins.store.element(id);
-        let category = if HOSTED.contains(&ty.as_str()) {
-            "host"
-        } else if let Some((_, why)) = NON_OFFERABLE.iter().find(|(t, _)| t == ty) {
-            why
-        } else if selects.get(&ty.to_lowercase()).is_some_and(|v| {
-            v.iter().any(|tokens| match tokens {
-                None => true,
-                Some(t) => {
-                    t.contains(&id.to_lowercase())
-                        || el.is_some_and(|e| {
-                            e.supports.iter().any(|s| t.contains(&s.to_lowercase()))
-                        })
-                }
-            })
-        }) {
-            "select"
-        } else {
-            "Grants"
-        };
-        seen_types.insert(ty);
-        if category != "host" && category != "select" {
-            *rows
-                .entry((ty.clone(), "nonoffer"))
-                .or_default()
-                .get_mut(0)
-                .unwrap() += 1;
-            continue;
-        }
-        let ok = offers.found.contains_key(id);
-        let r = rows.entry((ty.clone(), "offerable")).or_default();
-        r[0] += 1;
-        if ok {
-            r[1] += 1;
-        }
-        outcome::record(
-            SUITE,
-            &format!("{src}/s2/{ty}/{id}"),
-            ok,
-            "not offered by any host",
-        );
-    }
-    for ((ty, kind), [n, offered]) in &rows {
-        if *kind == "nonoffer" {
-            metric(src, "s2", ty, "non_offerable", *n);
-        } else {
-            metric(src, "s2", ty, "offerable", *n);
-            metric(src, "s2", ty, "offered", *offered);
-        }
-    }
-    metric(src, "s2", "*", "types", seen_types.len() as i64);
-    metric(src, "s2", "*", "unmapped_types", 0);
-}
-
 // ---------------------------------------------------------------- sources
 
 /// `name:bytes` of every content file of the installed (non-bundled) packs.
@@ -833,7 +532,10 @@ fn a_user_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/support/a-user")
 }
 
-fn aurora_folders(src: &str, dirs: &[PathBuf], zip_check: bool) {
+/// Stage 1 (and, with `with_stage2`, stage 2) of Aurora folders installed one after another.
+/// Returns whether the stacked app's builder still offers classes and races.
+fn aurora_folders(src: &str, dirs: &[PathBuf], zip_check: bool, with_stage2: bool) -> bool {
+    let t0 = std::time::Instant::now();
     let (tmp, app) = app_state();
     let mut tally = AuroraTally::default();
     let mut c = AuroraCount::default();
@@ -913,21 +615,88 @@ fn aurora_folders(src: &str, dirs: &[PathBuf], zip_check: bool) {
             }
         }
     }
-    stage2(src, &app, &ins, "ID_WOTC_", |_, name| {
-        format!(
-            "ID_WOTC_PHB_CLASS_{}",
-            name.to_uppercase().replace(' ', "_")
-        )
-    });
+    let healthy = builder_health(src, &app);
+    metric(src, "s1", "*", "wall_s", t0.elapsed().as_secs() as i64);
+    if with_stage2 {
+        stage2(src, &[&app], &ins, "ID_WOTC_", aurora_class_id, Scope::Full);
+    }
+    healthy
+}
+
+fn aurora_class_id(_: Ruleset, name: &str) -> String {
+    format!(
+        "ID_WOTC_PHB_CLASS_{}",
+        name.to_uppercase().replace(' ', "_")
+    )
+}
+
+/// Options of the L1 class and race/species slots per edition (0 = the builder is unusable).
+fn builder_counts(app: &AppState) -> Vec<(Ruleset, usize, usize)> {
+    let d = Driver::new(app);
+    [Ruleset::Dnd2014, Ruleset::Dnd2024]
+        .into_iter()
+        .filter_map(|rs| {
+            let h = d.create(rs, TEST_SCORES)?;
+            let count = |tys: &[&str]| {
+                h.snap
+                    .slots
+                    .iter()
+                    .filter(|s| tys.iter().any(|t| s.element_type.eq_ignore_ascii_case(t)))
+                    .map(|s| d.options(&h, &s.id).len())
+                    .sum::<usize>()
+            };
+            let out = (rs, count(&["Class"]), count(&["Race", "Species"]));
+            d.drop_host(h);
+            Some(out)
+        })
+        .collect()
+}
+
+fn builder_health(src: &str, app: &AppState) -> bool {
+    let counts = builder_counts(app);
+    for (rs, classes, races) in &counts {
+        let ed = if *rs == Ruleset::Dnd2024 {
+            "2024"
+        } else {
+            "2014"
+        };
+        metric(
+            src,
+            "s2",
+            "*",
+            &format!("builder_class_options_{ed}"),
+            *classes as i64,
+        );
+        metric(
+            src,
+            "s2",
+            "*",
+            &format!("builder_race_options_{ed}"),
+            *races as i64,
+        );
+    }
+    let ok = counts
+        .iter()
+        .any(|(rs, c, r)| *rs == Ruleset::Dnd2014 && *c > 0 && *r > 0);
+    outcome::record(SUITE, &format!("{src}/s2/builder_usable"), ok, "");
+    ok
 }
 
 #[test]
 fn acceptance_a_user() {
-    run_big(|| aurora_folders("a-user", &[a_user_dir()], true));
+    if !selected("a-user") {
+        return eprintln!("SKIPPED a-user: not in BOREALIS_ACCEPT_ONLY");
+    }
+    run_big(|| {
+        aurora_folders("a-user", &[a_user_dir()], true, true);
+    });
 }
 
 #[test]
 fn acceptance_a_comm() {
+    if !selected("a-comm") {
+        return eprintln!("SKIPPED a-comm: not in BOREALIS_ACCEPT_ONLY");
+    }
     let Ok(root) = std::env::var("BOREALIS_CORPUS_DIR") else {
         return skip("a-comm", "BOREALIS_CORPUS_DIR not set");
     };
@@ -945,9 +714,234 @@ fn acceptance_a_comm() {
         .filter(|p| p.is_dir() && !p.file_name().unwrap().to_string_lossy().starts_with('.'))
         .collect();
     dirs.sort_by_key(|p| (!p.ends_with(base), p.clone()));
-    run_big(move || aurora_folders("a-comm", &dirs, false));
+    run_big(move || {
+        // stage 1: every repo installed (base first); the stacked app's builder is checked too
+        let (shard, of) = shard();
+        // BOREALIS_ACCEPT_BISECT=1 names the repo that breaks the stacked builder (slow)
+        if shard == 0
+            && !aurora_folders("a-comm", &dirs, false, false)
+            && std::env::var_os("BOREALIS_ACCEPT_BISECT").is_some()
+        {
+            bisect_stack(&dirs);
+        }
+        comm_stage2(&repos, &dirs, shard, of);
+    });
 }
 
+/// Smallest prefix of `dirs` whose stack leaves the 2014 builder without classes or races:
+/// names the repo that breaks it and the elements it shares ids with earlier repos.
+fn bisect_stack(dirs: &[PathBuf]) {
+    let broken = |n: usize| {
+        let (_tmp, app) = app_state();
+        for dir in &dirs[..n] {
+            aurora_install(
+                &app,
+                &AuroraInput::Folder(dir.clone()),
+                &mut AuroraTally::default(),
+            );
+        }
+        !builder_counts(&app)
+            .iter()
+            .any(|(rs, c, r)| *rs == Ruleset::Dnd2014 && *c > 0 && *r > 0)
+    };
+    let (mut lo, mut hi) = (1, dirs.len());
+    while lo < hi {
+        let mid = (lo + hi) / 2;
+        if broken(mid) {
+            hi = mid;
+        } else {
+            lo = mid + 1;
+        }
+    }
+    let culprit = dirs[lo - 1]
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    eprintln!("  stack breaks the builder at repo #{lo}: {culprit}");
+    metric("a-comm-stack", "s2", "*", "breaking_prefix", lo as i64);
+    // alone on the base (dirs[0]) too?
+    let (_tmp, app) = app_state();
+    for dir in [&dirs[0], &dirs[lo - 1]] {
+        aurora_install(
+            &app,
+            &AuroraInput::Folder(dir.clone()),
+            &mut AuroraTally::default(),
+        );
+    }
+    let alone = builder_counts(&app);
+    for (rs, c, r) in &alone {
+        eprintln!("  base + {culprit} alone: {rs:?} classes {c} races {r}");
+    }
+    let ok_alone = alone
+        .iter()
+        .any(|(rs, c, r)| *rs == Ruleset::Dnd2014 && *c > 0 && *r > 0);
+    metric(
+        "a-comm-stack",
+        "s2",
+        "*",
+        "breaking_repo_alone_ok",
+        i64::from(ok_alone),
+    );
+    // the repo's name goes in an outcome id (metrics carry numbers only)
+    outcome::record(
+        SUITE,
+        &format!("a-comm-stack/s2/breaking_repo/{culprit}"),
+        false,
+        "",
+    );
+}
+
+/// The repos measured together as one realistic user setup (on top of A-core).
+const COMBO: &[&str] = &[
+    "aurorabuilder__elements",
+    "FreshRoyal__elements-partnered",
+    "Zenoverlordian__Aurora-Builder-KibblesTasty",
+    "Zenoverlordian__Aurora-Builder-LaserLlama",
+    "Idle-Handz__Aurora-Lights",
+];
+
+/// Stage 2 of A-comm as users install it: A-core (`BOREALIS_LIVE_INDEX_URL`; without it the
+/// corpus's aurorabuilder__elements folder) plus one repo, for every repo; then [`COMBO`].
+fn comm_stage2(repos: &Path, dirs: &[PathBuf], shard: usize, of: usize) {
+    let (base_tmp, base_label) = match std::env::var("BOREALIS_LIVE_INDEX_URL") {
+        Ok(url) => {
+            let tmp = tempfile::tempdir().expect("temp dir");
+            files::copy_tree(&core_base(&url).data, &tmp.path().join("data")).expect("copy");
+            (tmp, "a-core")
+        }
+        Err(_) => {
+            let (tmp, app) = app_state();
+            let dir = repos.join("aurorabuilder__elements");
+            aurora_install(&app, &AuroraInput::Folder(dir), &mut AuroraTally::default());
+            (tmp, "aurorabuilder__elements")
+        }
+    };
+    eprintln!("  a-comm stage 2 base: {base_label}");
+    let template = base_tmp.path().join("data");
+    // ids the base already has: a repo is measured on what it adds
+    let base_ids: BTreeSet<String> = installed(&template, &|_| true)
+        .store
+        .iter()
+        .map(|se| se.element.id.clone())
+        .collect();
+    let mut jobs: Vec<(String, Vec<PathBuf>)> = dirs
+        .iter()
+        .skip(shard)
+        .step_by(of)
+        .map(|d| {
+            let repo = d.file_name().unwrap().to_string_lossy().into_owned();
+            (format!("a-comm:{repo}"), vec![d.clone()])
+        })
+        .collect();
+    if shard == 0 {
+        let combo: Vec<PathBuf> = COMBO
+            .iter()
+            .map(|r| repos.join(r))
+            .filter(|p| p.is_dir())
+            .collect();
+        jobs.push(("a-comm-combo".into(), combo));
+    }
+    let t0 = std::time::Instant::now();
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    std::thread::scope(|sc| {
+        for _ in 0..comm_threads() {
+            std::thread::Builder::new()
+                .stack_size(64 << 20)
+                .spawn_scoped(sc, || {
+                    borealis_engine::invariants::enable_for_thread();
+                    loop {
+                        let i = next.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                        let Some((src, installs)) = jobs.get(i) else {
+                            return;
+                        };
+                        // an engine panic (settle invariants) fails this setup, not the run
+                        let run = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            comm_one(src, installs, &template, &base_ids, base_label);
+                        }));
+                        if let Err(e) = run {
+                            let why = e
+                                .downcast_ref::<String>()
+                                .map(String::as_str)
+                                .or_else(|| e.downcast_ref::<&str>().copied())
+                                .unwrap_or("panic");
+                            let why: String = why.lines().take(2).collect::<Vec<_>>().join(" | ");
+                            outcome::record(SUITE, &format!("{src}/s2/panic"), false, &why);
+                            metric(src, "s2", "*", "panicked", 1);
+                        }
+                    }
+                })
+                .expect("a-comm worker");
+        }
+    });
+    metric("a-comm", "s2", "*", "wall_s", t0.elapsed().as_secs() as i64);
+}
+
+/// `BOREALIS_ACCEPT_THREADS` (default 4): A-comm setups measured side by side, one app each.
+fn comm_threads() -> usize {
+    std::env::var("BOREALIS_ACCEPT_THREADS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .filter(|n| *n > 0)
+        .unwrap_or(COMM_THREADS)
+}
+
+/// `BOREALIS_ACCEPT_WORKERS` (default 3): stage-2 workers of a-core and f-full, one app each
+/// (copies of the installed data dir).
+fn workers() -> usize {
+    std::env::var("BOREALIS_ACCEPT_WORKERS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .filter(|n| *n > 0)
+        .unwrap_or(WORKERS)
+}
+
+const WORKERS: usize = 3;
+
+/// Default A-comm parallelism (within the resource guard: load < 15 with the other tests).
+const COMM_THREADS: usize = 6;
+
+/// Stage 2 of one A-comm setup: `installs` on a copy of the base, measured on what they add.
+fn comm_one(
+    src: &str,
+    installs: &[PathBuf],
+    template: &Path,
+    base_ids: &BTreeSet<String>,
+    base_label: &str,
+) {
+    let (tmp, app) = app_state_copy(template);
+    let mut ids = Vec::new();
+    for dir in installs {
+        ids.extend(aurora_install(
+            &app,
+            &AuroraInput::Folder(dir.clone()),
+            &mut AuroraTally::default(),
+        ));
+    }
+    if ids.is_empty() {
+        metric(src, "s2", "*", "install_refused", 1);
+        return;
+    }
+    if !builder_health(src, &app) {
+        eprintln!("  {src}: builder has no class/race options on {base_label}");
+    }
+    if std::env::var_os("BOREALIS_ACCEPT_COMM_S2").is_none() {
+        return;
+    }
+    let mut ins = installed(&tmp.path().join("data"), &|id| ids.iter().any(|i| i == id));
+    let all = ins.ours.len();
+    ins.ours.retain(|o| !base_ids.contains(&o.0));
+    metric(
+        src,
+        "s2",
+        "*",
+        "ids_already_in_base",
+        (all - ins.ours.len()) as i64,
+    );
+    stage2(src, &[&app], &ins, "ID_WOTC_", aurora_class_id, Scope::Repo);
+}
+
+/// A fetcher that keeps every file it downloaded (the stage-1 counter reads them).
 struct Recording {
     files: Mutex<Vec<(String, Vec<u8>)>>,
 }
@@ -965,27 +959,71 @@ impl Fetcher for Recording {
     }
 }
 
-fn core_install(url: &str) -> (tempfile::TempDir, AppState, Vec<(String, Vec<u8>)>, usize) {
-    let (tmp, app) = app_state();
+/// A-core installed through Update indexes, as the app does it.
+struct CoreInstall {
+    app: AppState,
+    fetched: Vec<(String, Vec<u8>)>,
+    failed: usize,
+    reports: Vec<borealis_lib::content_dto::MigrationReport>,
+}
+
+fn core_install_at(url: &str, data: PathBuf) -> CoreInstall {
+    let app = support::app::app_state_at(data);
     app.add_index(url).expect("add index");
     let rec = Recording {
         files: Mutex::new(Vec::new()),
     };
     let result = app.update_indexes(&rec, &NullSink).expect("update");
-    let fetched = rec.files.into_inner().unwrap();
-    (tmp, app, fetched, result.failed.len())
+    CoreInstall {
+        app,
+        fetched: rec.files.into_inner().unwrap(),
+        failed: result.failed.len(),
+        reports: result.reports,
+    }
+}
+
+/// A-core installed once per process (shared by a-core and a-comm, which copy its data dir).
+struct CoreBase {
+    data: PathBuf,
+    fetched: Vec<(String, Vec<u8>)>,
+    failed: usize,
+    reports: Vec<borealis_lib::content_dto::MigrationReport>,
+}
+
+static CORE_BASE: std::sync::OnceLock<CoreBase> = std::sync::OnceLock::new();
+
+fn core_base(url: &str) -> &'static CoreBase {
+    CORE_BASE.get_or_init(|| {
+        let dir = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("acceptance-core");
+        let _ = std::fs::remove_dir_all(&dir);
+        let data = dir.join("data");
+        let c = core_install_at(url, data.clone());
+        drop(c.app);
+        CoreBase {
+            data,
+            fetched: c.fetched,
+            failed: c.failed,
+            reports: c.reports,
+        }
+    })
 }
 
 #[test]
 fn acceptance_a_core() {
+    if !selected("a-core") {
+        return eprintln!("SKIPPED a-core: not in BOREALIS_ACCEPT_ONLY");
+    }
     let Ok(url) = std::env::var("BOREALIS_LIVE_INDEX_URL") else {
         return skip("a-core", "BOREALIS_LIVE_INDEX_URL not set");
     };
     run_big(move || {
         let src = "a-core";
-        let (tmp, app, fetched, failed) = core_install(&url);
+        let t0 = std::time::Instant::now();
+        let base = core_base(&url);
+        let (tmp, app) = app_state_copy(&base.data);
+        let (fetched, failed, reports) = (&base.fetched, base.failed, &base.reports);
         let mut c = AuroraCount::default();
-        for (_, bytes) in &fetched {
+        for (_, bytes) in fetched {
             c.add_file(&String::from_utf8_lossy(bytes));
         }
         let mine = |id: &str| !BUNDLED.contains(&id) && !id.starts_with("5etools-");
@@ -999,15 +1037,18 @@ fn acceptance_a_core() {
         let ins = installed(&tmp.path().join("data"), &|id| {
             mine(id) && non_bundled.iter().any(|p| p == id)
         });
-        let tally = AuroraTally {
+        let mut tally = AuroraTally {
             s: c.types.clone(),
             folder_errors: failed,
             ..AuroraTally::default()
         };
+        for r in reports {
+            tally_report(r, &mut tally);
+        }
         metric(src, "s1", "*", "fetched_files", fetched.len() as i64);
-        metric(src, "s1", "*", "warnings_not_reported", 1);
         aurora_stage1(src, &tally, &ins);
-        let (tmp2, _app2, _, _) = core_install(&url);
+        let tmp2 = tempfile::tempdir().expect("temp dir");
+        drop(core_install_at(&url, tmp2.path().join("data")).app);
         let again = installed(&tmp2.path().join("data"), &|id| {
             mine(id) && non_bundled.iter().any(|p| p == id)
         })
@@ -1025,12 +1066,13 @@ fn acceptance_a_core() {
             "rerun_identical",
             i64::from(again == ins.digest),
         );
-        stage2(src, &app, &ins, "ID_WOTC_", |_, name| {
-            format!(
-                "ID_WOTC_PHB_CLASS_{}",
-                name.to_uppercase().replace(' ', "_")
-            )
-        });
+        builder_health(src, &app);
+        metric(src, "s1", "*", "wall_s", t0.elapsed().as_secs() as i64);
+        let extra: Vec<_> = (1..workers()).map(|_| app_state_copy(&base.data)).collect();
+        let apps: Vec<&AppState> = std::iter::once(&app)
+            .chain(extra.iter().map(|x| &x.1))
+            .collect();
+        stage2(src, &apps, &ins, "ID_WOTC_", aurora_class_id, Scope::Full);
     });
 }
 
@@ -1048,11 +1090,15 @@ fn five_zip(data: &Path) -> Vec<u8> {
 
 #[test]
 fn acceptance_f_full() {
+    if !selected("f-full") {
+        return eprintln!("SKIPPED f-full: not in BOREALIS_ACCEPT_ONLY");
+    }
     let Ok(dir) = std::env::var("BOREALIS_5ETOOLS_DIR") else {
         return skip("f-full", "BOREALIS_5ETOOLS_DIR not set");
     };
     run_big(move || {
         let src = "f-full";
+        let t0 = std::time::Instant::now();
         let data = PathBuf::from(dir);
         let (tmp, app) = app_state();
         let (request, sources) = five_request(&app, &data);
@@ -1068,7 +1114,7 @@ fn acceptance_f_full() {
         let same = five_digest(&tmp2.path().join("data")) == digest;
         outcome::record(SUITE, &format!("{src}/s1/rerun_identical"), same, "");
         metric(src, "s1", "*", "rerun_identical", i64::from(same));
-        drop((tmp2, app2));
+        let rerun_same = same;
         let (tmp3, app3) = app_state();
         let zip = five_zip(&data);
         let zipped = app3
@@ -1097,12 +1143,34 @@ fn acceptance_f_full() {
         metric(src, "s1", "*", "zip_bytes", zip.len() as i64);
         drop((tmp3, app3));
         let ins = installed(&tmp.path().join("data"), &|id| id.starts_with("5etools-"));
-        stage2(src, &app, &ins, "ID_5ET_", prereq::class_id_5et);
+        metric(src, "s1", "*", "wall_s", t0.elapsed().as_secs() as i64);
+        // the rerun app holds the same packs (rerun_identical): the 2024 edition runs on it
+        let mut apps: Vec<&AppState> = if rerun_same {
+            vec![&app, &app2]
+        } else {
+            vec![&app]
+        };
+        let extra: Vec<_> = (apps.len()..workers())
+            .map(|_| app_state_copy(&tmp.path().join("data")))
+            .collect();
+        apps.extend(extra.iter().map(|x| &x.1));
+        stage2(
+            src,
+            &apps,
+            &ins,
+            "ID_5ET_",
+            prereq::class_id_5et,
+            Scope::Full,
+        );
+        drop((tmp2, app2));
     });
 }
 
 #[test]
 fn acceptance_f_url() {
+    if !selected("f-url") {
+        return eprintln!("SKIPPED f-url: not in BOREALIS_ACCEPT_ONLY");
+    }
     let Ok(url) = std::env::var("BOREALIS_LIVE_5ETOOLS_URL") else {
         return skip("f-url", "BOREALIS_LIVE_5ETOOLS_URL not set");
     };
@@ -1112,10 +1180,11 @@ fn acceptance_f_url() {
         let picked = app
             .stage_5etools_url(&HttpsFetcher, &url, &NullSink)
             .expect("download");
+        // the folder the download was granted as (consumed by the import: counted first)
         let staged = app
-            .paths
-            .data
-            .join(borealis_lib::content_fivetools_url::STAGE_DIR);
+            .picked
+            .resolve(&picked.token, PickPurpose::FivetoolsFolder)
+            .expect("staged folder");
         let sources: Vec<String> = app
             .scan_5etools_folder(&picked.token)
             .expect("scan")
@@ -1128,8 +1197,9 @@ fn acceptance_f_url() {
             sources: sources.clone(),
             include_fluff: true,
         };
-        app.import_5etools(&request, &NullSink).expect("import");
         five_stage1(src, &staged, &sources);
+        app.import_5etools(&request, &NullSink).expect("import");
+
         let digest = five_digest(&tmp.path().join("data"));
         if let Ok(dir) = std::env::var("BOREALIS_5ETOOLS_DIR") {
             let (tmp2, app2) = app_state();
@@ -1140,6 +1210,19 @@ fn acceptance_f_url() {
             metric(src, "s1", "*", "url_equals_folder", i64::from(same));
         }
     });
+}
+
+/// `BOREALIS_ACCEPT_SHARD=i/n`: this process measures every n-th A-comm repo from i (stage 1,
+/// the stack check and the combination run in shard 0 only). Unset = one shard.
+fn shard() -> (usize, usize) {
+    std::env::var("BOREALIS_ACCEPT_SHARD")
+        .ok()
+        .and_then(|v| {
+            let (i, n) = v.split_once('/')?;
+            let (i, n) = (i.trim().parse().ok()?, n.trim().parse::<usize>().ok()?);
+            (n > 0 && i < n).then_some((i, n))
+        })
+        .unwrap_or((0, 1))
 }
 
 /// Run on a big stack (deep content recursion), propagating panics.
