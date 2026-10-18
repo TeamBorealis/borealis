@@ -33,7 +33,7 @@ target-windows/
 
 # private workspace folders and recordings (never published)
 .claude/
-specs/
+/specs/
 videos/
 input/
 linux-smoke/
