@@ -58,27 +58,31 @@ const LOSSY: &[Accepted] = &[
         "the fixtures hold 1 SRD-flagged 2014 Fighting Style optional feature, the bundled \
          pack 6: Fighting Style option counts differ",
     ),
-    (
-        "",
-        "select.Archetype",
-        &[],
-        "an imported subclass is also offered by the bundled class of the same name; an \
-         imported class offers only imported subclasses",
-    ),
 ];
 
 /// Open bugs found by this test (see specs/handoffs/diff-5etools-bundled-1.md and
 /// specs/handoffs/import-gaps-2.md).
-const KNOWN_GAPS: &[Accepted] = &[(
-    "Dnd2024 Fighter",
-    "select.Feat",
-    &[20],
-    "engine: the imported Magic Initiate's spellcasting-ability choice is an element with a \
+const KNOWN_GAPS: &[Accepted] = &[
+    (
+        "Dnd2024",
+        "select.Class",
+        &[],
+        "engine (T11, specs/handoffs/det-5e-7.md): the equivalence index keeps one maps_to target \
+         per element and follows one hop, so a character holding the imported XPHB Fighter (which \
+         maps to the SRD 5.2.1 Fighter) is still offered the SRD 5.2.1 Fighter (which maps on to \
+         the SRD 5.1 one): 14 class options vs 13 with the bundled class held (Wizard alike)",
+    ),
+    (
+        "Dnd2024 Fighter",
+        "select.Feat",
+        &[20],
+        "engine: the imported Magic Initiate's spellcasting-ability choice is an element with a \
          spellcasting block, and `data.prerequisite.requires_feature: Spellcasting` is checked \
          leniently (any live block counts), so Boon of Spell Recall is offered to a Fighter (7 \
          Epic Boons vs 6); needs a strict class-Spellcasting test for 2024 prerequisites (see \
          specs/handoffs/import-gaps-2.md)",
-)];
+    ),
+];
 
 /// One side of a pair: the elements a character is built from.
 #[derive(Clone, Copy)]
@@ -441,8 +445,11 @@ fn accepted(label: &str, level: u32, key: &str) -> Option<usize> {
         .iter()
         .chain(KNOWN_GAPS)
         .position(|(l, k, levels, _)| {
+            // a prefix ends at a word: `select.Class` does not cover `select.Class Feature`
             label.contains(l)
-                && key.starts_with(k)
+                && key
+                    .strip_prefix(k)
+                    .is_some_and(|rest| !rest.starts_with(' '))
                 && (levels.is_empty() || levels.contains(&level))
         })
 }
