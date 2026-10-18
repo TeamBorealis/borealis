@@ -116,6 +116,11 @@ impl NeedsReader<'_> {
                 match (key.as_str(), feature.as_deref()) {
                     ("character" | "level", _) => needs.level = needs.level.max(n),
                     ("spellcasting", _) => needs.caster = true,
+                    // `[type:spell]`: the character has a spell (Elemental Adept copies)
+                    ("type", _) if matches!(&t.value, TestValue::Text(v) if v.eq_ignore_ascii_case("spell")) =>
+                    {
+                        needs.caster = true;
+                    }
                     (_, Some("spellcasting" | "pact magic")) => needs.caster = true,
                     (k, _) if ABILITY_KEYS.contains(&k) => {
                         let i = ABILITY_KEYS.iter().position(|a| *a == k).unwrap_or(0);

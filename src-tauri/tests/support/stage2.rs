@@ -635,6 +635,9 @@ fn category<'a>(
     ty: &'a str,
     el: Option<&borealis_content::Element>,
 ) -> &'a str {
+    if el.is_some_and(|e| legacy_of(e).is_some()) {
+        return "Legacy";
+    }
     if HOSTED.contains(&ty) {
         return "host";
     }
@@ -654,15 +657,45 @@ fn category<'a>(
     }
 }
 
-/// Offered / offerable per type, one outcome per offerable element.
+/// A former version of a 5etools race whose `_versions` became options of the replaced trait
+/// (det-5e-6, F14): kept under its old id for saved characters, requiring the race it is a
+/// version of, so no new character is offered it. Returns that base race id.
+fn legacy_of(el: &borealis_content::Element) -> Option<&str> {
+    let base = el.data.get("version_of")?.as_str()?;
+    (HOSTED.contains(&el.ty.as_str()) && el.requirements.trim() == base).then_some(base)
+}
+
+/// Offered / offerable per type, one outcome per offerable element. A legacy race version
+/// ([`legacy_of`]) gets its own outcome: passes when it is not offered and its base race is.
 fn record(src: &str, ins: &Installed, offers: &Offers) {
     let selects = select_index(&ins.store);
     let mut rows: BTreeMap<(String, &str), [i64; 2]> = BTreeMap::new();
     let mut seen_types: BTreeSet<&str> = BTreeSet::new();
     for (id, ty, _) in &ins.ours {
         let el = ins.store.element(id);
-        let category = category(&selects, id, ty, el);
         seen_types.insert(ty);
+        if let Some(base) = el.and_then(legacy_of) {
+            let (offered, base_offered) = (
+                offers.found.contains_key(id),
+                offers.found.contains_key(base),
+            );
+            let why = match (offered, base_offered) {
+                (false, true) => "legacy version: kept, not offered; its base race is offered",
+                (true, _) => "legacy version still offered for new characters",
+                (false, false) => "legacy version: its base race is not offered either",
+            };
+            let r = rows.entry((ty.clone(), "legacy")).or_default();
+            r[0] += 1;
+            r[1] += i64::from(!offered && base_offered);
+            outcome::record(
+                SUITE,
+                &format!("{src}/s2/{ty}/{id}"),
+                why.starts_with("legacy version: kept"),
+                why,
+            );
+            continue;
+        }
+        let category = category(&selects, id, ty, el);
         if category != "host" && category != "select" {
             rows.entry((ty.clone(), "nonoffer")).or_default()[0] += 1;
             continue;
@@ -682,6 +715,9 @@ fn record(src: &str, ins: &Installed, offers: &Offers) {
     for ((ty, kind), [n, offered]) in &rows {
         if *kind == "nonoffer" {
             metric(src, "s2", ty, "non_offerable", *n);
+        } else if *kind == "legacy" {
+            metric(src, "s2", ty, "legacy_versions", *n);
+            metric(src, "s2", ty, "legacy_versions_ok", *offered);
         } else {
             metric(src, "s2", ty, "offerable", *n);
             metric(src, "s2", ty, "offered", *offered);
@@ -816,6 +852,13 @@ fn option_host(
     if let Some(c) = needs.class.clone() {
         add(c, None);
     }
+    // a repeatable copy needs one slot per earlier copy: the fighter has the most improvement
+    // slots in both editions (2014: 4, 6, 8, 12, 14, 16, 19; 2024 the same with the Epic Boon)
+    if !needs.caster && !earlier_copies(store, target).is_empty() {
+        if let Some(f) = &e.ids.fighter {
+            add(f.clone(), None);
+        }
+    }
     let usable = |c: &String| e.builder_classes.contains(c);
     // the option's own select owners first (the needed ids climb to many unrelated classes)
     let mut own = Plan::default();
@@ -893,7 +936,8 @@ fn option_host_on(
         return false;
     };
     let label = format!("option:{target}");
-    let trace = std::env::var("BOREALIS_ACCEPT_TRACE").is_ok_and(|t| t == target);
+    let trace = std::env::var("BOREALIS_ACCEPT_TRACE")
+        .is_ok_and(|t| t.split(',').any(|x| x.trim() == target));
     let took = d.pick(&mut h, class);
     if trace {
         eprintln!("TRACE {target}: class {class} {took} archetype {archetype:?} groups {groups:?}");

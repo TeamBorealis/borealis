@@ -117,18 +117,20 @@ const SRD_CLASSES: [(&str, &str, &str); 12] = [
 const HILL_DWARF: (&str, &str) = ("ID_SRD_RACE_DWARF", "ID_SUB_RACE_HILL_DWARF");
 const ACOLYTE: &str = "ID_BACKGROUND_ACOLYTE";
 
-/// A-core vs bundled SRD 5.1 differences, classified (2026-10-18 run on a core.index install).
+/// A-core vs bundled SRD 5.1 differences, classified (2026-10-18 run at 139047b on a core.index
+/// install). Removed as no longer observed: A2 (bundled Ranger selects, 2becf31) and A3 (A-core's
+/// PHB 2024 content in a dnd2014-only pack, 180b74e: the Warlock now takes Eldritch Blast).
 const ACORE_FINDINGS: &[Finding] = &[
     ("A1", "", &["select.Background Feature", "select.Feat"], &[], Owner::Source,
      "A-core's 2024 PHB content gives the 2014 Acolyte a 'Variant Feature' select whose option opens an origin-feat select (10 feats); the SRD 5.1 Acolyte has neither"),
-    ("A2", "Ranger", &["select.Class Feature"], &[], Owner::Bundled,
-     "the bundled SRD 5.1 Ranger has no Favored Enemy / Natural Explorer selects (the SRD text has both choices; A-core offers 14 enemy types and 8 terrains)"),
-    ("A3", "Warlock", &["select.Class Feature", "select.Condition", "skill."], &[], Owner::Migrate,
-     "A-core installs its PHB 2024 content in a dnd2014-only pack, so the PHB Warlock's cantrip select offers the PHB and the PHB24 Chill Touch (both picked, no Eldritch Blast, Agonizing Blast not offered); the engine accepts two same-named spells in sibling slots"),
     ("A4", "Paladin", &["save."], &[], Owner::Source,
      "Aurora's core XML computes 'aura of protection:save bonus' (minimum 1) but never adds it to the paladin's own saves; the bundled pack adds it (Cha 8 here, so +1)"),
     ("A5", "Wizard", &["spell_choices"], &[20], Owner::Source,
      "Aurora's Spell Mastery / Signature Spells features carry no spell selects; the bundled pack models them as four spell selects"),
+    ("A6", "Warlock", &["select.Condition"], &[11, 20], Owner::Source,
+     "Aurora's core XML Fiendish Resilience (Fiend 10) has no rules (the resistance is chosen at each rest); the bundled pack models it as a damage-resistance Condition select"),
+    ("A7", "Fighter", &["initiative"], &[11, 20], Owner::Source,
+     "Aurora's core XML Remarkable Athlete adds half proficiency only to the Str/Dex skills (acrobatics, athletics, sleight of hand, stealth); SRD 5.1 applies it to every Str/Dex/Con check, initiative included, as the bundled pack does since 93f8c9b (bundled side right)"),
 ];
 
 fn content_dir() -> PathBuf {
@@ -295,7 +297,7 @@ fn verdicts(
                             SUITE,
                             &id,
                             owner == Owner::Source,
-                            &format!("{fid} {owner:?}"),
+                            &format!("{fid} {owner:?}: {d}"),
                         );
                         *v.classified.entry(i).or_default() += 1;
                         bad += usize::from(owner != Owner::Source);
