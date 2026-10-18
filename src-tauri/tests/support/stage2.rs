@@ -644,7 +644,13 @@ fn category<'a>(
     if let Some((_, why)) = NON_OFFERABLE.iter().find(|(t, _)| *t == ty) {
         return why;
     }
-    let offering = selects.offering(id, ty, el);
+    // an element's own select never offers it (it is held while its select is open): the
+    // trait holding a 5etools race's version select names itself as the support (det-5e-6 F14)
+    let offering: Vec<_> = selects
+        .offering(id, ty, el)
+        .into_iter()
+        .filter(|(owner, _, _)| owner != id)
+        .collect();
     let granters = selects.granted_by.get(id);
     let self_granted = !offering.is_empty()
         && offering
