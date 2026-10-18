@@ -214,3 +214,80 @@ fn acore_editions_local() {
     );
     assert!(!after.keys().any(|s| s.contains("2024")), "{after:?}");
 }
+
+/// Level-1 Race options of a new character (ruleset, cross-edition setting).
+fn race_options(store: &ContentStore, ruleset: Ruleset, cross: Option<bool>) -> Vec<String> {
+    let engine = Engine::new(store);
+    let mut state = commands::new_character(&engine, ruleset);
+    state.allow_cross_edition = cross;
+    let snap = engine.derive_with(&state, true);
+    snap.slots
+        .iter()
+        .filter(|s| s.owner.id == "ID_LEVEL_1" && (s.ty == "Race" || s.ty == "Species"))
+        .flat_map(|s| s.options.iter().map(|o| o.id.clone()))
+        .collect()
+}
+
+/// Local only (`BOREALIS_CORPUS_DIR`): the partnered repository's races of `D&D 5.5e` sources,
+/// stacked on aurorabuilder, are 2024 content now: offered to a 2024 character, not to a strict
+/// 2014 one (the 2014 profile takes only spells and items from 2024 content, also with "allow
+/// content from the other edition"; the count is printed). Prints counts only.
+#[test]
+fn partnered_2024_races_local() {
+    let Some(dir) = std::env::var_os("BOREALIS_CORPUS_DIR").map(std::path::PathBuf::from) else {
+        eprintln!("SKIP partnered_2024_races_local: BOREALIS_CORPUS_DIR not set");
+        return;
+    };
+    let repos = if dir.join("repos").is_dir() {
+        dir.join("repos")
+    } else {
+        dir
+    };
+    let (base, partnered) = (
+        repos.join("aurorabuilder__elements"),
+        repos.join("FreshRoyal__elements-partnered"),
+    );
+    if !base.is_dir() || !partnered.is_dir() {
+        eprintln!("SKIP partnered_2024_races_local: repositories missing");
+        return;
+    }
+    let tmp = tempfile::tempdir().unwrap();
+    let mut b = ContentStoreBuilder::new();
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+    for p in BUNDLED {
+        b = b.add_pack_dir(&root.join(p)).unwrap();
+    }
+    let mut races_2024 = Vec::new();
+    for (name, src) in [("base", &base), ("partnered", &partnered)] {
+        let opts = MigrateOptions {
+            pack_id: Some(name.into()),
+            ..MigrateOptions::default()
+        };
+        let out = migrate_path(src, &opts).unwrap();
+        write_output(&tmp.path().join(name), &out).unwrap();
+        if name == "partnered" {
+            for f in out.files.iter().filter(|f| f.path != "pack.json") {
+                let Ok(file) = ContentFile::from_json_str(&f.contents) else {
+                    continue;
+                };
+                for e in file.elements.iter().filter(|e| e.ty == "Race") {
+                    if e.ruleset.or(file.ruleset) == Some(Ruleset::Dnd2024) {
+                        races_2024.push(e.id.clone());
+                    }
+                }
+            }
+        }
+        b = b.add_pack_dir(&tmp.path().join(name)).unwrap();
+    }
+    let store = b.build();
+    let count = |opts: &[String]| races_2024.iter().filter(|r| opts.contains(r)).count();
+    let on_2024 = count(&race_options(&store, Ruleset::Dnd2024, None));
+    let strict_2014 = count(&race_options(&store, Ruleset::Dnd2014, Some(false)));
+    let cross_2014 = count(&race_options(&store, Ruleset::Dnd2014, Some(true)));
+    eprintln!(
+        "PARTNERED 2024 races {}: offered on 2024 {on_2024}, 2014 strict {strict_2014}, 2014 cross-edition {cross_2014}",
+        races_2024.len()
+    );
+    assert_eq!(on_2024, races_2024.len());
+    assert_eq!(strict_2014, 0);
+}
