@@ -51,6 +51,7 @@ pub mod content_fivetools_zip;
 pub mod content_import;
 pub mod content_index;
 pub mod content_index_aurora;
+pub(crate) mod content_overrides;
 pub mod content_packs;
 pub mod content_prefs;
 pub mod content_preview;

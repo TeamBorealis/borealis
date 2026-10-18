@@ -305,6 +305,8 @@ pub(crate) struct Converted {
     pub(crate) raw: Vec<borealis_content::Issue>,
     /// Source element type by id (converted, dropped and renamed elements).
     pub(crate) types: BTreeMap<String, String>,
+    /// Source file of each written content file (output path -> input path, both relative).
+    pub(crate) sources: BTreeMap<String, String>,
 }
 
 fn decode_files(files: &[ImportFileInput]) -> ApiResult<Vec<(String, Vec<u8>)>> {
@@ -542,6 +544,12 @@ pub(crate) fn convert_set(
         counts: totals.elements_by_type.clone(),
         raw: output.report.issues.clone(),
         types: output.report.element_types.clone(),
+        sources: output
+            .report
+            .files
+            .iter()
+            .filter_map(|f| Some((f.output.clone()?, f.input.clone())))
+            .collect(),
     })
 }
 
@@ -574,6 +582,7 @@ fn convert_json_single(
         counts,
         raw: Vec::new(),
         types: BTreeMap::new(),
+        sources: BTreeMap::new(),
     })
 }
 

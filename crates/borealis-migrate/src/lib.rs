@@ -9,6 +9,7 @@ pub mod convert;
 pub mod dom;
 pub mod error;
 pub mod idnorm;
+pub mod load_reject;
 pub mod pipeline;
 pub mod report;
 

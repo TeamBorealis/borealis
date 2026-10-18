@@ -4,6 +4,7 @@ mod info;
 mod parts;
 mod rules;
 mod salvage;
+pub(crate) use salvage::element_lines;
 mod typos;
 mod util;
 

@@ -61,7 +61,7 @@ fn file_level_issues_after_an_element_are_not_attributed_to_it() {
 #[test]
 fn element_types_cover_converted_dropped_and_renamed_elements() {
     let xml = r#"<elements>
-  <element name="Kept" type="Spell" source="Hb" id="ID_HB_SPELL_KEPT"><description><p>a</p></description></element>
+  <element name="Kept" type="Spell" source="Hb" id="ID_HB_SPELL_KEPT"><description><p>a</p></description><setters><set name="level">1</set><set name="school">Evocation</set><set name="time">1 action</set><set name="duration">Instantaneous</set><set name="range">Self</set></setters></element>
   <element name="" type="Race" source="Hb" id="ID_HB_RACE_NONAME"><description><p>b</p></description></element>
   <element name="Sniper" type="Feat" source="Hb" id="ID_HB_FEAT_SNIPER'S_NEST"><description><p>c</p></description></element>
 </elements>"#;

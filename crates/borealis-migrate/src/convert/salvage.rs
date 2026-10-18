@@ -28,6 +28,17 @@ pub(crate) fn report_unparsed_elements(ctx: &mut Ctx, text: &str) {
     }
 }
 
+/// The 1-based line of the first `<element>` start tag of every id, outside comments.
+pub(crate) fn element_lines(text: &str) -> std::collections::BTreeMap<String, u32> {
+    let mut out = std::collections::BTreeMap::new();
+    for (offset, attrs) in element_tags(text) {
+        if let Some(id) = attr(attrs, "id").filter(|i| !i.is_empty()) {
+            out.entry(id).or_insert_with(|| line_of(text, offset));
+        }
+    }
+    out
+}
+
 fn line_of(text: &str, offset: usize) -> u32 {
     let n = text[..offset].bytes().filter(|b| *b == b'\n').count() + 1;
     u32::try_from(n).unwrap_or(u32::MAX)

@@ -3,6 +3,7 @@
 //! source held is lost without a precise trace.
 
 use crate::content_dto::{MigrationIssue, MigrationReport};
+use crate::content_overrides::bundled_override_issues;
 use crate::content_preview::{Converted, SeverityCounts, UnresolvedRef};
 use crate::error::ApiResult;
 use crate::state::AppState;
@@ -68,8 +69,8 @@ impl Findings {
 }
 
 impl AppState {
-    /// Classify the issues of `conv` against the installed content and add the warning about
-    /// overridden bundled elements.
+    /// Classify the issues of `conv` against the installed content and add the warnings about
+    /// replaced bundled elements (one per source file and bundled pack).
     ///
     /// # Errors
     /// `internal` if the content lock is poisoned.
@@ -77,9 +78,9 @@ impl AppState {
         let hub = self.hub()?;
         let mut found = classify(&conv.raw, &conv.types, |t| hub.store.contains_id(t));
         if conv.converted > 0 {
-            if let Some(issue) = self.bundled_override_warning(out_dir) {
-                found.diagnostics.push(issue);
-            }
+            let replaced = bundled_override_issues(&hub.store, out_dir, &conv.sources);
+            found.summary.warnings += replaced.len();
+            found.diagnostics.extend(replaced);
         }
         Ok(found)
     }

@@ -22,4 +22,5 @@ name = "borealis-migrate"
 path = "src/main.rs"
 
 [dev-dependencies]
+borealis-engine.workspace = true
 tempfile = "3.27.0"

@@ -10,15 +10,15 @@ use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 
 /// An invented homebrew file: one element with a warning inside it, one dropped element,
-/// one renamed id and one clean element.
+/// one renamed id and one clean element (spells carry the setters Aurora requires).
 const HB: &str = r#"<elements>
   <element name="Quirk" type="Feat" source="Hb" id="ID_HBT_FEAT_QUIRK">
     <description><p>q</p></description>
     <set name="x">1</set>
   </element>
   <element name="" type="Race" source="Hb" id="ID_HBT_RACE_NONAME"><description><p>n</p></description></element>
-  <element name="Nest" type="Spell" source="Hb" id="ID_HBT_SPELL_O'NEST"><description><p>o</p></description></element>
-  <element name="Fine" type="Spell" source="Hb" id="ID_HBT_SPELL_FINE"><description><p>f</p></description></element>
+  <element name="Nest" type="Spell" source="Hb" id="ID_HBT_SPELL_O'NEST"><description><p>o</p></description><setters><set name="level">1</set><set name="school">Evocation</set><set name="time">1 action</set><set name="duration">Instantaneous</set><set name="range">Self</set></setters></element>
+  <element name="Fine" type="Spell" source="Hb" id="ID_HBT_SPELL_FINE"><description><p>f</p></description><setters><set name="level">1</set><set name="school">Evocation</set><set name="time">1 action</set><set name="duration">Instantaneous</set><set name="range">Self</set></setters></element>
 </elements>"#;
 
 const B: &str = r#"<elements>

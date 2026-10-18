@@ -7,6 +7,7 @@
 
 use crate::convert::{convert_xml, Document};
 use crate::error::MigrateError;
+use crate::load_reject;
 use crate::report::{FileReport, MigrationReport, Stats};
 use borealis_content::schema::{validate_document, DocumentKind};
 use borealis_content::store::load_order;
@@ -211,9 +212,24 @@ impl Run<'_> {
         let conv = convert_xml(&text, rel);
         self.issues.extend(conv.issues);
         self.types.extend(conv.element_types);
+        let mut stats = conv.stats;
+        let document = match conv.document {
+            Some(Document::Content(file)) if self.opts.origin == PackOrigin::Custom => {
+                let culprits = load_reject::missing_setters(&file);
+                if culprits.is_empty() {
+                    Some(Document::Content(file))
+                } else {
+                    self.issues
+                        .extend(load_reject::discard_issues(rel, &text, &file, &culprits));
+                    stats = load_reject::discarded_stats(&stats, &file);
+                    None
+                }
+            }
+            other => other,
+        };
         let out_name = output_name(rel);
         let mut followed = Vec::new();
-        let (kind, written) = match conv.document {
+        let (kind, written) = match document {
             None => ("skipped", None),
             Some(_) if !self.output_names.insert(out_name.clone()) => {
                 self.issues.push(
@@ -279,7 +295,7 @@ impl Run<'_> {
             input: rel.clone(),
             output: written,
             kind: kind.into(),
-            stats: conv.stats,
+            stats,
         });
         followed
     }

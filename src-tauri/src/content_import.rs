@@ -2,7 +2,7 @@
 
 use crate::content_dto::{
     ContentPack, FiveToolsImportReport, FiveToolsImportRequest, FiveToolsScan, FiveToolsSource,
-    ImportNote, ImportPackRequest, ImportPackResult, MigrationIssue, MigrationReport,
+    ImportNote, ImportPackRequest, ImportPackResult, MigrationReport,
 };
 use crate::content_packs::{progress, EventSink, PACK_META_FILE};
 use crate::content_preview::SCRATCH_XML;
@@ -13,7 +13,7 @@ use crate::state::{AppState, BUNDLED_PACKS};
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
 use borealis_content::{
-    ContentFile, IssueCode, PackFile, PackFileKind, PackFormat, PackManifest, PackOrigin, Ruleset,
+    ContentFile, PackFile, PackFileKind, PackFormat, PackManifest, PackOrigin, Ruleset,
 };
 use borealis_import_5etools::{import_folder_with_progress, ImportOptions, Phase};
 use borealis_migrate::{migrate_path, write_output, MigrateOptions};
@@ -24,8 +24,6 @@ pub const MAX_PACK_BYTES: usize = 64 * 1024 * 1024;
 
 /// Prefix given to a manual import whose name collides with a bundled pack id.
 const USER_PREFIX: &str = "user-";
-/// How many overridden element ids a warning lists.
-const OVERRIDE_SAMPLE: usize = 5;
 
 /// True when `id` names a bundled pack (`core` included), which imports must never replace.
 #[must_use]
@@ -177,63 +175,6 @@ impl AppState {
         tracing::info!(bytes = bytes.len(), "content file import started");
         sink.content_progress(&progress("converting", 0, 1, &request.file_name));
         self.import_files_now(request, bytes, sink)
-    }
-
-    /// A warning when the converted pack reuses element ids that bundled packs define.
-    pub(crate) fn bundled_override_warning(&self, out_dir: &Path) -> Option<MigrationIssue> {
-        let hub = self.hub().ok()?;
-        let manifest =
-            PackManifest::from_json_str(&std::fs::read_to_string(out_dir.join("pack.json")).ok()?)
-                .ok()?;
-        let mut hits: Vec<(String, String)> = Vec::new();
-        for file in manifest
-            .files
-            .iter()
-            .filter(|f| f.kind == PackFileKind::Content)
-        {
-            let Ok(text) = std::fs::read_to_string(out_dir.join(&file.path)) else {
-                continue;
-            };
-            let Ok(content) = ContentFile::from_json_str(text.trim_start_matches('\u{feff}'))
-            else {
-                continue;
-            };
-            hits.extend(
-                content
-                    .elements
-                    .iter()
-                    .filter(|e| {
-                        hub.store.get(&e.id).is_some_and(|stored| {
-                            // `file` is `<pack id>/<file>`; bundled ids are reserved.
-                            stored
-                                .file
-                                .split('/')
-                                .next()
-                                .is_some_and(|pack| BUNDLED_PACKS.contains(&pack))
-                        })
-                    })
-                    .map(|e| (e.id.clone(), e.ty.clone())),
-            );
-        }
-        let (first_id, first_ty) = hits.first().cloned()?;
-        let sample = hits
-            .iter()
-            .take(OVERRIDE_SAMPLE)
-            .map(|(id, _)| id.as_str())
-            .collect::<Vec<_>>();
-        Some(MigrationIssue {
-            severity: "warning",
-            code: IssueCode::ElementReplaced,
-            message: format!(
-                "This pack overrides {} element(s) from the bundled rules (for example {}).",
-                hits.len(),
-                sample.join(", ")
-            ),
-            element: Some(first_id),
-            element_type: Some(first_ty),
-            file: None,
-            line: None,
-        })
     }
 
     pub(crate) fn convert_xml(

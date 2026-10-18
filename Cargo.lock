@@ -652,6 +652,7 @@ name = "borealis-migrate"
 version = "1.0.0"
 dependencies = [
  "borealis-content",
+ "borealis-engine",
  "quick-xml",
  "serde",
  "serde_json",

@@ -109,11 +109,20 @@ fn references_follow_the_rename_and_collisions_get_a_stable_suffix() {
 
 #[test]
 fn shadowing_stubs_are_diagnosed_not_silently_accepted() {
+    // A Level without its required setters makes Aurora discard the whole custom file
+    // (content-format 9.1): nothing of it loads, and every element is named in the report.
     let (out, store) = migrate_and_load(STUBS);
     let codes: Vec<_> = out.report.issues.iter().map(|i| i.code).collect();
     assert!(codes.contains(&IssueCode::MissingRequiredSetter));
-    assert!(store
-        .validate()
-        .iter()
-        .any(|i| i.code == IssueCode::DuplicateId || i.code == IssueCode::MissingRequiredSetter));
+    assert!(codes.contains(&IssueCode::FileSkipped));
+    for id in ["ID_HB_LEVEL_1", "ID_HB_CLASS_X", "ID_HB_MULTICLASS_X"] {
+        assert!(store.get(id).is_none(), "{id} not loaded");
+        assert!(
+            out.report
+                .issues
+                .iter()
+                .any(|i| i.code == IssueCode::ElementDropped && i.element.as_deref() == Some(id)),
+            "{id} named"
+        );
+    }
 }
