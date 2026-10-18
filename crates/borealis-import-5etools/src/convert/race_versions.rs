@@ -80,22 +80,31 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Option<Conv> {
     if converted.is_empty() {
         return Some(conv);
     }
-    let own: Vec<Vec<Rule>> = converted
+    let base_name = conv.elements[0].name.clone();
+    // each version's rules, and the same rules read under the race's name (a version's selects
+    // are named after it: `Size (Custom Lineage; Darkvision)` is the race's `Size (Custom
+    // Lineage)`)
+    let own: Vec<Vec<(Rule, Rule)>> = converted
         .iter()
-        .map(|(_, e)| {
+        .map(|(vent, e)| {
             e.rules
                 .iter()
                 .filter(|r| !is_trait_grant(r))
-                .cloned()
+                .map(|r| (r.clone(), renamed(r, &vent.name, &base_name)))
                 .collect()
         })
         .collect();
+    // the race keeps what every version keeps; a rule some version drops (Custom Lineage's
+    // darkvision) or no version keeps (Dragonborn's free resistance choice) is the versions'
+    // to give
+    conv.elements[0].rules.retain(|r| {
+        is_trait_grant(r)
+            || (!is_spell_rule(r)
+                && own
+                    .iter()
+                    .all(|rules| rules.iter().any(|(_, read)| read == r)))
+    });
     let base_rules = conv.elements[0].rules.clone();
-    // a rule of the race that no version keeps (Dragonborn's free resistance choice) is the
-    // versions' to give
-    conv.elements[0]
-        .rules
-        .retain(|r| is_trait_grant(r) || own.iter().any(|rules| rules.contains(r)));
 
     let base_id = conv.elements[0].id.clone();
     // the race's own alternative spell groups (XPHB Elf) went with a dropped select: every
@@ -109,7 +118,6 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Option<Conv> {
             e.id == base_id || !matches!(e.supports.as_slice(), [only] if *only == base_id)
         });
     }
-    let base_name = conv.elements[0].name.clone();
     let source_display = conv.elements[0].source.clone();
     let is_2024 = ent.ruleset == Ruleset::Dnd2024;
     let option_ty = if is_2024 {
@@ -148,7 +156,8 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Option<Conv> {
         oe.supports = vec![tag.clone()];
         oe.rules = rules
             .into_iter()
-            .filter(|r| !base_rules.contains(r))
+            .filter(|(_, read)| !base_rules.contains(read))
+            .map(|(rule, _)| rule)
             .collect();
         if vel.spellcasting != conv.elements[0].spellcasting {
             oe.spellcasting.clone_from(&vel.spellcasting);
@@ -169,6 +178,43 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Option<Conv> {
     }
     drain_renderer(st, &renderer, &ent.file, &base_name);
     Some(conv)
+}
+
+/// A spell grant or choice: it belongs with the spellcasting ability choice and block of its
+/// own element (each version's), so it is never shared (MPMM Aasimar's Light).
+fn is_spell_rule(r: &Rule) -> bool {
+    match r {
+        Rule::Grant(g) => g.ty.as_deref() == Some("Spell"),
+        Rule::Select(s) => {
+            s.ty == "Spell"
+                || s.spellcasting.is_some()
+                || s.supports
+                    .as_deref()
+                    .is_some_and(|t| t.starts_with("SPELLCASTING_OF_"))
+        }
+        Rule::Custom(c) => c.kind.contains("spell"),
+        Rule::Stat(_) | Rule::Unknown(_) => false,
+    }
+}
+
+/// `rule` with the version's name in its strings read as the race's name.
+fn renamed(rule: &Rule, version: &str, race: &str) -> Rule {
+    fn walk(v: &mut Value, from: &str, to: &str) {
+        match v {
+            Value::String(s) if s.contains(from) => *s = s.replace(from, to),
+            Value::Array(a) => a.iter_mut().for_each(|x| walk(x, from, to)),
+            Value::Object(m) => m.values_mut().for_each(|x| walk(x, from, to)),
+            _ => {}
+        }
+    }
+    if version == race || version.is_empty() {
+        return rule.clone();
+    }
+    let Ok(mut v) = serde_json::to_value(rule) else {
+        return rule.clone();
+    };
+    walk(&mut v, version, race);
+    serde_json::from_value(v).unwrap_or_else(|_| rule.clone())
 }
 
 fn entries_of(raw: &Value) -> &[Value] {
@@ -285,6 +331,66 @@ mod tests {
             super::super::race::convert(&sh, &mut st, &ent(resolved.entries[1].clone()), false);
         assert_eq!(former.elements[0].id, "ID_5ET_ZZZ_SPECIES_DRAGONBORN_BLACK");
         assert_eq!(former.elements[0].requirements, base.id);
+    }
+
+    #[test]
+    fn the_race_keeps_what_every_version_keeps() {
+        // TCE Custom Lineage: both versions keep the +2, size, language and feat choices; only
+        // the Darkvision version keeps darkvision, only the other one the skill choice
+        let raw = json!({"name": "Lineage", "source": "ZZZ", "size": ["S", "M"], "speed": 30,
+            "ability": [{"choose": {"from": ["str", "dex", "con", "int", "wis", "cha"], "amount": 2}}],
+            "darkvision": 60, "feats": [{"any": 1}], "skillProficiencies": [{"any": 1}],
+            "languageProficiencies": [{"common": true, "anyStandard": 1}],
+            "entries": [{"type": "entries", "name": "Variable Trait", "entries": ["Either."]}],
+            "_versions": [
+                {"name": "Lineage; Darkvision", "source": "ZZZ", "skillProficiencies": null,
+                 "_mod": {"entries": {"mode": "replaceArr", "replace": "Variable Trait",
+                    "items": {"type": "entries", "name": "Variable Trait; Darkvision", "entries": ["Dark."]}}}},
+                {"name": "Lineage; Skill Proficiency", "source": "ZZZ", "darkvision": null,
+                 "_mod": {"entries": {"mode": "replaceArr", "replace": "Variable Trait",
+                    "items": {"type": "entries", "name": "Variable Trait; Skill Proficiency", "entries": ["Skill."]}}}}]});
+        let resolved = resolve_array("race", &[raw]);
+        let sh = Shared::default();
+        let mut st = State::default();
+        let conv =
+            super::super::race::convert(&sh, &mut st, &ent(resolved.entries[0].clone()), false);
+        let kinds = |e: &Element| -> Vec<String> {
+            e.rules
+                .iter()
+                .map(|r| match r {
+                    Rule::Select(s) => format!("select {} {}", s.ty, s.name),
+                    Rule::Grant(g) => format!("grant {}", g.id),
+                    Rule::Custom(c) => format!("{} {}", c.kind, c.fields["name"]),
+                    Rule::Stat(s) => format!("stat {}", s.name),
+                    Rule::Unknown(_) => "?".into(),
+                })
+                .collect()
+        };
+        let base = kinds(&conv.elements[0]);
+        for kept in [
+            "ability_increase \"Ability Score Increase (Lineage)\"",
+            "select Size Size (Lineage)",
+            "select Language Language (Lineage)",
+            "select Feat Feat (Lineage)",
+        ] {
+            assert!(base.iter().any(|k| k == kept), "{kept} in {base:?}");
+        }
+        assert!(!base.iter().any(|k| k.contains("DARKVISION")), "{base:?}");
+        assert!(!base.iter().any(|k| k.contains("Skill")), "{base:?}");
+        let option = |name: &str| {
+            kinds(
+                conv.elements
+                    .iter()
+                    .find(|e| e.ty == "Racial Trait" && e.name == name)
+                    .unwrap(),
+            )
+        };
+        let dark = option("Darkvision");
+        assert!(dark.iter().any(|k| k.contains("DARKVISION")), "{dark:?}");
+        assert_eq!(dark.len(), 1, "only darkvision: {dark:?}");
+        let skill = option("Skill Proficiency");
+        assert_eq!(skill.len(), 1, "only the skill choice: {skill:?}");
+        assert!(skill[0].starts_with("select Proficiency"), "{skill:?}");
     }
 
     #[test]
