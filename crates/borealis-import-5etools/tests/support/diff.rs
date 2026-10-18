@@ -46,13 +46,6 @@ pub const LOSSY: &[Accepted] = &[
         "the fixtures hold 1 SRD-flagged 2014 Fighting Style optional feature, the bundled \
          pack 6: Fighting Style option counts differ",
     ),
-    (
-        "",
-        "select.Archetype",
-        &[],
-        "an imported subclass is also offered by the bundled class of the same name; an \
-         imported class offers only imported subclasses",
-    ),
 ];
 
 /// Every LOSSY entry of this copy appears, label, key and reason, in `diff_bundled.rs`.
