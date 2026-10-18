@@ -138,7 +138,7 @@ fn source_hint_names_the_book() {
 }
 
 #[test]
-fn internal_bookkeeping_ids_are_not_reported_and_types_come_from_sum() {
+fn internal_ids_the_engine_lacks_are_reported_and_types_come_from_sum() {
     let xml = CHARACTER.replace(
         "<sum>",
         r#"<equipment><item id="ID_ZZ_INTERNAL_ITEM_PROXY" name="Proxy" amount="1"/></equipment><sum><element id="ID_ZZ_INTERNAL_GRANT_X" type="Grants" name="x"/><element id="ID_ZZ_SYN_CLASS_WARDEN" type="Class" name="Warden"/>"#,
@@ -146,10 +146,11 @@ fn internal_bookkeeping_ids_are_not_reported_and_types_come_from_sum() {
     let e = engine(false);
     let out = import_dnd5e(&e, &xml).expect("import");
     let miss = &out.report.missing_content;
-    assert!(
-        miss.iter().all(|m| !m.id.contains("_INTERNAL_")),
-        "{miss:?}"
-    );
+    // an Aurora internal id Borealis does not define is lost content, never dropped silently
+    // (det-char-1; it was filtered out before)
+    for id in ["ID_ZZ_INTERNAL_ITEM_PROXY", "ID_ZZ_INTERNAL_GRANT_X"] {
+        assert!(miss.iter().any(|m| m.id == id), "{id}: {miss:?}");
+    }
     let owner = miss
         .iter()
         .find(|m| m.id == "ID_ZZ_SYN_CLASS_WARDEN")

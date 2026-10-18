@@ -57,6 +57,9 @@ pub struct SlotNode {
     pub list_choice: Option<i64>,
     /// A stored choice that is currently not allowed.
     pub rejected: Option<Choice>,
+    /// A stored choice naming an element that is not installed. The slot stays open (offers
+    /// its options), as Aurora leaves such a select empty; the choice is kept until replaced.
+    pub missing: Option<String>,
 }
 
 /// A registered element instance.
@@ -165,6 +168,16 @@ const MAX_NEST_DEPTH: usize = 64;
 
 type SlotCache = HashMap<(u64, u32), Rc<HashSet<String>>>;
 
+/// The notice for a stored choice whose element is not installed.
+fn missing_choice(id: &str) -> Diagnostic {
+    Diagnostic::new(
+        code::SELECTION_MISSING_CONTENT,
+        Severity::Warning,
+        format!("chosen element {id} is not installed"),
+    )
+    .at(id.to_string())
+}
+
 impl<'u> Graph<'u> {
     /// Build and expand the graph for a state.
     #[must_use]
@@ -267,6 +280,15 @@ impl<'u> Graph<'u> {
             g.add_root(it.e, Some((it.uid, it.attuned)));
         }
         g.run();
+        // choices under content that is gone (a removed race's sub race) have no slot in the
+        // graph; they are still the character's and still lost
+        for sel in &state.selections {
+            if let Choice::Element(id) = &sel.choice {
+                if uni.get(id).is_none() && !ids::is_generated_with_class(id) {
+                    g.diags.push(missing_choice(id));
+                }
+            }
+        }
         g
     }
 
@@ -665,6 +687,7 @@ impl<'u> Graph<'u> {
                         chosen: None,
                         list_choice: None,
                         rejected: None,
+                        missing: None,
                     });
                 }
                 changed = true;
@@ -715,6 +738,7 @@ impl<'u> Graph<'u> {
                     chosen: None,
                     list_choice: None,
                     rejected: None,
+                    missing: None,
                 });
             }
             return true;
@@ -908,20 +932,17 @@ impl<'u> Graph<'u> {
                     continue;
                 }
             }
+            self.nodes[id].slots[si].missing = None;
             let Some(wanted) = wanted else {
                 self.nodes[id].slots[si].rejected = None;
                 continue;
             };
             let Some(target) = self.uni.get(&wanted) else {
-                self.nodes[id].slots[si].rejected = Some(Choice::Element(wanted.clone()));
-                self.diags.push(
-                    Diagnostic::new(
-                        code::SELECTION_MISSING_CONTENT,
-                        Severity::Warning,
-                        format!("chosen element {wanted} is not installed"),
-                    )
-                    .at(wanted),
-                );
+                self.nodes[id].slots[si].rejected = None;
+                self.nodes[id].slots[si].missing = Some(wanted.clone());
+                if !ids::is_generated_with_class(&wanted) {
+                    self.diags.push(missing_choice(&wanted));
+                }
                 continue;
             };
             if self.nesting_refused(id, target, "selects") {

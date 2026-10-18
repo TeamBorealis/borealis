@@ -123,6 +123,7 @@ pub fn remove_item(engine: &Engine, state: &CharacterState, uid: &str) -> CmdRes
     let i = index_of(state, uid)?;
     let mut next = state.clone();
     next.inventory.items.remove(i);
+    next.inventory.listed_attacks.retain(|u| u != uid);
     Ok(CommandOutcome::new(prune(engine, &next)))
 }
 

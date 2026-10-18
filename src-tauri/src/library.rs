@@ -404,8 +404,9 @@ impl AppState {
 }
 
 impl AppState {
-    /// Re-resolve imported characters that still reference missing content, against the content
-    /// installed now. Saved characters are rewritten when something resolved; an open character
+    /// Re-resolve every saved character against the content installed now: the unresolved parts
+    /// of imports, and anything a character names (choices, options, items) that is not
+    /// installed, built or imported. Saved characters are rewritten when something resolved; an open character
     /// is updated in its session (and only written to disk if it has no unsaved edits).
     ///
     /// # Errors
@@ -443,14 +444,11 @@ impl AppState {
                     }
                 },
             };
-            let has_work = !character.unresolved.is_empty()
-                || character
-                    .import
-                    .as_ref()
-                    .is_some_and(|i| !i.missing.is_empty());
-            if !has_work {
-                continue;
-            }
+            // the ids a session rewrites when the character is opened (renamed 5etools
+            // elements): they are not missing
+            let _ = crate::renamed_ids::migrate(&mut character.build, &hub.store);
+            // every character: one made in the builder loses content too when a pack is
+            // removed or updated (recheck lists what it names that is not installed)
             report.checked += 1;
             let outcome = recheck(&hub.engine, &mut character);
             let entry = RecheckEntry {

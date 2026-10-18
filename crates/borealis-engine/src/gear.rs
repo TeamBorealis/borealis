@@ -150,7 +150,8 @@ pub struct AttackCtx<'a> {
     pub martial_arts: Option<&'a MartialArtsSnapshot>,
 }
 
-/// Attack lines for equipped weapons (`engine.md` 12.4; spell attacks are per class).
+/// Attack lines for wielded weapons and for the weapons listed in
+/// [`crate::state::Inventory::listed_attacks`] (`engine.md` 12.4; spell attacks are per class).
 #[must_use]
 pub fn attacks(
     uni: &Universe,
@@ -191,14 +192,14 @@ pub fn attacks_with(
         let Some((e, adorner)) = crate::item_base::resolve(uni, it) else {
             continue;
         };
-        if !item_facts(e).weapon
-            || !matches!(
-                it.equipped,
-                Some(EquipSlot::PrimaryHand | EquipSlot::SecondaryHand)
-            )
-        {
+        let wielded = matches!(
+            it.equipped,
+            Some(EquipSlot::PrimaryHand | EquipSlot::SecondaryHand)
+        );
+        if !item_facts(e).weapon || !(wielded || state.inventory.listed_attacks.contains(&it.uid)) {
             continue;
         }
+        let versatile = it.versatile && wielded;
         let has = |tag: &str| e.supports.iter().any(|s| s == tag);
         let ranged = has("ID_INTERNAL_WEAPON_CATEGORY_SIMPLE_RANGED")
             || has("ID_INTERNAL_WEAPON_CATEGORY_MARTIAL_RANGED")
@@ -221,7 +222,7 @@ pub fn attacks_with(
                 || crate::item_prof::self_proficient(graph, &it.uid, e, adorner);
         let lname = e.el.name.to_lowercase();
         let group = if melee { "melee" } else { "ranged" };
-        let two_handed = has("ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED") || it.versatile;
+        let two_handed = has("ID_INTERNAL_WEAPON_PROPERTY_TWOHANDED") || versatile;
         let am = crate::attack_rules::attack_mods(
             graph,
             &crate::attack_rules::AttackFacts {
@@ -245,7 +246,7 @@ pub fn attacks_with(
             .and_then(|d| d.attribute("type"))
             .unwrap_or("")
             .to_string();
-        if it.versatile {
+        if versatile {
             if let Some(v) =
                 e.el.setter_value("versatile")
                     .filter(|v| !v.trim().is_empty())

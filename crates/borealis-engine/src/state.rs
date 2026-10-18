@@ -264,6 +264,12 @@ pub struct Inventory {
     /// Coins.
     #[serde(default)]
     pub coins: Coins,
+    /// Inventory uids of weapons whose attack line stays in the attacks table while the weapon
+    /// is not wielded. Aurora's attacks section is a list the user fills ("Add to Attacks"); it
+    /// recomputes and prints every listed weapon, equipped or not. The `.dnd5e` import keeps
+    /// that list here (B-10).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub listed_attacks: Vec<String>,
 }
 
 /// Mutable play-time state: resource uses, toggles, exhaustion, Heroic Inspiration.

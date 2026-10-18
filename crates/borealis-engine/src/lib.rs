@@ -29,6 +29,7 @@ pub mod options;
 pub mod packages;
 pub mod play_rules;
 pub mod profile;
+pub mod proxy;
 pub mod provenance;
 pub mod rolled;
 pub mod rule_terms;

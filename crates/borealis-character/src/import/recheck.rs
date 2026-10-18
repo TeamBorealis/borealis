@@ -43,9 +43,56 @@ fn to_slot(u: &UnresolvedSelection) -> SlotNode {
     }
 }
 
-/// Retry the unresolved parts of an imported character against the current content.
+/// What the character itself names that the content does not define (now): chosen elements,
+/// options, inventory items and adorners. Any character, built or imported: a pack removed or
+/// updated after the character was made takes these with it (stage 4 of the acceptance plan).
+fn references_not_installed(
+    uni: &borealis_engine::universe::Universe,
+    state: &borealis_engine::state::CharacterState,
+) -> Vec<MissingContent> {
+    use borealis_engine::state::Choice;
+    let mut out: Vec<MissingContent> = Vec::new();
+    let mut add = |id: &str, context: &str| {
+        if id.is_empty()
+            || uni.get(id).is_some()
+            || borealis_engine::ids::is_generated_with_class(id)
+            || out.iter().any(|m| m.id == id)
+        {
+            return;
+        }
+        let context = if borealis_engine::proxy::is_proxy_id(id) {
+            "proxy item"
+        } else {
+            context
+        };
+        out.push(MissingContent {
+            id: id.to_string(),
+            ty: String::new(),
+            name: name_hint(id),
+            context: context.into(),
+        });
+    };
+    for sel in &state.selections {
+        if let Choice::Element(id) = &sel.choice {
+            add(id, "selection");
+        }
+    }
+    for id in &state.options {
+        add(id, "option");
+    }
+    for it in &state.inventory.items {
+        add(&it.item, "inventory");
+        if let Some(a) = it.adorner.as_deref() {
+            add(a, "adorner");
+        }
+    }
+    out
+}
+
+/// Retry the unresolved parts of a character against the current content, and list what it
+/// names that is not installed now (whether it was imported or built).
 ///
-/// Characters that were not imported (or had nothing missing) come back unchanged.
+/// Characters with nothing unresolved or missing come back unchanged.
 pub fn recheck(engine: &Engine, character: &mut Character) -> RecheckOutcome {
     let uni = engine.universe(character.build.ruleset);
     let mut ctx = Ctx {
@@ -53,6 +100,7 @@ pub fn recheck(engine: &Engine, character: &mut Character) -> RecheckOutcome {
         state: std::mem::take(&mut character.build),
         report: ImportReport::default(),
         unresolved: Vec::new(),
+        saved_ids: None,
     };
     let mut resolved = 0u32;
     let mut pending = std::mem::take(&mut character.unresolved);
@@ -85,7 +133,8 @@ pub fn recheck(engine: &Engine, character: &mut Character) -> RecheckOutcome {
         .as_ref()
         .map(|i| i.missing.clone())
         .unwrap_or_default();
-    for m in ctx.report.missing_content.drain(..) {
+    let current = references_not_installed(ctx.uni, &ctx.state);
+    for m in ctx.report.missing_content.drain(..).chain(current) {
         if !missing.iter().any(|x| x.id == m.id) {
             missing.push(m);
         }

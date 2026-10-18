@@ -220,7 +220,7 @@ pub struct UElem {
 }
 
 impl UElem {
-    fn build(
+    pub(crate) fn build(
         mut el: Element,
         copied_rules: usize,
         derived: bool,
@@ -385,6 +385,8 @@ pub struct Universe {
     tables: ProfileTables,
     creation_roots: Vec<String>,
     exhaustion: crate::play_rules::ExhaustionRules,
+    /// Aurora's proxy items, indexed on the first lookup of a proxy id (B-06).
+    proxies: std::sync::OnceLock<crate::proxy::ProxyTable>,
 }
 
 /// The former type an element names (`legacy_alias`, `Race` on a 2024 `Species`) when the
@@ -577,6 +579,7 @@ impl Universe {
             tables: ProfileTables::default(),
             creation_roots: Vec::new(),
             exhaustion: crate::play_rules::ExhaustionRules::default(),
+            proxies: std::sync::OnceLock::new(),
         };
         let eff = |el: &Element| -> Vec<String> {
             let mut s = el.supports.clone();
@@ -848,10 +851,23 @@ impl Universe {
         }
     }
 
-    /// Look an element up by id.
+    /// Look an element up by id. Aurora's proxy items ([`crate::proxy`]) resolve here too,
+    /// although no listing contains them.
     #[must_use]
     pub fn get(&self, id: &str) -> Option<&UElem> {
-        self.by_id.get(id).map(|&i| &self.elems[i])
+        match self.by_id.get(id) {
+            Some(&i) => Some(&self.elems[i]),
+            None if crate::proxy::is_proxy_id(id) => self
+                .proxies
+                .get_or_init(|| crate::proxy::ProxyTable::build(self))
+                .get(self, id),
+            None => None,
+        }
+    }
+
+    /// The element at a load-order index (as enumerated by [`Universe::iter`]).
+    pub(crate) fn at(&self, index: usize) -> Option<&UElem> {
+        self.elems.get(index)
     }
 
     /// Elements that can fill a select of this type (see [`type_family`]).

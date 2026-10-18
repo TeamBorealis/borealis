@@ -153,6 +153,11 @@ pub struct SlotSnapshot {
     pub default: Option<String>,
     /// A stored choice that is currently not allowed.
     pub rejected: Option<Choice>,
+    /// A stored choice naming an element that is not installed: the slot is open (offers its
+    /// options, `chosen` is empty) so a replacement can be picked; the stored choice is kept
+    /// until then (it returns when the content is installed again).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub missing: Option<String>,
     /// Spellcasting class of a spell slot.
     pub spellcasting: Option<String>,
     /// Always-prepared spell slot.

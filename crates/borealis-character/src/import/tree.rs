@@ -98,7 +98,7 @@ fn read_children(node: &XmlElement, owner: &str, instance: Option<String>, ctx: 
                 }
                 read_slot(child, owner, reg, instance.clone(), ctx);
                 if child.attr("isList") != Some("true") {
-                    read_children(child, reg, instance.clone(), ctx);
+                    read_children(child, reg, None, ctx);
                 }
             }
             None => {
@@ -106,7 +106,9 @@ fn read_children(node: &XmlElement, owner: &str, instance: Option<String>, ctx: 
                 if id.is_empty() {
                     continue;
                 }
-                read_children(child, id, instance.clone(), ctx);
+                // Only the item element itself keys its slots by the inventory line; what it
+                // grants or selects is an ordinary element (`Graph::slot_key`).
+                read_children(child, id, None, ctx);
             }
         }
     }
@@ -269,6 +271,9 @@ pub(super) fn find_rule(ctx: &Ctx<'_>, w: &SlotNode) -> Option<usize> {
         }
     }
     if cands.len() > 1 {
+        drop_inactive(ctx, el, &mut cands);
+    }
+    if cands.len() > 1 {
         if let Some(lvl) = w.required_level {
             let at_level: Vec<_> = cands
                 .iter()
@@ -319,6 +324,65 @@ pub(super) fn find_rule(ctx: &Ctx<'_>, w: &SlotNode) -> Option<usize> {
                 .copied()
                 .find(|&i| !slot_taken(ctx, w, i))
                 .or_else(|| pool.first().copied())
+        }
+    }
+}
+
+/// Drop the candidates whose requirements were certainly false on the character Aurora saved,
+/// as long as one is left: Aurora only fills a select whose requirements hold. Ids are judged
+/// by the file's registered ids (the `sum` manifest and the element tree); level and score tests
+/// count as unknown. This matters for Multiclass elements, which copy their class's rules
+/// (B-06): a class's own select often carries `!<its multiclass id>` (the Rogue's four skills),
+/// and only the multiclass element's own select of the same name is active there.
+fn drop_inactive(
+    ctx: &Ctx<'_>,
+    el: &borealis_engine::universe::UElem,
+    cands: &mut Vec<(usize, &borealis_content::SelectRule)>,
+) {
+    use borealis_engine::universe::{Cond, URule};
+    let Some(saved) = ctx.saved_ids.as_ref() else {
+        return;
+    };
+    let possible = |i: usize| match el.rules.get(i) {
+        Some(URule::Select {
+            req: Cond::Expr(e), ..
+        }) => tri_state(e.root(), saved) != Some(false),
+        _ => true,
+    };
+    if cands.iter().any(|(i, _)| possible(*i)) {
+        cands.retain(|(i, _)| possible(*i));
+    }
+}
+
+/// Three-valued requirement evaluation: `Some` when the registered ids decide it.
+fn tri_state(
+    e: &borealis_content::expr::BoolExpr<borealis_content::expr::RequirementLeaf>,
+    saved: &std::collections::HashSet<String>,
+) -> Option<bool> {
+    use borealis_content::expr::{BoolExpr, RequirementLeaf};
+    match e {
+        BoolExpr::Leaf(RequirementLeaf::Id(id)) => Some(saved.contains(id)),
+        BoolExpr::Leaf(RequirementLeaf::Test(_)) => None,
+        BoolExpr::Not(x) => tri_state(x, saved).map(|v| !v),
+        BoolExpr::And(xs) => {
+            let vals: Vec<_> = xs.iter().map(|x| tri_state(x, saved)).collect();
+            if vals.contains(&Some(false)) {
+                Some(false)
+            } else if vals.iter().all(Option::is_some) {
+                Some(true)
+            } else {
+                None
+            }
+        }
+        BoolExpr::Or(xs) => {
+            let vals: Vec<_> = xs.iter().map(|x| tri_state(x, saved)).collect();
+            if vals.contains(&Some(true)) {
+                Some(true)
+            } else if vals.iter().all(Option::is_some) {
+                Some(false)
+            } else {
+                None
+            }
         }
     }
 }

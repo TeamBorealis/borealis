@@ -109,6 +109,7 @@ pub fn apply_defaults(engine: &Engine, state: &CharacterState) -> CharacterState
         let pick = snap.slots.iter().find(|s| {
             s.chosen.is_none()
                 && s.rejected.is_none()
+                && s.missing.is_none()
                 && s.default
                     .as_ref()
                     .is_some_and(|d| s.options.iter().any(|o| &o.id == d))

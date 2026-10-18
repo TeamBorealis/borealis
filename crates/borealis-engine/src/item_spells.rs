@@ -5,7 +5,8 @@
 //! spell list never shows it. For spells that come from an item, one block per item (named
 //! after it) lists them: the cantrip a worn circlet teaches, the spell a staff casts. Its
 //! ability is the grant's `ability` (when it names one; the save DC and attack bonus follow
-//! from it), and it has no slots. Spells granted by anything else keep their place.
+//! from it), and it has no slots. Spells granted by anything else, Aurora's proxy items
+//! included, keep their place.
 
 use crate::custom_rules::X_SPELL_ABILITY;
 use crate::graph::{Graph, Node, NodeId, Origin};
@@ -90,6 +91,16 @@ pub fn add_item_blocks(graph: &Graph<'_>, stats: &StatSet, out: &mut Vec<Spellca
         let Some(root) = item_root(graph, n) else {
             continue;
         };
+        // Aurora's proxy items ("Additional Spell, X", `crate::proxy`) add a spell outside any
+        // block: it stays with the character's additional spells, as in Aurora.
+        if graph.nodes[root]
+            .e
+            .el
+            .setter_value("slot")
+            .is_some_and(|s| s.eq_ignore_ascii_case("proxy"))
+        {
+            continue;
+        }
         let name = graph.nodes[root].e.el.name.clone();
         let at = match out.iter().position(|b| b.name == name) {
             Some(i) => i,

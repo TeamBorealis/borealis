@@ -76,3 +76,20 @@ pub fn level_id(n: u32) -> String {
 
 /// Engine-generated element carrying the origin languages step (Common plus Standard picks).
 pub const CREATION_LANGUAGES: &str = "ID_INTERNAL_CREATION_LANGUAGES";
+
+/// Prefix of the improvement features the engine generates per class (B-06):
+/// `ID_INTERNAL_CLASS_FEATURE_ASI_<n>_<CLASS>`, `ID_INTERNAL_CLASS_FEATURE_FEAT_<n>_<CLASS>`.
+pub const GENERATED_IMPROVEMENT_PREFIXES: [&str; 2] = [
+    "ID_INTERNAL_CLASS_FEATURE_ASI_",
+    "ID_INTERNAL_CLASS_FEATURE_FEAT_",
+];
+
+/// True for an id of an element the engine generates from a class (B-06). When one is not
+/// installed its class is not either: the class is the content to report, and the feature
+/// returns with it.
+#[must_use]
+pub fn is_generated_with_class(id: &str) -> bool {
+    GENERATED_IMPROVEMENT_PREFIXES
+        .iter()
+        .any(|p| id.starts_with(p))
+}

@@ -435,6 +435,7 @@ impl<'u> Evaluation<'u> {
                     locked,
                     default,
                     rejected: slot.rejected.clone(),
+                    missing: slot.missing.clone(),
                     spellcasting: rule.spellcasting.clone(),
                     prepared: rule.prepared.unwrap_or(false),
                     options: options
@@ -581,10 +582,11 @@ impl<'u> Evaluation<'u> {
         let slots = self.slots(state, &spellcasting, include_options);
         let mut invalid = Vec::new();
         for s in &slots {
-            if let Some(c) = &s.rejected {
+            let missing = s.missing.clone().map(crate::state::Choice::Element);
+            if let Some(c) = s.rejected.clone().or(missing) {
                 invalid.push(InvalidSelection {
                     slot: s.key.clone(),
-                    choice: c.clone(),
+                    choice: c,
                 });
             }
         }

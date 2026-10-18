@@ -104,6 +104,9 @@ pub(crate) struct Ctx<'e> {
     pub state: CharacterState,
     pub report: ImportReport,
     pub unresolved: Vec<crate::model::UnresolvedSelection>,
+    /// Every id the saved character registered (`sum` manifest and element tree); `None` when
+    /// unknown (re-check).
+    pub saved_ids: Option<std::collections::HashSet<String>>,
 }
 
 fn valid_version(v: &str) -> bool {
@@ -168,6 +171,7 @@ pub fn import_dnd5e(engine: &Engine, xml: &str) -> Result<ImportOutcome, ImportE
             ..ImportReport::default()
         },
         unresolved: Vec::new(),
+        saved_ids: Some(saved_ids(build)),
     };
     let mut character = Character::with_ruleset("", ruleset);
     sections::read_header(&root, &mut character, &mut ctx);
@@ -186,6 +190,28 @@ pub fn import_dnd5e(engine: &Engine, xml: &str) -> Result<ImportOutcome, ImportE
     finish(engine, root_level(&root), version, character, ctx)
 }
 
+/// Every element id the saved character registered: the `sum` manifest plus the ids and
+/// choices of the element tree.
+fn saved_ids(build: &XmlElement) -> std::collections::HashSet<String> {
+    fn walk(e: &XmlElement, out: &mut std::collections::HashSet<String>) {
+        for c in e.elements().filter(|c| c.name == "element") {
+            for a in ["id", "registered"] {
+                if let Some(v) = c.attr(a).filter(|v| !v.is_empty()) {
+                    out.insert(v.to_string());
+                }
+            }
+            walk(c, out);
+        }
+    }
+    let mut out = std::collections::HashSet::new();
+    for section in ["sum", "elements"] {
+        if let Some(s) = build.child(section) {
+            walk(s, &mut out);
+        }
+    }
+    out
+}
+
 /// Element id -> type, from the `sum` manifest (the complete list of registered ids).
 fn sum_types(build: &XmlElement) -> std::collections::HashMap<String, String> {
     build
@@ -196,17 +222,14 @@ fn sum_types(build: &XmlElement) -> std::collections::HashMap<String, String> {
         .collect()
 }
 
-/// Legacy bookkeeping elements (`ID_*_INTERNAL_*`) are not user content: nothing to install.
-pub(crate) fn is_internal_id(id: &str) -> bool {
-    id.contains("_INTERNAL_")
-}
-
-/// Drop internal bookkeeping ids and fill in element types the tree nodes did not carry.
+/// Fill in element types the tree nodes did not carry. Aurora's internal ids (`ID_INTERNAL_*`,
+/// its proxy items `ID_*_INTERNAL_ITEM_*_PROXY_*`) are listed like any other id: the engine
+/// knows the ones it supports (the core pack, `borealis_engine::proxy`), so one it lacks is
+/// something the character loses and the report must say so.
 pub(crate) fn tidy_missing(
-    list: &mut Vec<MissingContent>,
+    list: &mut [MissingContent],
     types: &std::collections::HashMap<String, String>,
 ) {
-    list.retain(|m| !is_internal_id(&m.id));
     for m in list.iter_mut().filter(|m| m.ty.is_empty()) {
         if let Some(t) = types.get(&m.id) {
             m.ty.clone_from(t);

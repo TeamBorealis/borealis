@@ -47,11 +47,11 @@ pub fn item_facts(e: &UElem) -> ItemFacts {
             .el
             .setter_value("versatile")
             .is_some_and(|v| !v.trim().is_empty()),
-        // Aurora equips only items with a slot; a magic item without one (a rod, many wondrous
-        // items) would then never apply its rules or count for attunement, so it is used
-        // (worn/carried) instead.
-        equippable: (!slot.is_empty() && slot != "proxy")
-            || (slot.is_empty() && e.el.ty == "Magic Item"),
+        // Aurora equips only items with a slot (`Item.IsEquippable`), its `proxy` items too
+        // (equipping one enables its grant, `crate::proxy`); a magic item without a slot (a
+        // rod, many wondrous items) would then never apply its rules or count for attunement,
+        // so it is used (worn/carried) instead.
+        equippable: !slot.is_empty() || e.el.ty == "Magic Item",
     }
 }
 

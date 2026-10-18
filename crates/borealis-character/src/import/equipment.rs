@@ -48,17 +48,68 @@ fn resolve_item_id(ctx: &Ctx<'_>, id: &str) -> String {
     id.to_string()
 }
 
-fn slot_of(equipped: &XmlElement) -> EquipSlot {
-    let loc = equipped.attr("location").unwrap_or("").to_lowercase();
-    if loc.contains("armor") {
+/// Where Aurora's loader puts an item saved as equipped, from `equipped/@location`
+/// (`RefactoredEquipmentSectionViewModel` collection handler: an exact `switch` on the text).
+/// `None` = a location Aurora does not restore: the item stays unequipped there too.
+/// The second value is "held versatile in both hands".
+fn slot_of(ctx: &Ctx<'_>, item_id: &str, location: Option<&str>) -> Option<(EquipSlot, bool)> {
+    let location = location.unwrap_or("").trim();
+    match location {
+        "One-Hand" | "Primary" | "Primary Hand" | "mainhand" => {
+            Some((EquipSlot::PrimaryHand, false))
+        }
+        "Secondary" | "Secondary Hand" | "offhand" => Some((EquipSlot::SecondaryHand, false)),
+        "Two-Handed (Versatile)" => Some((EquipSlot::PrimaryHand, true)),
+        "" | "body" | "Armor" | "Two-Handed" => Some((slot_by_item(ctx, item_id), false)),
+        _ => None,
+    }
+}
+
+/// Aurora's plain "equip" of an item (`EquipEquipmentItem`), decided by the item's `slot`
+/// setter (of the base item an item implies): armor/body -> armor, onehand + secondary ->
+/// off hand, twohand or onehand -> main hand (a two-handed weapon then fills both hands),
+/// primary / secondary -> that hand, anything else is worn.
+fn slot_by_item(ctx: &Ctx<'_>, item_id: &str) -> EquipSlot {
+    let Some(e) = ctx.uni.get(item_id) else {
+        return EquipSlot::Worn;
+    };
+    let base = borealis_engine::item_base::implied_base(ctx.uni, e).unwrap_or(e);
+    let slots: Vec<String> = base
+        .el
+        .setter_value("slot")
+        .unwrap_or("")
+        .split(',')
+        .map(|s| s.trim().to_lowercase())
+        .collect();
+    let has = |s: &str| slots.iter().any(|x| x == s);
+    if has("armor") || has("body") {
         EquipSlot::Armor
-    } else if loc.contains("secondary") {
+    } else if has("onehand") && has("secondary") {
         EquipSlot::SecondaryHand
-    } else if loc.contains("primary") {
+    } else if has("twohand") || has("onehand") || has("primary") {
         EquipSlot::PrimaryHand
+    } else if has("secondary") {
+        EquipSlot::SecondaryHand
     } else {
         EquipSlot::Worn
     }
+}
+
+/// Aurora's attacks section is a list the user fills; it keeps (and recomputes) the line of a
+/// listed weapon that is not equipped. Keep the inventory uids of its item-linked lines.
+fn listed_attacks(character: &Character, ctx: &Ctx<'_>) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for uid in character
+        .details
+        .attacks
+        .iter()
+        .filter_map(|a| a.item_uid.as_deref())
+    {
+        if ctx.state.inventory.items.iter().any(|i| i.uid == uid) && !out.iter().any(|u| u == uid) {
+            out.push(uid.to_string());
+        }
+    }
+    out
 }
 
 pub(super) fn read_equipment(
@@ -76,7 +127,6 @@ pub(super) fn read_equipment(
         .filter_map(|s| s.attr("name"))
         .map(String::from)
         .collect();
-    let _ = character;
     for (n, node) in eq.elements().filter(|e| e.name == "item").enumerate() {
         let raw_id = node.attr("id").unwrap_or("");
         let id = resolve_item_id(ctx, raw_id);
@@ -85,7 +135,12 @@ pub(super) fn read_equipment(
                 id: id.clone(),
                 ty: "Item".into(),
                 name: node.attr("name").unwrap_or("").to_string(),
-                context: "inventory".into(),
+                // an Aurora proxy ("Additional Feat, X") whose target is not installed
+                context: if borealis_engine::proxy::is_proxy_id(&id) {
+                    "proxy item".into()
+                } else {
+                    "inventory".into()
+                },
             });
         }
         let uid = node
@@ -129,12 +184,18 @@ pub(super) fn read_equipment(
             .child("equipped")
             .filter(|e| e.text().trim().eq_ignore_ascii_case("true"))
         {
-            it.equipped = Some(slot_of(e));
-            it.versatile = e
-                .attr("versatile")
-                .is_some_and(|v| v.eq_ignore_ascii_case("true"))
-                || e.attr("location")
-                    .is_some_and(|l| l.to_lowercase().contains("versatile"));
+            match slot_of(ctx, &id, e.attr("location")) {
+                Some((slot, versatile)) => {
+                    it.equipped = Some(slot);
+                    it.versatile = versatile;
+                }
+                None => ctx.report.warnings.push(format!(
+                    "{} is saved as equipped at \"{}\", a location Aurora does not restore; \
+                     imported unequipped, as Aurora loads it",
+                    node.attr("name").unwrap_or(&id),
+                    e.attr("location").unwrap_or("")
+                )),
+            }
         }
         it.attuned = truthy(node.child("attunement"));
         if let Some(d) = node.child("details") {
@@ -150,8 +211,12 @@ pub(super) fn read_equipment(
             .child("storage")
             .map(|s| text_of(s, "location"))
             .filter(|l| !l.is_empty());
+        if let Some(a) = it.adorner.clone() {
+            map.by_id.entry(a).or_default().push(uid.clone());
+        }
         map.by_id.entry(id).or_default().push(uid);
         ctx.state.inventory.items.push(it);
     }
+    ctx.state.inventory.listed_attacks = listed_attacks(character, ctx);
     map
 }
