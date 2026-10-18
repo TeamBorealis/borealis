@@ -849,6 +849,7 @@
       "source": "SRD 5.1",
       "description": "<p>When you take this oath at 3rd level, you gain the following two Channel Divinity options.</p>",
       "sheet": {
+        "usage": "{{channel divinity:count}}/Short or Long Rest",
         "descriptions": [
           {
             "text": "When you take this oath at 3rd level, you gain the following two Channel Divinity options."

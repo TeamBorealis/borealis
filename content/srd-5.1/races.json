@@ -1116,6 +1116,7 @@
       "source": "SRD 5.1",
       "description": "<p>You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type of the exhalation.</p><p>When you use your breath weapon, each creature in the area of the exhalation must make a saving throw, the type of which is determined by your draconic ancestry. The DC for this saving throw equals 8 + your Constitution modifier + your proficiency bonus. A creature takes 2d6 damage on a failed save, and half as much damage on a successful one. The damage increases to 3d6 at 6th level, 4d6 at 11th level, and 5d6 at 16th level.</p><p>After you use your breath weapon, you can’t use it again until you complete a short or long rest.</p>",
       "sheet": {
+        "usage": "1/Short Rest",
         "descriptions": [
           {
             "text": "Breath Weapon. You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type of the exhalation. When you use your breath weapon, each creature in the area of the exhalation must make a saving throw, the type of which is determined by your draconic ancestry. The DC for this saving throw equals 8 + your Constitution modifier + your proficiency bonus. A creature takes 2d6 damage on a failed save, and half as much damage on a successful one. The damage increases to 3d6 at 6th level, 4d6 at 11th level, and 5d6 at 16th level. After you use your breath weapon, you can’t use it again until you complete a short or long rest."
@@ -1660,6 +1661,7 @@
       "source": "SRD 5.1",
       "description": "<p>When you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. You can’t use this feature again until you finish a long rest.</p>",
       "sheet": {
+        "usage": "1/Long Rest",
         "descriptions": [
           {
             "text": "Relentless Endurance. When you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. You can’t use this feature again until you finish a long rest."
@@ -1781,18 +1783,27 @@
           "spellcasting": "Tiefling"
         },
         {
-          "kind": "grant",
-          "id": "ID_PHB_SPELL_HELLISH_REBUKE",
-          "type": "Spell",
+          "kind": "grant_spell",
+          "spell": "ID_PHB_SPELL_HELLISH_REBUKE",
+          "mode": "known",
+          "spell_list": "Tiefling",
           "level": 3,
-          "spellcasting": "Tiefling"
+          "free_cast": {
+            "uses": 1,
+            "recharge": "long_rest"
+          },
+          "cast_level": 2
         },
         {
-          "kind": "grant",
-          "id": "ID_PHB_SPELL_DARKNESS",
-          "type": "Spell",
+          "kind": "grant_spell",
+          "spell": "ID_PHB_SPELL_DARKNESS",
+          "mode": "known",
+          "spell_list": "Tiefling",
           "level": 5,
-          "spellcasting": "Tiefling"
+          "free_cast": {
+            "uses": 1,
+            "recharge": "long_rest"
+          }
         }
       ],
       "spellcasting": {
