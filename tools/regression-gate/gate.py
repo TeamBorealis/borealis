@@ -74,8 +74,10 @@ def suites():
             acc_env[var] = os.environ[var]
     deeper = [t for n in ("5etools-import", "5etools-engine", "5etools-items", "aurora-corpus",
                           "aurora-sweep") for t in table[n][2]]
+    # stage 4 (restart, update, removal per source): its checks pass (det-char-1), ratcheted here
     table["acceptance"] = ("IM4 end-to-end acceptance, per source x stage x type (slow, opt-in)",
-                           CORPUS, [("borealis", "acceptance", acc_env)] + deeper)
+                           CORPUS, [("borealis", "acceptance", acc_env),
+                                    ("borealis", "lifecycle", acc_env)] + deeper)
     # A-comm stage 2 per community repo on A-core (about 2700 builder hosts): too slow for every
     # acceptance run, so its own opt-in suite (--only acceptance-comm).
     comm_env = {**acc_env, "BOREALIS_ACCEPT_ONLY": "a-comm", "BOREALIS_ACCEPT_COMM_S2": "1"}
@@ -88,6 +90,8 @@ def suites():
             truth_env[var] = os.environ[var]
     table["dnd5e-truth"] = ("IM4 stage 3c: Aurora .dnd5e ground truth vs Borealis values (opt-in)",
                             CORPUS, [("borealis-character", "dnd5e_truth", truth_env)])
+    # It passes on every gated file (det-char-1) and runs in seconds: also part of acceptance.
+    table["acceptance"][2].append(("borealis-character", "dnd5e_truth", truth_env))
     return table
 
 
