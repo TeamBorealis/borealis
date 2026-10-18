@@ -1,4 +1,5 @@
 use super::*;
+use std::collections::BTreeSet;
 
 fn gh(owner: &str, repo: &str, git_ref: Option<&str>, path: Option<&str>) -> FiveToolsLocation {
     FiveToolsLocation::GitHub {
@@ -115,20 +116,105 @@ fn gunzip_decodes_and_caps_output() {
     assert!(gunzip(&wrong_size, data.len() + 10).is_err());
 }
 
+/// The importer's own root-file list, read from its source: the one list the download follows.
+fn importer_root_files() -> BTreeSet<String> {
+    const SRC: &str = include_str!("../../crates/borealis-import-5etools/src/folder.rs");
+    const DECL: &str = "const ROOT_FILES: &[&str] = &[";
+    let body = &SRC[SRC.find(DECL).expect("importer declares ROOT_FILES") + DECL.len()..];
+    let body = &body[..body.find("];").expect("ROOT_FILES ends")];
+    body.split('"')
+        .skip(1)
+        .step_by(2)
+        .map(str::to_string)
+        .collect()
+}
+
 #[test]
-fn root_files_match_what_the_importer_reads() {
+fn root_files_are_exactly_what_the_importer_reads() {
+    let importer = importer_root_files();
+    assert!(
+        importer.contains("charcreationoptions.json"),
+        "{importer:?}"
+    );
+    let ours: BTreeSet<String> = ROOT_FILES
+        .iter()
+        .filter(|f| !f.starts_with("generated/"))
+        .map(|s| (*s).to_string())
+        .collect();
+    assert_eq!(ours, importer, "the importer's root file list changed");
+    // Every listed file (the spell lookup included) is one the importer actually picks up.
     let dir = tempfile::tempdir().unwrap();
     std::fs::create_dir_all(dir.path().join("generated")).unwrap();
     for f in ROOT_FILES {
         std::fs::write(dir.path().join(f), "{}").unwrap();
     }
-    // Files the importer ignores must not be needed either.
     std::fs::write(dir.path().join("bestiary.json"), "{}").unwrap();
-    let mut read = borealis_import_5etools::folder::data_files(dir.path()).unwrap();
-    read.sort();
-    let mut ours: Vec<String> = ROOT_FILES.iter().map(|s| (*s).to_string()).collect();
-    ours.sort();
-    assert_eq!(read, ours, "the importer's root file list changed");
+    let read: BTreeSet<String> = borealis_import_5etools::folder::data_files(dir.path())
+        .unwrap()
+        .into_iter()
+        .collect();
+    let all: BTreeSet<String> = ROOT_FILES.iter().map(|s| (*s).to_string()).collect();
+    assert_eq!(read, all);
+}
+
+/// Serves a local folder as `https://mirror.test/data/<rel>` (404 for anything missing).
+struct Mirror(std::path::PathBuf);
+
+impl RemoteFetcher for Mirror {
+    fn fetch(&self, request: &FetchRequest<'_>) -> Result<FetchResponse, String> {
+        let rel = request
+            .url
+            .strip_prefix("https://mirror.test/data/")
+            .ok_or("unexpected address")?;
+        Ok(match std::fs::read(self.0.join(rel)) {
+            Ok(body) => FetchResponse {
+                status: 200,
+                body,
+                ..FetchResponse::default()
+            },
+            Err(_) => FetchResponse {
+                status: 404,
+                ..FetchResponse::default()
+            },
+        })
+    }
+}
+
+#[test]
+fn a_url_download_holds_every_file_the_importer_reads_from_the_folder() {
+    let src = tempfile::tempdir().unwrap();
+    for rel in importer_root_files().iter().map(String::as_str).chain([
+        "generated/gendata-spell-source-lookup.json",
+        "class/class-x.json",
+        "spells/spells-x.json",
+    ]) {
+        let path = src.path().join(rel);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, "{}").unwrap();
+    }
+    std::fs::write(
+        src.path().join("class/index.json"),
+        r#"{"x":"class-x.json"}"#,
+    )
+    .unwrap();
+    std::fs::write(
+        src.path().join("spells/index.json"),
+        r#"{"x":"spells-x.json"}"#,
+    )
+    .unwrap();
+    let dest = tempfile::tempdir().unwrap();
+    download_folder(
+        &Mirror(src.path().to_path_buf()),
+        "https://mirror.test/data/",
+        dest.path(),
+        None,
+        &crate::content_packs::NullSink,
+    )
+    .unwrap();
+    let read = |d: &Path| borealis_import_5etools::folder::data_files(d).unwrap();
+    let got = read(dest.path());
+    assert!(got.contains(&"charcreationoptions.json".to_string()));
+    assert_eq!(got, read(src.path()));
 }
 
 #[test]

@@ -39,9 +39,10 @@ const MARKER: &str = "books.json";
 /// Shown when the address has no `books.json`.
 pub const NO_DATA_FOLDER: &str =
     "This address has no 5etools data folder (books.json was not found).";
-/// Data-folder files the importer reads (`borealis_import_5etools::folder`), besides the
-/// `class/` and `spells/` files listed by the manifests. A test keeps the two lists in step.
-pub const ROOT_FILES: [&str; 21] = [
+/// Data-folder files the importer reads (`borealis_import_5etools::folder::data_files`), besides
+/// the `class/` and `spells/` files listed by the manifests. The importer's own list is the
+/// source of truth: a test reads it from the importer and fails on any difference.
+pub const ROOT_FILES: [&str; 22] = [
     "races.json",
     "backgrounds.json",
     "feats.json",
@@ -53,6 +54,7 @@ pub const ROOT_FILES: [&str; 21] = [
     "skills.json",
     "senses.json",
     "conditionsdiseases.json",
+    "charcreationoptions.json",
     "books.json",
     "adventures.json",
     "fluff-races.json",
