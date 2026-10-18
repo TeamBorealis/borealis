@@ -1,6 +1,6 @@
 //! st3-diff F13: an imported copy of an element that declares itself `maps_to` kind
 //! `equivalent` of a loaded element is the same rules element under two ids. A select offers
-//! it once (the counterpart while that is offerable) and refuses a second pick of it
+//! both and refuses a second pick of either once one is held
 //! (`engine.md` 6.2 step 4: duplicates are removed per element). Synthetic copy of the SRD 5.1
 //! Chill Touch on the bundled core + SRD 5.1 packs.
 
@@ -52,17 +52,6 @@ fn cantrip_slots(e: &Engine, s: &CharacterState) -> Vec<SlotSnapshot> {
 
 fn offers(slot: &SlotSnapshot, id: &str) -> bool {
     slot.options.iter().any(|o| o.id == id)
-}
-
-#[test]
-fn an_equivalent_copy_is_offered_once() {
-    let e = engine();
-    let s = warlock(&e);
-    let slots = cantrip_slots(&e, &s);
-    assert!(!slots.is_empty(), "a cantrip slot offers Chill Touch");
-    for slot in &slots {
-        assert!(offers(slot, SRD) && !offers(slot, COPY), "{}", slot.name);
-    }
 }
 
 #[test]

@@ -1061,9 +1061,6 @@ impl<'u> Graph<'u> {
             if self.restricted.is_restricted(&cand.el.source) {
                 return false;
             }
-            if self.collapsed_equivalent(cand) {
-                return false;
-            }
             let mastery = crate::custom_rules::kind_of(s) == Some("mastery");
             if !mastery
                 && !held_ok
@@ -1100,18 +1097,6 @@ impl<'u> Graph<'u> {
                 .equivalent_ids(id)
                 .iter()
                 .any(|x| self.ids.count(x) > 0)
-    }
-
-    /// A `maps_to` equivalent pair is offered once: the element that declares the mapping steps
-    /// back for its counterpart while the counterpart is itself offerable (not restricted,
-    /// its edition offered).
-    fn collapsed_equivalent(&self, cand: &UElem) -> bool {
-        let Some(target) = self.uni.equivalent_target(&cand.el.id) else {
-            return false;
-        };
-        self.uni
-            .get(target)
-            .is_some_and(|t| self.offers_edition(t) && !self.restricted.is_restricted(&t.el.source))
     }
 
     /// A `prepared` spell select of a spellcasting class may choose a spell that class already
