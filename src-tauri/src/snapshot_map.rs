@@ -74,7 +74,7 @@ pub fn build_snapshot(input: &MapInput<'_>) -> CharacterSnapshot {
         spellcasting: extras::spellcasting(input, &engine_snap),
         inventory: extras::inventory(input, &engine_snap),
         details: extras::details(input.character),
-        attacks: extras::attacks(input.character, &engine_snap),
+        attacks: with_save_dcs(extras::attacks(input.character, &engine_snap), &engine_snap),
         companion: crate::companion::companion(input, &engine_snap),
         options: extras::options(input, &engine_snap),
         available_options: extras::available_options(input),
@@ -82,6 +82,30 @@ pub fn build_snapshot(input: &MapInput<'_>) -> CharacterSnapshot {
         notices: extras::notices(input, &engine_snap),
         play: crate::play_dto::play_state(&engine_snap),
     }
+}
+
+/// Save-based attack rows (Sacred Flame, Vicious Mockery) show `DC 13 DEX` instead of a bonus.
+fn with_save_dcs(rows: Vec<crate::dto::Attack>, snap: &Engine) -> Vec<crate::dto::Attack> {
+    rows.into_iter()
+        .map(|a| {
+            let save = snap
+                .attacks
+                .iter()
+                .find(|r| r.uid == a.id)
+                .and_then(|r| r.save.as_ref());
+            match save {
+                Some(s) => crate::dto::Attack {
+                    attack_bonus: format!(
+                        "DC {} {}",
+                        s.dc,
+                        s.ability.get(..3).unwrap_or("").to_uppercase()
+                    ),
+                    ..a
+                },
+                None => a,
+            }
+        })
+        .collect()
 }
 
 fn level_state(input: &MapInput<'_>, snap: &Engine) -> LevelState {
@@ -289,6 +313,8 @@ fn stats(snap: &Engine) -> CharacterStats {
                 "expertise"
             } else if s.proficient {
                 "proficient"
+            } else if s.half_proficiency {
+                "half"
             } else {
                 "none"
             }

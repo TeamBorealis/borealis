@@ -387,6 +387,11 @@ pub struct Universe {
     exhaustion: crate::play_rules::ExhaustionRules,
     /// Aurora's proxy items, indexed on the first lookup of a proxy id (B-06).
     proxies: std::sync::OnceLock<crate::proxy::ProxyTable>,
+    /// `maps_to` kind `equivalent` pairs with both elements loaded: mapper id -> the
+    /// counterpart it declares itself equal to (an imported PHB spell and its SRD copy).
+    equivalents: HashMap<String, String>,
+    /// Counterpart id -> the ids that declare themselves equivalent to it.
+    equivalent_mappers: HashMap<String, Vec<String>>,
 }
 
 /// The former type an element names (`legacy_alias`, `Race` on a 2024 `Species`) when the
@@ -580,6 +585,8 @@ impl Universe {
             creation_roots: Vec::new(),
             exhaustion: crate::play_rules::ExhaustionRules::default(),
             proxies: std::sync::OnceLock::new(),
+            equivalents: HashMap::new(),
+            equivalent_mappers: HashMap::new(),
         };
         let eff = |el: &Element| -> Vec<String> {
             let mut s = el.supports.clone();
@@ -637,6 +644,7 @@ impl Universe {
         }
         uni.generate_improvements(store, &classes, &eff);
         uni.mark_superseded();
+        uni.index_equivalents();
         uni.load_profile_tables();
         uni.add_creation_languages(profile);
         uni.exhaustion = crate::play_rules::ExhaustionRules::load(&uni);
@@ -678,6 +686,60 @@ impl Universe {
         for u in &mut self.elems {
             u.superseded = u.el.ruleset != Some(ruleset) && replaced.contains(&u.el.id);
         }
+    }
+
+    /// Index the `maps_to` kind `equivalent` pairs whose two elements are both loaded (same
+    /// type): one rules element under two ids.
+    fn index_equivalents(&mut self) {
+        let mut map = HashMap::new();
+        for u in &self.elems {
+            let Some(m) = u.el.maps_to.as_ref() else {
+                continue;
+            };
+            if m.kind != Some(borealis_content::MapKind::Equivalent) {
+                continue;
+            }
+            for target in [&m.dnd2014, &m.dnd2024].into_iter().flatten() {
+                let same = self
+                    .get(target)
+                    .is_some_and(|t| t.el.id != u.el.id && t.el.ty == u.el.ty);
+                if same {
+                    map.insert(u.el.id.clone(), target.clone());
+                }
+            }
+        }
+        let mut mappers: HashMap<String, Vec<String>> = HashMap::new();
+        for (m, t) in &map {
+            mappers.entry(t.clone()).or_default().push(m.clone());
+        }
+        self.equivalents = map;
+        self.equivalent_mappers = mappers;
+    }
+
+    /// The loaded counterpart `id` declares itself equivalent to.
+    #[must_use]
+    pub fn equivalent_target(&self, id: &str) -> Option<&str> {
+        self.equivalents.get(id).map(String::as_str)
+    }
+
+    /// Every other id of the element `id` (its counterpart and the counterpart's other
+    /// equivalents), for the duplicate check.
+    #[must_use]
+    pub fn equivalent_ids<'a>(&'a self, id: &'a str) -> Vec<&'a str> {
+        let root = self.equivalent_target(id).unwrap_or(id);
+        let mut out: Vec<&str> = self
+            .equivalent_mappers
+            .get(root)
+            .into_iter()
+            .flatten()
+            .map(String::as_str)
+            .collect();
+        if out.is_empty() {
+            return out;
+        }
+        out.push(root);
+        out.retain(|x| *x != id);
+        out
     }
 
     fn load_profile_tables(&mut self) {

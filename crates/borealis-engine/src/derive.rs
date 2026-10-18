@@ -313,6 +313,9 @@ impl<'u> Evaluation<'u> {
     }
 
     fn skills(&self, mods: &[i32; 6], prof: i32) -> Vec<SkillSnapshot> {
+        let half = half_proficiency_skills(&self.graph);
+        let unproficient_bonus =
+            !crate::rule_view::live_rules(&self.graph, &["skill_bonus_unproficient"]).is_empty();
         SKILLS
             .iter()
             .map(|(name, ab)| {
@@ -329,6 +332,7 @@ impl<'u> Evaluation<'u> {
                     total,
                     proficient: p > 0,
                     expertise: prof > 0 && p >= 2 * prof,
+                    half_proficiency: p <= 0 && (unproficient_bonus || half.contains(*name)),
                     passive: self.stats.sum(&format!("{name}:passive")) + total,
                 }
             })
@@ -540,6 +544,14 @@ impl<'u> Evaluation<'u> {
             prof,
             &mods,
         );
+        let mut attacks = attacks;
+        attacks.extend(crate::spell_attacks::cantrip_attacks(
+            &self.graph,
+            self.uni,
+            &self.stats,
+            &mods,
+            &spellcasting,
+        ));
         let resources = crate::play_rules::resource_snapshots(&self.graph, &self.stats, &mods);
         let resource_costs = crate::play_rules::resource_costs(&self.graph);
         let toggles = crate::play_rules::toggle_snapshots(&self.graph, &self.stats);
@@ -803,6 +815,26 @@ pub(crate) fn thresholds(uni: &Universe) -> Vec<u32> {
                 .and_then(|e| e.el.setter_value("experience"))
                 .and_then(|v| v.trim().parse().ok())
                 .unwrap_or(table[(n - 1) as usize])
+        })
+        .collect()
+}
+
+/// Skills that an active stat rule gives half proficiency (`<skill>:misc` or
+/// `<skill>:proficiency` = `proficiency:half`, `proficiency:half:up`: Jack of All Trades,
+/// Remarkable Athlete in Aurora-format content).
+fn half_proficiency_skills(graph: &Graph<'_>) -> std::collections::HashSet<String> {
+    graph
+        .active_stat_rules(None)
+        .into_iter()
+        .filter(|st| {
+            matches!(&st.value, crate::universe::Val::Ref { name, neg: false }
+                if name.starts_with("proficiency:half"))
+        })
+        .filter_map(|st| {
+            st.name
+                .strip_suffix(":misc")
+                .or_else(|| st.name.strip_suffix(":proficiency"))
+                .map(str::to_string)
         })
         .collect()
 }

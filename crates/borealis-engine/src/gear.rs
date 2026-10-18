@@ -122,7 +122,7 @@ pub fn inventory_snapshot(
     }
 }
 
-fn dice_with_bonus(dice: &str, bonus: i32, ty: &str) -> String {
+pub(crate) fn dice_with_bonus(dice: &str, bonus: i32, ty: &str) -> String {
     let sign = if bonus < 0 { "-" } else { "+" };
     let core = if bonus == 0 {
         dice.to_string()
@@ -295,6 +295,7 @@ pub fn attacks_with(
             proficient,
             mastery: crate::play_rules::attack_mastery(uni, &e.el, cx.masteries),
             ammunition: loaded.map(|l| l.name),
+            save: None,
         });
     }
     if state.ruleset == borealis_content::Ruleset::Dnd2024 {
@@ -364,6 +365,7 @@ fn unarmed_strike(
         proficient: true,
         mastery: None,
         ammunition: None,
+        save: None,
     }
 }
 

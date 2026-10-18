@@ -47,7 +47,7 @@ fn base_damage(text: &str) -> Option<(String, String)> {
 
 /// Tiers `(level, dice)` from the `Cantrip Upgrade` sentence: `levels 5 (2d10), 11 (3d10)`.
 fn tiers(text: &str) -> Vec<(u32, String)> {
-    let Some(at) = text.find("Cantrip Upgrade") else {
+    let Some(at) = upgrade_at(text) else {
         return Vec::new();
     };
     let tail = &text[at..];
@@ -61,7 +61,11 @@ fn tiers(text: &str) -> Vec<(u32, String)> {
                 j += 1;
             }
             let level = tail[i..j].parse::<u32>().ok();
-            let rest = tail[j..].trim_start();
+            // 2014 wording: `5th level (2d10)`
+            let rest = tail[j..]
+                .trim_start_matches(|c: char| c.is_ascii_alphabetic())
+                .trim_start();
+            let rest = rest.strip_prefix("level").unwrap_or(rest).trim_start();
             if let (Some(l), Some(inner)) = (level, rest.strip_prefix('(')) {
                 if let Some((s, e)) = dice_at(inner, 0) {
                     if s == 0 {
@@ -77,14 +81,32 @@ fn tiers(text: &str) -> Vec<(u32, String)> {
     out
 }
 
+/// Where the scaling sentence starts: 2024 `Cantrip Upgrade`, 2014 `damage increases by`.
+fn upgrade_at(text: &str) -> Option<usize> {
+    text.find("Cantrip Upgrade")
+        .or_else(|| text.find("damage increases by"))
+}
+
+/// Damage of one attack of a damaging cantrip: [`scaled_damage`], else (beams: Eldritch
+/// Blast) the base dice, which do not scale.
+#[must_use]
+pub fn attack_damage(description_html: &str, character_level: u32) -> Option<String> {
+    scaled_damage(description_html, character_level).or_else(|| {
+        let text = plain_text(description_html);
+        if !text.contains("beam") {
+            return None;
+        }
+        let (dice, ty) = base_damage(&text)?;
+        Some(format!("{dice} {ty}").trim().to_string())
+    })
+}
+
 /// Damage of a cantrip at a character level, e.g. `2d10 Fire`; `None` when the text has no
 /// plain dice scaling (Eldritch Blast adds beams, utility cantrips deal no damage).
 #[must_use]
 pub fn scaled_damage(description_html: &str, character_level: u32) -> Option<String> {
     let text = plain_text(description_html);
-    if !text.contains("Cantrip Upgrade") {
-        return None;
-    }
+    upgrade_at(&text)?;
     let (base, ty) = base_damage(&text)?;
     let tiers = tiers(&text);
     if tiers.is_empty() {
@@ -125,6 +147,20 @@ mod tests {
         assert_eq!(scaled_damage(FIRE_BOLT, 5).as_deref(), Some("2d10 Fire"));
         assert_eq!(scaled_damage(FIRE_BOLT, 11).as_deref(), Some("3d10 Fire"));
         assert_eq!(scaled_damage(FIRE_BOLT, 20).as_deref(), Some("4d10 Fire"));
+    }
+
+    #[test]
+    fn srd51_wording_scales_too() {
+        let t = "<p>Make a ranged spell attack. On a hit, the target takes 1d10 fire damage.</p>\
+                 <p>This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th \
+                 level (3d10), and 17th level (4d10).</p>";
+        assert_eq!(scaled_damage(t, 4).as_deref(), Some("1d10 fire"));
+        assert_eq!(scaled_damage(t, 5).as_deref(), Some("2d10 fire"));
+        assert_eq!(scaled_damage(t, 17).as_deref(), Some("4d10 fire"));
+        let eb = "<p>Make a ranged spell attack. On a hit, the target takes 1d10 force damage.</p>\
+                  <p>two beams at 5th level, three beams at 11th level</p>";
+        assert_eq!(scaled_damage(eb, 5), None);
+        assert_eq!(attack_damage(eb, 5).as_deref(), Some("1d10 force"));
     }
 
     #[test]

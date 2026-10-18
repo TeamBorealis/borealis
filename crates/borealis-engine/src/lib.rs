@@ -38,12 +38,14 @@ pub mod runtime;
 pub mod settings;
 pub mod snapshot;
 pub mod speed_toggles;
+pub mod spell_attacks;
 pub mod spell_rules;
 pub mod spells;
 pub mod state;
 pub mod stats;
 pub mod tables;
 pub mod universe;
+pub mod usage;
 pub mod wild_shape;
 
 mod derive;

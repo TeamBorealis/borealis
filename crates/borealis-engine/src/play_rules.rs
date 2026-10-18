@@ -695,6 +695,8 @@ pub fn resource_snapshots(
             out.push(snap);
         }
     }
+    let derived = crate::usage::usage_resources(graph, stats, &out);
+    out.extend(derived);
     out
 }
 

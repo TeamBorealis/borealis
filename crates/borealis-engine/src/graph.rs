@@ -1061,11 +1061,14 @@ impl<'u> Graph<'u> {
             if self.restricted.is_restricted(&cand.el.source) {
                 return false;
             }
+            if self.collapsed_equivalent(cand) {
+                return false;
+            }
             let mastery = crate::custom_rules::kind_of(s) == Some("mastery");
             if !mastery
                 && !held_ok
                 && !cand.allow_duplicate
-                && self.ids.count(&cand.el.id) > 0
+                && self.held_or_equivalent(&cand.el.id)
                 && !self.repicks_known_spell(s, cand)
             {
                 return false;
@@ -1086,6 +1089,29 @@ impl<'u> Graph<'u> {
         env.rule_class_level =
             (n.mgr != Mgr::Main).then(|| i32::try_from(self.mgr_level(n.mgr)).unwrap_or(0));
         requirement_holds(&cand.req, &env)
+    }
+
+    /// The character has `id` or a `maps_to` equivalent of it (the duplicate check
+    /// of `engine.md` 6.2 step 4 is by element; two ids of one element are one element).
+    fn held_or_equivalent(&self, id: &str) -> bool {
+        self.ids.count(id) > 0
+            || self
+                .uni
+                .equivalent_ids(id)
+                .iter()
+                .any(|x| self.ids.count(x) > 0)
+    }
+
+    /// A `maps_to` equivalent pair is offered once: the element that declares the mapping steps
+    /// back for its counterpart while the counterpart is itself offerable (not restricted,
+    /// its edition offered).
+    fn collapsed_equivalent(&self, cand: &UElem) -> bool {
+        let Some(target) = self.uni.equivalent_target(&cand.el.id) else {
+            return false;
+        };
+        self.uni
+            .get(target)
+            .is_some_and(|t| self.offers_edition(t) && !self.restricted.is_restricted(&t.el.source))
     }
 
     /// A `prepared` spell select of a spellcasting class may choose a spell that class already

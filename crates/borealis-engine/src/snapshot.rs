@@ -65,6 +65,10 @@ pub struct SkillSnapshot {
     pub proficient: bool,
     /// Expertise.
     pub expertise: bool,
+    /// Not proficient, but half the proficiency bonus applies (Jack of All Trades,
+    /// Remarkable Athlete).
+    #[serde(default)]
+    pub half_proficiency: bool,
     /// Passive score (all 18 are computed).
     pub passive: i32,
 }
@@ -489,6 +493,18 @@ pub struct AttackSnapshot {
     /// Carried `+N` ammunition the weapon fires (its bonus is in `attack` and `damage`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ammunition: Option<String>,
+    /// A cantrip that calls for a saving throw instead of an attack roll (`attack` is 0).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub save: Option<AttackSave>,
+}
+
+/// The saving throw of a save-based attack row.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AttackSave {
+    /// Save DC.
+    pub dc: i32,
+    /// Ability of the save (`dexterity`).
+    pub ability: String,
 }
 
 fn default_crit_range() -> u8 {
