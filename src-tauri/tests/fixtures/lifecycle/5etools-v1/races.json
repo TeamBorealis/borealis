@@ -1,0 +1,92 @@
+{
+ "race": [
+  {
+   "name": "Wickfolk",
+   "source": "LNV",
+   "size": [
+    "M"
+   ],
+   "speed": 30,
+   "ability": [
+    {
+     "dex": 2
+    }
+   ],
+   "entries": [
+    {
+     "type": "entries",
+     "name": "Wick Sense",
+     "entries": [
+      "Invented test content (acceptance stage 4): no published game text."
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Emberfolk",
+   "source": "LNR",
+   "size": [
+    "M"
+   ],
+   "speed": 30,
+   "ability": [
+    {
+     "cha": 2
+    }
+   ],
+   "entries": [
+    {
+     "type": "entries",
+     "name": "Ember Skin",
+     "entries": [
+      "Invented test content (acceptance stage 4): no published game text."
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Cinderkin",
+   "source": "LNV",
+   "size": [
+    "S"
+   ],
+   "speed": 25,
+   "ability": [
+    {
+     "con": 2
+    }
+   ],
+   "entries": [
+    {
+     "type": "entries",
+     "name": "Cinder Heart",
+     "entries": [
+      "Invented test content (acceptance stage 4): no published game text."
+     ]
+    }
+   ]
+  }
+ ],
+ "subrace": [
+  {
+   "name": "Bright",
+   "source": "LNV",
+   "raceName": "Wickfolk",
+   "raceSource": "LNV",
+   "ability": [
+    {
+     "wis": 1
+    }
+   ],
+   "entries": [
+    {
+     "type": "entries",
+     "name": "Bright Glow",
+     "entries": [
+      "Invented test content (acceptance stage 4): no published game text."
+     ]
+    }
+   ]
+  }
+ ]
+}

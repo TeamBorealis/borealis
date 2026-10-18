@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Invented test content (acceptance stage 4, pack v1): no published game text. -->
+<elements>
+  <element name="Lanternfall" type="Source" source="Lanternfall" id="ID_SOURCE_LANTERNFALL">
+    <description><p>An invented test source.</p></description>
+    <setters><set name="abbreviation">LNF</set><set name="url">https://example.invalid/lanternfall</set></setters>
+  </element>
+  <element name="Wickling" type="Race" source="Lanternfall" id="ID_LANTERNFALL_RACE_WICKLING">
+    <description><p>Invented.</p></description>
+    <rules>
+      <stat name="dexterity" value="2" />
+      <stat name="innate speed" value="30" bonus="base" />
+      <select type="Sub Race" name="Subrace" supports="Wickling" />
+    </rules>
+  </element>
+  <element name="Ember Wickling" type="Sub Race" source="Lanternfall" id="ID_LANTERNFALL_SUB_RACE_EMBER_WICKLING">
+    <supports>Wickling</supports>
+    <description><p>Invented.</p></description>
+    <rules><stat name="wisdom" value="1" /></rules>
+  </element>
+  <element name="Ash Wickling" type="Sub Race" source="Lanternfall" id="ID_LANTERNFALL_SUB_RACE_ASH_WICKLING">
+    <supports>Wickling</supports>
+    <description><p>Invented.</p></description>
+    <rules><stat name="constitution" value="1" /></rules>
+  </element>
+  <element name="Lamplighter" type="Background" source="Lanternfall" id="ID_LANTERNFALL_BACKGROUND_LAMPLIGHTER">
+    <description><p>Invented.</p></description>
+    <rules><grant type="Proficiency" id="ID_PROFICIENCY_SKILL_PERCEPTION" /></rules>
+  </element>
+  <element name="Chandler" type="Background" source="Lanternfall" id="ID_LANTERNFALL_BACKGROUND_CHANDLER">
+    <description><p>Invented.</p></description>
+    <rules><grant type="Proficiency" id="ID_PROFICIENCY_SKILL_INVESTIGATION" /></rules>
+  </element>
+  <element name="Lantern Bearer" type="Feat" source="Lanternfall" id="ID_LANTERNFALL_FEAT_LANTERN_BEARER">
+    <description><p>Invented.</p></description>
+    <rules><stat name="initiative" value="1" /></rules>
+  </element>
+  <element name="Keeper's Vow" type="Feat" source="Lanternfall" id="ID_LANTERNFALL_FEAT_KEEPER_S_VOW">
+    <description><p>Invented.</p></description>
+    <rules><stat name="ac" value="1" /></rules>
+  </element>
+</elements>

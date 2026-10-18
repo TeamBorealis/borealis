@@ -1,0 +1,42 @@
+{
+ "background": [
+  {
+   "name": "Lamplighter",
+   "source": "LNV",
+   "skillProficiencies": [
+    {
+     "perception": true,
+     "insight": true
+    }
+   ],
+   "entries": [
+    {
+     "type": "entries",
+     "name": "Lamp Route",
+     "entries": [
+      "Invented test content (acceptance stage 4): no published game text."
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Chandler",
+   "source": "LNV",
+   "skillProficiencies": [
+    {
+     "investigation": true,
+     "history": true
+    }
+   ],
+   "entries": [
+    {
+     "type": "entries",
+     "name": "Wax Trade",
+     "entries": [
+      "Invented test content (acceptance stage 4): no published game text."
+     ]
+    }
+   ]
+  }
+ ]
+}

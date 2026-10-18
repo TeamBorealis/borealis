@@ -1,0 +1,40 @@
+{
+ "feat": [
+  {
+   "name": "Steady Flame",
+   "source": "LNV",
+   "ability": [
+    {
+     "dex": 1
+    }
+   ],
+   "entries": [
+    {
+     "type": "entries",
+     "name": "Steady",
+     "entries": [
+      "Invented test content (acceptance stage 4): no published game text."
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Lantern Oath",
+   "source": "LNV",
+   "ability": [
+    {
+     "wis": 1
+    }
+   ],
+   "entries": [
+    {
+     "type": "entries",
+     "name": "Oath",
+     "entries": [
+      "Invented test content (acceptance stage 4): no published game text."
+     ]
+    }
+   ]
+  }
+ ]
+}

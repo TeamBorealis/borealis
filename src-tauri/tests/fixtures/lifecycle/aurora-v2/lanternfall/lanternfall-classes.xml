@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Invented test content (acceptance stage 4, pack v2): no published game text. -->
+<elements>
+  <info><name>Lanternfall</name><update version="2.0.0"/></info>
+  <element name="Wickwarden" type="Class" source="Lanternfall" id="ID_LANTERNFALL_CLASS_WICKWARDEN">
+    <supports>Wickwarden</supports>
+    <description><p>Invented.</p></description>
+    <setters><set name="hd">d10</set><set name="short">An invented warden.</set></setters>
+    <rules>
+      <grant type="Class Feature" id="ID_LANTERNFALL_CLASS_FEATURE_WICK_GUARD" level="1" />
+      <select type="Archetype" name="Wickwarden Oath" supports="Wickwarden Oath" level="3" />
+      <select type="Feat" name="Wickwarden Talent" supports="Wickwarden Talent" level="4" />
+      <grant type="Class Feature" id="ID_LANTERNFALL_CLASS_FEATURE_EMBER_STEP" level="5" />
+      <grant type="Class Feature" id="ID_LANTERNFALL_CLASS_FEATURE_DEEP_GLOW" level="11" />
+    </rules>
+  </element>
+  <element name="Wick Guard" type="Class Feature" source="Lanternfall" id="ID_LANTERNFALL_CLASS_FEATURE_WICK_GUARD">
+    <description><p>Invented.</p></description>
+    <rules><stat name="ac" value="2" /></rules>
+  </element>
+  <element name="Ember Step" type="Class Feature" source="Lanternfall" id="ID_LANTERNFALL_CLASS_FEATURE_EMBER_STEP">
+    <description><p>Invented.</p></description>
+    <rules><stat name="speed" value="5" /></rules>
+  </element>
+  <element name="Deep Glow" type="Class Feature" source="Lanternfall" id="ID_LANTERNFALL_CLASS_FEATURE_DEEP_GLOW">
+    <description><p>Invented.</p></description>
+    <rules><stat name="initiative" value="1" /></rules>
+  </element>
+  <element name="Oath of Embers" type="Archetype" source="Lanternfall" id="ID_LANTERNFALL_ARCHETYPE_OATH_OF_EMBERS">
+    <supports>Wickwarden Oath</supports>
+    <description><p>Invented.</p></description>
+  </element>
+  <element name="Steady Wick" type="Feat" source="Lanternfall" id="ID_LANTERNFALL_FEAT_STEADY_WICK">
+    <supports>Wickwarden Talent</supports>
+    <description><p>Invented.</p></description>
+    <rules><stat name="strength" value="1" /></rules>
+  </element>
+  <element name="New Flame" type="Feat" source="Lanternfall" id="ID_LANTERNFALL_FEAT_NEW_FLAME">
+    <supports>Wickwarden Talent</supports>
+    <description><p>Invented.</p></description>
+  </element>
+</elements>

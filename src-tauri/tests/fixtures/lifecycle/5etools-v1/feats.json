@@ -1,0 +1,53 @@
+{
+ "feat": [
+  {
+   "name": "Steady Flame",
+   "source": "LNV",
+   "ability": [
+    {
+     "str": 1
+    }
+   ],
+   "entries": [
+    {
+     "type": "entries",
+     "name": "Steady",
+     "entries": [
+      "Invented test content (acceptance stage 4): no published game text."
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Spark Catcher",
+   "source": "LNV",
+   "entries": [
+    {
+     "type": "entries",
+     "name": "Catch",
+     "entries": [
+      "Invented test content (acceptance stage 4): no published game text."
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Lamp Oath",
+   "source": "LNV",
+   "ability": [
+    {
+     "wis": 1
+    }
+   ],
+   "entries": [
+    {
+     "type": "entries",
+     "name": "Oath",
+     "entries": [
+      "Invented test content (acceptance stage 4): no published game text."
+     ]
+    }
+   ]
+  }
+ ]
+}
