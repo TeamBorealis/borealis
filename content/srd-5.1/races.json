@@ -478,7 +478,7 @@
           "kind": "select",
           "type": "Language",
           "name": "Language (Elf)",
-          "supports": "Starting"
+          "supports": "Standard||Exotic"
         }
       ]
     },
@@ -699,7 +699,7 @@
           "kind": "select",
           "type": "Language",
           "name": "Language (Human)",
-          "supports": "Starting"
+          "supports": "Standard||Exotic"
         }
       ]
     },
@@ -1418,7 +1418,7 @@
           "kind": "select",
           "type": "Language",
           "name": "Language (Half-Elf)",
-          "supports": "Starting"
+          "supports": "Standard||Exotic"
         },
         {
           "kind": "grant",

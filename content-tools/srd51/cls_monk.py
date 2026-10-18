@@ -42,6 +42,8 @@ def build():
          grant(save('strength'), 'Proficiency'), grant(save('dexterity'), 'Proficiency')],
         mc, grants, 2, 'Monk', class_desc2(CLS, table), tool_selects=[
             select('Proficiency', 'Tool Proficiency (Monk)', supports='Musical Instrument||Artisan tools', requirements='!' + mc_id)]))
+    # the Martial Arts column, read by the engine's martial_arts rule (index = monk level - 1)
+    els[-1]['data'] = {'progression': {'martial_arts': [ma[l] for l in range(1, 21)]}}
 
     # Unarmored Defense
     els.append(class_feature(CLS, 'Unarmored Defense', html=H('Unarmored Defense'), rules=[
@@ -60,6 +62,13 @@ def build():
                 stat('martial arts:damage', 'dexterity:modifier', bonus='martial arts')]
     for lvl, d in ((1, 4), (5, 6), (11, 8), (17, 10)):
         ma_rules.append(stat('martial arts:dice', d, bonus='martial arts', level=lvl))
+    # SRD 5.1: monk weapons are shortswords and simple melee weapons without two-handed or heavy;
+    # Dexterity for them and unarmed strikes, the Martial Arts die, a bonus unarmed strike, all while
+    # wearing no armor and wielding no shield (the 5.2.1 pack's martial_arts rule, 2014 weapons).
+    ma_rules.append({'kind': 'martial_arts', 'die_table': 'martial_arts', 'bonus_unarmed_strike': True,
+                     'dexterous_attacks': True,
+                     'monk_weapons': {'simple_melee_without': ['Two-Handed', 'Heavy'], 'named': ['Shortsword']},
+                     'conditions': {'no_armor': True, 'no_shield': True}})
     els.append(class_feature(CLS, 'Martial Arts', html=H('Martial Arts'), rules=ma_rules,
                              sheet_=sheet(text='Use Dexterity for unarmed strikes and monk weapons; unarmed damage die d{{martial arts:dice}}; one unarmed strike as a bonus action after the Attack action.')))
     # Ki

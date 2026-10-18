@@ -82,7 +82,7 @@
    },
    "renamed_from": "ID_PHB_SPELL_MELFS_ACID_ARROW",
    "maps_to": {
-    "dnd2014": "ID_PHB_SPELL_MELFS_ACID_ARROW",
+    "dnd2014": "ID_PHB_SPELL_ACID_ARROW",
     "kind": "equivalent"
    }
   },
@@ -478,7 +478,7 @@
    },
    "renamed_from": "ID_PHB_SPELL_NYSTULS_MAGIC_AURA",
    "maps_to": {
-    "dnd2014": "ID_PHB_SPELL_NYSTULS_MAGIC_AURA",
+    "dnd2014": "ID_PHB_SPELL_ARCANISTS_MAGIC_AURA",
     "kind": "equivalent"
    }
   },

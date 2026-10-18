@@ -3,6 +3,10 @@ import re, sys
 sys.path.insert(0, '.')
 from lib import *
 
+# SRD 5.1 "one extra language of your choice" (Human, Half-Elf, High Elf): any standard or exotic
+# language, as the Acolyte's "two of your choice" (not only the standard ones).
+ANY_LANGUAGE = 'Standard||Exotic'
+
 ev = events()
 SPELL_DAMAGE = {'Acid': 'ACID', 'Cold': 'COLD', 'Fire': 'FIRE', 'Lightning': 'LIGHTNING', 'Poison': 'POISON'}
 
@@ -125,7 +129,7 @@ def build():
                   rules=[select('Spell', 'Wizard Cantrip (High Elf)', supports='Wizard,0', spellcasting='High Elf')],
                   spellcasting={'name': 'High Elf', 'ability': 'Intelligence'}))
     els.append(tr('ID_RACIAL_TRAIT_EXTRA_LANGUAGE', 'Extra Language', D['High Elf'][1]['Extra Language'], D['High Elf'][2]['Extra Language'],
-                  rules=[select('Language', 'Language (Elf)', supports='Starting')], display=False))
+                  rules=[select('Language', 'Language (Elf)', supports=ANY_LANGUAGE)], display=False))
 
     # ------------------------------------------------------------ Halfling
     a, b = race_range('Halfling'); D = traits_in(a, b)
@@ -153,7 +157,7 @@ def build():
         stat('wisdom', 1), stat('charisma', 1),
         stat('innate speed', 30, bonus='base'), grant('ID_SIZE_MEDIUM', 'Size'),
         grant('ID_LANGUAGE_COMMON', 'Language'),
-        select('Language', 'Language (Human)', supports='Starting'),
+        select('Language', 'Language (Human)', supports=ANY_LANGUAGE),
     ]))
 
     # ------------------------------------------------------------ Dragonborn
@@ -220,7 +224,7 @@ def build():
         select('Racial Trait', 'Ability Score Increase (Half-Elf)', supports='Half-Elf', number=2),
         stat('innate speed', 30, bonus='base'), grant('ID_SIZE_MEDIUM', 'Size'), grant('ID_VISION_DARKVISION', 'Vision'),
         grant('ID_LANGUAGE_COMMON', 'Language'), grant('ID_LANGUAGE_ELVISH', 'Language'),
-        select('Language', 'Language (Half-Elf)', supports='Starting'),
+        select('Language', 'Language (Half-Elf)', supports=ANY_LANGUAGE),
         grant('ID_RACIAL_TRAIT_HALFELF_FEY_ANCESTRY', 'Racial Trait'),
         grant('ID_RACIAL_TRAIT_SKILL_VERSATILITY', 'Racial Trait'),
     ]))

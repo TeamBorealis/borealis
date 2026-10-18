@@ -231,7 +231,7 @@
    },
    "renamed_from": "ID_PHB_SPELL_BIGBYS_HAND",
    "maps_to": {
-    "dnd2014": "ID_PHB_SPELL_BIGBYS_HAND",
+    "dnd2014": "ID_PHB_SPELL_ARCANE_HAND",
     "kind": "equivalent"
    }
   },
@@ -2671,7 +2671,7 @@
    },
    "renamed_from": "ID_PHB_SPELL_RARYS_TELEPATHIC_BOND",
    "maps_to": {
-    "dnd2014": "ID_PHB_SPELL_RARYS_TELEPATHIC_BOND",
+    "dnd2014": "ID_PHB_SPELL_TELEPATHIC_BOND",
     "kind": "equivalent"
    }
   },

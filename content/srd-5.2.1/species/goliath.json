@@ -42,7 +42,8 @@
     {
      "kind": "grant",
      "id": "ID_2024_TRAIT_GOLIATH_LARGE_FORM",
-     "type": "Racial Trait"
+     "type": "Racial Trait",
+     "level": 5
     },
     {
      "kind": "grant",
@@ -100,7 +101,10 @@
       "long_rest"
      ]
     }
-   ]
+   ],
+   "data": {
+    "level": 5
+   }
   },
   {
    "id": "ID_2024_TRAIT_GOLIATH_POWERFUL_BUILD",

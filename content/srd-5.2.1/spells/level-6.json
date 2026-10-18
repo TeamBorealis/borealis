@@ -956,7 +956,7 @@
    },
    "renamed_from": "ID_PHB_SPELL_OTILUKES_FREEZING_SPHERE",
    "maps_to": {
-    "dnd2014": "ID_PHB_SPELL_OTILUKES_FREEZING_SPHERE",
+    "dnd2014": "ID_PHB_SPELL_FREEZING_SPHERE",
     "kind": "equivalent"
    }
   },
@@ -1429,7 +1429,7 @@
    },
    "renamed_from": "ID_PHB_SPELL_DRAWMIJS_INSTANT_SUMMONS",
    "maps_to": {
-    "dnd2014": "ID_PHB_SPELL_DRAWMIJS_INSTANT_SUMMONS",
+    "dnd2014": "ID_PHB_SPELL_INSTANT_SUMMONS",
     "kind": "equivalent"
    }
   },
@@ -1503,7 +1503,7 @@
    },
    "renamed_from": "ID_PHB_SPELL_OTTOS_IRRESISTIBLE_DANCE",
    "maps_to": {
-    "dnd2014": "ID_PHB_SPELL_OTTOS_IRRESISTIBLE_DANCE",
+    "dnd2014": "ID_PHB_SPELL_IRRESISTIBLE_DANCE",
     "kind": "equivalent"
    }
   },

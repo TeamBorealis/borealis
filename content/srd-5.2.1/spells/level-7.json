@@ -88,7 +88,7 @@
    },
    "renamed_from": "ID_PHB_SPELL_MORDENKAINENS_SWORD",
    "maps_to": {
-    "dnd2014": "ID_PHB_SPELL_MORDENKAINENS_SWORD",
+    "dnd2014": "ID_PHB_SPELL_ARCANE_SWORD",
     "kind": "equivalent"
    }
   },
@@ -706,7 +706,7 @@
    },
    "renamed_from": "ID_PHB_SPELL_MORDENKAINENS_MAGNIFICENT_MANSION",
    "maps_to": {
-    "dnd2014": "ID_PHB_SPELL_MORDENKAINENS_MAGNIFICENT_MANSION",
+    "dnd2014": "ID_PHB_SPELL_MAGNIFICENT_MANSION",
     "kind": "equivalent"
    }
   },

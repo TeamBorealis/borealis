@@ -211,6 +211,32 @@
             "type": "Proficiency"
           }
         ]
+      },
+      "data": {
+        "progression": {
+          "martial_arts": [
+            "1d4",
+            "1d4",
+            "1d4",
+            "1d4",
+            "1d6",
+            "1d6",
+            "1d6",
+            "1d6",
+            "1d6",
+            "1d6",
+            "1d8",
+            "1d8",
+            "1d8",
+            "1d8",
+            "1d8",
+            "1d8",
+            "1d10",
+            "1d10",
+            "1d10",
+            "1d10"
+          ]
+        }
       }
     },
     {
@@ -332,6 +358,25 @@
           "value": "10",
           "bonus": "martial arts",
           "level": 17
+        },
+        {
+          "kind": "martial_arts",
+          "die_table": "martial_arts",
+          "bonus_unarmed_strike": true,
+          "dexterous_attacks": true,
+          "monk_weapons": {
+            "simple_melee_without": [
+              "Two-Handed",
+              "Heavy"
+            ],
+            "named": [
+              "Shortsword"
+            ]
+          },
+          "conditions": {
+            "no_armor": true,
+            "no_shield": true
+          }
         }
       ]
     },

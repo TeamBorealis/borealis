@@ -2108,7 +2108,7 @@
    },
    "renamed_from": "ID_PHB_SPELL_TENSERS_FLOATING_DISK",
    "maps_to": {
-    "dnd2014": "ID_PHB_SPELL_TENSERS_FLOATING_DISK",
+    "dnd2014": "ID_PHB_SPELL_FLOATING_DISK",
     "kind": "equivalent"
    }
   },
@@ -2792,7 +2792,7 @@
    },
    "renamed_from": "ID_PHB_SPELL_TASHAS_HIDEOUS_LAUGHTER",
    "maps_to": {
-    "dnd2014": "ID_PHB_SPELL_TASHAS_HIDEOUS_LAUGHTER",
+    "dnd2014": "ID_PHB_SPELL_HIDEOUS_LAUGHTER",
     "kind": "equivalent"
    }
   },

@@ -88,7 +88,8 @@ def make_species(sp,size,speed,rules,traits,extra_elems=(),size_choice=None,maps
     srules=[grant('ID_SIZE_'+(size.upper() if not size_choice else 'MEDIUM'),'Size')] if not size_choice else [custom('select_size',name='Size',options=['Small','Medium'])]
     srules.append(stat('innate speed',speed,bonus='base'))
     srules+=rules
-    srules+=[grant(t,'Racial Trait') for t in trait_ids]
+    # a trait gained at a character level (Goliath Large Form: 5) is granted at that level
+    srules+=[grant(t['id'],'Racial Trait',level=(t.get('data') or {}).get('level')) for t in traits]
     m=re.search(r'Size: (.*?)\nSpeed',block,re.S)
     sizetxt=join_lines(m.group(1).split('\n'))
     e=el(sid,sp,'Species',
@@ -195,7 +196,7 @@ for k,(pos,g) in enumerate(idx):
         rules=[custom('resource',id='giant ancestry',name=short,max={'type':'stat','stat':'proficiency'},recharge=['long_rest'])]))
 traits=[
  trait('Goliath','Giant Ancestry',intro_lines,[select('Species Trait Option','Giant Ancestry',supports='Giant Ancestry')]),
- trait('Goliath','Large Form',tb['Large Form'],[custom('resource',level=5,id='large form',name='Large Form',max={'type':'fixed','value':1},recharge=['long_rest'])]),
+ trait('Goliath','Large Form',tb['Large Form'],level=5,rules=[custom('resource',level=5,id='large form',name='Large Form',max={'type':'fixed','value':1},recharge=['long_rest'])]),
  trait('Goliath','Powerful Build',tb['Powerful Build'],[custom('save_advantage_check',context='end Grappled condition'),custom('carry_capacity_size_bonus',steps=1)])]
 make_species('Goliath','Medium','35',[],traits,go_opts)
 

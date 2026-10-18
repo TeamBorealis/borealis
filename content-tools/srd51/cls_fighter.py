@@ -86,15 +86,16 @@ def build():
     # ---- Champion
     # Improved / Superior Critical: the engine's per-attack critical threshold (weapon attacks and
     # unarmed strikes); Remarkable Athlete: half proficiency (rounded up) on the STR/DEX/CON skills
-    # the fighter is not proficient in (the Aurora rules).
+    # the fighter is not proficient in (the Aurora rules) and on initiative.
     def critical_range(n):
         return {'kind': 'critical_range', 'min': n, 'applies_to': ['weapon attacks', 'unarmed strikes']}
 
     def remarkable_athlete_rules():
         skills = [('acrobatics', 'ACROBATICS'), ('athletics', 'ATHLETICS'),
                   ('sleight of hand', 'SLEIGHTOFHAND'), ('stealth', 'STEALTH')]
+        # initiative is a Dexterity check that never uses the proficiency bonus
         return [stat(f'{k}:misc', 'proficiency:half:up', requirements=f'!ID_PROFICIENCY_SKILL_{i}')
-                for k, i in skills]
+                for k, i in skills] + [stat('initiative:misc', 'proficiency:half:up', alt='Remarkable Athlete')]
 
     ar = find_in(R, 'Champion', 21)
     ARC = lambda t: feature_html(find_in(R, t, 18, ar))

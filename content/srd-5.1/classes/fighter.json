@@ -641,6 +641,12 @@
           "name": "stealth:misc",
           "value": "proficiency:half:up",
           "requirements": "!ID_PROFICIENCY_SKILL_STEALTH"
+        },
+        {
+          "kind": "stat",
+          "name": "initiative:misc",
+          "value": "proficiency:half:up",
+          "alt": "Remarkable Athlete"
         }
       ]
     },

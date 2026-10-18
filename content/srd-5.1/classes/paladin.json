@@ -653,7 +653,16 @@
             "text": "By 11th level, you are so suffused with righteous might that all your melee weapon strikes carry divine power with them. Whenever you hit a creature with a melee weapon, the creature takes an extra 1d8 radiant damage."
           }
         ]
-      }
+      },
+      "rules": [
+        {
+          "kind": "extra_damage",
+          "name": "Improved Divine Smite",
+          "dice": "1d8",
+          "trigger": "melee weapon hit",
+          "damage_type": "radiant"
+        }
+      ]
     },
     {
       "id": "ID_WOTC_PHB_CLASS_FEATURE_PALADIN_CLEANSING_TOUCH",

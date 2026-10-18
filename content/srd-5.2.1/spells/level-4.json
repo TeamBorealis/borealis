@@ -313,7 +313,7 @@
    },
    "renamed_from": "ID_PHB_SPELL_EVARDS_BLACK_TENTACLES",
    "maps_to": {
-    "dnd2014": "ID_PHB_SPELL_EVARDS_BLACK_TENTACLES",
+    "dnd2014": "ID_PHB_SPELL_BLACK_TENTACLES",
     "kind": "equivalent"
    }
   },
@@ -1307,7 +1307,7 @@
    },
    "renamed_from": "ID_PHB_SPELL_MORDENKAINENS_FAITHFUL_HOUND",
    "maps_to": {
-    "dnd2014": "ID_PHB_SPELL_MORDENKAINENS_FAITHFUL_HOUND",
+    "dnd2014": "ID_PHB_SPELL_FAITHFUL_HOUND",
     "kind": "equivalent"
    }
   },
@@ -2164,7 +2164,7 @@
    },
    "renamed_from": "ID_PHB_SPELL_MORDENKAINENS_PRIVATE_SANCTUM",
    "maps_to": {
-    "dnd2014": "ID_PHB_SPELL_MORDENKAINENS_PRIVATE_SANCTUM",
+    "dnd2014": "ID_PHB_SPELL_PRIVATE_SANCTUM",
     "kind": "equivalent"
    }
   },
@@ -2240,7 +2240,7 @@
    },
    "renamed_from": "ID_PHB_SPELL_OTILUKES_RESILIENT_SPHERE",
    "maps_to": {
-    "dnd2014": "ID_PHB_SPELL_OTILUKES_RESILIENT_SPHERE",
+    "dnd2014": "ID_PHB_SPELL_RESILIENT_SPHERE",
     "kind": "equivalent"
    }
   },
@@ -2321,7 +2321,7 @@
    },
    "renamed_from": "ID_PHB_SPELL_LEOMUNDS_SECRET_CHEST",
    "maps_to": {
-    "dnd2014": "ID_PHB_SPELL_LEOMUNDS_SECRET_CHEST",
+    "dnd2014": "ID_PHB_SPELL_SECRET_CHEST",
     "kind": "equivalent"
    }
   },

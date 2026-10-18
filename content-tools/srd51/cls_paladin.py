@@ -70,7 +70,11 @@ def build():
     els.append(class_feature(CLS, 'Aura of Courage', html=H('Aura of Courage'),
                              rules=[stat('aura of courage:range', 10), stat('aura of courage:range', 20, level=18)],
                              sheet_=sheet(text='You and friendly creatures within {{aura of courage:range}} feet can’t be frightened while you are conscious.')))
-    els.append(class_feature(CLS, 'Improved Divine Smite', html=H('Improved Divine Smite')))
+    # SRD 5.1: whenever you hit a creature with a melee weapon, it takes an extra 1d8 radiant damage
+    # (the 5.2.1 pack's extra_damage rule, as on Radiant Strikes)
+    els.append(class_feature(CLS, 'Improved Divine Smite', html=H('Improved Divine Smite'),
+                             rules=[{'kind': 'extra_damage', 'name': 'Improved Divine Smite', 'dice': '1d8',
+                                     'trigger': 'melee weapon hit', 'damage_type': 'radiant'}]))
     els.append(class_feature(CLS, 'Cleansing Touch', html=H('Cleansing Touch'),
                              rules=[stat('cleansing touch:count', 1, bonus='base'), stat('cleansing touch:count', 'charisma:modifier', bonus='base')],
                              sheet_=sheet(action='Action', usage='{{cleansing touch:count}}/Long Rest')))
