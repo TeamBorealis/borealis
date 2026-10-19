@@ -48,7 +48,9 @@ use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 const SUITE: &str = "diff_corpus";
-const BUNDLED: [&str; 3] = ["core", "srd-5.1", "srd-5.2.1"];
+/// The packs the app bundles (`state::BUNDLED_PACKS`), the SRD monster stat blocks included:
+/// they fill Companion selects (PHB Beast Master, T1) in the app, so they fill them here.
+const BUNDLED: [&str; 5] = borealis_lib::state::BUNDLED_PACKS;
 
 /// The SRD classes and subclasses (bundled SRD 5.1 ids, which A-core shares).
 const SRD_CLASSES: [(&str, &str, &str); 12] = [
