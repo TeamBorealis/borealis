@@ -17,6 +17,9 @@ use borealis_content::{ContentStore, Rule, Ruleset};
 use borealis_lib::state::AppState;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
+#[path = "stage2_items.rs"]
+mod items;
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Scope {
     Full,
@@ -376,6 +379,8 @@ enum Job {
     Feat(String),
     /// a prerequisite-aware host for an option still not offered (see [`option_host`])
     Option(String),
+    /// an element only an item's select offers, and the items to hold (see [`items::item_host`])
+    Item(String, Vec<String>),
 }
 
 /// What one worker found: offers, (archetype, class) pairs offered, options explored, hosts.
@@ -418,6 +423,9 @@ fn run_job(d: &Driver<'_>, e: &Edition<'_>, job: &Job, ex: &mut Explore<'_>, f: 
         Job::Option(id) => {
             option_host(d, e, id, ex, offers);
         }
+        Job::Item(id, held) => {
+            items::item_host(d, e, id, held, ex, offers);
+        }
     }
 }
 
@@ -459,9 +467,7 @@ fn run_jobs(apps: &[&AppState], e: &Edition<'_>, jobs: &[Job]) -> Vec<Found> {
 
 fn merge(into: &mut Found, parts: Vec<Found>) {
     for (o, subs, n, m) in parts {
-        for (id, host) in o.found {
-            into.0.add(&id, &host);
-        }
+        into.0.merge(o);
         into.1.extend(subs);
         into.2 += n;
         into.3 += m;
@@ -504,7 +510,13 @@ fn edition(
     };
     let mut base = d.create(rs, TEST_SCORES).expect("create");
     survey(&d, &mut base, &mut ex, "L1", &mut total.0);
-    d.items(&base, &mut total.0, "search_items");
+    // the items this edition's item search lists: the only ones an item host may hold
+    let mut searchable = Offers::default();
+    d.items(&base, &mut searchable, "search_items");
+    let searchable: BTreeSet<String> = searchable.found.into_keys().collect();
+    for id in &searchable {
+        total.0.add(id, "search_items");
+    }
     let builder_classes: Vec<String> = base
         .snap
         .slots
@@ -590,6 +602,28 @@ fn edition(
         .map(|o| Job::Option(o.0.clone()))
         .collect();
     merge(&mut found, run_jobs(apps, &e, &options));
+    // what still is not offered and only an item's select offers gets an item host (also what
+    // another item host offered: each one is picked once, to see that it applies)
+    let by_item = |id: &str| {
+        let label = found.0.found.get(id).or_else(|| total.0.found.get(id));
+        label.map_or(true, |l| l.starts_with(items::ITEM_LABEL))
+            && !found.0.applied.contains_key(id)
+            && !total.0.applied.contains_key(id)
+    };
+    let held: Vec<Job> = ins
+        .ours
+        .iter()
+        .filter(|o| o.2 == rs && !items::is_item_type(&o.1) && by_item(&o.0))
+        .filter_map(|o| {
+            let el = ins.store.element(&o.0)?;
+            (category(&selects, &o.0, &o.1, Some(el)) == "select")
+                .then(|| items::host_items(&e, &o.0, el, &searchable))
+                .filter(|v| !v.is_empty())
+                .map(|v| Job::Item(o.0.clone(), v))
+        })
+        .take(cap.min(MAX_OPTION_HOSTS))
+        .collect();
+    merge(&mut found, run_jobs(apps, &e, &held));
     merge(total, vec![found]);
 }
 
@@ -731,6 +765,7 @@ fn record(src: &str, ins: &Installed, offers: &Offers) {
     }
     metric(src, "s2", "*", "types", seen_types.len() as i64);
     metric(src, "s2", "*", "unmapped_types", 0);
+    items::record_extra(src, ins, offers);
 }
 
 /// What a requirements expression asks for, as groups of alternatives (any one id of a group
@@ -786,25 +821,14 @@ fn earlier_copies(store: &ContentStore, id: &str) -> Vec<String> {
     out
 }
 
-/// A host built for one option still not offered: its requirements read (scores, class, level,
-/// race via `prereq::Needs`; every element id it names, the element ids those name, earlier
-/// copies of a repeatable option), the class/archetype/origin its select climbs to, then levels
-/// 1..=20 picking each needed id wherever the builder offers it. True when the option is offered.
-fn option_host(
-    d: &Driver<'_>,
+/// What an option needs, as any-of groups: earlier copies of a repeatable option, what its
+/// requirements name (and what those name), then what the selects that offer it require.
+fn needed_groups(
     e: &Edition<'_>,
     target: &str,
-    ex: &mut Explore<'_>,
-    offers: &mut Offers,
-) -> bool {
+    el: &borealis_content::Element,
+) -> Vec<Vec<String>> {
     let store = &e.ins.store;
-    let Some(el) = store.element(target) else {
-        return false;
-    };
-    let mut needs = prereq::Needs::default();
-    e.reader.needs(e.rs, el, 0, &mut needs);
-    // needed: earlier copies, then what the requirements name (and what those name), as
-    // any-of groups
     let mut groups: Vec<Vec<String>> = earlier_copies(store, target)
         .into_iter()
         .map(|c| vec![c])
@@ -841,6 +865,27 @@ fn option_host(
             }
         }
     }
+    groups
+}
+
+/// A host built for one option still not offered: its requirements read (scores, class, level,
+/// race via `prereq::Needs`; every element id it names, the element ids those name, earlier
+/// copies of a repeatable option), the class/archetype/origin its select climbs to, then levels
+/// 1..=20 picking each needed id wherever the builder offers it. True when the option is offered.
+fn option_host(
+    d: &Driver<'_>,
+    e: &Edition<'_>,
+    target: &str,
+    ex: &mut Explore<'_>,
+    offers: &mut Offers,
+) -> bool {
+    let store = &e.ins.store;
+    let Some(el) = store.element(target) else {
+        return false;
+    };
+    let mut needs = prereq::Needs::default();
+    e.reader.needs(e.rs, el, 0, &mut needs);
+    let groups = needed_groups(e, target, el);
     // hosts the option (and each needed id) climb to; each candidate class is tried in turn
     let mut roots = Plan::default();
     e.offerers.place(target, &mut roots);

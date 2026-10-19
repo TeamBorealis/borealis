@@ -6,7 +6,7 @@
 
 use borealis_content::Ruleset;
 use borealis_lib::dto::{AbilityMethodDto, CharacterSnapshot, NewCharacterRequest, OptionsPatch};
-use borealis_lib::dto_ext::ItemFilter;
+use borealis_lib::dto_ext::{EquipRequest, ItemFilter};
 use borealis_lib::state::{AppPaths, AppState};
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::PathBuf;
@@ -68,6 +68,8 @@ pub fn app_state_copy(template: &std::path::Path) -> (tempfile::TempDir, AppStat
 #[derive(Default)]
 pub struct Offers {
     pub found: BTreeMap<String, String>,
+    /// Elements an item host picked: whether the pick applied, and why not.
+    pub applied: BTreeMap<String, (bool, String)>,
 }
 
 impl Offers {
@@ -75,6 +77,16 @@ impl Offers {
         self.found
             .entry(id.to_string())
             .or_insert_with(|| host.to_string());
+    }
+
+    /// Everything `other` found, kept where this one already has an entry.
+    pub fn merge(&mut self, other: Offers) {
+        for (id, host) in other.found {
+            self.add(&id, &host);
+        }
+        for (id, a) in other.applied {
+            self.applied.entry(id).or_insert(a);
+        }
     }
 }
 
@@ -385,6 +397,54 @@ impl<'a> Driver<'a> {
                 return;
             }
         }
+    }
+
+    /// Turn on character options (`Option` elements a requirement names), as the options
+    /// dialog does. An option the builder refuses is left off.
+    pub fn enable_options(&self, host: &mut Host, ids: &[String]) {
+        if ids.is_empty() {
+            return;
+        }
+        let patch = OptionsPatch {
+            custom: Some(ids.iter().map(|id| (id.clone(), true)).collect()),
+            ..OptionsPatch::default()
+        };
+        if let Ok(s) = self.app.set_character_options(&host.id, &patch) {
+            host.set(s);
+        }
+    }
+
+    /// Add `item` to the inventory, equip it and attune to it when it needs attunement, as a
+    /// user would. True when the item is held (attuned if it needs it).
+    pub fn hold_item(&self, host: &mut Host, item: &str) -> bool {
+        let Ok(s) = self.app.add_item(&host.id, item, 1, false, None) else {
+            return false;
+        };
+        host.set(s);
+        let line = |h: &Host| {
+            h.snap
+                .inventory
+                .items
+                .iter()
+                .find(|i| i.item_id == item)
+                .cloned()
+        };
+        let Some(added) = line(host) else {
+            return false;
+        };
+        if let Ok(s) = self.app.equip_item(&host.id, &added.id, EquipRequest::Auto) {
+            host.set(s);
+        }
+        let Some(now) = line(host) else {
+            return false;
+        };
+        if now.requires_attunement && !now.attuned {
+            if let Ok(s) = self.app.set_attuned(&host.id, &now.id, true) {
+                host.set(s);
+            }
+        }
+        // an item that cannot be equipped still registers while carried
+        line(host).is_some_and(|i| i.attuned || !i.requires_attunement)
     }
 
     /// Every item `search_items` lists for a character of this host's edition.
