@@ -16,6 +16,7 @@ pub mod mech;
 pub mod misc;
 pub mod monster;
 pub mod monster_text;
+pub mod nested_options;
 pub mod optfeat;
 pub mod prereq;
 pub mod prereq_index;

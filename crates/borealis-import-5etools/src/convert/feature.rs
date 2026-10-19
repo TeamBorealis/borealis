@@ -340,6 +340,11 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
         if let Some(rule) = super::companion::companion_select(&f.name, &f.entries) {
             mech.push(rule);
         }
+        // a choice among other features nested in this one (PHB Totem Spirit's animals)
+        if let Some(rule) = super::nested_options::select_rule(sh, st, &f.name, &f.entries, ty, sub)
+        {
+            mech.push(rule);
+        }
         if let Some(choice) = stated.expertise_choice() {
             let owner = super::stated_choices::OptionOwner {
                 feature: &f.name,
@@ -412,7 +417,7 @@ fn srd_rules(
     } else {
         index.class_feature(ruleset, &f.class_name, &f.name)?
     };
-    if !crate::srd_features::portable(&f.name, &srd.rules) {
+    if !index.portable_feature(ruleset, &f.name, &srd.rules) {
         return None;
     }
     let field = |e: &Ent, k: &str| e.raw.get(k).and_then(Value::as_str).map(str::to_string);

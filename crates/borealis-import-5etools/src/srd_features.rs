@@ -208,6 +208,10 @@ pub struct SrdFeatures {
     /// Names of the SRD's `Class Feature` option elements, by `(ruleset, support tag)` (the
     /// seven SRD 5.1 `Favored Terrain` options).
     options: BTreeMap<(Ruleset, String), Vec<String>>,
+    /// Support tags of the SRD's `Archetype Feature` option elements, by `(ruleset, tag)`: true
+    /// when every option of the tag carries stats only (SRD 5.1 Draconic Ancestor, Hunter
+    /// Prey), false when one grants or chooses more (Circle of the Land Terrain's spells).
+    archetype_options: BTreeMap<(Ruleset, String), bool>,
 }
 
 impl SrdFeatures {
@@ -261,6 +265,29 @@ impl SrdFeatures {
             .map_or(&[], Vec::as_slice)
     }
 
+    /// [`portable`], or portable once the `Archetype Feature` selects of the SRD's own
+    /// stat-only option elements are allowed too (SRD 5.1 Dragon Ancestor: the ten ancestries
+    /// set `draconic-ancestor`; Hunter's Prey: three options without rules). Those options
+    /// live in the bundled pack, so the imported feature can offer them.
+    #[must_use]
+    pub fn portable_feature(&self, ruleset: Ruleset, feature_name: &str, rules: &[Rule]) -> bool {
+        if portable(feature_name, rules) {
+            return true;
+        }
+        let own_options = |r: &&Rule| match r {
+            Rule::Select(s)
+                if s.ty == "Archetype Feature" && srd_option_select(s.supports.as_deref()) =>
+            {
+                s.supports.as_deref().is_some_and(|t| {
+                    self.archetype_options.get(&(ruleset, t.trim().to_string())) == Some(&true)
+                })
+            }
+            _ => false,
+        };
+        let rest: Vec<Rule> = rules.iter().filter(|r| !own_options(r)).cloned().collect();
+        rest.len() < rules.len() && (rest.is_empty() || portable(feature_name, &rest))
+    }
+
     /// Number of indexed features.
     #[must_use]
     pub fn len(&self) -> usize {
@@ -312,6 +339,19 @@ impl SrdFeatures {
                 .collect();
             if !stats.is_empty() {
                 self.feats.insert((ruleset, normalize(&e.name)), stats);
+            }
+        }
+        for e in file.elements.iter().filter(|e| e.ty == "Archetype Feature") {
+            let Some(ruleset) = e.ruleset.or(file.ruleset).or(pack_ruleset) else {
+                continue;
+            };
+            let stats_only = e.rules.iter().all(|r| matches!(r, Rule::Stat(_)));
+            for tag in e.supports.iter().filter(|t| !t.starts_with("ID_")) {
+                let slot = self
+                    .archetype_options
+                    .entry((ruleset, tag.clone()))
+                    .or_insert(true);
+                *slot = *slot && stats_only;
             }
         }
         for e in file.elements.iter().filter(|e| e.ty == "Class Feature") {
@@ -596,5 +636,33 @@ mod tests {
         assert!(f
             .option_names(Ruleset::Dnd2024, "Favored Terrain")
             .is_empty());
+        // F17 / F18: selects of the SRD's own stat-only Archetype Feature options are taken,
+        // the Circle of the Land terrains (they grant spells) are not
+        let feature = |sub: &str, name: &str| {
+            f.subclass_feature(
+                Ruleset::Dnd2014,
+                if sub == "Draconic" {
+                    "Sorcerer"
+                } else if sub == "Land" {
+                    "Druid"
+                } else {
+                    "Ranger"
+                },
+                sub,
+                name,
+            )
+            .unwrap_or_else(|| panic!("SRD 5.1 {name}"))
+        };
+        for (sub, name) in [
+            ("Draconic", "Dragon Ancestor"),
+            ("Hunter", "Hunter's Prey"),
+            ("Hunter", "Defensive Tactics"),
+        ] {
+            let rules = &feature(sub, name).rules;
+            assert!(!portable(name, rules), "{name}");
+            assert!(f.portable_feature(Ruleset::Dnd2014, name, rules), "{name}");
+        }
+        let circle = &feature("Land", "Circle Spells").rules;
+        assert!(!f.portable_feature(Ruleset::Dnd2014, "Circle Spells", circle));
     }
 }
