@@ -371,7 +371,7 @@ pub fn raw_index(data: &Path, ours: &HashMap<String, (Element, Ruleset)>) -> Raw
     let variants = resolve("magicvariant");
     entries.extend(bases.iter().cloned());
     entries.extend(generate_variant_items(&variants, &bases));
-    let generic = generic_variant_items(&variants);
+    let generic = generic_variant_items(&variants, &bases);
     let mut generic_kind: HashMap<(String, String), &'static str> = HashMap::new();
     for v in &variants {
         let name = v.get("name").and_then(Value::as_str).unwrap_or("");
