@@ -111,7 +111,7 @@ fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
 /// relative to `data`, sorted. Fluff, Foundry and site files are not rules.
 pub fn fivetools_files(data: &Path) -> Vec<String> {
     let mut out = Vec::new();
-    for sub in ["", "class", "spells", "homebrew"] {
+    for sub in ["", "class", "spells", "bestiary", "homebrew"] {
         let dir = data.join(sub);
         let Ok(rd) = std::fs::read_dir(&dir) else {
             continue;
@@ -167,14 +167,21 @@ pub fn fivetools_entries(data: &Path) -> BTreeMap<String, BTreeMap<String, usize
                 continue;
             }
             if let Value::Array(items) = value {
-                // each `_versions` entry is an entity of its own (5etools semantics)
+                // each `_versions` entry is an entity of its own (5etools semantics); an
+                // `_abstract` version is one entity per `_implementations` entry (Dragonborn,
+                // XPHB Draconic Spirit)
+                let version_count = |v: &Value| {
+                    v.get("_implementations")
+                        .and_then(Value::as_array)
+                        .map_or(1, Vec::len)
+                };
                 let n: usize = items
                     .iter()
                     .map(|i| {
                         1 + i
                             .get("_versions")
                             .and_then(Value::as_array)
-                            .map_or(0, Vec::len)
+                            .map_or(0, |vs| vs.iter().map(version_count).sum())
                     })
                     .sum();
                 *out.entry(key).or_default().entry(rel.clone()).or_default() += n;
@@ -187,6 +194,26 @@ pub fn fivetools_entries(data: &Path) -> BTreeMap<String, BTreeMap<String, usize
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fivetools_counter_reads_creatures_and_abstract_versions() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join("bestiary")).unwrap();
+        std::fs::write(
+            dir.path().join("bestiary/bestiary-x.json"),
+            r#"{"monster": [{"name": "A"}, {"name": "B", "_versions": [{"name": "B2"},
+                {"_abstract": {}, "_implementations": [{}, {}, {}]}]}]}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join("bestiary/fluff-bestiary-x.json"),
+            r#"{"monsterFluff": [{}]}"#,
+        )
+        .unwrap();
+        let counts = fivetools_entries(dir.path());
+        assert_eq!(counts["monster"]["bestiary/bestiary-x.json"], 6);
+        assert!(!counts.contains_key("monsterFluff"));
+    }
 
     #[test]
     fn aurora_counter_reads_ids_types_and_overrides() {

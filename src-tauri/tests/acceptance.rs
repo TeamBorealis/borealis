@@ -68,6 +68,10 @@ const NON_OFFERABLE: &[(&str, &str)] = &[
 const FIVE_OUT_OF_SCOPE: &[&str] = &[
     "monster",
     "legendaryGroup",
+    // creature templates (`bestiary/template.json`) are applied to the creatures that copy
+    // through them, not imported on their own
+    "monsterTemplate",
+    "legendaryGroupTemplate",
     "vehicle",
     "vehicleUpgrade",
     "object",
@@ -104,6 +108,17 @@ const FIVE_SKIP_BY_DESIGN: &[&str] = &[
     "descriptive catalog entry covered by the core pack",
     "defined by the core pack",
     "duplicate of an entry that was already imported",
+    // creatures the typed stat block model cannot hold exactly, each with a reason code
+    // (borealis-import-5etools report::code): no challenge rating (summoned spirits whose
+    // numbers follow the spell, level-scaled companions), a creature type that is a choice or
+    // not one of the 14, a number printed as text, or a `_copy` target missing from the data
+    "creature stat block: no challenge rating",
+    "creature stat block: the creature type is a choice",
+    "creature stat block: creature type",
+    "creature stat block: hit points are not a number",
+    "creature stat block: the str score is not a number",
+    "creature stat block: challenge rating",
+    "cannot resolve _copy: replaceArr: target not found",
 ];
 
 /// Written straight to stderr (like `outcome::record`), so libtest's capture never swallows it.
@@ -1085,7 +1100,7 @@ fn acceptance_a_core() {
 fn five_zip(data: &Path) -> Vec<u8> {
     let keep = |rel: &str| {
         let root_file = !rel.contains('/');
-        let sub = ["class/", "spells/", "homebrew/"]
+        let sub = ["class/", "spells/", "bestiary/", "homebrew/"]
             .iter()
             .any(|p| rel.starts_with(p));
         rel.ends_with(".json")
