@@ -8,6 +8,9 @@ use borealis_engine::commands;
 use borealis_engine::{CharacterSnapshot, CharacterState};
 use serde_json::Value;
 
+/// Why a card deck's effect check is wrong: the deck applied one of its card effects.
+const DECK_EFFECT_APPLIED: &str = "a card deck applied a card effect (decks grant nothing)";
+
 /// One equipped item on the test character, with its 5etools entry.
 pub struct Check<'a> {
     pub cx: &'a Ctx<'a>,
@@ -37,7 +40,8 @@ impl Check<'_> {
         }
         if let Some(n) = self.raw.int("bonusAc").filter(|_| self.el.ty != "Armor") {
             let got = self.snap.armor_class - self.base.snap.armor_class;
-            t.record(
+            self.effect(
+                t,
                 "AC bonus (non-armor, ring/cloak style)",
                 id,
                 verdict(got == n, || format!("AC {got:+} want {n:+}")),
@@ -48,7 +52,8 @@ impl Check<'_> {
                 .map(|i| self.snap.abilities[i].save - self.base.snap.abilities[i].save)
                 .collect();
             let ok = deltas.iter().all(|d| *d == n);
-            t.record(
+            self.effect(
+                t,
                 "saving throw bonus",
                 id,
                 verdict(ok, || format!("deltas {deltas:?} want {n:+}")),
@@ -56,7 +61,8 @@ impl Check<'_> {
         }
         if let Some(n) = self.raw.int("bonusProficiencyBonus") {
             let got = self.snap.proficiency_bonus - self.base.snap.proficiency_bonus;
-            t.record(
+            self.effect(
+                t,
                 "proficiency bonus bonus",
                 id,
                 verdict_nm(got == n, got == 0, || format!("{got:+}")),
@@ -71,6 +77,24 @@ impl Check<'_> {
         if self.raw.code() == "A" || self.raw.code() == "AF" {
             self.ammunition(t);
         }
+    }
+
+    /// A card deck (`seeAlsoDeck`: Deck of Many Things, Deck of Wonder...): its effect fields
+    /// sum up what single random cards do when drawn, and the importer keeps them as data only,
+    /// as Aurora's Deck of Many Things grants nothing. Its effect checks are not modelled by
+    /// design; a card effect that does apply is wrong.
+    fn is_card_deck(&self) -> bool {
+        self.raw.0.contains_key("seeAlsoDeck")
+    }
+
+    /// Records an effect check (bonuses, abilities, defences, speed, spells, granted rules).
+    fn effect(&self, t: &mut Tally, cat: &str, id: &str, v: Verdict) {
+        let v = match v {
+            v if !self.is_card_deck() => v,
+            Verdict::Correct => Verdict::Wrong(DECK_EFFECT_APPLIED.into()),
+            Verdict::Wrong(_) | Verdict::NotModelled => Verdict::NotModelled,
+        };
+        t.record(cat, id, v);
     }
 
     fn cost_weight(&self, t: &mut Tally) {
@@ -388,7 +412,8 @@ impl Check<'_> {
                     let base = self.base.snap.abilities[i].score;
                     let got = self.snap.abilities[i].score;
                     let want = base.max(n);
-                    t.record(
+                    self.effect(
+                        t,
                         "ability score set (\"set Str to 19\")",
                         id,
                         verdict_nm(got == want, got == base, || {
@@ -398,7 +423,8 @@ impl Check<'_> {
                 }
             } else if key == "choose" || key == "from" || key == "count" || key == "amount" {
                 let opened = self.snap.slots.iter().any(|s| s.owner.id == self.el.id);
-                t.record(
+                self.effect(
+                    t,
                     "ability bonus, chosen ability",
                     id,
                     if opened {
@@ -412,7 +438,8 @@ impl Check<'_> {
                 let base = self.base.snap.abilities[i].score;
                 let got = self.snap.abilities[i].score;
                 let want = (base + n).min(20.max(base));
-                t.record(
+                self.effect(
+                    t,
                     "ability score flat bonus",
                     id,
                     verdict_nm(got == want, got == base, || {
@@ -438,7 +465,8 @@ impl Check<'_> {
         ] {
             for entry in self.raw.list(key) {
                 let Some(name) = entry.as_str() else {
-                    t.record(
+                    self.effect(
+                        t,
                         &format!("{cat} (choice/conditional form)"),
                         id,
                         Verdict::NotModelled,
@@ -455,7 +483,8 @@ impl Check<'_> {
                     _ => &self.base.snap.defenses.condition_immunities,
                 };
                 let got = had(list);
-                t.record(
+                self.effect(
+                    t,
                     cat,
                     id,
                     verdict_nm(got, !got && !had(base_list), || format!("{name} missing")),
@@ -491,7 +520,8 @@ impl Check<'_> {
                 // blowing): the toggle's speed (on: `speed_multiply`); off, no speed of its own
                 let multiplied = m.get("multiply").and_then(|x| x.get(mode)).is_some();
                 if how == "equal" && multiplied {
-                    t.record(
+                    self.effect(
+                        t,
                         "speed change (modifySpeed)",
                         id,
                         verdict(got == before, || {
@@ -507,13 +537,14 @@ impl Check<'_> {
                     _ => None,
                 };
                 let Some(want) = want else {
-                    t.record("speed change (other form)", id, Verdict::NotModelled);
+                    self.effect(t, "speed change (other form)", id, Verdict::NotModelled);
                     continue;
                 };
                 if want == before {
                     continue;
                 }
-                t.record(
+                self.effect(
+                    t,
                     "speed change (modifySpeed)",
                     id,
                     verdict_nm(got == want, got == before, || {
@@ -536,7 +567,7 @@ impl Check<'_> {
         let id = self.el.id.as_str();
         let cat = "speed change (other form)";
         let Some(factor) = v_i32(v) else {
-            t.record(cat, id, Verdict::NotModelled);
+            self.effect(t, cat, id, Verdict::NotModelled);
             return;
         };
         let get = |s: &CharacterSnapshot, mode: &str| match mode {
@@ -560,13 +591,14 @@ impl Check<'_> {
         let on = toggle
             .and_then(|tg| commands::set_toggle(self.cx.engine, self.state, &tg.id, true).ok());
         let Some(on) = on else {
-            t.record(cat, id, Verdict::NotModelled);
+            self.effect(t, cat, id, Verdict::NotModelled);
             return;
         };
         let toggled = self.cx.engine.derive(&on.state);
         let want = factor * get(self.snap, of);
         let got = get(&toggled, mode);
-        t.record(
+        self.effect(
+            t,
             cat,
             id,
             verdict_nm(got == want, got == get(self.snap, mode), || {
@@ -599,7 +631,8 @@ impl Check<'_> {
         let by_item = |s: &str| s == self.el.name || s == self.el.id;
         let free = self.snap.free_casts.iter().any(|f| by_item(&f.source));
         let casting = self.snap.spellcasting.iter().any(|s| by_item(&s.name));
-        t.record(
+        self.effect(
+            t,
             "spell-granting item (attachedSpells)",
             id,
             if free || casting {
@@ -654,7 +687,8 @@ impl Check<'_> {
                 // "proficient with this item": the worn line itself must be proficient
                 let line = self.snap.inventory.items.iter().find(|l| l.uid == self.uid);
                 let applied = line.is_some_and(|l| l.proficient_by_item);
-                t.record(
+                self.effect(
+                    t,
                     cat,
                     id,
                     verdict(applied, || {
@@ -664,7 +698,8 @@ impl Check<'_> {
                 continue;
             }
             if self.raw.0.contains_key(key) {
-                t.record(
+                self.effect(
+                    t,
                     cat,
                     id,
                     if ok {
