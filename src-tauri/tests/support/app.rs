@@ -260,6 +260,24 @@ impl<'a> Driver<'a> {
         false
     }
 
+    /// Change the choice of the first filled slot that offers `target` to it (a user changing an
+    /// earlier pick in the builder).
+    pub fn rechoose(&self, host: &mut Host, target: &str) -> bool {
+        let filled: Vec<String> = host
+            .snap
+            .slots
+            .iter()
+            .filter(|s| s.chosen.as_ref().is_some_and(|c| c.id != target))
+            .map(|s| s.id.clone())
+            .collect();
+        for slot in filled {
+            if self.options(host, &slot).iter().any(|(id, _)| id == target) {
+                return self.apply(host, &slot, target);
+            }
+        }
+        false
+    }
+
     /// The first option named `name` of the first open slot of `ty` (prefers ids with `prefix`).
     pub fn find_named(&self, host: &Host, ty: &str, name: &str, prefix: &str) -> Option<String> {
         let slot = host

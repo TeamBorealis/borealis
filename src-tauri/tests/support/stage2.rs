@@ -1089,6 +1089,15 @@ fn option_host_on(
             break;
         }
     }
+    // every slot filled: a choice made earlier can be changed to the option. Aurora evaluates a
+    // select's requirements against the character as it is now (`[level:warlock:2]` reads the
+    // current class level, ExpressionInterpreter.cs:42-63), and so does the builder: the 10th
+    // copy of PHB24 Lessons of the First Ones takes the Warlock 1 invocation slot at level 18
+    if !found && d.rechoose(&mut h, target) {
+        found = true;
+        d.collect(&h, &label, offers);
+        d.explore(&mut h, ex, &label, offers);
+    }
     d.drop_host(h);
     found
 }
