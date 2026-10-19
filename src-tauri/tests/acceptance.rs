@@ -119,7 +119,14 @@ const FIVE_SKIP_BY_DESIGN: &[&str] = &[
     "creature stat block: the str score is not a number",
     "creature stat block: challenge rating",
     "cannot resolve _copy: replaceArr: target not found",
+    // TCE sidekick classes level a companion creature, not a character (IM5: creatures are not
+    // character content); the importer skips them with code OUT_OF_SCOPE_SIDEKICK_CLASS
+    "sidekick class",
 ];
+/// Kinds the importer reports for elements it derives rather than reads: a magic variant applied
+/// to each base item it fits ("+1 Longsword"). They are no entries of the data, so they stay out
+/// of `S = I + W + K` (the variant itself is accounted by its generic item) and get metrics only.
+const FIVE_DERIVED: &[&str] = &["specificVariant"];
 
 /// Written straight to stderr (like `outcome::record`), so libtest's capture never swallows it.
 fn metric(src: &str, stage: &str, ty: &str, name: &str, n: i64) {
@@ -490,9 +497,14 @@ fn five_stage1(src: &str, data: &Path, sources: &[String]) {
     for ty in all {
         let sv = s.get(&ty).map_or(0, |m| m.values().sum::<usize>()) as i64;
         let [total, conv, part, _] = kinds.get(&ty).copied().unwrap_or_default();
-        // entities the importer saw (magic variants expand over base items): R - S > 0 = expansion
+        // entries the importer reported for the kind (R = S when each entry is reported once)
         metric(src, "s1", &ty, "R", total as i64);
         let (i, w) = ((conv - part) as i64, part as i64);
+        if FIVE_DERIVED.contains(&ty.as_str()) {
+            metric(src, "s1", &ty, "I", i);
+            metric(src, "s1", &ty, "W", w);
+            continue;
+        }
         let k = if FIVE_OUT_OF_SCOPE.contains(&ty.as_str()) && conv == 0 {
             sv
         } else {

@@ -44,6 +44,8 @@ fn identity_fields(prop: &str) -> &'static [&'static str] {
         ],
         "classFeature" => &["name", "source", "className", "classSource", "level"],
         "subrace" => &["name", "source", "raceName", "raceSource"],
+        // item types are keyed by their code: `Vehicle (Air)` copies `{"abbreviation": "SHP"}`
+        "itemType" => &["abbreviation", "source"],
         _ => &["name", "source"],
     }
 }
@@ -1048,6 +1050,22 @@ mod tests {
         assert_eq!(r.entries[1]["entries"][0], "dog sat. dog sat.");
         assert_eq!(r.entries[2]["entries"][0], "dog sat. cat sat.");
         assert_eq!(r.entries[1]["name2"], "cat");
+    }
+
+    #[test]
+    fn an_item_type_copies_its_base_by_abbreviation() {
+        let r = resolve(
+            "itemType",
+            json!([
+                {"name": "Vehicle (Air)", "abbreviation": "AIR", "source": "AAA",
+                 "_copy": {"abbreviation": "SHP", "source": "AAA"}},
+                {"name": "Vehicle (Water)", "abbreviation": "SHP", "source": "AAA", "entries": ["boats"]}
+            ]),
+        );
+        assert!(r.failed.is_empty(), "{:?}", r.failed);
+        assert_eq!(r.entries[0]["name"], "Vehicle (Air)");
+        assert_eq!(r.entries[0]["abbreviation"], "AIR");
+        assert_eq!(r.entries[0]["entries"], json!(["boats"]));
     }
 
     #[test]

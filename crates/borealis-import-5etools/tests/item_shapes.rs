@@ -156,6 +156,16 @@ fn imported_item_shapes_apply_on_a_built_character() {
         "{:?}",
         result.report.external_references
     );
+    // magicvariants.json holds 1 entry: its generic item counts as the file's item, the two
+    // items it makes from the zip ammunition count as specific variants, not as entries
+    let variants = result
+        .report
+        .files
+        .iter()
+        .find(|f| f.path == "magicvariants.json")
+        .expect("magic variants reported");
+    assert_eq!(variants.kinds["item"].total, 1, "{:?}", variants.kinds);
+    assert_eq!(variants.kinds["specificVariant"].total, 2);
     let e = Engine::new(&store);
     let base = fighter(&e);
 

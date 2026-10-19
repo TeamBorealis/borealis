@@ -32,6 +32,11 @@ pub struct ImportResult {
     pub report: ImportReport,
 }
 
+/// Report kind of a specific variant: a magic variant applied to one base item it fits
+/// ("+1 Longsword"). It is derived, not an entry of the data: `magicvariants.json` counts one
+/// `item` per variant (its generic item) and one of these per base item the variant fits.
+pub const SPECIFIC_VARIANT: &str = "specificVariant";
+
 /// Entities selected for conversion, by kind.
 #[derive(Default)]
 struct Ents {
@@ -46,6 +51,8 @@ struct Ents {
     optfeatures: Vec<Ent>,
     spells: Vec<Ent>,
     items: Vec<Ent>,
+    /// Indices into `items` of the specific variants (a magic variant applied to a base item).
+    specific_variants: std::ops::Range<usize>,
     groups: Vec<Ent>,
     masteries: Vec<Ent>,
     languages: Vec<Ent>,
@@ -295,7 +302,10 @@ fn select_entities(
         .into_iter()
         .map(|v| (v, "magicvariants.json".to_string()))
         .collect();
-    e.items.extend(to_ents(generated, "item", opts, st, case));
+    let start = e.items.len();
+    e.items
+        .extend(to_ents(generated, SPECIFIC_VARIANT, opts, st, case));
+    e.specific_variants = start..e.items.len();
     let generic = convert::item::generic_variant_items(&variants, &bases)
         .into_iter()
         .map(|v| (v, "magicvariants.json".to_string()))
@@ -617,9 +627,19 @@ fn convert_all(sh: &Shared, e: &Ents, st: &mut State, prog: &mut Progress<'_, '_
     run_group("spell", &e.spells, st, prog, |st, ent| {
         spell::convert(sh, st, ent)
     });
-    run_group("item", &e.items, st, prog, |st, ent| {
-        item::convert(sh, st, ent)
-    });
+    // items in data order; the specific variants among them are reported as their own kind
+    for (i, ent) in e.items.iter().enumerate() {
+        let conv = item::convert(sh, st, ent);
+        if !conv.elements.is_empty() {
+            let kind = if e.specific_variants.contains(&i) {
+                SPECIFIC_VARIANT
+            } else {
+                "item"
+            };
+            st.emit(ent, kind, conv);
+        }
+    }
+    prog.group_done("item", e.items.len());
     run_group("itemGroup", &e.groups, st, prog, |st, ent| {
         item::convert_group(sh, st, ent)
     });
