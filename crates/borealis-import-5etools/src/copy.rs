@@ -736,23 +736,54 @@ fn apply_one(target: &mut Value, key: &str, m: &Value, notes: &mut Vec<String>) 
             ) else {
                 return;
             };
-            let Some(slot) = target.get_mut(key).and_then(|v| v.get_mut(prop)) else {
+            let floor = m.get("floor").and_then(Value::as_bool).unwrap_or(false);
+            let Some(Value::Object(obj)) = target.get_mut(key) else {
                 return;
             };
-            if let Some(n) = slot.as_f64() {
-                let out = if mode == "scalarAddProp" {
-                    n + by
-                } else {
-                    n * by
+            // `"prop": "*"` scales every property (a creature's saves and skills)
+            let props: Vec<String> = if prop == "*" {
+                obj.keys().cloned().collect()
+            } else {
+                vec![prop.to_string()]
+            };
+            for p in props {
+                let Some(slot) = obj.get_mut(&p) else {
+                    continue;
                 };
-                *slot = if out.fract() == 0.0 {
-                    Value::from(out as i64)
-                } else {
-                    Value::from(out)
+                let scale = |n: f64| {
+                    let out = if mode == "scalarAddProp" {
+                        n + by
+                    } else {
+                        n * by
+                    };
+                    if floor {
+                        out.floor()
+                    } else {
+                        out
+                    }
                 };
+                // a signed bonus written as text (`"+6"`) stays signed text
+                let signed = slot
+                    .as_str()
+                    .and_then(|s| s.trim().trim_start_matches('+').parse::<f64>().ok());
+                if let Some(n) = slot.as_f64() {
+                    let out = scale(n);
+                    *slot = if out.fract() == 0.0 {
+                        Value::from(out as i64)
+                    } else {
+                        Value::from(out)
+                    };
+                } else if let Some(n) = signed {
+                    let out = scale(n) as i64;
+                    *slot = Value::String(if out < 0 {
+                        out.to_string()
+                    } else {
+                        format!("+{out}")
+                    });
+                }
             }
         }
-        other => match crate::copy_monster::apply_mode(target, other, m) {
+        other => match crate::copy_monster::apply_mode(target, key, other, m) {
             Some(Ok(())) => {}
             Some(Err(e)) => notes.push(e),
             None => notes.push(format!("unsupported _mod mode {other:?}")),
@@ -985,6 +1016,21 @@ mod tests {
         assert_eq!(keen["inherits"]["entries"], json!(["new", "more"]));
         assert_eq!(keen["inherits"]["namePrefix"], "Keen ");
         assert!(keen["inherits"].get("lootTables").is_none());
+    }
+
+    #[test]
+    fn scalar_modes_reach_every_prop_and_keep_signed_text() {
+        let r = resolve(
+            "monster",
+            json!([
+                {"name": "A", "source": "S", "save": {"dex": "+6", "wis": "+1"}, "hp": {"average": 11}},
+                {"name": "B", "source": "S", "_copy": {"name": "A", "source": "S", "_mod": {
+                    "save": {"mode": "scalarAddProp", "scalar": -2, "prop": "*"},
+                    "hp": {"mode": "scalarMultProp", "prop": "average", "scalar": 0.5, "floor": true}}}}
+            ]),
+        );
+        assert_eq!(r.entries[1]["save"], json!({"dex": "+4", "wis": "-1"}));
+        assert_eq!(r.entries[1]["hp"]["average"], 5);
     }
 
     #[test]

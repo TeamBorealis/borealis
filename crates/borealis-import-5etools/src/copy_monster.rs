@@ -246,12 +246,135 @@ fn edit_spells(target: &mut Value, mode: &str, m: &Value) -> Result<(), String> 
     Ok(())
 }
 
-/// Apply a creature-only `_mod` mode. `None` when `mode` is not one of them.
-pub(crate) fn apply_mode(target: &mut Value, mode: &str, m: &Value) -> Option<Result<(), String>> {
+const SIZES: [&str; 6] = ["T", "S", "M", "L", "H", "G"];
+
+/// `maxSize`: sizes above `max` become `max` (a reduced-threat creature is at most Large).
+fn max_size(target: &mut Value, m: &Value) -> Result<(), String> {
+    let max = m
+        .get("max")
+        .and_then(Value::as_str)
+        .ok_or("maxSize without max")?;
+    let cap = SIZES
+        .iter()
+        .position(|s| *s == max)
+        .ok_or("maxSize: unknown size")?;
+    let Some(Value::Array(sizes)) = target.get_mut("size") else {
+        return Err("maxSize: no size".into());
+    };
+    let mut out: Vec<Value> = Vec::new();
+    for s in sizes.iter() {
+        let i = s.as_str().and_then(|c| SIZES.iter().position(|x| *x == c));
+        let v = Value::String(SIZES[i.ok_or("maxSize: unknown size")?.min(cap)].to_string());
+        if !out.contains(&v) {
+            out.push(v);
+        }
+    }
+    *sizes = out;
+    Ok(())
+}
+
+/// Standard XP of a challenge rating written as 5etools text.
+fn standard_xp(cr: &str) -> Option<f64> {
+    borealis_content::Cr::parse(cr).map(|c| f64::from(c.standard_xp()))
+}
+
+/// `scalarMultXp`: the creature's XP times `scalar` (floored when `floor`), written as the
+/// printed XP of its challenge rating (`{"cr": "5", "xp": 900}`).
+fn scalar_mult_xp(target: &mut Value, m: &Value) -> Result<(), String> {
+    let by = m
+        .get("scalar")
+        .and_then(Value::as_f64)
+        .ok_or("scalarMultXp without scalar")?;
+    let floor = m.get("floor").and_then(Value::as_bool).unwrap_or(false);
+    let cr = target
+        .get("cr")
+        .ok_or("scalarMultXp: no challenge rating")?;
+    let (text, xp) = match cr {
+        Value::String(s) => (s.clone(), standard_xp(s)),
+        Value::Object(o) => {
+            let s = o
+                .get("cr")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string();
+            let xp = o
+                .get("xp")
+                .and_then(Value::as_f64)
+                .or_else(|| standard_xp(&s));
+            (s, xp)
+        }
+        _ => return Err("scalarMultXp: bad challenge rating".into()),
+    };
+    let xp = xp.ok_or("scalarMultXp: challenge rating is not a number")? * by;
+    let xp = if floor { xp.floor() } else { xp.round() };
+    let mut obj = match cr {
+        Value::Object(o) => o.clone(),
+        _ => Map::new(),
+    };
+    obj.insert("cr".into(), Value::String(text));
+    obj.insert("xp".into(), Value::from(xp as i64));
+    target["cr"] = Value::Object(obj);
+    Ok(())
+}
+
+/// `scalarAddHit` / `scalarAddDc`: every `{@hit N}` / `{@dc N}` in the property's text gets
+/// `scalar` added.
+fn scalar_add_tag(target: &mut Value, key: &str, tag: &str, m: &Value) -> Result<(), String> {
+    let by = m
+        .get("scalar")
+        .and_then(Value::as_i64)
+        .ok_or("scalarAdd without scalar")?;
+    let re = regex::Regex::new(&format!(r"\{{@{tag} (-?\d+)\}}")).map_err(|e| e.to_string())?;
+    fn walk(v: &mut Value, re: &regex::Regex, tag: &str, by: i64) {
+        match v {
+            Value::String(s) => {
+                let out = re.replace_all(s, |c: &regex::Captures<'_>| {
+                    let n: i64 = c[1].parse().unwrap_or(0);
+                    format!("{{@{tag} {}}}", n + by)
+                });
+                *s = out.into_owned();
+            }
+            Value::Array(a) => a.iter_mut().for_each(|x| walk(x, re, tag, by)),
+            Value::Object(o) => o.values_mut().for_each(|x| walk(x, re, tag, by)),
+            _ => {}
+        }
+    }
+    if let Some(v) = target.get_mut(key) {
+        walk(v, &re, tag, by);
+    }
+    Ok(())
+}
+
+/// `prefixSuffixStringProp`: text around a string property (`hp.formula`).
+fn prefix_suffix(target: &mut Value, key: &str, m: &Value) -> Result<(), String> {
+    let prop = m
+        .get("prop")
+        .and_then(Value::as_str)
+        .ok_or("prefixSuffixStringProp without prop")?;
+    let text = |k: &str| m.get(k).and_then(Value::as_str).unwrap_or("").to_string();
+    if let Some(Value::String(s)) = target.get_mut(key).and_then(|v| v.get_mut(prop)) {
+        *s = format!("{}{s}{}", text("prefix"), text("suffix"));
+    }
+    Ok(())
+}
+
+/// Apply a creature-only `_mod` mode on property `key` (`_` for the whole creature). `None`
+/// when `mode` is not one of them.
+pub(crate) fn apply_mode(
+    target: &mut Value,
+    key: &str,
+    mode: &str,
+    m: &Value,
+) -> Option<Result<(), String>> {
     Some(match mode {
         "addSkills" => add_skills(target, m),
         "addSenses" => add_senses(target, m),
         "addSpells" | "replaceSpells" | "removeSpells" => edit_spells(target, mode, m),
+        "maxSize" => max_size(target, m),
+        "scalarMultXp" => scalar_mult_xp(target, m),
+        "scalarAddHit" => scalar_add_tag(target, key, "hit", m),
+        "scalarAddDc" => scalar_add_tag(target, key, "dc", m),
+        "prefixSuffixStringProp" => prefix_suffix(target, key, m),
         _ => return None,
     })
 }
@@ -309,6 +432,7 @@ mod tests {
         let mut m = json!({"cr": "5", "wis": 14, "int": 10, "skill": {"insight": "+9"}});
         let r = apply_mode(
             &mut m,
+            "_",
             "addSkills",
             &json!({"skills": {"perception": 1, "investigation": 2, "insight": 1}}),
         );
@@ -322,7 +446,7 @@ mod tests {
     fn add_senses_widens_or_adds() {
         let mut m = json!({"senses": ["darkvision 30 ft."]});
         let mode = json!({"senses": [{"type": "darkvision", "range": 60}, {"type": "tremorsense", "range": 10}]});
-        assert_eq!(apply_mode(&mut m, "addSenses", &mode), Some(Ok(())));
+        assert_eq!(apply_mode(&mut m, "_", "addSenses", &mode), Some(Ok(())));
         assert_eq!(
             m["senses"],
             json!(["darkvision 60 ft.", "tremorsense 10 ft."])
@@ -337,11 +461,11 @@ mod tests {
             "spells": {"3": {"slots": 3, "spells": ["{@spell fly}"]}}
         }]});
         let add = json!({"will": ["{@spell mage hand}"], "spells": {"5": {"spells": ["{@spell scrying}"]}}});
-        assert_eq!(apply_mode(&mut m, "addSpells", &add), Some(Ok(())));
+        assert_eq!(apply_mode(&mut m, "_", "addSpells", &add), Some(Ok(())));
         let rep = json!({"spells": {"3": [{"replace": "{@spell fly}", "with": "{@spell haste}"}]}});
-        assert_eq!(apply_mode(&mut m, "replaceSpells", &rep), Some(Ok(())));
+        assert_eq!(apply_mode(&mut m, "_", "replaceSpells", &rep), Some(Ok(())));
         let rem = json!({"daily": {"1e": ["{@spell fear}"]}});
-        assert_eq!(apply_mode(&mut m, "removeSpells", &rem), Some(Ok(())));
+        assert_eq!(apply_mode(&mut m, "_", "removeSpells", &rem), Some(Ok(())));
         let sc = &m["spellcasting"][0];
         assert_eq!(sc["will"], json!(["{@spell light}", "{@spell mage hand}"]));
         assert_eq!(
@@ -352,9 +476,36 @@ mod tests {
         assert_eq!(sc["daily"]["1e"], json!(["{@spell fly}"]));
         let missing = json!({"daily": {"1e": [{"replace": "{@spell x}", "with": "{@spell y}"}]}});
         assert!(matches!(
-            apply_mode(&mut m, "replaceSpells", &missing),
+            apply_mode(&mut m, "_", "replaceSpells", &missing),
             Some(Err(_))
         ));
-        assert_eq!(apply_mode(&mut m, "maxSize", &json!({})), None);
+        assert_eq!(apply_mode(&mut m, "_", "calculateProp", &json!({})), None);
+    }
+
+    #[test]
+    fn reduced_threat_modes_scale_the_stat_block() {
+        let mut m = json!({"size": ["H", "G"], "cr": "5",
+            "hp": {"average": 11, "formula": "2d8 + 2"},
+            "action": [{"name": "Bite", "entries": ["{@hit 6} to hit. {@dc 14} Strength."]}]});
+        for (key, mode, spec) in [
+            ("_", "maxSize", json!({"max": "L"})),
+            ("_", "scalarMultXp", json!({"scalar": 0.5, "floor": true})),
+            ("action", "scalarAddHit", json!({"scalar": -2})),
+            ("action", "scalarAddDc", json!({"scalar": -2})),
+            (
+                "hp",
+                "prefixSuffixStringProp",
+                json!({"prop": "formula", "prefix": "(", "suffix": ") / 2"}),
+            ),
+        ] {
+            assert_eq!(apply_mode(&mut m, key, mode, &spec), Some(Ok(())), "{mode}");
+        }
+        assert_eq!(m["size"], json!(["L"]));
+        assert_eq!(m["cr"], json!({"cr": "5", "xp": 900}));
+        assert_eq!(
+            m["action"][0]["entries"][0],
+            "{@hit 4} to hit. {@dc 12} Strength."
+        );
+        assert_eq!(m["hp"]["formula"], "(2d8 + 2) / 2");
     }
 }
