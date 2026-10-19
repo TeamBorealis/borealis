@@ -76,6 +76,9 @@ struct Pass {
     invariants: BTreeMap<String, Vec<String>>,
     /// item ids whose own rules carry unread fields or kinds
     unread: Vec<String>,
+    /// Not-modelled checks of card decks (`seeAlsoDeck`) in the capped categories: by design
+    /// (the deck grants nothing), so they do not count against `NOT_MODELLED_CEILING`.
+    deck_not_modelled: Counts,
 }
 
 fn run(data: &Path) {
@@ -199,7 +202,7 @@ fn run(data: &Path) {
         "pack/group contents that are not installed items: {dangling:?}"
     );
     if std::env::var_os("BOREALIS_5ETOOLS_ITEM_LIMIT").is_none() {
-        ratchet(&tally);
+        ratchet(&tally, &pass.deck_not_modelled);
     }
 }
 
@@ -224,7 +227,7 @@ const NOT_MODELLED_CEILING: &[(&str, usize)] = &[
 
 /// The full corpus run may not lose ground: no new wrong values, no regressions in what is
 /// converted.
-fn ratchet(tally: &Tally) {
+fn ratchet(tally: &Tally, deck_not_modelled: &Counts) {
     for (cat, n) in tally.wrong_counts() {
         let allowed = KNOWN_WRONG
             .iter()
@@ -233,10 +236,12 @@ fn ratchet(tally: &Tally) {
         assert!(n <= allowed, "{cat}: {n} wrong (allowed {allowed})");
     }
     for (cat, ceiling) in NOT_MODELLED_CEILING {
-        let (_, missing) = tally.misses(cat).unwrap_or((0, 0));
+        let (_, all) = tally.misses(cat).unwrap_or((0, 0));
+        let by_design = deck_not_modelled.get(*cat).copied().unwrap_or(0);
+        let missing = all - by_design;
         assert!(
             missing <= *ceiling,
-            "{cat}: {missing} not modelled (ceiling {ceiling})"
+            "{cat}: {missing} not modelled (ceiling {ceiling}; {by_design} card deck checks by design not counted)"
         );
     }
 }
@@ -350,7 +355,23 @@ fn audit_item(
         fighter_attuned,
         fighter_proficient,
     };
+    if !ck.is_card_deck() {
+        ck.all(tally);
+        return;
+    }
+    let before = capped_not_modelled(tally);
     ck.all(tally);
+    for ((cat, was), (_, now)) in before.into_iter().zip(capped_not_modelled(tally)) {
+        *pass.deck_not_modelled.entry(cat.to_string()).or_default() += now - was;
+    }
+}
+
+/// Not-modelled counts of the categories with a ceiling.
+fn capped_not_modelled(tally: &Tally) -> Vec<(&'static str, usize)> {
+    NOT_MODELLED_CEILING
+        .iter()
+        .map(|(cat, _)| (*cat, tally.misses(cat).map_or(0, |(_, missing)| missing)))
+        .collect()
 }
 
 /// An item added to a character and, when it can be, equipped.

@@ -83,7 +83,7 @@ impl Check<'_> {
     /// sum up what single random cards do when drawn, and the importer keeps them as data only,
     /// as Aurora's Deck of Many Things grants nothing. Its effect checks are not modelled by
     /// design; a card effect that does apply is wrong.
-    fn is_card_deck(&self) -> bool {
+    pub fn is_card_deck(&self) -> bool {
         self.raw.0.contains_key("seeAlsoDeck")
     }
 
