@@ -1,7 +1,8 @@
 //! Stage-2 hosts and checks beyond the class / origin / feat / option hosts of [`super`]:
 //! an item host for an element only an item's select offers (an artifact's adjusted ability
-//! scores, a lycanthropy "item"), with the character options a requirement names turned on.
-//! Every host is derived from the content: no id is named here.
+//! scores, a lycanthropy "item"), the character options a requirement names (DMG firearms), and
+//! the values of a `select_param` (5etools sub-subclass options such as the Circle of the Land
+//! terrains). Every host is derived from the content: no id is named here.
 
 use super::{needed_groups, Edition};
 use crate::support::app::{Driver, Explore, Host, Offers, TEST_SCORES};
@@ -190,9 +191,33 @@ pub(super) fn item_host(
     })
 }
 
-/// Outcomes beyond "offered": every item-host pick applies (`s2/applies/<id>`). Counts and ids
-/// only.
-pub(super) fn record_extra(src: &str, _ins: &Installed, offers: &Offers) {
+/// The `select_param` rules of an element: (rule index, slot title, values).
+fn params(el: &Element) -> Vec<(usize, String, BTreeSet<String>)> {
+    el.rules
+        .iter()
+        .enumerate()
+        .filter_map(|(i, r)| {
+            let Rule::Custom(c) = r else { return None };
+            if c.kind != "select_param" {
+                return None;
+            }
+            let name = c.fields.get("name")?.as_str()?.to_string();
+            let values = c
+                .fields
+                .get("options")?
+                .as_array()?
+                .iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect();
+            Some((i, name, values))
+        })
+        .collect()
+}
+
+/// Outcomes beyond "offered": every item-host pick applies (`s2/applies/<id>`), and every
+/// `select_param` of a source element offers exactly its values in some host
+/// (`s2/param/<id>/<rule index>`). Counts and ids only.
+pub(super) fn record_extra(src: &str, ins: &Installed, offers: &Offers) {
     let mut applied = 0;
     for (id, (ok, why)) in &offers.applied {
         applied += i64::from(*ok);
@@ -200,4 +225,28 @@ pub(super) fn record_extra(src: &str, _ins: &Installed, offers: &Offers) {
     }
     metric(src, "s2", "*", "item_picks", offers.applied.len() as i64);
     metric(src, "s2", "*", "item_picks_applied", applied);
+    let (mut total, mut ok_n) = (0i64, 0i64);
+    for (id, _, _) in &ins.ours {
+        let Some(el) = ins.store.element(id) else {
+            continue;
+        };
+        for (i, name, values) in params(el) {
+            let seen = offers.lists.get(&name);
+            let ok = seen.is_some_and(|sets| sets.contains(&values));
+            let why = match seen {
+                None => "no host opened the parameter".to_string(),
+                Some(_) if ok => format!("{} values offered", values.len()),
+                Some(sets) => format!(
+                    "{} values expected; offered sets of sizes {:?}",
+                    values.len(),
+                    sets.iter().map(BTreeSet::len).collect::<Vec<_>>()
+                ),
+            };
+            total += 1;
+            ok_n += i64::from(ok);
+            outcome::record(SUITE, &format!("{src}/s2/param/{id}/{i}"), ok, &why);
+        }
+    }
+    metric(src, "s2", "*", "params", total);
+    metric(src, "s2", "*", "params_offered", ok_n);
 }

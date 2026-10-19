@@ -68,6 +68,8 @@ pub fn app_state_copy(template: &std::path::Path) -> (tempfile::TempDir, AppStat
 #[derive(Default)]
 pub struct Offers {
     pub found: BTreeMap<String, String>,
+    /// The values each open list slot (a `select_param`) offered, by slot title.
+    pub lists: BTreeMap<String, BTreeSet<BTreeSet<String>>>,
     /// Elements an item host picked: whether the pick applied, and why not.
     pub applied: BTreeMap<String, (bool, String)>,
 }
@@ -84,11 +86,17 @@ impl Offers {
         for (id, host) in other.found {
             self.add(&id, &host);
         }
+        for (title, sets) in other.lists {
+            self.lists.entry(title).or_default().extend(sets);
+        }
         for (id, a) in other.applied {
             self.applied.entry(id).or_insert(a);
         }
     }
 }
+
+/// Slot type of a `select_param` list (`ui_type("List")`).
+const LIST_SLOT: &str = "list";
 
 /// One character of the builder.
 pub struct Host {
@@ -204,7 +212,16 @@ impl<'a> Driver<'a> {
                 offers.add(&c.id, label);
             }
             if slot.chosen.is_none() {
-                for (id, _) in self.options(host, &slot.id) {
+                let options = self.options(host, &slot.id);
+                if slot.element_type.eq_ignore_ascii_case(LIST_SLOT) {
+                    let values = options.iter().map(|o| o.1.clone()).collect();
+                    offers
+                        .lists
+                        .entry(slot.title.clone())
+                        .or_default()
+                        .insert(values);
+                }
+                for (id, _) in options {
                     offers.add(&id, label);
                 }
             }
