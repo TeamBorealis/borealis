@@ -14,6 +14,8 @@ pub mod feature_rules;
 pub mod item;
 pub mod mech;
 pub mod misc;
+pub mod monster;
+pub mod monster_text;
 pub mod optfeat;
 pub mod prereq;
 pub mod prereq_index;

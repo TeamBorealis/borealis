@@ -44,6 +44,7 @@ fn count_kind(prop: &str) -> Option<&'static str> {
         "item" | "baseitem" | "itemGroup" | "magicvariant" => "item",
         "language" => "language",
         "condition" | "disease" | "status" => "condition",
+        "monster" => "monster",
         _ => return None,
     })
 }

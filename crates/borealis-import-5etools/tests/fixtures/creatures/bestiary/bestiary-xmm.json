@@ -1,0 +1,79 @@
+{
+	"monster": [
+		{
+			"name": "Wolf",
+			"source": "XMM",
+			"page": 373,
+			"srd52": true,
+			"basicRules2024": true,
+			"size": [
+				"M"
+			],
+			"type": "beast",
+			"alignment": [
+				"U"
+			],
+			"ac": [
+				12
+			],
+			"hp": {
+				"average": 11,
+				"formula": "2d8 + 2"
+			},
+			"speed": {
+				"walk": 40
+			},
+			"str": 14,
+			"dex": 15,
+			"con": 12,
+			"int": 3,
+			"wis": 12,
+			"cha": 6,
+			"skill": {
+				"perception": "+5",
+				"stealth": "+4"
+			},
+			"senses": [
+				"Darkvision 60 ft."
+			],
+			"passive": 15,
+			"cr": "1/4",
+			"trait": [
+				{
+					"name": "Pack Tactics",
+					"entries": [
+						"The wolf has {@variantrule Advantage|XPHB} on attack rolls against a creature if at least one of the wolf's allies is within 5 feet of the creature and the ally doesn't have the {@condition Incapacitated|XPHB} condition."
+					]
+				}
+			],
+			"action": [
+				{
+					"name": "Bite",
+					"entries": [
+						"{@atkr m} {@hit 4}, reach 5 ft. {@h}5 ({@damage 1d6 + 2}) Piercing damage. If the target is a Medium or smaller creature, it has the {@condition Prone|XPHB} condition."
+					]
+				}
+			],
+			"environment": [
+				"forest",
+				"grassland",
+				"hill"
+			],
+			"traitTags": [
+				"Pack Tactics"
+			],
+			"senseTags": [
+				"D"
+			],
+			"damageTags": [
+				"P"
+			],
+			"miscTags": [
+				"MA"
+			],
+			"conditionInflict": [
+				"prone"
+			]
+		}
+	]
+}

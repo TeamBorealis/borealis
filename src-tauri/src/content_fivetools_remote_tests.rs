@@ -146,6 +146,7 @@ fn root_files_are_exactly_what_the_importer_reads() {
     // Every listed file (the spell lookup included) is one the importer actually picks up.
     let dir = tempfile::tempdir().unwrap();
     std::fs::create_dir_all(dir.path().join("generated")).unwrap();
+    std::fs::create_dir_all(dir.path().join("bestiary")).unwrap();
     for f in ROOT_FILES {
         std::fs::write(dir.path().join(f), "{}").unwrap();
     }
@@ -188,6 +189,7 @@ fn a_url_download_holds_every_file_the_importer_reads_from_the_folder() {
         "generated/gendata-spell-source-lookup.json",
         "class/class-x.json",
         "spells/spells-x.json",
+        "bestiary/bestiary-x.json",
     ]) {
         let path = src.path().join(rel);
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -203,6 +205,11 @@ fn a_url_download_holds_every_file_the_importer_reads_from_the_folder() {
         r#"{"x":"spells-x.json"}"#,
     )
     .unwrap();
+    std::fs::write(
+        src.path().join("bestiary/index.json"),
+        r#"{"X":"bestiary-x.json"}"#,
+    )
+    .unwrap();
     let dest = tempfile::tempdir().unwrap();
     download_folder(
         &Mirror(src.path().to_path_buf()),
@@ -215,6 +222,8 @@ fn a_url_download_holds_every_file_the_importer_reads_from_the_folder() {
     let read = |d: &Path| borealis_import_5etools::folder::data_files(d).unwrap();
     let got = read(dest.path());
     assert!(got.contains(&"charcreationoptions.json".to_string()));
+    assert!(got.contains(&"bestiary/bestiary-x.json".to_string()));
+    assert!(got.contains(&"bestiary/template.json".to_string()));
     assert_eq!(got, read(src.path()));
 }
 

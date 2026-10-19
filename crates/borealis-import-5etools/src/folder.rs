@@ -65,6 +65,8 @@ const PROPS: &[&str] = &[
     "subclassFeature",
     "spell",
     "charoption",
+    "monster",
+    "monsterTemplate",
 ];
 
 /// Fluff properties and the entity property they belong to.
@@ -103,6 +105,7 @@ const ROOT_FILES: &[&str] = &[
     "fluff-languages.json",
     "fluff-optionalfeatures.json",
     "fluff-conditionsdiseases.json",
+    "bestiary/template.json",
 ];
 
 /// Relative paths (sorted) of the data files the importer reads.
@@ -125,6 +128,8 @@ pub fn data_files(root: &Path) -> Result<Vec<String>, ImportError> {
     for (dir, prefixes) in [
         ("class", &["class-", "fluff-class-"][..]),
         ("spells", &["spells-", "fluff-spells-"][..]),
+        // creatures (`bestiary/index.json` lists the same files); their fluff is not read
+        ("bestiary", &["bestiary-"][..]),
     ] {
         let dir_path = root.join(dir);
         let Ok(read) = std::fs::read_dir(&dir_path) else {
@@ -424,6 +429,16 @@ mod tests {
         );
         write(
             dir.path(),
+            "bestiary/fluff-bestiary-x.json",
+            &json!({"monsterFluff": []}),
+        );
+        write(
+            dir.path(),
+            "bestiary/legendarygroups.json",
+            &json!({"legendaryGroup": []}),
+        );
+        write(
+            dir.path(),
             "books.json",
             &json!({"book": [{"id": "X", "name": "Book X", "source": "X"}]}),
         );
@@ -436,6 +451,7 @@ mod tests {
         assert_eq!(
             files,
             vec![
+                "bestiary/bestiary-x.json",
                 "books.json",
                 "class/class-a.json",
                 "class/class-b.json",
@@ -448,8 +464,8 @@ mod tests {
         );
         let mut seen = Vec::new();
         let loaded = load(dir.path(), |i, n, f| seen.push((i, n, f.to_string()))).unwrap();
-        assert_eq!(seen.len(), 8);
-        assert_eq!(seen[0].1, 8);
+        assert_eq!(seen.len(), 9);
+        assert_eq!(seen[0].1, 9);
         assert_eq!(loaded.props["class"].len(), 2);
         assert_eq!(loaded.props["class"][0].value["name"], "A");
         assert_eq!(loaded.props["race"][0].file, "races.json");

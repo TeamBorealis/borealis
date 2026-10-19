@@ -2,6 +2,7 @@
 pub mod cli;
 pub mod convert;
 pub mod copy;
+pub mod copy_monster;
 pub mod core_ids;
 pub mod editions;
 pub mod error;

@@ -47,16 +47,57 @@ fn content() -> std::path::PathBuf {
     core_pack().join("..")
 }
 
+/// Invented creatures in `bestiary/`: two fit the Beast Bond filter (one through a `_copy`
+/// with a template and a `_mod`), one is too large, one cannot be read (its hit points are
+/// not a number).
+fn invented_creatures(dir: &Path) {
+    let beast = |name: &str, size: &str, cr: &str| {
+        json!({"name": name, "source": "ZZZ", "size": [size], "type": "beast",
+               "alignment": ["U"], "ac": [12], "hp": {"average": 9, "formula": "2d8"},
+               "speed": {"walk": 40}, "str": 12, "dex": 14, "con": 11, "int": 3, "wis": 12,
+               "cha": 6, "passive": 11, "cr": cr,
+               "action": [{"name": "Bite", "entries": ["{@atk mw} {@hit 3} to hit, reach 5 ft., \
+                   one target. {@h}4 ({@damage 1d6 + 1}) piercing damage."]}]})
+    };
+    let mut odd = beast("Probe Shade", "M", "1/4");
+    odd["hp"] = json!({"special": "half the tamer's"});
+    write(
+        dir,
+        "bestiary/bestiary-zzz.json",
+        &json!({"monster": [
+            beast("Probe Hound", "M", "1/8"),
+            beast("Probe Bear", "L", "1/4"),
+            odd,
+            {"name": "Probe Hound Elder", "source": "ZZZ", "cr": "1/4",
+             "_copy": {"name": "Probe Hound", "source": "ZZZ",
+                       "_templates": [{"name": "Keen", "source": "ZZZ"}],
+                       "_mod": {"_": {"mode": "addSkills", "skills": {"perception": 1}}}}},
+        ]}),
+    );
+    write(
+        dir,
+        "bestiary/template.json",
+        &json!({"monsterTemplate": [{"name": "Keen", "source": "ZZZ", "apply": {
+            "_root": {"size": ["S"]},
+            "_mod": {"_": {"mode": "addSenses", "senses": [{"type": "darkvision", "range": 60}]}}}}]}),
+    );
+}
+
 fn store(tmp: &Path) -> ContentStore {
+    store_with(tmp, &["core", "srd-5.1", "srd-5.1-monsters"]).0
+}
+
+fn store_with(tmp: &Path, packs: &[&str]) -> (ContentStore, borealis_import_5etools::ImportResult) {
     let data = tmp.join("data");
     invented(&data);
+    invented_creatures(&data);
     let options = ImportOptions {
         srd_dirs: vec![content().join("srd-5.1"), content().join("srd-5.2.1")],
         ..ImportOptions::default()
     };
     let result = import_folder(&data, &options).expect("invented data imports");
     let mut builder = ContentStoreBuilder::new();
-    for pack in ["core", "srd-5.1", "srd-5.1-monsters"] {
+    for pack in packs {
         builder = builder
             .add_pack_dir(&content().join(pack))
             .expect("bundled pack");
@@ -65,7 +106,7 @@ fn store(tmp: &Path) -> ContentStore {
         let dir = pack.write_to(&tmp.join("packs")).expect("write pack");
         builder = builder.add_pack_dir(&dir).expect("imported pack loads");
     }
-    builder.build()
+    (builder.build(), result)
 }
 
 fn tamer(e: &Engine) -> CharacterState {
@@ -123,6 +164,57 @@ fn a_bestiary_filter_offers_the_loaded_beasts_it_fits() {
     let wanted = small_srd_beasts(&store);
     assert!(wanted.len() > 20, "{wanted:?}");
     assert_eq!(offered, wanted);
+}
+
+fn companion_names(e: &Engine) -> Vec<String> {
+    let snap = e.derive(&tamer(e));
+    let slot = snap
+        .slots
+        .iter()
+        .find(|s| s.ty == "Companion")
+        .expect("companion slot");
+    let mut offered: Vec<String> = slot.options.iter().map(|o| o.name.clone()).collect();
+    offered.sort();
+    offered
+}
+
+#[test]
+fn imported_creatures_fill_the_companion_select() {
+    let tmp = tempfile::tempdir().unwrap();
+    // no bundled monster pack: only the imported creatures can fill it
+    let (store, result) = store_with(tmp.path(), &["core", "srd-5.1"]);
+    let e = Engine::new(&store);
+    assert_eq!(companion_names(&e), ["Probe Hound", "Probe Hound Elder"]);
+    let elder = store
+        .by_type("Monster")
+        .find(|x| x.element.name == "Probe Hound Elder")
+        .expect("copied creature");
+    let m = MonsterData::from_element(&elder.element).unwrap();
+    assert_eq!(m.size[0].as_str(), "small", "template _root");
+    assert_eq!(m.senses.darkvision, Some(60), "template _mod");
+    assert_eq!(
+        m.skills.values().copied().collect::<Vec<_>>(),
+        [3],
+        "the copy's _mod"
+    );
+    assert_eq!((m.cr.as_text(), m.xp), ("1/4".to_string(), 50));
+    let skipped: Vec<&str> = result
+        .report
+        .skipped
+        .iter()
+        .filter(|s| s.kind == "monster")
+        .map(|s| s.reason.as_str())
+        .collect();
+    assert_eq!(skipped.len(), 1, "{skipped:?}");
+    assert!(skipped[0].starts_with("creature stat block: hit points are not a number"));
+    // with the bundled SRD 5.1 beasts loaded too, both are offered
+    let (both, _) = store_with(
+        &tmp.path().join("b"),
+        &["core", "srd-5.1", "srd-5.1-monsters"],
+    );
+    let names = companion_names(&Engine::new(&both));
+    assert!(names.contains(&"Probe Hound".to_string()) && names.contains(&"Wolf".to_string()));
+    assert_eq!(names.len(), small_srd_beasts(&both).len());
 }
 
 #[test]

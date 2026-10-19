@@ -8,6 +8,9 @@ used. The spell source lookup keeps the `class` lists of the chosen spells only.
 The importer never ships or commits 5etools data. These files are a small,
 programmatically filtered subset (a dozen spells, two classes with their SRD features,
 a few races, items, a background, two feats) used to test the converters.
+`creatures/bestiary/` holds six SRD creatures (MM / XMM entries flagged `srd` / `srd52`) in
+the same layout, kept apart so the rules fixtures keep their four sources; tests add them to
+a copy of `data/` when they need creatures.
 `srd_fixtures.rs` fails if an unflagged entry is ever added here.
 
 ## Attribution

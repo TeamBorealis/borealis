@@ -36,6 +36,7 @@ fn walk(dir: &Path, files: &mut Vec<std::path::PathBuf>) {
 fn fixtures_contain_only_srd_flagged_entries() {
     let mut files = Vec::new();
     walk(&fixtures(), &mut files);
+    walk(&creature_fixtures(), &mut files);
     assert!(files.len() >= 12, "fixture files missing");
     let mut entries = 0;
     for path in files {
@@ -59,6 +60,102 @@ fn fixtures_contain_only_srd_flagged_entries() {
         }
     }
     assert!(entries > 100, "only {entries} fixture entries");
+}
+
+/// `tests/fixtures/creatures` (`bestiary/` of six SRD creatures, see the README).
+fn creature_fixtures() -> std::path::PathBuf {
+    fixtures().join("../creatures")
+}
+
+fn copy_tree(from: &Path, to: &Path) {
+    let mut files = Vec::new();
+    walk(from, &mut files);
+    for f in files {
+        let dest = to.join(f.strip_prefix(from).unwrap());
+        std::fs::create_dir_all(dest.parent().unwrap()).unwrap();
+        std::fs::copy(&f, dest).unwrap();
+    }
+}
+
+#[test]
+fn srd_creatures_import_as_the_bundled_monster_stat_blocks() {
+    let tmp = tempfile::tempdir().unwrap();
+    copy_tree(&fixtures(), tmp.path());
+    copy_tree(&creature_fixtures(), tmp.path());
+    let result = import_folder(tmp.path(), &ImportOptions::default()).unwrap();
+    let monsters: Vec<&borealis_content::Element> = result
+        .packs
+        .iter()
+        .flat_map(|p| p.elements())
+        .filter(|e| e.ty == "Monster")
+        .collect();
+    assert_eq!(monsters.len(), 6, "six creatures");
+    assert!(result.report.skipped.iter().all(|n| n.kind != "monster"));
+    // the 5etools Wolf reads into the SRD 5.1 pack's Wolf, number for number
+    let pack = std::fs::read_to_string(
+        fixtures().join("../../../../../content/srd-5.1-monsters/creatures.json"),
+    )
+    .unwrap();
+    let pack: Value = serde_json::from_str(&pack).unwrap();
+    let srd = pack["elements"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["name"] == "Wolf")
+        .unwrap();
+    let srd: borealis_content::Element = serde_json::from_value(srd.clone()).unwrap();
+    let srd = borealis_content::MonsterData::from_element(&srd).unwrap();
+    let wolf = monsters
+        .iter()
+        .find(|e| e.name == "Wolf" && e.id.contains("_MM_"))
+        .unwrap();
+    let ours = borealis_content::MonsterData::from_element(wolf).unwrap();
+    assert_eq!(
+        (
+            ours.size.clone(),
+            ours.creature_type,
+            ours.alignment.clone(),
+            ours.ac.clone(),
+            ours.hp.clone()
+        ),
+        (
+            srd.size.clone(),
+            srd.creature_type,
+            srd.alignment.clone(),
+            srd.ac.clone(),
+            srd.hp.clone()
+        )
+    );
+    assert_eq!(
+        (ours.speed.clone(), ours.abilities, ours.skills.clone()),
+        (srd.speed.clone(), srd.abilities, srd.skills.clone())
+    );
+    assert_eq!(
+        (
+            ours.cr,
+            ours.xp,
+            ours.proficiency_bonus,
+            ours.senses.clone()
+        ),
+        (srd.cr, srd.xp, srd.proficiency_bonus, srd.senses.clone())
+    );
+    let names = |m: &borealis_content::MonsterData| -> Vec<String> {
+        m.traits
+            .iter()
+            .chain(&m.actions)
+            .map(|f| f.name.clone())
+            .collect()
+    };
+    assert_eq!(names(&ours), names(&srd));
+    // the 2024 Wolf is a 2024 stat block with its initiative; the Lich keeps its legendary actions
+    let xwolf = monsters.iter().find(|e| e.id.contains("_XMM_")).unwrap();
+    let x = borealis_content::MonsterData::from_element(xwolf).unwrap();
+    assert_eq!(x.ruleset, borealis_content::Ruleset::Dnd2024);
+    assert_eq!(x.initiative.map(|i| i.modifier), Some(2));
+    let lich = monsters.iter().find(|e| e.name == "Lich").unwrap();
+    let lich = borealis_content::MonsterData::from_element(lich).unwrap();
+    assert_eq!(lich.legendary.as_ref().map(|l| l.actions.len()), Some(4));
+    assert!(lich.traits.iter().any(|t| t.name == "Spellcasting"));
 }
 
 #[test]

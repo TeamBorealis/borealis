@@ -8,6 +8,9 @@
 //! single-source PHB / XPHB imports work. Thresholds were set from a full 2026-10 5etools
 //! checkout with a little headroom: at least 97% of entries converted, at most 260 skipped and
 //! 60 partial (none about additional spells or the gaps closed by 5etools-gaps-1), at least 85 packs and 12,000 elements (see the constants below).
+//! These rules-content thresholds count every kind but creatures (`bestiary/`, read since
+//! det-5e-9), which have their own: a share converted, and a reason code on every creature skip
+//! and loss.
 
 mod support;
 
@@ -42,6 +45,12 @@ const CLOSED_GAPS: &[(&str, &str)] = &[
 /// Highest acceptable number of unenforced prerequisites (220 on the 2026-10 corpus before
 /// prerequisites were mapped, 5 after: 4 house renown tiers and 1 unknown race at most).
 const MAX_UNENFORCED_PREREQS: usize = 8;
+/// Lowest acceptable share of converted creatures, in percent (4359 of 4645 = 93.8% on the
+/// 2026-10 corpus at det-5e-9; every skip carries a reason code: no challenge rating,
+/// a number printed as text, a creature type that is a choice, a `_copy` mode not applied).
+const MIN_CREATURE_CONVERTED_PERCENT: usize = 92;
+/// Report kind of creatures.
+const CREATURE: &str = "monster";
 /// Lower bounds on what a full folder must produce (92 packs, 12443 elements in 2026-10).
 const MIN_PACKS: usize = 85;
 const MIN_ELEMENTS: usize = 12_000;
@@ -122,8 +131,10 @@ fn store_check(result: &ImportResult, dirs: &[PathBuf]) -> (Counts, Vec<String>)
     let mut undocumented = Vec::new();
     for i in issues.iter().filter(|i| i.severity >= Severity::Warning) {
         bump(&mut counts, format!("{:?}/{:?}", i.severity, i.code));
-        let documented = i.code == IssueCode::DanglingReference
-            && external.iter().any(|id| i.message.contains(id.as_str()));
+        // HB4: a creature's printed XP is kept when it is not the table XP of its CR
+        let documented = (i.code == IssueCode::DanglingReference
+            && external.iter().any(|id| i.message.contains(id.as_str())))
+            || (i.code == IssueCode::NonStandardMonsterXp && i.severity == Severity::Warning);
         if !documented {
             undocumented.push(format!(
                 "{:?}/{:?} [{}]",
@@ -168,6 +179,40 @@ fn summarize(label: &str, result: &ImportResult) -> usize {
     elements
 }
 
+/// Creatures: every skip and loss carries a reason code, and enough of them convert. Returns
+/// how many converted.
+fn creature_check(r: &borealis_import_5etools::report::ImportReport) -> usize {
+    let (mut total, mut converted) = (0, 0);
+    for f in &r.files {
+        if let Some(k) = f.kinds.get(CREATURE) {
+            total += k.total;
+            converted += k.converted;
+        }
+    }
+    let mut codes = Counts::new();
+    for n in r.skipped.iter().filter(|n| n.kind == CREATURE) {
+        bump(&mut codes, n.code.clone());
+    }
+    println!("=== creatures: converted {converted} of {total}");
+    table("creature skips by reason code", &codes, 20);
+    assert!(
+        !codes.contains_key(""),
+        "creature skips without a reason code: {:?}",
+        r.skipped
+            .iter()
+            .filter(|n| n.kind == CREATURE && n.code.is_empty())
+            .map(|n| n.reason.as_str())
+            .take(10)
+            .collect::<Vec<_>>()
+    );
+    assert!(total > 0, "the bestiary was read");
+    assert!(
+        converted * 100 >= total * MIN_CREATURE_CONVERTED_PERCENT,
+        "creatures converted {converted} of {total}"
+    );
+    converted
+}
+
 #[test]
 fn five_etools_corpus() {
     let Ok(dir) = std::env::var("BOREALIS_5ETOOLS_DIR") else {
@@ -189,6 +234,25 @@ fn five_etools_corpus() {
     let first = import_folder(&data, &options()).expect("full import");
     let elements = summarize("all sources", &first);
     let r = &first.report;
+    let creatures = creature_check(r);
+    // the rules-content thresholds count every kind but creatures
+    let rules_report = borealis_import_5etools::report::ImportReport {
+        converted: r.converted - creatures,
+        partial: r
+            .partial
+            .iter()
+            .filter(|n| n.kind != CREATURE)
+            .cloned()
+            .collect(),
+        skipped: r
+            .skipped
+            .iter()
+            .filter(|n| n.kind != CREATURE)
+            .cloned()
+            .collect(),
+        ..r.clone()
+    };
+    let r = &rules_report;
     let total = r.converted + r.skipped.len();
     assert!(
         first.packs.len() >= MIN_PACKS,

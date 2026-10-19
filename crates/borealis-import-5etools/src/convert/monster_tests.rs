@@ -1,0 +1,183 @@
+use super::*;
+use borealis_content::monster::{RestKind, Usage};
+use serde_json::json;
+
+/// The SRD 5.1 Wolf as 5etools writes a creature.
+fn wolf() -> Value {
+    json!({
+        "name": "Wolf", "source": "MM", "srd": true,
+        "size": ["M"], "type": "beast", "alignment": ["U"],
+        "ac": [{"ac": 13, "from": ["{@item natural armor|mm}"]}],
+        "hp": {"average": 11, "formula": "2d8 + 2"},
+        "speed": {"walk": 40},
+        "str": 12, "dex": 15, "con": 12, "int": 3, "wis": 12, "cha": 6,
+        "skill": {"perception": "+3", "stealth": "+4"},
+        "passive": 13, "cr": "1/4",
+        "trait": [
+            {"name": "Keen Hearing and Smell", "entries": ["The wolf has advantage on Wisdom ({@skill Perception}) checks that rely on hearing or smell."]},
+            {"name": "Pack Tactics", "entries": ["The wolf has advantage on attack rolls against a creature if at least one of the wolf's allies is within 5 feet of the creature and the ally isn't {@condition incapacitated}."]}
+        ],
+        "action": [{"name": "Bite", "entries": ["{@atk mw} {@hit 4} to hit, reach 5 ft., one target. {@h}7 ({@damage 2d4 + 2}) piercing damage. If the target is a creature, it must succeed on a {@dc 11} Strength saving throw or be knocked {@condition prone}."]}]
+    })
+}
+
+#[test]
+fn a_creature_reads_into_the_srd_stat_block_shape() {
+    let (m, lost) = stat_block(&wolf(), Ruleset::Dnd2014).unwrap();
+    assert!(lost.is_empty(), "{lost:?}");
+    assert_eq!(m.size, vec![CreatureSize::Medium]);
+    assert_eq!(m.creature_type, CreatureType::Beast);
+    assert_eq!(m.alignment, "unaligned");
+    assert_eq!(
+        m.ac,
+        vec![ArmorClass {
+            value: 13,
+            source: Some("natural armor".into()),
+            condition: None
+        }]
+    );
+    assert_eq!(
+        m.hp,
+        HitPoints {
+            average: 11,
+            formula: Some("2d8+2".into())
+        }
+    );
+    assert_eq!(m.speed.walk, Some(40));
+    assert_eq!((m.abilities.dex, m.abilities.cha), (15, 6));
+    assert_eq!(m.skills.get(&Skill::Perception), Some(&3));
+    assert_eq!(m.senses.passive_perception, 13);
+    assert_eq!(m.cr.as_text(), "1/4");
+    assert_eq!((m.xp, m.proficiency_bonus), (50, 2));
+    assert!(m.initiative.is_none());
+    let names: Vec<&str> = m.traits.iter().map(|t| t.name.as_str()).collect();
+    assert_eq!(names, ["Keen Hearing and Smell", "Pack Tactics"]);
+    assert!(m.actions[0].text.starts_with(
+        "Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 7 (2d4 + 2) piercing"
+    ));
+    // the element is the bundled packs' Monster element, and the engine reads it back
+    let el = m.to_element("ID_X", "Wolf", "Monster Manual");
+    assert_eq!(el.ty, "Monster");
+    assert_eq!(MonsterData::from_element(&el).unwrap(), m);
+}
+
+#[test]
+fn usage_legendary_tags_swarms_and_defences_are_read() {
+    let raw = json!({
+        "name": "Test Drake", "source": "X", "isNamedCreature": false,
+        "size": ["H"], "type": {"type": "dragon", "tags": ["chromatic", {"tag": "shapechanger", "prefix": "any"}]},
+        "alignment": ["L", "NX", "C", "E"],
+        "ac": [19, {"ac": 21, "condition": "with {@spell shield}", "braces": true}],
+        "hp": {"average": 200, "formula": "16d12 + 96"},
+        "speed": {"walk": 40, "fly": {"number": 80, "condition": "(hover)"}},
+        "initiative": {"proficiency": 2},
+        "str": 23, "dex": 10, "con": 21, "int": 14, "wis": 11, "cha": 19,
+        "save": {"dex": "+5", "wis": "+5"},
+        "senses": ["blindsight 60 ft.", "darkvision 120 ft."], "passive": 21,
+        "resist": ["cold", {"resist": ["bludgeoning", "piercing"], "note": "from nonmagical attacks", "cond": true}],
+        "immune": ["fire"],
+        "conditionImmune": ["frightened", {"conditionImmune": ["charmed"], "note": "while awake"}],
+        "languages": ["Common", "Draconic", "telepathy 60 ft."],
+        "cr": {"cr": "15", "xpLair": 15000},
+        "trait": [{"name": "Legendary Resistance (3/Day, or 4/Day in Lair)", "entries": ["It succeeds instead."]}],
+        "action": [{"name": "Fire Breath {@recharge 5}", "entries": ["{@actSave dex} {@dc 19}. {@actSaveFail} 63 ({@damage 18d6}) Fire damage."]}],
+        "reaction": [{"name": "Tail Flick (Recharges after a Short or Long Rest)", "entries": ["It flicks."]}],
+        "legendary": [{"name": "Wing Attack (Costs 2 Actions)", "entries": ["It beats its wings."]}],
+        "legendaryActionsLair": 4,
+        "spellcasting": [{"name": "Spellcasting", "displayAs": "action", "headerEntries": ["It casts:"], "will": ["{@spell light}"]}],
+        "mythic": [{"name": "M", "entries": ["m"]}]
+    });
+    let (m, lost) = stat_block(&raw, Ruleset::Dnd2024).unwrap();
+    assert_eq!(m.tags, ["chromatic", "any shapechanger"]);
+    assert_eq!(m.alignment, "any evil alignment");
+    assert_eq!(m.ac[1].condition.as_deref(), Some("with shield"));
+    assert!(m.speed.hover && m.speed.fly == Some(80) && m.speed.note.is_none());
+    assert_eq!(
+        m.initiative,
+        Some(Initiative {
+            modifier: 10,
+            score: 20
+        })
+    );
+    assert_eq!(m.saves.get(&Ability::Dex), Some(&5));
+    assert_eq!(m.damage_resistances.len(), 2);
+    assert_eq!(
+        m.damage_resistances[1].types,
+        [DamageType::Bludgeoning, DamageType::Piercing]
+    );
+    assert_eq!(
+        m.damage_resistances[1].text.as_deref(),
+        Some("from nonmagical attacks")
+    );
+    assert_eq!(
+        m.condition_immunities,
+        ["frightened", "charmed (while awake)"]
+    );
+    assert_eq!(m.telepathy, Some(60));
+    assert_eq!(
+        (m.xp, m.xp_lair, m.proficiency_bonus),
+        (13_000, Some(15_000), 5)
+    );
+    assert_eq!(
+        m.traits[0].usage,
+        Some(Usage::PerDayInLair { normal: 3, lair: 4 })
+    );
+    assert_eq!(m.traits[0].name, "Legendary Resistance");
+    assert_eq!(m.actions[0].usage, Some(Usage::Recharge { min: 5, max: 6 }));
+    assert!(
+        m.actions[0]
+            .text
+            .starts_with("Dexterity Saving Throw: DC 19. Failure: 63"),
+        "{}",
+        m.actions[0].text
+    );
+    assert_eq!(m.actions[1].name, "Spellcasting");
+    assert_eq!(
+        m.reactions[0].usage,
+        Some(Usage::OnRest(RestKind::ShortOrLong))
+    );
+    let leg = m.legendary.as_ref().unwrap();
+    assert_eq!(
+        (leg.per_round, leg.lair_uses, leg.actions[0].cost),
+        (Some(3), Some(4), Some(2))
+    );
+    assert!(leg
+        .preamble
+        .starts_with("Legendary Action Uses: 3 (4 in Lair)."));
+    assert_eq!(lost, ["creature section: mythic actions not imported"]);
+    let swarm = json!({"name": "Swarm", "source": "X", "size": ["M"],
+        "type": {"type": "beast", "swarmSize": "T"}, "alignment": ["U"], "ac": [12],
+        "hp": {"average": 22, "formula": "5d8"}, "speed": {"walk": 0, "fly": 60},
+        "str": 5, "dex": 15, "con": 10, "int": 2, "wis": 12, "cha": 4, "passive": 11, "cr": "1/4"});
+    assert_eq!(
+        stat_block(&swarm, Ruleset::Dnd2014).unwrap().0.swarm_of,
+        Some(CreatureSize::Tiny)
+    );
+}
+
+#[test]
+fn creatures_that_cannot_be_read_exactly_say_why() {
+    let with = |k: &str, v: Value| {
+        let mut w = wolf();
+        w[k] = v;
+        stat_block(&w, Ruleset::Dnd2014).unwrap_err()
+    };
+    assert!(with("hp", json!({"special": "half the summoner's"}))
+        .starts_with("hit points are not a number"));
+    assert_eq!(with("cr", Value::Null), "no challenge rating");
+    assert!(with("cr", json!("Unknown")).contains("is not a number"));
+    assert!(
+        with("type", json!({"type": {"choose": ["celestial", "fiend"]}}))
+            .starts_with("the creature type is a choice")
+    );
+    assert!(with("str", Value::Null).contains("str score"));
+    assert_eq!(
+        with("ac", json!([{"special": "varies"}])),
+        "armor class is not a number"
+    );
+    let mut odd = wolf();
+    odd["hp"]["formula"] = json!("2d8 + 2 + your level");
+    let (m, lost) = stat_block(&odd, Ruleset::Dnd2014).unwrap();
+    assert_eq!(m.hp.formula, None);
+    assert_eq!(lost.len(), 1);
+}

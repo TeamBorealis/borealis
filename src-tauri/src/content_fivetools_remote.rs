@@ -6,9 +6,10 @@
 //! For GitHub the branch is resolved to a commit with one unauthenticated API call (the public
 //! ref list is the fallback when the API is rate limited), and the files are then read at that
 //! commit from `raw.githubusercontent.com`. Only the files the importer reads are downloaded:
-//! measured on the real repository, that is 79 files / 12 MB (2.6 MB gzip-compressed), against a
+//! measured on the real repository before creatures were read, that was 79 files / 12 MB (2.6 MB
+//! gzip-compressed; the `bestiary/` files add about 210 files / 11 MB), against a
 //! 50 MB repository archive. A plain folder address is walked with the same file list, using the
-//! `class/` and `spells/` index manifests. Every file is capped, names from manifests must be
+//! `class/`, `spells/` and `bestiary/` index manifests. Every file is capped, names from manifests must be
 //! plain file names (nothing can escape the folder), and only `https://` is ever fetched.
 //! Deterministic: no AI is involved.
 
@@ -45,9 +46,9 @@ const MARKER: &str = "books.json";
 pub const NO_DATA_FOLDER: &str =
     "This address has no 5etools data folder (books.json was not found).";
 /// Data-folder files the importer reads (`borealis_import_5etools::folder::data_files`), besides
-/// the `class/` and `spells/` files listed by the manifests. The importer's own list is the
+/// the `class/`, `spells/` and `bestiary/` files listed by the manifests. The importer's own list is the
 /// source of truth: a test reads it from the importer and fails on any difference.
-pub const ROOT_FILES: [&str; 22] = [
+pub const ROOT_FILES: [&str; 23] = [
     "races.json",
     "backgrounds.json",
     "feats.json",
@@ -69,14 +70,16 @@ pub const ROOT_FILES: [&str; 22] = [
     "fluff-languages.json",
     "fluff-optionalfeatures.json",
     "fluff-conditionsdiseases.json",
+    "bestiary/template.json",
     "generated/gendata-spell-source-lookup.json",
 ];
 /// Manifests (`{"<key>": "<file name>"}`) of the sub-folders the importer reads.
-pub const MANIFESTS: [&str; 4] = [
+pub const MANIFESTS: [&str; 5] = [
     "class/index.json",
     "class/fluff-index.json",
     "spells/index.json",
     "spells/fluff-index.json",
+    "bestiary/index.json",
 ];
 
 /// One HTTPS request.

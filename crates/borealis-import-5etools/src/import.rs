@@ -50,6 +50,7 @@ struct Ents {
     masteries: Vec<Ent>,
     languages: Vec<Ent>,
     charoptions: Vec<Ent>,
+    monsters: Vec<Ent>,
     conditions: Vec<(&'static str, Ent)>,
     catalog: Vec<(&'static str, Ent)>,
 }
@@ -71,6 +72,7 @@ impl Ents {
             + self.masteries.len()
             + self.languages.len()
             + self.charoptions.len()
+            + self.monsters.len()
             + self.conditions.len()
             + self.catalog.len()
     }
@@ -156,7 +158,18 @@ fn resolved(
         return Vec::new();
     };
     let raw: Vec<Value> = entries.iter().map(|e| e.value.clone()).collect();
-    let r = copy::resolve_array(prop, &raw);
+    // creatures may copy through the templates of `bestiary/template.json`
+    let templates: Vec<Value> = match prop {
+        "monster" => loaded
+            .props
+            .get("monsterTemplate")
+            .into_iter()
+            .flatten()
+            .map(|e| e.value.clone())
+            .collect(),
+        _ => Vec::new(),
+    };
+    let r = copy::resolve_array_with_templates(prop, &raw, &templates);
     for n in &r.notes {
         st.report.warn(format!("{prop}: {n}"));
     }
@@ -251,6 +264,7 @@ fn select_entities(
         masteries: get("itemMastery", "itemMastery", st),
         languages: get("language", "language", st),
         charoptions: get("charoption", "charoption", st),
+        monsters: get("monster", convert::monster::KIND, st),
         ..Ents::default()
     };
     e.conditions = tagged(get("condition", "condition", st), "condition");
@@ -594,6 +608,9 @@ fn convert_all(sh: &Shared, e: &Ents, st: &mut State, prog: &mut Progress<'_, '_
     });
     run_group("charoption", &e.charoptions, st, prog, |st, ent| {
         misc::convert_char_option(sh, st, ent)
+    });
+    run_group(convert::monster::KIND, &e.monsters, st, prog, |st, ent| {
+        convert::monster::convert(sh, st, ent)
     });
     for (tag, ent) in &e.conditions {
         let conv = misc::convert_condition(sh, st, ent, tag);

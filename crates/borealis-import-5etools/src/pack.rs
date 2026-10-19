@@ -97,6 +97,7 @@ pub(crate) fn file_for(e: &Element) -> &'static str {
         "Feat" | "Feat Feature" => "feats.json",
         "Spell" => "spells.json",
         "Weapon" | "Armor" | "Item" | "Magic Item" | "Mastery Property" => "items.json",
+        "Monster" => "monsters.json",
         _ => "misc.json",
     }
 }
@@ -110,6 +111,7 @@ const FILE_ORDER: &[&str] = &[
     "options.json",
     "spells.json",
     "items.json",
+    "monsters.json",
     "misc.json",
 ];
 

@@ -52,6 +52,8 @@ pub enum IdKind {
     Condition,
     /// Character creation option (`charoption`: secrets, supernatural gifts, dark gifts).
     CharOption,
+    /// Creature stat block (`monster`).
+    Monster,
 }
 
 impl IdKind {
@@ -80,6 +82,7 @@ impl IdKind {
             Self::ItemProperty => "ITEMPROP",
             Self::Condition => "CONDITION",
             Self::CharOption => "CHAROPTION",
+            Self::Monster => "MONSTER",
         }
     }
 }

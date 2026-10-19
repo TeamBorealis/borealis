@@ -53,6 +53,27 @@ pub mod code {
     pub const CHARACTER_OPTION: &str = "ENGINE_NO_CHARACTER_OPTION_SLOT";
     /// A sidekick class (TCE): it levels a companion creature, not a character.
     pub const SIDEKICK_CLASS: &str = "OUT_OF_SCOPE_SIDEKICK_CLASS";
+    /// A part printed with a creature that is not its stat block (variant sidebars, lair
+    /// actions and regional effects, mythic actions, section introductions).
+    pub const CREATURE_SECTION: &str = "OUT_OF_SCOPE_CREATURE_SECTION";
+    /// A creature field kept in part: a printed remark or alternative the stat block model has
+    /// no field for (alternate speeds, a skill "plus PB", an armor class "varies").
+    pub const CREATURE_FIELD: &str = "MODEL_CREATURE_FIELD_TEXT";
+    /// A creature without a challenge rating (a summoned spirit or animated object whose
+    /// numbers follow the spell, a level-scaled companion): the stat block model needs a CR.
+    pub const CREATURE_WITHOUT_CR: &str = "MODEL_CREATURE_WITHOUT_CR";
+    /// Hit points, an ability score, the AC or the CR printed as text, not a number ("half the
+    /// summoner's", "Unknown").
+    pub const CREATURE_NOT_A_NUMBER: &str = "DATA_CREATURE_STAT_NOT_A_NUMBER";
+    /// A creature type that is a choice ("celestial, fey or fiend") or not one of the 14 types.
+    pub const CREATURE_TYPE: &str = "MODEL_CREATURE_TYPE";
+    /// A creature whose stat block fails the model's consistency checks.
+    pub const CREATURE_INVALID: &str = "DATA_CREATURE_STAT_BLOCK_INVALID";
+    /// A creature `_copy` whose `_mod` (or template) uses a mode the importer does not apply
+    /// (`scalarAddHit`, `maxSize`): applying the rest would leave wrong numbers.
+    pub const COPY_MODE: &str = "DATA_COPY_MOD_MODE_NOT_APPLIED";
+    /// A `_copy` whose base, template or `_mod` target is not in the data.
+    pub const COPY_TARGET: &str = "DATA_COPY_TARGET_MISSING";
 }
 
 /// The reason code of a partial-conversion note (see [`code`]).
@@ -87,6 +108,10 @@ pub fn reason_code(reason: &str) -> &'static str {
         code::CHARACTER_OPTION
     } else if reason.starts_with("sidekick class") {
         code::SIDEKICK_CLASS
+    } else if reason.starts_with("creature section: ") {
+        code::CREATURE_SECTION
+    } else if reason.starts_with("creature field: ") {
+        code::CREATURE_FIELD
     } else {
         code::UNCLASSIFIED
     }
@@ -95,8 +120,34 @@ pub fn reason_code(reason: &str) -> &'static str {
 /// Reason code of a skip note, when the skip is classified (empty otherwise).
 #[must_use]
 pub fn skip_code(reason: &str) -> &'static str {
+    let creature = |rest: &str| {
+        reason
+            .strip_prefix("creature stat block: ")
+            .is_some_and(|r| r.starts_with(rest))
+    };
+    let not_a_number = reason.starts_with("creature stat block: ")
+        && (reason.contains("is not a number") || reason.contains("are not a number"));
     if reason.starts_with("sidekick class") {
         code::SIDEKICK_CLASS
+    } else if creature("no challenge rating") {
+        code::CREATURE_WITHOUT_CR
+    } else if not_a_number {
+        code::CREATURE_NOT_A_NUMBER
+    } else if creature("the creature type")
+        || creature("creature type")
+        || creature("no creature type")
+    {
+        code::CREATURE_TYPE
+    } else if reason.starts_with("creature stat block: ") {
+        code::CREATURE_INVALID
+    } else if reason.starts_with("cannot resolve _copy: ")
+        && reason.contains("unsupported _mod mode")
+    {
+        code::COPY_MODE
+    } else if reason.starts_with("cannot resolve _copy: ")
+        && (reason.contains("not found") || reason.contains("circular"))
+    {
+        code::COPY_TARGET
     } else {
         ""
     }
@@ -311,6 +362,58 @@ mod tests {
             code::SIDEKICK_CLASS
         );
         assert_eq!(skip_code("class has no hit die"), "");
+    }
+
+    #[test]
+    fn every_creature_skip_and_loss_carries_a_code() {
+        for (reason, want) in [
+            (
+                "creature stat block: no challenge rating",
+                code::CREATURE_WITHOUT_CR,
+            ),
+            (
+                "creature stat block: hit points are not a number (half)",
+                code::CREATURE_NOT_A_NUMBER,
+            ),
+            (
+                "creature stat block: the str score is not a number",
+                code::CREATURE_NOT_A_NUMBER,
+            ),
+            (
+                "creature stat block: challenge rating \"Unknown\" is not a number",
+                code::CREATURE_NOT_A_NUMBER,
+            ),
+            (
+                "creature stat block: the creature type is a choice (x)",
+                code::CREATURE_TYPE,
+            ),
+            (
+                "creature stat block: creature type \"drow\" is not known",
+                code::CREATURE_TYPE,
+            ),
+            (
+                "creature stat block: stat block not valid: speed: no speed given",
+                code::CREATURE_INVALID,
+            ),
+            (
+                "cannot resolve _copy: unsupported _mod mode \"maxSize\"",
+                code::COPY_MODE,
+            ),
+            (
+                "cannot resolve _copy: replaceArr: target not found in action",
+                code::COPY_TARGET,
+            ),
+        ] {
+            assert_eq!(skip_code(reason), want, "{reason}");
+        }
+        assert_eq!(
+            reason_code("creature section: variant sidebars not imported"),
+            code::CREATURE_SECTION
+        );
+        assert_eq!(
+            reason_code("creature field: alternate speeds not imported"),
+            code::CREATURE_FIELD
+        );
     }
 
     use super::*;

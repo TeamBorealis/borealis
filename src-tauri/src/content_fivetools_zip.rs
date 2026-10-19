@@ -34,7 +34,7 @@ const STAGE_DIR: &str = ".tmp-5etools-zip";
 /// Every 5etools `data/` folder has this file at its root.
 const MARKER: &str = "books.json";
 /// Sub-folders whose `*.json` files the importer reads.
-const DATA_SUBDIRS: [&str; 3] = ["class", "spells", "homebrew"];
+const DATA_SUBDIRS: [&str; 4] = ["class", "spells", "bestiary", "homebrew"];
 /// The one generated file the importer reads.
 const SPELL_LOOKUP: &str = "generated/gendata-spell-source-lookup.json";
 
@@ -250,12 +250,14 @@ mod tests {
             "class/class-wizard.json",
             "spells/spells-phb.json",
             "homebrew/my.json",
+            "bestiary/bestiary-mm.json",
+            "bestiary/template.json",
             SPELL_LOOKUP,
         ] {
             assert!(is_data_file(ok), "{ok}");
         }
         for no in [
-            "bestiary/bestiary-mm.json",
+            "bestiary/deep/bestiary-x.json",
             "class/deep/class-x.json",
             "generated/gendata-tables.json",
             "class/._class-x.json",
@@ -283,13 +285,14 @@ mod tests {
             true,
         );
         let n = unpack_5etools_zip(&z, dir.path()).unwrap();
-        assert_eq!(n, 3);
+        assert_eq!(n, 4);
         assert_eq!(
             std::fs::read(dir.path().join("races.json")).unwrap(),
             b"{\"race\":[]}"
         );
         assert!(dir.path().join("class/class-x.json").is_file());
-        assert!(!dir.path().join("bestiary").exists());
+        // creatures are read (they fill companion selects)
+        assert!(dir.path().join("bestiary/bestiary-mm.json").is_file());
         assert!(!dir.path().join("img").exists());
     }
 

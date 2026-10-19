@@ -1,0 +1,625 @@
+{
+	"monster": [
+		{
+			"name": "Giant Badger",
+			"source": "MM",
+			"page": 323,
+			"srd": true,
+			"basicRules": true,
+			"reprintedAs": [
+				"Giant Badger|XMM"
+			],
+			"size": [
+				"M"
+			],
+			"type": "beast",
+			"alignment": [
+				"U"
+			],
+			"ac": [
+				10
+			],
+			"hp": {
+				"average": 13,
+				"formula": "2d8 + 4"
+			},
+			"speed": {
+				"walk": 30,
+				"burrow": 10
+			},
+			"str": 13,
+			"dex": 10,
+			"con": 15,
+			"int": 2,
+			"wis": 12,
+			"cha": 5,
+			"senses": [
+				"darkvision 30 ft."
+			],
+			"passive": 11,
+			"cr": "1/4",
+			"trait": [
+				{
+					"name": "Keen Smell",
+					"entries": [
+						"The badger has advantage on Wisdom ({@skill Perception}) checks that rely on smell."
+					]
+				}
+			],
+			"action": [
+				{
+					"name": "Multiattack",
+					"entries": [
+						"The badger makes two attacks: one with its bite and one with its claws."
+					]
+				},
+				{
+					"name": "Bite",
+					"entries": [
+						"{@atk mw} {@hit 3} to hit, reach 5 ft., one target. {@h}4 ({@damage 1d6 + 1}) piercing damage."
+					]
+				},
+				{
+					"name": "Claws",
+					"entries": [
+						"{@atk mw} {@hit 3} to hit, reach 5 ft., one target. {@h}6 ({@damage 2d4 + 1}) slashing damage."
+					]
+				}
+			],
+			"environment": [
+				"forest"
+			],
+			"traitTags": [
+				"Keen Senses"
+			],
+			"senseTags": [
+				"D"
+			],
+			"actionTags": [
+				"Multiattack"
+			],
+			"damageTags": [
+				"P",
+				"S"
+			],
+			"miscTags": [
+				"MW"
+			]
+		},
+		{
+			"name": "Lich",
+			"source": "MM",
+			"page": 202,
+			"srd": true,
+			"reprintedAs": [
+				"Lich|XMM"
+			],
+			"size": [
+				"M"
+			],
+			"type": "undead",
+			"alignment": [
+				"L",
+				"NX",
+				"C",
+				"E"
+			],
+			"ac": [
+				{
+					"ac": 17,
+					"from": [
+						"natural armor"
+					]
+				}
+			],
+			"hp": {
+				"average": 135,
+				"formula": "18d8 + 54"
+			},
+			"speed": {
+				"walk": 30
+			},
+			"str": 11,
+			"dex": 16,
+			"con": 16,
+			"int": 20,
+			"wis": 14,
+			"cha": 16,
+			"save": {
+				"con": "+10",
+				"int": "+12",
+				"wis": "+9"
+			},
+			"skill": {
+				"arcana": "+19",
+				"history": "+12",
+				"insight": "+9",
+				"perception": "+9"
+			},
+			"senses": [
+				"truesight 120 ft."
+			],
+			"passive": 19,
+			"resist": [
+				"cold",
+				"lightning",
+				"necrotic"
+			],
+			"immune": [
+				"poison",
+				{
+					"immune": [
+						"bludgeoning",
+						"piercing",
+						"slashing"
+					],
+					"note": "from nonmagical attacks",
+					"cond": true
+				}
+			],
+			"conditionImmune": [
+				"charmed",
+				"exhaustion",
+				"frightened",
+				"paralyzed",
+				"poisoned"
+			],
+			"languages": [
+				"Common plus up to five other languages"
+			],
+			"cr": {
+				"cr": "21",
+				"lair": "22"
+			},
+			"spellcasting": [
+				{
+					"name": "Spellcasting",
+					"type": "spellcasting",
+					"headerEntries": [
+						"The lich is an 18th-level spellcaster. Its spellcasting ability is Intelligence (spell save {@dc 20}, {@hit 12} to hit with spell attacks). The lich has the following wizard spells prepared:"
+					],
+					"spells": {
+						"0": {
+							"spells": [
+								"{@spell mage hand}",
+								"{@spell prestidigitation}",
+								"{@spell ray of frost}"
+							]
+						},
+						"1": {
+							"slots": 4,
+							"spells": [
+								"{@spell detect magic}",
+								"{@spell magic missile}",
+								"{@spell shield}",
+								"{@spell thunderwave}"
+							]
+						},
+						"2": {
+							"slots": 3,
+							"spells": [
+								"{@spell detect thoughts}",
+								"{@spell invisibility}",
+								"{@spell Melf's acid arrow}",
+								"{@spell mirror image}"
+							]
+						},
+						"3": {
+							"slots": 3,
+							"spells": [
+								"{@spell animate dead}",
+								"{@spell counterspell}",
+								"{@spell dispel magic}",
+								"{@spell fireball}"
+							]
+						},
+						"4": {
+							"slots": 3,
+							"spells": [
+								"{@spell blight}",
+								"{@spell dimension door}"
+							]
+						},
+						"5": {
+							"slots": 3,
+							"spells": [
+								"{@spell cloudkill}",
+								"{@spell scrying}"
+							]
+						},
+						"6": {
+							"slots": 1,
+							"spells": [
+								"{@spell disintegrate}",
+								"{@spell globe of invulnerability}"
+							]
+						},
+						"7": {
+							"slots": 1,
+							"spells": [
+								"{@spell finger of death}",
+								"{@spell plane shift}"
+							]
+						},
+						"8": {
+							"slots": 1,
+							"spells": [
+								"{@spell dominate monster}",
+								"{@spell power word stun}"
+							]
+						},
+						"9": {
+							"slots": 1,
+							"spells": [
+								"{@spell power word kill}"
+							]
+						}
+					},
+					"ability": "int"
+				}
+			],
+			"trait": [
+				{
+					"name": "Legendary Resistance (3/Day)",
+					"entries": [
+						"If the lich fails a saving throw, it can choose to succeed instead."
+					]
+				},
+				{
+					"name": "Rejuvenation",
+					"entries": [
+						"If it has a phylactery, a destroyed lich gains a new body in {@dice 1d10} days, regaining all its hit points and becoming active again. The new body appears within 5 feet of the phylactery."
+					]
+				},
+				{
+					"name": "Turn Resistance",
+					"entries": [
+						"The lich has advantage on saving throws against any effect that turns undead."
+					]
+				}
+			],
+			"action": [
+				{
+					"name": "Paralyzing Touch",
+					"entries": [
+						"{@atk ms} {@hit 12} to hit, reach 5 ft., one creature. {@h}10 ({@damage 3d6}) cold damage. The target must succeed on a {@dc 18} Constitution saving throw or be {@condition paralyzed} for 1 minute. The target can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success."
+					]
+				}
+			],
+			"legendary": [
+				{
+					"name": "Cantrip",
+					"entries": [
+						"The lich casts a cantrip."
+					]
+				},
+				{
+					"name": "Paralyzing Touch (Costs 2 Actions)",
+					"entries": [
+						"The lich uses its Paralyzing Touch."
+					]
+				},
+				{
+					"name": "Frightening Gaze (Costs 2 Actions)",
+					"entries": [
+						"The lich fixes its gaze on one creature it can see within 10 feet of it. The target must succeed on a {@dc 18} Wisdom saving throw against this magic or become {@condition frightened} for 1 minute. The {@condition frightened} target can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success. If a target's saving throw is successful or the effect ends for it, the target is immune to the lich's gaze for the next 24 hours."
+					]
+				},
+				{
+					"name": "Disrupt Life (Costs 3 Actions)",
+					"entries": [
+						"Each non-undead creature within 20 feet of the lich must make a {@dc 18} Constitution saving throw against this magic, taking 21 ({@damage 6d6}) necrotic damage on a failed save, or half as much damage on a successful one."
+					]
+				}
+			],
+			"legendaryGroup": {
+				"name": "Lich",
+				"source": "MM"
+			},
+			"traitTags": [
+				"Legendary Resistances",
+				"Rejuvenation",
+				"Turn Resistance"
+			],
+			"senseTags": [
+				"U"
+			],
+			"languageTags": [
+				"C",
+				"X"
+			],
+			"damageTags": [
+				"C",
+				"N"
+			],
+			"damageTagsLegendary": [
+				"N"
+			],
+			"damageTagsSpell": [
+				"A",
+				"C",
+				"F",
+				"I",
+				"N",
+				"O",
+				"T"
+			],
+			"spellcastingTags": [
+				"CW"
+			],
+			"conditionInflict": [
+				"frightened",
+				"paralyzed"
+			],
+			"conditionInflictSpell": [
+				"charmed",
+				"invisible",
+				"stunned"
+			],
+			"savingThrowForced": [
+				"constitution",
+				"wisdom"
+			],
+			"savingThrowForcedLegendary": [
+				"constitution"
+			],
+			"savingThrowForcedSpell": [
+				"charisma",
+				"constitution",
+				"dexterity",
+				"wisdom"
+			]
+		},
+		{
+			"name": "Mastiff",
+			"source": "MM",
+			"page": 332,
+			"srd": true,
+			"basicRules": true,
+			"reprintedAs": [
+				"Mastiff|XMM"
+			],
+			"size": [
+				"M"
+			],
+			"type": "beast",
+			"alignment": [
+				"U"
+			],
+			"ac": [
+				12
+			],
+			"hp": {
+				"average": 5,
+				"formula": "1d8 + 1"
+			},
+			"speed": {
+				"walk": 40
+			},
+			"str": 13,
+			"dex": 14,
+			"con": 12,
+			"int": 3,
+			"wis": 12,
+			"cha": 7,
+			"skill": {
+				"perception": "+3"
+			},
+			"passive": 13,
+			"cr": "1/8",
+			"trait": [
+				{
+					"name": "Keen Hearing and Smell",
+					"entries": [
+						"The mastiff has advantage on Wisdom ({@skill Perception}) checks that rely on hearing or smell."
+					]
+				}
+			],
+			"action": [
+				{
+					"name": "Bite",
+					"entries": [
+						"{@atk mw} {@hit 3} to hit, reach 5 ft., one target. {@h}4 ({@damage 1d6 + 1}) piercing damage. If the target is a creature, it must succeed on a {@dc 11} Strength saving throw or be knocked {@condition prone}."
+					]
+				}
+			],
+			"environment": [
+				"forest",
+				"hill",
+				"urban"
+			],
+			"traitTags": [
+				"Keen Senses"
+			],
+			"damageTags": [
+				"P"
+			],
+			"miscTags": [
+				"MW"
+			],
+			"conditionInflict": [
+				"prone"
+			],
+			"savingThrowForced": [
+				"strength"
+			]
+		},
+		{
+			"name": "Panther",
+			"source": "MM",
+			"page": 333,
+			"srd": true,
+			"basicRules": true,
+			"reprintedAs": [
+				"Panther|XMM"
+			],
+			"size": [
+				"M"
+			],
+			"type": "beast",
+			"alignment": [
+				"U"
+			],
+			"ac": [
+				12
+			],
+			"hp": {
+				"average": 13,
+				"formula": "3d8"
+			},
+			"speed": {
+				"walk": 50,
+				"climb": 40
+			},
+			"str": 14,
+			"dex": 15,
+			"con": 10,
+			"int": 3,
+			"wis": 14,
+			"cha": 7,
+			"skill": {
+				"perception": "+4",
+				"stealth": "+6"
+			},
+			"passive": 14,
+			"cr": "1/4",
+			"trait": [
+				{
+					"name": "Keen Smell",
+					"entries": [
+						"The panther has advantage on Wisdom ({@skill Perception}) checks that rely on smell."
+					]
+				},
+				{
+					"name": "Pounce",
+					"entries": [
+						"If the panther moves at least 20 feet straight toward a creature and then hits it with a claw attack on the same turn, that target must succeed on a {@dc 12} Strength saving throw or be knocked {@condition prone}. If the target is {@condition prone}, the panther can make one bite attack against it as a bonus action."
+					]
+				}
+			],
+			"action": [
+				{
+					"name": "Bite",
+					"entries": [
+						"{@atk mw} {@hit 4} to hit, reach 5 ft., one target. {@h}5 ({@damage 1d6 + 2}) piercing damage."
+					]
+				},
+				{
+					"name": "Claw",
+					"entries": [
+						"{@atk mw} {@hit 4} to hit, reach 5 ft., one target. {@h}4 ({@damage 1d4 + 2}) slashing damage."
+					]
+				}
+			],
+			"environment": [
+				"grassland",
+				"forest",
+				"hill"
+			],
+			"traitTags": [
+				"Keen Senses",
+				"Pounce"
+			],
+			"damageTags": [
+				"P",
+				"S"
+			],
+			"miscTags": [
+				"MW"
+			],
+			"conditionInflict": [
+				"prone"
+			],
+			"savingThrowForced": [
+				"strength"
+			]
+		},
+		{
+			"name": "Wolf",
+			"source": "MM",
+			"page": 341,
+			"srd": true,
+			"basicRules": true,
+			"reprintedAs": [
+				"Wolf|XMM"
+			],
+			"size": [
+				"M"
+			],
+			"type": "beast",
+			"alignment": [
+				"U"
+			],
+			"ac": [
+				{
+					"ac": 13,
+					"from": [
+						"natural armor"
+					]
+				}
+			],
+			"hp": {
+				"average": 11,
+				"formula": "2d8 + 2"
+			},
+			"speed": {
+				"walk": 40
+			},
+			"str": 12,
+			"dex": 15,
+			"con": 12,
+			"int": 3,
+			"wis": 12,
+			"cha": 6,
+			"skill": {
+				"perception": "+3",
+				"stealth": "+4"
+			},
+			"passive": 13,
+			"cr": "1/4",
+			"trait": [
+				{
+					"name": "Keen Hearing and Smell",
+					"entries": [
+						"The wolf has advantage on Wisdom ({@skill Perception}) checks that rely on hearing or smell."
+					]
+				},
+				{
+					"name": "Pack Tactics",
+					"entries": [
+						"The wolf has advantage on an attack roll against a creature if at least one of the wolf's allies is within 5 feet of the creature and the ally isn't {@condition incapacitated}."
+					]
+				}
+			],
+			"action": [
+				{
+					"name": "Bite",
+					"entries": [
+						"{@atk mw} {@hit 4} to hit, reach 5 ft., one target. {@h}7 ({@damage 2d4 + 2}) piercing damage. If the target is a creature, it must succeed on a {@dc 11} Strength saving throw or be knocked {@condition prone}."
+					]
+				}
+			],
+			"environment": [
+				"grassland",
+				"forest",
+				"hill"
+			],
+			"traitTags": [
+				"Keen Senses",
+				"Pack Tactics"
+			],
+			"damageTags": [
+				"P"
+			],
+			"miscTags": [
+				"MW"
+			],
+			"conditionInflict": [
+				"prone"
+			],
+			"savingThrowForced": [
+				"strength"
+			]
+		}
+	]
+}

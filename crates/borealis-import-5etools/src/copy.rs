@@ -92,6 +92,8 @@ struct Resolver<'a> {
     prop: &'a str,
     raw: &'a [Value],
     index: HashMap<String, usize>,
+    /// Creature templates (`bestiary/template.json`) by [`crate::copy_monster::template_key`].
+    templates: HashMap<String, Value>,
     done: HashMap<usize, Result<Value, String>>,
     stack: BTreeSet<usize>,
     notes: Vec<String>,
@@ -126,13 +128,27 @@ impl Resolver<'_> {
         };
         let base = self.resolve(base_idx)?;
         let mut notes = Vec::new();
-        let merged = merge_copy(&base, &entry, &copy, &mut notes);
+        let merged = merge_copy(&base, &entry, &copy, &self.templates, &mut notes);
+        // A creature is a stat block: a modification that could not be applied exactly
+        // would leave wrong numbers, so the creature is not imported.
+        if STRICT_PROPS.contains(&self.prop) && !notes.is_empty() {
+            return Err(notes.join("; "));
+        }
         self.notes.extend(notes);
         Ok(merged)
     }
 }
 
-fn merge_copy(base: &Value, entry: &Value, copy: &Value, notes: &mut Vec<String>) -> Value {
+/// Properties whose `_copy` fails when one of its modifications cannot be applied.
+const STRICT_PROPS: &[&str] = &["monster"];
+
+fn merge_copy(
+    base: &Value,
+    entry: &Value,
+    copy: &Value,
+    templates: &HashMap<String, Value>,
+    notes: &mut Vec<String>,
+) -> Value {
     let preserve: BTreeSet<String> = copy
         .get("_preserve")
         .and_then(Value::as_object)
@@ -161,6 +177,13 @@ fn merge_copy(base: &Value, entry: &Value, copy: &Value, notes: &mut Vec<String>
         }
     }
     let mut merged = Value::Object(result);
+    if let Some(Value::Array(refs)) = copy.get("_templates") {
+        let own: BTreeSet<String> = entry
+            .as_object()
+            .map(|m| m.keys().cloned().collect())
+            .unwrap_or_default();
+        crate::copy_monster::apply_templates(&mut merged, &own, refs, templates, notes);
+    }
     if let Some(mods) = copy.get("_mod") {
         apply_mods(&mut merged, mods, notes);
     }
@@ -173,6 +196,12 @@ fn merge_copy(base: &Value, entry: &Value, copy: &Value, notes: &mut Vec<String>
 /// Resolve `_copy` and expand `_versions` for every entry of one property array.
 #[must_use]
 pub fn resolve_array(prop: &str, raw: &[Value]) -> Resolved {
+    resolve_array_with_templates(prop, raw, &[])
+}
+
+/// [`resolve_array`] with the creature templates a `_copy._templates` can name.
+#[must_use]
+pub fn resolve_array_with_templates(prop: &str, raw: &[Value], templates: &[Value]) -> Resolved {
     let mut index = HashMap::new();
     for (i, e) in raw.iter().enumerate() {
         index.entry(identity_key(prop, e)).or_insert(i);
@@ -181,6 +210,10 @@ pub fn resolve_array(prop: &str, raw: &[Value]) -> Resolved {
         prop,
         raw,
         index,
+        templates: templates
+            .iter()
+            .map(|t| (crate::copy_monster::template_key(t), t.clone()))
+            .collect(),
         done: HashMap::new(),
         stack: BTreeSet::new(),
         notes: Vec::new(),
@@ -376,6 +409,11 @@ fn as_list(value: &Value) -> Vec<&Value> {
         Value::Array(a) => a.iter().collect(),
         other => vec![other],
     }
+}
+
+/// Apply a `_mod` map (also used for the `_mod` of creature templates).
+pub(crate) fn apply_mods_pub(target: &mut Value, mods: &Value, notes: &mut Vec<String>) {
+    apply_mods(target, mods, notes);
 }
 
 fn apply_mods(target: &mut Value, mods: &Value, notes: &mut Vec<String>) {
@@ -714,7 +752,11 @@ fn apply_one(target: &mut Value, key: &str, m: &Value, notes: &mut Vec<String>) 
                 };
             }
         }
-        other => notes.push(format!("unsupported _mod mode {other:?}")),
+        other => match crate::copy_monster::apply_mode(target, other, m) {
+            Some(Ok(())) => {}
+            Some(Err(e)) => notes.push(e),
+            None => notes.push(format!("unsupported _mod mode {other:?}")),
+        },
     }
 }
 

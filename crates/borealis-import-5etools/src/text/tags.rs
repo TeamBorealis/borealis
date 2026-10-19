@@ -125,6 +125,33 @@ fn atk_text(code: &str) -> String {
     }
 }
 
+/// `{@atkr m}` (2024 stat blocks): `Melee Attack Roll:`, `Melee or Ranged Attack Roll:`.
+fn atkr_text(code: &str) -> String {
+    let parts: Vec<&str> = code
+        .split(',')
+        .filter_map(|c| match c.trim() {
+            "m" => Some("Melee"),
+            "r" => Some("Ranged"),
+            _ => None,
+        })
+        .collect();
+    format!("{} Attack Roll:", parts.join(" or "))
+}
+
+/// `str` -> `Strength` (an unknown code is kept).
+fn ability_name(code: &str) -> String {
+    match code {
+        "str" => "Strength",
+        "dex" => "Dexterity",
+        "con" => "Constitution",
+        "int" => "Intelligence",
+        "wis" => "Wisdom",
+        "cha" => "Charisma",
+        other => other,
+    }
+    .to_string()
+}
+
 fn signed(n: &str) -> String {
     let n = n.trim();
     if n.starts_with('+') || n.starts_with('-') || n.starts_with('\u{2212}') {
@@ -189,7 +216,14 @@ pub fn render_tag(tag: &str, body: &str) -> Rendered {
             }
         }
         "atk" => text(atk_text(body)),
-        "atkr" => text(atk_text(body)),
+        "atkr" => text(atkr_text(body)),
+        "actSave" => text(format!("{} Saving Throw:", ability_name(body.trim()))),
+        "actSaveFail" => text("Failure:".to_string()),
+        "actSaveFailBy" => text(format!("Failure by {} or More:", body.trim())),
+        "actSaveSuccess" => text("Success:".to_string()),
+        "actSaveSuccessOrFail" => text("Failure or Success:".to_string()),
+        "actTrigger" => text("Trigger:".to_string()),
+        "actResponse" => text("Response:".to_string()),
         "h" => text("Hit: ".to_string()),
         "m" => text("Miss: ".to_string()),
         "hom" => text("Hit or Miss: ".to_string()),
@@ -307,6 +341,24 @@ mod tests {
 
     fn no_links(_: RefKind, _: &str, _: &str) -> Option<String> {
         None
+    }
+
+    #[test]
+    fn stat_block_tags_of_2024_creatures_render_their_labels() {
+        assert_eq!(
+            strip_tags("{@atkr m} {@hit 4}, reach 5 ft. {@h}5 damage."),
+            "Melee Attack Roll: +4, reach 5 ft. Hit: 5 damage."
+        );
+        assert_eq!(strip_tags("{@atkr m,r}"), "Melee or Ranged Attack Roll:");
+        assert_eq!(
+            strip_tags("{@actSave dex} {@dc 21}. {@actSaveFail} x. {@actSaveSuccess} y."),
+            "Dexterity Saving Throw: DC 21. Failure: x. Success: y."
+        );
+        assert_eq!(strip_tags("{@actSaveFailBy 5}"), "Failure by 5 or More:");
+        assert_eq!(
+            strip_tags("{@actTrigger} a {@actResponse} b"),
+            "Trigger: a Response: b"
+        );
     }
 
     #[test]

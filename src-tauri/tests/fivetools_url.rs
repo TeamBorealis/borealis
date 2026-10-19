@@ -43,6 +43,12 @@ fn fixture_files() -> BTreeMap<String, Vec<u8>> {
             }
         }
     }
+    // creatures (six SRD ones) are kept apart from the rules fixtures; a real folder has them
+    let creatures = root.join("../creatures");
+    for name in ["bestiary-mm.json", "bestiary-xmm.json"] {
+        let rel = format!("bestiary/{name}");
+        out.insert(rel.clone(), std::fs::read(creatures.join(&rel)).unwrap());
+    }
     // The fixture has no books.json or manifests; a real data folder has both.
     out.insert("books.json".into(), br#"{"book":[]}"#.to_vec());
     let manifest = |dir: &str| {
@@ -55,8 +61,10 @@ fn fixture_files() -> BTreeMap<String, Vec<u8>> {
     };
     let class = manifest("class");
     let spells = manifest("spells");
+    let bestiary = manifest("bestiary");
     out.insert("class/index.json".into(), class);
     out.insert("spells/index.json".into(), spells);
+    out.insert("bestiary/index.json".into(), bestiary);
     out
 }
 
@@ -285,8 +293,41 @@ fn a_folder_address_is_walked_through_its_manifests() {
     ] {
         assert!(calls.contains(&format!("{FOLDER}{want}")), "{want} fetched");
     }
-    assert!(calls.iter().all(|c| !c.contains("bestiary")));
+    // creatures are read too (they fill companion selects), through their own manifest
+    for want in ["bestiary/index.json", "bestiary/bestiary-mm.json"] {
+        assert!(calls.contains(&format!("{FOLDER}{want}")), "{want} fetched");
+    }
     assert_eq!(app.list_5etools_urls()[0].revision.len(), 12);
+}
+
+#[test]
+fn creatures_import_from_an_address_as_from_the_folder() {
+    let (_dir, app) = app();
+    let mock = Mock::new();
+    let by_url = import_url(&app, &mock, FOLDER, &["MM"]);
+    // the same files as a local folder, imported by the importer directly
+    let tmp = tempfile::tempdir().unwrap();
+    for (rel, body) in fixture_files() {
+        let p = tmp.path().join(rel);
+        std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+        std::fs::write(p, body).unwrap();
+    }
+    let options = borealis_import_5etools::ImportOptions::default().with_sources(["MM"]);
+    let folder = borealis_import_5etools::import_folder(tmp.path(), &options).unwrap();
+    let monsters: Vec<&str> = folder
+        .packs
+        .iter()
+        .flat_map(|p| p.elements())
+        .filter(|e| e.ty == "Monster")
+        .map(|e| e.id.as_str())
+        .collect();
+    assert_eq!(monsters.len(), 5, "{monsters:?}");
+    assert_eq!(by_url, folder.report.converted);
+    assert!(app
+        .list_packs()
+        .unwrap()
+        .iter()
+        .any(|p| p.id == "5etools-mm"));
 }
 
 #[test]
