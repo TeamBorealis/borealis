@@ -296,13 +296,17 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Build the installer bundle (release)
-        # beforeBuildCommand builds ui/dist. Linux: deb only (AppImage is slow and not installed here).
+      - name: Build the installer bundle
+        # beforeBuildCommand builds ui/dist. Linux: release deb only (AppImage is slow and not installed here);
+        # WebKitWebDriver drives a release build. Windows: debug NSIS installer, as Tauri's WebDriver docs and
+        # CI example build the app under test: a release build has the WebView2 DevTools off, so its webview
+        # opens no remote-debugging port and msedgedriver fails with "DevToolsActivePort file doesn't exist"
+        # (run 39317258271). The debug exe is console-subsystem; harmless here.
         run: |
           if [ "$RUNNER_OS" = Linux ]; then
             node ui/node_modules/@tauri-apps/cli/tauri.js build --bundles deb
           else
-            node ui/node_modules/@tauri-apps/cli/tauri.js build
+            node ui/node_modules/@tauri-apps/cli/tauri.js build --debug --bundles nsis
           fi
 
       - name: Install the bundle (Linux)
@@ -317,7 +321,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $setup = Get-ChildItem target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          $setup = Get-ChildItem target/debug/bundle/nsis/*-setup.exe | Select-Object -First 1
+          if (-not $setup) { Write-Output '::error::no NSIS installer under target/debug/bundle/nsis'; exit 1 }
           Start-Process -FilePath $setup.FullName -ArgumentList '/S' -Wait
           $exe = Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Borealis') -Filter *.exe |
             Where-Object { $_.Name -notmatch '^uninstall' } | Select-Object -First 1
@@ -353,8 +358,12 @@ jobs:
             Invoke-WebRequest "https://msedgedriver.microsoft.com/$wv/edgedriver_win64.zip" -OutFile $zip
             Expand-Archive $zip -DestinationPath $dir -Force
             $driver = Join-Path $dir 'msedgedriver.exe'
-            Write-Output "downloaded msedgedriver $wv"
           }
+          # Diagnostics (numbers only): the driver's major must equal the WebView2 runtime's, not Edge's.
+          $edge = (Get-Item "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe" -ErrorAction SilentlyContinue).VersionInfo.ProductVersion
+          $used = [regex]::Match((& $driver --version), '\d+\.\d+\.\d+\.\d+').Value
+          Write-Output "versions: WebView2 runtime $wv; msedgedriver $used; Edge browser $edge"
+          if ($used.Split('.')[0] -ne $wv.Split('.')[0]) { Write-Output "::error::msedgedriver $used does not match WebView2 $wv"; exit 1 }
           "driver=$driver" >> $env:GITHUB_OUTPUT
 
       - name: WebDriver smoke on the installed app
