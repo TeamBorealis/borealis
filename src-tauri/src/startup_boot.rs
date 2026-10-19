@@ -127,6 +127,14 @@ fn load(handle: &AppHandle, startup: &Startup) -> Result<(), String> {
     #[cfg(mobile)]
     let _ = data;
     handle.manage::<AppState>(state);
+    // S5 acceptance (debug builds only): answer a pending digest request once the content is loaded.
+    #[cfg(debug_assertions)]
+    {
+        let handle = handle.clone();
+        std::thread::spawn(move || {
+            crate::acceptance_digest::answer_request(&handle.state::<AppState>());
+        });
+    }
     #[cfg(desktop)]
     handle.manage(ai);
     #[cfg(not(any(target_os = "android", target_os = "ios")))]

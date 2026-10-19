@@ -155,6 +155,7 @@
     "allow-open-download-page",
     "allow-open-app-folder",
     "allow-get-recent-logs",
-    "allow-restart-app"
+    "allow-restart-app",
+    "allow-acceptance-digest"
   ]
 }

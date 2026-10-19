@@ -618,6 +618,8 @@ export class MockApi implements Api {
   async openAppFolder(args: { folder: string }) { await this.tick(); this.openedFolders.push(args.folder); }
   async getRecentLogs() { await this.tick(); return this.recentLogs; }
   async restartApp() { await this.tick(); }
+  /** Debug-build Rust command only: the mock has no content digest. */
+  async acceptanceDigest(): Promise<Record<string, unknown>> { await this.tick(); throw apiError("not_found", "The acceptance digest exists only in debug builds of the app."); }
 
   /* ---------- AI ---------- */
 

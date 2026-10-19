@@ -307,6 +307,8 @@ export interface ApiMethods {
   getRecentLogs(): Promise<string>;
   /** Restart the application so new content loads. */
   restartApp(): Promise<void>;
+  /** Debug builds only (S5 acceptance): per-type counts and digests of the loaded content and of 12 fixed characters built from it. Release builds have no such command. */
+  acceptanceDigest(): Promise<Record<string, unknown>>;
 
   /* AI */
   aiStatus(): Promise<AiStatus>;
@@ -481,6 +483,7 @@ export const COMMANDS = {
   openAppFolder: "open_app_folder",
   getRecentLogs: "get_recent_logs",
   restartApp: "restart_app",
+  acceptanceDigest: "acceptance_digest",
   aiStatus: "ai_status",
   aiStartTask: "ai_start_task",
   aiCancelTask: "ai_cancel_task",

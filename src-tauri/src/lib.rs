@@ -13,6 +13,9 @@ pub mod ai_host;
 #[cfg(desktop)]
 pub mod ai_jobs;
 pub mod ai_override;
+// S5 acceptance digest: debug builds only (never in a release binary).
+#[cfg(debug_assertions)]
+pub mod acceptance_digest;
 #[cfg(desktop)]
 pub mod ai_profile;
 #[cfg(desktop)]
@@ -25,6 +28,8 @@ pub mod app_update;
 pub mod builder;
 pub mod bundled_content;
 pub mod commands;
+#[cfg(debug_assertions)]
+pub mod commands_acceptance;
 #[cfg(desktop)]
 pub mod commands_ai;
 #[cfg(desktop)]
@@ -438,6 +443,8 @@ pub fn run() {
             commands_system::open_app_folder,
             commands_system::get_recent_logs,
             commands_system::restart_app,
+            #[cfg(debug_assertions)]
+            commands_acceptance::acceptance_digest,
         ])
         .build(tauri::generate_context!())
         .expect("error while building Borealis")
