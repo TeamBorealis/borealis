@@ -1,20 +1,22 @@
 {
   "version": 1,
   "desktop-linux": {
-    "a-user/s1": { "wall_s": 30 },
-    "a-core/s1": { "wall_s": 170 },
-    "a-user/s2": { "wall_s": 110 },
-    "a-comm/s1": { "wall_s": 310 },
-    "a-comm/s2": { "wall_s": 40 },
-    "a-core/s2": { "wall_s": 2210 }
+    "a-user/s1": { "wall_s": 60 },
+    "a-core/s1": { "wall_s": 110 },
+    "a-user/s2": { "wall_s": 340 },
+    "a-comm/s1": { "wall_s": 990 },
+    "a-comm/s2": { "wall_s": 110 },
+    "a-core/s2": { "wall_s": 5350 },
+    "process/acceptance": { "peak_mem_mb": 8300 }
   },
   "desktop-windows": {
-    "a-user/s1": { "wall_s": 30 },
-    "a-core/s1": { "wall_s": 130 },
-    "a-user/s2": { "wall_s": 250 },
-    "a-comm/s1": { "wall_s": 740 },
-    "a-comm/s2": { "wall_s": 80 },
-    "a-core/s2": { "wall_s": 4010 }
+    "a-user/s1": { "wall_s": 60 },
+    "a-core/s1": { "wall_s": 110 },
+    "a-user/s2": { "wall_s": 340 },
+    "a-comm/s1": { "wall_s": 990 },
+    "a-comm/s2": { "wall_s": 110 },
+    "a-core/s2": { "wall_s": 5350 },
+    "process/acceptance": { "peak_mem_mb": 8300 }
   },
   "android": {
     "a-core/import": { "wall_s": 200 },

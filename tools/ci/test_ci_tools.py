@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Tests for the acceptance CI helpers: python3 -I tools/ci/test_ci_tools.py (stdlib only)."""
+import contextlib
 import ctypes
+import io
 import json
 import os
 import subprocess
@@ -15,6 +17,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import check_thresholds as ct  # noqa: E402
 import fetch_aurora_corpus as fetch  # noqa: E402
 import webdriver_smoke as ws  # noqa: E402
+
+
+def quiet(fn, *args):
+    """(return value, captured stdout+stderr) of fn(*args). The tests drive the tools' main() through
+    failure paths, and their `::error::` lines must not reach a CI log, where GitHub would turn them into
+    error annotations on the self-test step."""
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+        value = fn(*args)
+    return value, out.getvalue()
 import match_hashes as mh  # noqa: E402
 import run_filtered as rf  # noqa: E402
 
@@ -133,11 +145,11 @@ class MatchTests(unittest.TestCase):
             local.write_text("".join(self.LOCAL), encoding="utf-8")
             empty.write_text("nothing\n", encoding="utf-8")
             ci.write_text("".join(self.ci_log(self.LOCAL)), encoding="utf-8")
-            self.assertEqual(mh.main([str(local), str(ci)]), 0)
+            self.assertEqual(quiet(mh.main, [str(local), str(ci)])[0], 0)
             ci.write_text("".join(self.ci_log(self.LOCAL[:3])), encoding="utf-8")
-            self.assertEqual(mh.main([str(local), str(ci)]), 1)
-            self.assertEqual(mh.main([str(empty), str(ci)]), 2)
-            self.assertEqual(mh.main([str(local), str(Path(d) / "missing.log")]), 2)
+            self.assertEqual(quiet(mh.main, [str(local), str(ci)])[0], 1)
+            self.assertEqual(quiet(mh.main, [str(empty), str(ci)])[0], 2)
+            self.assertEqual(quiet(mh.main, [str(local), str(Path(d) / "missing.log")])[0], 2)
 
 
 class FetchTests(unittest.TestCase):
@@ -181,7 +193,8 @@ class ThresholdTests(unittest.TestCase):
             t, log = Path(d) / "t.json", Path(d) / "a.log"
             t.write_text(json.dumps(limits), encoding="utf-8")
             log.write_text("".join(log_lines), encoding="utf-8")
-            return ct.main(["--platform", platform, "--thresholds", str(t), str(log)])
+            code, self.out = quiet(ct.main, ["--platform", platform, "--thresholds", str(t), str(log)])
+            return code
 
     def test_committed_thresholds_are_numbers_only_for_every_platform(self):
         data = ct.load_thresholds(ct.THRESHOLDS)
@@ -212,9 +225,10 @@ class ThresholdTests(unittest.TestCase):
         self.assertEqual(self.run_main(self.LIMITS, self.LOG), 0)
         over = self.LOG + ["METRIC\tprocess\tacceptance\t*\tpeak_mem_mb\t4001\n"]
         self.assertEqual(self.run_main(self.LIMITS, over), 1)
+        self.assertIn("::error::desktop-linux process/acceptance peak_mem_mb 4001", self.out)
         self.assertEqual(self.run_main(self.LIMITS, self.LOG, platform="desktop-macos"), 2)
         self.assertEqual(self.run_main(self.LIMITS, self.LOG, platform="version"), 2)
-        self.assertEqual(ct.main(["--platform", "ios", "/nonexistent/log"]), 2)
+        self.assertEqual(quiet(ct.main, ["--platform", "ios", "/nonexistent/log"])[0], 2)
 
     def test_rejects_thresholds_that_are_not_positive_numbers(self):
         for bad in ({"desktop-linux": {"a-core/s1": {"wall_s": "90"}}},
@@ -331,7 +345,7 @@ class WebDriverSmokeTests(unittest.TestCase):
     def test_smoke_skips_the_closed_splash_and_retries_a_lost_click(self):
         with tempfile.TemporaryDirectory() as d:
             shot = Path(d) / "s.png"
-            failed = ws.smoke(self.client, "/usr/bin/borealis", timeout=4, screenshot=str(shot))
+            failed, _ = quiet(ws.smoke, self.client, "/usr/bin/borealis", 4, str(shot))
             self.assertIsNone(failed)
             self.assertEqual(shot.read_bytes(), b"hi")
         st = FakeTauriDriver.state
@@ -343,7 +357,7 @@ class WebDriverSmokeTests(unittest.TestCase):
 
     def test_smoke_names_the_failed_check(self):
         FakeTauriDriver.state = {"clicks": -100}
-        self.assertEqual(ws.smoke(self.client, "/usr/bin/borealis", timeout=0.4), "content screen opens")
+        self.assertEqual(quiet(ws.smoke, self.client, "/usr/bin/borealis", 0.4)[0], "content screen opens")
 
 
 if __name__ == "__main__":
