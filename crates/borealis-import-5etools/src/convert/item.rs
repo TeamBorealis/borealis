@@ -369,7 +369,11 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         }
         el.setters.push(setter);
     }
-    if let Some(bonus) = it.bonus_weapon.as_deref().and_then(signed_value) {
+    // a card deck's effect fields sum up random cards; carrying it grants nothing
+    let is_deck = is_card_deck(&ent.raw);
+    if is_deck {
+        keep_deck_effects_as_data(&ent.raw, &mut el);
+    } else if let Some(bonus) = it.bonus_weapon.as_deref().and_then(signed_value) {
         el.setters
             .push(Setter::new("enhancement", bonus.to_string()));
     }
@@ -380,22 +384,26 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
             el.data.insert("base_weapon".into(), json!(base));
         }
     }
-    magic_rules(&it, ty, &code, &mut mech, &mut el);
-    if let Some(rule) = item_shapes::crit_rule(&it, ty == "Weapon") {
-        mech.push(rule);
+    if !is_deck {
+        magic_rules(&it, ty, &code, &mut mech, &mut el);
+        if let Some(rule) = item_shapes::crit_rule(&it, ty == "Weapon") {
+            mech.push(rule);
+        }
+        item_mech::ability_bonus_rules(&it, &mut mech, &mut partial);
+        item_mech::speed_rules(&it, &el.id, &mut mech, &mut partial);
+        item_extras::bonus_stats(&it, &mut mech);
     }
-    item_mech::ability_bonus_rules(&it, &mut mech, &mut partial);
-    item_mech::speed_rules(&it, &el.id, &mut mech, &mut partial);
-    item_extras::bonus_stats(&it, &mut mech);
     item_extras::dex_cap(&ent.raw, &code, &mut mech);
-    item_extras::granted_rules(sh, &it, &mut mech, &mut partial);
+    if !is_deck {
+        item_extras::granted_rules(sh, &it, &mut mech, &mut partial);
+    }
     if item_extras::proficient_with_itself(&it) {
         el.setters.push(Setter::new("proficient", "true"));
     }
     let charges = item_mech::charges_rule(&it, &el, &mut partial);
     let has_charges = charges.is_some();
     mech.rules.extend(charges);
-    if let Some(attached) = it.extra.get("attachedSpells") {
+    if let Some(attached) = it.extra.get("attachedSpells").filter(|_| !is_deck) {
         mech.rules.extend(item_spells::attached_spell_rules(
             sh,
             &el.id,
@@ -627,6 +635,48 @@ fn magic_rules(it: &Item, ty: &str, code: &str, mech: &mut Mech<'_>, el: &mut El
             note_unmapped(el, key, "item property kept in data only");
             el.data.insert(key.to_string(), it.extra[key].clone());
         }
+    }
+}
+
+/// The effect fields of a card deck that the item's own converters would turn into rules.
+const DECK_EFFECT_KEYS: [&str; 20] = [
+    "ability",
+    "attachedSpells",
+    "grantsProficiency",
+    "grantsLanguage",
+    "resist",
+    "immune",
+    "vulnerable",
+    "conditionImmune",
+    "modifySpeed",
+    "speed",
+    "senses",
+    "bonusWeapon",
+    "bonusAc",
+    "bonusSavingThrow",
+    "bonusSpellAttack",
+    "bonusSpellSaveDc",
+    "bonusAbilityCheck",
+    "bonusProficiencyBonus",
+    "bonusSavingThrowConcentration",
+    "critThreshold",
+];
+
+/// A card deck (`seeAlsoDeck`: Deck of Many Things, Deck of Wonder, Deck of Illusions...): its
+/// effect fields are filter tags that sum up what single random cards do when drawn. Aurora's
+/// Deck of Many Things has no rules, so carrying or wearing the deck grants nothing.
+fn is_card_deck(raw: &Value) -> bool {
+    raw.get("seeAlsoDeck").is_some()
+}
+
+/// The deck's effect fields as data, each noted the way other unconverted properties are.
+fn keep_deck_effects_as_data(raw: &Value, el: &mut Element) {
+    for key in DECK_EFFECT_KEYS {
+        let Some(v) = raw.get(key) else {
+            continue;
+        };
+        note_unmapped(el, key, "card deck effect kept in data only");
+        el.data.insert(key.to_string(), v.clone());
     }
 }
 
@@ -1416,6 +1466,78 @@ mod tests {
         assert_eq!(
             items[0]["entries"][0],
             "Your axe gets +2; it deals slashing damage. It is an Axe."
+        );
+    }
+
+    fn spell_grants(el: &Element) -> Vec<&str> {
+        el.rules
+            .iter()
+            .filter_map(|r| match r {
+                Rule::Grant(g) if g.ty.as_deref() == Some("Spell") => Some(g.id.as_str()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn card_deck_effects_stay_in_data_and_grant_nothing() {
+        // Arrange: an invented deck whose filter tags sum up its random cards
+        let sh = Shared::default();
+        let mut st = State::default();
+        let deck = json!({"name": "Deck of Odd Fortunes", "source": "ZZZ", "rarity": "legendary", "wondrous": true,
+            "seeAlsoDeck": ["deck of odd fortunes|zzz"],
+            "ability": {"from": ["str", "dex", "con", "int", "wis", "cha"], "count": 1, "amount": 2},
+            "grantsProficiency": true, "attachedSpells": ["glow orb|zzz"],
+            "resist": ["fire"], "vulnerable": ["cold"], "modifySpeed": {"equal": {"climb": "walk"}},
+            "bonusSavingThrow": "+1", "bonusWeapon": "+1",
+            "entries": ["Odd Card. You gain proficiency in the Stealth skill."]});
+        // Act
+        let el = &convert(&sh, &mut st, &ent(deck)).elements[0];
+        // Assert: no spell, no ability choice, no resistance, no rule at all
+        assert!(spell_grants(el).is_empty(), "{:?}", el.rules);
+        assert!(
+            !el.rules.iter().any(|r| matches!(r, Rule::Select(_))),
+            "no ability choice: {:?}",
+            el.rules
+        );
+        assert!(el.rules.is_empty(), "{:?}", el.rules);
+        assert!(el.setter("enhancement").is_none());
+        for key in [
+            "ability",
+            "attachedSpells",
+            "grantsProficiency",
+            "resist",
+            "vulnerable",
+            "modifySpeed",
+            "bonusSavingThrow",
+            "bonusWeapon",
+        ] {
+            assert!(el.data.contains_key(key), "{key} kept in data");
+            assert!(
+                el.extra
+                    .attributes
+                    .get(&format!("5et:{key}"))
+                    .is_some_and(|v| v.contains("kept in data only")),
+                "{key} noted"
+            );
+        }
+    }
+
+    #[test]
+    fn item_with_attached_spells_and_no_deck_grants_its_spell() {
+        // Arrange: the same spell on an ordinary wondrous item (no `seeAlsoDeck`)
+        let sh = Shared::default();
+        let mut st = State::default();
+        let charm = json!({"name": "Charm of Glow", "source": "ZZZ", "rarity": "uncommon", "wondrous": true,
+            "attachedSpells": ["glow orb|zzz"], "resist": ["fire"]});
+        // Act
+        let el = &convert(&sh, &mut st, &ent(charm)).elements[0];
+        // Assert
+        assert_eq!(spell_grants(el).len(), 1, "{:?}", el.rules);
+        assert!(
+            el.rules.len() > 1,
+            "the resistance is a rule too: {:?}",
+            el.rules
         );
     }
 }
