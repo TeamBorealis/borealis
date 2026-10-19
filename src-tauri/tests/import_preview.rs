@@ -26,7 +26,7 @@ fn element(id: &str, name: &str, grants: &[&str]) -> String {
 
 fn xml(elements: &[String]) -> String {
     format!(
-        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<elements>\n  <info><name>Test Book</name></info>\n{}\n</elements>",
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<elements>\n  <info><name>Test Book</name><update version=\"1.0.0\"><file name=\"test-book.xml\" url=\"https://example.invalid/test-book.xml\"/></update></info>\n{}\n</elements>",
         elements.join("\n")
     )
 }

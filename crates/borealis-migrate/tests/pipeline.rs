@@ -13,6 +13,7 @@ const GOOD: &str = r#"<?xml version="1.0" encoding="utf-8" ?>
   <info><name>Mine</name><update version="1.0.0"><file name="mine.xml" url="https://example.invalid/mine.xml"/></update></info>
   <element name="Thing" type="Item" source="Homebrew" id="ID_HB_ITEM_THING">
     <description><p>A &amp; B</p></description>
+    <setters />
     <rules><grant type="Item" id="ID_HB_ITEM_OTHER"/></rules>
   </element>
 </elements>"#;
@@ -25,7 +26,7 @@ fn write(root: &Path, rel: &str, text: &str) {
 
 fn element_xml(id: &str, desc: &str) -> String {
     format!(
-        r#"<elements><element name="{id}" type="Item" source="S" id="{id}"><description><p>{desc}</p></description></element></elements>"#
+        r#"<elements><element name="{id}" type="Item" source="S" id="{id}"><description><p>{desc}</p></description><setters /></element></elements>"#
     )
 }
 

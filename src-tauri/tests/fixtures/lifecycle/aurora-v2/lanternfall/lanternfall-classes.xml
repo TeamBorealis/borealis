@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Invented test content (acceptance stage 4, pack v2): no published game text. -->
 <elements>
-  <info><name>Lanternfall</name><update version="2.0.0"/></info>
+  <info><name>Lanternfall</name><update version="2.0.0"><file name="lanternfall-classes.xml" url="https://example.invalid/lanternfall/lanternfall-classes.xml"/></update></info>
   <element name="Wickwarden" type="Class" source="Lanternfall" id="ID_LANTERNFALL_CLASS_WICKWARDEN">
     <supports>Wickwarden</supports>
     <description><p>Invented.</p></description>

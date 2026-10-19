@@ -9,7 +9,7 @@ use borealis_migrate::{migrate_path, MigrateOptions};
 use std::path::Path;
 
 const PACK: &str = r#"<elements>
-  <info><name>Synthetic</name><update version="0.0.1"/></info>
+  <info><name>Synthetic</name><update version="0.0.1"><file name="synthetic.xml" url="https://example.invalid/synthetic.xml"/></update></info>
   <element name="Warden" type="Class" source="Synthetic" id="ID_ZZ_SYN_CLASS_WARDEN">
     <supports>Warden</supports>
     <setters><set name="hd">d8</set></setters>

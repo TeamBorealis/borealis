@@ -214,8 +214,14 @@ impl Run<'_> {
         self.types.extend(conv.element_types);
         let mut stats = conv.stats;
         let document = match conv.document {
-            Some(Document::Content(file)) if self.opts.origin == PackOrigin::Custom => {
-                let culprits = load_reject::missing_setters(&file);
+            // Aurora skips an `ignore="true"` file before parsing its elements.
+            Some(Document::Content(file))
+                if self.opts.origin == PackOrigin::Custom && file.ignore != Some(true) =>
+            {
+                // The raw XML, as Aurora reads it (convert_xml parsed it already, so it parses).
+                let culprits = crate::dom::parse_document(&text)
+                    .map(|root| load_reject::culprits(&root))
+                    .unwrap_or_default();
                 if culprits.is_empty() {
                     Some(Document::Content(file))
                 } else {

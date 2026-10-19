@@ -29,7 +29,7 @@ fn b64(s: &str) -> String {
 
 fn install_missing_content(app: &AppState) {
     let xml = format!(
-        r#"<elements><info><name>Later</name><update version="0.0.1"/></info>
+        r#"<elements><info><name>Later</name><update version="0.0.1"><file name="later.xml" url="https://example.invalid/later.xml"/></update></info>
   <element name="Gone Option" type="Option" source="Later" id="{OPTION}"/>
   <element name="Lost Cantrip" type="Spell" source="Later" id="{SPELL}">
     <supports>Wizard</supports>

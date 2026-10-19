@@ -14,7 +14,7 @@ use std::path::PathBuf;
 
 const XML: &str = r#"<?xml version="1.0" encoding="utf-8"?>
 <elements>
-  <info><name>Sec Book</name></info>
+  <info><name>Sec Book</name><update version="1.0.0"><file name="sec-book.xml" url="https://example.invalid/sec-book.xml"/></update></info>
   <element name="Sec Gift" type="Feat" source="Sec Book" id="ID_SEC_FEAT_GIFT">
     <description><p>Test.</p></description>
     <sheet display="true"><description>Test.</description></sheet>

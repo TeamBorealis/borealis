@@ -21,7 +21,7 @@ use std::time::{Duration, Instant};
 
 const XML: &str = r#"<?xml version="1.0" encoding="utf-8"?>
 <elements>
-  <info><name>Side Book</name></info>
+  <info><name>Side Book</name><update version="1.0.0"><file name="side-book.xml" url="https://example.invalid/side-book.xml"/></update></info>
   <element name="Side Gift" type="Feat" source="Side Book" id="ID_SIDE_FEAT_GIFT">
     <description><p>Test.</p></description>
     <sheet display="true"><description>Test.</description></sheet>
