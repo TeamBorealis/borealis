@@ -58,7 +58,9 @@ mod features;
 mod retrain;
 pub mod text;
 
-pub use adapter::{Adaptation, EditionAdapter, PassThroughAdapter, StandardAdapter};
+pub use adapter::{
+    Adaptation, EditionAdapter, PassThroughAdapter, StandardAdapter, FLEXIBLE_INCREASE_NAME,
+};
 pub use compat::{CompatEntry, CompatibilityReport, EditionBadge};
 pub use diag::{Diagnostic, Severity};
 pub use engine::Engine;

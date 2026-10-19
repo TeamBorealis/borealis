@@ -432,6 +432,14 @@ fn legacy_alias_note<'e>(el: &'e Element, profile: &dyn RulesetProfile) -> Optio
         .filter(|a| !a.is_empty() && *a != el.ty && profile.accepts_legacy_alias(a, from))
 }
 
+/// Element types that make up a species (its traits, lineage options, subraces).
+fn is_origin_part(ty: &str) -> bool {
+    matches!(
+        ty,
+        "Species" | "Race" | "Sub Race" | "Racial Trait" | "Species Trait Option"
+    )
+}
+
 /// Union-find over `equivalent` edges: id -> class index, and the ids of each class in the
 /// order they first appear.
 fn equivalence_classes(edges: &[(String, String)]) -> (HashMap<String, usize>, Vec<Vec<String>>) {
@@ -718,6 +726,7 @@ impl Universe {
                 }
             }
         }
+        uni.add_origin_increases(profile, adapter);
         uni.generate_improvements(store, &classes, &eff);
         uni.mark_superseded();
         uni.index_equivalents();
@@ -947,6 +956,82 @@ impl Universe {
                 }
             }
         }
+    }
+
+    /// IM9: every accepted foreign species with no ability increase anywhere in its parts goes
+    /// through [`EditionAdapter::origin_increase`]; the element is rebuilt in place (same id,
+    /// type and index) and the change is added to its compatibility notes.
+    fn add_origin_increases(&mut self, profile: &dyn RulesetProfile, adapter: &dyn EditionAdapter) {
+        for i in 0..self.elems.len() {
+            let u = &self.elems[i];
+            let EditionStatus::Foreign {
+                from,
+                accepted: true,
+                notes,
+                ..
+            } = &u.edition
+            else {
+                continue;
+            };
+            if !matches!(u.el.ty.as_str(), "Species" | "Race") || self.origin_raises_ability(i) {
+                continue;
+            }
+            let Some((el, added)) = adapter.origin_increase(&u.el, *from, profile) else {
+                continue;
+            };
+            let notes: Vec<String> = notes
+                .iter()
+                .filter(|n| *n != USED_AS_WRITTEN)
+                .cloned()
+                .chain(added)
+                .collect();
+            let edition = EditionStatus::Foreign {
+                from: *from,
+                accepted: true,
+                converted: true,
+                notes,
+            };
+            let mut rebuilt =
+                UElem::build(el, u.copied_rules, u.derived, edition, u.supports.clone());
+            rebuilt.legacy_accepted = u.legacy_accepted;
+            self.elems[i] = rebuilt;
+        }
+    }
+
+    /// Does the species at `root`, one of its granted traits, or an option one of their selects
+    /// can pick (lineages, subraces) raise an ability score? Feats, spells and the like are not
+    /// parts of the species and are not followed.
+    fn origin_raises_ability(&self, root: usize) -> bool {
+        let mut stack = vec![root];
+        let mut seen = std::collections::HashSet::new();
+        while let Some(i) = stack.pop() {
+            if !seen.insert(i) {
+                continue;
+            }
+            let u = &self.elems[i];
+            if u.el.rules.iter().any(crate::adapter::raises_ability) {
+                return true;
+            }
+            for (rule, parsed) in u.el.rules.iter().zip(&u.rules) {
+                match (rule, parsed) {
+                    (Rule::Grant(g), _) => stack.extend(
+                        self.by_id
+                            .get(&g.id)
+                            .copied()
+                            .filter(|&j| is_origin_part(&self.elems[j].el.ty)),
+                    ),
+                    (Rule::Select(s), URule::Select { supports, .. }) if is_origin_part(&s.ty) => {
+                        stack.extend(self.candidates_for(&s.ty).filter_map(|c| {
+                            crate::eval::supports_cond_match(supports, c, &crate::eval::NoDynamics)
+                                .then(|| self.by_id.get(&c.el.id).copied())
+                                .flatten()
+                        }));
+                    }
+                    _ => {}
+                }
+            }
+        }
+        false
     }
 
     fn push(&mut self, u: UElem) {

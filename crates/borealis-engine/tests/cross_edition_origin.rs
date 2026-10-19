@@ -225,12 +225,12 @@ fn a_2024_character_is_unchanged() {
     assert!(!has(&offered(&fresh, "Class"), FIGHTER_14));
 }
 
-/// What the engine does with ability scores when a 2014 character takes a 2024 species: the
-/// species has no ability increase (2024 moves it to the background). With a 2014 background
-/// the character has no racial increase at all; a 2024 background brings its own ability
-/// distribution. Recorded as an open question for the user (no rule invented here).
+/// Ability scores when a 2014 character takes a 2024 species: the species itself has no
+/// increase (2024 moves it to the background), so IM9 offers a flexible +2/+1 or +1/+1/+1
+/// (`cross_edition_species_asi.rs`); left unchosen, nothing applies. A 2024 background brings
+/// its own ability distribution on top.
 #[test]
-fn a_2024_species_on_a_2014_character_has_no_racial_ability_increase() {
+fn a_2024_species_on_a_2014_character_adds_nothing_until_the_increase_is_chosen() {
     let mut s = fighter(Ruleset::Dnd2014, FIGHTER_14, Some(true), 1);
     s = pick(&s, "ID_LEVEL_1", "Race", ELF_24);
     let bg = open_slot(&engine().derive(&s), "Background");
@@ -242,7 +242,7 @@ fn a_2024_species_on_a_2014_character_has_no_racial_ability_increase() {
     assert_eq!(
         scores,
         BASE.to_vec(),
-        "no increase from species or background"
+        "no increase from the background, the species' IM9 choice still open"
     );
 
     let with_24_bg = commands::select(engine(), &s, &bg, Choice::Element(SOLDIER_24.into()))
