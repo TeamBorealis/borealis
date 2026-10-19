@@ -45,9 +45,9 @@ const CLOSED_GAPS: &[(&str, &str)] = &[
 /// Highest acceptable number of unenforced prerequisites (220 on the 2026-10 corpus before
 /// prerequisites were mapped, 5 after: 4 house renown tiers and 1 unknown race at most).
 const MAX_UNENFORCED_PREREQS: usize = 8;
-/// Lowest acceptable share of converted creatures, in percent (4359 of 4645 = 93.8% on the
+/// Lowest acceptable share of converted creatures, in percent (4588 of 4851 = 94.6% on the
 /// 2026-10 corpus at det-5e-9; every skip carries a reason code: no challenge rating,
-/// a number printed as text, a creature type that is a choice, a `_copy` mode not applied).
+/// a number printed as text, a creature type that is a choice, a `_copy` target missing).
 const MIN_CREATURE_CONVERTED_PERCENT: usize = 92;
 /// Report kind of creatures.
 const CREATURE: &str = "monster";
