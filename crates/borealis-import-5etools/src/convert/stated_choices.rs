@@ -183,12 +183,42 @@ fn doubled(sentence: &str) -> bool {
     .is_ok_and(|re| re.is_match(sentence))
 }
 
+/// "you gain proficiency in one skill of your choice from the (list of) skills available to
+/// <class>s at level 1 / 1st level" (XPHB Student of War): a choice over the class's own
+/// level 1 skill list, when the sentence names the feature's own class. A sentence that also
+/// grants it again later ("and again at 10th level") is not read.
+fn class_skill_choice(sentence: &str, class: &str, class_skills: &[String]) -> Option<SkillChoice> {
+    let re = Regex::new(
+        r"\byou (?:also )?gain proficiency in (a|one|two) skills? of your choice from (?:the list of )?(?:the )?skills available to ([a-z]+?)s? at (?:level 1|1st level)$",
+    )
+    .ok()?;
+    let caps = re.captures(sentence)?;
+    let count = number_word(&caps[1])?;
+    let same_class = caps[2].eq_ignore_ascii_case(class.trim_end_matches('s'));
+    (same_class && !sentence.contains("again at") && class_skills.len() > count as usize).then(
+        || SkillChoice {
+            count,
+            skills: class_skills.to_vec(),
+        },
+    )
+}
+
 /// The proficiency choices the feature's own sentences state.
 #[must_use]
 pub fn read(entries: &[Value]) -> Stated {
+    read_for_class(entries, "", &[])
+}
+
+/// [`read`], also reading a choice from `class`'s level 1 skill list `class_skills`.
+#[must_use]
+pub fn read_for_class(entries: &[Value], class: &str, class_skills: &[String]) -> Stated {
     let mut out = Stated::default();
     for s in sentences(entries).iter().filter(|s| !conditional(s)) {
         out.skills.extend(skill_choice(s));
+        if !class_skills.is_empty() {
+            out.skills
+                .extend(class_skill_choice(s, &class.to_lowercase(), class_skills));
+        }
         out.tools.extend(tool_choice(s));
         out.languages = out.languages.or_else(|| languages(s));
         out.doubled |= doubled(s);
@@ -265,6 +295,37 @@ mod tests {
 
     fn read_one(text: &str) -> Stated {
         read(&[json!(text)])
+    }
+
+    #[test]
+    fn a_skill_choice_from_the_class_level_1_list() {
+        let list: Vec<String> = ["acrobatics", "athletics", "history"]
+            .iter()
+            .map(|s| (*s).to_string())
+            .collect();
+        let text = "You gain proficiency with one type of {@item Artisan's Tools|XPHB} of your \
+                    choice, and you gain proficiency in one skill of your choice from the skills \
+                    available to Fighters at level 1.";
+        let st = read_for_class(&[json!(text)], "Fighter", &list);
+        assert_eq!(
+            st.skills,
+            vec![SkillChoice {
+                count: 1,
+                skills: list.clone()
+            }]
+        );
+        assert_eq!(st.tools.len(), 1);
+        // another class's list, a repeated grant, or no list: nothing is read
+        assert!(read_for_class(&[json!(text)], "Cleric", &list)
+            .skills
+            .is_empty());
+        let again = "When you reach 3rd level and again at 10th level, you gain proficiency in \
+                     one skill of your choice from the list of skills available to fighters at \
+                     1st level.";
+        assert!(read_for_class(&[json!(again)], "Fighter", &list)
+            .skills
+            .is_empty());
+        assert!(read_one(text).skills.is_empty());
     }
 
     #[test]

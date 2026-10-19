@@ -508,7 +508,30 @@ fn build_shared(loaded: &mut Loaded, e: &Ents, opts: &ImportOptions, st: &mut St
     let (sf, sf_keys) = index_features(&e.subclass_features, true);
     sh.subclass_features = sf;
     sh.subclass_feature_keys = sf_keys;
+    sh.class_skills = class_skills(&e.classes);
     sh
+}
+
+/// The level 1 skill list of each class (`startingProficiencies.skills[].choose.from`).
+fn class_skills(classes: &[Ent]) -> BTreeMap<String, Vec<String>> {
+    let mut out = BTreeMap::new();
+    for c in classes {
+        let from: Vec<String> = c
+            .raw
+            .pointer("/startingProficiencies/skills")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(|s| s.pointer("/choose/from")?.as_array())
+            .flatten()
+            .filter_map(Value::as_str)
+            .map(str::to_lowercase)
+            .collect();
+        if !from.is_empty() {
+            out.insert(race_key(&c.name, &c.source), from);
+        }
+    }
+    out
 }
 
 // ---------------------------------------------------------------------------------------

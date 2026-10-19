@@ -334,7 +334,16 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
     let mut stated_options = Vec::new();
     if !took_srd {
         // proficiency choices the feature states only in its prose
-        let stated = super::stated_choices::read(&f.entries);
+        let class_skills = sh
+            .class_skills
+            .get(&format!(
+                "{}|{}",
+                f.class_name.to_lowercase(),
+                f.class_source.to_uppercase()
+            ))
+            .map_or(&[][..], Vec::as_slice);
+        let stated =
+            super::stated_choices::read_for_class(&f.entries, &f.class_name, class_skills);
         super::stated_choices::apply(&mut mech, &stated);
         // a creature the character chooses, stated as a bestiary filter (Ranger's Companion)
         if let Some(rule) = super::companion::companion_select(&f.name, &f.entries) {

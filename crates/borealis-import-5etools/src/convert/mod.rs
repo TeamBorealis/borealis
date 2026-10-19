@@ -124,6 +124,9 @@ pub struct Shared {
     /// select of those codes is typed `Option`, the type 2024 optional features import as
     /// (the bundled SRD 5.2.1 invocations and metamagic).
     pub option_codes_2024: std::collections::BTreeSet<String>,
+    /// The skills each imported class offers at level 1 (`startingProficiencies.skills`
+    /// `choose.from`), by class `name|source` (lower-case name, source upper-case).
+    pub class_skills: BTreeMap<String, Vec<String>>,
 }
 
 /// Key of [`Shared::subclass_twins`].
