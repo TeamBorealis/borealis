@@ -290,6 +290,20 @@ impl<'a> Mech<'a> {
         true
     }
 
+    /// One choice over skills and tools (ids) and kinds of tools (tags such as
+    /// "Artisan tools"), offered by a single Proficiency select.
+    pub fn proficiency_choice(&mut self, terms: &[String]) {
+        if !terms.is_empty() {
+            self.pick_tag("Proficiency", "Proficiency", &terms.join("||"), 1);
+        }
+    }
+
+    /// The tag of a kind of tool ("artisan's tools" -> "Artisan tools"), if `name` is one.
+    #[must_use]
+    pub fn tool_kind_tag(name: &str) -> Option<&'static str> {
+        Self::tool_category_name(name)
+    }
+
     /// A tool category named as a key (`"gaming set": true`, one tool of it) or in a `choose`
     /// list ("musical instrument").
     fn tool_category_name(name: &str) -> Option<&'static str> {

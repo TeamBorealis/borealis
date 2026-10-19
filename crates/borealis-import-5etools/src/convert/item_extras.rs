@@ -182,6 +182,58 @@ pub fn proficient_with_itself(it: &Item) -> bool {
     texts.iter().any(|t| re.is_match(&strip_tags(t)))
 }
 
+/// Partial note of a listed proficiency choice whose text doubles the bonus (not modelled, as
+/// in Aurora's own element of the same item).
+const DOUBLED_NOT_APPLIED: &str =
+    "the doubled proficiency bonus of the chosen proficiency is not applied";
+
+fn listed_choice_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(r"(?i)\byou gain (?:one|1) of the following proficiencies\b")
+            .expect("listed proficiency choice pattern")
+    })
+}
+
+/// One option of a listed proficiency choice: a skill or a tool (its id) or one kind of tool
+/// "of your choice" (its tag). `None` for anything else.
+fn listed_option(v: &Value) -> Option<String> {
+    let text = v.as_str()?;
+    let tags: Vec<_> = tag_re().captures_iter(text).collect();
+    let [tag] = tags.as_slice() else {
+        return None;
+    };
+    let name = tag[2].trim().to_lowercase();
+    let kind = strip_tags(text).to_lowercase().contains("of your choice");
+    match (&tag[1], kind) {
+        ("skill", false) => core_ids::skill_id(&name),
+        ("item", true) => Mech::tool_kind_tag(&name).map(str::to_string),
+        ("item", false) => core_ids::tool_prof_id(&name),
+        _ => None,
+    }
+}
+
+/// "You gain one of the following proficiencies" followed by a list (ERLW Living Gloves): the
+/// listed options, as Aurora's own element of that item offers them in one Proficiency select.
+/// `None` when there is no such list or one of its options is not a skill, a tool or a kind of
+/// tool (nothing is guessed).
+fn listed_choice(entries: &[Value]) -> Option<Vec<String>> {
+    for pair in entries.windows(2) {
+        if let [Value::String(lead), list] = pair {
+            if listed_choice_re().is_match(&strip_tags(lead))
+                && list.get("type").and_then(Value::as_str) == Some("list")
+            {
+                let items = list.get("items")?.as_array()?;
+                return items.iter().map(listed_option).collect();
+            }
+        }
+    }
+    entries
+        .iter()
+        .filter_map(|e| e.get("entries").and_then(Value::as_array))
+        .find_map(|inner| listed_choice(inner))
+}
+
 /// Languages and proficiencies of items flagged `grantsLanguage` / `grantsProficiency`.
 pub fn granted_rules(sh: &Shared, it: &Item, mech: &mut Mech<'_>, partial: &mut Vec<String>) {
     let lang = it.extra.get("grantsLanguage") == Some(&Value::Bool(true));
@@ -216,7 +268,17 @@ pub fn granted_rules(sh: &Shared, it: &Item, mech: &mut Mech<'_>, partial: &mut 
             all.tools.extend(g.tools);
             all.weapons.extend(g.weapons);
         }
-        if all == Granted::default() && !proficient_with_itself(it) {
+        let listed = listed_choice(&it.entries);
+        if let Some(options) = &listed {
+            mech.proficiency_choice(options);
+            if texts
+                .iter()
+                .any(|t| t.contains("double your proficiency bonus"))
+            {
+                partial.push(DOUBLED_NOT_APPLIED.into());
+            }
+        }
+        if all == Granted::default() && listed.is_none() && !proficient_with_itself(it) {
             partial.push("the proficiencies the item grants were not found in its text".into());
         }
         mech.skills(&all.skills);
@@ -366,5 +428,48 @@ mod tests {
         assert!(rules
             .iter()
             .any(|r| matches!(r, Rule::Select(s) if s.ty == "Proficiency")));
+    }
+
+    fn proficiency_selects(rules: &[Rule]) -> Vec<String> {
+        rules
+            .iter()
+            .filter_map(|r| match r {
+                Rule::Select(s) if s.ty == "Proficiency" => s.supports.clone(),
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn a_listed_choice_of_proficiencies_is_one_select() {
+        let (rules, partial) = rules_of(json!({"name": "G", "source": "ZZZ",
+        "grantsProficiency": true, "entries": [
+            "While you wear them, you gain one of the following proficiencies (chosen once):",
+            {"type": "list", "items": [
+                "{@skill Stealth}",
+                "{@item Thieves' tools|PHB}",
+                "One kind of {@item artisan's tools|PHB} of your choice",
+                "One kind of {@item musical instrument|PHB} of your choice"
+            ]},
+            "A check with the chosen proficiency adds double your proficiency bonus."
+        ]}));
+        let want = [
+            core_ids::skill_id("stealth").unwrap(),
+            core_ids::tool_prof_id("thieves' tools").unwrap(),
+            "Artisan tools".to_string(),
+            "Musical Instrument".to_string(),
+        ]
+        .join("||");
+        assert_eq!(proficiency_selects(&rules), [want]);
+        assert!(grants(&rules, "Proficiency").is_empty(), "{rules:?}");
+        assert_eq!(partial, [DOUBLED_NOT_APPLIED]);
+        // an option that is not a skill, a tool or a kind of tool: nothing is guessed
+        let (rules, partial) = rules_of(json!({"name": "G", "source": "ZZZ",
+        "grantsProficiency": true, "entries": [
+            "You gain one of the following proficiencies:",
+            {"type": "list", "items": ["{@skill Stealth}", "One simple weapon of your choice"]}
+        ]}));
+        assert!(proficiency_selects(&rules).is_empty(), "{rules:?}");
+        assert_eq!(partial.len(), 1, "{partial:?}");
     }
 }
