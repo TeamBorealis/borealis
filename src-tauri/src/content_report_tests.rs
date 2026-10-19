@@ -252,3 +252,50 @@ fn the_ui_issue_code_union_names_only_real_codes() {
         assert!(parsed.is_ok(), "{code} is not an IssueCode");
     }
 }
+
+/// An invented file appending to an id only the bundled core pack defines, and to one nothing defines.
+const APPENDS: &str = r#"<elements>
+  <element name="Knack" type="Feat" source="Hb" id="ID_HBT_FEAT_KNACK"><description><p>k</p></description></element>
+  <append id="ID_INTERNAL_GRANTS_CHARACTER_BASE">
+    <rules><grant type="Feat" id="ID_HBT_FEAT_KNACK" /></rules>
+  </append>
+  <append id="ID_HBT_NOWHERE">
+    <rules><grant type="Feat" id="ID_HBT_FEAT_KNACK" /></rules>
+  </append>
+</elements>"#;
+
+#[test]
+fn classify_drops_an_append_whose_target_is_installed_and_keeps_a_missing_one() {
+    use borealis_content::{Issue, IssueCode};
+    let missing = |id: &str| {
+        Issue::warning(
+            IssueCode::AppendTargetMissing,
+            "append targets an element that does not exist",
+        )
+        .in_file("a.xml".to_string())
+        .at_element(id.to_string())
+    };
+    let raw = vec![missing("ID_BUNDLED"), missing("ID_GONE")];
+    let found = super::classify(&raw, &BTreeMap::new(), |t| t == "ID_BUNDLED");
+    let kept: Vec<_> = found
+        .diagnostics
+        .iter()
+        .map(|i| i.element.as_deref())
+        .collect();
+    assert_eq!(kept, vec![Some("ID_GONE")]);
+    assert_eq!(found.summary.warnings, 1);
+}
+
+#[test]
+fn an_append_to_a_bundled_core_id_is_not_reported_missing() {
+    let (_dir, app) = app();
+    let result = install(&app, &upload("appends.xml", APPENDS.as_bytes()));
+    let missing: Vec<_> = result
+        .report
+        .issues
+        .iter()
+        .filter(|i| i.code == borealis_content::IssueCode::AppendTargetMissing)
+        .map(|i| i.element.as_deref())
+        .collect();
+    assert_eq!(missing, vec![Some("ID_HBT_NOWHERE")]);
+}

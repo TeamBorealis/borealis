@@ -87,7 +87,10 @@ impl AppState {
 }
 
 /// Split issues into diagnostics and unresolved references. A reference the installed content
-/// already defines (`is_installed`) is not a problem and is dropped.
+/// already defines (`is_installed`, the bundled packs included) is not a problem and is dropped,
+/// and so is an append whose target it defines: the converter validates the new pack alone, but
+/// at runtime one builder loads the bundled and installed packs first, so the append applies
+/// (Aurora's `internal.xml` appends to `ID_INTERNAL_GRANTS_CHARACTER_BASE` of the core pack).
 pub(crate) fn classify(
     raw: &[Issue],
     types: &BTreeMap<String, String>,
@@ -109,6 +112,11 @@ pub(crate) fn classify(
                     slot.1.push(e.clone());
                 }
             }
+            continue;
+        }
+        if issue.code == IssueCode::AppendTargetMissing
+            && issue.element.as_deref().is_some_and(&is_installed)
+        {
             continue;
         }
         match issue.severity {
