@@ -39,7 +39,8 @@ pub mod code {
     pub const SPEED_MULTIPLIER: &str = "ENGINE_SPEED_MULTIPLIER";
     /// A bonus to every speed the character has.
     pub const ALL_SPEEDS: &str = "ENGINE_BONUS_TO_EVERY_SPEED";
-    /// Item proficiencies that are random, in a table, or "proficient with this item".
+    /// Item proficiencies that are random, in a table, or "proficient with this item", and the
+    /// doubled bonus of a proficiency an item lets its owner choose.
     pub const ITEM_PROFICIENCY: &str = "ENGINE_ITEM_PROFICIENCY_TEXT";
     /// A prerequisite the requirement grammar cannot test (house renown).
     pub const UNCHECKED_PREREQUISITE: &str = "ENGINE_UNCHECKED_PREREQUISITE";
@@ -98,7 +99,9 @@ pub fn reason_code(reason: &str) -> &'static str {
         code::SPEED_MULTIPLIER
     } else if has("applied to the walking speed only") {
         code::ALL_SPEEDS
-    } else if has("the proficiencies the item grants were not found") {
+    } else if has("the proficiencies the item grants were not found")
+        || has("doubled proficiency bonus of the chosen proficiency")
+    {
         code::ITEM_PROFICIENCY
     } else if reason.starts_with("prerequisite not enforced") {
         code::UNCHECKED_PREREQUISITE
@@ -498,6 +501,10 @@ mod tests {
             ),
             (
                 "the proficiencies the item grants were not found in its text",
+                code::ITEM_PROFICIENCY,
+            ),
+            (
+                "the doubled proficiency bonus of the chosen proficiency is not applied",
                 code::ITEM_PROFICIENCY,
             ),
             (
