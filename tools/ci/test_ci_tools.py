@@ -337,6 +337,30 @@ class WebDriverSmokeTests(unittest.TestCase):
         self.assertEqual(caps["capabilities"]["alwaysMatch"]["tauri:options"]["application"],
                          "C:/Users/x/AppData/Local/Borealis/borealis.exe")
 
+    def test_direct_msedgedriver_session_is_the_webview2_mapping(self):
+        caps = ws.webview2_payload("C:/app/borealis.exe")["capabilities"]["alwaysMatch"]
+        self.assertEqual(caps["browserName"], "webview2")
+        self.assertEqual(caps["ms:edgeOptions"]["binary"], "C:/app/borealis.exe")
+        self.assertIn("webviewOptions", caps["ms:edgeOptions"])
+
+    def test_driver_log_summary_keeps_driver_lines_and_drops_devtools_traffic(self):
+        lines = ["[1.0][INFO]: Launching WebView2 app\n",
+                 "[1.1][INFO]: DevTools WebSocket Response: Runtime.evaluate (id=7) {\"value\": \"page text\"}\n",
+                 "[1.2][SEVERE]: DevToolsActivePort file doesn't exist\n",
+                 "page text without a level\n",
+                 "[1.3][DEBUG]: DevTools HTTP Request: http://localhost:1/json/version\n"]
+        out = ws.driver_log_summary(lines)
+        self.assertEqual(out[0], "driver log: 5 lines, 2 driver lines")
+        self.assertEqual(out[1:], ["[1.0][INFO]: Launching WebView2 app",
+                                   "[1.2][SEVERE]: DevToolsActivePort file doesn't exist"])
+        self.assertNotIn("page text", "\n".join(out))
+
+    def test_direct_mode_sends_the_webview2_session(self):
+        client = ws.Client(self.client.base, ws.webview2_payload)
+        quiet(ws.smoke, client, "C:/app/borealis.exe", 4)
+        caps = FakeTauriDriver.state["caps"]["capabilities"]["alwaysMatch"]
+        self.assertEqual(caps["ms:edgeOptions"]["binary"], "C:/app/borealis.exe")
+
     def test_w3c_error_raises(self):
         with self.assertRaises(ws.WebDriverError):
             ws.unwrap({"value": {"error": "no such window", "message": "gone"}})

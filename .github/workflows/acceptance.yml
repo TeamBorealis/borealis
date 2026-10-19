@@ -250,10 +250,16 @@ jobs:
           "$RUNNER_TEMP/acc-tmp" "$RUNNER_TEMP/corpus" target/tmp target/release/tmp
 
   installed-app:
-    # Spec S5 (Windows, Ubuntu): the installer bundle installs, the installed app starts, its main window
-    # shows the start page and the content screen opens, driven through tauri-driver (WebDriver).
-    # Linux: deb + WebKitWebDriver (webkit2gtk-driver) under Xvfb. Windows: NSIS installer (per user) +
-    # msedgedriver matching the WebView2 runtime. Fresh install, bundled content only: no corpus, no secret.
+    # Spec S5 (Windows, Ubuntu): the installer bundle installs, the app starts, its main window shows the
+    # start page and the content screen opens, driven through tauri-driver (WebDriver). Fresh install,
+    # bundled content only: no corpus, no secret.
+    # Linux: release deb installed; WebKitWebDriver (webkit2gtk-driver) under Xvfb drives the INSTALLED app.
+    # Windows (split): msedgedriver could not drive the NSIS-installed exe (release and debug alike:
+    # "DevToolsActivePort file doesn't exist", runs 39317258271, 39332189035, driver = WebView2 runtime
+    # version). So (1) the installed exe is launched directly and must stay up with a window titled
+    # Borealis, and (2) the WebDriver smoke runs on the built exe, target/debug/borealis.exe, as Tauri's
+    # WebDriver docs do. Same build: the installer packs that exe. On a WebDriver failure a diagnostic run
+    # talks to msedgedriver directly with a verbose log and prints its driver lines.
     name: installed app smoke (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
@@ -366,9 +372,44 @@ jobs:
           if ($used.Split('.')[0] -ne $wv.Split('.')[0]) { Write-Output "::error::msedgedriver $used does not match WebView2 $wv"; exit 1 }
           "driver=$driver" >> $env:GITHUB_OUTPUT
 
-      - name: WebDriver smoke on the installed app
+      - name: Installed app launches and stays up (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
         env:
-          APP: ${{ steps.install-linux.outputs.app || steps.install-windows.outputs.app }}
+          APP: ${{ steps.install-windows.outputs.app }}
+        run: |
+          $p = Start-Process -FilePath $env:APP -PassThru
+          $null = $p.Handle  # keeps the exit code readable after exit
+          $title = ''
+          for ($i = 1; $i -le 60 -and -not $p.HasExited; $i++) {
+            Start-Sleep -Seconds 1
+            $p.Refresh()
+            if ($p.MainWindowTitle) { $title = $p.MainWindowTitle }
+            if ($i -ge 15 -and $title) { break }
+          }
+          $alive = -not $p.HasExited
+          $code = if ($alive) { '-' } else { $p.ExitCode }
+          $wv = @(Get-Process msedgewebview2 -ErrorAction SilentlyContinue).Count
+          Write-Output "installed app: alive $alive after $i s; exit code $code; window title '$title'; msedgewebview2 processes $wv"
+          # App log (<app data>/logs): line counts and the first error lines, cut short.
+          $logs = Get-ChildItem "$env:APPDATA\app.borealis\logs", "$env:LOCALAPPDATA\app.borealis\logs" -Filter *.log -ErrorAction SilentlyContinue
+          foreach ($f in $logs) {
+            $lines = @(Get-Content $f.FullName)
+            $err = @($lines | Select-String -Pattern 'ERROR|panic')
+            Write-Output "app log $($f.Name): $($lines.Count) lines, $($err.Count) error lines"
+            $err | Select-Object -First 3 | ForEach-Object { '  ' + $_.Line.Substring(0, [Math]::Min(160, $_.Line.Length)) }
+          }
+          if (-not $logs) { Write-Output 'app log: none' }
+          # Leave no app or webview process behind for the WebDriver step (it shares the data folder).
+          Get-Process borealis, msedgewebview2 -ErrorAction SilentlyContinue | Stop-Process -Force
+          Start-Sleep -Seconds 3
+          if (-not $alive) { Write-Output "::error::the installed app exited at start (exit code $code)"; exit 1 }
+          if ($title -notmatch 'Borealis') { Write-Output "::error::the installed app shows no window titled Borealis"; exit 1 }
+
+      - name: WebDriver smoke (Linux installed app, Windows target/debug exe)
+        id: smoke
+        env:
+          APP: ${{ steps.install-linux.outputs.app || format('{0}\target\debug\borealis.exe', github.workspace) }}
           NATIVE_DRIVER: ${{ steps.edgedriver.outputs.driver }}
           # Software rendering under Xvfb (as build/linux/smoke.sh).
           WEBKIT_DISABLE_COMPOSITING_MODE: "1"
@@ -385,6 +426,16 @@ jobs:
           else
             "$@" --native-driver "$NATIVE_DRIVER"
           fi
+      - name: WebDriver diagnostics, msedgedriver direct with a verbose log (Windows, on failure)
+        if: failure() && runner.os == 'Windows' && steps.smoke.outcome == 'failure'
+        continue-on-error: true
+        env:
+          APP: ${{ format('{0}\target\debug\borealis.exe', github.workspace) }}
+          NATIVE_DRIVER: ${{ steps.edgedriver.outputs.driver }}
+        run: |
+          python -I tools/ci/webdriver_smoke.py --msedgedriver "$NATIVE_DRIVER" --port 4446 --timeout 90 \
+            --app "$APP" --driver-log "$RUNNER_TEMP/msedgedriver-verbose.log" || true
+          rm -f "$RUNNER_TEMP/msedgedriver-verbose.log"
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

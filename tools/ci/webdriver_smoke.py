@@ -7,14 +7,18 @@ msedgedriver matching the WebView2 runtime, passed with --native-driver), opens 
 installed app, finds the window whose page shows "Additional content" (the splash window closes
 while the app loads, so every window handle is tried), clicks that tab and waits for "Custom
 content". Fresh install: only the bundled content is present, so nothing private reaches the log.
+Windows diagnostics: --msedgedriver PATH --driver-log FILE talks to msedgedriver directly (the
+capabilities tauri-driver would send) with a verbose driver log, then prints that log's driver lines
+(no DevTools traffic, which could carry page text), at most DRIVER_LOG_LINES, each cut to 200 chars.
 
-Usage: webdriver_smoke.py --tauri-driver PATH --app PATH [--native-driver PATH] [--port N]
-                          [--timeout S] [--screenshot FILE]
+Usage: webdriver_smoke.py (--tauri-driver PATH [--native-driver PATH] | --msedgedriver PATH
+                          [--driver-log FILE]) --app PATH [--port N] [--timeout S] [--screenshot FILE]
 Exit: 0 pass, 1 a check failed, 2 the driver did not start. Python 3.9+, stdlib only.
 """
 import argparse
 import base64
 import json
+import re
 import subprocess
 import sys
 import time
@@ -33,6 +37,9 @@ CLICK_TEXT = ("const re = new RegExp(arguments[0], 'i');"
               "if (!leaf) return false; leaf.click(); return true;")
 POLL_S = 1.0
 CLICK_TRIES = 4
+DRIVER_LOG_LINES = 40
+DRIVER_LINE = re.compile(r"\[(INFO|WARNING|SEVERE|DEBUG)\]")
+DEVTOOLS_TRAFFIC = re.compile(r"WebSocket|DevTools (HTTP|WebSocket)|Command:|Response:|Event:")
 
 
 class WebDriverError(RuntimeError):
@@ -45,6 +52,19 @@ def session_payload(app):
     return {"capabilities": {"alwaysMatch": caps, "firstMatch": [{}]}}
 
 
+def webview2_payload(app):
+    """New-session body straight to msedgedriver, as tauri-driver maps tauri:options on Windows."""
+    caps = {"browserName": "webview2", "ms:edgeOptions": {"binary": app, "args": [], "webviewOptions": {}}}
+    return {"capabilities": {"alwaysMatch": caps, "firstMatch": [{}]}}
+
+
+def driver_log_summary(lines):
+    """Driver lines of a verbose msedgedriver log, without DevTools traffic, short."""
+    keep = [line.rstrip()[:200] for line in lines
+            if DRIVER_LINE.search(line) and not DEVTOOLS_TRAFFIC.search(line)]
+    return [f"driver log: {len(lines)} lines, {len(keep)} driver lines"] + keep[:DRIVER_LOG_LINES]
+
+
 def unwrap(body):
     """The `value` of a WebDriver reply; raises on a W3C error object."""
     value = body.get("value") if isinstance(body, dict) else None
@@ -54,9 +74,10 @@ def unwrap(body):
 
 
 class Client:
-    def __init__(self, base):
+    def __init__(self, base, payload=session_payload):
         self.base = base.rstrip("/")
         self.sid = None
+        self.payload = payload
 
     def call(self, method, path, body=None, timeout=60):
         data = None if body is None else json.dumps(body).encode("utf-8")
@@ -76,7 +97,7 @@ class Client:
         return bool(value.get("ready", True)) if isinstance(value, dict) else True
 
     def new_session(self, app, timeout):
-        value = self.call("POST", "/session", session_payload(app), timeout=timeout)
+        value = self.call("POST", "/session", self.payload(app), timeout=timeout)
         self.sid = value["sessionId"]
 
     def s(self, method, path, body=None, timeout=60):
@@ -166,18 +187,26 @@ def smoke(client, app, timeout, screenshot=None):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="installed-app smoke through tauri-driver")
-    ap.add_argument("--tauri-driver", required=True)
+    drivers = ap.add_mutually_exclusive_group(required=True)
+    drivers.add_argument("--tauri-driver")
+    drivers.add_argument("--msedgedriver")
     ap.add_argument("--app", required=True)
     ap.add_argument("--native-driver")
+    ap.add_argument("--driver-log")
     ap.add_argument("--port", type=int, default=4444)
     ap.add_argument("--timeout", type=float, default=180.0)
     ap.add_argument("--screenshot")
     args = ap.parse_args(argv)
-    cmd = [args.tauri_driver, "--port", str(args.port)]
-    if args.native_driver:
-        cmd += ["--native-driver", args.native_driver]
+    if args.tauri_driver:
+        cmd, payload = [args.tauri_driver, "--port", str(args.port)], session_payload
+        if args.native_driver:
+            cmd += ["--native-driver", args.native_driver]
+    else:
+        cmd, payload = [args.msedgedriver, f"--port={args.port}"], webview2_payload
+        if args.driver_log:
+            cmd += ["--verbose", f"--log-path={args.driver_log}"]
     driver = subprocess.Popen(cmd)
-    client = Client(f"http://127.0.0.1:{args.port}")
+    client = Client(f"http://127.0.0.1:{args.port}", payload)
     try:
         if not wait_until(client.ready, 60):
             print("::error::tauri-driver did not answer on its port within 60 s")
@@ -191,6 +220,12 @@ def main(argv=None):
             driver.wait(timeout=30)
         except subprocess.TimeoutExpired:
             driver.kill()
+        if args.msedgedriver and args.driver_log:
+            try:
+                with open(args.driver_log, encoding="utf-8", errors="replace") as f:
+                    print("\n".join(driver_log_summary(f.readlines())))
+            except OSError:
+                print("driver log: none written")
     if failed:
         print(f"::error::installed-app smoke failed: {failed}")
         return 1
