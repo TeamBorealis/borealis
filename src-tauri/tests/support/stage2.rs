@@ -947,26 +947,41 @@ fn option_host(
         scores[*i] = scores[*i].max(*v);
     }
     let race = needs.race.clone().or_else(|| e.ids.human.clone());
-    classes
-        .into_iter()
-        .take(OPTION_HOST_CLASSES)
-        .any(|(class, archetype)| {
-            option_host_on(
-                d,
-                e,
-                target,
-                ex,
-                offers,
-                (&class, archetype.as_deref()),
-                scores,
-                race.as_deref(),
-                &roots,
-                &groups,
-            )
-        })
+    classes.truncate(OPTION_HOST_CLASSES);
+    // last, for an option a character option gates, the other fallback: a select never offers
+    // what a proficiency the class already has covers (a martial class is not offered the DMG
+    // firearms, which are martial ranged weapons)
+    let gated = !items::split_options(store, &groups).0.is_empty();
+    let other = if !gated {
+        &None
+    } else if needs.caster {
+        &e.ids.fighter
+    } else {
+        &e.ids.wizard
+    };
+    if let Some(c) = other {
+        if !classes.iter().any(|x| &x.0 == c && x.1.is_none()) {
+            classes.push((c.clone(), None));
+        }
+    }
+    classes.into_iter().any(|(class, archetype)| {
+        option_host_on(
+            d,
+            e,
+            target,
+            ex,
+            offers,
+            (&class, archetype.as_deref()),
+            scores,
+            race.as_deref(),
+            &roots,
+            &groups,
+        )
+    })
 }
 
-/// Host configurations an option host tries (needs class, climbed classes, archetypes, fallback).
+/// Host configurations an option host tries (needs class, climbed classes, archetypes, fallback),
+/// before the other fallback class.
 const OPTION_HOST_CLASSES: usize = 4;
 
 /// One configuration of [`option_host`].
@@ -1015,7 +1030,17 @@ fn option_host_on(
     if !sub_origins.is_empty() {
         want.push(sub_origins);
     }
-    want.extend(groups.iter().cloned());
+    // a needed character option (an `Option` element such as the DMG firearms) is turned on in
+    // the options dialog, not picked in a slot
+    let (options, rest) = items::split_options(&e.ins.store, groups);
+    d.enable_options(&mut h, &options);
+    want.extend(rest);
+    // a feat whose select offers the option is taken where a feat is offered (Weapon Master)
+    let mut own = Plan::default();
+    e.offerers.place(target, &mut own);
+    if !own.feats.is_empty() {
+        want.push(own.feats.into_iter().collect());
+    }
     let offered = |d: &Driver<'_>, h: &Host| {
         h.snap
             .slots
