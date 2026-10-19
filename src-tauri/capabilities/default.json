@@ -52,6 +52,8 @@
     "allow-equip-item",
     "allow-unequip-item",
     "allow-set-attuned",
+    "allow-set-rolled-max",
+    "allow-reroll-max",
     "allow-store-item",
     "allow-move-item",
     "allow-update-item-details",
