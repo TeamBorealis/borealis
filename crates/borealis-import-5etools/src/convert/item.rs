@@ -13,6 +13,8 @@ use borealis_content::{Element, ExtractItem, Rule, Ruleset, Setter};
 use serde_json::{json, Map, Value};
 use std::collections::BTreeSet;
 
+#[path = "item_category.rs"]
+mod item_category;
 #[path = "item_extras.rs"]
 mod item_extras;
 #[path = "item_mech.rs"]
@@ -36,34 +38,6 @@ fn type_code(it: &Item) -> String {
 
 fn flag(it: &Item, key: &str) -> bool {
     it.extra.get(key) == Some(&Value::Bool(true))
-}
-
-fn category_for(code: &str) -> &'static str {
-    match code {
-        "A" | "AF" => "Ammunition",
-        "AT" => "Artisan's Tools",
-        "EXP" => "Explosives",
-        "FD" => "Food and Drink",
-        "G" => "Adventuring Gear",
-        "GS" => "Gaming Sets",
-        "INS" => "Musical Instruments",
-        "M" | "R" => "Weapons",
-        "HA" | "MA" | "LA" | "S" => "Armor",
-        "MNT" => "Mounts",
-        "P" => "Potions",
-        "RD" => "Rods",
-        "RG" => "Rings",
-        "SC" => "Scrolls",
-        "SCF" => "Spellcasting Focuses",
-        "ST" => "Staffs",
-        "T" => "Tools",
-        "TAH" => "Tack and Harness",
-        "TG" => "Trade Goods",
-        "VEH" | "SHP" | "AIR" | "SPC" => "Vehicles",
-        "WD" => "Wands",
-        "$C" | "$G" | "$A" => "Treasure",
-        _ => "Other",
-    }
 }
 
 fn magic_type_header(code: &str) -> String {
@@ -334,17 +308,10 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         .unwrap_or_else(|| it.name.clone());
 
     // Common setters.
-    let category = if it.pack_contents.is_empty() {
-        category_for(&code)
-    } else {
-        "Equipment Packs"
-    };
-    let category = if category == "Other" && flag(&it, "wondrous") {
-        "Wondrous Items"
-    } else {
-        category
-    };
-    el.setters.push(Setter::new("category", category));
+    el.setters.push(Setter::new(
+        "category",
+        item_category::item_category(&it, &code, ty),
+    ));
     if let Some(v) = it.value {
         el.setters.extend(cost_setter(v));
     }
@@ -831,7 +798,7 @@ fn placeholder_text(spec: &str, item: &Map<String, Value>) -> String {
 /// The generic item of each magic variant ("Weapon of Warning"), as 5etools lists it next to
 /// the concrete items. Item groups and links point at these.
 #[must_use]
-pub fn generic_variant_items(variants: &[Value]) -> Vec<Value> {
+pub fn generic_variant_items(variants: &[Value], bases: &[Value]) -> Vec<Value> {
     let mut out = Vec::new();
     for variant in variants {
         let (Some(name), Some(inherits)) = (
@@ -880,6 +847,12 @@ pub fn generic_variant_items(variants: &[Value]) -> Vec<Value> {
         } else {
             "item"
         };
+        if let Some(c) = item_category::generic_category(variant, bases) {
+            item.insert(
+                item_category::GENERIC_CATEGORY.into(),
+                Value::String(c.into()),
+            );
+        }
         let mut snapshot = item.clone();
         snapshot.insert("baseName".into(), Value::String(base.into()));
         if let Some(entries) = item.get_mut("entries") {
@@ -1425,7 +1398,7 @@ mod tests {
             "inherits": {"nameSuffix": " of Keenness", "source": "ZZZ", "rarity": "rare",
                 "bonusWeapon": "+2", "reprintedAs": ["X|Y"],
                 "entries": ["Your {=baseName/l} gets {=bonusWeapon}; it deals {=dmgType} damage. It is {=baseName/a}."]}})];
-        let generic = generic_variant_items(&variants);
+        let generic = generic_variant_items(&variants, &[]);
         assert_eq!(generic.len(), 1);
         let g = &generic[0];
         assert_eq!(g["name"], "Keen Weapon");

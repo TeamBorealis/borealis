@@ -159,9 +159,9 @@ fn imported_item_shapes_apply_on_a_built_character() {
     let e = Engine::new(&store);
     let base = fighter(&e);
 
-    // a +1 bundle filed under Equipment Packs is ammunition of the bow's kind
+    // a +1 bundle of one kind of ammunition is filed under Ammunition, of the bow's kind
     let bundle = find(&result, "ID_5ET_ZZZ_ITEM_PLUS_1_ZIP_ARROWS_20").expect("bundle");
-    assert_eq!(bundle.setter_value("category"), Some("Equipment Packs"));
+    assert_eq!(bundle.setter_value("category"), Some("Ammunition"));
     assert_eq!(bundle.setter_value("ammunition"), Some("arrow"));
     let bow = find(&result, "ID_5ET_ZZZ_ITEM_ZIP_BOW").expect("bow");
     assert_eq!(bow.setter_value("ammunition"), Some("arrow"));

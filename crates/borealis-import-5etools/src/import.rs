@@ -296,7 +296,7 @@ fn select_entities(
         .map(|v| (v, "magicvariants.json".to_string()))
         .collect();
     e.items.extend(to_ents(generated, "item", opts, st, case));
-    let generic = convert::item::generic_variant_items(&variants)
+    let generic = convert::item::generic_variant_items(&variants, &bases)
         .into_iter()
         .map(|v| (v, "magicvariants.json".to_string()))
         .collect();
