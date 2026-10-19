@@ -1026,6 +1026,7 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
     for el in of_type("Feat") {
         let mut found = true;
         let mut extra = Vec::new();
+        let mut deeper = Vec::new();
         if hosts.iter().all(|h| sw.pick(h, &el.id).is_none()) {
             for race in races_for(&el.requirements) {
                 let hs = race_hosts.entry(race.clone()).or_insert_with(|| {
@@ -1063,18 +1064,45 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
                     .iter()
                     .filter_map(|h| chain_host(&sw, h, &chain)),
             );
+            let again = with_next_copies(sw.store, &chain, &el.id);
+            if again != chain {
+                deeper.extend(
+                    class_hosts
+                        .iter()
+                        .filter_map(|h| chain_host(&sw, h, &again)),
+                );
+            }
         }
         guarded(&mut t, "feat", &el.id, &mut || {
-            let mut problems = Vec::new();
-            match hosts.iter().chain(&extra).find_map(|h| sw.pick(h, &el.id)) {
-                None => found = false,
-                Some(Err(e)) => problems.push(e),
-                Some(Ok(s)) => {
-                    let s = sw.fill(s, Pick::First);
-                    sw.problems(&s, &sw.engine.derive(&s), &mut problems);
+            let own_empty = format!("offers no options {}", el.id);
+            let empty = |p: &[String]| p.iter().any(|x| x.ends_with(&own_empty));
+            let attempt = |h: &CharacterState| {
+                sw.pick(h, &el.id).map(|r| match r {
+                    Err(e) => vec![e],
+                    Ok(s) => {
+                        let s = sw.fill(s, Pick::First);
+                        let mut problems = Vec::new();
+                        sw.problems(&s, &sw.engine.derive(&s), &mut problems);
+                        problems
+                    }
+                })
+            };
+            match hosts.iter().chain(&extra).find_map(attempt) {
+                None => {
+                    found = false;
+                    Vec::new()
                 }
+                // the feat's own select offers nothing on this host because its options need
+                // picks of an earlier feat that the requirements do not name (the third Script
+                // Sage mastery needs a third hieroglyph, from Script Carver taken again): a
+                // host that also took the next copy of each feat of the chain
+                Some(p) if empty(&p) => deeper
+                    .iter()
+                    .find_map(attempt)
+                    .filter(|q| !empty(q))
+                    .unwrap_or(p),
+                Some(p) => p,
             }
-            problems
         });
         outcome::record(
             "aurora_sweep",
@@ -1273,6 +1301,33 @@ fn chain_host(
             return Some(state);
         }
     }
+}
+
+/// The next copy of a repeatable element (`X` -> `X_2`, `X_2` -> `X_3`): same type and name.
+fn next_copy(store: &ContentStore, id: &str) -> Option<String> {
+    let (base, n) = match id.rsplit_once('_') {
+        Some((b, d)) if !d.is_empty() && d.bytes().all(|c| c.is_ascii_digit()) => {
+            (b, d.parse::<u32>().ok()?)
+        }
+        _ => (id, 1),
+    };
+    let next = format!("{base}_{}", n + 1);
+    let (a, b) = (store.element(id)?, store.element(&next)?);
+    (a.ty == b.ty && a.name == b.name).then_some(next)
+}
+
+/// `chain` with the next copy of each of its feats taken right after it (not `target` itself).
+fn with_next_copies(store: &ContentStore, chain: &[String], target: &str) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for id in chain {
+        out.push(id.clone());
+        if let Some(next) = next_copy(store, id) {
+            if next != target && !chain.contains(&next) && !out.contains(&next) {
+                out.push(next);
+            }
+        }
+    }
+    out
 }
 
 /// The first element of type `ty` that grants `id`, with the grant's level.
