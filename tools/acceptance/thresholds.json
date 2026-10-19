@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "desktop-linux": {
+    "a-user/s1": { "wall_s": 30 },
+    "a-core/s1": { "wall_s": 170 },
+    "a-user/s2": { "wall_s": 110 },
+    "a-comm/s1": { "wall_s": 310 },
+    "a-comm/s2": { "wall_s": 40 },
+    "a-core/s2": { "wall_s": 2210 }
+  },
+  "desktop-windows": {
+    "a-user/s1": { "wall_s": 30 },
+    "a-core/s1": { "wall_s": 130 },
+    "a-user/s2": { "wall_s": 250 },
+    "a-comm/s1": { "wall_s": 740 },
+    "a-comm/s2": { "wall_s": 80 },
+    "a-core/s2": { "wall_s": 4010 }
+  },
+  "android": {
+    "a-core/import": { "wall_s": 200 },
+    "a-user/import": { "wall_s": 30 },
+    "f-full/import": { "wall_s": 180 },
+    "app/restart_digest": { "wall_s": 140 },
+    "process/m4": { "peak_mem_mb": 2500 }
+  },
+  "ios": {
+    "a-core/import": { "wall_s": 340 },
+    "a-user/import": { "wall_s": 50 },
+    "f-full/import": { "wall_s": 180 },
+    "app/restart_digest": { "wall_s": 140 },
+    "process/m4": { "peak_mem_mb": 1500 }
+  }
+}

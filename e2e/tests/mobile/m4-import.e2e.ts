@@ -4,7 +4,7 @@ import { expect } from 'e2e';
 import { describe, test } from '@e2e-dev/mobile';
 import { freshInstall, SLOW } from '../../support/mobile.js';
 import type { MobilePlatform } from '../../support/mobile.js';
-import { deliverInputs, peakMemoryKb, readDigest, requestDigest, writeResult } from '../../support/mobile-acceptance.js';
+import { deliverInputs, peakMemoryKb, readDigest, requestDigest, thresholdBreaches, writeResult } from '../../support/mobile-acceptance.js';
 import { chooseFile, openAdditionalContentMobile, scrollTo, statusText } from '../../support/mobile-content.js';
 
 // m4 (S5, specs/acceptance-imports-1.md): the phone imports the acceptance inputs through the UI and its
@@ -105,6 +105,8 @@ async function m4({ app, device, screen }: Context, platform: MobilePlatform): P
   expect(digest.contentDigest).toBe(reference.contentDigest);
   expect(digest.characters).toEqual(reference.characters);
   expect(digest.digest).toBe(reference.digest);
+  // Time and peak memory limits (tools/acceptance/thresholds.json), checked after the digest equality.
+  expect(thresholdBreaches(platform, times, peakKb)).toEqual([]);
 }
 
 for (const platform of ['ios', 'android'] as const) {

@@ -5,8 +5,10 @@ name: Import acceptance
 # `gh workflow run acceptance.yml --ref <branch>` (needs this file on the default branch), or a
 # push to the dedicated branch ci/platform-tests. Never on pull requests or other pushes.
 # Privacy (C4/IM6): 5etools data comes only from the BOREALIS_LIVE_5ETOOLS_URL secret, is never
-# committed, cached or uploaded, and logs carry counts only (tools/ci/run_filtered.py). No
-# artifacts are uploaded.
+# committed, cached or uploaded, and logs carry counts only (tools/ci/run_filtered.py). Time and
+# peak-memory limits per platform and stage: tools/acceptance/thresholds.json (numbers only), checked
+# by tools/ci/check_thresholds.py. The installed-app job (bundle + tauri-driver smoke) uploads its
+# screenshot only on failure (fresh install, bundled content only; 7 days); nothing else is uploaded.
 on:
   workflow_dispatch:
     inputs:
@@ -211,8 +213,14 @@ jobs:
           python -I -c "import os; os.makedirs(os.environ['TMP'], exist_ok=True)"
           [ -n "$BOREALIS_ACCEPT_LIMIT" ] || unset BOREALIS_ACCEPT_LIMIT
           [ -n "$BOREALIS_LIVE_5ETOOLS_URL" ] || unset BOREALIS_LIVE_5ETOOLS_URL
-          python -I tools/ci/run_filtered.py --label "acceptance ($RUNNER_OS)" \
-            -- -p borealis --test acceptance -- --color never
+          # The tee'd copy holds only the filtered lines (counts and METRIC numbers) for the threshold check.
+          python -I tools/ci/run_filtered.py --label "acceptance ($RUNNER_OS)" --peak-metric acceptance \
+            -- -p borealis --test acceptance -- --color never | tee "$RUNNER_TEMP/acceptance-metrics.log"
+
+      - name: Time and memory thresholds
+        # wall_s per source/stage and the test process's peak_mem_mb against tools/acceptance/thresholds.json.
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: python -I tools/ci/check_thresholds.py --platform "desktop-${RUNNER_OS,,}" "$RUNNER_TEMP/acceptance-metrics.log"
 
       - name: Deeper Aurora corpus suites
         if: ${{ !cancelled() && steps.build.outcome == 'success' && steps.plan.outputs.deeper == 'true' }}
@@ -240,3 +248,138 @@ jobs:
         run: >-
           python -I -c "import shutil, sys; [shutil.rmtree(p, ignore_errors=True) for p in sys.argv[1:]]"
           "$RUNNER_TEMP/acc-tmp" "$RUNNER_TEMP/corpus" target/tmp target/release/tmp
+
+  installed-app:
+    # Spec S5 (Windows, Ubuntu): the installer bundle installs, the installed app starts, its main window
+    # shows the start page and the content screen opens, driven through tauri-driver (WebDriver).
+    # Linux: deb + WebKitWebDriver (webkit2gtk-driver) under Xvfb. Windows: NSIS installer (per user) +
+    # msedgedriver matching the WebView2 runtime. Fresh install, bundled content only: no corpus, no secret.
+    name: installed app smoke (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Keep LF line endings (Windows)
+        if: runner.os == 'Windows'
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+      - name: Free runner disk (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+      - name: Linux webkit2gtk, WebKitWebDriver and Xvfb
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev libxdo-dev \
+            webkit2gtk-driver xvfb xauth dbus-x11
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target"
+          shared-key: installed-app
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - run: npm ci
+        working-directory: ui
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build the installer bundle (release)
+        # beforeBuildCommand builds ui/dist. Linux: deb only (AppImage is slow and not installed here).
+        run: |
+          if [ "$RUNNER_OS" = Linux ]; then
+            node ui/node_modules/@tauri-apps/cli/tauri.js build --bundles deb
+          else
+            node ui/node_modules/@tauri-apps/cli/tauri.js build
+          fi
+
+      - name: Install the bundle (Linux)
+        id: install-linux
+        if: runner.os == 'Linux'
+        run: |
+          debs=(target/release/bundle/deb/*.deb)
+          sudo apt-get install -y "./${debs[0]}"
+          echo "app=$(command -v borealis)" >> "$GITHUB_OUTPUT"
+      - name: Install the bundle (Windows)
+        id: install-windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          Start-Process -FilePath $setup.FullName -ArgumentList '/S' -Wait
+          $exe = Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Borealis') -Filter *.exe |
+            Where-Object { $_.Name -notmatch '^uninstall' } | Select-Object -First 1
+          if (-not $exe) { Write-Output '::error::the installer put no app exe under %LOCALAPPDATA%\Borealis'; exit 1 }
+          "app=$($exe.FullName)" >> $env:GITHUB_OUTPUT
+
+      - name: Install tauri-driver
+        run: cargo install tauri-driver --locked
+
+      - name: msedgedriver matching the WebView2 runtime (Windows)
+        id: edgedriver
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $key = 'SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+          $wv = @("HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}", "HKLM:\$key", "HKCU:\$key") |
+            ForEach-Object { (Get-ItemProperty $_ -ErrorAction SilentlyContinue).pv } | Where-Object { $_ } | Select-Object -First 1
+          if (-not $wv) { $wv = (Get-Item "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe").VersionInfo.ProductVersion }
+          Write-Output "WebView2 runtime $wv"
+          $driver = $null
+          if ($env:EDGEWEBDRIVER) {
+            $pre = Join-Path $env:EDGEWEBDRIVER 'msedgedriver.exe'
+            if (Test-Path $pre) {
+              $have = [regex]::Match((& $pre --version), '\d+\.\d+\.\d+\.\d+').Value
+              Write-Output "runner msedgedriver $have"
+              if ($have.Split('.')[0] -eq $wv.Split('.')[0]) { $driver = $pre }
+            }
+          }
+          if (-not $driver) {
+            $dir = Join-Path $env:RUNNER_TEMP 'edgedriver'
+            New-Item -ItemType Directory -Force $dir | Out-Null
+            $zip = Join-Path $dir 'edgedriver.zip'
+            Invoke-WebRequest "https://msedgedriver.microsoft.com/$wv/edgedriver_win64.zip" -OutFile $zip
+            Expand-Archive $zip -DestinationPath $dir -Force
+            $driver = Join-Path $dir 'msedgedriver.exe'
+            Write-Output "downloaded msedgedriver $wv"
+          }
+          "driver=$driver" >> $env:GITHUB_OUTPUT
+
+      - name: WebDriver smoke on the installed app
+        env:
+          APP: ${{ steps.install-linux.outputs.app || steps.install-windows.outputs.app }}
+          NATIVE_DRIVER: ${{ steps.edgedriver.outputs.driver }}
+          # Software rendering under Xvfb (as build/linux/smoke.sh).
+          WEBKIT_DISABLE_COMPOSITING_MODE: "1"
+          WEBKIT_DISABLE_DMABUF_RENDERER: "1"
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          NO_AT_BRIDGE: "1"
+        run: |
+          mkdir -p "$RUNNER_TEMP/smoke"
+          # tauri-driver by name: cargo's bin folder is on PATH (and Windows appends .exe).
+          set -- python -I tools/ci/webdriver_smoke.py --tauri-driver tauri-driver \
+            --app "$APP" --screenshot "$RUNNER_TEMP/smoke/installed-app.png"
+          if [ "$RUNNER_OS" = Linux ]; then
+            xvfb-run -a -s "-screen 0 1400x900x24" dbus-run-session -- "$@"
+          else
+            "$@" --native-driver "$NATIVE_DRIVER"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: installed-app-smoke-${{ matrix.os }}
+          path: ${{ runner.temp }}/smoke/
+          retention-days: 7
+          if-no-files-found: ignore

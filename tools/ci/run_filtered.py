@@ -13,12 +13,17 @@ first 12 hex digits of sha256(OUTCOME_SALT + id). The salt is a fixed public con
 public-content ids; the hash only keeps names out of the log), so tools/ci/match_hashes.py can
 match CI rows against a local gate's OUTCOME lines. Everything else is withheld and only counted. With
 GITHUB_STEP_SUMMARY set, a counts-only table is appended there. Nothing is written to disk.
+With --peak-metric STAGE, the peak memory of the largest process under cargo (the test binary) is
+printed after the run as `METRIC<TAB>process<TAB>STAGE<TAB>*<TAB>peak_mem_mb<TAB>n` (MiB; Linux and
+macOS: peak RSS of the largest reaped child; Windows: peak commit of the largest process in a job
+object that this process joins), for tools/ci/check_thresholds.py.
 
-Usage: run_filtered.py --label NAME [--fail-on-outcome-fail] -- <cargo test args>
+Usage: run_filtered.py --label NAME [--fail-on-outcome-fail] [--peak-metric STAGE] -- <cargo test args>
 Exit status: cargo's (1 also when --fail-on-outcome-fail and an OUTCOME failed), 2 usage error.
 Python 3.9+, stdlib only.
 """
 import argparse
+import ctypes
 import hashlib
 import os
 import re
@@ -36,6 +41,9 @@ RUNNING_LINE = re.compile(r"^running \d+ tests?$")
 SKIP_LINE = re.compile(r"^SKIPPED(?: [a-z0-9-]+)?: [A-Za-z0-9_ ]{1,96}$")
 OUTCOME_SALT = "borealis-outcome-v1:"
 HASH_HEX = 12
+PEAK_STAGE = re.compile(r"^[a-z0-9-]{1,32}$")
+MIB = 1024 * 1024
+JOB_EXTENDED_LIMIT_INFORMATION = 9  # JOBOBJECTINFOCLASS JobObjectExtendedLimitInformation
 
 
 def outcome_hash(check_id):
@@ -76,6 +84,72 @@ class Tally:
             return line
         self.withheld += 1
         return None
+
+
+class JobBasicLimits(ctypes.Structure):
+    """JOBOBJECT_BASIC_LIMIT_INFORMATION (winnt.h)."""
+    _fields_ = [("PerProcessUserTimeLimit", ctypes.c_int64), ("PerJobUserTimeLimit", ctypes.c_int64),
+                ("LimitFlags", ctypes.c_uint32), ("MinimumWorkingSetSize", ctypes.c_size_t),
+                ("MaximumWorkingSetSize", ctypes.c_size_t), ("ActiveProcessLimit", ctypes.c_uint32),
+                ("Affinity", ctypes.c_size_t), ("PriorityClass", ctypes.c_uint32),
+                ("SchedulingClass", ctypes.c_uint32)]
+
+
+class JobExtendedLimits(ctypes.Structure):
+    """JOBOBJECT_EXTENDED_LIMIT_INFORMATION (winnt.h); IO_COUNTERS is six ULONGLONGs."""
+    _fields_ = [("BasicLimitInformation", JobBasicLimits), ("IoInfo", ctypes.c_uint64 * 6),
+                ("ProcessMemoryLimit", ctypes.c_size_t), ("JobMemoryLimit", ctypes.c_size_t),
+                ("PeakProcessMemoryUsed", ctypes.c_size_t), ("PeakJobMemoryUsed", ctypes.c_size_t)]
+
+
+def maxrss_to_mib(maxrss, platform):
+    """ru_maxrss is bytes on macOS and KiB on Linux."""
+    return maxrss // MIB if platform == "darwin" else maxrss // 1024
+
+
+class PeakMeter:
+    """Peak memory of the largest process started after this meter (see the module doc)."""
+
+    def __init__(self):
+        self.job = None
+        self.kernel32 = None
+        if os.name == "nt":
+            self._join_job()
+
+    def _join_job(self):
+        k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        k32.CreateJobObjectW.restype = ctypes.c_void_p
+        k32.CreateJobObjectW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p]
+        k32.GetCurrentProcess.restype = ctypes.c_void_p
+        k32.AssignProcessToJobObject.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+        k32.QueryInformationJobObject.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p,
+                                                  ctypes.c_uint32, ctypes.c_void_p]
+        job = k32.CreateJobObjectW(None, None)
+        if job and k32.AssignProcessToJobObject(job, k32.GetCurrentProcess()):
+            self.job, self.kernel32 = job, k32
+
+    def peak_mib(self):
+        """MiB, or None when the platform gives no number."""
+        if os.name != "nt":
+            import resource
+            usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+            return maxrss_to_mib(usage.ru_maxrss, sys.platform)
+        if self.job is None:
+            return None
+        info = JobExtendedLimits()
+        ok = self.kernel32.QueryInformationJobObject(self.job, JOB_EXTENDED_LIMIT_INFORMATION,
+                                                     ctypes.byref(info), ctypes.sizeof(info), None)
+        return info.PeakProcessMemoryUsed // MIB if ok else None
+
+
+def peak_metric_line(stage, mib):
+    return f"METRIC\tprocess\t{stage}\t*\tpeak_mem_mb\t{mib}"
+
+
+def peak_stage(value):
+    if not PEAK_STAGE.match(value):
+        raise argparse.ArgumentTypeError("lowercase letters, digits and '-' only")
+    return value
 
 
 def outcome_group(check_id):
@@ -149,6 +223,7 @@ def main():
     ap = argparse.ArgumentParser(description="cargo test --release with counts-only output")
     ap.add_argument("--label", required=True)
     ap.add_argument("--fail-on-outcome-fail", action="store_true")
+    ap.add_argument("--peak-metric", type=peak_stage, metavar="STAGE")
     ap.add_argument("cargo_args", nargs=argparse.REMAINDER)
     args = ap.parse_args()
     cargo_args = args.cargo_args[1:] if args.cargo_args[:1] == ["--"] else args.cargo_args
@@ -156,7 +231,14 @@ def main():
         ap.error("missing cargo test arguments after --")
     mask_secret()
     tally = Tally()
+    meter = PeakMeter() if args.peak_metric else None
     code = run(cargo_args, tally)
+    if meter is not None:
+        mib = meter.peak_mib()
+        if mib is None:
+            print("peak memory: unavailable on this runner")
+        else:
+            print(tally.take(peak_metric_line(args.peak_metric, mib)), flush=True)
     head, rows = summary_lines(args.label, code, tally)
     print(f"== {head}")
     for g, p, f in rows:

@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
 """Tests for the acceptance CI helpers: python3 -I tools/ci/test_ci_tools.py (stdlib only)."""
+import ctypes
+import json
+import os
+import subprocess
 import sys
 import tempfile
+import threading
 import unittest
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import check_thresholds as ct  # noqa: E402
 import fetch_aurora_corpus as fetch  # noqa: E402
+import webdriver_smoke as ws  # noqa: E402
 import match_hashes as mh  # noqa: E402
 import run_filtered as rf  # noqa: E402
 
@@ -156,6 +164,186 @@ class FetchTests(unittest.TestCase):
             rows = fetch.character_rows(root)
         self.assertEqual(rows, [{"path": "repos/o__r/chars/a.dnd5e", "repo": "o__r",
                                  "kind": "character"}])
+
+
+class ThresholdTests(unittest.TestCase):
+    LIMITS = {"version": 1, "desktop-linux": {"a-core/s1": {"wall_s": 100},
+                                              "process/acceptance": {"peak_mem_mb": 4000}}}
+    LOG = ["IM4 acceptance (ubuntu-latest)\tAcceptance\t2026-10-19T10:18:03.7Z METRIC\ta-core\ts1\t*\twall_s\t54\n",
+           "2026-10-19T10:18:03.8Z METRIC\ta-core\ts1\tClass\twall_s\t999\n",
+           "METRIC\tprocess\tacceptance\t*\tpeak_mem_mb\t3500\n",
+           "METRIC\ta-user\ts1\t*\twall_s\t2\n",
+           "METRIC\ta-user\ts1\t*\tfolder_errors\t0\n",
+           "test result: ok. 8 passed; 0 failed\n"]
+
+    def run_main(self, limits, log_lines, platform="desktop-linux"):
+        with tempfile.TemporaryDirectory() as d:
+            t, log = Path(d) / "t.json", Path(d) / "a.log"
+            t.write_text(json.dumps(limits), encoding="utf-8")
+            log.write_text("".join(log_lines), encoding="utf-8")
+            return ct.main(["--platform", platform, "--thresholds", str(t), str(log)])
+
+    def test_committed_thresholds_are_numbers_only_for_every_platform(self):
+        data = ct.load_thresholds(ct.THRESHOLDS)
+        self.assertEqual(set(data) - {"version"},
+                         {"desktop-linux", "desktop-windows", "android", "ios"})
+        for platform in ("android", "ios"):
+            self.assertIn("peak_mem_mb", data[platform]["process/m4"])
+            self.assertLessEqual(data[platform]["f-full/import"]["wall_s"], 180)
+
+    def test_reads_aggregate_rows_behind_any_log_prefix(self):
+        rows = ct.metric_rows(self.LOG)
+        self.assertEqual(rows, [("a-core/s1", "wall_s", 54), ("process/acceptance", "peak_mem_mb", 3500),
+                                ("a-user/s1", "wall_s", 2), ("a-user/s1", "folder_errors", 0)])
+
+    def test_value_over_its_limit_is_a_breach_and_watched_rows_without_limit_are_listed(self):
+        checked, breaches, unlimited = ct.check(
+            [("a-core/s1", "wall_s", 101), ("a-user/s1", "wall_s", 2), ("a-user/s1", "folder_errors", 0)],
+            self.LIMITS["desktop-linux"])
+        self.assertEqual(breaches, [("a-core/s1", "wall_s", 101, 100)])
+        self.assertEqual(len(checked), 1)
+        self.assertEqual(unlimited, [("a-user/s1", "wall_s", 2, None)])
+
+    def test_value_equal_to_the_limit_passes(self):
+        _, breaches, _ = ct.check([("a-core/s1", "wall_s", 100)], self.LIMITS["desktop-linux"])
+        self.assertEqual(breaches, [])
+
+    def test_main_exit_codes(self):
+        self.assertEqual(self.run_main(self.LIMITS, self.LOG), 0)
+        over = self.LOG + ["METRIC\tprocess\tacceptance\t*\tpeak_mem_mb\t4001\n"]
+        self.assertEqual(self.run_main(self.LIMITS, over), 1)
+        self.assertEqual(self.run_main(self.LIMITS, self.LOG, platform="desktop-macos"), 2)
+        self.assertEqual(self.run_main(self.LIMITS, self.LOG, platform="version"), 2)
+        self.assertEqual(ct.main(["--platform", "ios", "/nonexistent/log"]), 2)
+
+    def test_rejects_thresholds_that_are_not_positive_numbers(self):
+        for bad in ({"desktop-linux": {"a-core/s1": {"wall_s": "90"}}},
+                    {"desktop-linux": {"a-core/s1": {"wall_s": True}}},
+                    {"desktop-linux": {"a-core/s1": {"wall_s": 0}}},
+                    {"desktop-linux": {"a-core": {"wall_s": 9}}},
+                    {"desktop-linux": {"a-core/s1": {}}}):
+            self.assertEqual(self.run_main(bad, self.LOG), 2, bad)
+
+
+class PeakMemoryTests(unittest.TestCase):
+    def test_job_structures_match_the_x64_layout(self):
+        if ctypes.sizeof(ctypes.c_void_p) != 8:
+            self.skipTest("64-bit layout")
+        self.assertEqual(ctypes.sizeof(rf.JobBasicLimits), 64)
+        self.assertEqual(ctypes.sizeof(rf.JobExtendedLimits), 144)
+        self.assertEqual(rf.JobExtendedLimits.PeakProcessMemoryUsed.offset, 128)
+
+    def test_maxrss_units(self):
+        self.assertEqual(rf.maxrss_to_mib(2048 * 1024, "linux"), 2048)
+        self.assertEqual(rf.maxrss_to_mib(3 * rf.MIB, "darwin"), 3)
+
+    def test_peak_line_passes_the_counts_only_filter(self):
+        line = rf.peak_metric_line("acceptance", 812)
+        t = rf.Tally()
+        self.assertEqual(t.take(line), line)
+        self.assertEqual(ct.metric_rows([line]), [("process/acceptance", "peak_mem_mb", 812)])
+
+    def test_peak_stage_is_a_short_slug(self):
+        self.assertEqual(rf.peak_stage("aurora-sweep"), "aurora-sweep")
+        for bad in ("A b", "x\ty", "", "a" * 33):
+            with self.assertRaises(Exception):
+                rf.peak_stage(bad)
+
+    @unittest.skipIf(os.name == "nt", "POSIX rusage path")
+    def test_meter_sees_a_child_that_ran_after_it(self):
+        meter = rf.PeakMeter()
+        subprocess.run([sys.executable, "-I", "-c", "b = bytearray(64 * 1024 * 1024)"], check=True)
+        self.assertGreaterEqual(meter.peak_mib(), 64)
+
+
+class FakeTauriDriver(BaseHTTPRequestHandler):
+    """A WebDriver endpoint with a splash window that is gone and a main window with the start page."""
+    state = {}
+
+    def log_message(self, *args):
+        pass
+
+    def reply(self, value, status=200):
+        body = json.dumps({"value": value}).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_GET(self):
+        if self.path == "/status":
+            return self.reply({"ready": True})
+        if self.path.endswith("/window/handles"):
+            return self.reply(["splash", "main"])
+        if self.path.endswith("/screenshot"):
+            return self.reply("aGk=")
+        return self.reply({"error": "unknown command", "message": self.path}, 404)
+
+    def do_DELETE(self):
+        self.state["deleted"] = True
+        self.reply(None)
+
+    def do_POST(self):
+        st = self.state
+        body = json.loads(self.rfile.read(int(self.headers["Content-Length"])) or b"{}")
+        if self.path == "/session":
+            st["caps"] = body
+            return self.reply({"sessionId": "s1", "capabilities": {}})
+        if self.path.endswith("/window"):
+            st["window"] = body["handle"]
+            return self.reply(None)
+        if self.path.endswith("/execute/sync"):
+            if st.get("window") == "splash":
+                return self.reply({"error": "no such window", "message": "closed"}, 404)
+            if body["script"] == ws.CLICK_TEXT:
+                st["clicks"] = st.get("clicks", 0) + 1
+                return self.reply(True)
+            pattern = body["args"][0]
+            showing = pattern == ws.START_TEXT or (pattern == ws.CONTENT_TEXT and st.get("clicks", 0) >= 2)
+            return self.reply(showing)
+        return self.reply({"error": "unknown command", "message": self.path}, 404)
+
+
+class WebDriverSmokeTests(unittest.TestCase):
+    def setUp(self):
+        FakeTauriDriver.state = {}
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), FakeTauriDriver)
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        self.client = ws.Client(f"http://127.0.0.1:{self.server.server_address[1]}")
+        self.poll, ws.POLL_S = ws.POLL_S, 0.01
+
+    def tearDown(self):
+        ws.POLL_S = self.poll
+        self.server.shutdown()
+        self.server.server_close()
+
+    def test_session_names_the_installed_app(self):
+        caps = ws.session_payload("C:/Users/x/AppData/Local/Borealis/borealis.exe")
+        self.assertEqual(caps["capabilities"]["alwaysMatch"]["tauri:options"]["application"],
+                         "C:/Users/x/AppData/Local/Borealis/borealis.exe")
+
+    def test_w3c_error_raises(self):
+        with self.assertRaises(ws.WebDriverError):
+            ws.unwrap({"value": {"error": "no such window", "message": "gone"}})
+        self.assertEqual(ws.unwrap({"value": 3}), 3)
+
+    def test_smoke_skips_the_closed_splash_and_retries_a_lost_click(self):
+        with tempfile.TemporaryDirectory() as d:
+            shot = Path(d) / "s.png"
+            failed = ws.smoke(self.client, "/usr/bin/borealis", timeout=4, screenshot=str(shot))
+            self.assertIsNone(failed)
+            self.assertEqual(shot.read_bytes(), b"hi")
+        st = FakeTauriDriver.state
+        self.assertEqual(st["caps"]["capabilities"]["alwaysMatch"]["tauri:options"]["application"],
+                         "/usr/bin/borealis")
+        self.assertEqual(st["clicks"], 2)
+        self.assertTrue(st["deleted"])
+        self.assertTrue(self.client.ready())
+
+    def test_smoke_names_the_failed_check(self):
+        FakeTauriDriver.state = {"clicks": -100}
+        self.assertEqual(ws.smoke(self.client, "/usr/bin/borealis", timeout=0.4), "content screen opens")
 
 
 if __name__ == "__main__":
