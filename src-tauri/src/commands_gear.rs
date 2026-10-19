@@ -2,8 +2,8 @@
 
 use crate::dto::{CharacterSnapshot, ElementSummary, ExportResult, Page};
 use crate::dto_ext::{
-    CompendiumFacets, CompendiumQuery, ElementDetail, EquipRequest, ItemFilter, ItemPatch,
-    ItemSummary, SheetOptionsDto, SheetPreview, StatTraceDto,
+    CompendiumFacets, CompendiumQuery, ElementDetail, EquipRequest, ItemCategory, ItemFilter,
+    ItemPatch, ItemSummary, SheetOptionsDto, SheetPreview, StatTraceDto,
 };
 #[cfg(desktop)]
 use crate::error::ApiError;
@@ -58,6 +58,12 @@ pub fn search_items(
         offset,
         character_id,
     })
+}
+
+/// The equipment screen's item categories for a character, in Aurora's order, with counts.
+#[tauri::command(async)]
+pub fn list_item_categories(state: S<'_>, character_id: String) -> ApiResult<Vec<ItemCategory>> {
+    state.list_item_categories(&character_id)
 }
 
 #[tauri::command(async)]

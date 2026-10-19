@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { ItemSummary } from "../../api/contract";
+import type { CharacterSnapshot, ItemCategory, ItemSummary } from "../../api/contract";
 import { isApiError } from "../../api/contract";
 import { Alert, Button, ComboBox, useConfirm } from "../../components";
 import { useApi } from "../../state/ApiContext";
@@ -13,23 +13,26 @@ import { InventoryPanel } from "./InventoryPanel";
 import { QtyCommand } from "./QtyBox";
 import "./equipment.css";
 
-/** The classic builder's category list, in its order. */
-export const CATEGORIES = ["Adventuring Gear", "Equipment Packs", "Tools", "Armor", "Magic Armor", "Weapons", "Magic Weapons", "Ammunition", "Spellcasting Focus", "Musical Instruments", "Wondrous Items", "Staffs", "Rods", "Wands", "Rings", "Potions", "Poison", "Scrolls"];
+/** Shown until the character's category list has loaded (the classic builder's first category). */
+const FIRST_CATEGORY = "Adventuring Gear";
 const COIN_LABELS = [["Copper:", "cp"], ["Silver:", "sp"], ["Electrum:", "ep"], ["Gold:", "gp"], ["Platinum:", "pp"]] as const;
 
-function useCategoryCounts() {
+/** What the category list depends on: edition, spellcasting classes and source restrictions. */
+const categoryKey = (s: CharacterSnapshot | null) =>
+  s ? JSON.stringify([s.ruleset, s.spellcasting.classes.map((c) => c.className), s.sourceRestrictions]) : "";
+
+/** The character's item categories in the classic builder's order (`list_item_categories`). */
+function useItemCategories(snapshot: CharacterSnapshot | null) {
   const api = useApi();
-  return useAsync(async () => {
-    const rows = await Promise.all(CATEGORIES.map(async (c) => [c, (await api.searchItems({ category: c, limit: 1 })).total] as const));
-    return Object.fromEntries(rows) as Record<string, number>;
-  }, [api]);
+  const id = snapshot?.id ?? "";
+  return useAsync(() => (id ? api.listItemCategories({ characterId: id }) : Promise.resolve([] as ItemCategory[])), [api, id, categoryKey(snapshot)]);
 }
 
 export function EquipmentTab() {
   const api = useApi();
   const confirm = useConfirm();
   const { snapshot, mutate } = useCharacter();
-  const [category, setCategory] = useState(CATEGORIES[0]!);
+  const [picked, setCategory] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [filterOn, setFilterOn] = useState(true);
   const [source, setSource] = useState("");
@@ -39,9 +42,13 @@ export function EquipmentTab() {
   const [buyQty, setBuyQty] = useState(1);
   const [coins, setCoins] = useState(false);
   const q = useDebounced(filterOn ? query : "", 150);
-  const counts = useCategoryCounts();
+  const cats = useItemCategories(snapshot);
+  const listed = cats.data ?? [];
+  // A category that is no longer listed (sources restricted, class changed) falls back to the first.
+  const category = picked !== null && (!cats.data || listed.some((c) => c.name === picked)) ? picked : listed[0]?.name ?? FIRST_CATEGORY;
+  const characterId = snapshot?.id;
   const sources = useAsync(() => api.listSources(), [api]);
-  const items = useAsync(() => api.searchItems({ category, query: q || undefined, source: source || undefined, limit: 200 }), [api, category, q, source]);
+  const items = useAsync(() => api.searchItems({ category, query: q || undefined, source: source || undefined, limit: 200, characterId }), [api, category, q, source, characterId]);
   if (!snapshot) return null;
   const inv = snapshot.inventory;
 
@@ -60,21 +67,22 @@ export function EquipmentTab() {
     });
   };
   const pick = (i: ItemSummary) => { setPickedItem(i); setDescId(i.id); };
-  const label = (c: string) => `${c}${counts.data ? ` (${counts.data[c] ?? 0})` : ""}`;
+  const label = (c: ItemCategory) => `${c.name} (${c.count})`;
   const left = (
     <div className="eq-layout">
       <nav className="eq-cats" aria-label="Item categories">
         <Band title="Categories" />
         <div className="eq-cats-sub">Category</div>
         <ul>
-          {CATEGORIES.map((c) => <li key={c}><button type="button" aria-current={c === category} onClick={() => { setCategory(c); setPickedItem(null); }}>{label(c)}</button></li>)}
+          {listed.map((c) => <li key={c.name}><button type="button" aria-current={c.name === category} onClick={() => { setCategory(c.name); setPickedItem(null); }}>{label(c)}</button></li>)}
         </ul>
       </nav>
       <div className="eq-items">
         <Band title={category === "Equipment Packs" ? "Equipment Packs" : category} stats={COIN_LABELS.map(([n, k]) => [n, inv.coins[k]] as [string, number])} />
         <div className="eq-cats-narrow" style={{ padding: "6px 0" }}>
-          <ComboBox aria-label="Category" value={category} onChange={(e) => setCategory(e.target.value)} options={CATEGORIES.map((c) => ({ value: c, label: label(c) }))} />
+          <ComboBox aria-label="Category" value={category} onChange={(e) => setCategory(e.target.value)} options={listed.map((c) => ({ value: c.name, label: label(c) }))} />
         </div>
+        {cats.error && <Alert tone="danger">{cats.error}</Alert>}
         {items.error && <Alert tone="danger">{items.error}</Alert>}
         <ItemGrid items={items.data?.items ?? []} category={category} picked={pickedItem?.id ?? null} onPick={pick} onAdd={(i) => void add(i, addQty, false)} />
       </div>

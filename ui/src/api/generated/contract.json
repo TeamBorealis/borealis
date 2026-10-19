@@ -794,6 +794,19 @@
     }
    }
   },
+  "list_item_categories": {
+   "args": {
+    "characterId": false
+   },
+   "method": "listItemCategories",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "ItemCategory"
+    }
+   }
+  },
   "list_packs": {
    "args": {},
    "method": "listPacks",
@@ -5723,6 +5736,23 @@
       "t": {
        "k": "prim"
       }
+     }
+    }
+   }
+  },
+  "ItemCategory": {
+   "k": "object",
+   "props": {
+    "count": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
      }
     }
    }

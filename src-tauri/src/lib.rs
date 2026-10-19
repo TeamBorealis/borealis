@@ -69,6 +69,7 @@ pub mod gear_facts;
 pub mod gear_info;
 pub mod homebrew_api;
 pub mod ids;
+pub mod item_categories;
 #[cfg(desktop)]
 pub mod import_bug_report;
 pub mod import_check;
@@ -296,6 +297,7 @@ pub fn run() {
             commands_gear::set_spell_prepared,
             commands_gear::explain_stat,
             commands_gear::search_items,
+            commands_gear::list_item_categories,
             commands_gear::add_item,
             commands_gear::remove_item,
             commands_gear::equip_item,

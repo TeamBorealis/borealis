@@ -44,7 +44,7 @@ pub struct ItemPatch {
 /// Item search filter (the `characterId` restricts to the character's ruleset and sources).
 #[derive(Debug, Clone, Default)]
 pub struct ItemFilter {
-    /// Category setter value, e.g. `Weapons`.
+    /// Equipment-screen category (exact name), e.g. `Weapons`.
     pub category: Option<String>,
     /// Name text.
     pub query: Option<String>,
@@ -56,6 +56,16 @@ pub struct ItemFilter {
     pub offset: Option<usize>,
     /// Character whose ruleset and source restrictions apply.
     pub character_id: Option<String>,
+}
+
+/// One equipment-screen category and how many items the character can see in it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ItemCategory {
+    /// Category name (a `category` setter value or one of Aurora's fixed names).
+    pub name: String,
+    /// Items listed under it for the character.
+    pub count: usize,
 }
 
 /// A catalogue item row.

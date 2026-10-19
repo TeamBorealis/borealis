@@ -7,6 +7,12 @@ export interface ItemSummary extends ElementSummary {
   requiresAttunement: boolean;
 }
 
+/** One equipment-screen category and how many items the character can see in it (`list_item_categories`). */
+export interface ItemCategory {
+  name: string;
+  count: number;
+}
+
 export interface ItemQuery {
   category?: string;
   query?: string;

@@ -1,9 +1,10 @@
 import type {
   CompendiumFacets, FiveToolsImportReport, FiveToolsImportRequest, FiveToolsScan, CompendiumQuery, ContentIndex, ContentPack, ContentProgress, ContentSource, ElementDetail, ElementSummary,
-  ImportPackRequest, ImportPackResult, ItemQuery, ItemSummary, MigrationIssue, MigrationReport, Page, UpdateIndexesResult,
+  ImportPackRequest, ImportPackResult, ItemCategory, ItemQuery, ItemSummary, MigrationIssue, MigrationReport, Page, UpdateIndexesResult,
 } from "../types";
 import { issue, scanElements, xmlIssues } from "./import-issues";
 import { ELEMENTS, ITEMS, getElement } from "./content";
+import { itemCategoryList } from "./item-categories";
 import type { MockElement } from "./data-types";
 import { apiError } from "./errors";
 import { SOURCE_2014, SOURCE_2024 } from "./content";
@@ -85,6 +86,11 @@ export class ContentService {
       .map((i) => ({ ...this.summary(getElement(i.id)!), category: i.category, costCp: i.costCp, weight: i.weight, requiresAttunement: !!i.attune }));
     const sorted = hits.sort((a, b) => a.name.localeCompare(b.name));
     return { total: sorted.length, items: sorted.slice(q.offset ?? 0, (q.offset ?? 0) + (q.limit ?? 100)) };
+  }
+
+  /** `list_item_categories` over the sample items (`enabled` = enabled source ids, null = all). */
+  itemCategories(casters: string[], enabled: string[] | null): ItemCategory[] {
+    return itemCategoryList(ITEMS.map((i) => ({ category: i.category, visible: !enabled || enabled.includes(getElement(i.id)!.source) })), casters);
   }
 
   packs(): ContentPack[] {

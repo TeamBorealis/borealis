@@ -73,6 +73,7 @@ import type {
   ImportReport,
   RecheckReport,
   InventoryItem,
+  ItemCategory,
   ItemQuery,
   ItemSummary,
   NewCharacterRequest,
@@ -192,6 +193,8 @@ export interface ApiMethods {
 
   /* Equipment */
   searchItems(args: ItemQuery & { characterId?: string }): Promise<Page<ItemSummary>>;
+  /** The equipment screen's categories for the character, in the classic builder's order, with item counts. */
+  listItemCategories(args: Cid): Promise<ItemCategory[]>;
   addItem(args: Cid & { itemId: string; quantity: number; buy: boolean; baseItemId?: string }): Promise<CharacterSnapshot>;
   removeItem(args: Cid & { inventoryId: string; all: boolean }): Promise<CharacterSnapshot>;
   equipItem(args: Cid & { inventoryId: string; slot: EquipRequest }): Promise<CharacterSnapshot>;
@@ -413,6 +416,7 @@ export const COMMANDS = {
   setWildShapeForms: "set_wild_shape_forms",
   chooseEquipmentPackage: "choose_equipment_package",
   searchItems: "search_items",
+  listItemCategories: "list_item_categories",
   addItem: "add_item",
   removeItem: "remove_item",
   equipItem: "equip_item",

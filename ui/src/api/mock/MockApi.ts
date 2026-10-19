@@ -405,6 +405,11 @@ export class MockApi implements Api {
   /* ---------- equipment ---------- */
 
   async searchItems(q: Parameters<Api["searchItems"]>[0]) { await this.tick(); return this.content.items(q); }
+  async listItemCategories({ characterId }: { characterId: string }) {
+    await this.tick();
+    const s = this.snap(this.get(characterId));
+    return this.content.itemCategories(s.spellcasting.classes.map((c) => c.className), s.sourceRestrictions);
+  }
   async addItem(a: { characterId: string; itemId: string; quantity: number; buy: boolean }) { return this.mutate(a.characterId, (c) => rolled.rollGained(c, eq.addItem(c, a.itemId, a.quantity, a.buy), this.rng)); }
   async removeItem(a: { characterId: string; inventoryId: string; all: boolean }) { return this.mutate(a.characterId, (c) => eq.removeItem(c, a.inventoryId, a.all)); }
   async equipItem(a: { characterId: string; inventoryId: string; slot: Parameters<typeof eq.equipItem>[2] }) { return this.mutate(a.characterId, (c) => eq.equipItem(c, a.inventoryId, a.slot)); }

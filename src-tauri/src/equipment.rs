@@ -6,6 +6,7 @@ use crate::dto_ext::{EquipRequest, ItemFilter, ItemPatch, ItemSummary};
 use crate::elements::summary;
 use crate::error::{ApiError, ApiResult};
 use crate::gear_info::{category, cost_cp, is_item, requires_attunement, weight_lb};
+use crate::item_categories::list_category;
 use crate::session::Draft;
 use crate::state::AppState;
 use borealis_engine::commands;
@@ -91,39 +92,30 @@ fn requested_slot(
 }
 
 impl AppState {
-    /// Search the item catalogue (name ranking: prefix before substring), paged.
+    /// Search the item catalogue (name ranking: prefix before substring), paged. A category
+    /// matches the way the equipment screen lists it ([`list_category`]).
     ///
     /// # Errors
     /// `not_found` when `character_id` is given but not open.
     pub fn search_items(&self, filter: &ItemFilter) -> ApiResult<Page<ItemSummary>> {
-        let (ruleset, restricted) = match &filter.character_id {
-            Some(id) => self.read(id, |_, s| {
-                Ok((
-                    Some(s.character.ruleset()),
-                    s.character.build.restricted_sources.clone(),
-                ))
-            })?,
-            None => (None, Vec::new()),
-        };
+        let scope = self.item_scope(filter.character_id.as_deref())?;
         let hub = self.hub()?;
         let needle = filter
             .query
             .as_deref()
             .map(|q| q.trim().to_lowercase())
             .filter(|q| !q.is_empty());
-        let wanted_category = filter.category.as_deref().map(str::to_lowercase);
         let mut hits: Vec<(u8, &borealis_content::Element)> = hub
             .store
             .iter()
             .map(|s| &s.element)
-            .filter(|e| is_item(e))
-            .filter(|e| ruleset.map_or(true, |r| e.ruleset.map_or(true, |x| x.compatible_with(r))))
-            .filter(|e| !restricted.iter().any(|r| r == &e.source))
+            .filter(|e| is_item(e) && scope.admits(e))
             .filter(|e| filter.source.as_ref().map_or(true, |s| s == &e.source))
             .filter(|e| {
-                wanted_category
-                    .as_ref()
-                    .map_or(true, |c| category(e).to_lowercase() == *c)
+                filter
+                    .category
+                    .as_deref()
+                    .map_or(true, |c| list_category(e) == c)
             })
             .filter_map(|e| match &needle {
                 None => Some((0, e)),
