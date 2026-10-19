@@ -357,8 +357,101 @@ fn aurora_install(app: &AppState, input: &AuroraInput, t: &mut AuroraTally) -> O
 /// Issue codes that are about a file, not an element (det-src-1/-2).
 const FILE_LEVEL_CODES: &[&str] = &["FileSkipped", "UnsupportedConstruct"];
 
-/// Folds one migration report into the tally: warnings by element id; precise = code, source
-/// file, element id and type all present; `normalized` infos record the source id as an alias.
+/// A precise finding names its source file and a closed code, and then its element and that
+/// element's type, or, outside any element, a file-level code or its line in the file (an
+/// `<info>` without `<update>`, D-20: the whole file is not loaded and each of its elements
+/// gets `element_dropped`). An append names its target by id only (Aurora's `<append id>`
+/// carries no type, `DataManager.cs:1006` finds the target by id), so a missing target has no
+/// type to report: its file and target id are the whole location.
+fn is_precise(issue: &borealis_lib::content_dto::MigrationIssue) -> bool {
+    let code = format!("{:?}", issue.code);
+    if issue.file.is_none() {
+        return false;
+    }
+    match &issue.element {
+        None => FILE_LEVEL_CODES.contains(&code.as_str()) || issue.line.is_some(),
+        Some(_) => issue.element_type.is_some() || code == "AppendTargetMissing",
+    }
+}
+
+#[test]
+fn precise_findings_name_their_file_and_element_or_line() {
+    use borealis_content::IssueCode;
+    use borealis_lib::content_dto::MigrationIssue;
+    let issue =
+        |code, element: Option<&str>, ty: Option<&str>, file: Option<&str>, line| MigrationIssue {
+            severity: "warning",
+            code,
+            message: String::new(),
+            element: element.map(str::to_string),
+            element_type: ty.map(str::to_string),
+            file: file.map(str::to_string),
+            line,
+        };
+    let f = Some("a.xml");
+    let el = Some("ID_X");
+    assert!(is_precise(&issue(
+        IssueCode::DanglingReference,
+        el,
+        Some("Feat"),
+        f,
+        None
+    )));
+    assert!(!is_precise(&issue(
+        IssueCode::DanglingReference,
+        el,
+        None,
+        f,
+        None
+    )));
+    assert!(!is_precise(&issue(
+        IssueCode::DanglingReference,
+        el,
+        Some("Feat"),
+        None,
+        None
+    )));
+    // an append's missing target has no type
+    assert!(is_precise(&issue(
+        IssueCode::AppendTargetMissing,
+        el,
+        None,
+        f,
+        None
+    )));
+    assert!(!is_precise(&issue(
+        IssueCode::AppendTargetMissing,
+        None,
+        None,
+        f,
+        None
+    )));
+    // outside any element: a file-level code, or the line of the construct
+    assert!(is_precise(&issue(
+        IssueCode::FileSkipped,
+        None,
+        None,
+        f,
+        None
+    )));
+    assert!(is_precise(&issue(
+        IssueCode::MissingAttribute,
+        None,
+        None,
+        f,
+        Some(3)
+    )));
+    assert!(!is_precise(&issue(
+        IssueCode::MissingAttribute,
+        None,
+        None,
+        f,
+        None
+    )));
+}
+
+/// Folds one migration report into the tally: warnings by element id; precision by
+/// [`is_precise`]; `normalized` infos record the source id as an alias.
 fn tally_report(report: &borealis_lib::content_dto::MigrationReport, t: &mut AuroraTally) {
     for issue in &report.issues {
         let code = format!("{:?}", issue.code);
@@ -375,12 +468,7 @@ fn tally_report(report: &borealis_lib::content_dto::MigrationReport, t: &mut Aur
         if let Some(id) = &issue.element {
             t.warned.insert(id.clone());
         }
-        // a file-level issue (a whole file not loaded, a construct outside any element) is precise
-        // with its file and code; the elements of a skipped file each get `element_dropped`
-        let file_level = FILE_LEVEL_CODES.contains(&code.as_str()) && issue.element.is_none();
-        let precise = issue.file.is_some()
-            && (file_level || (issue.element.is_some() && issue.element_type.is_some()));
-        if !precise {
+        if !is_precise(issue) {
             t.imprecise += 1;
             if t.imprecise <= 3 {
                 eprintln!(
@@ -573,16 +661,24 @@ fn aurora_folders(src: &str, dirs: &[PathBuf], zip_check: bool, with_stage2: boo
     let mut tally = AuroraTally::default();
     let mut c = AuroraCount::default();
     let mut ids = Vec::new();
+    let mut no_content = 0;
     for dir in dirs {
         count_folder(dir, &mut c);
-        ids.extend(aurora_install(
-            &app,
-            &AuroraInput::Folder(dir.clone()),
-            &mut tally,
-        ));
+        let before = tally.folder_errors;
+        let got = aurora_install(&app, &AuroraInput::Folder(dir.clone()), &mut tally);
+        // a folder without one .xml file holds no Aurora content (an empty repository, an app,
+        // character files, a lone remote .index): Aurora loads custom content from *.xml only
+        // (DataManager.cs:934, 966; an .index is read by the online updater), so the refusal
+        // "Nothing could be imported." is the right answer, not a folder error
+        if got.is_none() && tally.folder_errors == before + 1 && count::xml_files(dir).is_empty() {
+            tally.folder_errors = before;
+            no_content += 1;
+        }
+        ids.extend(got);
     }
     tally.s = c.types.clone();
     metric(src, "s1", "*", "malformed_tags", c.malformed as i64);
+    metric(src, "s1", "*", "no_content_folders", no_content);
     let data = tmp.path().join("data");
     let ins = installed(&data, &|id| ids.iter().any(|i| i == id));
     aurora_stage1(src, &tally, &ins);
