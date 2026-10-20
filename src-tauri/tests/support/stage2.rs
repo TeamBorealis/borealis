@@ -441,7 +441,9 @@ fn run_jobs(apps: &[&AppState], e: &Edition<'_>, phase: &str, jobs: &[Job]) -> V
         e.src,
         jobs.len()
     ));
-    let found = std::thread::scope(|sc| {
+    // workers record settle-invariant violations like their caller (a-comm), and hand them back
+    let recording = borealis_engine::invariants::recording_for_thread();
+    let found: Vec<(Found, Vec<_>)> = std::thread::scope(|sc| {
         let handles: Vec<_> = (0..n)
             .map(|w| {
                 let app = apps[w];
@@ -449,6 +451,9 @@ fn run_jobs(apps: &[&AppState], e: &Edition<'_>, phase: &str, jobs: &[Job]) -> V
                     .stack_size(WORKER_STACK)
                     .spawn_scoped(sc, move || {
                         borealis_engine::invariants::enable_for_thread();
+                        if recording {
+                            borealis_engine::invariants::record_for_thread();
+                        }
                         let d = Driver::new(app);
                         let mut ex = Explore {
                             owners: e.owners,
@@ -461,7 +466,7 @@ fn run_jobs(apps: &[&AppState], e: &Edition<'_>, phase: &str, jobs: &[Job]) -> V
                         }
                         f.2 = ex.explored;
                         f.3 = d.made.get();
-                        f
+                        (f, borealis_engine::invariants::take_recorded())
                     })
                     .expect("stage-2 worker")
             })
@@ -477,6 +482,12 @@ fn run_jobs(apps: &[&AppState], e: &Edition<'_>, phase: &str, jobs: &[Job]) -> V
         t0.elapsed().as_secs()
     ));
     found
+        .into_iter()
+        .map(|(f, recorded)| {
+            borealis_engine::invariants::record_violations(recorded);
+            f
+        })
+        .collect()
 }
 
 fn merge(into: &mut Found, parts: Vec<Found>) {

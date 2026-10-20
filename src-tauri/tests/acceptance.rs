@@ -985,6 +985,9 @@ fn comm_stage2(repos: &Path, dirs: &[PathBuf], shard: usize, of: usize) {
                 .stack_size(64 << 20)
                 .spawn_scoped(sc, || {
                     borealis_engine::invariants::enable_for_thread();
+                    // a community content defect (negative slots, a requirement that never
+                    // settles) is one failed check, not the loss of the setup's results
+                    borealis_engine::invariants::record_for_thread();
                     loop {
                         let i = next.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                         let Some((src, installs)) = jobs.get(i) else {
@@ -1006,6 +1009,7 @@ fn comm_stage2(repos: &Path, dirs: &[PathBuf], shard: usize, of: usize) {
                             outcome::record(SUITE, &format!("{src}/s2/panic"), false, &why);
                             metric(src, "s2", "*", "panicked", 1);
                         }
+                        record_invariants(src);
                         progress(&format!("{src} done in {} s", started.elapsed().as_secs()));
                     }
                 })
@@ -1013,6 +1017,19 @@ fn comm_stage2(repos: &Path, dirs: &[PathBuf], shard: usize, of: usize) {
         }
     });
     metric("a-comm", "s2", "*", "wall_s", t0.elapsed().as_secs() as i64);
+}
+
+/// One failed outcome per settle invariant (kind and element) the setup's derives broke.
+fn record_invariants(src: &str) {
+    let found = borealis_engine::invariants::take_recorded();
+    metric(src, "s2", "*", "invariant_violations", found.len() as i64);
+    for v in found {
+        let id = match &v.element {
+            Some(e) => format!("{src}/s2/invariant/{}/{e}", v.kind),
+            None => format!("{src}/s2/invariant/{}", v.kind),
+        };
+        outcome::record(SUITE, &id, false, &v.message);
+    }
 }
 
 /// `BOREALIS_ACCEPT_THREADS` (default 4): A-comm setups measured side by side, one app each.
