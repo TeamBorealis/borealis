@@ -136,7 +136,12 @@ fn every_source_element_converts_or_is_reported() {
                 None if i.file.is_none() => imprecise += 1,
                 None => {
                     *file_level
-                        .entry(format!("{:?} {:?} {}", i.severity, i.code, i.message.chars().take(70).collect::<String>()))
+                        .entry(format!(
+                            "{:?} {:?} {}",
+                            i.severity,
+                            i.code,
+                            i.message.chars().take(70).collect::<String>()
+                        ))
                         .or_insert(0) += 1
                 }
             }

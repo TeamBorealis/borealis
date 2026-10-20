@@ -342,8 +342,7 @@ pub fn convert_feature(sh: &Shared, st: &mut State, ent: &Ent, sub: bool) -> Con
                 f.class_source.to_uppercase()
             ))
             .map_or(&[][..], Vec::as_slice);
-        let stated =
-            super::stated_choices::read_for_class(&f.entries, &f.class_name, class_skills);
+        let stated = super::stated_choices::read_for_class(&f.entries, &f.class_name, class_skills);
         super::stated_choices::apply(&mut mech, &stated);
         // a creature the character chooses, stated as a bestiary filter (Ranger's Companion)
         if let Some(rule) = super::companion::companion_select(&f.name, &f.entries) {
