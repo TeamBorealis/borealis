@@ -3,13 +3,15 @@
 //! abilities, as with Tasha's custom origin. The adapter adds it when the universe is prepared
 //! (stored data untouched, R4) and the compatibility report says so. Not for 2024 characters, not
 //! for 2014 races, and not for a 2024 species whose own rules or parts already raise a score.
+//! IM9a (user, 2026-10-20): not applied while the character has a background that gives its own
+//! increase (a 2024 background), in either pick order; the report says so.
 //! Bundled core + SRD 5.1 + SRD 5.2.1 packs, plus two synthetic 2024 species with increases.
 
 use borealis_content::{ContentFile, ContentStoreBuilder, PackOrigin, Ruleset};
 use borealis_engine::commands::{self, slot_key};
 use borealis_engine::snapshot::{CharacterSnapshot, SlotSnapshot};
 use borealis_engine::state::CharacterState;
-use borealis_engine::{Choice, Engine, FLEXIBLE_INCREASE_NAME};
+use borealis_engine::{Choice, Engine, FLEXIBLE_INCREASE_NAME, INCREASE_NOT_APPLIED};
 use serde_json::json;
 use std::path::Path;
 use std::sync::OnceLock;
@@ -223,4 +225,166 @@ fn turning_the_setting_off_afterwards_breaks_nothing() {
         .iter()
         .filter(|k| k.ty == "Race")
         .all(|k| k.options.iter().all(|o| o.id != ELF_24)));
+}
+
+// IM9a (user, 2026-10-20): the IM9 increase is not applied when the character also has a
+// background that gives its own increase (a 2024 background): only one origin increase applies,
+// the background's. The choice requires that none of those backgrounds is on the character.
+
+const ACOLYTE_14: &str = "ID_BACKGROUND_ACOLYTE";
+const SOLDIER_24: &str = "ID_2024_BACKGROUND_SOLDIER";
+const SOLDIER_SCORES: &str = "Ability Scores (Soldier)";
+const STR2_DEX1: [i32; 6] = [17, 15, 13, 12, 10, 8];
+const IM9_CON_WIS_CHA: [i32; 6] = [15, 14, 14, 12, 11, 9];
+
+fn with_background(s: &CharacterState, id: &str) -> CharacterState {
+    pick(s, "ID_LEVEL_1", "Background", id)
+}
+
+/// Pick the Soldier's own +2/+1 (Strength +2, Dexterity +1).
+fn soldier_increase(s: &CharacterState) -> CharacterState {
+    let snap = engine().derive(s);
+    let slot = snap
+        .slots
+        .iter()
+        .find(|k| k.owner.id == SOLDIER_24 && k.name == SOLDIER_SCORES)
+        .expect("the 2024 background's increase");
+    let (item, _) = slot
+        .list_items
+        .iter()
+        .find(|(_, t)| t == "Strength +2, Dexterity +1")
+        .expect("list entry")
+        .clone();
+    commands::select(engine(), s, &slot.key, Choice::ListItem(item))
+        .expect("background increase")
+        .state
+}
+
+fn species_notes(s: &CharacterState) -> Vec<String> {
+    engine()
+        .derive(s)
+        .compatibility
+        .entries
+        .iter()
+        .find(|c| c.element.id == ELF_24)
+        .expect("species in the report")
+        .notes
+        .clone()
+}
+
+/// No rejected slot and no selection or evaluation diagnostic.
+fn no_problems(s: &CharacterState) {
+    let snap = engine().derive(s);
+    assert!(
+        snap.slots.iter().all(|k| k.rejected.is_none()),
+        "no rejected slot"
+    );
+    assert!(
+        snap.diagnostics
+            .iter()
+            .all(|d| !d.code.starts_with("selection.") && !d.code.starts_with("eval.")),
+        "{:?}",
+        snap.diagnostics
+    );
+}
+
+#[test]
+fn with_a_2014_background_the_increase_is_offered_and_applies() {
+    let s = with_background(&fighter_with(Ruleset::Dnd2014, BASE, ELF_24), ACOLYTE_14);
+    let s = choose(&s, ELF_24, "Strength +2, Dexterity +1");
+    assert_eq!(scores(&s), STR2_DEX1.to_vec());
+    assert!(!species_notes(&s).iter().any(|n| n == INCREASE_NOT_APPLIED));
+    no_problems(&s);
+}
+
+#[test]
+fn with_a_2024_background_only_the_background_increase_applies() {
+    let s = with_background(&fighter_with(Ruleset::Dnd2014, BASE, ELF_24), SOLDIER_24);
+    assert!(
+        increase_slot(&engine().derive(&s), ELF_24).is_none(),
+        "the IM9 choice is not offered"
+    );
+    assert_eq!(
+        scores(&s),
+        BASE.to_vec(),
+        "nothing until the background's pick"
+    );
+    let s = soldier_increase(&s);
+    assert_eq!(scores(&s), STR2_DEX1.to_vec(), "the background's, once");
+    no_problems(&s);
+}
+
+#[test]
+fn picking_a_2024_background_after_the_increase_switches_it_off() {
+    let s = choose(
+        &fighter_with(Ruleset::Dnd2014, BASE, ELF_24),
+        ELF_24,
+        "Constitution +1, Wisdom +1, Charisma +1",
+    );
+    assert_eq!(scores(&s), IM9_CON_WIS_CHA.to_vec());
+    let s = soldier_increase(&with_background(&s, SOLDIER_24));
+    assert!(increase_slot(&engine().derive(&s), ELF_24).is_none());
+    assert_eq!(scores(&s), STR2_DEX1.to_vec(), "only the background's");
+    no_problems(&s);
+    // A command drops selections whose slot is gone (`prune`), so going back to a 2014
+    // background offers the choice again, empty.
+    let bg = slot_key(&engine().derive(&s), "ID_LEVEL_1", "Background", 1).expect("bg slot");
+    let back = commands::select(engine(), &s, &bg, Choice::Element(ACOLYTE_14.into()))
+        .expect("2014 background")
+        .state;
+    let snap = engine().derive(&back);
+    let slot = increase_slot(&snap, ELF_24).expect("offered again");
+    assert!(
+        slot.list_choice.is_none() && slot.rejected.is_none(),
+        "{slot:?}"
+    );
+    assert_eq!(scores(&back), BASE.to_vec());
+    let back = choose(&back, ELF_24, "Strength +2, Dexterity +1");
+    assert_eq!(scores(&back), STR2_DEX1.to_vec());
+}
+
+#[test]
+fn a_stored_increase_is_kept_but_not_applied_under_a_2024_background() {
+    // A state holding both (saved before IM9a, or edited by hand): the stored IM9 pick stays in
+    // the state, unused and without error, and applies again once the background is 2014.
+    let s = fighter_with(Ruleset::Dnd2014, BASE, ELF_24);
+    let chosen = choose(&s, ELF_24, "Constitution +1, Wisdom +1, Charisma +1");
+    let im9 = chosen
+        .selections
+        .iter()
+        .find(|x| !s.selections.contains(x))
+        .expect("the IM9 pick")
+        .clone();
+    let mut both = soldier_increase(&with_background(&s, SOLDIER_24));
+    both.selections.push(im9.clone());
+    assert_eq!(scores(&both), STR2_DEX1.to_vec());
+    no_problems(&both);
+    assert!(both.selections.contains(&im9));
+    let swapped = CharacterState {
+        selections: both
+            .selections
+            .iter()
+            .map(|sel| match &sel.choice {
+                Choice::Element(id) if id == SOLDIER_24 => borealis_engine::state::Selection {
+                    choice: Choice::Element(ACOLYTE_14.into()),
+                    ..sel.clone()
+                },
+                _ => sel.clone(),
+            })
+            .collect(),
+        ..both
+    };
+    assert_eq!(scores(&swapped), IM9_CON_WIS_CHA.to_vec());
+}
+
+#[test]
+fn the_compatibility_report_says_when_the_increase_is_not_applied() {
+    let s = with_background(&fighter_with(Ruleset::Dnd2014, BASE, ELF_24), SOLDIER_24);
+    let notes = species_notes(&s);
+    assert!(notes.iter().any(|n| n == INCREASE_NOT_APPLIED), "{notes:?}");
+    assert!(notes
+        .iter()
+        .any(|n| n.starts_with("Ability score increase added")));
+    let s = with_background(&fighter_with(Ruleset::Dnd2014, BASE, ELF_24), ACOLYTE_14);
+    assert!(!species_notes(&s).iter().any(|n| n == INCREASE_NOT_APPLIED));
 }

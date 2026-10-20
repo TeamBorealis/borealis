@@ -432,6 +432,12 @@ fn legacy_alias_note<'e>(el: &'e Element, profile: &dyn RulesetProfile) -> Optio
         .filter(|a| !a.is_empty() && *a != el.ty && profile.accepts_legacy_alias(a, from))
 }
 
+/// Element types that make up a background (its features, variants, characteristics), followed
+/// when looking for its ability increase (IM9a).
+fn is_background_part(ty: &str) -> bool {
+    ty.starts_with("Background")
+}
+
 /// Element types that make up a species (its traits, lineage options, subraces).
 fn is_origin_part(ty: &str) -> bool {
     matches!(
@@ -960,8 +966,18 @@ impl Universe {
 
     /// IM9: every accepted foreign species with no ability increase anywhere in its parts goes
     /// through [`EditionAdapter::origin_increase`]; the element is rebuilt in place (same id,
-    /// type and index) and the change is added to its compatibility notes.
+    /// type and index) and the change is added to its compatibility notes. IM9a: the backgrounds
+    /// (any edition) whose parts raise a score are passed along, so the added increase applies
+    /// only while the character has none of them.
     fn add_origin_increases(&mut self, profile: &dyn RulesetProfile, adapter: &dyn EditionAdapter) {
+        let with_own_increase: Vec<String> = self
+            .by_type
+            .get("Background")
+            .into_iter()
+            .flatten()
+            .filter(|&&i| self.raises_ability_in(i, is_background_part))
+            .map(|&i| self.elems[i].el.id.clone())
+            .collect();
         for i in 0..self.elems.len() {
             let u = &self.elems[i];
             let EditionStatus::Foreign {
@@ -973,10 +989,14 @@ impl Universe {
             else {
                 continue;
             };
-            if !matches!(u.el.ty.as_str(), "Species" | "Race") || self.origin_raises_ability(i) {
+            if !matches!(u.el.ty.as_str(), "Species" | "Race")
+                || self.raises_ability_in(i, is_origin_part)
+            {
                 continue;
             }
-            let Some((el, added)) = adapter.origin_increase(&u.el, *from, profile) else {
+            let Some((el, added)) =
+                adapter.origin_increase(&u.el, *from, profile, &with_own_increase)
+            else {
                 continue;
             };
             let notes: Vec<String> = notes
@@ -998,10 +1018,11 @@ impl Universe {
         }
     }
 
-    /// Does the species at `root`, one of its granted traits, or an option one of their selects
-    /// can pick (lineages, subraces) raise an ability score? Feats, spells and the like are not
-    /// parts of the species and are not followed.
-    fn origin_raises_ability(&self, root: usize) -> bool {
+    /// Does the origin element at `root` (a species or a background), one of its granted parts,
+    /// or an option one of their selects can pick (lineages, subraces, background variants)
+    /// raise an ability score? Only elements whose type passes `is_part` are followed: feats,
+    /// spells and the like are not parts of the origin.
+    fn raises_ability_in(&self, root: usize, is_part: fn(&str) -> bool) -> bool {
         let mut stack = vec![root];
         let mut seen = std::collections::HashSet::new();
         while let Some(i) = stack.pop() {
@@ -1018,9 +1039,9 @@ impl Universe {
                         self.by_id
                             .get(&g.id)
                             .copied()
-                            .filter(|&j| is_origin_part(&self.elems[j].el.ty)),
+                            .filter(|&j| is_part(&self.elems[j].el.ty)),
                     ),
-                    (Rule::Select(s), URule::Select { supports, .. }) if is_origin_part(&s.ty) => {
+                    (Rule::Select(s), URule::Select { supports, .. }) if is_part(&s.ty) => {
                         stack.extend(self.candidates_for(&s.ty).filter_map(|c| {
                             crate::eval::supports_cond_match(supports, c, &crate::eval::NoDynamics)
                                 .then(|| self.by_id.get(&c.el.id).copied())

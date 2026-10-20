@@ -775,7 +775,14 @@ impl<'u> Evaluation<'u> {
                     element: element_ref(e),
                     from: *from,
                     converted: *converted,
-                    notes: notes.clone(),
+                    notes: notes
+                        .iter()
+                        .cloned()
+                        .chain(
+                            self.increase_switched_off(n)
+                                .then(|| crate::adapter::INCREASE_NOT_APPLIED.to_string()),
+                        )
+                        .collect(),
                 })
             })
             .collect();
@@ -783,6 +790,16 @@ impl<'u> Evaluation<'u> {
             strict: !self.graph.allow_cross_edition,
             entries,
         }
+    }
+
+    /// IM9a: the node carries the IM9 increase choice but has no slot for it, because the
+    /// character's background gives its own increase (the choice's requirement fails).
+    fn increase_switched_off(&self, n: NodeId) -> bool {
+        let node = &self.graph.nodes[n];
+        node.e.el.rules.iter().enumerate().any(|(ri, r)| {
+            matches!(r, Rule::Select(s) if s.name == crate::adapter::FLEXIBLE_INCREASE_NAME)
+                && node.slots.iter().all(|sl| sl.rule != ri)
+        })
     }
 
     /// XP thresholds from the Level elements (falls back to the standard table).

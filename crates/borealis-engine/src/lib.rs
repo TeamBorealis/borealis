@@ -60,6 +60,7 @@ pub mod text;
 
 pub use adapter::{
     Adaptation, EditionAdapter, PassThroughAdapter, StandardAdapter, FLEXIBLE_INCREASE_NAME,
+    INCREASE_NOT_APPLIED,
 };
 pub use compat::{CompatEntry, CompatibilityReport, EditionBadge};
 pub use diag::{Diagnostic, Severity};

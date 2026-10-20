@@ -228,7 +228,7 @@ fn a_2024_character_is_unchanged() {
 /// Ability scores when a 2014 character takes a 2024 species: the species itself has no
 /// increase (2024 moves it to the background), so IM9 offers a flexible +2/+1 or +1/+1/+1
 /// (`cross_edition_species_asi.rs`); left unchosen, nothing applies. A 2024 background brings
-/// its own ability distribution on top.
+/// its own ability distribution instead (IM9a: the species' choice is then not offered).
 #[test]
 fn a_2024_species_on_a_2014_character_adds_nothing_until_the_increase_is_chosen() {
     let mut s = fighter(Ruleset::Dnd2014, FIGHTER_14, Some(true), 1);

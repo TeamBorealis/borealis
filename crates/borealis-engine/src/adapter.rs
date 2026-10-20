@@ -42,12 +42,15 @@ pub trait EditionAdapter: Send + Sync + std::fmt::Debug {
 
     /// IM9: the ability score increase a foreign species gets when neither it nor any of its
     /// traits or lineage options carries one (the universe checks that, since it needs the
-    /// species' parts). `None` = used as [`Self::adapt`] left it.
+    /// species' parts). `superseded_by` lists the backgrounds that bring their own increase:
+    /// the added one applies only while the character has none of them (IM9a). `None` = used
+    /// as [`Self::adapt`] left it.
     fn origin_increase(
         &self,
         _el: &Element,
         _from: Ruleset,
         _to: &dyn RulesetProfile,
+        _superseded_by: &[String],
     ) -> Option<(Element, Vec<String>)> {
         None
     }
@@ -91,10 +94,11 @@ impl EditionAdapter for StandardAdapter {
         el: &Element,
         from: Ruleset,
         to: &dyn RulesetProfile,
+        superseded_by: &[String],
     ) -> Option<(Element, Vec<String>)> {
         match (from, to.ruleset(), el.ty.as_str()) {
             (Ruleset::Dnd2024, Ruleset::Dnd2014, "Species" | "Race") => {
-                Some(flexible_origin_increase(el))
+                Some(flexible_origin_increase(el, superseded_by))
             }
             _ => None,
         }
@@ -103,6 +107,11 @@ impl EditionAdapter for StandardAdapter {
 
 /// Name of the choice IM9 adds to a 2024 species in a 2014 character.
 pub const FLEXIBLE_INCREASE_NAME: &str = "Ability Score Increase (Other Edition)";
+
+/// Compatibility note for a species whose IM9 increase is switched off because the character's
+/// background gives its own (IM9a).
+pub const INCREASE_NOT_APPLIED: &str =
+    "Ability score increase not applied: the 2024 background gives the increase (IM9a)";
 
 /// Does a rule raise an ability score: a plain ability stat (not an inline display value), an
 /// `ability_increase` / `ability_distribution` choice (raw, or rewritten into its list select),
@@ -124,14 +133,19 @@ pub fn raises_ability(rule: &Rule) -> bool {
 
 /// Appends (so earlier rule indices and slot keys stay put) a choice of +2 to one ability and +1
 /// to another, or +1 to three, capped at 20: the 2024 background distribution over all six
-/// abilities, as Tasha's custom origin and the newer lineages give.
-fn flexible_origin_increase(el: &Element) -> (Element, Vec<String>) {
-    let fields = json!({
+/// abilities, as Tasha's custom origin and the newer lineages give. IM9a: the choice requires
+/// that none of `superseded_by` (backgrounds with their own increase) is on the character, so
+/// only one origin increase applies, the background's.
+fn flexible_origin_increase(el: &Element, superseded_by: &[String]) -> (Element, Vec<String>) {
+    let mut fields = json!({
         "name": FLEXIBLE_INCREASE_NAME,
         "pool": ABILITIES,
         "options": [[2, 1], [1, 1, 1]],
         "cap": 20,
     });
+    if let Some(req) = none_of(superseded_by) {
+        fields["requirements"] = json!(req);
+    }
     let mut out = el.clone();
     out.rules.push(Rule::Custom(CustomRule {
         kind: "ability_distribution".into(),
@@ -139,10 +153,24 @@ fn flexible_origin_increase(el: &Element) -> (Element, Vec<String>) {
     }));
     let notes = vec![
         "Ability score increase added: +2 to one ability and +1 to another, or +1 to three \
-         (a 2024 species has none; IM9, as Tasha's custom origin)"
+         (a 2024 species has none; IM9, as Tasha's custom origin), unless the background gives \
+         one (IM9a)"
             .to_string(),
     ];
     (out, notes)
+}
+
+/// A requirements expression that holds while the character has none of `ids`: `!(A||B||...)`.
+/// Ids the requirements grammar cannot name (`ID_` then letters, digits, `_`) are left out, so
+/// the expression always parses. `None` when no id is left.
+fn none_of(ids: &[String]) -> Option<String> {
+    let nameable = |id: &&String| {
+        id.len() > "ID_".len() + 1
+            && id.starts_with("ID_")
+            && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+    };
+    let ids: Vec<&str> = ids.iter().filter(nameable).map(String::as_str).collect();
+    (!ids.is_empty()).then(|| format!("!({})", ids.join("||")))
 }
 
 /// Removes plain ability-score stat rules from a race. `None` when there are none.
@@ -190,23 +218,49 @@ mod tests {
         let el = species(json!([]));
         let a = StandardAdapter;
         let (out, notes) = a
-            .origin_increase(&el, Ruleset::Dnd2024, profile_for(Ruleset::Dnd2014))
+            .origin_increase(&el, Ruleset::Dnd2024, profile_for(Ruleset::Dnd2014), &[])
             .expect("adapted");
         assert_eq!(out.rules.len(), 1);
         assert!(raises_ability(&out.rules[0]));
         assert_eq!(notes.len(), 1);
         assert!(el.rules.is_empty(), "the stored element is untouched");
         assert!(a
-            .origin_increase(&el, Ruleset::Dnd2014, profile_for(Ruleset::Dnd2024))
+            .origin_increase(&el, Ruleset::Dnd2014, profile_for(Ruleset::Dnd2024), &[])
             .is_none());
         let mut feat = el.clone();
         feat.ty = "Feat".into();
         assert!(a
-            .origin_increase(&feat, Ruleset::Dnd2024, profile_for(Ruleset::Dnd2014))
+            .origin_increase(&feat, Ruleset::Dnd2024, profile_for(Ruleset::Dnd2014), &[])
             .is_none());
         assert!(PassThroughAdapter
-            .origin_increase(&el, Ruleset::Dnd2024, profile_for(Ruleset::Dnd2014))
+            .origin_increase(&el, Ruleset::Dnd2024, profile_for(Ruleset::Dnd2014), &[])
             .is_none());
+    }
+
+    #[test]
+    fn the_increase_requires_none_of_the_backgrounds_with_their_own() {
+        let el = species(json!([]));
+        let backgrounds = ["ID_BG_A".to_string(), "ID_BG_B".into(), "not an id".into()];
+        let (out, _) = StandardAdapter
+            .origin_increase(
+                &el,
+                Ruleset::Dnd2024,
+                profile_for(Ruleset::Dnd2014),
+                &backgrounds,
+            )
+            .expect("adapted");
+        let Rule::Custom(c) = &out.rules[0] else {
+            panic!("custom rule")
+        };
+        assert_eq!(c.fields["requirements"], json!("!(ID_BG_A||ID_BG_B)"));
+        assert_eq!(none_of(&["bad".into()]), None);
+        let (plain, _) = StandardAdapter
+            .origin_increase(&el, Ruleset::Dnd2024, profile_for(Ruleset::Dnd2014), &[])
+            .expect("adapted");
+        let Rule::Custom(c) = &plain.rules[0] else {
+            panic!("custom rule")
+        };
+        assert!(!c.fields.contains_key("requirements"));
     }
 
     #[test]
