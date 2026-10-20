@@ -380,8 +380,14 @@ impl AppState {
     }
 }
 
-/// Bundled packs whose elements 5etools imports may map to.
-const SRD_PACKS: [&str; 2] = ["srd-5.1", "srd-5.2.1"];
+/// Bundled packs whose elements 5etools imports may map to (the monster packs for the
+/// Monster Manual creatures).
+pub const SRD_PACKS: [&str; 4] = [
+    "srd-5.1",
+    "srd-5.2.1",
+    "srd-5.1-monsters",
+    "srd-5.2.1-monsters",
+];
 
 fn tools_error(e: &borealis_import_5etools::error::ImportError) -> ApiError {
     tracing::warn!("5etools import failed: {e}");

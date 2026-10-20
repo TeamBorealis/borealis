@@ -26,6 +26,8 @@ pub enum SrdKind {
     Background,
     /// Language.
     Language,
+    /// Monster (a creature stat block).
+    Monster,
 }
 
 impl SrdKind {
@@ -42,6 +44,7 @@ impl SrdKind {
             "Feat" => Self::Feat,
             "Background" => Self::Background,
             "Language" => Self::Language,
+            "Monster" => Self::Monster,
             _ => return None,
         })
     }

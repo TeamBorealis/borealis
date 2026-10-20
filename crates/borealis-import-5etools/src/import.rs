@@ -519,7 +519,33 @@ fn build_shared(loaded: &mut Loaded, e: &Ents, opts: &ImportOptions, st: &mut St
     sh.subclass_features = sf;
     sh.subclass_feature_keys = sf_keys;
     sh.class_skills = class_skills(&e.classes);
+    sh.legendary_groups = legendary_groups(loaded, st);
     sh
+}
+
+/// Every legendary group of the folder (whatever sources are imported: a creature of one book
+/// may name the group of another), resolved.
+fn legendary_groups(loaded: &Loaded, st: &mut State) -> convert::monster_lair::LegendaryGroups {
+    let values = |prop: &str| -> Vec<Value> {
+        loaded
+            .props
+            .get(prop)
+            .into_iter()
+            .flatten()
+            .map(|e| e.value.clone())
+            .collect()
+    };
+    let mut notes = Vec::new();
+    let groups = convert::monster_lair::LegendaryGroups::new(
+        &values(convert::monster_lair::PROP),
+        &values(convert::monster_lair::TEMPLATE_PROP),
+        &mut notes,
+    );
+    for n in notes {
+        st.report
+            .warn(format!("{}: {n}", convert::monster_lair::PROP));
+    }
+    groups
 }
 
 /// The level 1 skill list of each class (`startingProficiencies.skills[].choose.from`).

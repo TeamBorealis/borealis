@@ -67,6 +67,8 @@ const PROPS: &[&str] = &[
     "charoption",
     "monster",
     "monsterTemplate",
+    "legendaryGroup",
+    "legendaryGroupTemplate",
 ];
 
 /// Fluff properties and the entity property they belong to.
@@ -109,6 +111,7 @@ pub const ROOT_FILES: &[&str] = &[
     "fluff-optionalfeatures.json",
     "fluff-conditionsdiseases.json",
     "bestiary/template.json",
+    "bestiary/legendarygroups.json",
 ];
 
 /// The spell source lookup the importer reads when the data folder has it.
@@ -455,6 +458,7 @@ mod tests {
             files,
             vec![
                 "bestiary/bestiary-x.json",
+                "bestiary/legendarygroups.json",
                 "books.json",
                 "class/class-a.json",
                 "class/class-b.json",
@@ -467,8 +471,9 @@ mod tests {
         );
         let mut seen = Vec::new();
         let loaded = load(dir.path(), |i, n, f| seen.push((i, n, f.to_string()))).unwrap();
-        assert_eq!(seen.len(), 9);
-        assert_eq!(seen[0].1, 9);
+        assert_eq!(seen.len(), 10);
+        assert_eq!(seen[0].1, 10);
+        assert!(loaded.props["legendaryGroup"].is_empty());
         assert_eq!(loaded.props["class"].len(), 2);
         assert_eq!(loaded.props["class"][0].value["name"], "A");
         assert_eq!(loaded.props["race"][0].file, "races.json");

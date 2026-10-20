@@ -154,9 +154,27 @@ impl MonsterEntry {
     }
 }
 
-/// Index of the monsters of `ruleset` (empty for [`Ruleset::Any`]), sorted by CR then name.
+/// Index of the monsters of `ruleset` (empty for [`Ruleset::Any`]), sorted by CR then name. A
+/// monster that declares itself another listed monster of the same ruleset (`maps_to` kind
+/// `equivalent`: an imported Monster Manual creature and the bundled SRD one) is listed once,
+/// as the monster it names.
 #[must_use]
 pub fn monster_index(store: &ContentStore, ruleset: Ruleset) -> Vec<MonsterEntry> {
+    let twin_of = |e: &borealis_content::Element| -> Option<String> {
+        let m = e
+            .maps_to
+            .as_ref()
+            .filter(|m| m.kind == Some(borealis_content::MapKind::Equivalent))?;
+        match ruleset {
+            Ruleset::Dnd2014 => m.dnd2014.clone(),
+            _ => m.dnd2024.clone(),
+        }
+        .filter(|t| *t != e.id)
+    };
+    let twins: BTreeMap<String, String> = store
+        .by_type("Monster")
+        .filter_map(|s| Some((s.element.id.clone(), twin_of(&s.element)?)))
+        .collect();
     let mut out: Vec<MonsterEntry> = store
         .by_type("Monster")
         .filter_map(|s| {
@@ -188,6 +206,13 @@ pub fn monster_index(store: &ContentStore, ruleset: Ruleset) -> Vec<MonsterEntry
             })
         })
         .collect();
+    let listed: std::collections::BTreeSet<String> = out.iter().map(|m| m.id.clone()).collect();
+    // two monsters naming each other keep the one whose id sorts first
+    out.retain(|m| {
+        twins.get(&m.id).map_or(true, |t| {
+            !listed.contains(t) || (twins.get(t) == Some(&m.id) && m.id < *t)
+        })
+    });
     out.sort_by(|a, b| (a.cr, &a.name, &a.id).cmp(&(b.cr, &b.name, &b.id)));
     out
 }

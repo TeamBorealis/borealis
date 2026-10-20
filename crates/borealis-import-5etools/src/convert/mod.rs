@@ -15,6 +15,7 @@ pub mod item;
 pub mod mech;
 pub mod misc;
 pub mod monster;
+pub mod monster_lair;
 pub mod monster_text;
 pub mod nested_options;
 pub mod optfeat;
@@ -127,6 +128,8 @@ pub struct Shared {
     /// The skills each imported class offers at level 1 (`startingProficiencies.skills`
     /// `choose.from`), by class `name|source` (lower-case name, source upper-case).
     pub class_skills: BTreeMap<String, Vec<String>>,
+    /// The legendary groups (lair actions and regional effects) creatures name.
+    pub legendary_groups: monster_lair::LegendaryGroups,
 }
 
 /// Key of [`Shared::subclass_twins`].

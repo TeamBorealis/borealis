@@ -2,7 +2,9 @@
 //! the element type and `data` shape ([`MonsterData`]) of the bundled SRD monster packs, read
 //! field by field (name, source, size, type and tags, alignment, AC, HP, speed, ability
 //! scores, saves, skills, senses, languages, CR and XP, and traits / actions / bonus actions
-//! / reactions / legendary actions as text). Deterministic; no AI is involved.
+//! / reactions / legendary actions as text, lair actions and regional effects from the
+//! creature's legendary group). A Monster Manual creature links to the bundled SRD stat block
+//! of the same name and edition (`maps_to` kind `equivalent`). Deterministic; no AI is involved.
 //!
 //! A creature whose stat block cannot be read exactly (an ability score or challenge rating
 //! that is not a number, a creature type that is a choice, ...) is skipped with the reason in
@@ -11,9 +13,11 @@
 //! challenge rating such text is still a skip. Details the model has no field for are listed
 //! as partial.
 
+use super::monster_lair::LegendaryGroups;
 use super::monster_text::{alignment, name_usage, senses, spellcasting};
 use super::{Conv, Ent, Shared, State};
 use crate::ids::IdKind;
+use crate::srd::SrdKind;
 use crate::text::{strip_tags, Renderer};
 use borealis_content::monster::{
     Abilities, Ability, ArmorClass, CreatureSize, CreatureType, DamageClause, DamageType, Feature,
@@ -29,14 +33,14 @@ pub const KIND: &str = "monster";
 /// Prefix of a skip reason: the creature's stat block cannot be read exactly.
 pub const SKIP: &str = "creature stat block: ";
 /// Prefix of a partial note: a part printed with the stat block that the model does not hold
-/// (variant sidebars, lair actions, mythic actions).
+/// (variant sidebars, mythic actions, a lair whose legendary group is not in the data).
 pub const SECTION: &str = "creature section: ";
 /// Prefix of a partial note: a field kept in part (a printed remark the model has no field for).
 pub const FIELD: &str = "creature field: ";
 
 /// Convert one creature. A creature that cannot be read is reported as skipped here.
 pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
-    match stat_block(&ent.raw, ent.ruleset) {
+    match stat_block_in(&ent.raw, ent.ruleset, &sh.legendary_groups) {
         Err(reason) => {
             st.report
                 .skipped(&ent.file, KIND, &ent.label(), &format!("{SKIP}{reason}"));
@@ -54,7 +58,8 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
                 })
                 .collect();
             let id = st.ids.named(IdKind::Monster, &ent.source, &ent.name);
-            let el = data.to_element(id, &ent.name, sh.source_display(&ent.source));
+            let mut el = data.to_element(id, &ent.name, sh.source_display(&ent.source));
+            el.maps_to = srd_equivalent(sh, ent);
             Conv {
                 elements: vec![el],
                 partial,
@@ -63,11 +68,42 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     }
 }
 
-/// The typed stat block of a resolved 5etools creature and what it loses.
+/// Books whose creatures are the SRD's creatures under the same name: the 2014 Monster Manual
+/// (SRD 5.1) and the 2025 Monster Manual (SRD 5.2.1).
+pub const SRD_MONSTER_BOOKS: &[&str] = &["MM", "XMM"];
+
+/// `maps_to` kind `equivalent` from a Monster Manual creature to the bundled SRD stat block of
+/// the same name and edition, so the two are one creature. Other books get no link, nor does
+/// the other edition (its stat block differs; the SRD packs map those pairs `approximate`).
+fn srd_equivalent(sh: &Shared, ent: &Ent) -> Option<borealis_content::MapsTo> {
+    if !SRD_MONSTER_BOOKS
+        .iter()
+        .any(|b| ent.source.eq_ignore_ascii_case(b))
+    {
+        return None;
+    }
+    sh.maps_to(SrdKind::Monster, ent.ruleset, &ent.name, &[], &|_| None)
+}
+
+/// The typed stat block of a resolved 5etools creature and what it loses (with no legendary
+/// groups: a creature's lair is a partial note).
 ///
 /// # Errors
 /// Why the creature cannot be imported.
 pub fn stat_block(raw: &Value, ruleset: Ruleset) -> Result<(MonsterData, Vec<String>), String> {
+    stat_block_in(raw, ruleset, &LegendaryGroups::default())
+}
+
+/// [`stat_block`] with the legendary groups that hold the creatures' lair actions and
+/// regional effects.
+///
+/// # Errors
+/// Why the creature cannot be imported.
+pub fn stat_block_in(
+    raw: &Value,
+    ruleset: Ruleset,
+    groups: &LegendaryGroups,
+) -> Result<(MonsterData, Vec<String>), String> {
     let mut lost = Vec::new();
     let (creature_type, tags, swarm_of) = creature_type(raw)?;
     let abilities = abilities(raw)?;
@@ -97,11 +133,8 @@ pub fn stat_block(raw: &Value, ruleset: Ruleset) -> Result<(MonsterData, Vec<Str
             _ => traits.push(f),
         }
     }
+    let lair = super::monster_lair::lair(raw, groups, &mut lost);
     for (key, what) in [
-        (
-            "legendaryGroup",
-            "lair actions and regional effects (legendary group)",
-        ),
         ("mythic", "mythic actions"),
         ("variant", "variant sidebars"),
         ("actionHeader", "the actions' introduction"),
@@ -155,6 +188,8 @@ pub fn stat_block(raw: &Value, ruleset: Ruleset) -> Result<(MonsterData, Vec<Str
         bonus_actions,
         reactions,
         legendary: legendary(raw, ruleset, &mut lost),
+        lair_actions: lair.actions,
+        regional_effects: lair.regional_effects,
         description: None,
         abilities,
     };

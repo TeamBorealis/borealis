@@ -320,3 +320,67 @@ fn a_2024_creature_without_a_challenge_rating_has_no_proficient_initiative() {
     let m = stat_block(&c, Ruleset::Dnd2024).unwrap().0;
     assert_eq!(m.initiative.map(|i| i.modifier), Some(2));
 }
+
+fn ent(raw: Value, source: &str, ruleset: Ruleset) -> Ent {
+    Ent {
+        name: raw["name"].as_str().unwrap().to_string(),
+        raw,
+        file: "bestiary/bestiary-x.json".into(),
+        source: source.into(),
+        ruleset,
+        is_srd: true,
+    }
+}
+
+/// Convert `raw` as a creature of `source` with an SRD index holding a 2014 and a 2024 Wolf.
+fn converted(raw: Value, source: &str, ruleset: Ruleset) -> borealis_content::Element {
+    use crate::srd::SrdKind;
+    let mut sh = Shared::default();
+    sh.srd
+        .insert(SrdKind::Monster, Ruleset::Dnd2014, "Wolf", "ID_SRD51_WOLF");
+    sh.srd
+        .insert(SrdKind::Monster, Ruleset::Dnd2024, "Wolf", "ID_SRD521_WOLF");
+    sh.srd
+        .insert(SrdKind::Spell, Ruleset::Dnd2014, "Pack Tactics", "ID_X");
+    let mut st = State::default();
+    let mut conv = convert(&sh, &mut st, &ent(raw, source, ruleset));
+    assert_eq!(conv.elements.len(), 1);
+    conv.elements.remove(0)
+}
+
+#[test]
+fn a_monster_manual_creature_is_the_srd_creature_of_its_name_and_edition() {
+    use borealis_content::MapKind;
+    let mm = converted(wolf(), "MM", Ruleset::Dnd2014);
+    let maps = mm.maps_to.expect("MM Wolf maps to the SRD 5.1 Wolf");
+    assert_eq!(
+        (maps.dnd2014.as_deref(), maps.dnd2024.as_deref(), maps.kind),
+        (Some("ID_SRD51_WOLF"), None, Some(MapKind::Equivalent))
+    );
+    let mut xwolf = wolf();
+    xwolf["source"] = json!("XMM");
+    let xmm = converted(xwolf, "xmm", Ruleset::Dnd2024);
+    let maps = xmm.maps_to.expect("XMM Wolf maps to the SRD 5.2.1 Wolf");
+    assert_eq!(
+        (maps.dnd2014.as_deref(), maps.dnd2024.as_deref(), maps.kind),
+        (None, Some("ID_SRD521_WOLF"), Some(MapKind::Equivalent))
+    );
+}
+
+#[test]
+fn other_books_and_other_names_get_no_srd_link() {
+    let mut adventure = wolf();
+    adventure["source"] = json!("ZZZ");
+    assert!(converted(adventure, "ZZZ", Ruleset::Dnd2014)
+        .maps_to
+        .is_none());
+    let mut renamed = wolf();
+    renamed["name"] = json!("Dire Wolf");
+    assert!(converted(renamed, "MM", Ruleset::Dnd2014).maps_to.is_none());
+    // a name that is an SRD element of another kind is no creature
+    let mut spellish = wolf();
+    spellish["name"] = json!("Pack Tactics");
+    assert!(converted(spellish, "MM", Ruleset::Dnd2014)
+        .maps_to
+        .is_none());
+}

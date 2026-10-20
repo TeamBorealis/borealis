@@ -538,10 +538,10 @@ fn five_stage1(src: &str, data: &Path, sources: &[String]) {
     }
     let options = borealis_import_5etools::ImportOptions {
         include_fluff: true,
-        srd_dirs: vec![
-            content_dir().join("srd-5.1"),
-            content_dir().join("srd-5.2.1"),
-        ],
+        srd_dirs: borealis_lib::content_import::SRD_PACKS
+            .iter()
+            .map(|p| content_dir().join(p))
+            .collect(),
         ..borealis_import_5etools::ImportOptions::default().with_sources(sources)
     };
     let report = borealis_import_5etools::import_folder(data, &options)
