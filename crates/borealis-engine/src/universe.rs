@@ -1119,12 +1119,15 @@ impl Universe {
     pub fn get(&self, id: &str) -> Option<&UElem> {
         match self.by_id.get(id) {
             Some(&i) => Some(&self.elems[i]),
-            None if crate::proxy::is_proxy_id(id) => self
-                .proxies
-                .get_or_init(|| crate::proxy::ProxyTable::build(self))
-                .get(self, id),
+            None if crate::proxy::is_proxy_id(id) => self.proxy_table().get(self, id),
             None => None,
         }
+    }
+
+    /// Aurora's proxy items of this universe, indexed on first use (B-06).
+    pub(crate) fn proxy_table(&self) -> &crate::proxy::ProxyTable {
+        self.proxies
+            .get_or_init(|| crate::proxy::ProxyTable::build(self))
     }
 
     /// The element at a load-order index (as enumerated by [`Universe::iter`]).
