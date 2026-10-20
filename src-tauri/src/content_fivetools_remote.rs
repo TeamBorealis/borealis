@@ -19,6 +19,7 @@ use crate::content_fivetools_zip::{
 };
 use crate::content_index::{looks_like_html, require_https, sha256_hex};
 use crate::content_packs::{progress, EventSink};
+use borealis_import_5etools::folder;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
@@ -45,34 +46,15 @@ const MARKER: &str = "books.json";
 /// Shown when the address has no `books.json`.
 pub const NO_DATA_FOLDER: &str =
     "This address has no 5etools data folder (books.json was not found).";
-/// Data-folder files the importer reads (`borealis_import_5etools::folder::data_files`), besides
-/// the `class/`, `spells/` and `bestiary/` files listed by the manifests. The importer's own list is the
-/// source of truth: a test reads it from the importer and fails on any difference.
-pub const ROOT_FILES: [&str; 23] = [
-    "races.json",
-    "backgrounds.json",
-    "feats.json",
-    "optionalfeatures.json",
-    "items-base.json",
-    "items.json",
-    "magicvariants.json",
-    "languages.json",
-    "skills.json",
-    "senses.json",
-    "conditionsdiseases.json",
-    "charcreationoptions.json",
-    "books.json",
-    "adventures.json",
-    "fluff-races.json",
-    "fluff-backgrounds.json",
-    "fluff-feats.json",
-    "fluff-items.json",
-    "fluff-languages.json",
-    "fluff-optionalfeatures.json",
-    "fluff-conditionsdiseases.json",
-    "bestiary/template.json",
-    "generated/gendata-spell-source-lookup.json",
-];
+/// Data-folder files the importer reads by fixed path (`borealis_import_5etools::folder::data_files`),
+/// besides the `class/`, `spells/` and `bestiary/` files listed by the manifests: the importer's
+/// own [`folder::ROOT_FILES`] plus its spell source lookup, so the download follows that one list.
+pub fn root_files() -> impl Iterator<Item = &'static str> {
+    folder::ROOT_FILES
+        .iter()
+        .copied()
+        .chain([folder::SPELL_SOURCE_LOOKUP])
+}
 /// Manifests (`{"<key>": "<file name>"}`) of the sub-folders the importer reads.
 pub const MANIFESTS: [&str; 5] = [
     "class/index.json",
@@ -547,10 +529,9 @@ pub fn download_folder(
         return Err("This address is a web page, not a 5etools data folder.".into());
     }
     let mut files: BTreeMap<String, FileTag> = BTreeMap::new();
-    let mut wanted: Vec<String> = ROOT_FILES
-        .iter()
-        .filter(|r| **r != MARKER)
-        .map(|r| (*r).to_string())
+    let mut wanted: Vec<String> = root_files()
+        .filter(|r| *r != MARKER)
+        .map(str::to_string)
         .collect();
     let mut required: BTreeSet<String> = BTreeSet::new();
     for manifest in MANIFESTS {

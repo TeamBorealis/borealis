@@ -83,7 +83,10 @@ const FLUFF_PROPS: &[(&str, &str)] = &[
     ("spellFluff", "spell"),
 ];
 
-const ROOT_FILES: &[&str] = &[
+/// Files the importer reads from the data folder by fixed path, besides the `class/`,
+/// `spells/` and `bestiary/` files it lists, the `homebrew/` files and [`SPELL_SOURCE_LOOKUP`].
+/// A URL import downloads exactly these (src-tauri `content_fivetools_remote`).
+pub const ROOT_FILES: &[&str] = &[
     "races.json",
     "backgrounds.json",
     "feats.json",
@@ -108,13 +111,16 @@ const ROOT_FILES: &[&str] = &[
     "bestiary/template.json",
 ];
 
+/// The spell source lookup the importer reads when the data folder has it.
+pub const SPELL_SOURCE_LOOKUP: &str = "generated/gendata-spell-source-lookup.json";
+
+/// Sub-folder of the data folder whose `*.json` files are read as homebrew.
+pub const HOMEBREW_DIR: &str = "homebrew";
+
 /// Relative paths (sorted) of the data files the importer reads.
 ///
 /// # Errors
 /// [`ImportError::NotADirectory`] when `root` is not a directory.
-/// Sub-folder of the data folder whose `*.json` files are read as homebrew.
-pub const HOMEBREW_DIR: &str = "homebrew";
-
 pub fn data_files(root: &Path) -> Result<Vec<String>, ImportError> {
     if !root.is_dir() {
         return Err(ImportError::NotADirectory(root.to_path_buf()));
@@ -154,11 +160,8 @@ pub fn data_files(root: &Path) -> Result<Vec<String>, ImportError> {
         names.sort();
         out.extend(names.into_iter().map(|n| format!("{HOMEBREW_DIR}/{n}")));
     }
-    if root
-        .join("generated/gendata-spell-source-lookup.json")
-        .is_file()
-    {
-        out.push("generated/gendata-spell-source-lookup.json".to_string());
+    if root.join(SPELL_SOURCE_LOOKUP).is_file() {
+        out.push(SPELL_SOURCE_LOOKUP.to_string());
     }
     out.sort();
     Ok(out)
@@ -227,7 +230,7 @@ pub fn load(
 }
 
 fn absorb(loaded: &mut Loaded, rel: &str, value: Value) {
-    if rel == "generated/gendata-spell-source-lookup.json" {
+    if rel == SPELL_SOURCE_LOOKUP {
         loaded.spell_lookup = Some(value);
         return;
     }

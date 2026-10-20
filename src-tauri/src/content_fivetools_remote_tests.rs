@@ -117,46 +117,34 @@ fn gunzip_decodes_and_caps_output() {
     assert!(gunzip(&wrong_size, data.len() + 10).is_err());
 }
 
-/// The importer's own root-file list, read from its source: the one list the download follows.
+/// The importer's own root-file list (`folder::ROOT_FILES`): the one list the download follows.
 fn importer_root_files() -> BTreeSet<String> {
-    const SRC: &str = include_str!("../../crates/borealis-import-5etools/src/folder.rs");
-    const DECL: &str = "const ROOT_FILES: &[&str] = &[";
-    let body = &SRC[SRC.find(DECL).expect("importer declares ROOT_FILES") + DECL.len()..];
-    let body = &body[..body.find("];").expect("ROOT_FILES ends")];
-    body.split('"')
-        .skip(1)
-        .step_by(2)
-        .map(str::to_string)
+    folder::ROOT_FILES
+        .iter()
+        .map(|s| (*s).to_string())
         .collect()
 }
 
 #[test]
 fn root_files_are_exactly_what_the_importer_reads() {
-    let importer = importer_root_files();
-    assert!(
-        importer.contains("charcreationoptions.json"),
-        "{importer:?}"
-    );
-    let ours: BTreeSet<String> = ROOT_FILES
-        .iter()
-        .filter(|f| !f.starts_with("generated/"))
-        .map(|s| (*s).to_string())
-        .collect();
-    assert_eq!(ours, importer, "the importer's root file list changed");
-    // Every listed file (the spell lookup included) is one the importer actually picks up.
+    let ours: BTreeSet<String> = root_files().map(str::to_string).collect();
+    assert!(ours.contains("charcreationoptions.json"), "{ours:?}");
+    assert!(ours.contains(folder::SPELL_SOURCE_LOOKUP), "{ours:?}");
+    assert_eq!(ours.len(), folder::ROOT_FILES.len() + 1, "no duplicates");
+    // Every listed file (the spell lookup included) is one the importer actually picks up, and
+    // the importer picks up no other root file: a file it reads by a path missing here fails.
     let dir = tempfile::tempdir().unwrap();
     std::fs::create_dir_all(dir.path().join("generated")).unwrap();
     std::fs::create_dir_all(dir.path().join("bestiary")).unwrap();
-    for f in ROOT_FILES {
+    for f in &ours {
         std::fs::write(dir.path().join(f), "{}").unwrap();
     }
     std::fs::write(dir.path().join("bestiary.json"), "{}").unwrap();
-    let read: BTreeSet<String> = borealis_import_5etools::folder::data_files(dir.path())
+    let read: BTreeSet<String> = folder::data_files(dir.path())
         .unwrap()
         .into_iter()
         .collect();
-    let all: BTreeSet<String> = ROOT_FILES.iter().map(|s| (*s).to_string()).collect();
-    assert_eq!(read, all);
+    assert_eq!(read, ours);
 }
 
 /// Serves a local folder as `https://mirror.test/data/<rel>` (404 for anything missing).
@@ -186,7 +174,7 @@ impl RemoteFetcher for Mirror {
 fn a_url_download_holds_every_file_the_importer_reads_from_the_folder() {
     let src = tempfile::tempdir().unwrap();
     for rel in importer_root_files().iter().map(String::as_str).chain([
-        "generated/gendata-spell-source-lookup.json",
+        folder::SPELL_SOURCE_LOOKUP,
         "class/class-x.json",
         "spells/spells-x.json",
         "bestiary/bestiary-x.json",
