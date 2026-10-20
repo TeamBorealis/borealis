@@ -9,10 +9,13 @@ while the app loads, so every window handle is tried), clicks that tab and waits
 content". Fresh install: only the bundled content is present, so nothing private reaches the log.
 Windows diagnostics: --msedgedriver PATH --driver-log FILE talks to msedgedriver directly (the
 capabilities tauri-driver would send) with a verbose driver log, then prints that log's driver lines
-(no DevTools traffic, which could carry page text), at most DRIVER_LOG_LINES, each cut to 200 chars.
+(no DevTools traffic, which could carry page text), at most DRIVER_LOG_LINES, each cut to 200 chars
+(the launch-arguments line to 600). --debugger-address HOST:PORT (with --msedgedriver) attaches to an
+app already started with that remote-debugging port, as Microsoft documents for WebView2 apps.
 
 Usage: webdriver_smoke.py (--tauri-driver PATH [--native-driver PATH] | --msedgedriver PATH
-                          [--driver-log FILE]) --app PATH [--port N] [--timeout S] [--screenshot FILE]
+                          [--driver-log FILE] [--debugger-address HOST:PORT]) [--app PATH]
+                          [--port N] [--timeout S] [--screenshot FILE]
 Exit: 0 pass, 1 a check failed, 2 the driver did not start. Python 3.9+, stdlib only.
 """
 import argparse
@@ -58,9 +61,18 @@ def webview2_payload(app):
     return {"capabilities": {"alwaysMatch": caps, "firstMatch": [{}]}}
 
 
+def attach_payload(address):
+    """New-session body that attaches msedgedriver to a running WebView2 app (debuggerAddress)."""
+    caps = {"browserName": "webview2", "ms:edgeOptions": {"debuggerAddress": address}}
+    return {"capabilities": {"alwaysMatch": caps, "firstMatch": [{}]}}
+
+
 def driver_log_summary(lines):
     """Driver lines of a verbose msedgedriver log, without DevTools traffic, short."""
-    keep = [line.rstrip()[:200] for line in lines
+    def cut(line):
+        line = line.rstrip()
+        return line[:600] if "BROWSER_ARGUMENTS" in line else line[:200]
+    keep = [cut(line) for line in lines
             if DRIVER_LINE.search(line) and not DEVTOOLS_TRAFFIC.search(line)]
     return [f"driver log: {len(lines)} lines, {len(keep)} driver lines"] + keep[:DRIVER_LOG_LINES]
 
@@ -190,19 +202,26 @@ def main(argv=None):
     drivers = ap.add_mutually_exclusive_group(required=True)
     drivers.add_argument("--tauri-driver")
     drivers.add_argument("--msedgedriver")
-    ap.add_argument("--app", required=True)
+    ap.add_argument("--app")
     ap.add_argument("--native-driver")
     ap.add_argument("--driver-log")
+    ap.add_argument("--debugger-address")
     ap.add_argument("--port", type=int, default=4444)
     ap.add_argument("--timeout", type=float, default=180.0)
     ap.add_argument("--screenshot")
     args = ap.parse_args(argv)
+    if args.debugger_address and not args.msedgedriver:
+        ap.error("--debugger-address needs --msedgedriver")
+    if not args.app and not args.debugger_address:
+        ap.error("--app is required (except with --debugger-address)")
     if args.tauri_driver:
         cmd, payload = [args.tauri_driver, "--port", str(args.port)], session_payload
         if args.native_driver:
             cmd += ["--native-driver", args.native_driver]
     else:
         cmd, payload = [args.msedgedriver, f"--port={args.port}"], webview2_payload
+        if args.debugger_address:
+            payload = lambda _app: attach_payload(args.debugger_address)  # noqa: E731
         if args.driver_log:
             cmd += ["--verbose", f"--log-path={args.driver_log}"]
     driver = subprocess.Popen(cmd)

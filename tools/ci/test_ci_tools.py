@@ -361,6 +361,22 @@ class WebDriverSmokeTests(unittest.TestCase):
         caps = FakeTauriDriver.state["caps"]["capabilities"]["alwaysMatch"]
         self.assertEqual(caps["ms:edgeOptions"]["binary"], "C:/app/borealis.exe")
 
+    def test_attach_session_names_only_the_debugger_address(self):
+        caps = ws.attach_payload("127.0.0.1:9222")["capabilities"]["alwaysMatch"]
+        self.assertEqual(caps, {"browserName": "webview2",
+                                "ms:edgeOptions": {"debuggerAddress": "127.0.0.1:9222"}})
+
+    def test_launch_arguments_line_is_kept_longer(self):
+        line = "[1.0][INFO]: WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = " + "--x " * 200
+        out = ws.driver_log_summary([line])
+        self.assertEqual(len(out[1]), 600)
+
+    def test_debugger_address_needs_msedgedriver(self):
+        with self.assertRaises(SystemExit):
+            quiet(ws.main, ["--tauri-driver", "t", "--debugger-address", "127.0.0.1:9222"])
+        with self.assertRaises(SystemExit):
+            quiet(ws.main, ["--msedgedriver", "m"])
+
     def test_w3c_error_raises(self):
         with self.assertRaises(ws.WebDriverError):
             ws.unwrap({"value": {"error": "no such window", "message": "gone"}})
