@@ -1,7 +1,7 @@
 //! Consistency checks for [`MonsterData`](crate::monster::MonsterData).
 
 use crate::monster::{MonsterData, MonsterIssue};
-use crate::monster_types::{Ability, Attack, Feature, Skill, Usage};
+use crate::monster_types::{Ability, Attack, Feature, LairSection, Skill, Usage};
 
 /// Parse `NdS`, `NdS+M` or `NdS-M` into `(n, s, m)`.
 #[must_use]
@@ -95,7 +95,31 @@ pub(crate) fn validate(m: &MonsterData) -> Vec<MonsterIssue> {
             out.push(MonsterIssue::new("legendary.actions", "cost 0"));
         }
     }
+    for (section, label, lair) in [
+        ("lair_actions", "lair actions", &m.lair_actions),
+        ("regional_effects", "regional effects", &m.regional_effects),
+    ] {
+        if let Some(lair) = lair {
+            check_lair(section, label, lair, &mut out);
+        }
+    }
     out
+}
+
+fn check_lair(section: &str, label: &str, lair: &LairSection, out: &mut Vec<MonsterIssue>) {
+    if lair.preamble.trim().is_empty() && lair.options.is_empty() && lair.closing.trim().is_empty()
+    {
+        out.push(MonsterIssue::new(section, format!("the {label} are empty")));
+    }
+    for (i, o) in lair.options.iter().enumerate() {
+        let blank_name = o.name.as_deref().is_some_and(|n| n.trim().is_empty());
+        if o.text.trim().is_empty() || blank_name {
+            out.push(MonsterIssue::new(
+                format!("{section}.options[{i}]"),
+                format!("option {i} of the {label} needs text (and a name when named)"),
+            ));
+        }
+    }
 }
 
 fn check_features(section: &str, list: &[Feature], out: &mut Vec<MonsterIssue>) {

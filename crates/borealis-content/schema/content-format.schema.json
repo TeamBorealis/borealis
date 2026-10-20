@@ -1870,7 +1870,46 @@
           },
           "additionalProperties": false
         },
+        "lair_actions": {
+          "$ref": "#/$defs/monsterLairSection"
+        },
+        "regional_effects": {
+          "$ref": "#/$defs/monsterLairSection"
+        },
         "description": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "monsterLairSection": {
+      "type": "object",
+      "description": "Lair actions or regional effects: text before the options, the options in printed order, text after them.",
+      "properties": {
+        "preamble": {
+          "type": "string"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "text"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "closing": {
           "type": "string"
         }
       },

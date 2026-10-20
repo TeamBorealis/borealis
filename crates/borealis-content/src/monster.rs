@@ -15,9 +15,9 @@ use std::fmt;
 
 pub use crate::monster_types::{
     Abilities, Ability, ArmorClass, Attack, AttackKind, Cr, CreatureSize, CreatureType,
-    DamageClause, DamagePart, DamageType, Feature, HitPoints, Initiative, LegendaryActions,
-    RestKind, SaveEffect, Senses, Skill, Speeds, SpellFrequency, SpellList, SpellRef,
-    SpellcastingBlock, Usage,
+    DamageClause, DamagePart, DamageType, Feature, HitPoints, Initiative, LairOption, LairSection,
+    LegendaryActions, RestKind, SaveEffect, Senses, Skill, Speeds, SpellFrequency, SpellList,
+    SpellRef, SpellcastingBlock, Usage,
 };
 
 /// What a sheet shows for a creature with neither a challenge rating nor a note for it (also
@@ -172,6 +172,12 @@ pub struct MonsterData {
     /// Legendary actions.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub legendary: Option<LegendaryActions>,
+    /// Lair actions (printed with the creature's lair).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lair_actions: Option<LairSection>,
+    /// Regional effects (printed with the creature's lair).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub regional_effects: Option<LairSection>,
     /// Flavour text printed with the stat block.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,

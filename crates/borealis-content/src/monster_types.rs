@@ -576,6 +576,33 @@ pub struct LegendaryActions {
     pub actions: Vec<Feature>,
 }
 
+/// Lair actions or regional effects: a section printed with a creature's lair (5etools keeps
+/// them in the creature's legendary group).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LairSection {
+    /// Text before the options (paragraphs separated by a blank line).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub preamble: String,
+    /// The options or effects, in printed order.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub options: Vec<LairOption>,
+    /// Text printed after the options (paragraphs separated by a blank line).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub closing: String,
+}
+
+/// One lair action or regional effect.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LairOption {
+    /// The option's name, when it is printed with one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// Full text.
+    pub text: String,
+}
+
 /// Initiative entry of a 2024 stat block: "Initiative +7 (17)".
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

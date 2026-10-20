@@ -44,6 +44,7 @@ The store reports every `validate()` problem as `Severity::Error` / `IssueCode::
 | `xp_lair` | number | 2024 `XP 18,000, or 20,000 in lair`; must not be below `xp` |
 | `traits` / `actions` / `bonus_actions` / `reactions` | `[Feature]` | printed order |
 | `legendary` | `{per_round?, lair_uses?, preamble, actions[]}` | `per_round` parsed from "can take 3 legendary actions" (5.1) or `Legendary Action Uses: 3` (5.2.1); `lair_uses` from `(4 in Lair)` |
+| `lair_actions` / `regional_effects` | `{preamble?, options[{name?, text}], closing?}`, optional | the sections printed with a creature's lair (5etools keeps them in the creature's legendary group, `bestiary/legendarygroups.json`): the text before the options, the options in printed order (a name when printed with one) and the text after them. Not empty; every option has text. The bundled SRD stat blocks have none |
 | `description` | string | flavour paragraph printed with the block (SRD 5.1 appendices only) |
 
 `Feature = {name, text, usage?, cost?, condition?, attack?}`:
