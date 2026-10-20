@@ -19,7 +19,7 @@ use crate::snapshot::{CharacterSnapshot, SpellcastingSnapshot};
 use crate::state::CharacterState;
 use borealis_content::Rule;
 use std::cell::{Cell, RefCell};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 /// Violation codes (stable, one per invariant).
 pub mod kind {
@@ -84,6 +84,8 @@ thread_local! {
     static ENABLED: Cell<bool> = const { Cell::new(false) };
     static CHECKING: Cell<bool> = const { Cell::new(false) };
     static ALLOWED: RefCell<Vec<(&'static str, String)>> = const { RefCell::new(Vec::new()) };
+    static PASSED: RefCell<HashSet<PassedKey>> = RefCell::new(HashSet::new());
+    static RUN: Cell<usize> = const { Cell::new(0) };
 }
 
 /// Let the derive hook of this thread accept violations of `kind` concerning `element` (a
@@ -110,12 +112,37 @@ pub fn enable_for_thread() {
 pub fn disable_for_thread() {
     ENABLED.with(|e| e.set(false));
     ALLOWED.with(|a| a.borrow_mut().clear());
+    PASSED.with(|p| p.borrow_mut().clear());
+}
+
+/// A state the hook already checked without any violation: (engine serial, hash and length of
+/// the state's JSON). A derive is deterministic (the checks prove it: idempotence), so the same
+/// state on the same engine passes again; checking it again only costs a few derives.
+type PassedKey = (u64, u64, usize);
+
+/// Most passed states a thread remembers (then it starts over): a long corpus run derives
+/// millions of states.
+const PASSED_CAP: usize = 100_000;
+
+fn passed_key(engine: &Engine, state: &CharacterState) -> Option<PassedKey> {
+    use std::hash::{Hash, Hasher};
+    let json = serde_json::to_vec(state).ok()?;
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    json.hash(&mut h);
+    Some((engine.serial(), h.finish(), json.len()))
 }
 
 /// Is checking enabled on this thread?
 #[must_use]
 pub fn enabled_for_thread() -> bool {
     ENABLED.with(Cell::get)
+}
+
+/// How many derives the hook of this thread has checked (a state that already passed is not
+/// checked again, see [`after_derive`]).
+#[must_use]
+pub fn checks_run_on_thread() -> usize {
+    RUN.with(Cell::get)
 }
 
 /// Runs `f` with the derive hook off, so the checks' own derives are not checked again.
@@ -135,8 +162,25 @@ pub(crate) fn after_derive(engine: &Engine, state: &CharacterState, snap: &Chara
     if !enabled_for_thread() || CHECKING.with(Cell::get) {
         return;
     }
+    // the builder re-derives an unchanged state for every option page and slot it lists
+    let key = passed_key(engine, state);
+    if key.is_some_and(|k| PASSED.with(|p| p.borrow().contains(&k))) {
+        return;
+    }
+    RUN.with(|r| r.set(r.get() + 1));
     let mut found = quiet(|| check_with(engine, state, snap, true));
     found.retain(|v| !allowed(v));
+    if let (true, Some(k)) = (found.is_empty(), key) {
+        // the allowed list only grows until disable_for_thread, which forgets the passes too:
+        // a state that passed stays passing
+        PASSED.with(|p| {
+            let mut p = p.borrow_mut();
+            if p.len() >= PASSED_CAP {
+                p.clear();
+            }
+            p.insert(k);
+        });
+    }
     assert!(
         found.is_empty(),
         "settle invariants failed ({:?} level {}):\n{}",

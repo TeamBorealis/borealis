@@ -211,3 +211,43 @@ fn the_thread_hook_panics_on_a_violation_and_only_when_enabled() {
     let _ = e.derive_with(&s, false);
     invariants::disable_for_thread();
 }
+
+/// The builder derives an unchanged character once per option page and slot: the hook checks a
+/// state that passed once only, on the same engine; a violating state is judged every time.
+#[test]
+fn the_thread_hook_checks_a_passed_state_once_and_a_violation_every_time() {
+    let e = engine();
+    let clean = character(Ruleset::Dnd2014, None, FIGHTER, 2);
+    let other = character(Ruleset::Dnd2014, None, FIGHTER, 3);
+    let bad = character(Ruleset::Dnd2014, Some("ID_T_RACE_MUTE_CASTER"), FIGHTER, 1);
+    // the synthetic content's unknown rule kind is reported on every character of this engine
+    let enable = || {
+        invariants::enable_for_thread();
+        invariants::allow_for_thread(kind::UNKNOWN_RULE, "ID_T_RACE_UNKNOWN_KIND");
+    };
+    enable();
+    let before = invariants::checks_run_on_thread();
+    let first = e.derive(&clean);
+    let again = e.derive(&clean);
+    assert_eq!(first, again);
+    assert_eq!(
+        invariants::checks_run_on_thread() - before,
+        1,
+        "checked once"
+    );
+    // another state is checked
+    let _ = e.derive(&other);
+    assert_eq!(invariants::checks_run_on_thread() - before, 2);
+    for _ in 0..2 {
+        let hooked = std::panic::catch_unwind(|| e.derive(&bad));
+        assert!(hooked.is_err(), "a violation panics on every derive");
+    }
+    assert_eq!(invariants::checks_run_on_thread() - before, 4);
+    invariants::disable_for_thread();
+    // disabling forgets the passed states: the next enabled derive is checked again
+    enable();
+    let before = invariants::checks_run_on_thread();
+    let _ = e.derive(&clean);
+    assert_eq!(invariants::checks_run_on_thread() - before, 1);
+    invariants::disable_for_thread();
+}

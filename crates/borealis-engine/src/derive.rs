@@ -411,7 +411,7 @@ impl<'u> Evaluation<'u> {
                     && (if include_options {
                         options.is_empty()
                     } else {
-                        self.graph.slot_options(id, si).is_empty()
+                        !self.graph.slot_has_options(id, si)
                     })
                     && self.graph.slot_all_known(id, si);
                 let retrain = self.retrain_info(state, casters, slot, rule);

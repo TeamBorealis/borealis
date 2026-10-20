@@ -18,7 +18,12 @@ use borealis_content::{ContentStore, Ruleset};
 pub struct Engine {
     settings: EngineSettings,
     universes: [Universe; 2],
+    /// Process-unique id of this engine (its content and settings never change after build).
+    serial: u64,
 }
+
+/// Source of [`Engine::serial`].
+static NEXT_SERIAL: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
 
 impl Engine {
     /// Prepare an engine with default settings.
@@ -43,6 +48,7 @@ impl Engine {
         Self {
             settings,
             universes: all_profiles().map(|p| Universe::with_adapter(store, p.ruleset(), adapter)),
+            serial: NEXT_SERIAL.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
         }
     }
 
@@ -50,6 +56,12 @@ impl Engine {
     #[must_use]
     pub fn evaluate(store: &ContentStore, state: &CharacterState) -> CharacterSnapshot {
         Self::new(store).derive(state)
+    }
+
+    /// Process-unique id of this engine: two engines with the same serial are one engine.
+    #[must_use]
+    pub(crate) fn serial(&self) -> u64 {
+        self.serial
     }
 
     /// The settings in effect.
