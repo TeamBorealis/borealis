@@ -451,13 +451,24 @@ fn equip_label(slot: Option<EquipSlot>) -> &'static str {
     }
 }
 
-fn gear(snap: &CharacterSnapshot) -> GearData {
+/// The gear list: every inventory line but those with "include in inventory" off (Aurora's
+/// equipment page; its proxy items start that way, `specs/proxy-items.md` 1.5, IM13 D3).
+fn gear(snap: &CharacterSnapshot, character: &Character) -> GearData {
     let inv = &snap.inventory;
     let c = &inv.coins;
+    let hidden: Vec<&str> = character
+        .build
+        .inventory
+        .items
+        .iter()
+        .filter(|i| i.hidden)
+        .map(|i| i.uid.as_str())
+        .collect();
     GearData {
         items: inv
             .items
             .iter()
+            .filter(|i| !hidden.contains(&i.uid.as_str()))
             .map(|i| GearItem {
                 name: i.name.clone(),
                 quantity: i.amount,
@@ -673,7 +684,7 @@ pub(crate) fn build(
         proficiencies,
         features: features(snap),
         limited_uses: limited_uses(snap),
-        gear: gear(snap),
+        gear: gear(snap, character),
         spellcasting,
         play: play(snap),
         story: story(character),
