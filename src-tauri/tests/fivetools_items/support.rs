@@ -99,6 +99,8 @@ pub enum Verdict {
     Correct,
     Wrong(String),
     NotModelled,
+    /// Not applied, by design (a card deck's card effects are data only, IM10): no failure.
+    ByDesign(&'static str),
 }
 
 #[derive(Default)]
@@ -107,6 +109,7 @@ pub struct Cat {
     correct: usize,
     wrong: Vec<(String, String)>,
     not_modelled: Vec<String>,
+    by_design: usize,
 }
 
 /// Value checks by category.
@@ -121,6 +124,7 @@ impl Tally {
             Verdict::Correct => (true, ""),
             Verdict::Wrong(why) => (false, why.as_str()),
             Verdict::NotModelled => (false, "not modelled"),
+            Verdict::ByDesign(why) => (true, *why),
         };
         outcome::record("fivetools_items", &format!("{cat}/{id}"), pass, why);
         let c = self.cats.entry(cat.to_string()).or_default();
@@ -129,6 +133,7 @@ impl Tally {
             Verdict::Correct => c.correct += 1,
             Verdict::Wrong(why) => c.wrong.push((id.to_string(), why)),
             Verdict::NotModelled => c.not_modelled.push(id.to_string()),
+            Verdict::ByDesign(_) => c.by_design += 1,
         }
     }
 
@@ -163,14 +168,17 @@ impl Tally {
     }
 
     pub fn print(&self) {
-        println!("--- value checks: checked / correct / wrong / not modelled  category");
+        println!(
+            "--- value checks: checked / correct / wrong / not modelled / by design  category"
+        );
         for (cat, c) in &self.cats {
             println!(
-                "{:>6} {:>6} {:>6} {:>6}  {cat}",
+                "{:>6} {:>6} {:>6} {:>6} {:>6}  {cat}",
                 c.checked,
                 c.correct,
                 c.wrong.len(),
-                c.not_modelled.len()
+                c.not_modelled.len(),
+                c.by_design
             );
         }
         for (cat, c) in &self.cats {

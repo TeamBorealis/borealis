@@ -10,6 +10,9 @@ use serde_json::Value;
 
 /// Why a card deck's effect check is wrong: the deck applied one of its card effects.
 const DECK_EFFECT_APPLIED: &str = "a card deck applied a card effect (decks grant nothing)";
+/// Why a card deck's effect check is no failure: the importer keeps its card effects as data
+/// only (IM10).
+const DECK_EFFECT_DATA_ONLY: &str = "by design: a card deck keeps its card effects as data (IM10)";
 
 /// One equipped item on the test character, with its 5etools entry.
 pub struct Check<'a> {
@@ -81,9 +84,9 @@ impl Check<'_> {
 
     /// A card deck (`seeAlsoDeck`: Deck of Many Things, Deck of Wonder...): its effect fields
     /// sum up what single random cards do when drawn, and the importer keeps them as data only,
-    /// as Aurora's Deck of Many Things grants nothing. Its effect checks are not modelled by
-    /// design; a card effect that does apply is wrong.
-    pub fn is_card_deck(&self) -> bool {
+    /// as Aurora's Deck of Many Things grants nothing. Its effect checks pass by design (an
+    /// effect not applied is no failure); a card effect that does apply is wrong.
+    fn is_card_deck(&self) -> bool {
         self.raw.0.contains_key("seeAlsoDeck")
     }
 
@@ -92,7 +95,9 @@ impl Check<'_> {
         let v = match v {
             v if !self.is_card_deck() => v,
             Verdict::Correct => Verdict::Wrong(DECK_EFFECT_APPLIED.into()),
-            Verdict::Wrong(_) | Verdict::NotModelled => Verdict::NotModelled,
+            Verdict::Wrong(_) | Verdict::NotModelled | Verdict::ByDesign(_) => {
+                Verdict::ByDesign(DECK_EFFECT_DATA_ONLY)
+            }
         };
         t.record(cat, id, v);
     }
