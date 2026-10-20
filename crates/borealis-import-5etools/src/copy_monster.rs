@@ -24,6 +24,16 @@ fn proficiency_of(cr: Option<&Value>) -> Option<i64> {
     Some(2 + (n - 1).max(0) / 4)
 }
 
+/// The creature has no challenge rating (decision IM12): `cr` absent, null, or an object
+/// without one (`{"lair": ...}` alone).
+fn without_cr(target: &Value) -> bool {
+    match target.get("cr") {
+        None | Some(Value::Null) => true,
+        Some(Value::Object(o)) => o.get("cr").map_or(true, Value::is_null),
+        Some(_) => false,
+    }
+}
+
 /// The ability a skill uses.
 fn skill_ability(skill: &str) -> Option<&'static str> {
     Some(match skill {
@@ -50,12 +60,17 @@ fn bonus_of(v: &Value) -> Option<i64> {
 
 /// `addSkills`: `{"skills": {"perception": 1}}` gives the skill at the multiple of the
 /// proficiency bonus (1 proficient, 2 expertise) plus the ability modifier, unless the
-/// creature already has a higher bonus.
+/// creature already has a higher bonus. A creature without a challenge rating (IM12) has no
+/// proficiency bonus of its own (a summon uses its summoner's): its skills stay as printed
+/// rather than the copy failing.
 fn add_skills(target: &mut Value, m: &Value) -> Result<(), String> {
     let skills = m
         .get("skills")
         .and_then(Value::as_object)
         .ok_or("addSkills without skills")?;
+    if without_cr(target) {
+        return Ok(());
+    }
     let pb = proficiency_of(target.get("cr")).ok_or("addSkills: no challenge rating")?;
     let mut added = Vec::new();
     for (skill, mult) in skills {
@@ -279,12 +294,16 @@ fn standard_xp(cr: &str) -> Option<f64> {
 }
 
 /// `scalarMultXp`: the creature's XP times `scalar` (floored when `floor`), written as the
-/// printed XP of its challenge rating (`{"cr": "5", "xp": 900}`).
+/// printed XP of its challenge rating (`{"cr": "5", "xp": 900}`). A creature without a
+/// challenge rating (IM12) has no XP to scale: nothing changes rather than the copy failing.
 fn scalar_mult_xp(target: &mut Value, m: &Value) -> Result<(), String> {
     let by = m
         .get("scalar")
         .and_then(Value::as_f64)
         .ok_or("scalarMultXp without scalar")?;
+    if without_cr(target) {
+        return Ok(());
+    }
     let floor = m.get("floor").and_then(Value::as_bool).unwrap_or(false);
     let cr = target
         .get("cr")
@@ -440,6 +459,28 @@ mod tests {
         assert_eq!(m["skill"]["perception"], "+5");
         assert_eq!(m["skill"]["investigation"], "+6");
         assert_eq!(m["skill"]["insight"], "+9");
+    }
+
+    #[test]
+    fn xp_and_skill_modes_leave_a_creature_without_a_challenge_rating_as_it_is() {
+        for cr in [None, Some(Value::Null), Some(json!({"lair": "1"}))] {
+            let mut m = json!({"wis": 14, "skill": {"insight": "+2"}});
+            if let Some(cr) = cr {
+                m["cr"] = cr;
+            }
+            let before = m.clone();
+            let skills = json!({"skills": {"perception": 1}});
+            assert_eq!(apply_mode(&mut m, "_", "addSkills", &skills), Some(Ok(())));
+            let half = json!({"scalar": 0.5, "floor": true});
+            assert_eq!(apply_mode(&mut m, "_", "scalarMultXp", &half), Some(Ok(())));
+            assert_eq!(m, before);
+        }
+        let mut unknown = json!({"cr": "Unknown", "wis": 14});
+        let skills = json!({"skills": {"perception": 1}});
+        assert!(matches!(
+            apply_mode(&mut unknown, "_", "addSkills", &skills),
+            Some(Err(_))
+        ));
     }
 
     #[test]
