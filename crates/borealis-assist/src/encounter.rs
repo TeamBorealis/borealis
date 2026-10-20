@@ -165,7 +165,8 @@ pub fn monster_index(store: &ContentStore, ruleset: Ruleset) -> Vec<MonsterEntry
             if e.ruleset.unwrap_or(data.ruleset) != ruleset {
                 return None;
             }
-            let cr: Cr = data.cr.as_text().parse().ok()?;
+            // a creature without a challenge rating has no XP (IM12): not an encounter monster
+            let cr: Cr = data.cr?.as_text().parse().ok()?;
             let maps_to = e.maps_to.as_ref().and_then(|m| match ruleset {
                 Ruleset::Dnd2014 => m.dnd2024.clone(),
                 _ => m.dnd2014.clone(),
@@ -174,7 +175,7 @@ pub fn monster_index(store: &ContentStore, ruleset: Ruleset) -> Vec<MonsterEntry
                 id: e.id.clone(),
                 name: e.name.clone(),
                 cr,
-                xp: cr.encounter_xp(Some(u64::from(data.xp))),
+                xp: cr.encounter_xp(data.xp.map(u64::from)),
                 creature_type: data.creature_type.as_str().to_string(),
                 size: data.size.iter().map(|s| s.as_str().to_string()).collect(),
                 tags: data.tags.iter().map(|t| t.to_lowercase()).collect(),

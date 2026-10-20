@@ -222,7 +222,11 @@ fn spot_check_goblin_warrior() {
     );
     assert_eq!(m.languages, vec!["Common", "Goblin"]);
     assert_eq!(
-        (m.cr.to_string().as_str(), m.xp, m.proficiency_bonus),
+        (
+            m.challenge_text().as_str(),
+            m.xp.unwrap(),
+            m.proficiency_bonus.unwrap()
+        ),
         ("1/4", 50, 2)
     );
     let scimitar = m.actions[0].attack.as_ref().unwrap();
@@ -270,7 +274,11 @@ fn spot_check_owlbear() {
     );
     assert!(m.languages.is_empty());
     assert_eq!(
-        (m.cr.to_string().as_str(), m.xp, m.proficiency_bonus),
+        (
+            m.challenge_text().as_str(),
+            m.xp.unwrap(),
+            m.proficiency_bonus.unwrap()
+        ),
         ("3", 700, 2)
     );
     assert_eq!(
@@ -342,12 +350,12 @@ fn spot_check_adult_red_dragon() {
     assert_eq!(m.languages, vec!["Common", "Draconic"]);
     assert_eq!(
         (
-            m.cr.to_string().as_str(),
+            m.challenge_text().as_str(),
             m.xp,
             m.xp_lair,
             m.proficiency_bonus
         ),
-        ("17", 18_000, Some(20_000), 6)
+        ("17", Some(18_000), Some(20_000), Some(6))
     );
     assert_eq!(m.traits[0].name, "Legendary Resistance");
     assert_eq!(
@@ -473,7 +481,7 @@ fn spot_check_lich() {
     );
     assert_eq!(m.languages, vec!["All"]);
     assert_eq!(
-        (m.cr.to_string().as_str(), m.xp, m.xp_lair),
+        (m.challenge_text().as_str(), m.xp.unwrap(), m.xp_lair),
         ("21", 33_000, Some(41_000))
     );
     assert_eq!(
@@ -565,7 +573,7 @@ fn spot_check_wolf_and_beasts_for_wild_shape() {
         (Some(60), 15)
     );
     assert!(m.languages.is_empty());
-    assert_eq!((m.cr.to_string().as_str(), m.xp), ("1/4", 50));
+    assert_eq!((m.challenge_text().as_str(), m.xp), ("1/4", Some(50)));
     assert_eq!(m.traits[0].name, "Pack Tactics");
     let bite = m.actions[0].attack.as_ref().unwrap();
     assert_eq!(
@@ -599,7 +607,7 @@ fn spot_check_wolf_and_beasts_for_wild_shape() {
                 .all(|f| f.spellcasting.is_none()),
             "{id}"
         );
-        assert!(b.cr.as_f64() <= 8.0, "{id}");
+        assert!(b.cr.unwrap().as_f64() <= 8.0, "{id}");
     }
 }
 
@@ -607,7 +615,7 @@ fn spot_check_wolf_and_beasts_for_wild_shape() {
 fn new_2024_features_are_structured() {
     let archmage = monster("Archmage");
     assert_eq!(
-        (archmage.cr.to_string().as_str(), archmage.xp),
+        (archmage.challenge_text().as_str(), archmage.xp.unwrap()),
         ("12", 8_400)
     );
     assert_eq!(

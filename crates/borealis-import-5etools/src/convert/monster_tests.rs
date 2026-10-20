@@ -47,8 +47,11 @@ fn a_creature_reads_into_the_srd_stat_block_shape() {
     assert_eq!((m.abilities.dex, m.abilities.cha), (15, 6));
     assert_eq!(m.skills.get(&Skill::Perception), Some(&3));
     assert_eq!(m.senses.passive_perception, 13);
-    assert_eq!(m.cr.as_text(), "1/4");
-    assert_eq!((m.xp, m.proficiency_bonus), (50, 2));
+    assert_eq!(m.challenge_text(), "1/4");
+    assert_eq!(
+        (m.xp, m.proficiency_bonus, m.cr_note.as_deref()),
+        (Some(50), Some(2), None)
+    );
     assert!(m.initiative.is_none());
     let names: Vec<&str> = m.traits.iter().map(|t| t.name.as_str()).collect();
     assert_eq!(names, ["Keen Hearing and Smell", "Pack Tactics"]);
@@ -116,7 +119,7 @@ fn usage_legendary_tags_swarms_and_defences_are_read() {
     assert_eq!(m.telepathy, Some(60));
     assert_eq!(
         (m.xp, m.xp_lair, m.proficiency_bonus),
-        (13_000, Some(15_000), 5)
+        (Some(13_000), Some(15_000), Some(5))
     );
     assert_eq!(
         m.traits[0].usage,
@@ -164,7 +167,6 @@ fn creatures_that_cannot_be_read_exactly_say_why() {
     };
     assert!(with("hp", json!({"special": "half the summoner's"}))
         .starts_with("hit points are not a number"));
-    assert_eq!(with("cr", Value::Null), "no challenge rating");
     assert!(with("cr", json!("Unknown")).contains("is not a number"));
     assert!(
         with("type", json!({"type": {"choose": ["celestial", "fiend"]}}))
@@ -180,4 +182,71 @@ fn creatures_that_cannot_be_read_exactly_say_why() {
     let (m, lost) = stat_block(&odd, Ruleset::Dnd2014).unwrap();
     assert_eq!(m.hp.formula, None);
     assert_eq!(lost.len(), 1);
+}
+
+/// A synthetic summoned spirit as 5etools prints one: no `cr`, numbers that follow the spell.
+fn ember_spirit() -> Value {
+    json!({
+        "name": "Synthetic Ember Spirit", "source": "SYN",
+        "size": ["S"], "type": "elemental", "alignment": ["N"],
+        "ac": [12], "hp": {"average": 20, "formula": "4d6 + 6"},
+        "speed": {"walk": 30, "fly": 30},
+        "str": 8, "dex": 14, "con": 12, "int": 6, "wis": 10, "cha": 8,
+        "passive": 10,
+        "summonedBySpell": "Synthetic Kindle Spirit|SYN", "summonedBySpellLevel": 3,
+        "pbNote": "equals your bonus",
+        "action": [{"name": "Sear", "entries": ["{@atk ms} {@hit 5} to hit, reach 5 ft., one target. {@h}5 ({@damage 1d6 + 2}) fire damage."]}]
+    })
+}
+
+#[test]
+fn a_creature_without_a_challenge_rating_imports_without_cr_or_xp() {
+    let (m, _) = stat_block(&ember_spirit(), Ruleset::Dnd2014).unwrap();
+    assert_eq!(
+        (m.cr, m.xp, m.xp_lair, m.proficiency_bonus),
+        (None, None, None, None)
+    );
+    assert_eq!(
+        m.cr_note.as_deref(),
+        Some("Scales with spell level (Synthetic Kindle Spirit)")
+    );
+    assert_eq!(
+        m.challenge_text(),
+        "Scales with spell level (Synthetic Kindle Spirit)"
+    );
+    assert!(m.validate().is_empty(), "{:?}", m.validate());
+    assert!(m.warnings().is_empty());
+}
+
+#[test]
+fn the_note_for_a_missing_challenge_rating_follows_what_5etools_prints() {
+    let note = |edit: &dyn Fn(&mut Value)| {
+        let mut c = ember_spirit();
+        for k in ["summonedBySpell", "summonedBySpellLevel"] {
+            c.as_object_mut().unwrap().remove(k);
+        }
+        edit(&mut c);
+        stat_block(&c, Ruleset::Dnd2014).unwrap().0.challenge_text()
+    };
+    assert_eq!(
+        note(&|c| c["summonedByClass"] = json!("Synthetic Warden|SYN")),
+        "Scales with the summoner's level (Synthetic Warden)"
+    );
+    assert_eq!(
+        note(&|c| c["summonedBySpellLevel"] = json!(2)),
+        "Scales with spell level"
+    );
+    assert_eq!(note(&|c| c["level"] = json!(7)), "Level 7");
+    assert_eq!(note(&|_| {}), borealis_content::NO_CHALLENGE_RATING);
+    assert_eq!(note(&|c| c["cr"] = Value::Null), "\u{2014}");
+}
+
+#[test]
+fn a_2024_creature_without_a_challenge_rating_has_no_proficient_initiative() {
+    let mut c = ember_spirit();
+    c["initiative"] = json!({"proficiency": 1});
+    assert_eq!(stat_block(&c, Ruleset::Dnd2024).unwrap().0.initiative, None);
+    c["initiative"] = json!({"proficiency": 0});
+    let m = stat_block(&c, Ruleset::Dnd2024).unwrap().0;
+    assert_eq!(m.initiative.map(|i| i.modifier), Some(2));
 }

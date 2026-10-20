@@ -618,7 +618,9 @@ fn title_case(word: &str) -> String {
 }
 
 /// Typed `Monster` stat blocks carry the same tags as an Aurora `Companion` (`Beast`, `Tiny`,
-/// `1/4`) so companion selects can offer them; lower-case type and size are added too.
+/// `1/4`) so companion selects can offer them; lower-case type and size are added too. A
+/// creature without a challenge rating (decision IM12) carries no CR tag, so a select that
+/// restricts by CR never offers it, while one that does not may.
 fn monster_implicit_supports(el: &Element) -> Vec<String> {
     let Ok(m) = borealis_content::MonsterData::from_element(el) else {
         return Vec::new();
@@ -631,7 +633,7 @@ fn monster_implicit_supports(el: &Element) -> Vec<String> {
         out.push(title_case(size.as_str()));
         out.push(size.as_str().to_string());
     }
-    out.push(m.cr.as_text());
+    out.extend(m.cr.map(|cr| cr.as_text()));
     out
 }
 

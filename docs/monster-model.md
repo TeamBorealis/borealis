@@ -37,8 +37,9 @@ The store reports every `validate()` problem as `Severity::Error` / `IssueCode::
 | `gear` | `[string]` | 2024 `Gear` line, one entry per item |
 | `senses` | `{blindsight?, darkvision?, tremorsense?, truesight?, deafened_range?, blind_beyond?, passive_perception, notes?}` | feet |
 | `languages` | `[string]` | one per comma item, verbatim; `telepathy` (feet) is split out |
-| `cr` | string | `"0" "1/8" "1/4" "1/2" "1".."30"`; integers also deserialize; never a float (`Cr` type) |
-| `xp`, `proficiency_bonus` | numbers | both stored as printed; `validate()` checks the bonus against `cr`, `warnings()` the XP |
+| `cr` | string, optional | `"0" "1/8" "1/4" "1/2" "1".."30"`; integers also deserialize; never a float (`Cr` type). Absent for a creature printed without one (decision IM12: summoned spirits, animated objects, level-scaled NPCs) |
+| `cr_note` | string, optional | only without `cr`: display text standing in for it ("Scales with spell level (Summon Beast)", "Level 5"); `challenge_text()` returns the CR, else this note, else an em dash |
+| `xp`, `proficiency_bonus` | numbers | both stored as printed; `validate()` checks the bonus against `cr`, `warnings()` the XP. With a `cr` both are required; without one there is no `xp` (nor `xp_lair`) and the bonus may be absent (a summon uses its summoner's) |
 | `xp_lair` | number | 2024 `XP 18,000, or 20,000 in lair`; must not be below `xp` |
 | `traits` / `actions` / `bonus_actions` / `reactions` | `[Feature]` | printed order |
 | `legendary` | `{per_round?, lair_uses?, preamble, actions[]}` | `per_round` parsed from "can take 3 legendary actions" (5.1) or `Legendary Action Uses: 3` (5.2.1); `lair_uses` from `(4 in Lair)` |
@@ -60,10 +61,15 @@ for the first `<Ability> Saving Throw: DC n ... Failure: ... Success: Half damag
 SRD 5.2.1 spell when it exists. Elements also carry `maps_to {dnd2014, kind: approximate}` to the matching SRD 5.1 monster
 and `renamed_from` (5.1 name) when the 2024 name differs.
 
+A stat block without a `cr` (IM12) carries no CR support tag in the engine, so a select restricted by CR (companion,
+familiar or conjure lists), Wild Shape forms and the encounter / balance tools never offer it; a select without a CR
+restriction (`Beast`) may. The compendium and sheet cards show `challenge_text()` and no XP.
+
 ## Validation
 
 Hard (`validate`): sizes non-empty; AC > 0; HP > 0 and formula `NdS[+-M]`; ability scores 1..=30; at least one speed;
-no empty damage clause; `proficiency_bonus` equals the CR's bonus (2, +1 per four CR above 4); non-empty feature
+no empty damage clause; with a `cr`: `xp` present, no `cr_note`, `proficiency_bonus` equals the CR's bonus (2, +1 per
+four CR above 4); without a `cr`: no `xp` / `xp_lair`; non-empty feature
 names/text; recharge is a d6 range; legendary actions need `per_round`.
 
 Warning (`warnings`, reported by the store as `non_standard_monster_xp` warnings, decision HB4): `xp` differs from the CR

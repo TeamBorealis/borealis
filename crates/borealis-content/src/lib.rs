@@ -46,7 +46,7 @@ pub use file::{
 };
 pub use info::{Author, Info, Update, UpdateFile};
 pub use issue::{count_severity, Issue, IssueCode, Severity};
-pub use monster::{MonsterData, MonsterError, MonsterIssue};
+pub use monster::{MonsterData, MonsterError, MonsterIssue, NO_CHALLENGE_RATING};
 pub use monster_types::Cr;
 pub use rules::{
     CustomRule, GrantRule, ListItem, Rule, RuleKind, SelectRule, StatRule, UnknownRule,

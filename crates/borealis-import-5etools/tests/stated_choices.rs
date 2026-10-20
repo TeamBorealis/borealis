@@ -140,7 +140,8 @@ fn small_srd_beasts(store: &ContentStore) -> Vec<String> {
                 && m.size
                     .iter()
                     .all(|s| ["tiny", "small", "medium"].contains(&s.as_str()))
-                && ["0", "1/8", "1/4"].contains(&m.cr.as_text().as_str())
+                && m.cr
+                    .is_some_and(|c| ["0", "1/8", "1/4"].contains(&c.as_text().as_str()))
         })
         .map(|(n, _)| n)
         .collect();
@@ -197,7 +198,7 @@ fn imported_creatures_fill_the_companion_select() {
         [3],
         "the copy's _mod"
     );
-    assert_eq!((m.cr.as_text(), m.xp), ("1/4".to_string(), 50));
+    assert_eq!((m.challenge_text(), m.xp), ("1/4".to_string(), Some(50)));
     let skipped: Vec<&str> = result
         .report
         .skipped

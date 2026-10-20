@@ -39,11 +39,14 @@ fn resolve_group(tools: &Tools, group: &Group) -> Result<MonsterGroup, String> {
             .ok_or_else(|| format!("no monster with id {id:?}"))?;
         let data = MonsterData::from_element(element)
             .map_err(|e| format!("{id} is not a readable monster: {e}"))?;
-        let as_json = serde_json::to_value(data.cr).map_err(|e| e.to_string())?;
+        let monster_cr = data
+            .cr
+            .ok_or_else(|| format!("{id} has no challenge rating, so no XP"))?;
+        let as_json = serde_json::to_value(monster_cr).map_err(|e| e.to_string())?;
         let cr: Cr = serde_json::from_value(as_json).map_err(|e| format!("{id}: {e}"))?;
         return Ok(MonsterGroup::with_stored_xp(
             cr,
-            Some(u64::from(data.xp)),
+            data.xp.map(u64::from),
             count,
         ));
     }

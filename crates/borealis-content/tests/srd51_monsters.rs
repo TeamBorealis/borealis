@@ -143,7 +143,11 @@ fn spot_check_goblin() {
     );
     assert_eq!(m.languages, vec!["Common", "Goblin"]);
     assert_eq!(
-        (m.cr.to_string().as_str(), m.xp, m.proficiency_bonus),
+        (
+            m.challenge_text().as_str(),
+            m.xp.unwrap(),
+            m.proficiency_bonus.unwrap()
+        ),
         ("1/4", 50, 2)
     );
     assert_eq!(m.traits[0].name, "Nimble Escape");
@@ -190,7 +194,11 @@ fn spot_check_owlbear() {
     );
     assert!(m.languages.is_empty());
     assert_eq!(
-        (m.cr.to_string().as_str(), m.xp, m.proficiency_bonus),
+        (
+            m.challenge_text().as_str(),
+            m.xp.unwrap(),
+            m.proficiency_bonus.unwrap()
+        ),
         ("3", 700, 2)
     );
     assert_eq!(
@@ -260,7 +268,11 @@ fn spot_check_adult_red_dragon() {
     );
     assert_eq!(m.languages, vec!["Common", "Draconic"]);
     assert_eq!(
-        (m.cr.to_string().as_str(), m.xp, m.proficiency_bonus),
+        (
+            m.challenge_text().as_str(),
+            m.xp.unwrap(),
+            m.proficiency_bonus.unwrap()
+        ),
         ("17", 18_000, 6)
     );
     assert_eq!(m.traits[0].name, "Legendary Resistance");
@@ -358,7 +370,11 @@ fn spot_check_lich() {
         (Some(120), 19)
     );
     assert_eq!(
-        (m.cr.to_string().as_str(), m.xp, m.proficiency_bonus),
+        (
+            m.challenge_text().as_str(),
+            m.xp.unwrap(),
+            m.proficiency_bonus.unwrap()
+        ),
         ("21", 33_000, 7)
     );
     assert_eq!(m.legendary.as_ref().unwrap().per_round, Some(3));
@@ -391,7 +407,11 @@ fn spot_check_commoner() {
     );
     assert_eq!(m.senses.passive_perception, 10);
     assert_eq!(
-        (m.cr.to_string().as_str(), m.xp, m.proficiency_bonus),
+        (
+            m.challenge_text().as_str(),
+            m.xp.unwrap(),
+            m.proficiency_bonus.unwrap()
+        ),
         ("0", 10, 2)
     );
     assert_eq!(m.actions.len(), 1);
@@ -485,7 +505,7 @@ fn cr_to_xp_table_matches_the_srd() {
     );
     // every monster in the pack uses the table value (Frog and Sea Horse print 0 XP)
     for (id, m) in all() {
-        assert!(m.cr.accepts_xp(m.xp), "{id}");
+        assert!(m.cr.unwrap().accepts_xp(m.xp.unwrap()), "{id}");
     }
 }
 
@@ -508,8 +528,8 @@ fn broken_monsters_are_reported_by_the_store_validator() {
         .find(|(id, _)| id.ends_with("GOBLIN"))
         .unwrap();
     let mut bad = good.clone();
-    bad.xp = 51;
-    bad.proficiency_bonus = 3;
+    bad.xp = Some(51);
+    bad.proficiency_bonus = Some(3);
     bad.hp.formula = Some("two dice".into());
     bad.abilities.str = 0;
     let issues = bad.validate();

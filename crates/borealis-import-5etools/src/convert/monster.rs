@@ -68,7 +68,8 @@ pub fn stat_block(raw: &Value, ruleset: Ruleset) -> Result<(MonsterData, Vec<Str
     let mut lost = Vec::new();
     let (creature_type, tags, swarm_of) = creature_type(raw)?;
     let abilities = abilities(raw)?;
-    let (cr, xp, xp_lair) = challenge(raw, &mut lost)?;
+    let challenge = challenge(raw, &mut lost)?;
+    let cr = challenge.map(|(cr, _, _)| cr);
     let mut skill_notes = Vec::new();
     let skills = bonuses::<Skill>(raw, "skill", &mut lost, &mut skill_notes);
     let passive = passive(raw, &abilities, &skills);
@@ -131,9 +132,10 @@ pub fn stat_block(raw: &Value, ruleset: Ruleset) -> Result<(MonsterData, Vec<Str
         languages: texts(raw.get("languages")),
         telepathy: telepathy(raw),
         cr,
-        xp,
-        xp_lair,
-        proficiency_bonus: cr.proficiency_bonus(),
+        cr_note: cr.is_none().then(|| challenge_note(raw)).flatten(),
+        xp: challenge.map(|(_, xp, _)| xp),
+        xp_lair: challenge.and_then(|(_, _, lair)| lair),
+        proficiency_bonus: cr.map(Cr::proficiency_bonus),
         traits,
         actions,
         bonus_actions,
@@ -177,6 +179,8 @@ fn sizes(raw: &Value) -> Result<Vec<CreatureSize>, String> {
 }
 
 type TypeParts = (CreatureType, Vec<String>, Option<CreatureSize>);
+/// Challenge rating, XP and lair XP.
+type Challenge = (Cr, u32, Option<u32>);
 
 fn creature_type(raw: &Value) -> Result<TypeParts, String> {
     let ty = raw.get("type").ok_or("no creature type")?;
@@ -240,22 +244,24 @@ fn cr_of(text: &str) -> Result<Cr, String> {
     Cr::parse(text.trim()).ok_or_else(|| format!("challenge rating {text:?} is not a number"))
 }
 
-fn challenge(raw: &Value, lost: &mut Vec<String>) -> Result<(Cr, u32, Option<u32>), String> {
+/// Challenge rating, XP and lair XP. `None` for a creature printed without a challenge rating
+/// (decision IM12): it imports with no CR and no XP.
+fn challenge(raw: &Value, lost: &mut Vec<String>) -> Result<Option<Challenge>, String> {
     let as_u32 = |v: Option<&Value>| {
         v.and_then(Value::as_u64)
             .and_then(|n| u32::try_from(n).ok())
     };
     match raw.get("cr") {
+        None | Some(Value::Null) => Ok(None),
         Some(Value::String(s)) => {
             let cr = cr_of(s)?;
-            Ok((cr, cr.standard_xp(), None))
+            Ok(Some((cr, cr.standard_xp(), None)))
         }
         Some(Value::Object(o)) => {
-            let cr = cr_of(
-                o.get("cr")
-                    .and_then(Value::as_str)
-                    .ok_or("no challenge rating")?,
-            )?;
+            let Some(text) = o.get("cr").and_then(Value::as_str) else {
+                return Ok(None);
+            };
+            let cr = cr_of(text)?;
             let xp = as_u32(o.get("xp")).unwrap_or_else(|| cr.standard_xp());
             let lair = match (
                 as_u32(o.get("xpLair")),
@@ -268,10 +274,35 @@ fn challenge(raw: &Value, lost: &mut Vec<String>) -> Result<(Cr, u32, Option<u32
             if o.contains_key("coven") {
                 lost.push("the challenge rating in a coven not imported".into());
             }
-            Ok((cr, xp, lair))
+            Ok(Some((cr, xp, lair)))
         }
-        _ => Err("no challenge rating".into()),
+        Some(_) => Err("the challenge rating is neither text nor an object".into()),
     }
+}
+
+/// What stands in for a missing challenge rating, from the fields 5etools prints instead: the
+/// spell or class whose level the creature scales with, or its own level (level-scaled NPCs).
+fn challenge_note(raw: &Value) -> Option<String> {
+    let name_of = |key: &str| {
+        raw.get(key)
+            .and_then(Value::as_str)
+            .and_then(|r| r.split('|').next())
+            .map(str::trim)
+            .filter(|n| !n.is_empty())
+            .map(str::to_string)
+    };
+    if let Some(spell) = name_of("summonedBySpell") {
+        return Some(format!("Scales with spell level ({spell})"));
+    }
+    if raw.get("summonedBySpellLevel").is_some() {
+        return Some("Scales with spell level".into());
+    }
+    if let Some(class) = name_of("summonedByClass") {
+        return Some(format!("Scales with the summoner's level ({class})"));
+    }
+    raw.get("level")
+        .and_then(Value::as_u64)
+        .map(|level| format!("Level {level}"))
 }
 
 fn hit_points(raw: &Value, lost: &mut Vec<String>) -> Result<HitPoints, String> {
@@ -406,7 +437,9 @@ fn ability_modifier(score: u8) -> i32 {
     (i32::from(score) - 10).div_euclid(2)
 }
 
-fn initiative(raw: &Value, ruleset: Ruleset, ab: &Abilities, cr: Cr) -> Option<Initiative> {
+/// The initiative; `None` when it adds a proficiency bonus the creature does not have (no
+/// challenge rating: a summoned creature uses its summoner's).
+fn initiative(raw: &Value, ruleset: Ruleset, ab: &Abilities, cr: Option<Cr>) -> Option<Initiative> {
     let field = raw.get("initiative");
     if field.is_none() && ruleset != Ruleset::Dnd2024 {
         return None;
@@ -416,7 +449,12 @@ fn initiative(raw: &Value, ruleset: Ruleset, ab: &Abilities, cr: Cr) -> Option<I
         Some(Value::Number(n)) => i32::try_from(n.as_i64()?).ok()?,
         Some(o) => {
             let mult = o.get("proficiency").and_then(Value::as_i64).unwrap_or(0);
-            dex + i32::try_from(mult).ok()? * i32::from(cr.proficiency_bonus())
+            let pb = match cr {
+                Some(cr) => i32::from(cr.proficiency_bonus()),
+                None if mult == 0 => 0,
+                None => return None,
+            };
+            dex + i32::try_from(mult).ok()? * pb
         }
         None => dex,
     };

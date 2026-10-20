@@ -257,6 +257,20 @@ fn damage_text(el: &Element) -> String {
     })
 }
 
+/// A typed stat block's challenge rating with its XP (`1/4 (50 XP)`); a creature without one
+/// (decision IM12) shows the note that stands in for it, or an em dash, and no XP.
+fn challenge_fact(el: &Element) -> Option<ElementFact> {
+    if el.ty != "Monster" {
+        return None;
+    }
+    let m = borealis_content::MonsterData::from_element(el).ok()?;
+    let text = match m.xp.filter(|_| m.cr.is_some()) {
+        Some(xp) => format!("{} ({xp} XP)", m.challenge_text()),
+        None => m.challenge_text(),
+    };
+    fact("Challenge", text)
+}
+
 pub(crate) fn facts(el: &Element) -> Vec<ElementFact> {
     let mut out: Vec<ElementFact> = Vec::new();
     out.extend(fact("Type", type_label(ui_type(&el.ty))));
@@ -272,6 +286,7 @@ pub(crate) fn facts(el: &Element) -> Vec<ElementFact> {
             out.extend(fact(label, v));
         }
     }
+    out.extend(challenge_fact(el));
     if el.ty == "Spell" {
         out.extend(fact("Components", components(el)));
         if flag(el, "isConcentration") {

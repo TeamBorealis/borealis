@@ -60,9 +60,6 @@ pub mod code {
     /// A creature field kept in part: a printed remark or alternative the stat block model has
     /// no field for (alternate speeds, a skill "plus PB", an armor class "varies").
     pub const CREATURE_FIELD: &str = "MODEL_CREATURE_FIELD_TEXT";
-    /// A creature without a challenge rating (a summoned spirit or animated object whose
-    /// numbers follow the spell, a level-scaled companion): the stat block model needs a CR.
-    pub const CREATURE_WITHOUT_CR: &str = "MODEL_CREATURE_WITHOUT_CR";
     /// Hit points, an ability score, the AC or the CR printed as text, not a number ("half the
     /// summoner's", "Unknown").
     pub const CREATURE_NOT_A_NUMBER: &str = "DATA_CREATURE_STAT_NOT_A_NUMBER";
@@ -132,8 +129,6 @@ pub fn skip_code(reason: &str) -> &'static str {
         && (reason.contains("is not a number") || reason.contains("are not a number"));
     if reason.starts_with("sidekick class") {
         code::SIDEKICK_CLASS
-    } else if creature("no challenge rating") {
-        code::CREATURE_WITHOUT_CR
     } else if not_a_number {
         code::CREATURE_NOT_A_NUMBER
     } else if creature("the creature type")
@@ -370,10 +365,6 @@ mod tests {
     #[test]
     fn every_creature_skip_and_loss_carries_a_code() {
         for (reason, want) in [
-            (
-                "creature stat block: no challenge rating",
-                code::CREATURE_WITHOUT_CR,
-            ),
             (
                 "creature stat block: hit points are not a number (half)",
                 code::CREATURE_NOT_A_NUMBER,

@@ -20,6 +20,9 @@ pub use crate::monster_types::{
     SpellcastingBlock, Usage,
 };
 
+/// What a sheet shows for a creature with neither a challenge rating nor a note for it.
+pub const NO_CHALLENGE_RATING: &str = "\u{2014}";
+
 /// A problem found in a [`MonsterData`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MonsterIssue {
@@ -122,15 +125,25 @@ pub struct MonsterData {
     /// Telepathy range in feet.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub telepathy: Option<u32>,
-    /// Challenge rating.
-    pub cr: Cr,
-    /// Experience points.
-    pub xp: u32,
+    /// Challenge rating. Absent for a creature printed without one (decision IM12: a summoned
+    /// spirit whose numbers follow the spell, a level-scaled companion); such a creature has no
+    /// XP and no select or filter that compares challenge ratings offers it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cr: Option<Cr>,
+    /// What stands in for a missing challenge rating, as display text ("Scales with spell
+    /// level (Summon Beast)", "Level 5"). Only with no `cr`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cr_note: Option<String>,
+    /// Experience points (absent exactly when there is no `cr`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub xp: Option<u32>,
     /// Experience points when fought in its lair ("XP 18,000, or 20,000 in lair").
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub xp_lair: Option<u32>,
-    /// Proficiency bonus (derived from the CR, stored for convenience).
-    pub proficiency_bonus: u8,
+    /// Proficiency bonus (derived from the CR, stored for convenience). With no `cr` it may be
+    /// absent (a summoned creature uses its summoner's).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub proficiency_bonus: Option<u8>,
     /// Passive traits.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub traits: Vec<Feature>,
@@ -219,6 +232,17 @@ impl MonsterData {
             .get(&ability)
             .copied()
             .unwrap_or_else(|| self.modifier(ability))
+    }
+
+    /// The challenge rating as shown on a sheet or card: the CR (`1/4`), else the note that
+    /// stands in for it, else an em dash.
+    #[must_use]
+    pub fn challenge_text(&self) -> String {
+        match (&self.cr, &self.cr_note) {
+            (Some(cr), _) => cr.as_text(),
+            (None, Some(note)) if !note.trim().is_empty() => note.trim().to_string(),
+            _ => NO_CHALLENGE_RATING.to_string(),
+        }
     }
 
     /// Ability modifier of `ability`.

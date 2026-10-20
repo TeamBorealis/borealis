@@ -79,20 +79,7 @@ pub(crate) fn validate(m: &MonsterData) -> Vec<MonsterIssue> {
             bad("damage", "empty damage clause".into());
         }
     }
-    if m.cr.proficiency_bonus() != m.proficiency_bonus {
-        bad(
-            "proficiency_bonus",
-            format!(
-                "{} does not match CR {} (expected {})",
-                m.proficiency_bonus,
-                m.cr,
-                m.cr.proficiency_bonus()
-            ),
-        );
-    }
-    if m.xp_lair.is_some_and(|lair| lair < m.xp) {
-        bad("xp_lair", "lair XP is below the XP outside the lair".into());
-    }
+    challenge(m, &mut bad);
     if m.gear.iter().any(|g| g.trim().is_empty()) {
         bad("gear", "empty gear entry".into());
     }
@@ -170,18 +157,57 @@ fn check_features(section: &str, list: &[Feature], out: &mut Vec<MonsterIssue>) 
 /// Numbers a printed stat block may set apart from the standard tables, kept as given and
 /// reported (decision HB4): an XP other than the standard XP of the challenge rating.
 pub(crate) fn warnings(m: &MonsterData) -> Vec<MonsterIssue> {
-    if m.cr.accepts_xp(m.xp) {
+    let (Some(cr), Some(xp)) = (m.cr, m.xp) else {
+        return Vec::new();
+    };
+    if cr.accepts_xp(xp) {
         return Vec::new();
     }
     vec![MonsterIssue::new(
         "xp",
         format!(
-            "printed XP {} differs from the standard {} XP for CR {}; the printed value is kept",
-            m.xp,
-            m.cr.standard_xp(),
-            m.cr
+            "printed XP {xp} differs from the standard {} XP for CR {cr}; the printed value is kept",
+            cr.standard_xp(),
         ),
     )]
+}
+
+/// Challenge rating, XP and proficiency bonus agree (decision IM12): with a CR, the XP and the
+/// CR's proficiency bonus are present and no note stands in for it; without one there is no XP.
+fn challenge(m: &MonsterData, bad: &mut impl FnMut(&str, String)) {
+    let Some(cr) = m.cr else {
+        if m.xp.is_some() || m.xp_lair.is_some() {
+            bad("xp", "XP without a challenge rating".into());
+        }
+        return;
+    };
+    if m.cr_note.is_some() {
+        bad(
+            "cr_note",
+            "a challenge rating note next to a challenge rating".into(),
+        );
+    }
+    match m.proficiency_bonus {
+        Some(pb) if pb == cr.proficiency_bonus() => {}
+        Some(pb) => bad(
+            "proficiency_bonus",
+            format!(
+                "{pb} does not match CR {cr} (expected {})",
+                cr.proficiency_bonus()
+            ),
+        ),
+        None => bad(
+            "proficiency_bonus",
+            format!("missing (CR {cr} gives {})", cr.proficiency_bonus()),
+        ),
+    }
+    match (m.xp, m.xp_lair) {
+        (None, _) => bad("xp", format!("missing for CR {cr}")),
+        (Some(xp), Some(lair)) if lair < xp => {
+            bad("xp_lair", "lair XP is below the XP outside the lair".into());
+        }
+        _ => {}
+    }
 }
 
 pub(crate) fn soft_checks(m: &MonsterData) -> Vec<MonsterIssue> {

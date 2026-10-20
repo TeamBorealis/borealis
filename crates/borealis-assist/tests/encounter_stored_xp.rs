@@ -53,8 +53,8 @@ fn with_homebrew() -> &'static ContentStore {
             .element
             .clone();
         let mut m = MonsterData::from_element(&warrior).unwrap();
-        assert_eq!(m.cr.as_text(), "1/4");
-        m.xp = u32::try_from(PRINTED_XP).unwrap();
+        assert_eq!(m.challenge_text(), "1/4");
+        m.xp = Some(u32::try_from(PRINTED_XP).unwrap());
         let file = ContentFile {
             elements: vec![m.to_element(HOMEBREW, "Brindlewick Mossgnawer", "Test Homebrew")],
             ..ContentFile::default()

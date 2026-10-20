@@ -42,8 +42,8 @@ fn validated(m: &MonsterData) -> (Vec<borealis_content::Issue>, Value) {
 fn a_printed_xp_off_the_table_is_kept_and_warned_not_an_error() {
     // Arrange: CR 1/4 (standard 50 XP) printed with 75 XP.
     let mut m = quillback();
-    assert_eq!(m.cr, Cr::parse("1/4").unwrap());
-    m.xp = 75;
+    assert_eq!(m.cr, Cr::parse("1/4"));
+    m.xp = Some(75);
 
     // Act
     let hard = m.validate();
@@ -79,9 +79,9 @@ fn a_standard_xp_gives_no_warning() {
     // Arrange: the table value, and CR 0 printed as 0 XP.
     let m = quillback();
     let mut zero = quillback();
-    zero.cr = Cr::parse("0").unwrap();
-    zero.proficiency_bonus = 2;
-    zero.xp = 0;
+    zero.cr = Cr::parse("0");
+    zero.proficiency_bonus = Some(2);
+    zero.xp = Some(0);
 
     // Act / Assert
     for m in [m, zero] {

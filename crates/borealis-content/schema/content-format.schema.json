@@ -1323,11 +1323,14 @@
         "hp",
         "speed",
         "abilities",
-        "senses",
-        "cr",
-        "xp",
-        "proficiency_bonus"
+        "senses"
       ],
+      "dependentRequired": {
+        "cr": [
+          "xp",
+          "proficiency_bonus"
+        ]
+      },
       "properties": {
         "ruleset": {
           "$ref": "#/$defs/Ruleset"
@@ -1761,7 +1764,13 @@
             30
           ]
         },
+        "cr_note": {
+          "description": "Display text standing in for a missing challenge rating (decision IM12), e.g. \"Scales with spell level\". Only when `cr` is absent.",
+          "type": "string",
+          "minLength": 1
+        },
         "xp": {
+          "description": "Experience points; absent exactly when `cr` is absent (decision IM12).",
           "type": "integer",
           "minimum": 0
         },

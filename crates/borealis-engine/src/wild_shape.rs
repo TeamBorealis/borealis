@@ -118,11 +118,15 @@ fn senses_text(m: &MonsterData) -> String {
     .join(", ")
 }
 
-/// Every Beast stat block of the universe, summarised, with its CR.
+/// Every Beast stat block of the universe with a challenge rating, summarised, with its CR. A
+/// beast without one (decision IM12) has no number to compare with the form limit: never a form.
 fn beasts(uni: &Universe) -> Vec<(FormSummary, f64)> {
     let mut out = Vec::new();
     for u in uni.by_type("Monster") {
         let Ok(m) = MonsterData::from_element(&u.el) else {
+            continue;
+        };
+        let Some(cr) = m.cr else {
             continue;
         };
         if m.creature_type.as_str() != "beast" {
@@ -132,7 +136,7 @@ fn beasts(uni: &Universe) -> Vec<(FormSummary, f64)> {
             FormSummary {
                 id: u.el.id.clone(),
                 name: u.el.name.clone(),
-                cr: m.cr.as_text(),
+                cr: cr.as_text(),
                 size: m
                     .size
                     .first()
@@ -151,7 +155,7 @@ fn beasts(uni: &Universe) -> Vec<(FormSummary, f64)> {
                 ],
                 senses: senses_text(&m),
             },
-            m.cr.as_f64(),
+            cr.as_f64(),
         ));
     }
     out
@@ -201,4 +205,46 @@ pub fn wild_shape(
         invalid: invalid.into_iter().cloned().collect(),
         options,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use borealis_content::{ContentFile, ContentStoreBuilder, Element, PackOrigin, Ruleset};
+    use serde_json::json;
+
+    /// A synthetic beast stat block, with a CR or (decision IM12) without one.
+    fn beast(id: &str, cr: Option<&str>) -> Element {
+        let mut data = json!({"ruleset": "dnd2014", "size": ["small"], "creature_type": "beast",
+            "alignment": "unaligned", "ac": [{"value": 12}], "hp": {"average": 9},
+            "speed": {"walk": 30},
+            "abilities": {"str": 10, "dex": 12, "con": 10, "int": 3, "wis": 10, "cha": 5},
+            "senses": {"passive_perception": 10}});
+        if let Some(cr) = cr {
+            data["cr"] = json!(cr);
+            data["xp"] = json!(25);
+            data["proficiency_bonus"] = json!(2);
+        } else {
+            data["cr_note"] = json!("Scales with spell level");
+        }
+        let m: MonsterData = serde_json::from_value(data).expect("stat block");
+        m.to_element(id, id, "Test")
+    }
+
+    #[test]
+    fn a_beast_without_a_challenge_rating_is_never_a_form() {
+        let file = ContentFile {
+            elements: vec![
+                beast("ID_TEST_RATED", Some("1/8")),
+                beast("ID_TEST_UNRATED", None),
+            ],
+            ..ContentFile::default()
+        };
+        let store = ContentStoreBuilder::new()
+            .add_file("beasts.json", PackOrigin::Custom, file)
+            .build();
+        let uni = Universe::new(&store, Ruleset::Dnd2014);
+        let ids: Vec<String> = beasts(&uni).into_iter().map(|(f, _)| f.id).collect();
+        assert_eq!(ids, ["ID_TEST_RATED"]);
+    }
 }

@@ -293,10 +293,11 @@ fn damage_per_round(m: &MonsterData) -> f64 {
     routine.max(save_best)
 }
 
-/// Measure a `Monster` element; `None` when its data does not parse.
+/// Measure a `Monster` element; `None` when its data does not parse or it has no challenge
+/// rating (decision IM12: nothing to compare it with).
 pub fn monster(el: &Element) -> Option<MonsterM> {
     let m = MonsterData::from_element(el).ok()?;
-    let text = m.cr.as_text();
+    let text = m.cr?.as_text();
     let (cr_rank, (label, _)) = Cr::XP_TABLE
         .iter()
         .enumerate()
