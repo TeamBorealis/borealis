@@ -1,13 +1,10 @@
 pages: 4
 page 1
-  roles: Artifact=143 H2=7 Lbl=27 P=132 TH=4
-  text-ops: 382
+  roles: Artifact=140 H2=7 Lbl=27 P=135 TH=4
+  text-ops: 385
   colours (10): 0.122 0.153 0.169 RG; 0.122 0.153 0.169 rg; 0.188 0.341 0.329 rg; 0.306 0.345 0.365 RG; 0.306 0.345 0.365 rg; 0.702 0.502 0.000 RG; 0.702 0.502 0.000 rg; 0.812 0.788 0.737 RG; 0.953 0.937 0.902 rg; 0.984 0.976 0.957 rg
-  fields (89):
+  fields (86):
     ac.note
-    atk.1.range
-    atk.2.range
-    atk.3.range
     char.alignment
     char.player
     char.subclass
@@ -247,4 +244,4 @@ page 4
     char.subclass@4
     char.subrace@4
     story.equipment_notes
-document fields: 228
+document fields: 225

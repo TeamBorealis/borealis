@@ -448,18 +448,17 @@ fn damage_cantrips_of_the_2014_pack_become_attack_lines() {
         .iter()
         .find(|a| a.name == "Fire Bolt")
         .expect("Fire Bolt");
-    assert_eq!(fire.damage, "2d10 Fire");
-    assert!(
-        fire.bonus.starts_with("DC "),
-        "no facts: plain DC, {}",
-        fire.bonus
-    );
+    assert_eq!(fire.damage, "2d10 fire");
+    // The engine knows the roll without sheet facts: a spell attack shows the attack bonus.
+    let caster = &d.spellcasting.casters[0];
+    assert_eq!(fire.bonus, format!("{:+}", caster.attack));
     assert!(!fire.notes.contains("DC"));
     let acid = lines
         .iter()
         .find(|a| a.name == "Acid Splash")
         .expect("Acid");
-    assert_eq!(acid.damage, "2d6 Acid");
+    assert_eq!(acid.damage, "2d6 acid");
+    assert_eq!(acid.bonus, format!("DC {} DEX", caster.dc));
     assert!(!lines.iter().any(|a| a.name == "Dancing Lights"));
 }
 

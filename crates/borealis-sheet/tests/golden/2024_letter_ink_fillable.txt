@@ -1,9 +1,9 @@
 pages: 4
 page 1
-  roles: Artifact=150 H2=6 Lbl=26 P=138 TH=4
-  text-ops: 358
+  roles: Artifact=148 H2=6 Lbl=26 P=140 TH=4
+  text-ops: 360
   colours (10): 0.100 0.100 0.100 RG; 0.100 0.100 0.100 rg; 0.300 0.300 0.300 RG; 0.300 0.300 0.300 rg; 0.330 0.330 0.330 RG; 0.330 0.330 0.330 rg; 0.550 0.550 0.550 rg; 0.720 0.720 0.720 RG; 0.950 0.950 0.950 rg; 1.000 1.000 1.000 rg
-  fields (98):
+  fields (96):
     ac.note
     ac.shield
     armor.heavy
@@ -13,9 +13,7 @@ page 1
     atk.1.mastery
     atk.1.notes
     atk.2.mastery
-    atk.2.range
     atk.3.mastery
-    atk.3.range
     char.alignment
     char.lineage
     char.player
@@ -239,4 +237,4 @@ page 4
     spell.1.slot.2.used.3
     spell.1.slot.3.used.1
     spell.1.slot.3.used.2
-document fields: 220
+document fields: 218

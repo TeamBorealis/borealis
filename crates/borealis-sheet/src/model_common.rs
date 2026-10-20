@@ -235,6 +235,7 @@ fn attacks(
     let mut rows: Vec<AttackRow> = snap
         .attacks
         .iter()
+        .filter(|a| !is_spell_row(&a.uid))
         .map(|a| AttackRow {
             name: a.name.clone(),
             kind: AttackKind::Weapon,
@@ -269,6 +270,19 @@ fn attacks(
                 notes: String::new(),
             }),
     );
+    rows.extend(
+        snap.attacks
+            .iter()
+            .filter(|a| is_spell_row(&a.uid))
+            .map(|a| {
+                let caster_of = casters.iter().find(|c| {
+                    c.cantrips
+                        .iter()
+                        .any(|s| spell_row_id(&a.uid) == Some(s.id.as_str()))
+                });
+                engine_cantrip_row(a, caster_of)
+            }),
+    );
     for c in casters {
         for sp in c.cantrips.iter().filter(|s| s.damage.is_some()) {
             if rows
@@ -293,6 +307,42 @@ fn attacks(
         }
     }
     rows
+}
+
+/// The engine lists damaging cantrips among `snap.attacks` with uid `spell:<casting name>:<id>`.
+fn is_spell_row(uid: &str) -> bool {
+    uid.starts_with("spell:")
+}
+
+fn spell_row_id(uid: &str) -> Option<&str> {
+    uid.rsplit_once(':').map(|(_, id)| id)
+}
+
+/// A damaging cantrip the engine already derived: its Hit / DC cell, damage (with Agonizing Blast,
+/// Elemental Affinity and the like) and range are the engine's; the class comes from the casting block.
+fn engine_cantrip_row(
+    a: &borealis_engine::snapshot::AttackSnapshot,
+    caster: Option<&CasterData>,
+) -> AttackRow {
+    let bonus = match &a.save {
+        Some(save) => format!(
+            "DC {} {}",
+            save.dc,
+            save.ability.get(..3).unwrap_or("").to_uppercase()
+        ),
+        None => signed_text(a.attack),
+    };
+    AttackRow {
+        name: a.name.clone(),
+        kind: AttackKind::Cantrip,
+        bonus,
+        damage: a.damage.clone(),
+        range: a.range.clone(),
+        mastery: None,
+        notes: caster
+            .map(|c| format!("{} cantrip", c.class))
+            .unwrap_or_default(),
+    }
 }
 
 /// Hit / DC cell of a damage cantrip: the spell attack bonus for attack rolls, "DC n ABL" for saves.
