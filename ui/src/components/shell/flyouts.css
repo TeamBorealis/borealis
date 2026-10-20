@@ -86,3 +86,16 @@
 
 /* Save flyout: portrait sits at the top of the body */
 .sv .qv-portrait { margin-top: 0; }
+
+/* Companion context of the information slider. */
+.qv-companion .qv-build { margin-top: 12px; font-size: 11px; font-weight: 400; }
+.qv-companion .qv-stats { margin-top: 8px; gap: 10px; font-size: 10px; }
+.qv-companion .qv-stats span { color: var(--gray-5); }
+.qv-companion .qv-stats b { margin-left: 3px; }
+.qv-companion .qv-abil { margin-top: 14px; }
+.qv-feat { margin: 4px 4px 6px; font-size: 11px; color: var(--text-secondary); }
+.qv-feat em { font-weight: 600; color: var(--gray-5); }
+.qv-breakdown li { gap: 6px; }
+.qv-breakdown b { font-weight: 600; color: var(--gold); min-width: 40px; }
+.qv-breakdown i { margin-left: auto; font-style: normal; color: var(--gray-6); }
+.qv-switch { display: flex; justify-content: center; gap: 10px; }

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { CharacterSnapshot } from "../../api/contract";
 import { ABILITY_KEYS } from "../../api/contract";
 import { Flyout } from "../controls/Flyout";
@@ -6,6 +7,8 @@ import { Portrait } from "../Portrait";
 import { MetroProgressBar } from "../controls/Controls";
 import { ABILITY_LABEL } from "../../lib/format";
 import { useSettings } from "../../state/SettingsContext";
+import { Button } from "../Button";
+import { CompanionQuickView, companionDisplayName } from "./CompanionQuickView";
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 const chosen = (s: CharacterSnapshot, tab: string) => s.slots.find((x) => x.tab === tab && x.chosen)?.chosen?.name ?? "";
@@ -20,6 +23,7 @@ export const buildLine = (s: CharacterSnapshot): string =>
  */
 export function QuickViewFlyout({ snapshot, onClose }: { snapshot: CharacterSnapshot; onClose: () => void }) {
   const { settings } = useSettings();
+  const [context, setContext] = useState<"character" | "companion">("character");
   const { level, stats, abilities, details, play } = snapshot;
   const span = level.nextLevelXp !== null ? level.nextLevelXp - level.currentLevelXp : 1;
   const sub = [chosen(snapshot, "background"), details.gender, details.alignment].filter(Boolean);
@@ -29,9 +33,16 @@ export function QuickViewFlyout({ snapshot, onClose }: { snapshot: CharacterSnap
     ["Proficiency", signed(stats.proficiencyBonus)], ["Initiative", signed(stats.initiative)], ["AC", String(stats.armorClass)],
     ["Speed", `${stats.speed}ft`], ["HP", String(stats.hpMax)],
   ];
+  const companion = context === "companion" ? snapshot.companion : null;
+  const switchButtons = (
+    <div className="qv-switch">
+      <Button variant="flat" disabled={!companion} onClick={() => setContext("character")}>SWITCH TO CHARACTER</Button>
+      <Button variant="flat" disabled={!!companion} onClick={() => setContext("companion")}>SWITCH TO COMPANION</Button>
+    </div>
+  );
   return (
-    <Flyout title={<span className="qv-name">{snapshot.name}</span>} onClose={onClose}>
-      <div className="qv">
+    <Flyout title={<span className="qv-name">{companion ? companionDisplayName(companion).toUpperCase() : snapshot.name}</span>} onClose={onClose} footer={snapshot.companion ? switchButtons : undefined}>
+      {companion ? <CompanionQuickView companion={companion} /> : <div className="qv">
         <div className="qv-xp">
           <span>{level.currentLevelXp} XP</span>
           <MetroProgressBar label="Progress to next level" value={level.nextLevelXp !== null ? level.xp - level.currentLevelXp : 1} max={span} />
@@ -74,7 +85,7 @@ export function QuickViewFlyout({ snapshot, onClose }: { snapshot: CharacterSnap
             {play.senses.map((s, i) => <li key={i}><span>{s.name}{s.range > 0 ? ` ${s.range} ft` : ""}</span></li>)}
           </ul>
         </Expander>
-      </div>
+      </div>}
     </Flyout>
   );
 }

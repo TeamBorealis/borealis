@@ -264,4 +264,36 @@ pub struct CompanionState {
     pub challenge: String,
     pub speed: i32,
     pub abilities: crate::dto::AbilityRecord<i32>,
+    /// Proficiency bonus (companion context of the information slider).
+    pub proficiency: i32,
+    /// Initiative modifier: the Dexterity modifier (or the printed initiative).
+    pub initiative: i32,
+    /// `Medium beast, unaligned`: size, creature type and alignment.
+    pub build: String,
+    pub fly_speed: i32,
+    pub climb_speed: i32,
+    pub swim_speed: i32,
+    pub burrow_speed: i32,
+    pub skills: Vec<CompanionSkill>,
+    pub passive_perception: i32,
+    pub traits: Vec<CompanionFeature>,
+    pub actions: Vec<CompanionFeature>,
+    pub reactions: Vec<CompanionFeature>,
+}
+
+/// One companion skill line: name, key ability abbreviation and signed bonus.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CompanionSkill {
+    pub name: String,
+    pub ability: String,
+    pub bonus: i32,
+}
+
+/// A companion trait, action or reaction: name and sheet text.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CompanionFeature {
+    pub name: String,
+    pub text: String,
 }

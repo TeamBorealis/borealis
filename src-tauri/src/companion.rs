@@ -1,6 +1,7 @@
 //! The companion tab state: the creature chosen in a `Companion` select (an Aurora `Companion`
 //! element or a bundled `Monster` stat block) with its statistics, plus the user's name/picture.
 
+use crate::companion_block::{self, CompanionBlock};
 use crate::content_dto::CompanionState;
 use crate::dto::{AbilityRecord, ElementRef};
 use crate::extras::ui_extras;
@@ -91,6 +92,17 @@ fn companion_stats(el: &Element) -> CreatureStats {
     }
 }
 
+/// The slider's companion block of a chosen creature element.
+fn creature_block(el: &Element, input: &MapInput<'_>) -> CompanionBlock {
+    if el.ty == "Monster" {
+        return MonsterData::from_element(el).map_or_else(
+            |_| CompanionBlock::default(),
+            |m| companion_block::monster_block(&m),
+        );
+    }
+    companion_block::element_block(el, &|id| input.hub.element(id).cloned())
+}
+
 fn creature_stats(el: &Element) -> CreatureStats {
     if el.ty == "Monster" {
         return MonsterData::from_element(el)
@@ -113,10 +125,12 @@ pub fn companion(input: &MapInput<'_>, snap: &Engine) -> Option<CompanionState> 
         ty: "companion".to_string(),
         source: e.source.clone(),
     });
-    let stats = chosen
-        .and_then(|e| input.hub.element(&e.id))
-        .map(creature_stats)
+    let element = chosen.and_then(|e| input.hub.element(&e.id));
+    let stats = element.map(creature_stats).unwrap_or_default();
+    let block = element
+        .map(|e| creature_block(e, input))
         .unwrap_or_default();
+    let skills = companion_block::skills(&block, &stats.abilities);
     let c = input.character;
     let portrait = ui_extras(c).companion_portrait;
     let name = c.details.companion_name.clone();
@@ -141,6 +155,18 @@ pub fn companion(input: &MapInput<'_>, snap: &Engine) -> Option<CompanionState> 
         challenge: stats.challenge,
         speed: stats.speed,
         abilities: AbilityRecord::from_fn(|i| stats.abilities[i]),
+        proficiency: block.proficiency,
+        initiative: block.initiative,
+        build: block.build,
+        fly_speed: block.speeds[0],
+        climb_speed: block.speeds[1],
+        swim_speed: block.speeds[2],
+        burrow_speed: block.speeds[3],
+        passive_perception: companion_block::passive_perception(&skills),
+        skills,
+        traits: block.traits,
+        actions: block.actions,
+        reactions: block.reactions,
     })
 }
 

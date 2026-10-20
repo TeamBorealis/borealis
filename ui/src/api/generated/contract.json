@@ -3544,6 +3544,46 @@
     }
    }
   },
+  "CompanionFeature": {
+   "k": "object",
+   "props": {
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "text": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "CompanionSkill": {
+   "k": "object",
+   "props": {
+    "ability": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "bonus": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "CompanionState": {
    "k": "object",
    "props": {
@@ -3591,6 +3631,16 @@
       }
      }
     },
+    "actions": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "CompanionFeature"
+      }
+     }
+    },
     "armorClass": {
      "opt": false,
      "t": {
@@ -3603,7 +3653,25 @@
       "k": "prim"
      }
     },
+    "build": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "burrowSpeed": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "challenge": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "climbSpeed": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -3614,6 +3682,12 @@
      "t": {
       "k": "ref",
       "name": "ElementRef"
+     }
+    },
+    "flySpeed": {
+     "opt": false,
+     "t": {
+      "k": "prim"
      }
     },
     "hp": {
@@ -3628,7 +3702,19 @@
       "k": "prim"
      }
     },
+    "initiative": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "passivePerception": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -3640,10 +3726,52 @@
       "k": "prim"
      }
     },
+    "proficiency": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "reactions": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "CompanionFeature"
+      }
+     }
+    },
+    "skills": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "CompanionSkill"
+      }
+     }
+    },
     "speed": {
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    },
+    "swimSpeed": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "traits": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "CompanionFeature"
+      }
      }
     }
    }

@@ -46,6 +46,7 @@ pub mod commands_report;
 pub mod commands_settings;
 pub mod commands_system;
 pub mod companion;
+pub mod companion_block;
 pub mod compendium;
 pub mod content_auto;
 pub mod content_dto;

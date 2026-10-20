@@ -402,6 +402,33 @@ export interface CompanionState {
   challenge: string;
   speed: number;
   abilities: AbilityRecord<number>;
+  /** Proficiency bonus (companion context of the information slider). */
+  proficiency: number;
+  /** Initiative modifier. */
+  initiative: number;
+  /** "Medium beast, unaligned": size, creature type and alignment. */
+  build: string;
+  flySpeed: number;
+  climbSpeed: number;
+  swimSpeed: number;
+  burrowSpeed: number;
+  skills: CompanionSkill[];
+  passivePerception: number;
+  traits: CompanionFeature[];
+  actions: CompanionFeature[];
+  reactions: CompanionFeature[];
+}
+
+export interface CompanionSkill {
+  name: string;
+  /** Key ability abbreviation (DEX). */
+  ability: string;
+  bonus: number;
+}
+
+export interface CompanionFeature {
+  name: string;
+  text: string;
 }
 
 /* ---------- Snapshot ---------- */
