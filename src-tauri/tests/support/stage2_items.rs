@@ -37,6 +37,11 @@ pub(super) fn is_item_type(ty: &str) -> bool {
     ITEM_TYPES.contains(&ty)
 }
 
+/// A proxy item Borealis generates (`ProxyTable`): a proxy-shaped id the content does not define.
+fn is_generated_proxy(store: &ContentStore, id: &str) -> bool {
+    is_proxy_id(id) && store.element(id).is_none()
+}
+
 /// An item of Aurora's `proxy` slot (its generated "Additional ..." items have it).
 fn is_proxy_slot(el: &Element) -> bool {
     el.setter_value("slot")
@@ -53,9 +58,11 @@ pub(super) fn host_items(
     searchable: &BTreeSet<String>,
 ) -> Vec<String> {
     let store = &e.ins.store;
-    // a generated proxy item ("Additional Feat, X") is never an offering host (IM13 D5)
+    // A Borealis-generated proxy item ("Additional Feat, X") is never an offering host (IM13 D5).
+    // A content item is one even when its id has the proxy shape: the content "Companion
+    // Selection" Additional Feature item offers companions, as in Aurora.
     let is_item = |x: &str| {
-        !is_proxy_id(x)
+        !is_generated_proxy(store, x)
             && searchable.contains(x)
             && store
                 .element(x)
