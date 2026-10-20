@@ -102,6 +102,7 @@ fn appends_apply_after_all_files_regardless_of_order() {
     let stored = store.get("ID_T").unwrap();
     assert!(stored.extended);
     assert_eq!(stored.element.supports, ["Wizard", "Sorcerer"]);
+    assert_eq!(stored.appended_supports, ["Sorcerer"]);
     assert_eq!(stored.element.rules.len(), 1);
     assert_eq!(stored.element.setter_value("keywords"), Some("fire"));
     assert!(store.diagnostics().iter().any(
@@ -260,4 +261,28 @@ fn json_errors_carry_the_file_path() {
     let missing =
         ContentStoreBuilder::new().add_json_file(&tmp.path().join("nope.json"), PackOrigin::Custom);
     assert!(matches!(missing.unwrap_err(), ContentError::Io { .. }));
+}
+
+#[test]
+fn appended_supports_list_only_the_tags_appends_added() {
+    let mut appends = file(vec![]);
+    for tags in [vec!["Wizard", "Order"], vec!["Order", "Circle"]] {
+        appends.appends.push(Append {
+            id: "ID_T".into(),
+            supports: tags.into_iter().map(String::from).collect(),
+            ..Append::default()
+        });
+    }
+    let mut target = el("ID_T", "Spell", "Core");
+    target.supports = vec!["Wizard".into()];
+    let mut plain = el("ID_U", "Spell", "Core");
+    plain.supports = vec!["Wizard".into()];
+    let store = ContentStoreBuilder::new()
+        .add_file("t.json", PackOrigin::Core, file(vec![target, plain]))
+        .add_file("a.json", PackOrigin::Custom, appends)
+        .build();
+    let stored = store.get("ID_T").unwrap();
+    assert_eq!(stored.element.supports, ["Wizard", "Order", "Circle"]);
+    assert_eq!(stored.appended_supports, ["Order", "Circle"]);
+    assert!(store.get("ID_U").unwrap().appended_supports.is_empty());
 }

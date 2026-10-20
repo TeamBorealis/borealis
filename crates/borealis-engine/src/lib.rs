@@ -3,6 +3,7 @@
 
 pub mod adapter;
 pub mod ammo;
+mod appended_supports;
 pub mod attack_rules;
 pub mod attunement;
 pub mod breath;

@@ -236,6 +236,7 @@ impl ContentStoreBuilder {
                     file: Arc::clone(&name),
                     origin: pending.origin,
                     extended: false,
+                    appended_supports: Vec::new(),
                 }));
             }
             appends.extend(
@@ -262,9 +263,21 @@ impl ContentStoreBuilder {
             if let Some(stored) = slots[idx].as_ref() {
                 let (merged, changed) = apply_append(&stored.element, &append);
                 if changed {
+                    let added = merged
+                        .supports
+                        .iter()
+                        .filter(|t| !stored.element.supports.contains(t))
+                        .cloned();
+                    let appended_supports = stored
+                        .appended_supports
+                        .iter()
+                        .cloned()
+                        .chain(added)
+                        .collect();
                     slots[idx] = Some(StoredElement {
                         element: merged,
                         extended: true,
+                        appended_supports,
                         ..stored.clone()
                     });
                 }

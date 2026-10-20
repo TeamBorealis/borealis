@@ -27,6 +27,9 @@ pub struct StoredElement {
     pub origin: PackOrigin,
     /// True when an `<append>` changed it.
     pub extended: bool,
+    /// The supports tags that `<append>`s added (not in the element's own definition), in the
+    /// order they were added.
+    pub appended_supports: Vec<String>,
 }
 
 /// An index file loaded alongside the packs (metadata only).

@@ -735,6 +735,7 @@ impl Universe {
         uni.add_origin_increases(profile, adapter);
         uni.generate_improvements(store, &classes, &eff);
         uni.mark_superseded();
+        crate::appended_supports::share(&mut uni.elems, store, ruleset, &support_names);
         uni.index_equivalents();
         uni.load_profile_tables();
         uni.add_creation_languages(profile);
