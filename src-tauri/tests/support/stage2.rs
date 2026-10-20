@@ -388,6 +388,7 @@ type Found = (Offers, Vec<(String, String)>, usize, usize);
 
 /// Shared inputs of the hosts of one edition.
 struct Edition<'a> {
+    src: &'a str,
     offerers: &'a Offerers<'a>,
     selects: &'a Selects,
     builder_classes: &'a [String],
@@ -431,9 +432,16 @@ fn run_job(d: &Driver<'_>, e: &Edition<'_>, job: &Job, ex: &mut Explore<'_>, f: 
 
 /// Runs `jobs` on `apps.len()` workers (job `i` on worker `i % n`, one app each), each with its
 /// own driver and explore memo; results come back in worker order, so a run is deterministic.
-fn run_jobs(apps: &[&AppState], e: &Edition<'_>, jobs: &[Job]) -> Vec<Found> {
+fn run_jobs(apps: &[&AppState], e: &Edition<'_>, phase: &str, jobs: &[Job]) -> Vec<Found> {
     let n = apps.len().min(jobs.len()).max(1);
-    std::thread::scope(|sc| {
+    let t0 = std::time::Instant::now();
+    let edition = format!("{:?}", e.rs);
+    super::progress(&format!(
+        "{} s2 {edition} {phase}: {} hosts on {n} workers",
+        e.src,
+        jobs.len()
+    ));
+    let found = std::thread::scope(|sc| {
         let handles: Vec<_> = (0..n)
             .map(|w| {
                 let app = apps[w];
@@ -462,7 +470,13 @@ fn run_jobs(apps: &[&AppState], e: &Edition<'_>, jobs: &[Job]) -> Vec<Found> {
             .into_iter()
             .map(|h| h.join().unwrap_or_else(|p| std::panic::resume_unwind(p)))
             .collect()
-    })
+    });
+    super::progress(&format!(
+        "{} s2 {edition} {phase}: done in {} s",
+        e.src,
+        t0.elapsed().as_secs()
+    ));
+    found
 }
 
 fn merge(into: &mut Found, parts: Vec<Found>) {
@@ -478,6 +492,7 @@ fn merge(into: &mut Found, parts: Vec<Found>) {
 /// then archetypes, then feats) and records what they offer.
 #[allow(clippy::too_many_arguments)]
 fn edition(
+    src: &str,
     apps: &[&AppState],
     ins: &Installed,
     rs: Ruleset,
@@ -535,6 +550,7 @@ fn edition(
     let offerers = Offerers::new(&ins.store);
     let selects = select_index(&ins.store);
     let e = Edition {
+        src,
         offerers: &offerers,
         selects: &selects,
         builder_classes: &builder_classes,
@@ -552,7 +568,7 @@ fn edition(
     let mut jobs: Vec<Job> = plan.origins.iter().cloned().map(Job::Origin).collect();
     jobs.extend(classes.into_iter().take(cap).map(Job::Class));
     let mut found: Found = (Offers::default(), Vec::new(), 0, 0);
-    merge(&mut found, run_jobs(apps, &e, &jobs));
+    merge(&mut found, run_jobs(apps, &e, "origins+classes", &jobs));
     // archetype -> classes whose progression offered it (tried first), then the climbed ones
     let mut subs: BTreeMap<String, Vec<String>> = BTreeMap::new();
     let mut offered_subs = std::mem::take(&mut found.1);
@@ -574,7 +590,7 @@ fn edition(
         .take(cap)
         .map(|(a, c)| Job::Archetype(a, c))
         .collect();
-    merge(&mut found, run_jobs(apps, &e, &jobs));
+    merge(&mut found, run_jobs(apps, &e, "archetypes", &jobs));
     let mut feats: Vec<Job> = Vec::new();
     let openers = plan.feats.iter().filter(|f| !own_feats.contains(*f));
     for feat in own_feats.iter().chain(openers) {
@@ -585,7 +601,7 @@ fn edition(
         feats.push(Job::Feat(feat.clone()));
     }
     feats.truncate(cap);
-    merge(&mut found, run_jobs(apps, &e, &feats));
+    merge(&mut found, run_jobs(apps, &e, "feats", &feats));
     // every offerable option still not offered gets a host built for its prerequisites
     let options: Vec<Job> = ins
         .ours
@@ -601,7 +617,7 @@ fn edition(
         .take(cap.min(MAX_OPTION_HOSTS))
         .map(|o| Job::Option(o.0.clone()))
         .collect();
-    merge(&mut found, run_jobs(apps, &e, &options));
+    merge(&mut found, run_jobs(apps, &e, "options", &options));
     // what still is not offered and only an item's select offers gets an item host (also what
     // another item host offered: each one is picked once, to see that it applies)
     let by_item = |id: &str| {
@@ -623,7 +639,7 @@ fn edition(
         })
         .take(cap.min(MAX_OPTION_HOSTS))
         .collect();
-    merge(&mut found, run_jobs(apps, &e, &held));
+    merge(&mut found, run_jobs(apps, &e, "items", &held));
     merge(total, vec![found]);
 }
 
@@ -648,7 +664,9 @@ pub fn stage2(
     };
     let mut total: Found = (Offers::default(), Vec::new(), 0, 0);
     for rs in editions {
-        edition(apps, ins, rs, prefix, &reader, &owners, scope, &mut total);
+        edition(
+            src, apps, ins, rs, prefix, &reader, &owners, scope, &mut total,
+        );
     }
     metric(src, "s2", "*", "hosts_created", total.3 as i64);
     metric(src, "s2", "*", "options_explored", total.2 as i64);

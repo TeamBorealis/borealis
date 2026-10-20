@@ -14,7 +14,9 @@ use std::path::PathBuf;
 pub const TEST_SCORES: [i32; 6] = [15, 14, 14, 12, 12, 10];
 pub const CASTER_SCORES: [i32; 6] = [12, 12, 14, 15, 15, 15];
 const ABILITIES: [&str; 6] = ["str", "dex", "con", "int", "wis", "cha"];
-const PAGE: usize = 200;
+/// Option page size: the builder's largest page (each page is a derive of the character, and a
+/// spell or feat list of a big install runs past the default 200).
+const PAGE: usize = 1000;
 const FILL_PASSES: usize = 60;
 /// How deep [`Driver::explore`] follows selects opened by an explored option.
 pub const EXPLORE_DEPTH: usize = 2;

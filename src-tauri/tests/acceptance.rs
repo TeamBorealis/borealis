@@ -34,7 +34,7 @@ use std::sync::Mutex;
 use support::app::{app_state, app_state_copy, Driver, TEST_SCORES};
 use support::count::{self, AuroraCount};
 use support::stage2::{stage2, Scope};
-use support::{files, prereq};
+use support::{files, prereq, progress};
 
 const SUITE: &str = "acceptance";
 const BUNDLED: [&str; 3] = ["core", "srd-5.1", "srd-5.2.1"];
@@ -921,6 +921,9 @@ fn bisect_stack(dirs: &[PathBuf]) {
     );
 }
 
+/// Source label of the [`COMBO`] setup.
+const COMBO_SRC: &str = "a-comm-combo";
+
 /// The repos measured together as one realistic user setup (on top of A-core).
 const COMBO: &[&str] = &[
     "aurorabuilder__elements",
@@ -969,10 +972,13 @@ fn comm_stage2(repos: &Path, dirs: &[PathBuf], shard: usize, of: usize) {
             .map(|r| repos.join(r))
             .filter(|p| p.is_dir())
             .collect();
-        jobs.push(("a-comm-combo".into(), combo));
+        // the combination is the longest setup by far: it starts first (on its own workers),
+        // so the repos fill the other threads instead of it running alone at the end
+        jobs.insert(0, (COMBO_SRC.into(), combo));
     }
     let t0 = std::time::Instant::now();
     let next = std::sync::atomic::AtomicUsize::new(0);
+    let total = jobs.len();
     std::thread::scope(|sc| {
         for _ in 0..comm_threads() {
             std::thread::Builder::new()
@@ -984,6 +990,8 @@ fn comm_stage2(repos: &Path, dirs: &[PathBuf], shard: usize, of: usize) {
                         let Some((src, installs)) = jobs.get(i) else {
                             return;
                         };
+                        let started = std::time::Instant::now();
+                        progress(&format!("{src} start ({}/{total})", i + 1));
                         // an engine panic (settle invariants) fails this setup, not the run
                         let run = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                             comm_one(src, installs, &template, &base_ids, base_label);
@@ -998,6 +1006,7 @@ fn comm_stage2(repos: &Path, dirs: &[PathBuf], shard: usize, of: usize) {
                             outcome::record(SUITE, &format!("{src}/s2/panic"), false, &why);
                             metric(src, "s2", "*", "panicked", 1);
                         }
+                        progress(&format!("{src} done in {} s", started.elapsed().as_secs()));
                     }
                 })
                 .expect("a-comm worker");
@@ -1067,7 +1076,19 @@ fn comm_one(
         "ids_already_in_base",
         (all - ins.ours.len()) as i64,
     );
-    stage2(src, &[&app], &ins, "ID_WOTC_", aurora_class_id, Scope::Repo);
+    // the combination holds four big repos: its hosts run on workers() apps (copies of its
+    // data dir), as a-core's do; a single repo keeps one app
+    let extra: Vec<_> = if src == COMBO_SRC {
+        (1..workers())
+            .map(|_| app_state_copy(&tmp.path().join("data")))
+            .collect()
+    } else {
+        Vec::new()
+    };
+    let apps: Vec<&AppState> = std::iter::once(&app)
+        .chain(extra.iter().map(|x| &x.1))
+        .collect();
+    stage2(src, &apps, &ins, "ID_WOTC_", aurora_class_id, Scope::Repo);
 }
 
 /// A fetcher that keeps every file it downloaded (the stage-1 counter reads them).
