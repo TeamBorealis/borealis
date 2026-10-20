@@ -86,6 +86,44 @@ thread_local! {
     static ALLOWED: RefCell<Vec<(&'static str, String)>> = const { RefCell::new(Vec::new()) };
     static PASSED: RefCell<HashSet<PassedKey>> = RefCell::new(HashSet::new());
     static RUN: Cell<usize> = const { Cell::new(0) };
+    static RECORD: Cell<bool> = const { Cell::new(false) };
+    static RECORDED: RefCell<Vec<Violation>> = const { RefCell::new(Vec::new()) };
+}
+
+/// Make the derive hook of this thread record violations instead of panicking (a corpus sweep of
+/// community content, where one defective element must not drop the whole setup's results).
+/// [`take_recorded`] returns them; [`disable_for_thread`] turns this off.
+pub fn record_for_thread() {
+    RECORD.with(|r| r.set(true));
+}
+
+/// The distinct violations the hook recorded on this thread since the last call (kind and
+/// element; the first message of each).
+#[must_use]
+pub fn take_recorded() -> Vec<Violation> {
+    RECORDED.with(|r| std::mem::take(&mut *r.borrow_mut()))
+}
+
+/// Does the derive hook of this thread record violations ([`record_for_thread`])?
+#[must_use]
+pub fn recording_for_thread() -> bool {
+    RECORD.with(Cell::get)
+}
+
+/// Add violations recorded elsewhere (a worker thread's [`take_recorded`]) to this thread's.
+pub fn record_violations(found: Vec<Violation>) {
+    record(found);
+}
+
+fn record(found: Vec<Violation>) {
+    RECORDED.with(|r| {
+        let mut r = r.borrow_mut();
+        for v in found {
+            if !r.iter().any(|o| o.kind == v.kind && o.element == v.element) {
+                r.push(v);
+            }
+        }
+    });
 }
 
 /// Let the derive hook of this thread accept violations of `kind` concerning `element` (a
@@ -111,6 +149,7 @@ pub fn enable_for_thread() {
 /// Stop checking derives on this thread (and forget its allowed violations).
 pub fn disable_for_thread() {
     ENABLED.with(|e| e.set(false));
+    RECORD.with(|r| r.set(false));
     ALLOWED.with(|a| a.borrow_mut().clear());
     PASSED.with(|p| p.borrow_mut().clear());
 }
@@ -170,6 +209,11 @@ pub(crate) fn after_derive(engine: &Engine, state: &CharacterState, snap: &Chara
     RUN.with(|r| r.set(r.get() + 1));
     let mut found = quiet(|| check_with(engine, state, snap, true));
     found.retain(|v| !allowed(v));
+    let recording = RECORD.with(Cell::get);
+    if recording && !found.is_empty() {
+        // recorded once: the same state is not judged again
+        record(std::mem::take(&mut found));
+    }
     if let (true, Some(k)) = (found.is_empty(), key) {
         // the allowed list only grows until disable_for_thread, which forgets the passes too:
         // a state that passed stays passing
@@ -345,7 +389,11 @@ fn slot_table(name: &str, slots: &[i32; 9], out: &mut Vec<Violation>) {
             format!("negative spell slots {slots:?}"),
         ));
     }
-    if slots.windows(2).any(|w| w[1] > w[0]) {
+    // content may grant slots of some levels only (a species' single 2nd-level slot, a
+    // capstone's 7th-9th level slots): the levels it grants must not grow, the empty ones
+    // between them say nothing
+    let granted: Vec<i32> = slots.iter().copied().filter(|n| *n != 0).collect();
+    if granted.windows(2).any(|w| w[1] > w[0]) {
         out.push(violation(
             kind::SLOTS,
             Some(name),

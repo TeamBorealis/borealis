@@ -47,6 +47,36 @@ fn races() -> Vec<Value> {
                     {"kind": "select", "type": "Spell", "name": "Spell Known (Hollow)",
                      "supports": "Warlock", "spellcasting": "Hollow"}]}),
         ),
+        // one 2nd-level slot and nothing below it: a valid table
+        race(
+            "ID_T_RACE_LONE_SLOT",
+            json!({"spellcasting": {"name": "Lone", "ability": "Charisma",
+                "list": {"supports": "Wizard"}},
+                "rules": [stat("lone:spellcasting:slots:2", "1"),
+                    {"kind": "select", "type": "Spell", "name": "Spell (Lone)",
+                     "supports": "Wizard", "spellcasting": "Lone"}]}),
+        ),
+        race(
+            "ID_T_RACE_MINUS_SLOT",
+            json!({"spellcasting": {"name": "Minus", "ability": "Charisma",
+                "list": {"supports": "Wizard"}},
+                "rules": [stat("minus:spellcasting:slots:1", "1"),
+                    stat("minus:spellcasting:slots:2", "-1"),
+                    {"kind": "select", "type": "Spell", "name": "Spell (Minus)",
+                     "supports": "Wizard", "spellcasting": "Minus"}]}),
+        ),
+        // a points budget whose option spends the points it requires, with its own id as the
+        // escape once picked
+        race(
+            "ID_T_RACE_BUDGET",
+            json!({"rules": [stat("budget:points", "3"),
+                {"kind": "select", "type": "Racial Trait", "name": "Budget Option",
+                 "supports": "Budget Option"}]}),
+        ),
+        json!({"id": "ID_T_TRAIT_SPEND", "name": "Spend", "type": "Racial Trait",
+            "source": "Test", "supports": ["Budget Option"],
+            "requirements": "([budget:points:2]|ID_T_TRAIT_SPEND)",
+            "rules": [stat("budget:points", "-2")]}),
     ]
 }
 
@@ -193,6 +223,76 @@ fn pact_slots_without_a_level_are_a_violation() {
         1,
     );
     assert!(kinds(&s).contains(&kind::PACT));
+}
+
+#[test]
+fn slots_of_one_high_level_only_are_no_violation() {
+    let s = character(Ruleset::Dnd2014, Some("ID_T_RACE_LONE_SLOT"), FIGHTER, 1);
+    let snap = engine().derive(&s);
+    let lone = snap
+        .spellcasting
+        .iter()
+        .find(|c| c.name == "Lone")
+        .expect("block");
+    assert_eq!(lone.slots[..2], [0, 1]);
+    assert!(!kinds(&s).contains(&kind::SLOTS), "{:?}", kinds(&s));
+}
+
+#[test]
+fn negative_or_growing_granted_slots_are_a_violation() {
+    let s = character(Ruleset::Dnd2014, Some("ID_T_RACE_MINUS_SLOT"), FIGHTER, 1);
+    assert!(kinds(&s).contains(&kind::SLOTS));
+}
+
+/// The option spends the points its requirement checks, and names itself as the way out once
+/// picked (Aurora re-validates a registered pick with its own id present). Restoring the stored
+/// pick must see it the same way, or every evaluation round undoes and redoes it.
+#[test]
+fn a_pick_that_spends_the_points_it_requires_settles() {
+    let e = engine();
+    let s = character(Ruleset::Dnd2014, Some("ID_T_RACE_BUDGET"), FIGHTER, 1);
+    let snap = e.derive(&s);
+    let slot = snap
+        .slots
+        .iter()
+        .find(|x| x.name == "Budget Option")
+        .expect("slot");
+    assert_eq!(
+        slot.chosen.as_ref().map(|c| c.id.as_str()),
+        Some("ID_T_TRAIT_SPEND")
+    );
+    assert!(
+        !snap
+            .diagnostics
+            .iter()
+            .any(|d| d.code == "eval.not_converged"),
+        "{:?}",
+        snap.diagnostics
+    );
+    assert!(!kinds(&s).contains(&kind::NOT_CONVERGED));
+}
+
+#[test]
+fn the_recording_hook_collects_violations_once_instead_of_panicking() {
+    let s = character(Ruleset::Dnd2014, Some("ID_T_RACE_MUTE_CASTER"), FIGHTER, 1);
+    let e = engine();
+    invariants::enable_for_thread();
+    invariants::record_for_thread();
+    let _ = e.derive(&s);
+    let _ = e.derive(&s);
+    let found = invariants::take_recorded();
+    invariants::disable_for_thread();
+    let mute: Vec<_> = found
+        .iter()
+        .filter(|v| v.kind == kind::NO_SPELL_ACQUISITION)
+        .collect();
+    assert_eq!(mute.len(), 1, "{found:?}");
+    assert!(invariants::take_recorded().is_empty());
+    // disabling ends recording: the hook panics again when re-enabled
+    invariants::enable_for_thread();
+    let hooked = std::panic::catch_unwind(|| e.derive(&s));
+    invariants::disable_for_thread();
+    assert!(hooked.is_err());
 }
 
 #[test]

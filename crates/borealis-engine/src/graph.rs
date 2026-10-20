@@ -949,7 +949,7 @@ impl<'u> Graph<'u> {
                 self.nodes[id].slots[si].rejected = Some(Choice::Element(wanted));
                 continue;
             }
-            if self.choice_allowed(id, ri, target, true) {
+            if self.restore_allowed(id, ri, target) {
                 let mgr = self.mgr_for_selected(id, target);
                 let c = self.add_child(id, target, Origin::Selected(si), mgr);
                 self.nodes[c].spell_class = rule.spellcasting.clone();
@@ -962,6 +962,18 @@ impl<'u> Graph<'u> {
             }
         }
         changed
+    }
+
+    /// May a stored choice be restored? Aurora re-validates a choice while it is registered, so
+    /// the choice's own id counts as held (`engine.md` 3.2, all character ids): a requirement
+    /// like `[points:2]|<own id>`, which spends the points it checks, keeps the pick once made.
+    /// The keep check of a restored choice sees it the same way, so restore and keep agree (else
+    /// every rebuild of the graph undoes and redoes the pick and the evaluation never settles).
+    fn restore_allowed(&mut self, owner: NodeId, rule_index: usize, cand: &'u UElem) -> bool {
+        self.ids.add(&cand.el.id);
+        let ok = self.choice_allowed(owner, rule_index, cand, true);
+        self.ids.remove(&cand.el.id);
+        ok
     }
 
     /// May `cand` be offered for a NEW pick? Strict mode hides foreign-edition content; stored
