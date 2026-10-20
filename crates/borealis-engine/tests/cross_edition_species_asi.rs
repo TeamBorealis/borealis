@@ -5,7 +5,9 @@
 //! for 2014 races, and not for a 2024 species whose own rules or parts already raise a score.
 //! IM9a (user, 2026-10-20): not applied while the character has a background that gives its own
 //! increase (a 2024 background), in either pick order; the report says so.
-//! Bundled core + SRD 5.1 + SRD 5.2.1 packs, plus two synthetic 2024 species with increases.
+//! det-engine-10: the background's increase may also live in a feat (or other part) it grants or
+//! lets you pick; any such option counts (static, as for species options).
+//! Bundled core + SRD 5.1 + SRD 5.2.1 packs, plus synthetic 2024 species, backgrounds and feats.
 
 use borealis_content::{ContentFile, ContentStoreBuilder, PackOrigin, Ruleset};
 use borealis_engine::commands::{self, slot_key};
@@ -45,7 +47,27 @@ fn engine() -> &'static Engine {
             {"id": "ID_T_2024_OPTION_LINEAGE_A", "name": "Lineage A",
              "type": "Species Trait Option", "source": "Test", "ruleset": "dnd2024",
              "supports": ["Test Lineage"],
-             "rules": [{"kind": "ability_increase", "options": [{"abilities": 1, "amount": 1}]}]}
+             "rules": [{"kind": "ability_increase", "options": [{"abilities": 1, "amount": 1}]}]},
+            {"id": BG_GRANTED_FEAT_ASI, "name": "Test Background Feat Increase",
+             "type": "Background", "source": "Test", "ruleset": "dnd2024",
+             "rules": [{"kind": "grant", "type": "Feat", "id": FEAT_ASI}]},
+            {"id": BG_SELECTED_FEAT_ASI, "name": "Test Background Feat Choice",
+             "type": "Background", "source": "Test", "ruleset": "dnd2024",
+             "rules": [{"kind": "select", "type": "Feat", "name": PICK_NAME,
+                        "supports": "Test Background Pick"}]},
+            {"id": BG_GRANTED_FEAT_PLAIN, "name": "Test Background Plain Feat",
+             "type": "Background", "source": "Test", "ruleset": "dnd2024",
+             "rules": [{"kind": "grant", "type": "Feat", "id": FEAT_PLAIN}]},
+            {"id": FEAT_ASI, "name": "Test Feat With Increase", "type": "Feat",
+             "source": "Test", "ruleset": "dnd2024", "supports": ["Test Background Pick"],
+             "rules": [{"kind": "ability_increase", "options": [{"abilities": 1, "amount": 1}]}]},
+            {"id": FEAT_PLAIN, "name": "Test Feat Without Increase", "type": "Feat",
+             "source": "Test", "ruleset": "dnd2024", "supports": ["Test Background Pick"],
+             "rules": [{"kind": "grant", "type": "Feat Feature", "id": "ID_T_2024_FEAT_FEATURE_LOOP"}]},
+            {"id": "ID_T_2024_FEAT_FEATURE_LOOP", "name": "Test Feat Feature Loop",
+             "type": "Feat Feature", "source": "Test", "ruleset": "dnd2024",
+             "rules": [{"kind": "grant", "type": "Feat", "id": FEAT_PLAIN},
+                       {"kind": "stat", "name": "strength", "value": "1", "inline": true}]}
         ]}))
         .expect("synthetic content");
         let store = ContentStoreBuilder::new()
@@ -387,4 +409,74 @@ fn the_compatibility_report_says_when_the_increase_is_not_applied() {
         .any(|n| n.starts_with("Ability score increase added")));
     let s = with_background(&fighter_with(Ruleset::Dnd2014, BASE, ELF_24), ACOLYTE_14);
     assert!(!species_notes(&s).iter().any(|n| n == INCREASE_NOT_APPLIED));
+}
+
+// det-engine-10: a background whose increase lives in what it grants or lets you pick.
+const BG_GRANTED_FEAT_ASI: &str = "ID_T_2024_BACKGROUND_GRANTED_FEAT_ASI";
+const BG_SELECTED_FEAT_ASI: &str = "ID_T_2024_BACKGROUND_SELECTED_FEAT_ASI";
+const BG_GRANTED_FEAT_PLAIN: &str = "ID_T_2024_BACKGROUND_GRANTED_FEAT_PLAIN";
+const FEAT_ASI: &str = "ID_T_2024_FEAT_ASI";
+const FEAT_PLAIN: &str = "ID_T_2024_FEAT_PLAIN";
+const PICK_NAME: &str = "Test Background Feat";
+
+#[test]
+fn a_background_whose_granted_feat_raises_a_score_switches_the_increase_off() {
+    let s = with_background(
+        &fighter_with(Ruleset::Dnd2014, BASE, ELF_24),
+        BG_GRANTED_FEAT_ASI,
+    );
+    assert!(
+        increase_slot(&engine().derive(&s), ELF_24).is_none(),
+        "the feat's increase is the background's"
+    );
+    assert!(species_notes(&s).iter().any(|n| n == INCREASE_NOT_APPLIED));
+    no_problems(&s);
+}
+
+#[test]
+fn a_background_whose_feat_choice_can_raise_a_score_switches_the_increase_off() {
+    let s = with_background(
+        &fighter_with(Ruleset::Dnd2014, BASE, ELF_24),
+        BG_SELECTED_FEAT_ASI,
+    );
+    assert!(
+        increase_slot(&engine().derive(&s), ELF_24).is_none(),
+        "one pickable feat raises a score"
+    );
+    // Static, as for species options: the pick does not matter.
+    let s = pick(&s, BG_SELECTED_FEAT_ASI, PICK_NAME, FEAT_PLAIN);
+    assert!(increase_slot(&engine().derive(&s), ELF_24).is_none());
+    assert_eq!(scores(&s), BASE.to_vec());
+    no_problems(&s);
+}
+
+#[test]
+fn a_background_whose_granted_feat_raises_nothing_keeps_the_increase() {
+    // The feat grants a feat feature that grants the feat back (a cycle) and carries only an
+    // inline (display) Strength value.
+    let s = with_background(
+        &fighter_with(Ruleset::Dnd2014, BASE, ELF_24),
+        BG_GRANTED_FEAT_PLAIN,
+    );
+    assert!(increase_slot(&engine().derive(&s), ELF_24).is_some());
+    let s = choose(&s, ELF_24, "Strength +2, Dexterity +1");
+    assert_eq!(scores(&s), STR2_DEX1.to_vec());
+    assert!(!species_notes(&s).iter().any(|n| n == INCREASE_NOT_APPLIED));
+    no_problems(&s);
+}
+
+#[test]
+fn switching_from_a_feat_background_back_to_a_2014_one_offers_the_increase_again() {
+    let s = with_background(&fighter_with(Ruleset::Dnd2014, BASE, ELF_24), ACOLYTE_14);
+    let s = choose(&s, ELF_24, "Constitution +1, Wisdom +1, Charisma +1");
+    assert_eq!(scores(&s), IM9_CON_WIS_CHA.to_vec());
+    let s = with_background(&s, BG_GRANTED_FEAT_ASI);
+    assert!(increase_slot(&engine().derive(&s), ELF_24).is_none());
+    assert_eq!(scores(&s), BASE.to_vec(), "the stored pick is dropped");
+    let s = with_background(&s, ACOLYTE_14);
+    let snap = engine().derive(&s);
+    let slot = increase_slot(&snap, ELF_24).expect("offered again");
+    assert!(slot.list_choice.is_none(), "empty");
+    assert_eq!(scores(&s), BASE.to_vec());
+    no_problems(&s);
 }

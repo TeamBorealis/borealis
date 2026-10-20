@@ -432,10 +432,19 @@ fn legacy_alias_note<'e>(el: &'e Element, profile: &dyn RulesetProfile) -> Optio
         .filter(|a| !a.is_empty() && *a != el.ty && profile.accepts_legacy_alias(a, from))
 }
 
-/// Element types that make up a background (its features, variants, characteristics), followed
-/// when looking for its ability increase (IM9a).
+/// Element types followed from a background when looking for its own ability increase (IM9a):
+/// its features, variants and characteristics (`Background*`), plus what a background can hand
+/// out that may carry the increase instead of the background itself: a feat and its feat
+/// features (a 2024-style origin feat), a generic option, a `Grants` bundle, and an Aurora
+/// ability score improvement element. Not followed: spells, proficiencies, languages, items,
+/// class or species content, which never carry an origin increase (class features would pull in
+/// the level 4 improvements, which are not origin increases).
 fn is_background_part(ty: &str) -> bool {
     ty.starts_with("Background")
+        || matches!(
+            ty,
+            "Feat" | "Feat Feature" | "Option" | "Grants" | "Ability Score Improvement"
+        )
 }
 
 /// Element types that make up a species (its traits, lineage options, subraces).
@@ -1020,9 +1029,11 @@ impl Universe {
     }
 
     /// Does the origin element at `root` (a species or a background), one of its granted parts,
-    /// or an option one of their selects can pick (lineages, subraces, background variants)
-    /// raise an ability score? Only elements whose type passes `is_part` are followed: feats,
-    /// spells and the like are not parts of the origin.
+    /// or an option one of their selects can pick (lineages, subraces, background variants, a
+    /// background's feats) raise an ability score? Only elements whose type passes `is_part` are
+    /// followed ([`is_origin_part`] for species: no feats; [`is_background_part`] for
+    /// backgrounds). Static, as for species (det-engine-7): one option that could raise a score
+    /// is enough, whichever option the character picks. `seen` guards grant/select cycles.
     fn raises_ability_in(&self, root: usize, is_part: fn(&str) -> bool) -> bool {
         let mut stack = vec![root];
         let mut seen = std::collections::HashSet::new();
