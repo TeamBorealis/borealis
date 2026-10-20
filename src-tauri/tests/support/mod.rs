@@ -7,6 +7,7 @@ pub mod count;
 pub mod files;
 pub mod plan;
 pub mod prereq;
+pub mod proxy_rows;
 pub mod stage2;
 
 /// A progress line on stderr (`PROGRESS\t...`), past libtest's capture: setup labels, phases,

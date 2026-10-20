@@ -8,6 +8,7 @@ use super::{needed_groups, Edition};
 use crate::support::app::{Driver, Explore, Host, Offers, TEST_SCORES};
 use crate::{metric, outcome, Installed, SUITE};
 use borealis_content::{ContentStore, Element, Rule};
+use borealis_engine::proxy::is_proxy_id;
 use std::collections::BTreeSet;
 
 /// Element types a character carries (`gear_info::is_item`).
@@ -36,6 +37,12 @@ pub(super) fn is_item_type(ty: &str) -> bool {
     ITEM_TYPES.contains(&ty)
 }
 
+/// An item of Aurora's `proxy` slot (its generated "Additional ..." items have it).
+fn is_proxy_slot(el: &Element) -> bool {
+    el.setter_value("slot")
+        .is_some_and(|s| s.trim().eq_ignore_ascii_case("proxy"))
+}
+
 /// The items whose selects offer `id`: an item owning an offering select, or an item that
 /// grants (unconditionally) the element owning one; only items the edition's item search lists
 /// (`searchable`), as a user can add no other. In store order, at most [`MAX_ITEMS`].
@@ -46,8 +53,14 @@ pub(super) fn host_items(
     searchable: &BTreeSet<String>,
 ) -> Vec<String> {
     let store = &e.ins.store;
-    let is_item =
-        |x: &str| searchable.contains(x) && store.element(x).is_some_and(|x| is_item_type(&x.ty));
+    // a generated proxy item ("Additional Feat, X") is never an offering host (IM13 D5)
+    let is_item = |x: &str| {
+        !is_proxy_id(x)
+            && searchable.contains(x)
+            && store
+                .element(x)
+                .is_some_and(|x| is_item_type(&x.ty) && !is_proxy_slot(x))
+    };
     let mut out: Vec<String> = Vec::new();
     for (owner, _, _) in e.selects.offering(id, &el.ty, Some(el)) {
         if owner == id {

@@ -543,6 +543,10 @@ fn edition(
     for id in &searchable {
         total.0.add(id, "search_items");
     }
+    if scope == Scope::Full {
+        // the generated proxy items get rows of their own, never offer rows (IM13 D5)
+        super::proxy_rows::record(src, apps[0], rs);
+    }
     let builder_classes: Vec<String> = base
         .snap
         .slots
