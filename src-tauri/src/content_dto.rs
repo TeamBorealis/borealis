@@ -253,6 +253,12 @@ pub struct CompanionState {
     pub portrait: Option<String>,
     pub armor_class: i32,
     pub hp: i32,
+    /// The armor class as text when the stat block prints it as a formula (decision IM12a);
+    /// the tab shows it instead of `armor_class`.
+    pub armor_class_note: Option<String>,
+    /// The hit points as text when the stat block prints them as a formula (decision IM12a);
+    /// the tab shows it instead of `hp`.
+    pub hp_note: Option<String>,
     pub speed: i32,
     pub abilities: crate::dto::AbilityRecord<i32>,
 }

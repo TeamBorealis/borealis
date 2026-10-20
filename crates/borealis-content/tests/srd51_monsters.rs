@@ -123,7 +123,13 @@ fn spot_check_goblin() {
         (m.ac[0].value, m.ac[0].source.as_deref()),
         (15, Some("leather armor, shield"))
     );
-    assert_eq!((m.hp.average, m.hp.formula.as_deref()), (7, Some("2d6")));
+    assert_eq!(
+        (
+            m.hp.as_ref().unwrap().average,
+            m.hp.as_ref().unwrap().formula.as_deref()
+        ),
+        (7, Some("2d6"))
+    );
     assert_eq!(m.speed.walk, Some(30));
     assert_eq!(
         [
@@ -172,7 +178,10 @@ fn spot_check_owlbear() {
         (13, Some("natural armor"))
     );
     assert_eq!(
-        (m.hp.average, m.hp.formula.as_deref()),
+        (
+            m.hp.as_ref().unwrap().average,
+            m.hp.as_ref().unwrap().formula.as_deref()
+        ),
         (59, Some("7d10+21"))
     );
     assert_eq!(m.speed.walk, Some(40));
@@ -225,7 +234,10 @@ fn spot_check_adult_red_dragon() {
         (19, Some("natural armor"))
     );
     assert_eq!(
-        (m.hp.average, m.hp.formula.as_deref()),
+        (
+            m.hp.as_ref().unwrap().average,
+            m.hp.as_ref().unwrap().formula.as_deref()
+        ),
         (256, Some("19d12+133"))
     );
     assert_eq!(
@@ -313,7 +325,10 @@ fn spot_check_lich() {
         (17, Some("natural armor"))
     );
     assert_eq!(
-        (m.hp.average, m.hp.formula.as_deref()),
+        (
+            m.hp.as_ref().unwrap().average,
+            m.hp.as_ref().unwrap().formula.as_deref()
+        ),
         (135, Some("18d8+54"))
     );
     assert_eq!(
@@ -393,7 +408,13 @@ fn spot_check_commoner() {
     assert_eq!(m.tags, vec!["any race"]);
     assert_eq!(m.alignment, "any alignment");
     assert_eq!((m.ac[0].value, m.ac[0].source.clone()), (10, None));
-    assert_eq!((m.hp.average, m.hp.formula.as_deref()), (4, Some("1d8")));
+    assert_eq!(
+        (
+            m.hp.as_ref().unwrap().average,
+            m.hp.as_ref().unwrap().formula.as_deref()
+        ),
+        (4, Some("1d8"))
+    );
     assert_eq!(
         [
             m.abilities.str,
@@ -530,7 +551,7 @@ fn broken_monsters_are_reported_by_the_store_validator() {
     let mut bad = good.clone();
     bad.xp = Some(51);
     bad.proficiency_bonus = Some(3);
-    bad.hp.formula = Some("two dice".into());
+    bad.hp.as_mut().unwrap().formula = Some("two dice".into());
     bad.abilities.str = 0;
     let issues = bad.validate();
     let fields: Vec<&str> = issues.iter().map(|i| i.field.as_str()).collect();

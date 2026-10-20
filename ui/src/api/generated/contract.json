@@ -3597,6 +3597,12 @@
       "k": "prim"
      }
     },
+    "armorClassNote": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "creature": {
      "opt": false,
      "t": {
@@ -3605,6 +3611,12 @@
      }
     },
     "hp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "hpNote": {
      "opt": false,
      "t": {
       "k": "prim"

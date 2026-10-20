@@ -165,7 +165,10 @@ pub fn monster_index(store: &ContentStore, ruleset: Ruleset) -> Vec<MonsterEntry
             if e.ruleset.unwrap_or(data.ruleset) != ruleset {
                 return None;
             }
-            // a creature without a challenge rating has no XP (IM12): not an encounter monster
+            // a creature without a challenge rating has no XP (IM12), one whose armor class or
+            // hit points are a formula (IM12a) no fixed numbers: not an encounter monster
+            data.armor_class()?;
+            data.hit_points()?;
             let cr: Cr = data.cr?.as_text().parse().ok()?;
             let maps_to = e.maps_to.as_ref().and_then(|m| match ruleset {
                 Ruleset::Dnd2014 => m.dnd2024.clone(),

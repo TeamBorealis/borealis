@@ -18,11 +18,15 @@ const COMPANION_ABILITIES: [&str; 6] = [
     "charisma",
 ];
 
-/// Armor class, hit points, walking speed and ability scores of a creature.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Armor class, hit points, walking speed and ability scores of a creature. A stat block whose
+/// armor class or hit points are a formula (decision IM12a) carries the text in the note and 0 in
+/// the number, which the companion tab does not show.
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct CreatureStats {
     armor_class: i32,
     hp: i32,
+    armor_class_note: Option<String>,
+    hp_note: Option<String>,
     speed: i32,
     abilities: [i32; 6],
 }
@@ -32,6 +36,8 @@ impl Default for CreatureStats {
         Self {
             armor_class: 0,
             hp: 0,
+            armor_class_note: None,
+            hp_note: None,
             speed: 0,
             abilities: [DEFAULT_ABILITY; 6],
         }
@@ -52,10 +58,13 @@ fn monster_stats(m: &MonsterData) -> CreatureStats {
     let a = &m.abilities;
     CreatureStats {
         armor_class: m
-            .ac
-            .first()
-            .map_or(0, |ac| i32::try_from(ac.value).unwrap_or(0)),
-        hp: i32::try_from(m.hp.average).unwrap_or(0),
+            .armor_class()
+            .map_or(0, |ac| i32::try_from(ac).unwrap_or(0)),
+        hp: m
+            .hit_points()
+            .map_or(0, |hp| i32::try_from(hp).unwrap_or(0)),
+        armor_class_note: m.ac.is_empty().then(|| m.armor_class_text()),
+        hp_note: m.hp.is_none().then(|| m.hit_points_text()),
         speed: m.speed.walk.map_or(0, |w| i32::try_from(w).unwrap_or(0)),
         abilities: [a.str, a.dex, a.con, a.int, a.wis, a.cha].map(i32::from),
     }
@@ -67,6 +76,8 @@ fn companion_stats(el: &Element) -> CreatureStats {
     CreatureStats {
         armor_class: int("ac").unwrap_or(0),
         hp: int("hp").unwrap_or(0),
+        armor_class_note: None,
+        hp_note: None,
         speed: int("speed").unwrap_or(0),
         abilities: COMPANION_ABILITIES.map(|n| int(n).unwrap_or(DEFAULT_ABILITY)),
     }
@@ -117,6 +128,8 @@ pub fn companion(input: &MapInput<'_>, snap: &Engine) -> Option<CompanionState> 
         portrait,
         armor_class: stats.armor_class,
         hp: stats.hp,
+        armor_class_note: stats.armor_class_note,
+        hp_note: stats.hp_note,
         speed: stats.speed,
         abilities: AbilityRecord::from_fn(|i| stats.abilities[i]),
     })

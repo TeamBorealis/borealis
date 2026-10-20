@@ -294,9 +294,12 @@ fn damage_per_round(m: &MonsterData) -> f64 {
 }
 
 /// Measure a `Monster` element; `None` when its data does not parse or it has no challenge
-/// rating (decision IM12: nothing to compare it with).
+/// rating (decision IM12: nothing to compare it with) or its hit points or armor class are a
+/// formula (decision IM12a: no number to measure).
 pub fn monster(el: &Element) -> Option<MonsterM> {
     let m = MonsterData::from_element(el).ok()?;
+    let hp = m.hit_points()?;
+    m.armor_class()?;
     let text = m.cr?.as_text();
     let (cr_rank, (label, _)) = Cr::XP_TABLE
         .iter()
@@ -306,7 +309,7 @@ pub fn monster(el: &Element) -> Option<MonsterM> {
     Some(MonsterM {
         cr_rank,
         cr_label: label,
-        hp: f64::from(m.hp.average),
+        hp: f64::from(hp),
         ac: m.ac.iter().map(|a| f64::from(a.value)).fold(0.0, f64::max),
         attack: m
             .actions
@@ -327,6 +330,33 @@ mod tests {
         let v = dice_expressions("deals 2d8 + 4 and 10d10 damage; add 1d4");
         let avgs: Vec<f64> = v.iter().map(|x| x.1).collect();
         assert_eq!(avgs, vec![13.0, 55.0, 2.5]);
+    }
+
+    /// A synthetic CR 1/8 stat block, its hit points or armor class optionally a formula.
+    fn creature(hp_formula: bool, ac_formula: bool) -> Element {
+        let mut data = serde_json::json!({"ruleset": "dnd2014", "size": ["small"],
+            "creature_type": "beast", "alignment": "unaligned", "ac": [{"value": 12}],
+            "hp": {"average": 9}, "speed": {"walk": 30},
+            "abilities": {"str": 10, "dex": 12, "con": 10, "int": 3, "wis": 10, "cha": 5},
+            "senses": {"passive_perception": 10}, "cr": "1/8", "xp": 25, "proficiency_bonus": 2});
+        if hp_formula {
+            data.as_object_mut().unwrap().remove("hp");
+            data["hp_note"] = serde_json::json!("3 per moon");
+        }
+        if ac_formula {
+            data.as_object_mut().unwrap().remove("ac");
+            data["ac_note"] = serde_json::json!("10 + a moon");
+        }
+        let m: MonsterData = serde_json::from_value(data).expect("stat block");
+        m.to_element("ID_TEST_MOONHOUND", "Moonhound", "Test")
+    }
+
+    #[test]
+    fn a_stat_block_with_formula_hit_points_or_armor_class_is_not_measured() {
+        let m = monster(&creature(false, false)).expect("measured");
+        assert_eq!((m.hp, m.ac), (9.0, 12.0));
+        assert!(monster(&creature(true, false)).is_none());
+        assert!(monster(&creature(false, true)).is_none());
     }
 
     #[test]

@@ -25,8 +25,9 @@ The store reports every `validate()` problem as `Severity::Error` / `IssueCode::
 | `creature_type` | enum of the 14 types | lowercase, singular |
 | `tags` | `[string]` | the parenthetical: `["goblinoid"]`, `["human","shapechanger"]`, `["any race"]` |
 | `alignment` | string | verbatim: `neutral evil`, `unaligned`, `any non-good alignment` |
-| `ac` | `[{value, source?, condition?}]` | one entry per form; `source` is the parenthetical, `condition` e.g. `in humanoid form` |
-| `hp` | `{average, formula?}` | formula without spaces, `19d12+133`, `2d6-2`; absent when fixed |
+| `ac` | `[{value, source?, condition?}]` | one entry per form (absent only with `ac_note`); `source` is the parenthetical, `condition` e.g. `in humanoid form` |
+| `hp` | `{average, formula?}` | formula without spaces, `19d12+133`, `2d6-2`; absent when fixed. `hp` itself is absent only with `hp_note` |
+| `ac_note`, `hp_note` | string, optional | decision IM12a: the armor class / hit points printed as a formula (a base plus the summoning spell's level, a summon), kept as display text in place of the number; each only without its number, and one of number or note is required. `armor_class()` / `hit_points()` return `None` then, `armor_class_text()` / `hit_points_text()` the number as printed (`13 (natural armor)`, `11 (2d8+2)`) or this note |
 | `speed` | `{walk?, burrow?, climb?, fly?, swim?, hover?, note?}` | feet; `note` for form dependent speeds |
 | `initiative` | `{modifier, score}` | 2024 stat blocks (`Initiative +7 (17)`); soft check: score = 10 + modifier |
 | `abilities` | `{str,dex,con,int,wis,cha}` | 1..=30 |
@@ -65,9 +66,14 @@ A stat block without a `cr` (IM12) carries no CR support tag in the engine, so a
 familiar or conjure lists), Wild Shape forms and the encounter / balance tools never offer it; a select without a CR
 restriction (`Beast`) may. The compendium and sheet cards show `challenge_text()` and no XP.
 
+A stat block whose AC or HP is a note (IM12a) has no number to compute with: Wild Shape forms, the encounter index and
+the balance measures leave it out, and the compendium / sheet cards and the companion tab show the note where the
+number would be (`Armor Class` / `Hit Points` facts, `CompanionState.armorClassNote` / `hpNote`).
+
 ## Validation
 
-Hard (`validate`): sizes non-empty; AC > 0; HP > 0 and formula `NdS[+-M]`; ability scores 1..=30; at least one speed;
+Hard (`validate`): sizes non-empty; an AC or an `ac_note`, not both, every AC > 0; HP or an `hp_note`, not both,
+HP > 0 and formula `NdS[+-M]`; ability scores 1..=30; at least one speed;
 no empty damage clause; with a `cr`: `xp` present, no `cr_note`, `proficiency_bonus` equals the CR's bonus (2, +1 per
 four CR above 4); without a `cr`: no `xp` / `xp_lair`; non-empty feature
 names/text; recharge is a d6 range; legendary actions need `per_round`.

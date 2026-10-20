@@ -2,7 +2,9 @@
 //! level-scaled NPC) imports, through the real app state, on invented homebrew data only. The
 //! compendium shows the note that stands in for its CR and no XP; a companion select that
 //! restricts by CR never offers it, one that does not offers it; a character that picked it
-//! saves, closes and loads back with it.
+//! saves, closes and loads back with it. Decision IM12a: a summon whose armor class and hit
+//! points are formulas imports with the text, shown on its compendium card and companion tab in
+//! place of the numbers, and keeps it through save, close and load.
 
 use borealis_lib::content_dto::{FiveToolsImportReport, FiveToolsImportRequest};
 use borealis_lib::content_packs::NullSink;
@@ -18,6 +20,9 @@ const CLASS: &str = "ID_5ET_HBX_CLASS_TAMER";
 const HOUND: &str = "ID_5ET_HBX_MONSTER_PROBE_HOUND";
 const SPIRIT: &str = "ID_5ET_HBX_MONSTER_PROBE_EMBER_SPIRIT";
 const NPC: &str = "ID_5ET_HBX_MONSTER_PROBE_LEVELLED_GUIDE";
+const WARD: &str = "ID_5ET_HBX_MONSTER_PROBE_WARD_SPIRIT";
+const WARD_AC: &str = "9 + the kindling level";
+const WARD_HP: &str = "15 + 5 for each kindling level";
 /// The select whose filter restricts by challenge rating, and the one that does not.
 const GATED: &str = "Beast Bond";
 const UNGATED: &str = "Spirit Bond";
@@ -66,6 +71,9 @@ fn homebrew(dir: &Path) {
             creature("Probe Ember Spirit", &json!({
                 "summonedBySpell": "Probe Kindling|HBX", "summonedBySpellLevel": 2})),
             creature("Probe Levelled Guide", &json!({"level": 4, "type": "humanoid"})),
+            creature("Probe Ward Spirit", &json!({
+                "summonedBySpell": "Probe Kindling|HBX", "summonedBySpellLevel": 2,
+                "ac": [{"special": WARD_AC}], "hp": {"special": WARD_HP}})),
         ]
     });
     std::fs::create_dir_all(dir.join("homebrew")).unwrap();
@@ -86,14 +94,18 @@ fn import(app: &AppState, dir: &Path) -> FiveToolsImportReport {
     app.import_5etools(&request, &NullSink).expect("import")
 }
 
-fn challenge(app: &AppState, id: &str) -> String {
+fn fact(app: &AppState, id: &str, label: &str) -> String {
     app.get_element(id)
         .unwrap_or_else(|e| panic!("{id}: {e:?}"))
         .facts
         .into_iter()
-        .find(|f| f.label == "Challenge")
-        .unwrap_or_else(|| panic!("{id} has no Challenge fact"))
+        .find(|f| f.label == label)
+        .unwrap_or_else(|| panic!("{id} has no {label} fact"))
         .value
+}
+
+fn challenge(app: &AppState, id: &str) -> String {
+    fact(app, id, "Challenge")
 }
 
 fn slot_id(snap: &CharacterSnapshot, title: &str) -> String {
@@ -207,4 +219,43 @@ fn a_creature_without_a_challenge_rating_imports_shows_its_note_and_fills_only_u
     );
     let reopened = again.load_character(&s.id).expect("load in a new app");
     assert_eq!(picked(&reopened).as_deref(), Some(SPIRIT));
+}
+
+#[test]
+fn a_summon_whose_armor_class_and_hit_points_are_formulas_imports_and_shows_the_text() {
+    let data = tempfile::tempdir().expect("data dir");
+    homebrew(data.path());
+    let home = tempfile::tempdir().expect("app dir");
+    let app = app(home.path());
+    let report = import(&app, data.path());
+    assert!(report.skipped.is_empty(), "nothing is skipped");
+
+    // the card shows the text in place of the numbers; a numbered stat block its numbers
+    assert_eq!(fact(&app, WARD, "Armor Class"), WARD_AC);
+    assert_eq!(fact(&app, WARD, "Hit Points"), WARD_HP);
+    assert_eq!(fact(&app, HOUND, "Armor Class"), "12");
+    assert_eq!(fact(&app, HOUND, "Hit Points"), "9 (2d8)");
+
+    // the companion tab shows the text, not a number it would have to invent
+    let s = tamer(&app);
+    assert!(offered(&app, &s, UNGATED).iter().any(|id| id == WARD));
+    assert!(!offered(&app, &s, GATED).iter().any(|id| id == WARD));
+    let s = app
+        .apply_selection(&s.id, &slot_id(&s, UNGATED), WARD)
+        .expect("pick the ward spirit");
+    let notes = |snap: &CharacterSnapshot| {
+        let c = snap.companion.as_ref().expect("companion");
+        (c.armor_class_note.clone(), c.hp_note.clone())
+    };
+    let want = (Some(WARD_AC.to_string()), Some(WARD_HP.to_string()));
+    assert_eq!(notes(&s), want);
+    app.save_character(&s.id).expect("save");
+    app.close_character(&s.id, false).expect("close");
+    assert_eq!(notes(&app.load_character(&s.id).expect("load")), want);
+
+    // a fresh app reads the stored stat block back with its text
+    drop(app);
+    let again = self::app(home.path());
+    assert_eq!(fact(&again, WARD, "Hit Points"), WARD_HP);
+    assert_eq!(notes(&again.load_character(&s.id).expect("load")), want);
 }

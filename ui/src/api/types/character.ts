@@ -394,6 +394,10 @@ export interface CompanionState {
   portrait: string | null;
   armorClass: number;
   hp: number;
+  /** The armor class as text when the stat block prints it as a formula (shown instead of armorClass). */
+  armorClassNote: string | null;
+  /** The hit points as text when the stat block prints them as a formula (shown instead of hp). */
+  hpNote: string | null;
   speed: number;
   abilities: AbilityRecord<number>;
 }

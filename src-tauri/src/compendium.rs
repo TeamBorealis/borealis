@@ -259,16 +259,29 @@ fn damage_text(el: &Element) -> String {
 
 /// A typed stat block's challenge rating with its XP (`1/4 (50 XP)`); a creature without one
 /// (decision IM12) shows the note that stands in for it, or an em dash, and no XP.
-fn challenge_fact(el: &Element) -> Option<ElementFact> {
+/// A typed stat block's armor class and hit points as printed (`13 (natural armor)`,
+/// `11 (2d8+2)`), or the formula text that stands in for one (decision IM12a), then its
+/// challenge rating with its XP (`1/4 (50 XP)`); a creature without one (decision IM12) shows
+/// the note that stands in for it, or an em dash, and no XP.
+fn monster_facts(el: &Element) -> Vec<ElementFact> {
     if el.ty != "Monster" {
-        return None;
+        return Vec::new();
     }
-    let m = borealis_content::MonsterData::from_element(el).ok()?;
-    let text = match m.xp.filter(|_| m.cr.is_some()) {
+    let Ok(m) = borealis_content::MonsterData::from_element(el) else {
+        return Vec::new();
+    };
+    let challenge = match m.xp.filter(|_| m.cr.is_some()) {
         Some(xp) => format!("{} ({xp} XP)", m.challenge_text()),
         None => m.challenge_text(),
     };
-    fact("Challenge", text)
+    [
+        fact("Armor Class", m.armor_class_text()),
+        fact("Hit Points", m.hit_points_text()),
+        fact("Challenge", challenge),
+    ]
+    .into_iter()
+    .flatten()
+    .collect()
 }
 
 pub(crate) fn facts(el: &Element) -> Vec<ElementFact> {
@@ -286,7 +299,7 @@ pub(crate) fn facts(el: &Element) -> Vec<ElementFact> {
             out.extend(fact(label, v));
         }
     }
-    out.extend(challenge_fact(el));
+    out.extend(monster_facts(el));
     if el.ty == "Spell" {
         out.extend(fact("Components", components(el)));
         if flag(el, "isConcentration") {

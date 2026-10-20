@@ -207,7 +207,13 @@ fn spot_check_goblin_warrior() {
             score: 12
         })
     );
-    assert_eq!((m.hp.average, m.hp.formula.as_deref()), (10, Some("3d6")));
+    assert_eq!(
+        (
+            m.hp.as_ref().unwrap().average,
+            m.hp.as_ref().unwrap().formula.as_deref()
+        ),
+        (10, Some("3d6"))
+    );
     assert_eq!(m.speed.walk, Some(30));
     assert_eq!(scores(&m), [8, 15, 10, 10, 8, 8]);
     assert!(m.saves.is_empty());
@@ -262,7 +268,10 @@ fn spot_check_owlbear() {
         })
     );
     assert_eq!(
-        (m.hp.average, m.hp.formula.as_deref()),
+        (
+            m.hp.as_ref().unwrap().average,
+            m.hp.as_ref().unwrap().formula.as_deref()
+        ),
         (59, Some("7d10+21"))
     );
     assert_eq!((m.speed.walk, m.speed.climb), (Some(40), Some(40)));
@@ -314,7 +323,10 @@ fn spot_check_adult_red_dragon() {
         })
     );
     assert_eq!(
-        (m.hp.average, m.hp.formula.as_deref()),
+        (
+            m.hp.as_ref().unwrap().average,
+            m.hp.as_ref().unwrap().formula.as_deref()
+        ),
         (256, Some("19d12+133"))
     );
     assert_eq!(
@@ -441,7 +453,10 @@ fn spot_check_lich() {
         })
     );
     assert_eq!(
-        (m.hp.average, m.hp.formula.as_deref()),
+        (
+            m.hp.as_ref().unwrap().average,
+            m.hp.as_ref().unwrap().formula.as_deref()
+        ),
         (315, Some("42d8+126"))
     );
     assert_eq!(scores(&m), [11, 16, 16, 21, 14, 16]);
@@ -561,7 +576,13 @@ fn spot_check_wolf_and_beasts_for_wild_shape() {
             score: 12
         })
     );
-    assert_eq!((m.hp.average, m.hp.formula.as_deref()), (11, Some("2d8+2")));
+    assert_eq!(
+        (
+            m.hp.as_ref().unwrap().average,
+            m.hp.as_ref().unwrap().formula.as_deref()
+        ),
+        (11, Some("2d8+2"))
+    );
     assert_eq!(m.speed.walk, Some(40));
     assert_eq!(scores(&m), [14, 15, 12, 3, 12, 6]);
     assert_eq!(

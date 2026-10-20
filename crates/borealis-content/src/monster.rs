@@ -20,7 +20,8 @@ pub use crate::monster_types::{
     SpellcastingBlock, Usage,
 };
 
-/// What a sheet shows for a creature with neither a challenge rating nor a note for it.
+/// What a sheet shows for a creature with neither a challenge rating nor a note for it (also
+/// for an armor class or hit points with neither a number nor a note).
 pub const NO_CHALLENGE_RATING: &str = "\u{2014}";
 
 /// A problem found in a [`MonsterData`].
@@ -81,10 +82,22 @@ pub struct MonsterData {
     pub tags: Vec<String>,
     /// Alignment as printed (`neutral evil`, `unaligned`, `any non-good alignment`).
     pub alignment: String,
-    /// Armor classes (more than one when the AC depends on a form).
+    /// Armor classes (more than one when the AC depends on a form). Empty only when the armor
+    /// class is printed as a formula (decision IM12a), kept as text in `ac_note`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub ac: Vec<ArmorClass>,
-    /// Hit points.
-    pub hp: HitPoints,
+    /// The armor class as display text when it is a formula, not a number (a base plus the
+    /// summoning spell's level). Only with no `ac`; nothing computes with it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ac_note: Option<String>,
+    /// Hit points. Absent only when they are printed as a formula (decision IM12a), kept as
+    /// text in `hp_note`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hp: Option<HitPoints>,
+    /// The hit points as display text when they are a formula, not a number (a base plus so many
+    /// per spell level). Only with no `hp`; nothing computes with it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hp_note: Option<String>,
     /// Movement.
     pub speed: Speeds,
     /// Initiative modifier and score (SRD 5.2.1 stat blocks).
@@ -238,10 +251,58 @@ impl MonsterData {
     /// stands in for it, else an em dash.
     #[must_use]
     pub fn challenge_text(&self) -> String {
-        match (&self.cr, &self.cr_note) {
-            (Some(cr), _) => cr.as_text(),
-            (None, Some(note)) if !note.trim().is_empty() => note.trim().to_string(),
-            _ => NO_CHALLENGE_RATING.to_string(),
+        match &self.cr {
+            Some(cr) => cr.as_text(),
+            None => note_or_dash(self.cr_note.as_deref()),
+        }
+    }
+
+    /// The first armor class number, or `None` when the AC is a formula (decision IM12a).
+    #[must_use]
+    pub fn armor_class(&self) -> Option<u32> {
+        self.ac.first().map(|a| a.value)
+    }
+
+    /// The average hit points, or `None` when they are a formula (decision IM12a).
+    #[must_use]
+    pub fn hit_points(&self) -> Option<u32> {
+        self.hp.as_ref().map(|hp| hp.average)
+    }
+
+    /// The armor class as shown on a sheet or card (`13 (natural armor)`, several forms joined
+    /// with `, `), else the formula text that stands in for it, else an em dash.
+    #[must_use]
+    pub fn armor_class_text(&self) -> String {
+        if self.ac.is_empty() {
+            return note_or_dash(self.ac_note.as_deref());
+        }
+        self.ac
+            .iter()
+            .map(|a| {
+                let mut text = a.value.to_string();
+                if let Some(source) = a.source.as_deref().filter(|s| !s.trim().is_empty()) {
+                    text.push_str(&format!(" ({})", source.trim()));
+                }
+                if let Some(condition) = a.condition.as_deref().filter(|c| !c.trim().is_empty()) {
+                    text.push_str(&format!(" {}", condition.trim()));
+                }
+                text
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+
+    /// The hit points as shown on a sheet or card (`11 (2d8+2)`), else the formula text that
+    /// stands in for them, else an em dash.
+    #[must_use]
+    pub fn hit_points_text(&self) -> String {
+        match &self.hp {
+            Some(HitPoints {
+                average,
+                formula: Some(f),
+            }) => format!("{average} ({f})"),
+            Some(hp) => hp.average.to_string(),
+            None => note_or_dash(self.hp_note.as_deref()),
         }
     }
 
@@ -250,4 +311,11 @@ impl MonsterData {
     pub fn modifier(&self, ability: Ability) -> i32 {
         self.abilities.modifier(ability)
     }
+}
+
+/// A trimmed display note, or an em dash when there is none.
+fn note_or_dash(note: Option<&str>) -> String {
+    note.map(str::trim)
+        .filter(|n| !n.is_empty())
+        .map_or_else(|| NO_CHALLENGE_RATING.to_string(), str::to_string)
 }

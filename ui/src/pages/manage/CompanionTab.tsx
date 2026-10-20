@@ -17,8 +17,8 @@ export function CompanionTab() {
           </MgField>
         </div>
         <div className="mg-tiles" aria-label="Companion statistics" style={{ marginTop: 10 }}>
-          <div className="mg-tile"><span>AC</span><b>{c.armorClass}</b></div>
-          <div className="mg-tile"><span>HP</span><b>{c.hp}</b></div>
+          <div className="mg-tile"><span>AC</span><b>{c.armorClassNote ?? c.armorClass}</b></div>
+          <div className="mg-tile"><span>HP</span><b>{c.hpNote ?? c.hp}</b></div>
           <div className="mg-tile"><span>Speed</span><b>{c.speed} ft</b></div>
           {ABILITY_KEYS.map((k) => <div key={k} className="mg-tile"><span>{ABILITY_LABEL[k].slice(0, 3)}</span><b>{c.abilities[k]}</b></div>)}
         </div>

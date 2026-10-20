@@ -38,10 +38,10 @@ fn a_creature_reads_into_the_srd_stat_block_shape() {
     );
     assert_eq!(
         m.hp,
-        HitPoints {
+        Some(HitPoints {
             average: 11,
             formula: Some("2d8+2".into())
-        }
+        })
     );
     assert_eq!(m.speed.walk, Some(40));
     assert_eq!((m.abilities.dex, m.abilities.cha), (15, 6));
@@ -180,7 +180,7 @@ fn creatures_that_cannot_be_read_exactly_say_why() {
     let mut odd = wolf();
     odd["hp"]["formula"] = json!("2d8 + 2 + your level");
     let (m, lost) = stat_block(&odd, Ruleset::Dnd2014).unwrap();
-    assert_eq!(m.hp.formula, None);
+    assert_eq!(m.hp.as_ref().unwrap().formula, None);
     assert_eq!(lost.len(), 1);
 }
 
@@ -239,6 +239,76 @@ fn the_note_for_a_missing_challenge_rating_follows_what_5etools_prints() {
     assert_eq!(note(&|c| c["level"] = json!(7)), "Level 7");
     assert_eq!(note(&|_| {}), borealis_content::NO_CHALLENGE_RATING);
     assert_eq!(note(&|c| c["cr"] = Value::Null), "\u{2014}");
+}
+
+#[test]
+fn a_summon_keeps_a_formula_armor_class_and_hit_points_as_text() {
+    let mut c = ember_spirit();
+    c["ac"] = json!([{"special": "9 + the {@b kindling} level"}]);
+    c["hp"] = json!({"special": "15 + 5 for each kindling level"});
+    let (m, lost) = stat_block(&c, Ruleset::Dnd2014).unwrap();
+    assert!(m.ac.is_empty() && m.hp.is_none());
+    assert_eq!(m.ac_note.as_deref(), Some("9 + the kindling level"));
+    assert_eq!(m.hp_note.as_deref(), Some("15 + 5 for each kindling level"));
+    assert_eq!(
+        (m.armor_class_text(), m.hit_points_text()),
+        (
+            "9 + the kindling level".to_string(),
+            "15 + 5 for each kindling level".to_string()
+        )
+    );
+    assert!(lost.is_empty(), "{lost:?}");
+    assert!(m.validate().is_empty(), "{:?}", m.validate());
+
+    // only one of them a formula: the other stays a number
+    let mut hp_only = ember_spirit();
+    hp_only["hp"] = json!({"special": "4 per kindling level"});
+    let m = stat_block(&hp_only, Ruleset::Dnd2014).unwrap().0;
+    assert_eq!((m.armor_class(), m.ac_note), (Some(12), None));
+    assert_eq!(m.hp_note.as_deref(), Some("4 per kindling level"));
+}
+
+#[test]
+fn printed_text_where_a_number_belongs_is_still_a_skip() {
+    // a creature with a challenge rating needs its numbers
+    let mut rated = ember_spirit();
+    rated["cr"] = json!("1");
+    rated["hp"] = json!({"special": "4 per kindling level"});
+    assert!(stat_block(&rated, Ruleset::Dnd2014)
+        .unwrap_err()
+        .starts_with("hit points are not a number"));
+    rated["hp"] = json!({"average": 20});
+    rated["ac"] = json!([{"special": "9 + the kindling level"}]);
+    assert_eq!(
+        stat_block(&rated, Ruleset::Dnd2014).unwrap_err(),
+        "armor class is not a number"
+    );
+    // without one: an armor class entry that is neither a number nor text, an ability score
+    let mut summon = ember_spirit();
+    summon["ac"] = json!([{"from": ["natural armor"]}]);
+    assert_eq!(
+        stat_block(&summon, Ruleset::Dnd2014).unwrap_err(),
+        "armor class is not a number"
+    );
+    let mut summon = ember_spirit();
+    summon["hp"] = json!({"special": "  "});
+    assert!(stat_block(&summon, Ruleset::Dnd2014)
+        .unwrap_err()
+        .starts_with("hit points are not a number"));
+    let mut summon = ember_spirit();
+    summon["str"] = json!("as the kindling");
+    assert!(stat_block(&summon, Ruleset::Dnd2014)
+        .unwrap_err()
+        .contains("str score"));
+}
+
+#[test]
+fn a_formula_beside_a_number_keeps_the_number() {
+    let mut c = ember_spirit();
+    c["ac"] = json!([12, {"special": "14 while kindled"}]);
+    let (m, lost) = stat_block(&c, Ruleset::Dnd2014).unwrap();
+    assert_eq!((m.armor_class(), m.ac_note), (Some(12), None));
+    assert_eq!(lost.len(), 1, "{lost:?}");
 }
 
 #[test]

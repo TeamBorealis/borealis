@@ -112,12 +112,12 @@ const FIVE_SKIP_BY_DESIGN: &[&str] = &[
     // (borealis-import-5etools report::code): a creature type that is a choice or not one of
     // the 14, a number printed as text, or a `_copy` target missing from the data. Creatures
     // without a challenge rating (summoned spirits, level-scaled NPCs) import since decision
-    // IM12 and are no longer skipped; the summoned ones whose armor class or hit points are a
-    // formula of the spell level ("11 + the spell's level") stay skipped as numbers printed as
-    // text (DATA_CREATURE_STAT_NOT_A_NUMBER): 2026-10 corpus, 120 of the 235 import, 115 do not.
+    // IM12, and since IM12a also the 115 summons whose armor class or hit points are a formula
+    // of the spell or summoner level (kept as display text). DATA_CREATURE_STAT_NOT_A_NUMBER is
+    // left for 8 creatures with a challenge rating (2026-10 corpus): an ability score (5), hit
+    // points (2) or the challenge rating (1) printed as text.
     "creature stat block: the creature type is a choice",
     "creature stat block: creature type",
-    "creature stat block: armor class is not a number",
     "creature stat block: hit points are not a number",
     "creature stat block: the str score is not a number",
     "creature stat block: challenge rating",

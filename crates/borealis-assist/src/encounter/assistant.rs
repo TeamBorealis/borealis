@@ -474,7 +474,9 @@ fn verified_tactics(
             .element(&m.id)
             .and_then(|e| MonsterData::from_element(e).ok())
         {
-            guard.allow_int(i64::from(d.hp.average));
+            if let Some(hp) = d.hit_points() {
+                guard.allow_int(i64::from(hp));
+            }
             d.ac.iter()
                 .for_each(|a| guard.allow_int(i64::from(a.value)));
         }

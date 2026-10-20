@@ -35,23 +35,7 @@ pub(crate) fn validate(m: &MonsterData) -> Vec<MonsterIssue> {
     if m.alignment.trim().is_empty() {
         bad("alignment", "alignment is empty".into());
     }
-    if m.ac.is_empty() || m.ac.iter().any(|a| a.value == 0) {
-        bad(
-            "ac",
-            "needs at least one armor class greater than zero".into(),
-        );
-    }
-    if m.hp.average == 0 {
-        bad(
-            "hp.average",
-            "hit point average must be greater than zero".into(),
-        );
-    }
-    if let Some(f) = &m.hp.formula {
-        if crate::monster_validate::parse_dice(f).is_none() {
-            bad("hp.formula", format!("{f:?} is not NdS[+-M]"));
-        }
-    }
+    defenses(m, &mut bad);
     for ability in Ability::ALL {
         let score = m.abilities.score(*ability);
         if score == 0 || score > MAX_SCORE {
@@ -172,6 +156,47 @@ pub(crate) fn warnings(m: &MonsterData) -> Vec<MonsterIssue> {
     )]
 }
 
+/// Armor class and hit points (decision IM12a): each is a number or, when printed as a formula,
+/// a non-empty note standing in for it, never both.
+fn defenses(m: &MonsterData, bad: &mut impl FnMut(&str, String)) {
+    let has_note = |note: &Option<String>| note.as_deref().is_some_and(|n| !n.trim().is_empty());
+    if m.ac.is_empty() {
+        if !has_note(&m.ac_note) {
+            bad("ac", "needs an armor class or a note for it".into());
+        }
+    } else {
+        if m.ac.iter().any(|a| a.value == 0) {
+            bad("ac", "every armor class must be greater than zero".into());
+        }
+        if m.ac_note.is_some() {
+            bad(
+                "ac_note",
+                "an armor class note next to an armor class".into(),
+            );
+        }
+    }
+    let Some(hp) = &m.hp else {
+        if !has_note(&m.hp_note) {
+            bad("hp", "needs hit points or a note for them".into());
+        }
+        return;
+    };
+    if m.hp_note.is_some() {
+        bad("hp_note", "a hit point note next to hit points".into());
+    }
+    if hp.average == 0 {
+        bad(
+            "hp.average",
+            "hit point average must be greater than zero".into(),
+        );
+    }
+    if let Some(f) = &hp.formula {
+        if parse_dice(f).is_none() {
+            bad("hp.formula", format!("{f:?} is not NdS[+-M]"));
+        }
+    }
+}
+
 /// Challenge rating, XP and proficiency bonus agree (decision IM12): with a CR, the XP and the
 /// CR's proficiency bonus are present and no note stands in for it; without one there is no XP.
 fn challenge(m: &MonsterData, bad: &mut impl FnMut(&str, String)) {
@@ -212,12 +237,15 @@ fn challenge(m: &MonsterData, bad: &mut impl FnMut(&str, String)) {
 
 pub(crate) fn soft_checks(m: &MonsterData) -> Vec<MonsterIssue> {
     let mut out = Vec::new();
-    if let Some(f) = &m.hp.formula {
+    if let Some((average, f)) =
+        m.hp.as_ref()
+            .and_then(|hp| hp.formula.as_ref().map(|f| (hp.average, f)))
+    {
         if let Some(avg) = dice_average(f) {
-            if i64::from(avg) != i64::from(m.hp.average) {
+            if i64::from(avg) != i64::from(average) {
                 out.push(MonsterIssue::new(
                     "hp",
-                    format!("average {} but {f} averages {avg}", m.hp.average),
+                    format!("average {average} but {f} averages {avg}"),
                 ));
             }
         }

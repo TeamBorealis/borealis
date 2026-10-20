@@ -4,9 +4,12 @@
 //! scores, saves, skills, senses, languages, CR and XP, and traits / actions / bonus actions
 //! / reactions / legendary actions as text). Deterministic; no AI is involved.
 //!
-//! A creature whose stat block cannot be read exactly (hit points or challenge rating that
-//! are not numbers, a creature type that is a choice, ...) is skipped with the reason in the
-//! report. Details the model has no field for are listed as partial.
+//! A creature whose stat block cannot be read exactly (an ability score or challenge rating
+//! that is not a number, a creature type that is a choice, ...) is skipped with the reason in
+//! the report. A creature without a challenge rating (a summon) whose armor class or hit points
+//! are printed as a formula keeps the formula as display text (decision IM12a); with a
+//! challenge rating such text is still a skip. Details the model has no field for are listed
+//! as partial.
 
 use super::monster_text::{alignment, name_usage, senses, spellcasting};
 use super::{Conv, Ent, Shared, State};
@@ -109,15 +112,26 @@ pub fn stat_block(raw: &Value, ruleset: Ruleset) -> Result<(MonsterData, Vec<Str
             lost.push(format!("{SECTION}{what} not imported"));
         }
     }
+    let size = sizes(raw)?;
+    let (ac, ac_note) = match armor(raw, &mut lost) {
+        Ok(ac) => (ac, None),
+        Err(nan) => (Vec::new(), Some(formula_note(nan, cr)?)),
+    };
+    let (hp, hp_note) = match hit_points(raw, &mut lost) {
+        Ok(hp) => (Some(hp), None),
+        Err(nan) => (None, Some(formula_note(nan, cr)?)),
+    };
     let data = MonsterData {
         ruleset,
-        size: sizes(raw)?,
+        size,
         swarm_of,
         creature_type,
         tags,
         alignment: alignment(raw),
-        ac: armor(raw, &mut lost)?,
-        hp: hit_points(raw, &mut lost)?,
+        ac,
+        ac_note,
+        hp,
+        hp_note,
         speed: speeds(raw, &mut lost)?,
         initiative: initiative(raw, ruleset, &abilities, cr),
         saves: bonuses::<Ability>(raw, "save", &mut lost, &mut Vec::new()),
@@ -305,8 +319,43 @@ fn challenge_note(raw: &Value) -> Option<String> {
         .map(|level| format!("Level {level}"))
 }
 
-fn hit_points(raw: &Value, lost: &mut Vec<String>) -> Result<HitPoints, String> {
-    let hp = raw.get("hp").ok_or("no hit points")?;
+/// Why an armor class or hit points are not a number: the skip reason, and the printed text
+/// when there is some (a formula of the spell or summoner level).
+struct NotANumber {
+    reason: String,
+    text: Option<String>,
+}
+
+impl NotANumber {
+    fn plain(reason: &str) -> Self {
+        Self {
+            reason: reason.to_string(),
+            text: None,
+        }
+    }
+}
+
+/// Decision IM12a: a creature without a challenge rating (a summon whose numbers follow the
+/// spell or the summoner's level) keeps an armor class or hit points printed as a formula as
+/// display text. With a challenge rating, or with no text at all, it stays a skip.
+fn formula_note(nan: NotANumber, cr: Option<Cr>) -> Result<String, String> {
+    match nan.text {
+        Some(text) if cr.is_none() => Ok(text),
+        _ => Err(nan.reason),
+    }
+}
+
+/// The printed text of a `special` entry, tags stripped; `None` when empty.
+fn special_text(v: &Value) -> Option<String> {
+    let text = strip_tags(v.get("special")?.as_str()?);
+    let text = text.trim();
+    (!text.is_empty()).then(|| text.to_string())
+}
+
+fn hit_points(raw: &Value, lost: &mut Vec<String>) -> Result<HitPoints, NotANumber> {
+    let hp = raw
+        .get("hp")
+        .ok_or_else(|| NotANumber::plain("no hit points"))?;
     // a `special` that is only a number is the hit points (AWM prints them so)
     let plain_special = hp
         .get("special")
@@ -319,10 +368,10 @@ fn hit_points(raw: &Value, lost: &mut Vec<String>) -> Result<HitPoints, String> 
         .and_then(|n| u32::try_from(n).ok())
     else {
         let special = hp.get("special").and_then(Value::as_str).unwrap_or("?");
-        return Err(format!(
-            "hit points are not a number ({})",
-            strip_tags(special)
-        ));
+        return Err(NotANumber {
+            reason: format!("hit points are not a number ({})", strip_tags(special)),
+            text: special_text(hp),
+        });
     };
     let formula = hp.get("formula").and_then(Value::as_str).and_then(|f| {
         let flat: String = f
@@ -354,17 +403,14 @@ fn is_dice(s: &str) -> bool {
     digits(n) && digits(sides) && sides != "1" && modifier.map_or(true, digits)
 }
 
-fn armor(raw: &Value, lost: &mut Vec<String>) -> Result<Vec<ArmorClass>, String> {
+fn armor(raw: &Value, lost: &mut Vec<String>) -> Result<Vec<ArmorClass>, NotANumber> {
     let mut out = Vec::new();
-    for a in raw
-        .get("ac")
-        .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-    {
+    let mut not_numbers = Vec::new();
+    let entries = raw.get("ac").and_then(Value::as_array);
+    for a in entries.into_iter().flatten() {
         let value = a.as_u64().or_else(|| a.get("ac").and_then(Value::as_u64));
         let Some(value) = value.and_then(|v| u32::try_from(v).ok()) else {
-            lost.push(format!(
+            not_numbers.push(format!(
                 "armor class {} not imported",
                 strip_tags(&a.to_string())
             ));
@@ -385,8 +431,17 @@ fn armor(raw: &Value, lost: &mut Vec<String>) -> Result<Vec<ArmorClass>, String>
         });
     }
     if out.is_empty() {
-        return Err("armor class is not a number".into());
+        // every entry is text: the formula when each one is a `special` line
+        let texts: Option<Vec<String>> = entries
+            .filter(|list| !list.is_empty())
+            .map(|list| list.iter().map(special_text).collect())
+            .unwrap_or_default();
+        return Err(NotANumber {
+            reason: "armor class is not a number".into(),
+            text: texts.map(|t| t.join(", ")),
+        });
     }
+    lost.extend(not_numbers);
     Ok(out)
 }
 

@@ -61,7 +61,9 @@ pub mod code {
     /// no field for (alternate speeds, a skill "plus PB", an armor class "varies").
     pub const CREATURE_FIELD: &str = "MODEL_CREATURE_FIELD_TEXT";
     /// Hit points, an ability score, the AC or the CR printed as text, not a number ("half the
-    /// summoner's", "Unknown").
+    /// summoner's", "Unknown"). A creature without a CR keeps AC / HP text as a display note
+    /// instead (decision IM12a), so for AC / HP this is a creature with a CR, or one with no
+    /// text at all.
     pub const CREATURE_NOT_A_NUMBER: &str = "DATA_CREATURE_STAT_NOT_A_NUMBER";
     /// A creature type that is a choice ("celestial, fey or fiend") or not one of the 14 types.
     pub const CREATURE_TYPE: &str = "MODEL_CREATURE_TYPE";

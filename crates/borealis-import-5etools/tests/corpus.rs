@@ -47,10 +47,12 @@ const CLOSED_GAPS: &[(&str, &str)] = &[
 const MAX_UNENFORCED_PREREQS: usize = 8;
 /// Lowest acceptable share of converted creatures, in percent (4588 of 4851 = 94.6% on the
 /// 2026-10 corpus at det-5e-9; 4708 = 97.0% at det-5e-10, where creatures without a challenge
-/// rating import (decision IM12). Every skip carries a reason code: a number printed as text
-/// (123: 115 summoned creatures whose AC or HP is a formula of the spell level, 8 others), a
-/// creature type that is a choice or not one of the 14 (17), a `_copy` target missing (3).
-const MIN_CREATURE_CONVERTED_PERCENT: usize = 96;
+/// rating import (decision IM12); 4823 = 99.4% at det-5e-11, where the 115 summons whose AC or
+/// HP is a formula of the spell or summoner level import with it as text (decision IM12a).
+/// Every skip carries a reason code: a number printed as text on a creature with a challenge
+/// rating (8: an ability score 5, hit points 2, the challenge rating 1), a creature type that
+/// is a choice or not one of the 14 (17), a `_copy` target missing (3).
+const MIN_CREATURE_CONVERTED_PERCENT: usize = 99;
 /// Report kind of creatures.
 const CREATURE: &str = "monster";
 /// Lower bounds on what a full folder must produce (92 packs, 12443 elements in 2026-10).

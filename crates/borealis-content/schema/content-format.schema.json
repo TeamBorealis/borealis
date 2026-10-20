@@ -1319,8 +1319,6 @@
         "size",
         "creature_type",
         "alignment",
-        "ac",
-        "hp",
         "speed",
         "abilities",
         "senses"
@@ -1331,6 +1329,38 @@
           "proficiency_bonus"
         ]
       },
+      "allOf": [
+        {
+          "description": "An armor class, or a note for one printed as a formula (decision IM12a), not both.",
+          "oneOf": [
+            {
+              "required": [
+                "ac"
+              ]
+            },
+            {
+              "required": [
+                "ac_note"
+              ]
+            }
+          ]
+        },
+        {
+          "description": "Hit points, or a note for them printed as a formula (decision IM12a), not both.",
+          "oneOf": [
+            {
+              "required": [
+                "hp"
+              ]
+            },
+            {
+              "required": [
+                "hp_note"
+              ]
+            }
+          ]
+        }
+      ],
       "properties": {
         "ruleset": {
           "$ref": "#/$defs/Ruleset"
@@ -1409,6 +1439,16 @@
             },
             "additionalProperties": false
           }
+        },
+        "ac_note": {
+          "description": "Display text standing in for an armor class printed as a formula (decision IM12a), e.g. a base number plus the spell level. Only when `ac` is absent.",
+          "type": "string",
+          "minLength": 1
+        },
+        "hp_note": {
+          "description": "Display text standing in for hit points printed as a formula (decision IM12a). Only when `hp` is absent.",
+          "type": "string",
+          "minLength": 1
         },
         "hp": {
           "type": "object",

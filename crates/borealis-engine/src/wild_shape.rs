@@ -120,13 +120,14 @@ fn senses_text(m: &MonsterData) -> String {
 
 /// Every Beast stat block of the universe with a challenge rating, summarised, with its CR. A
 /// beast without one (decision IM12) has no number to compare with the form limit: never a form.
+/// Nor is one whose armor class or hit points are a formula (decision IM12a): a form needs them.
 fn beasts(uni: &Universe) -> Vec<(FormSummary, f64)> {
     let mut out = Vec::new();
     for u in uni.by_type("Monster") {
         let Ok(m) = MonsterData::from_element(&u.el) else {
             continue;
         };
-        let Some(cr) = m.cr else {
+        let (Some(cr), Some(ac), Some(hp)) = (m.cr, m.armor_class(), m.hit_points()) else {
             continue;
         };
         if m.creature_type.as_str() != "beast" {
@@ -141,8 +142,8 @@ fn beasts(uni: &Universe) -> Vec<(FormSummary, f64)> {
                     .size
                     .first()
                     .map_or(String::new(), |s| s.as_str().to_string()),
-                ac: m.ac.first().map_or(0, |a| a.value),
-                hp: m.hp.average,
+                ac,
+                hp,
                 speed: speed_text(&m),
                 flying: m.speed.fly.is_some(),
                 abilities: [
@@ -246,5 +247,38 @@ mod tests {
         let uni = Universe::new(&store, Ruleset::Dnd2014);
         let ids: Vec<String> = beasts(&uni).into_iter().map(|(f, _)| f.id).collect();
         assert_eq!(ids, ["ID_TEST_RATED"]);
+    }
+
+    /// A rated beast whose armor class or hit points are a formula (decision IM12a).
+    fn beast_with_formula(id: &str, ac_formula: bool) -> Element {
+        let mut m = MonsterData::from_element(&beast(id, Some("1/8"))).expect("stat block");
+        if ac_formula {
+            m.ac.clear();
+            m.ac_note = Some("10 + a level".into());
+        } else {
+            m.hp = None;
+            m.hp_note = Some("5 per level".into());
+        }
+        m.to_element(id, id, "Test")
+    }
+
+    #[test]
+    fn a_beast_whose_armor_class_or_hit_points_are_a_formula_is_never_a_form() {
+        let file = ContentFile {
+            elements: vec![
+                beast("ID_TEST_RATED", Some("1/8")),
+                beast_with_formula("ID_TEST_AC_FORMULA", true),
+                beast_with_formula("ID_TEST_HP_FORMULA", false),
+            ],
+            ..ContentFile::default()
+        };
+        let store = ContentStoreBuilder::new()
+            .add_file("beasts.json", PackOrigin::Custom, file)
+            .build();
+        let uni = Universe::new(&store, Ruleset::Dnd2014);
+        let forms = beasts(&uni);
+        let ids: Vec<&str> = forms.iter().map(|(f, _)| f.id.as_str()).collect();
+        assert_eq!(ids, ["ID_TEST_RATED"]);
+        assert_eq!((forms[0].0.ac, forms[0].0.hp), (12, 9));
     }
 }
