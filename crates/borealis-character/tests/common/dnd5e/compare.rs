@@ -237,7 +237,9 @@ pub fn compare(e: &Sheet, a: &Sheet) -> Vec<Check> {
 /// A reviewed exception: `(file key, check id) -> (class, reason)`.
 pub type Exceptions = BTreeMap<(String, String), (String, String)>;
 
-/// `exceptions.tsv`: `file<TAB>check<TAB>class (b|c)<TAB>reason`; `#` lines are comments.
+/// `exceptions.tsv`: `file<TAB>check<TAB>class (b|c|m)<TAB>reason`; `#` lines are comments.
+/// Classes: `b` stale file, `c` Aurora bug or deliberate Borealis decision, `m` the value
+/// depends on content that no corpus repo has (holds only while the file's content is missing).
 pub fn load_exceptions(path: &Path) -> Exceptions {
     let Ok(text) = std::fs::read_to_string(path) else {
         return Exceptions::new();
@@ -249,8 +251,8 @@ pub fn load_exceptions(path: &Path) -> Exceptions {
         }
         let cols: Vec<&str> = line.splitn(4, '\t').collect();
         assert!(
-            cols.len() == 4 && matches!(cols[2], "b" | "c") && !cols[3].trim().is_empty(),
-            "{}:{}: want file<TAB>check<TAB>b|c<TAB>reason",
+            cols.len() == 4 && matches!(cols[2], "b" | "c" | "m") && !cols[3].trim().is_empty(),
+            "{}:{}: want file<TAB>check<TAB>b|c|m<TAB>reason",
             path.display(),
             n + 1
         );

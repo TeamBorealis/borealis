@@ -13,6 +13,9 @@
 //! `rates.tsv`) live in `BOREALIS_DND5E_PRIVATE` (default `../specs/acceptance-private/dnd5e`
 //! next to the app repo when that folder exists); they hold content ids, so never in the repo.
 //! Pass = every check of every file with complete content matches or is a listed exception.
+//! Files with missing content are compared, not gated; their gate outcome rows still FAIL on a
+//! mismatch unless `exceptions.tsv` lists it as class `m` (the value depends on content that
+//! no corpus repo has, reviewed per row).
 //!
 //! ```text
 //! BOREALIS_CORPUS_DIR=/path/to/corpus cargo test --release -p borealis-character \
@@ -305,8 +308,11 @@ fn report_lines(r: &borealis_character::ImportReport) -> Vec<String> {
     out
 }
 
-fn excepted<'a>(ex: &'a Exceptions, key: &str, c: &Check) -> Option<&'a (String, String)> {
-    ex.get(&(key.to_string(), c.id.clone()))
+/// The reviewed exception for check `c` of file `r`. Class `m` (content no corpus repo has)
+/// holds only while the file's content is still missing: once it loads, the check is gated again.
+fn excepted<'a>(ex: &'a Exceptions, r: &FileResult, c: &Check) -> Option<&'a (String, String)> {
+    ex.get(&(r.key.clone(), c.id.clone()))
+        .filter(|(class, _)| class != "m" || matches!(r.status, Status::ContentMissing(_)))
 }
 
 fn write_result(dir: &Path, r: &FileResult, ex: &Exceptions) {
@@ -319,7 +325,7 @@ fn write_result(dir: &Path, r: &FileResult, ex: &Exceptions) {
         .checks
         .iter()
         .map(|c| {
-            let x = excepted(ex, &r.key, c);
+            let x = excepted(ex, r, c);
             serde_json::json!({
                 "check": c.id, "ok": c.ok, "expected": c.expected, "actual": c.actual,
                 "exception": x.map(|(k, why)| format!("({k}) {why}")),
@@ -362,7 +368,7 @@ fn rates(results: &[FileResult], ex: &Exceptions, gated_only: bool) -> Rates {
             let row = out.entry(c.field).or_default();
             row[0] += 1;
             row[1] += usize::from(c.ok);
-            row[2] += usize::from(!c.ok && excepted(ex, &r.key, c).is_some());
+            row[2] += usize::from(!c.ok && excepted(ex, r, c).is_some());
         }
     }
     out
@@ -430,7 +436,7 @@ fn run(repos: &Path) {
             );
         }
         for c in &r.checks {
-            let x = excepted(&ex, key, c);
+            let x = excepted(&ex, &r, c);
             let gated = matches!(r.status, Status::Complete);
             outcome::record(
                 SUITE,
@@ -496,7 +502,7 @@ fn run(repos: &Path) {
         .flat_map(|r| {
             r.checks
                 .iter()
-                .filter(|c| !c.ok && excepted(&ex, &r.key, c).is_none())
+                .filter(|c| !c.ok && excepted(&ex, r, c).is_none())
                 .map(|c| format!("{}/{}", r.key, c.id))
         })
         .collect();
