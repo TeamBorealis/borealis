@@ -18,7 +18,9 @@ pub use progression::*;
 pub use retrain::*;
 pub use selection::*;
 
+use crate::snapshot::CharacterSnapshot;
 use crate::state::CharacterState;
+use std::sync::Arc;
 use thiserror::Error;
 
 /// Why a command was refused.
@@ -57,6 +59,9 @@ pub struct CommandOutcome {
     pub state: CharacterState,
     /// Warnings such as "equipped without attunement".
     pub warnings: Vec<String>,
+    /// [`crate::Engine::derive`] of `state`, when the command had it at hand (the `_derived`
+    /// commands: their prune evaluated the state and dropped nothing).
+    pub derived: Option<Arc<CharacterSnapshot>>,
 }
 
 impl CommandOutcome {
@@ -64,6 +69,7 @@ impl CommandOutcome {
         Self {
             state,
             warnings: Vec::new(),
+            derived: None,
         }
     }
 }

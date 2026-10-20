@@ -109,6 +109,21 @@ impl Engine {
         snap
     }
 
+    /// [`Self::derive`] of `state` from its evaluation (made without provenance), with the same
+    /// derive hook.
+    pub(crate) fn finish_derive(
+        &self,
+        ev: Evaluation<'_>,
+        state: &CharacterState,
+    ) -> CharacterSnapshot {
+        let include_options = self.settings.include_options;
+        let snap = ev.snapshot(state, &self.settings, include_options, false);
+        if include_options {
+            crate::invariants::after_derive(self, state, &snap);
+        }
+        snap
+    }
+
     /// The deterministic provenance trace of one statistic (`ac`, `strength:score`, ...):
     /// base value, every contributing or rejected rule with the reason, the final value and the
     /// diagnostics touching it. An unknown statistic yields an empty trace with value 0.

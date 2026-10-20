@@ -102,6 +102,15 @@ impl ContentHub {
         self.derived.derive(&self.engine, state)
     }
 
+    /// Keep a command's full derive of its new state
+    /// ([`borealis_engine::commands::CommandOutcome::derived`], made by this
+    /// hub's engine) for the derive that follows.
+    pub fn keep_derived(&self, outcome: &borealis_engine::commands::CommandOutcome) {
+        if let Some(snap) = &outcome.derived {
+            self.derived.insert(&outcome.state, snap);
+        }
+    }
+
     /// Engine-derived elements of a type (absent from the store), each id once.
     pub fn derived_elements<'a>(&'a self, ty: &'a str) -> impl Iterator<Item = &'a Element> + 'a {
         let mut seen = BTreeSet::new();

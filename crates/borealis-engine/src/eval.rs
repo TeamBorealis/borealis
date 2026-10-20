@@ -27,7 +27,12 @@ pub struct IdCounts(pub HashMap<String, usize>);
 impl IdCounts {
     /// Increment.
     pub fn add(&mut self, id: &str) {
-        *self.0.entry(id.to_string()).or_insert(0) += 1;
+        // a known id is counted without allocating its key again (graph builds add every node)
+        if let Some(c) = self.0.get_mut(id) {
+            *c += 1;
+        } else {
+            self.0.insert(id.to_string(), 1);
+        }
     }
 
     /// Decrement.
@@ -204,6 +209,31 @@ pub fn requirement_holds(cond: &Cond<RequirementsExpr>, env: &ReqEnv) -> bool {
             RequirementLeaf::Test(t) => env.test(&t.key, &t.value),
         }),
     }
+}
+
+/// The element ids a requirement condition names (its id leaves, each once): the only ids
+/// [`requirement_holds`] looks up.
+#[must_use]
+pub fn requirement_ids(cond: &Cond<RequirementsExpr>) -> HashSet<&str> {
+    fn walk<'a>(e: &'a BoolExpr<RequirementLeaf>, out: &mut HashSet<&'a str>) {
+        match e {
+            BoolExpr::Leaf(RequirementLeaf::Id(id)) => {
+                out.insert(id.as_str());
+            }
+            BoolExpr::Leaf(RequirementLeaf::Test(_)) => {}
+            BoolExpr::Not(e) => walk(e, out),
+            BoolExpr::And(items) | BoolExpr::Or(items) => {
+                for e in items {
+                    walk(e, out);
+                }
+            }
+        }
+    }
+    let mut out = HashSet::new();
+    if let Cond::Expr(e) = cond {
+        walk(e.root(), &mut out);
+    }
+    out
 }
 
 /// Information about the element in a hand or armor slot for equipped conditions.

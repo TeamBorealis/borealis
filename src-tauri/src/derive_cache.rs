@@ -35,6 +35,12 @@ impl DeriveCache {
         snap
     }
 
+    /// Keeps `snap`, which must be [`Engine::derive`] of `state` by this cache's engine (a
+    /// command that evaluated the state already made it).
+    pub fn insert(&self, state: &CharacterState, snap: &Arc<CharacterSnapshot>) {
+        self.keep(state, snap);
+    }
+
     /// Removes and returns the derive of `state`, if kept (a poisoned lock is a miss).
     fn take(&self, state: &CharacterState) -> Option<Arc<CharacterSnapshot>> {
         let mut recent = self.recent.lock().ok()?;
@@ -83,6 +89,23 @@ mod tests {
         let other = cache.derive(&e, &two);
         assert!(!Arc::ptr_eq(&first, &other), "another state is derived");
         assert!(Arc::ptr_eq(&first, &cache.derive(&e, &one)), "both kept");
+    }
+
+    #[test]
+    fn a_level_up_keeps_the_derive_its_command_made() {
+        let e = engine();
+        let cache = DeriveCache::default();
+        let one = commands::new_character(&e, Ruleset::Dnd2014);
+        let out = commands::level_up_main_derived(&e, &one, None).expect("level up");
+        let carried = out.derived.clone().expect("a level up drops nothing here");
+        cache.insert(&out.state, &carried);
+        let got = cache.derive(&e, &out.state);
+        assert!(Arc::ptr_eq(&carried, &got), "not derived again");
+        assert_eq!(
+            *got,
+            e.derive(&out.state),
+            "the carried derive is the engine's"
+        );
     }
 
     #[test]

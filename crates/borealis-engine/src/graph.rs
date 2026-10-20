@@ -4,7 +4,8 @@
 
 use crate::diag::{code, DiagSink, Diagnostic, Severity};
 use crate::eval::{
-    requirement_holds, supports_cond_match, DynamicSupports, EquipState, IdCounts, ReqEnv,
+    requirement_holds, requirement_ids, supports_cond_match, DynamicSupports, EquipState, IdCounts,
+    ReqEnv,
 };
 use crate::ids;
 use crate::state::{CharacterState, Choice, ClassSlot, SlotKey};
@@ -486,8 +487,13 @@ impl<'u> Graph<'u> {
         }
     }
 
-    fn granted_subtree_counts(&self, owner: NodeId) -> IdCounts {
+    /// Counts of the ids in `only` among the live elements `owner` granted (and everything below
+    /// them): the owner environment of a grant rule's requirement, which reads no other id.
+    fn granted_subtree_counts(&self, owner: NodeId, only: &HashSet<&str>) -> IdCounts {
         let mut c = IdCounts::default();
+        if only.is_empty() {
+            return c;
+        }
         let mut stack: Vec<NodeId> = self.nodes[owner]
             .children
             .iter()
@@ -498,7 +504,10 @@ impl<'u> Graph<'u> {
             if !self.nodes[n].alive {
                 continue;
             }
-            c.add(&self.nodes[n].e.el.id);
+            let id = self.nodes[n].e.el.id.as_str();
+            if only.contains(id) {
+                c.add(id);
+            }
             stack.extend(self.nodes[n].children.iter().copied());
         }
         c
@@ -791,7 +800,7 @@ impl<'u> Graph<'u> {
         if ri < e.copied_rules {
             return requirement_holds(req, &self.env());
         }
-        let ex = self.granted_subtree_counts(id);
+        let ex = self.granted_subtree_counts(id, &requirement_ids(req));
         let mut env = self.env();
         env.exclude = Some(&ex);
         requirement_holds(req, &env)
@@ -1071,6 +1080,17 @@ impl<'u> Graph<'u> {
             if self.restricted.is_restricted(&cand.el.source) {
                 return false;
             }
+        }
+        // the supports filter before the duplicate check: most candidates of a long list fail it,
+        // and every check up to the requirement is a pure test, so the order does not change the
+        // answer (the requirement, which notes statistic reads, stays last)
+        let supported = dyns
+            .replaced_known_spell(s, cand)
+            .unwrap_or_else(|| supports_cond_match(supports, cand, dyns));
+        if !alternative && !supported {
+            return false;
+        }
+        if !existing {
             let mastery = crate::custom_rules::kind_of(s) == Some("mastery");
             if !mastery
                 && !held_ok
@@ -1084,12 +1104,6 @@ impl<'u> Graph<'u> {
         if crate::custom_rules::kind_of(s) == Some("mastery")
             && !crate::play_rules::mastery_allows(self, s, cand)
         {
-            return false;
-        }
-        let supported = dyns
-            .replaced_known_spell(s, cand)
-            .unwrap_or_else(|| supports_cond_match(supports, cand, dyns));
-        if !alternative && !supported {
             return false;
         }
         if !self.prereq_holds(cand) {

@@ -8,9 +8,10 @@
 //!   an invariant fails (test helpers call it once per test). Derives made by the checks
 //!   themselves are not checked again.
 //!
-//! The checks re-derive the character (idempotence), re-run the option filters per candidate
-//! (the option-list oracle) and prune twice, so a check costs a few derives. Nothing runs unless
-//! a caller asks for it.
+//! The checks re-derive the character (idempotence; the same evaluation feeds the option-list
+//! oracle, which re-runs the option filters per candidate) and prune twice (the first from the
+//! second derive's slots, the second only when the first dropped something), so a check costs
+//! about one derive. Nothing runs unless a caller asks for it.
 
 use crate::derive::Evaluation;
 use crate::diag::code;
@@ -283,10 +284,21 @@ fn check_with(
     if let Some(m) = &snap.multiclass_slots {
         slot_table("multiclass", &m.slots, &mut out);
     }
-    idempotence(engine, state, snap, with_options, &mut out);
+    // one evaluation serves the second derive and the oracle (a derive is a pure function of
+    // the state; the oracle reads the evaluation before the snapshot consumes it)
+    let ev = Evaluation::run(
+        engine.universe(state.ruleset),
+        state,
+        engine.settings(),
+        false,
+    );
+    let mut listed = Vec::new();
     if with_options {
-        oracle(engine, state, snap, &mut out);
+        oracle(engine, state, snap, &ev, &mut listed);
     }
+    let again = ev.snapshot(state, engine.settings(), with_options, false);
+    idempotence(engine, state, snap, &again, &mut out);
+    out.extend(listed);
     out
 }
 
@@ -470,22 +482,24 @@ fn idempotence(
     engine: &Engine,
     state: &CharacterState,
     snap: &CharacterSnapshot,
-    with_options: bool,
+    again: &CharacterSnapshot,
     out: &mut Vec<Violation>,
 ) {
-    let again = engine.derive_with(state, with_options);
-    if &again != snap {
+    if again != snap {
         out.push(violation(
             kind::NOT_IDEMPOTENT,
             None,
-            format!(
-                "a second derive differs: {}",
-                first_difference(snap, &again)
-            ),
+            format!("a second derive differs: {}", first_difference(snap, again)),
         ));
     }
-    let once = crate::commands::prune(engine, state);
-    let twice = crate::commands::prune(engine, &once);
+    // the second derive lists the state's active slots (as the derive a prune makes), and a
+    // prune that dropped nothing gives the same state again
+    let once = crate::commands::prune_derived(state, again);
+    let twice = if once == *state {
+        once.clone()
+    } else {
+        crate::commands::prune(engine, &once)
+    };
     if once != twice {
         out.push(violation(
             kind::NOT_IDEMPOTENT,
@@ -522,10 +536,10 @@ fn oracle(
     engine: &Engine,
     state: &CharacterState,
     snap: &CharacterSnapshot,
+    ev: &Evaluation<'_>,
     out: &mut Vec<Violation>,
 ) {
     let uni = engine.universe(state.ruleset);
-    let ev = Evaluation::run(uni, state, engine.settings(), false);
     let g = &ev.graph;
     let settled = ev.stats.sums();
     if g.stat_sums != settled {

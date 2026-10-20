@@ -11,11 +11,11 @@ use crate::profile::{profile_for, ProficiencySource, RulesetProfile};
 use crate::settings::EngineSettings;
 use crate::snapshot::*;
 use crate::spells;
-use crate::state::{AbilityMethod, CharacterState, ClassSlot};
+use crate::state::{AbilityMethod, CharacterState, ClassSlot, SlotKey};
 use crate::stats::{self, StatInputs, StatSet};
 use crate::universe::{EditionStatus, UElem, Universe};
 use borealis_content::Rule;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 const MAX_OUTER: usize = 6;
 const MAX_ABILITY_PASSES: usize = 8;
@@ -380,6 +380,22 @@ impl<'u> Evaluation<'u> {
                 }
             })
             .collect()
+    }
+
+    /// Keys of the snapshot's slots that are not rejected, without building the snapshot: the
+    /// same walk as [`Self::slots`] (live nodes in pre-order, select rules only). Option lists
+    /// never change which slots exist or are rejected.
+    pub(crate) fn active_slot_keys(&self) -> HashSet<SlotKey> {
+        let mut out = HashSet::new();
+        for id in self.graph.preorder() {
+            let n = &self.graph.nodes[id];
+            for slot in &n.slots {
+                if matches!(n.e.el.rules[slot.rule], Rule::Select(_)) && slot.rejected.is_none() {
+                    out.insert(slot.key.clone());
+                }
+            }
+        }
+        out
     }
 
     fn slots(

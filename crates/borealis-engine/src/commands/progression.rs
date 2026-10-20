@@ -1,6 +1,6 @@
 //! Levels, experience, options, hit point rolls and spell preparation.
 
-use super::selection::prune;
+use super::selection::{prune, pruned};
 use super::{CmdResult, CommandError, CommandOutcome};
 use crate::engine::Engine;
 use crate::ids;
@@ -53,6 +53,7 @@ fn level_up(
     state: &CharacterState,
     slot: ClassSlot,
     roll: Option<u32>,
+    derive: bool,
 ) -> CmdResult {
     let new_level = state.level() + 1;
     if new_level > MAX_LEVEL {
@@ -65,7 +66,7 @@ fn level_up(
         .max(engine.xp_threshold(state.ruleset, new_level));
     let class_level = next.class_level(&slot);
     record_roll(&mut next, &slot, class_level, roll);
-    Ok(CommandOutcome::new(prune(engine, &next)))
+    Ok(pruned(engine, &next, derive))
 }
 
 /// Gain a level in the main class (`hp_roll` is stored when hit points are rolled).
@@ -73,7 +74,20 @@ fn level_up(
 /// # Errors
 /// [`CommandError::Level`] at level 20.
 pub fn level_up_main(engine: &Engine, state: &CharacterState, hp_roll: Option<u32>) -> CmdResult {
-    level_up(engine, state, ClassSlot::Main, hp_roll)
+    level_up(engine, state, ClassSlot::Main, hp_roll, false)
+}
+
+/// [`level_up_main`], and the outcome carries the new state's full derive when its prune
+/// dropped nothing ([`CommandOutcome::derived`]): for a caller that derives the new state next.
+///
+/// # Errors
+/// As [`level_up_main`].
+pub fn level_up_main_derived(
+    engine: &Engine,
+    state: &CharacterState,
+    hp_roll: Option<u32>,
+) -> CmdResult {
+    level_up(engine, state, ClassSlot::Main, hp_roll, true)
 }
 
 /// Start a multiclass: the new character level belongs to a class chosen in the
@@ -99,6 +113,7 @@ pub fn level_up_new_multiclass(
             starting_level: start,
         },
         hp_roll,
+        false,
     )
 }
 
@@ -116,7 +131,7 @@ pub fn level_up_multiclass(
     if !state.levels.contains(&slot) {
         return Err(CommandError::Level("no such multiclass".into()));
     }
-    level_up(engine, state, slot, hp_roll)
+    level_up(engine, state, slot, hp_roll, false)
 }
 
 /// Remove the last level. Experience becomes the threshold of the new level.

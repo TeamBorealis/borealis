@@ -32,6 +32,7 @@ pub(crate) fn apply(d: &mut Draft, outcome: CommandOutcome) {
 
 /// Apply a command result and then select forced (locked, single-candidate) slots.
 fn apply_filled(ctx: &Ctx<'_>, d: &mut Draft, outcome: CommandOutcome) {
+    ctx.hub.keep_derived(&outcome);
     apply(d, outcome);
     d.character.build = fill_locked(ctx.hub, &d.character.build);
 }
@@ -161,30 +162,40 @@ impl AppState {
                     .as_ref()
                     .map_or(true, |n| name.to_lowercase().contains(n))
             };
-            let rows: Vec<SlotOption> = if slot.ty == "List" {
-                slot.list_items
+            let skip = offset.unwrap_or(0);
+            let take = limit.unwrap_or(DEFAULT_PAGE).min(MAX_PAGE);
+            // rows of the page only are mapped (a summary renders the description)
+            let (total, items) = if slot.ty == "List" {
+                let rows: Vec<_> = slot
+                    .list_items
                     .iter()
                     .filter(|(_, text)| matches(text))
+                    .collect();
+                let items = rows
+                    .iter()
+                    .skip(skip)
+                    .take(take)
                     .map(|(item, text)| list_option(*item, text, &slot.owner.source))
-                    .collect()
+                    .collect();
+                (rows.len(), items)
             } else {
-                slot.options
+                let rows: Vec<_> = slot
+                    .options
                     .iter()
                     .filter(|o| matches(&o.name))
                     .filter_map(|o| ctx.hub.element(&o.id))
+                    .collect();
+                let items = rows
+                    .iter()
+                    .skip(skip)
+                    .take(take)
                     .map(|el| SlotOption {
                         summary: summary(&ctx.hub.store, el),
                         disabled_reason: None,
                     })
-                    .collect()
+                    .collect();
+                (rows.len(), items)
             };
-            let total = rows.len();
-            let take = limit.unwrap_or(DEFAULT_PAGE).min(MAX_PAGE);
-            let items = rows
-                .into_iter()
-                .skip(offset.unwrap_or(0))
-                .take(take)
-                .collect();
             Ok(Page { total, items })
         })
     }
@@ -216,7 +227,7 @@ impl AppState {
             } else {
                 Choice::Element(element_id.to_string())
             };
-            let out = commands::select(engine, &d.character.build, &key, choice)?;
+            let out = commands::select_derived(engine, &d.character.build, &snap, &key, choice)?;
             apply_filled(ctx, d, out);
             Ok(())
         })
@@ -262,7 +273,7 @@ impl AppState {
             let engine = &ctx.hub.engine;
             let state = &d.character.build;
             let out = match slot {
-                ClassSlot::Main => commands::level_up_main(engine, state, None)?,
+                ClassSlot::Main => commands::level_up_main_derived(engine, state, None)?,
                 ClassSlot::Multi { starting_level } => {
                     commands::level_up_multiclass(engine, state, starting_level, None)?
                 }

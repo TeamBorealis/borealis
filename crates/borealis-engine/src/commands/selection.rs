@@ -1,11 +1,14 @@
 //! Selection commands: choose, clear, prune and fill defaults.
 
 use super::{CmdResult, CommandError, CommandOutcome};
+use crate::derive::Evaluation;
 use crate::engine::Engine;
 use crate::graph::Graph;
+use crate::snapshot::CharacterSnapshot;
 use crate::state::{CharacterState, Choice, Selection, SlotKey};
 use borealis_content::Rule;
 use std::collections::HashSet;
+use std::sync::Arc;
 
 pub(super) fn find_slot<'g, 'u>(
     graph: &'g Graph<'u>,
@@ -27,16 +30,49 @@ pub(super) fn find_slot<'g, 'u>(
 /// A new state without selections that no longer belong to an active slot or are not allowed.
 #[must_use]
 pub fn prune(engine: &Engine, state: &CharacterState) -> CharacterState {
-    let snap = engine.derive_with(state, false);
-    let active: HashSet<&SlotKey> = snap
+    let active = engine.with_evaluation(state, |ev| ev.active_slot_keys());
+    retain_active(state, |k| active.contains(k))
+}
+
+/// [`prune`] given a derive of `state` (with or without option lists) made by the same engine:
+/// the snapshot already lists the active slots, so nothing is evaluated again.
+#[must_use]
+pub fn prune_derived(state: &CharacterState, derived: &CharacterSnapshot) -> CharacterState {
+    let active: HashSet<&SlotKey> = derived
         .slots
         .iter()
         .filter(|s| s.rejected.is_none())
         .map(|s| &s.key)
         .collect();
+    retain_active(state, |k| active.contains(k))
+}
+
+/// [`prune`] as a command outcome; with `derive`, the outcome also carries the full derive of
+/// the state when the prune dropped nothing (one evaluation serves both: a derive is a pure
+/// function of the state, and the prune reads the same evaluation's slots).
+pub(super) fn pruned(engine: &Engine, next: &CharacterState, derive: bool) -> CommandOutcome {
+    if !derive {
+        return CommandOutcome::new(prune(engine, next));
+    }
+    let ev = Evaluation::run(
+        engine.universe(next.ruleset),
+        next,
+        engine.settings(),
+        false,
+    );
+    let active = ev.active_slot_keys();
+    let state = retain_active(next, |k| active.contains(k));
+    let mut out = CommandOutcome::new(state);
+    if out.state == *next {
+        out.derived = Some(Arc::new(engine.finish_derive(ev, next)));
+    }
+    out
+}
+
+fn retain_active(state: &CharacterState, active: impl Fn(&SlotKey) -> bool) -> CharacterState {
     let mut next = state.clone();
-    next.selections.retain(|s| active.contains(&s.slot));
-    next.slot_history.retain(|h| active.contains(&h.slot));
+    next.selections.retain(|s| active(&s.slot));
+    next.slot_history.retain(|h| active(&h.slot));
     next
 }
 
@@ -46,12 +82,56 @@ pub fn prune(engine: &Engine, state: &CharacterState) -> CharacterState {
 /// # Errors
 /// [`CommandError::UnknownSlot`], [`CommandError::UnknownElement`] or [`CommandError::NotAllowed`].
 pub fn select(engine: &Engine, state: &CharacterState, key: &SlotKey, choice: Choice) -> CmdResult {
-    let check = engine.with_evaluation(state, |ev| -> Result<(), CommandError> {
+    check_choice(engine, state, key, &choice)?;
+    Ok(commit(engine, state, key, choice, false))
+}
+
+/// [`select`] given the full derive of `state` (option lists included) made by the same engine,
+/// as the builder has it when the user picks. An element the snapshot lists as an option of the
+/// open slot is valid without a second evaluation: the option list is the same per-candidate
+/// check. Any other choice is checked as [`select`] does. The outcome carries the new state's
+/// full derive when the prune dropped nothing ([`CommandOutcome::derived`]).
+///
+/// # Errors
+/// As [`select`].
+pub fn select_derived(
+    engine: &Engine,
+    state: &CharacterState,
+    derived: &CharacterSnapshot,
+    key: &SlotKey,
+    choice: Choice,
+) -> CmdResult {
+    if !offered(derived, key, &choice) {
+        check_choice(engine, state, key, &choice)?;
+    }
+    Ok(commit(engine, state, key, choice, true))
+}
+
+/// Does the snapshot's one open slot with this key list the element? A key that occurs twice is
+/// left to the full check (it finds the first live node with that key).
+fn offered(derived: &CharacterSnapshot, key: &SlotKey, choice: &Choice) -> bool {
+    let Choice::Element(id) = choice else {
+        return false;
+    };
+    let mut slots = derived.slots.iter().filter(|s| &s.key == key);
+    let (Some(slot), None) = (slots.next(), slots.next()) else {
+        return false;
+    };
+    slot.chosen.is_none() && slot.options.iter().any(|o| &o.id == id)
+}
+
+fn check_choice(
+    engine: &Engine,
+    state: &CharacterState,
+    key: &SlotKey,
+    choice: &Choice,
+) -> Result<(), CommandError> {
+    engine.with_evaluation(state, |ev| -> Result<(), CommandError> {
         let (owner, si, rule) = find_slot(&ev.graph, key).ok_or(CommandError::UnknownSlot)?;
         let Rule::Select(r) = &ev.graph.nodes[owner].e.el.rules[rule] else {
             return Err(CommandError::UnknownSlot);
         };
-        match &choice {
+        match choice {
             Choice::ListItem(i) => {
                 if r.is_list() && r.items.iter().any(|x| x.id == *i) {
                     Ok(())
@@ -76,8 +156,17 @@ pub fn select(engine: &Engine, state: &CharacterState, key: &SlotKey, choice: Ch
                 }
             }
         }
-    });
-    check?;
+    })
+}
+
+/// The state with `choice` in the slot, pruned (see [`pruned`] for `derive`).
+fn commit(
+    engine: &Engine,
+    state: &CharacterState,
+    key: &SlotKey,
+    choice: Choice,
+    derive: bool,
+) -> CommandOutcome {
     let mut next = state.clone();
     next.selections.retain(|s| &s.slot != key);
     // a pick into a reopened slot is gained at the level the slot reopened at
@@ -87,7 +176,7 @@ pub fn select(engine: &Engine, state: &CharacterState, key: &SlotKey, choice: Ch
         choice,
         replace_level,
     });
-    Ok(CommandOutcome::new(prune(engine, &next)))
+    pruned(engine, &next, derive)
 }
 
 /// Remove the choice of a slot (and everything that depended on it).

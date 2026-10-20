@@ -198,8 +198,12 @@ pub fn fill_locked(
         });
         let Some(slot) = pick else { break };
         let choice = Choice::Element(slot.options[0].id.clone());
-        match borealis_engine::commands::select(engine, &current, &slot.key, choice) {
-            Ok(outcome) => current = outcome.state,
+        match borealis_engine::commands::select_derived(engine, &current, &snap, &slot.key, choice)
+        {
+            Ok(outcome) => {
+                hub.keep_derived(&outcome);
+                current = outcome.state;
+            }
             Err(_) => break,
         }
     }
