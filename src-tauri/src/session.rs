@@ -6,7 +6,7 @@ use crate::settings::AppSettings;
 use crate::snapshot_map::{build_snapshot, MapInput};
 use crate::state::{AppState, ContentHub, Session};
 use borealis_character::Character;
-use borealis_engine::{Choice, Engine};
+use borealis_engine::Choice;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -179,14 +179,16 @@ fn snapshot_for(
 }
 
 /// Select every locked slot that has exactly one candidate, repeating while new slots appear.
+/// Its derives go through the hub's cache: the last one is the state's snapshot that follows.
 #[must_use]
 pub fn fill_locked(
-    engine: &Engine,
+    hub: &ContentHub,
     state: &borealis_engine::CharacterState,
 ) -> borealis_engine::CharacterState {
+    let engine = &hub.engine;
     let mut current = state.clone();
     for _ in 0..MAX_FILL_PASSES {
-        let snap = engine.derive(&current);
+        let snap = hub.derive(&current);
         let pick = snap.slots.iter().find(|s| {
             s.locked
                 && s.chosen.is_none()

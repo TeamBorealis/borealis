@@ -53,7 +53,7 @@ pub struct MapInput<'a> {
 /// Build the UI snapshot of a character.
 #[must_use]
 pub fn build_snapshot(input: &MapInput<'_>) -> CharacterSnapshot {
-    let engine_snap = input.hub.engine.derive(&input.character.build);
+    let engine_snap = input.hub.derive(&input.character.build);
     let slots_and_progress = slots(&engine_snap);
     let (slots, progress) = slots_and_progress;
     let ruleset = input.character.ruleset();

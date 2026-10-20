@@ -33,7 +33,7 @@ pub(crate) fn apply(d: &mut Draft, outcome: CommandOutcome) {
 /// Apply a command result and then select forced (locked, single-candidate) slots.
 fn apply_filled(ctx: &Ctx<'_>, d: &mut Draft, outcome: CommandOutcome) {
     apply(d, outcome);
-    d.character.build = fill_locked(&ctx.hub.engine, &d.character.build);
+    d.character.build = fill_locked(ctx.hub, &d.character.build);
 }
 
 fn ability_of(key: &str) -> ApiResult<usize> {
@@ -125,7 +125,7 @@ impl AppState {
             let out = commands::level_up_main(engine, &draft.character.build, None)?;
             apply(&mut draft, out);
         }
-        draft.character.build = fill_locked(engine, &draft.character.build);
+        draft.character.build = fill_locked(ctx.hub, &draft.character.build);
         let id = new_id();
         let path = self.character_path(&id)?;
         draft.character.save(&path)?;
@@ -146,7 +146,7 @@ impl AppState {
     ) -> ApiResult<Page<SlotOption>> {
         let key = decode_slot(slot_id)?;
         self.read(id, |ctx, session| {
-            let snap = ctx.hub.engine.derive(&session.character.build);
+            let snap = ctx.hub.derive(&session.character.build);
             let slot = snap
                 .slots
                 .iter()
@@ -202,7 +202,7 @@ impl AppState {
         let key = decode_slot(slot_id)?;
         self.mutate(id, |ctx, d| {
             let engine = &ctx.hub.engine;
-            let snap = engine.derive(&d.character.build);
+            let snap = ctx.hub.derive(&d.character.build);
             let slot = snap
                 .slots
                 .iter()

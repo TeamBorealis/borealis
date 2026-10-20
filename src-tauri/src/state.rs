@@ -1,6 +1,7 @@
 //! Application state: content store + engine, settings, and open-character sessions.
 
 use crate::content_prefs::ContentPrefs;
+use crate::derive_cache::DeriveCache;
 use crate::dto::RollRecord;
 use crate::error::{ApiError, ApiResult};
 use crate::settings::AppSettings;
@@ -72,6 +73,8 @@ pub struct ContentHub {
     pub builder: ContentStoreBuilder,
     /// Problems found while loading user packs (bundled packs failing is fatal).
     pub load_warnings: Vec<String>,
+    /// The engine's last full derives (see [`ContentHub::derive`]).
+    derived: DeriveCache,
 }
 
 impl ContentHub {
@@ -87,6 +90,16 @@ impl ContentHub {
                 .iter()
                 .find_map(|r| self.engine.universe(*r).get(id).map(|u| &u.el))
         })
+    }
+
+    /// [`Engine::derive`] of `state` (option lists included), kept for the next identical call:
+    /// the builder derives an unchanged character for every slot it lists.
+    #[must_use]
+    pub fn derive(
+        &self,
+        state: &borealis_engine::state::CharacterState,
+    ) -> Arc<borealis_engine::snapshot::CharacterSnapshot> {
+        self.derived.derive(&self.engine, state)
     }
 
     /// Engine-derived elements of a type (absent from the store), each id once.
@@ -176,6 +189,7 @@ impl ContentHub {
             engine,
             builder,
             load_warnings,
+            derived: DeriveCache::default(),
         })
     }
 
@@ -187,6 +201,7 @@ impl ContentHub {
             engine: Engine::with_settings(&self.store, settings.engine_settings()),
             builder: self.builder.clone(),
             load_warnings: self.load_warnings.clone(),
+            derived: DeriveCache::default(),
         }
     }
 }
@@ -317,6 +332,7 @@ impl AppState {
             engine: Engine::with_settings(&store.clone().build(), settings.engine_settings()),
             builder: store,
             load_warnings: vec![reason.to_string()],
+            derived: DeriveCache::default(),
         };
         Ok(Self::from_hub(paths, settings, hub))
     }

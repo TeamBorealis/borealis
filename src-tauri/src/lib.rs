@@ -64,6 +64,7 @@ pub mod content_prefs;
 pub mod content_preview;
 pub mod content_report;
 pub mod data_dirs;
+pub mod derive_cache;
 pub mod dto;
 pub mod dto_ext;
 pub mod elements;
@@ -74,7 +75,6 @@ pub mod gear_facts;
 pub mod gear_info;
 pub mod homebrew_api;
 pub mod ids;
-pub mod item_categories;
 #[cfg(desktop)]
 pub mod import_bug_report;
 pub mod import_check;
@@ -90,6 +90,7 @@ pub mod import_review;
 pub mod import_service;
 #[cfg(desktop)]
 pub mod import_sources;
+pub mod item_categories;
 pub mod library;
 pub mod magic;
 pub mod manage;
