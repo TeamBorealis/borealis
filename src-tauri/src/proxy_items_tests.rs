@@ -254,3 +254,15 @@ fn spell_proxies_join_their_class_block_or_none() {
         "reload keeps what the proxies grant"
     );
 }
+
+#[test]
+fn the_detail_of_a_proxy_shows_its_targets_description() {
+    let (_dir, app, id) = wizard();
+    let proxy = row(&app, &id, "Additional Feat", "Additional Feat, Watchful");
+    let detail = app.get_element(&proxy).unwrap();
+    assert!(
+        detail.description_html.contains("Watchful test feat."),
+        "{}",
+        detail.description_html
+    );
+}

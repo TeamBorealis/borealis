@@ -144,3 +144,14 @@ fn spell_proxies_carry_the_cast_name_and_supports_as_keywords() {
         .unwrap();
     assert_eq!(feat.keywords(), vec!["watch", "sentry"]);
 }
+
+#[test]
+fn the_detail_of_a_proxy_holds_its_targets_description() {
+    let uni = engine().universe(Ruleset::Dnd2014);
+    let el = &uni.get(FEAT_PROXY).unwrap().el;
+    assert!(
+        el.description.contains("Lookout feat text."),
+        "{}",
+        el.description
+    );
+}

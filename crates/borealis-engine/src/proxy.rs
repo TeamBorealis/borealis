@@ -497,9 +497,11 @@ fn make(target: &UElem, kind: Kind, id: &str, cast: &str) -> UElem {
     let category = category_name(kind, cast);
     let mut el = Element::new(id, format!("{category}, {shown}"), "Item", t.source.clone());
     el.ruleset = t.ruleset;
+    // Borealis's own hint, then the target's description (the reference Aurora embeds).
     el.description = format!(
-        "<p>Aurora proxy item: equip it to enable it. It grants {shown} and stays hidden from the \
-         inventory on the character sheet.</p>"
+        "<p>Equip this item to gain {shown}. It is left out of the inventory on the character \
+         sheet.</p>{}",
+        t.description
     );
     el.setters = vec![
         Setter::new("slot", "proxy"),
