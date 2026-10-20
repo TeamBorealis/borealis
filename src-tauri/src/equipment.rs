@@ -174,20 +174,13 @@ impl AppState {
             if adorner.is_none() && stack_onto_existing(&mut d.character.build, base, quantity) {
                 return Ok(());
             }
-            let out = commands::add_item(engine, &d.character.build, base, quantity)?;
+            let out = match adorner {
+                Some(a) => {
+                    commands::add_adorned_item(engine, &d.character.build, base, a, quantity)?
+                }
+                None => commands::add_item(engine, &d.character.build, base, quantity)?,
+            };
             apply(d, out);
-            if let Some(a) = adorner {
-                let uid = d
-                    .character
-                    .build
-                    .inventory
-                    .items
-                    .last()
-                    .map(|i| i.uid.clone())
-                    .ok_or_else(|| ApiError::internal("item was not added"))?;
-                let out = commands::set_adorner(engine, &d.character.build, &uid, Some(a))?;
-                apply(d, out);
-            }
             Ok(())
         })
     }

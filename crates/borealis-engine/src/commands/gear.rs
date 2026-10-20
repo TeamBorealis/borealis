@@ -52,10 +52,61 @@ pub fn add_item(engine: &Engine, state: &CharacterState, item: &str, amount: u32
     let mut next = state.clone();
     let mut it = InventoryItem::new(next_uid(state), item);
     it.amount = amount.max(1);
+    if is_inventory_hidden(engine, state, item) {
+        hide_line(&mut it);
+    }
     next.inventory
         .items
         .push(rolled::with_rolls(engine.universe(state.ruleset), &it));
     Ok(CommandOutcome::new(next))
+}
+
+/// Add `base` adorned by `adorner` (a magic item layered on a base item) as one new line. The
+/// adorner alone decides the hidden-item defaults of [`add_item`].
+///
+/// # Errors
+/// [`CommandError::Inventory`] if either item is not installed.
+pub fn add_adorned_item(
+    engine: &Engine,
+    state: &CharacterState,
+    base: &str,
+    adorner: &str,
+    amount: u32,
+) -> CmdResult {
+    let added = add_item(engine, state, base, amount)?.state;
+    let uid = added
+        .inventory
+        .items
+        .last()
+        .map(|i| i.uid.clone())
+        .ok_or_else(|| CommandError::Inventory(format!("{base} was not added")))?;
+    let mut out = set_adorner(engine, &added, &uid, Some(adorner))?;
+    let hidden = is_inventory_hidden(engine, state, adorner);
+    if let Some(line) = out.state.inventory.items.iter_mut().find(|i| i.uid == uid) {
+        let fresh = InventoryItem::new("", "");
+        (line.hidden, line.card, line.sidebar) = (fresh.hidden, fresh.card, fresh.sidebar);
+        if hidden {
+            hide_line(line);
+        }
+    }
+    Ok(out)
+}
+
+/// Does the item carry Aurora's `inventory-hidden` setter (its proxy items do)?
+fn is_inventory_hidden(engine: &Engine, state: &CharacterState, item: &str) -> bool {
+    engine
+        .universe(state.ruleset)
+        .get(item)
+        .and_then(|e| e.el.setter_value("inventory-hidden"))
+        .is_some_and(|v| v.trim().eq_ignore_ascii_case("true"))
+}
+
+/// Aurora's new line of an `inventory-hidden` item: left out of the sheet inventory, no item
+/// card, not in the sidebar (the user can turn each back on).
+fn hide_line(line: &mut InventoryItem) {
+    line.hidden = true;
+    line.card = false;
+    line.sidebar = false;
 }
 
 /// The rolled resource `resource` of inventory line `uid` and its dice.
