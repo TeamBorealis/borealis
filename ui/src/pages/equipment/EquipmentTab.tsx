@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { CharacterSnapshot, ItemCategory, ItemSummary } from "../../api/contract";
+import type { Api, CharacterSnapshot, ItemCategory, ItemSummary, Page } from "../../api/contract";
 import { isApiError } from "../../api/contract";
 import { Alert, Button, ComboBox, useConfirm } from "../../components";
 import { useApi } from "../../state/ApiContext";
@@ -20,6 +20,19 @@ const COIN_LABELS = [["Copper:", "cp"], ["Silver:", "sp"], ["Electrum:", "ep"], 
 /** What the category list depends on: edition, spellcasting classes and source restrictions. */
 const categoryKey = (s: CharacterSnapshot | null) =>
   s ? JSON.stringify([s.ruleset, s.spellcasting.classes.map((c) => c.className), s.sourceRestrictions]) : "";
+
+/** Rows asked for per `search_items` call (the backend's largest page). */
+export const ITEM_PAGE = 1000;
+
+/** Every row of an item search, page by page: a big category (every "Additional Spell") is never cut off. */
+export async function searchAllItems(api: Api, args: Parameters<Api["searchItems"]>[0]): Promise<Page<ItemSummary>> {
+  const items: ItemSummary[] = [];
+  for (;;) {
+    const page = await api.searchItems({ ...args, limit: ITEM_PAGE, offset: items.length });
+    items.push(...page.items);
+    if (page.items.length === 0 || items.length >= page.total) return { total: page.total, items };
+  }
+}
 
 /** The character's item categories in the classic builder's order (`list_item_categories`). */
 function useItemCategories(snapshot: CharacterSnapshot | null) {
@@ -48,7 +61,7 @@ export function EquipmentTab() {
   const category = picked !== null && (!cats.data || listed.some((c) => c.name === picked)) ? picked : listed[0]?.name ?? FIRST_CATEGORY;
   const characterId = snapshot?.id;
   const sources = useAsync(() => api.listSources(), [api]);
-  const items = useAsync(() => api.searchItems({ category, query: q || undefined, source: source || undefined, limit: 200, characterId }), [api, category, q, source, characterId]);
+  const items = useAsync(() => searchAllItems(api, { category, query: q || undefined, source: source || undefined, characterId }), [api, category, q, source, characterId]);
   if (!snapshot) return null;
   const inv = snapshot.inventory;
 

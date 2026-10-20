@@ -3,11 +3,14 @@ import type {
   ImportPackRequest, ImportPackResult, ItemCategory, ItemQuery, ItemSummary, MigrationIssue, MigrationReport, Page, UpdateIndexesResult,
 } from "../types";
 import { issue, scanElements, xmlIssues } from "./import-issues";
-import { ELEMENTS, ITEMS, getElement } from "./content";
-import { itemCategoryList } from "./item-categories";
+import { CLASSES, ELEMENTS, ITEMS, getElement } from "./content";
+import { isProxyId, itemCategoryList, matchesItemSearch, proxyRows, type ProxyRow } from "./item-categories";
 import type { MockElement } from "./data-types";
 import { apiError } from "./errors";
 import { SOURCE_2014, SOURCE_2024 } from "./content";
+
+const PROXY_PREFIX = "proxy:";
+const PROXY_HINT = "Equip this item to gain what it grants. It stays off the inventory on the character sheet.";
 
 const TYPE_LABELS: Record<string, string> = {
   race: "Races", subrace: "Subraces", class: "Classes", multiclass: "Multiclass", archetype: "Subclasses", "fighting-style": "Fighting styles",
@@ -63,6 +66,9 @@ export class ContentService {
   }
 
   element(id: string): ElementDetail {
+    const target = this.proxyTarget(id);
+    const proxy = target && this.proxies().find((p) => p.id === id);
+    if (target && proxy) return { ...this.proxySummary(proxy), descriptionHtml: `<p>${PROXY_HINT}</p>${target.description}`, facts: [], grants: [target.name] };
     const e = this.all().find((x) => x.id === id) ?? getElement(id);
     // Like the real backend: list-rule entries (personality traits, ...) are text choices, not elements.
     if (!e || e.type === "list") throw apiError("not_found", "That element does not exist.");
@@ -80,17 +86,40 @@ export class ContentService {
     return { types, sources };
   }
 
+  /**
+   * `search_items`: inside a category the classic builder's filter (words in the name or a keyword, `+`
+   * alternatives) over its items and generated proxies; without one a name search over the items only.
+   */
   items(q: ItemQuery): Page<ItemSummary> {
     const text = (q.query ?? "").toLowerCase();
-    const hits = ITEMS.filter((i) => (!q.category || i.category === q.category) && (!text || getElement(i.id)!.name.toLowerCase().includes(text)))
+    const named = (name: string, keywords: string[]) => (q.category ? matchesItemSearch(name, keywords, q.query ?? "") : !text || name.toLowerCase().includes(text));
+    const hits = ITEMS.filter((i) => (!q.category || i.category === q.category) && named(getElement(i.id)!.name, []))
       .map((i) => ({ ...this.summary(getElement(i.id)!), category: i.category, costCp: i.costCp, weight: i.weight, requiresAttunement: !!i.attune }));
-    const sorted = hits.sort((a, b) => a.name.localeCompare(b.name));
+    const proxies = q.category ? this.proxies().filter((p) => p.category === q.category && named(p.name, p.keywords)).map((p) => this.proxySummary(p)) : [];
+    const sorted = [...hits, ...proxies].sort((a, b) => a.name.localeCompare(b.name));
     return { total: sorted.length, items: sorted.slice(q.offset ?? 0, (q.offset ?? 0) + (q.limit ?? 100)) };
   }
 
-  /** `list_item_categories` over the sample items (`enabled` = enabled source ids, null = all). */
+  /** `list_item_categories` over the sample items and proxies (`enabled` = enabled source ids, null = all). */
   itemCategories(casters: string[], enabled: string[] | null): ItemCategory[] {
-    return itemCategoryList(ITEMS.map((i) => ({ category: i.category, visible: !enabled || enabled.includes(getElement(i.id)!.source) })), casters);
+    const visible = (source: string) => !enabled || enabled.includes(source);
+    const content = ITEMS.map((i) => ({ category: i.category, visible: visible(getElement(i.id)!.source) }));
+    const generated = this.proxies().map((p) => ({ category: p.category, visible: visible(p.source) }));
+    return itemCategoryList([...content, ...generated], casters);
+  }
+
+  /** The generated proxy items of the loaded content (every caster class gets its "Additional <Class> Spell"). */
+  private proxies(): ProxyRow[] {
+    return proxyRows(this.all(), CLASSES.filter((c) => c.caster).map((c) => c.id));
+  }
+
+  private proxyTarget(id: string): MockElement | undefined {
+    return isProxyId(id) ? this.all().find((e) => e.id === id.slice(id.indexOf(":", PROXY_PREFIX.length) + 1)) : undefined;
+  }
+
+  private proxySummary(p: ProxyRow): ItemSummary {
+    const target = this.proxyTarget(p.id)!;
+    return { ...this.summary(target), id: p.id, name: p.name, type: "item", shortDescription: PROXY_HINT, category: p.category, costCp: 0, weight: 0, requiresAttunement: false };
   }
 
   packs(): ContentPack[] {

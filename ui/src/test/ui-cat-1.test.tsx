@@ -24,6 +24,8 @@ describe("equipment categories come from list_item_categories", () => {
     expect(navLabels()).toEqual([
       "Adventuring Gear (6)", "Equipment Packs (2)", "Tools (2)", "Armor (5)", "Weapons (8)", "Ammunition (1)",
       "Wondrous Items (2)", "Staffs (1)", "Magic Items (5)",
+      // the generated proxy categories follow the content ones (the sample wizard sees its own spell one)
+      ...["Feat (7)", "Language (10)", "Proficiency (18)", "Ability Score Improvement (12)", "Spell (28)", "Wizard Spell (28)"].map((s) => `Additional ${s}`),
     ]);
     expect(comboLabels()).toEqual(navLabels());
     expect(spy).toHaveBeenCalled();
