@@ -6,11 +6,12 @@ use crate::dto_ext::{EquipRequest, ItemFilter, ItemPatch, ItemSummary};
 use crate::elements::summary;
 use crate::error::{ApiError, ApiResult};
 use crate::gear_info::{category, cost_cp, is_item, requires_attunement, weight_lb};
-use crate::item_categories::list_category;
+use crate::item_categories::{keywords, list_category, matches_item_search, proxy_rows};
 use crate::session::Draft;
 use crate::state::AppState;
 use borealis_engine::commands;
 use borealis_engine::money::Coin;
+use borealis_engine::proxy::ProxyEntry;
 use borealis_engine::state::{CharacterState, Coins, EquipSlot};
 
 const DEFAULT_PAGE: usize = 100;
@@ -100,32 +101,38 @@ impl AppState {
     pub fn search_items(&self, filter: &ItemFilter) -> ApiResult<Page<ItemSummary>> {
         let scope = self.item_scope(filter.character_id.as_deref())?;
         let hub = self.hub()?;
-        let needle = filter
-            .query
-            .as_deref()
-            .map(|q| q.trim().to_lowercase())
-            .filter(|q| !q.is_empty());
-        let mut hits: Vec<(u8, &borealis_content::Element)> = hub
+        let query = filter.query.as_deref().unwrap_or("").trim();
+        let needle = Some(query.to_lowercase()).filter(|q| !q.is_empty());
+        let category = filter.category.as_deref();
+        let source_ok = |s: &str| filter.source.as_deref().map_or(true, |f| f == s);
+        // Inside a category: Aurora's filter (every word in the name or a keyword), by name.
+        // Without one: a name search ranked prefix-first, over the content items only (IM13 D4).
+        let rank = |name: &str, keywords: &dyn Fn() -> Vec<String>| match (category, &needle) {
+            (_, None) => Some(0),
+            (Some(_), Some(_)) => matches_item_search(name, &keywords(), query).then_some(0),
+            (None, Some(n)) => name_rank(name, n),
+        };
+        let mut hits: Vec<(u8, Hit<'_>)> = hub
             .store
             .iter()
             .map(|s| &s.element)
-            .filter(|e| is_item(e) && scope.admits(e))
-            .filter(|e| filter.source.as_ref().map_or(true, |s| s == &e.source))
-            .filter(|e| {
-                filter
-                    .category
-                    .as_deref()
-                    .map_or(true, |c| list_category(e) == c)
-            })
-            .filter_map(|e| match &needle {
-                None => Some((0, e)),
-                Some(n) => name_rank(&e.name, n).map(|r| (r, e)),
-            })
+            .filter(|e| is_item(e) && scope.admits(e) && source_ok(&e.source))
+            .filter(|e| category.map_or(true, |c| list_category(e) == c))
+            .filter_map(|e| rank(&e.name, &|| keywords(e)).map(|r| (r, Hit::Item(e))))
             .collect();
+        if let Some(c) = category {
+            let uni = hub.engine.universe(scope.universe_ruleset());
+            hits.extend(
+                proxy_rows(uni, &scope, c)
+                    .into_iter()
+                    .filter(|p| source_ok(p.source))
+                    .filter_map(|p| rank(&p.name, &|| p.keywords()).map(|r| (r, Hit::Proxy(p)))),
+            );
+        }
         hits.sort_by(|a, b| {
             a.0.cmp(&b.0)
-                .then_with(|| a.1.name.cmp(&b.1.name))
-                .then_with(|| a.1.id.cmp(&b.1.id))
+                .then_with(|| a.1.name().cmp(b.1.name()))
+                .then_with(|| a.1.id().cmp(b.1.id()))
         });
         let total = hits.len();
         let take = filter.limit.unwrap_or(DEFAULT_PAGE).min(MAX_PAGE);
@@ -133,7 +140,10 @@ impl AppState {
             .into_iter()
             .skip(filter.offset.unwrap_or(0))
             .take(take)
-            .map(|(_, e)| item_row(&hub.store, e))
+            .map(|(_, h)| match h {
+                Hit::Item(e) => item_row(&hub.store, e),
+                Hit::Proxy(p) => proxy_row(&p),
+            })
             .collect();
         Ok(Page { total, items })
     }
@@ -157,10 +167,18 @@ impl AppState {
         self.mutate(id, |ctx, d| {
             let engine = &ctx.hub.engine;
             let store = &ctx.hub.store;
-            let el = store
-                .element(item_id)
+            // Aurora's proxy items are not in the store; the universe resolves them (B-06).
+            let in_store = store.element(item_id);
+            let el = in_store
+                .or_else(|| {
+                    engine
+                        .universe(d.character.build.ruleset)
+                        .get(item_id)
+                        .map(|u| &u.el)
+                })
                 .filter(|e| is_item(e))
                 .ok_or_else(|| ApiError::not_found("That item does not exist."))?;
+            let stackable = in_store.is_some();
             let (base, adorner) = match base_item_id {
                 Some(b) => (b, Some(item_id)),
                 None => (item_id, None),
@@ -171,7 +189,11 @@ impl AppState {
                     .map_err(|_| ApiError::requirement("Not enough money to buy that."))?;
                 d.character.build = state.state;
             }
-            if adorner.is_none() && stack_onto_existing(&mut d.character.build, base, quantity) {
+            // A proxy never stacks: each add is a line of its own, as in Aurora.
+            if adorner.is_none()
+                && stackable
+                && stack_onto_existing(&mut d.character.build, base, quantity)
+            {
                 return Ok(());
             }
             let out = match adorner {
@@ -496,6 +518,62 @@ fn name_rank(name: &str, needle: &str) -> Option<u8> {
         Some(3)
     } else {
         None
+    }
+}
+
+/// One row of an item search: a content item or one of Aurora's generated proxy items.
+enum Hit<'a> {
+    Item(&'a borealis_content::Element),
+    Proxy(ProxyEntry<'a>),
+}
+
+impl Hit<'_> {
+    fn name(&self) -> &str {
+        match self {
+            Self::Item(e) => &e.name,
+            Self::Proxy(p) => &p.name,
+        }
+    }
+
+    fn id(&self) -> &str {
+        match self {
+            Self::Item(e) => &e.id,
+            Self::Proxy(p) => &p.id,
+        }
+    }
+}
+
+/// Short text of a proxy row (the detail pane shows the target's description, P6).
+const PROXY_ROW_TEXT: &str = "Equip it to gain what it grants.";
+
+/// The row of a proxy item, without building it: no cost, weight or attunement.
+fn proxy_row(p: &ProxyEntry<'_>) -> ItemSummary {
+    use borealis_content::Ruleset;
+    let rulesets = match p.ruleset {
+        Some(Ruleset::Dnd2014) => vec![Ruleset::Dnd2014],
+        Some(Ruleset::Dnd2024) => vec![Ruleset::Dnd2024],
+        _ => vec![Ruleset::Dnd2014, Ruleset::Dnd2024],
+    };
+    ItemSummary {
+        summary: ElementSummary {
+            id: p.id.clone(),
+            name: p.name.clone(),
+            ty: "Item".into(),
+            source: p.source.to_string(),
+            source_name: p.source.to_string(),
+            short_description: PROXY_ROW_TEXT.into(),
+            prerequisites: None,
+            rulesets,
+            level: None,
+            school: None,
+            spell: None,
+            armor: None,
+            weapon: None,
+        },
+        category: p.category.clone(),
+        cost_cp: 0,
+        weight: 0.0,
+        requires_attunement: false,
     }
 }
 

@@ -115,22 +115,35 @@ fn additional_class_spell_categories_need_that_spellcasting() {
 const PACK_SOURCE: &str = "UiCat Test";
 
 fn app_with_pack() -> (tempfile::TempDir, AppState, String) {
+    let el = |id: &str, name: &str, category: &str| {
+        serde_json::json!({"id": id, "name": name, "type": "Item", "source": PACK_SOURCE, "ruleset": "dnd2024",
+            "setters": [{"name": "category", "value": category}]})
+    };
+    app_with(vec![
+        el(
+            "ID_UICAT_ADD_WIZ",
+            "Additional Wizard Spell, Test",
+            "Additional Wizard Spell",
+        ),
+        el(
+            "ID_UICAT_ADD_SPELL",
+            "Additional Spell, Test",
+            "Additional Spell",
+        ),
+        el("ID_UICAT_GIFT", "Test Gift", "Supernatural Gifts"),
+        el("ID_UICAT_ODD", "Odd Thing", "Curiosities"),
+    ])
+}
+
+/// An app with the bundled content plus `elements`, and a new 2024 character.
+fn app_with(elements: Vec<serde_json::Value>) -> (tempfile::TempDir, AppState, String) {
     let dir = tempfile::tempdir().unwrap();
     let app = AppState::new(AppPaths {
         content_root: Path::new(env!("CARGO_MANIFEST_DIR")).join("../content"),
         data: dir.path().join("data"),
     })
     .unwrap();
-    let el = |id: &str, name: &str, category: &str| {
-        serde_json::json!({"id": id, "name": name, "type": "Item", "source": PACK_SOURCE, "ruleset": "dnd2024",
-            "setters": [{"name": "category", "value": category}]})
-    };
-    let pack = serde_json::json!({"format": "borealis-content/1", "elements": [
-        el("ID_UICAT_ADD_WIZ", "Additional Wizard Spell, Test", "Additional Wizard Spell"),
-        el("ID_UICAT_ADD_SPELL", "Additional Spell, Test", "Additional Spell"),
-        el("ID_UICAT_GIFT", "Test Gift", "Supernatural Gifts"),
-        el("ID_UICAT_ODD", "Odd Thing", "Curiosities"),
-    ]});
+    let pack = serde_json::json!({"format": "borealis-content/1", "elements": elements});
     let imported = app
         .import_pack(
             &ImportPackRequest {
@@ -183,7 +196,9 @@ fn the_command_lists_imported_categories_and_gates_class_spell_ones() {
         .unwrap_or_else(|| panic!("imported category: {shown:?}"));
     assert!(shown.contains(&"Supernatural Gifts"), "{shown:?}");
     assert!(curio > fixed_end, "{shown:?}");
-    assert_eq!(shown.last(), Some(&"Additional Spell"));
+    // the content's own "Additional ..." categories come before the generated proxy ones
+    let at = |n: &str| shown.iter().position(|s| *s == n);
+    assert!(at("Additional Spell") < at("Additional Feat"), "{shown:?}");
     assert!(!shown.contains(&"Additional Wizard Spell"), "{shown:?}");
     // Every count is what the item search returns for that category.
     for c in &list {
@@ -203,9 +218,13 @@ fn the_command_lists_imported_categories_and_gates_class_spell_ones() {
         .expect("class");
     let caster = app.list_item_categories(&id).unwrap();
     let shown = names(&caster);
+    let at = |n: &str| shown.iter().position(|s| *s == n);
     assert_eq!(
-        shown[shown.len() - 2..],
-        ["Additional Wizard Spell", "Additional Spell"],
+        at("Additional Wizard Spell").map(|i| i + 1),
+        at("Additional Spell"),
         "{shown:?}"
     );
 }
+
+#[path = "proxy_items_tests.rs"]
+mod proxy_items;
