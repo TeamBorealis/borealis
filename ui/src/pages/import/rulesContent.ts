@@ -45,7 +45,7 @@ function isAuroraXml(t: string): boolean {
 
 /** What kind of rules content `text` is, if any. */
 export function detectRulesContent(text: string): RulesContent | null {
-  const t = text.replace(/^﻿/, "").trim();
+  const t = text.replace(/^\uFEFF/, "").trim();
   if (t.startsWith("{") || t.startsWith("[")) {
     try {
       return detectJson(JSON.parse(t));

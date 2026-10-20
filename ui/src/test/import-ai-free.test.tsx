@@ -36,7 +36,7 @@ function watched() {
 
 describe("rules content detection", () => {
   it("recognises Aurora XML, 5etools data and Borealis packs", () => {
-    for (const t of [AURORA, `﻿ ${AURORA}`, `Here it is:\n${AURORA}`, AURORA_FRAGMENT, AURORA_INDEX]) expect(detectRulesContent(t)).toBe("aurora");
+    for (const t of [AURORA, `\uFEFF ${AURORA}`, `Here it is:\n${AURORA}`, AURORA_FRAGMENT, AURORA_INDEX]) expect(detectRulesContent(t)).toBe("aurora");
     for (const t of [FIVETOOLS, FIVETOOLS_HOMEBREW, FIVETOOLS_FLUFF, FIVETOOLS_ENTITY, `[${FIVETOOLS_ENTITY}]`]) expect(detectRulesContent(t)).toBe("5etools");
     for (const t of [BOREALIS, BOREALIS_PACK]) expect(detectRulesContent(t)).toBe("borealis");
   });

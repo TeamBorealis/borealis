@@ -12,6 +12,8 @@ import "./SaveFlyout.css";
 import { setStatus } from "../../state/status";
 
 const DEFAULT_GROUP = "Characters";
+// Control characters are illegal in file names, so the class matches them on purpose.
+// eslint-disable-next-line no-control-regex
 const ILLEGAL = /[\\/:*?"<>|\u0000-\u001f]/g;
 /** Classic builder strips illegal filename characters silently as you type. */
 export const sanitizeFileName = (s: string): string => s.replace(ILLEGAL, "");
