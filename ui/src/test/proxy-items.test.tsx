@@ -61,3 +61,44 @@ describe("the name filter inside a category follows the classic builder", () => 
     expect(detail.descriptionHtml.length).toBeGreaterThan(0);
   });
 });
+
+describe("adding a generated proxy item (IM13, specs/proxy-items.md P4)", () => {
+  async function setup() {
+    const api = new MockApi();
+    const id = await seededId(api, "Seraphine");
+    const listed = await api.searchItems({ category: SPELLS, limit: 1000, characterId: id });
+    return { api, id, proxy: listed.items[0]! };
+  }
+
+  it("adds an id the listing offers as a free, hidden line without a card", async () => {
+    const { api, id, proxy } = await setup();
+    const start = await api.loadCharacter({ characterId: id });
+    const snap = await api.addItem({ characterId: id, itemId: proxy.id, quantity: 1, buy: true });
+    const line = snap.inventory.items.find((i) => i.itemId === proxy.id)!;
+    expect(snap.inventory.items).toHaveLength(start.inventory.items.length + 1);
+    expect(line.displayName).toBe(proxy.name);
+    expect(line.category).toBe(SPELLS);
+    expect(line.listInInventory).toBe(false);
+    expect(line.showCard).toBe(false);
+    expect(snap.inventory.coins).toEqual(start.inventory.coins);
+  });
+
+  it("never stacks: a second add is a line of its own", async () => {
+    const { api, id, proxy } = await setup();
+    await api.addItem({ characterId: id, itemId: proxy.id, quantity: 1, buy: false });
+    const snap = await api.addItem({ characterId: id, itemId: proxy.id, quantity: 1, buy: false });
+    expect(snap.inventory.items.filter((i) => i.itemId === proxy.id)).toHaveLength(2);
+  });
+
+  it("still rejects an id the listing does not offer", async () => {
+    const { api, id } = await setup();
+    await expect(api.addItem({ characterId: id, itemId: "proxy::nothing", quantity: 1, buy: false })).rejects.toMatchObject({ code: "not_found" });
+  });
+
+  it("leaves hidden lines out of the sheet's gear list", async () => {
+    const { api, id, proxy } = await setup();
+    await api.addItem({ characterId: id, itemId: proxy.id, quantity: 1, buy: false });
+    const after = (await api.renderSheet({ characterId: id })).html;
+    expect(after).not.toContain(proxy.name);
+  });
+});

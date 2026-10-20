@@ -28,13 +28,33 @@ export function makeItem(itemId: string, quantity: number): InventoryItem {
   };
 }
 
+/** A generated "Additional ..." item (specs/proxy-items.md): added as a hidden, cardless, free line of its own. */
+export interface ProxyLine {
+  id: string;
+  name: string;
+  category: string;
+}
+
+function makeProxyItem(p: ProxyLine, quantity: number): InventoryItem {
+  return {
+    id: nextId(), itemId: p.id, name: p.name, displayName: p.name, category: p.category, quantity, weight: 0, valueCp: 0,
+    equipped: null, attuned: false, requiresAttunement: false, storage: 0, notes: "", listInInventory: false, showCard: false,
+    isPack: false, packContents: [], isWeapon: false, weapon: null, armor: null,
+  };
+}
+
 function stack(items: InventoryItem[], itemId: string, qty: number): InventoryItem[] {
   const existing = items.find((i) => i.itemId === itemId && !i.equipped && i.storage === 0 && !i.attuned);
   if (existing && !existing.requiresAttunement) return items.map((i) => (i === existing ? { ...i, quantity: i.quantity + qty } : i));
   return [...items, makeItem(itemId, qty)];
 }
 
-export function addItem(c: MockCharacter, itemId: string, qty: number, buy: boolean): MockCharacter {
+export function addItem(c: MockCharacter, itemId: string, qty: number, buy: boolean, proxy?: ProxyLine): MockCharacter {
+  if (proxy) {
+    if (qty < 1 || qty > 100) throw apiError("invalid_argument", "Quantity must be 1-100.");
+    // Buying a proxy costs nothing, and a proxy never stacks: every add is a line of its own.
+    return { ...c, items: [...c.items, makeProxyItem(proxy, qty)] };
+  }
   const def = getItem(itemId);
   if (!def) throw apiError("not_found", `Unknown item ${itemId}`);
   if (qty < 1 || qty > 100) throw apiError("invalid_argument", "Quantity must be 1-100.");

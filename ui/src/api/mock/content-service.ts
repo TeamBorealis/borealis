@@ -108,6 +108,12 @@ export class ContentService {
     return itemCategoryList([...content, ...generated], casters);
   }
 
+  /** The generated proxy item with this id, when the listing offers it. */
+  proxyLine(id: string): { id: string; name: string; category: string } | undefined {
+    const p = isProxyId(id) ? this.proxies().find((x) => x.id === id) : undefined;
+    return p && { id: p.id, name: p.name, category: p.category };
+  }
+
   /** The generated proxy items of the loaded content (every caster class gets its "Additional <Class> Spell"). */
   private proxies(): ProxyRow[] {
     return proxyRows(this.all(), CLASSES.filter((c) => c.caster).map((c) => c.id));

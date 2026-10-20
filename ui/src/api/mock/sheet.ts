@@ -22,7 +22,7 @@ export function renderSheetHtml(s: CharacterSnapshot): string {
   const skills = s.stats.skills.map((k) => `<li>${k.proficiency !== "none" ? "&#9679;" : "&#9675;"} ${esc(k.name)} <b>${signed(k.bonus)}</b></li>`).join("");
   const attacks = s.attacks.map((a) => `<tr><td>${esc(a.name)}</td><td>${esc(a.attackBonus)}</td><td>${esc(a.damage)}</td></tr>`).join("");
   const spells = s.spellcasting.classes.flatMap((c) => c.spells.filter((x) => x.prepared)).map((x) => `<li>${esc(x.name)} (${x.level || "cantrip"})</li>`).join("");
-  const gear = s.inventory.items.map((i) => `<li>${i.quantity}&times; ${esc(i.displayName)}${i.equipped ? " (equipped)" : ""}</li>`).join("");
+  const gear = s.inventory.items.filter((i) => i.listInInventory).map((i) => `<li>${i.quantity}&times; ${esc(i.displayName)}${i.equipped ? " (equipped)" : ""}</li>`).join("");
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${esc(s.name)}</title><style>${CSS}</style></head><body class="sheet">
 <section class="page"><header class="top"><div><h1>${esc(s.name)}</h1><div class="sub">Level ${s.level.total} &middot; ${s.ruleset === "dnd2024" ? "2024 rules" : "2014 rules"}</div></div></header>
 <div class="stats">${abil}</div>
