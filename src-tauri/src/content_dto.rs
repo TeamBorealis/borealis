@@ -259,6 +259,9 @@ pub struct CompanionState {
     /// The hit points as text when the stat block prints them as a formula (decision IM12a);
     /// the tab shows it instead of `hp`.
     pub hp_note: Option<String>,
+    /// The challenge rating as printed (`1/4`), the note that stands in for it, or an em dash
+    /// (decision IM12); the tab shows it as is.
+    pub challenge: String,
     pub speed: i32,
     pub abilities: crate::dto::AbilityRecord<i32>,
 }

@@ -3603,6 +3603,12 @@
       "k": "prim"
      }
     },
+    "challenge": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "creature": {
      "opt": false,
      "t": {

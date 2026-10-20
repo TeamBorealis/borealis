@@ -249,6 +249,11 @@ fn a_summon_whose_armor_class_and_hit_points_are_formulas_imports_and_shows_the_
     };
     let want = (Some(WARD_AC.to_string()), Some(WARD_HP.to_string()));
     assert_eq!(notes(&s), want);
+    // the challenge on the tab is the one the card shows (a note or an em dash, never a CR)
+    assert_eq!(
+        s.companion.as_ref().map(|c| c.challenge.clone()),
+        Some(challenge(&app, WARD))
+    );
     app.save_character(&s.id).expect("save");
     app.close_character(&s.id, false).expect("close");
     assert_eq!(notes(&app.load_character(&s.id).expect("load")), want);

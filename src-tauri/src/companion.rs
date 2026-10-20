@@ -5,7 +5,7 @@ use crate::content_dto::CompanionState;
 use crate::dto::{AbilityRecord, ElementRef};
 use crate::extras::ui_extras;
 use crate::snapshot_map::MapInput;
-use borealis_content::{Element, MonsterData};
+use borealis_content::{Element, MonsterData, NO_CHALLENGE_RATING};
 use borealis_engine::snapshot::CharacterSnapshot as Engine;
 
 const DEFAULT_ABILITY: i32 = 10;
@@ -27,6 +27,7 @@ struct CreatureStats {
     hp: i32,
     armor_class_note: Option<String>,
     hp_note: Option<String>,
+    challenge: String,
     speed: i32,
     abilities: [i32; 6],
 }
@@ -38,6 +39,7 @@ impl Default for CreatureStats {
             hp: 0,
             armor_class_note: None,
             hp_note: None,
+            challenge: NO_CHALLENGE_RATING.to_string(),
             speed: 0,
             abilities: [DEFAULT_ABILITY; 6],
         }
@@ -65,6 +67,7 @@ fn monster_stats(m: &MonsterData) -> CreatureStats {
             .map_or(0, |hp| i32::try_from(hp).unwrap_or(0)),
         armor_class_note: m.ac.is_empty().then(|| m.armor_class_text()),
         hp_note: m.hp.is_none().then(|| m.hit_points_text()),
+        challenge: m.challenge_text(),
         speed: m.speed.walk.map_or(0, |w| i32::try_from(w).unwrap_or(0)),
         abilities: [a.str, a.dex, a.con, a.int, a.wis, a.cha].map(i32::from),
     }
@@ -78,6 +81,11 @@ fn companion_stats(el: &Element) -> CreatureStats {
         hp: int("hp").unwrap_or(0),
         armor_class_note: None,
         hp_note: None,
+        challenge: el
+            .setter_value("challenge")
+            .map(str::trim)
+            .filter(|c| !c.is_empty())
+            .map_or_else(|| NO_CHALLENGE_RATING.to_string(), str::to_string),
         speed: int("speed").unwrap_or(0),
         abilities: COMPANION_ABILITIES.map(|n| int(n).unwrap_or(DEFAULT_ABILITY)),
     }
@@ -130,6 +138,7 @@ pub fn companion(input: &MapInput<'_>, snap: &Engine) -> Option<CompanionState> 
         hp: stats.hp,
         armor_class_note: stats.armor_class_note,
         hp_note: stats.hp_note,
+        challenge: stats.challenge,
         speed: stats.speed,
         abilities: AbilityRecord::from_fn(|i| stats.abilities[i]),
     })
@@ -158,5 +167,16 @@ mod tests {
         let s = creature_stats(&el);
         assert_eq!((s.armor_class, s.hp, s.speed), (13, 11, 40));
         assert_eq!(s.abilities, [12, 15, 10, 10, 10, 10]);
+        assert_eq!(s.challenge, NO_CHALLENGE_RATING);
+    }
+
+    #[test]
+    fn companion_challenge_setter_is_shown() {
+        let el: Element = serde_json::from_value(serde_json::json!({
+            "id": "ID_T_COMP", "name": "Wolf", "type": "Companion", "source": "Test",
+            "setters": [{"name": "challenge", "value": " 1/4 "}]
+        }))
+        .unwrap();
+        assert_eq!(creature_stats(&el).challenge, "1/4");
     }
 }

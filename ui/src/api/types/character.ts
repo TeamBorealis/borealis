@@ -398,6 +398,8 @@ export interface CompanionState {
   armorClassNote: string | null;
   /** The hit points as text when the stat block prints them as a formula (shown instead of hp). */
   hpNote: string | null;
+  /** The challenge rating as printed ("1/4"), the note that stands in for it, or "—" (IM12). */
+  challenge: string;
   speed: number;
   abilities: AbilityRecord<number>;
 }
