@@ -97,6 +97,11 @@ def suites():
     goldens = APP / "src-tauri" / "tests" / "goldens"
     table["golden"] = ("IM7 stage 3e: SRD golden characters vs hand-derived expected sheets", goldens,
                        [("borealis", "golden_characters", {})])
+    # The sheet crate's own tests (lib + every integration target + doc tests), run as one package
+    # run: a None target omits `--test`, so the sheet regressions are gated like the other suites.
+    sheet = APP / "crates" / "borealis-sheet"
+    table["sheet"] = ("borealis-sheet tests: layout, golden renders, PDF parity, cards, tags", sheet,
+                      [("borealis-sheet", None, {})])
     table["acceptance"][2].append(("borealis", "golden_characters", {}))
     return table
 
@@ -143,12 +148,14 @@ class Outcomes:
 
 def run_tests(targets, logs, oc):
     for pkg, target, env in targets:
-        code, out, err = cargo(["-p", pkg, "--test", target], env, logs / f"{pkg}__{target}")
-        oc.parse_libtest(f"{pkg}:{target}", out)
+        label = target or "all"  # a None target runs every target of the package
+        args = ["-p", pkg] + (["--test", target] if target else [])
+        code, out, err = cargo(args, env, logs / f"{pkg}__{label}")
+        oc.parse_libtest(f"{pkg}:{label}", out)
         oc.parse_outcome_lines(err)
         if code != 0 and "test result:" not in out:
-            oc.add(f"build/{pkg}:{target}", False, err.strip().splitlines()[-1:][0] if err.strip() else "")
-            print(f"    {pkg}:{target}: did not run (build error?), see {logs}")
+            oc.add(f"build/{pkg}:{label}", False, err.strip().splitlines()[-1:][0] if err.strip() else "")
+            print(f"    {pkg}:{label}: did not run (build error?), see {logs}")
 
 
 def live_drafts():
