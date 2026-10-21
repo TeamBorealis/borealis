@@ -26,8 +26,9 @@ mod defects;
 #[path = "stage2_climb.rs"]
 mod climb;
 use climb::{
-    climb_items, multiclass_entries, on_climb, rank_configs, spell_list_hosts, stat_groups,
-    MULTICLASS_TYPE,
+    attunement_configs, climb_items, counter_configs, grant_level_configs,
+    grant_requirement_groups, list_owner_configs, multiclass_entries, negated_ids, on_climb,
+    rank_configs, spell_list_hosts, stat_groups, MULTICLASS_TYPE,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -892,6 +893,7 @@ fn needed_groups(
     e: &Edition<'_>,
     target: &str,
     el: &borealis_content::Element,
+    depth: usize,
 ) -> Vec<Vec<String>> {
     let store = &e.ins.store;
     let mut groups: Vec<Vec<String>> = earlier_copies(store, target)
@@ -899,7 +901,7 @@ fn needed_groups(
         .map(|c| vec![c])
         .collect();
     let mut queue = vec![target.to_string()];
-    for _ in 0..prereq::MAX_PRIOR_FEATS {
+    for _ in 0..depth {
         let mut next = Vec::new();
         for id in &queue {
             let Some(x) = store.element(id) else { continue };
@@ -950,7 +952,7 @@ fn option_host(
     };
     let mut needs = prereq::Needs::default();
     e.reader.needs(e.rs, el, 0, &mut needs);
-    let groups = needed_groups(e, target, el);
+    let groups = needed_groups(e, target, el, prereq::MAX_PRIOR_FEATS);
     // hosts the option (and each needed id) climb to; each candidate class is tried in turn
     let mut roots = Plan::default();
     e.offerers.place(target, &mut roots);
@@ -1064,7 +1066,30 @@ fn option_host(
     every.extend(classes.iter().cloned());
     let ranked = rank_configs(e, target, &groups, every);
     // a spell a subclass's (or feature's) own spell list names: that host first
-    let (classes, roots) = spell_list_hosts(e, target, ranked, roots);
+    let (mut classes, mut roots) = spell_list_hosts(e, target, ranked, roots);
+    // a needed spell that a subclass's own list adds to a class whose select offers the option
+    // (an invocation that requires a spell only one patron's expanded list holds): that
+    // configuration first
+    let own_classes: BTreeSet<String> = {
+        let mut own = Plan::default();
+        e.offerers.place_precise(target, &mut own);
+        own.classes
+    };
+    let mut listed: Vec<(String, Option<String>)> = Vec::new();
+    for id in groups.iter().flatten() {
+        if let Some(spell) = store.element(id).filter(|x| x.ty == "Spell") {
+            let mut scratch = Plan::default();
+            for c in list_owner_configs(e, spell, &mut scratch) {
+                if c.1.is_some() && own_classes.contains(&c.0) && !listed.contains(&c) {
+                    listed.push(c);
+                }
+            }
+        }
+    }
+    if !listed.is_empty() {
+        classes.retain(|c| !listed.contains(c));
+        classes.splice(0..0, listed);
+    }
     // the climb pass records apart, with its own explore memo: the hosts after it (options,
     // items) are planned exactly as before it existed
     let mut memo = Explore {
@@ -1073,10 +1098,65 @@ fn option_host(
         explored: 0,
     };
     let mut pass = Offers::default();
-    // the climb pass also takes the elements that set a counter a requirement tests
-    // (`[smith:armor:1]` set by an earlier upgrade pick)
-    let mut groups = groups;
-    groups.extend(stat_groups(store, target, &groups));
+    // the climb pass follows a requirement chain to its start (the 10th copy of an upgrade
+    // that requires the 9th, which requires the 8th, ...), then takes the elements that set a
+    // counter a requirement tests (`[smith:armor:1]` set by an earlier upgrade pick)
+    let mut deep = needed_groups(e, target, el, MAX_CHAIN);
+    for g in groups {
+        if !deep.contains(&g) {
+            deep.push(g);
+        }
+    }
+    // what a grant on the climb paths asks for (an item grants a trait whose select's choice
+    // decides which further trait it grants; a feat grants a feature to one race only): the
+    // user makes that choice, and takes that race when nothing else decides it
+    let granting = grant_requirement_groups(store, &roots.path);
+    if roots.origins.is_empty() {
+        for id in granting.iter().flatten() {
+            let mut p = Plan::default();
+            e.offerers.place(id, &mut p);
+            roots.origins.extend(p.origins);
+        }
+    }
+    // when one element alone owns the selects that offer the option, what that owner requires
+    // is needed too (a feat for one race whose select offers the feature)
+    let owners: BTreeSet<&str> = e
+        .selects
+        .offering(target, &el.ty, Some(el))
+        .into_iter()
+        .map(|(o, _, _)| o.as_str())
+        .collect();
+    let mut owned = Vec::new();
+    if let [owner] = owners.into_iter().collect::<Vec<_>>().as_slice() {
+        if let Some(x) = store.element(owner) {
+            if let Ok(Some(expr)) = RequirementsExpr::parse(&x.requirements) {
+                required_groups(store, expr.root(), &mut owned);
+            }
+        }
+    }
+    for g in granting.into_iter().chain(owned) {
+        if !deep.contains(&g) && !g.iter().any(|i| i == target) {
+            deep.push(g);
+        }
+    }
+    let mut groups = deep;
+    let counters = stat_groups(store, target, &groups);
+    // the classes whose features set such a counter (a monk's ki for a feat option testing
+    // `[ki:points:1]`) are tried after the ranked ones
+    groups.extend(counters.iter().cloned());
+    // and the classes a carried item's attunement restriction names (the robe whose select
+    // offers the option attunes only to a sorcerer, warlock, or wizard)
+    let carried = climb_items(store, target, &roots, &groups);
+    let mut classes = classes;
+    for c in counter_configs(e, &counters)
+        .into_iter()
+        .chain(attunement_configs(e, &carried))
+        .chain(grant_level_configs(e, &roots.path))
+    {
+        if !classes.contains(&c) {
+            classes.push(c);
+        }
+    }
     // then, where the climb pass offers nothing, the multiclass pass: the same configurations
     // also multiclassing as a user does (a class's own multiclass node; another class leading
     // the levels), apart so that what the climb pass offered stays offered
@@ -1124,6 +1204,10 @@ fn option_host(
 /// before the other fallback class.
 const OPTION_HOST_CLASSES: usize = 4;
 
+/// How deep the climb pass follows a requirement chain (an upgrade line of ten copies, each
+/// requiring the one before).
+const MAX_CHAIN: usize = 12;
+
 /// Configurations the multiclass pass of [`option_host`] retries at most.
 const MAX_MULTICLASS_CONFIGS: usize = 4;
 
@@ -1159,12 +1243,90 @@ fn option_host_on(
     // the climb pass takes the origins the paths reach before the fallback race (a sub race's
     // trait needs the sub race's own race, not the human host)
     let origins = roots.origins.iter().map(String::as_str);
+    // a race or background the option's requirements name comes before the path origins
+    let needed_races = groups.iter().flatten().filter(|id| {
+        e.ins
+            .store
+            .element(id)
+            .is_some_and(|x| matches!(x.ty.as_str(), "Race" | "Species" | "Background"))
+    });
+    // then the origins the option's own path reaches (the sub race granting the trait whose
+    // select offers it), then the origins of the needed ids' paths
+    let mut own = Plan::default();
+    e.offerers.place(target, &mut own);
+    // then a race an element on the paths requires (a class variant for elves only)
+    let mut path_races: Vec<String> = Vec::new();
+    if climb {
+        for p in roots.path.iter().filter(|p| on_climb(&e.ins.store, p)) {
+            let Some(x) = e.ins.store.element(p) else {
+                continue;
+            };
+            if let Ok(Some(expr)) = RequirementsExpr::parse(&x.requirements) {
+                let mut found = Vec::new();
+                required_groups(&e.ins.store, expr.root(), &mut found);
+                let races = found.into_iter().flatten().filter(|id| {
+                    e.ins
+                        .store
+                        .element(id)
+                        .is_some_and(|x| matches!(x.ty.as_str(), "Race" | "Species"))
+                });
+                path_races.extend(races);
+            }
+        }
+    }
+    // and the race of a sub race the option's requirements name (a feat for one subrace)
+    let mut sub_parents: Vec<String> = Vec::new();
+    if climb {
+        let subs = groups.iter().flatten().filter(|id| {
+            e.ins
+                .store
+                .element(id)
+                .is_some_and(|x| matches!(x.ty.as_str(), "Sub Race" | "Race Variant"))
+        });
+        for id in subs {
+            let mut p = Plan::default();
+            e.offerers.place_precise(id, &mut p);
+            let races = p.origins.into_iter().filter(|o| {
+                e.ins
+                    .store
+                    .element(o)
+                    .is_some_and(|x| matches!(x.ty.as_str(), "Race" | "Species"))
+            });
+            sub_parents.extend(races);
+        }
+    }
     let order: Vec<&str> = if climb {
-        origins.chain(race).collect()
+        needed_races
+            .map(String::as_str)
+            .chain(sub_parents.iter().map(String::as_str))
+            .chain(own.origins.iter().map(String::as_str))
+            .chain(path_races.iter().map(String::as_str))
+            .chain(origins)
+            .chain(race)
+            .collect()
     } else {
         race.into_iter().chain(origins).collect()
     };
-    for r in order {
+    // the climb pass leaves alone what the option's requirements negate (a race variant)
+    let avoid = if climb {
+        // and what the selects offering it negate (a variant select closed to one variant)
+        let select_reqs: Vec<&str> = e
+            .ins
+            .store
+            .element(target)
+            .map(|el| e.selects.offering(target, &el.ty, Some(el)))
+            .unwrap_or_default()
+            .into_iter()
+            .map(|(_, _, r)| r.as_str())
+            .collect();
+        negated_ids(&e.ins.store, target, groups, &select_reqs)
+    } else {
+        Vec::new()
+    };
+    if trace && climb {
+        eprintln!("TRACE {target}: avoid {avoid:?} order {order:?}");
+    }
+    for r in order.into_iter().filter(|r| !avoid.iter().any(|a| a == r)) {
         d.pick(&mut h, r);
     }
     let mut want: Vec<Vec<String>> = archetype.map(|a| vec![a.to_string()]).into_iter().collect();
@@ -1206,10 +1368,8 @@ fn option_host_on(
         want.extend(rest);
     }
     // a feat whose select offers the option is taken where a feat is offered (Weapon Master)
-    let mut own = Plan::default();
-    e.offerers.place(target, &mut own);
     if !own.feats.is_empty() {
-        want.push(own.feats.into_iter().collect());
+        want.push(own.feats.iter().cloned().collect());
     }
     // then every element a select puts on the climb paths of the option and of what it needs
     // (the racial trait whose select offers the option, the feat whose select offers a needed
@@ -1223,10 +1383,21 @@ fn option_host_on(
     // an item on a path, or one that grants a needed id (a "feat unlocker" item granting the
     // id a feat's requirement names), is carried, as a user adds it on the equipment screen
     if climb {
-        for item in climb_items(&e.ins.store, target, roots, groups) {
-            let held = d.hold_item(&mut h, &item);
+        let carried = climb_items(&e.ins.store, target, roots, groups);
+        for item in &carried {
+            let held = d.hold_item(&mut h, item);
             if trace {
                 eprintln!("TRACE {target}: item {item} held {held}");
+            }
+        }
+        // a later item of the same slot took a needed item off (the armor whose stat a
+        // requirement tests, then a path item's armor): a user wears the needed one
+        for g in groups {
+            if let Some(item) = g.iter().find(|i| carried.contains(i)) {
+                let worn = d.equip_again(&mut h, item);
+                if trace {
+                    eprintln!("TRACE {target}: item {item} equipped {worn}");
+                }
             }
         }
     }
@@ -1261,11 +1432,25 @@ fn option_host_on(
     } else {
         Vec::new()
     };
+    // the wanted groups the lead class serves (a spell only its select offers): once they are
+    // picked, the levels go back to the main class (whose select offers the option)
+    let lead_for: Vec<Vec<String>> = if lead.is_empty() {
+        Vec::new()
+    } else {
+        want.iter()
+            .filter(|g| !multiclass_entries(e, class, std::slice::from_ref(*g), true).is_empty())
+            .cloned()
+            .collect()
+    };
     if !lead.is_empty() && !want.contains(&lead) {
         want.push(lead.clone());
     }
     let mut multiclass =
         climb && (is_mc(target) || want.iter().flatten().any(|w| is_mc(w)) || !lead.is_empty());
+    for g in &mut want {
+        g.retain(|i| !avoid.contains(i));
+    }
+    want.retain(|g| !g.is_empty());
     let mut level_slot = String::from("main");
     let mut found = false;
     loop {
@@ -1295,6 +1480,24 @@ fn option_host_on(
                 h.snap.level.total,
                 offered(d, &h)
             );
+            // the open slots, with how many options each has and the wanted ids among them
+            let wanted: BTreeSet<&str> = want.iter().flatten().map(String::as_str).collect();
+            let open: Vec<(String, usize, Vec<String>)> = h
+                .snap
+                .slots
+                .iter()
+                .filter(|s| s.chosen.is_none())
+                .map(|s| {
+                    let o = d.options(&h, &s.id);
+                    let hit = o
+                        .iter()
+                        .filter(|(id, _)| wanted.contains(id.as_str()))
+                        .map(|(id, _)| id.clone())
+                        .collect();
+                    (s.id.clone(), o.len(), hit)
+                })
+                .collect();
+            eprintln!("TRACE {target}: open {open:?}");
         }
         if offered(d, &h) {
             found = true;
@@ -1304,7 +1507,7 @@ fn option_host_on(
             }
             break;
         }
-        d.fill(&mut h, &label, offers);
+        d.fill_avoiding(&mut h, &label, offers, &avoid);
         if h.snap.level.total >= MAX_LEVEL {
             break;
         }
@@ -1334,6 +1537,10 @@ fn option_host_on(
                 }
                 continue;
             }
+        }
+        let served = !lead_for.is_empty() && lead_for.iter().all(|g| !want.contains(g));
+        if served && level_slot != "main" {
+            level_slot = String::from("main");
         }
         if !d.level_up_slot(&mut h, &level_slot) {
             break;

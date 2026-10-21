@@ -7,7 +7,7 @@
 //! Everything is read from the installed content; no id is named here.
 
 use super::items;
-use super::{Edition, NON_OFFERABLE};
+use super::{required_groups, Edition, NON_OFFERABLE};
 use crate::support::plan::{supports_match, tokens, Plan};
 use borealis_content::expr::{BoolExpr, RequirementLeaf, RequirementsExpr, TestValue};
 use borealis_content::{ContentStore, Rule};
@@ -133,6 +133,13 @@ pub(super) fn stat_groups(
             })
         })
     };
+    // a setter adds a positive number, or a term that grows with the character (`level:monk`:
+    // the class feature whose counter a feat option tests)
+    let raises = |v: &str| {
+        let v = v.trim();
+        v.parse::<i64>()
+            .map_or(!v.is_empty() && !v.starts_with('-'), |n| n > 0)
+    };
     let mut out: Vec<Vec<String>> = Vec::new();
     for key in keys.into_iter().filter(|k| !spent(k)) {
         let setters: Vec<String> = store
@@ -141,7 +148,7 @@ pub(super) fn stat_groups(
             .filter(|se| {
                 se.element.rules.iter().any(|r| {
                     matches!(r, Rule::Stat(s) if s.name.eq_ignore_ascii_case(&key)
-                        && s.value.trim().parse::<i64>().is_ok_and(|n| n > 0))
+                        && raises(&s.value))
                 })
             })
             .map(|se| se.element.id.clone())
@@ -149,6 +156,68 @@ pub(super) fn stat_groups(
             .collect();
         if !setters.is_empty() && !groups.contains(&setters) && !out.contains(&setters) {
             out.push(setters);
+        }
+    }
+    out
+}
+
+/// The configurations (class, archetype) the setters of counter groups ([`stat_groups`]) climb
+/// to, in group order.
+pub(super) fn counter_configs(e: &Edition<'_>, counters: &[Vec<String>]) -> Vec<Config> {
+    let usable = |c: &String| e.builder_classes.contains(c);
+    let mut out: Vec<Config> = Vec::new();
+    for g in counters {
+        let mut p = Plan::default();
+        for id in g {
+            e.offerers.place_precise(id, &mut p);
+        }
+        let configs = p
+            .classes
+            .iter()
+            .filter(|c| usable(c))
+            .map(|c| (c.clone(), None))
+            .chain(p.archetypes.iter().flat_map(|(a, cs)| {
+                cs.iter()
+                    .filter(|c| usable(c))
+                    .map(|c| (c.clone(), Some(a.clone())))
+            }));
+        for c in configs {
+            if !out.contains(&c) {
+                out.push(c);
+            }
+        }
+    }
+    out
+}
+
+/// The classes a carried item's attunement restriction names ("by a sorcerer, warlock, or
+/// wizard", the `attunement` setter's `addition`): a user who wants the select of such an item
+/// plays one of them (the builder refuses the attunement otherwise). Item order, then class
+/// order.
+pub(super) fn attunement_configs(e: &Edition<'_>, items: &[String]) -> Vec<Config> {
+    let store = &e.ins.store;
+    let mut out: Vec<Config> = Vec::new();
+    for item in items {
+        let Some(text) = store
+            .element(item)
+            .and_then(|x| x.setter("attunement"))
+            .and_then(|s| s.attribute("addition"))
+            .map(str::to_lowercase)
+        else {
+            continue;
+        };
+        let words: BTreeSet<&str> = text
+            .split(|c: char| !c.is_alphanumeric() && c != '\'')
+            .filter(|w| !w.is_empty())
+            .collect();
+        for c in e.builder_classes {
+            let named = store
+                .element(c)
+                .is_some_and(|x| words.contains(x.name.to_lowercase().as_str()));
+            let cfg = (c.clone(), None);
+            if named && !out.contains(&cfg) {
+                out.push(cfg);
+            }
         }
     }
     out
@@ -173,6 +242,15 @@ pub(super) fn multiclass_entries(
         let mut p = Plan::default();
         for id in g {
             e.offerers.place_precise(id, &mut p);
+            // a needed spell no class list names is learned where a select offers any spell of
+            // an allowed level (Magical Secrets, see [`slots_select_hosts`])
+            let spell = store.element(id).filter(|x| x.ty == "Spell");
+            if let Some(spell) = spell.filter(|_| p.classes.is_empty() && p.archetypes.is_empty()) {
+                let mut q = Plan::default();
+                for (c, _) in slots_select_hosts(e, spell, &mut q) {
+                    p.classes.insert(c);
+                }
+            }
         }
         let reached: BTreeSet<&String> = p
             .classes
@@ -209,22 +287,52 @@ pub(super) fn multiclass_entries(
     out
 }
 
-/// The classes (builder class ids, by name) whose level gates a select that offers `target` by
-/// its whole supports expression (`[level:<class>:N]` in the select's requirements).
-fn select_level_classes(e: &Edition<'_>, target: &str) -> BTreeSet<String> {
-    fn level_keys(x: &BoolExpr<RequirementLeaf>, out: &mut BTreeSet<String>) {
-        match x {
-            BoolExpr::Leaf(RequirementLeaf::Test(t)) => {
-                if let Some(c) = t.normalized_key().strip_prefix("level:") {
-                    out.insert(c.to_string());
-                }
+/// The class names a requirements expression tests the level of (`[level:paladin:1]`).
+fn level_keys(x: &BoolExpr<RequirementLeaf>, out: &mut BTreeSet<String>) {
+    match x {
+        BoolExpr::Leaf(RequirementLeaf::Test(t)) => {
+            if let Some(c) = t.normalized_key().strip_prefix("level:") {
+                out.insert(c.to_string());
             }
-            BoolExpr::Leaf(RequirementLeaf::Id(_)) | BoolExpr::Not(_) => {}
-            BoolExpr::And(items) | BoolExpr::Or(items) => {
-                items.iter().for_each(|i| level_keys(i, out));
+        }
+        BoolExpr::Leaf(RequirementLeaf::Id(_)) | BoolExpr::Not(_) => {}
+        BoolExpr::And(items) | BoolExpr::Or(items) => {
+            items.iter().for_each(|i| level_keys(i, out));
+        }
+    }
+}
+
+/// The classes (builder class ids, by name) whose level gates a grant of a `path` element (an
+/// optional-feature item grants a class feature only at `[level:paladin:1]`): a user who wants
+/// what that grant gives plays that class.
+pub(super) fn grant_level_configs(e: &Edition<'_>, path: &BTreeSet<String>) -> Vec<Config> {
+    let store = &e.ins.store;
+    let mut names = BTreeSet::new();
+    for se in store.iter() {
+        for r in &se.element.rules {
+            let Rule::Grant(g) = r else { continue };
+            let Some(req) = g.requirements.as_deref().filter(|_| path.contains(&g.id)) else {
+                continue;
+            };
+            if let Ok(Some(expr)) = RequirementsExpr::parse(req) {
+                level_keys(expr.root(), &mut names);
             }
         }
     }
+    e.builder_classes
+        .iter()
+        .filter(|c| {
+            store
+                .element(c)
+                .is_some_and(|x| names.contains(&x.name.to_lowercase()))
+        })
+        .map(|c| (c.clone(), None))
+        .collect()
+}
+
+/// The classes (builder class ids, by name) whose level gates a select that offers `target` by
+/// its whole supports expression (`[level:<class>:N]` in the select's requirements).
+fn select_level_classes(e: &Edition<'_>, target: &str) -> BTreeSet<String> {
     let store = &e.ins.store;
     let Some(el) = store.element(target) else {
         return BTreeSet::new();
@@ -317,28 +425,23 @@ pub(super) fn rank_configs(
     scored.into_iter().map(|(_, c)| c).collect()
 }
 
-/// The climb pass's configurations and roots for a spell: the elements whose own spell list
-/// (or list extension) names the spell or one of its supports come first (a subclass with its
-/// own list of fusion-element spells; the class is then the subclass's class), then the owners
-/// of a slots-only spell select ([`slots_select_hosts`]), then `classes`. Other targets keep
-/// `classes` and `roots`.
-pub(super) fn spell_list_hosts(
+/// The configurations (class, archetype) of the elements whose own spell list (or list
+/// extension) names `spell` or one of its supports (a subclass's expanded spell list); each
+/// non-class owner joins the climb paths of `roots`. Store order.
+pub(super) fn list_owner_configs(
     e: &Edition<'_>,
-    target: &str,
-    classes: Vec<(String, Option<String>)>,
-    mut roots: Plan,
-) -> (Vec<(String, Option<String>)>, Plan) {
+    spell: &borealis_content::Element,
+    roots: &mut Plan,
+) -> Vec<Config> {
     let store = &e.ins.store;
-    let Some(spell) = store.element(target).filter(|x| x.ty == "Spell") else {
-        return (classes, roots);
-    };
+    let target = spell.id.as_str();
     let keys: BTreeSet<String> = spell
         .supports
         .iter()
         .map(|s| s.to_lowercase())
         .chain(std::iter::once(target.to_lowercase()))
         .collect();
-    let mut first: Vec<(String, Option<String>)> = Vec::new();
+    let mut first: Vec<Config> = Vec::new();
     let usable = |c: &String| e.builder_classes.contains(c);
     for se in store.iter() {
         let owner = &se.element;
@@ -373,6 +476,25 @@ pub(super) fn spell_list_hosts(
             }
         }
     }
+    first
+}
+
+/// The climb pass's configurations and roots for a spell: the elements whose own spell list
+/// (or list extension) names the spell or one of its supports come first (a subclass with its
+/// own list of fusion-element spells; the class is then the subclass's class), then the owners
+/// of a slots-only spell select ([`slots_select_hosts`]), then `classes`. Other targets keep
+/// `classes` and `roots`.
+pub(super) fn spell_list_hosts(
+    e: &Edition<'_>,
+    target: &str,
+    classes: Vec<(String, Option<String>)>,
+    mut roots: Plan,
+) -> (Vec<(String, Option<String>)>, Plan) {
+    let store = &e.ins.store;
+    let Some(spell) = store.element(target).filter(|x| x.ty == "Spell") else {
+        return (classes, roots);
+    };
+    let first = list_owner_configs(e, spell, &mut roots);
     // then the owners of a spell select that offers any spell of an allowed level
     // (`$(spellcasting:slots)` with no class list term: Magical Secrets, engine.md 10.3), whose
     // dynamic supports the reverse index cannot link to any one spell
@@ -446,5 +568,65 @@ fn slots_select_hosts(
         seen.push(c.clone());
         new
     });
+    out
+}
+
+/// The ids the requirements of `target`, of the needed ids and `extra` requirement strings
+/// negate (`!ID_X`).
+pub(super) fn negated_ids(
+    store: &ContentStore,
+    target: &str,
+    groups: &[Vec<String>],
+    extra: &[&str],
+) -> Vec<String> {
+    fn walk(e: &BoolExpr<RequirementLeaf>, out: &mut Vec<String>) {
+        match e {
+            BoolExpr::Not(inner) => {
+                if let BoolExpr::Leaf(RequirementLeaf::Id(id)) = inner.as_ref() {
+                    out.push(id.clone());
+                }
+            }
+            BoolExpr::And(items) | BoolExpr::Or(items) => items.iter().for_each(|x| walk(x, out)),
+            BoolExpr::Leaf(_) => {}
+        }
+    }
+    let mut out = Vec::new();
+    let own = std::iter::once(target)
+        .chain(groups.iter().flatten().map(String::as_str))
+        .filter_map(|id| store.element(id).map(|x| x.requirements.as_str()));
+    for req in own.chain(extra.iter().copied()) {
+        if let Ok(Some(expr)) = RequirementsExpr::parse(req) {
+            walk(expr.root(), &mut out);
+        }
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// The any-of groups the `requirements` of grants of `path` elements name (only ids; a grant's
+/// tests and negations are left to the character), in store order.
+pub(super) fn grant_requirement_groups(
+    store: &ContentStore,
+    path: &BTreeSet<String>,
+) -> Vec<Vec<String>> {
+    let mut out: Vec<Vec<String>> = Vec::new();
+    for se in store.iter() {
+        for r in &se.element.rules {
+            let Rule::Grant(g) = r else { continue };
+            let Some(req) = g.requirements.as_deref().filter(|_| path.contains(&g.id)) else {
+                continue;
+            };
+            if let Ok(Some(expr)) = RequirementsExpr::parse(req) {
+                let mut found = Vec::new();
+                required_groups(store, expr.root(), &mut found);
+                for f in found {
+                    if !out.contains(&f) {
+                        out.push(f);
+                    }
+                }
+            }
+        }
+    }
     out
 }

@@ -159,7 +159,8 @@ pub(super) fn item_host(
     let Some(el) = store.element(target) else {
         return false;
     };
-    let (options, _) = split_options(store, &needed_groups(e, target, el));
+    let groups = needed_groups(e, target, el, super::prereq::MAX_PRIOR_FEATS);
+    let (options, _) = split_options(store, &groups);
     items.iter().any(|item| {
         let Some(mut h) = d.create(e.rs, TEST_SCORES) else {
             return false;

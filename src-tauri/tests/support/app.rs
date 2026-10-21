@@ -337,6 +337,19 @@ impl<'a> Driver<'a> {
     /// Every option of every slot it fills is recorded as offered under `label` first, so the
     /// selects that open (and close) along the way are measured too.
     pub fn fill(&self, host: &mut Host, label: &str, offers: &mut Offers) {
+        self.fill_avoiding(host, label, offers, &[]);
+    }
+
+    /// [`Driver::fill`], taking in each slot the first option not in `avoid` (an id the wanted
+    /// option's requirements negate: a user leaves the optional variant select empty, or takes
+    /// another variant); a slot offering only avoided ids takes its first option.
+    pub fn fill_avoiding(
+        &self,
+        host: &mut Host,
+        label: &str,
+        offers: &mut Offers,
+        avoid: &[String],
+    ) {
         let mut refused = HashSet::new();
         for _ in 0..FILL_PASSES {
             let open = host.snap.slots.iter().find(|s| {
@@ -353,7 +366,11 @@ impl<'a> Driver<'a> {
             for (id, _) in &opts {
                 offers.add(id, label);
             }
-            let first = opts.into_iter().next();
+            let first = opts
+                .iter()
+                .find(|(id, _)| !avoid.contains(id))
+                .or_else(|| opts.first())
+                .cloned();
             let ok = first.is_some_and(|(id, _)| self.apply(host, &slot, &id));
             if !ok {
                 refused.insert(slot);
@@ -502,6 +519,28 @@ impl<'a> Driver<'a> {
         if let Ok(s) = self.app.set_character_options(&host.id, &patch) {
             host.set(s);
         }
+    }
+
+    /// Equip the carried `item` again (a later item of the same slot replaced it), as a user
+    /// puts the armor they need back on. True when its line is equipped afterwards.
+    pub fn equip_again(&self, host: &mut Host, item: &str) -> bool {
+        let line = |h: &Host| {
+            h.snap
+                .inventory
+                .items
+                .iter()
+                .find(|i| i.item_id == item)
+                .cloned()
+        };
+        let Some(held) = line(host) else {
+            return false;
+        };
+        if held.equipped.is_none() {
+            if let Ok(s) = self.app.equip_item(&host.id, &held.id, EquipRequest::Auto) {
+                host.set(s);
+            }
+        }
+        line(host).is_some_and(|i| i.equipped.is_some())
     }
 
     /// Add `item` to the inventory, equip it and attune to it when it needs attunement, as a
