@@ -2,7 +2,7 @@ import { describe, test } from '@e2e-dev/web';
 import { expect } from 'e2e';
 import { expectEqual } from '../support/index.js';
 import {
-  boxOf, clickByText, clickCellInRow, clickCss, clickMainTab, loadSeraphine, rowsText, textOf, waitFor, waitStatus,
+  clickByText, clickCellInRow, clickCss, clickMainTab, loadSeraphine, rowsText, textOf, waitFor, waitStatus,
 } from '../support/flows-a.js';
 
 // Manage equipment: category list, armor grid, full-row select. Seeded: Seraphine Vale.
@@ -29,8 +29,9 @@ describe('w4 equipment', { tags: ['w4'] }, () => {
   test('page layout: categories, coin purse, inventory columns', async (ctx) => {
     await openEquipment(ctx);
     const text = (await textOf(ctx, '.aur-content')).replace(/\s+/g, ' ');
-    // Category list in order, with counts.
-    const cats = ['Adventuring Gear (6)', 'Equipment Packs (2)', 'Tools (2)', 'Armor (5)', 'Magic Armor (0)', 'Weapons (8)', 'Magic Weapons (0)'];
+    // Category list in order, with counts. Only categories that hold a visible item are listed (the backend rule).
+    const cats = ['Adventuring Gear (6)', 'Equipment Packs (2)', 'Tools (2)', 'Armor (5)', 'Weapons (8)'];
+    expect(text).not.toMatch(/\(0\)/);
     let at = -1;
     for (const c of cats) {
       const n = text.indexOf(c, at + 1);
