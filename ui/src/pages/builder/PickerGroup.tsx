@@ -16,7 +16,8 @@ export interface SlotGroup { key: string; label: string | null; title: string; s
 
 /** One expander per pick: a "2 of 3" rule is three separate pickers, each with its own footer line. */
 export function groupSlots(slots: SelectionSlot[]): SlotGroup[] {
-  return slots.map((s) => ({ key: s.id, label: s.groupLabel, title: s.title, slots: [s] }));
+  // E31 SO-3: a locked slot (sole defaulted option, held) cannot change or clear and Aurora does not show it.
+  return slots.filter((s) => !s.locked).map((s) => ({ key: s.id, label: s.groupLabel, title: s.title, slots: [s] }));
 }
 
 /**

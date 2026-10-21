@@ -69,10 +69,10 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
   if (tab === "levels") return <LevelsRedirect />;
   if (!tabs.some((t) => t.id === tab)) return <Navigate to="/builder/race" replace />;
   const active = tab as TabId;
-  const slots = snapshot.slots.filter((s) => s.tab === active && SLOT_TABS.includes(s.tab));
+  const slots = snapshot.slots.filter((s) => s.tab === active && SLOT_TABS.includes(s.tab) && !s.locked); // locked slots are hidden (E31 SO-3)
   // List entries (e.g. a background's ability increase) are not elements: the pane keeps the last element instead.
   const elementChoices = slots.filter((s) => s.chosen && s.chosen.type !== "list");
-  const defaultId = elementChoices.find((s) => !s.locked)?.chosen?.id ?? elementChoices[0]?.chosen?.id ?? null;
+  const defaultId = elementChoices[0]?.chosen?.id ?? null;
   const own = described?.tab === active ? described : null;
   const shownId = own ? own.id : defaultId;
   const paneId = own?.isElement ? own.id : defaultId;
