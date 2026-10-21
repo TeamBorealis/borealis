@@ -13,6 +13,10 @@
 //!   setup does not define (Aurora compares ids ordinally; a missing id is never held). Such an
 //!   element is also unreachable for the elements below it (a feat whose select is the only
 //!   offerer, when the feat requires another class's feature that is not installed).
+//! * **inactive rule** - every grant or select that names it has requirements that never hold
+//!   (they need an element no character can hold here: its only granter is not installed, or a
+//!   later repo replaced that granter with a copy that no longer grants it); when only its
+//!   selects are inactive it is still granted, but never offered.
 //! * **known list only** (spells) - listed only by `<list known="true">` of casters that do not
 //!   prepare, with no grant and no select that can offer it (engine.md 10.2): by design.
 //!
@@ -57,9 +61,15 @@ fn is_root(ty: &str) -> bool {
     ROOT_TYPES.contains(&ty) || GENERATED_SELECT_TYPES.contains(&ty)
 }
 
+/// One way onto a character: (owner, true for a select / false for a grant, the rule's own
+/// requirements). The rule fires only when its requirements hold.
+type Edge = (String, bool, String);
+
 /// Why a not-offered element is a content defect, or `None`.
 pub(super) struct Defects {
     parents: HashMap<String, BTreeSet<String>>,
+    /// element -> the grants and selects that can put it on a character
+    edges: HashMap<String, BTreeSet<Edge>>,
     reachable: HashSet<String>,
     /// ids some element grants
     granted: HashSet<String>,
@@ -67,9 +77,10 @@ pub(super) struct Defects {
 
 impl Defects {
     pub(super) fn new(store: &ContentStore, defined: &dyn Fn(&str) -> bool) -> Self {
-        let mut granted_by: HashMap<String, BTreeSet<String>> = HashMap::new();
-        // (select type, supports token) -> owners; token "" = no supports (any element)
-        let mut selected_by: HashMap<(String, String), BTreeSet<String>> = HashMap::new();
+        // granted id -> (owner, grant requirements)
+        let mut granted_by: HashMap<String, BTreeSet<(String, String)>> = HashMap::new();
+        // (select type, support token) -> (owner, select requirements); token "" = no supports
+        let mut selected_by: HashMap<(String, String), BTreeSet<(String, String)>> = HashMap::new();
         for se in store.iter() {
             let e = &se.element;
             for r in &e.rules {
@@ -78,7 +89,7 @@ impl Defects {
                         granted_by
                             .entry(g.id.clone())
                             .or_default()
-                            .insert(e.id.clone());
+                            .insert((e.id.clone(), g.requirements.clone().unwrap_or_default()));
                     }
                     Rule::Select(s) => {
                         let ty = s.ty.to_lowercase();
@@ -88,38 +99,52 @@ impl Defects {
                         } else {
                             toks.into_iter().collect()
                         };
+                        let req = s.requirements.clone().unwrap_or_default();
                         for t in keys {
                             selected_by
                                 .entry((ty.clone(), t))
                                 .or_default()
-                                .insert(e.id.clone());
+                                .insert((e.id.clone(), req.clone()));
                         }
                     }
                     _ => {}
                 }
             }
         }
-        let mut parents: HashMap<String, BTreeSet<String>> = HashMap::new();
+        let mut edges: HashMap<String, BTreeSet<Edge>> = HashMap::new();
         for se in store.iter() {
             let e = &se.element;
-            let mut out = granted_by.get(&e.id).cloned().unwrap_or_default();
+            let mut out: BTreeSet<Edge> = granted_by
+                .get(&e.id)
+                .into_iter()
+                .flatten()
+                .map(|(o, req)| (o.clone(), false, req.clone()))
+                .collect();
             let ty = e.ty.to_lowercase();
             let keys = std::iter::once(String::new())
                 .chain(std::iter::once(e.id.to_lowercase()))
                 .chain(e.supports.iter().map(|s| s.to_lowercase()));
             for k in keys {
                 if let Some(o) = selected_by.get(&(ty.clone(), k)) {
-                    out.extend(o.iter().cloned());
+                    out.extend(o.iter().map(|(o, req)| (o.clone(), true, req.clone())));
                 }
             }
-            out.remove(&e.id);
-            parents.insert(e.id.clone(), out);
+            out.retain(|(o, _, _)| *o != e.id);
+            edges.insert(e.id.clone(), out);
         }
-        // reachable: the roots, then every element with a reachable parent
-        let mut children: HashMap<&str, Vec<&str>> = HashMap::new();
-        for (child, ps) in &parents {
-            for p in ps {
-                children.entry(p.as_str()).or_default().push(child.as_str());
+        let parents: HashMap<String, BTreeSet<String>> = edges
+            .iter()
+            .map(|(id, es)| (id.clone(), es.iter().map(|x| x.0.clone()).collect()))
+            .collect();
+        // reachable: the roots, then every element with a reachable parent whose grant or
+        // select can fire (its own requirements may hold)
+        let mut children: HashMap<&str, Vec<(&str, &str)>> = HashMap::new();
+        for (child, es) in &edges {
+            for (p, _, req) in es {
+                children
+                    .entry(p.as_str())
+                    .or_default()
+                    .push((child.as_str(), req.as_str()));
             }
         }
         // an element whose requirements name an installed element no character can hold is
@@ -137,6 +162,7 @@ impl Defects {
         let granted = granted_by.into_keys().collect();
         Self {
             parents,
+            edges,
             reachable,
             granted,
         }
@@ -227,13 +253,29 @@ impl Defects {
                  it or its supports (its class or race is not installed, or the supports differ)",
             );
         }
-        parents
-            .iter()
-            .all(|p| !self.reachable.contains(p))
-            .then_some(
+        if parents.iter().all(|p| !self.reachable.contains(p)) {
+            return Some(
                 "content defect: every element that could put it on a character is itself \
                  unreachable (nothing grants it, no select offers it)",
-            )
+            );
+        }
+        // a grant or select fires only when its own requirements hold: one that needs an
+        // element no character can hold in this setup (its only granter is missing, or a later
+        // repo replaced it with a copy that no longer grants it) never offers anything
+        let edges = self.edges.get(id)?;
+        let live = |(owner, _, req): &Edge| {
+            self.reachable.contains(owner) && !requirement_never_holds(req, &holdable)
+        };
+        if !edges.iter().any(live) {
+            return Some(
+                "never offered in this setup: every grant or select that could put it on a \
+                 character requires an element no installed content can put on a character",
+            );
+        }
+        (edges.iter().any(|e| e.1) && !edges.iter().filter(|e| e.1).any(live)).then_some(
+            "never offered in this setup: only granted; every select naming it requires an \
+             element no installed content can put on a character",
+        )
     }
 }
 
@@ -337,7 +379,7 @@ const MAX_REACH_ROUNDS: usize = 8;
 /// hold under `holds` (they name ids no character can have) puts nothing on a character.
 fn reach(
     store: &ContentStore,
-    children: &HashMap<&str, Vec<&str>>,
+    children: &HashMap<&str, Vec<(&str, &str)>>,
     holds: &dyn Fn(&str) -> bool,
 ) -> HashSet<String> {
     let mut reachable: HashSet<String> = HashSet::new();
@@ -354,7 +396,11 @@ fn reach(
             continue;
         }
         if let Some(kids) = children.get(id) {
-            queue.extend(kids.iter().copied());
+            queue.extend(
+                kids.iter()
+                    .filter(|(_, req)| !requirement_never_holds(req, holds))
+                    .map(|(kid, _)| *kid),
+            );
         }
     }
     reachable
@@ -620,5 +666,55 @@ mod tests {
         };
         assert!(!crate::support::plan::supports_match("ID_A,ID_B", &el));
         assert!(crate::support::plan::supports_match("ID_A|ID_B", &el));
+    }
+
+    /// A store of synthetic elements (one custom file, in order).
+    fn store_of(elements: serde_json::Value) -> borealis_content::ContentStore {
+        let elements: Vec<serde_json::Value> = elements
+            .as_array()
+            .expect("list")
+            .iter()
+            .map(|e| {
+                let mut e = e.clone();
+                e["source"] = "T".into();
+                e
+            })
+            .collect();
+        let file = serde_json::json!({ "format": "borealis-content/1", "elements": elements });
+        let file = borealis_content::ContentFile::from_json_str(&file.to_string()).expect("file");
+        borealis_content::ContentStoreBuilder::new()
+            .add_file("t.json", borealis_content::PackOrigin::Custom, file)
+            .build()
+    }
+
+    #[test]
+    fn a_rule_whose_requirements_never_hold_puts_nothing_on_a_character() {
+        // a feat whose selects/grants require markers: one nothing grants, one a race grants
+        let store = store_of(serde_json::json!([
+            {"id": "ID_T_FEAT", "type": "Feat", "name": "F", "rules": [
+                {"kind": "select", "type": "Feat Feature", "name": "Dead",
+                 "supports": "T Benefit", "requirements": "ID_T_MARKER"},
+                {"kind": "select", "type": "Feat Feature", "name": "Live", "supports": "T Live"},
+                {"kind": "grant", "type": "Feat Feature", "id": "ID_T_GRANTED",
+                 "requirements": "ID_T_OTHER_MARKER"}]},
+            {"id": "ID_T_RACE", "type": "Race", "name": "R", "rules": [
+                {"kind": "grant", "type": "Grants", "id": "ID_T_OTHER_MARKER"}]},
+            {"id": "ID_T_MARKER", "type": "Grants", "name": "M"},
+            {"id": "ID_T_OTHER_MARKER", "type": "Grants", "name": "O"},
+            {"id": "ID_T_SELECTED", "type": "Feat Feature", "name": "S",
+             "supports": ["T Benefit"], "rules": [
+                {"kind": "select", "type": "Feat Feature", "name": "Ability",
+                 "supports": "ID_T_CHILD"}]},
+            {"id": "ID_T_CHILD", "type": "Feat Feature", "name": "C"},
+            {"id": "ID_T_GRANTED", "type": "Feat Feature", "name": "G", "supports": ["T Benefit"]},
+            {"id": "ID_T_LIVE", "type": "Feat Feature", "name": "L", "supports": ["T Live"]}
+        ]));
+        let defined = |_: &str| true;
+        let d = super::Defects::new(&store, &defined);
+        let of = |id: &str| d.of(&store, id, borealis_content::Ruleset::Dnd2014, &defined);
+        assert!(of("ID_T_SELECTED").is_some_and(|w| w.contains("every grant or select")));
+        assert!(of("ID_T_CHILD").is_some_and(|w| w.contains("itself unreachable")));
+        assert!(of("ID_T_GRANTED").is_some_and(|w| w.contains("only granted")));
+        assert_eq!(of("ID_T_LIVE"), None);
     }
 }
