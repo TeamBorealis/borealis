@@ -118,6 +118,8 @@ an option the slot does not offer or a spell over the preparation limit.
 - **No AI inside.** Every number is computed by the engine; imports are rules-based.
 - Logs go to stderr; stdout carries only results (CLI) or protocol messages (MCP).
 
-Known limit: the Windows release build is a GUI-subsystem executable, so CLI output is visible
-when redirected or piped (`borealis help > out.txt`, `| more`), not printed straight into a
-console window. MCP over pipes is unaffected.
+Windows: the release build is a GUI-subsystem executable, so in CLI/MCP mode it attaches to the
+parent cmd/PowerShell console before any output (only when stdout/stderr are not already
+redirected). `borealis help`, `--human` output and errors print straight into the console;
+redirects, pipes and MCP over stdio keep using their own handles. A double-click launch is
+unchanged (no console window).
