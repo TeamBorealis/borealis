@@ -20,12 +20,16 @@
 //! looked for on level 1/4/19 hosts; spells are checked against the class spell lists. The test
 //! asserts only that nothing panics: the counts are the audit. Every checked snapshot also runs
 //! the settle invariants (`borealis_engine::invariants::check`), reported as `invariant.*`
-//! problems.
+//! problems. A problem that is the correct outcome for the content as written (a non-standard
+//! id, an id no corpus repo defines, a select no element can satisfy: `review`) passes with its
+//! reviewed reason, only when that claim is verified (T6).
 
 #[path = "../../../tools/regression-gate/outcome.rs"]
 mod outcome;
 #[path = "../../../src-tauri/tests/support/prereq.rs"]
 mod prereq;
+#[path = "aurora_corpus_sweep/review.rs"]
+mod review;
 
 use borealis_content::{ContentStore, ContentStoreBuilder, Element, PackOrigin, Rule, Ruleset};
 use borealis_engine::commands::{self, slot_key};
@@ -33,6 +37,7 @@ use borealis_engine::state::SlotKey;
 use borealis_engine::{invariants, CharacterSnapshot, CharacterState, Choice, Engine, Severity};
 use borealis_migrate::{migrate_path, write_output, MigrateOptions};
 use prereq::{feat_chain, required_of_type};
+use review::Review;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
@@ -138,22 +143,53 @@ fn example(id: &str, message: &str) -> String {
 }
 
 #[derive(Default)]
-struct Tally {
+struct Tally<'r> {
     tried: BTreeMap<&'static str, usize>,
     failed: BTreeMap<&'static str, usize>,
     causes: BTreeMap<&'static str, Counts>,
     examples: BTreeMap<(&'static str, String), Vec<String>>,
+    /// Problems that are the correct outcome for the content as written pass with their
+    /// reviewed reason (T6, `review`).
+    review: Option<&'r Review<'r>>,
+    reviewed: Counts,
 }
 
-impl Tally {
+impl<'r> Tally<'r> {
+    fn reviewed_by(review: &'r Review<'r>) -> Self {
+        Self {
+            review: Some(review),
+            ..Self::default()
+        }
+    }
+
     fn record(&mut self, kind: &'static str, id: &str, mut problems: Vec<String>) {
         problems.sort();
         problems.dedup();
+        let mut reasons = Vec::new();
+        if let Some(review) = self.review {
+            problems.retain(|p| match review.accept(id, p) {
+                Some(why) => {
+                    reasons.push(why);
+                    false
+                }
+                None => true,
+            });
+        }
+        reasons.sort();
+        reasons.dedup();
+        for why in &reasons {
+            *self.reviewed.entry(cause(why)).or_default() += 1;
+        }
+        let detail = if problems.is_empty() {
+            reasons.join("; ")
+        } else {
+            problems.join("; ")
+        };
         outcome::record(
             "aurora_sweep",
             &format!("{kind}/{id}"),
             problems.is_empty(),
-            &problems.join("; "),
+            &detail,
         );
         *self.tried.entry(kind).or_default() += 1;
         if !problems.is_empty() {
@@ -183,6 +219,9 @@ impl Tally {
                 "{kind:>16}: {n} tried, {} with problems",
                 self.failed.get(kind).unwrap_or(&0)
             );
+        }
+        for (why, n) in &self.reviewed {
+            println!("{n:>6}  reviewed, passes: {why}");
         }
         for (kind, counts) in &self.causes {
             println!("--- {kind} problems by cause");
@@ -736,7 +775,8 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
     );
 
     // content-level issues (dangling references etc.) on our elements
-    let mut store_issues = Tally::default();
+    let review = Review::new(&store, corpus_repos());
+    let mut store_issues = Tally::reviewed_by(&review);
     let mut per_el: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for i in store
         .validate()
@@ -784,11 +824,11 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
     let of_type = |ty: &str| -> Vec<&Element> {
         elements.iter().filter(|e| e.ty == ty).take(limit).collect()
     };
-    let mut t = Tally::default();
+    let mut t = Tally::reviewed_by(&review);
     let mut panics = 0usize;
     let mut spells_rows = Vec::new();
     let mut guarded =
-        |t: &mut Tally, kind: &'static str, id: &str, f: &mut dyn FnMut() -> Vec<String>| {
+        |t: &mut Tally<'_>, kind: &'static str, id: &str, f: &mut dyn FnMut() -> Vec<String>| {
             let start = Instant::now();
             let r = catch_unwind(AssertUnwindSafe(f));
             let mut problems = r.unwrap_or_else(|_| {
@@ -1180,7 +1220,7 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
 
     println!("=== [{label}] engine sweep");
     t.print();
-    let mut global = Tally::default();
+    let mut global = Tally::reviewed_by(&review);
     for (el, text) in sw.unattributed.borrow().iter() {
         global.record("unattributed", el, vec![text.clone()]);
     }
