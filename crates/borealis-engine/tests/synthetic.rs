@@ -812,3 +812,99 @@ fn compatibility_report_round_trips_through_serde() {
     let back: CharacterState = serde_json::from_value(serde_json::to_value(&s).unwrap()).unwrap();
     assert_eq!(back.allow_cross_edition, Some(false));
 }
+
+/// engine-optional-sole-option.md: a background in the shape of the PHB Noble (an optional
+/// one-option variant without a default, a variant feature gated on `!<variant>`) plus a
+/// defaulted sole option and a defaulted two-option slot.
+fn noble_engine() -> Engine {
+    engine_with(vec![
+        json!({"id":"ID_T_NOBLE","name":"Noble","type":"Background","source":"Test","rules":[
+            {"kind":"select","type":"Background Variant","name":"Variant Noble","supports":"Variant Noble","optional":true},
+            {"kind":"select","type":"Background Feature","name":"Variant Feature","supports":"Noble Feature","optional":true,"requirements":"!ID_T_KNIGHT"},
+            {"kind":"grant","type":"Background Feature","id":"ID_T_PRIVILEGE","requirements":"!ID_T_KNIGHT"},
+            {"kind":"select","type":"Background Feature","name":"Fixed","supports":"Sole Feature","default":"ID_T_ONLY"},
+            {"kind":"select","type":"Background Feature","name":"Pair","supports":"Pair Feature","default":"ID_T_PAIR_A"}]}),
+        json!({"id":"ID_T_KNIGHT","name":"Knight","type":"Background Variant","source":"Test","supports":["Variant Noble"],"rules":[
+            {"kind":"grant","type":"Background Feature","id":"ID_T_RETAINERS"}]}),
+        json!({"id":"ID_T_PRIVILEGE","name":"Position of Privilege","type":"Background Feature","source":"Test"}),
+        json!({"id":"ID_T_RETAINERS","name":"Retainers","type":"Background Feature","source":"Test"}),
+        json!({"id":"ID_T_FEAT_A","name":"Feature A","type":"Background Feature","source":"Test","supports":["Noble Feature"]}),
+        json!({"id":"ID_T_FEAT_B","name":"Feature B","type":"Background Feature","source":"Test","supports":["Noble Feature"]}),
+        json!({"id":"ID_T_ONLY","name":"Only","type":"Background Feature","source":"Test","supports":["Sole Feature"]}),
+        json!({"id":"ID_T_PAIR_A","name":"Pair A","type":"Background Feature","source":"Test","supports":["Pair Feature"]}),
+        json!({"id":"ID_T_PAIR_B","name":"Pair B","type":"Background Feature","source":"Test","supports":["Pair Feature"]}),
+    ])
+}
+
+fn noble(e: &Engine) -> CharacterState {
+    pick(e, &hero(e), "ID_LEVEL_1", "Background", 1, "ID_T_NOBLE")
+}
+
+#[test]
+fn sole_option_without_default_stays_open_and_unlocked() {
+    let e = noble_engine();
+    let snap = e.derive(&noble(&e));
+    // SO-1: one option, no default: empty, unlocked, nothing registered
+    let variant = snap.slot("ID_T_NOBLE", "Variant Noble").unwrap();
+    assert_eq!(variant.options.len(), 1);
+    assert!(variant.chosen.is_none() && !variant.locked, "{variant:?}");
+    assert!(!snap.has_element("ID_T_KNIGHT"));
+    // SO-6: `!Knight` is true while Knight is only offered
+    let feature = snap.slot("ID_T_NOBLE", "Variant Feature").unwrap();
+    assert!(feature.rejected.is_none() && feature.options.len() == 2);
+    assert!(snap.has_element("ID_T_PRIVILEGE"));
+    // a defaulted slot is not locked before it holds a choice
+    let fixed = snap.slot("ID_T_NOBLE", "Fixed").unwrap();
+    assert!(fixed.chosen.is_none() && !fixed.locked);
+}
+
+#[test]
+fn choosing_the_sole_variant_closes_the_gated_slot_and_clearing_reopens_it() {
+    let e = noble_engine();
+    let mut s = noble(&e);
+    s = pick(&e, &s, "ID_T_NOBLE", "Variant Feature", 1, "ID_T_FEAT_A");
+    assert!(e.derive(&s).has_element("ID_T_FEAT_A"));
+    s = pick(&e, &s, "ID_T_NOBLE", "Variant Noble", 1, "ID_T_KNIGHT");
+    let snap = e.derive(&s);
+    assert!(snap.has_element("ID_T_KNIGHT") && snap.has_element("ID_T_RETAINERS"));
+    assert!(
+        !snap.has_element("ID_T_FEAT_A"),
+        "the gated choice is unregistered"
+    );
+    assert!(!snap.has_element("ID_T_PRIVILEGE"));
+    // a chosen sole option without a default stays unlocked: the user may clear it
+    let variant = snap.slot("ID_T_NOBLE", "Variant Noble").unwrap();
+    assert!(variant.chosen.is_some() && !variant.locked, "{variant:?}");
+    let key = variant.key.clone();
+    let s = commands::clear(&e, &s, &key).unwrap().state;
+    let snap = e.derive(&s);
+    assert!(!snap.has_element("ID_T_KNIGHT") && !snap.has_element("ID_T_RETAINERS"));
+    let variant = snap.slot("ID_T_NOBLE", "Variant Noble").unwrap();
+    assert!(variant.chosen.is_none() && !variant.locked);
+    let feature = snap.slot("ID_T_NOBLE", "Variant Feature").unwrap();
+    assert!(feature.chosen.is_none() && feature.options.len() == 2);
+    assert!(snap.has_element("ID_T_PRIVILEGE"));
+}
+
+#[test]
+fn only_a_defaulted_sole_option_that_is_chosen_is_locked() {
+    let e = noble_engine();
+    let snap = e.derive(&commands::apply_defaults(&e, &noble(&e)));
+    // SO-3: default + one option + chosen
+    let fixed = snap.slot("ID_T_NOBLE", "Fixed").unwrap();
+    assert_eq!(
+        fixed.chosen.as_ref().map(|c| c.id.as_str()),
+        Some("ID_T_ONLY")
+    );
+    assert!(fixed.locked, "{fixed:?}");
+    // a default among two options is chosen but stays unlocked
+    let pair = snap.slot("ID_T_NOBLE", "Pair").unwrap();
+    assert_eq!(
+        pair.chosen.as_ref().map(|c| c.id.as_str()),
+        Some("ID_T_PAIR_A")
+    );
+    assert!(!pair.locked);
+    // the optional sole option without a default is still not picked
+    let variant = snap.slot("ID_T_NOBLE", "Variant Noble").unwrap();
+    assert!(variant.chosen.is_none() && !variant.locked);
+}

@@ -151,7 +151,9 @@ pub struct SlotSnapshot {
     /// weapons on a fighter): the choice counts as made.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub all_known: bool,
-    /// The only option can be applied automatically.
+    /// The user cannot change or clear the choice: the rule has a `default`, the list has exactly
+    /// one option and the slot holds a choice (engine-optional-sole-option SO-3). A sole option
+    /// without a default is never locked nor chosen automatically.
     pub locked: bool,
     /// Rule default element, if any.
     pub default: Option<String>,

@@ -420,7 +420,10 @@ impl<'u> Evaluation<'u> {
                 let satisfied = chosen.is_some() || slot.list_choice.is_some();
                 let optional = rule.optional.unwrap_or(false);
                 let default = rule.default_id.clone();
-                let locked = include_options && !satisfied && options.len() == 1;
+                // engine-optional-sole-option SO-3: a default, a single option and a choice
+                // (`optional` plays no part; a sole option without a default stays open)
+                let has_default = default.as_deref().is_some_and(|d| !d.trim().is_empty());
+                let locked = include_options && has_default && satisfied && options.len() == 1;
                 let all_known = !satisfied
                     && !optional
                     && !rule.is_list()
