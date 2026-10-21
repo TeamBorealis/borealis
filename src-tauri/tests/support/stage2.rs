@@ -1085,6 +1085,9 @@ fn option_host(
 /// before the other fallback class.
 const OPTION_HOST_CLASSES: usize = 4;
 
+/// The ability score multiclass prerequisites ask for (PHB p.163; homebrew follows it).
+const MULTICLASS_SCORE: i32 = 13;
+
 /// One configuration of [`option_host`].
 #[allow(clippy::too_many_arguments)]
 fn option_host_on(
@@ -1207,7 +1210,21 @@ fn option_host_on(
             want.push(entries);
         }
     }
-    let mut multiclass = climb && (is_mc(target) || want.iter().flatten().any(|w| is_mc(w)));
+    // an element on the paths that only another class reaches (the bard's Magical Secrets,
+    // whose select offers a spell that requires the Elementalist class: a multiclass never
+    // registers the class id, so that class stays the main one): the climb pass multiclasses
+    // into the other class and levels it, as a user does
+    let lead = if climb {
+        multiclass_entries(e, class, &want)
+    } else {
+        Vec::new()
+    };
+    if !lead.is_empty() && !want.contains(&lead) {
+        want.push(lead.clone());
+    }
+    let mut multiclass =
+        climb && (is_mc(target) || want.iter().flatten().any(|w| is_mc(w)) || !lead.is_empty());
+    let mut level_slot = String::from("main");
     let mut found = false;
     loop {
         d.collect(&h, &label, offers);
@@ -1249,10 +1266,32 @@ fn option_host_on(
         if h.snap.level.total >= MAX_LEVEL {
             break;
         }
-        if std::mem::take(&mut multiclass) && d.add_multiclass(&mut h) {
-            continue;
+        if std::mem::take(&mut multiclass) {
+            // a user taking a multiclass level first meets its prerequisites (13 in the
+            // multiclass ability; a homebrew class may ask for two, `[dex:13],[cha:13]`)
+            d.set_scores(&mut h, scores.map(|s| s.max(MULTICLASS_SCORE)));
+            let added = d.add_multiclass(&mut h);
+            if trace {
+                let open: Vec<(String, Vec<String>)> = h
+                    .snap
+                    .slots
+                    .iter()
+                    .filter(|s| s.chosen.is_none())
+                    .map(|s| {
+                        let o = d.options(&h, &s.id).into_iter().map(|(id, _)| id);
+                        (s.id.clone(), o.take(12).collect())
+                    })
+                    .collect();
+                eprintln!("TRACE {target}: multiclass added {added} open {open:?}");
+            }
+            if added {
+                if !lead.is_empty() {
+                    level_slot = format!("multi-{}", h.snap.level.total);
+                }
+                continue;
+            }
         }
-        if !d.level_up(&mut h) {
+        if !d.level_up_slot(&mut h, &level_slot) {
             break;
         }
     }

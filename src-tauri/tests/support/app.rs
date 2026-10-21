@@ -170,18 +170,24 @@ impl<'a> Driver<'a> {
             portrait: None,
             group: None,
         };
-        let mut snap = self.app.create_character(rs, &request).ok()?;
+        let snap = self.app.create_character(rs, &request).ok()?;
         self.made.set(self.made.get() + 1);
-        for (key, v) in ABILITIES.iter().zip(scores) {
-            if let Ok(s) = self.app.set_base_score(&snap.id, key, v) {
-                snap = s;
-            }
-        }
-        Some(Host {
+        let mut host = Host {
             id: snap.id.clone(),
             snap,
             gen: 0,
-        })
+        };
+        self.set_scores(&mut host, scores);
+        Some(host)
+    }
+
+    /// Set the base ability scores (str, dex, con, int, wis, cha), as on the abilities page.
+    pub fn set_scores(&self, host: &mut Host, scores: [i32; 6]) {
+        for (key, v) in ABILITIES.iter().zip(scores) {
+            if let Ok(s) = self.app.set_base_score(&host.id, key, v) {
+                host.set(s);
+            }
+        }
     }
 
     /// Close and delete a host (keeps the data dir small).
@@ -433,7 +439,12 @@ impl<'a> Driver<'a> {
     }
 
     pub fn level_up(&self, host: &mut Host) -> bool {
-        match self.app.level_up(&host.id, "main") {
+        self.level_up_slot(host, "main")
+    }
+
+    /// The next level in one class progression: `main`, or `multi-<starting level>`.
+    pub fn level_up_slot(&self, host: &mut Host, class_slot: &str) -> bool {
+        match self.app.level_up(&host.id, class_slot) {
             Ok(s) => {
                 host.set(s);
                 true

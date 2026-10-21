@@ -61,6 +61,8 @@ fn is_root(ty: &str) -> bool {
 pub(super) struct Defects {
     parents: HashMap<String, BTreeSet<String>>,
     reachable: HashSet<String>,
+    /// ids some element grants
+    granted: HashSet<String>,
 }
 
 impl Defects {
@@ -139,7 +141,12 @@ impl Defects {
                 queue.extend(kids.iter().copied());
             }
         }
-        Self { parents, reachable }
+        let granted = granted_by.into_keys().collect();
+        Self {
+            parents,
+            reachable,
+            granted,
+        }
     }
 
     /// The defect that keeps `id` off every character, or `None` when the content can reach it.
@@ -164,10 +171,25 @@ impl Defects {
                  select or grant in this setup offers it",
             );
         }
+        let parents = self.parents.get(id)?;
+        // nothing grants it and every select naming it asks for supports it lacks: ids joined
+        // with `,` (and) outside the id-range mode, so no element satisfies both (engine.md 5.2).
+        // A proficiency is a root only through its proxy item, which never counts as offering
+        // (proxy-items.md D5), so the rule holds for it too.
+        let select_root = el.ty == "Proficiency";
+        if (select_root || !is_root(&el.ty))
+            && !parents.is_empty()
+            && !self.granted.contains(id)
+            && parents.iter().all(|p| !select_matches(store, p, el))
+        {
+            return Some(
+                "content defect: nothing grants it and no select of its type matches it by the \
+                 whole supports expression (engine.md 5.2: `,` is and; an id list needs `|`)",
+            );
+        }
         if is_root(&el.ty) {
             return None;
         }
-        let parents = self.parents.get(id)?;
         if parents.is_empty() {
             // a subclass or sub race no installed class or race has a select for
             return Some(
@@ -183,6 +205,17 @@ impl Defects {
                  unreachable (nothing grants it, no select offers it)",
             )
     }
+}
+
+/// True when a select of `owner` of `el`'s type offers `el` by its whole supports expression
+/// (generous: a tag matches the id or a support, any case; a dynamic part matches).
+fn select_matches(store: &ContentStore, owner: &str, el: &Element) -> bool {
+    store.element(owner).is_some_and(|o| {
+        o.rules.iter().any(|r| {
+            matches!(r, Rule::Select(s) if s.ty.eq_ignore_ascii_case(&el.ty)
+                && supports_match(s.supports.as_deref().unwrap_or(""), el))
+        })
+    })
 }
 
 /// The content verdict of a settle-invariant violation, or `None` when the content does not
@@ -408,5 +441,16 @@ mod tests {
         assert!(!requirement_never_holds("!ID_MISSING", &defined));
         assert!(!requirement_never_holds("[level:5],ID_KNOWN", &defined));
         assert!(!requirement_never_holds("", &defined));
+    }
+
+    #[test]
+    fn ids_joined_with_a_comma_match_no_element() {
+        let el = borealis_content::Element {
+            id: "ID_B".into(),
+            ty: "Proficiency".into(),
+            ..Default::default()
+        };
+        assert!(!crate::support::plan::supports_match("ID_A,ID_B", &el));
+        assert!(crate::support::plan::supports_match("ID_A|ID_B", &el));
     }
 }

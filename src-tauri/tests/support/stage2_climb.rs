@@ -164,6 +164,9 @@ pub(super) fn multiclass_entries(
 ) -> Vec<String> {
     let store = &e.ins.store;
     let mut names: BTreeSet<String> = BTreeSet::new();
+    // the class's own multiclass node (the store keeps it on the class; the engine makes the
+    // Multiclass element from it)
+    let mut out: Vec<String> = Vec::new();
     for g in groups {
         let mut p = Plan::default();
         for id in g {
@@ -183,18 +186,23 @@ pub(super) fn multiclass_entries(
         {
             if let Some(x) = store.element(c) {
                 names.insert(x.name.to_lowercase());
+                out.extend(x.multiclass.as_ref().map(|m| m.id.clone()));
             }
         }
     }
     if names.is_empty() {
         return Vec::new();
     }
-    store
-        .iter()
-        .filter(|se| se.element.ty == MULTICLASS_TYPE)
-        .filter(|se| names.contains(&se.element.name.to_lowercase()))
-        .map(|se| se.element.id.clone())
-        .collect()
+    out.extend(
+        store
+            .iter()
+            .filter(|se| se.element.ty == MULTICLASS_TYPE)
+            .filter(|se| names.contains(&se.element.name.to_lowercase()))
+            .map(|se| se.element.id.clone()),
+    );
+    out.sort();
+    out.dedup();
+    out
 }
 
 /// The classes (builder class ids, by name) whose level gates a select that offers `target` by
@@ -307,8 +315,9 @@ pub(super) fn rank_configs(
 
 /// The climb pass's configurations and roots for a spell: the elements whose own spell list
 /// (or list extension) names the spell or one of its supports come first (a subclass with its
-/// own list of fusion-element spells; the class is then the subclass's class), then `classes`.
-/// Other targets keep `classes` and `roots`.
+/// own list of fusion-element spells; the class is then the subclass's class), then the owners
+/// of a slots-only spell select ([`slots_select_hosts`]), then `classes`. Other targets keep
+/// `classes` and `roots`.
 pub(super) fn spell_list_hosts(
     e: &Edition<'_>,
     target: &str,
@@ -360,12 +369,78 @@ pub(super) fn spell_list_hosts(
             }
         }
     }
+    // then the owners of a spell select that offers any spell of an allowed level
+    // (`$(spellcasting:slots)` with no class list term: Magical Secrets, engine.md 10.3), whose
+    // dynamic supports the reverse index cannot link to any one spell
+    let slots = slots_select_hosts(e, spell, &mut roots);
+    let room = if slots.is_empty() {
+        MAX_CLIMB_CONFIGS
+    } else {
+        MAX_CLIMB_CONFIGS - MAX_SLOTS_CONFIGS
+    };
     let mut out: Vec<(String, Option<String>)> = Vec::new();
-    for c in first.into_iter().chain(classes) {
+    for c in first.into_iter().take(room) {
+        if !out.contains(&c) {
+            out.push(c);
+        }
+    }
+    for c in slots.into_iter().take(MAX_SLOTS_CONFIGS).chain(classes) {
         if !out.contains(&c) {
             out.push(c);
         }
     }
     out.truncate(MAX_CLIMB_CONFIGS);
     (out, roots)
+}
+
+/// Configurations a spell's climb pass keeps for owners of a slots-only spell select.
+const MAX_SLOTS_CONFIGS: usize = 2;
+
+/// The configurations (class, archetype) of the owners of a spell select whose supports offer
+/// `spell` through `$(spellcasting:slots)` without a `$(spellcasting:list)` term; each owner
+/// joins the climb paths of `roots`. Owners in store order.
+fn slots_select_hosts(
+    e: &Edition<'_>,
+    spell: &borealis_content::Element,
+    roots: &mut Plan,
+) -> Vec<(String, Option<String>)> {
+    let store = &e.ins.store;
+    let usable = |c: &String| e.builder_classes.contains(c);
+    let mut out: Vec<(String, Option<String>)> = Vec::new();
+    for se in store.iter() {
+        let owner = &se.element;
+        let offers = owner.rules.iter().any(|r| {
+            let Rule::Select(s) = r else { return false };
+            let raw = s.supports.as_deref().unwrap_or("").to_lowercase();
+            s.ty.eq_ignore_ascii_case("Spell")
+                && raw.contains("$(spellcasting:slots)")
+                && !raw.contains("$(spellcasting:list)")
+                && supports_match(&raw, spell)
+        });
+        if !offers {
+            continue;
+        }
+        let mut q = Plan::default();
+        e.offerers.place(&owner.id, &mut q);
+        if owner.ty == "Class" && usable(&owner.id) {
+            out.push((owner.id.clone(), None));
+        }
+        for c in q.classes.iter().filter(|c| usable(c)) {
+            out.push((c.clone(), None));
+        }
+        for (a, cs) in &q.archetypes {
+            for c in cs.iter().filter(|c| usable(c)) {
+                out.push((c.clone(), Some(a.clone())));
+            }
+        }
+        roots.path.insert(owner.id.clone());
+        roots.path.extend(q.path);
+    }
+    let mut seen = Vec::new();
+    out.retain(|c| {
+        let new = !seen.contains(c);
+        seen.push(c.clone());
+        new
+    });
+    out
 }
