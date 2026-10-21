@@ -1147,7 +1147,6 @@ fn option_host(
     // and the classes a carried item's attunement restriction names (the robe whose select
     // offers the option attunes only to a sorcerer, warlock, or wizard)
     let carried = climb_items(store, target, &roots, &groups);
-    let mut classes = classes;
     for c in counter_configs(e, &counters)
         .into_iter()
         .chain(attunement_configs(e, &carried))
