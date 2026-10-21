@@ -311,7 +311,23 @@ fn empty_select_host(d: &Driver<'_>, e: &Edition<'_>, origin: &str, offers: &mut
         .collect();
     let label = format!("origin-select:{origin}");
     d.enable_options(&mut h, &options);
-    if d.pick(&mut h, class) && d.pick(&mut h, origin) {
+    // the class's own picks first (its skill list, before an origin's open skill selects take
+    // the first skills), then the origin
+    let classed = d.pick(&mut h, class);
+    if classed {
+        d.fill(&mut h, &label, offers);
+    }
+    // a class select that is already empty before the origin (the 2024 fighter's skill select in
+    // a setup whose skills it cannot name) would be judged in place of the origin's: no check
+    let class_empty =
+        h.snap.slots.iter().any(|s| {
+            s.id.starts_with(class) && s.chosen.is_none() && d.options(&h, &s.id).is_empty()
+        });
+    if class_empty {
+        d.drop_host(h);
+        return;
+    }
+    if classed && d.pick(&mut h, origin) {
         // the fill leaves origin and feat slots to the hosts; here their first option is taken
         // too, so nothing is left to pick
         for _ in 0..MAX_ORIGIN_PICKS {
