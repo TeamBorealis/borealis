@@ -1,7 +1,7 @@
 import { Button, useToast } from "../../components";
 import { useApi } from "../../state/ApiContext";
 import { errorMessage } from "../../state/useAsync";
-import { FieldLabel, Help } from "./rows";
+import { SectionDesc, SectionTitle } from "./rows";
 
 const SHARE_TITLE = "Borealis logs";
 
@@ -31,8 +31,8 @@ export function LogsRow({ mobile }: { mobile: boolean }) {
   };
   return (
     <>
-      <FieldLabel>LOGS</FieldLabel>
-      <Help>Borealis keeps a few days of diagnostic logs on this device. They hold no character or source content and are never sent anywhere unless you choose to include them in a report.</Help>
+      <SectionTitle>LOGS</SectionTitle>
+      <SectionDesc>Borealis keeps a few days of diagnostic logs on this device. They hold no character or source content and are never sent anywhere unless you choose to include them in a report.</SectionDesc>
       <div className="aur-set-left-clear">
         {mobile
           ? <Button onClick={() => void share()}>Share logs</Button>

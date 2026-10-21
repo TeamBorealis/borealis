@@ -56,3 +56,7 @@
 /* the bordered input/select is the 26 px box (the wrapper rule above only sized the wrapper). */
 .mg-char-appearance .mg-f .aur-textbox input, .mg-char-appearance .mg-f .aur-combo select { height: 26px; min-height: 26px; }
 .mg-char-appearance .mg-grid { row-gap: 4.5px; }
+
+/* FX-60: Companions Gallery uses the Manage command-button skin (26 tall, glyph 5 px in) */
+.mg-tool-gallery { height: 26px; min-height: 26px; box-sizing: border-box; padding: 0 8px 0 5px; gap: 6px; font-size: 11px; justify-content: flex-start; }
+.mg-tool-gallery .icon { width: 16px; height: 16px; }

@@ -21,6 +21,7 @@ describe("local logs in Settings (UP3)", () => {
     renderApp("/characters", { api });
     const dialog = await openDataFiles(user);
     expect(within(dialog).queryByRole("button", { name: "Share logs" })).toBeNull();
+    expect(within(dialog).getByRole("heading", { name: "LOGS" })).toBeTruthy();
     await user.click(await within(dialog).findByRole("button", { name: "Open logs folder" }));
     await waitFor(() => expect(api.openedFolders).toEqual(["logs"]));
   });

@@ -1,6 +1,6 @@
 import { mdiImageSearch } from "@mdi/js";
 import { useState } from "react";
-import { Button, TextBox } from "../../components";
+import { TextBox } from "../../components";
 import { useCharacter } from "../../state/CharacterContext";
 import { MgField, MgSection } from "./Field";
 import { PortraitsFlyout } from "./PortraitsFlyout";
@@ -30,9 +30,9 @@ export function CompanionTab() {
           </MgField>
         </div>
         <div style={{ marginTop: 10 }}>
-          <Button variant="flat" onClick={() => setGalleryOpen(true)}>
+          <button type="button" className="mg-tool wide mg-tool-gallery" onClick={() => setGalleryOpen(true)}>
             <svg className="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={mdiImageSearch} /></svg>Companions Gallery
-          </Button>
+          </button>
         </div>
       </MgSection>
       {galleryOpen && (

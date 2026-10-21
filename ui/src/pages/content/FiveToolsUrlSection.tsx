@@ -4,6 +4,7 @@ import { Button, ProgressBar, useConfirm, useImportNotice, useToast } from "../.
 import { useApi } from "../../state/ApiContext";
 import { errorMessage, useAsync } from "../../state/useAsync";
 import { sourceConsentText } from "./IndexesTab";
+import { setStatus as setStatusBar } from "../../state/status";
 import { UP_TO_DATE } from "./indexUpdateText";
 import { Section } from "./Section";
 
@@ -62,9 +63,9 @@ export function FiveToolsUrlSection({ onStaged, onReport, refresh }: Props) {
       const r = await api.update5etoolsUrl({ url: target.url });
       const text = describeUrlUpdate(r.upToDate, r.report);
       setStatus(text);
-      toast.push(text, "info");
+      setStatusBar(text);
       if (r.report) onReport(r.report);
-    } catch (e) { setStatus(errorMessage(e)); toast.push(errorMessage(e), "error"); }
+    } catch (e) { setStatus(errorMessage(e)); setStatusBar(errorMessage(e)); }
     finally { setBusy(null); urls.reload(); }
   };
   const remove = (target: FiveToolsUrl) => void api.remove5etoolsUrl({ url: target.url }).then(urls.reload).catch((e) => toast.push(errorMessage(e), "error"));

@@ -4,6 +4,7 @@ import { Button, ProgressBar, useConfirm, useToast } from "../../components";
 import { useApi } from "../../state/ApiContext";
 import { usePlatform } from "../../state/platform";
 import { errorMessage, useAsync } from "../../state/useAsync";
+import { setStatus as setStatusBar } from "../../state/status";
 import { describeIndexUpdate } from "./indexUpdateText";
 import { ImportReportDialog } from "./ImportReportDialog";
 import { Section } from "./Section";
@@ -60,9 +61,9 @@ export function IndexesTab() {
       const list = await api.listIndexes().catch(() => indexes.data ?? []);
       const text = describeIndexUpdate(r, list, checkedText(new Date().toISOString()));
       setStatus(text.status);
-      toast.push(text.toast, text.tone);
+      setStatusBar(text.toast);
       indexes.reload();
-    } catch (e) { setStatus(errorMessage(e)); toast.push(errorMessage(e), "error"); }
+    } catch (e) { setStatus(errorMessage(e)); setStatusBar(errorMessage(e)); }
     finally { setBusy(false); }
   };
   const openFolder = (folder: AppFolder) => void api.openAppFolder({ folder }).catch((e) => toast.push(errorMessage(e), "error"));

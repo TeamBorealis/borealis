@@ -31,7 +31,7 @@ describe("the Manage > Companion tab", () => {
     const section = await screen.findByRole("region", { name: "COMPANION" });
     expect(within(section).getByText("A companion that accompanies you on your adventures and is trained to fight alongside you.")).toBeTruthy();
     expect(within(section).getByLabelText("Companion Name")).toHaveProperty("value", "Pip");
-    expect(within(section).getByRole("button", { name: "Companions Gallery" })).toBeTruthy();
+    expect(within(section).getByRole("button", { name: "Companions Gallery" }).classList.contains("mg-tool")).toBe(true);
     expect(within(section).queryByText("CR")).toBeNull();
     expect(within(section).queryByText("AC")).toBeNull();
   });
