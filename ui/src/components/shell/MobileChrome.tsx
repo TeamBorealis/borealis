@@ -4,8 +4,9 @@ import { BrandMark } from "./BrandMark";
 import { MAIN_TABS, activeTab } from "./sections";
 import { useShell } from "./ShellContext";
 import { useShellActions } from "./useShellActions";
+import { UpdateCommand } from "./UpdateFlyout";
 
-/** Phone title bar: hamburger, character name (gold) or app name, settings. Honours the top safe-area inset. */
+/** Phone title bar: hamburger, character name (gold) or app name, the update button when a release is waiting, settings. Honours the top safe-area inset. */
 export function MobileTitleBar({ onMenu }: { onMenu: () => void }) {
   const { snapshot } = useShellActions();
   const { openSettings } = useShell();
@@ -14,6 +15,7 @@ export function MobileTitleBar({ onMenu }: { onMenu: () => void }) {
       <button type="button" className="aur-iconbtn" aria-label="Menu" onClick={onMenu}><Icon name="menu" /></button>
       <BrandMark />
       <div className={`aur-title-text ${snapshot ? "gold" : ""}`}>{snapshot ? snapshot.name : "Borealis"}</div>
+      <UpdateCommand compact />
       <button type="button" className="aur-iconbtn" aria-label="Settings" onClick={() => openSettings()}><Icon name="cog" /></button>
     </header>
   );

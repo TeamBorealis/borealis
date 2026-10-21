@@ -39,34 +39,84 @@ describe("phone check with fetch()", () => {
   });
 });
 
-describe("update banner", () => {
-  it("shows for a newer version, Download opens the page, Dismiss hides it and is remembered", async () => {
+const updateButton = () => screen.queryByRole("button", { name: "Update available" });
+const updateFlyout = () => screen.queryByRole("dialog", { name: "Update available" });
+
+describe("update button and UPDATE AVAILABLE flyout", () => {
+  it("a newer version shows the title-bar button; the flyout downloads; Close dismisses and is remembered", async () => {
     const user = userEvent.setup();
     const api = fast();
     api.appUpdate.status = { ...NEWER };
     const first = renderApp("/characters", { api });
-    const bar = await screen.findByRole("region", { name: "Update available" });
-    expect(bar.textContent).toContain("Borealis 1.0.1 is available");
-    await user.click(within(bar).getByRole("button", { name: "Download" }));
+    await user.click(await screen.findByRole("button", { name: "Update available" }));
+    const flyout = await screen.findByRole("dialog", { name: "Update available" });
+    expect(flyout.textContent).toContain("Borealis 1.0.1");
+    expect(flyout.textContent).toContain("You have version 1.0.0");
+    await user.click(within(flyout).getByRole("button", { name: "Download" }));
     await waitFor(() => expect(api.appUpdate.opened).toBe(1));
-    await user.click(within(bar).getByRole("button", { name: "Dismiss" }));
-    expect(screen.queryByRole("region", { name: "Update available" })).toBeNull();
+    await user.click(within(flyout).getByRole("button", { name: "Close" }));
+    expect(updateFlyout()).toBeNull();
+    expect(updateButton()).toBeNull();
     first.unmount();
     // A new launch: the same version stays hidden, a newer one comes back.
     renderApp("/characters", { api });
     await screen.findByRole("contentinfo", { name: "Status" });
-    await waitFor(() => expect(screen.queryByRole("region", { name: "Update available" })).toBeNull());
+    await waitFor(() => expect(updateButton()).toBeNull());
     await act(async () => { await api.checkAppUpdate(); });
-    expect(screen.queryByRole("region", { name: "Update available" })).toBeNull();
+    expect(updateButton()).toBeNull();
     api.appUpdate.status = { ...NEWER, latest: "1.0.2" };
     await act(async () => { await api.checkAppUpdate(); });
-    expect((await screen.findByRole("region", { name: "Update available" })).textContent).toContain("1.0.2");
+    await user.click(await screen.findByRole("button", { name: "Update available" }));
+    expect((await screen.findByRole("dialog", { name: "Update available" })).textContent).toContain("1.0.2");
+  });
+
+  it("sits in the title-bar commands left of the website button and pushes nothing down", async () => {
+    const api = fast();
+    api.appUpdate.status = { ...NEWER };
+    const { container } = renderApp("/characters", { api });
+    const button = await screen.findByRole("button", { name: "Update available" });
+    const cmds = container.querySelector(".aur-wincmds")!;
+    const labels = [...cmds.querySelectorAll("button")].map((b) => b.getAttribute("aria-label"));
+    expect(labels.indexOf("Update available")).toBe(labels.indexOf("Project website") - 1);
+    expect(cmds.contains(button)).toBe(true);
+    expect(screen.queryByRole("region", { name: "Update available" })).toBeNull();
+    expect(container.querySelector(".aur-update")).toBeNull();
+  });
+
+  it("Escape closes the flyout and keeps the button", async () => {
+    const user = userEvent.setup();
+    const api = fast();
+    api.appUpdate.status = { ...NEWER };
+    renderApp("/characters", { api });
+    await user.click(await screen.findByRole("button", { name: "Update available" }));
+    await screen.findByRole("dialog", { name: "Update available" });
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(updateFlyout()).toBeNull());
+    expect(updateButton()).not.toBeNull();
+  });
+
+  it("phones show the button in the title bar next to Settings", async () => {
+    const phone = (q: string) => ({
+      matches: true, media: q, onchange: null, addEventListener: () => undefined, removeEventListener: () => undefined,
+      addListener: () => undefined, removeListener: () => undefined, dispatchEvent: () => false,
+    }) as MediaQueryList;
+    Object.defineProperty(window, "matchMedia", { configurable: true, writable: true, value: phone });
+    try {
+      const user = userEvent.setup();
+      const api = fast();
+      api.appUpdate.status = { ...NEWER };
+      const { container } = renderApp("/characters", { api });
+      const button = await screen.findByRole("button", { name: "Update available" });
+      expect(container.querySelector(".aur-title.mobile")!.contains(button)).toBe(true);
+      await user.click(button);
+      expect((await screen.findByRole("dialog", { name: "Update available" })).textContent).toContain("Borealis 1.0.1");
+    } finally { Reflect.deleteProperty(window, "matchMedia"); }
   });
 
   it("does not show when you are up to date", async () => {
     renderApp("/characters", { api: fast() });
     await screen.findByRole("contentinfo", { name: "Status" });
-    expect(screen.queryByRole("region", { name: "Update available" })).toBeNull();
+    expect(updateButton()).toBeNull();
   });
 });
 

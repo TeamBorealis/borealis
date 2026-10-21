@@ -186,9 +186,14 @@
 }
 .aur-window.narrow .aur-subband .tabs.sub .tab { flex: none; white-space: nowrap; font-size: 11px; padding: 2px 8px 0; }
 
-/* "New version available" bar: the status bar's chrome colours, one slim row under the sub-tab band. */
-.aur-update { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 4px; min-height: var(--status-h); padding: 0 5px; background: var(--chrome); color: var(--gray-6); border-bottom: 1px solid rgb(255 255 255 / 0.08); font-size: var(--fs-xs); text-transform: uppercase; }
-.aur-update .update-msg { margin: 0 5px; flex: 1 1 auto; min-width: 0; }
-.aur-update button { height: var(--status-h); padding: 1px 8px; background: transparent; border: 0; color: var(--gray-5); font-size: var(--fs-xs); text-transform: uppercase; cursor: pointer; }
-.aur-update button:hover { background: rgb(255 255 255 / 0.05); }
-.aur-update .update-go { color: var(--gold); }
+/* Update available: an accent-filled title-bar command (left of the website button) whose double chevron drops on a loop; it opens the UPDATE AVAILABLE flyout. */
+.aur-wincmds button.aur-update-cmd, .aur-iconbtn.aur-update-cmd { background: var(--accent-base); color: #fff; overflow: hidden; }
+.aur-wincmds button.aur-update-cmd:hover { background: #343f44; }
+.aur-update-glyph { display: grid; place-items: center; animation: aur-update-drop 1.6s ease-in infinite; }
+@keyframes aur-update-drop {
+  0% { transform: translateY(-9px); opacity: 0; }
+  30% { transform: translateY(0); opacity: 1; }
+  70% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(9px); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .aur-update-glyph { animation: none; } }

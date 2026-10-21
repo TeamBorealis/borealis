@@ -10,7 +10,7 @@ import { LevelPanel } from "../../pages/builder/LevelPanel";
 import { useNarrow } from "./useNarrow";
 import { useContentUpdateNotice } from "./useContentUpdateNotice";
 import { useAppUpdateWatcher } from "../../state/appUpdate";
-import { UpdateBanner } from "./UpdateBanner";
+import { UpdateFlyout } from "./UpdateFlyout";
 import { useShellActions } from "./useShellActions";
 import { useCharacter } from "../../state/CharacterContext";
 import { OptionsFlyout } from "../../pages/manage/OptionsFlyout";
@@ -89,7 +89,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           )}
           <SubBand />
-          <UpdateBanner />
           <main id="main" className="aur-content" tabIndex={-1}>{children}</main>
           <StatusBar compact={narrow} busy={busy} />
           {narrow && <BottomBar />}
@@ -98,6 +97,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <OptionsFlyout />
           <EditionFlyout />
           <SaveFlyout />
+          <UpdateFlyout />
           <SettingsHost />
           {narrow && menuOpen && (
             <Flyout title="Menu" position="left" width="settings" onClose={() => setMenuOpen(false)}>

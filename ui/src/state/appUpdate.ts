@@ -57,7 +57,7 @@ export async function checkWithFetch(current: string, fetchFn: typeof fetch = fe
   }
 }
 
-/* ---- shared store: the banner and Settings read the same answer ---- */
+/* ---- shared store: the title-bar update button and Settings read the same answer ---- */
 let status: AppUpdateStatus | null = null;
 let dismissed = readDismissed();
 const listeners = new Set<() => void>();
@@ -72,19 +72,19 @@ export const getAppUpdate = (): AppUpdateStatus | null => status;
 /** Test hook: forget the stored answer and the remembered dismissal. */
 export function resetAppUpdate(): void { status = null; try { localStorage.removeItem(DISMISSED_KEY); } catch { /* storage unavailable */ } dismissed = null; emit(); }
 
-/** Hide the banner for this version; remembered across launches. */
+/** Hide the update button for this version; remembered across launches. */
 export function dismissAppUpdate(version: string): void {
   dismissed = version;
   try { localStorage.setItem(DISMISSED_KEY, version); } catch { /* storage unavailable: hidden until restart */ }
   emit();
 }
 
-export interface AppUpdateView { status: AppUpdateStatus | null; showBanner: boolean }
+export interface AppUpdateView { status: AppUpdateStatus | null; showNotice: boolean }
 
-let cached: AppUpdateView = { status: null, showBanner: false };
+let cached: AppUpdateView = { status: null, showNotice: false };
 function snapshot(): AppUpdateView {
   const show = !!status && status.state === "done" && status.newer && !!status.latest && status.latest !== dismissed;
-  if (cached.status !== status || cached.showBanner !== show) cached = { status, showBanner: show };
+  if (cached.status !== status || cached.showNotice !== show) cached = { status, showNotice: show };
   return cached;
 }
 

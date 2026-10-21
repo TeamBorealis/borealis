@@ -10,6 +10,7 @@ import { isTauri } from "../../lib/tauri";
 import "./flyouts.css";
 import { useShell } from "./ShellContext";
 import { QuickViewFlyout } from "./QuickViewFlyout";
+import { UpdateCommand } from "./UpdateFlyout";
 import { PortraitsFlyout } from "../../pages/manage/PortraitsFlyout";
 import { useCharacter } from "../../state/CharacterContext";
 import { useShellActions } from "./useShellActions";
@@ -44,6 +45,7 @@ export function TitleCommands() {
     <div className="aur-wincmds">
       {snapshot && <ToolTip text="Character sheet"><button type="button" aria-label="Character sheet" onClick={() => nav("/sheet")}><Icon name="open-in-app" /></button></ToolTip>}
       <ToolTip text="Settings"><button type="button" aria-label="Settings" onClick={() => openSettings()}><Icon name="cog" /></button></ToolTip>
+      <UpdateCommand />
       <ToolTip text="Project website"><button type="button" aria-label="Project website" onClick={openSite}><Icon name="globe" /></button></ToolTip>
     </div>
   );
