@@ -20,8 +20,9 @@ const TABS: BuilderTab[] = ["race", "class", "background", "abilities", "feats",
 export const toSlot = (d: SlotDef, c: MockCharacter): SelectionSlot => {
   const chosenId = c.choices[d.id];
   const el = chosenId ? getElement(chosenId) : undefined;
-  const { candidates, dup: _dup, lockedTo: _lockedTo, ...rest } = d;
-  const locked = d.locked || (d.required && candidates.length === 1 && d.elementType !== "class" && d.elementType !== "multiclass");
+  const { candidates: _candidates, dup: _dup, lockedTo: _lockedTo, ...rest } = d;
+  // engine-optional-sole-option SO-3: only a defaulted sole option (a fixed grant here) is locked
+  const locked = d.locked;
   const history = c.slotHistory?.[d.id] ?? [];
   const replaced = history.map((h) => ({ id: h.id, name: getElement(h.id)?.name ?? h.id, level: h.level }));
   const gainedOnLevel = history.at(-1)?.level ?? d.requiredLevel ?? 1;

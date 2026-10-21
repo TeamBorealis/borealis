@@ -163,7 +163,7 @@ export function buildSlotDefs(c: MockCharacter): SlotDef[] {
   });
 }
 
-/** Re-evaluates choices until stable: drops stale picks and applies locked grants. */
+/** Re-evaluates choices until stable: drops stale picks and applies locked grants (a sole option is never picked by itself). */
 export function reprocess(c: MockCharacter): { character: MockCharacter; defs: SlotDef[] } {
   let cur = c;
   for (let pass = 0; pass < 5; pass++) {
@@ -173,7 +173,6 @@ export function reprocess(c: MockCharacter): { character: MockCharacter; defs: S
       const ch = cur.choices[d.id];
       if (d.lockedTo && d.candidates.some((e) => e.id === d.lockedTo)) next[d.id] = d.lockedTo;
       else if (ch && d.candidates.some((e) => e.id === ch)) next[d.id] = ch;
-      else if (d.required && d.candidates.length === 1 && d.elementType !== "class" && d.elementType !== "multiclass") next[d.id] = d.candidates[0]!.id;
     }
     const same = Object.keys(next).length === Object.keys(cur.choices).length && Object.entries(next).every(([k, v]) => cur.choices[k] === v);
     cur = same ? cur : { ...cur, choices: next };
