@@ -1033,7 +1033,7 @@ fn option_host(
     // first the needed ids only; then, where that offers nothing, the same configurations also
     // picking the elements on the climb paths (each pass is deterministic, and the first one is
     // exactly the older host, so what it offered stays offered)
-    let run = |climb: bool,
+    let run = |(climb, mc): (bool, bool),
                configs: &[(String, Option<String>)],
                roots: &Plan,
                groups: &[Vec<String>],
@@ -1046,7 +1046,7 @@ fn option_host(
                 target,
                 ex,
                 offers,
-                (class, archetype.as_deref(), climb),
+                (class, archetype.as_deref(), climb, mc),
                 scores,
                 race.as_deref(),
                 roots,
@@ -1054,7 +1054,9 @@ fn option_host(
             )
         })
     };
-    if run(false, &classes, &roots, &groups, ex, offers) || offers.climbed.contains_key(target) {
+    if run((false, false), &classes, &roots, &groups, ex, offers)
+        || offers.climbed.contains_key(target)
+    {
         return true;
     }
     // the climb pass ranks every configuration by the needed ids it reaches (the archetype a
@@ -1075,7 +1077,24 @@ fn option_host(
     // (`[smith:armor:1]` set by an earlier upgrade pick)
     let mut groups = groups;
     groups.extend(stat_groups(store, target, &groups));
-    let found = run(true, &classes, &roots, &groups, &mut memo, &mut pass);
+    // then, where the climb pass offers nothing, the multiclass pass: the same configurations
+    // also multiclassing as a user does (a class's own multiclass node; another class leading
+    // the levels), apart so that what the climb pass offered stays offered
+    let found = run(
+        (true, false),
+        &classes,
+        &roots,
+        &groups,
+        &mut memo,
+        &mut pass,
+    ) || run(
+        (true, true),
+        &classes,
+        &roots,
+        &groups,
+        &mut memo,
+        &mut pass,
+    );
     ex.explored += memo.explored;
     offers.keep_climbed(pass);
     found
@@ -1096,7 +1115,7 @@ fn option_host_on(
     target: &str,
     ex: &mut Explore<'_>,
     offers: &mut Offers,
-    (class, archetype, climb): (&str, Option<&str>, bool),
+    (class, archetype, climb, mc): (&str, Option<&str>, bool, bool),
     scores: [i32; 6],
     race: Option<&str>,
     roots: &Plan,
@@ -1205,7 +1224,7 @@ fn option_host_on(
     // a needed id only another class reaches (a class's own grant that a pact boon requires):
     // the climb pass multiclasses into that class
     if climb {
-        let entries = multiclass_entries(e, class, groups);
+        let entries = multiclass_entries(e, class, groups, mc);
         if !entries.is_empty() && !want.contains(&entries) {
             want.push(entries);
         }
@@ -1214,8 +1233,8 @@ fn option_host_on(
     // whose select offers a spell that requires the Elementalist class: a multiclass never
     // registers the class id, so that class stays the main one): the climb pass multiclasses
     // into the other class and levels it, as a user does
-    let lead = if climb {
-        multiclass_entries(e, class, &want)
+    let lead = if climb && mc {
+        multiclass_entries(e, class, &want, true)
     } else {
         Vec::new()
     };
@@ -1269,7 +1288,9 @@ fn option_host_on(
         if std::mem::take(&mut multiclass) {
             // a user taking a multiclass level first meets its prerequisites (13 in the
             // multiclass ability; a homebrew class may ask for two, `[dex:13],[cha:13]`)
-            d.set_scores(&mut h, scores.map(|s| s.max(MULTICLASS_SCORE)));
+            if mc {
+                d.set_scores(&mut h, scores.map(|s| s.max(MULTICLASS_SCORE)));
+            }
             let added = d.add_multiclass(&mut h);
             if trace {
                 let open: Vec<(String, Vec<String>)> = h

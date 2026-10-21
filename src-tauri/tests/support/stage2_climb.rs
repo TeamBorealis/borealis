@@ -156,11 +156,13 @@ pub(super) fn stat_groups(
 
 /// The multiclass entries (`Multiclass` elements named as the class) of the classes a needed
 /// group reaches when it reaches none of `class` (by a grant or select of that class or one of
-/// its archetypes): the climb pass takes that class as a multiclass level.
+/// its archetypes): the climb pass takes that class as a multiclass level. `own_node` also
+/// takes the class's own multiclass node (the multiclass pass only, see `option_host`).
 pub(super) fn multiclass_entries(
     e: &Edition<'_>,
     class: &str,
     groups: &[Vec<String>],
+    own_node: bool,
 ) -> Vec<String> {
     let store = &e.ins.store;
     let mut names: BTreeSet<String> = BTreeSet::new();
@@ -186,7 +188,9 @@ pub(super) fn multiclass_entries(
         {
             if let Some(x) = store.element(c) {
                 names.insert(x.name.to_lowercase());
-                out.extend(x.multiclass.as_ref().map(|m| m.id.clone()));
+                if own_node {
+                    out.extend(x.multiclass.as_ref().map(|m| m.id.clone()));
+                }
             }
         }
     }
