@@ -1087,14 +1087,34 @@ fn option_host(
         &groups,
         &mut memo,
         &mut pass,
-    ) || run(
-        (true, true),
-        &classes,
-        &roots,
-        &groups,
-        &mut memo,
-        &mut pass,
-    );
+    ) || {
+        // only the configurations the multiclass pass changes (a multiclass the climb pass
+        // does not take), at most MAX_MULTICLASS_CONFIGS: the pass is a retry, not a sweep
+        let path: Vec<Vec<String>> = roots
+            .path
+            .iter()
+            .filter(|p| on_climb(store, p))
+            .map(|p| vec![p.clone()])
+            .collect();
+        let changed: Vec<(String, Option<String>)> = classes
+            .iter()
+            .filter(|(c, _)| {
+                multiclass_entries(e, c, &groups, true) != multiclass_entries(e, c, &groups, false)
+                    || !multiclass_entries(e, c, &path, true).is_empty()
+            })
+            .take(MAX_MULTICLASS_CONFIGS)
+            .cloned()
+            .collect();
+        !changed.is_empty()
+            && run(
+                (true, true),
+                &changed,
+                &roots,
+                &groups,
+                &mut memo,
+                &mut pass,
+            )
+    };
     ex.explored += memo.explored;
     offers.keep_climbed(pass);
     found
@@ -1103,6 +1123,9 @@ fn option_host(
 /// Host configurations an option host tries (needs class, climbed classes, archetypes, fallback),
 /// before the other fallback class.
 const OPTION_HOST_CLASSES: usize = 4;
+
+/// Configurations the multiclass pass of [`option_host`] retries at most.
+const MAX_MULTICLASS_CONFIGS: usize = 4;
 
 /// The ability score multiclass prerequisites ask for (PHB p.163; homebrew follows it).
 const MULTICLASS_SCORE: i32 = 13;
