@@ -285,19 +285,15 @@ impl Ctx<'_> {
             .collect();
         open.sort_by_key(|(lv, _)| *lv);
         for (_, slot) in open {
-            let hit = self.options(&slot).into_iter().find(|(id, n, src)| {
-                let named = norm::name(n) == norm::name(name);
-                match (want_id, self.resolve) {
-                    (Some(w), false) => id == w && named,
-                    _ => named && self.sources.iter().any(|s| s == src),
-                }
-            });
-            if let Some((id, _, _)) = hit {
+            if let Some(id) = self.offered(&slot, name, want_id) {
                 let r = self.app.apply_selection(&self.id, &slot, &id);
                 return self.set(r, &format!("pick {name}"), level).then_some(id);
             }
         }
         if let Some(id) = self.already(name, filter) {
+            return Some(id);
+        }
+        if let Some(id) = self.replace_default(name, filter, want_id, level) {
             return Some(id);
         }
         if step["spell"].as_bool() == Some(true) {
@@ -309,6 +305,54 @@ impl Ctx<'_> {
             let msg = format!("L{level} pick '{name}' (slot '{filter}'): no open slot offers it");
             self.retry.push((msg.clone(), step.clone(), level));
             self.log.failed.push(msg);
+        }
+        None
+    }
+
+    /// The id of the option of `slot` that the step names (`want_id`, else by name and source).
+    fn offered(&self, slot: &str, name: &str, want_id: Option<&str>) -> Option<String> {
+        let hit = self.options(slot).into_iter().find(|(id, n, src)| {
+            let named = norm::name(n) == norm::name(name);
+            match (want_id, self.resolve) {
+                (Some(w), false) => id == w && named,
+                _ => named && self.sources.iter().any(|s| s == src),
+            }
+        });
+        hit.map(|(id, _, _)| id)
+    }
+
+    /// A named slot that already holds another, unlocked choice: the slot's `default`, chosen when
+    /// the slot appeared (engine-optional-sole-option SO-2, the 2024 feat slots' Ability Score
+    /// Improvement), which the user changes in Aurora like any unlocked pick.
+    fn replace_default(
+        &mut self,
+        name: &str,
+        filter: &str,
+        want_id: Option<&str>,
+        level: usize,
+    ) -> Option<String> {
+        if filter.is_empty() {
+            return None;
+        }
+        let held: Vec<String> = self
+            .snap
+            .slots
+            .iter()
+            .filter(|s| {
+                // the bundled content's defaults are all feats; a held spell or language is a
+                // pick of this build, not a default
+                s.element_type == "feat"
+                    && s.chosen.is_some()
+                    && !s.locked
+                    && Self::slot_matches(s, filter)
+            })
+            .map(|s| s.id.clone())
+            .collect();
+        for slot in held {
+            if let Some(id) = self.offered(&slot, name, want_id) {
+                let r = self.app.apply_selection(&self.id, &slot, &id);
+                return self.set(r, &format!("pick {name}"), level).then_some(id);
+            }
         }
         None
     }
