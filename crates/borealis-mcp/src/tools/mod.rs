@@ -96,13 +96,20 @@ impl Tools {
             "explain_rules_term" => glossary::run(self, args),
             _ => return None,
         };
-        Some(match outcome {
-            Ok(value) => success_result(value, structured),
-            Err(message) => json!({
-                "content": [{"type": "text", "text": message}],
-                "isError": true,
-            }),
-        })
+        Some(tool_result(outcome, structured))
+    }
+}
+
+/// The MCP tool result for a tool outcome: `content` and `isError`, plus `structuredContent`
+/// when `structured` and successful (and under [`MAX_OUTPUT_CHARS`]).
+#[must_use]
+pub fn tool_result(outcome: Result<Value, String>, structured: bool) -> Value {
+    match outcome {
+        Ok(value) => success_result(value, structured),
+        Err(message) => json!({
+            "content": [{"type": "text", "text": message}],
+            "isError": true,
+        }),
     }
 }
 

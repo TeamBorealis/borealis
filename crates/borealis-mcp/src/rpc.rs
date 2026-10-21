@@ -17,7 +17,51 @@ use std::io::{BufRead, Write};
 
 use serde_json::{json, Value};
 
-use crate::tools::Tools;
+use crate::tools::{tool_result, Tools};
+use crate::ToolExtension;
+
+/// What a server answers with: the read-only tools plus an optional extension (write mode).
+struct Host<'a> {
+    tools: &'a Tools,
+    extension: Option<&'a dyn ToolExtension>,
+}
+
+impl Host<'_> {
+    fn instructions(&self) -> String {
+        match self.extension.and_then(ToolExtension::instructions) {
+            Some(extra) => format!("{INSTRUCTIONS} {extra}"),
+            None => INSTRUCTIONS.to_string(),
+        }
+    }
+
+    fn list(&self, with_output_schema: bool) -> Value {
+        let mut list = self.tools.list(with_output_schema);
+        let Some(ext) = self.extension else {
+            return list;
+        };
+        let mut extra = ext.list();
+        if !with_output_schema {
+            for t in &mut extra {
+                if let Some(obj) = t.as_object_mut() {
+                    obj.remove("outputSchema");
+                    obj.remove("annotations");
+                }
+            }
+        }
+        if let Some(items) = list.as_array_mut() {
+            items.extend(extra);
+        }
+        list
+    }
+
+    fn call(&self, name: &str, args: &Value, structured: bool) -> Option<Value> {
+        if let Some(r) = self.tools.call(name, args, structured) {
+            return Some(r);
+        }
+        let outcome = self.extension?.call(name, args)?;
+        Some(tool_result(outcome, structured))
+    }
+}
 
 const PARSE_ERROR: i64 = -32700;
 const INVALID_REQUEST: i64 = -32600;
@@ -106,7 +150,7 @@ fn era_of(conn: &Connection, id: &Value, params: &Value) -> Result<Era, Value> {
     }
 }
 
-fn initialize(conn: &mut Connection, id: Value, params: &Value) -> Value {
+fn initialize(host: &Host, conn: &mut Connection, id: Value, params: &Value) -> Value {
     let asked = params.get("protocolVersion").and_then(Value::as_str);
     let version = asked
         .filter(|v| LEGACY_VERSIONS.contains(v))
@@ -116,22 +160,22 @@ fn initialize(conn: &mut Connection, id: Value, params: &Value) -> Value {
         "protocolVersion": version,
         "capabilities": {"tools": {"listChanged": false}},
         "serverInfo": server_info(),
-        "instructions": INSTRUCTIONS,
+        "instructions": host.instructions(),
     }})
 }
 
-fn discover(id: &Value) -> Value {
+fn discover(host: &Host, id: &Value) -> Value {
     let result = with_modern_fields(json!({
         "supportedVersions": [MODERN_VERSION],
         "capabilities": {"tools": {}, "extensions": {}},
-        "instructions": INSTRUCTIONS,
+        "instructions": host.instructions(),
         "ttlMs": TTL_MS,
         "cacheScope": "private",
     }));
     json!({"jsonrpc": "2.0", "id": id, "result": result})
 }
 
-fn handle_tools(tools: &Tools, era: &Era, id: Value, method: &str, params: &Value) -> Value {
+fn handle_tools(host: &Host, era: &Era, id: Value, method: &str, params: &Value) -> Value {
     let legacy_version = match era {
         Era::Legacy(v) => Some(v.as_str()),
         Era::Modern => None,
@@ -139,7 +183,7 @@ fn handle_tools(tools: &Tools, era: &Era, id: Value, method: &str, params: &Valu
     // `outputSchema` and `structuredContent` exist from 2025-06-18 on.
     let structured = legacy_version != Some("2024-11-05");
     let result = if method == "tools/list" {
-        let mut r = json!({"tools": tools.list(structured)});
+        let mut r = json!({"tools": host.list(structured)});
         if legacy_version.is_none() {
             r["ttlMs"] = json!(TTL_MS);
             r["cacheScope"] = json!("private");
@@ -161,7 +205,7 @@ fn handle_tools(tools: &Tools, era: &Era, id: Value, method: &str, params: &Valu
         if !args.is_object() {
             return error(id, INVALID_PARAMS, "`arguments` must be an object", None);
         }
-        match tools.call(name, &args, structured) {
+        match host.call(name, &args, structured) {
             Some(r) => r,
             None => return error(id, INVALID_PARAMS, &format!("Unknown tool: {name}"), None),
         }
@@ -175,7 +219,7 @@ fn handle_tools(tools: &Tools, era: &Era, id: Value, method: &str, params: &Valu
 }
 
 /// Handle one parsed message. `None` means no response (a notification).
-fn handle(tools: &Tools, conn: &mut Connection, msg: &Value) -> Option<Value> {
+fn handle(host: &Host, conn: &mut Connection, msg: &Value) -> Option<Value> {
     let Some(obj) = msg.as_object() else {
         return Some(error(
             Value::Null,
@@ -204,7 +248,7 @@ fn handle(tools: &Tools, conn: &mut Connection, msg: &Value) -> Option<Value> {
     };
     let params = obj.get("params").cloned().unwrap_or(Value::Null);
     if method == "initialize" {
-        return Some(initialize(conn, id, &params));
+        return Some(initialize(host, conn, id, &params));
     }
     // Methods removed in 2026-07-28 (ping, logging/setLevel, ...) and unknown ones fall through.
     let known = matches!(method, "server/discover" | "tools/list" | "tools/call")
@@ -218,10 +262,10 @@ fn handle(tools: &Tools, conn: &mut Connection, msg: &Value) -> Option<Value> {
         Err(response) => return Some(response),
     };
     Some(match (method, &era) {
-        ("server/discover", Era::Modern) => discover(&id),
+        ("server/discover", Era::Modern) => discover(host, &id),
         // `ping` is a legacy-only method; a modern request for it is method-not-found.
         ("ping", Era::Legacy(_)) => json!({"jsonrpc": "2.0", "id": id, "result": {}}),
-        ("tools/list" | "tools/call", era) => handle_tools(tools, era, id, method, &params),
+        ("tools/list" | "tools/call", era) => handle_tools(host, era, id, method, &params),
         _ => error(
             id,
             METHOD_NOT_FOUND,
@@ -306,9 +350,11 @@ fn request_id(msg: &Value) -> Value {
 /// I/O errors on the transport.
 pub fn serve(
     tools: &Tools,
+    extension: Option<&dyn ToolExtension>,
     mut reader: impl BufRead,
     mut writer: impl Write,
 ) -> std::io::Result<()> {
+    let host = Host { tools, extension };
     let mut conn = Connection::default();
     while let Some(line) = read_line_bounded(&mut reader, MAX_LINE_BYTES)? {
         let bytes = match line {
@@ -328,7 +374,7 @@ pub fn serve(
             continue;
         }
         let response = match serde_json::from_slice::<Value>(&bytes) {
-            Ok(msg) => guarded(request_id(&msg), || handle(tools, &mut conn, &msg)),
+            Ok(msg) => guarded(request_id(&msg), || handle(&host, &mut conn, &msg)),
             Err(e) => Some(error(
                 Value::Null,
                 PARSE_ERROR,
