@@ -147,32 +147,38 @@ impl<'a> Offerers<'a> {
         self.place_with(id, plan, true)
     }
 
+    /// Climbs from `id` breadth-first. Each branch carries the nearest archetype it passed (an
+    /// archetype maps only to the classes above it on its own branch, not to every class the
+    /// climb reaches after any archetype); a node is visited once per carried archetype.
     fn place_with(&self, id: &str, plan: &mut Plan, precise: bool) -> bool {
+        type Step = (String, Option<String>);
         let mut found = false;
-        let mut seen = BTreeSet::from([id.to_string()]);
-        let mut level: BTreeSet<String> = self.parents_of(id, precise);
-        let mut archetypes: BTreeSet<String> = BTreeSet::new();
+        let mut seen: BTreeSet<Step> = BTreeSet::from([(id.to_string(), None)]);
+        let mut level: BTreeSet<Step> = self
+            .parents_of(id, precise)
+            .into_iter()
+            .map(|p| (p, None))
+            .collect();
         for _ in 0..MAX_CLIMB {
             let mut next = BTreeSet::new();
-            for p in level {
-                if !seen.insert(p.clone()) {
+            for (p, carried) in level {
+                if !seen.insert((p.clone(), carried.clone())) {
                     continue;
                 }
                 plan.path.insert(p.clone());
                 let Some(e) = self.store.element(&p) else {
                     continue;
                 };
-                match e.ty.as_str() {
+                let carry = match e.ty.as_str() {
                     "Class" => {
                         found = true;
-                        for a in &archetypes {
-                            plan.archetypes
-                                .entry(a.clone())
-                                .or_default()
-                                .insert(p.clone());
-                        }
-                        if archetypes.is_empty() {
-                            plan.classes.insert(p);
+                        match carried {
+                            Some(a) => {
+                                plan.archetypes.entry(a).or_default().insert(p);
+                            }
+                            None => {
+                                plan.classes.insert(p);
+                            }
                         }
                         continue;
                     }
@@ -186,12 +192,14 @@ impl<'a> Offerers<'a> {
                         plan.origins.insert(p);
                         continue;
                     }
-                    "Archetype" => {
-                        archetypes.insert(p.clone());
-                    }
-                    _ => {}
-                }
-                next.extend(self.parents_of(&p, precise));
+                    "Archetype" => Some(p.clone()),
+                    _ => carried,
+                };
+                next.extend(
+                    self.parents_of(&p, precise)
+                        .into_iter()
+                        .map(|q| (q, carry.clone())),
+                );
             }
             if next.is_empty() {
                 break;
@@ -221,5 +229,44 @@ pub fn supports_match(raw: &str, el: &Element) -> bool {
     match SupportsExpr::parse(raw) {
         Ok(Some(expr)) => eval(expr.root(), el),
         _ => true,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Offerers, Plan};
+
+    #[test]
+    fn an_archetype_maps_only_to_the_classes_on_its_own_branch() {
+        // a feature granted by an archetype of class A and directly by class B
+        let elements = serde_json::json!([
+            {"id": "ID_T_CLASS_A", "type": "Class", "name": "A", "rules": [
+                {"kind": "select", "type": "Archetype", "name": "Path", "supports": "A Path"}]},
+            {"id": "ID_T_CLASS_B", "type": "Class", "name": "B", "rules": [
+                {"kind": "grant", "type": "Class Feature", "id": "ID_T_FEATURE"}]},
+            {"id": "ID_T_ARCH_A", "type": "Archetype", "name": "AA", "supports": ["A Path"],
+             "rules": [{"kind": "grant", "type": "Archetype Feature", "id": "ID_T_FEATURE"}]},
+            {"id": "ID_T_FEATURE", "type": "Archetype Feature", "name": "F"}
+        ]);
+        let elements: Vec<serde_json::Value> = elements
+            .as_array()
+            .expect("list")
+            .iter()
+            .map(|e| {
+                let mut e = e.clone();
+                e["source"] = "T".into();
+                e
+            })
+            .collect();
+        let file = serde_json::json!({ "format": "borealis-content/1", "elements": elements });
+        let file = borealis_content::ContentFile::from_json_str(&file.to_string()).expect("file");
+        let store = borealis_content::ContentStoreBuilder::new()
+            .add_file("t.json", borealis_content::PackOrigin::Custom, file)
+            .build();
+        let mut plan = Plan::default();
+        assert!(Offerers::new(&store).place("ID_T_FEATURE", &mut plan));
+        assert_eq!(plan.classes.iter().collect::<Vec<_>>(), ["ID_T_CLASS_B"]);
+        let a = plan.archetypes.get("ID_T_ARCH_A").expect("archetype");
+        assert_eq!(a.iter().collect::<Vec<_>>(), ["ID_T_CLASS_A"]);
     }
 }
