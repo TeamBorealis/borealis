@@ -62,16 +62,7 @@ const LOSSY: &[Accepted] = &[
 
 /// Open bugs found by this test (see specs/handoffs/diff-5etools-bundled-1.md and
 /// specs/handoffs/import-gaps-2.md).
-const KNOWN_GAPS: &[Accepted] = &[(
-    "Dnd2024 Fighter",
-    "select.Feat",
-    &[20],
-    "engine: the imported Magic Initiate's spellcasting-ability choice is an element with a \
-         spellcasting block, and `data.prerequisite.requires_feature: Spellcasting` is checked \
-         leniently (any live block counts), so Boon of Spell Recall is offered to a Fighter (7 \
-         Epic Boons vs 6); needs a strict class-Spellcasting test for 2024 prerequisites (see \
-         specs/handoffs/import-gaps-2.md)",
-)];
+const KNOWN_GAPS: &[Accepted] = &[];
 
 /// One side of a pair: the elements a character is built from.
 #[derive(Clone, Copy)]

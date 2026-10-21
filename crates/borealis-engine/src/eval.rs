@@ -129,6 +129,13 @@ impl ReqEnv<'_> {
             || (self.spell_blocks && name.eq_ignore_ascii_case("spellcasting"))
     }
 
+    /// At least one class spell slot (Spellcasting or Pact Magic), the strict check behind
+    /// `data.prerequisite.requires_feature: Spellcasting`.
+    #[must_use]
+    pub fn has_class_spell_slots(&self) -> bool {
+        self.has_spell_slots(1)
+    }
+
     /// `[spellcasting:N]` (Borealis extension, strict): the character has at least one spell
     /// slot of level `N` or higher from a class Spellcasting or Pact Magic feature, read from
     /// the slot statistic groups `<class>:spellcasting:slots:<level>` (pact slots included,

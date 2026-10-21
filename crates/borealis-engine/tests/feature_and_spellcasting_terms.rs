@@ -46,6 +46,8 @@ fn engine() -> &'static Engine {
             feat("ID_T_NO_STYLE", "![feature:Fighting Style]"),
             feat("ID_T_STRICT", "[spellcasting:1]"),
             feat("ID_T_LENIENT", "[feature:Spellcasting]"),
+            json!({"id": "ID_T_STRUCT", "name": "ID_T_STRUCT", "type": "Feat", "source": "Test",
+                   "data": {"prerequisite": {"requires_feature": "Spellcasting"}}}),
             feat("ID_T_PACT_OR", "[feature:Pact Magic]||[spellcasting:3]"),
         ];
         let file: ContentFile = serde_json::from_value(
@@ -104,7 +106,12 @@ fn feature_term_reads_live_feature_names_inside_or_groups() {
     let wizard = offered(PLAIN_RACE, "ID_WOTC_PHB_CLASS_WIZARD", 1);
     assert_eq!(
         wizard,
-        ["ID_T_LENIENT", "ID_T_NO_STYLE", "ID_T_STRICT"],
+        [
+            "ID_T_LENIENT",
+            "ID_T_NO_STYLE",
+            "ID_T_STRICT",
+            "ID_T_STRUCT"
+        ],
         "wizard 1"
     );
 }
@@ -133,4 +140,18 @@ fn spellcasting_term_needs_class_slots_unlike_the_lenient_feature_check() {
         wiz5.contains(&"ID_T_PACT_OR".into()),
         "3rd-level slots: {wiz5:?}"
     );
+}
+
+#[test]
+fn structured_spellcasting_prerequisite_needs_class_slots() {
+    // B-23: `data.prerequisite.requires_feature: Spellcasting` (Boon of Spell Recall) is the
+    // strict "Spellcasting or Pact Magic feature" rule; a species spellcasting block is not it
+    let fighter = offered(CASTING_RACE, "ID_WOTC_PHB_CLASS_FIGHTER", 1);
+    assert!(!fighter.contains(&"ID_T_STRUCT".into()), "{fighter:?}");
+    let plain = offered(PLAIN_RACE, "ID_WOTC_PHB_CLASS_FIGHTER", 1);
+    assert!(!plain.contains(&"ID_T_STRUCT".into()), "{plain:?}");
+    let wizard = offered(PLAIN_RACE, "ID_WOTC_PHB_CLASS_WIZARD", 1);
+    assert!(wizard.contains(&"ID_T_STRUCT".into()), "wizard: {wizard:?}");
+    let warlock = offered(PLAIN_RACE, "ID_WOTC_PHB_CLASS_WARLOCK", 1);
+    assert!(warlock.contains(&"ID_T_STRUCT".into()), "pact: {warlock:?}");
 }

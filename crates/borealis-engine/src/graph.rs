@@ -649,6 +649,11 @@ impl<'u> Graph<'u> {
             return false;
         }
         match p.requires_feature.as_deref() {
+            // "Spellcasting" is the 2024 "Spellcasting or Pact Magic feature" rule: strict class
+            // spell slots, so a feat or species spellcasting block does not satisfy it (B-23)
+            Some(f) if f.trim().eq_ignore_ascii_case("spellcasting") => {
+                self.env().has_class_spell_slots()
+            }
             Some(f) => self.has_feature_named(f),
             None => true,
         }
