@@ -1,7 +1,8 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
+import { m4MetricLines } from './mobile-metrics.js';
 import { ANDROID_BUNDLE_ID, IOS_BUNDLE_ID, IOS_SIMULATOR } from './mobile-env.js';
 import type { MobilePlatform } from './mobile.js';
 
@@ -184,38 +185,24 @@ export function iosOpenButtonShown(): boolean {
   return blue >= MIN_BLUE_PIXELS;
 }
 
-/** tools/acceptance/thresholds.json: `{ <platform>: { "<source>/<stage>": { <metric>: max } } }`, numbers only. */
-const THRESHOLDS = resolve(import.meta.dirname, '../../tools/acceptance/thresholds.json');
-
-/** m4 time per stage key of the thresholds file. */
-const M4_STAGES: Record<string, string> = {
-  aCoreMs: 'a-core/import',
-  aUserMs: 'a-user/import',
-  fFullMs: 'f-full/import',
-  restartToDigestMs: 'app/restart_digest',
-};
+/** tools/ci/check_thresholds.py, the same checker CI uses for desktop. */
+const CHECK_THRESHOLDS = resolve(import.meta.dirname, '../../tools/ci/check_thresholds.py');
 
 /**
- * The m4 numbers over their limit in tools/acceptance/thresholds.json (the same file CI checks with
- * tools/ci/check_thresholds.py): wall_s per import and the restart, peak_mem_mb (MiB) over the whole run.
+ * Writes the m4 METRIC lines to `<out>/m4-<platform>.metrics.log` and runs check_thresholds.py on them
+ * (the checker CI runs on the desktop lines; limits: tools/acceptance/thresholds.json, numbers only).
+ * Returns the checker's exit code and output; the numbers stay in the log, not in any report.
  */
-export function thresholdBreaches(
+export function checkThresholds(
   platform: MobilePlatform,
   times: Record<string, number>,
   peakKb: Record<string, number | undefined>,
-): string[] {
-  const all = JSON.parse(readFileSync(THRESHOLDS, 'utf8')) as Record<string, Record<string, Record<string, number>>>;
-  const limits = all[platform];
-  if (!limits) return [`no ${platform} entry in ${THRESHOLDS}`];
-  const breaches: string[] = [];
-  const over = (key: string, metric: string, value: number) => {
-    const limit = limits[key]?.[metric];
-    if (limit !== undefined && value > limit) breaches.push(`${key} ${metric} ${value} > ${limit}`);
-  };
-  for (const [name, key] of Object.entries(M4_STAGES)) {
-    if (times[name] !== undefined) over(key, 'wall_s', Math.round(times[name] / 1000));
-  }
-  const peaks = Object.values(peakKb).filter((kb): kb is number => kb !== undefined);
-  if (peaks.length) over('process/m4', 'peak_mem_mb', Math.round(Math.max(...peaks) / 1024));
-  return breaches;
+  outDir: string,
+): { code: number; output: string } {
+  mkdirSync(outDir, { recursive: true });
+  const log = join(outDir, `m4-${platform}.metrics.log`);
+  writeFileSync(log, `${m4MetricLines(times, peakKb).join('\n')}\n`);
+  const r = spawnSync('python3', ['-I', CHECK_THRESHOLDS, '--platform', platform, log], { encoding: 'utf8' });
+  const output = `${r.stdout ?? ''}${r.stderr ?? ''}${r.error ? String(r.error) : ''}`.trim();
+  return { code: r.status ?? 2, output };
 }

@@ -238,6 +238,28 @@ class ThresholdTests(unittest.TestCase):
                     {"desktop-linux": {"a-core/s1": {}}}):
             self.assertEqual(self.run_main(bad, self.LOG), 2, bad)
 
+    # Lines exactly as e2e/support/mobile-metrics.ts writes them for the S5 (m4) run.
+    M4_LOG = ["METRIC\ta-core\timport\t*\twall_s\t201\n", "METRIC\ta-user\timport\t*\twall_s\t1\n",
+              "METRIC\tf-full\timport\t*\twall_s\t5\n", "METRIC\tapp\trestart_digest\t*\twall_s\t2\n",
+              "METRIC\tprocess\tm4\t*\tpeak_mem_mb\t{peak}\n"]
+
+    def m4_code(self, platform, peak, wall=None):
+        lines = [l.format(peak=peak) for l in self.M4_LOG]
+        if wall:
+            lines[0] = f"METRIC\ta-core\timport\t*\twall_s\t{wall}\n"
+        return self.run_main(ct.load_thresholds(ct.THRESHOLDS), lines, platform=platform)
+
+    def test_s5_mobile_run_is_judged_by_the_committed_android_and_ios_rows(self):
+        self.assertEqual(self.m4_code("android", 2500, wall=200), 0)
+        self.assertEqual(self.m4_code("ios", 1500, wall=340), 0)
+        self.assertEqual(self.m4_code("android", 2501), 1)
+        self.assertIn("::error::android process/m4 peak_mem_mb 2501 is over the limit 2500", self.out)
+        self.assertEqual(self.m4_code("ios", 1501), 1)
+        # Same a-core time: inside the iOS limit (340 s), over the Android one (200 s).
+        self.assertEqual(self.m4_code("ios", 100, wall=300), 0)
+        self.assertEqual(self.m4_code("android", 100, wall=300), 1)
+        self.assertIn("android a-core/import wall_s 300 is over the limit 200", self.out)
+
 
 class PeakMemoryTests(unittest.TestCase):
     def test_job_structures_match_the_x64_layout(self):
