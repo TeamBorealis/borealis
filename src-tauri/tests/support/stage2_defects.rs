@@ -170,6 +170,13 @@ impl Defects {
                  put on a character (nothing grants it, no select offers it)",
             );
         }
+        if worn_counters_exclusive(store, el, &holdable) {
+            return Some(
+                "content defect: its requirements need two counters at once that only different \
+                 body armors set, and a character wears one armor (a selection whose own \
+                 requirements fail is dropped on re-evaluation, engine.md 3.3)",
+            );
+        }
         if el.ty == "Spell" && known_list_only(store, el) {
             return Some(
                 "by design (engine.md 10.2): listed only by the known list of a caster that does \
@@ -211,6 +218,98 @@ impl Defects {
                  unreachable (nothing grants it, no select offers it)",
             )
     }
+}
+
+/// The counter keys each conjunct of `req` asks for (`[a:1]` or `[a:1]|[b:1]` is one conjunct);
+/// an id conjunct adds the conjuncts of that element's own requirements (it must hold at the
+/// same time). Conjuncts of any other form are left out (they only make it harder to hold).
+fn counter_conjuncts(store: &ContentStore, req: &str, depth: usize) -> Vec<BTreeSet<String>> {
+    fn keys(e: &BoolExpr<RequirementLeaf>, out: &mut BTreeSet<String>) -> bool {
+        match e {
+            BoolExpr::Leaf(RequirementLeaf::Test(t)) => {
+                let positive =
+                    matches!(t.value, borealis_content::expr::TestValue::Number(n) if n > 0);
+                out.insert(t.normalized_key());
+                positive
+            }
+            BoolExpr::Or(items) => items.iter().all(|x| keys(x, out)),
+            _ => false,
+        }
+    }
+    let Ok(Some(expr)) = RequirementsExpr::parse(req) else {
+        return Vec::new();
+    };
+    let items: Vec<&BoolExpr<RequirementLeaf>> = match expr.root() {
+        BoolExpr::And(items) => items.iter().collect(),
+        other => vec![other],
+    };
+    let mut out = Vec::new();
+    for item in items {
+        if let BoolExpr::Leaf(RequirementLeaf::Id(id)) = item {
+            if let Some(x) = store.element(id).filter(|_| depth > 0) {
+                out.extend(counter_conjuncts(store, &x.requirements, depth - 1));
+            }
+            continue;
+        }
+        let mut k = BTreeSet::new();
+        if keys(item, &mut k)
+            && k.iter()
+                .all(|key| key.contains(':') && !key.starts_with("level"))
+        {
+            out.push(k);
+        }
+    }
+    out
+}
+
+/// True when `el`'s requirements (and those of the ids they name) need two counter conjuncts
+/// at once, every holdable element raising any of their counters is body armor, and no one
+/// armor raises a counter of both: a character wears one body armor.
+fn worn_counters_exclusive(
+    store: &ContentStore,
+    el: &Element,
+    holdable: &dyn Fn(&str) -> bool,
+) -> bool {
+    let conj = counter_conjuncts(store, &el.requirements, 1);
+    if conj.len() < 2 {
+        return false;
+    }
+    // the holdable setters of each counter
+    let setters = |key: &str| -> Vec<&Element> {
+        store
+            .iter()
+            .map(|se| &se.element)
+            .filter(|e| holdable(&e.id))
+            .filter(|e| {
+                e.rules.iter().any(|r| {
+                    matches!(r, Rule::Stat(s) if s.name.eq_ignore_ascii_case(key)
+                        && s.value.trim().parse::<i64>().map_or(true, |n| n > 0))
+                })
+            })
+            .collect()
+    };
+    let body_armor =
+        |e: &Element| e.ty == "Armor" && e.setter_value("slot").is_some_and(|v| v.trim() == "body");
+    let sets: Vec<BTreeSet<String>> = conj
+        .iter()
+        .map(|keys| {
+            keys.iter()
+                .flat_map(|k| setters(k))
+                .map(|e| e.id.clone())
+                .collect()
+        })
+        .collect();
+    let all_armor = conj.iter().flatten().all(|k| {
+        let s = setters(k);
+        !s.is_empty() && s.iter().all(|e| body_armor(e))
+    });
+    if !all_armor {
+        return false;
+    }
+    // two conjuncts whose setters share no armor can never hold together
+    sets.iter()
+        .enumerate()
+        .any(|(i, a)| sets.iter().skip(i + 1).any(|b| a.is_disjoint(b)))
 }
 
 /// Rounds of [`Defects::new`] that drop elements requiring an unholdable element (each round
