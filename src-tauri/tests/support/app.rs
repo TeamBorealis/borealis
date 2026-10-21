@@ -283,18 +283,28 @@ impl<'a> Driver<'a> {
     }
 
     /// Change the choice of the first filled slot that offers `target` to it (a user changing an
-    /// earlier pick in the builder).
-    pub fn rechoose(&self, host: &mut Host, target: &str) -> bool {
+    /// earlier pick in the builder), leaving the slots that hold an id of `keep` (what the
+    /// target requires) alone. True when the target is chosen afterwards.
+    pub fn rechoose(&self, host: &mut Host, target: &str, keep: &[&str]) -> bool {
         let filled: Vec<String> = host
             .snap
             .slots
             .iter()
-            .filter(|s| s.chosen.as_ref().is_some_and(|c| c.id != target))
+            .filter(|s| {
+                s.chosen
+                    .as_ref()
+                    .is_some_and(|c| c.id != target && !keep.contains(&c.id.as_str()))
+            })
             .map(|s| s.id.clone())
             .collect();
         for slot in filled {
             if self.options(host, &slot).iter().any(|(id, _)| id == target) {
-                return self.apply(host, &slot, target);
+                return self.apply(host, &slot, target)
+                    && host
+                        .snap
+                        .slots
+                        .iter()
+                        .any(|s| s.chosen.as_ref().is_some_and(|c| c.id == target));
             }
         }
         false

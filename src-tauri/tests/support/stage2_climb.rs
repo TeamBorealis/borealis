@@ -1,12 +1,15 @@
 //! The climb pass of an option host ([`super::option_host`]): when the needed ids alone offer
 //! nothing, the host also takes what a user would take on the way down to the option: the
 //! elements on its climb paths, the items that carry them, the character options they need, the
-//! subclass whose own spell list names a spell, a new multiclass level for a multiclass entry.
+//! subclass whose own spell list names a spell, a new multiclass level for a multiclass entry
+//! (or for a class only whose grants reach a needed id), the elements that raise a counter a
+//! requirement tests. Its configurations are ranked by what they reach ([`rank_configs`]).
 //! Everything is read from the installed content; no id is named here.
 
 use super::items;
 use super::{Edition, NON_OFFERABLE};
-use crate::support::plan::{tokens, Plan};
+use crate::support::plan::{supports_match, tokens, Plan};
+use borealis_content::expr::{BoolExpr, RequirementLeaf, RequirementsExpr, TestValue};
 use borealis_content::{ContentStore, Rule};
 use std::collections::BTreeSet;
 
@@ -20,8 +23,8 @@ pub(super) const MULTICLASS_TYPE: &str = "Multiclass";
 /// Configurations a climb pass tries at most.
 const MAX_CLIMB_CONFIGS: usize = 6;
 
-/// Items an option host's climb pass carries: items on the climb paths and items that grant
-/// the option or a needed id outright, in id order, at most [`MAX_CLIMB_ITEMS`].
+/// Items an option host's climb pass carries: items on the climb paths, needed ids that are items,
+/// and items that grant the option or a needed id outright, in id order, at most [`MAX_CLIMB_ITEMS`].
 pub(super) fn climb_items(
     store: &ContentStore,
     target: &str,
@@ -34,11 +37,22 @@ pub(super) fn climb_items(
         .map(String::as_str)
         .chain(std::iter::once(target))
         .collect();
+    let is_item = |p: &&str| store.element(p).is_some_and(|x| items::is_item_type(&x.ty));
+    // a needed id that is itself an item (a requirement naming a weapon, the armor that sets a
+    // counter a requirement tests) is carried first
+    let first: Vec<String> = needed
+        .iter()
+        .copied()
+        .filter(|n| *n != target)
+        .filter(is_item)
+        .map(|n| n.to_string())
+        .collect();
     let mut out: BTreeSet<String> = roots
         .path
         .iter()
-        .filter(|p| store.element(p).is_some_and(|x| items::is_item_type(&x.ty)))
-        .cloned()
+        .map(String::as_str)
+        .filter(is_item)
+        .map(str::to_string)
         .collect();
     for se in store.iter() {
         let el = &se.element;
@@ -51,7 +65,13 @@ pub(super) fn climb_items(
             out.insert(el.id.clone());
         }
     }
-    out.into_iter().take(MAX_CLIMB_ITEMS).collect()
+    let rest = out.into_iter().filter(|x| !first.contains(x));
+    first
+        .iter()
+        .cloned()
+        .chain(rest)
+        .take(MAX_CLIMB_ITEMS)
+        .collect()
 }
 
 /// An element on a climb path that an option host picks where a slot offers it: not the class,
@@ -63,6 +83,226 @@ pub(super) fn on_climb(store: &ContentStore, id: &str) -> bool {
             "Class" | "Level" | "Race" | "Species" | "Background" | "Sub Race" | "Race Variant"
         ) && !NON_OFFERABLE.iter().any(|(t, _)| *t == x.ty)
     })
+}
+
+/// Setters one counter group holds at most.
+const MAX_SETTERS: usize = 12;
+
+/// Any-of groups of the elements that set a content counter the option's (or a needed id's)
+/// requirements test (`[smith:armor:1]`, raised by a stat rule of an earlier upgrade): the
+/// climb pass picks one where it is offered, as a user does before the option shows. Only
+/// `:`-keys no builder term reads (not `level...`, `spellcasting...`, a class level or an
+/// ability) and no element spends (a points budget); groups already present are left out.
+pub(super) fn stat_groups(
+    store: &ContentStore,
+    target: &str,
+    groups: &[Vec<String>],
+) -> Vec<Vec<String>> {
+    fn tests(e: &BoolExpr<RequirementLeaf>, out: &mut BTreeSet<String>) {
+        match e {
+            BoolExpr::Leaf(RequirementLeaf::Test(t)) => {
+                let key = t.normalized_key();
+                let builtin = key.starts_with("level") || key.starts_with("spellcasting");
+                if key.contains(':') && !builtin && matches!(t.value, TestValue::Number(n) if n > 0)
+                {
+                    out.insert(key);
+                }
+            }
+            BoolExpr::Leaf(RequirementLeaf::Id(_)) | BoolExpr::Not(_) => {}
+            BoolExpr::And(items) | BoolExpr::Or(items) => {
+                items.iter().for_each(|x| tests(x, out));
+            }
+        }
+    }
+    let mut keys = BTreeSet::new();
+    for id in groups.iter().flatten().map(String::as_str).chain([target]) {
+        let Some(el) = store.element(id) else {
+            continue;
+        };
+        if let Ok(Some(expr)) = RequirementsExpr::parse(&el.requirements) {
+            tests(expr.root(), &mut keys);
+        }
+    }
+    // a budget some element spends (`modular:points -1`) is not a counter earlier picks raise:
+    // picking its setters changes what the budget allows, so it is left to the other picks
+    let spent = |key: &str| {
+        store.iter().any(|se| {
+            se.element.rules.iter().any(|r| {
+                matches!(r, Rule::Stat(s) if s.name.eq_ignore_ascii_case(key)
+                    && s.value.trim().parse::<i64>().is_ok_and(|n| n < 0))
+            })
+        })
+    };
+    let mut out: Vec<Vec<String>> = Vec::new();
+    for key in keys.into_iter().filter(|k| !spent(k)) {
+        let setters: Vec<String> = store
+            .iter()
+            .filter(|se| se.element.id != target)
+            .filter(|se| {
+                se.element.rules.iter().any(|r| {
+                    matches!(r, Rule::Stat(s) if s.name.eq_ignore_ascii_case(&key)
+                        && s.value.trim().parse::<i64>().is_ok_and(|n| n > 0))
+                })
+            })
+            .map(|se| se.element.id.clone())
+            .take(MAX_SETTERS)
+            .collect();
+        if !setters.is_empty() && !groups.contains(&setters) && !out.contains(&setters) {
+            out.push(setters);
+        }
+    }
+    out
+}
+
+/// The multiclass entries (`Multiclass` elements named as the class) of the classes a needed
+/// group reaches when it reaches none of `class` (by a grant or select of that class or one of
+/// its archetypes): the climb pass takes that class as a multiclass level.
+pub(super) fn multiclass_entries(
+    e: &Edition<'_>,
+    class: &str,
+    groups: &[Vec<String>],
+) -> Vec<String> {
+    let store = &e.ins.store;
+    let mut names: BTreeSet<String> = BTreeSet::new();
+    for g in groups {
+        let mut p = Plan::default();
+        for id in g {
+            e.offerers.place_precise(id, &mut p);
+        }
+        let reached: BTreeSet<&String> = p
+            .classes
+            .iter()
+            .chain(p.archetypes.values().flatten())
+            .collect();
+        if reached.is_empty() || reached.iter().any(|c| c.as_str() == class) {
+            continue;
+        }
+        for c in reached
+            .into_iter()
+            .filter(|c| e.builder_classes.contains(c))
+        {
+            if let Some(x) = store.element(c) {
+                names.insert(x.name.to_lowercase());
+            }
+        }
+    }
+    if names.is_empty() {
+        return Vec::new();
+    }
+    store
+        .iter()
+        .filter(|se| se.element.ty == MULTICLASS_TYPE)
+        .filter(|se| names.contains(&se.element.name.to_lowercase()))
+        .map(|se| se.element.id.clone())
+        .collect()
+}
+
+/// The classes (builder class ids, by name) whose level gates a select that offers `target` by
+/// its whole supports expression (`[level:<class>:N]` in the select's requirements).
+fn select_level_classes(e: &Edition<'_>, target: &str) -> BTreeSet<String> {
+    fn level_keys(x: &BoolExpr<RequirementLeaf>, out: &mut BTreeSet<String>) {
+        match x {
+            BoolExpr::Leaf(RequirementLeaf::Test(t)) => {
+                if let Some(c) = t.normalized_key().strip_prefix("level:") {
+                    out.insert(c.to_string());
+                }
+            }
+            BoolExpr::Leaf(RequirementLeaf::Id(_)) | BoolExpr::Not(_) => {}
+            BoolExpr::And(items) | BoolExpr::Or(items) => {
+                items.iter().for_each(|i| level_keys(i, out));
+            }
+        }
+    }
+    let store = &e.ins.store;
+    let Some(el) = store.element(target) else {
+        return BTreeSet::new();
+    };
+    let mut names = BTreeSet::new();
+    for se in store.iter() {
+        for r in &se.element.rules {
+            let Rule::Select(s) = r else { continue };
+            if !s.ty.eq_ignore_ascii_case(&el.ty)
+                || !supports_match(s.supports.as_deref().unwrap_or(""), el)
+            {
+                continue;
+            }
+            let req = s.requirements.as_deref().unwrap_or("");
+            if let Ok(Some(expr)) = RequirementsExpr::parse(req) {
+                level_keys(expr.root(), &mut names);
+            }
+        }
+    }
+    e.builder_classes
+        .iter()
+        .filter(|c| {
+            store
+                .element(c)
+                .is_some_and(|x| names.contains(&x.name.to_lowercase()))
+        })
+        .cloned()
+        .collect()
+}
+
+/// One host configuration: a class and the archetype taken on it.
+type Config = (String, Option<String>);
+
+/// The climb pass's configurations, ranked by what they reach: each configuration scores 2 when
+/// the option's own select (matched by its whole supports expression) climbs to it and 1 per
+/// needed group whose ids climb to it (doubled when they reach its archetype; a class root counts
+/// for every archetype of the class). The roots of the option and of the needed ids join
+/// `candidates`; ties keep the older order (needs class, own select owners, roots, fallbacks).
+pub(super) fn rank_configs(
+    e: &Edition<'_>,
+    target: &str,
+    groups: &[Vec<String>],
+    candidates: Vec<Config>,
+) -> Vec<Config> {
+    let usable = |c: &String| e.builder_classes.contains(c);
+    let mut plans: Vec<(u32, Plan)> = Vec::new();
+    let mut own = Plan::default();
+    e.offerers.place_precise(target, &mut own);
+    // a select gated by a class level (`[level:barbarian:2]`) belongs to that class even when
+    // its owner reaches no class (a feature an item grants)
+    own.classes.extend(select_level_classes(e, target));
+    plans.push((2, own));
+    for g in groups {
+        let mut p = Plan::default();
+        for id in g {
+            e.offerers.place_precise(id, &mut p);
+        }
+        plans.push((1, p));
+    }
+    let mut configs: Vec<Config> = Vec::new();
+    let mut add = |c: Config| {
+        if !configs.contains(&c) {
+            configs.push(c);
+        }
+    };
+    candidates.into_iter().for_each(&mut add);
+    for (_, p) in &plans {
+        for (a, cs) in &p.archetypes {
+            for c in cs.iter().filter(|c| usable(c)) {
+                add((c.clone(), Some(a.clone())));
+            }
+        }
+        for c in p.classes.iter().filter(|c| usable(c)) {
+            add((c.clone(), None));
+        }
+    }
+    // an archetype root is the more specific reach (its own selects), so it counts double
+    let reach = |(c, a): &Config, p: &Plan| -> u32 {
+        if a.as_ref()
+            .is_some_and(|a| p.archetypes.get(a).is_some_and(|cs| cs.contains(c)))
+        {
+            2
+        } else {
+            u32::from(p.classes.contains(c))
+        }
+    };
+    let score = |cfg: &Config| -> u32 { plans.iter().map(|(w, p)| w * reach(cfg, p)).sum() };
+    let mut scored: Vec<(u32, Config)> = configs.into_iter().map(|c| (score(&c), c)).collect();
+    scored.sort_by_key(|s| std::cmp::Reverse(s.0));
+    scored.into_iter().map(|(_, c)| c).collect()
 }
 
 /// The climb pass's configurations and roots for a spell: the elements whose own spell list

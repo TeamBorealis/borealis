@@ -1039,22 +1039,19 @@ fn invariant_row(src: &str, v: &borealis_engine::invariants::Violation) -> Strin
     }
 }
 
-/// The violations a setup's hosts recorded, less the empty selects no installed element can
-/// ever fill: those rows assert that content defect (Aurora shows the same empty select); the
-/// rest stay recorded for [`record_invariants`].
-fn assert_unfillable_selects(src: &str, store: &ContentStore) {
-    let (unfillable, rest): (Vec<_>, Vec<_>) = borealis_engine::invariants::take_recorded()
+/// The violations a setup's hosts recorded, less the ones the installed content explains (an
+/// empty required select no installed element can fill, a feature that requires its own absence,
+/// slot stats the content writes negative): those rows assert that content verdict (Aurora reads
+/// the same content and shows the same state); the rest stay recorded for [`record_invariants`].
+fn assert_content_invariants(src: &str, store: &ContentStore) {
+    let (explained, rest): (Vec<_>, Vec<_>) = borealis_engine::invariants::take_recorded()
         .into_iter()
-        .partition(|v| support::stage2::unfillable_select(store, v));
-    for v in &unfillable {
-        outcome::record(
-            SUITE,
-            &invariant_row(src, v),
-            true,
-            "content defect: no installed element can fill this required select",
-        );
+        .map(|v| (support::stage2::invariant_verdict(store, &v), v))
+        .partition(|(why, _)| why.is_some());
+    for (why, v) in &explained {
+        outcome::record(SUITE, &invariant_row(src, v), true, why.unwrap_or_default());
     }
-    borealis_engine::invariants::record_violations(rest);
+    borealis_engine::invariants::record_violations(rest.into_iter().map(|(_, v)| v).collect());
 }
 
 /// `BOREALIS_ACCEPT_THREADS` (default 4): A-comm setups measured side by side, one app each.
@@ -1131,7 +1128,7 @@ fn comm_one(
         .chain(extra.iter().map(|x| &x.1))
         .collect();
     stage2(src, &apps, &ins, "ID_WOTC_", aurora_class_id, Scope::Repo);
-    assert_unfillable_selects(src, &ins.store);
+    assert_content_invariants(src, &ins.store);
 }
 
 /// A fetcher that keeps every file it downloaded (the stage-1 counter reads them).

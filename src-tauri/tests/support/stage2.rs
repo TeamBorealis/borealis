@@ -25,7 +25,10 @@ mod defects;
 
 #[path = "stage2_climb.rs"]
 mod climb;
-use climb::{climb_items, on_climb, spell_list_hosts, MULTICLASS_TYPE};
+use climb::{
+    climb_items, multiclass_entries, on_climb, rank_configs, spell_list_hosts, stat_groups,
+    MULTICLASS_TYPE,
+};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Scope {
@@ -665,9 +668,13 @@ fn edition(
     merge(total, vec![found]);
 }
 
-/// An empty required select no installed element can ever fill (see `defects`).
-pub fn unfillable_select(store: &ContentStore, v: &borealis_engine::invariants::Violation) -> bool {
-    defects::unfillable_select(store, v)
+/// The content verdict of a settle-invariant violation a community setup recorded, or `None`
+/// (see `defects::invariant_verdict`).
+pub fn invariant_verdict(
+    store: &ContentStore,
+    v: &borealis_engine::invariants::Violation,
+) -> Option<&'static str> {
+    defects::invariant_verdict(store, v)
 }
 
 /// Stage 2 over every edition of the source; each edition's hosts run on `apps` (apps holding
@@ -755,9 +762,9 @@ fn legacy_of(el: &borealis_content::Element) -> Option<&str> {
 fn record(src: &str, app: &AppState, ins: &Installed, offers: &Offers, scope: Scope) {
     let selects = select_index(&ins.store);
     // a community repo's rows: a content defect (see [`defects`]) asserts that verdict
-    let defects = (scope == Scope::Repo).then(|| defects::Defects::new(&ins.store));
     let hub = app.hub().ok();
     let defined = |id: &str| hub.as_ref().map_or(true, |h| h.element(id).is_some());
+    let defects = (scope == Scope::Repo).then(|| defects::Defects::new(&ins.store, &defined));
     let mut defect_rows = 0;
     let mut rows: BTreeMap<(String, &str), [i64; 2]> = BTreeMap::new();
     let mut seen_types: BTreeSet<&str> = BTreeSet::new();
@@ -1005,6 +1012,7 @@ fn option_host(
         scores[*i] = scores[*i].max(*v);
     }
     let race = needs.race.clone().or_else(|| e.ids.human.clone());
+    let mut every = classes.clone();
     classes.truncate(OPTION_HOST_CLASSES);
     // last, for an option a character option gates, the other fallback: a select never offers
     // what a proficiency the class already has covers (a martial class is not offered the DMG
@@ -1028,6 +1036,7 @@ fn option_host(
     let run = |climb: bool,
                configs: &[(String, Option<String>)],
                roots: &Plan,
+               groups: &[Vec<String>],
                ex: &mut Explore<'_>,
                offers: &mut Offers| {
         configs.iter().any(|(class, archetype)| {
@@ -1041,15 +1050,19 @@ fn option_host(
                 scores,
                 race.as_deref(),
                 roots,
-                &groups,
+                groups,
             )
         })
     };
-    if run(false, &classes, &roots, ex, offers) || offers.climbed.contains_key(target) {
+    if run(false, &classes, &roots, &groups, ex, offers) || offers.climbed.contains_key(target) {
         return true;
     }
+    // the climb pass ranks every configuration by the needed ids it reaches (the archetype a
+    // needed archetype feature belongs to, the class of a needed class feature)
+    every.extend(classes.iter().cloned());
+    let ranked = rank_configs(e, target, &groups, every);
     // a spell a subclass's (or feature's) own spell list names: that host first
-    let (classes, roots) = spell_list_hosts(e, target, classes, roots);
+    let (classes, roots) = spell_list_hosts(e, target, ranked, roots);
     // the climb pass records apart, with its own explore memo: the hosts after it (options,
     // items) are planned exactly as before it existed
     let mut memo = Explore {
@@ -1058,7 +1071,11 @@ fn option_host(
         explored: 0,
     };
     let mut pass = Offers::default();
-    let found = run(true, &classes, &roots, &mut memo, &mut pass);
+    // the climb pass also takes the elements that set a counter a requirement tests
+    // (`[smith:armor:1]` set by an earlier upgrade pick)
+    let mut groups = groups;
+    groups.extend(stat_groups(store, target, &groups));
+    let found = run(true, &classes, &roots, &groups, &mut memo, &mut pass);
     ex.explored += memo.explored;
     offers.keep_climbed(pass);
     found
@@ -1162,7 +1179,10 @@ fn option_host_on(
     // id a feat's requirement names), is carried, as a user adds it on the equipment screen
     if climb {
         for item in climb_items(&e.ins.store, target, roots, groups) {
-            d.hold_item(&mut h, &item);
+            let held = d.hold_item(&mut h, &item);
+            if trace {
+                eprintln!("TRACE {target}: item {item} held {held}");
+            }
         }
     }
     let offered = |d: &Driver<'_>, h: &Host| {
@@ -1179,6 +1199,14 @@ fn option_host_on(
             .element(id)
             .is_some_and(|x| x.ty == MULTICLASS_TYPE)
     };
+    // a needed id only another class reaches (a class's own grant that a pact boon requires):
+    // the climb pass multiclasses into that class
+    if climb {
+        let entries = multiclass_entries(e, class, groups);
+        if !entries.is_empty() && !want.contains(&entries) {
+            want.push(entries);
+        }
+    }
     let mut multiclass = climb && (is_mc(target) || want.iter().flatten().any(|w| is_mc(w)));
     let mut found = false;
     loop {
@@ -1232,7 +1260,8 @@ fn option_host_on(
     // select's requirements against the character as it is now (`[level:warlock:2]` reads the
     // current class level, ExpressionInterpreter.cs:42-63), and so does the builder: the 10th
     // copy of PHB24 Lessons of the First Ones takes the Warlock 1 invocation slot at level 18
-    if !found && d.rechoose(&mut h, target) {
+    let keep: Vec<&str> = groups.iter().flatten().map(String::as_str).collect();
+    if !found && d.rechoose(&mut h, target, &keep) {
         found = true;
         d.collect(&h, &label, offers);
         d.explore(&mut h, ex, &label, offers);
