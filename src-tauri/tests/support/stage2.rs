@@ -1250,8 +1250,6 @@ fn option_host_on(
             .element(id)
             .is_some_and(|x| matches!(x.ty.as_str(), "Race" | "Species" | "Background"))
     });
-    // then the origins the option's own path reaches (the sub race granting the trait whose
-    // select offers it), then the origins of the needed ids' paths
     let mut own = Plan::default();
     e.offerers.place(target, &mut own);
     // then a race an element on the paths requires (a class variant for elves only)
@@ -1299,7 +1297,6 @@ fn option_host_on(
         needed_races
             .map(String::as_str)
             .chain(sub_parents.iter().map(String::as_str))
-            .chain(own.origins.iter().map(String::as_str))
             .chain(path_races.iter().map(String::as_str))
             .chain(origins)
             .chain(race)
