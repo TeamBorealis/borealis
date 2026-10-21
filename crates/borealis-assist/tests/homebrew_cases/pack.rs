@@ -362,15 +362,31 @@ fn alternatives(token: &str) -> Vec<&str> {
 }
 
 /// Does the (normalised) text contain the token (or one of its `A|B` alternatives), ignoring
-/// spacing ("1500gp" = "1500 gp", "Wood/Metal" = "Wood / Metal") and number words
-/// ("six hours" = "6 hours")?
+/// spacing ("1500gp" = "1500 gp", "Wood/Metal" = "Wood / Metal"), number words
+/// ("six hours" = "6 hours") and the foot abbreviation ("30 feet" = "30 ft.")?
 fn text_has(text: &str, token: &str) -> bool {
     alternatives(token).into_iter().any(|alt| {
         let t = norm(alt);
         text.contains(&t)
             || squash(text).contains(&squash(&t))
             || digits(text).contains(&digits(&t))
+            || feet(&digits(text)).contains(&feet(&digits(&t)))
     })
+}
+
+/// `feet` / `foot` / `ft.` as `ft` (the usual abbreviation of a distance).
+fn feet(text: &str) -> String {
+    text.split(' ')
+        .map(|w| {
+            let bare = w.trim_matches(|c: char| !c.is_ascii_alphanumeric());
+            match bare {
+                "feet" | "foot" => w.replacen(bare, "ft", 1),
+                "ft" => w.replacen("ft.", "ft", 1),
+                _ => w.to_string(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 fn has_prose(e: &Element) -> bool {
@@ -587,11 +603,15 @@ fn silent_drop_rows(case: &CaseFile, l: &Loaded) -> Vec<Row> {
         .collect()
 }
 
-/// The pack element an expectation targets.
-pub fn find<'a>(l: &'a Loaded, ty: Option<&str>, name: &str) -> Option<&'a Element> {
+/// The pack elements an expectation may target (its `type` and `name` alternatives).
+fn candidates<'a>(
+    l: &'a Loaded,
+    ty: Option<&'a str>,
+    name: &'a str,
+) -> impl Iterator<Item = &'a Element> + 'a {
     l.elements
         .iter()
-        .find(|e| name_matches(name, &e.name) && ty.map_or(true, |t| name_matches(t, &e.ty)))
+        .filter(move |e| name_matches(name, &e.name) && ty.map_or(true, |t| name_matches(t, &e.ty)))
 }
 
 /// The value of `"setter"` or `"setter@attribute"`.
@@ -738,14 +758,49 @@ fn json_check_errors(json: &Value, j: &JsonCheck) -> Vec<String> {
     errs
 }
 
+/// An element expectation holds when one of the elements matching its `type` and `name`
+/// alternatives meets it (the error is the first candidate's). An unsupported object
+/// (`Mech::Unsupported`: an element with text *or* a report entry is expected) that no element
+/// matches holds when the report lists it as `text_only` with its element(s) or `unsupported`.
 fn check_element(l: &Loaded, x: &ElementExpect) -> Result<(), String> {
-    let Some(e) = find(l, x.ty.as_deref(), &x.name) else {
-        return Err(format!(
-            "no {} element named {:?}",
-            x.ty.as_deref().unwrap_or("(any type)"),
-            x.name
-        ));
-    };
+    let mut first_err = None;
+    for e in candidates(l, x.ty.as_deref(), &x.name) {
+        match check_candidate(l, x, e) {
+            Ok(()) => return Ok(()),
+            Err(m) => {
+                first_err.get_or_insert(m);
+            }
+        }
+    }
+    if let Some(m) = first_err {
+        return Err(m);
+    }
+    if x.head.class == Mech::Unsupported && reported_unsupported(l, &x.name) {
+        return Ok(());
+    }
+    Err(format!(
+        "no {} element named {:?}",
+        x.ty.as_deref().unwrap_or("(any type)"),
+        x.name
+    ))
+}
+
+/// The report lists the source object `name` as unsupported, or as text only with the
+/// element(s) that carry it.
+fn reported_unsupported(l: &Loaded, name: &str) -> bool {
+    l.report.as_ref().is_some_and(|r| {
+        r.entries.iter().any(|e| {
+            name_matches(name, &e.source)
+                && match e.outcome.as_str() {
+                    "unsupported" => true,
+                    "text_only" => !e.elements.is_empty(),
+                    _ => false,
+                }
+        })
+    })
+}
+
+fn check_candidate(l: &Loaded, x: &ElementExpect, e: &Element) -> Result<(), String> {
     let mut errs = Vec::new();
     if x.head.class != Mech::Mechanised && !has_prose(e) {
         errs.push("no description text".to_string());
@@ -984,6 +1039,17 @@ mod tests {
     fn inline_tags_do_not_split_a_phrase() {
         let t = norm(&plain_text("<p>You know the <i>glow orb</i> cantrip.</p>"));
         assert!(text_has(&t, "glow orb cantrip"));
+    }
+
+    #[test]
+    fn a_distance_matches_in_feet_or_abbreviated() {
+        // Arrange
+        let t = norm("Speed: 30 ft. Swim 40 ft walking; reach 5 feet");
+        // Act + Assert
+        assert!(text_has(&t, "30 feet"));
+        assert!(text_has(&t, "40 feet"));
+        assert!(text_has(&t, "5 ft"));
+        assert!(!text_has(&t, "25 feet"));
     }
 
     #[test]
