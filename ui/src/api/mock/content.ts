@@ -1,6 +1,7 @@
 import type { AbilityKey, ElementType, Ruleset } from "../types";
 import { armorFacts, spellFacts, weaponFacts } from "./facts";
 import type { BackgroundDef, ClassDef, ItemDef, MockElement, RaceDef, SpellDef } from "./data-types";
+import { monsterElements } from "./monsters";
 
 /** Original, SRD-generic sample content for the mock backend. */
 export const SOURCE_2014 = "sample-srd-51";
@@ -261,6 +262,7 @@ function mk(): MockElement[] {
     out.push(el(`asi:${a}:2`, "asi", `+2 ${ABILITY_NAMES[a]}`, `Increase ${ABILITY_NAMES[a]} by 2.`));
     out.push(el(`asi:${a}:1`, "asi", `+1 ${ABILITY_NAMES[a]}`, `Increase ${ABILITY_NAMES[a]} by 1.`, { rulesets: ["dnd2024"], source: SOURCE_2024 }));
   }
+  out.push(...monsterElements((id, name, short, extra) => el(id, "monster", name, short, extra)));
   // Items that carry the same id in 2024 sample get the 2024 source for a few new entries
   return out;
 }

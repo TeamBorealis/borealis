@@ -85,6 +85,7 @@ pub fn ui_type(content_type: &str) -> &'static str {
         "Armor" => "armor",
         "Magic Item" => "magic-item",
         "Companion" => "companion",
+        "Monster" => "monster",
         "Deity" => "deity",
         "Source" => "source",
         "List" => "list",

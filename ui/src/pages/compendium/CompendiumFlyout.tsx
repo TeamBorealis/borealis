@@ -18,13 +18,17 @@ function Detail({ id, onSource, onNavigate }: { id: string; onSource: (s: string
   if (d.error) return <Alert tone="danger">{d.error}</Alert>;
   if (!d.data) return <p className="empty">Loading...</p>;
   const e = d.data;
+  const facts = e.facts.length > 0 && <dl className="kv">{e.facts.map((f) => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl>;
+  /** A monster reads as a stat block: type, AC, HP and CR first, then its traits, actions and the rest. */
+  const statBlock = e.type === "monster";
   return (
     <article aria-label={e.name}>
       <h2>{e.name}</h2>
       <p className="flavour">{[e.type, ...e.rulesets.map((r) => (r === "dnd2024" ? "2024 rules" : "2014 rules"))].join(" - ")}</p>
       {e.prerequisites && <p className="flavour">Prerequisite: {e.prerequisites}</p>}
+      {statBlock && facts}
       <div className="body"><SafeHtml html={e.descriptionHtml} /></div>
-      {e.facts.length > 0 && <dl className="kv">{e.facts.map((f) => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl>}
+      {!statBlock && facts}
       <h4>Source</h4>
       <a href={`#source-${e.source}`} onClick={(ev) => { ev.preventDefault(); onSource(e.source); }}>{e.sourceName}</a>
       {aiEnabled && (

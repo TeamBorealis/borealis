@@ -1,5 +1,6 @@
 //! Compendium services: ranked search with filters, element detail and facets.
 
+use crate::compendium_monster::{monster_facts, monster_html};
 use crate::dto::{ElementSummary, Page};
 use crate::dto_ext::{CompendiumFacets, CompendiumQuery, ElementDetail, ElementFact, Facet};
 use crate::elements::{plain_text, summary};
@@ -167,7 +168,7 @@ impl AppState {
             .ok_or_else(|| ApiError::not_found("That element does not exist."))?;
         Ok(ElementDetail {
             summary: summary(&hub.store, el),
-            description_html: sanitize_html(&el.description),
+            description_html: description_html(el),
             facts: facts(el),
             grants: grants(&hub.store, el),
         })
@@ -207,6 +208,15 @@ impl AppState {
                 .collect(),
         })
     }
+}
+
+/// The element's sanitised description; a monster's stat block sections follow it.
+fn description_html(el: &Element) -> String {
+    let mut html = sanitize_html(&el.description);
+    if let Some(block) = monster_html(el) {
+        html.push_str(&sanitize_html(&block));
+    }
+    html
 }
 
 fn fact(label: &str, value: impl Into<String>) -> Option<ElementFact> {
@@ -255,33 +265,6 @@ fn damage_text(el: &Element) -> String {
         let kind = d.attribute("type").unwrap_or_default();
         format!("{} {kind}", d.value.trim())
     })
-}
-
-/// A typed stat block's challenge rating with its XP (`1/4 (50 XP)`); a creature without one
-/// (decision IM12) shows the note that stands in for it, or an em dash, and no XP.
-/// A typed stat block's armor class and hit points as printed (`13 (natural armor)`,
-/// `11 (2d8+2)`), or the formula text that stands in for one (decision IM12a), then its
-/// challenge rating with its XP (`1/4 (50 XP)`); a creature without one (decision IM12) shows
-/// the note that stands in for it, or an em dash, and no XP.
-fn monster_facts(el: &Element) -> Vec<ElementFact> {
-    if el.ty != "Monster" {
-        return Vec::new();
-    }
-    let Ok(m) = borealis_content::MonsterData::from_element(el) else {
-        return Vec::new();
-    };
-    let challenge = match m.xp.filter(|_| m.cr.is_some()) {
-        Some(xp) => format!("{} ({xp} XP)", m.challenge_text()),
-        None => m.challenge_text(),
-    };
-    [
-        fact("Armor Class", m.armor_class_text()),
-        fact("Hit Points", m.hit_points_text()),
-        fact("Challenge", challenge),
-    ]
-    .into_iter()
-    .flatten()
-    .collect()
 }
 
 pub(crate) fn facts(el: &Element) -> Vec<ElementFact> {

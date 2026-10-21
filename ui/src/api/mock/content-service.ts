@@ -15,7 +15,7 @@ const PROXY_HINT = "Equip this item to gain what it grants. It stays off the inv
 const TYPE_LABELS: Record<string, string> = {
   race: "Races", subrace: "Subraces", class: "Classes", multiclass: "Multiclass", archetype: "Subclasses", "fighting-style": "Fighting styles",
   background: "Backgrounds", feat: "Feats", spell: "Spells", weapon: "Weapons", armor: "Armor", item: "Gear", "magic-item": "Magic items",
-  skill: "Skills", language: "Languages", asi: "Ability improvements", list: "Characteristics",
+  skill: "Skills", language: "Languages", asi: "Ability improvements", list: "Characteristics", monster: "Monster",
 };
 
 const stripHtml = (s: string): string => s.replace(/<[^>]+>/g, "");

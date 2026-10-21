@@ -48,6 +48,7 @@ pub mod commands_system;
 pub mod companion;
 pub mod companion_block;
 pub mod compendium;
+mod compendium_monster;
 pub mod content_auto;
 pub mod content_dto;
 pub mod content_fetch_retry;

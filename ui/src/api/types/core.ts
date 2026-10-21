@@ -31,6 +31,7 @@ export type ElementType =
   | "armor"
   | "magic-item"
   | "companion"
+  | "monster"
   | "deity"
   | "option"
   | "source";
