@@ -2,7 +2,7 @@ import { describe, test } from '@e2e-dev/web';
 import { expect } from 'e2e';
 import { expectEqual } from '../support/index.js';
 import {
-  clickByText, clickCss, dblClickByText, isDisabled, loadSeraphine, openLevelUp, rawTextOf, rowsText, textOf, waitFor, waitStatus,
+  clickByText, clickCss, dblClickByText, isDisabled, loadSeraphine, openLevelUp, rawTextOf, rowsText, style, textOf, waitFor, waitStatus,
 } from '../support/flows-a.js';
 
 // Level up, hit points, multiclass, remove last level.
@@ -17,7 +17,7 @@ const profileLine = (ctx: Parameters<typeof rawTextOf>[0]) =>
 
 describe('w2 level up', { tags: ['w2'] }, () => {
   test('flyout layout: title, XP bar, level line, class panel, multiclassing expander', async (ctx) => {
-    const { screen, browser } = ctx;
+    const { screen } = ctx;
     await loadSeraphine(ctx);
     await openLevelUp(ctx);
     const text = (await textOf(ctx, FLYOUT)).replace(/\n+/g, ' / ');
@@ -30,6 +30,7 @@ describe('w2 level up', { tags: ['w2'] }, () => {
       at = next;
     }
     // The remove link is #E6E6E6 when enabled.
+    expectEqual('remove-last-level colour (level 2, enabled)', REMOVE_COLOUR_ENABLED, await style(ctx, REMOVE, 'color'));
     await expect(screen.getByRole('button', 'Level up Wizard')).toBeVisible();
   });
 
@@ -76,6 +77,7 @@ describe('w2 level up', { tags: ['w2'] }, () => {
     await waitFor(ctx, (_: null) => location.hash === '#/builder/race', null, 'route /builder/race');
     await openLevelUp(ctx);
     expect(await isDisabled(ctx, REMOVE)).toBe(true);
+    expectEqual('remove-last-level colour (level 1, disabled)', REMOVE_COLOUR_DISABLED, await style(ctx, REMOVE, 'color'));
   });
 
   test('multiclass buttons follow the prerequisites', async (ctx) => {
