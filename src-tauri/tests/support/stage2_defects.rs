@@ -122,24 +122,17 @@ impl Defects {
                 children.entry(p.as_str()).or_default().push(child.as_str());
             }
         }
-        let mut reachable: HashSet<String> = HashSet::new();
-        let mut queue: Vec<&str> = store
-            .iter()
-            .filter(|se| is_root(&se.element.ty))
-            .map(|se| se.element.id.as_str())
-            .collect();
-        while let Some(id) = queue.pop() {
-            // an element whose requirements never hold (they name ids no installed content
-            // defines) puts nothing on a character: a feat that requires another class's feature
-            let never = store
-                .element(id)
-                .is_some_and(|e| requirement_never_holds(&e.requirements, defined));
-            if never || !reachable.insert(id.to_string()) {
-                continue;
+        // an element whose requirements name an installed element no character can hold is
+        // unreachable too (an invocation requiring a pact boon whose supports no select names):
+        // each round only removes elements, so it settles
+        let mut reachable = reach(store, &children, defined);
+        for _ in 0..MAX_REACH_ROUNDS {
+            let holdable = |id: &str| holdable(store, &reachable, defined, id);
+            let next = reach(store, &children, &holdable);
+            if next.len() == reachable.len() {
+                break;
             }
-            if let Some(kids) = children.get(id) {
-                queue.extend(kids.iter().copied());
-            }
+            reachable = next;
         }
         let granted = granted_by.into_keys().collect();
         Self {
@@ -147,6 +140,12 @@ impl Defects {
             reachable,
             granted,
         }
+    }
+
+    /// True when some character can hold `id`: defined in this setup and, when installed
+    /// content defines it, reachable.
+    fn holdable(&self, store: &ContentStore, defined: &dyn Fn(&str) -> bool, id: &str) -> bool {
+        holdable(store, &self.reachable, defined, id)
     }
 
     /// The defect that keeps `id` off every character, or `None` when the content can reach it.
@@ -162,6 +161,13 @@ impl Defects {
             return Some(
                 "never offered in this setup: its requirements need ids no installed content \
                  defines (a typo, or content of a repo not installed here)",
+            );
+        }
+        let holdable = |x: &str| self.holdable(store, defined, x);
+        if requirement_never_holds(&el.requirements, &holdable) {
+            return Some(
+                "content defect: its requirements need an element that no installed content can \
+                 put on a character (nothing grants it, no select offers it)",
             );
         }
         if el.ty == "Spell" && known_list_only(store, el) {
@@ -205,6 +211,47 @@ impl Defects {
                  unreachable (nothing grants it, no select offers it)",
             )
     }
+}
+
+/// Rounds of [`Defects::new`] that drop elements requiring an unholdable element (each round
+/// follows one more link of such a chain; real chains are short).
+const MAX_REACH_ROUNDS: usize = 8;
+
+/// The roots, then every element with a reachable parent; an element whose requirements never
+/// hold under `holds` (they name ids no character can have) puts nothing on a character.
+fn reach(
+    store: &ContentStore,
+    children: &HashMap<&str, Vec<&str>>,
+    holds: &dyn Fn(&str) -> bool,
+) -> HashSet<String> {
+    let mut reachable: HashSet<String> = HashSet::new();
+    let mut queue: Vec<&str> = store
+        .iter()
+        .filter(|se| is_root(&se.element.ty))
+        .map(|se| se.element.id.as_str())
+        .collect();
+    while let Some(id) = queue.pop() {
+        let never = store
+            .element(id)
+            .is_some_and(|e| requirement_never_holds(&e.requirements, holds));
+        if never || !reachable.insert(id.to_string()) {
+            continue;
+        }
+        if let Some(kids) = children.get(id) {
+            queue.extend(kids.iter().copied());
+        }
+    }
+    reachable
+}
+
+/// True when `id` is defined in this setup and, when installed content defines it, reachable.
+fn holdable(
+    store: &ContentStore,
+    reachable: &HashSet<String>,
+    defined: &dyn Fn(&str) -> bool,
+    id: &str,
+) -> bool {
+    defined(id) && (store.element(id).is_none() || reachable.contains(id))
 }
 
 /// True when a select of `owner` of `el`'s type offers `el` by its whole supports expression
