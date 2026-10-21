@@ -66,6 +66,8 @@ pub mod content_preview;
 pub mod content_report;
 pub mod data_dirs;
 pub mod derive_cache;
+#[cfg(desktop)]
+pub mod drive;
 pub mod dto;
 pub mod dto_ext;
 pub mod elements;
