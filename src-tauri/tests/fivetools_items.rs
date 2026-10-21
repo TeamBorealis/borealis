@@ -295,6 +295,7 @@ fn audit_item(
         warnings,
         refused,
     } = equip_on(cx, &fighter.state, el);
+    let fighter_equipped = refused.is_none();
     match refused {
         None => support::bump(&mut pass.equipped, category),
         Some(cause) => {
@@ -320,6 +321,7 @@ fn audit_item(
     } else {
         None
     };
+    let host_used = host.is_some();
     let (base, state, uid, snap): (&Base, _, _, _) = match &host {
         Some((h, st, u)) => (h, st.clone(), u.clone(), cx.engine.derive(st)),
         None => (fighter, state, uid, snap),
@@ -349,6 +351,8 @@ fn audit_item(
         uid: &uid,
         fighter_attuned,
         fighter_proficient,
+        // a host is only kept when the item equipped there (barred_and_host)
+        equipped: host_used || fighter_equipped,
     };
     ck.all(tally);
 }

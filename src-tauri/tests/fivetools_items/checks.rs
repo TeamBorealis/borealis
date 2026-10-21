@@ -13,6 +13,17 @@ const DECK_EFFECT_APPLIED: &str = "a card deck applied a card effect (decks gran
 /// Why a card deck's effect check is no failure: the importer keeps its card effects as data
 /// only (IM10).
 const DECK_EFFECT_DATA_ONLY: &str = "by design: a card deck keeps its card effects as data (IM10)";
+/// Why a carried-only mundane item's effect not showing is no failure: gear (type Item) with no
+/// equip slot cannot be equipped, so its rules do not apply while it is carried, as in Aurora;
+/// the slotless-item superset covers magic items only (E30).
+const CARRIED_GEAR: &str =
+    "by design: mundane gear without an equip slot is carried, not used, so its rules do not apply (E30)";
+/// Why a poison's attachedSpells check is no failure: it names the spell whose effect the poison
+/// imposes on the creature subjected to it, not a spell its owner casts (det-5e-4).
+const POISON_SPELL: &str =
+    "by design: a poison's attached spell is its effect on the victim, not a spell its owner casts";
+/// Why a poison's attachedSpells check is wrong: its owner gained the spell.
+const POISON_SPELL_GRANTED: &str = "a poison granted its attached spell to its owner";
 
 /// One equipped item on the test character, with its 5etools entry.
 pub struct Check<'a> {
@@ -29,6 +40,9 @@ pub struct Check<'a> {
     pub fighter_attuned: bool,
     /// The item's attack line on the level-5 fighter (the proficiency check is a fighter's).
     pub fighter_proficient: Option<bool>,
+    /// The item is equipped on the character of `snap` (false: equipping was refused, it is
+    /// only carried).
+    pub equipped: bool,
 }
 
 impl Check<'_> {
@@ -90,14 +104,23 @@ impl Check<'_> {
         self.raw.0.contains_key("seeAlsoDeck")
     }
 
+    /// Mundane gear (type Item) that could not be equipped: only carried, so its rules do not
+    /// apply (an effect that shows no change at all passes by design).
+    fn is_carried_gear(&self) -> bool {
+        !self.equipped && self.el.ty == "Item"
+    }
+
     /// Records an effect check (bonuses, abilities, defences, speed, spells, granted rules).
     fn effect(&self, t: &mut Tally, cat: &str, id: &str, v: Verdict) {
         let v = match v {
-            v if !self.is_card_deck() => v,
-            Verdict::Correct => Verdict::Wrong(DECK_EFFECT_APPLIED.into()),
-            Verdict::Wrong(_) | Verdict::NotModelled | Verdict::ByDesign(_) => {
-                Verdict::ByDesign(DECK_EFFECT_DATA_ONLY)
-            }
+            v if self.is_card_deck() => match v {
+                Verdict::Correct => Verdict::Wrong(DECK_EFFECT_APPLIED.into()),
+                Verdict::Wrong(_) | Verdict::NotModelled | Verdict::ByDesign(_) => {
+                    Verdict::ByDesign(DECK_EFFECT_DATA_ONLY)
+                }
+            },
+            Verdict::NotModelled if self.is_carried_gear() => Verdict::ByDesign(CARRIED_GEAR),
+            v => v,
         };
         t.record(cat, id, v);
     }
@@ -636,6 +659,15 @@ impl Check<'_> {
         let by_item = |s: &str| s == self.el.name || s == self.el.id;
         let free = self.snap.free_casts.iter().any(|f| by_item(&f.source));
         let casting = self.snap.spellcasting.iter().any(|s| by_item(&s.name));
+        if self.raw.0.get("poison") == Some(&Value::Bool(true)) {
+            let v = if free || casting {
+                Verdict::Wrong(POISON_SPELL_GRANTED.into())
+            } else {
+                Verdict::ByDesign(POISON_SPELL)
+            };
+            t.record("spell-granting item (attachedSpells)", id, v);
+            return;
+        }
         self.effect(
             t,
             "spell-granting item (attachedSpells)",
