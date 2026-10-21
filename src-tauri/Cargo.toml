@@ -11,8 +11,13 @@ description = "Borealis - cross-platform D&D character builder"
 name = "borealis_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
-[lints]
-workspace = true
+# Same as [workspace.lints], except unsafe_code is "deny" rather than "forbid" so the one Windows-only
+# FFI module (src/console_attach.rs, AttachConsole/SetStdHandle) can opt out with #[allow(unsafe_code)].
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

@@ -49,6 +49,8 @@ pub mod companion;
 pub mod companion_block;
 pub mod compendium;
 mod compendium_monster;
+// The only module allowed `unsafe` (Windows console FFI); see src-tauri/Cargo.toml [lints].
+#[allow(unsafe_code)]
 pub mod console_attach;
 pub mod content_auto;
 pub mod content_dto;
