@@ -15,7 +15,7 @@ use std::collections::BTreeSet;
 const ITEM_TYPES: [&str; 4] = ["Item", "Weapon", "Armor", "Magic Item"];
 
 /// Element type of a character option (the options dialog's custom toggles).
-const OPTION_TYPE: &str = "Option";
+pub(super) const OPTION_TYPE: &str = "Option";
 
 /// Host label prefix of an item host.
 pub(super) const ITEM_LABEL: &str = "item:";

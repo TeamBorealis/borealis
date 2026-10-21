@@ -269,6 +269,99 @@ fn origin_host(
     d.drop_host(h);
 }
 
+/// A classed L1 host of `origin` when one of the origin's own selects can never offer anything
+/// (`defects::supports_unfillable`), with the character options that select requires turned
+/// on. With a class and every other select filled nothing is left to pick, so the settle
+/// invariants judge that empty select and its content-verdict row is recorded whatever other
+/// hosts happen to take this origin (the class-less origin host always has the class open).
+fn empty_select_host(d: &Driver<'_>, e: &Edition<'_>, origin: &str, offers: &mut Offers) {
+    let store = &e.ins.store;
+    let Some(el) = store.element(origin) else {
+        return;
+    };
+    let mut ids = Vec::new();
+    let mut unfillable = false;
+    for r in &el.rules {
+        let Rule::Select(s) = r else { continue };
+        if !defects::supports_unfillable(store, &s.ty, s.supports.as_deref()) {
+            continue;
+        }
+        unfillable = true;
+        let req = s.requirements.as_deref().unwrap_or("");
+        if let Ok(Some(expr)) = RequirementsExpr::parse(req) {
+            positive_ids(expr.root(), &mut ids);
+        }
+    }
+    let (Some(class), true) = (e.ids.fighter.as_deref(), unfillable) else {
+        return;
+    };
+    let Some(mut h) = d.create(e.rs, TEST_SCORES) else {
+        return;
+    };
+    // the character options the select requires: the core's options live in the engine's
+    // universe, not in the installed store
+    let hub = d.app.hub().ok();
+    let options: Vec<String> = ids
+        .into_iter()
+        .filter(|id| {
+            hub.as_ref()
+                .and_then(|h| h.element(id))
+                .is_some_and(|x| x.ty == items::OPTION_TYPE)
+        })
+        .collect();
+    let label = format!("origin-select:{origin}");
+    d.enable_options(&mut h, &options);
+    if d.pick(&mut h, class) && d.pick(&mut h, origin) {
+        // the fill leaves origin and feat slots to the hosts; here their first option is taken
+        // too, so nothing is left to pick
+        for _ in 0..MAX_ORIGIN_PICKS {
+            d.fill(&mut h, &label, offers);
+            let open = h.snap.slots.iter().find_map(|s| {
+                let first = d.options(&h, &s.id).into_iter().next();
+                first.filter(|_| s.chosen.is_none()).map(|o| o.0)
+            });
+            match open {
+                Some(id) if d.pick(&mut h, &id) => {}
+                _ => break,
+            }
+        }
+        d.collect(&h, &label, offers);
+    }
+    if std::env::var("BOREALIS_ACCEPT_TRACE")
+        .is_ok_and(|t| t.split(',').any(|x| x.trim() == origin))
+    {
+        let open: Vec<(&str, usize, bool)> = h
+            .snap
+            .slots
+            .iter()
+            .filter(|s| s.id.starts_with(origin) || s.chosen.is_none())
+            .map(|s| {
+                (
+                    s.id.as_str(),
+                    d.options(&h, &s.id).len(),
+                    s.chosen.is_some(),
+                )
+            })
+            .collect();
+        eprintln!("TRACE {origin}: empty-select host options {options:?} slots {open:?}");
+    }
+    d.drop_host(h);
+}
+
+/// Origin, sub race and feat slots an [`empty_select_host`] fills with their first option.
+const MAX_ORIGIN_PICKS: usize = 8;
+
+/// The ids a requirements expression needs present (leaves outside any negation).
+fn positive_ids(expr: &BoolExpr<RequirementLeaf>, out: &mut Vec<String>) {
+    match expr {
+        BoolExpr::Leaf(RequirementLeaf::Id(id)) => out.push(id.clone()),
+        BoolExpr::And(items) | BoolExpr::Or(items) => {
+            items.iter().for_each(|x| positive_ids(x, out));
+        }
+        _ => {}
+    }
+}
+
 /// Every select by type (lower case): its owner, the support tokens it names (`None` = any
 /// element) and its requirements; plus who grants each element unconditionally.
 /// One select: owner id, support tokens (`None` = any element), requirements.
@@ -413,7 +506,10 @@ struct Edition<'a> {
 fn run_job(d: &Driver<'_>, e: &Edition<'_>, job: &Job, ex: &mut Explore<'_>, f: &mut Found) {
     let offers = &mut f.0;
     match job {
-        Job::Origin(o) => origin_host(d, e.rs, o, ex, offers),
+        Job::Origin(o) => {
+            origin_host(d, e.rs, o, ex, offers);
+            empty_select_host(d, e, o, offers);
+        }
         Job::Class(c) => {
             let ours = |a: &String| e.ins.ours.iter().any(|o| &o.0 == a);
             for a in progression(d, e.rs, e.ids, c, None, ex, offers).0 {
@@ -769,7 +865,7 @@ fn record(src: &str, app: &AppState, ins: &Installed, offers: &Offers, scope: Sc
     let mut defect_rows = 0;
     let mut rows: BTreeMap<(String, &str), [i64; 2]> = BTreeMap::new();
     let mut seen_types: BTreeSet<&str> = BTreeSet::new();
-    for (id, ty, _) in &ins.ours {
+    for (id, ty, rs) in &ins.ours {
         let el = ins.store.element(id);
         seen_types.insert(ty);
         if let Some(base) = el.and_then(legacy_of) {
@@ -807,7 +903,7 @@ fn record(src: &str, app: &AppState, ins: &Installed, offers: &Offers, scope: Sc
         let defect = defects
             .as_ref()
             .filter(|_| !ok)
-            .and_then(|d| d.of(&ins.store, id, &defined));
+            .and_then(|d| d.of(&ins.store, id, *rs, &defined));
         defect_rows += i64::from(defect.is_some());
         let by = offers
             .reached(id)
@@ -981,6 +1077,14 @@ fn option_host(
     // the option's own select owners first (the needed ids climb to many unrelated classes)
     let mut own = Plan::default();
     e.offerers.place(target, &mut own);
+    if std::env::var("BOREALIS_ACCEPT_TRACE")
+        .is_ok_and(|t| t.split(',').any(|x| x.trim() == target))
+    {
+        eprintln!(
+            "TRACE {target}: own classes {:?} archetypes {:?} roots archetypes {:?}",
+            own.classes, own.archetypes, roots.archetypes
+        );
+    }
     for c in own.classes.iter().filter(|c| usable(c)) {
         add(c.clone(), None);
     }
@@ -1292,10 +1396,16 @@ fn option_host_on(
             sub_parents.extend(races);
         }
     }
+    // an option only origins reach (no class, subclass or feat on its own path: a racial trait
+    // of one sub race's trait select) has its own origins next, so the race is the one whose
+    // sub race offers it, not the first race on the path of something it needs
+    let origin_only = own.classes.is_empty() && own.archetypes.is_empty() && own.feats.is_empty();
+    let own_origins = own.origins.iter().filter(|_| climb && origin_only);
     let order: Vec<&str> = if climb {
         needed_races
             .map(String::as_str)
             .chain(sub_parents.iter().map(String::as_str))
+            .chain(own_origins.map(String::as_str))
             .chain(path_races.iter().map(String::as_str))
             .chain(origins)
             .chain(race)
@@ -1327,7 +1437,7 @@ fn option_host_on(
     }
     let mut want: Vec<Vec<String>> = archetype.map(|a| vec![a.to_string()]).into_iter().collect();
     // a sub race or race variant on the climb path is picked like any needed id
-    let sub_origins: Vec<String> = roots
+    let mut sub_origins: Vec<String> = roots
         .path
         .iter()
         .filter(|p| {
@@ -1338,6 +1448,10 @@ fn option_host_on(
         })
         .cloned()
         .collect();
+    // the option's own path first: a user picks the sub race whose trait's select offers the
+    // option, not the first sub race on the path of something it needs (a tool proficiency
+    // that several sub races of the same race grant)
+    sub_origins.sort_by_key(|p| !own.path.contains(p));
     if !sub_origins.is_empty() {
         want.push(sub_origins);
     }
@@ -1453,13 +1567,18 @@ fn option_host_on(
         d.collect(&h, &label, offers);
         d.open_feat_selects(&mut h);
         // pick what is wanted wherever it is offered, until nothing more can be picked
+        // and stop once the option is offered: a user does not fill the select that offers it
+        // with other picks first (a points budget the other path traits would spend)
         let mut progress = true;
-        while progress {
+        while progress && !offered(d, &h) {
             progress = false;
             for g in want.clone() {
                 if g.iter().any(|w| d.pick(&mut h, w)) {
                     want.retain(|x| *x != g);
                     progress = true;
+                    if offered(d, &h) {
+                        break;
+                    }
                 }
             }
         }

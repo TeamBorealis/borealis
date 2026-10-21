@@ -22,7 +22,7 @@
 
 use crate::support::plan::{supports_match, tokens};
 use borealis_content::expr::{BoolExpr, RequirementLeaf, RequirementsExpr};
-use borealis_content::{ContentStore, Element, Rule, SpellcastingList};
+use borealis_content::{ContentStore, Element, Rule, Ruleset, SpellcastingList};
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 /// Element types a host takes directly (class, origins, feats, spells, gear, options), so they
@@ -154,6 +154,7 @@ impl Defects {
         &self,
         store: &ContentStore,
         id: &str,
+        rs: Ruleset,
         defined: &dyn Fn(&str) -> bool,
     ) -> Option<&'static str> {
         let el = store.element(id)?;
@@ -185,6 +186,22 @@ impl Defects {
             );
         }
         let parents = self.parents.get(id)?;
+        // every element that grants it or owns a select naming it is tagged for the other
+        // ruleset: those are excluded from this edition's option lists (decisions-engine.md
+        // B-12), and this element is excluded from theirs
+        let other_edition = |p: &String| {
+            store
+                .element(p)
+                .and_then(|x| x.ruleset)
+                .is_some_and(|r| r != rs && r != Ruleset::Any)
+        };
+        if rs != Ruleset::Any && !parents.is_empty() && parents.iter().all(other_edition) {
+            return Some(
+                "never offered in this edition: every element that grants it or has a select \
+                 naming it belongs to the other ruleset, whose elements this edition's option \
+                 lists exclude (decisions-engine.md B-12)",
+            );
+        }
         // nothing grants it and every select naming it asks for supports it lacks: ids joined
         // with `,` (and) outside the id-range mode, so no element satisfies both (engine.md 5.2).
         // A proficiency is a root only through its proxy item, which never counts as offering
@@ -462,19 +479,24 @@ pub(super) fn unfillable_select(
     } else {
         named
     };
-    let fillable = |toks: &BTreeSet<String>| {
-        store.iter().any(|se| {
+    !candidates.is_empty()
+        && candidates
+            .iter()
+            .all(|s| supports_unfillable(store, ty, s.supports.as_deref()))
+}
+
+/// True when a select of `ty` with `supports` can never offer anything: it names support
+/// tokens (no expansion) and no installed element of `ty` carries any of them.
+pub(super) fn supports_unfillable(store: &ContentStore, ty: &str, supports: Option<&str>) -> bool {
+    let raw = supports.unwrap_or("");
+    let toks = tokens(raw);
+    !toks.is_empty()
+        && !raw.contains("$(")
+        && !store.iter().any(|se| {
             let e = &se.element;
             e.ty == ty
                 && (toks.contains(&e.id.to_lowercase())
                     || e.supports.iter().any(|s| toks.contains(&s.to_lowercase())))
-        })
-    };
-    !candidates.is_empty()
-        && candidates.iter().all(|s| {
-            let raw = s.supports.as_deref().unwrap_or("");
-            let toks = tokens(raw);
-            !toks.is_empty() && !raw.contains("$(") && !fillable(&toks)
         })
 }
 
