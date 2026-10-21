@@ -13,9 +13,9 @@ function SweepBanner({ draft }: { draft: ImportDraft }) {
   const isClass = draft.detected.kinds.some((k) => k === "class" || k === "subclass");
   const { levelsPassed, errors } = draft.sweep;
   if (errors.length) return <Alert tone="warning">The level test found {errors.length} problem{errors.length > 1 ? "s" : ""}: {errors.join(" ")}</Alert>;
-  if (isClass && levelsPassed >= 20) return <Alert tone="success">Level 1–20 test passed ✓</Alert>;
+  if (isClass && levelsPassed >= 20) return <Alert tone="success">Level 1–20 test passed</Alert>;
   if (isClass) return <Alert tone="warning">Level test reached level {levelsPassed} of 20.</Alert>;
-  return <Alert tone="success">Engine check passed ✓</Alert>;
+  return <Alert tone="success">Engine check passed</Alert>;
 }
 
 const NOTE_ITEMS_SHOWN = 8;
@@ -102,7 +102,7 @@ export function ReviewStep({ run, draft, bar }: { run: ImportRun; draft: ImportD
         <Tag>{Math.round(draft.detected.confidence * 100)}% sure</Tag>
       </div>
       <ParentChooser draft={draft} onChoose={(id) => void run.choosePar(id)} />
-      {aiEnabled && <Expander title="Ask the AI to change anything">
+      {aiEnabled && <Expander title="Ask the AI to change anything" defaultOpen={false}>
         <form className="v5-inline" onSubmit={(e) => { e.preventDefault(); if (instruction.trim()) { void run.revise(instruction.trim()); setInstruction(""); } }}>
           <TextField label="Ask the AI to change anything" value={instruction} onChange={(e) => setInstruction(e.target.value)} placeholder="e.g. make the capstone weaker" />
           <div><Button type="submit" icon="sparkles" disabled={!instruction.trim() || run.revising.has("*")}>{run.revising.has("*") ? "Working..." : "Apply"}</Button></div>

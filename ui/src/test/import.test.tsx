@@ -13,10 +13,11 @@ describe("import anything", () => {
     await user.type(await screen.findByLabelText("Paste text"), "Runebinder: a half-caster class that etches runes.");
     await user.click(screen.getByRole("button", { name: "Import" }));
     expect(await screen.findByRole("progressbar", { name: "Import progress" })).toBeTruthy();
-    expect(await screen.findByText("Level 1–20 test passed ✓", {}, { timeout: 3000 })).toBeTruthy();
+    expect(await screen.findByText("Level 1–20 test passed", {}, { timeout: 3000 })).toBeTruthy();
 
     const capstone = screen.getByRole("region", { name: "Master Runebinder" });
     expect(within(capstone).getByText("Check this")).toBeTruthy();
+    await user.click(within(capstone).getByRole("button", { name: /^Details \(/ }));
     expect(within(capstone).getByText(/Capstone has no cost/)).toBeTruthy();
     expect(within(screen.getByRole("region", { name: "Rune Etching" })).getByText("OK")).toBeTruthy();
 

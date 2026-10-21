@@ -68,7 +68,7 @@ export function PacksTab() {
         {!mobile && <Button icon="upload" onClick={() => void pickFolder()}>Import my content folder</Button>}
         <Button icon="upload" onClick={() => void chooseFiles()}>Import files</Button>
       </>}>
-        <p className="muted">Import XML files, .index files, a .zip{mobile ? "" : " or your whole custom content folder"}. A preview lists what will be added before you install it. <Button small variant="clear" onClick={notice.read}>Content import notice</Button></p>
+        <p className="muted">Import XML files, .index files, a .zip{mobile ? "" : " or your whole custom content folder"}. A preview lists what will be added before you install it. <button type="button" className="v4-inline-link" onClick={notice.read}>Content import notice</button></p>
         <input ref={fileRef} type="file" multiple accept={mobile ? `${CONTENT_ACCEPT},${UNTYPED_FILE}` : CONTENT_ACCEPT} hidden aria-label="Choose content files" onChange={(e) => void onFiles(e.target.files)} />
       </Section>
       <Section title="Installed packs">

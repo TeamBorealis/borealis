@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ImportElement } from "../../api/contract";
 import { Button } from "../../components";
+import { Expander } from "../../components/controls";
 import { DescHead, Tag, type TagTone } from "../ai/Panes";
 import { ElementActions, type ActionHandlers } from "./ElementActions";
 import { type LineRange, SourcePane } from "./SourcePane";
@@ -32,10 +33,11 @@ function DetailList({ element }: { element: ImportElement }) {
   const items = [...new Set([...element.review.details, ...element.balanceFlags.map((f) => `Balance: ${f}`), ...element.validationIssues])];
   if (!items.length) return null;
   return (
-    <details className="imp-details">
-      <summary>Details ({items.length})</summary>
-      <ul>{items.map((d, i) => <li key={`${i}-${d}`}>{d}</li>)}</ul>
-    </details>
+    <div className="imp-details">
+      <Expander title={`Details (${items.length})`} defaultOpen={false}>
+        <ul>{items.map((d, i) => <li key={`${i}-${d}`}>{d}</li>)}</ul>
+      </Expander>
+    </div>
   );
 }
 
@@ -78,10 +80,11 @@ export function ElementRow(props: ElementRowProps) {
             {error && <p className="error-text" role="alert">{error}</p>}
             <div className="imp-split">
               <ElementSide element={element} onSaveJson={onSaveJson} />
-              <details className="imp-source-box" open>
-                <summary>Source passage</summary>
-                <SourcePane lines={sourceLines} passage={element.sourcePassage} picked={picked} onPick={setPicked} disabled={busy} />
-              </details>
+              <div className="imp-source-box">
+                <Expander title="Source passage">
+                  <SourcePane lines={sourceLines} passage={element.sourcePassage} picked={picked} onPick={setPicked} disabled={busy} />
+                </Expander>
+              </div>
             </div>
             <ElementActions {...props} picked={picked} onPicked={() => setPicked(null)} />
             {onReport && <div className="v5-foot"><Button small variant="ghost" onClick={onReport}>Report a problem</Button></div>}

@@ -14,7 +14,7 @@ async function reviewClass(user: User, api = mock()) {
   const view = renderApp("/import", { api });
   await user.type(await screen.findByLabelText("Paste text"), "Runebinder: a half-caster class that etches runes.");
   await user.click(screen.getByRole("button", { name: "Import" }));
-  await screen.findByText("Level 1–20 test passed ✓", {}, { timeout: 3000 });
+  await screen.findByText("Level 1–20 test passed", {}, { timeout: 3000 });
   return view;
 }
 const regions = () => screen.getAllByRole("region").filter((r) => r.closest("ul[aria-label='Imported elements']")).map((r) => r.getAttribute("aria-label"));
@@ -62,14 +62,14 @@ describe("import review screen (HB2)", () => {
     expect(region("Rockling").querySelector(".v5-sub")?.textContent).toMatch(/flying speed of 30 feet/);
   });
 
-  it("collapses the rest of an element's notes behind a details disclosure", async () => {
+  it("collapses the rest of an element's notes behind an expander", async () => {
     const user = userEvent.setup();
     await reviewClass(user);
-    const details = within(region("Master Runebinder")).getByText(/^Details \(/).closest("details") as HTMLDetailsElement;
-    expect(details.open).toBe(false);
-    await user.click(within(details).getByText(/^Details \(/));
-    expect(details.open).toBe(true);
-    expect(within(details).getAllByText(/Spell level cap missing/)).toHaveLength(1);
+    const details = within(region("Master Runebinder")).getByRole("button", { name: /^Details \(/ });
+    expect(details.getAttribute("aria-expanded")).toBe("false");
+    await user.click(details);
+    expect(details.getAttribute("aria-expanded")).toBe("true");
+    expect(within(region("Master Runebinder")).getAllByText(/Spell level cap missing/)).toHaveLength(1);
   });
 
   it("relocates an element to the lines picked in the source", async () => {

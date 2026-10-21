@@ -93,3 +93,7 @@
 .v4-5et-count { display: inline-block; min-width: 28px; margin-right: 4px; color: var(--gold); font-variant-numeric: tabular-nums; }
 .v4-5et-notes { margin: 0; padding: 0; list-style: none; font-size: var(--fs-sm); max-height: 260px; overflow: auto; }
 .v4-5et-notes li { min-height: 21px; padding: 0 5px; border-bottom: 1px solid rgba(0, 0, 0, .04); overflow-wrap: anywhere; }
+
+/* FX-56: the notice link sits in the copy line without raising the line box */
+.v4-inline-link { display: inline; background: none; border: 0; padding: 0; margin: 0; font: inherit; line-height: inherit; color: var(--gold); text-transform: uppercase; font-size: 10px; font-weight: 600; cursor: pointer; }
+.v4-inline-link:hover { text-decoration: underline; }

@@ -13,7 +13,7 @@
 .import-page h2 { margin: 23px 0 6px; padding-bottom: 1px; font-size: 16px; font-weight: 600; text-transform: uppercase; color: var(--desc-head); border-bottom: 1px solid #333333; }
 
 /* Opt-in bug report: the self-check band sits in the group margins; the payload preview scrolls inside the dialog. */
-.import-page .imp-report-band { display: flex; flex-direction: column; gap: 6px; margin: 6px 16px 10px 14px; }
+.import-page .imp-report-band { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 10px; }
 .imp-report-dlg .imp-report-lead { margin: 0; }
 .imp-report-dlg .imp-report-json { max-height: 320px; overflow: auto; margin: 0; padding: 6px 8px; font-size: 12px; white-space: pre; background: var(--description-bg, #1e1e1e); border: 1px solid #333333; }
 
@@ -29,7 +29,7 @@
 .import-page .imp-summary { margin: 0 0 6px; white-space: pre-wrap; }
 .import-page .imp-textonly { margin: 0 0 6px; padding: 4px 8px; border-left: 3px solid var(--warning); background: var(--warning-soft); }
 .import-page .imp-hint { margin: 2px 0 6px; font-size: 12px; opacity: 0.85; }
-.import-page .imp-details summary, .import-page .imp-source-box > summary { cursor: pointer; font-weight: 600; }
+.import-page .imp-details ul { margin: 0; padding: 6px 8px 6px 24px; }
 .import-page .imp-source-lines { max-height: 260px; overflow: auto; border: 1px solid #333333; background: var(--description-bg, #1e1e1e); }
 .import-page .imp-lines { list-style: none; margin: 0; padding: 0; }
 .import-page .imp-line { display: flex; gap: 6px; padding: 0 6px 0 0; font-size: 12px; line-height: 1.5; border-left: 3px solid transparent; }

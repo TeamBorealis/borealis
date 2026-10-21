@@ -9,7 +9,7 @@ const fast = () => new MockApi({ aiChunkDelayMs: 2, importStepMs: 1, aiEnabled: 
 async function reviewRunebinder(user: ReturnType<typeof userEvent.setup>) {
   await user.type(await screen.findByLabelText("Paste text"), "Runebinder: a half-caster class that etches runes.");
   await user.click(screen.getByRole("button", { name: "Import" }));
-  await screen.findByText("Level 1–20 test passed ✓", {}, { timeout: 3000 });
+  await screen.findByText("Level 1–20 test passed", {}, { timeout: 3000 });
 }
 
 describe("import bug reports (opt-in)", () => {
