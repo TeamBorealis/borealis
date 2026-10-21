@@ -2,23 +2,24 @@ import { describe, test } from '@e2e-dev/web';
 import { expect } from 'e2e';
 import { bootToHome } from '../support/index.js';
 import { pressKey } from '../support/flows-b.js';
+import type { Ctx } from '../support/flows-a.js';
 
 // AI is optional: a fresh desktop profile has no AI entries and no setup wizard, the Settings switch reveals them,
 // and a phone build never shows AI text. Deterministic: no model.
 const SERAPHINE = 'Seraphine Vale, Level 2 Elf Wizard';
 const AI_TEXT = /\bAI\b|assistant|codex|claude|\bpair/i;
 
-const pageText = (ctx: any): Promise<string> => ctx.browser.evaluate((_: null) => document.body.innerText, null);
-const hasAiText = async (ctx: any): Promise<boolean> => AI_TEXT.test(await pageText(ctx));
+const pageText = (ctx: Ctx): Promise<string> => ctx.browser.evaluate((_: null) => document.body.innerText, null);
+const hasAiText = async (ctx: Ctx): Promise<boolean> => AI_TEXT.test(await pageText(ctx));
 
-async function menuHasAi(ctx: any, menu: string): Promise<boolean> {
+async function menuHasAi(ctx: Ctx, menu: string): Promise<boolean> {
   await ctx.screen.getByRole('menuitem', menu).tap();
   const found = await hasAiText(ctx);
   await pressKey(ctx, 'Escape');
   return found;
 }
 
-async function openBorealisSettings(ctx: any): Promise<void> {
+async function openBorealisSettings(ctx: Ctx): Promise<void> {
   await ctx.screen.getByRole('menuitem', 'View').tap();
   await ctx.screen.getByRole('menuitem', 'Borealis Settings').tap();
   await expect(ctx.screen.getByRole('dialog', 'Borealis Settings')).toBeVisible();

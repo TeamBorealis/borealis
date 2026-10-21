@@ -1,5 +1,6 @@
 import { describe, test } from '@e2e-dev/mobile';
 import { expect } from 'e2e';
+import type { TestFixtures } from 'e2e';
 import type { Device } from '@e2e-dev/mobile';
 
 /**
@@ -16,7 +17,7 @@ export const SLOW = { timeout: 60_000 } as const;
 
 export const CHARACTER_NAME = 'Mira Test';
 
-type Screen = Parameters<Parameters<typeof import('@e2e-dev/mobile').test>[1]>[0]['screen'];
+type Screen = TestFixtures['screen'];
 
 /** Start page -> New character dialog -> name -> Create. Leaves the app on the Build page. */
 export async function createCharacter(screen: Screen, device: Device, name: string): Promise<void> {
@@ -57,7 +58,7 @@ export function navLink(screen: Screen, platform: MobilePlatform, name: RegExp) 
   return platform === 'ios' ? screen.getByRole('link', name) : screen.getByLabel(name);
 }
 
-type Context = Parameters<Parameters<typeof test>[1]>[0];
+type Context = TestFixtures & { device: Device };
 type Body = (context: Context, platform: MobilePlatform) => Promise<void>;
 
 /** Registers one suite on iOS (runs) and on Android (runs); same body, strict assertions. */

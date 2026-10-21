@@ -1,9 +1,10 @@
 import { expect } from 'e2e';
+import type { TestFixtures } from 'e2e';
 import type { Device } from '@e2e-dev/mobile';
 import type { MobilePlatform } from './mobile.js';
 import { IOS_PICKER_BROWSE, IOS_PICKER_ON_MY_IPHONE, IOS_PICKER_OPEN, iosOpenButtonShown, iosPickerCell } from './mobile-acceptance.js';
 
-type Screen = Parameters<Parameters<typeof import('@e2e-dev/mobile').test>[1]>[0]['screen'];
+type Screen = TestFixtures['screen'];
 type Locator = ReturnType<Screen['getByText']>;
 
 /** Swipes of the content page tried before a node counts as missing (the 5etools section is far down). */

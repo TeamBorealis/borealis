@@ -1,17 +1,18 @@
 import { describe, test } from '@e2e-dev/web';
 import { expect } from 'e2e';
 import { expectEqual, bootToHome, realClick } from '../support/index.js';
+import type { Ctx } from '../support/flows-a.js';
 import { pressKey, textsOf, waitStatus } from '../support/flows-b.js';
 
 // Application Settings dialog: left vertical tabs, footer Restore defaults / Save / Cancel, Cancel discards, URL unchanged.
 const TAB_ORDER = 'GENERAL|APPEARANCE|CHARACTER BUILD|DATA FILES|EQUIPMENT|CHARACTER SHEET|LICENSE|ABOUT';
 
-async function openSettings(ctx: Parameters<typeof bootToHome>[0] & { browser: any }) {
+async function openSettings(ctx: Ctx) {
   await ctx.screen.getByRole('menuitem', 'View').tap();
   await ctx.screen.getByRole('menuitem', /^Application settings/i).tap();
   await expect(ctx.screen.getByRole('dialog', 'Application Settings')).toBeVisible();
 }
-const flowState = (ctx: any): Promise<string> =>
+const flowState = (ctx: Ctx): Promise<string> =>
   ctx.browser.evaluate((_: null) => document.querySelector('.aur-status button.flow-on, .aur-status button.flow-off')?.className ?? 'missing', null);
 
 describe('w11', { tags: ['w11'] }, () => {

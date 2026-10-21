@@ -5,6 +5,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "e2e": "E2E_TELEMETRY_DISABLED=1 e2e run --target web",
     "e2e:replay": "E2E_TELEMETRY_DISABLED=1 e2e run --target web --strict-cache",
     "e2e:ci": "E2E_TELEMETRY_DISABLED=1 CI=1 e2e run --target web --strict-cache",

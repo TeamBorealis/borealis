@@ -4,14 +4,15 @@ import { expectEqual, bootToHome } from '../support/index.js';
 import {
   clickByText, clickCss, clickSubTab, dblClickByText, dblClickCss, rawTextOf, textOf, waitFor, waitStatus,
 } from '../support/flows-a.js';
+import type { Ctx } from '../support/flows-a.js';
 
 // Create a new character: edition first, point buy cannot overspend, per-ability picker. Deterministic: no model.
 const NEW_BTN = 'button.aur-newchar';
 const CREATE = 'Create character';
 
-async function openNewFlyout(ctx: Parameters<typeof bootToHome>[0] & { browser: any; screen: any }) {
+async function openNewFlyout(ctx: Ctx) {
   await bootToHome(ctx);
-  await clickCss(ctx as never, NEW_BTN);
+  await clickCss(ctx, NEW_BTN);
   await expect(ctx.screen.getByRole('dialog', 'New character')).toBeVisible();
 }
 

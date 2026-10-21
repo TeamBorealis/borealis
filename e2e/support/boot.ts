@@ -1,12 +1,10 @@
 import { expect } from 'e2e';
+import type { TestFixtures } from 'e2e';
 
 /** Route hash the UI starts on. The shell uses HashRouter: `/#/characters`. */
 export const HOME = '/#/characters';
 
-interface BootCtx {
-  app: { open(path?: string): Promise<void> };
-  screen: { getByRole(role: 'menuitem', name: string): unknown };
-}
+type BootCtx = Pick<TestFixtures, 'app' | 'screen'>;
 
 /**
  * Boot to a known state: fresh browser context (MockApi is in-memory, so every page load

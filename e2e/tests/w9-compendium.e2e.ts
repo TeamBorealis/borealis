@@ -41,7 +41,7 @@ describe('w9', { tags: ['w9'] }, () => {
 
     // F1 / Esc close; F1 toggles open again.
     await pressKey(ctx, 'Escape');
-    await expect(dlg, 'Esc closes').toBeHidden();
+    await expect(dlg).toBeHidden(); // Esc closes
     await pressKey(ctx, 'F1');
     await expect(dlg).toBeVisible();
   });

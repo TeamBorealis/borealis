@@ -1,20 +1,10 @@
 import { expect } from 'e2e';
 import { realClick } from './real-click.js';
-import type { BrowserLike, LocatorLike, ScreenLike } from './types.js';
+import type { Locator } from 'e2e';
+import type { Ctx } from './flows-a.js';
 
-/** Structural slice of the test fixtures used by the flows (keeps helpers independent of unexported types). */
-export interface FlowCtx {
-  app: { open(path?: string): Promise<void> };
-  screen: ScreenLike & {
-    getByRole(role: string, name?: string, opts?: { exact?: boolean }): any;
-    getByLabel(label: string, opts?: { exact?: boolean }): any;
-    getByText(text: string | RegExp, opts?: { exact?: boolean }): any;
-  };
-  browser: BrowserLike & {
-    locator(css: string): LocatorLike & any;
-    keyboard: { press(key: string): Promise<void>; type(text: string): Promise<void> };
-  };
-}
+/** The web test fixtures the flows use. */
+export type FlowCtx = Ctx;
 
 /** Viewport-level key press (working call: `browser.keyboard.press('Control+s' | 'F8' | 'Escape' | 'Alt+q')`). */
 export function pressKey(ctx: FlowCtx, key: string): Promise<void> {
@@ -70,7 +60,7 @@ export { realClick };
  * must be (inside) an element whose trimmed innerText equals `text`, otherwise fails naming the
  * covering element (e.g. a scrim over a menu item). Then clicks that point with the real mouse.
  */
-export async function realClickText(ctx: FlowCtx, locator: LocatorLike, css: string, text: string): Promise<void> {
+export async function realClickText(ctx: FlowCtx, locator: Locator, css: string, text: string): Promise<void> {
   await locator.waitFor({ state: 'visible' });
   const box = await locator.boundingBox();
   if (!box) throw new Error(`realClickText: no box for ${css}`);

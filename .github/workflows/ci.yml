@@ -64,6 +64,13 @@ jobs:
       # Also produces ui/dist, which the Tauri crate needs to compile.
       - run: npm run build
         working-directory: ui
+      # The e2e suite is TypeScript too: typecheck it next to the UI (no browser needed).
+      - name: e2e typecheck (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          npm ci
+          npm run typecheck
+        working-directory: e2e
       - name: rustfmt (Linux only)
         if: runner.os == 'Linux'
         run: cargo fmt --all --check

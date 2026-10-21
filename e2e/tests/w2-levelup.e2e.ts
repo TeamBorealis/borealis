@@ -145,7 +145,7 @@ describe('w2 level up', { tags: ['w2'] }, () => {
     await clickByText(ctx, '.flyout button', 'OK');
     await openLevelUp(ctx);
     await waitFor(ctx, (_: null) => document.querySelectorAll('.hp-rolls').length > 0, null, 'HP roll boxes');
-    expect(await browser.evaluate((_: null) => document.querySelector('.hp-rolls')?.getAttribute('aria-label'), null)).toBe('Hit point rolls (d6)');
+    expect(await browser.evaluate((_: null) => document.querySelector('.hp-rolls')?.getAttribute('aria-label') ?? null, null)).toBe('Hit point rolls (d6)');
     // Wizard d6: level 1 is fixed at the die maximum; level 2 has an adjustable roll (1..6).
     expectEqual('level 1 HP (fixed at max)', 'Lv 1 6 (max)', (await textOf(ctx, '.hp-rolls .lvl-roll')).replace(/\s+/g, ' ').trim());
     const roll = 'output[aria-label="Wizard level 2 HP roll value"]';

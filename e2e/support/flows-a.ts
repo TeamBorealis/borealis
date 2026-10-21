@@ -1,16 +1,10 @@
 import { expect } from 'e2e';
+import type { JsonValue, TestFixtures } from 'e2e';
+import type { Browser } from '@e2e-dev/web';
 import { realClick } from './real-click.js';
 
-/** Structural slice of the fixtures (kept loose so helpers do not depend on unexported types). */
-export interface Ctx {
-  app: { open(path?: string): Promise<void> };
-  screen: { tapAt(p: { x: number; y: number }): Promise<void>; getByRole(role: string, name?: string, opts?: { exact?: boolean }): any };
-  browser: {
-    evaluate<R, A>(fn: (arg: A) => R, arg: A): Promise<R>;
-    locator(css: string): any;
-    keyboard: { press(key: string): Promise<void> };
-  };
-}
+/** The web test fixtures the flows use (the engine's own types, so `expect` and queries stay typed). */
+export type Ctx = Pick<TestFixtures, 'app' | 'screen'> & { browser: Browser };
 
 const POLL_MS = 100;
 const WAIT_MS = 5000;
@@ -36,7 +30,7 @@ export async function expectStatus(ctx: Ctx, want: string): Promise<void> {
 }
 
 /** Generic poll for a page-side predicate. */
-export async function waitFor<A>(ctx: Ctx, fn: (arg: A) => boolean, arg: A, what: string, timeoutMs = WAIT_MS): Promise<void> {
+export async function waitFor<A extends JsonValue>(ctx: Ctx, fn: (arg: A) => boolean, arg: A, what: string, timeoutMs = WAIT_MS): Promise<void> {
   const end = Date.now() + timeoutMs;
   for (;;) {
     if (await ctx.browser.evaluate(fn, arg)) return;
@@ -55,6 +49,7 @@ export async function dblClickCss(ctx: Ctx, css: string): Promise<void> {
   const loc = ctx.browser.locator(css).first();
   await loc.waitFor({ state: 'visible' });
   const box = await loc.boundingBox();
+  if (!box) throw new Error(`dblClickCss: no box for ${css}`);
   const hit = await ctx.browser.evaluate(({ css, x, y }) => {
     const top = document.elementFromPoint(x, y);
     return !!top && Array.from(document.querySelectorAll(css)).some((t) => t === top || t.contains(top));
@@ -177,6 +172,7 @@ export async function dblClickByText(ctx: Ctx, css: string, text: string): Promi
   const loc = ctx.browser.locator(css).nth(idx);
   await loc.waitFor({ state: 'visible' });
   const box = await loc.boundingBox();
+  if (!box) throw new Error(`dblClickByText: no box for ${css} "${text}"`);
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
   const hit = await ctx.browser.evaluate(({ css, idx, x, y }) => {
@@ -193,7 +189,7 @@ export async function dblClickByText(ctx: Ctx, css: string, text: string): Promi
  * hit-tests the centre and taps it with the real mouse. A single press (mouse-down + up) is what full-row selection must accept.
  */
 export async function clickCellInRow(ctx: Ctx, rowCss: string, rowText: string, cellCss: string): Promise<void> {
-  const pt = await ctx.browser.evaluate(({ rowCss, rowText, cellCss }) => {
+  const pt = await ctx.browser.evaluate(({ rowCss, rowText, cellCss }): { err: string } | { x: number; y: number } => {
     const row = Array.from(document.querySelectorAll(rowCss)).find((r) => (r.textContent ?? '').includes(rowText));
     if (!row) return { err: `no ${rowCss} containing "${rowText}"` };
     const cell = row.querySelector(cellCss);
@@ -206,7 +202,7 @@ export async function clickCellInRow(ctx: Ctx, rowCss: string, rowText: string, 
     return { x, y };
   }, { rowCss, rowText, cellCss });
   if ('err' in pt) throw new Error(`clickCellInRow: ${pt.err}`);
-  await ctx.screen.tapAt({ x: pt.x as number, y: pt.y as number });
+  await ctx.screen.tapAt({ x: pt.x, y: pt.y });
 }
 
 /** Text of the rows matching `css`, whitespace collapsed. */

@@ -1,6 +1,7 @@
+import type { TestFixtures } from 'e2e';
 import type { MobilePlatform } from './mobile.js';
 
-type Screen = Parameters<Parameters<typeof import('@e2e-dev/mobile').test>[1]>[0]['screen'];
+type Screen = TestFixtures['screen'];
 
 /**
  * A Build picker row (one node named "<Name>, <Source>"). iOS reports it as a `switch` (the row carries

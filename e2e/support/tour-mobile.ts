@@ -1,6 +1,8 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, test } from '@e2e-dev/mobile';
+import type { Device } from '@e2e-dev/mobile';
+import type { TestFixtures } from 'e2e';
 import type { MobilePlatform } from './mobile.js';
 
 /**
@@ -8,7 +10,7 @@ import type { MobilePlatform } from './mobile.js';
  * injected overlay, so each caption is only LOGGED here (epoch ms) and burned into the MP4 afterwards by
  * scripts/collect-videos.mjs, which aligns it with the video through the report's artifact `startedAt`.
  */
-type Context = Parameters<Parameters<typeof test>[1]>[0];
+type Context = TestFixtures & { device: Device };
 export interface MobileCaption { text: string; at: number }
 export interface MobileTourLog { name: string; platform: MobilePlatform; title: string; captions: MobileCaption[]; endedAt: number }
 

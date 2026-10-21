@@ -2,6 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import { expect } from 'e2e';
 import { describe, test } from '@e2e-dev/mobile';
+import type { Device } from '@e2e-dev/mobile';
+import type { TestFixtures } from 'e2e';
 import { freshInstall, SLOW } from '../../support/mobile.js';
 import type { MobilePlatform } from '../../support/mobile.js';
 import { deliverInputs, peakMemoryKb, readDigest, requestDigest, thresholdBreaches, writeResult } from '../../support/mobile-acceptance.js';
@@ -30,7 +32,7 @@ function input(name: string): string {
   return path;
 }
 
-type Context = Parameters<Parameters<typeof test>[1]>[0];
+type Context = TestFixtures & { device: Device };
 
 async function m4({ app, device, screen }: Context, platform: MobilePlatform): Promise<void> {
   const aUser = input('E2E_S5_A_USER_ZIP');
