@@ -2,10 +2,10 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MockApi } from "../api/mock";
-import { checkWithFetch, isNewer, openDownload, parseVersion, resetAppUpdate } from "../state/appUpdate";
+import { checkWithFetch, isNewer, MAX_NOTES_CHARS, openDownload, parseVersion, resetAppUpdate } from "../state/appUpdate";
 import { openBorealisSettings, renderApp } from "./utils";
 
-const NEWER = { state: "done", current: "1.0.0", latest: "1.0.1", newer: true, url: "https://borealisbuilder.com/#download", releaseUrl: null, checkedAt: "2026-10-15T09:00:00Z" } as const;
+const NEWER = { state: "done", current: "1.0.0", latest: "1.0.1", newer: true, url: "https://borealisbuilder.com/#download", releaseUrl: null, notes: null, checkedAt: "2026-10-15T09:00:00Z" } as const;
 const fast = () => new MockApi({ aiChunkDelayMs: 1, rng: () => 0.5 });
 
 beforeEach(() => { resetAppUpdate(); });
@@ -26,6 +26,16 @@ describe("phone check with fetch()", () => {
   it("reports a newer release and the download page", async () => {
     const s = await checkWithFetch("1.0.0", answer({ tag_name: "v1.0.1", html_url: "https://github.com/alon-mini/borealis/releases/tag/v1.0.1" }));
     expect(s).toMatchObject({ state: "done", latest: "1.0.1", newer: true, url: "https://borealisbuilder.com/#download" });
+  });
+  it("carries the release notes, trimmed and capped, and none when blank", async () => {
+    const base = { tag_name: "v1.0.1" };
+    expect((await checkWithFetch("1.0.0", answer({ ...base, body: "  ## New\r\n- a fix \n" }))).notes).toBe("## New\n- a fix");
+    expect((await checkWithFetch("1.0.0", answer({ ...base, body: "  \n" }))).notes).toBeNull();
+    expect((await checkWithFetch("1.0.0", answer({ ...base, body: null }))).notes).toBeNull();
+    expect((await checkWithFetch("1.0.0", answer(base))).notes).toBeNull();
+    const long = (await checkWithFetch("1.0.0", answer({ ...base, body: "x".repeat(MAX_NOTES_CHARS + 10) }))).notes!;
+    expect(long).toHaveLength(MAX_NOTES_CHARS + 3);
+    expect(long.endsWith("...")).toBe(true);
   });
   it("is quiet when offline, rate limited or the release is a pre-release", async () => {
     expect((await checkWithFetch("1.0.0", vi.fn(async () => { throw new Error("offline"); }) as unknown as typeof fetch)).state).toBe("failed");
@@ -68,6 +78,32 @@ describe("update button and UPDATE AVAILABLE flyout", () => {
     await act(async () => { await api.checkAppUpdate(); });
     await user.click(await screen.findByRole("button", { name: "Update available" }));
     expect((await screen.findByRole("dialog", { name: "Update available" })).textContent).toContain("1.0.2");
+  });
+
+  it("shows the release notes as text in the description pane, never as HTML", async () => {
+    const user = userEvent.setup();
+    const api = fast();
+    api.appUpdate.status = { ...NEWER, notes: "## What's new\n- Faster **imports**\n- <img src=x onerror=alert(1)>" };
+    renderApp("/characters", { api });
+    await user.click(await screen.findByRole("button", { name: "Update available" }));
+    const flyout = await screen.findByRole("dialog", { name: "Update available" });
+    const notes = within(flyout).getByTestId("update-notes");
+    expect(notes.textContent).toContain("What's new");
+    expect(notes.querySelector("strong")!.textContent).toBe("imports");
+    expect(notes.querySelectorAll("li")).toHaveLength(2);
+    expect(notes.querySelector("img")).toBeNull();
+    expect(notes.textContent).toContain("<img src=x onerror=alert(1)>");
+  });
+
+  it("a missing body shows no empty notes pane", async () => {
+    const user = userEvent.setup();
+    const api = fast();
+    api.appUpdate.status = { ...NEWER };
+    renderApp("/characters", { api });
+    await user.click(await screen.findByRole("button", { name: "Update available" }));
+    const flyout = await screen.findByRole("dialog", { name: "Update available" });
+    expect(within(flyout).queryByTestId("update-notes")).toBeNull();
+    expect(flyout.textContent).toContain("You have version 1.0.0");
   });
 
   it("sits in the title-bar commands left of the website button and pushes nothing down", async () => {

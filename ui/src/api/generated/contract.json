@@ -2510,6 +2510,12 @@
       "k": "prim"
      }
     },
+    "notes": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "releaseUrl": {
      "opt": false,
      "t": {

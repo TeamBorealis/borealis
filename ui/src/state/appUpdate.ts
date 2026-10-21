@@ -36,7 +36,19 @@ export function isNewer(latest: string, current: string): boolean {
 }
 
 const bare = (state: AppUpdateStatus["state"], current: string): AppUpdateStatus =>
-  ({ state, current, latest: null, newer: false, url: null, releaseUrl: null, checkedAt: null });
+  ({ state, current, latest: null, newer: false, url: null, releaseUrl: null, notes: null, checkedAt: null });
+
+/** Same cap as the backend (characters). */
+export const MAX_NOTES_CHARS = 4000;
+
+/** Release body -> notes: trimmed, capped, null when absent or blank (same rules as the backend). */
+export function cleanNotes(body: unknown): string | null {
+  if (typeof body !== "string") return null;
+  const text = body.replace(/\r\n?/g, "\n").trim();
+  if (!text) return null;
+  const chars = Array.from(text);
+  return chars.length <= MAX_NOTES_CHARS ? text : `${chars.slice(0, MAX_NOTES_CHARS).join("").trimEnd()}...`;
+}
 
 /** Phones: one GET to GitHub with `fetch()` (no cookies, no custom headers), same answer shape as the backend. Never throws. */
 export async function checkWithFetch(current: string, fetchFn: typeof fetch = fetch): Promise<AppUpdateStatus> {
@@ -46,12 +58,12 @@ export async function checkWithFetch(current: string, fetchFn: typeof fetch = fe
     const timer = setTimeout(() => ctl.abort(), FETCH_TIMEOUT_MS);
     const res = await fetchFn(RELEASES_API, { credentials: "omit", signal: ctl.signal }).finally(() => clearTimeout(timer));
     if (!res.ok) return { ...bare("failed", current), checkedAt: now };
-    const rel = (await res.json()) as { tag_name?: unknown; html_url?: unknown; draft?: unknown; prerelease?: unknown };
+    const rel = (await res.json()) as { tag_name?: unknown; html_url?: unknown; body?: unknown; draft?: unknown; prerelease?: unknown };
     const v = typeof rel.tag_name === "string" && !rel.draft && !rel.prerelease ? parseVersion(rel.tag_name) : null;
     if (!v) return { ...bare("failed", current), checkedAt: now };
     const html = typeof rel.html_url === "string" && rel.html_url.startsWith(RELEASE_PAGE_PREFIX) ? rel.html_url : null;
     const latest = v.join(".");
-    return { state: "done", current, latest, newer: isNewer(latest, current), url: DOWNLOAD_PAGE, releaseUrl: html, checkedAt: now };
+    return { state: "done", current, latest, newer: isNewer(latest, current), url: DOWNLOAD_PAGE, releaseUrl: html, notes: cleanNotes(rel.body), checkedAt: now };
   } catch {
     return { ...bare("failed", current), checkedAt: now };
   }

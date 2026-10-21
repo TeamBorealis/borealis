@@ -23,6 +23,8 @@ const RELEASE_PAGE_PREFIX: &str = "https://github.com/alon-mini/borealis/";
 const MAX_RESPONSE_BYTES: usize = 512 * 1024;
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
 const MAX_REDIRECTS: usize = 3;
+/// Release notes longer than this (in characters) are cut, so a huge body never reaches the UI.
+pub const MAX_NOTES_CHARS: usize = 4000;
 /// Wait after startup before asking, so launch is never slowed.
 pub const STARTUP_CHECK_DELAY: Duration = Duration::from_secs(12);
 /// This build's version.
@@ -59,6 +61,8 @@ pub struct AppUpdateStatus {
     pub url: Option<String>,
     /// The GitHub release page, when GitHub gave a usable one.
     pub release_url: Option<String>,
+    /// The release's notes (GitHub's markdown `body`), trimmed and capped; `None` when empty or absent.
+    pub notes: Option<String>,
     /// RFC 3339 time of the last answer.
     pub checked_at: Option<String>,
 }
@@ -72,6 +76,7 @@ impl AppUpdateStatus {
             newer: false,
             url: None,
             release_url: None,
+            notes: None,
             checked_at: None,
         }
     }
@@ -82,6 +87,8 @@ struct Release {
     tag_name: String,
     #[serde(default)]
     html_url: Option<String>,
+    #[serde(default)]
+    body: Option<String>,
     #[serde(default)]
     draft: bool,
     #[serde(default)]
@@ -120,6 +127,22 @@ pub fn is_newer(latest: &str, current: &str) -> bool {
     }
 }
 
+/// The release body trimmed and cut to `MAX_NOTES_CHARS` characters (an ellipsis marks a cut);
+/// `None` when it is absent or blank.
+#[must_use]
+pub fn clean_notes(body: Option<&str>) -> Option<String> {
+    let text = body?.replace("\r\n", "\n");
+    let text = text.trim();
+    if text.is_empty() {
+        return None;
+    }
+    if text.chars().count() <= MAX_NOTES_CHARS {
+        return Some(text.to_string());
+    }
+    let cut: String = text.chars().take(MAX_NOTES_CHARS).collect();
+    Some(format!("{}...", cut.trim_end()))
+}
+
 /// Turn GitHub's answer into a status (`Done`), or say why it cannot be used.
 ///
 /// # Errors
@@ -141,6 +164,7 @@ pub fn evaluate(body: &[u8], current: &str, now: &str) -> Result<AppUpdateStatus
         newer: is_newer(&rel.tag_name, current),
         url: Some(DOWNLOAD_PAGE.to_string()),
         release_url,
+        notes: clean_notes(rel.body.as_deref()),
         checked_at: Some(now.to_string()),
     })
 }
@@ -352,6 +376,29 @@ mod tests {
         let s = evaluate(&body, "1.0.0", "t").unwrap();
         assert_eq!(s.release_url, None);
         assert_eq!(s.url.as_deref(), Some(DOWNLOAD_PAGE));
+    }
+
+    #[test]
+    fn release_notes_are_carried_trimmed_and_capped() {
+        let with = |body: &str| {
+            let json = serde_json::json!({"tag_name": "v9.0.0", "body": body}).to_string();
+            evaluate(json.as_bytes(), "1.0.0", "t").unwrap().notes
+        };
+        assert_eq!(
+            with("  ## New\r\n- a fix  \n").as_deref(),
+            Some("## New\n- a fix")
+        );
+        assert_eq!(with(""), None);
+        assert_eq!(with(" \n\t "), None);
+        let long = with(&"\u{e9}".repeat(MAX_NOTES_CHARS + 50)).unwrap();
+        assert_eq!(long.chars().count(), MAX_NOTES_CHARS + 3);
+        assert!(long.ends_with("..."));
+        let exact = "x".repeat(MAX_NOTES_CHARS);
+        assert_eq!(with(&exact).as_deref(), Some(exact.as_str()));
+        let absent = br#"{"tag_name":"v9.0.0"}"#;
+        assert_eq!(evaluate(absent, "1.0.0", "t").unwrap().notes, None);
+        let null = br#"{"tag_name":"v9.0.0","body":null}"#;
+        assert_eq!(evaluate(null, "1.0.0", "t").unwrap().notes, None);
     }
 
     #[test]

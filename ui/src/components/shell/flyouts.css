@@ -107,3 +107,7 @@
 .upd-desc { flex: 1; background: var(--description-bg); padding: 10px 12px 20px; font-size: var(--fs-md); line-height: 1.5; }
 .upd-desc h4 { margin: 0 0 6px; font-size: var(--fs-md); font-weight: 600; text-transform: uppercase; }
 .upd-desc p { margin: 0 0 8px; }
+.upd-notes { margin: 0 0 8px; max-height: 40vh; overflow-y: auto; overflow-wrap: anywhere; }
+.upd-notes .v5-md-h { margin: 8px 0 4px; font-size: var(--fs-md); font-weight: 600; }
+.upd-notes ul, .upd-notes ol { margin: 0 0 8px; padding-left: 20px; }
+.upd-notes pre { margin: 0 0 8px; white-space: pre-wrap; }

@@ -4,6 +4,7 @@ import { Icon } from "../Icon";
 import { Flyout } from "../controls/Flyout";
 import { ToolTip } from "../controls/Controls";
 import { useApi } from "../../state/ApiContext";
+import { Markdown } from "../../pages/ai/markdown";
 import { dismissAppUpdate, openDownload, useAppUpdateView } from "../../state/appUpdate";
 
 const OPEN_EVENT = "borealis:update-flyout";
@@ -57,6 +58,7 @@ export function UpdateFlyout() {
         <section className="upd-desc" aria-label="Release">
           <h4>Borealis {latest}</h4>
           <p>Version {latest} of Borealis is available. You have version {status.current}.</p>
+          {status.notes && <div className="upd-notes" data-testid="update-notes"><Markdown text={status.notes} renderText={(t) => t} /></div>}
           <p>Download it from the Borealis website. Your characters and content stay where they are.</p>
         </section>
       </div>

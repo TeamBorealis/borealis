@@ -134,6 +134,8 @@ export interface AppUpdateStatus {
   url: string | null;
   /** The GitHub release page, when GitHub gave one. */
   releaseUrl: string | null;
+  /** The release notes (GitHub's markdown), trimmed and capped; null when there are none. */
+  notes: string | null;
   /** RFC 3339. */
   checkedAt: string | null;
 }
