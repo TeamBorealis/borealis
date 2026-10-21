@@ -567,7 +567,7 @@ fn starting_level_applies_extra_levels() {
 }
 
 #[test]
-fn slots_are_placed_on_the_right_tabs_and_forced_slots_are_filled() {
+fn slots_are_placed_on_the_right_tabs_and_a_sole_candidate_is_left_to_the_user() {
     let (_dir, app) = app();
     let snap = build(&app);
     let bg = snap
@@ -575,11 +575,12 @@ fn slots_are_placed_on_the_right_tabs_and_forced_slots_are_filled() {
         .iter()
         .find(|s| s.title == "Background")
         .expect("background slot");
-    assert_eq!(
-        bg.chosen.as_ref().map(|c| c.name.as_str()),
-        Some("Acolyte"),
-        "single candidate is forced"
-    );
+    // engine-optional-sole-option SO-1: Acolyte is the only SRD background, but without a
+    // `default` Aurora leaves the slot empty and unlocked
+    assert!(bg.chosen.is_none() && !bg.locked && bg.required, "{bg:?}");
+    let snap = app
+        .apply_selection(&snap.id, &bg.id, "ID_BACKGROUND_ACOLYTE")
+        .expect("acolyte");
     for title in ["Ideal", "Bond", "Flaw"] {
         let slot = snap.slots.iter().find(|s| s.title == title).expect("slot");
         assert_eq!(slot.tab, "background", "{title}");
@@ -592,4 +593,62 @@ fn slots_are_placed_on_the_right_tabs_and_forced_slots_are_filled() {
         .multiclass_blocked_reason
         .expect("blocked at 9 STR/DEX");
     assert!(reason.contains("Strength 13"), "{reason}");
+}
+
+/// engine-optional-sole-option SO-2/SO-3/SO-4: a slot's `default` is chosen when the slot first
+/// appears (the 2024 Fighter's level 4 feat defaults to Ability Score Improvement). While it is
+/// the only qualifying feat (all scores 8) the slot is locked and cannot be cleared; once
+/// Strength 15 lets other feats qualify it unlocks and keeps its choice; a cleared default is
+/// not re-applied by later commands.
+#[test]
+fn a_default_is_chosen_when_its_slot_appears_and_locks_while_it_is_the_sole_option() {
+    const FEAT_SLOT: &str = "Ability Score Improvement (Fighter 4)";
+    const ASI: &str = "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT";
+    let (_dir, app) = app();
+    let snap = app
+        .create_character(
+            Ruleset::Dnd2024,
+            &request("Ona", Ruleset::Dnd2024, AbilityMethodDto::Manual),
+        )
+        .expect("2024");
+    let id = snap.id.clone();
+    for a in ["str", "dex", "con", "int", "wis", "cha"] {
+        app.set_base_score(&id, a, 8).expect("score");
+    }
+    let mut s = app
+        .apply_selection(&id, &slot_id(&snap, "Class"), "ID_2024_CLASS_FIGHTER")
+        .expect("class");
+    assert!(!s.slots.iter().any(|x| x.title == FEAT_SLOT));
+    while s.level.total < 4 {
+        s = app.level_up(&id, "main").expect("level up");
+    }
+    let feat = s.slots.iter().find(|x| x.title == FEAT_SLOT).expect("feat");
+    assert_eq!(feat.chosen.as_ref().map(|c| c.id.as_str()), Some(ASI));
+    let feat_id = feat.id.clone();
+    let offered = |app: &AppState| {
+        app.get_slot_options(&id, &feat_id, None, Some(200), None)
+            .expect("options")
+            .items
+            .into_iter()
+            .filter(|o| o.disabled_reason.is_none())
+            .count()
+    };
+    assert_eq!(offered(&app), 1, "only ASI qualifies with 8s");
+    assert!(
+        feat.locked,
+        "a chosen default that is the sole option is locked"
+    );
+    assert_eq!(
+        code(app.clear_selection(&id, &feat_id)),
+        ErrorCode::InvalidArgument
+    );
+    let s = app.set_base_score(&id, "str", 15).expect("str 15");
+    assert!(offered(&app) > 1);
+    let feat = s.slots.iter().find(|x| x.id == feat_id).expect("feat");
+    assert!(!feat.locked, "a grown list unlocks the slot");
+    assert_eq!(feat.chosen.as_ref().map(|c| c.id.as_str()), Some(ASI));
+    app.clear_selection(&id, &feat_id).expect("clear");
+    let s = app.level_up(&id, "main").expect("level 5");
+    let feat = s.slots.iter().find(|x| x.id == feat_id).expect("feat");
+    assert!(feat.chosen.is_none(), "a cleared default is not re-applied");
 }

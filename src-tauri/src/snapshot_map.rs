@@ -436,31 +436,21 @@ fn slots(snap: &Engine) -> (Vec<SelectionSlot>, SelectionProgress) {
     (out, progress)
 }
 
-/// The shown choice of a slot: the stored pick, or the only candidate of a locked slot.
+/// The shown choice of a slot: the stored pick or list entry (a locked slot always holds one).
 fn chosen_ref(s: &SlotSnapshot) -> Option<crate::dto::ElementRef> {
     if let Some(c) = &s.chosen {
         return Some(engine_ref(c));
     }
-    if let Some(id) = s.list_choice {
-        let name = s
-            .list_items
-            .iter()
-            .find(|(i, _)| *i == id)
-            .map_or_else(|| id.to_string(), |(_, n)| n.clone());
-        return Some(crate::dto::ElementRef {
-            id: id.to_string(),
-            name,
-            ty: "list".into(),
-            source: s.owner.source.clone(),
-        });
-    }
-    match (s.locked, s.options.as_slice()) {
-        (true, [only]) => Some(crate::dto::ElementRef {
-            id: only.id.clone(),
-            name: only.name.clone(),
-            ty: ui_type(&s.ty).to_string(),
-            source: only.source.clone(),
-        }),
-        _ => None,
-    }
+    let id = s.list_choice?;
+    let name = s
+        .list_items
+        .iter()
+        .find(|(i, _)| *i == id)
+        .map_or_else(|| id.to_string(), |(_, n)| n.clone());
+    Some(crate::dto::ElementRef {
+        id: id.to_string(),
+        name,
+        ty: "list".into(),
+        source: s.owner.source.clone(),
+    })
 }

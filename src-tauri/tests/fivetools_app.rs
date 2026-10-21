@@ -129,7 +129,7 @@ fn build(
     while s.level.total < 3 {
         s = app.level_up(&id, "main").expect("level up");
     }
-    // a slot with a single candidate is filled automatically (locked), like in the UI
+    // the subclass may already be chosen by the slot's `default` (a sole candidate never is)
     let auto = s.slots.iter().any(|x| {
         x.element_type.eq_ignore_ascii_case("Archetype")
             && x.chosen.as_ref().is_some_and(|c| c.id == subclass)

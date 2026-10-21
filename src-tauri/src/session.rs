@@ -6,7 +6,8 @@ use crate::settings::AppSettings;
 use crate::snapshot_map::{build_snapshot, MapInput};
 use crate::state::{AppState, ContentHub, Session};
 use borealis_character::Character;
-use borealis_engine::Choice;
+use borealis_engine::{Choice, SlotKey};
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -178,28 +179,41 @@ fn snapshot_for(
     })
 }
 
-/// Select every locked slot that has exactly one candidate, repeating while new slots appear.
-/// Its derives go through the hub's cache: the last one is the state's snapshot that follows.
+/// Choose the rule `default` of every slot that is first populated by a command (engine-optional-
+/// sole-option SO-2): a slot whose key is not in `existing` (the slots of the state before the
+/// command) and whose list holds its default. Nothing else is ever chosen automatically (SO-1):
+/// a sole option without a default stays open for the user. Repeats while chosen defaults bring
+/// new slots. Its derives go through the hub's cache: the last one is the state's snapshot that
+/// follows.
 #[must_use]
-pub fn fill_locked(
+pub fn fill_defaults(
     hub: &ContentHub,
+    existing: &HashSet<SlotKey>,
     state: &borealis_engine::CharacterState,
 ) -> borealis_engine::CharacterState {
     let engine = &hub.engine;
+    let mut done = existing.clone();
     let mut current = state.clone();
     for _ in 0..MAX_FILL_PASSES {
         let snap = hub.derive(&current);
-        let pick = snap.slots.iter().find(|s| {
-            s.locked
+        let pick = snap.slots.iter().find_map(|s| {
+            let default = s
+                .default
+                .as_deref()
+                .map(str::trim)
+                .filter(|d| !d.is_empty())?;
+            (!done.contains(&s.key)
                 && s.chosen.is_none()
                 && s.rejected.is_none()
+                && s.missing.is_none()
                 && s.list_choice.is_none()
-                && s.options.len() == 1
+                && s.options.iter().any(|o| o.id == default))
+            .then(|| (s.key.clone(), default.to_string()))
         });
-        let Some(slot) = pick else { break };
-        let choice = Choice::Element(slot.options[0].id.clone());
-        match borealis_engine::commands::select_derived(engine, &current, &snap, &slot.key, choice)
-        {
+        let Some((key, default)) = pick else { break };
+        done.insert(key.clone());
+        let choice = Choice::Element(default);
+        match borealis_engine::commands::select_derived(engine, &current, &snap, &key, choice) {
             Ok(outcome) => {
                 hub.keep_derived(&outcome);
                 current = outcome.state;
@@ -208,4 +222,15 @@ pub fn fill_locked(
         }
     }
     current
+}
+
+/// Keys of every slot of `state` (rejected ones included): the slots that already exist before
+/// a command, whose `default` is therefore never applied again ([`fill_defaults`]).
+#[must_use]
+pub fn slot_keys(hub: &ContentHub, state: &borealis_engine::CharacterState) -> HashSet<SlotKey> {
+    hub.derive(state)
+        .slots
+        .iter()
+        .map(|s| s.key.clone())
+        .collect()
 }

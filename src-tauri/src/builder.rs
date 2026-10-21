@@ -8,7 +8,7 @@ use crate::elements::summary;
 use crate::error::{ApiError, ApiResult};
 use crate::extras::{array_assignment, set_ui_extras, ui_extras};
 use crate::ids::{ability_index, decode_class_slot, decode_slot, ui_type, ABILITY_KEYS};
-use crate::session::{fill_locked, new_id, Ctx, Draft};
+use crate::session::{fill_defaults, new_id, slot_keys, Ctx, Draft};
 use crate::state::AppState;
 use borealis_character::Character;
 use borealis_engine::commands::{self, CommandOutcome};
@@ -23,6 +23,8 @@ const MAX_PAGE: usize = 1000;
 const MAX_XP: i64 = 10_000_000;
 const DEFAULT_GROUP: &str = "Characters";
 const MAX_NAME_CHARS: usize = 120;
+/// A locked slot (default, sole option, chosen) cannot be changed or cleared (SO-3, SO-4).
+const LOCKED_SLOT: &str = "This selection is locked.";
 
 /// Apply a command outcome to a draft.
 pub(crate) fn apply(d: &mut Draft, outcome: CommandOutcome) {
@@ -30,11 +32,13 @@ pub(crate) fn apply(d: &mut Draft, outcome: CommandOutcome) {
     d.warnings.extend(outcome.warnings);
 }
 
-/// Apply a command result and then select forced (locked, single-candidate) slots.
+/// Apply a command result and then choose the `default` of the slots it brought (a sole option
+/// without a default is left for the user, engine-optional-sole-option SO-1/SO-2).
 fn apply_filled(ctx: &Ctx<'_>, d: &mut Draft, outcome: CommandOutcome) {
+    let existing = slot_keys(ctx.hub, &d.character.build);
     ctx.hub.keep_derived(&outcome);
     apply(d, outcome);
-    d.character.build = fill_locked(ctx.hub, &d.character.build);
+    d.character.build = fill_defaults(ctx.hub, &existing, &d.character.build);
 }
 
 fn ability_of(key: &str) -> ApiResult<usize> {
@@ -126,7 +130,8 @@ impl AppState {
             let out = commands::level_up_main(engine, &draft.character.build, None)?;
             apply(&mut draft, out);
         }
-        draft.character.build = fill_locked(ctx.hub, &draft.character.build);
+        let none = std::collections::HashSet::new();
+        draft.character.build = fill_defaults(ctx.hub, &none, &draft.character.build);
         let id = new_id();
         let path = self.character_path(&id)?;
         draft.character.save(&path)?;
@@ -219,6 +224,9 @@ impl AppState {
                 .iter()
                 .find(|s| s.key == key)
                 .ok_or_else(|| ApiError::not_found("That selection slot does not exist."))?;
+            if slot.locked && !slot.chosen.as_ref().is_some_and(|c| c.id == element_id) {
+                return Err(ApiError::invalid(LOCKED_SLOT));
+            }
             let choice = if slot.ty == "List" {
                 let item = element_id
                     .parse()
@@ -240,6 +248,10 @@ impl AppState {
     pub fn clear_selection(&self, id: &str, slot_id: &str) -> ApiResult<CharacterSnapshot> {
         let key = decode_slot(slot_id)?;
         self.mutate(id, |ctx, d| {
+            let snap = ctx.hub.derive(&d.character.build);
+            if snap.slots.iter().any(|s| s.key == key && s.locked) {
+                return Err(ApiError::invalid(LOCKED_SLOT));
+            }
             let out = commands::clear(&ctx.hub.engine, &d.character.build, &key)?;
             apply(d, out);
             Ok(())

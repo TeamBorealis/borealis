@@ -232,8 +232,17 @@ fn level_5_fighter_weapon_fields_map_with_real_fields() {
 #[test]
 fn cleric_prepares_spells_up_to_the_limit() {
     let (_dir, app) = app();
-    let (id, _) = hero(&app, CLERIC, 5);
-    let snap = app.get_snapshot(&id).expect("snapshot");
+    let (id, s) = hero(&app, CLERIC, 5);
+    // Life is the only SRD domain; like Aurora, a sole option is left for the user to pick
+    let domain = s
+        .slots
+        .iter()
+        .find(|x| x.title == "Divine Domain")
+        .expect("domain slot");
+    assert!(domain.chosen.is_none() && !domain.locked);
+    let snap = app
+        .apply_selection(&id, &domain.id, "ID_WOTC_PHB_ARCHETYPE_LIFEDOMAIN")
+        .expect("life domain");
     let class = &snap.spellcasting.classes[0];
     assert_eq!(
         class.model, "prepared",
