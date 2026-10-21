@@ -20,6 +20,13 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 #[path = "stage2_items.rs"]
 mod items;
 
+#[path = "stage2_defects.rs"]
+mod defects;
+
+#[path = "stage2_climb.rs"]
+mod climb;
+use climb::{climb_items, on_climb, spell_list_hosts, MULTICLASS_TYPE};
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Scope {
     Full,
@@ -658,6 +665,11 @@ fn edition(
     merge(total, vec![found]);
 }
 
+/// An empty required select no installed element can ever fill (see `defects`).
+pub fn unfillable_select(store: &ContentStore, v: &borealis_engine::invariants::Violation) -> bool {
+    defects::unfillable_select(store, v)
+}
+
 /// Stage 2 over every edition of the source; each edition's hosts run on `apps` (apps holding
 /// the same installed content, one worker each: one app's builder commands serialize).
 pub fn stage2(
@@ -686,7 +698,7 @@ pub fn stage2(
     metric(src, "s2", "*", "hosts_created", total.3 as i64);
     metric(src, "s2", "*", "options_explored", total.2 as i64);
     metric(src, "s2", "*", "workers", apps.len() as i64);
-    record(src, ins, &total.0);
+    record(src, apps[0], ins, &total.0, scope);
     metric(src, "s2", "*", "wall_s", t0.elapsed().as_secs() as i64);
 }
 
@@ -740,8 +752,13 @@ fn legacy_of(el: &borealis_content::Element) -> Option<&str> {
 
 /// Offered / offerable per type, one outcome per offerable element. A legacy race version
 /// ([`legacy_of`]) gets its own outcome: passes when it is not offered and its base race is.
-fn record(src: &str, ins: &Installed, offers: &Offers) {
+fn record(src: &str, app: &AppState, ins: &Installed, offers: &Offers, scope: Scope) {
     let selects = select_index(&ins.store);
+    // a community repo's rows: a content defect (see [`defects`]) asserts that verdict
+    let defects = (scope == Scope::Repo).then(|| defects::Defects::new(&ins.store));
+    let hub = app.hub().ok();
+    let defined = |id: &str| hub.as_ref().map_or(true, |h| h.element(id).is_some());
+    let mut defect_rows = 0;
     let mut rows: BTreeMap<(String, &str), [i64; 2]> = BTreeMap::new();
     let mut seen_types: BTreeSet<&str> = BTreeSet::new();
     for (id, ty, _) in &ins.ours {
@@ -773,17 +790,25 @@ fn record(src: &str, ins: &Installed, offers: &Offers) {
             rows.entry((ty.clone(), "nonoffer")).or_default()[0] += 1;
             continue;
         }
-        let ok = offers.found.contains_key(id);
+        let ok = offers.reached(id).is_some();
         let r = rows.entry((ty.clone(), "offerable")).or_default();
         r[0] += 1;
         if ok {
             r[1] += 1;
         }
+        let defect = defects
+            .as_ref()
+            .filter(|_| !ok)
+            .and_then(|d| d.of(&ins.store, id, &defined));
+        defect_rows += i64::from(defect.is_some());
         let by = offers
-            .found
-            .get(id)
+            .reached(id)
             .map_or("not offered by any host", String::as_str);
-        outcome::record(SUITE, &format!("{src}/s2/{ty}/{id}"), ok, by);
+        let row = format!("{src}/s2/{ty}/{id}");
+        outcome::record(SUITE, &row, ok || defect.is_some(), defect.unwrap_or(by));
+    }
+    if defects.is_some() {
+        metric(src, "s2", "*", "content_defects", defect_rows);
     }
     for ((ty, kind), [n, offered]) in &rows {
         if *kind == "nonoffer" {
@@ -997,20 +1022,46 @@ fn option_host(
             classes.push((c.clone(), None));
         }
     }
-    classes.into_iter().any(|(class, archetype)| {
-        option_host_on(
-            d,
-            e,
-            target,
-            ex,
-            offers,
-            (&class, archetype.as_deref()),
-            scores,
-            race.as_deref(),
-            &roots,
-            &groups,
-        )
-    })
+    // first the needed ids only; then, where that offers nothing, the same configurations also
+    // picking the elements on the climb paths (each pass is deterministic, and the first one is
+    // exactly the older host, so what it offered stays offered)
+    let run = |climb: bool,
+               configs: &[(String, Option<String>)],
+               roots: &Plan,
+               ex: &mut Explore<'_>,
+               offers: &mut Offers| {
+        configs.iter().any(|(class, archetype)| {
+            option_host_on(
+                d,
+                e,
+                target,
+                ex,
+                offers,
+                (class, archetype.as_deref(), climb),
+                scores,
+                race.as_deref(),
+                roots,
+                &groups,
+            )
+        })
+    };
+    if run(false, &classes, &roots, ex, offers) || offers.climbed.contains_key(target) {
+        return true;
+    }
+    // a spell a subclass's (or feature's) own spell list names: that host first
+    let (classes, roots) = spell_list_hosts(e, target, classes, roots);
+    // the climb pass records apart, with its own explore memo: the hosts after it (options,
+    // items) are planned exactly as before it existed
+    let mut memo = Explore {
+        owners: ex.owners,
+        memo: ex.memo.clone(),
+        explored: 0,
+    };
+    let mut pass = Offers::default();
+    let found = run(true, &classes, &roots, &mut memo, &mut pass);
+    ex.explored += memo.explored;
+    offers.keep_climbed(pass);
+    found
 }
 
 /// Host configurations an option host tries (needs class, climbed classes, archetypes, fallback),
@@ -1025,7 +1076,7 @@ fn option_host_on(
     target: &str,
     ex: &mut Explore<'_>,
     offers: &mut Offers,
-    (class, archetype): (&str, Option<&str>),
+    (class, archetype, climb): (&str, Option<&str>, bool),
     scores: [i32; 6],
     race: Option<&str>,
     roots: &Plan,
@@ -1039,12 +1090,19 @@ fn option_host_on(
         .is_ok_and(|t| t.split(',').any(|x| x.trim() == target));
     let took = d.pick(&mut h, class);
     if trace {
-        eprintln!("TRACE {target}: class {class} {took} archetype {archetype:?} groups {groups:?}");
+        eprintln!(
+            "TRACE {target}: class {class} {took} archetype {archetype:?} climb {climb} groups {groups:?}"
+        );
     }
-    for r in race
-        .into_iter()
-        .chain(roots.origins.iter().map(String::as_str))
-    {
+    // the climb pass takes the origins the paths reach before the fallback race (a sub race's
+    // trait needs the sub race's own race, not the human host)
+    let origins = roots.origins.iter().map(String::as_str);
+    let order: Vec<&str> = if climb {
+        origins.chain(race).collect()
+    } else {
+        race.into_iter().chain(origins).collect()
+    };
+    for r in order {
         d.pick(&mut h, r);
     }
     let mut want: Vec<Vec<String>> = archetype.map(|a| vec![a.to_string()]).into_iter().collect();
@@ -1068,11 +1126,44 @@ fn option_host_on(
     let (options, rest) = items::split_options(&e.ins.store, groups);
     d.enable_options(&mut h, &options);
     want.extend(rest);
+    // the climb pass also meets what the elements on the paths require (the character option
+    // a homebrew multiclass entry needs), after the option's own needs
+    if climb {
+        let mut path_groups: Vec<Vec<String>> = Vec::new();
+        for p in roots.path.iter().filter(|p| on_climb(&e.ins.store, p)) {
+            let Some(x) = e.ins.store.element(p) else {
+                continue;
+            };
+            if let Ok(Some(expr)) = RequirementsExpr::parse(&x.requirements) {
+                required_groups(&e.ins.store, expr.root(), &mut path_groups);
+            }
+        }
+        path_groups.retain(|g| !g.iter().any(|i| i == target) && !want.contains(g));
+        let (options, rest) = items::split_options(&e.ins.store, &path_groups);
+        d.enable_options(&mut h, &options);
+        want.extend(rest);
+    }
     // a feat whose select offers the option is taken where a feat is offered (Weapon Master)
     let mut own = Plan::default();
     e.offerers.place(target, &mut own);
     if !own.feats.is_empty() {
         want.push(own.feats.into_iter().collect());
+    }
+    // then every element a select puts on the climb paths of the option and of what it needs
+    // (the racial trait whose select offers the option, the feat whose select offers a needed
+    // option): a user picks the chain down to the option, so the host does too
+    let path = roots.path.iter().filter(|_| climb);
+    for p in path.filter(|p| *p != target && on_climb(&e.ins.store, p)) {
+        if !want.iter().any(|g| g.contains(p)) {
+            want.push(vec![p.clone()]);
+        }
+    }
+    // an item on a path, or one that grants a needed id (a "feat unlocker" item granting the
+    // id a feat's requirement names), is carried, as a user adds it on the equipment screen
+    if climb {
+        for item in climb_items(&e.ins.store, target, roots, groups) {
+            d.hold_item(&mut h, &item);
+        }
     }
     let offered = |d: &Driver<'_>, h: &Host| {
         h.snap
@@ -1080,6 +1171,15 @@ fn option_host_on(
             .iter()
             .any(|s| s.chosen.is_none() && d.options(h, &s.id).iter().any(|(id, _)| id == target))
     };
+    // a Multiclass element (the option or one on its paths: homebrew "auxiliary levels") is
+    // offered by the select of a new multiclass level: the climb pass takes its second level so
+    let is_mc = |id: &str| {
+        e.ins
+            .store
+            .element(id)
+            .is_some_and(|x| x.ty == MULTICLASS_TYPE)
+    };
+    let mut multiclass = climb && (is_mc(target) || want.iter().flatten().any(|w| is_mc(w)));
     let mut found = false;
     loop {
         d.collect(&h, &label, offers);
@@ -1118,7 +1218,13 @@ fn option_host_on(
             break;
         }
         d.fill(&mut h, &label, offers);
-        if h.snap.level.total >= MAX_LEVEL || !d.level_up(&mut h) {
+        if h.snap.level.total >= MAX_LEVEL {
+            break;
+        }
+        if std::mem::take(&mut multiclass) && d.add_multiclass(&mut h) {
+            continue;
+        }
+        if !d.level_up(&mut h) {
             break;
         }
     }
@@ -1130,6 +1236,13 @@ fn option_host_on(
         found = true;
         d.collect(&h, &label, offers);
         d.explore(&mut h, ex, &label, offers);
+    }
+    // an option the host's character holds without a pick reaches it through a grant (a
+    // subclass feature grants a feature that the class's select also lists, and a select never
+    // offers what the character already has): it is on the character, which is what the row asks
+    if !found && climb && d.holds(&h, target) {
+        found = true;
+        offers.add(target, &format!("held:{label}"));
     }
     d.drop_host(h);
     found

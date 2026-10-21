@@ -74,9 +74,26 @@ pub struct Offers {
     pub lists: BTreeMap<String, BTreeSet<BTreeSet<String>>>,
     /// Elements an item host picked: whether the pick applied, and why not.
     pub applied: BTreeMap<String, (bool, String)>,
+    /// What only an option host's climb pass reached (with its host), kept apart so that the
+    /// hosts after it are planned exactly as without it (stage 2 counts both as offered).
+    pub climbed: BTreeMap<String, String>,
 }
 
 impl Offers {
+    /// Offered by a host, or reached by a climb pass.
+    pub fn reached(&self, id: &str) -> Option<&String> {
+        self.found.get(id).or_else(|| self.climbed.get(id))
+    }
+
+    /// Keep what a climb pass (`pass`, its own record) reached and no host offered yet.
+    pub fn keep_climbed(&mut self, pass: Offers) {
+        for (id, host) in pass.found.into_iter().chain(pass.climbed) {
+            if !self.found.contains_key(&id) {
+                self.climbed.entry(id).or_insert(host);
+            }
+        }
+    }
+
     pub fn add(&mut self, id: &str, host: &str) {
         self.found
             .entry(id.to_string())
@@ -93,6 +110,9 @@ impl Offers {
         }
         for (id, a) in other.applied {
             self.applied.entry(id).or_insert(a);
+        }
+        for (id, host) in other.climbed {
+            self.climbed.entry(id).or_insert(host);
         }
     }
 }
@@ -412,6 +432,18 @@ impl<'a> Driver<'a> {
         }
     }
 
+    /// The next level as a new multiclass (its "Multiclass" select opens), as the builder's
+    /// "Add multiclass" button does.
+    pub fn add_multiclass(&self, host: &mut Host) -> bool {
+        match self.app.add_multiclass(&host.id) {
+            Ok(s) => {
+                host.set(s);
+                true
+            }
+            Err(_) => false,
+        }
+    }
+
     /// Take the "Feat" option of every open ability score improvement select.
     pub fn open_feat_selects(&self, host: &mut Host) {
         for _ in 0..4 {
@@ -482,6 +514,26 @@ impl<'a> Driver<'a> {
         }
         // an item that cannot be equipped still registers while carried
         line(host).is_some_and(|i| i.attuned || !i.requires_attunement)
+    }
+
+    /// True when the host's character holds `id` (granted, selected or a root), as the engine
+    /// derives it: an element a select of its type names but that its owner grants outright
+    /// reaches the character without being offered.
+    pub fn holds(&self, host: &Host, id: &str) -> bool {
+        let Ok(hub) = self.app.hub() else {
+            return false;
+        };
+        let state = match self.app.sessions() {
+            Ok(s) => match s.get(&host.id) {
+                Some(session) => session.character.build.clone(),
+                None => return false,
+            },
+            Err(_) => return false,
+        };
+        hub.derive(&state)
+            .elements
+            .iter()
+            .any(|e| e.element.id == id)
     }
 
     /// Every item `search_items` lists for a character of this host's edition.

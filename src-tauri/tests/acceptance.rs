@@ -1027,12 +1027,34 @@ fn record_invariants(src: &str) {
     let found = borealis_engine::invariants::take_recorded();
     metric(src, "s2", "*", "invariant_violations", found.len() as i64);
     for v in found {
-        let id = match &v.element {
-            Some(e) => format!("{src}/s2/invariant/{}/{e}", v.kind),
-            None => format!("{src}/s2/invariant/{}", v.kind),
-        };
-        outcome::record(SUITE, &id, false, &v.message);
+        outcome::record(SUITE, &invariant_row(src, &v), false, &v.message);
     }
+}
+
+/// The outcome id of one settle-invariant violation of a setup.
+fn invariant_row(src: &str, v: &borealis_engine::invariants::Violation) -> String {
+    match &v.element {
+        Some(e) => format!("{src}/s2/invariant/{}/{e}", v.kind),
+        None => format!("{src}/s2/invariant/{}", v.kind),
+    }
+}
+
+/// The violations a setup's hosts recorded, less the empty selects no installed element can
+/// ever fill: those rows assert that content defect (Aurora shows the same empty select); the
+/// rest stay recorded for [`record_invariants`].
+fn assert_unfillable_selects(src: &str, store: &ContentStore) {
+    let (unfillable, rest): (Vec<_>, Vec<_>) = borealis_engine::invariants::take_recorded()
+        .into_iter()
+        .partition(|v| support::stage2::unfillable_select(store, v));
+    for v in &unfillable {
+        outcome::record(
+            SUITE,
+            &invariant_row(src, v),
+            true,
+            "content defect: no installed element can fill this required select",
+        );
+    }
+    borealis_engine::invariants::record_violations(rest);
 }
 
 /// `BOREALIS_ACCEPT_THREADS` (default 4): A-comm setups measured side by side, one app each.
@@ -1109,6 +1131,7 @@ fn comm_one(
         .chain(extra.iter().map(|x| &x.1))
         .collect();
     stage2(src, &apps, &ins, "ID_WOTC_", aurora_class_id, Scope::Repo);
+    assert_unfillable_selects(src, &ins.store);
 }
 
 /// A fetcher that keeps every file it downloaded (the stage-1 counter reads them).
