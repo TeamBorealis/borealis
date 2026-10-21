@@ -403,14 +403,25 @@ pub fn convert(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
     let charges = item_mech::charges_rule(&it, &el, &mut partial);
     let has_charges = charges.is_some();
     mech.rules.extend(charges);
+    // A poison's `attachedSpells` names the spell whose effect it imposes on the creature
+    // subjected to it, not a spell its owner casts: data only (det-5e-4).
+    let is_poison = it.extra.get("poison") == Some(&Value::Bool(true));
     if let Some(attached) = it.extra.get("attachedSpells").filter(|_| !is_deck) {
-        mech.rules.extend(item_spells::attached_spell_rules(
-            sh,
-            &el.id,
-            has_charges,
-            attached,
-            &mut partial,
-        ));
+        if is_poison {
+            note_unmapped(
+                &mut el,
+                "attachedSpells",
+                "a poison's spell is its effect on the victim, kept in data only",
+            );
+        } else {
+            mech.rules.extend(item_spells::attached_spell_rules(
+                sh,
+                &el.id,
+                has_charges,
+                attached,
+                &mut partial,
+            ));
+        }
     }
 
     // Equipment packs.
@@ -1539,5 +1550,24 @@ mod tests {
             "the resistance is a rule too: {:?}",
             el.rules
         );
+    }
+
+    #[test]
+    fn poison_attached_spell_is_data_not_a_spell_for_its_owner() {
+        // Arrange: an invented poison whose victim suffers a spell's effect
+        let sh = Shared::default();
+        let mut st = State::default();
+        let poison = json!({"name": "Dreamweed Vapour", "source": "ZZZ", "type": "G", "rarity": "unknown",
+            "poison": true, "poisonTypes": ["inhaled"], "attachedSpells": ["glow orb|zzz"]});
+        // Act
+        let el = &convert(&sh, &mut st, &ent(poison)).elements[0];
+        // Assert: no spell grant, the spell kept in data and noted
+        assert!(spell_grants(el).is_empty(), "{:?}", el.rules);
+        assert!(el.data.contains_key("attachedSpells"));
+        assert!(el
+            .extra
+            .attributes
+            .get("5et:attachedSpells")
+            .is_some_and(|v| v.contains("effect on the victim")));
     }
 }
