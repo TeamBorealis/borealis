@@ -1,6 +1,6 @@
 /* Equipment tab: classic builder grid rows [* | Auto | 200 (min 160) | Auto]; the inventory fills the bottom. */
 .ap-left:has(> .eq-layout) { padding-top: 18px; padding-bottom: 5px; gap: 0; }
-.eq-layout { flex: 1 1 auto; display: grid; grid-template-columns: 170px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto minmax(160px, 230px); column-gap: 11px; margin-right: -2px; min-height: 0; }
+.eq-layout { flex: 1 1 auto; display: grid; grid-template-columns: 169px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto minmax(160px, 230px); column-gap: 10px; margin-right: -2px; min-height: 0; }
 .eq-cats { border: 1px solid var(--aur-line, #252d31); display: flex; flex-direction: column; min-height: 0; background: var(--content-bg, #161616); }
 .eq-cats .ap-band { border-width: 0; }
 .eq-cats-sub { background: #283237; color: var(--text); font-size: 9px; font-weight: 600; text-transform: uppercase; padding: 3px 5px 4px; line-height: 1; }
@@ -105,10 +105,10 @@
 @media (max-width: 899px) { .eq-page { padding: 15px max(15px, var(--safe-l)) 25px max(15px, var(--safe-r)); } }
 .tab-panel:has(> .eq-page) { padding-top: 0; }
 /* catalog Name header/cell start 2 px left (classic builder 236); the Armor grid is WPF Auto-sized (widest content + 5 px each side) and scrolls sideways. */
-.eq-grid:not(.eq-invgrid) th:first-child, .eq-grid:not(.eq-invgrid) td:first-child { padding-left: 3px; }
+.eq-grid:not(.eq-invgrid) th:first-child, .eq-grid:not(.eq-invgrid) td:first-child { padding-left: 5px; }
 .eq-grid.eq-armor { width: max-content; min-width: 100%; }
 .eq-grid.eq-armor th, .eq-grid.eq-armor td { white-space: nowrap; width: auto; padding-left: 5px; padding-right: 5px; }
-.eq-grid.eq-armor th:first-child, .eq-grid.eq-armor td:first-child { padding-left: 3px; }
+.eq-grid.eq-armor th:first-child, .eq-grid.eq-armor td:first-child { padding-left: 5px; }
 .eq-grid.eq-armor:not(.eq-invgrid) th:first-child { width: auto; }
 /* Classic builder ref column floors (measured from column centres): Name 101, Weight 56, Stealth 96, Group 104 px. Armor class is 140 (its text is clipped at 1 px padding). */
 .eq-grid.eq-armor th:first-child, .eq-grid.eq-armor th.k-weight, .eq-grid.eq-armor th.k-stealth, .eq-grid.eq-armor th.k-group { box-sizing: border-box; }
