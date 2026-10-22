@@ -416,14 +416,24 @@ fn limited_uses(snap: &CharacterSnapshot) -> Vec<LimitedUse> {
             rolled: r.rolled.as_ref().map(|d| rolled_label(r.max, d)),
         })
         .collect();
-    out.extend(snap.free_casts.iter().filter_map(|f| {
-        Some(LimitedUse {
-            name: format!("{} (free cast)", f.name),
-            max: f.uses?,
-            recharge: recharge_label(std::slice::from_ref(&f.recharge)),
-            rolled: None,
+    // The engine lists every free cast with a known count as a Play resource of the same name.
+    let extra: Vec<LimitedUse> = snap
+        .free_casts
+        .iter()
+        .filter_map(|f| {
+            let name = format!("{} (free cast)", f.name);
+            if out.iter().any(|u| u.name == name) {
+                return None;
+            }
+            Some(LimitedUse {
+                name,
+                max: f.uses?,
+                recharge: recharge_label(std::slice::from_ref(&f.recharge)),
+                rolled: None,
+            })
         })
-    }));
+        .collect();
+    out.extend(extra);
     out.retain(|u| u.max > 0);
     for f in &snap.features {
         let known = out.iter().any(|u| u.name.eq_ignore_ascii_case(&f.name));

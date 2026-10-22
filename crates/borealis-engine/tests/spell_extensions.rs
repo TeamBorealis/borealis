@@ -154,3 +154,59 @@ fn spell_free_cast_binds_to_the_spell_picked_in_its_select() {
     assert!(!f.also_with_slots);
     assert_eq!(f.source, "ID_T_SEER_CASTING");
 }
+
+fn gifted(e: &Engine) -> CharacterState {
+    let s = seer(e, 1);
+    let snap = e.derive(&s);
+    let key = slot_key(&snap, "ID_T_SEER_CASTING", "Gift Spell", 1).expect("gift slot");
+    commands::select(e, &s, &key, Choice::Element("ID_T_SPELL_ALPHA".into()))
+        .expect("pick")
+        .state
+}
+
+fn pool<'a>(
+    snap: &'a borealis_engine::snapshot::CharacterSnapshot,
+    spell: &str,
+) -> &'a borealis_engine::snapshot::ResourceSnapshot {
+    snap.resources
+        .iter()
+        .find(|r| r.id == format!("free_cast:ID_T_SEER_CASTING:{spell}"))
+        .expect("free cast pool")
+}
+
+#[test]
+fn free_casts_are_spendable_pools_that_a_long_rest_restores() {
+    let e = engine_with(content(true));
+    let s = gifted(&e);
+    let snap = e.derive(&s);
+    let alpha = pool(&snap, "ID_T_SPELL_ALPHA");
+    assert_eq!((alpha.max, alpha.current), (1, 1));
+    assert_eq!(alpha.recharge, vec!["long_rest".to_string()]);
+    assert_eq!(alpha.source, "Seer Spellcasting");
+    assert_eq!(pool(&snap, "ID_T_SPELL_EPSILON").max, 2);
+
+    let id = alpha.id.clone();
+    let spent = commands::spend_resource(&e, &s, &id, 1)
+        .expect("spend")
+        .state;
+    assert_eq!(pool(&e.derive(&spent), "ID_T_SPELL_ALPHA").current, 0);
+    assert!(commands::spend_resource(&e, &spent, &id, 1).is_err());
+    let short = commands::short_rest(&e, &spent).expect("short").state;
+    assert_eq!(pool(&e.derive(&short), "ID_T_SPELL_ALPHA").current, 0);
+    let long = commands::long_rest(&e, &spent).expect("long").state;
+    assert_eq!(pool(&e.derive(&long), "ID_T_SPELL_ALPHA").current, 1);
+}
+
+#[test]
+fn short_rest_free_casts_come_back_on_a_short_rest() {
+    let mut c = content(true);
+    c[1]["rules"][4]["recharge"] = json!("short_rest");
+    let e = engine_with(c);
+    let s = gifted(&e);
+    let id = "free_cast:ID_T_SEER_CASTING:ID_T_SPELL_ALPHA";
+    let spent = commands::spend_resource(&e, &s, id, 1)
+        .expect("spend")
+        .state;
+    let short = commands::short_rest(&e, &spent).expect("short").state;
+    assert_eq!(pool(&e.derive(&short), "ID_T_SPELL_ALPHA").current, 1);
+}

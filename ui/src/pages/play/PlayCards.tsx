@@ -8,6 +8,17 @@ import { RolledChargesEditor, chargesLabel, rolledChargeOf } from "../equipment/
 const RECHARGE_LABEL: Record<string, string> = { short_rest: "Short Rest", long_rest: "Long Rest", initiative: "Initiative", dawn: "Dawn" };
 export const rechargeText = (r: PlayResource): string => r.recharge.map((x) => RECHARGE_LABEL[x] ?? x.replace(/_/g, " ")).join(" / ");
 
+/** Id prefix of the use pools the engine makes for spells cast without a slot (`free_cast:<granter>:<spell>`). */
+const FREE_CAST_PREFIX = "free_cast:";
+
+/** The grey text on a resource row: its source, plus the recharge period for a free cast ("per long rest") or the rolled maximum. */
+export function resourceMeta(r: PlayResource, rolledMax: string | null): string {
+  if (rolledMax) return `${r.source} · max ${rolledMax}`;
+  if (!r.id.startsWith(FREE_CAST_PREFIX)) return r.source;
+  const period = r.recharge[0]?.replace(/_/g, " ");
+  return `${r.source} · ${period && period !== "none" ? `per ${period}` : "no recharge"}`;
+}
+
 function Pips({ r }: { r: PlayResource }) {
   if (r.max > 12) return <span className="v5-count" aria-hidden="true">{r.current}/{r.max}</span>;
   return (
@@ -30,7 +41,7 @@ function ResourceRow({ r, selected, onSelect }: { r: PlayResource } & Pickable) 
     <li className={`v5-line ${on ? "is-selected" : ""}`}>
       <button type="button" className="v5-row grow" aria-current={on} onClick={() => onSelect({ kind: "resource", id: r.id })}>
         <span className="grow">{r.name}</span>
-        <span className="meta">{rolled ? `${r.source} · max ${chargesLabel(rolled.charge)}` : r.source}</span>
+        <span className="meta">{resourceMeta(r, rolled ? chargesLabel(rolled.charge) : null)}</span>
       </button>
       <Pips r={r} />
       <span className="v5-count" role="status" aria-label={`${r.name}: ${r.current} of ${r.max} uses left`}>{r.current}/{r.max}</span>

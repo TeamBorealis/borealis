@@ -4,7 +4,7 @@
 
 use crate::custom_rules::{X_ALSO_WITH_SLOTS, X_CAST_LEVEL, X_FREE_CAST};
 use crate::graph::{Graph, Origin};
-use crate::snapshot::{FreeCastSnapshot, NamedSaveDc, SpellcastingSnapshot};
+use crate::snapshot::{FreeCastSnapshot, NamedSaveDc, ResourceSnapshot, SpellcastingSnapshot};
 use crate::universe::Universe;
 use borealis_content::Rule;
 use serde_json::Value;
@@ -239,6 +239,53 @@ pub fn free_casts(graph: &Graph<'_>, prof: i32, mods: &[i32; 6]) -> Vec<FreeCast
             also_with_slots,
             cast_level,
             source: graph.nodes[parent].e.el.id.clone(),
+        });
+    }
+    out
+}
+
+/// Id of the use pool of one free cast (`free_cast:<granting element>:<spell>`).
+#[must_use]
+pub fn free_cast_pool_id(f: &FreeCastSnapshot) -> String {
+    format!("free_cast:{}:{}", f.source, f.spell)
+}
+
+/// The free casts as resource pools, so Play spends them and the rests restore them like any
+/// other limited-use resource. A cast without a known positive count (a table the engine does
+/// not resolve) gets no pool; a `none` recharge never comes back; the rest refill on a Long Rest
+/// and, for `short_rest`, on a Short Rest too.
+#[must_use]
+pub fn free_cast_resources(graph: &Graph<'_>, casts: &[FreeCastSnapshot]) -> Vec<ResourceSnapshot> {
+    let mut out: Vec<ResourceSnapshot> = Vec::new();
+    for f in casts {
+        let Some(max) = f.uses.filter(|n| *n > 0) else {
+            continue;
+        };
+        let id = free_cast_pool_id(f);
+        if out.iter().any(|r| r.id == id) {
+            continue;
+        }
+        let used = i32::try_from(graph.runtime.used_of(&id)).unwrap_or(i32::MAX);
+        let source = graph
+            .nodes
+            .iter()
+            .find(|n| n.e.el.id == f.source)
+            .map_or_else(|| f.source.clone(), |n| n.e.el.name.clone());
+        out.push(ResourceSnapshot {
+            id,
+            name: format!("{} (free cast)", f.name),
+            max,
+            current: (max - used).max(0),
+            source,
+            recharge: if f.recharge.is_empty() {
+                Vec::new()
+            } else {
+                vec![f.recharge.clone()]
+            },
+            short_rest_regain: (f.recharge == "short_rest").then_some(max),
+            long_rest_regain_all: f.recharge != "none",
+            other_regain: Vec::new(),
+            rolled: None,
         });
     }
     out

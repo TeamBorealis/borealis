@@ -576,7 +576,11 @@ impl<'u> Evaluation<'u> {
             &self.stats,
             &mods,
         ));
-        let resources = crate::play_rules::resource_snapshots(&self.graph, &self.stats, &mods);
+        let mut resources = crate::play_rules::resource_snapshots(&self.graph, &self.stats, &mods);
+        resources.extend(crate::spell_rules::free_cast_resources(
+            &self.graph,
+            &free_casts,
+        ));
         let resource_costs = crate::play_rules::resource_costs(&self.graph);
         let toggles = crate::play_rules::toggle_snapshots(&self.graph, &self.stats);
         let exhaustion = crate::play_rules::exhaustion_snapshot(&self.graph, &self.stats);
