@@ -121,8 +121,8 @@ page 2
     story.quest
     story.treasure
 page 3
-  roles: Artifact=8 H2=1 Lbl=6 P=17
-  text-ops: 104
+  roles: Artifact=9 H2=2 Lbl=6 P=17
+  text-ops: 105
   colours (5): 0.100 0.100 0.100 rg; 0.300 0.300 0.300 rg; 0.330 0.330 0.330 rg; 0.550 0.550 0.550 rg; 0.720 0.720 0.720 RG
   fields (4):
     char.alignment@3
