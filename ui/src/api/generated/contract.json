@@ -1391,6 +1391,13 @@
     "name": "CharacterSnapshot"
    }
   },
+  "share_logs": {
+   "args": {},
+   "method": "shareLogs",
+   "response": {
+    "k": "nil"
+   }
+  },
   "short_rest": {
    "args": {
     "characterId": false

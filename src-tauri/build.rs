@@ -151,6 +151,7 @@ const COMMANDS: &[&str] = &[
     "open_download_page",
     "open_app_folder",
     "get_recent_logs",
+    "share_logs",
     "restart_app",
     "acceptance_digest",
 ];

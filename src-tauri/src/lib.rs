@@ -25,6 +25,7 @@ pub mod ai_setup;
 pub mod app_api;
 pub mod app_logs;
 pub mod app_update;
+pub mod app_update_debug;
 pub mod builder;
 pub mod bundled_content;
 pub mod commands;
@@ -102,6 +103,7 @@ pub mod library;
 pub mod magic;
 pub mod manage;
 pub mod mcp_mode;
+pub mod native_share;
 pub mod picked_files;
 pub mod picked_paths;
 pub mod play_api;
@@ -263,6 +265,9 @@ pub fn run() {
             .open_js_links_on_click(false)
             .build(),
     );
+    // Android: the in-app Kotlin share plugin behind "Share logs" (see `native_share`).
+    #[cfg(target_os = "android")]
+    let builder = builder.plugin(native_share::init());
     builder
         .plugin(tauri_plugin_dialog::init())
         .on_window_event(|window, event| {
@@ -450,6 +455,7 @@ pub fn run() {
             commands_app_update::open_download_page,
             commands_system::open_app_folder,
             commands_system::get_recent_logs,
+            commands_system::share_logs,
             commands_system::restart_app,
             #[cfg(debug_assertions)]
             commands_acceptance::acceptance_digest,

@@ -206,3 +206,24 @@ export function checkThresholds(
   const output = `${r.stdout ?? ''}${r.stderr ?? ''}${r.error ? String(r.error) : ''}`.trim();
   return { code: r.status ?? 2, output };
 }
+
+/** Same name as `app_update_debug::FEED_FILE` (src-tauri/src/app_update_debug.rs). */
+const UPDATE_FEED_FILE = 'debug-update-feed.json';
+
+/**
+ * B-41: put a release-feed fixture (GitHub latest-release JSON) in the app's data folder. A debug
+ * build answers the update check from it on its next launch (release builds ignore the file).
+ * The data folder exists once the app has launched after the install.
+ */
+export function writeUpdateFeed(platform: MobilePlatform, json: string): void {
+  if (platform === 'android') {
+    const local = join(tmpdir(), UPDATE_FEED_FILE);
+    const remote = `/data/local/tmp/${UPDATE_FEED_FILE}`;
+    writeFileSync(local, json);
+    adb('push', local, remote);
+    adb('shell', 'chmod', '644', remote);
+    runAs(`cp ${remote} ${androidDataDir()}/${UPDATE_FEED_FILE}`);
+    return;
+  }
+  writeFileSync(join(iosDataDir(), UPDATE_FEED_FILE), json);
+}

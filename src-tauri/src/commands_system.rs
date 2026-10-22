@@ -74,6 +74,21 @@ pub fn get_recent_logs(state: S<'_>) -> String {
     crate::app_logs::recent_logs(&state.paths.logs(), crate::app_logs::EXCERPT_LINES)
 }
 
+/// Android (no Web Share in its web view): send the newest log lines to the system share sheet as
+/// a text file. Other platforms answer "not available"; the UI then copies the logs instead.
+#[tauri::command(async)]
+pub fn share_logs(app: AppHandle, state: S<'_>) -> ApiResult<()> {
+    let text = crate::app_logs::recent_logs(&state.paths.logs(), crate::app_logs::EXCERPT_LINES);
+    crate::native_share::share_text(
+        &app,
+        &crate::native_share::ShareTextArgs {
+            text: &text,
+            file_name: "borealis-logs.txt",
+            title: "Borealis logs",
+        },
+    )
+}
+
 /// Restart the application (new content is loaded once per process).
 #[tauri::command]
 pub fn restart_app(app: AppHandle) -> ApiResult<()> {

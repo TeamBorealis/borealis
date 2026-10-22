@@ -305,6 +305,8 @@ export interface ApiMethods {
   openAppFolder(args: { folder: AppFolder }): Promise<void>;
   /** The newest log lines (home folder shown as `~`), for sharing from a phone, which has no folder to open. */
   getRecentLogs(): Promise<string>;
+  /** Android (no Web Share in its web view): send the newest log lines to the system share sheet as a file. Elsewhere it fails with "not available". */
+  shareLogs(): Promise<void>;
   /** Restart the application so new content loads. */
   restartApp(): Promise<void>;
   /** Debug builds only (S5 acceptance): per-type counts and digests of the loaded content and of 12 fixed characters built from it. Release builds have no such command. */
@@ -482,6 +484,7 @@ export const COMMANDS = {
   openDownloadPage: "open_download_page",
   openAppFolder: "open_app_folder",
   getRecentLogs: "get_recent_logs",
+  shareLogs: "share_logs",
   restartApp: "restart_app",
   acceptanceDigest: "acceptance_digest",
   aiStatus: "ai_status",

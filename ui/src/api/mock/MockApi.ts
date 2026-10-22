@@ -621,6 +621,14 @@ export class MockApi implements Api {
   recentLogs = "2026-10-15T09:00:00Z  INFO borealis_lib::app_logs: Borealis started version=\"1.0.1\"";
   async openAppFolder(args: { folder: string }) { await this.tick(); this.openedFolders.push(args.folder); }
   async getRecentLogs() { await this.tick(); return this.recentLogs; }
+  /** Native log shares asked for; `nativeShare` says whether this mock "device" has one (Android). */
+  nativeShare = false;
+  shares = 0;
+  async shareLogs() {
+    await this.tick();
+    if (!this.nativeShare) throw apiError("invalid_argument", "Sharing is not available on this device.");
+    this.shares += 1;
+  }
   async restartApp() { await this.tick(); }
   /** Debug-build Rust command only: the mock has no content digest. */
   async acceptanceDigest(): Promise<Record<string, unknown>> { await this.tick(); throw apiError("not_found", "The acceptance digest exists only in debug builds of the app."); }
