@@ -239,6 +239,9 @@ mod tests {
     #[test]
     fn regions_skip_empty_sections() {
         let ids: Vec<_> = hound().regions().iter().map(|r| r.0).collect();
-        assert_eq!(ids, ["companion.stats", "companion.skills", "companion.traits"]);
+        assert_eq!(
+            ids,
+            ["companion.stats", "companion.skills", "companion.traits"]
+        );
     }
 }

@@ -11,7 +11,10 @@ use lopdf::Document;
 
 fn hound(entries: usize) -> CompanionSheet {
     let entry = |kind: &str, i: usize| CompanionEntry {
-        name: format!("Zq{kind}{}", char::from(b'a' + u8::try_from(i % 26).unwrap())),
+        name: format!(
+            "Zq{kind}{}",
+            char::from(b'a' + u8::try_from(i % 26).unwrap())
+        ),
         text: "Does something useful on its turn, repeatedly, so that the text wraps. ".repeat(6),
     };
     CompanionSheet {
@@ -73,10 +76,20 @@ fn companion_page_prints_the_stat_block_in_both_editions() {
         let pages = |b: &[u8]| Document::load_mem(b).unwrap().get_pages().len();
         assert!(pages(&with) > pages(&without), "{label}: no companion page");
         let text = all_text(&with);
-        for want in ["Synthetic Hound", "Statistics", "Skills", "Traits", "Actions", "Passive Perception"] {
+        for want in [
+            "Synthetic Hound",
+            "Statistics",
+            "Skills",
+            "Traits",
+            "Actions",
+            "Passive Perception",
+        ] {
             assert!(text.contains(want), "{label}: missing {want}");
         }
-        assert!(!all_text(&without).contains("Passive Perception"), "{label}");
+        assert!(
+            !all_text(&without).contains("Passive Perception"),
+            "{label}"
+        );
     }
 }
 
@@ -94,8 +107,8 @@ fn long_companion_continues_on_more_pages_without_dropping_entries() {
 #[test]
 fn html_preview_has_a_companion_page() {
     let (c, s) = common::wizard_2024();
-    let html = render_html_with(&c, &s, &SheetOptions::default(), &content(Some(hound(1))))
-        .expect("html");
+    let html =
+        render_html_with(&c, &s, &SheetOptions::default(), &content(Some(hound(1)))).expect("html");
     assert!(html.contains("Synthetic Hound"));
     assert!(html.contains("companion.stats"));
     let none = render_html_with(&c, &s, &SheetOptions::default(), &content(None)).expect("html");

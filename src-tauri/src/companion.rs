@@ -276,8 +276,14 @@ mod tests {
             source: "Test".into(),
         };
         let b = sheet_block(&state(Some(creature))).unwrap();
-        assert_eq!((b.creature.as_str(), b.hit_points.as_str()), ("Hound", "2d8 + 2"));
-        assert_eq!((b.armor_class.as_str(), b.abilities[5], b.other_speeds[1]), ("13", 15, 30));
+        assert_eq!(
+            (b.creature.as_str(), b.hit_points.as_str()),
+            ("Hound", "2d8 + 2")
+        );
+        assert_eq!(
+            (b.armor_class.as_str(), b.abilities[5], b.other_speeds[1]),
+            ("13", 15, 30)
+        );
     }
 
     #[test]
