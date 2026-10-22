@@ -45,9 +45,16 @@ export class MockPicks {
     return p.path;
   }
 
+  /** A native folder drop: one `content-folder` token, as the folder picker mints. */
+  dropFolder(name: string): FileDrop {
+    const token = `pick_mock_${++this.seq}`;
+    this.picks.set(token, { path: `/home/me/Desktop/${name}`, purpose: "content-folder" });
+    return { files: [], folders: [{ token, name }], rejected: [] };
+  }
+
   /** A native drop: tokens for the allowed files, names of the rest. */
   drop(files: { name: string; contentBase64: string }[]): FileDrop {
-    const out: FileDrop = { files: [], rejected: [] };
+    const out: FileDrop = { files: [], folders: [], rejected: [] };
     for (const f of files) {
       if (!DROP_EXT.includes(ext(f.name))) { out.rejected.push(f.name); continue; }
       const path = `/home/me/Desktop/${f.name}`;

@@ -34,10 +34,13 @@ pub struct DroppedFile {
 }
 
 /// `borealis://file-drop` payload. `rejected` names the dropped items that cannot be imported.
+/// `folders` holds at most one dropped folder, as a `content-folder` token: the same token the
+/// "Import my content folder" picker mints, so it goes through the same preview.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FileDrop {
     pub files: Vec<DroppedFile>,
+    pub folders: Vec<DroppedFile>,
     pub rejected: Vec<String>,
 }
 
@@ -57,14 +60,23 @@ fn has_extension(path: &Path, allowed: &[&str]) -> bool {
         .is_some_and(|e| allowed.contains(&e.as_str()))
 }
 
-/// Turn the paths of a native drop into `dropped-file` tokens. Folders, unknown file types and
-/// anything beyond [`MAX_PICKS`] are listed as rejected (by name only).
+/// Turn the paths of a native drop into `dropped-file` tokens, and the first dropped folder into
+/// a `content-folder` token. Further folders, unknown file types and anything beyond
+/// [`MAX_PICKS`] are listed as rejected (by name only).
 ///
 /// # Errors
 /// `internal` if the token store's lock is poisoned.
 pub fn grant_drop(picks: &PickedPaths, paths: &[PathBuf]) -> ApiResult<FileDrop> {
     let mut drop = FileDrop::default();
     for path in paths {
+        if path.is_dir() && drop.folders.is_empty() {
+            let picked = picks.grant(path.clone(), PickPurpose::ContentFolder)?;
+            drop.folders.push(DroppedFile {
+                token: picked.token,
+                name: picked.name,
+            });
+            continue;
+        }
         let ok =
             path.is_file() && has_extension(path, DROP_EXTENSIONS) && drop.files.len() < MAX_PICKS;
         if !ok {
@@ -188,6 +200,9 @@ mod tests {
         let sub = dir.path().join("folder.xml");
         fs::create_dir(&sub).unwrap();
         paths.push(sub);
+        let second = dir.path().join("second");
+        fs::create_dir(&second).unwrap();
+        paths.push(second);
         paths.push(dir.path().join("gone.xml"));
         let picks = PickedPaths::default();
         let drop = grant_drop(&picks, &paths).unwrap();
@@ -196,10 +211,24 @@ mod tests {
             names,
             ["pack.XML", "set.index", "all.zip", "x.json", "hero.dnd5e"]
         );
+        assert_eq!(drop.rejected, ["id_rsa", "notes.txt", "second", "gone.xml"]);
+        let folders: Vec<_> = drop.folders.iter().map(|f| f.name.as_str()).collect();
         assert_eq!(
-            drop.rejected,
-            ["id_rsa", "notes.txt", "folder.xml", "gone.xml"]
+            folders,
+            ["folder.xml"],
+            "the first folder is offered as a content folder"
         );
+        assert!(drop.folders[0].token.starts_with("pick_"));
+        let folder_token = drop.folders[0].token.clone();
+        assert!(
+            picks
+                .resolve(&folder_token, PickPurpose::ContentFolder)
+                .is_ok(),
+            "the token works exactly like the folder picker's"
+        );
+        assert!(picks
+            .resolve(&folder_token, PickPurpose::DroppedFile)
+            .is_err());
         let wire = serde_json::to_string(&drop).unwrap();
         assert!(!wire.contains(&*dir.path().to_string_lossy()), "{wire}");
         assert!(drop.files.iter().all(|f| f.token.starts_with("pick_")));

@@ -584,6 +584,7 @@ export class MockApi implements Api {
   async takePickedFiles({ purpose, tokens }: { purpose: PickPurpose; tokens: string[] }) { await this.tick(); return this.picks.read(purpose, tokens); }
   /** Simulates files dropped on the window from the OS (the backend's native drag-drop handler). */
   dropFiles(files: { name: string; contentBase64: string }[]): void { this.emit("files:dropped", this.picks.drop(files)); }
+  dropFolder(name: string): void { this.emit("files:dropped", this.picks.dropFolder(name)); }
   async setAiOverride({ token }: { token: string }) {
     await this.tick();
     const path = this.picks.take(token, "ai-override");

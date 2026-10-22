@@ -23,8 +23,12 @@ export interface DroppedFile {
   name: string;
 }
 
-/** `files:dropped` payload. `rejected` names dropped items that cannot be imported (folders, other file types). */
+/**
+ * `files:dropped` payload. `rejected` names dropped items that cannot be imported (other file types, a second folder).
+ * `folders` holds at most one dropped folder as a `content-folder` token, previewed like the folder picker's.
+ */
 export interface FileDrop {
   files: DroppedFile[];
+  folders: DroppedFile[];
   rejected: string[];
 }

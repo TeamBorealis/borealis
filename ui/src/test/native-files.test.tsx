@@ -29,6 +29,19 @@ describe("Native file drop (desktop app): tokens only, read through takePickedFi
     expect(args.tokens[0]).toMatch(/^pick_/);
   });
 
+  it("previews a dropped folder like the Import my content folder picker", async () => {
+    const api = mock();
+    const preview = vi.spyOn(api, "previewImportPack");
+    api.folderFiles = [{ fileName: "lantern.xml", contentBase64: btoa(PACK) }];
+    await openContent(api);
+    act(() => api.dropFolder("My Content"));
+    const dialog = await screen.findByRole("dialog", { name: /Import preview/ });
+    expect(within(dialog).getByText(/1 element from 1 file will be added as "My Content"/)).toBeTruthy();
+    const [args] = preview.mock.calls[0]!;
+    expect(args.request.folder).toMatch(/^pick_/);
+    expect(args.request.files).toBeUndefined();
+  });
+
   it("imports a dropped character file and opens the character list", async () => {
     const api = mock();
     const importCharacter = vi.spyOn(api, "importCharacter");

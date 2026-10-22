@@ -72,13 +72,17 @@ export function GlobalImport() {
   useEffect(() => api.subscribe("files:dropped", (drop) => {
     void (async () => {
       if (drop.rejected.length) toast.push(unsupportedImportMessage(drop.rejected, mobile), "error");
+      const [folder] = drop.folders;
+      if (folder && (await notice.ensure())) {
+        await startImportPreview(api, { folder: folder.token }, (m) => toast.push(m, "error"));
+      }
       if (!drop.files.length) return;
       try {
         const opened = await api.takePickedFiles({ purpose: "dropped-file", tokens: drop.files.map((f) => f.token) });
         await route(opened.map((o) => base64ToFile(o.fileName, o.contentBase64)));
       } catch (e) { toast.push(errorMessage(e), "error"); }
     })();
-  }), [api, route, toast, mobile]);
+  }), [api, route, toast, mobile, notice]);
 
   useEffect(() => {
     const over = (e: DragEvent) => { if (hasFiles(e)) e.preventDefault(); };
