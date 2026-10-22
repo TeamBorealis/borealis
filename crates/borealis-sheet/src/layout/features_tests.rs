@@ -499,3 +499,32 @@ fn weights_and_coins_group_thousands_like_xp() {
     assert_eq!(group_digits("-1234"), "-1,234");
     assert_eq!(group_digits("999"), "999");
 }
+
+/// Lowest text line of a page, ignoring the footer.
+fn lowest_text(p: &PdfPage, body_bottom: f32) -> f32 {
+    p.ops
+        .iter()
+        .filter_map(|op| match op {
+            PageOp::Text { y, .. } if *y < body_bottom => Some(*y),
+            _ => None,
+        })
+        .fold(0.0, f32::max)
+}
+
+#[test]
+fn feature_details_use_the_room_left_on_the_last_continuation_page() {
+    // Only the last page of the sequence may end early; the full-text blocks used to start a page
+    // of their own after a nearly empty continuation page.
+    let g = Grid::new(Paper::Letter);
+    for n_feats in [10, 18] {
+        let d = overflow(with_story(data(&wizard_2024())), n_feats, 0);
+        let (f, _) = build_with_limits(&d, &LayoutOptions::default(), &g, 2);
+        let last = f.main.len() - 1;
+        for (i, p) in f.main.iter().enumerate().take(last) {
+            assert!(
+                lowest_text(p, g.body_bottom) > g.body_bottom - 40.0,
+                "page {i} of {n_feats} features ends early"
+            );
+        }
+    }
+}

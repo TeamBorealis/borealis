@@ -62,6 +62,8 @@ impl FeaturePages {
     }
 }
 
+/// Heading of the full-text blocks of summarised features.
+const DETAILS_TITLE: &str = "Feature details";
 /// Height of the deity row at the top of the 2024 start column.
 const DEITY_H: f32 = 25.0;
 /// Slack before a column counts as overfull.
@@ -230,14 +232,22 @@ fn choose_summaries(d: &SheetData, k: f32, w: f32, col_h: f32) -> HashSet<usize>
 fn detail_queue(d: &SheetData, summarised: &HashSet<usize>) -> VecDeque<Piece> {
     let mut idx: Vec<usize> = summarised.iter().copied().collect();
     idx.sort_unstable();
-    idx.into_iter()
-        .map(|i| {
-            let mut f = feature_piece(d, i, false);
-            f.detail = true;
-            f.pips = 0;
-            Piece::Feature(f)
-        })
-        .collect()
+    let mut q = VecDeque::new();
+    if idx.is_empty() {
+        return q;
+    }
+    q.push_back(Piece::Heading {
+        title: DETAILS_TITLE.into(),
+        hint: None,
+    });
+    q.extend(idx.into_iter().map(|i| {
+        let mut f = feature_piece(d, i, false);
+        f.detail = true;
+        f.pips = 0;
+        f.group = DETAILS_TITLE.to_string();
+        Piece::Feature(f)
+    }));
+    q
 }
 
 /// Build the features and gear pages. `first_page_no` is the printed number of the first page
@@ -299,17 +309,18 @@ fn build_2024(env: &Env, first_page_no: u32) -> (FeaturePages, Vec<Vec<(usize, f
         right = features_gear::column_2024(&mut cx, (b.0, top, b.1), g.body_bottom, marks);
     }
     seq.push(c);
+    // The full-text blocks join the shorter column's queue, so they use the room left on the
+    // continuation pages instead of starting a page of their own.
+    let mut left = left;
+    let mut right = right;
+    let shorter = if queue_height(&left, k, a.1) <= queue_height(&right, k, b.1) {
+        &mut left
+    } else {
+        &mut right
+    };
+    shorter.extend(detail_queue(d, &summarised));
     let cont = "Features & gear (continued)";
     seq.flow_pages(env, 1, (cont, cont), left, right);
-    let main_pages = seq.pages.len();
-    let details = detail_queue(d, &summarised);
-    seq.flow_pages(
-        env,
-        main_pages as u32,
-        ("Feature details", "Feature details (continued)"),
-        details,
-        VecDeque::new(),
-    );
     seq.resolve_refs(env, |i| first_page_no + i as u32);
     seq.resolve_marks(env.o, |i| first_page_no + i as u32);
     (
