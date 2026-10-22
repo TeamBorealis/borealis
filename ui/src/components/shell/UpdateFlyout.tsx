@@ -8,7 +8,7 @@ import { Markdown } from "../../pages/ai/markdown";
 import { dismissAppUpdate, openDownload, useAppUpdateView } from "../../state/appUpdate";
 
 const OPEN_EVENT = "borealis:update-flyout";
-export const UPDATE_TIP = "Update available";
+export const UPDATE_TIP = "Update Available";
 
 /** Opens the UPDATE AVAILABLE flyout (the title-bar update button). */
 export function openUpdateFlyout(): void {
@@ -17,7 +17,7 @@ export function openUpdateFlyout(): void {
 
 /**
  * Title-bar command shown while a newer release is known and not dismissed: accent fill, a dropping double chevron,
- * tooltip "Update available". `compact` is the phone title bar's icon button.
+ * tooltip "Update Available". `compact` is the phone title bar's icon button.
  */
 export function UpdateCommand({ compact = false }: { compact?: boolean }) {
   const { showNotice } = useAppUpdateView();
@@ -30,7 +30,7 @@ export function UpdateCommand({ compact = false }: { compact?: boolean }) {
   return compact ? button : <ToolTip text={UPDATE_TIP}>{button}</ToolTip>;
 }
 
-/** Classic builder's update flyout: title block, a description panel with the release, DOWNLOAD (success) and CLOSE. */
+/** Classic builder's update flyout: a description panel with the release, DOWNLOAD (success) and CLOSE. */
 export function UpdateFlyout() {
   const api = useApi();
   const { status } = useAppUpdateView();
@@ -46,15 +46,13 @@ export function UpdateFlyout() {
   /** CLOSE dismisses this version (remembered across launches); Esc and the scrim only close the flyout. */
   const dismiss = () => { dismissAppUpdate(latest); close(); };
   return (
-    <Flyout title="Update available" onClose={close} footer={
+    <Flyout title="Update Available" onClose={close} footer={
       <div className="v4-foot">
         <Button variant="success" onClick={() => void openDownload(api, status.url ?? undefined)}>Download</Button>
         <Button onClick={dismiss}>Close</Button>
       </div>
     }>
       <div className="upd-flyout" tabIndex={-1} data-autofocus>
-        <h3 className="upd-title">Borealis {latest}</h3>
-        <p className="upd-sub">A new version is available</p>
         <section className="upd-desc" aria-label="Release">
           <h4>Borealis {latest}</h4>
           <p>Version {latest} of Borealis is available. You have version {status.current}.</p>

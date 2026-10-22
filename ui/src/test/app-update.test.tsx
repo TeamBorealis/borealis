@@ -49,8 +49,8 @@ describe("phone check with fetch()", () => {
   });
 });
 
-const updateButton = () => screen.queryByRole("button", { name: "Update available" });
-const updateFlyout = () => screen.queryByRole("dialog", { name: "Update available" });
+const updateButton = () => screen.queryByRole("button", { name: "Update Available" });
+const updateFlyout = () => screen.queryByRole("dialog", { name: "Update Available" });
 
 describe("update button and UPDATE AVAILABLE flyout", () => {
   it("a newer version shows the title-bar button; the flyout downloads; Close dismisses and is remembered", async () => {
@@ -58,8 +58,8 @@ describe("update button and UPDATE AVAILABLE flyout", () => {
     const api = fast();
     api.appUpdate.status = { ...NEWER };
     const first = renderApp("/characters", { api });
-    await user.click(await screen.findByRole("button", { name: "Update available" }));
-    const flyout = await screen.findByRole("dialog", { name: "Update available" });
+    await user.click(await screen.findByRole("button", { name: "Update Available" }));
+    const flyout = await screen.findByRole("dialog", { name: "Update Available" });
     expect(flyout.textContent).toContain("Borealis 1.0.1");
     expect(flyout.textContent).toContain("You have version 1.0.0");
     await user.click(within(flyout).getByRole("button", { name: "Download" }));
@@ -76,8 +76,8 @@ describe("update button and UPDATE AVAILABLE flyout", () => {
     expect(updateButton()).toBeNull();
     api.appUpdate.status = { ...NEWER, latest: "1.0.2" };
     await act(async () => { await api.checkAppUpdate(); });
-    await user.click(await screen.findByRole("button", { name: "Update available" }));
-    expect((await screen.findByRole("dialog", { name: "Update available" })).textContent).toContain("1.0.2");
+    await user.click(await screen.findByRole("button", { name: "Update Available" }));
+    expect((await screen.findByRole("dialog", { name: "Update Available" })).textContent).toContain("1.0.2");
   });
 
   it("shows the release notes as text in the description pane, never as HTML", async () => {
@@ -85,8 +85,8 @@ describe("update button and UPDATE AVAILABLE flyout", () => {
     const api = fast();
     api.appUpdate.status = { ...NEWER, notes: "## What's new\n- Faster **imports**\n- <img src=x onerror=alert(1)>" };
     renderApp("/characters", { api });
-    await user.click(await screen.findByRole("button", { name: "Update available" }));
-    const flyout = await screen.findByRole("dialog", { name: "Update available" });
+    await user.click(await screen.findByRole("button", { name: "Update Available" }));
+    const flyout = await screen.findByRole("dialog", { name: "Update Available" });
     const notes = within(flyout).getByTestId("update-notes");
     expect(notes.textContent).toContain("What's new");
     expect(notes.querySelector("strong")!.textContent).toBe("imports");
@@ -100,8 +100,8 @@ describe("update button and UPDATE AVAILABLE flyout", () => {
     const api = fast();
     api.appUpdate.status = { ...NEWER };
     renderApp("/characters", { api });
-    await user.click(await screen.findByRole("button", { name: "Update available" }));
-    const flyout = await screen.findByRole("dialog", { name: "Update available" });
+    await user.click(await screen.findByRole("button", { name: "Update Available" }));
+    const flyout = await screen.findByRole("dialog", { name: "Update Available" });
     expect(within(flyout).queryByTestId("update-notes")).toBeNull();
     expect(flyout.textContent).toContain("You have version 1.0.0");
   });
@@ -110,12 +110,12 @@ describe("update button and UPDATE AVAILABLE flyout", () => {
     const api = fast();
     api.appUpdate.status = { ...NEWER };
     const { container } = renderApp("/characters", { api });
-    const button = await screen.findByRole("button", { name: "Update available" });
+    const button = await screen.findByRole("button", { name: "Update Available" });
     const cmds = container.querySelector(".aur-wincmds")!;
     const labels = [...cmds.querySelectorAll("button")].map((b) => b.getAttribute("aria-label"));
-    expect(labels.indexOf("Update available")).toBe(labels.indexOf("Project website") - 1);
+    expect(labels.indexOf("Update Available")).toBe(labels.indexOf("Project website") - 1);
     expect(cmds.contains(button)).toBe(true);
-    expect(screen.queryByRole("region", { name: "Update available" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Update Available" })).toBeNull();
     expect(container.querySelector(".aur-update")).toBeNull();
   });
 
@@ -124,8 +124,8 @@ describe("update button and UPDATE AVAILABLE flyout", () => {
     const api = fast();
     api.appUpdate.status = { ...NEWER };
     renderApp("/characters", { api });
-    await user.click(await screen.findByRole("button", { name: "Update available" }));
-    await screen.findByRole("dialog", { name: "Update available" });
+    await user.click(await screen.findByRole("button", { name: "Update Available" }));
+    await screen.findByRole("dialog", { name: "Update Available" });
     await user.keyboard("{Escape}");
     await waitFor(() => expect(updateFlyout()).toBeNull());
     expect(updateButton()).not.toBeNull();
@@ -142,10 +142,10 @@ describe("update button and UPDATE AVAILABLE flyout", () => {
       const api = fast();
       api.appUpdate.status = { ...NEWER };
       const { container } = renderApp("/characters", { api });
-      const button = await screen.findByRole("button", { name: "Update available" });
+      const button = await screen.findByRole("button", { name: "Update Available" });
       expect(container.querySelector(".aur-title.mobile")!.contains(button)).toBe(true);
       await user.click(button);
-      expect((await screen.findByRole("dialog", { name: "Update available" })).textContent).toContain("Borealis 1.0.1");
+      expect((await screen.findByRole("dialog", { name: "Update Available" })).textContent).toContain("Borealis 1.0.1");
     } finally { Reflect.deleteProperty(window, "matchMedia"); }
   });
 
