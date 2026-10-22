@@ -1,5 +1,5 @@
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { Icon } from "../Icon";
 import { usePlatform } from "../../state/platform";
 import { CHARACTER_MENU, type MenuEntry, openProjectSite, visibleMenus } from "./sections";

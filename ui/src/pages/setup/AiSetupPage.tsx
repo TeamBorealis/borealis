@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import type { AiSetupProvider, AiSetupProviderId, AiSetupStatus } from "../../api/contract";
 import { Alert, Button, useShell } from "../../components";
 import { Expander } from "../../components/controls";

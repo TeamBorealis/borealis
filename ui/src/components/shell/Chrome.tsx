@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router";
 import { Portrait } from "../Portrait";
 import { Icon } from "../Icon";
 import { MetroProgressBar } from "../controls/Controls";

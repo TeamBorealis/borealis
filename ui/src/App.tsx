@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router";
 import { ControlsGallery } from "./components/controls/ControlsGallery";
 import { AppShell } from "./components/shell/AppShell";
 import { GlobalImport } from "./components/GlobalImport";

@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import type { AiProviderId, AppSettings, Density } from "../../api/contract";
 import { Alert, Button, ComboBox } from "../../components";
 import { useApi } from "../../state/ApiContext";

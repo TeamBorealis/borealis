@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import type { AiMode } from "../../api/contract";
 import { Alert, Button, Check, TextArea, useShell } from "../../components";
 import { Expander } from "../../components/controls";

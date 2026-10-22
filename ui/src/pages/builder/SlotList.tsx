@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import type { SelectionSlot } from "../../api/contract";
 import { useCharacter } from "../../state/CharacterContext";
 import { DescriptionPane } from "./DescriptionPane";

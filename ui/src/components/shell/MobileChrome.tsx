@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router";
 import { Icon } from "../Icon";
 import { BrandMark } from "./BrandMark";
 import { MAIN_TABS, activeTab } from "./sections";

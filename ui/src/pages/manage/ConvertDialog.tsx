@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import type { ConversionItem, ConversionOutcome, ConversionPreview, ConversionStats } from "../../api/contract";
 import { Alert, Button, Chip, Modal, signed } from "../../components";
 import { useApi } from "../../state/ApiContext";

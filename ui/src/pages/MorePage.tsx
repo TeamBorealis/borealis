@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Icon } from "../components";
 import { ROUTES } from "../routes";
 import { usePlatform } from "../state/platform";

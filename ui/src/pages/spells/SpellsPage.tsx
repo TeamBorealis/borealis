@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import type { ClassSpellcasting, PactSlotRow, SelectionSlot, SpellSlotRow } from "../../api/contract";
 import { TabPanel, Tabs, signed } from "../../components";
 import { RequireCharacter } from "../../components/RequireCharacter";

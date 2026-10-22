@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { tabForSlot } from "../../pages/builder/BuilderPage";
 import { useSettings } from "../../state/SettingsContext";
 import { useCharacter } from "../../state/CharacterContext";

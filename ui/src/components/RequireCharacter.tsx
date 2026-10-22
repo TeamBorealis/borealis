@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { useCharacter } from "../state/CharacterContext";
 import { EmptyState } from "./Card";
 

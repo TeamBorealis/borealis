@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import type { ImportPreview } from "../../api/contract";
 import { Alert, Button, Modal, useToast } from "../../components";
 import { Expander } from "../../components/controls";

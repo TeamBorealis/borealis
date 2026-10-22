@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { SheetPreview } from "../../api/contract";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { Alert, ShellSubTabs } from "../../components";
 import "./sheet.css";
 import { RequireCharacter } from "../../components/RequireCharacter";

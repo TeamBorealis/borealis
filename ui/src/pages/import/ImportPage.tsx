@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import { Alert, Button, Icon } from "../../components";
 import { Expander } from "../../components/controls";
 import { useToast } from "../../components/Toast";

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router";
 import type { BuilderTab, RulesetProfile } from "../../api/contract";
 import { Alert, TabPanel, Tabs, type TabDef } from "../../components";
 import { RequireCharacter } from "../../components/RequireCharacter";

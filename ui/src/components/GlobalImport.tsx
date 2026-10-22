@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router";
 import { classifyImport, RULES_IMPORT_ACCEPT, unsupportedImportMessage } from "../lib/importRouting";
 import { base64ToFile, fileToBase64, filesToInputs } from "../lib/files";
 import { ImportPreviewHost } from "../pages/content/ImportPreviewDialog";

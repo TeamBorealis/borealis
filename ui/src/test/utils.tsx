@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter } from "react-router";
 import { App } from "../App";
 import { AppProviders } from "../AppProviders";
 import { MockApi } from "../api/mock";
@@ -20,7 +20,7 @@ export function renderApp(route: string, opts: { api?: MockApi; openCharacterId?
   } catch { /* ignore */ }
   const utils = render(
     <AppProviders api={api}>
-      <MemoryRouter initialEntries={[route]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={[route]}>
         <App />
       </MemoryRouter>
     </AppProviders>,

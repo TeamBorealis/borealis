@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import { useShell } from "../../components/shell/ShellContext";
 import { ApplicationSettings } from "./ApplicationSettings";
 import { BorealisSettings } from "./BorealisSettings";

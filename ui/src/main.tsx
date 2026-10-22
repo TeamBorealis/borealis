@@ -1,6 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { HashRouter } from "react-router-dom";
+import { HashRouter } from "react-router";
 import { createApi } from "./api";
 import { App } from "./App";
 import { AppProviders } from "./AppProviders";
@@ -26,7 +26,7 @@ const root = document.getElementById("root");
 if (!root) throw new Error("root element missing");
 const app = () => (
   <AppProviders api={createApi()}>
-    <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <HashRouter>
       <App />
     </HashRouter>
   </AppProviders>

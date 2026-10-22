@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useShell } from "../../components/shell/ShellContext";
 import type { ElementSummary } from "../../api/contract";
 import { MetroProgressBar, ScoreInput, TextBox, useConfirm } from "../../components";

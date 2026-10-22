@@ -1,5 +1,5 @@
 import { useMemo, type CSSProperties, type KeyboardEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import type { ElementRef, SelectionSlot, SlotOption } from "../../api/contract";
 import { Expander, FocusBar, Icon } from "../../components";
 import { useApi } from "../../state/ApiContext";

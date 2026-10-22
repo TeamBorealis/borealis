@@ -1,6 +1,6 @@
 import { CheckBox } from "../../components/controls";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router";
 import type { CharacterSummary, RecheckReport } from "../../api/contract";
 import { Alert, Button, Modal, SearchInput, TextField, useConfirm, useToast } from "../../components";
 import { fileToBase64 } from "../../lib/files";

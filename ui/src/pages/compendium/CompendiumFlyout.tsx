@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import type { ElementSummary, Ruleset } from "../../api/contract";
 import { Alert, Button, ComboBox, Expander, SafeHtml, SearchInput } from "../../components";
 import { Flyout } from "../../components/controls/Flyout";
