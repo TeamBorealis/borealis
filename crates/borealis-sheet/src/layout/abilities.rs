@@ -94,7 +94,37 @@ fn sigil_id(key: &str) -> ArtId {
     }
 }
 
-fn card_header(c: &mut Canvas, (x, y, w): (f32, f32, f32), a: &AbilityData, swap: bool, ink: bool) {
+/// Field names of an ability card's two boxes.
+pub(crate) struct CardIds {
+    pub score: String,
+    pub modifier: String,
+}
+
+impl CardIds {
+    /// The main sheet's `abil.<key>.score` / `.mod`.
+    fn sheet(key: &str) -> CardIds {
+        CardIds {
+            score: id::abil_score(key),
+            modifier: id::abil_mod(key),
+        }
+    }
+}
+
+/// Height of an ability card with no rows below its header.
+pub(crate) const HEADER_CARD_H: f32 = HEADER_H + CARD_PAD_BOTTOM;
+
+fn card_header(c: &mut Canvas, rect: (f32, f32, f32), a: &AbilityData, swap: bool, ink: bool) {
+    header_with_ids(c, rect, a, (swap, ink), &CardIds::sheet(a.key));
+}
+
+/// The ability card header (sigil, name, big box and score ring), with its own field names.
+pub(crate) fn header_with_ids(
+    c: &mut Canvas,
+    (x, y, w): (f32, f32, f32),
+    a: &AbilityData,
+    (swap, ink): (bool, bool),
+    ids: &CardIds,
+) {
     place(
         c,
         ink,
@@ -107,16 +137,16 @@ fn card_header(c: &mut Canvas, (x, y, w): (f32, f32, f32), a: &AbilityData, swap
     c.label(x + 45.0, y + 26.0, Align::Start, &a.key.to_uppercase());
     let (big_id, big, small_id, small) = if swap {
         (
-            id::abil_score(a.key),
+            ids.score.clone(),
             a.score.to_string(),
-            id::abil_mod(a.key),
+            ids.modifier.clone(),
             signed(i64::from(a.modifier)),
         )
     } else {
         (
-            id::abil_mod(a.key),
+            ids.modifier.clone(),
             signed(i64::from(a.modifier)),
-            id::abil_score(a.key),
+            ids.score.clone(),
             a.score.to_string(),
         )
     };

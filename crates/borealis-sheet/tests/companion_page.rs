@@ -83,8 +83,17 @@ fn companion_page_prints_the_stat_block_in_both_editions() {
             "Traits",
             "Actions",
             "Passive Perception",
+            "Strength",
+            "Charisma",
         ] {
             assert!(text.contains(want), "{label}: missing {want}");
+        }
+        assert!(
+            !text.contains("STR 12 ("),
+            "{label}: scores still printed as text"
+        );
+        if let Ok(dir) = std::env::var("BOREALIS_E2C_OUT") {
+            std::fs::write(format!("{dir}/companion-{label}.pdf"), &with).unwrap();
         }
         assert!(
             !all_text(&without).contains("Passive Perception"),

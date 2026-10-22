@@ -104,6 +104,12 @@ impl CompanionSheet {
     /// The statistics text: build, the headline numbers and the six scores, one per line.
     #[must_use]
     pub fn stats_text(&self) -> String {
+        self.stats_lines(true)
+    }
+
+    /// The statistics text; `with_scores` false leaves the six scores out (the PDF draws them as
+    /// score boxes).
+    fn stats_lines(&self, with_scores: bool) -> String {
         let mut lines = Vec::new();
         if !self.name.is_empty() && self.name != self.creature {
             lines.push(format!("Name: {}", self.name));
@@ -131,8 +137,10 @@ impl CompanionSheet {
                 signed(modifier(self.abilities[i]))
             )
         };
-        lines.push((0..3).map(score).collect::<Vec<_>>().join("   "));
-        lines.push((3..6).map(score).collect::<Vec<_>>().join("   "));
+        if with_scores {
+            lines.push((0..3).map(score).collect::<Vec<_>>().join("   "));
+            lines.push((3..6).map(score).collect::<Vec<_>>().join("   "));
+        }
         lines.join("\n")
     }
 
@@ -162,8 +170,19 @@ impl CompanionSheet {
     /// text are left out. The PDF page and the HTML preview both use this list.
     #[must_use]
     pub fn regions(&self) -> Vec<(&'static str, &'static str, String)> {
+        self.regions_for(true)
+    }
+
+    /// [`CompanionSheet::regions`]; `scores_in_text` false leaves the six scores out of the
+    /// statistics (drawn as score boxes instead).
+    #[must_use]
+    pub fn regions_for(&self, scores_in_text: bool) -> Vec<(&'static str, &'static str, String)> {
         [
-            ("companion.stats", "Statistics", self.stats_text()),
+            (
+                "companion.stats",
+                "Statistics",
+                self.stats_lines(scores_in_text),
+            ),
             ("companion.skills", "Skills", self.skills_text()),
             (
                 "companion.traits",
