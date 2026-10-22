@@ -486,6 +486,27 @@ fn is_internal_label(prefix: &str, rest: &str) -> bool {
     prefix.to_lowercase().contains("group") || rest.to_lowercase().contains("group")
 }
 
+/// The text inside the outer parentheses of a proficiency name: only the closing parenthesis of
+/// the name itself goes, so "Vehicles (water)" keeps its own.
+fn proficiency_item(inside: &str) -> String {
+    inside
+        .strip_suffix(')')
+        .unwrap_or(inside)
+        .trim()
+        .to_string()
+}
+
+#[cfg(test)]
+mod proficiency_item_tests {
+    use super::proficiency_item;
+
+    #[test]
+    fn keeps_nested_parentheses() {
+        assert_eq!(proficiency_item("Vehicles (water))"), "Vehicles (water)");
+        assert_eq!(proficiency_item("Club)"), "Club");
+    }
+}
+
 /// Proficiencies without skill/save rows, internal group labels, duplicates or members of a
 /// category the character holds as a whole.
 pub(crate) fn proficiencies(snap: &CharacterSnapshot) -> ProficiencyData {
@@ -494,7 +515,7 @@ pub(crate) fn proficiencies(snap: &CharacterSnapshot) -> ProficiencyData {
         let Some((prefix, rest)) = name.split_once(" (") else {
             continue;
         };
-        let item = rest.trim_end_matches(')').trim().to_string();
+        let item = proficiency_item(rest);
         if prefix.starts_with("Saving Throw")
             || prefix.starts_with("Skill")
             || is_internal_label(prefix, &item)
