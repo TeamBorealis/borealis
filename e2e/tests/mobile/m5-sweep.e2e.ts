@@ -28,6 +28,11 @@ const NOTICE_TIMEOUT = { timeout: 60_000 } as const;
 /** Long enough for the delayed phone check to have run and shown the button if it were going to. */
 const AFTER_CHECK_MS = 25_000;
 const FOREGROUND_POLL_MS = 1_000;
+/** A tap that lands before the page is interactive is retried this often, waiting this long for its effect. */
+const RETAP_ATTEMPTS = 3;
+const RETAP_WAIT_MS = 10_000;
+/** Long enough for the web view to have written localStorage to disk (15 s held by hand on Android). */
+const STORAGE_FLUSH_MS = 15_000;
 const FOREGROUND_TIMEOUT_MS = 20_000;
 /** A host whose certificate is signed by nobody (badssl.com test hosts). */
 const BAD_CERT_INDEX = 'https://self-signed.badssl.com/core.index';
@@ -36,6 +41,33 @@ const BUNDLE_ID = 'app.borealis';
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 type Context = TestFixtures & { device: Device };
+
+type Locator = ReturnType<TestFixtures['screen']['getByText']>;
+
+/** Tap `target` until `expected` shows: a tap right after launch can land before the page is interactive (Android). */
+async function tapUntilVisible(target: Locator, expected: Locator): Promise<void> {
+  for (let attempt = 0; ; attempt += 1) {
+    await target.tap();
+    try {
+      await expect(expected).toBeVisible({ timeout: RETAP_WAIT_MS });
+      return;
+    } catch (e) {
+      if (attempt >= RETAP_ATTEMPTS - 1) throw e;
+    }
+  }
+}
+
+/** Settings > Data files > Share logs (the tab is a button on iOS; on Android it is found by its text). */
+async function tapShareLogs({ app, device, screen }: Context, platform: MobilePlatform): Promise<void> {
+  await freshInstall(device);
+  await app.open();
+  await expect(screen.getByText('WELCOME TO BOREALIS')).toBeVisible(SLOW);
+  const tab = platform === 'ios' ? screen.getByRole('button', 'Data files') : screen.getByText('Data files').first();
+  await tapUntilVisible(screen.getByRole('button', 'Settings'), tab);
+  const share = screen.getByRole('button', 'Share logs');
+  await tapUntilVisible(tab, share);
+  await share.tap();
+}
 
 async function waitForeignForeground(device: Device): Promise<string> {
   const end = Date.now() + FOREGROUND_TIMEOUT_MS;
@@ -55,18 +87,26 @@ async function updateNotice({ app, device, screen }: Context, platform: MobilePl
   await app.restart();
   const button = screen.getByRole('button', UPDATE);
   await expect(button).toBeVisible(NOTICE_TIMEOUT);
-  await button.tap();
-  await expect(screen.getByText(new RegExp(`^Version ${FIXTURE_VERSION.replace(/\./g, '\\.')} of Borealis is available\\.`))).toBeVisible(SLOW);
+  // Android's accessibility tree does not expose the flyout body (the "Release" region), only its
+  // title and buttons; the version text is checked on iOS (Android: checked on screen, B-41).
+  const flyout = platform === 'ios'
+    ? screen.getByText(new RegExp(`^Version ${FIXTURE_VERSION.replace(/\./g, '\\.')} of Borealis is available\\.`))
+    : screen.getByText('UPDATE AVAILABLE').last();
+  await tapUntilVisible(button, flyout);
   // Download hands the website to the system browser. iOS: agent-device reports the session app, not
   // Safari, so the browser hand-off is only checked on Android (B-08 checked iOS on screen).
   await screen.getByRole('button', /^Download$/).tap();
   if (platform === 'android') console.info(`[m5] Download opened ${await waitForeignForeground(device)}`);
   await app.open();
   await expect(button).toBeVisible(NOTICE_TIMEOUT);
-  await button.tap();
+  const close = screen.getByRole('button', /^Close$/).last();
+  await tapUntilVisible(button, close);
   // Close dismisses this version; the button is gone and stays gone after a restart.
-  await screen.getByRole('button', /^Close$/).last().tap();
+  await close.tap();
   await expect(button).toBeHidden(SLOW);
+  // The dismissal lives in localStorage, which the Android WebView writes to disk lazily: a restart
+  // right after Close loses it (seen in B-41). Give it time to land first.
+  await sleep(STORAGE_FLUSH_MS);
   await app.restart();
   await sleep(AFTER_CHECK_MS);
   await expect(screen.getByText(/^Start$/).last()).toBeVisible(SLOW);
@@ -89,28 +129,15 @@ async function badCertIndex({ app, device, screen }: Context, platform: MobilePl
 }
 
 /** iOS: Share logs hands the newest log lines to the system share sheet (Web Share). */
-async function shareLogsIos({ app, device, screen }: Context): Promise<void> {
-  await freshInstall(device);
-  await app.open();
-  await expect(screen.getByText('WELCOME TO BOREALIS')).toBeVisible(SLOW);
-  await screen.getByRole('button', 'Settings').tap();
-  const tab = screen.getByRole('button', 'Data files');
-  await expect(tab).toBeVisible(SLOW);
-  await tab.tap();
-  await screen.getByRole('button', 'Share logs').tap();
-  await expect(screen.getByText('Save to Files')).toBeVisible(SLOW);
+async function shareLogsIos(ctx: Context): Promise<void> {
+  await tapShareLogs(ctx, 'ios');
+  await expect(ctx.screen.getByText('Save to Files')).toBeVisible(SLOW);
 }
 
 /** Android (B-40): Share logs opens the system share sheet (native ACTION_SEND), not the clipboard fallback. */
-async function shareLogsAndroid({ app, device, screen }: Context): Promise<void> {
-  await freshInstall(device);
-  await app.open();
-  await expect(screen.getByText('WELCOME TO BOREALIS')).toBeVisible(SLOW);
-  await screen.getByRole('button', 'Settings').tap();
-  const tab = screen.getByRole('button', 'Data files');
-  await expect(tab).toBeVisible(SLOW);
-  await tab.tap();
-  await screen.getByRole('button', 'Share logs').tap();
+async function shareLogsAndroid(ctx: Context): Promise<void> {
+  const { device, screen } = ctx;
+  await tapShareLogs(ctx, 'android');
   console.info(`[m5] Share logs opened ${await waitForeignForeground(device)}`);
   await device.back();
   await expect(screen.getByText(/copied to the clipboard/)).toBeHidden();
