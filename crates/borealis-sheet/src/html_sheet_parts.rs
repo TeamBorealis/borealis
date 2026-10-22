@@ -123,22 +123,21 @@ pub(super) fn level_name(level: u32) -> String {
     format!("{level}{suffix} level")
 }
 
-/// Ability card: sigil, name, modifier, score circle, save row and `skills` nested under it.
-pub(super) fn ability_card(
+/// Opening of an ability card up to the end of its top row: sigil, name, modifier and score.
+pub(super) fn card_top(
     o: &HtmlOptions,
-    a: &AbilityData,
-    skills: &[&SkillData],
-    signed: &dyn Fn(i32) -> String,
+    (key, name): (&str, &str),
+    (mod_id, modifier): (&str, &str),
+    (score_id, score): (&str, &str),
 ) -> String {
-    use crate::model_ids as id;
     let mut out = format!(
         "<div class=\"ab\"><div class=\"ab-top\">{}<div class=\"ab-name\">{}<small>{}</small></div>",
-        art(&format!("sigil-{}", a.key), ""),
-        esc(&a.name),
-        a.key
+        art(&format!("sigil-{key}"), ""),
+        esc(name),
+        key
     );
-    let modifier = fld(&id::abil_mod(a.key), "", &signed(a.modifier));
-    let score = fld(&id::abil_score(a.key), "", &a.score.to_string());
+    let modifier = fld(mod_id, "", modifier);
+    let score = fld(score_id, "", score);
     let _ = if o.swap_ability_positions {
         write!(
             out,
@@ -150,6 +149,23 @@ pub(super) fn ability_card(
             "<div class=\"mod\">{modifier}</div><div class=\"score\">{score}</div>"
         )
     };
+    out
+}
+
+/// Ability card: sigil, name, modifier, score circle, save row and `skills` nested under it.
+pub(super) fn ability_card(
+    o: &HtmlOptions,
+    a: &AbilityData,
+    skills: &[&SkillData],
+    signed: &dyn Fn(i32) -> String,
+) -> String {
+    use crate::model_ids as id;
+    let mut out = card_top(
+        o,
+        (a.key, &a.name),
+        (&id::abil_mod(a.key), &signed(a.modifier)),
+        (&id::abil_score(a.key), &a.score.to_string()),
+    );
     let _ = write!(
         out,
         "</div><div class=\"rows\"><div class=\"r save\">{}<span>Saving throw</span>{}</div>",

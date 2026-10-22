@@ -65,6 +65,7 @@ pub(crate) use legacy_plan::{
 };
 pub(crate) use page_cards::build as build_cards;
 pub(crate) use page_companion::build as build_companion;
+pub(crate) use page_companion::ABILITIES as COMPANION_ABILITIES;
 pub(crate) use page_core::build as build_page_one;
 pub(crate) use page_features::{build as build_features, details_portrait_rect};
 pub(crate) use page_legacy_spells::{build as build_legacy_spells, columns_avail as legacy_avail};

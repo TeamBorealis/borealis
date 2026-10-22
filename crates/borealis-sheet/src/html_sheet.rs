@@ -304,7 +304,7 @@ fn page_specs(d: &SheetData, o: &HtmlOptions) -> Vec<PageSpec> {
     if is24 && sel.story && d.story.has_content() {
         v.push(spec("story", "Story", "Story", p4::page(d, o)));
     }
-    if let (true, Some(body)) = (sel.story, p4::companion_page(d)) {
+    if let (true, Some(body)) = (sel.story, p4::companion_page(d, o)) {
         let title = d
             .extras
             .companion

@@ -120,6 +120,9 @@ fn html_preview_has_a_companion_page() {
         render_html_with(&c, &s, &SheetOptions::default(), &content(Some(hound(1)))).expect("html");
     assert!(html.contains("Synthetic Hound"));
     assert!(html.contains("companion.stats"));
+    // The scores are ability cards (sigil, modifier, score), not text lines.
+    assert!(html.contains("data-field=\"companion.dex.score\""));
+    assert!(html.contains("data-field=\"companion.cha.mod\""));
     let none = render_html_with(&c, &s, &SheetOptions::default(), &content(None)).expect("html");
     assert!(!none.contains("companion.stats"));
 }

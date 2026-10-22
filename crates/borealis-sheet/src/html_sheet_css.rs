@@ -92,6 +92,7 @@ tr.empty td{height:12pt}
 .chips{display:flex;flex-wrap:wrap;gap:2pt 7pt}.chip{display:inline-flex;gap:2.5pt;align-items:center}
 .sq{width:6.5pt;height:6.5pt;border:.7pt solid var(--ink-2);border-radius:1pt;display:inline-block}
 .sq.on{background:var(--ink)}
+.companion-scores{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4.5pt;margin-bottom:6pt}
 .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12pt;flex:1}
 .sub{display:grid;grid-template-columns:150pt minmax(0,1fr);gap:10pt}
 .feat{margin-bottom:4pt;break-inside:avoid}

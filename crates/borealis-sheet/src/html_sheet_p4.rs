@@ -1,7 +1,9 @@
 //! Story page (2024 page 4) and the story column of the 2014 details page.
 
-use super::parts::{area, esc, fld, h2};
+use super::parts::{area, card_top, esc, fld, h2};
 use super::HtmlOptions;
+use crate::companion::signed;
+use crate::layout::COMPANION_ABILITIES;
 use crate::model_ids as id;
 use crate::model_types::SheetData;
 use std::fmt::Write;
@@ -99,10 +101,10 @@ pub(super) fn details_2014(d: &SheetData, o: &HtmlOptions) -> String {
 
 /// Companion page: the stat block regions in two columns (statistics and skills left, the
 /// creature's traits, actions and reactions right). `None` without a stat block.
-pub(super) fn companion_page(d: &SheetData) -> Option<String> {
+pub(super) fn companion_page(d: &SheetData, o: &HtmlOptions) -> Option<String> {
     let c = d.extras.companion.as_ref()?;
     let (mut left, mut right) = (String::new(), String::new());
-    for (i, title, text) in c.regions() {
+    for (i, title, text) in c.regions_for(false) {
         let col = if matches!(i, "companion.stats" | "companion.skills") {
             &mut left
         } else {
@@ -111,6 +113,25 @@ pub(super) fn companion_page(d: &SheetData) -> Option<String> {
         col.push_str(&text_section(title, i, &text, false));
     }
     Some(format!(
-        "<div class=\"two\"><div class=\"col\">{left}</div><div class=\"col\">{right}</div></div>"
+        "<div class=\"companion-scores\">{}</div><div class=\"two\"><div class=\"col\">{left}</div><div class=\"col\">{right}</div></div>",
+        score_cards(&c.abilities, o)
     ))
+}
+
+/// The six scores as the main sheet's ability cards (sigil, name, modifier, score), two per row.
+fn score_cards(scores: &[i32; 6], o: &HtmlOptions) -> String {
+    let mut out = String::new();
+    for (&(key, name), &score) in COMPANION_ABILITIES.iter().zip(scores) {
+        out.push_str(&card_top(
+            o,
+            (key, name),
+            (
+                &format!("companion.{key}.mod"),
+                &signed((score - 10).div_euclid(2)),
+            ),
+            (&format!("companion.{key}.score"), &score.to_string()),
+        ));
+        out.push_str("</div>");
+    }
+    out
 }

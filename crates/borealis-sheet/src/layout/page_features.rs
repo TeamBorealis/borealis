@@ -311,7 +311,6 @@ fn build_2024(env: &Env, first_page_no: u32) -> (FeaturePages, Vec<Vec<(usize, f
     seq.push(c);
     // The full-text blocks join the shorter column's queue, so they use the room left on the
     // continuation pages instead of starting a page of their own.
-    let mut left = left;
     let mut right = right;
     let shorter = if queue_height(&left, k, a.1) <= queue_height(&right, k, b.1) {
         &mut left

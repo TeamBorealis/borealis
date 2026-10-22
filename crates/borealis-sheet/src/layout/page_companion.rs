@@ -44,7 +44,8 @@ fn queues(data: &SheetData) -> (VecDeque<Piece>, VecDeque<Piece>) {
 const BOX_GAP: f32 = 5.0;
 /// Space between the score boxes and the text columns below them.
 const BOXES_BELOW: f32 = 6.0;
-const ABILITIES: [(&str, &str); 6] = [
+/// Key and name of the six abilities in card order.
+pub(crate) const ABILITIES: [(&str, &str); 6] = [
     ("str", "Strength"),
     ("dex", "Dexterity"),
     ("con", "Constitution"),
