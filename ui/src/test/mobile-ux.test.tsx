@@ -92,4 +92,10 @@ describe("mobile CSS guards", () => {
     expect(css("shell.css")).toMatch(/\.aur-bottombar \{[^}]*var\(--safe-b\)/);
     expect(css("shell.css")).toMatch(/\.aur-window\.narrow \.aur-status \.status-msg \{ flex: 1 1 0; min-width: 0/);
   });
+  it("the full-screen Settings window on a phone keeps its title and tabs out of the status bar (B-08)", () => {
+    const settings = readFileSync(resolve(__dirname, "../pages/settings/settings.css"), "utf8");
+    const phone = settings.slice(settings.indexOf("@media (max-width: 639px)"));
+    expect(phone).toMatch(/\.aur-set-win \{[^}]*padding: var\(--safe-t\) var\(--safe-r\) var\(--safe-b\) var\(--safe-l\)/);
+    expect(phone).toMatch(/\.aur-set-win \{[^}]*box-sizing: border-box/);
+  });
 });
