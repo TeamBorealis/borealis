@@ -92,6 +92,31 @@ export async function tapInView(ctx: Ctx, target: Locator, opts: { double?: bool
   await (opts.double === true ? target.doubleTap() : target.tap());
 }
 
+/** Most attempts at choosing a Build option before giving up. */
+const MAX_PICKS = 6;
+const escapeRe = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Chooses `name` from `source` in the open Build picker by double-tapping it, then waits for its "Clear" button. The
+ * option list scrolls inside the page (at most 60% of the window high): a row clipped at its bottom still reports a
+ * rectangle inside the window and a tap on it is lost. So when no "Clear" button answers, scroll (the swipe lands on
+ * the list, which fills the middle of the window) and try again.
+ */
+export async function pickInBuild(ctx: Ctx, name: string, source: string): Promise<void> {
+  const option = ctx.screen.getByRole('checkbox', new RegExp(`^${escapeRe(name)}, ${escapeRe(source)}$`)).first();
+  const chosen = ctx.screen.getByRole('button', new RegExp(`^Clear ${escapeRe(name)}$`)).first();
+  for (let attempt = 0; attempt < MAX_PICKS; attempt += 1) {
+    await tapInView(ctx, option, { double: true });
+    try {
+      await expect(chosen).toBeVisible({ timeout: 3000 });
+      return;
+    } catch { /* the double-tap hit a clipped row */ }
+    await appView(ctx).swipe({ direction: 'up' });
+    await settle(500);
+  }
+  await expect(chosen).toBeVisible(SLOW);
+}
+
 /** Short lowercase path to the 5etools data folder (the native panel is typed key by key). */
 export const FIVETOOLS_LINK = '/tmp/borealis-e2e-5etools';
 export const IMPORT_NOTICE = 'Import only content you own';

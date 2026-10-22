@@ -1,6 +1,6 @@
 import {
   createViaShortcut, desktopSuite, pressKey, expect, IMPORT_NOTICE, linkFiveToolsData, NAME, openAdditionalContent, pickFiveToolsFolder,
-  scanFiveTools, settle, SLOW, tapInView,
+  pickInBuild as pickFromBuild, scanFiveTools, settle, SLOW, tapInView,
 } from './helpers.js';
 
 // d9 (B-07): real backend, 5etools import narrowed with the source filters, then 2014 characters built from the
@@ -108,30 +108,8 @@ async function showFeat(ctx: Ctx, option: ReturnType<Ctx['screen']['getByRole']>
   }
 }
 
-/** Most attempts at choosing a Build option before giving up. */
-const MAX_PICKS = 6;
-const escapeRe = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-/**
- * Chooses `name` from the imported Player's Handbook in the open Build picker by double-tapping it, then waits for its
- * "Clear" button. The option list scrolls inside the page (at most 60% of the window high): a row clipped at its
- * bottom still reports a rectangle inside the window and a tap on it is lost. So when no "Clear" button answers,
- * scroll (the swipe lands on the list, which fills the middle of the window) and try again.
- */
-async function pickInBuild(ctx: Ctx, name: string): Promise<void> {
-  const option = ctx.screen.getByRole('checkbox', new RegExp(`^${escapeRe(name)}, ${escapeRe(PHB_SOURCE)}$`)).first();
-  const chosen = ctx.screen.getByRole('button', new RegExp(`^Clear ${escapeRe(name)}$`)).first();
-  for (let attempt = 0; attempt < MAX_PICKS; attempt += 1) {
-    await tapInView(ctx, option, { double: true });
-    try {
-      await expect(chosen).toBeVisible({ timeout: 3000 });
-      return;
-    } catch { /* the double-tap hit a clipped row */ }
-    await ctx.screen.getByRole('webview' as never, 'Borealis').swipe({ direction: 'up' });
-    await settle(500);
-  }
-  await expect(chosen).toBeVisible(SLOW);
-}
+/** Chooses `name` from the imported 2014 Player's Handbook in the open Build picker. */
+const pickInBuild = (ctx: Ctx, name: string): Promise<void> => pickFromBuild(ctx, name, PHB_SOURCE);
 
 async function pickClass(ctx: Ctx, name: string): Promise<void> {
   await ctx.screen.getByText('Class', { exact: true }).first().tap();

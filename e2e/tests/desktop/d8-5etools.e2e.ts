@@ -1,33 +1,23 @@
-import { existsSync, rmSync, symlinkSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { desktopSuite, expect, NAME, openAdditionalContent, pressKey, SLOW, settle, typeText, createViaShortcut } from './helpers.js';
+import {
+  createViaShortcut, desktopSuite, expect, linkFiveToolsData, NAME, openAdditionalContent, pickFiveToolsFolder, pickInBuild, pressKey,
+  scanFiveTools, SLOW, settle, tapInView,
+} from './helpers.js';
 
 // d8: real backend, Additional content > 5etools import on the committed SRD fixture folder (override with
 // BOREALIS_5ETOOLS_DIR, e.g. a full local data/ folder: never committed). Scan -> notice (first time tick nothing; second time tick
 // "Don't show this again"; third scan has no notice; Settings > Data files brings it back) -> native folder panel ->
 // source list (PHB and XPHB) -> Import -> report -> new character picks the imported Fighter and, at level 3, Champion.
-const FIXTURE = resolve(import.meta.dirname, '../../../crates/borealis-import-5etools/tests/fixtures/data');
-const DATA = process.env['BOREALIS_5ETOOLS_DIR'] ?? FIXTURE;
-const LINK = '/tmp/borealis-e2e-5etools'; // short lowercase path: the panel is typed key by key
+const XPHB = "Player's Handbook (2024)"; // the source label of imported XPHB entries
 
-/** Importing every book of the full corpus takes minutes; the whole suite gets room for it plus the re-scan. */
-const IMPORT_TIMEOUT_MS = 900_000;
-const SUITE_TIMEOUT_MS = 1_500_000;
+/** Importing all 125 books of the full corpus showed its report 15 s after the tap (B-07 run 2); generous room. */
+const IMPORT_TIMEOUT_MS = 300_000;
+const SUITE_TIMEOUT_MS = 1_200_000;
 
 desktopSuite('d8', '5etools import: scan, notice, import report, imported class and subclass in a new character', async (ctx) => {
   const { app, screen } = ctx;
-  if (!existsSync(DATA)) throw new Error(`5etools data folder not found: ${DATA}`);
-  rmSync(LINK, { force: true });
-  symlinkSync(DATA, LINK);
-  const pick = async () => {
-    await settle();
-    await pressKey(ctx, 'ControlOrMeta+Shift+g');
-    await settle();
-    await typeText(ctx, LINK);
-    await pressKey(ctx, 'Enter');
-    await settle(800);
-    await pressKey(ctx, 'Enter');
-  };
+  linkFiveToolsData();
+  // The folder path is pasted: typed key by key the panel lost keys and, once, the window (B-07 run 2).
+  const pick = () => pickFiveToolsFolder(ctx);
   // The 5etools section sits below the fold: native taps on off-screen nodes do nothing, so scroll the page first.
   // The a11y tree lists off-screen nodes as visible and a tap on them is silently lost, so scroll to the top, then
   // down one swipe at a time, tapping the button after each until the notice (or the folder panel) answers.
@@ -43,6 +33,21 @@ desktopSuite('d8', '5etools import: scan, notice, import report, imported class 
       } catch { /* not hit yet */ }
       await webview.swipe({ direction: 'up' });
     }
+  };
+
+  const report = () => screen.getByText(/not redistributable/).first();
+  const startImport = async () => {
+    const button = screen.getByRole('button', /^Import \d+ book/);
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      await tapInView(ctx, button);
+      for (const answer of [screen.getByRole('progressbar', 'Import progress'), report()]) {
+        try {
+          await expect(answer).toBeVisible({ timeout: 5000 });
+          return;
+        } catch { /* not this one */ }
+      }
+    }
+    throw new Error('the Import button never started an import');
   };
 
   await app.open();
@@ -75,25 +80,25 @@ desktopSuite('d8', '5etools import: scan, notice, import report, imported class 
   await expect(screen.getByText(/\(PHB\)$/).first()).toBeVisible(SLOW);
 
   // Import everything found.
+  // The button heads the source list, below the fold after the scans: a tap on it there is silently lost (the
+  // import never starts), so scroll it into the window and tap until the progress bar (or the report) answers.
   const importStart = Date.now();
-  await screen.getByRole('button', /^Import \d+ book/).tap();
-  await expect(screen.getByText(/not redistributable/).first()).toBeVisible({ timeout: IMPORT_TIMEOUT_MS });
+  await startImport();
+  await expect(report()).toBeVisible({ timeout: IMPORT_TIMEOUT_MS });
   console.info(`[d8] import tap to report visible: ${Date.now() - importStart} ms`);
   await expect(screen.getByText(/^0 elements converted/)).toBeHidden({ timeout: 3000 });
   await expect(screen.getByText(/\berror\b/i).first()).toBeHidden({ timeout: 3000 });
 
-  // New character with the imported Fighter (its source label is the 5etools book, not SRD).
+  // New (2024 rules) character with the imported Fighter (its source label is the 5etools book, not SRD).
   await createViaShortcut(ctx, NAME);
   await screen.getByText('Class', { exact: true }).first().tap();
-  await expect(screen.getByRole('checkbox', /^Fighter, (?!SRD)/).first()).toBeVisible(SLOW);
-  await screen.getByRole('checkbox', /^Fighter, (?!SRD)/).first().doubleTap();
+  await pickInBuild(ctx, 'Fighter', XPHB);
   await expect(screen.getByText(/\berror\b|failed|does not exist/i)).toBeHidden({ timeout: 5000 });
   const noError = () => expect(screen.getByText(/\berror\b|failed|does not exist/i)).toBeHidden({ timeout: 5000 });
 
-  // Imported species (PHB Dwarf, not the SRD one).
+  // Imported species (the 2024 Player's Handbook Dwarf, not the SRD one).
   await screen.getByText('Species', { exact: true }).first().tap();
-  await expect(screen.getByRole('checkbox', /^Dwarf, (?!SRD)/).first()).toBeVisible(SLOW);
-  await screen.getByRole('checkbox', /^Dwarf, (?!SRD)/).first().doubleTap();
+  await pickInBuild(ctx, 'Dwarf', XPHB);
   await noError();
 
   // Level 3 and the imported Champion subclass.
@@ -116,7 +121,7 @@ desktopSuite('d8', '5etools import: scan, notice, import report, imported class 
   const champion = screen.getByRole('checkbox', /^Champion, Player's Handbook \(2024\)/);
   try {
     await expect(champion).toBeVisible({ timeout: 4000 });
-    await champion.doubleTap();
+    await tapInView(ctx, champion, { double: true });
   } catch { /* already selected */ }
   await expect(screen.getByRole('button', /^Clear Champion/)).toBeVisible(SLOW);
   await expect(screen.getByText(/^Source\. Player's Handbook/).first()).toBeVisible(SLOW);
@@ -129,10 +134,14 @@ desktopSuite('d8', '5etools import: scan, notice, import report, imported class 
   await screen.getByRole('button', 'Save').nth(1).tap(); // the dialog's Save (the sheet bar has its own)
   await settle();
 
-  // The next scan shows the notice again.
+  // The next scan shows the notice again. Every imported book is now an installed pack listed above the 5etools
+  // section (125 rows on the full corpus): too far for swipes, so click plain text on the page (WebKit then scrolls
+  // that area from the keyboard) and jump to its end, where "Scan folder..." is a few swipes up.
   await screen.getByRole('link', /^START$/).tap();
   await openAdditionalContent(ctx);
-  await scan();
-  await expect(screen.getByText('Import only content you own')).toBeVisible(SLOW);
+  await screen.getByText(/^Import XML files, /).first().tap();
+  await pressKey(ctx, 'End');
+  await settle(800);
+  await scanFiveTools(ctx);
   await noError();
 }, { timeout: SUITE_TIMEOUT_MS });
