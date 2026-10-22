@@ -9,7 +9,7 @@
 //! `timeout`, ...) next to its address; callers report it and never install a partial Aurora index
 //! because of it.
 
-use crate::content_index::Fetcher;
+use crate::content_index::{Fetcher, Tagged};
 use std::collections::BTreeSet;
 use std::sync::{Mutex, PoisonError};
 use std::time::Duration;
@@ -355,6 +355,16 @@ impl Fetcher for Retrying<'_> {
     fn get_classified(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, FetchError> {
         self.run
             .run(url, || self.inner.get_classified(url, max_bytes))
+    }
+
+    fn get_tagged(
+        &self,
+        url: &str,
+        max_bytes: usize,
+        etag: Option<&str>,
+    ) -> Result<Tagged, FetchError> {
+        self.run
+            .run(url, || self.inner.get_tagged(url, max_bytes, etag))
     }
 }
 

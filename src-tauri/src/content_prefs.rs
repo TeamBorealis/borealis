@@ -28,6 +28,9 @@ pub struct IndexRecord {
     /// Aurora XML indexes: SHA-256 of every file at its first download (trust on first use);
     /// a later change is applied but reported.
     pub file_hashes: BTreeMap<String, String>,
+    /// Aurora XML indexes: the ETag the server sent with every file that has one. Update sends it
+    /// back, and a file answered "not modified" is read from the local copy instead of downloaded.
+    pub file_etags: BTreeMap<String, String>,
     /// Hosts the index tree downloaded from at the last check.
     pub hosts: Vec<String>,
     /// Why the last check failed or was incomplete, for the Indexes list.

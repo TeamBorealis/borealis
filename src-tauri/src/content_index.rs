@@ -99,6 +99,35 @@ pub trait Fetcher: Send + Sync {
         self.get(url, max_bytes)
             .map_err(|m| FetchError::from_message(&m))
     }
+
+    /// [`Fetcher::get_classified`] as a conditional request: with the `etag` stored from an earlier
+    /// download the server may answer "not modified". The default never does and reports no ETag,
+    /// so a fetcher without conditional requests simply downloads everything.
+    ///
+    /// # Errors
+    /// The classified reason.
+    fn get_tagged(
+        &self,
+        url: &str,
+        max_bytes: usize,
+        etag: Option<&str>,
+    ) -> Result<Tagged, FetchError> {
+        let _ = etag;
+        self.get_classified(url, max_bytes)
+            .map(|bytes| Tagged::Body { bytes, etag: None })
+    }
+}
+
+/// The answer to a conditional download ([`Fetcher::get_tagged`]).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Tagged {
+    /// The stored copy is still current (HTTP 304).
+    NotModified,
+    /// The file, with the ETag the server sent for it.
+    Body {
+        bytes: Vec<u8>,
+        etag: Option<String>,
+    },
 }
 
 /// Reject anything but an `https://` URL with a host.
@@ -246,15 +275,32 @@ impl Fetcher for HttpsFetcher {
     }
 
     fn get_classified(&self, url: &str, max_bytes: usize) -> Result<Vec<u8>, FetchError> {
+        match self.get_tagged(url, max_bytes, None)? {
+            Tagged::Body { bytes, .. } => Ok(bytes),
+            Tagged::NotModified => Err(FetchError::new(CODE_OTHER, "the server answered 304")),
+        }
+    }
+
+    fn get_tagged(
+        &self,
+        url: &str,
+        max_bytes: usize,
+        etag: Option<&str>,
+    ) -> Result<Tagged, FetchError> {
         use std::io::Read;
         require_https(url).map_err(|e| FetchError::new(CODE_REFUSED, e.message))?;
         let client = shared_client().map_err(|m| FetchError::new(CODE_OTHER, m))?;
-        let response = client
+        let mut call = client
             .get(url)
-            .header(reqwest::header::USER_AGENT, USER_AGENT)
-            .send()
-            .map_err(|e| send_error(&e))?;
+            .header(reqwest::header::USER_AGENT, USER_AGENT);
+        if let Some(tag) = etag {
+            call = call.header(reqwest::header::IF_NONE_MATCH, tag);
+        }
+        let response = call.send().map_err(|e| send_error(&e))?;
         let status = response.status();
+        if etag.is_some() && status.as_u16() == 304 {
+            return Ok(Tagged::NotModified);
+        }
         if !status.is_success() {
             let header = |name| {
                 response
@@ -272,6 +318,11 @@ impl Fetcher for HttpsFetcher {
             let reason = status.canonical_reason().unwrap_or_default();
             return Err(FetchError::http(status.as_u16(), reason, retry_after));
         }
+        let new_tag = response
+            .headers()
+            .get(reqwest::header::ETAG)
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_string);
         let announced = response.content_length();
         let mut body = Vec::new();
         response
@@ -282,7 +333,10 @@ impl Fetcher for HttpsFetcher {
             return Err(FetchError::too_large());
         }
         check_complete(body.len(), announced)?;
-        Ok(body)
+        Ok(Tagged::Body {
+            bytes: body,
+            etag: new_tag,
+        })
     }
 }
 
@@ -378,6 +432,13 @@ impl AppState {
         let _guard = self.content_lock()?;
         let mut prefs = self.content_prefs();
         prefs.indexes.retain(|i| i.url != url.trim());
+        let cache = self
+            .paths
+            .data
+            .join(crate::content_index_aurora::CACHE_DIR)
+            .join(crate::content_index_aurora::pack_id_for(url.trim()));
+        // Only a saving is lost when the local copies stay behind.
+        let _ = std::fs::remove_dir_all(cache);
         prefs.save(&self.paths.prefs_file())?;
         Ok(prefs.indexes.iter().map(dto).collect())
     }

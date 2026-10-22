@@ -18,7 +18,9 @@
 
 use crate::content_dto::{MigrationIssue, MigrationReport};
 use crate::content_import::{slug, stem, write_pack_meta, Scratch};
-use crate::content_index::{looks_like_html, raw_file_url, require_https, sha256_hex, Fetcher};
+use crate::content_index::{
+    looks_like_html, raw_file_url, require_https, sha256_hex, Fetcher, Tagged,
+};
 use crate::content_packs::{progress, EventSink};
 use crate::content_prefs::IndexRecord;
 use crate::content_preview::convert_set;
@@ -265,7 +267,7 @@ pub fn summarize(problems: &[(String, String)]) -> Option<String> {
 }
 
 /// Stable pack id for a top-level index URL.
-fn pack_id_for(url: &str) -> String {
+pub(crate) fn pack_id_for(url: &str) -> String {
     let file = url.rsplit('/').next().unwrap_or(url);
     format!(
         "dl-{}-{}",
@@ -316,12 +318,24 @@ impl AppState {
         if record.requires_newer_app {
             record.updates_available = record.file_count;
             record.file_hashes.clone_from(&previous.file_hashes);
+            record.file_etags.clone_from(&previous.file_etags);
             record.hosts.clone_from(&previous.hosts);
             return Ok(record);
         }
         let mut problems = crawl.problems.clone();
         let mut passing = crawl.incomplete.clone();
-        let fetched = download_all(fetcher, sink, &crawl.files, &mut problems, &mut passing);
+        let pack_id = pack_id_for(url);
+        let cache = Cache::new(self.paths.data.join(CACHE_DIR).join(&pack_id));
+        let downloaded = download_all(
+            fetcher,
+            sink,
+            &crawl.files,
+            previous,
+            &cache,
+            &mut problems,
+            &mut passing,
+        );
+        let fetched = downloaded.files;
         record.hosts = note_hosts(url, &crawl, previous, outcome);
         // Entries that never became a file (refused, cycles) still count as listed.
         let listed = (crawl.files.len() + crawl.nested).max(problems.len());
@@ -344,6 +358,7 @@ impl AppState {
             ));
             record.updates_available = record.file_count.max(1);
             record.file_hashes.clone_from(&previous.file_hashes);
+            record.file_etags.clone_from(&previous.file_etags);
             let nothing = MigrationReport {
                 file_name: url.to_string(),
                 format: "xml".into(),
@@ -358,6 +373,9 @@ impl AppState {
             .iter()
             .map(|(l, b)| (l.url.clone(), sha256_hex(b)))
             .collect();
+        if downloaded.from_network > 0 || hashes.len() != previous.file_hashes.len() {
+            cache.replace(&fetched);
+        }
         for (file, hash) in &hashes {
             if previous
                 .file_hashes
@@ -368,7 +386,6 @@ impl AppState {
                 outcome.changed.push(file.clone());
             }
         }
-        let pack_id = pack_id_for(url);
         let installed = self.paths.library().join(&pack_id).is_dir();
         let failed_files = crawl.files.len() - fetched.len();
         record.problem = summarize(&problems).map(|summary| {
@@ -383,6 +400,11 @@ impl AppState {
         if installed && (lost || hashes == previous.file_hashes) {
             // Unchanged, or a partial download that would drop installed content: keep what is there.
             record.file_hashes.clone_from(&previous.file_hashes);
+            record.file_etags = if lost {
+                previous.file_etags.clone()
+            } else {
+                downloaded.etags
+            };
             return Ok(record);
         }
         if fetched.is_empty() {
@@ -420,6 +442,7 @@ impl AppState {
         staged.push((out_dir, pack_id));
         scratches.push(scratch);
         record.file_hashes = hashes;
+        record.file_etags = downloaded.etags;
         Ok(record)
     }
 }
@@ -440,26 +463,57 @@ fn with_failures(report: MigrationReport, problems: &[(String, String)]) -> Migr
     MigrationReport { issues, ..report }
 }
 
-/// Download every listed file; failures go to `problems`, and the addresses of those that may
-/// pass also to `passing`.
+/// What [`download_all`] brought back.
+struct Downloaded {
+    /// Every usable file: from the server, or the local copy the server said is still current.
+    files: Vec<(Listed, Vec<u8>)>,
+    /// The ETag the server holds for each file that has one.
+    etags: BTreeMap<String, String>,
+    /// Files that were actually transferred.
+    from_network: usize,
+}
+
+/// Download every listed file that changed; failures go to `problems`, and the addresses of
+/// those that may pass also to `passing`. A file with a stored ETag and an intact local copy is
+/// requested conditionally and kept when the server answers "not modified".
 fn download_all(
     fetcher: &dyn Fetcher,
     sink: &dyn EventSink,
     files: &[Listed],
+    previous: &IndexRecord,
+    cache: &Cache,
     problems: &mut Vec<(String, String)>,
     passing: &mut Vec<String>,
-) -> Vec<(Listed, Vec<u8>)> {
-    let mut fetched = Vec::with_capacity(files.len());
+) -> Downloaded {
+    let mut done = Downloaded {
+        files: Vec::with_capacity(files.len()),
+        etags: BTreeMap::new(),
+        from_network: 0,
+    };
     for (i, listed) in files.iter().enumerate() {
         if i % 25 == 0 {
             let label = listed.rel.rsplit('/').next().unwrap_or(&listed.rel);
             sink.content_progress(&progress("downloading", i, files.len(), label));
         }
-        match fetcher.get_classified(&listed.url, MAX_FILE_BYTES) {
-            Ok(body) if looks_like_html(&body) => {
+        let kept = cache.intact_copy(listed, previous);
+        let sent = kept.as_ref().map(|(tag, _)| tag.as_str());
+        match fetcher.get_tagged(&listed.url, MAX_FILE_BYTES, sent) {
+            Ok(Tagged::NotModified) => {
+                if let Some((tag, body)) = kept {
+                    done.etags.insert(listed.url.clone(), tag);
+                    done.files.push((listed.clone(), body));
+                }
+            }
+            Ok(Tagged::Body { bytes, .. }) if looks_like_html(&bytes) => {
                 problems.push((listed.url.clone(), WEB_PAGE.into()));
             }
-            Ok(body) => fetched.push((listed.clone(), body)),
+            Ok(Tagged::Body { bytes, etag }) => {
+                done.from_network += 1;
+                if let Some(tag) = etag {
+                    done.etags.insert(listed.url.clone(), tag);
+                }
+                done.files.push((listed.clone(), bytes));
+            }
             Err(e) => {
                 if e.is_transient() {
                     passing.push(listed.url.clone());
@@ -468,7 +522,49 @@ fn download_all(
             }
         }
     }
-    fetched
+    done
+}
+
+/// Folder (below the data folder) with the files each index tree downloaded, one subfolder per pack.
+pub const CACHE_DIR: &str = "index_cache";
+
+/// The local copies of one index tree's files, kept so that the next Update can ask the server
+/// whether they changed instead of downloading them again.
+struct Cache {
+    dir: PathBuf,
+}
+
+impl Cache {
+    fn new(dir: PathBuf) -> Self {
+        Self { dir }
+    }
+
+    /// The stored ETag and local copy of `listed`, when both exist and the copy is still the file
+    /// whose hash was recorded.
+    fn intact_copy(&self, listed: &Listed, previous: &IndexRecord) -> Option<(String, Vec<u8>)> {
+        let tag = previous.file_etags.get(&listed.url)?;
+        let want = previous.file_hashes.get(&listed.url)?;
+        let body = std::fs::read(self.dir.join(&listed.rel)).ok()?;
+        (sha256_hex(&body) == *want).then(|| (tag.clone(), body))
+    }
+
+    /// Make the folder hold exactly `files` (a file the index dropped leaves it too). A folder
+    /// that cannot be written only costs the saving: the next Update downloads in full.
+    fn replace(&self, files: &[(Listed, Vec<u8>)]) {
+        let _ = std::fs::remove_dir_all(&self.dir);
+        for (listed, body) in files {
+            let path = self.dir.join(&listed.rel);
+            let written = path
+                .parent()
+                .map_or(Ok(()), std::fs::create_dir_all)
+                .and_then(|()| std::fs::write(&path, body));
+            if let Err(e) = written {
+                tracing::warn!("index cache: {}: {e}", path.display());
+                let _ = std::fs::remove_dir_all(&self.dir);
+                return;
+            }
+        }
+    }
 }
 
 /// Hosts of this index tree; hosts not seen before (other than the index's own) are reported.
