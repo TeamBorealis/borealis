@@ -76,7 +76,9 @@ fn multiclassed(e: &Engine, first_levels: u32, second_levels: u32) -> CharacterS
     s.abilities.base = [14, 14, 14, 14, 14, 14];
     s = pick(e, &s, "ID_LEVEL_1", "Class", FIRST);
     for _ in 1..first_levels {
-        s = commands::level_up_main(e, &s, None).expect("main level").state;
+        s = commands::level_up_main(e, &s, None)
+            .expect("main level")
+            .state;
     }
     s = commands::level_up_new_multiclass(e, &s, None)
         .expect("new multiclass")
@@ -121,7 +123,10 @@ fn multiclass_subclass_grants_at_the_multiclass_level() {
     let s = multiclassed(&e, 1, 3);
     let snap = e.derive(&s);
     assert!(snap.has_element(ARCH), "subclass on the multiclass select");
-    assert!(snap.has_element(ARCH_F3), "level-3 subclass feature at second 3");
+    assert!(
+        snap.has_element(ARCH_F3),
+        "level-3 subclass feature at second 3"
+    );
     assert!(!snap.has_element(ARCH_F6));
     assert!(has_slot(&e, &s, ARCH_F3, "Path Lore"));
     let s = pick(&e, &s, ARCH_F3, "Path Lore", LORE);
@@ -134,10 +139,16 @@ fn multiclass_subclass_ignores_character_and_main_class_levels() {
     // first 5 / second 2: character level 7, main class 5, the subclass feature not yet granted
     let s = multiclassed(&e, 5, 2);
     let snap = e.derive(&s);
-    assert!(!snap.has_element(PATH_FEATURE), "second 2 has no subclass yet");
+    assert!(
+        !snap.has_element(PATH_FEATURE),
+        "second 2 has no subclass yet"
+    );
     // first 5 / second 3: subclass level 3 only, never the 6 the main class or character has
     let s = multiclassed(&e, 5, 3);
     let snap = e.derive(&s);
     assert!(snap.has_element(ARCH_F3));
-    assert!(!snap.has_element(ARCH_F6), "main class or character level used");
+    assert!(
+        !snap.has_element(ARCH_F6),
+        "main class or character level used"
+    );
 }
