@@ -11,7 +11,7 @@ import {
 // Charisma 13, is not, at point-buy 8). Needs the full local data folder (BOREALIS_5ETOOLS_DIR): the committed
 // fixture has no Sorcerer and no feats with prerequisites. Engine side: src-tauri/tests/fivetools_prereqs.rs.
 const PHB = /^Player's Handbook \(2014\) \(PHB\)$/;
-const PHB_SOURCE = /, Player's Handbook$/; // the 2014 book; the 2024 one is "Player's Handbook (2024)"
+const PHB_SOURCE = "Player's Handbook (2014)"; // the 2024 book is "Player's Handbook (2024)"
 
 desktopSuite('d9', '5etools PHB only via filters; known caster, spellbook caster and a prerequisite feat', async (ctx) => {
   const { app, screen } = ctx;
@@ -50,25 +50,26 @@ desktopSuite('d9', '5etools PHB only via filters; known caster, spellbook caster
   await screen.getByRole('link', /^MAGIC$/).tap();
   const known = screen.getByRole('cell', /^Spell \(Sorcerer 1\) \(1 of 2\)/);
   await tapInView(ctx, known);
-  await tapInView(ctx, screen.getByRole('button', 'Magic Missile'), { double: true });
+  await tapInView(ctx, screen.getByRole('button', 'Magic Missile').first(), { double: true }); // listed twice: the SRD 5.1 and the imported PHB spell
   await expect(screen.getByRole('cell', /^Spell \(Sorcerer 1\) \(2 of 2\)/)).toBeVisible(SLOW);
   await noError(ctx);
 
   // Spellbook caster and prerequisite feat: a 2014 PHB Variant Human Wizard.
   await newCharacter2014(ctx);
-  await pickInBuild(ctx, /^Human, /);
-  await pickInBuild(ctx, /^Variant/);
-  await expect(screen.getByRole('checkbox', /^Alert, Player's Handbook$/)).toBeVisible(SLOW);
+  await pickInBuild(ctx, 'Human');
+  await pickInBuild(ctx, 'Human (Variant)');
+  // The flow asks for the variant's ability increases first (not Charisma: Inspiring Leader must stay out of reach).
+  await pickInBuild(ctx, 'Intelligence +1, Wisdom +1');
+  await showFeat(ctx, screen.getByRole('checkbox', /^Alert, Player's Handbook \(2014\)$/));
   await expect(screen.getByRole('checkbox', /^Inspiring Leader, /)).toBeHidden({ timeout: 3000 }); // needs Charisma 13
   await expect(screen.getByRole('checkbox', /^War Caster, /)).toBeHidden({ timeout: 3000 }); // no spellcasting yet
   await pickClass(ctx, 'Wizard');
-  await screen.getByText('Species', { exact: true }).first().tap();
-  await pickInBuild(ctx, /^War Caster, Player's Handbook$/);
-  await expect(screen.getByRole('button', /^Clear War Caster/)).toBeVisible(SLOW);
+  await showFeat(ctx, screen.getByRole('checkbox', /^War Caster, Player's Handbook \(2014\)$/));
+  await pickInBuild(ctx, 'War Caster');
   await noError(ctx);
   await screen.getByRole('link', /^MAGIC$/).tap();
   await tapInView(ctx, screen.getByRole('cell', /^Spellbook \(Wizard 1\) \(1 of 6\)/));
-  await expect(screen.getByRole('button', 'Magic Missile')).toBeVisible(SLOW);
+  await expect(screen.getByRole('button', 'Magic Missile').first()).toBeVisible(SLOW);
   await noError(ctx);
 }, process.env['BOREALIS_5ETOOLS_DIR'] === undefined ? { skip: 'BOREALIS_5ETOOLS_DIR is not set (the fixture has no Sorcerer)' } : {});
 
@@ -76,28 +77,65 @@ type Ctx = Parameters<Parameters<typeof desktopSuite>[2]>[0];
 
 const noError = (ctx: Ctx) => expect(ctx.screen.getByText(/\berror\b|failed|does not exist/i)).toBeHidden({ timeout: 5000 });
 
-/** Cmd+N with the 2014 rules edition (the imported Player's Handbook is 2014 content). */
+/**
+ * Cmd+N with the 2014 rules edition (the imported Player's Handbook is 2014 content). The edition select is the last
+ * row of the flyout's inner scrolling list, clipped at this window size; a swipe scrolls the page, not that list, and
+ * WebKit's Tab skips selects unless macOS keyboard navigation is on. So collapse "Character details" (as a user would)
+ * and the options list fits.
+ */
 async function newCharacter2014(ctx: Ctx): Promise<void> {
   const { screen } = ctx;
   await createViaShortcut(ctx, NAME, async () => {
-    await tabTo(ctx, screen.getByText(/^2024 - Revised rules/).first());
-    await settle(400);
-    await pressKey(ctx, 'Space'); // opens the focused select's pop-up menu
+    await screen.getByRole('button', /^character details$/i).first().tap();
+    await expect(screen.getByRole('textbox', /^name$/i)).toBeHidden(SLOW);
+    await tapInView(ctx, screen.getByText(/^2024 - Revised rules/).first()); // opens the select's pop-up menu
     await pickPopupItem(ctx, 1); // the items are unnamed: 2024 Revised, 2014 Classic
-    await settle(600);
     await expect(screen.getByText(/^2014 - Classic rules/).first()).toBeVisible(SLOW);
   });
 }
 
-/** Double-taps an option of the open Build picker (scrolled into the window first). */
-async function pickInBuild(ctx: Ctx, option: RegExp): Promise<void> {
-  await tapInView(ctx, ctx.screen.getByRole('checkbox', option).first(), { double: true });
-  await settle(600);
+/**
+ * Opens the Build "Feats" tab (the variant's feat slot lives there, not on the species tab) and waits for `option`;
+ * if the feat picker is collapsed, its header opens it.
+ */
+async function showFeat(ctx: Ctx, option: ReturnType<Ctx['screen']['getByRole']>): Promise<void> {
+  await ctx.screen.getByText('Feats', { exact: true }).first().tap();
+  try {
+    await expect(option).toBeVisible({ timeout: 5000 });
+  } catch {
+    await ctx.screen.getByRole('button', /^FEAT\b/i).first().tap();
+    await expect(option).toBeVisible(SLOW);
+  }
+}
+
+/** Most attempts at choosing a Build option before giving up. */
+const MAX_PICKS = 6;
+const escapeRe = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Chooses `name` from the imported Player's Handbook in the open Build picker by double-tapping it, then waits for its
+ * "Clear" button. The option list scrolls inside the page (at most 60% of the window high): a row clipped at its
+ * bottom still reports a rectangle inside the window and a tap on it is lost. So when no "Clear" button answers,
+ * scroll (the swipe lands on the list, which fills the middle of the window) and try again.
+ */
+async function pickInBuild(ctx: Ctx, name: string): Promise<void> {
+  const option = ctx.screen.getByRole('checkbox', new RegExp(`^${escapeRe(name)}, ${escapeRe(PHB_SOURCE)}$`)).first();
+  const chosen = ctx.screen.getByRole('button', new RegExp(`^Clear ${escapeRe(name)}$`)).first();
+  for (let attempt = 0; attempt < MAX_PICKS; attempt += 1) {
+    await tapInView(ctx, option, { double: true });
+    try {
+      await expect(chosen).toBeVisible({ timeout: 3000 });
+      return;
+    } catch { /* the double-tap hit a clipped row */ }
+    await ctx.screen.getByRole('webview' as never, 'Borealis').swipe({ direction: 'up' });
+    await settle(500);
+  }
+  await expect(chosen).toBeVisible(SLOW);
 }
 
 async function pickClass(ctx: Ctx, name: string): Promise<void> {
   await ctx.screen.getByText('Class', { exact: true }).first().tap();
-  await pickInBuild(ctx, new RegExp(`^${name}${PHB_SOURCE.source}`));
+  await pickInBuild(ctx, name);
   await noError(ctx);
 }
 
@@ -110,21 +148,4 @@ async function pickPopupItem(ctx: Ctx, index: number): Promise<void> {
   for (let i = 0; i < index; i += 1) await pressKey(ctx, 'ArrowDown');
   await pressKey(ctx, 'Space');
   await settle(600);
-}
-
-/** Bottom edge (screen y) of the flyout's scrolling options list; a node below it is clipped. */
-const FLYOUT_LIST_BOTTOM = 810;
-/** Most Tab presses needed to walk from the name field to the rules edition select. */
-const MAX_TABS = 40;
-
-/**
- * The options list scrolls inside the flyout and a swipe does not reach it, so Tab from the name field until the
- * browser has scrolled `target` (the last control) into the visible part of the list.
- */
-async function tabTo(ctx: Ctx, target: ReturnType<Ctx['screen']['getByText']>): Promise<void> {
-  for (let i = 0; i < MAX_TABS; i += 1) {
-    const box = await target.boundingBox().catch(() => null);
-    if (box !== null && box.y + box.height < FLYOUT_LIST_BOTTOM) return;
-    await pressKey(ctx, 'Tab');
-  }
 }
