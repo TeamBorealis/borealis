@@ -96,8 +96,11 @@
   .pick .focus-bar { padding-left: 6px; }
   .bp-left .tab-panel { padding-top: 10px; }
   .pick-main, .pick-row { min-height: 44px; height: auto; }
-  .pick-main, .pick-list.with-desc .pick-main { grid-template-columns: minmax(0, 1fr) fit-content(45%); }
-  .pick-src { min-width: 0; max-width: 100%; }
+  /* Name and source share the row as flex items, so the source keeps its full text up to 55% of the row and the
+     name (zero basis) gives way first; a percentage grid track collapsed the source to "S..." in the Android WebView. */
+  .pick-main, .pick-list.with-desc .pick-main { display: flex; align-items: center; column-gap: 8px; }
+  .pick-name { flex: 1 1 0; min-width: 0; }
+  .pick-src { flex: 0 1 auto; min-width: 0; max-width: 55%; }
   .pick-list.with-desc .pick-desc { display: none; }
   .pick-x { width: 44px; }
   .pick-chosen { min-height: 44px; }

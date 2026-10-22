@@ -6,7 +6,7 @@
 .v4-csec { margin: 0 0 26px; }
 .v4-csec > header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--light-3); }
 .v4-csec h2 { margin: 0; flex: 1; font-size: var(--fs-md); font-weight: 600; text-transform: uppercase; color: var(--text); }
-.v4-csec .act { display: inline-flex; gap: 6px; }
+.v4-csec .act { display: inline-flex; flex-wrap: wrap; gap: 6px; max-width: 100%; }
 .v4-csec .body { font-size: var(--fs-sm); color: var(--text-body, var(--text)); }
 .v4-csec .body > p { margin: 0 0 8px; }
 .v4-csec .body .field > label, .v4-csec .body .field-label { text-transform: uppercase; }

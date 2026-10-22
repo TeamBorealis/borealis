@@ -119,12 +119,17 @@ export function SubBand() {
   // Longest matching sub-tab wins so /content/sources does not also light up Additional Content.
   const single = SINGLE_SUBTABS.find((s) => pathname === s.to || pathname.startsWith(`${s.to}/`));
   const activeSub = START_SUBNAV.filter((s) => pathname === s.to || pathname.startsWith(`${s.to}/`)).sort((a, b) => b.to.length - a.to.length)[0]?.to;
+  const strip = useRef<HTMLElement>(null);
+  // A narrow strip scrolls: bring the current tab fully into view when the route changes.
+  useEffect(() => {
+    strip.current?.querySelector<HTMLElement>('[aria-current="page"]')?.scrollIntoView?.({ inline: "nearest", block: "nearest" });
+  }, [activeSub]);
   return (
     <div className="aur-subband">
       <div className="aur-subtabs">
         {start && single && <div className="tabs sub"><span className="tab" aria-current="page">{single.label}</span></div>}
         {start && !single && (
-          <nav className="tabs sub" aria-label="Start sections">
+          <nav className="tabs sub" aria-label="Start sections" ref={strip}>
             {START_SUBNAV.map((s) => <NavLink key={s.to} to={s.to} className="tab" data-testid={`subnav-${s.label.toLowerCase().replace(/\s+/g, "-")}`} aria-current={s.to === activeSub ? "page" : undefined}>{s.label}</NavLink>)}
           </nav>
         )}

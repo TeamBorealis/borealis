@@ -185,6 +185,8 @@
     linear-gradient(to left, rgb(255 255 255 / 0.45), transparent) right center / 18px 100% no-repeat scroll;
 }
 .aur-window.narrow .aur-subband .tabs.sub .tab { flex: none; white-space: nowrap; font-size: 11px; padding: 2px 8px 0; }
+/* End spacer: the last tab (ADDITIONAL CONTENT) is never flush against, or under, the right edge when the strip scrolls. */
+.aur-window.narrow .aur-subband .tabs.sub::after { content: ""; flex: 0 0 16px; }
 
 /* Update available: an accent-filled title-bar command (left of the website button) whose double chevron drops on a loop; it opens the UPDATE AVAILABLE flyout. */
 .aur-wincmds button.aur-update-cmd, .aur-iconbtn.aur-update-cmd { background: var(--accent-base); color: #fff; overflow: hidden; }
