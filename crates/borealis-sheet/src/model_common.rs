@@ -663,6 +663,7 @@ fn extras(character: &Character, snap: &CharacterSnapshot) -> ExtrasData {
         condition_immunities: active(&snap.defenses.condition_immunities),
         advantages: snap.advantages.iter().map(|a| a.text.clone()).collect(),
         companion_name: character.details.companion_name.trim().into(),
+        companion: None,
         has_wild_shape: snap.wild_shape.is_some(),
     }
 }

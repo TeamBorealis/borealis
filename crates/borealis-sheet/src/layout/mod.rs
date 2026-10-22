@@ -8,6 +8,7 @@ mod grid;
 mod legacy_plan;
 mod lists;
 mod page_cards;
+mod page_companion;
 mod page_core;
 mod page_features;
 mod page_legacy_spells;
@@ -63,6 +64,7 @@ pub(crate) use legacy_plan::{
     dropped_note as legacy_dropped_note, level_title as legacy_level_title, plan as legacy_plan,
 };
 pub(crate) use page_cards::build as build_cards;
+pub(crate) use page_companion::build as build_companion;
 pub(crate) use page_core::build as build_page_one;
 pub(crate) use page_features::{build as build_features, details_portrait_rect};
 pub(crate) use page_legacy_spells::{build as build_legacy_spells, columns_avail as legacy_avail};

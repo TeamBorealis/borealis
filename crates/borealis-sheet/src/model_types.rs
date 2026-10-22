@@ -615,8 +615,10 @@ pub struct ExtrasData {
     pub condition_immunities: Vec<String>,
     /// Advantage notes.
     pub advantages: Vec<String>,
-    /// Companion name (no stat block in the model yet).
+    /// Companion name.
     pub companion_name: String,
+    /// The companion's stat block, when the app supplied one (`SheetContent::companion`).
+    pub companion: Option<crate::CompanionSheet>,
     /// The character has Wild Shape.
     pub has_wild_shape: bool,
 }

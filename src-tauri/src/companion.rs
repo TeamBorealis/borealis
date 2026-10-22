@@ -170,6 +170,52 @@ pub fn companion(input: &MapInput<'_>, snap: &Engine) -> Option<CompanionState> 
     })
 }
 
+/// The companion's stat block for the printed sheet; `None` when no creature is chosen (a name or
+/// a picture alone adds no page).
+#[must_use]
+pub fn sheet_block(c: &CompanionState) -> Option<borealis_sheet::CompanionSheet> {
+    use borealis_sheet::{CompanionEntry, CompanionSheet, CompanionSkillLine};
+    let creature = c.creature.as_ref()?;
+    let entries = |v: &[crate::content_dto::CompanionFeature]| -> Vec<CompanionEntry> {
+        v.iter()
+            .map(|f| CompanionEntry {
+                name: f.name.clone(),
+                text: f.text.clone(),
+            })
+            .collect()
+    };
+    let a = &c.abilities;
+    Some(CompanionSheet {
+        creature: creature.name.clone(),
+        name: c.name.clone(),
+        build: c.build.clone(),
+        armor_class: c
+            .armor_class_note
+            .clone()
+            .unwrap_or_else(|| c.armor_class.to_string()),
+        hit_points: c.hp_note.clone().unwrap_or_else(|| c.hp.to_string()),
+        initiative: c.initiative,
+        proficiency: c.proficiency,
+        challenge: c.challenge.clone(),
+        speed: c.speed,
+        other_speeds: [c.fly_speed, c.climb_speed, c.swim_speed, c.burrow_speed],
+        abilities: [a.str, a.dex, a.con, a.int, a.wis, a.cha],
+        skills: c
+            .skills
+            .iter()
+            .map(|s| CompanionSkillLine {
+                name: s.name.clone(),
+                ability: s.ability.clone(),
+                bonus: s.bonus,
+            })
+            .collect(),
+        passive_perception: c.passive_perception,
+        traits: entries(&c.traits),
+        actions: entries(&c.actions),
+        reactions: entries(&c.reactions),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -194,6 +240,44 @@ mod tests {
         assert_eq!((s.armor_class, s.hp, s.speed), (13, 11, 40));
         assert_eq!(s.abilities, [12, 15, 10, 10, 10, 10]);
         assert_eq!(s.challenge, NO_CHALLENGE_RATING);
+    }
+
+    #[test]
+    fn sheet_block_needs_a_chosen_creature() {
+        let state = |creature: Option<ElementRef>| CompanionState {
+            creature,
+            name: "Rex".into(),
+            portrait: None,
+            armor_class: 13,
+            hp: 0,
+            armor_class_note: None,
+            hp_note: Some("2d8 + 2".into()),
+            challenge: "1/4".into(),
+            speed: 40,
+            abilities: AbilityRecord::from_fn(|i| 10 + i32::try_from(i).unwrap()),
+            proficiency: 2,
+            initiative: 1,
+            build: "Medium beast".into(),
+            fly_speed: 0,
+            climb_speed: 30,
+            swim_speed: 0,
+            burrow_speed: 0,
+            skills: Vec::new(),
+            passive_perception: 10,
+            traits: Vec::new(),
+            actions: Vec::new(),
+            reactions: Vec::new(),
+        };
+        assert!(sheet_block(&state(None)).is_none());
+        let creature = ElementRef {
+            id: "ID_T".into(),
+            name: "Hound".into(),
+            ty: "companion".into(),
+            source: "Test".into(),
+        };
+        let b = sheet_block(&state(Some(creature))).unwrap();
+        assert_eq!((b.creature.as_str(), b.hit_points.as_str()), ("Hound", "2d8 + 2"));
+        assert_eq!((b.armor_class.as_str(), b.abilities[5], b.other_speeds[1]), ("13", 15, 30));
     }
 
     #[test]

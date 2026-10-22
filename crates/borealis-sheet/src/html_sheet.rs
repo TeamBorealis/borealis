@@ -304,6 +304,14 @@ fn page_specs(d: &SheetData, o: &HtmlOptions) -> Vec<PageSpec> {
     if is24 && sel.story && d.story.has_content() {
         v.push(spec("story", "Story", "Story", p4::page(d, o)));
     }
+    if let (true, Some(body)) = (sel.story, p4::companion_page(d)) {
+        let title = d
+            .extras
+            .companion
+            .as_ref()
+            .map_or_else(String::new, |c| c.title());
+        v.push(spec("companion", "Companion", &title, body));
+    }
     for (i, page) in o.cards.iter().enumerate() {
         v.push(spec("cards", "Cards", "Cards", cards::body(page, i)));
     }

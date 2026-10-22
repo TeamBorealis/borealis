@@ -85,8 +85,15 @@ fn card_text(el: &borealis_content::Element) -> CardText {
 }
 
 /// Content text for the spell and item cards of a snapshot.
-fn sheet_content(store: &borealis_content::ContentStore, snap: &CharacterSnapshot) -> SheetContent {
-    let mut out = SheetContent::default();
+fn sheet_content(
+    store: &borealis_content::ContentStore,
+    snap: &CharacterSnapshot,
+    companion: Option<borealis_sheet::CompanionSheet>,
+) -> SheetContent {
+    let mut out = SheetContent {
+        companion,
+        ..SheetContent::default()
+    };
     let mut seen = HashSet::new();
     for sp in snap.spellcasting.iter().flat_map(|c| &c.spells) {
         if let (true, Some(el)) = (seen.insert(sp.id.clone()), store.element(&sp.id)) {
@@ -104,6 +111,26 @@ fn sheet_content(store: &borealis_content::ContentStore, snap: &CharacterSnapsho
         }
     }
     out
+}
+
+/// The companion's stat block, when a creature is chosen.
+fn companion_sheet(
+    ctx: &crate::session::Ctx<'_>,
+    id: &str,
+    session: &crate::state::Session,
+    snap: &CharacterSnapshot,
+) -> Option<borealis_sheet::CompanionSheet> {
+    let input = crate::snapshot_map::MapInput {
+        id,
+        character: &session.character,
+        dirty: session.dirty,
+        display_path: String::new(),
+        hub: ctx.hub,
+        settings: ctx.settings,
+        rolls: &session.rolls,
+        warnings: &[],
+    };
+    crate::companion::companion(&input, snap).and_then(|c| crate::companion::sheet_block(&c))
 }
 
 const PAGE_MARKER: &str = "<section class=\"page ";
@@ -155,7 +182,7 @@ impl AppState {
         let settings = self.settings()?.sheet;
         self.read(id, |ctx, s| {
             let snap = ctx.hub.engine.derive(&s.character.build);
-            let content = sheet_content(&ctx.hub.store, &snap);
+            let content = sheet_content(&ctx.hub.store, &snap, companion_sheet(ctx, id, s, &snap));
             let html = render_html_with(&s.character, &snap, &sheet_options(&settings), &content)
                 .map_err(|e| sheet_error(&e))?;
             Ok(SheetPreview {
@@ -175,7 +202,7 @@ impl AppState {
         let settings = self.settings()?.sheet;
         self.read(id, |ctx, s| {
             let snap = ctx.hub.engine.derive(&s.character.build);
-            let content = sheet_content(&ctx.hub.store, &snap);
+            let content = sheet_content(&ctx.hub.store, &snap, companion_sheet(ctx, id, s, &snap));
             let render_options = sheet_options(&settings);
             let stem = file_stem(&s.character.meta.name);
             if html {

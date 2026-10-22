@@ -96,3 +96,21 @@ pub(super) fn details_2014(d: &SheetData, o: &HtmlOptions) -> String {
         "<div class=\"two\"><div class=\"col\">{features}</div><div class=\"col\">{l}{r}</div></div>"
     )
 }
+
+/// Companion page: the stat block regions in two columns (statistics and skills left, the
+/// creature's traits, actions and reactions right). `None` without a stat block.
+pub(super) fn companion_page(d: &SheetData) -> Option<String> {
+    let c = d.extras.companion.as_ref()?;
+    let (mut left, mut right) = (String::new(), String::new());
+    for (i, title, text) in c.regions() {
+        let col = if matches!(i, "companion.stats" | "companion.skills") {
+            &mut left
+        } else {
+            &mut right
+        };
+        col.push_str(&text_section(title, i, &text, false));
+    }
+    Some(format!(
+        "<div class=\"two\"><div class=\"col\">{left}</div><div class=\"col\">{right}</div></div>"
+    ))
+}

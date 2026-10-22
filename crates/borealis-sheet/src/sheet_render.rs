@@ -9,6 +9,9 @@
 //!   (they carry the story fields).
 //! - `spellcasting`: the spell pages of casters (none for non-casters).
 //!
+//! The companion stat block (when the app supplies one) is its own page after the story pages,
+//! selected with `story`.
+//!
 //! Cards (`layout::build_cards`) are appended after all other pages. `legacy_spellcasting` swaps the
 //! spell pages for the fixed-capacity basic page (`layout::build_legacy_spells`).
 
@@ -68,6 +71,7 @@ struct Plan {
     spells: bool,
     inventory: bool,
     story: bool,
+    companion: bool,
 }
 
 fn plan(data: &SheetData, sel: PageSelection) -> Plan {
@@ -82,6 +86,7 @@ fn plan(data: &SheetData, sel: PageSelection) -> Plan {
         spells: sel.spellcasting,
         inventory: !is24 && sel.inventory,
         story: is24 && sel.story,
+        companion: data.extras.companion.is_some() && sel.story,
     }
 }
 
@@ -107,6 +112,18 @@ fn place_portrait(
     });
 }
 
+/// The sheet model with the companion stat block the app supplied.
+fn data_with_companion(
+    character: &Character,
+    snapshot: &CharacterSnapshot,
+    options: &SheetOptions,
+    content: &SheetContent,
+) -> SheetData {
+    let mut data = sheet_data_for(character, snapshot, &content.spell_facts, options.edition);
+    data.extras.companion = content.companion.clone();
+    data
+}
+
 /// Render the PDF.
 pub(crate) fn render_pdf(
     character: &Character,
@@ -114,7 +131,7 @@ pub(crate) fn render_pdf(
     options: &SheetOptions,
     content: &SheetContent,
 ) -> Result<Vec<u8>, SheetError> {
-    let data = sheet_data_for(character, snapshot, &content.spell_facts, options.edition);
+    let data = data_with_companion(character, snapshot, options, content);
     let lopts = layout_options(options);
     let (pages, images) = build_pages(&data, character, snapshot, options, content)?;
     Ok(layout::write(pages, images, &data, &lopts))
@@ -197,6 +214,9 @@ pub(crate) fn build_pages(
         }
         pages.append(&mut story);
     }
+    if want.companion {
+        pages.extend(layout::build_companion(data, &lopts, &g));
+    }
     pages.extend(layout::build_cards(&card_pages, data, &lopts, &g));
     if pages.is_empty() {
         return Err(SheetError::NoPages);
@@ -212,7 +232,7 @@ pub(crate) fn render_html(
     options: &SheetOptions,
     content: &SheetContent,
 ) -> Result<String, SheetError> {
-    let data = sheet_data_for(character, snapshot, &content.spell_facts, options.edition);
+    let data = data_with_companion(character, snapshot, options, content);
     let portrait = portrait_bytes(character).map(|(mime, bytes)| PortraitImage {
         mime: mime.to_string(),
         base64: base64::encode(&bytes),

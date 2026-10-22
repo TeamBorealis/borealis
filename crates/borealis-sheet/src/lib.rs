@@ -8,6 +8,7 @@ mod art;
 mod base64;
 mod bidi;
 mod card_model;
+mod companion;
 mod fonts;
 mod html_sheet;
 mod image;
@@ -34,6 +35,7 @@ mod portrait_resize;
 mod sheet_render;
 mod spell_facts;
 
+pub use companion::{CompanionEntry, CompanionSheet, CompanionSkillLine};
 pub use portrait_resize::{downscale_portrait, ResizedPortrait, MAX_PORTRAIT_EDGE_PX};
 pub use spell_facts::{spell_effect, spell_facts};
 
@@ -210,6 +212,8 @@ pub struct SheetContent {
     pub items: std::collections::HashMap<String, CardText>,
     /// Spell facts by spell id for the typed sheet model (pass to [`sheet_data`]).
     pub spell_facts: model_types::SpellFactsMap,
+    /// The companion creature's stat block (printed as its own page when set).
+    pub companion: Option<CompanionSheet>,
 }
 
 /// Rendering failures.
