@@ -30,9 +30,11 @@ mod pdf_draw;
 mod pdf_fonts;
 mod pdf_form;
 mod pdf_tags;
+mod portrait_resize;
 mod sheet_render;
 mod spell_facts;
 
+pub use portrait_resize::{downscale_portrait, ResizedPortrait, MAX_PORTRAIT_EDGE_PX};
 pub use spell_facts::{spell_effect, spell_facts};
 
 use borealis_character::Character;

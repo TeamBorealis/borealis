@@ -22,6 +22,23 @@ const MAX_NAME_CHARS: usize = 120;
 const MAX_IMPORT_BYTES: usize = 32 * 1024 * 1024;
 const DEFAULT_GROUP: &str = "Characters";
 
+/// Replace an oversized imported portrait with a downscaled copy (see
+/// [`borealis_sheet::MAX_PORTRAIT_EDGE_PX`]). Undecodable or already-small pictures stay as they are.
+fn shrink_portrait(character: &mut Character) {
+    let Some(portrait) = &character.portrait else {
+        return;
+    };
+    let Ok(bytes) = STANDARD.decode(portrait.data_base64.trim()) else {
+        return;
+    };
+    if let Some(resized) = borealis_sheet::downscale_portrait(&bytes) {
+        character.portrait = Some(borealis_character::Portrait {
+            file_name: format!("portrait.{}", resized.extension),
+            data_base64: STANDARD.encode(resized.bytes),
+        });
+    }
+}
+
 fn clean_name(name: &str) -> ApiResult<String> {
     let trimmed = name.trim();
     if trimmed.is_empty() || trimmed.chars().count() > MAX_NAME_CHARS {
@@ -366,6 +383,7 @@ impl AppState {
         if character.meta.group.trim().is_empty() {
             character.meta.group = DEFAULT_GROUP.to_string();
         }
+        shrink_portrait(&mut character);
         let id = new_id();
         let path = self.character_path(&id)?;
         character.save(&path)?;
