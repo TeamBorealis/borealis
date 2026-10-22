@@ -52,7 +52,12 @@ fn real_snapshots_satisfy_the_ui_contract() {
         problems.is_empty(),
         "{} contract mismatches (first 20):\n{}",
         problems.len(),
-        problems.iter().take(20).cloned().collect::<Vec<_>>().join("\n")
+        problems
+            .iter()
+            .take(20)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("\n")
     );
 }
 

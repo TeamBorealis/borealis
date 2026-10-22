@@ -1,0 +1,2 @@
+# cargo-mutants survivors (missed + timeout), one per line, no line numbers.
+# Regenerate: python3 -I tools/mutants/gate.py --accept

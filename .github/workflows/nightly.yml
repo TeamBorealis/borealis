@@ -1,0 +1,75 @@
+name: Nightly sweeps
+
+# B-22 nightly sweeps: the regression-gate suites that are self-contained (bundled SRD content and
+# committed goldens only, no private corpus, no network): `golden` (26 SRD characters vs hand-derived
+# sheets) and `sheet` (borealis-sheet tests). The corpus suites (5etools-*, aurora-*, import-cases,
+# acceptance, dnd5e-truth) need private corpora and stay local: see docs/nightly-and-mutation.md.
+# There is no baseline in CI (baselines hold private ids and live outside the repository), so the
+# gate runs against an empty baseline: every failing check is a regression. The gate's diff and
+# machine-readable results (SRD ids and pass/fail only) are uploaded as an artifact.
+# Does not touch ci.yml or acceptance.yml.
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+  CARGO_PROFILE_TEST_DEBUG: line-tables-only
+  CARGO_PROFILE_RELEASE_DEBUG: line-tables-only
+
+jobs:
+  gate:
+    name: regression gate (self-contained suites)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free runner disk
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+      - name: Linux webkit2gtk deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev libxdo-dev
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target"
+          shared-key: nightly
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - run: npm ci
+        working-directory: ui
+      # Produces ui/dist, which the Tauri crate needs to compile.
+      - run: npm run build
+        working-directory: ui
+      - name: Regression gate (golden, sheet)
+        env:
+          BOREALIS_GATE_DIR: ${{ runner.temp }}/gate
+        run: python3 -I tools/regression-gate/gate.py --only golden,sheet
+      - name: Collect the gate diff
+        if: always()
+        run: |
+          mkdir -p gate-artifact
+          cp "$RUNNER_TEMP/gate/last-run/diff.txt" "$RUNNER_TEMP/gate/last-run/results.json" gate-artifact/ || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regression-gate-diff
+          path: gate-artifact/
+          if-no-files-found: warn
+          retention-days: 14

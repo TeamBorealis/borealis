@@ -659,6 +659,165 @@ mod tests {
         assert_eq!(increase_choices(&grappler).len(), 2);
     }
 
+    fn attr<'a>(extra: &'a borealis_content::extra::Extra, key: &str) -> Option<&'a str> {
+        extra.attributes.get(key).map(String::as_str)
+    }
+
+    #[test]
+    fn select_feat_keeps_every_gating_field() {
+        let rule = feat_slot(&custom(json!({
+            "kind": "select_feat", "category": "Origin", "name": "Bonus Feat", "level": 4,
+            "requirements": "[level:4]", "default": "ID_FEAT_ALERT",
+            "alternatives": ["ID_A", "ID_B"], "distinct": true
+        })));
+        assert_eq!(rule.ty, "Feat");
+        assert_eq!(rule.name, "Bonus Feat");
+        assert_eq!(rule.level, Some(4));
+        assert_eq!(rule.requirements.as_deref(), Some("[level:4]"));
+        assert_eq!(rule.supports.as_deref(), Some("Origin Feat"));
+        assert_eq!(rule.default_id.as_deref(), Some("ID_FEAT_ALERT"));
+        assert_eq!(attr(&rule.extra, X_KIND), Some("feat"));
+        assert_eq!(attr(&rule.extra, X_ALTERNATIVES), Some("ID_A,ID_B"));
+        assert_eq!(attr(&rule.extra, X_DISTINCT), Some("1"));
+    }
+
+    #[test]
+    fn select_feat_defaults_and_distinct_only_when_true() {
+        let bare = feat_slot(&custom(json!({"kind": "select_feat"})));
+        assert_eq!(bare.name, "General Feat");
+        assert_eq!(bare.supports.as_deref(), Some("General Feat"));
+        assert_eq!((bare.level, bare.requirements.as_deref()), (None, None));
+        assert_eq!(attr(&bare.extra, X_DISTINCT), None);
+        assert_eq!(attr(&bare.extra, X_ALTERNATIVES), None);
+        let off = feat_slot(&custom(json!({"kind": "select_feat", "distinct": false})));
+        assert_eq!(attr(&off.extra, X_DISTINCT), None);
+    }
+
+    #[test]
+    fn grant_feat_keeps_type_level_requirements_and_params() {
+        let g = grant_feat(&custom(json!({
+            "kind": "grant_feat", "feat": "ID_FEAT_X", "level": 3,
+            "requirements": "[level:3]", "params": {"skill": "Arcana"}
+        })))
+        .expect("grant");
+        assert_eq!(g.id, "ID_FEAT_X");
+        assert_eq!(g.ty.as_deref(), Some("Feat"));
+        assert_eq!(g.level, Some(3));
+        assert_eq!(g.requirements.as_deref(), Some("[level:3]"));
+        assert!(attr(&g.extra, X_PARAMS).is_some_and(|p| p.contains("Arcana")));
+        let empty = grant_feat(&custom(
+            json!({"kind": "grant_feat", "feat": "F", "params": {}}),
+        ))
+        .expect("grant");
+        assert_eq!(attr(&empty.extra, X_PARAMS), None);
+        assert!(grant_feat(&custom(json!({"kind": "grant_feat"}))).is_none());
+    }
+
+    #[test]
+    fn grant_spell_keeps_gating_list_mode_and_extras() {
+        let g = grant_spell(&custom(json!({
+            "kind": "grant_spell", "spell": "ID_SPELL_X", "level": 5, "requirements": "[level:5]",
+            "spell_list": "wizard", "mode": "always_prepared", "free_cast": "1/long rest",
+            "ability": "charisma", "also_with_slots": true, "cast_level": 2,
+            "resource_cost": "ki", "requirements_param": "choice"
+        })))
+        .expect("grant");
+        assert_eq!(g.id, "ID_SPELL_X");
+        assert_eq!(g.ty.as_deref(), Some("Spell"));
+        assert_eq!(g.level, Some(5));
+        assert_eq!(g.requirements.as_deref(), Some("[level:5]"));
+        assert_eq!(g.spellcasting.as_deref(), Some("wizard"));
+        assert_eq!(g.prepared, Some(true));
+        assert_eq!(attr(&g.extra, X_SPELL_MODE), Some("always_prepared"));
+        assert_eq!(attr(&g.extra, X_FREE_CAST), Some("1/long rest"));
+        assert_eq!(attr(&g.extra, X_SPELL_ABILITY), Some("charisma"));
+        assert_eq!(attr(&g.extra, X_ALSO_WITH_SLOTS), Some("true"));
+        assert_eq!(attr(&g.extra, X_CAST_LEVEL), Some("2"));
+        assert_eq!(attr(&g.extra, X_RESOURCE_COST), Some("ki"));
+        assert!(attr(&g.extra, X_REQ_PARAM).is_some());
+        let other = grant_spell(&custom(
+            json!({"kind": "grant_spell", "spell": "S", "mode": "known"}),
+        ))
+        .expect("grant");
+        assert_eq!(other.prepared, None);
+        assert!(grant_spell(&custom(json!({"kind": "grant_spell"}))).is_none());
+    }
+
+    #[test]
+    fn param_select_keeps_name_options_gating_and_distinct() {
+        let s = param_select(&custom(json!({
+            "kind": "select_param", "name": "Spell List", "options": ["Cleric", "Druid"],
+            "level": 2, "requirements": "[level:2]", "distinct_per_instance": true
+        })))
+        .expect("select");
+        assert_eq!(s.ty, "List");
+        assert_eq!(s.name, "Spell List");
+        assert_eq!(s.level, Some(2));
+        assert_eq!(s.requirements.as_deref(), Some("[level:2]"));
+        let items: Vec<(i64, &str)> = s.items.iter().map(|i| (i.id, i.text.as_str())).collect();
+        assert_eq!(items, vec![(1, "Cleric"), (2, "Druid")]);
+        assert_eq!(attr(&s.extra, X_KIND), Some("param"));
+        assert_eq!(attr(&s.extra, X_KEY), Some("spell_list"));
+        assert_eq!(attr(&s.extra, X_DISTINCT), Some("1"));
+        let off = param_select(&custom(
+            json!({"kind": "select_param", "name": "N", "distinct_per_instance": false}),
+        ))
+        .expect("select");
+        assert_eq!(attr(&off.extra, X_DISTINCT), None);
+        assert!(param_select(&custom(json!({"kind": "select_param"}))).is_none());
+    }
+
+    #[test]
+    fn size_mastery_and_expertise_slots_keep_level_marker_and_support() {
+        let size = size_select(&custom(
+            json!({"kind": "select_size", "level": 3, "options": ["Small", "medium"]}),
+        ));
+        assert_eq!(size.level, Some(3));
+        assert_eq!(
+            size.supports.as_deref(),
+            Some("ID_SIZE_SMALL|ID_SIZE_MEDIUM")
+        );
+        assert_eq!(attr(&size.extra, X_KIND), Some("size"));
+        let mastery = mastery_select(&custom(
+            json!({"kind": "weapon_mastery", "level": 4, "count": 2}),
+        ));
+        assert_eq!(mastery.level, Some(4));
+        assert_eq!(mastery.optional, Some(true));
+        assert_eq!(attr(&mastery.extra, X_COUNT), Some("2"));
+        let expertise = expertise_select(&custom(
+            json!({"kind": "expertise", "level": 6, "count": 2}),
+        ));
+        assert_eq!((expertise.level, expertise.number), (Some(6), Some(2)));
+        assert_eq!(
+            expertise.supports.as_deref(),
+            Some("ID_INTERNAL_SUPPORT_EXPERTISE")
+        );
+        assert_eq!(attr(&expertise.extra, X_KIND), Some("expertise"));
+        let c = custom(
+            json!({"kind": "ability_increase", "level": 8, "options": [{"abilities": 1, "amount": 2}]}),
+        );
+        let (ability, _) = ability_select(&c, ("ID_X", "X"), false);
+        assert_eq!(ability.level, Some(8));
+    }
+
+    #[test]
+    fn small_field_readers_reject_wrong_types() {
+        let c = custom(json!({"kind": "k", "level": "3", "big": 1, "name": 7}));
+        assert_eq!(level_field(&c), None);
+        assert_eq!(str_field(&c, "name"), None);
+        assert_eq!(
+            level_field(&custom(json!({"kind": "k", "level": 4_294_967_296_u64}))),
+            None
+        );
+        assert_eq!(
+            level_field(&custom(json!({"kind": "k", "level": 7}))),
+            Some(7)
+        );
+        assert!(is_empty_object(&json!({})));
+        assert!(!is_empty_object(&json!({"a": 1})));
+        assert!(!is_empty_object(&json!([])));
+    }
+
     #[test]
     fn param_keys_ignore_case_and_spaces() {
         assert_eq!(param_key("Spell List"), "spell_list");
