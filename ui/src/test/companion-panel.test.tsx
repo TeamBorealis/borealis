@@ -71,10 +71,17 @@ describe("the information slider, companion context", () => {
     expect(strip?.textContent).toContain("HP: 40 + 10 for each spell level above 4th");
   });
 
+  it("opens every section by default (orchestrator default; Aurora's is unknown)", async () => {
+    const { panel } = await slider(base);
+    expect(panel.getByText("Passive Perception")).toBeTruthy();
+    expect(panel.getByText("Keen Hearing.")).toBeTruthy();
+    expect(panel.getByText("Bite.")).toBeTruthy();
+    expect(panel.getAllByText("n/a").length).toBeGreaterThan(0);
+  });
+
   it("lists the sections and the speed rows that exist, and switches back to the character", async () => {
     const { user, panel } = await slider(base);
     for (const t of ["Skills", "Traits", "Actions", "Reactions", "Additional Statistics & Breakdown"]) expect(panel.getByText(t)).toBeTruthy();
-    await user.click(panel.getByText("Additional Statistics & Breakdown"));
     expect(panel.getByText("Climb Speed")).toBeTruthy();
     expect(panel.queryByText("Fly Speed")).toBeNull();
     expect((screen.getByRole("button", { name: "SWITCH TO COMPANION" }) as HTMLButtonElement).disabled).toBe(true);

@@ -24,7 +24,7 @@ function breakdownRows(c: CompanionState): [string, string][] {
 
 function Features({ title, items }: { title: string; items: CompanionState["traits"] }) {
   return (
-    <Expander title={title} defaultOpen={false}>
+    <Expander title={title} defaultOpen>
       {items.map((f, i) => <p key={i} className="qv-feat"><em>{f.name}.</em> {f.text}</p>)}
       {items.length === 0 && <p className="qv-note">None.</p>}
     </Expander>
@@ -48,7 +48,7 @@ export function CompanionQuickView({ companion: c }: { companion: CompanionState
       <div className="qv-abil">
         {ABILITY_KEYS.map((k) => <div key={k}><b>{k}</b><span>{scoreWithModifier(c.abilities[k])}</span></div>)}
       </div>
-      <Expander title="Skills" defaultOpen={false}>
+      <Expander title="Skills" defaultOpen>
         <ul className="qv-list">
           {c.skills.map((s) => <li key={s.name}><em>{signed(s.bonus)}</em><span>{s.name} <small>({s.ability})</small></span></li>)}
         </ul>
@@ -57,7 +57,7 @@ export function CompanionQuickView({ companion: c }: { companion: CompanionState
       <Features title="Traits" items={c.traits} />
       <Features title="Actions" items={c.actions} />
       <Features title="Reactions" items={c.reactions} />
-      <Expander title="Additional Statistics & Breakdown" defaultOpen={false}>
+      <Expander title="Additional Statistics & Breakdown" defaultOpen>
         <ul className="qv-list qv-breakdown">
           {breakdownRows(c).map(([name, value]) => <li key={name}><b>{value}</b><span>{name}</span><i>{NO_BREAKDOWN}</i></li>)}
         </ul>
