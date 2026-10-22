@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 /**
  * Minimal, safe markdown for model output. Everything is built as React elements (text nodes), never
  * as HTML, so a `<script>` or `<img onerror>` payload is shown as literal text. Supported: headings,
- * paragraphs, bullet/numbered lists, fenced code, **bold**, *italic*, `code`. `[label](url)` keeps only
+ * paragraphs, bullet/numbered lists, fenced code, pipe tables, **bold**, *italic*, `code`. `[label](url)` keeps only
  * its label: model output never produces a real hyperlink; citations come from `[[ID]]` markers via
  * `renderText`. Unclosed markers (a half-streamed `**`) format to the end of the line instead of
  * showing the raw marker.
@@ -14,12 +14,21 @@ type Block =
   | { kind: "heading"; text: string }
   | { kind: "para"; text: string }
   | { kind: "list"; ordered: boolean; items: string[] }
-  | { kind: "code"; text: string };
+  | { kind: "code"; text: string }
+  | { kind: "table"; head: string[]; rows: string[][] };
 
 const HEADING = /^\s{0,3}#{1,6}(?:\s+(.*))?$/;
 const BULLET = /^\s{0,3}[-*+]\s+(.*)$/;
 const NUMBERED = /^\s{0,3}\d{1,3}[.)]\s+(.*)$/;
 const FENCE = /^\s{0,3}```/;
+const TABLE_ROW = /^\s{0,3}\|.*\|\s*$/;
+const TABLE_RULE = /^\s{0,3}\|(?:\s*:?-{3,}:?\s*\|)+\s*$/;
+
+/** `| a | b |` -> ["a", "b"] (an escaped `\|` stays in its cell). */
+function tableCells(line: string): string[] {
+  return line.trim().slice(1, -1).split(/(?<!\\)\|/).map((c) => c.trim().replace(/\\\|/g, "|"));
+}
+
 const LINK = /\[([^\]\n]+)\]\([^)\n]*\)/g;
 
 /** Drop a trailing half-typed `[[ID` marker so it never flashes while streaming. */
@@ -39,6 +48,15 @@ export function parseBlocks(source: string): Block[] {
       const code: string[] = [];
       for (i++; i < lines.length && !FENCE.test(lines[i]!); i++) code.push(lines[i]!);
       blocks.push({ kind: "code", text: code.join("\n") });
+      continue;
+    }
+    if (TABLE_ROW.test(line) && TABLE_RULE.test(lines[i + 1] ?? "")) {
+      flush();
+      const head = tableCells(line);
+      const rows: string[][] = [];
+      for (i += 2; i < lines.length && TABLE_ROW.test(lines[i]!); i++) rows.push(tableCells(lines[i]!));
+      i--;
+      blocks.push({ kind: "table", head, rows });
       continue;
     }
     const h = HEADING.exec(line);
@@ -108,6 +126,12 @@ export function Markdown({ text, renderText }: { text: string; renderText: Rende
           case "heading": return <h3 key={k} className="v5-md-h">{renderInline(b.text, renderText, k)}</h3>;
           case "para": return <p key={k}>{renderInline(b.text, renderText, k)}</p>;
           case "code": return <pre key={k}>{b.text}</pre>;
+          case "table": return (
+            <table key={k} className="v5-md-table">
+              <thead><tr>{b.head.map((c, j) => <th key={j}>{renderInline(c, renderText, `${k}-h${j}`)}</th>)}</tr></thead>
+              <tbody>{b.rows.map((r, ri) => <tr key={ri}>{b.head.map((_, j) => <td key={j}>{renderInline(r[j] ?? "", renderText, `${k}-${ri}-${j}`)}</td>)}</tr>)}</tbody>
+            </table>
+          );
           case "list": {
             const items = b.items.map((it, j) => <li key={j}>{renderInline(it, renderText, `${k}-${j}`)}</li>);
             return b.ordered ? <ol key={k}>{items}</ol> : <ul key={k}>{items}</ul>;

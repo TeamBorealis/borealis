@@ -95,6 +95,21 @@ describe("update button and UPDATE AVAILABLE flyout", () => {
     expect(notes.textContent).toContain("<img src=x onerror=alert(1)>");
   });
 
+  it("a markdown table in the release notes is a table, not a run of pipes (B-08)", async () => {
+    const user = userEvent.setup();
+    const api = fast();
+    api.appUpdate.status = { ...NEWER, notes: "Pick a file:\n\n| Platform | File |\n|---|:---:|\n| macOS | `a.dmg` |\n| Android | <b>b.apk</b> |\n\nDone." };
+    renderApp("/characters", { api });
+    await user.click(await screen.findByRole("button", { name: "Update Available" }));
+    const notes = within(await screen.findByRole("dialog", { name: "Update Available" })).getByTestId("update-notes");
+    const table = notes.querySelector("table")!;
+    expect([...table.querySelectorAll("th")].map((c) => c.textContent)).toEqual(["Platform", "File"]);
+    expect([...table.querySelectorAll("tbody tr")].map((r) => [...r.querySelectorAll("td")].map((c) => c.textContent))).toEqual([["macOS", "a.dmg"], ["Android", "<b>b.apk</b>"]]);
+    expect(table.querySelector("code")!.textContent).toBe("a.dmg");
+    expect(table.querySelector("b")).toBeNull();
+    expect(notes.textContent).not.toContain("|---");
+  });
+
   it("a missing body shows no empty notes pane", async () => {
     const user = userEvent.setup();
     const api = fast();
