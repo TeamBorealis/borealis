@@ -52,6 +52,13 @@ export function deriveSpellcasting(c: MockCharacter, ab: AbilityState): Spellcas
         spells.push(entry(s.id, { prepared: al || prepSet.has(s.id), alwaysPrepared: al }));
       }
     }
+    const restricted = c.sourceRestrictions;
+    if (restricted) {
+      for (const s of spells) {
+        const src = getElement(s.id)?.source;
+        if (s.prepared && !s.alwaysPrepared && src && !restricted.includes(src)) s.restrictedBySource = true;
+      }
+    }
     spells.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
     const counted = spells.filter((s) => s.level > 0 && s.prepared && !s.alwaysPrepared).length;
     classes.push({

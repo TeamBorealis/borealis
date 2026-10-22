@@ -200,6 +200,7 @@ impl AppState {
                 .find(|e| e.element.ty == "Source")
                 .map(|e| plain_text(&e.element.description))
                 .unwrap_or_default();
+            let flags = source_flags(elements.iter().map(|e| &e.element));
             out.push(ContentSource {
                 id: source.to_string(),
                 name: source.to_string(),
@@ -207,7 +208,9 @@ impl AppState {
                 pack_id,
                 element_count: elements.len(),
                 description,
-                playtest: false,
+                playtest: flags.playtest,
+                incomplete: flags.incomplete,
+                info: flags.info,
             });
         }
         Ok(out)
@@ -311,5 +314,77 @@ impl AppState {
         }
         self.reload_content(&prefs, sink, "downloads-cleared")?;
         self.list_packs()
+    }
+}
+
+/// The content-warning setters of a source's `Source` element.
+#[derive(Debug, Default, PartialEq, Eq)]
+struct SourceFlags {
+    playtest: bool,
+    incomplete: bool,
+    info: String,
+}
+
+/// Reads `playtest`/`beta`, `incomplete`/`wip` and `information` from the first `Source` element.
+fn source_flags<'a>(elements: impl Iterator<Item = &'a borealis_content::Element>) -> SourceFlags {
+    let Some(src) = elements.into_iter().find(|e| e.ty == "Source") else {
+        return SourceFlags::default();
+    };
+    let flag = |names: &[&str]| {
+        names
+            .iter()
+            .any(|n| src.setter(n).and_then(|s| s.as_bool()) == Some(true))
+    };
+    SourceFlags {
+        playtest: flag(&["playtest", "beta"]),
+        incomplete: flag(&["incomplete", "wip"]),
+        info: src
+            .setter_value("information")
+            .map(|v| v.trim().to_string())
+            .unwrap_or_default(),
+    }
+}
+
+#[cfg(test)]
+mod source_flag_tests {
+    use super::*;
+    use borealis_content::{Element, Setter};
+
+    fn source(setters: &[(&str, &str)]) -> Element {
+        let mut e = Element::new(
+            "ID_SYN_SOURCE_X",
+            "Synthetic Source",
+            "Source",
+            "Synthetic Source",
+        );
+        for (k, v) in setters {
+            e.setters.push(Setter::new(*k, *v));
+        }
+        e
+    }
+
+    #[test]
+    fn flags_come_from_the_source_element_setters() {
+        let e = source(&[
+            ("wip", "true"),
+            ("beta", "true"),
+            ("information", " Draft. "),
+        ]);
+        let f = source_flags(std::iter::once(&e));
+        assert_eq!(
+            f,
+            SourceFlags {
+                playtest: true,
+                incomplete: true,
+                info: "Draft.".into()
+            }
+        );
+    }
+
+    #[test]
+    fn a_plain_source_has_no_flags() {
+        let e = source(&[("incomplete", "false")]);
+        assert_eq!(source_flags(std::iter::once(&e)), SourceFlags::default());
+        assert_eq!(source_flags(std::iter::empty()), SourceFlags::default());
     }
 }

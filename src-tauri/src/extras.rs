@@ -217,6 +217,7 @@ pub fn slot_caster_id(snap: &Engine, slot: &SlotSnapshot) -> Option<String> {
 fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> ClassSpellcasting {
     let store = &input.hub.store;
     let slot = caster_slot(snap, &c.name);
+    let restricted = &input.character.build.restricted_sources;
     let own_slots = || {
         snap.slots
             .iter()
@@ -234,6 +235,9 @@ fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> Clas
             };
             let own = own_slots().find(|k| k.chosen.as_ref().is_some_and(|ch| ch.id == s.id));
             let slot_id = own.map(|k| encode_slot(&k.key));
+            let restricted_by_source = s.prepared
+                && !s.always_prepared
+                && el.is_some_and(|e| restricted.contains(&e.source));
             SpellEntry {
                 id: s.id.clone(),
                 name: s.name.clone(),
@@ -246,6 +250,7 @@ fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> Clas
                 always_prepared: s.always_prepared,
                 origin: "class".into(),
                 can_replace: own.is_some_and(|k| k.replaceable),
+                restricted_by_source,
                 slot_id,
                 concentration: flag("isConcentration"),
                 ritual: flag("isRitual"),

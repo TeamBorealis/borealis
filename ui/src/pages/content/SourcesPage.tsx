@@ -5,7 +5,7 @@ import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { useAsync } from "../../state/useAsync";
 import { useShell } from "../../components/shell/ShellContext";
-import { mdiBookSearch, mdiContentSave, mdiFlask, mdiFolderOpen } from "@mdi/js";
+import { mdiAlertCircleOutline, mdiBookSearch, mdiContentSave, mdiFlask, mdiFolderOpen, mdiInformationOutline } from "@mdi/js";
 import { CheckBox, triState } from "../../components/controls";
 import { PaneShell } from "../builder/DescriptionPane";
 import "../builder/builder.css";
@@ -135,7 +135,7 @@ export function SourcesPage() {
                   return (
                     <div key={s.id} role="row" aria-selected={selected.has(s.id)} onContextMenu={(e) => onRowContext(e, s)} className={`v4-grid-row${selected.has(s.id) ? " sel" : ""}`} onClick={(e) => pick(s.id, e)} onDoubleClick={() => openCompendium({ source: s.id })}>
                       <span role="gridcell" className="chk"><CheckBox aria-label={`Allow ${s.name}`} checked={allowed.has(s.id)} onChange={() => toggle(s)} /></span>
-                      <span role="gridcell" className="nm">{s.name}<span className="v4-flags">{s.playtest && <Badge d={mdiFlask} tip="Playtest material" />}</span></span>
+                      <span role="gridcell" className="nm">{s.name}<span className="v4-flags">{s.playtest && <Badge d={mdiFlask} tip="Playtest material" />}{s.incomplete && <Badge d={mdiAlertCircleOutline} tip="Incomplete source" />}{s.info && <Badge d={mdiInformationOutline} tip={s.info} />}</span></span>
                       <span role="gridcell">{s.group}</span>
                       <span role="gridcell">{p?.attribution ?? ""}</span>
                       <span role="gridcell">{p?.version ?? ""}</span>
@@ -154,7 +154,8 @@ export function SourcesPage() {
       {sel ? (
         <PaneShell title={sel.name} intro={sel.group} imageIcon={false} readText={sel.description}>
           <p>{sel.description}</p>
-          <p className="v4-src-facts">{sel.elementCount} elements{meta.get(sel.packId)?.attribution ? ` · ${meta.get(sel.packId)?.attribution}` : ""}{meta.get(sel.packId)?.version ? ` · v${meta.get(sel.packId)?.version}` : ""}{sel.playtest ? " · playtest" : ""}</p>
+          <p className="v4-src-facts">{sel.elementCount} elements{meta.get(sel.packId)?.attribution ? ` · ${meta.get(sel.packId)?.attribution}` : ""}{meta.get(sel.packId)?.version ? ` · v${meta.get(sel.packId)?.version}` : ""}{sel.playtest ? " · playtest" : ""}{sel.incomplete ? " · incomplete" : ""}</p>
+          {sel.info && <p className="v4-src-info">{sel.info}</p>}
         </PaneShell>
       ) : <aside className="desc-pane" aria-label="Description" />}
     </div>

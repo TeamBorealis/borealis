@@ -219,6 +219,8 @@ export interface SpellEntry {
   /** Selection slot holding this spell (for replace), if chosen via a slot. */
   slotId: string | null;
   canReplace: boolean;
+  /** Prepared, but its source book is restricted on this character. */
+  restrictedBySource?: boolean;
   concentration: boolean;
   ritual: boolean;
   /** Casting time, range, duration and V/S/M; null when the spell has no content element. */

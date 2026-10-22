@@ -65,6 +65,10 @@ export interface ContentSource {
   elementCount: number;
   description: string;
   playtest: boolean;
+  /** The source is flagged incomplete (work in progress). */
+  incomplete?: boolean;
+  /** The source's own extra note; empty or absent when it has none. */
+  info?: string;
 }
 
 export type ContentFormat = "json" | "xml";

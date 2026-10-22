@@ -54,6 +54,10 @@ pub struct ContentSource {
     pub element_count: usize,
     pub description: String,
     pub playtest: bool,
+    /// The Source element is flagged `incomplete` / `wip`.
+    pub incomplete: bool,
+    /// The Source element's `information` setter (an extra note shown to the user); empty = none.
+    pub info: String,
 }
 
 /// `import_pack` argument.

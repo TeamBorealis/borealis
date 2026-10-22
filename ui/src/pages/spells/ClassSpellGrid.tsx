@@ -13,6 +13,9 @@ const isKnown = (s: SpellEntry) => isLocked(s) || s.prepared;
 
 /** Info box for the highlighted spell: cantrips and granted spells cannot be prepared. */
 function InfoBox({ spell }: { spell: SpellEntry | undefined }) {
+  if (spell?.restrictedBySource) {
+    return <p className="sp-info" role="status">{spell.name} is prepared but is restricted by source. Prepare another spell.</p>;
+  }
   if (!spell || !isLocked(spell)) return null;
   const text = spell.level === 0
     ? `${spell.name} (cantrip) is always ready to cast and doesn't need to be prepared.`

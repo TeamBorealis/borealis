@@ -390,6 +390,8 @@ pub struct SpellEntry {
     pub origin: String,
     pub slot_id: Option<String>,
     pub can_replace: bool,
+    /// Prepared, but its source book is restricted on this character (the Magic page flags it).
+    pub restricted_by_source: bool,
     pub concentration: bool,
     pub ritual: bool,
     /// Casting time, range, duration and V/S/M components.
