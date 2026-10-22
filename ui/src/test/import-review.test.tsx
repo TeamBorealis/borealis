@@ -142,6 +142,19 @@ describe("import review screen (HB2)", () => {
     expect(screen.getByLabelText("Fix Brisk Walker with AI")).toBeTruthy();
   });
 
+  it("puts the selected element's actions above the source passage so they are in view (B-10)", () => {
+    const element: ImportElement = {
+      id: "e2", type: "feat", name: "Brisk Walker", status: "needs_review", sourceExcerpt: "x", json: { name: "Brisk Walker" }, balanceFlags: [], validationIssues: [],
+      sourcePassage: { startLine: 1, endLine: 1, text: "x" },
+      review: { state: "check", code: "untraced", reason: "r", details: [], textOnly: false, textOnlyReason: "", textOnlyOverride: null, accepted: false },
+    };
+    render(<ElementRow element={element} selected busy={false} sourceLines={["x"]} aiEnabled={false} error={null} onSelect={() => undefined} onSaveJson={async () => true}
+      onAccept={() => undefined} onRelocate={() => undefined} onRegenerate={() => undefined} onRevise={() => undefined} onTextOnly={() => undefined} />);
+    const regenerate = screen.getByRole("button", { name: "Regenerate" });
+    const source = screen.getByRole("button", { name: "Source passage" });
+    expect(regenerate.compareDocumentPosition(source) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("marks text-only elements and applies the manual override", async () => {
     const user = userEvent.setup();
     const api = mock();

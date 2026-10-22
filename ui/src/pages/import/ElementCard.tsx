@@ -78,6 +78,7 @@ export function ElementRow(props: ElementRowProps) {
           <div className="v5-inline imp-panel">
             {busy && <p className="imp-hint" role="status">Working on {element.name}. Your draft stays as it is until this finishes.</p>}
             {error && <p className="error-text" role="alert">{error}</p>}
+            <ElementActions {...props} picked={picked} onPicked={() => setPicked(null)} />
             <div className="imp-split">
               <ElementSide element={element} onSaveJson={onSaveJson} />
               <div className="imp-source-box">
@@ -86,7 +87,6 @@ export function ElementRow(props: ElementRowProps) {
                 </Expander>
               </div>
             </div>
-            <ElementActions {...props} picked={picked} onPicked={() => setPicked(null)} />
             {onReport && <div className="v5-foot"><Button small variant="ghost" onClick={onReport}>Report a problem</Button></div>}
           </div>
         )}

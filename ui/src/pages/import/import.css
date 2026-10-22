@@ -41,3 +41,10 @@
 .import-page .imp-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .import-page .imp-textonly-choice { border: 0; padding: 0; margin: 0; }
 .import-page .imp-textonly-choice legend { font-size: 12px; font-weight: 600; }
+
+/* Phone width: nothing in the selected element's panel may push the page sideways. */
+@media (max-width: 420px) {
+  .import-page .imp-panel, .import-page .imp-side, .import-page .imp-source-box, .import-page .imp-actions { min-width: 0; max-width: 100%; }
+  .import-page .imp-side .textarea { width: 100%; max-width: 100%; box-sizing: border-box; }
+  .import-page .imp-summary, .import-page .imp-details li { overflow-wrap: anywhere; }
+}
