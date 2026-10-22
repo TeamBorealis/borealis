@@ -1,5 +1,5 @@
 import {
-  createViaShortcut, desktopSuite, expect, IMPORT_NOTICE, linkFiveToolsData, NAME, openAdditionalContent, pickFiveToolsFolder,
+  createViaShortcut, desktopSuite, pressKey, expect, IMPORT_NOTICE, linkFiveToolsData, NAME, openAdditionalContent, pickFiveToolsFolder,
   scanFiveTools, settle, SLOW, tapInView,
 } from './helpers.js';
 
@@ -10,7 +10,7 @@ import {
 // Human's feat: War Caster, which needs spellcasting, is offered to the Wizard; Inspiring Leader, which needs
 // Charisma 13, is not, at point-buy 8). Needs the full local data folder (BOREALIS_5ETOOLS_DIR): the committed
 // fixture has no Sorcerer and no feats with prerequisites. Engine side: src-tauri/tests/fivetools_prereqs.rs.
-const PHB = /^Player's Handbook \(PHB\)$/;
+const PHB = /^Player's Handbook \(2014\) \(PHB\)$/;
 const PHB_SOURCE = /, Player's Handbook$/; // the 2014 book; the 2024 one is "Player's Handbook (2024)"
 
 desktopSuite('d9', '5etools PHB only via filters; known caster, spellbook caster and a prerequisite feat', async (ctx) => {
@@ -30,10 +30,12 @@ desktopSuite('d9', '5etools PHB only via filters; known caster, spellbook caster
   }
   await expect(screen.getByRole('button', 'Import 0 book(s)')).toBeVisible(SLOW);
   await tapInView(ctx, screen.getByRole('searchbox', 'Filter sources'));
-  await screen.getByRole('searchbox', 'Filter sources').fill("player's handbook");
+  await screen.getByRole('searchbox', 'Filter sources').fill('handbook'); // no apostrophe: macOS text entry turns it into a typographic one
   await expect(screen.getByText(/^Player's Handbook \(2024\) \(XPHB\)$/).first()).toBeVisible(SLOW);
-  await screen.getByRole('combobox', 'Edition').tap();
-  await screen.getByRole('menuitem', '2014 rules').tap();
+  // The native popup shows in the tree as an unnamed-role node called "Edition" (no combobox role).
+  await screen.getByText('Edition', { exact: true }).first().tap();
+  // The popup items carry no names, only a test id: All editions, 2014 rules, 2024 rules.
+  await pickPopupItem(ctx, 1);
   await expect(screen.getByText(/\(XPHB\)$/)).toBeHidden(SLOW);
   await tapInView(ctx, screen.getByText(PHB).first());
   await expect(screen.getByRole('button', 'Import 1 book(s)')).toBeVisible(SLOW);
@@ -78,10 +80,12 @@ const noError = (ctx: Ctx) => expect(ctx.screen.getByText(/\berror\b|failed|does
 async function newCharacter2014(ctx: Ctx): Promise<void> {
   const { screen } = ctx;
   await createViaShortcut(ctx, NAME, async () => {
-    await tapInView(ctx, screen.getByText(/^2024 - Revised rules/).first());
-    await settle();
-    await screen.getByRole('menuitem', /^2014 - Classic rules/).tap();
+    await tabTo(ctx, screen.getByText(/^2024 - Revised rules/).first());
+    await settle(400);
+    await pressKey(ctx, 'Space'); // opens the focused select's pop-up menu
+    await pickPopupItem(ctx, 1); // the items are unnamed: 2024 Revised, 2014 Classic
     await settle(600);
+    await expect(screen.getByText(/^2014 - Classic rules/).first()).toBeVisible(SLOW);
   });
 }
 
@@ -95,4 +99,32 @@ async function pickClass(ctx: Ctx, name: string): Promise<void> {
   await ctx.screen.getByText('Class', { exact: true }).first().tap();
   await pickInBuild(ctx, new RegExp(`^${name}${PHB_SOURCE.source}`));
   await noError(ctx);
+}
+
+/**
+ * Chooses the item at `index` of the pop-up menu that was just opened. The items are not in the accessibility tree
+ * while it is open and Return would also submit the form behind it, so: Down keys from the first item, then Space.
+ */
+async function pickPopupItem(ctx: Ctx, index: number): Promise<void> {
+  await settle(600);
+  for (let i = 0; i < index; i += 1) await pressKey(ctx, 'ArrowDown');
+  await pressKey(ctx, 'Space');
+  await settle(600);
+}
+
+/** Bottom edge (screen y) of the flyout's scrolling options list; a node below it is clipped. */
+const FLYOUT_LIST_BOTTOM = 810;
+/** Most Tab presses needed to walk from the name field to the rules edition select. */
+const MAX_TABS = 40;
+
+/**
+ * The options list scrolls inside the flyout and a swipe does not reach it, so Tab from the name field until the
+ * browser has scrolled `target` (the last control) into the visible part of the list.
+ */
+async function tabTo(ctx: Ctx, target: ReturnType<Ctx['screen']['getByText']>): Promise<void> {
+  for (let i = 0; i < MAX_TABS; i += 1) {
+    const box = await target.boundingBox().catch(() => null);
+    if (box !== null && box.y + box.height < FLYOUT_LIST_BOTTOM) return;
+    await pressKey(ctx, 'Tab');
+  }
 }

@@ -10,6 +10,10 @@ const FIXTURE = resolve(import.meta.dirname, '../../../crates/borealis-import-5e
 const DATA = process.env['BOREALIS_5ETOOLS_DIR'] ?? FIXTURE;
 const LINK = '/tmp/borealis-e2e-5etools'; // short lowercase path: the panel is typed key by key
 
+/** Importing every book of the full corpus takes minutes; the whole suite gets room for it plus the re-scan. */
+const IMPORT_TIMEOUT_MS = 900_000;
+const SUITE_TIMEOUT_MS = 1_500_000;
+
 desktopSuite('d8', '5etools import: scan, notice, import report, imported class and subclass in a new character', async (ctx) => {
   const { app, screen } = ctx;
   if (!existsSync(DATA)) throw new Error(`5etools data folder not found: ${DATA}`);
@@ -73,7 +77,7 @@ desktopSuite('d8', '5etools import: scan, notice, import report, imported class 
   // Import everything found.
   const importStart = Date.now();
   await screen.getByRole('button', /^Import \d+ book/).tap();
-  await expect(screen.getByText(/not redistributable/).first()).toBeVisible({ timeout: 300_000 });
+  await expect(screen.getByText(/not redistributable/).first()).toBeVisible({ timeout: IMPORT_TIMEOUT_MS });
   console.info(`[d8] import tap to report visible: ${Date.now() - importStart} ms`);
   await expect(screen.getByText(/^0 elements converted/)).toBeHidden({ timeout: 3000 });
   await expect(screen.getByText(/\berror\b/i).first()).toBeHidden({ timeout: 3000 });
@@ -131,4 +135,4 @@ desktopSuite('d8', '5etools import: scan, notice, import report, imported class 
   await scan();
   await expect(screen.getByText('Import only content you own')).toBeVisible(SLOW);
   await noError();
-});
+}, { timeout: SUITE_TIMEOUT_MS });

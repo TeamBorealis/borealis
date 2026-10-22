@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { existsSync, rmSync, symlinkSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, test, type Locator, type Role, type TestFixtures } from 'e2e';
@@ -63,7 +64,7 @@ export async function createViaShortcut(ctx: Ctx, name: string, beforeCreate?: (
 }
 
 /** Most swipes needed to bring a node into the window (each swipe scrolls a few rows). */
-const MAX_SCROLLS = 30;
+const MAX_SCROLLS = 60;
 /** A node this close to the window edge still counts as off-screen (its click could land on the frame). */
 const EDGE_PX = 24;
 
@@ -76,8 +77,12 @@ const appView = (ctx: Ctx): Locator => ctx.screen.getByRole(WEBVIEW, 'Borealis')
 export async function tapInView(ctx: Ctx, target: Locator, opts: { double?: boolean } = {}): Promise<void> {
   await expect(target).toBeVisible(SLOW);
   for (let i = 0; i < MAX_SCROLLS; i += 1) {
-    const [box, view] = await Promise.all([target.boundingBox(), appView(ctx).boundingBox()]);
-    if (box === null || view === null) break;
+    // The tree can be empty for a moment right after a swipe: look again instead of failing.
+    const [box, view] = await Promise.all([target.boundingBox().catch(() => null), appView(ctx).boundingBox().catch(() => null)]);
+    if (box === null || view === null) {
+      await settle(500);
+      continue;
+    }
     const mid = box.y + box.height / 2;
     if (mid > view.y + view.height - EDGE_PX) await appView(ctx).swipe({ direction: 'up' });
     else if (mid < view.y + EDGE_PX) await appView(ctx).swipe({ direction: 'down' });
@@ -106,10 +111,22 @@ export async function pickFiveToolsFolder(ctx: Ctx): Promise<void> {
   await settle();
   await pressKey(ctx, 'ControlOrMeta+Shift+g');
   await settle();
-  await typeText(ctx, FIVETOOLS_LINK);
+  await pasteText(ctx, FIVETOOLS_LINK);
   await pressKey(ctx, 'Enter');
   await settle(800);
   await pressKey(ctx, 'Enter');
+}
+
+/** Pastes text with Cmd+V (typing key by key takes ~1 s a key and can lose the panel); the user's clipboard is put back. */
+export async function pasteText(ctx: Ctx, text: string): Promise<void> {
+  const previous = execFileSync('pbpaste', { encoding: 'utf8' });
+  try {
+    execFileSync('pbcopy', { input: text });
+    await pressKey(ctx, 'ControlOrMeta+v');
+    await settle(800);
+  } finally {
+    execFileSync('pbcopy', { input: previous });
+  }
 }
 
 /**
