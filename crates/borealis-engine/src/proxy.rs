@@ -126,6 +126,11 @@ pub fn proxy_id(target: &Element, abbr: &str, cast: &str) -> Option<String> {
 }
 
 /// Aurora's proxy id from its parts.
+///
+/// A spell proxy without a spellcasting name has an empty cast key, so its id has two
+/// underscores in a row (`ID_<ABBR>_INTERNAL_ITEM__SPELL_PROXY_SPELL_<REST>`). That is Aurora's
+/// own id, on purpose: Aurora files and saved Borealis characters carry it, so it must not be
+/// "fixed". The `proxy_catalogue` test pins it.
 fn format_id(kind: Kind, abbr: &str, cast: &str, rest: &str) -> String {
     let middle = match kind {
         Kind::Spell => format!("{}{}", cast.replace(' ', "_"), kind.infix()),
