@@ -273,11 +273,17 @@ impl<'a> Driver<'a> {
 
     /// Choose `target` in the first open slot that offers it.
     pub fn pick(&self, host: &mut Host, target: &str) -> bool {
+        self.pick_leaving(host, target, &BTreeSet::new())
+    }
+
+    /// [`Driver::pick`], leaving the open slots in `leave` alone (a select a user keeps for a
+    /// later pick).
+    pub fn pick_leaving(&self, host: &mut Host, target: &str, leave: &BTreeSet<String>) -> bool {
         let open: Vec<String> = host
             .snap
             .slots
             .iter()
-            .filter(|s| s.chosen.is_none())
+            .filter(|s| s.chosen.is_none() && !leave.contains(&s.id))
             .map(|s| s.id.clone())
             .collect();
         for slot in open {
@@ -350,7 +356,20 @@ impl<'a> Driver<'a> {
         offers: &mut Offers,
         avoid: &[String],
     ) {
-        let mut refused = HashSet::new();
+        self.fill_leaving(host, label, offers, avoid, &BTreeSet::new());
+    }
+
+    /// [`Driver::fill_avoiding`], leaving the open slots in `leave` empty (a select a user keeps
+    /// for a later pick).
+    pub fn fill_leaving(
+        &self,
+        host: &mut Host,
+        label: &str,
+        offers: &mut Offers,
+        avoid: &[String],
+        leave: &BTreeSet<String>,
+    ) {
+        let mut refused: HashSet<String> = leave.iter().cloned().collect();
         for _ in 0..FILL_PASSES {
             let open = host.snap.slots.iter().find(|s| {
                 s.chosen.is_none()

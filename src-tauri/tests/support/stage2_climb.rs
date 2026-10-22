@@ -7,7 +7,7 @@
 //! Everything is read from the installed content; no id is named here.
 
 use super::items;
-use super::{required_groups, Edition, NON_OFFERABLE};
+use super::{required_groups, Edition, Host, NON_OFFERABLE};
 use crate::support::plan::{supports_match, tokens, Plan};
 use borealis_content::expr::{BoolExpr, RequirementLeaf, RequirementsExpr, TestValue};
 use borealis_content::{ContentStore, Rule};
@@ -604,6 +604,37 @@ pub(super) fn negated_ids(
     out
 }
 
+/// The owners of the selects that can offer `target` by type and supports, whatever their
+/// requirements (the selects the last climb pass keeps for the option).
+pub(super) fn offering_owners(e: &Edition<'_>, target: &str) -> BTreeSet<String> {
+    let Some(el) = e.ins.store.element(target) else {
+        return BTreeSet::new();
+    };
+    e.selects
+        .offering(target, &el.ty, Some(el))
+        .into_iter()
+        .map(|(owner, _, _)| owner.clone())
+        .collect()
+}
+
+/// The open slots of `host` whose select one of `owners` owns (a slot id starts with its
+/// owner's id, `OWNER:rule:ordinal`).
+pub(super) fn kept_slots(host: &Host, owners: &BTreeSet<String>) -> BTreeSet<String> {
+    let open = host.snap.slots.iter().filter(|s| s.chosen.is_none());
+    owned_slots(open.map(|s| s.id.as_str()), owners)
+}
+
+/// The slot ids of `slots` whose owner (the id before the first `:`) is one of `owners`.
+fn owned_slots<'a>(
+    slots: impl Iterator<Item = &'a str>,
+    owners: &BTreeSet<String>,
+) -> BTreeSet<String> {
+    slots
+        .filter(|id| owners.contains(id.split(':').next().unwrap_or("")))
+        .map(str::to_string)
+        .collect()
+}
+
 /// The any-of groups the `requirements` of grants of `path` elements name (only ids; a grant's
 /// tests and negations are left to the character), in store order.
 pub(super) fn grant_requirement_groups(
@@ -629,4 +660,23 @@ pub(super) fn grant_requirement_groups(
         }
     }
     out
+}
+
+#[cfg(test)]
+mod kept_tests {
+    #[test]
+    fn a_kept_slot_is_one_whose_owner_is_named_exactly() {
+        let owners = ["ID_T_LORE".to_string()].into_iter().collect();
+        let open = [
+            "ID_T_LORE:0:1",
+            "ID_T_LORE_X:0:1",
+            "ID_T_OTHER:2:1",
+            "ID_T_LORE:1:2",
+        ];
+        let kept: Vec<String> = super::owned_slots(open.into_iter(), &owners)
+            .into_iter()
+            .collect();
+        assert_eq!(kept, ["ID_T_LORE:0:1", "ID_T_LORE:1:2"]);
+        assert!(super::owned_slots(open.into_iter(), &Default::default()).is_empty());
+    }
 }

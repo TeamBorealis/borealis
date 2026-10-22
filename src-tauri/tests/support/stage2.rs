@@ -27,8 +27,8 @@ mod defects;
 mod climb;
 use climb::{
     attunement_configs, climb_items, counter_configs, grant_level_configs,
-    grant_requirement_groups, list_owner_configs, multiclass_entries, negated_ids, on_climb,
-    rank_configs, spell_list_hosts, stat_groups, MULTICLASS_TYPE,
+    grant_requirement_groups, kept_slots, list_owner_configs, multiclass_entries, negated_ids,
+    offering_owners, on_climb, rank_configs, spell_list_hosts, stat_groups, MULTICLASS_TYPE,
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -1155,7 +1155,7 @@ fn option_host(
     // first the needed ids only; then, where that offers nothing, the same configurations also
     // picking the elements on the climb paths (each pass is deterministic, and the first one is
     // exactly the older host, so what it offered stays offered)
-    let run = |(climb, mc): (bool, bool),
+    let run = |(climb, mc, keep): (bool, bool, bool),
                configs: &[(String, Option<String>)],
                roots: &Plan,
                groups: &[Vec<String>],
@@ -1168,7 +1168,7 @@ fn option_host(
                 target,
                 ex,
                 offers,
-                (class, archetype.as_deref(), climb, mc),
+                (class, archetype.as_deref(), climb, mc, keep),
                 scores,
                 race.as_deref(),
                 roots,
@@ -1176,7 +1176,7 @@ fn option_host(
             )
         })
     };
-    if run((false, false), &classes, &roots, &groups, ex, offers)
+    if run((false, false, false), &classes, &roots, &groups, ex, offers)
         || offers.climbed.contains_key(target)
     {
         return true;
@@ -1280,7 +1280,7 @@ fn option_host(
     // also multiclassing as a user does (a class's own multiclass node; another class leading
     // the levels), apart so that what the climb pass offered stays offered
     let found = run(
-        (true, false),
+        (true, false, false),
         &classes,
         &roots,
         &groups,
@@ -1304,15 +1304,25 @@ fn option_host(
             .take(MAX_MULTICLASS_CONFIGS)
             .cloned()
             .collect();
+        // and last, where that offers nothing either, the same configurations planned as a
+        // user who wants the option plans: multiclass into the class whose select offers it,
+        // and keep that select for it (see `option_host_on`)
         !changed.is_empty()
-            && run(
-                (true, true),
+            && (run(
+                (true, true, false),
                 &changed,
                 &roots,
                 &groups,
                 &mut memo,
                 &mut pass,
-            )
+            ) || run(
+                (true, true, true),
+                &changed,
+                &roots,
+                &groups,
+                &mut memo,
+                &mut pass,
+            ))
     };
     ex.explored += memo.explored;
     offers.keep_climbed(pass);
@@ -1341,7 +1351,7 @@ fn option_host_on(
     target: &str,
     ex: &mut Explore<'_>,
     offers: &mut Offers,
-    (class, archetype, climb, mc): (&str, Option<&str>, bool, bool),
+    (class, archetype, climb, mc, keep_offering): (&str, Option<&str>, bool, bool, bool),
     scores: [i32; 6],
     race: Option<&str>,
     roots: &Plan,
@@ -1553,11 +1563,29 @@ fn option_host_on(
     // whose select offers a spell that requires the Elementalist class: a multiclass never
     // registers the class id, so that class stays the main one): the climb pass multiclasses
     // into the other class and levels it, as a user does
-    let lead = if climb && mc {
+    let mut lead = if climb && mc {
         multiclass_entries(e, class, &want, true)
     } else {
         Vec::new()
     };
+    // the last pass plans for the option: the class whose own select (or subclass's select)
+    // offers it leads first, as a user multiclasses into the class that offers it, not into the
+    // first class some path reaches
+    if keep_offering && lead.len() > 1 {
+        let offering = multiclass_entries(e, class, &[vec![target.to_string()]], true);
+        lead.sort_by_key(|m| !offering.contains(m));
+    }
+    // and it keeps the selects that can offer the option (by type and supports) for it: the
+    // elements on the paths are not picked there, nor is the select filled, so it offers the
+    // option once its requirements hold (a blank subclass feature select that every subclass
+    // feature fits, and the only select that offers the option)
+    let offer_owners = if keep_offering {
+        offering_owners(e, target)
+    } else {
+        BTreeSet::new()
+    };
+    let needed: BTreeSet<&str> = groups.iter().flatten().map(String::as_str).collect();
+    let mut kept_before_lead: Option<BTreeSet<String>> = None;
     // the wanted groups the lead class serves (a spell only its select offers): once they are
     // picked, the levels go back to the main class (whose select offers the option)
     let lead_for: Vec<Vec<String>> = if lead.is_empty() {
@@ -1589,7 +1617,12 @@ fn option_host_on(
         while progress && !offered(d, &h) {
             progress = false;
             for g in want.clone() {
-                if g.iter().any(|w| d.pick(&mut h, w)) {
+                let leave = if g.iter().any(|w| needed.contains(w.as_str())) {
+                    BTreeSet::new()
+                } else {
+                    kept_slots(&h, &offer_owners)
+                };
+                if g.iter().any(|w| d.pick_leaving(&mut h, w, &leave)) {
                     want.retain(|x| *x != g);
                     progress = true;
                     if offered(d, &h) {
@@ -1638,7 +1671,8 @@ fn option_host_on(
             }
             break;
         }
-        d.fill_avoiding(&mut h, &label, offers, &avoid);
+        let leave = kept_slots(&h, &offer_owners);
+        d.fill_leaving(&mut h, &label, offers, &avoid, &leave);
         if h.snap.level.total >= MAX_LEVEL {
             break;
         }
@@ -1665,11 +1699,18 @@ fn option_host_on(
             if added {
                 if !lead.is_empty() {
                     level_slot = format!("multi-{}", h.snap.level.total);
+                    kept_before_lead = Some(kept_slots(&h, &offer_owners));
                 }
                 continue;
             }
         }
-        let served = !lead_for.is_empty() && lead_for.iter().all(|g| !want.contains(g));
+        // planning for the option, the lead class has served once a select that can offer the
+        // option is on the character that was not there before it (the subclass feature)
+        let kept_new = kept_before_lead
+            .as_ref()
+            .is_some_and(|before| !kept_slots(&h, &offer_owners).is_subset(before));
+        let served =
+            kept_new || (!lead_for.is_empty() && lead_for.iter().all(|g| !want.contains(g)));
         if served && level_slot != "main" {
             level_slot = String::from("main");
         }
