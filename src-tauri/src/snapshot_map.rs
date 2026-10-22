@@ -375,11 +375,27 @@ fn slot_tab(s: &SlotSnapshot) -> &'static str {
     }
 }
 
+/// engine-optional-sole-option SO-5: an optional slot with no options and no choice is disabled
+/// and not shown (a required one stays, empty, and still requires a selection). The app always
+/// derives with options included, so an empty list here means nothing is on offer.
+fn is_hidden_empty_optional(s: &SlotSnapshot) -> bool {
+    s.optional
+        && s.chosen.is_none()
+        && s.list_choice.is_none()
+        && s.missing.is_none()
+        && s.options.is_empty()
+        && s.list_items.is_empty()
+}
+
 fn slots(snap: &Engine) -> (Vec<SelectionSlot>, SelectionProgress) {
     let mut out = Vec::new();
     let mut ranked: Vec<(u8, usize)> = Vec::new();
     let mut by_tab: BTreeMap<String, usize> = TABS.iter().map(|t| ((*t).to_string(), 0)).collect();
-    for s in snap.slots.iter().filter(|s| s.rejected.is_none()) {
+    for s in snap
+        .slots
+        .iter()
+        .filter(|s| s.rejected.is_none() && !is_hidden_empty_optional(s))
+    {
         let tab = slot_tab(s);
         let required = !s.optional;
         let chosen = chosen_ref(s);
@@ -453,4 +469,79 @@ fn chosen_ref(s: &SlotSnapshot) -> Option<crate::dto::ElementRef> {
         ty: "list".into(),
         source: s.owner.source.clone(),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use borealis_engine::snapshot::{ElementRef, OptionRef};
+    use borealis_engine::state::SlotKey;
+
+    fn element(id: &str) -> ElementRef {
+        ElementRef {
+            id: id.into(),
+            name: id.into(),
+            ty: "Language".into(),
+            source: "Test".into(),
+        }
+    }
+
+    fn slot(optional: bool, options: usize) -> SlotSnapshot {
+        SlotSnapshot {
+            key: SlotKey::new("ID_T_OWNER", 0, 1),
+            owner: element("ID_T_OWNER"),
+            name: "Pick".into(),
+            ty: "Language".into(),
+            level: 1,
+            number: 1,
+            optional,
+            chosen: None,
+            list_choice: None,
+            list_items: Vec::new(),
+            requires_selection: !optional,
+            all_known: false,
+            locked: false,
+            default: None,
+            rejected: None,
+            missing: None,
+            spellcasting: None,
+            prepared: false,
+            options: (0..options)
+                .map(|i| OptionRef {
+                    id: format!("ID_T_OPT_{i}"),
+                    name: format!("Option {i}"),
+                    source: "Test".into(),
+                    level: None,
+                    edition: None,
+                })
+                .collect(),
+            replaceable: false,
+            gained_level: 1,
+            replaced: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn optional_slot_without_options_is_hidden() {
+        assert!(is_hidden_empty_optional(&slot(true, 0)));
+    }
+
+    #[test]
+    fn optional_slot_with_an_option_stays() {
+        assert!(!is_hidden_empty_optional(&slot(true, 1)));
+    }
+
+    #[test]
+    fn required_slot_without_options_stays_and_requires_selection() {
+        let s = slot(false, 0);
+        assert!(!is_hidden_empty_optional(&s));
+        assert!(s.requires_selection);
+    }
+
+    #[test]
+    fn optional_slot_holding_a_choice_stays() {
+        let mut s = slot(true, 0);
+        s.list_choice = Some(2);
+        assert!(!is_hidden_empty_optional(&s));
+    }
 }
