@@ -433,7 +433,8 @@ impl<'u> Evaluation<'u> {
                         !self.graph.slot_has_options(id, si)
                     })
                     && self.graph.slot_all_known(id, si);
-                let retrain = self.retrain_info(state, casters, slot, rule);
+                let retrain =
+                    self.retrain_info(state, casters, slot, rule, self.graph.mgr_level(n.mgr));
                 out.push(SlotSnapshot {
                     key: slot.key.clone(),
                     owner: element_ref(n.e),

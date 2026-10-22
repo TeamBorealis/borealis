@@ -2,8 +2,10 @@
 
 use super::selection::{find_slot, prune};
 use super::{CmdResult, CommandError, CommandOutcome};
+use crate::derive::Evaluation;
 use crate::engine::Engine;
 use crate::state::{CharacterState, ReplacedPick, SlotHistory, SlotKey};
+use borealis_content::Rule;
 
 /// Replace the spell in a filled slot: the old pick is unregistered (and unprepared), recorded
 /// in the slot's history, and the slot reopens for a new pick at the current class level.
@@ -28,10 +30,12 @@ pub fn replace_spell(engine: &Engine, state: &CharacterState, key: &SlotKey) -> 
         .clone()
         .ok_or_else(|| CommandError::Spell("No spell is chosen in that slot.".into()))?;
     if !slot.replaceable {
-        return Err(CommandError::Spell(format!(
-            "{} cannot be replaced.",
-            chosen.name
-        )));
+        let used = engine.with_evaluation(state, |ev| swap_used_for(ev, state, key));
+        return Err(CommandError::Spell(if used {
+            "Only one spell can be replaced each time a level is gained.".into()
+        } else {
+            format!("{} cannot be replaced.", chosen.name)
+        }));
     }
     let level = engine
         .with_evaluation(state, |ev| {
@@ -56,4 +60,20 @@ pub fn replace_spell(engine: &Engine, state: &CharacterState, key: &SlotKey) -> 
         }),
     }
     Ok(CommandOutcome::new(prune(engine, &next)))
+}
+
+/// Whether the class of the slot `key` already swapped a spell of the same kind at its level.
+fn swap_used_for(ev: &Evaluation<'_>, state: &CharacterState, key: &SlotKey) -> bool {
+    let Some((owner, si, rule_idx)) = find_slot(&ev.graph, key) else {
+        return false;
+    };
+    let node = &ev.graph.nodes[owner];
+    let Rule::Select(rule) = &node.e.el.rules[rule_idx] else {
+        return false;
+    };
+    let (Some(class), Some(chosen)) = (rule.spellcasting.as_deref(), node.slots[si].chosen) else {
+        return false;
+    };
+    let cantrip = ev.graph.nodes[chosen].e.spell_level() == Some(0);
+    ev.swap_used(state, class, ev.graph.mgr_level(node.mgr), cantrip)
 }

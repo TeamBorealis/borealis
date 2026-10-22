@@ -184,3 +184,50 @@ fn level_down_drops_history_of_vanished_slots() {
     let s = commands::prune(e, &s);
     assert!(s.slot_history.is_empty());
 }
+
+#[test]
+fn only_one_spell_is_replaced_per_level_gained() {
+    let e = engine("srd-5.1");
+    let s = caster(e, Ruleset::Dnd2014, "ID_WOTC_PHB_CLASS_SORCERER", 5);
+    let snap = e.derive(&s);
+    let first = slot(&snap, "Spell (Sorcerer)", 2).key.clone();
+    let second = slot(&snap, "Spell (Sorcerer)", 3).key.clone();
+    assert!(by_key(&snap, &second).replaceable);
+    let s = commands::replace_spell(e, &s, &first)
+        .expect("first swap")
+        .state;
+    let snap = e.derive(&s);
+    assert!(
+        !by_key(&snap, &second).replaceable,
+        "the level's swap is spent"
+    );
+    let err = commands::replace_spell(e, &s, &second).unwrap_err();
+    assert!(err.to_string().contains("Only one spell"), "{err}");
+    // a new level gained restores the swap
+    let s = commands::level_up_main(e, &s, None)
+        .expect("level up")
+        .state;
+    assert!(by_key(&e.derive(&s), &second).replaceable);
+}
+
+#[test]
+fn wizard_2024_swaps_one_cantrip_per_level() {
+    let e = engine("srd-5.2.1");
+    let s = caster(e, Ruleset::Dnd2024, "ID_2024_CLASS_WIZARD", 4);
+    let snap = e.derive(&s);
+    let cantrip = slot(&snap, "Cantrip (Wizard 1)", 1).key.clone();
+    let s = commands::replace_spell(e, &s, &cantrip)
+        .expect("cantrip")
+        .state;
+    let snap = e.derive(&s);
+    let others: Vec<_> = snap
+        .slots
+        .iter()
+        .filter(|x| x.name.starts_with("Cantrip") && x.chosen.is_some())
+        .collect();
+    assert!(!others.is_empty());
+    assert!(
+        others.iter().all(|c| !c.replaceable),
+        "one cantrip swap per level"
+    );
+}

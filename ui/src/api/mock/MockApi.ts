@@ -304,6 +304,9 @@ export class MockApi implements Api {
       if (!def.allowReplace) throw apiError("requirement_failed", `${getElement(old)?.name ?? old} cannot be replaced.`);
       const classSlot = def.classSlotId ?? "";
       const level = Math.max(levelOf(c, classSlot), def.requiredLevel ?? 1);
+      const spent = buildSlotDefs(c).some((d) => d.classSlotId === def.classSlotId
+        && (c.slotHistory?.[d.id] ?? []).some((p) => p.level === level && (p.id.includes("cantrip") === old.includes("cantrip"))));
+      if (spent) throw apiError("requirement_failed", "Only one spell can be replaced each time a level is gained.");
       const { [key]: _old, ...choices } = c.choices;
       const prepared = Object.fromEntries(Object.entries(c.prepared).map(([k, v]) => [k, v.filter((s) => s !== old)]));
       const history = c.slotHistory ?? {};
