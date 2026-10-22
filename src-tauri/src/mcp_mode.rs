@@ -34,6 +34,59 @@ pub(crate) fn default_content_dirs(exe: &Path) -> Vec<PathBuf> {
     .collect()
 }
 
+/// The app identifier: the per-user data folder is named after it on every platform.
+const APP_IDENTIFIER: &str = "app.borealis";
+
+/// Operating systems with their own per-user data folder convention.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Platform {
+    MacOs,
+    Windows,
+    Linux,
+}
+
+impl Platform {
+    /// The platform this binary runs on (other Unixes follow the Linux convention).
+    fn current() -> Self {
+        if cfg!(target_os = "macos") {
+            Self::MacOs
+        } else if cfg!(windows) {
+            Self::Windows
+        } else {
+            Self::Linux
+        }
+    }
+}
+
+/// The per-user data folder of the app, exactly where the desktop app keeps it (Tauri's
+/// `app_data_dir`): `~/Library/Application Support/<id>` on macOS, `%APPDATA%\<id>` on Windows,
+/// `$XDG_DATA_HOME/<id>` (default `~/.local/share/<id>`) on Linux. Pure: `env` answers variable
+/// lookups, so each platform is testable on any host.
+pub(crate) fn user_data_dir(
+    platform: Platform,
+    env: &dyn Fn(&str) -> Option<String>,
+) -> Option<PathBuf> {
+    let var = |name: &str| env(name).filter(|v| !v.trim().is_empty());
+    let base = match platform {
+        Platform::MacOs => PathBuf::from(var("HOME")?).join("Library/Application Support"),
+        Platform::Windows => var("APPDATA").map(PathBuf::from).or_else(|| {
+            var("USERPROFILE").map(|u| PathBuf::from(u).join("AppData").join("Roaming"))
+        })?,
+        Platform::Linux => match var("XDG_DATA_HOME").map(PathBuf::from) {
+            Some(x) if x.is_absolute() => x,
+            _ => PathBuf::from(var("HOME")?).join(".local/share"),
+        },
+    };
+    Some(base.join(APP_IDENTIFIER))
+}
+
+/// The user content library (imported packs) of this machine, when it exists.
+fn user_library_dir() -> Option<PathBuf> {
+    let env = |name: &str| std::env::var(name).ok();
+    let dir = user_data_dir(Platform::current(), &env)?.join("library");
+    dir.is_dir().then_some(dir)
+}
+
 /// Parse MCP-mode arguments.
 ///
 /// # Errors
@@ -63,6 +116,11 @@ pub fn parse_args(args: &[String], exe: &Path) -> Result<McpConfig, String> {
     }
     if config.content_dirs.is_empty() {
         config.content_dirs = default_content_dirs(exe);
+        // Without an explicit folder the server also serves the user's imported content, found
+        // in the platform data folder (bundled packs come first and are never shadowed).
+        if !config.content_dirs.is_empty() {
+            config.content_dirs.extend(user_library_dir());
+        }
     }
     if config.content_dirs.is_empty() {
         return Err("no content directory found; pass --content-dir <dir>".into());
@@ -169,5 +227,81 @@ pub fn run(args: &[String]) -> i32 {
             eprintln!("borealis --mcp: {e}");
             1
         }
+    }
+}
+
+#[cfg(test)]
+mod data_dir_tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    fn lookup(pairs: &[(&str, &str)]) -> impl Fn(&str) -> Option<String> {
+        let map: HashMap<String, String> = pairs
+            .iter()
+            .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+            .collect();
+        move |k| map.get(k).cloned()
+    }
+
+    fn tail(path: &Path, n: usize) -> Vec<String> {
+        let parts: Vec<String> = path
+            .components()
+            .map(|c| c.as_os_str().to_string_lossy().into_owned())
+            .collect();
+        parts[parts.len() - n..].to_vec()
+    }
+
+    #[test]
+    fn macos_uses_application_support_under_home() {
+        let dir = user_data_dir(Platform::MacOs, &lookup(&[("HOME", "/Users/mira")])).unwrap();
+        assert_eq!(
+            tail(&dir, 3),
+            ["Library", "Application Support", "app.borealis"]
+        );
+        assert!(dir.starts_with("/Users/mira"));
+    }
+
+    #[test]
+    fn windows_uses_roaming_appdata_then_the_profile() {
+        let appdata = user_data_dir(
+            Platform::Windows,
+            &lookup(&[("APPDATA", "C:/Users/mira/AppData/Roaming")]),
+        )
+        .unwrap();
+        assert!(appdata.starts_with("C:/Users/mira/AppData/Roaming"));
+        assert_eq!(tail(&appdata, 1), ["app.borealis"]);
+        let profile = user_data_dir(
+            Platform::Windows,
+            &lookup(&[("USERPROFILE", "C:/Users/mira")]),
+        )
+        .unwrap();
+        assert_eq!(tail(&profile, 3), ["AppData", "Roaming", "app.borealis"]);
+        assert!(user_data_dir(Platform::Windows, &lookup(&[])).is_none());
+    }
+
+    #[test]
+    fn linux_honours_an_absolute_xdg_data_home_else_local_share() {
+        let xdg = user_data_dir(
+            Platform::Linux,
+            &lookup(&[("XDG_DATA_HOME", "/data/xdg"), ("HOME", "/home/mira")]),
+        )
+        .unwrap();
+        assert_eq!(xdg, PathBuf::from("/data/xdg/app.borealis"));
+        let relative = user_data_dir(
+            Platform::Linux,
+            &lookup(&[("XDG_DATA_HOME", "rel"), ("HOME", "/home/mira")]),
+        )
+        .unwrap();
+        assert_eq!(
+            relative,
+            PathBuf::from("/home/mira/.local/share/app.borealis")
+        );
+        let blank = user_data_dir(
+            Platform::Linux,
+            &lookup(&[("XDG_DATA_HOME", " "), ("HOME", "/home/mira")]),
+        )
+        .unwrap();
+        assert_eq!(blank, PathBuf::from("/home/mira/.local/share/app.borealis"));
+        assert!(user_data_dir(Platform::Linux, &lookup(&[])).is_none());
     }
 }

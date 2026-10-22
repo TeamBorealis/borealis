@@ -45,6 +45,9 @@ it for good.
 - `--args '<json>'` passes all arguments as one JSON object, exactly as the MCP tool takes them.
 - Output is JSON on stdout by default; `--human` prints a short text form.
 - `--content-dir <dir>` overrides the bundled content folder (default: next to the executable).
+  Without it, `borealis --mcp` also serves the content you imported in the app, read from the
+  per-user data folder (`~/Library/Application Support/app.borealis/library` on macOS,
+  `%APPDATA%\app.borealis\library` on Windows, `$XDG_DATA_HOME` or `~/.local/share/app.borealis/library` on Linux).
 - Exit codes: `0` done; `1` the action was refused or failed (stdout carries
   `{"error": {"code", "message"}}`, stderr the message); `2` usage error (unknown command or
   argument, missing `--library`).
