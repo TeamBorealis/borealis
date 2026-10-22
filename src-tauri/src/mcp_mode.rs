@@ -92,6 +92,18 @@ fn user_library_dir() -> Option<PathBuf> {
 /// # Errors
 /// A message for unknown or incomplete arguments.
 pub fn parse_args(args: &[String], exe: &Path) -> Result<McpConfig, String> {
+    parse_args_with(args, exe, user_library_dir())
+}
+
+/// [`parse_args`] with the user content library given (`None` = the user has none).
+///
+/// # Errors
+/// A message for unknown or incomplete arguments.
+pub fn parse_args_with(
+    args: &[String],
+    exe: &Path,
+    user_library: Option<PathBuf>,
+) -> Result<McpConfig, String> {
     let mut config = McpConfig::default();
     let mut it = args.iter();
     while let Some(arg) = it.next() {
@@ -119,7 +131,7 @@ pub fn parse_args(args: &[String], exe: &Path) -> Result<McpConfig, String> {
         // Without an explicit folder the server also serves the user's imported content, found
         // in the platform data folder (bundled packs come first and are never shadowed).
         if !config.content_dirs.is_empty() {
-            config.content_dirs.extend(user_library_dir());
+            config.content_dirs.extend(user_library);
         }
     }
     if config.content_dirs.is_empty() {

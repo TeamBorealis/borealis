@@ -66,9 +66,20 @@ fn mcp_mode_finds_bundled_content_next_to_an_app_bundle_executable() {
     std::fs::create_dir_all(&macos).unwrap();
     std::fs::create_dir_all(&core).unwrap();
     std::fs::write(core.join("pack.json"), "{}").unwrap();
-    let cfg = mcp_mode::parse_args(&strs(&["--mcp"]), &macos.join("borealis")).unwrap();
+    let exe = macos.join("borealis");
+    let cfg = mcp_mode::parse_args_with(&strs(&["--mcp"]), &exe, None).unwrap();
     assert_eq!(cfg.content_dirs.len(), 1);
     assert!(cfg.content_dirs[0].ends_with("Resources/content"));
+    // the user's imported library follows the bundled content, never replaces it
+    let library = app.path().join("data/app.borealis/library");
+    let cfg = mcp_mode::parse_args_with(&strs(&["--mcp"]), &exe, Some(library.clone())).unwrap();
+    assert_eq!(cfg.content_dirs.len(), 2);
+    assert!(cfg.content_dirs[0].ends_with("Resources/content"));
+    assert_eq!(cfg.content_dirs[1], library);
+    // an explicit --content-dir means exactly that
+    let explicit = strs(&["--mcp", "--content-dir", "/a"]);
+    let cfg = mcp_mode::parse_args_with(&explicit, &exe, Some(library)).unwrap();
+    assert_eq!(cfg.content_dirs, vec![PathBuf::from("/a")]);
 }
 
 #[test]
