@@ -4047,6 +4047,18 @@
       "k": "prim"
      }
     },
+    "incomplete": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "info": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "name": {
      "opt": false,
      "t": {
@@ -4686,6 +4698,16 @@
    "k": "object",
    "props": {
     "files": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "DroppedFile"
+      }
+     }
+    },
+    "folders": {
      "opt": false,
      "t": {
       "k": "array",
@@ -8320,6 +8342,12 @@
     },
     "prepared": {
      "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "restrictedBySource": {
+     "opt": true,
      "t": {
       "k": "prim"
      }
