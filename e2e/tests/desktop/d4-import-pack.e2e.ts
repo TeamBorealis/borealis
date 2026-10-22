@@ -25,5 +25,9 @@ desktopSuite('d4', 'Content: import an XML pack through preview and install', as
   await expect(screen.getByText(/ID_MOONFEN_FEAT_MISSING/)).toBeVisible(SLOW);
   await screen.getByRole('button', 'Install').tap();
   await expect(screen.getByText(/2 elements from 1 file/)).toBeHidden(SLOW);
+  // Install ends with the import report dialog; dismiss it, then the pack is listed behind it.
+  await expect(screen.getByText('2 elements converted; 0 errors, 0 warnings, 1 note.')).toBeVisible(SLOW);
+  await screen.getByRole('button', 'Close').first().tap();
+  await expect(screen.getByText('Import report').first()).toBeHidden(SLOW);
   await expect(screen.getByText('d4pack').first()).toBeVisible(SLOW);
 });

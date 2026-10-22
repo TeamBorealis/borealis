@@ -2,7 +2,8 @@ import { createViaShortcut, desktopSuite, expect, NAME, SLOW, settle } from './h
 
 // d6: real backend, new 2024 High Elf Wizard (Sage): Build > Sage ability increase shows no "does not exist" pane;
 // Magic page: a cantrip slot opens its catalogue and takes a cantrip; a "Spellbook (Wizard 1)" slot opens a catalogue
-// that offers Magic Missile (real slot ids; the mock hid both bugs).
+// that offers Magic Missile (real slot ids; the mock hid both bugs). The catalogue has one table per spell list
+// (Wizard, High Elf), so a spell can appear twice.
 // Not covered here: picking Magic Missile and preparing it. The catalogue sits below the fold of the 1200x800 window,
 // and a native tap on it lands on stale coordinates after the pane scrolls (hits the neighbouring slot or tab). That path is
 // covered by ui/src/test/magic-real-slot-ids.test.tsx and src-tauri/tests/magic_slots.rs.
@@ -28,10 +29,10 @@ desktopSuite('d6', 'New 2024 Wizard: Sage description, cantrip pick, spellbook s
   await expect(screen.getByText(/Spellbook \(Wizard 1\)/).first()).toBeVisible(SLOW);
   await screen.getByRole('cell', /^Cantrip \(Wizard 1\) \(1 of 3\)/).tap();
   await expect(screen.getByText('No spells to show.')).toBeHidden(SLOW);
-  await screen.getByRole('button', 'Acid Splash').doubleTap();
+  await screen.getByRole('button', 'Acid Splash').first().doubleTap();
   await expect(screen.getByText('CANTRIPS:1/3')).toBeVisible(SLOW);
   await screen.getByRole('table', 'Selection slots').swipe({ direction: 'up' });
   await settle();
   await screen.getByRole('cell', /^Spellbook \(Wizard 1\) \(1 of 6\)/).tap();
-  await expect(screen.getByRole('button', 'Magic Missile')).toBeVisible(SLOW);
+  await expect(screen.getByRole('button', 'Magic Missile').first()).toBeVisible(SLOW);
 });
