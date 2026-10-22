@@ -34,6 +34,7 @@ mod pdf_tags;
 mod portrait_resize;
 mod sheet_render;
 mod spell_facts;
+mod table_text;
 
 pub use companion::{CompanionEntry, CompanionSheet, CompanionSkillLine};
 pub use portrait_resize::{downscale_portrait, ResizedPortrait, MAX_PORTRAIT_EDGE_PX};

@@ -244,6 +244,10 @@ fn join(list: &[String]) -> String {
     list.join(", ")
 }
 
+const ARMOR_TIP: &str = "Armor proficiencies";
+/// Smallest scale the armor note shrinks to before it moves to its own line.
+const ARMOR_NOTE_MIN_FIT: f32 = 0.78;
+
 /// Training and proficiencies (2024) / proficiencies and languages (2014).
 pub(crate) fn training(c: &mut Canvas, (x, y, w): (f32, f32, f32), d: &SheetData) -> f32 {
     let p = &d.proficiencies;
@@ -272,17 +276,21 @@ pub(crate) fn training(c: &mut Canvas, (x, y, w): (f32, f32, f32), d: &SheetData
             );
             cx += 10.0 + c.put(cx + 10.0, y + 6.6, &bt, label) + 9.0;
         }
-        let rest = (x + w - cx).max(20.0);
         let nt = Txt::new(c.s(6.0), Style::SansItalic, c.pal.ink2);
-        c.text_field(
-            id::PROF_ARMOR,
-            "Armor proficiencies",
-            (cx, y, rest, 9.5),
-            y + 6.6,
-            &join(&p.armor),
-            &nt,
-        );
-        y += 12.5;
+        let armor = join(&p.armor);
+        let fits = text_width(nt.style, &armor, nt.size * ARMOR_NOTE_MIN_FIT) <= x + w - cx - 2.0;
+        if fits || armor.is_empty() {
+            let rest = (x + w - cx).max(20.0);
+            let field = (cx, y, rest, 9.5);
+            c.text_field(id::PROF_ARMOR, ARMOR_TIP, field, y + 6.6, &armor, &nt);
+            y += 12.5;
+        } else {
+            // The note would be cut ("Shie..."): give it its own line under the ticks.
+            y += 10.5;
+            let field = (x + LABEL_COL, y, w - LABEL_COL, 9.5);
+            c.text_field(id::PROF_ARMOR, ARMOR_TIP, field, y + 6.6, &armor, &nt);
+            y += 12.0;
+        }
         y += labelled(
             c,
             (x, y, w),

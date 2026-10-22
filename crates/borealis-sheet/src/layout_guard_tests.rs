@@ -426,3 +426,25 @@ fn continued_notes_point_at_the_next_page() {
         assert!(on_page_two, "{label}: page 2 overflows but has no note");
     }
 }
+
+#[test]
+fn long_armor_training_note_is_not_cut() {
+    let pair = wizard_2024();
+    let note = "Light Armor, Medium Armor, Heavy Armor, Shields, Spiked Plate";
+    for ink in [true, false] {
+        let o = options(Paper::A4, ink, false, 0);
+        let mut d =
+            crate::sheet_data_for(&pair.0, &pair.1, &SpellFactsMap::new(), SheetEdition::Auto);
+        d.proficiencies.armor = note.split(", ").map(String::from).collect();
+        let (pages, _) =
+            build_pages(&d, &pair.0, &pair.1, &o, &SheetContent::default()).expect("pages");
+        let value = pages[0].ops.iter().find_map(|op| match op {
+            PageOp::Field(f) if f.name == crate::model_ids::PROF_ARMOR => match &f.kind {
+                FieldKind::Text(t) => Some(t.value.clone()),
+                _ => None,
+            },
+            _ => None,
+        });
+        assert_eq!(value.as_deref(), Some(note), "armor note cut or missing");
+    }
+}

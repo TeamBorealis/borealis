@@ -146,6 +146,9 @@ impl Seq {
     }
 }
 
+/// How far a note in the last column moves left to clear the corner flourish, in points.
+const CORNER_CLEAR: f32 = 26.0;
+
 /// Draw "continued on page N" notes into `pages` (N is the page after the mark's own).
 pub(crate) fn draw_marks(
     pages: &mut [PdfPage],
@@ -160,7 +163,14 @@ pub(crate) fn draw_marks(
         let mut c = Canvas::new(Palette::new(o.ink), o.compact, f32::MAX);
         let t = Txt::new(c.s(MARK_SIZE), Style::SansItalic, c.pal.ink2).align(Align::End);
         let note = format!("continued on page {}", page_no(m.page + 1));
-        c.put(m.x_right, m.base, &t, &note);
+        // The note of the last column would run into the bottom-right corner flourish.
+        let right_edge = Grid::new(o.paper).w - MARGIN_X;
+        let x_right = if m.x_right >= right_edge - 1.0 {
+            m.x_right - CORNER_CLEAR
+        } else {
+            m.x_right
+        };
+        c.put(x_right, m.base, &t, &note);
         page.ops.extend(c.ops);
     }
 }
