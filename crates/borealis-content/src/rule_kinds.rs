@@ -175,12 +175,18 @@ const ATTACK: &str = "attack_rules";
 const PLAY: &str = "play_rules";
 const SPELLS: &str = "spell_rules";
 
-/// Known engine gap: the field means something the engine does not evaluate yet. Each one is
-/// listed in `specs/handoffs/loud-content-1.md`; removing an entry once a reader exists is the
-/// fix, adding one needs review.
-const GAP: &str = "not evaluated yet (known engine gap)";
+/// Known engine gap: the field means something the engine does not evaluate yet. Removing an
+/// entry once a reader exists is the fix; adding one needs review (the engine test
+/// `unmodelled_fields_are_pinned` lists them all).
+pub const GAP: &str = "not evaluated yet (known engine gap)";
+/// Intentionally ignored: a rule applied at the table; the engine does not roll casts or damage
+/// and the feature text tells the player.
+pub const TABLE_TIME: &str = "resolved at the table: the engine does not roll casts or damage";
+/// Intentionally ignored: when a pick may change or a pool recovers (a rest, a level) is not
+/// modelled; picks stay editable at any time.
+pub const REST_TIMING: &str = "rest/level timing of a re-pick or a recovery is not modelled";
 /// Redundant: another field the engine reads, or the engine's own model, already says this.
-const IMPLIED: &str = "implied by another field or by the engine model";
+pub const IMPLIED: &str = "implied by another field or by the engine model";
 
 /// Every custom rule kind the engine reads, sorted by kind.
 pub const KNOWN_KINDS: &[KindSpec] = &[
@@ -221,8 +227,8 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
         "cantrip_damage_bonus",
         NOTES,
         true,
-        &["spell_class", "value", "choose_cantrip"],
-        &[("cantrip_filter", GAP)],
+        &["spell_class", "value", "choose_cantrip", "cantrip_filter"],
+        &[],
     ),
     ku(
         "cantrip_range_bonus",
@@ -235,8 +241,8 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
         "cantrip_rider",
         NOTES,
         true,
-        &["cantrip_filter", "effect"],
-        &[("spell_class", GAP), ("choose_cantrip", IMPLIED)],
+        &["cantrip_filter", "effect", "spell_class"],
+        &[("choose_cantrip", IMPLIED)],
     ),
     k(
         "cantrip_swap",
@@ -275,7 +281,7 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
         NOTES,
         true,
         &["from", "to", "table", "amount", "action"],
-        &[("expires", GAP)],
+        &[("expires", REST_TIMING)],
     ),
     k(
         "critical_range",
@@ -324,7 +330,7 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
             "d20_penalty_per_level",
             "speed_penalty_ft_per_level",
         ],
-        &[("dies_at_level", GAP), ("reduce_on", GAP)],
+        &[("dies_at_level", IMPLIED), ("reduce_on", REST_TIMING)],
     ),
     ku(
         "expertise",
@@ -356,13 +362,10 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
             "requires",
             "cost",
             "replaces",
+            "effects_choose",
+            "per_slot_level",
         ],
-        &[
-            ("effects_choose", GAP),
-            ("per_slot_level", GAP),
-            ("first_target_only", GAP),
-            ("weapon", GAP),
-        ],
+        &[("first_target_only", TABLE_TIME), ("weapon", TABLE_TIME)],
     ),
     k(
         "free_cast_choice",
@@ -402,12 +405,12 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
         &[
             ("counts_against_prepared", IMPLIED),
             ("ability", GAP),
-            ("target", GAP),
-            ("auto_succeed_save", GAP),
-            ("max_roll", GAP),
-            ("condition", GAP),
-            ("special_forms", GAP),
-            ("no_material", GAP),
+            ("target", TABLE_TIME),
+            ("auto_succeed_save", TABLE_TIME),
+            ("max_roll", TABLE_TIME),
+            ("condition", TABLE_TIME),
+            ("special_forms", TABLE_TIME),
+            ("no_material", TABLE_TIME),
         ],
     )
     .shape(&[], &[("mode", GRANT_SPELL_MODES)]),
@@ -490,8 +493,8 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
             ("start", GAP),
             ("step", GAP),
             ("pool", GAP),
-            ("cure_poison_cost", GAP),
-            ("kind_note", GAP),
+            ("cure_poison_cost", TABLE_TIME),
+            ("kind_note", TABLE_TIME),
         ],
     )
     .shape(
@@ -550,7 +553,7 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
             "level",
             "requirements",
         ],
-        &[("replace_on", GAP)],
+        &[("replace_on", REST_TIMING)],
     ),
     ku(
         "select_param",
@@ -564,9 +567,9 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
             "requirements",
         ],
         &[
-            ("reselect_on", GAP),
+            ("reselect_on", REST_TIMING),
             ("grants_resistance", GAP),
-            ("note", GAP),
+            ("note", TABLE_TIME),
         ],
     ),
     k(
@@ -656,7 +659,7 @@ pub const KNOWN_KINDS: &[KindSpec] = &[
         NORMALIZE,
         false,
         &["name", "count", "filter", "level"],
-        &[("change_on", GAP)],
+        &[("change_on", REST_TIMING)],
     ),
 ];
 

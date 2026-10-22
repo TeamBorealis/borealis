@@ -257,7 +257,10 @@ fn text(l: &Live<'_>, cx: &Cx<'_, '_>) -> Option<String> {
             } else {
                 "your "
             },
-            s(l, "spell_class")
+            match s(l, "cantrip_filter") {
+                "" => s(l, "spell_class").to_string(),
+                f => format!("{} ({f})", s(l, "spell_class")),
+            }
         ),
         "cantrip_range_bonus" => {
             let per =
@@ -274,8 +277,9 @@ fn text(l: &Live<'_>, cx: &Cx<'_, '_>) -> Option<String> {
             )
         }
         "cantrip_rider" => format!(
-            "Chosen cantrip ({}): {}",
+            "Chosen cantrip ({}, {} list): {}",
             s(l, "cantrip_filter"),
+            s(l, "spell_class"),
             s(l, "effect")
         ),
         "slot_recovery" => slot_recovery(l, cx),

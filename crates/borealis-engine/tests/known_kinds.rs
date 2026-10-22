@@ -264,3 +264,50 @@ fn gated_resources_follow_their_level() {
     let d5 = hero_2024("ID_2024_SPECIES_DRAGONBORN", FIGHTER, 5);
     assert_eq!(resource_max(&d5, "draconic flight"), Some(1));
 }
+
+/// The fields bundled content carries that nothing evaluates yet (`rule_kinds::GAP`). The list
+/// only shrinks: a new unread field fails `bundled_content_uses_only_registered_kinds_and_fields`
+/// until it has a reader or a documented reason, and cannot slip in as a new `GAP` without
+/// editing this list (review).
+const PINNED_GAPS: [(&str, &str); 12] = [
+    ("grant_spell", "ability"),
+    ("martial_arts", "dexterous_attacks"),
+    ("martial_arts", "monk_weapons"),
+    ("movement_mode", "requires_resource"),
+    ("resource", "counter"),
+    ("resource", "pool"),
+    ("resource", "start"),
+    ("resource", "step"),
+    ("ritual_casting", "requires_prepared"),
+    ("select_param", "grants_resistance"),
+    ("slot_recovery", "improved_at"),
+    ("spell_list_extend", "for_prepared"),
+];
+
+/// A reason shorter than this says nothing.
+const MIN_REASON_LEN: usize = 20;
+
+#[test]
+fn unmodelled_fields_are_pinned() {
+    use borealis_content::rule_kinds::GAP;
+    let mut gaps = BTreeSet::new();
+    for s in KNOWN_KINDS {
+        for (field, reason) in s.unmodelled {
+            assert!(
+                reason.len() > MIN_REASON_LEN,
+                "{}.{field} has an undocumented reason {reason:?}",
+                s.kind
+            );
+            assert!(
+                !s.fields.contains(field),
+                "{}.{field} is read and unmodelled",
+                s.kind
+            );
+            if *reason == GAP {
+                gaps.insert((s.kind, *field));
+            }
+        }
+    }
+    let pinned: BTreeSet<_> = PINNED_GAPS.iter().copied().collect();
+    assert_eq!(gaps, pinned, "the unread-field allow-list changed");
+}
