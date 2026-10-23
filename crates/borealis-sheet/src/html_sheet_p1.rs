@@ -434,12 +434,19 @@ fn equipment_2014(d: &SheetData) -> String {
     out.push_str("</div><table>");
     // All 15 lines, as the PDF: lines past the last item are blank write-ins.
     for n in 1..=id::SUMMARY_ROWS {
-        let (qty, name) = g.items.get(n - 1).map_or((String::new(), ""), |it| {
-            (it.quantity.to_string(), &it.name)
+        let item = g.items.get(n - 1);
+        let (qty, name) = item.map_or((String::new(), ""), |it| {
+            (it.quantity.to_string(), it.name.as_str())
         });
+        // A blank line keeps the height of a filled one (`tr.empty`).
         let _ = write!(
             out,
-            "<tr><td class=\"c\">{}</td><td>{}</td></tr>",
+            "<tr{}><td class=\"c\">{}</td><td>{}</td></tr>",
+            if item.is_none() {
+                " class=\"empty\""
+            } else {
+                ""
+            },
             fld(&id::summary_equip(n, "qty"), "", &qty),
             fld(&id::summary_equip(n, "name"), "", name)
         );
