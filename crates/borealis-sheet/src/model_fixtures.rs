@@ -111,6 +111,26 @@ pub(crate) fn wizard_2024() -> (Character, CharacterSnapshot) {
     wrap("Mira Vale", s, &e)
 }
 
+/// Level-3 2024 wizard of `species` with `lineage` chosen in its lineage trait (SRD 5.2.1).
+pub(crate) fn lineage_wizard_2024(species: &str, lineage: &str) -> (Character, CharacterSnapshot) {
+    let st = store("srd-5.2.1");
+    let e = Engine::new(&st);
+    let mut s = commands::new_character(&e, Ruleset::Dnd2024);
+    s.abilities.base = [8, 14, 13, 15, 12, 10];
+    s = level1(
+        &e,
+        s,
+        species,
+        "ID_2024_CLASS_WIZARD",
+        "ID_2024_BACKGROUND_SAGE",
+    );
+    s = pick(&e, &s, "Species Trait Option", lineage);
+    for _ in 0..2 {
+        s = commands::level_up_main(&e, &s, None).unwrap().state;
+    }
+    wrap("Ilia Thorn", s, &e)
+}
+
 fn multiclass_2014(
     first: &str,
     levels: u32,

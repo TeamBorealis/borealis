@@ -665,3 +665,35 @@ fn rolled_charges_show_their_dice_as_the_app_does() {
     let html = crate::render_html(&c, &snap, &crate::SheetOptions::default()).expect("html");
     assert!(html.contains("Dawn; max 7 (1d6 + 3)"), "printed sheet");
 }
+
+#[test]
+fn the_2024_header_shows_the_lineage_chosen_in_the_species_trait() {
+    // B-21 L3: SRD 5.2.1 lineages and legacies are a choice of a species trait, not an origin
+    // entry ("Sub Species"), so the header lost them.
+    for (species, option, lineage) in [
+        (
+            "ID_2024_SPECIES_ELF",
+            "ID_2024_OPTION_ELVEN_LINEAGE_HIGH_ELF",
+            "High Elf",
+        ),
+        (
+            "ID_2024_SPECIES_TIEFLING",
+            "ID_2024_OPTION_FIENDISH_LEGACY_INFERNAL",
+            "Infernal",
+        ),
+    ] {
+        let (c, snap) = crate::model_fixtures::lineage_wizard_2024(species, option);
+        let d = data(&(c.clone(), snap.clone()));
+        let EditionFields::Y2024(f) = &d.edition_fields else {
+            panic!("2024 fields");
+        };
+        assert_eq!(f.lineage.as_deref(), Some(lineage), "{species}");
+        let html = crate::render_html(&c, &snap, &crate::SheetOptions::default()).expect("html");
+        let field = format!("data-field=\"{}\" dir=\"auto\">{lineage}<", id::LINEAGE);
+        assert!(html.contains(&field), "{lineage} in the header");
+    }
+    let EditionFields::Y2024(f) = data(&wizard_2024()).edition_fields else {
+        panic!("2024 fields");
+    };
+    assert_eq!(f.lineage, None, "a human has no lineage");
+}

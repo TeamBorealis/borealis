@@ -12,6 +12,21 @@ fn first_origin(snap: &CharacterSnapshot, keys: &[&str]) -> Option<String> {
         .map(|e| e.name.clone())
 }
 
+/// Species traits whose choice is the lineage the header shows (SRD 5.2.1 "Elven Lineage",
+/// "Gnomish Lineage", "Fiendish Legacy").
+const LINEAGE_SUFFIXES: [&str; 2] = ["Lineage", "Legacy"];
+
+/// The option chosen in a species trait's lineage slot (`Species Trait Option`), when the
+/// origin has no sub-species entry.
+fn chosen_lineage(snap: &CharacterSnapshot) -> Option<String> {
+    let species_trait = |ty: &str| matches!(ty, "Racial Trait" | "Species Trait");
+    snap.slots
+        .iter()
+        .filter(|s| species_trait(&s.owner.ty))
+        .filter(|s| LINEAGE_SUFFIXES.iter().any(|x| s.name.ends_with(x)))
+        .find_map(|s| s.chosen.as_ref().map(|c| c.name.clone()))
+}
+
 pub(crate) fn build(snap: &CharacterSnapshot, prof: &ProficiencyData) -> Fields2024 {
     let background = snap.origin.get("Background").map(|e| e.name.as_str());
     let origin_feat = snap
@@ -27,7 +42,8 @@ pub(crate) fn build(snap: &CharacterSnapshot, prof: &ProficiencyData) -> Fields2
     }
     Fields2024 {
         species: first_origin(snap, &["Species", "Race"]).unwrap_or_default(),
-        lineage: first_origin(snap, &["Sub Species", "Lineage", "Sub Race"]),
+        lineage: first_origin(snap, &["Sub Species", "Lineage", "Sub Race"])
+            .or_else(|| chosen_lineage(snap)),
         origin_feat,
         armor_training: armor_training(&prof.armor),
         weapon_masteries: masteries,
