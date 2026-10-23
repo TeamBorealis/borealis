@@ -197,6 +197,43 @@ pub(crate) fn pdf_string(text: &str) -> String {
     out
 }
 
+/// Grid (points) that thin horizontal rules snap to: one device pixel at 150 dpi (two at 300).
+const RULE_GRID: f32 = 72.0 / 150.0;
+/// Rules at most this wide snap (hairline rules of ruled fields and tables).
+const RULE_SNAP_MAX_W: f32 = 0.6;
+
+/// PDF-space y of a line's ends (`top` is the line's y from the page top): a thin horizontal
+/// rule is centred on a 150 dpi pixel centre (B-21 L5: at 150/300 dpi a 0.5 pt rule rasterised
+/// 1-2 / 2-3 px thick depending on its sub-pixel y, so evenly pitched rules looked doubled at
+/// random). Other lines are unchanged.
+fn snap_rule(h: f32, (top_a, top_b): (f32, f32), width: f32) -> (f32, f32) {
+    if (top_a - top_b).abs() > f32::EPSILON || width > RULE_SNAP_MAX_W {
+        return (h - top_a, h - top_b);
+    }
+    let y = ((top_a / RULE_GRID - 0.5).round() + 0.5) * RULE_GRID;
+    (h - y, h - y)
+}
+
+#[cfg(test)]
+mod rule_snap_tests {
+    use super::{snap_rule, RULE_GRID};
+
+    #[test]
+    fn thin_horizontal_rules_sit_on_150_dpi_pixel_centres() {
+        for i in 0..200 {
+            let top = 100.0 + i as f32 * 0.137;
+            let (a, b) = snap_rule(792.0, (top, top), 0.5);
+            assert_eq!(a, b);
+            let px = (792.0 - a) / RULE_GRID;
+            assert!((px - px.floor() - 0.5).abs() < 0.01, "{top}: {px}");
+            assert!((792.0 - a - top).abs() <= RULE_GRID / 2.0 + 0.01);
+        }
+        // Thick and slanted lines keep their position.
+        assert_eq!(snap_rule(792.0, (100.3, 100.3), 0.9), (691.7, 691.7));
+        assert_eq!(snap_rule(792.0, (100.3, 120.0), 0.5), (691.7, 672.0));
+    }
+}
+
 fn art_seg(op: Op) -> Seg {
     match op {
         Op::Move(x, y) => Seg::Move(x, y),
@@ -359,12 +396,11 @@ fn page_content(ops: &[PageOp], cx: &PageCtx<'_>) -> String {
                 color: c,
                 width,
             } => {
+                let (ya, yb) = snap_rule(h, (*y1, *y2), *width);
                 let _ = writeln!(
                     s,
-                    "{} RG {width:.2} w {x1:.2} {:.2} m {x2:.2} {:.2} l S",
+                    "{} RG {width:.2} w {x1:.2} {ya:.2} m {x2:.2} {yb:.2} l S",
                     color(*c),
-                    h - y1,
-                    h - y2
                 );
             }
             PageOp::Path { path, paint } => paint_path(&mut s, path, paint, h),
