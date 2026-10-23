@@ -6,9 +6,12 @@ import { freshInstall, SLOW } from '../../support/mobile.js';
 import type { MobilePlatform } from '../../support/mobile.js';
 import { openAdditionalContentMobile, statusText } from '../../support/mobile-content.js';
 import { writeUpdateFeed } from '../../support/mobile-acceptance.js';
+import { startSelfSignedServer } from '../../support/local-https.js';
 
 // m5 (B-08 mobile sweep): the phone update notice (UP1/UP1a), Share logs (UP3) and an index download
-// from a host with a bad TLS certificate (IM2). Opt-in (live network): E2E_B08=1 npm run e2e:ios|e2e:android -- --tag m5
+// from a host with a bad TLS certificate (IM2). Opt-in: E2E_B08=1 npm run e2e:ios|e2e:android -- --tag m5
+// No internet needed: the bad-certificate host is a local HTTPS server with a self-signed certificate
+// made at test time (support/local-https.ts, B-42).
 //
 // Update notice test hook (B-41): a debug build answers the update check from a release-feed fixture in
 // its data folder (src-tauri/src/app_update_debug.rs; release builds ignore it), so the notice shows on
@@ -34,8 +37,9 @@ const RETAP_WAIT_MS = 10_000;
 /** Long enough for the web view to have written localStorage to disk (15 s held by hand on Android). */
 const STORAGE_FLUSH_MS = 15_000;
 const FOREGROUND_TIMEOUT_MS = 20_000;
-/** A host whose certificate is signed by nobody (badssl.com test hosts). */
-const BAD_CERT_INDEX = 'https://self-signed.badssl.com/core.index';
+/** Served by a local host whose certificate is signed by nobody (self-signed, made at test time). */
+const BAD_CERT_PATH = '/core.index';
+const BAD_CERT_BODY = '<index/>\n';
 const FAIL_TIMEOUT = { timeout: 120_000 } as const;
 const BUNDLE_ID = 'app.borealis';
 
@@ -113,12 +117,21 @@ async function updateNotice({ app, device, screen }: Context, platform: MobilePl
   await expect(button).toBeHidden();
 }
 
-async function badCertIndex({ app, device, screen }: Context, platform: MobilePlatform): Promise<void> {
+async function badCertIndex(ctx: Context, platform: MobilePlatform): Promise<void> {
+  const server = await startSelfSignedServer(platform, { [BAD_CERT_PATH]: BAD_CERT_BODY });
+  try {
+    await badCertIndexAt(ctx, platform, `${server.baseUrl}${BAD_CERT_PATH}`);
+  } finally {
+    await server.close();
+  }
+}
+
+async function badCertIndexAt({ app, device, screen }: Context, platform: MobilePlatform, url: string): Promise<void> {
   await freshInstall(device);
   await app.open();
   await expect(screen.getByText('WELCOME TO BOREALIS')).toBeVisible(SLOW);
   await openAdditionalContentMobile(screen);
-  await screen.getByRole('textbox').first().fill(BAD_CERT_INDEX);
+  await screen.getByRole('textbox').first().fill(url);
   await device.dismissKeyboard();
   await screen.getByRole('button', /^Fetch$/).tap();
   await screen.getByRole('button', /^Add source$/).tap();
@@ -143,7 +156,7 @@ async function shareLogsAndroid(ctx: Context): Promise<void> {
   await expect(screen.getByText(/copied to the clipboard/)).toBeHidden();
 }
 
-const skip = process.env.E2E_B08 ? false : 'B-08 sweep only (E2E_B08=1, live network)';
+const skip = process.env.E2E_B08 ? false : 'B-08 sweep only (E2E_B08=1)';
 for (const platform of ['ios', 'android'] as const) {
   const id = platform === 'ios' ? 'm5' : 'm5-android';
   describe(id, { tags: [platform, 'm5'], platforms: [platform], requires: ['native-app'] }, () => {
