@@ -122,6 +122,10 @@ pub struct SlotOption {
     pub summary: ElementSummary,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub disabled_reason: Option<String>,
+    /// Set when the option comes from the other edition (a 2014 subclass offered to a 2024
+    /// class): the edition it was written for, shown as a tag next to its source.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub edition: Option<Ruleset>,
 }
 
 /// A page of results.

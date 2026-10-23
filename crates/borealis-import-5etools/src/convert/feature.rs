@@ -924,6 +924,18 @@ pub fn convert_subclass(sh: &Shared, st: &mut State, ent: &Ent) -> Conv {
         &sc.reprinted_as,
         &|_| None,
     );
+    // B-44: the engine does not offer an older subclass to a 2024 class when its reprint
+    // (`Wild Heart|Barbarian|XPHB|XPHB`) is loaded, whatever the reprint is named
+    let reprints: Vec<Value> = sc
+        .reprinted_as
+        .iter()
+        .filter_map(|r| r.as_str().or_else(|| r.get("uid").and_then(Value::as_str)))
+        .map(|uid| Value::String(uid.to_string()))
+        .collect();
+    if !reprints.is_empty() {
+        el.data
+            .insert("reprinted_as".into(), Value::Array(reprints));
+    }
     drain_renderer(st, &renderer, &ent.file, &sc.name);
     partial.sort();
     partial.dedup();
@@ -1186,6 +1198,24 @@ mod tests {
     }
 
     #[test]
+    fn a_reprinted_subclass_keeps_its_reprint_uids() {
+        // B-44: the engine hides it from 2024 classes when the reprint is loaded
+        let sh = shared_with_champion();
+        let mut st = State::default();
+        let e = ent(
+            json!({"name": "Champion", "shortName": "Champion", "source": "ZZZ", "className": "Fighter", "classSource": "ZZZ",
+            "reprintedAs": ["Champ|Fighter|YYY|YYY", {"uid": "Victor|Fighter|YYY|WWW"}],
+            "subclassFeatures": ["Champion|Fighter|ZZZ|Champion|ZZZ|3"]}),
+            "class/class-fighter.json",
+        );
+        let conv = convert_subclass(&sh, &mut st, &e);
+        assert_eq!(
+            conv.elements[0].data["reprinted_as"],
+            json!(["Champ|Fighter|YYY|YYY", "Victor|Fighter|YYY|WWW"])
+        );
+    }
+
+    #[test]
     fn champion_like_subclass() {
         let sh = shared_with_champion();
         let mut st = State::default();
@@ -1232,6 +1262,7 @@ mod tests {
         assert_eq!(conv.partial.len(), 1);
         assert!(conv.partial[0].contains("Missing"));
         assert_eq!(el.data["level"], 3);
+        assert!(!el.data.contains_key("reprinted_as"));
         // the intro feature was merged and is not converted again
         assert!(st
             .done_features

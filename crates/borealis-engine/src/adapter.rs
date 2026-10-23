@@ -78,6 +78,9 @@ impl EditionAdapter for StandardAdapter {
     fn adapt(&self, el: &Element, from: Ruleset, to: &dyn RulesetProfile) -> Adaptation {
         let converted = match (from, to.ruleset(), el.ty.as_str()) {
             (Ruleset::Dnd2014, Ruleset::Dnd2024, "Race" | "Sub Race") => ignore_racial_asi(el),
+            (Ruleset::Dnd2014, Ruleset::Dnd2024, "Archetype" | "Archetype Feature") => to
+                .legacy_subclass_start()
+                .and_then(|start| raise_subclass_levels(el, start)),
             _ => None,
         };
         match converted {
@@ -160,10 +163,57 @@ fn flexible_origin_increase(el: &Element, superseded_by: &[String]) -> (Element,
     (out, notes)
 }
 
+/// The level a rule is listed at, if it names one (`level` of a grant, select or stat; a numeric
+/// `level` field of an extension rule).
+fn rule_level(rule: &Rule) -> Option<u32> {
+    match rule {
+        Rule::Grant(g) => g.level,
+        Rule::Select(s) => s.level,
+        Rule::Stat(s) => s.level,
+        Rule::Custom(c) => c
+            .fields
+            .get("level")
+            .and_then(serde_json::Value::as_u64)
+            .and_then(|l| u32::try_from(l).ok()),
+        Rule::Unknown(_) => None,
+    }
+}
+
+fn set_rule_level(rule: &mut Rule, level: u32) {
+    match rule {
+        Rule::Grant(g) => g.level = Some(level),
+        Rule::Select(s) => s.level = Some(level),
+        Rule::Stat(s) => s.level = Some(level),
+        Rule::Custom(c) => {
+            c.fields.insert("level".into(), json!(level));
+        }
+        Rule::Unknown(_) => {}
+    }
+}
+
+/// B-44: an older subclass in a 2024 class. Every rule of the subclass or of one of its features
+/// listed below `start` (the 2024 subclass level, 3) takes effect at `start`; rules listed at
+/// `start` or later keep their level. `None` when no rule is listed below `start`.
+fn raise_subclass_levels(el: &Element, start: u32) -> Option<(Element, Vec<String>)> {
+    let below = |r: &Rule| rule_level(r).is_some_and(|l| l < start);
+    if !el.rules.iter().any(below) {
+        return None;
+    }
+    let mut out = el.clone();
+    for r in out.rules.iter_mut().filter(|r| below(r)) {
+        set_rule_level(r, start);
+    }
+    let notes = vec![format!(
+        "Subclass from an older book: what it lists below level {start} is gained at level \
+         {start}, the 2024 subclass level"
+    )];
+    Some((out, notes))
+}
+
 /// A requirements expression that holds while the character has none of `ids`: `!(A||B||...)`.
 /// Ids the requirements grammar cannot name (`ID_` then letters, digits, `_`) are left out, so
 /// the expression always parses. `None` when no id is left.
-fn none_of(ids: &[String]) -> Option<String> {
+pub(crate) fn none_of(ids: &[String]) -> Option<String> {
     let nameable = |id: &&String| {
         id.len() > "ID_".len() + 1
             && id.starts_with("ID_")

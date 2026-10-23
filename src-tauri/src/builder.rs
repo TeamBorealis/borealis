@@ -188,15 +188,16 @@ impl AppState {
                     .options
                     .iter()
                     .filter(|o| matches(&o.name))
-                    .filter_map(|o| ctx.hub.element(&o.id))
+                    .filter_map(|o| ctx.hub.element(&o.id).map(|el| (o, el)))
                     .collect();
                 let items = rows
                     .iter()
                     .skip(skip)
                     .take(take)
-                    .map(|el| SlotOption {
+                    .map(|(o, el)| SlotOption {
                         summary: summary(&ctx.hub.store, el),
                         disabled_reason: None,
+                        edition: o.edition.as_ref().map(|b| b.from),
                     })
                     .collect();
                 (rows.len(), items)
@@ -559,6 +560,7 @@ fn list_option(item: i64, text: &str, source: &str) -> SlotOption {
             weapon: None,
         },
         disabled_reason: None,
+        edition: None,
     }
 }
 

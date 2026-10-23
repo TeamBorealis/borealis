@@ -100,6 +100,24 @@ pub struct AbilityGeneration {
     pub standard_array: [i32; 6],
 }
 
+/// A class feature whose text says it replaces same-named features of a subclass from an
+/// older book (B-44): a character with the feature does not also gain those older features.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LegacyOverlap {
+    /// Name of the class feature (matched without case or punctuation).
+    pub class_feature: &'static str,
+    /// Names of the older subclass features it replaces.
+    pub replaces: &'static [&'static str],
+}
+
+/// SRD 5.2.1 Cleric, Blessed Strikes: "if you get either option from a Cleric subclass in an
+/// older book, use only the option you choose for this feature". The only such statement in the
+/// SRD 5.2.1 class text.
+const LEGACY_OVERLAPS_2024: &[LegacyOverlap] = &[LegacyOverlap {
+    class_feature: "Blessed Strikes",
+    replaces: &["Divine Strike", "Potent Spellcasting"],
+}];
+
 /// Diagnostic code for an area a profile names but the engine does not implement.
 pub const UNIMPLEMENTED_CODE: &str = "profile.unimplemented";
 
@@ -193,6 +211,16 @@ pub trait RulesetProfile: std::fmt::Debug + Send + Sync {
     /// that was a `Race`) be used as that type? Defaults to [`Self::accepts_foreign`] of `alias`.
     fn accepts_legacy_alias(&self, alias: &str, from: Ruleset) -> bool {
         self.accepts_foreign(alias, from)
+    }
+    /// B-44: the class level at which a subclass from an older edition starts in this profile's
+    /// classes. Its features (and grants, choices and stats) listed below that level are gained
+    /// at it. `None` = older subclasses are used as written.
+    fn legacy_subclass_start(&self) -> Option<u32> {
+        None
+    }
+    /// B-44: class features of this edition that replace features of an older subclass.
+    fn legacy_subclass_overlaps(&self) -> &'static [LegacyOverlap] {
+        &[]
     }
     /// Standard languages chosen at character creation besides Common (0 = languages come from
     /// content, 2014).
@@ -336,6 +364,14 @@ impl RulesetProfile for Dnd2024 {
     fn creation_languages(&self) -> u32 {
         2
     }
+    /// 2024: every class gains its subclass at level 3, so an older subclass's level 1 and 2
+    /// features arrive at 3.
+    fn legacy_subclass_start(&self) -> Option<u32> {
+        self.default_subclass_level()
+    }
+    fn legacy_subclass_overlaps(&self) -> &'static [LegacyOverlap] {
+        LEGACY_OVERLAPS_2024
+    }
     fn unimplemented_areas(&self) -> &'static [&'static str] {
         &[]
     }
@@ -448,6 +484,13 @@ mod tests {
         assert!(a.accepts_legacy_alias("Race", Ruleset::Dnd2024));
         assert!(!a.accepts_legacy_alias("Class", Ruleset::Dnd2024));
         assert!(b.accepts_legacy_alias("Race", Ruleset::Dnd2014));
+        assert_eq!(a.legacy_subclass_start(), None);
+        assert_eq!(b.legacy_subclass_start(), Some(3));
+        assert!(a.legacy_subclass_overlaps().is_empty());
+        assert_eq!(
+            b.legacy_subclass_overlaps()[0].class_feature,
+            "Blessed Strikes"
+        );
         assert!(a.unimplemented_areas().is_empty());
         assert!(b.unimplemented_areas().is_empty());
     }

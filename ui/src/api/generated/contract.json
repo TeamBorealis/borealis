@@ -8172,6 +8172,12 @@
       "k": "prim"
      }
     },
+    "edition": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "id": {
      "opt": false,
      "t": {

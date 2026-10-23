@@ -106,6 +106,8 @@ export interface SlotOptionsArgs extends Cid {
 export interface SlotOption extends ElementSummary {
   /** Present when the option is shown but not choosable (e.g. unmet prerequisite). */
   disabledReason?: string;
+  /** Present when the option comes from the other edition (a 2014 subclass on a 2024 class): the edition it was written for. */
+  edition?: Ruleset;
 }
 
 /** All request/response commands. Keep in sync with `COMMANDS`. */

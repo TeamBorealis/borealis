@@ -748,6 +748,7 @@ impl Universe {
         uni.mark_superseded();
         crate::appended_supports::share(&mut uni.elems, store, ruleset, &support_names);
         uni.index_equivalents();
+        crate::legacy_subclass::adopt(&mut uni.elems, &uni.by_id, profile);
         uni.load_profile_tables();
         uni.add_creation_languages(profile);
         uni.exhaustion = crate::play_rules::ExhaustionRules::load(&uni);

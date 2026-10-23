@@ -38,6 +38,12 @@ function ElementSource({ id }: { id: string }) {
 
 type Row = Pick<SlotOption, "id" | "name"> & Partial<SlotOption>;
 
+/** Edition tag after an other-edition option's source, as the description pane writes it: "Source (2014)". */
+export function editionTag(edition: SlotOption["edition"]): string {
+  if (!edition) return "";
+  return edition === "dnd2024" ? " (2024)" : " (2014)";
+}
+
 /** Merges chosen elements the option list omits back into it, at their alphabetical place, so rows never jump. */
 export function mergeRows(items: SlotOption[], chosen: ElementRef[]): Row[] {
   const out: Row[] = [...items];
@@ -113,7 +119,7 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
               return (
                 <li key={o.id} className={`pick-row ${sel ? "selected" : ""} ${hl ? "hl" : ""}`}>
                   <button type="button" className="pick-main" aria-pressed={sel} aria-disabled={disabled || undefined} title={o.disabledReason}
-                    aria-label={[o.name, o.level !== undefined ? (o.level === 0 ? "Cantrip" : `Level ${o.level}`) : "", o.sourceName ?? ""].filter(Boolean).join(", ")}
+                    aria-label={[o.name, o.level !== undefined ? (o.level === 0 ? "Cantrip" : `Level ${o.level}`) : "", o.sourceName ? `${o.sourceName}${editionTag(o.edition)}` : ""].filter(Boolean).join(", ")}
                     onClick={() => onDescribe(o.id, !isListSlot(slot))} onKeyDown={(e) => onRowKey(e, o, disabled)}
                     onDoubleClick={() => { if (!sel && !disabled) onChoose(slot.id, o.id); }}>
                     <span className={`pick-name ${disabled ? "disabled" : ""}`} aria-hidden="true">
@@ -121,7 +127,7 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
                       {o.prerequisites && <span className="pick-sub"> - Requires {o.prerequisites}</span>}
                     </span>
                     {showDescription && <span className="pick-desc" aria-hidden="true">{o.shortDescription}</span>}
-                    <span className="pick-src" aria-hidden="true">{o.sourceName ?? (isListSlot(slot) ? null : <ElementSource id={o.id} />)}</span>
+                    <span className="pick-src" aria-hidden="true">{o.sourceName ?? (isListSlot(slot) ? null : <ElementSource id={o.id} />)}{editionTag(o.edition)}</span>
                   </button>
                 </li>
               );
