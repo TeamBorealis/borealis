@@ -53,4 +53,11 @@ authors of Aurora Builder.
    (tools/sheet-art/LICENSE-anidoodle). Modified: ported from TypeScript to JavaScript and reduced to the
    helpers the sheet art generator needs. The generated art (crates/borealis-sheet/src/art.rs) is Borealis's own.
 
+7. Colour profile (crates/borealis-sheet/icc/sRGB-v2-micro.icc)
+
+   The compact sRGB v2 profile from Compact ICC Profiles by Clinton Ingram
+   (github.com/saucecontrol/Compact-ICC-Profiles), CC0 1.0 Universal
+   (https://creativecommons.org/publicdomain/zero/1.0/legalcode). Unmodified. Embedded in sheet PDFs as the
+   output intent. See crates/borealis-sheet/icc/README.txt.
+
 Dependencies installed through Cargo and npm are covered by their own licences; see their package metadata.

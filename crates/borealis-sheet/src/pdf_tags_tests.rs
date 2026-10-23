@@ -301,3 +301,35 @@ fn custom_tags_get_role_map_and_scope_is_written() {
     assert_eq!(rm.get(b"Stat").unwrap().as_name().unwrap(), b"Div");
     assert_eq!(rm.get(b"Odd").unwrap().as_name().unwrap(), b"Span");
 }
+
+#[test]
+fn list_items_wrap_loose_content_in_lbody_and_short_rows_span_the_table() {
+    // PDF/UA-1 7.2-20 (an LI holds Lbl/LBody only) and 7.2-42 (rows of equal width).
+    let mut b = StructBuilder::new();
+    b.begin("L");
+    b.begin("LI");
+    b.leaf("Lbl", 0);
+    b.leaf("P", 0);
+    b.widget(0, 0, None);
+    b.end();
+    b.end();
+    b.begin("Table");
+    b.begin("TR");
+    for _ in 0..3 {
+        b.leaf("TD", 0);
+    }
+    b.end();
+    b.begin("TR");
+    b.leaf("TH", 0);
+    b.end();
+    b.end();
+    let (nodes, spans) = b.normalized();
+    let tags =
+        |ids: &[usize]| -> Vec<String> { ids.iter().map(|&k| nodes[k].tag.clone()).collect() };
+    let li = nodes.iter().position(|n| n.tag == "LI").unwrap();
+    assert_eq!(tags(&nodes[li].kids), ["Lbl", "LBody"]);
+    assert_eq!(tags(&nodes[nodes[li].kids[1]].kids), ["P", "Form"]);
+    let th = nodes.iter().position(|n| n.tag == "TH").unwrap();
+    assert_eq!(spans.get(&th), Some(&3));
+    assert_eq!(spans.len(), 1, "full rows keep one column per cell");
+}

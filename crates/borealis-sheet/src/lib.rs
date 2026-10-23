@@ -31,6 +31,7 @@ mod pdf;
 mod pdf_draw;
 mod pdf_fonts;
 mod pdf_form;
+mod pdf_meta;
 mod pdf_tags;
 mod portrait_resize;
 mod shaping;

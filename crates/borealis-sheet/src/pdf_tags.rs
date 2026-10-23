@@ -235,8 +235,48 @@ impl StructBuilder {
         map
     }
 
-    fn element(&self, id: usize, ids: &[usize], parent: usize, refs: &DocRefs) -> String {
-        let node = &self.nodes[id];
+    /// The tree as written (PDF/UA-1 7.2): content of an `LI` outside its `Lbl`/`LBody` is
+    /// wrapped in an `LBody` (7.2-20), and the last cell of a table row with fewer cells than
+    /// the table's widest row spans the missing columns (7.2-42). Returns the nodes (wrappers
+    /// appended, so MCID and widget indices stay valid) and the column span per cell.
+    fn normalized(&self) -> (Vec<Node>, BTreeMap<usize, u32>) {
+        let mut nodes = self.nodes.clone();
+        for i in 0..self.nodes.len() {
+            if nodes[i].tag == "LI" {
+                wrap_list_body(&mut nodes, i);
+            }
+        }
+        let mut spans = BTreeMap::new();
+        for t in (0..nodes.len()).filter(|&t| nodes[t].tag == "Table") {
+            let rows: Vec<Vec<usize>> = table_rows(&nodes, t)
+                .into_iter()
+                .map(|r| {
+                    nodes[r]
+                        .kids
+                        .iter()
+                        .copied()
+                        .filter(|&k| matches!(nodes[k].tag.as_str(), "TH" | "TD"))
+                        .collect()
+                })
+                .collect();
+            let cols = rows.iter().map(Vec::len).max().unwrap_or(0);
+            for cells in &rows {
+                if let Some(&last) = cells.last().filter(|_| cells.len() < cols) {
+                    let span = u32::try_from(cols - cells.len() + 1).unwrap_or(u32::MAX);
+                    spans.insert(last, span);
+                }
+            }
+        }
+        (nodes, spans)
+    }
+
+    fn element(
+        node: &Node,
+        span: Option<u32>,
+        ids: &[usize],
+        parent: usize,
+        refs: &DocRefs,
+    ) -> String {
         let mut d = format!("<< /Type /StructElem /S /{} /P {parent} 0 R", node.tag);
         let page_of = |p: usize| refs.pages.get(p).copied();
         match node.kind {
@@ -271,12 +311,63 @@ impl StructBuilder {
         if let Some(t) = &node.opts.actual_text {
             let _ = write!(d, " /ActualText {}", utf16_hex_string(t));
         }
-        if let Some(s) = node.opts.scope {
-            let _ = write!(d, " /A << /O /Table /Scope /{} >>", s.name());
+        let scope = node.opts.scope.map(|s| format!(" /Scope /{}", s.name()));
+        let span = span.map(|n| format!(" /ColSpan {n}"));
+        if scope.is_some() || span.is_some() {
+            let _ = write!(
+                d,
+                " /A << /O /Table{}{} >>",
+                scope.unwrap_or_default(),
+                span.unwrap_or_default()
+            );
         }
         d.push_str(" >>");
         d
     }
+}
+
+/// Wrap every run of `LI` kids that are neither `Lbl` nor `LBody` in a new `LBody`.
+fn wrap_list_body(nodes: &mut Vec<Node>, li: usize) {
+    let mut kids = Vec::with_capacity(nodes[li].kids.len());
+    let mut body: Option<usize> = None;
+    for k in nodes[li].kids.clone() {
+        if matches!(nodes[k].tag.as_str(), "Lbl" | "LBody") {
+            body = None;
+            kids.push(k);
+            continue;
+        }
+        let b = match body {
+            Some(b) => b,
+            None => {
+                let b = nodes.len();
+                nodes.push(Node::new("LBody", Kind::Group, LeafOpts::default()));
+                kids.push(b);
+                body = Some(b);
+                b
+            }
+        };
+        nodes[b].kids.push(k);
+    }
+    nodes[li].kids = kids;
+}
+
+/// The `TR`s of table `t`: its own and those of its `THead`/`TBody`/`TFoot`.
+fn table_rows(nodes: &[Node], t: usize) -> Vec<usize> {
+    let mut rows = Vec::new();
+    for &k in &nodes[t].kids {
+        match nodes[k].tag.as_str() {
+            "TR" => rows.push(k),
+            "THead" | "TBody" | "TFoot" => rows.extend(
+                nodes[k]
+                    .kids
+                    .iter()
+                    .copied()
+                    .filter(|&r| nodes[r].tag == "TR"),
+            ),
+            _ => {}
+        }
+    }
+    rows
 }
 
 impl Node {
@@ -294,16 +385,21 @@ impl StructureWriter for StructBuilder {
     fn write(&self, sink: &mut ObjectSink<'_>, refs: &DocRefs) -> String {
         let root = sink.alloc();
         let parent_tree = sink.alloc();
-        let ids: Vec<usize> = self.nodes.iter().map(|_| sink.alloc()).collect();
+        let (nodes, spans) = self.normalized();
+        let ids: Vec<usize> = nodes.iter().map(|_| sink.alloc()).collect();
         // Parent of every node (the tree root for top-level elements).
-        let mut parent = vec![root; self.nodes.len()];
-        for (i, n) in self.nodes.iter().enumerate() {
+        let mut parent = vec![root; nodes.len()];
+        for (i, n) in nodes.iter().enumerate() {
             for &k in &n.kids {
                 parent[k] = ids[i];
             }
         }
-        for i in 0..self.nodes.len() {
-            sink.object(ids[i], &self.element(i, &ids, parent[i], refs));
+        for (i, node) in nodes.iter().enumerate() {
+            let span = spans.get(&i).copied();
+            sink.object(
+                ids[i],
+                &StructBuilder::element(node, span, &ids, parent[i], refs),
+            );
         }
 
         // ParentTree: page key -> [elements by MCID]; widget key -> element.

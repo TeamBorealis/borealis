@@ -805,13 +805,16 @@ pub(crate) fn write_document(doc: &PdfDocument<'_>) -> Vec<u8> {
     if !extra.is_empty() {
         let _ = write!(catalog, " {extra}");
     }
-    catalog.push_str(" >>");
+    // PDF/UA-1 7.1-8 and PDF/A-2 6.6.2.1 (XMP), PDF/A-2 6.2.4.3 (output intent).
+    let meta = crate::pdf_meta::write_metadata(&mut w, &doc.title);
+    let _ = write!(catalog, " {meta} >>");
     w.object(CATALOG_OBJ, catalog.as_bytes());
     w.object(
         INFO_OBJ,
         format!(
-            "<< /Title {} /Producer (Borealis) >>",
-            utf16_hex_string(&doc.title)
+            "<< /Title {} /Producer ({}) >>",
+            utf16_hex_string(&doc.title),
+            crate::pdf_meta::PRODUCER
         )
         .as_bytes(),
     );
