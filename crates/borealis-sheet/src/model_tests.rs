@@ -463,7 +463,25 @@ fn damage_cantrips_of_the_2014_pack_become_attack_lines() {
 }
 
 #[test]
-fn features_with_a_once_per_rest_summary_become_limited_uses_in_2014() {
+fn level_5_cantrip_rows_of_the_2014_pack_take_the_engine_damage() {
+    // The dice come from the spell text through the engine (`SpellEntry.damage`), as in 2024.
+    let d = data(&wizard_2014());
+    let row = d.spellcasting.casters[0]
+        .cantrips
+        .iter()
+        .find(|r| r.name == "Fire Bolt")
+        .expect("Fire Bolt row");
+    assert_eq!(row.damage.as_deref(), Some("2d10 fire"));
+    let utility = d.spellcasting.casters[0]
+        .cantrips
+        .iter()
+        .find(|r| r.name == "Dancing Lights");
+    assert!(utility.map_or(true, |r| r.damage.is_none()));
+}
+
+#[test]
+fn sheet_usage_pools_become_limited_uses_in_2014() {
+    // SRD 5.1 Arcane Recovery has `usage="1/Day"`: the engine's resource, not the summary text.
     let d = data(&wizard_2014());
     let u = d
         .limited_uses

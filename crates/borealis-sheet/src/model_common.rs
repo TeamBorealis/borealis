@@ -435,20 +435,6 @@ fn limited_uses(snap: &CharacterSnapshot) -> Vec<LimitedUse> {
         .collect();
     out.extend(extra);
     out.retain(|u| u.max > 0);
-    for f in &snap.features {
-        let known = out.iter().any(|u| u.name.eq_ignore_ascii_case(&f.name));
-        if known || !f.displayed || snap.resources.iter().any(|r| r.source == f.name) {
-            continue;
-        }
-        if let Some(recharge) = crate::model_text::once_per_rest(f.sheet_summary.as_deref()) {
-            out.push(LimitedUse {
-                name: f.name.clone(),
-                max: 1,
-                recharge,
-                rolled: None,
-            });
-        }
-    }
     out
 }
 
@@ -501,12 +487,7 @@ fn gear(snap: &CharacterSnapshot, character: &Character) -> GearData {
     }
 }
 
-fn spell_row(sp: &SpellEntry, facts: &SpellFactsMap, snap: &CharacterSnapshot) -> SpellRow {
-    let damage = sp.damage.clone().or_else(|| {
-        (sp.level == 0 && edition_of(snap) == Edition::Dnd2014)
-            .then(|| crate::model_text::cantrip_damage_2014(&sp.name, snap.level))
-            .flatten()
-    });
+fn spell_row(sp: &SpellEntry, facts: &SpellFactsMap) -> SpellRow {
     SpellRow {
         id: sp.id.clone(),
         name: sp.name.clone(),
@@ -515,7 +496,7 @@ fn spell_row(sp: &SpellEntry, facts: &SpellFactsMap, snap: &CharacterSnapshot) -
         always_prepared: sp.always_prepared,
         known: sp.known,
         source: sp.granted_by.as_ref().map(|g| g.name.clone()),
-        damage,
+        damage: sp.damage.clone(),
         facts: facts.get(&sp.id).cloned(),
     }
 }
@@ -549,7 +530,7 @@ fn caster(
                 r.always_prepared |= sp.always_prepared;
                 r.known |= sp.known;
             }
-            None => rows.push(spell_row(sp, facts, snap)),
+            None => rows.push(spell_row(sp, facts)),
         }
     }
     rows.sort_by(|a, b| (a.level, &a.name).cmp(&(b.level, &b.name)));

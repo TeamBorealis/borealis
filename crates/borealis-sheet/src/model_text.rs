@@ -445,43 +445,6 @@ pub(crate) fn armor_training(armor: &[String]) -> ArmorTraining {
     }
 }
 
-/// SRD 5.1 damage cantrips: base dice and type; the dice step up at levels 5, 11 and 17. The 2014
-/// content has no scaling data the engine reads, so the sheet knows them by name.
-const CANTRIPS_2014: &[(&str, u32, u32, &str)] = &[
-    ("Acid Splash", 1, 6, "Acid"),
-    ("Chill Touch", 1, 8, "Necrotic"),
-    ("Eldritch Blast", 1, 10, "Force"),
-    ("Fire Bolt", 1, 10, "Fire"),
-    ("Poison Spray", 1, 12, "Poison"),
-    ("Produce Flame", 1, 8, "Fire"),
-    ("Ray of Frost", 1, 8, "Cold"),
-    ("Sacred Flame", 1, 8, "Radiant"),
-    ("Shocking Grasp", 1, 8, "Lightning"),
-    ("Thorn Whip", 1, 6, "Piercing"),
-    ("Vicious Mockery", 1, 4, "Psychic"),
-];
-
-/// Damage of a 2014 cantrip at a character level (`2d10 Fire`), `None` for non-damage cantrips.
-pub(crate) fn cantrip_damage_2014(name: &str, level: u32) -> Option<String> {
-    let (_, n, die, ty) = CANTRIPS_2014.iter().find(|c| c.0 == name)?;
-    let tier = n + [5, 11, 17].iter().filter(|l| level >= **l).count() as u32;
-    Some(format!("{tier}d{die} {ty}"))
-}
-
-/// Recharge label when a feature summary says "once per day / short rest / long rest".
-pub(crate) fn once_per_rest(summary: Option<&str>) -> Option<String> {
-    let lower = summary?.to_lowercase();
-    let at = lower.find("once per ")? + "once per ".len();
-    let rest = &lower[at..];
-    if rest.starts_with("day") || rest.starts_with("long rest") {
-        Some("Long Rest".into())
-    } else if rest.starts_with("short rest") {
-        Some("Short Rest".into())
-    } else {
-        None
-    }
-}
-
 fn is_internal_label(prefix: &str, rest: &str) -> bool {
     prefix.to_lowercase().contains("group") || rest.to_lowercase().contains("group")
 }

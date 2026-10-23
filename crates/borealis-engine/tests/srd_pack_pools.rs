@@ -250,3 +250,66 @@ fn elemental_affinity_adds_charisma_to_cantrips_of_the_chosen_type_2024() {
     assert_eq!(damage(&snap, "Fire Bolt"), format!("2d10+{cha} fire"));
     assert_eq!(damage(&snap, "Ray of Frost"), "2d8 cold");
 }
+
+/// SRD 5.1 damage cantrips: base die and damage type, one more die at 5th, 11th and 17th level,
+/// read from the pack's own spell text (the sheet no longer knows them by name).
+const SRD51_CANTRIPS: &[(&str, u32, &str)] = &[
+    ("Acid Splash", 6, "acid"),
+    ("Chill Touch", 8, "necrotic"),
+    ("Fire Bolt", 10, "fire"),
+    ("Poison Spray", 12, "poison"),
+    ("Produce Flame", 8, "fire"),
+    ("Ray of Frost", 8, "cold"),
+    ("Sacred Flame", 8, "radiant"),
+    ("Shocking Grasp", 8, "lightning"),
+    ("Vicious Mockery", 4, "psychic"),
+];
+
+#[test]
+fn srd51_damage_cantrips_scale_at_5_11_and_17_from_their_text() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+    if !root.join("srd-5.1/pack.json").is_file() {
+        eprintln!("SKIPPED: content/srd-5.1 not present");
+        return;
+    }
+    let store = ContentStoreBuilder::new()
+        .add_pack_dir(&root.join("srd-5.1"))
+        .expect("pack loads")
+        .build();
+    let text = |name: &str| {
+        store
+            .by_type("Spell")
+            .find(|s| s.element.name == name)
+            .unwrap_or_else(|| panic!("{name} in SRD 5.1"))
+            .element
+            .description
+            .clone()
+    };
+    let tiers = [
+        (1, 1),
+        (4, 1),
+        (5, 2),
+        (10, 2),
+        (11, 3),
+        (16, 3),
+        (17, 4),
+        (20, 4),
+    ];
+    for (name, die, ty) in SRD51_CANTRIPS {
+        let html = text(name);
+        for (level, n) in tiers {
+            assert_eq!(
+                borealis_engine::cantrips::scaled_damage(&html, level),
+                Some(format!("{n}d{die} {ty}")),
+                "{name} at level {level}"
+            );
+        }
+    }
+    // Eldritch Blast adds beams: no dice tier, one beam's dice on the attack row.
+    let eb = text("Eldritch Blast");
+    assert_eq!(borealis_engine::cantrips::scaled_damage(&eb, 5), None);
+    assert_eq!(
+        borealis_engine::cantrips::attack_damage(&eb, 5).as_deref(),
+        Some("1d10 force")
+    );
+}
