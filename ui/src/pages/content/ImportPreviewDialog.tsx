@@ -1,10 +1,13 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import type { ImportPreview } from "../../api/contract";
-import { Alert, Button, Modal, useToast } from "../../components";
+import type { ContentProgress, ImportPreview } from "../../api/contract";
+import { Alert, Button, Modal, ProgressBar, useConfirm, useToast } from "../../components";
 import { Expander } from "../../components/controls";
 import { useApi } from "../../state/ApiContext";
 import { closeInstallReport, dismissImportPreview, setImportBusy, showInstallReport, useImportPreviewState } from "../../state/importPreview";
 import { errorMessage } from "../../state/useAsync";
+import { addIndexSource } from "./addIndexSource";
+import { sourceConsentText } from "./IndexesTab";
 import { ImportIssues } from "./ImportIssues";
 import { ImportReportDialog } from "./ImportReportDialog";
 
@@ -17,6 +20,23 @@ export function ImportPreviewDialog({ preview }: { preview: ImportPreview }) {
   const navigate = useNavigate();
   const { busy } = useImportPreviewState();
   const none = preview.converted === 0;
+  const confirm = useConfirm();
+  const source = none ? preview.indexUrl : undefined;
+  const [progress, setProgress] = useState<ContentProgress | null>(null);
+  useEffect(() => api.subscribe("content:progress", setProgress), [api]);
+  /** A lone .index has nothing to import here: add it as a content source and download what it lists, as Indexes > Fetch does. */
+  const addSource = async () => {
+    if (!source) return;
+    const host = new URL(source).host;
+    const known = (await api.listIndexes().catch(() => [])).some((i) => i.url === source);
+    if (!known && (await confirm({ title: "Add content source", body: sourceConsentText(host), confirmLabel: "Add source" })) !== "confirm") return;
+    setImportBusy(true);
+    const r = await addIndexSource(api, source);
+    toast.push(r.text, r.tone);
+    if (r.tone === "error") { setImportBusy(false); return; }
+    dismissImportPreview(api);
+    navigate("/content");
+  };
   const install = async () => {
     setImportBusy(true);
     try {
@@ -29,12 +49,15 @@ export function ImportPreviewDialog({ preview }: { preview: ImportPreview }) {
   const { errors, warnings } = preview.summary;
   return (
     <Modal title="Import preview" wide className="aur-rep-dlg" onClose={() => dismissImportPreview(api)}
-      footer={<><Button onClick={() => dismissImportPreview(api)}>Cancel</Button><Button variant="primary" disabled={none || busy} onClick={() => void install()}>Install</Button></>}>
+      footer={<><Button onClick={() => dismissImportPreview(api)}>Cancel</Button>{source
+        ? <Button variant="primary" disabled={busy} onClick={() => void addSource()}>Add as source</Button>
+        : <Button variant="primary" disabled={none || busy} onClick={() => void install()}>Install</Button>}</>}>
       <div className="stack">
         <Alert tone={none ? "danger" : errors ? "warning" : "success"}>
-          {none ? `Nothing in ${preview.packName} can be imported.` : `${plural(preview.converted, "element")} from ${plural(preview.fileCount, "file")} will be added as "${preview.packName}".`}
+          {source ? `${preview.packName} lists files to download. Add it as a content source to get them.` : none ? `Nothing in ${preview.packName} can be imported.` : `${plural(preview.converted, "element")} from ${plural(preview.fileCount, "file")} will be added as "${preview.packName}".`}
           {!none && preview.skipped > 0 && ` ${preview.skipped} skipped.`}
         </Alert>
+        {source && busy && progress && progress.phase !== "done" && <div><ProgressBar label="Update progress" value={progress.done} max={Math.max(1, progress.total)} /><span className="small muted" role="status">{progress.message}</span></div>}
         {preview.replacesExisting && !none && <Alert tone="warning">An installed pack named "{preview.packName}" will be replaced.</Alert>}
         {preview.counts.length > 0 && (
           <Expander title="Converted">

@@ -97,6 +97,10 @@ pub struct ImportPreview {
     pub unresolved_total: usize,
     /// An installed pack with the same id will be replaced.
     pub replaces_existing: bool,
+    /// A lone `.index` with nothing importable beside it: the address it updates from. The UI offers to
+    /// add it as a content source (the same outcome as Additional Content > Indexes).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub index_url: Option<String>,
 }
 
 /// A file handed to the app by the OS ("open with" / share), waiting for the UI. Android's activity
@@ -163,7 +167,14 @@ impl AppState {
             (None, false) => Inputs::Files(decode_files(&request.files)?),
             _ => return Err(ApiError::invalid("Choose files or a folder to import.")),
         };
-        let staged = self.stage_import(inputs, None)?;
+        let source = match &inputs {
+            Inputs::Files(files) => lone_index_source(files),
+            Inputs::Folder(_) => None,
+        };
+        let mut staged = self.stage_import(inputs, None)?;
+        if staged.preview.converted == 0 {
+            staged.preview.index_url = source;
+        }
         let preview = staged.preview.clone();
         let mut all = STAGED.lock()?;
         while all.len() >= MAX_STAGED {
@@ -285,6 +296,7 @@ impl AppState {
             unresolved: found.unresolved,
             unresolved_total: found.unresolved_total,
             replaces_existing: self.paths.library().join(&id).exists(),
+            index_url: None,
         };
         Ok(Staged {
             _scratch: scratch,
@@ -438,6 +450,25 @@ fn stage_files(
         .cloned()
         .unwrap_or_else(|| display.clone());
     Ok((display, id, source, entries.len(), conv))
+}
+
+/// The https address a lone `.index` in `entries` updates from (its `info/update/file/@url`), if it
+/// has exactly one index and a usable address.
+fn lone_index_source(entries: &[(String, Vec<u8>)]) -> Option<String> {
+    let mut indexes = entries
+        .iter()
+        .filter(|(n, _)| n.to_lowercase().ends_with(".index"));
+    let (name, bytes) = indexes.next()?;
+    if indexes.next().is_some() {
+        return None;
+    }
+    let Some(Document::Index(index)) = convert_xml(std::str::from_utf8(bytes).ok()?, name).document
+    else {
+        return None;
+    };
+    let url = index.info.update?.file?.url.trim().to_string();
+    crate::content_index::require_https(&url).ok()?;
+    Some(url)
 }
 
 /// A display name for a set: the archive, else the index, else the first file and a count.

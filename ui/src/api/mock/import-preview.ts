@@ -7,6 +7,14 @@ const INSTALLED = /^ID_(PHB|WOTC|INTERNAL)_/;
 const attr = (tag: string, name: string) => new RegExp(`\\b${name}="([^"]*)"`).exec(tag)?.[1];
 const stem = (n: string) => n.replace(/\.[^.]+$/, "");
 
+/** The https address a lone index updates from (its info/update/file/@url). */
+const sourceOf = (base64: string): string | undefined => {
+  try {
+    const url = /<update\b[^>]*>\s*<file\s[^>]*>/.exec(atob(base64))?.[0].match(/\burl="([^"]*)"/)?.[1]?.trim();
+    return url && /^https:\/\/[^/\s]+/.test(url) ? url : undefined;
+  } catch { return undefined; }
+};
+
 interface Staged { preview: ImportPreview; texts: string[] }
 
 /** Mirrors the Rust preview: converts a set of files together, reports counts, diagnostics and unresolved references. */
@@ -24,6 +32,8 @@ export class MockImportPreview {
     const grants: { from: string; target: string }[] = [];
     const listed: { index: string; name: string }[] = [];
     let skipped = 0;
+    const indexFiles = files.filter((f) => /\.index$/i.test(f.fileName));
+    const sourceUrl = indexFiles.length === 1 ? sourceOf(indexFiles[0]!.contentBase64) : undefined;
     for (const f of files) {
       let text: string;
       try { text = atob(f.contentBase64); } catch { throw apiError("invalid_argument", "The file content is not valid base64."); }
@@ -60,6 +70,7 @@ export class MockImportPreview {
       converted: [...counts.values()].reduce((a, b) => a + b, 0), skipped,
       counts: [...counts].map(([type, count]) => ({ type, count })), summary: { errors: sev("error"), warnings: sev("warning"), infos: sev("info") },
       diagnostics, diagnosticsTruncated: false, unresolved, unresolvedTotal: unresolved.length, replacesExisting: false,
+      ...(sourceUrl && !texts.length && !folder ? { indexUrl: sourceUrl } : {}),
     };
     this.staged.set(preview.previewId, { preview, texts });
     return preview;

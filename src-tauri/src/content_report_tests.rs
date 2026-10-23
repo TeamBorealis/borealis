@@ -299,3 +299,49 @@ fn an_append_to_a_bundled_core_id_is_not_reported_missing() {
         .collect();
     assert_eq!(missing, vec![Some("ID_HBT_NOWHERE")]);
 }
+
+const LONE_INDEX: &str = r#"<index>
+  <info><name>Hb</name><update version="1.0"><file name="hb.index" url="https://example.invalid/hb/master/hb.index"/></update></info>
+  <files><file name="hb.xml" url="https://example.invalid/hb/master/hb.xml"/></files>
+</index>"#;
+
+#[test]
+fn a_lone_index_preview_names_its_source_and_adding_it_downloads_the_listed_files() {
+    const BASE: &str = "https://example.invalid/hb/master/";
+    let (_dir, app) = app();
+    let preview = app
+        .preview_import_pack(&upload("hb.index", LONE_INDEX.as_bytes()))
+        .unwrap();
+    assert_eq!(preview.converted, 0);
+    let url = preview.index_url.clone().expect("source offered");
+    assert_eq!(url, format!("{BASE}hb.index"));
+    // The offered outcome is the Indexes tab's: add the address, then update.
+    app.cancel_import_preview(&preview.preview_id).unwrap();
+    app.add_index(&url).unwrap();
+    let stub = Stub(HashMap::from([
+        (url.clone(), LONE_INDEX.as_bytes().to_vec()),
+        (format!("{BASE}hb.xml"), HB.as_bytes().to_vec()),
+    ]));
+    let result = app.update_indexes(&stub, &NullSink).unwrap();
+    assert_eq!(result.updated, 1);
+    assert!(app.list_indexes().iter().any(|i| i.url == url));
+}
+
+#[test]
+fn an_index_with_files_beside_it_or_no_https_source_offers_no_source() {
+    let (_dir, app) = app();
+    let beside = PreviewImportRequest {
+        files: vec![
+            upload("hb.index", LONE_INDEX.as_bytes()).files.remove(0),
+            upload("hb.xml", HB.as_bytes()).files.remove(0),
+        ],
+        folder: None,
+    };
+    let preview = app.preview_import_pack(&beside).unwrap();
+    assert!(preview.converted > 0 && preview.index_url.is_none());
+    let plain = LONE_INDEX.replace("https://", "http://");
+    let preview = app
+        .preview_import_pack(&upload("hb.index", plain.as_bytes()))
+        .unwrap();
+    assert!(preview.index_url.is_none());
+}

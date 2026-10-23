@@ -5388,6 +5388,12 @@
       "k": "prim"
      }
     },
+    "indexUrl": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "packId": {
      "opt": false,
      "t": {

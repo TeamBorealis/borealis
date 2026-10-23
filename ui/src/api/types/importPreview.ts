@@ -53,6 +53,8 @@ export interface ImportPreview {
   unresolvedTotal: number;
   /** An installed pack with the same id will be replaced. */
   replacesExisting: boolean;
+  /** A lone `.index` with nothing importable beside it: the address it updates from, offered as a content source. */
+  indexUrl?: string;
 }
 
 /** A file the OS handed to the app ("open with" / share). */
