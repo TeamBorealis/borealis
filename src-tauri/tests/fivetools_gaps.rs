@@ -275,11 +275,17 @@ fn renamed_subclass(w: &World<'_>, store: &ContentStore) {
             .any(|s| s.element.ty == "Archetype" && hashed(&s.element.id)),
         "hash-suffixed subclass ids remain"
     );
-    // a character saved with the old id opens with the new one
+    // a character saved with the old id opens with the new one; the subclass must be one the
+    // class offers (a 2014 subclass with a loaded 2024 reprint is superseded: never offered)
     let sub = qualified
         .iter()
+        .filter(|e| {
+            !w.e.universe(Ruleset::Dnd2024)
+                .get(&e.id)
+                .is_some_and(|u| u.superseded)
+        })
         .find(|e| e.supports.iter().any(|t| t == "ID_5ET_XPHB_CLASS_FIGHTER"))
-        .expect("fighter subclass");
+        .expect("offered fighter subclass");
     let old = sub.renamed_from.clone().unwrap();
     let mut s = w.fill(
         w.character(Ruleset::Dnd2024, "ID_5ET_XPHB_CLASS_FIGHTER"),

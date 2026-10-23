@@ -870,6 +870,26 @@ fn legacy_of(el: &borealis_content::Element) -> Option<&str> {
     (HOSTED.contains(&el.ty.as_str()) && el.requirements.trim() == base).then_some(base)
 }
 
+/// The imported archetypes the engine marks `superseded` (a 2014 subclass with a loaded 2024
+/// reprint, B-44), asked of an engine built on the installed store. 5etools attaches 2014
+/// subclasses to 2024 classes, so either edition's universe counts.
+fn superseded_archetypes(ins: &Installed) -> BTreeSet<String> {
+    if !ins.ours.iter().any(|(_, ty, _)| ty == "Archetype") {
+        return BTreeSet::new();
+    }
+    let engine = borealis_engine::Engine::new(&ins.store);
+    ins.ours
+        .iter()
+        .filter(|(_, ty, _)| ty == "Archetype")
+        .filter(|(id, _, _)| {
+            [Ruleset::Dnd2014, Ruleset::Dnd2024]
+                .iter()
+                .any(|rs| engine.universe(*rs).get(id).is_some_and(|u| u.superseded))
+        })
+        .map(|(id, _, _)| id.clone())
+        .collect()
+}
+
 /// Offered / offerable per type, one outcome per offerable element. A legacy race version
 /// ([`legacy_of`]) gets its own outcome: passes when it is not offered and its base race is.
 fn record(src: &str, app: &AppState, ins: &Installed, offers: &Offers, scope: Scope) {
@@ -879,6 +899,9 @@ fn record(src: &str, app: &AppState, ins: &Installed, offers: &Offers, scope: Sc
     let defined = |id: &str| hub.as_ref().map_or(true, |h| h.element(id).is_some());
     let defects = (scope == Scope::Repo).then(|| defects::Defects::new(&ins.store, &defined));
     let mut defect_rows = 0;
+    // 2014 archetypes the engine supersedes with a loaded 2024 reprint (B-44): never offered
+    let superseded = superseded_archetypes(ins);
+    let offerers = Offerers::new(&ins.store);
     let mut rows: BTreeMap<(String, &str), [i64; 2]> = BTreeMap::new();
     let mut seen_types: BTreeSet<&str> = BTreeSet::new();
     for (id, ty, rs) in &ins.ours {
@@ -910,7 +933,9 @@ fn record(src: &str, app: &AppState, ins: &Installed, offers: &Offers, scope: Sc
             rows.entry((ty.clone(), "nonoffer")).or_default()[0] += 1;
             continue;
         }
-        let ok = offers.reached(id).is_some();
+        let reached = offers.reached(id).is_some();
+        let by_rule = !reached && !superseded.is_empty() && offerers.only_via(id, &superseded);
+        let ok = reached || by_rule;
         let r = rows.entry((ty.clone(), "offerable")).or_default();
         r[0] += 1;
         if ok {
@@ -921,9 +946,14 @@ fn record(src: &str, app: &AppState, ins: &Installed, offers: &Offers, scope: Sc
             .filter(|_| !ok)
             .and_then(|d| d.of(&ins.store, id, *rs, &defined));
         defect_rows += i64::from(defect.is_some());
-        let by = offers
-            .reached(id)
-            .map_or("not offered by any host", String::as_str);
+        let by = offers.reached(id).map_or(
+            if by_rule {
+                "superseded by its 2024 reprint: reachable only through superseded subclasses"
+            } else {
+                "not offered by any host"
+            },
+            String::as_str,
+        );
         let row = format!("{src}/s2/{ty}/{id}");
         outcome::record(SUITE, &row, ok || defect.is_some(), defect.unwrap_or(by));
     }

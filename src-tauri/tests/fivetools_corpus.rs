@@ -295,7 +295,15 @@ impl Sweeper<'_> {
                 out.push("character level does not match".into());
             }
         }
-        if !picked {
+        // the rule (B-44): a 2014 subclass with a loaded 2024 reprint is superseded, so it is
+        // never offered to a 2024 class; that expected non-offer passes
+        let superseded = sub.is_some_and(|id| {
+            self.engine
+                .universe(ruleset)
+                .get(id)
+                .is_some_and(|u| u.superseded)
+        });
+        if !picked && !superseded {
             out.push("subclass never offered".into());
         }
         out.sort();

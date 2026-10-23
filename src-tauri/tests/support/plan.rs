@@ -147,6 +147,39 @@ impl<'a> Offerers<'a> {
         self.place_with(id, plan, true)
     }
 
+    /// True when `id` can reach a class only through the `blocked` elements (superseded
+    /// archetypes): the climb never goes above a blocked element, finds no class, and met at
+    /// least one blocked element (or `id` itself is blocked).
+    pub fn only_via(&self, id: &str, blocked: &BTreeSet<String>) -> bool {
+        if blocked.contains(id) {
+            return true;
+        }
+        let mut met = false;
+        let mut seen = BTreeSet::from([id.to_string()]);
+        let mut level = self.parents_of(id, false);
+        for _ in 0..MAX_CLIMB {
+            let mut next = BTreeSet::new();
+            for p in level {
+                if !seen.insert(p.clone()) {
+                    continue;
+                }
+                if blocked.contains(&p) {
+                    met = true;
+                    continue;
+                }
+                if self.store.element(&p).is_some_and(|e| e.ty == "Class") {
+                    return false;
+                }
+                next.extend(self.parents_of(&p, false));
+            }
+            if next.is_empty() {
+                break;
+            }
+            level = next;
+        }
+        met
+    }
+
     /// Climbs from `id` breadth-first. Each branch carries the nearest archetype it passed (an
     /// archetype maps only to the classes above it on its own branch, not to every class the
     /// climb reaches after any archetype); a node is visited once per carried archetype.
