@@ -450,29 +450,55 @@ jobs:
           APP: ${{ format('{0}\target\debug\borealis.exe', github.workspace) }}
           NATIVE_DRIVER: ${{ steps.edgedriver.outputs.driver }}
         run: |
-          Get-Process borealis, msedgewebview2 -ErrorAction SilentlyContinue | Stop-Process -Force
-          $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = '--remote-debugging-port=9222'
+          # B-28: which launch route gets --remote-debugging-port into WebView2? A = Start-Process with the
+          # environment variable, B = CreateProcess with an explicit environment block (no shell execute),
+          # C = the per-executable registry override WebView2 documents. Flags and paths only.
+          $port = 9222
+          $flag = "--remote-debugging-port=$port"
+          $exe = Split-Path $env:APP -Leaf
+          $regKey = 'HKCU:\Software\Policies\Microsoft\Edge\WebView2\AdditionalBrowserArguments'
+          function Stop-App { Get-Process borealis, msedgewebview2 -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Seconds 2 }
+          function Report([string]$route) {
+            Start-Sleep -Seconds 20
+            $wv = @(Get-CimInstance Win32_Process -Filter "Name='msedgewebview2.exe'")
+            $with = @($wv | Where-Object { $_.CommandLine -match [regex]::Escape($flag) }).Count
+            $browser = $wv | Where-Object { $_.CommandLine -notmatch '--type=' } | Select-Object -First 1
+            $names = if ($browser) { ([regex]::Matches($browser.CommandLine, '--[a-z0-9-]+') | ForEach-Object Value | Select-Object -Unique) -join ' ' } else { 'no browser process' }
+            $dirs = @($wv | ForEach-Object { if ($_.CommandLine -match '--user-data-dir="?([^"]+?)"?(\s|$)') { $Matches[1] } } | Select-Object -Unique)
+            $dtp = @(Get-ChildItem $dirs -Filter DevToolsActivePort -ErrorAction SilentlyContinue).Count
+            $ok = $false
+            try { Invoke-RestMethod "http://127.0.0.1:$port/json/version" -TimeoutSec 10 | Out-Null; $ok = $true } catch {}
+            Write-Host "probe $route`: msedgewebview2 $($wv.Count), with the port flag $with, DevToolsActivePort $dtp, port answers $ok"
+            Write-Host "probe $route browser flags: $names"
+            return $ok
+          }
+          Write-Output "probe: WebView2 driver $(& $env:NATIVE_DRIVER --version)"
+          $results = @{}
+          Stop-App
+          $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = $flag
           $p = Start-Process -FilePath $env:APP -PassThru
-          Start-Sleep -Seconds 20
+          $results['A'] = Report 'A'
           Remove-Item Env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS
-          # Flags and paths only: does the variable reach WebView2, which user data folder, does the port answer.
-          $wv = @(Get-CimInstance Win32_Process -Filter "Name='msedgewebview2.exe'")
-          $flag = @($wv | Where-Object { $_.CommandLine -match '--remote-debugging-port=9222' }).Count
-          $dirs = @($wv | ForEach-Object { if ($_.CommandLine -match '--user-data-dir="?([^"]+?)"?(\s|$)') { $Matches[1] } } | Select-Object -Unique)
-          Write-Output "probe: app alive $(-not $p.HasExited); msedgewebview2 $($wv.Count), with the port flag $flag; user data dirs: $($dirs -join '; ')"
-          $dtp = @(Get-ChildItem $dirs -Filter DevToolsActivePort -ErrorAction SilentlyContinue | ForEach-Object FullName)
-          Write-Output "probe: DevToolsActivePort files: $($dtp.Count) $($dtp -join '; ')"
-          $ok = $false
-          try { $v = Invoke-RestMethod http://127.0.0.1:9222/json/version -TimeoutSec 10; $ok = $true; Write-Output "probe: port 9222 answers ($($v.Browser))" }
-          catch { Write-Output "probe: port 9222 does not answer" }
+          Stop-App
+          $psi = New-Object System.Diagnostics.ProcessStartInfo $env:APP
+          $psi.UseShellExecute = $false
+          $psi.Environment['WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS'] = $flag
+          $p = [System.Diagnostics.Process]::Start($psi)
+          $results['B'] = Report 'B'
+          Stop-App
+          New-Item -Path $regKey -Force | Out-Null
+          New-ItemProperty -Path $regKey -Name $exe -Value $flag -PropertyType String -Force | Out-Null
+          $p = Start-Process -FilePath $env:APP -PassThru
+          $results['C'] = Report 'C'
           $rc = 1
-          if ($ok) {
+          if ($results['C']) {
             python -I tools/ci/webdriver_smoke.py --msedgedriver $env:NATIVE_DRIVER --port 4447 --timeout 90 `
-              --debugger-address 127.0.0.1:9222
+              --debugger-address "127.0.0.1:$port"
             $rc = $LASTEXITCODE
           }
-          Get-Process borealis, msedgewebview2 -ErrorAction SilentlyContinue | Stop-Process -Force
-          Write-Output "probe: attach smoke exit $rc"
+          Remove-ItemProperty -Path $regKey -Name $exe -ErrorAction SilentlyContinue
+          Stop-App
+          Write-Output "probe: routes $(($results.GetEnumerator() | Sort-Object Name | ForEach-Object { "$($_.Name)=$($_.Value)" }) -join ' '); attach smoke (C) exit $rc"
           exit $rc
       - uses: actions/upload-artifact@v4
         if: failure()
