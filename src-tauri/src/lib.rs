@@ -119,6 +119,7 @@ pub mod snapshot_map;
 pub mod startup;
 pub mod startup_boot;
 pub mod state;
+pub mod webview_args;
 pub mod zip_read;
 
 use state::{AppState, LoadStep};
@@ -460,7 +461,11 @@ pub fn run() {
             #[cfg(debug_assertions)]
             commands_acceptance::acceptance_digest,
         ])
-        .build(tauri::generate_context!())
+        .build({
+            let mut context = tauri::generate_context!();
+            webview_args::apply_env(&mut context);
+            context
+        })
         .expect("error while building Borealis")
         .run(|app, event| {
             #[cfg(any(target_os = "macos", target_os = "ios"))]

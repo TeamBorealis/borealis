@@ -63,21 +63,26 @@ pub fn install(app: &tauri::App) -> tauri::Result<()> {
 fn open_windows(handle: &AppHandle) -> tauri::Result<()> {
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     {
-        tauri::WebviewWindowBuilder::new(
+        let mut splash = tauri::WebviewWindowBuilder::new(
             handle,
             SPLASH_LABEL,
             tauri::WebviewUrl::App("index.html#/splash".into()),
-        )
-        .title("Borealis")
-        .inner_size(SPLASH_SIZE.0, SPLASH_SIZE.1)
-        .resizable(false)
-        .maximizable(false)
-        .minimizable(false)
-        .decorations(false)
-        .shadow(true)
-        .center()
-        .background_color(SPLASH_BG)
-        .build()?;
+        );
+        // WebView2 shares one browser process per data directory, so the splash takes the main window's arguments.
+        if let Some(args) = crate::webview_args::configured(handle.config()) {
+            splash = splash.additional_browser_args(&args);
+        }
+        splash
+            .title("Borealis")
+            .inner_size(SPLASH_SIZE.0, SPLASH_SIZE.1)
+            .resizable(false)
+            .maximizable(false)
+            .minimizable(false)
+            .decorations(false)
+            .shadow(true)
+            .center()
+            .background_color(SPLASH_BG)
+            .build()?;
     }
     #[cfg(any(target_os = "android", target_os = "ios"))]
     if let Some(main) = handle.get_webview_window("main") {
