@@ -99,6 +99,7 @@ tr.empty td{height:12pt}
 .feat .t{font-weight:700}.feat .tag{font-size:5.6pt;color:var(--gold);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-left:3pt}
 .feat .txt{white-space:pre-line}
 .feat.plain .t{font-weight:400}.feat.plain .tag{display:none}
+.feat .ftab{margin:2pt 0 1pt;font-size:7pt}.feat .ftab td{padding:1.2pt 3pt}
 .coins{display:grid;grid-template-columns:repeat(5,1fr);gap:4pt;text-align:center}.coins .f{font-weight:700;font-size:9pt}
 .slots{display:grid;grid-template-columns:repeat(9,1fr);gap:4pt}
 .slots .box{text-align:center;padding:2pt 1pt 3pt}.slots .off{opacity:.35}

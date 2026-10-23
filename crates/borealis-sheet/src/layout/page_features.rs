@@ -14,6 +14,8 @@ pub(crate) mod features_flow;
 pub(crate) mod features_gear;
 #[path = "features_pages.rs"]
 pub(crate) mod features_pages;
+#[path = "features_tables.rs"]
+pub(crate) mod features_tables;
 #[cfg(test)]
 #[path = "features_tests.rs"]
 mod features_tests;
@@ -109,15 +111,36 @@ fn species_hint(d: &SheetData) -> Option<String> {
     .filter(|s| !s.is_empty())
 }
 
+/// Feature `i` as pieces: its block, then the tables of its full text that fit width `w` (their
+/// rows leave the text). `group` is the heading a continuation repeats.
+fn feature_pieces(
+    d: &SheetData,
+    i: usize,
+    summary: bool,
+    (k, w): (f32, f32),
+    group: &str,
+) -> Vec<Piece> {
+    let mut f = feature_piece(d, i, summary);
+    f.group = group.to_string();
+    if summary && f.summarised {
+        return vec![Piece::Feature(f)];
+    }
+    let (text, tables) = features_tables::split_off_tables(&d.features[i], k, w);
+    f.text = text;
+    let mut out = vec![Piece::Feature(f)];
+    out.extend(tables.into_iter().map(|mut t| {
+        t.group = group.to_string();
+        Piece::Table(t)
+    }));
+    out
+}
+
 /// The feature queue in reading order: class groups, species, feats, background and other, then
-/// the "other features" write-in area. `summary` lists the features shown as a summary.
-fn feature_queue(d: &SheetData, summary: &HashSet<usize>) -> VecDeque<Piece> {
+/// the "other features" write-in area. `summary` lists the features shown as a summary; `kw` is
+/// the scale and column width (for the tables of feature text).
+fn feature_queue(d: &SheetData, summary: &HashSet<usize>, kw: (f32, f32)) -> VecDeque<Piece> {
     let mut q = VecDeque::new();
-    let block = |i: usize, group: &str| {
-        let mut f = feature_piece(d, i, summary.contains(&i));
-        f.group = group.to_string();
-        Piece::Feature(f)
-    };
+    let block = |i: usize, group: &str| feature_pieces(d, i, summary.contains(&i), kw, group);
     let of = |g: &[FeatureGroup]| -> Vec<usize> {
         (0..d.features.len())
             .filter(|&i| g.contains(&d.features[i].group))
@@ -132,7 +155,7 @@ fn feature_queue(d: &SheetData, summary: &HashSet<usize>) -> VecDeque<Piece> {
                 title: "Class features".into(),
                 hint: None,
             });
-            q.extend(class_idx.iter().map(|&i| block(i, "Class features")));
+            q.extend(class_idx.iter().flat_map(|&i| block(i, "Class features")));
         }
     } else {
         for c in classes {
@@ -153,7 +176,7 @@ fn feature_queue(d: &SheetData, summary: &HashSet<usize>) -> VecDeque<Piece> {
                 title: title.clone(),
                 hint: Some(format!("{} {}", c.class, c.level)),
             });
-            q.extend(own.into_iter().map(|i| block(i, &title)));
+            q.extend(own.into_iter().flat_map(|i| block(i, &title)));
         }
     }
     let groups: [(&str, &[FeatureGroup], Option<String>); 3] = [
@@ -182,7 +205,7 @@ fn feature_queue(d: &SheetData, summary: &HashSet<usize>) -> VecDeque<Piece> {
             title: title.into(),
             hint,
         });
-        q.extend(idx.into_iter().map(|i| block(i, title)));
+        q.extend(idx.into_iter().flat_map(|i| block(i, title)));
     }
     let title = if d.edition == Edition::Dnd2014 {
         "Additional features"
@@ -207,7 +230,7 @@ fn queue_height(q: &VecDeque<Piece>, k: f32, w: f32) -> f32 {
 fn choose_summaries(d: &SheetData, k: f32, w: f32, col_h: f32) -> HashSet<usize> {
     let mut chosen = HashSet::new();
     loop {
-        if queue_height(&feature_queue(d, &chosen), k, w) <= col_h - FIT_SLACK {
+        if queue_height(&feature_queue(d, &chosen, (k, w)), k, w) <= col_h - FIT_SLACK {
             return chosen;
         }
         let best = (0..d.features.len())
@@ -229,7 +252,7 @@ fn choose_summaries(d: &SheetData, k: f32, w: f32, col_h: f32) -> HashSet<usize>
     }
 }
 
-fn detail_queue(d: &SheetData, summarised: &HashSet<usize>) -> VecDeque<Piece> {
+fn detail_queue(d: &SheetData, summarised: &HashSet<usize>, kw: (f32, f32)) -> VecDeque<Piece> {
     let mut idx: Vec<usize> = summarised.iter().copied().collect();
     idx.sort_unstable();
     let mut q = VecDeque::new();
@@ -240,12 +263,13 @@ fn detail_queue(d: &SheetData, summarised: &HashSet<usize>) -> VecDeque<Piece> {
         title: DETAILS_TITLE.into(),
         hint: None,
     });
-    q.extend(idx.into_iter().map(|i| {
-        let mut f = feature_piece(d, i, false);
-        f.detail = true;
-        f.pips = 0;
-        f.group = DETAILS_TITLE.to_string();
-        Piece::Feature(f)
+    q.extend(idx.into_iter().flat_map(|i| {
+        let mut pieces = feature_pieces(d, i, false, kw, DETAILS_TITLE);
+        if let Some(Piece::Feature(f)) = pieces.first_mut() {
+            f.detail = true;
+            f.pips = 0;
+        }
+        pieces
     }));
     q
 }
@@ -294,7 +318,7 @@ fn build_2024(env: &Env, first_page_no: u32) -> (FeaturePages, Vec<Vec<(usize, f
     let (mut c, top) = new_canvas(env, None);
     let y0 = top + DEITY_H * k;
     let summarised = choose_summaries(d, k, a.1, g.body_bottom - y0);
-    let mut left = feature_queue(d, &summarised);
+    let mut left = feature_queue(d, &summarised, (k, a.1));
     let right;
     {
         let mut cx = Cx {
@@ -320,7 +344,7 @@ fn build_2024(env: &Env, first_page_no: u32) -> (FeaturePages, Vec<Vec<(usize, f
     } else {
         &mut right
     };
-    shorter.extend(detail_queue(d, &summarised));
+    shorter.extend(detail_queue(d, &summarised, (k, a.1)));
     let cont = "Features & gear (continued)";
     seq.flow_pages(env, 1, (cont, cont), left, right);
     seq.resolve_refs(env, |i| first_page_no + i as u32);
@@ -361,7 +385,12 @@ fn build_2014(
     // Details page.
     let mut details = Seq::default();
     let (mut c, top) = new_canvas(env, None);
-    let mut left = feature_queue(d, &HashSet::new());
+    let k = if env.o.compact {
+        super::grid::COMPACT_K
+    } else {
+        1.0
+    };
+    let mut left = feature_queue(d, &HashSet::new(), (k, a.1));
     let mut right = story_regions::details_2014(d, band);
     {
         let mut cx = Cx {

@@ -36,11 +36,14 @@ pub(crate) struct Seq {
 /// A queue that goes on on a new page in the middle of a group ("Feats") starts with a
 /// "Feats (continued)" heading.
 fn regroup(q: &mut VecDeque<Piece>) {
-    if let Some(Piece::Feature(f)) = q.front() {
-        if !f.group.is_empty() {
-            let title = continued(&f.group);
-            q.push_front(Piece::Heading { title, hint: None });
-        }
+    let group = match q.front() {
+        Some(Piece::Feature(f)) => &f.group,
+        Some(Piece::Table(t)) => &t.group,
+        _ => return,
+    };
+    if !group.is_empty() {
+        let title = continued(group);
+        q.push_front(Piece::Heading { title, hint: None });
     }
 }
 

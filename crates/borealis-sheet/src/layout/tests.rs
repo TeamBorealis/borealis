@@ -231,6 +231,10 @@ fn write_samples() {
         ("2014", data(&wizard_2014())),
         ("2024", data(&wizard_2024())),
         ("2014c", data(&cleric_2014())),
+        (
+            "2014-band",
+            crate::model_fixtures::with_sample_extras(data(&cleric_2014())),
+        ),
     ];
     for (name, d) in &sets {
         for (tag, ink, paper) in [

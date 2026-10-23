@@ -6,7 +6,9 @@ use crate::fonts::text_width;
 use crate::layout::grid::Grid;
 use crate::layout::page_story;
 use crate::layout::{chrome, LayoutOptions};
-use crate::model_fixtures::{cleric_2014, wizard_2014, wizard_2024};
+use crate::model_fixtures::{
+    cleric_2014, table_feature, with_sample_extras, wizard_2014, wizard_2024,
+};
 use crate::model_types::{
     Edition, FeatureData, FeatureGroup, GearItem, SheetData, SpellFactsMap, StoryData,
 };
@@ -90,6 +92,7 @@ fn overflow(mut d: SheetData, n_feats: usize, n_items: usize) -> SheetData {
             level: (i % 5 + 1) as u32,
             sources: Vec::new(),
             summary: format!("Feature {i} in short."),
+            tables: Vec::new(),
             text,
         });
     }
@@ -465,6 +468,13 @@ fn write_samples() {
             "2014-overflow",
             overflow(with_story(data(&wizard_2014())), 40, 60),
         ),
+        ("2014-tables", {
+            let mut d = with_sample_extras(data(&cleric_2014()));
+            d.features
+                .insert(1, table_feature(70, 4, "A longer value that wraps"));
+            d
+        }),
+        ("2024-tables", with_sample_extras(data(&wizard_2024()))),
     ];
     for (name, d) in &sets {
         for (tag, ink, paper) in [
@@ -662,6 +672,110 @@ fn no_trailing_page_of_blank_notes_only() {
             }
         }
     }
+}
+
+fn page_texts(p: &PdfPage) -> Vec<&str> {
+    p.ops
+        .iter()
+        .filter_map(|o| match o {
+            PageOp::Text { text, .. } => Some(text.as_str()),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Text of every `TH` label (header cells are letter-spaced labels, tagged with their text).
+fn header_cells(pages: &[PdfPage]) -> Vec<String> {
+    pages
+        .iter()
+        .flat_map(|p| &p.ops)
+        .filter_map(|o| match o {
+            PageOp::Leaf {
+                tag: "TH",
+                actual: Some(t),
+            } => Some(t.clone()),
+            _ => None,
+        })
+        .collect()
+}
+
+fn feature_text_value(pages: &[PdfPage]) -> String {
+    pages
+        .iter()
+        .flat_map(|p| &p.ops)
+        .filter_map(|o| match o {
+            PageOp::Field(f) if base_id(&f.name) == "feat.1.text" => match &f.kind {
+                FieldKind::Text(t) => Some(t.value.clone()),
+                _ => None,
+            },
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+#[test]
+fn feature_tables_are_drawn_as_ruled_tables_with_a_header_row() {
+    for base in [data(&wizard_2014()), data(&wizard_2024())] {
+        let mut d = base;
+        d.features.insert(0, table_feature(4, 3, "Short value"));
+        let (pages, _) = pages_of(&d, &LayoutOptions::default());
+        let texts: Vec<&str> = pages.iter().flat_map(page_texts).collect();
+        let heads = header_cells(&pages);
+        for h in ["HEAD 0", "HEAD 1", "HEAD 2"] {
+            assert!(heads.contains(&h.to_string()), "{:?}: {h} drawn", d.edition);
+        }
+        assert!(texts.contains(&"Option 3"));
+        let text = feature_text_value(&pages);
+        assert!(text.contains("Choose one option.") && text.contains("Then rest."));
+        assert!(
+            !text.contains("Option 0."),
+            "rows leave the text field: {text}"
+        );
+        let groups: Vec<&str> = pages
+            .iter()
+            .flat_map(|p| &p.ops)
+            .filter_map(|o| match o {
+                PageOp::Group(g) => Some(*g),
+                _ => None,
+            })
+            .collect();
+        assert!(groups.contains(&"Table"));
+    }
+}
+
+#[test]
+fn long_feature_tables_continue_with_the_header_repeated() {
+    let mut d = data(&wizard_2014());
+    d.features
+        .insert(0, table_feature(90, 3, "A somewhat longer cell value"));
+    let (pages, _) = pages_of(&d, &LayoutOptions::default());
+    let texts: Vec<&str> = pages.iter().flat_map(page_texts).collect();
+    // Cells may wrap, so look at the drawn lines joined in drawing order.
+    let joined = format!(" {} ", texts.join(" "));
+    for r in 0..90 {
+        let label = format!(" Option {r} ");
+        assert_eq!(joined.matches(&label).count(), 1, "{label} printed once");
+    }
+    let heads = header_cells(&pages)
+        .iter()
+        .filter(|t| *t == "HEAD 1")
+        .count();
+    assert!(heads >= 2, "header repeated on the continuation ({heads})");
+    assert!(texts.contains(&"Synthetic table feature (continued)"));
+}
+
+#[test]
+fn a_table_without_room_stays_as_text() {
+    let mut d = data(&wizard_2014());
+    let word = "Incomprehensibilities".repeat(2);
+    d.features.insert(0, table_feature(3, 6, &word));
+    let (pages, _) = pages_of(&d, &LayoutOptions::default());
+    let text = feature_text_value(&pages);
+    assert!(
+        text.contains("Option 0. Head 1:"),
+        "row sentences kept: {text}"
+    );
 }
 
 #[test]

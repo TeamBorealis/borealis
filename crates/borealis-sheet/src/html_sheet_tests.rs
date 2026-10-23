@@ -291,7 +291,7 @@ fn html_sheet_sample() {
     std::fs::create_dir_all(&dir).unwrap();
     let cases = [("2014", cleric_2014()), ("2024", wizard_2024())];
     for (name, pair) in cases {
-        let mut d = data(&pair);
+        let mut d = crate::model_fixtures::with_sample_extras(data(&pair));
         d.story.backstory = "Raised by the keeper of a lighthouse on the Sword Coast.".into();
         d.story.traits = "I always have a plan for what to do when things go wrong.".into();
         for ink in [false, true] {

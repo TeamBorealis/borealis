@@ -1,6 +1,8 @@
 //! Tables in feature descriptions, written as one sentence per row (one paragraph each with
-//! `card_model::plain_paragraphs`) so a flattened table does not print as a run-on paragraph (M6), and the raw text copy of a table dropped (it only repeats the
-//! table, often cut off).
+//! `card_model::plain_paragraphs`) so a flattened table does not print as a run-on paragraph
+//! (M6), and the raw text copy of a table dropped (it only repeats the table, often cut off).
+//! [`locate_tables`] keeps the table structure next to that text, so the sheet can draw a real
+//! table where it has room.
 
 const TABLE_OPEN: &str = "<table";
 const TABLE_CLOSE: &str = "</table>";
@@ -67,13 +69,36 @@ fn cells(row: &str) -> Vec<String> {
     out
 }
 
-fn rows_text(table: &str) -> String {
-    let rows: Vec<Vec<String>> = table
+/// Cell text of every non-empty row of one `<table>` block, header row first.
+fn table_rows(table: &str) -> Vec<Vec<String>> {
+    table
         .split("<tr")
         .skip(1)
         .map(cells)
         .filter(|r| !r.is_empty())
+        .collect()
+}
+
+/// One body row as the sentence the flattened text prints ("Row. Header: value; Header:
+/// value.").
+pub(crate) fn row_sentence(head: &[String], row: &[String]) -> String {
+    let label = row.first().map_or("", String::as_str);
+    let rest: Vec<String> = row
+        .iter()
+        .enumerate()
+        .skip(1)
+        .map(|(i, v)| (i, v.trim_end_matches('.')))
+        .filter(|(_, v)| !v.is_empty())
+        .map(|(i, v)| match head.get(i) {
+            Some(h) if !h.is_empty() => format!("{h}: {v}"),
+            _ => v.to_string(),
+        })
         .collect();
+    format!("{label}. {}.", rest.join("; "))
+}
+
+fn rows_text(table: &str) -> String {
+    let rows = table_rows(table);
     let Some((head, body)) = rows.split_first() else {
         return String::new();
     };
@@ -81,23 +106,55 @@ fn rows_text(table: &str) -> String {
         return format!("<p>{}</p>", head.join(" | "));
     }
     body.iter()
-        .map(|row| {
-            let label = row.first().map_or("", String::as_str);
-            let rest: Vec<String> = row
-                .iter()
-                .enumerate()
-                .skip(1)
-                .map(|(i, v)| (i, v.trim_end_matches('.')))
-                .filter(|(_, v)| !v.is_empty())
-                .map(|(i, v)| match head.get(i) {
-                    Some(h) if !h.is_empty() => format!("{h}: {v}"),
-                    _ => v.to_string(),
-                })
-                .collect();
-            format!("<p>{label}. {}.</p>", rest.join("; "))
-        })
+        .map(|row| format!("<p>{}</p>", row_sentence(head, row)))
         .collect::<Vec<_>>()
         .join("")
+}
+
+/// The tables of `html` that have a header row and at least one body row, in document order:
+/// `(header, body rows)`.
+pub(crate) fn parse_tables(html: &str) -> Vec<(Vec<String>, Vec<Vec<String>>)> {
+    let mut out = Vec::new();
+    let mut rest = html;
+    while let Some(start) = rest.find(TABLE_OPEN) {
+        let Some(len) = rest[start..].find(TABLE_CLOSE) else {
+            break;
+        };
+        let end = start + len + TABLE_CLOSE.len();
+        let mut rows = table_rows(&rest[start..end]);
+        if rows.len() > 1 {
+            let head = rows.remove(0);
+            out.push((head, rows));
+        }
+        rest = &rest[end..];
+    }
+    out
+}
+
+/// The tables of a feature description located in its flattened `text`: each table whose row
+/// sentences are consecutive paragraphs of `text` (in order), with those paragraphs' range.
+/// A table whose sentences are not found (text rewritten after flattening) is left out, so
+/// its rows stay plain text.
+pub(crate) fn locate_tables(html: &str, text: &str) -> Vec<crate::model_types::TextTable> {
+    let lines: Vec<&str> = text.split('\n').collect();
+    let mut from = 0;
+    let mut out = Vec::new();
+    for (header, rows) in parse_tables(html) {
+        let sentences: Vec<String> = rows.iter().map(|r| row_sentence(&header, r)).collect();
+        let n = sentences.len();
+        let found = (from..lines.len())
+            .filter(|&i| i + n <= lines.len())
+            .find(|&i| sentences.iter().zip(&lines[i..i + n]).all(|(s, l)| s == l));
+        if let Some(start) = found {
+            out.push(crate::model_types::TextTable {
+                header,
+                rows,
+                lines: start..start + n,
+            });
+            from = start + n;
+        }
+    }
+    out
 }
 
 #[cfg(test)]
@@ -125,6 +182,18 @@ mod tests {
             "Spell Slots. The table shows how many.\nSpellbook. It holds spells:\n\u{2022} one\n\u{2022} two\nline\nbreak"
         );
         assert_eq!(crate::card_model::plain_paragraphs("<p> </p><p>x</p>"), "x");
+    }
+
+    #[test]
+    fn locates_each_table_among_the_paragraphs() {
+        let text = crate::card_model::plain_paragraphs(&tables_as_rows(ELVEN));
+        let t = locate_tables(ELVEN, &text);
+        assert_eq!(t.len(), 1);
+        assert_eq!(t[0].header, ["Lineage", "Level 1", "Level 3"]);
+        assert_eq!(t[0].rows.len(), 2);
+        assert_eq!(t[0].lines, 1..3);
+        assert!(locate_tables(ELVEN, "Pick one.\nAfter.").is_empty());
+        assert!(locate_tables("<p>No table.</p>", "No table.").is_empty());
     }
 
     #[test]

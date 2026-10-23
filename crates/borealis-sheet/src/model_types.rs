@@ -262,6 +262,19 @@ pub struct FeatureData {
     pub text: String,
     /// Short text (first sentence, at most 180 characters).
     pub summary: String,
+    /// Tables of the description, each also spelled out in `text` as row sentences.
+    pub tables: Vec<TextTable>,
+}
+
+/// A table of a feature description.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TextTable {
+    /// Header cells.
+    pub header: Vec<String>,
+    /// Body rows (cell text).
+    pub rows: Vec<Vec<String>>,
+    /// The paragraphs (`\n`-separated lines) of the feature text that spell the rows out.
+    pub lines: std::ops::Range<usize>,
 }
 
 /// A limited-use pool.

@@ -22,17 +22,51 @@ fn feature_html(o: &HtmlOptions, full: bool, n: usize, f: &FeatureData) -> Strin
         format!("<span class=\"tag\" dir=\"auto\">{}</span>", esc(&tag))
     };
     let name = fld(&id::feat(n, "name"), "t", &f.name);
-    let shown = if !full && f.text.chars().count() > LONG_TEXT {
-        &f.summary
+    let summarised = !full && f.text.chars().count() > LONG_TEXT;
+    let (shown, tables) = if summarised {
+        (f.summary.clone(), String::new())
     } else {
-        &f.text
+        prose_and_tables(f)
     };
-    let text = fld(&id::feat(n, "text"), "txt", shown);
+    let text = fld(&id::feat(n, "text"), "txt", &shown);
     if o.style_formatting {
-        format!("<div class=\"feat\">{name}{tag}<div>{text}</div></div>")
+        format!("<div class=\"feat\">{name}{tag}<div>{text}</div>{tables}</div>")
     } else {
-        format!("<div class=\"feat plain\">{name}. {text}</div>")
+        format!("<div class=\"feat plain\">{name}. {text}{tables}</div>")
     }
+}
+
+/// The feature text without the row sentences of its tables, and the tables as HTML tables
+/// (header row, then the body rows), as the PDF draws them below the text.
+fn prose_and_tables(f: &FeatureData) -> (String, String) {
+    if f.tables.is_empty() {
+        return (f.text.clone(), String::new());
+    }
+    let prose = f
+        .text
+        .split('\n')
+        .enumerate()
+        .filter(|(i, _)| !f.tables.iter().any(|t| t.lines.contains(i)))
+        .map(|(_, l)| l)
+        .collect::<Vec<_>>()
+        .join("\n");
+    let mut html = String::new();
+    for t in &f.tables {
+        html.push_str("<table class=\"ftab\"><tr>");
+        for h in &t.header {
+            let _ = write!(html, "<th scope=\"col\" dir=\"auto\">{}</th>", esc(h));
+        }
+        html.push_str("</tr>");
+        for row in &t.rows {
+            html.push_str("<tr>");
+            for c in row {
+                let _ = write!(html, "<td dir=\"auto\">{}</td>", esc(c));
+            }
+            html.push_str("</tr>");
+        }
+        html.push_str("</table>");
+    }
+    (prose, html)
 }
 
 fn feature_section(

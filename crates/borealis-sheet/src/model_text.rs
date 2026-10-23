@@ -251,6 +251,19 @@ fn feature_text(f: &FeatureDetail, name: &str) -> String {
     evaluate_formulas(&strip_own_name(name, &raw))
 }
 
+/// Tables of a feature's description found in its sheet text (none for a sheet summary).
+fn feature_tables(f: &FeatureDetail, text: &str) -> Vec<crate::model_types::TextTable> {
+    let summarised = f
+        .sheet_summary
+        .as_deref()
+        .is_some_and(|s| !s.trim().is_empty());
+    if summarised {
+        Vec::new()
+    } else {
+        crate::table_text::locate_tables(&f.description, text)
+    }
+}
+
 /// Displayed features, de-duplicated by name (sources merged), formulas evaluated and ordered:
 /// per class base before subclass at equal level, then species, feats, background.
 pub(crate) fn features(snap: &CharacterSnapshot) -> Vec<FeatureData> {
@@ -275,6 +288,7 @@ pub(crate) fn features(snap: &CharacterSnapshot) -> Vec<FeatureData> {
         {
             if prev.data.text.is_empty() && !text.is_empty() {
                 prev.data.summary = short_summary(&text);
+                prev.data.tables = feature_tables(f, &text);
                 prev.data.text = text;
             }
             if let Some(s) = source.filter(|s| !prev.data.sources.contains(s)) {
@@ -301,6 +315,7 @@ pub(crate) fn features(snap: &CharacterSnapshot) -> Vec<FeatureData> {
                 level: f.level,
                 sources: source.into_iter().collect(),
                 summary: short_summary(&text),
+                tables: feature_tables(f, &text),
                 text,
             },
         });

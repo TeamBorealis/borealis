@@ -1,5 +1,6 @@
 //! Test characters built from the bundled SRD packs (2014 wizard, 2024 wizard, fighter/wizard).
 
+use crate::model_types::{FeatureData, FeatureGroup, GearItem, SheetData};
 use borealis_character::Character;
 use borealis_content::{ContentStore, ContentStoreBuilder, Ruleset};
 use borealis_engine::commands::{self, slot_key};
@@ -204,4 +205,60 @@ pub(crate) fn cleric_2014() -> (Character, CharacterSnapshot) {
         s = commands::equip(&e, &s, &uid, None).unwrap().state;
     }
     wrap("Brunhild Stonehand", s, &e)
+}
+
+/// A synthetic feature whose description has a table of `rows` rows and `cols` columns.
+pub(crate) fn table_feature(rows: usize, cols: usize, cell: &str) -> FeatureData {
+    let mut html = String::from("<p>Choose one option.</p><table><tr>");
+    for c in 0..cols {
+        html.push_str(&format!("<th>Head {c}</th>"));
+    }
+    html.push_str("</tr>");
+    for r in 0..rows {
+        html.push_str(&format!("<tr><td>Option {r}</td>"));
+        for c in 1..cols {
+            html.push_str(&format!("<td>{cell} {r}.{c}</td>"));
+        }
+        html.push_str("</tr>");
+    }
+    html.push_str("</table><p>Then rest.</p>");
+    let text = crate::card_model::plain_paragraphs(&crate::table_text::tables_as_rows(&html));
+    FeatureData {
+        id: "ID_TABLE_FEATURE".into(),
+        name: "Synthetic table feature".into(),
+        group: FeatureGroup::Class,
+        class: None,
+        level: 1,
+        sources: Vec::new(),
+        summary: "Choose one option.".into(),
+        tables: crate::table_text::locate_tables(&html, &text),
+        text,
+    }
+}
+
+/// Sample content for the visual checks: items, coins, personality and a feature with a table.
+pub(crate) fn with_sample_extras(mut d: SheetData) -> SheetData {
+    let names = [
+        "Rope, hempen (50 feet)",
+        "Torch",
+        "Rations (1 day)",
+        "Waterskin",
+    ];
+    for (i, name) in names.iter().enumerate() {
+        d.gear.items.push(GearItem {
+            name: (*name).to_string(),
+            quantity: (i % 3 + 1) as u32,
+            weight: 1.0,
+            equipped: String::new(),
+            attuned: false,
+            requires_attunement: false,
+        });
+    }
+    d.gear.coins = [12, 30, 0, 1234, 2];
+    d.story.traits = "I quote sacred texts at odd moments.\nI always have a plan.".into();
+    d.story.ideals = "Knowledge shared freely.".into();
+    d.story.bonds = "The temple that raised me.".into();
+    d.story.flaws = "I trust iron more than people.".into();
+    d.features.insert(0, table_feature(5, 3, "Value"));
+    d
 }

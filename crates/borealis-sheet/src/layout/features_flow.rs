@@ -2,6 +2,7 @@
 //! blocks, ruled write-in regions, equipment rows, the appearance block), their measured heights,
 //! splitting between paragraphs, and `fill`, which pours a queue of pieces into one column.
 
+use super::features_tables::{self as tables, TablePiece};
 use super::features_text::{line_count, split_text, Ids};
 use crate::fonts::{text_width, Style};
 use crate::layout::grid::{Align, Canvas, Txt, FIELD_PAD};
@@ -79,12 +80,20 @@ pub(crate) enum AppKind {
 /// One flowing piece.
 #[derive(Debug, Clone)]
 pub(crate) enum Piece {
-    Heading { title: String, hint: Option<String> },
+    Heading {
+        title: String,
+        hint: Option<String>,
+    },
     Feature(Feat),
     Region(Region),
-    EquipHead { title: String, hint: Option<String> },
+    EquipHead {
+        title: String,
+        hint: Option<String>,
+    },
     EquipRow(usize),
     Appearance(AppKind),
+    /// A table of a feature description (drawn below the feature's text).
+    Table(TablePiece),
 }
 
 /// Where a "continued on page N" note goes: the block above it goes on on the page after
@@ -169,6 +178,7 @@ pub(crate) fn height(p: &Piece, k: f32, w: f32) -> f32 {
         Piece::EquipHead { .. } => (HEAD_H + COLHEAD_H) * k,
         Piece::EquipRow(_) => ROW_H * k,
         Piece::Appearance(_) => appearance_h(k),
+        Piece::Table(t) => tables::height(t, k, w),
     }
 }
 
@@ -181,6 +191,7 @@ fn min_h(p: &Piece, k: f32, w: f32) -> f32 {
         Piece::Region(r) if !r.text.is_empty() && text_lines(k, w, &r.text) > MIN_PART + 1 => {
             HEAD_H * k + MIN_PART as f32 * PITCH * k + BLOCK_GAP
         }
+        Piece::Table(t) => tables::min_height(t, k, w),
         _ => height(p, k, w),
     }
 }
@@ -238,6 +249,9 @@ fn split(p: &Piece, k: f32, w: f32, room: f32) -> Option<(Piece, Piece)> {
                 ..r.clone()
             };
             Some((Piece::Region(a), Piece::Region(b)))
+        }
+        Piece::Table(t) => {
+            tables::split(t, k, w, room).map(|(a, b)| (Piece::Table(a), Piece::Table(b)))
         }
         _ => None,
     }
@@ -555,6 +569,7 @@ fn draw(cx: &mut Cx, p: &Piece, (x, y, w): (f32, f32, f32), h: f32) {
         Piece::EquipHead { title, hint } => draw_equip_head(cx, title, hint.as_deref(), (x, y, w)),
         Piece::EquipRow(i) => draw_equip_row(cx, *i, (x, y, w)),
         Piece::Appearance(kind) => draw_appearance(cx, *kind, (x, y, w)),
+        Piece::Table(t) => tables::draw(cx.c, t, (x, y, w)),
     }
 }
 
