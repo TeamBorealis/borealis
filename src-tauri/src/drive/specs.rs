@@ -147,7 +147,8 @@ fn gear_tools() -> Vec<Value> {
     );
     vec![
         tool("search_items", "Search equipment; with `id`, restricted to the character's ruleset and sources.", &props(&[("id", s("Character id (optional).")), ("query", s("Name filter.")), ("category", s("Item category.")), ("limit", int("Page size (default 25).")), ("offset", int("Page start."))]), &[], Kind::Read),
-        tool("add_item", "Add an item to the inventory.", &props(&[id(), ("item_id", s("Item id from search_items.")), ("quantity", int("How many (default 1).")), ("base_item_id", s("Base item for a generic magic item.")), ("buy", flag("Pay its price from the coins."))]), &["id", "item_id"], Kind::Write),
+        tool("list_base_items", "The base items a generic magic weapon or armor (+1 armor, +2 weapon, ...) can be added on; empty `items` and `needsBase: false` when the item needs none.", &props(&[id(), ("item_id", s("Item id from search_items."))]), &["id", "item_id"], Kind::Read),
+        tool("add_item", "Add an item to the inventory. A generic magic weapon or armor needs `base_item_id` (see list_base_items); without a suitable base it is refused.", &props(&[id(), ("item_id", s("Item id from search_items.")), ("quantity", int("How many (default 1).")), ("base_item_id", s("Base item id from list_base_items (required for a generic magic weapon or armor).")), ("buy", flag("Pay its price from the coins."))]), &["id", "item_id"], Kind::Write),
         tool("remove_item", "Remove one item (or the whole stack with `all`).", &props(&[id(), uid(), ("all", flag("Remove the whole stack."))]), &["id", "uid"], Kind::Write),
         tool("equip_item", "Equip an inventory item.", &props(&[id(), uid(), ("slot", equip)]), &["id", "uid"], Kind::Write),
         tool("unequip_item", "Unequip an inventory item.", &props(&[id(), uid()]), &["id", "uid"], Kind::Write),

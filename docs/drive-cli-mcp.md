@@ -65,6 +65,8 @@ Example session (2024 rules, a level-3 cleric):
     borealis level-up --id $ID --library $L
     borealis search-items --id $ID --query Mace --library $L --human
     borealis add-item --id $ID --item-id ID_2024_WEAPON_MACE --library $L
+    borealis list-base-items --id $ID --item-id <generic +N armor or weapon id> --library $L --human
+    borealis add-item --id $ID --item-id <that id> --base-item-id <base id> --library $L
     borealis equip-item --id $ID --uid <uid from the inventory> --library $L
     borealis get-character --id $ID --section spells --library $L
     borealis prepare-spell --id $ID --spell-id <spell id> --library $L
@@ -76,7 +78,7 @@ Example session (2024 rules, a level-3 cleric):
 |---|---|
 | Library | `list_characters`, `create_character`, `open_character`, `get_character` (sections: summary, abilities, stats, slots, spells, inventory, full), `save_character` (`as_name` saves a copy), `close_character`, `delete_character` |
 | Builder | `list_slots`, `list_options`, `pick`, `unpick`, `level_up`, `add_multiclass`, `set_abilities` |
-| Gear and spells | `search_items`, `add_item`, `remove_item`, `equip_item`, `unequip_item`, `attune_item`, `prepare_spell`, `unprepare_spell`, `export_sheet` |
+| Gear and spells | `search_items`, `list_base_items`, `add_item`, `remove_item`, `equip_item`, `unequip_item`, `attune_item`, `prepare_spell`, `unprepare_spell`, `export_sheet` |
 | Content | `list_packs`, `import_index` (HTTPS index URL), `scan_5etools`, `import_5etools` (a 5etools `data` folder or `.zip`), `import_content_file` (XML, JSON, `.index` or `.zip`) |
 
 Multiclassing: `add_multiclass` returns the new slot (`addedSlots`); `pick` a class into it,

@@ -2,7 +2,7 @@
 
 use super::{parse, view, wire_enum, Drive, DriveError, DriveResult};
 use crate::dto::CharacterSnapshot;
-use crate::dto_ext::{EquipRequest, ItemFilter, SheetOptionsDto};
+use crate::dto_ext::{EquipRequest, ItemFilter, ItemSummary, SheetOptionsDto};
 use serde::Deserialize;
 use serde_json::{json, Value};
 
@@ -27,6 +27,13 @@ pub struct AddArgs {
     pub base_item_id: Option<String>,
     #[serde(default)]
     pub buy: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BaseItemsArgs {
+    pub id: String,
+    pub item_id: String,
 }
 
 #[derive(Deserialize)]
@@ -60,6 +67,7 @@ pub struct ExportArgs {
 pub fn dispatch(d: &Drive, name: &str, args: &Value) -> Option<DriveResult<Value>> {
     Some(match name {
         "search_items" => parse(args).and_then(|a| search(d, &a)),
+        "list_base_items" => parse(args).and_then(|a| base_items(d, &a)),
         "add_item" => parse(args).and_then(|a| add(d, &a)),
         "remove_item" => parse(args).and_then(|a: ItemArgs| {
             only(&a, &["all"])?;
@@ -127,18 +135,17 @@ pub fn search(d: &Drive, a: &SearchArgs) -> DriveResult<Value> {
         character_id: a.id.clone(),
     };
     let page = d.app().search_items(&filter)?;
-    let items: Vec<Value> = page
-        .items
-        .iter()
-        .map(|i| {
-            json!({
-                "id": i.summary.id, "name": i.summary.name, "category": i.category,
-                "source": i.summary.source_name, "costCp": i.cost_cp, "weight": i.weight,
-                "requiresAttunement": i.requires_attunement,
-            })
-        })
-        .collect();
+    let items: Vec<Value> = page.items.iter().map(item_json).collect();
     Ok(json!({"total": page.total, "items": items}))
+}
+
+/// The base items a generic magic weapon or armor can be added on (empty when `item_id` needs
+/// none); pass one of them as `base_item_id` to `add_item`.
+pub fn base_items(d: &Drive, a: &BaseItemsArgs) -> DriveResult<Value> {
+    d.ensure_open(&a.id)?;
+    let bases = d.app().list_base_items(&a.id, &a.item_id)?;
+    let items: Vec<Value> = bases.iter().map(item_json).collect();
+    Ok(json!({"itemId": a.item_id, "needsBase": !items.is_empty(), "items": items}))
 }
 
 pub fn add(d: &Drive, a: &AddArgs) -> DriveResult<Value> {
@@ -199,4 +206,12 @@ pub fn export(d: &Drive, a: &ExportArgs) -> DriveResult<Value> {
         "format": format,
         "bytes": file.bytes.len(),
     }))
+}
+
+fn item_json(i: &ItemSummary) -> Value {
+    json!({
+        "id": i.summary.id, "name": i.summary.name, "category": i.category,
+        "source": i.summary.source_name, "costCp": i.cost_cp, "weight": i.weight,
+        "requiresAttunement": i.requires_attunement,
+    })
 }

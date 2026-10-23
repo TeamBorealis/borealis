@@ -5,7 +5,7 @@ use super::{specs, Drive};
 use borealis_mcp::ToolExtension;
 use serde_json::Value;
 
-const INSTRUCTIONS: &str = "Write mode: character tools over one library folder. Typical flow: create_character, list_slots (open_only), list_options for a slot, pick, set_abilities, level_up, search_items/add_item/equip_item, prepare_spell, get_character, export_sheet. Every change is validated by the engine and saved; a refused change explains why and changes nothing.";
+const INSTRUCTIONS: &str = "Write mode: character tools over one library folder. Typical flow: create_character, list_slots (open_only), list_options for a slot, pick, set_abilities, level_up, search_items/list_base_items (generic +N weapons and armor)/add_item/equip_item, prepare_spell, get_character, export_sheet. Every change is validated by the engine and saved; a refused change explains why and changes nothing.";
 
 /// The drive tools for the MCP server.
 pub struct DriveTools {

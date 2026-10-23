@@ -153,3 +153,63 @@ fn export_needs_a_matching_extension_inside_the_library() {
         .unwrap_err();
     assert_eq!(e.code, "outside_library");
 }
+
+#[test]
+fn generic_magic_armor_needs_a_base_from_list_base_items() {
+    const ARMOR_1: &str = "ID_WOTC_DMG_MAGIC_ITEM_ARMOR_1";
+    const CHAIN_MAIL: &str = "ID_WOTC_ARMOR_HEAVY_CHAIN_MAIL";
+    const LONGSWORD: &str = "ID_WOTC_PHB_WEAPON_LONGSWORD";
+    let (_dir, d) = drive();
+    let made = d
+        .call(
+            "create_character",
+            &json!({"name": "Armorer", "ruleset": "2014"}),
+        )
+        .expect("create");
+    let id = made["id"].as_str().expect("id").to_string();
+
+    let listed = d
+        .call("list_base_items", &json!({"id": id, "item_id": ARMOR_1}))
+        .expect("list");
+    assert_eq!(listed["needsBase"], true, "{listed}");
+    let ids: Vec<&str> = listed["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|i| i["id"].as_str())
+        .collect();
+    assert!(
+        ids.contains(&CHAIN_MAIL) && !ids.contains(&LONGSWORD),
+        "{ids:?}"
+    );
+    let plain = d
+        .call("list_base_items", &json!({"id": id, "item_id": CHAIN_MAIL}))
+        .expect("plain");
+    assert_eq!(plain["needsBase"], false);
+
+    let missing = d
+        .call("add_item", &json!({"id": id, "item_id": ARMOR_1}))
+        .unwrap_err();
+    assert_eq!(missing.code, "requirement_failed");
+    let wrong = d
+        .call(
+            "add_item",
+            &json!({"id": id, "item_id": ARMOR_1, "base_item_id": LONGSWORD}),
+        )
+        .unwrap_err();
+    assert_eq!(wrong.code, "requirement_failed");
+    let added = d
+        .call(
+            "add_item",
+            &json!({"id": id, "item_id": ARMOR_1, "base_item_id": CHAIN_MAIL}),
+        )
+        .expect("add on a base");
+    assert!(
+        added["inventory"]["items"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|i| i["name"] == "Chain Mail +1"),
+        "{added}"
+    );
+}
