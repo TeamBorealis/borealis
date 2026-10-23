@@ -540,6 +540,7 @@ impl StoryData {
     pub fn has_content(&self) -> bool {
         self.has_portrait
             || [
+                &self.gender,
                 &self.age,
                 &self.height,
                 &self.weight,
@@ -550,12 +551,40 @@ impl StoryData {
                 &self.ideals,
                 &self.bonds,
                 &self.flaws,
+                &self.trinket,
                 &self.backstory,
                 &self.organization,
                 &self.allies,
                 &self.treasure,
                 &self.quest,
                 &self.additional_features,
+                &self.notes,
+            ]
+            .iter()
+            .any(|s| !s.trim().is_empty())
+    }
+
+    /// Whether the 2024 Story page has anything to print: [`Self::has_content`] without the
+    /// treasure, quest items and additional features, which the 2024 sheet prints on page 2.
+    #[must_use]
+    pub fn has_story_page_content(&self) -> bool {
+        self.has_portrait
+            || [
+                &self.gender,
+                &self.age,
+                &self.height,
+                &self.weight,
+                &self.eyes,
+                &self.skin,
+                &self.hair,
+                &self.traits,
+                &self.ideals,
+                &self.bonds,
+                &self.flaws,
+                &self.trinket,
+                &self.backstory,
+                &self.organization,
+                &self.allies,
                 &self.notes,
             ]
             .iter()

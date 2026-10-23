@@ -44,6 +44,12 @@ fn regroup(q: &mut VecDeque<Piece>) {
     }
 }
 
+/// Whether a queue holds nothing but blank write-in areas (empty regions such as Notes).
+fn only_blank(q: &VecDeque<Piece>) -> bool {
+    q.iter()
+        .all(|p| matches!(p, Piece::Region(r) if r.text.trim().is_empty()))
+}
+
 /// The two body columns `[(x, w); 2]`.
 pub(crate) fn columns(g: &Grid) -> [(f32, f32); 2] {
     let w = (g.content_w() - COL_GAP) / 2.0;
@@ -84,6 +90,13 @@ impl Seq {
     ) {
         let mut n = 0;
         while !left.is_empty() || !right.is_empty() {
+            // A page of blank write-in areas only (an empty Notes region that did not fit) is
+            // not printed, and the page before it no longer says "continued on page N".
+            if only_blank(&left) && only_blank(&right) {
+                let last = self.pages.len().checked_sub(1);
+                self.marks.retain(|m| Some(m.page) != last);
+                break;
+            }
             ordinal += 1;
             n += 1;
             regroup(&mut left);

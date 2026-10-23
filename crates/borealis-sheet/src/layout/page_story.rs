@@ -23,6 +23,13 @@ pub(crate) fn portrait_rect(g: &Grid, compact: bool) -> Rect {
     (x, g.body_top + HEAD_H * k, PORTRAIT_W, PORTRAIT_H)
 }
 
+/// Whether the 2024 Story page is printed: some story field of that page (or the companion name)
+/// has text. A page of blank write-in areas only is not printed.
+pub(crate) fn has_story_page(d: &SheetData) -> bool {
+    d.edition == Edition::Dnd2024
+        && (d.story.has_story_page_content() || !d.extras.companion_name.trim().is_empty())
+}
+
 /// Build the Story page (and its continuation pages). Empty when there is nothing to print or
 /// the edition is 2014.
 pub(crate) fn build(
@@ -42,7 +49,7 @@ pub(crate) fn build_with_limits(
     first_page_no: u32,
 ) -> (Vec<PdfPage>, Vec<Vec<(usize, f32)>>) {
     let _ = first_page_no;
-    if data.edition != Edition::Dnd2024 || !data.story.has_content() {
+    if !has_story_page(data) {
         return (Vec::new(), Vec::new());
     }
     let env = Env {

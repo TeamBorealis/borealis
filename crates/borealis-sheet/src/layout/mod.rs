@@ -73,7 +73,9 @@ pub(crate) use page_features::{build as build_features, details_portrait_rect};
 pub(crate) use page_legacy_spells::{build as build_legacy_spells, columns_avail as legacy_avail};
 pub(crate) use page_overflow::{build as build_overflow, needed as overflow_needed};
 pub(crate) use page_spells::build as build_spells;
-pub(crate) use page_story::{build as build_story, portrait_rect as story_portrait_rect};
+pub(crate) use page_story::{
+    build as build_story, has_story_page, portrait_rect as story_portrait_rect,
+};
 
 /// Build a one-page document (page 1 only; tests).
 #[cfg(test)]

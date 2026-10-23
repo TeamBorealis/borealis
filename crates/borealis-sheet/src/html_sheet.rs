@@ -301,7 +301,7 @@ fn page_specs(d: &SheetData, o: &HtmlOptions) -> Vec<PageSpec> {
             p2::inventory(d),
         ));
     }
-    if is24 && sel.story && d.story.has_content() {
+    if sel.story && crate::layout::has_story_page(d) {
         v.push(spec("story", "Story", "Story", p4::page(d, o)));
     }
     if let (true, Some(body)) = (sel.story, p4::companion_page(d, o)) {

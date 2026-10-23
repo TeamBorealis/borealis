@@ -178,7 +178,7 @@ fn check_ids(d: &SheetData, pages: &[PdfPage]) {
     for n in &names {
         *count.entry(base_id(n)).or_default() += 1;
     }
-    let story_page = d.edition == Edition::Dnd2024 && d.story.has_content();
+    let story_page = crate::layout::has_story_page(d);
     for n in &names {
         assert!(known.iter().any(|k| k == base_id(n)), "invented id {n}");
     }
@@ -582,4 +582,100 @@ fn lowest_field(p: &PdfPage, body_bottom: f32) -> f32 {
             _ => None,
         })
         .fold(0.0, f32::max)
+}
+
+/// Whether a page holds nothing but empty write-in fields (the chrome header aside).
+fn blank_write_ins_only(p: &PdfPage) -> bool {
+    p.ops.iter().all(|op| match op {
+        PageOp::Field(f) if f.name.starts_with("char.") && !f.name.starts_with("char.deity") => {
+            true
+        }
+        PageOp::Field(f) => {
+            let blank = matches!(&f.kind, FieldKind::Text(t) if t.value.trim().is_empty());
+            blank && (f.name.starts_with("story.") || f.name.starts_with("xtra."))
+        }
+        _ => true,
+    })
+}
+
+/// Highest "continued on page N" of a sequence.
+fn last_continued_target(pages: &[PdfPage]) -> Option<u32> {
+    pages
+        .iter()
+        .flat_map(|p| &p.ops)
+        .filter_map(|op| match op {
+            PageOp::Text { text, .. } => text.strip_prefix("continued on page ")?.parse().ok(),
+            _ => None,
+        })
+        .max()
+}
+
+/// `n` numbered lines.
+fn numbered_lines(n: usize) -> String {
+    (0..n)
+        .map(|i| format!("Line {i}"))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+#[test]
+fn no_trailing_page_of_blank_notes_only() {
+    // B-21 M1 remainder: when the columns were exactly full, the empty Notes region (and other
+    // blank write-ins) started a last Details / Story page of its own.
+    for paper in [Paper::Letter, Paper::A4] {
+        let o = LayoutOptions {
+            paper,
+            ..LayoutOptions::default()
+        };
+        let g = Grid::new(paper);
+        for base in [data(&wizard_2014()), data(&wizard_2024())] {
+            for lines in 0..120 {
+                let mut d = with_story(base.clone());
+                d.story.notes = String::new();
+                d.story.quest = String::new();
+                d.story.allies = String::new();
+                if d.edition == Edition::Dnd2014 {
+                    d.story.treasure = numbered_lines(lines);
+                } else {
+                    d.story.backstory = numbered_lines(lines);
+                }
+                let first = 2;
+                let pages = if d.edition == Edition::Dnd2014 {
+                    build_with_limits(&d, &o, &g, first, None).0.main
+                } else {
+                    page_story::build(&d, &o, &g, first)
+                };
+                for (i, p) in pages.iter().enumerate().skip(1) {
+                    assert!(
+                        !blank_write_ins_only(p),
+                        "{:?} {paper:?} {lines} lines: page {i} holds only blank write-ins",
+                        d.edition
+                    );
+                }
+                let last = first + pages.len() as u32 - 1;
+                if let Some(n) = last_continued_target(&pages) {
+                    assert!(
+                        n <= last,
+                        "{lines} lines: 'continued on page {n}' of {last}"
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn notes_with_text_still_get_their_page() {
+    let o = LayoutOptions::default();
+    let g = Grid::new(o.paper);
+    for lines in [40, 60, 80] {
+        let mut d = with_story(data(&wizard_2014()));
+        d.story.treasure = numbered_lines(lines);
+        let pages = build_with_limits(&d, &o, &g, 2, None).0.main;
+        let names = field_names(&pages);
+        assert!(
+            names.iter().any(|n| base_id(n) == "story.notes"),
+            "{lines}: notes with text are printed"
+        );
+    }
 }

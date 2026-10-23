@@ -95,6 +95,27 @@ fn story_page_is_omitted_when_empty() {
 }
 
 #[test]
+fn story_page_needs_text_of_its_own_fields() {
+    // 2024 treasure, quest items and additional features are on page 2: a Story page with only
+    // them would be blank write-ins. A portrait, a trinket or a companion name keep the page.
+    let mut d = data(&wizard_2024());
+    d.story.treasure = "A sapphire.".into();
+    d.story.quest = "The sealed letter.".into();
+    let html = render_sheet(&d, &HtmlOptions::default());
+    assert!(!html.contains("data-page=\"story\""));
+    let mut with_trinket = d.clone();
+    with_trinket.story.trinket = "A cracked holy symbol.".into();
+    let mut with_portrait = d.clone();
+    with_portrait.story.has_portrait = true;
+    let mut with_companion = d;
+    with_companion.extras.companion_name = "Owl".into();
+    for d in [with_trinket, with_portrait, with_companion] {
+        let html = render_sheet(&d, &HtmlOptions::default());
+        assert!(html.contains("data-page=\"story\""));
+    }
+}
+
+#[test]
 fn user_text_is_escaped_and_marked_dir_auto() {
     let mut d = with_story(data(&wizard_2024()));
     d.identity.name = "<script>alert(1)</script> \u{5e9}\u{5dc}\u{5d5}\u{5dd}".into();
