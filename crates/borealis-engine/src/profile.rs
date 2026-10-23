@@ -118,6 +118,51 @@ const LEGACY_OVERLAPS_2024: &[LegacyOverlap] = &[LegacyOverlap {
     replaces: &["Divine Strike", "Potent Spellcasting"],
 }];
 
+/// A subclass the newer edition reprinted under a new name (B-44b): game terms only.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SubclassRename {
+    /// Class name (matched without case or punctuation).
+    pub class: &'static str,
+    /// The older subclass name.
+    pub from: &'static str,
+    /// The name of its reprint in this edition.
+    pub to: &'static str,
+}
+
+const fn rename(class: &'static str, from: &'static str, to: &'static str) -> SubclassRename {
+    SubclassRename { class, from, to }
+}
+
+/// 2024 Player's Handbook subclasses that were reprinted under a new name. Same-name reprints
+/// need no entry.
+const SUBCLASS_RENAMES_2024: &[SubclassRename] = &[
+    rename(
+        "Barbarian",
+        "Path of the Totem Warrior",
+        "Path of the Wild Heart",
+    ),
+    rename("Monk", "Way of the Open Hand", "Warrior of the Open Hand"),
+    rename("Monk", "Way of Shadow", "Warrior of Shadow"),
+    rename(
+        "Monk",
+        "Way of the Four Elements",
+        "Warrior of the Elements",
+    ),
+    rename("Monk", "Way of Mercy", "Warrior of Mercy"),
+    rename("Sorcerer", "Draconic Bloodline", "Draconic Sorcery"),
+    rename("Sorcerer", "Wild Magic", "Wild Magic Sorcery"),
+    rename("Sorcerer", "Aberrant Mind", "Aberrant Sorcery"),
+    rename("Sorcerer", "Clockwork Soul", "Clockwork Sorcery"),
+    rename("Warlock", "The Archfey", "Archfey Patron"),
+    rename("Warlock", "The Fiend", "Fiend Patron"),
+    rename("Warlock", "The Great Old One", "Great Old One Patron"),
+    rename("Warlock", "The Celestial", "Celestial Patron"),
+    rename("Wizard", "School of Abjuration", "Abjurer"),
+    rename("Wizard", "School of Divination", "Diviner"),
+    rename("Wizard", "School of Evocation", "Evoker"),
+    rename("Wizard", "School of Illusion", "Illusionist"),
+];
+
 /// Diagnostic code for an area a profile names but the engine does not implement.
 pub const UNIMPLEMENTED_CODE: &str = "profile.unimplemented";
 
@@ -220,6 +265,10 @@ pub trait RulesetProfile: std::fmt::Debug + Send + Sync {
     }
     /// B-44: class features of this edition that replace features of an older subclass.
     fn legacy_subclass_overlaps(&self) -> &'static [LegacyOverlap] {
+        &[]
+    }
+    /// B-44b: older subclasses this edition reprinted under a new name.
+    fn subclass_renames(&self) -> &'static [SubclassRename] {
         &[]
     }
     /// Standard languages chosen at character creation besides Common (0 = languages come from
@@ -372,6 +421,9 @@ impl RulesetProfile for Dnd2024 {
     fn legacy_subclass_overlaps(&self) -> &'static [LegacyOverlap] {
         LEGACY_OVERLAPS_2024
     }
+    fn subclass_renames(&self) -> &'static [SubclassRename] {
+        SUBCLASS_RENAMES_2024
+    }
     fn unimplemented_areas(&self) -> &'static [&'static str] {
         &[]
     }
@@ -487,6 +539,8 @@ mod tests {
         assert_eq!(a.legacy_subclass_start(), None);
         assert_eq!(b.legacy_subclass_start(), Some(3));
         assert!(a.legacy_subclass_overlaps().is_empty());
+        assert!(a.subclass_renames().is_empty());
+        assert!(!b.subclass_renames().is_empty());
         assert_eq!(
             b.legacy_subclass_overlaps()[0].class_feature,
             "Blessed Strikes"

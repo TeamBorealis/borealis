@@ -10,7 +10,8 @@
 //!    names. Classes are matched across editions by name, never by a list of class names.
 //! 2. An older subclass is *reprinted* when a same-edition subclass of the same class has the
 //!    same name (case and punctuation aside), maps to it (`maps_to`), maps to the same 2014
-//!    subclass, or is named by its 5etools `data.reprinted_as`. A reprinted subclass is never
+//!    subclass, is named by its 5etools `data.reprinted_as`, or is listed in the profile's
+//!    rename table ([`RulesetProfile::subclass_renames`], `School of Abjuration` -> `Abjurer`). A reprinted subclass is never
 //!    offered for new picks (`superseded`); a stored pick still replays.
 //! 3. Every other older subclass gets the support tags of the same-name classes' subclass
 //!    choices, so they offer it, unless it already fits the choice or another subclass of the
@@ -25,7 +26,7 @@
 
 use crate::adapter::{none_of, USED_AS_WRITTEN};
 use crate::eval::{supports_match, NoDynamics};
-use crate::profile::RulesetProfile;
+use crate::profile::{RulesetProfile, SubclassRename};
 use crate::universe::{Cond, EditionStatus, UElem, URule};
 use borealis_content::expr::{BoolExpr, RequirementsExpr, SupportsExpr, SupportsLeaf};
 use borealis_content::Rule;
@@ -81,6 +82,8 @@ struct Ctx<'a> {
     class_of: HashMap<usize, HashSet<String>>,
     /// [`name_key`] of each subclass.
     keys: HashMap<usize, String>,
+    /// The profile's subclass rename table.
+    renames: &'a [SubclassRename],
 }
 
 /// Run the pass (see the module docs). `elems` are the universe's elements, `pos` their index
@@ -109,6 +112,7 @@ pub(crate) fn adopt(
             .map(|&i| (i, name_key(&elems[i].el.name)))
             .collect(),
         subclasses: &subclasses,
+        renames: profile.subclass_renames(),
     };
     let plans: Vec<(usize, Plan)> = subclasses
         .iter()
@@ -219,6 +223,7 @@ const MIN_SHORT_NAME: usize = 4;
 /// Is native subclass `b` (name key `b_key`) a reprint of older subclass `a` (name key `a_key`,
 /// reprint keys `reprints`), both of one class?
 fn is_reprint(a: &UElem, a_key: &str, reprints: &[String], b: &UElem, b_key: &str) -> bool {
+    // `reprints` also holds the profile's renamed names (exact), see `plan`
     let (ma, mb) = (a.el.maps_to.as_ref(), b.el.maps_to.as_ref());
     let same_2014 = ma
         .and_then(|m| m.dnd2014.as_ref())
@@ -234,11 +239,24 @@ fn is_reprint(a: &UElem, a_key: &str, reprints: &[String], b: &UElem, b_key: &st
         || named
 }
 
+/// Name keys the profile's rename table gives the older subclass `key` of the classes `classes`.
+fn renamed_to<'a>(
+    renames: &'a [SubclassRename],
+    classes: &'a HashSet<String>,
+    key: &'a str,
+) -> impl Iterator<Item = String> + 'a {
+    renames
+        .iter()
+        .filter(move |r| classes.contains(&name_key(r.class)) && name_key(r.from) == key)
+        .map(|r| name_key(r.to))
+}
+
 fn plan(ctx: &Ctx<'_>, a: usize) -> Plan {
     let elems = ctx.elems;
     let mine = &ctx.class_of[&a];
     let key = &ctx.keys[&a];
-    let reprints = reprinted_as(&elems[a]);
+    let mut reprints = reprinted_as(&elems[a]);
+    reprints.extend(renamed_to(ctx.renames, mine, key));
     let reprinted = ctx.subclasses.iter().any(|&b| {
         b != a
             && !elems[b].edition.is_foreign()
