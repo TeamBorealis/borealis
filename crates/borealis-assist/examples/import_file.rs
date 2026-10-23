@@ -406,6 +406,7 @@ async fn run(args: Args) -> Result<(), String> {
             pack_id: "import-headless".to_string(),
             pack_name: "Imported content".to_string(),
             edition_hint: args.edition,
+            edition_override: None,
         };
         import_anything(&runner, &base, &req, &opts, Some(&cb))
             .await

@@ -174,6 +174,7 @@ impl AppState {
             pack_id: format!("import-{short}"),
             pack_name: "Imported content".to_string(),
             edition_hint: job.hint.edition(),
+            edition_override: job.hint.edition_override(),
         };
         let opts = RunOptions {
             max_repairs: MAX_REPAIRS,

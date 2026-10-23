@@ -94,6 +94,10 @@ pub struct AnythingRequest {
     pub pack_name: String,
     /// Edition to assume when the source does not say.
     pub edition_hint: Edition,
+    /// Edition the user chose explicitly. Unlike `edition_hint` it wins over what the model
+    /// detects in the text, so a source worded for one edition can be imported as the other and
+    /// link to that edition's parent class and subclass slot.
+    pub edition_override: Option<Edition>,
 }
 
 /// Where the pipeline stands.
@@ -140,6 +144,22 @@ pub async fn detect_source(
     edition_hint: Edition,
     opts: &RunOptions<'_>,
 ) -> Result<(Detection, String), AssistError> {
+    detect_source_as(runner, source, edition_hint, None, opts).await
+}
+
+/// [`detect_source`] with an explicit edition that replaces the detected one (the model still
+/// sees it as the default, so the rest of its answer is read in that edition).
+///
+/// # Errors
+/// As [`detect_source`].
+pub async fn detect_source_as(
+    runner: &dyn VisionRunner,
+    source: &ImportSource,
+    edition_hint: Edition,
+    edition_override: Option<Edition>,
+    opts: &RunOptions<'_>,
+) -> Result<(Detection, String), AssistError> {
+    let edition_hint = edition_override.unwrap_or(edition_hint);
     let (text, _, attachments) = source_parts(source);
     if attachments.is_empty() && text.trim().is_empty() {
         return Err(AssistError::Extraction("the source is empty".into()));
@@ -158,7 +178,8 @@ pub async fn detect_source(
         .items
         .into_iter()
         .partition(|i| i.kind != ImportKind::Mixed);
-    let items = variants::with_bases(variants::split(items, out.edition));
+    let edition = edition_override.unwrap_or(out.edition);
+    let items = variants::with_bases(variants::split(items, edition));
     // A named creature whose stat block is not in the text gets its page read once more as a
     // picture (pasted stat blocks the first pass took for decoration).
     let monsters: Vec<String> = items
@@ -187,7 +208,7 @@ pub async fn detect_source(
     // entries, and the report says when nothing mechanical was found.
     let detection = Detection {
         kind: overall_kind(&items),
-        edition: out.edition,
+        edition,
         confidence: out.confidence.clamp(0.0, 1.0),
         items,
         notes: out.notes,
@@ -458,7 +479,14 @@ pub async fn import_anything(
     let guard = batch::AccountGuard::new(runner);
     let runner: &dyn VisionRunner = &guard;
     emit(progress, Stage::Detect, 0, 1, "reading the source");
-    let (detection, text) = detect_source(runner, &req.source, req.edition_hint, opts).await?;
+    let (detection, text) = detect_source_as(
+        runner,
+        &req.source,
+        req.edition_hint,
+        req.edition_override,
+        opts,
+    )
+    .await?;
     emit(progress, Stage::Plan, 0, detection.items.len(), "planning");
     let plan = plan_import(runner, base, &detection, &text, &req.id_prefix, opts).await?;
     guard.check()?;

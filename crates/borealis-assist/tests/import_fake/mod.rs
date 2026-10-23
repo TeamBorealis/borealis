@@ -139,6 +139,7 @@ pub fn request(source: ImportSource, prefix: &str, edition: Edition) -> Anything
         pack_id: format!("{prefix}-import"),
         pack_name: format!("{prefix} (import)"),
         edition_hint: edition,
+        edition_override: None,
     }
 }
 

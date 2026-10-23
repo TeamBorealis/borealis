@@ -30,9 +30,16 @@ impl ImportHintDto {
     /// The edition hint (2024 when absent).
     #[must_use]
     pub fn edition(&self) -> Edition {
+        self.edition_override().unwrap_or(Edition::Y2024)
+    }
+
+    /// The edition the user picked explicitly (none for Auto), which wins over detection.
+    #[must_use]
+    pub fn edition_override(&self) -> Option<Edition> {
         match self.edition.as_deref() {
-            Some("dnd2014" | "2014") => Edition::Y2014,
-            _ => Edition::Y2024,
+            Some("dnd2014" | "2014") => Some(Edition::Y2014),
+            Some("dnd2024" | "2024") => Some(Edition::Y2024),
+            _ => None,
         }
     }
 }
@@ -354,5 +361,33 @@ pub fn draft_dto(
                 items: n.items,
             })
             .collect(),
+    }
+}
+
+#[cfg(test)]
+mod edition_override_tests {
+    use super::*;
+
+    fn hint(edition: Option<&str>) -> ImportHintDto {
+        ImportHintDto {
+            edition: edition.map(str::to_string),
+            ..ImportHintDto::default()
+        }
+    }
+
+    #[test]
+    fn auto_is_no_override_and_an_explicit_edition_is_one() {
+        assert_eq!(hint(None).edition_override(), None);
+        assert_eq!(hint(Some("auto")).edition_override(), None);
+        assert_eq!(
+            hint(Some("dnd2014")).edition_override(),
+            Some(Edition::Y2014)
+        );
+        assert_eq!(
+            hint(Some("dnd2024")).edition_override(),
+            Some(Edition::Y2024)
+        );
+        assert_eq!(hint(None).edition(), Edition::Y2024);
+        assert_eq!(hint(Some("dnd2014")).edition(), Edition::Y2014);
     }
 }

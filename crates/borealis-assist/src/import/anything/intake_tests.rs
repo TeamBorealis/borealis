@@ -526,6 +526,7 @@ fn request(source: &str) -> AnythingRequest {
         pack_id: "test-pack".into(),
         pack_name: "Test Pack".into(),
         edition_hint: Edition::Y2014,
+        edition_override: None,
     }
 }
 

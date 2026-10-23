@@ -54,9 +54,9 @@ pub use error::AssistError;
 pub use explain::{explain_number, explain_number_offline, Explanation};
 pub use homebrew::{homebrew_with_balance, HomebrewOutcome, HomebrewRequest, PackContext};
 pub use import::anything::{
-    choose_parent, continue_draft, detect_source, finalize_draft, import_anything, plan_import,
-    revise_draft, AnythingRequest, Detection, Edition, ImportDraft, ImportKind, ImportPlan,
-    ImportStep, VisionRunner,
+    choose_parent, continue_draft, detect_source, detect_source_as, finalize_draft,
+    import_anything, plan_import, revise_draft, AnythingRequest, Detection, Edition, ImportDraft,
+    ImportKind, ImportPlan, ImportStep, VisionRunner,
 };
 pub use import::{
     import_text_to_pack, ChunkReport, ChunkStatus, ImportOutcome, ImportReport, ImportRequest,

@@ -988,3 +988,92 @@ Lantern Of Echoes. Copper Key. Thunderous.";
         .unwrap()
         .contains("Thunderous"));
 }
+
+// ---- Explicit edition override ---------------------------------------------------------------
+
+const SHADOW_SOURCE: &str = "# Test Shadow Path (Rogue Subclass)\n\nA rogue of the dark. Uses Weapon Mastery.\n\n\
+Dusk Step.\nYou slip between shadows.\n\nGloom Strike.\nYour strikes bite.\n\nNight Veil.\nYou hide in plain sight.\n";
+
+/// A "Test Shadow Path" Rogue subclass whose text reads as 2024; the model detects `edition`.
+fn shadow_fake(edition: &str) -> Fake {
+    let sub = |name: &str| {
+        json!({"element": {"id": "X", "name": name, "type": "Archetype Feature", "description": format!("<p>{name}.</p>")},
+            "notes": []})
+        .to_string()
+    };
+    let root = json!({"element": {"id": "X", "name": "Test Shadow Path", "type": "Archetype",
+        "description": "<p>Shadows.</p>"}, "notes": []})
+    .to_string();
+    Fake::default()
+        .on(
+            "import_detect",
+            "Classify",
+            &[detect(
+                "subclass",
+                "Test Shadow Path",
+                Some("Rogue"),
+                edition,
+            )],
+        )
+        .on(
+            "import_outline",
+            "Test Shadow Path",
+            &[outline(
+                "Test Shadow Path",
+                json!({}),
+                &[(3, "Dusk Step"), (9, "Gloom Strike"), (13, "Night Veil")],
+            )],
+        )
+        .on("import_generate", "(type Archetype,", &[root])
+        .on(
+            "import_generate",
+            BATCH_NEEDLE,
+            &[batch_reply(&[
+                sub("Dusk Step"),
+                sub("Gloom Strike"),
+                sub("Night Veil"),
+            ])],
+        )
+}
+
+async fn shadow_draft(detected: &str, hint: Edition, forced: Option<Edition>) -> ImportDraft {
+    let mut req = request(ImportSource::Text(SHADOW_SOURCE.into()), "shadow", hint);
+    req.edition_override = forced;
+    let step = import_anything(&shadow_fake(detected), &base(), &req, &opts(), None)
+        .await
+        .unwrap();
+    step.draft().clone()
+}
+
+#[tokio::test]
+async fn without_an_override_the_detected_edition_decides() {
+    let draft = shadow_draft("2024", Edition::Y2014, None).await;
+    assert_eq!(draft.edition, Edition::Y2024);
+    let link = draft.plan.groups[0].parent.as_ref().expect("parent");
+    assert_eq!(link.class_id, "ID_2024_CLASS_ROGUE");
+    assert_eq!(link.supports, "Rogue Subclass");
+}
+
+#[tokio::test]
+async fn an_edition_override_beats_a_2024_detection_and_links_the_2014_slot() {
+    let draft = shadow_draft("2024", Edition::Y2024, Some(Edition::Y2014)).await;
+    assert_eq!(draft.edition, Edition::Y2014);
+    assert_eq!(draft.detection.edition, Edition::Y2014);
+    let link = draft.plan.groups[0].parent.as_ref().expect("parent");
+    assert_eq!(link.class_id, "ID_WOTC_PHB_CLASS_ROGUE");
+    assert_eq!(link.supports, "Roguish Archetype");
+    let root = draft
+        .elements
+        .iter()
+        .find(|e| e.role == Role::Subclass)
+        .unwrap();
+    assert_eq!(root.json["supports"], json!(["Roguish Archetype"]));
+}
+
+#[tokio::test]
+async fn a_2024_override_beats_a_2014_detection() {
+    let draft = shadow_draft("2014", Edition::Y2014, Some(Edition::Y2024)).await;
+    assert_eq!(draft.edition, Edition::Y2024);
+    let link = draft.plan.groups[0].parent.as_ref().expect("parent");
+    assert_eq!(link.supports, "Rogue Subclass");
+}
