@@ -197,6 +197,20 @@ pub(crate) fn pdf_string(text: &str) -> String {
     out
 }
 
+/// 16-byte file identifier of `body` as hex: two FNV-1a 64-bit hashes with different offsets.
+fn file_id(body: &[u8]) -> String {
+    const PRIME: u64 = 0x0000_0100_0000_01b3;
+    let hash = |seed: u64| {
+        body.iter()
+            .fold(seed, |h, b| (h ^ u64::from(*b)).wrapping_mul(PRIME))
+    };
+    format!(
+        "{:016x}{:016x}",
+        hash(0xcbf2_9ce4_8422_2325),
+        hash(0x8422_2325_cbf2_9ce4)
+    )
+}
+
 /// Grid (points) that thin horizontal rules snap to: one device pixel at 150 dpi (two at 300).
 const RULE_GRID: f32 = 72.0 / 150.0;
 /// Rules at most this wide snap (hairline rules of ruled fields and tables).
@@ -529,9 +543,11 @@ impl Writer {
                 let _ = writeln!(xref, "{off:010} 00000 n ");
             }
         }
+        // File identifier (PDF/A-2 6.1.3): a hash of the body, so the output stays deterministic.
+        let id = file_id(&self.buf);
         let _ = write!(
             xref,
-            "trailer\n<< /Size {count} /Root {CATALOG_OBJ} 0 R /Info {INFO_OBJ} 0 R >>\n\
+            "trailer\n<< /Size {count} /Root {CATALOG_OBJ} 0 R /Info {INFO_OBJ} 0 R /ID [<{id}> <{id}>] >>\n\
              startxref\n{xref_at}\n%%EOF\n"
         );
         self.buf.extend_from_slice(xref.as_bytes());
@@ -776,7 +792,10 @@ pub(crate) fn write_document(doc: &PdfDocument<'_>) -> Vec<u8> {
         )
         .as_bytes(),
     );
-    let mut catalog = format!("<< /Type /Catalog /Pages {PAGES_OBJ} 0 R");
+    // PDF/UA-1 7.1-10: viewers show the document title, not the file name.
+    let mut catalog = format!(
+        "<< /Type /Catalog /Pages {PAGES_OBJ} 0 R /ViewerPreferences << /DisplayDocTitle true >>"
+    );
     if let Some(id) = acro {
         let _ = write!(catalog, " /AcroForm {id} 0 R");
     }
