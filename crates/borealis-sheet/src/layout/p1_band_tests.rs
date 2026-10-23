@@ -104,8 +104,15 @@ fn page_1_of_2014_carries_personality_and_equipment_with_coins() {
                     assert!(t.contains(&heading), "{heading} on page 1");
                 }
                 assert!(!t.contains(&"Notes"), "the band replaces the Notes filler");
-                assert!(t.contains(&"1,234"), "coins on page 1");
                 let f = fields(std::slice::from_ref(&p));
+                assert!(
+                    f.iter()
+                        .any(|(n, v)| n == "summary.coin.gp" && v == "1,234"),
+                    "coins on page 1 are fields of their own"
+                );
+                for c in crate::model_ids::SUMMARY_COINS {
+                    assert_eq!(f.iter().filter(|(n, _)| n == c).count(), 1, "{c}");
+                }
                 for (id, _) in PERSONALITY {
                     assert_eq!(f.iter().filter(|(n, _)| n == id).count(), 1, "{id}");
                 }
@@ -118,10 +125,21 @@ fn page_1_of_2014_carries_personality_and_equipment_with_coins() {
                 );
             }
         }
-        for it in &d.gear.items {
-            let (p, _) = page_one(&d, &LayoutOptions::default());
-            assert!(texts(&p).contains(&it.name.as_str()), "{}", it.name);
+        let (p, _) = page_one(&d, &LayoutOptions::default());
+        let f = fields(std::slice::from_ref(&p));
+        for (i, it) in d.gear.items.iter().enumerate() {
+            let name = crate::model_ids::summary_equip(i + 1, "name");
+            let qty = crate::model_ids::summary_equip(i + 1, "qty");
+            assert!(f.contains(&(name, it.name.clone())), "{}", it.name);
+            assert!(f.contains(&(qty, it.quantity.to_string())), "{}", it.name);
         }
+        assert!(
+            !f.iter().any(|(n, _)| n.starts_with("equip.")),
+            "inventory fields stay on the inventory page"
+        );
+        // Lines past the last item are blank write-in fields (widgets when fillable).
+        let blank = crate::model_ids::summary_equip(d.gear.items.len() + 1, "name");
+        assert!(f.contains(&(blank, String::new())), "blank summary line");
     }
 }
 
@@ -139,9 +157,14 @@ fn a_long_equipment_list_points_at_the_inventory_page() {
     d.gear.items = (1..=40).map(item).collect();
     let (p, _) = page_one(&d, &LayoutOptions::default());
     let t = texts(&p);
+    let f = fields(std::slice::from_ref(&p));
     let shown = (1..=40)
-        .filter(|n| t.contains(&format!("Item {n}").as_str()))
+        .filter(|n| f.iter().any(|(_, v)| v == &format!("Item {n}")))
         .count();
+    assert!(f.iter().any(
+        |(n, v)| n == &crate::model_ids::summary_equip(shown, "name")
+            && v == &format!("Item {shown}")
+    ));
     assert!((2..15).contains(&shown), "{shown} lines");
     let note = format!("+{} more on page 5", 40 - shown);
     assert!(t.contains(&note.as_str()), "{note}");

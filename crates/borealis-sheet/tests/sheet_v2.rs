@@ -196,6 +196,25 @@ fn flatten_mode_has_no_form() {
 }
 
 #[test]
+fn page_1_equipment_summary_lines_are_fields_of_their_own_in_2014() {
+    // The blank lines of the 2014 page-1 summary (the fixture carries no items) are widgets in a
+    // fillable PDF; items and coins (prefilled) are printed, as every other prefilled field.
+    let (c, s) = common::wizard_2014();
+    let o = SheetOptions {
+        edition: SheetEdition::Y2014,
+        ..opts()
+    };
+    let names = field_names(&parse(&render_pdf(&c, &s, &o).unwrap()));
+    assert!(names.contains("summary.equip.1.name"), "{names:?}");
+    assert!(names.contains("summary.equip.1.qty"));
+    let flat = SheetOptions {
+        form_fillable: false,
+        ..o
+    };
+    assert!(field_names(&parse(&render_pdf(&c, &s, &flat).unwrap())).is_empty());
+}
+
+#[test]
 fn ink_pdf_has_only_grey_colour_operators() {
     let (c, s) = common::wizard_2014();
     let o = SheetOptions {

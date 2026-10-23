@@ -5,13 +5,15 @@
 //!
 //! [`plan`] measures the band once; page 1 draws it and the Details page carries on any
 //! personality text that did not fit (`story.<key>@2`), so both pages agree on the split. The
-//! equipment summary is printed text: the editable inventory and coin fields stay on the
-//! Inventory page (one widget per id in the document).
+//! summary's coins and lines are fields of their own (`summary.coin.*`, `summary.equip.N.*`, as
+//! Aurora's page 1 has its own coinage fields): fillable in a fillable PDF, flattened text
+//! otherwise. The inventory and coin fields of the Inventory page are separate ids.
 
 use super::grid::{Align, Canvas, Txt, FIELD_PAD};
 use super::page_features::features_flow::{body_size, group_digits, trim_num, PITCH};
 use super::page_features::features_text::{line_count, split_text};
 use crate::fonts::Style;
+use crate::model_ids as id;
 use crate::model_types::{Edition, SheetData};
 
 /// Heading height (as `Canvas::heading`).
@@ -27,7 +29,7 @@ const COLHEAD_H: f32 = 8.0;
 /// Width of the quantity column of the equipment lines.
 const QTY_W: f32 = 18.0;
 /// Aurora's character page lists the first 15 inventory rows.
-const MAX_ROWS: usize = 15;
+const MAX_ROWS: usize = id::SUMMARY_ROWS;
 /// Fewest equipment lines worth a summary.
 const MIN_ROWS: usize = 2;
 
@@ -193,20 +195,7 @@ fn equipment(
     let g = &d.gear;
     let hint = format!("{} lb carried", trim_num(g.weight));
     let top = c.heading(x, y, w, "Equipment", Some(&hint));
-    let gap = 3.0;
-    let cw = (w - 4.0 * gap) / 5.0;
-    let value = Txt::new(c.s(8.6), Style::SansBold, c.pal.ink).align(Align::Center);
-    for (i, label) in ["CP", "SP", "EP", "GP", "PP"].iter().enumerate() {
-        let bx = x + i as f32 * (cw + gap);
-        c.label(bx + cw / 2.0, top + 5.0 * k, Align::Center, label);
-        c.card((bx, top + 7.5 * k, cw, 14.0 * k), 2.5, Some(c.pal.tint));
-        c.put(
-            bx + cw / 2.0,
-            top + 17.6 * k,
-            &value.within(cw - 2.0),
-            &group_digits(&g.coins[i].to_string()),
-        );
-    }
+    coins(c, d, (x, top, w));
     let pitch = PITCH * k;
     let head = top + COIN_H * k;
     let mut row_top = head + COLHEAD_H * k;
@@ -225,33 +214,80 @@ fn equipment(
         c.label(x + QTY_W, head + 6.0 * k, Align::Start, "ITEM");
     });
     c.hline(x, x + w, row_top, c.pal.ink, 0.9);
-    let t = Txt::new(c.s(7.2), Style::Sans, c.pal.ink);
-    let qty = t.align(Align::End).within(QTY_W - 3.0);
-    let name = t.within(w - QTY_W - 2.0);
-    for item in g.items.iter().take(shown) {
-        let base = row_top + pitch - 3.4 * k;
-        c.group("TR", |c| {
-            c.put(x + QTY_W - 3.0, base, &qty, &item.quantity.to_string());
-            c.put(x + QTY_W, base, &name, &item.name);
-        });
+    for (i, item) in g.items.iter().take(shown).enumerate() {
+        let value = (item.quantity.to_string(), item.name.as_str());
+        line(c, i + 1, (x, row_top, w), (&value.0, value.1));
         row_top += pitch;
         c.hline(x, x + w, row_top, c.pal.rule, 0.5);
+    }
+    if hidden == 0 || rows <= shown {
+        // Blank lines are write-in fields too (widgets in a fillable PDF), as Aurora's 15 rows.
+        for row in shown..rows {
+            line(c, row + 1, (x, row_top, w), ("", ""));
+            row_top += pitch;
+            c.hline(x, x + w, row_top, c.pal.rule, 0.5);
+        }
+        c.close_table();
+        return;
     }
     c.close_table();
-    for row in shown..rows {
-        if hidden > 0 && row == shown {
-            let note = Txt::new(c.s(6.4), Style::SansItalic, c.pal.ink2)
-                .align(Align::End)
-                .within(w);
-            let text = match inventory {
-                Some(p) => format!("+{hidden} more on page {p}"),
-                None => format!("+{hidden} more"),
-            };
-            c.put(x + w, row_top + pitch - 3.4 * k, &note, &text);
-        }
-        row_top += pitch;
-        c.hline(x, x + w, row_top, c.pal.rule, 0.5);
+    // The last line points at the full list (`shown` is `rows - 1` here).
+    let note = Txt::new(c.s(6.4), Style::SansItalic, c.pal.ink2)
+        .align(Align::End)
+        .within(w);
+    let text = match inventory {
+        Some(p) => format!("+{hidden} more on page {p}"),
+        None => format!("+{hidden} more"),
+    };
+    c.put(x + w, row_top + pitch - 3.4 * k, &note, &text);
+    c.hline(x, x + w, row_top + pitch, c.pal.rule, 0.5);
+}
+
+/// The five coin boxes under the Equipment heading (`top` is the y below it).
+fn coins(c: &mut Canvas, d: &SheetData, (x, top, w): (f32, f32, f32)) {
+    let k = c.k;
+    let gap = 3.0;
+    let cw = (w - 4.0 * gap) / 5.0;
+    let value = Txt::new(c.s(8.6), Style::SansBold, c.pal.ink).align(Align::Center);
+    for (i, label) in ["CP", "SP", "EP", "GP", "PP"].iter().enumerate() {
+        let bx = x + i as f32 * (cw + gap);
+        c.label(bx + cw / 2.0, top + 5.0 * k, Align::Center, label);
+        let r = (bx, top + 7.5 * k, cw, 14.0 * k);
+        c.card(r, 2.5, Some(c.pal.tint));
+        c.text_field(
+            id::SUMMARY_COINS[i],
+            label,
+            r,
+            top + 17.6 * k,
+            &group_digits(&d.gear.coins[i].to_string()),
+            &value,
+        );
     }
+}
+
+/// Summary line `n` (a `TR`): quantity and item name fields in the row at `y`.
+fn line(c: &mut Canvas, n: usize, (x, y, w): (f32, f32, f32), (qty, name): (&str, &str)) {
+    let pitch = PITCH * c.k;
+    let base = y + pitch - 3.4 * c.k;
+    let t = Txt::new(c.s(7.2), Style::Sans, c.pal.ink);
+    c.group("TR", |c| {
+        c.text_field(
+            &id::summary_equip(n, "qty"),
+            "Quantity",
+            (x, y, QTY_W - 3.0 + FIELD_PAD, pitch),
+            base,
+            qty,
+            &t.align(Align::End),
+        );
+        c.text_field(
+            &id::summary_equip(n, "name"),
+            "Item name",
+            (x + QTY_W - FIELD_PAD, y, w - QTY_W, pitch),
+            base,
+            name,
+            &t,
+        );
+    });
 }
 
 #[cfg(test)]

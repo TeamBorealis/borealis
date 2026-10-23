@@ -52,6 +52,13 @@ fn on_page_1(id: &str, d: &SheetData) -> bool {
     if let Some(n) = n_of("use.") {
         return n <= super::lists::USE_CAPACITY;
     }
+    if id.starts_with("summary.equip.") {
+        // The 2014 summary prints as many lines as the band has room for.
+        return false;
+    }
+    if id.starts_with("summary.coin.") {
+        return true;
+    }
     let _ = d;
     const PREFIXES: [&str; 17] = [
         "abil.", "save.", "skill.", "passive.", "hd.", "death.", "cond.", "exh.", "prof.",

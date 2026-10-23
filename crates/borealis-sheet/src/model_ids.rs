@@ -5,7 +5,7 @@
 //! Fixed ids are the `pub const`s below; indexed ids come from the builder functions. Every id a
 //! sheet needs is enumerated by [`SheetData::fields`], which is what the layout and the tests use.
 
-use crate::model_types::{CasterData, EditionFields, SheetData};
+use crate::model_types::{CasterData, Edition, EditionFields, SheetData};
 
 /// Widget kind.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -88,6 +88,17 @@ pub const CARRY_WEIGHT: &str = "carry.weight";
 pub const CARRY_CAPACITY: &str = "carry.capacity";
 /// Coin ids in CP SP EP GP PP order.
 pub const COINS: [&str; 5] = ["coin.cp", "coin.sp", "coin.ep", "coin.gp", "coin.pp"];
+/// Coin ids of the 2014 page-1 equipment summary (Aurora's `details_coinage_*`), CP SP EP GP PP.
+pub const SUMMARY_COINS: [&str; 5] = [
+    "summary.coin.cp",
+    "summary.coin.sp",
+    "summary.coin.ep",
+    "summary.coin.gp",
+    "summary.coin.pp",
+];
+/// Inventory lines of the 2014 page-1 equipment summary (Aurora's character page lists the
+/// first 15 inventory rows).
+pub const SUMMARY_ROWS: usize = 15;
 /// Story fields (text), in sheet order.
 pub const STORY: [&str; 20] = [
     "story.gender",
@@ -274,6 +285,12 @@ pub fn use_box(n: usize, m: i32) -> String {
 pub fn equip(n: usize, part: &str) -> String {
     format!("equip.{n}.{part}")
 }
+/// `summary.equip.1.name`: line 1 of the 2014 page-1 equipment summary; `part` is `qty` or
+/// `name`.
+#[must_use]
+pub fn summary_equip(n: usize, part: &str) -> String {
+    format!("summary.equip.{n}.{part}")
+}
 /// `attune.1` (check box) and `attune.1.name`.
 #[must_use]
 pub fn attune(n: usize) -> String {
@@ -453,6 +470,17 @@ impl SheetData {
         }
         for c in COINS {
             o.text(c);
+        }
+        if self.edition == Edition::Dnd2014 {
+            for c in SUMMARY_COINS {
+                o.text(c);
+            }
+            // Every summary line is a field (Aurora's page 1 has 15 rows); lines past the last
+            // item are blank write-ins.
+            for n in 1..=SUMMARY_ROWS {
+                o.text(summary_equip(n, "qty"));
+                o.text(summary_equip(n, "name"));
+            }
         }
         for n in 1..=self.gear.attunement_limit as usize {
             o.play_check(attune(n));

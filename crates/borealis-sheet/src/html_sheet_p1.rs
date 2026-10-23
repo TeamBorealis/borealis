@@ -412,34 +412,39 @@ fn features_summary(d: &SheetData) -> String {
     out
 }
 
-/// Inventory lines in the 2014 page-1 equipment summary (Aurora prints the first 15).
-const EQUIPMENT_LINES_2014: usize = 15;
-
-/// 2014 page-1 equipment summary: carried weight, coins and the first inventory lines. Printed
-/// text; the fields are on the inventory page.
+/// 2014 page-1 equipment summary: carried weight, coins and the first inventory lines, as
+/// fields of their own (`summary.*`; the Inventory page has the `coin.*` and `equip.*` ones).
 fn equipment_2014(d: &SheetData) -> String {
     let g = &d.gear;
     let mut out = format!(
         "<div class=\"sec\">{}<div class=\"coins\">",
         h2("Equipment", &format!("{} lb carried", pounds(g.weight)))
     );
-    for (label, v) in ["CP", "SP", "EP", "GP", "PP"].iter().zip(g.coins) {
+    for ((label, v), i) in ["CP", "SP", "EP", "GP", "PP"]
+        .iter()
+        .zip(g.coins)
+        .zip(id::SUMMARY_COINS)
+    {
         let _ = write!(
             out,
-            "<div><div class=\"lbl\">{label}</div><span class=\"f\">{}</span></div>",
-            thousands(v)
+            "<div><div class=\"lbl\">{label}</div>{}</div>",
+            fld(i, "f", &thousands(v))
         );
     }
     out.push_str("</div><table>");
-    for it in g.items.iter().take(EQUIPMENT_LINES_2014) {
+    // All 15 lines, as the PDF: lines past the last item are blank write-ins.
+    for n in 1..=id::SUMMARY_ROWS {
+        let (qty, name) = g.items.get(n - 1).map_or((String::new(), ""), |it| {
+            (it.quantity.to_string(), &it.name)
+        });
         let _ = write!(
             out,
-            "<tr><td class=\"c\">{}</td><td dir=\"auto\">{}</td></tr>",
-            it.quantity,
-            esc(&it.name)
+            "<tr><td class=\"c\">{}</td><td>{}</td></tr>",
+            fld(&id::summary_equip(n, "qty"), "", &qty),
+            fld(&id::summary_equip(n, "name"), "", name)
         );
     }
-    let more = g.items.len().saturating_sub(EQUIPMENT_LINES_2014);
+    let more = g.items.len().saturating_sub(id::SUMMARY_ROWS);
     if more > 0 {
         let _ = write!(
             out,
