@@ -26,6 +26,8 @@ const ALL_INTERFACES = '0.0.0.0';
 export interface LocalHttpsServer {
   /** Base URL as the device sees it, e.g. https://10.0.2.2:53122 */
   readonly baseUrl: string;
+  /** TLS handshakes the client gave up on so far (proof the device reached this server). */
+  refusedHandshakes(): number;
   close(): Promise<void>;
 }
 
@@ -54,14 +56,15 @@ function selfSignedPair(host: string): { key: Buffer; cert: Buffer } {
 export async function startSelfSignedServer(platform: MobilePlatform, files: Readonly<Record<string, string>>): Promise<LocalHttpsServer> {
   const host = deviceHostAddress(platform);
   const requests: string[] = [];
+  let refused = 0;
   const server = createServer(selfSignedPair(host), (req, res) => {
     requests.push(req.url ?? '');
     const body = files[req.url ?? ''];
     res.writeHead(body === undefined ? 404 : 200, { 'content-type': 'text/plain' });
     res.end(body ?? 'not found');
   });
-  // A rejected handshake (the point of the test) surfaces here; it is expected, not a failure.
-  server.on('tlsClientError', (e) => console.info(`[local-https] handshake refused by the client: ${e.message}`));
+  // A handshake the client rejects (the point of the test) surfaces here; it is expected, not a failure.
+  server.on('tlsClientError', () => { refused += 1; });
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject);
     server.listen(0, ALL_INTERFACES, () => resolve());
@@ -69,8 +72,9 @@ export async function startSelfSignedServer(platform: MobilePlatform, files: Rea
   const { port } = server.address() as AddressInfo;
   return {
     baseUrl: `https://${host}:${port}`,
+    refusedHandshakes: () => refused,
     close: () => new Promise<void>((resolve) => {
-      if (requests.length > 0) console.info(`[local-https] served ${requests.join(', ')}`);
+      console.info(`[local-https] ${refused} handshake(s) refused by the client; served: ${requests.join(', ') || 'nothing'}`);
       server.closeAllConnections();
       server.close(() => resolve());
     }),

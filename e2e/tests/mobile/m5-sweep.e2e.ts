@@ -121,6 +121,8 @@ async function badCertIndex(ctx: Context, platform: MobilePlatform): Promise<voi
   const server = await startSelfSignedServer(platform, { [BAD_CERT_PATH]: BAD_CERT_BODY });
   try {
     await badCertIndexAt(ctx, platform, `${server.baseUrl}${BAD_CERT_PATH}`);
+    // The failure came from this host: the app reached it and refused its certificate.
+    expect(server.refusedHandshakes()).toBeGreaterThan(0);
   } finally {
     await server.close();
   }
