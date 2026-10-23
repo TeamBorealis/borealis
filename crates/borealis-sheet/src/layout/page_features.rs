@@ -385,7 +385,7 @@ fn build_2014(
     let mut inv = Seq::default();
     let (mut c, top) = new_canvas(env, None);
     let head = format!("{} lb carried", features_flow::trim_num(d.gear.weight));
-    let (mut eq, side);
+    let (mut eq, mut side);
     {
         let mut cx = Cx {
             c: &mut c,
@@ -398,14 +398,16 @@ fn build_2014(
         };
         eq = features_gear::equipment_queue(&cx, 0, "Equipment", Some(head));
         let marks = &mut inv.marks;
-        let y = fill_last(&mut cx, &mut eq, (a.0, top, a.1), g.body_bottom, marks);
+        // Rows that do not fit go on in the right column (no "continued on page" note here).
+        let y = features_flow::fill(&mut cx, &mut eq, (a.0, top, a.1), g.body_bottom);
         if eq.is_empty() {
             features_flow::blank_rows(cx.c, (a.0, y, a.1), g.body_bottom);
         }
-        side = features_gear::side_2014(&mut cx, (b.0, top, b.1), g.body_bottom, marks);
+        let rows = std::mem::take(&mut eq);
+        side = features_gear::side_2014(&mut cx, (b.0, top, b.1), g.body_bottom, marks, rows);
     }
     inv.push(c);
-    features_gear::continue_equipment(&mut eq);
+    features_gear::continue_equipment(&mut side);
     let cont = "Inventory (continued)";
     inv.flow_pages(env, 1, (cont, cont), eq, side);
     let mut limits = details.limits;

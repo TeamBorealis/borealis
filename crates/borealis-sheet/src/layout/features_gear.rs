@@ -236,17 +236,22 @@ pub(crate) fn column_2024(
     q
 }
 
-/// The 2014 inventory page right column: attunement, coins, carrying, then equipment notes.
+/// The 2014 inventory page right column: attunement, coins, carrying, then the equipment rows
+/// the left column had no room for (under "Equipment (continued)"; M1: they used to start a
+/// page of their own beside an empty column) and the equipment notes. `rows` is the left
+/// column's remainder; everything that does not fit is returned for the continuation pages.
 pub(crate) fn side_2014(
     cx: &mut Cx,
     (x, y0, w): (f32, f32, f32),
     bottom: f32,
     marks: &mut Vec<ContMark>,
+    rows: VecDeque<Piece>,
 ) -> VecDeque<Piece> {
     let mut y = attunement(cx, (x, y0, w));
     y = coins(cx, (x, y, w));
     y = carry(cx, (x, y, w));
-    let mut q: VecDeque<Piece> = VecDeque::new();
+    let mut q = rows;
+    continue_equipment(&mut q);
     q.push_back(region(cx, 0, 4, true));
     fill_last(cx, &mut q, (x, y, w), bottom, marks);
     q

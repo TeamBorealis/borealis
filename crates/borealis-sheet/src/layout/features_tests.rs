@@ -528,3 +528,58 @@ fn feature_details_use_the_room_left_on_the_last_continuation_page() {
         }
     }
 }
+
+#[test]
+fn inventory_rows_go_on_in_the_right_column_before_a_new_page() {
+    // M1 (2014): rows that overflowed the left column used to start a page of their own while
+    // the right column had room below coins and carrying.
+    let g = Grid::new(Paper::Letter);
+    let o = LayoutOptions::default();
+    for n in [40, 60, 90, 140] {
+        let d = overflow(data(&wizard_2014()), 0, n);
+        let (f, _) = build_with_limits(&d, &o, &g, 2, None);
+        let inv = &f.inventory;
+        if n <= 60 {
+            assert_eq!(inv.len(), 1, "{n} items fit one page");
+        }
+        let names = field_names(inv);
+        for i in 1..=n {
+            let id = crate::model_ids::equip(i, "name");
+            let c = names.iter().filter(|x| base_id(x) == id).count();
+            assert_eq!(c, 1, "{id} of {n}");
+        }
+        let heads = |p: &PdfPage| -> usize {
+            p.ops
+                .iter()
+                .filter(
+                    |op| matches!(op, PageOp::Text { text, .. } if text == "Equipment (continued)"),
+                )
+                .count()
+        };
+        assert!(
+            n <= 40 || heads(&inv[0]) == 1,
+            "{n}: rows go on in the right column"
+        );
+        for (i, p) in inv.iter().enumerate().take(inv.len() - 1) {
+            assert!(
+                lowest_field(p, g.body_bottom) > g.body_bottom - 40.0,
+                "inventory page {i} of {n} items ends early"
+            );
+            assert!(
+                heads(&inv[i + 1]) >= 1,
+                "the next page repeats the table heading"
+            );
+        }
+    }
+}
+
+/// Bottom of the lowest form field of a page (equipment rows are fields), ignoring the footer.
+fn lowest_field(p: &PdfPage, body_bottom: f32) -> f32 {
+    p.ops
+        .iter()
+        .filter_map(|op| match op {
+            PageOp::Field(f) if f.y + f.h <= body_bottom => Some(f.y + f.h),
+            _ => None,
+        })
+        .fold(0.0, f32::max)
+}
