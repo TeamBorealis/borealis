@@ -3,6 +3,10 @@
 //! writes the text to a file in the app's cache folder and sends it with `ACTION_SEND` and a
 //! `FileProvider` content URI. iOS keeps the web view's own share sheet; desktop opens the logs
 //! folder. Everywhere but Android this answers "not available", and the UI copies to the clipboard.
+//!
+//! The same plugin hands over the files Android opened with Borealis (B-24): the activity reads each
+//! one when the intent arrives and parks it; the UI pulls them through `take_opened_files` on mount
+//! and when nudged, so a file that starts the app is not lost before the page exists.
 
 use crate::error::{ApiError, ApiResult, ErrorCode};
 use serde::Serialize;
@@ -107,6 +111,43 @@ pub fn share_text<R: tauri::Runtime>(
     Err(ApiError::new(ErrorCode::InvalidArgument, NOT_AVAILABLE))
 }
 
+/// What the Kotlin `takeOpenedFiles` command answers.
+#[derive(Debug, Default, serde::Deserialize)]
+pub struct TakenFiles {
+    pub files: Vec<crate::content_preview::OpenedFile>,
+}
+
+/// The files Android opened with Borealis since the last call, oldest first. A failed plugin call
+/// is logged and answers none (the UI asks again on the next nudge).
+#[cfg(target_os = "android")]
+pub fn take_opened_files<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+) -> Vec<crate::content_preview::OpenedFile> {
+    use tauri::Manager;
+    let Some(handle) = app.try_state::<android::ShareHandle<R>>() else {
+        return Vec::new();
+    };
+    match handle
+        .0
+        .run_mobile_plugin::<TakenFiles>("takeOpenedFiles", ())
+    {
+        Ok(taken) => taken.files,
+        Err(e) => {
+            tracing::warn!("could not take opened files: {e}");
+            Vec::new()
+        }
+    }
+}
+
+/// Off Android the OS hands files to Rust directly (`content_preview::push_opened_file`).
+#[cfg(not(target_os = "android"))]
+#[must_use]
+pub fn take_opened_files<R: tauri::Runtime>(
+    _app: &tauri::AppHandle<R>,
+) -> Vec<crate::content_preview::OpenedFile> {
+    Vec::new()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -138,5 +179,17 @@ mod tests {
         assert_eq!(json["fileName"], "f.txt");
         assert_eq!(json["text"], "t");
         assert_eq!(json["title"], "Borealis logs");
+    }
+
+    #[test]
+    fn the_kotlin_opened_files_answer_parses() {
+        // The shape `SharePlugin.takeOpenedFiles` resolves with (B-24).
+        let answer = r#"{"files":[{"fileName":"hero.dnd5e","contentBase64":"PGE+"}]}"#;
+        let taken: TakenFiles = serde_json::from_str(answer).expect("parse");
+        assert_eq!(taken.files.len(), 1);
+        assert_eq!(taken.files[0].file_name, "hero.dnd5e");
+        assert_eq!(taken.files[0].content_base64, "PGE+");
+        let none: TakenFiles = serde_json::from_str(r#"{"files":[]}"#).expect("parse");
+        assert!(none.files.is_empty());
     }
 }

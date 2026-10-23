@@ -8,6 +8,7 @@ import app.tauri.annotation.Command
 import app.tauri.annotation.InvokeArg
 import app.tauri.annotation.TauriPlugin
 import app.tauri.plugin.Invoke
+import app.tauri.plugin.JSObject
 import app.tauri.plugin.Plugin
 import java.io.File
 
@@ -22,7 +23,8 @@ class ShareTextArgs {
  * "Share logs" on Android (B-40): the System WebView has no Web Share API, so the backend
  * (`native_share.rs`) calls `shareText`. The text is written to `cache/share/<fileName>` and sent
  * with ACTION_SEND through the app's FileProvider (`res/xml/file_paths.xml` cache-path), with a
- * read grant for the receiving app only.
+ * read grant for the receiving app only. It also hands the backend the files the OS opened with
+ * Borealis (`takeOpenedFiles`, B-24).
  */
 @TauriPlugin
 class SharePlugin(private val activity: Activity) : Plugin(activity) {
@@ -52,6 +54,12 @@ class SharePlugin(private val activity: Activity) : Plugin(activity) {
     } catch (e: Exception) {
       invoke.reject(e.message ?: "The share sheet could not open.")
     }
+  }
+
+  /** Files opened with Borealis since the last call (see `MainActivity`), as `{ files: [...] }`. */
+  @Command
+  fun takeOpenedFiles(invoke: Invoke) {
+    invoke.resolve(JSObject().put("files", OpenedFiles.take()))
   }
 
   companion object {

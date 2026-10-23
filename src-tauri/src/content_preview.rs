@@ -99,8 +99,9 @@ pub struct ImportPreview {
     pub replaces_existing: bool,
 }
 
-/// A file handed to the app by the OS ("open with" / share), waiting for the UI.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+/// A file handed to the app by the OS ("open with" / share), waiting for the UI. Android's activity
+/// parks these in Kotlin and the backend reads them back (`native_share::take_opened_files`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OpenedFile {
     pub file_name: String,

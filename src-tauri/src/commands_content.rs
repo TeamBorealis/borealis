@@ -180,10 +180,13 @@ pub fn cancel_import_preview(state: S<'_>, preview_id: String) -> ApiResult<()> 
 }
 
 /// Files the OS opened with the app (macOS/iOS "open with", Android share/open), oldest first.
-#[tauri::command]
+/// Async: on Android it calls the Kotlin plugin, which runs on the main thread.
+#[tauri::command(async)]
 #[must_use]
-pub fn take_opened_files() -> Vec<OpenedFile> {
-    crate::content_preview::take_opened_files()
+pub fn take_opened_files(app: AppHandle) -> Vec<OpenedFile> {
+    let mut files = crate::content_preview::take_opened_files();
+    files.extend(crate::native_share::take_opened_files(&app));
+    files
 }
 
 /// Queue files from `RunEvent::Opened` and tell the UI.

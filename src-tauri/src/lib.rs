@@ -247,8 +247,9 @@ fn setup_ai_profile(app: &AppHandle, state: &AppState, ai: &ai_service::AiServic
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Windows and Linux "Open with" / double-click pass the file as an argument (Linux desktop entry
-    // `Exec=borealis %F`); macOS uses RunEvent::Opened. The UI drains the queue on mount; non-content
-    // arguments are ignored by `push_opened_file`.
+    // `Exec=borealis %F`); macOS and iOS use RunEvent::Opened; Android's activity parks the file in
+    // Kotlin (`native_share::take_opened_files`). The UI drains the queue on mount and when nudged;
+    // non-content arguments are ignored by `push_opened_file`.
     #[cfg(any(windows, target_os = "linux"))]
     for arg in std::env::args_os().skip(1) {
         content_preview::push_opened_file(std::path::Path::new(&arg));
@@ -267,7 +268,7 @@ pub fn run() {
             .open_js_links_on_click(false)
             .build(),
     );
-    // Android: the in-app Kotlin share plugin behind "Share logs" (see `native_share`).
+    // Android: the in-app Kotlin plugin behind "Share logs" and opened files (see `native_share`).
     #[cfg(target_os = "android")]
     let builder = builder.plugin(native_share::init());
     builder
@@ -477,6 +478,9 @@ pub fn run() {
             let _ = (app, event);
         });
 }
+
+#[cfg(test)]
+mod open_with_manifests;
 
 #[cfg(test)]
 mod tests {

@@ -49,16 +49,15 @@ export function GlobalImport() {
     }
     if (others.length && aiEnabled) { stashImportFiles(others); navigate("/import"); return; }
     if (others.length) toast.push(unsupportedImportMessage(others.map((f) => f.name), mobile), "error");
-    if (target) navigate(target);
+    // A fresh state tells an already-open Characters page to list the new character (B-24: a cold-start open lands there).
+    if (target) navigate(target, { state: { imported: Date.now() } });
   }, [api, toast, navigate, aiEnabled, mobile, notice]);
 
-  // Files the OS opened with Borealis ("Open with" / share): Tauri queues them (macOS, iOS); Android's activity pushes to window.__borealisOpened.
+  // Files the OS opened with Borealis ("Open with" / share), drained on mount and when nudged: Tauri queues them
+  // (macOS, iOS: `content:open-file`); Android's activity parks them for the backend and fires `borealis-open-file`.
   useEffect(() => {
     const drain = async () => {
-      const win = window as unknown as { __borealisOpened?: { fileName: string; contentBase64: string }[] };
-      const queued = win.__borealisOpened ?? [];
-      win.__borealisOpened = [];
-      const opened = [...queued, ...(await api.takeOpenedFiles().catch(() => []))];
+      const opened = await api.takeOpenedFiles().catch(() => []);
       if (opened.length) void route(opened.map((o) => base64ToFile(o.fileName, o.contentBase64)));
     };
     void drain();

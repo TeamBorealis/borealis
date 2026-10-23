@@ -77,6 +77,13 @@ Result: BUILD SUCCEEDED in ~1.5 min, no Rust cfg changes needed (aws-lc-sys cros
 iPhone 17 / iOS 27.0, renders the Characters page; app data dir `Library/Application Support/app.borealis/`
 (`library/`, `characters/`).
 
+File types: every `tauri ios build` rewrites `CFBundleDocumentTypes` in `gen/apple/borealis_iOS/Info.plist` from
+the file associations; `src-tauri/tauri.ios.conf.json` repeats them with `contentTypes`, because iOS matches
+document types by UTI only (without them Files > Share never offers Borealis for a `.dnd5e`). Opening a file from
+Files is Share > Borealis (the app copies it; it does not open documents in place). Android's open-with filters
+and the activity that parks opened files for the UI are in `gen/android` (`AndroidManifest.xml`,
+`MainActivity.kt`); `e2e/tests/mobile/m6-open-with.e2e.ts` (`E2E_B24=1`) runs both file types warm and cold.
+
 Device / App Store build (not attempted): needs an Apple Developer team ID
 (`bundle > iOS > developmentTeam` in tauri.conf.json or env `APPLE_DEVELOPMENT_TEAM`), a signing certificate and
 provisioning profile for `app.borealis` in the keychain, then `npm run tauri -- ios build --target aarch64`

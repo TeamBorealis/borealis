@@ -1,6 +1,6 @@
 import { CheckBox } from "../../components/controls";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 import type { CharacterSummary, RecheckReport } from "../../api/contract";
 import { Alert, Button, Modal, SearchInput, TextField, useConfirm, useToast } from "../../components";
 import { fileToBase64 } from "../../lib/files";
@@ -39,7 +39,9 @@ export function CharactersPage() {
   const confirm = useConfirm();
   const { settings, update } = useSettings();
   const ch = useCharacter();
-  const list = useAsync(() => api.listCharacters(), [api]);
+  // Open-with imports (GlobalImport) navigate here with a fresh `imported` state: list again even when already showing.
+  const imported = (useLocation().state as { imported?: number } | null)?.imported;
+  const list = useAsync(() => api.listCharacters(), [api, imported]);
   const [query, setQuery] = useState("");
   const [finding, setFinding] = useState(false);
   const [creating, setCreating] = useState(false);

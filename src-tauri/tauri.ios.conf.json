@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "fileAssociations": [
+      {
+        "ext": ["dnd5e"],
+        "contentTypes": ["app.borealis.dnd5e"],
+        "name": "Character file",
+        "description": "5e character",
+        "role": "Editor",
+        "rank": "Owner",
+        "mimeType": "application/x-dnd5e"
+      },
+      {
+        "ext": ["index"],
+        "contentTypes": ["app.borealis.index"],
+        "name": "Content index",
+        "description": "Content index",
+        "role": "Viewer",
+        "rank": "Owner"
+      },
+      {
+        "ext": ["xml"],
+        "contentTypes": ["public.xml"],
+        "name": "Content file",
+        "description": "Content XML",
+        "role": "Viewer",
+        "rank": "Alternate",
+        "mimeType": "text/xml"
+      },
+      {
+        "ext": ["zip"],
+        "contentTypes": ["public.zip-archive"],
+        "name": "Content archive",
+        "description": "Zipped content",
+        "role": "Viewer",
+        "rank": "Alternate",
+        "mimeType": "application/zip"
+      }
+    ]
+  }
+}

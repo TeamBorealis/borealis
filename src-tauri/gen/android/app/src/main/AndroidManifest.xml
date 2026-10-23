@@ -47,6 +47,14 @@
                 <data android:pathPattern=".*\\.xml" />
                 <data android:pathPattern=".*\\.zip" />
             </intent-filter>
+            <!-- The Downloads provider names files by an opaque id (content://…/document/msf:123), so the
+                 path patterns above never match; .dnd5e and .index arrive there as octet-stream. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <action android:name="android.intent.action.SEND_MULTIPLE" />

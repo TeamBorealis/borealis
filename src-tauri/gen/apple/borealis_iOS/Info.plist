@@ -25,6 +25,10 @@
 			<array>
 				<string>dnd5e</string>
 			</array>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>app.borealis.dnd5e</string>
+			</array>
 			<key>CFBundleTypeName</key>
 			<string>Character file</string>
 			<key>CFBundleTypeRole</key>
@@ -36,6 +40,10 @@
 			<key>CFBundleTypeExtensions</key>
 			<array>
 				<string>index</string>
+			</array>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>app.borealis.index</string>
 			</array>
 			<key>CFBundleTypeName</key>
 			<string>Content index</string>
@@ -64,6 +72,10 @@
 			<key>CFBundleTypeExtensions</key>
 			<array>
 				<string>zip</string>
+			</array>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.zip-archive</string>
 			</array>
 			<key>CFBundleTypeName</key>
 			<string>Content archive</string>
