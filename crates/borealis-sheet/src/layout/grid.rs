@@ -460,6 +460,22 @@ impl Canvas {
         })
     }
 
+    /// A caps label wrapped over `lines` (first baseline `base`, then every `lead`): one
+    /// structure leaf whose replacement text is the whole label.
+    pub fn label_lines(&mut self, x: f32, base: f32, lead: f32, lines: &[String]) -> f32 {
+        let (role, color, size) = (self.label_role, self.pal.ink2, LABEL_SIZE * self.k);
+        self.leaf(role, Some(lines.join(" ")), |c| {
+            lines
+                .iter()
+                .enumerate()
+                .map(|(i, l)| {
+                    let at = base + lead * i as f32;
+                    c.label_letters(x, at, Align::Start, l, color, size)
+                })
+                .fold(0.0, f32::max)
+        })
+    }
+
     fn label_letters(
         &mut self,
         x: f32,

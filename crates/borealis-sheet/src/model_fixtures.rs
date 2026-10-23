@@ -229,9 +229,14 @@ pub(crate) fn cleric_2014() -> (Character, CharacterSnapshot) {
 
 /// A synthetic feature whose description has a table of `rows` rows and `cols` columns.
 pub(crate) fn table_feature(rows: usize, cols: usize, cell: &str) -> FeatureData {
+    table_feature_with(rows, cols, cell, "Head")
+}
+
+/// [`table_feature`] with header cells `"{head} {c}"`.
+pub(crate) fn table_feature_with(rows: usize, cols: usize, cell: &str, head: &str) -> FeatureData {
     let mut html = String::from("<p>Choose one option.</p><table><tr>");
     for c in 0..cols {
-        html.push_str(&format!("<th>Head {c}</th>"));
+        html.push_str(&format!("<th>{head} {c}</th>"));
     }
     html.push_str("</tr>");
     for r in 0..rows {

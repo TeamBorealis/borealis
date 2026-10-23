@@ -69,6 +69,7 @@ pub(crate) use page_cards::build as build_cards;
 pub(crate) use page_companion::build as build_companion;
 pub(crate) use page_companion::ABILITIES as COMPANION_ABILITIES;
 pub(crate) use page_core::{band as page_one_band, build as build_page_one, PageRefs};
+pub(crate) use page_features::features_tables::prose_segments;
 pub(crate) use page_features::{build as build_features, details_portrait_rect};
 pub(crate) use page_legacy_spells::{build as build_legacy_spells, columns_avail as legacy_avail};
 pub(crate) use page_overflow::{build as build_overflow, needed as overflow_needed};

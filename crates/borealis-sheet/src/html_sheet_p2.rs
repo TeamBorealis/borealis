@@ -26,7 +26,7 @@ fn feature_html(o: &HtmlOptions, full: bool, n: usize, f: &FeatureData) -> Strin
     let (shown, tables) = if summarised {
         (f.summary.clone(), String::new())
     } else {
-        prose_and_tables(f)
+        prose_and_tables(n, f)
     };
     let text = fld(&id::feat(n, "text"), "txt", &shown);
     if o.style_formatting {
@@ -36,37 +36,45 @@ fn feature_html(o: &HtmlOptions, full: bool, n: usize, f: &FeatureData) -> Strin
     }
 }
 
-/// The feature text without the row sentences of its tables, and the tables as HTML tables
-/// (header row, then the body rows), as the PDF draws them below the text.
-fn prose_and_tables(f: &FeatureData) -> (String, String) {
+/// The feature text before its first table, and the tables as HTML tables (header row, then
+/// the body rows), each followed by the prose after it, as the PDF draws them (the later prose
+/// in fields `feat.N.text.2`, `.3`...).
+fn prose_and_tables(n: usize, f: &FeatureData) -> (String, String) {
     if f.tables.is_empty() {
         return (f.text.clone(), String::new());
     }
-    let prose = f
-        .text
-        .split('\n')
-        .enumerate()
-        .filter(|(i, _)| !f.tables.iter().any(|t| t.lines.contains(i)))
-        .map(|(_, l)| l)
-        .collect::<Vec<_>>()
-        .join("\n");
+    let mut tables: Vec<_> = f.tables.iter().collect();
+    tables.sort_by_key(|t| t.lines.start);
+    let mut segments = crate::layout::prose_segments(&f.text, &tables).into_iter();
+    let prose = segments.next().unwrap_or_default();
     let mut html = String::new();
-    for t in &f.tables {
-        html.push_str("<table class=\"ftab\"><tr>");
-        for h in &t.header {
-            let _ = write!(html, "<th scope=\"col\" dir=\"auto\">{}</th>", esc(h));
+    let mut part = 1;
+    for (t, after) in tables.into_iter().zip(segments) {
+        table_html(&mut html, t);
+        if !after.trim().is_empty() {
+            part += 1;
+            let tid = format!("{}.{part}", id::feat(n, "text"));
+            let _ = write!(html, "<div>{}</div>", fld(&tid, "txt", &after));
         }
-        html.push_str("</tr>");
-        for row in &t.rows {
-            html.push_str("<tr>");
-            for c in row {
-                let _ = write!(html, "<td dir=\"auto\">{}</td>", esc(c));
-            }
-            html.push_str("</tr>");
-        }
-        html.push_str("</table>");
     }
     (prose, html)
+}
+
+/// A feature table as an HTML table.
+fn table_html(html: &mut String, t: &crate::model_types::TextTable) {
+    html.push_str("<table class=\"ftab\"><tr>");
+    for h in &t.header {
+        let _ = write!(html, "<th scope=\"col\" dir=\"auto\">{}</th>", esc(h));
+    }
+    html.push_str("</tr>");
+    for row in &t.rows {
+        html.push_str("<tr>");
+        for c in row {
+            let _ = write!(html, "<td dir=\"auto\">{}</td>", esc(c));
+        }
+        html.push_str("</tr>");
+    }
+    html.push_str("</table>");
 }
 
 fn feature_section(

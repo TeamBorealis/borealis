@@ -3,9 +3,10 @@
 //! with the header row repeated. A table that does not fit the column (a word wider than its
 //! column) stays as row sentences in the text field.
 //!
-//! The feature's text field holds the prose; the table follows it (prose that came after the
-//! table in the description is printed above it, in the same field). Table cells are printed
-//! text, tagged `Table > TR > TH/TD`.
+//! The feature's text field holds the prose before the first table; prose that follows a table
+//! in the description is printed below it, in a text field of its own (`feat.N.text.2`, the
+//! way a split feature's continuation is). Table cells are printed text, tagged
+//! `Table > TR > TH/TD`.
 
 use super::features_text::wrap_field;
 use crate::fonts::{text_width, Style};
@@ -25,6 +26,8 @@ const CELL_SIZE: f32 = 7.0;
 const CELL_LEAD: f32 = 1.25;
 /// Height of the header row.
 const HEAD_ROW_H: f32 = 10.0;
+/// Line pitch of a header label wrapped over several lines.
+const HEAD_LEAD: f32 = HEAD_SIZE * 1.25;
 /// Padding inside a cell, left and right.
 const PAD_X: f32 = 2.0;
 /// Space above the first and below the last line of a body row.
@@ -60,8 +63,16 @@ fn longest_word(style: Style, size: f32, text: &str) -> f32 {
         .fold(0.0, f32::max)
 }
 
-/// Column widths for a table in width `w`, `None` when it has no room (a word or a header wider
-/// than its column).
+/// Widest word of a caps header label.
+fn longest_head_word(text: &str, size: f32) -> f32 {
+    head_label(text)
+        .split_whitespace()
+        .map(|w| tracked_width(Style::SansBold, w, size))
+        .fold(0.0, f32::max)
+}
+
+/// Column widths for a table in width `w`, `None` when it has no room (a word wider than its
+/// column). Header labels stay on one line when every one fits; otherwise they wrap.
 pub(crate) fn widths(header: &[String], rows: &[Vec<String>], k: f32, w: f32) -> Option<Vec<f32>> {
     let n = header
         .len()
@@ -71,15 +82,24 @@ pub(crate) fn widths(header: &[String], rows: &[Vec<String>], k: f32, w: f32) ->
     }
     let (hs, cs) = (HEAD_SIZE * k, CELL_SIZE * k);
     let col = |i: usize| rows.iter().map(move |r| cell(r, i));
-    let min: Vec<f32> = (0..n)
+    let words: Vec<f32> = (0..n)
         .map(|i| {
-            let head = tracked_width(Style::SansBold, &head_label(cell(header, i)), hs);
-            let words = col(i)
+            col(i)
                 .map(|t| longest_word(Style::Sans, cs, t))
-                .fold(0.0, f32::max);
-            head.max(words) + 2.0 * PAD_X
+                .fold(0.0, f32::max)
         })
         .collect();
+    let with_head = |head: &dyn Fn(&str) -> f32| -> Vec<f32> {
+        (0..n)
+            .map(|i| head(cell(header, i)).max(words[i]) + 2.0 * PAD_X)
+            .collect()
+    };
+    let one_line = with_head(&|h| tracked_width(Style::SansBold, &head_label(h), hs));
+    let min = if one_line.iter().sum::<f32>() <= w {
+        one_line
+    } else {
+        with_head(&|h| longest_head_word(h, hs))
+    };
     let natural: Vec<f32> = (0..n)
         .map(|i| {
             col(i)
@@ -174,20 +194,49 @@ fn row_h(row: &[String], widths: &[f32], k: f32) -> f32 {
     n as f32 * CELL_SIZE * k * CELL_LEAD + 2.0 * PAD_Y
 }
 
-fn top_h(t: &TablePiece, k: f32) -> f32 {
-    (if t.cont { CONT_H } else { 0.0 } + HEAD_ROW_H) * k
+/// The caps header label of column `i` in lines that fit the column (one line when it fits).
+fn head_lines(header: &[String], i: usize, k: f32, col_w: f32) -> Vec<String> {
+    let (size, room) = (HEAD_SIZE * k, col_w - 2.0 * PAD_X + 0.01);
+    let mut out: Vec<String> = Vec::new();
+    for word in head_label(cell(header, i)).split_whitespace() {
+        match out.last_mut() {
+            Some(line)
+                if tracked_width(Style::SansBold, &format!("{line} {word}"), size) <= room =>
+            {
+                line.push(' ');
+                line.push_str(word);
+            }
+            _ => out.push(word.to_string()),
+        }
+    }
+    out
 }
 
-fn rows_h(t: &TablePiece, rows: &[Vec<String>], k: f32, w: f32) -> f32 {
+/// Height of the header row: one label line, plus a line pitch per extra wrapped line.
+fn head_h(t: &TablePiece, ws: &[f32], k: f32) -> f32 {
+    let n = (0..ws.len())
+        .map(|i| head_lines(&t.header, i, k, ws[i]).len())
+        .max()
+        .unwrap_or(1)
+        .max(1);
+    (HEAD_ROW_H + (n - 1) as f32 * HEAD_LEAD) * k
+}
+
+fn top_h(t: &TablePiece, ws: &[f32], k: f32) -> f32 {
+    (if t.cont { CONT_H } else { 0.0 }) * k + head_h(t, ws, k)
+}
+
+/// Height of the header and `rows` (the whole table when it has no room: nothing is drawn).
+fn body_h(t: &TablePiece, rows: &[Vec<String>], k: f32, w: f32) -> f32 {
     let Some(ws) = widths(&t.header, &t.rows, k, w) else {
-        return 0.0;
+        return (if t.cont { CONT_H } else { 0.0 } + HEAD_ROW_H) * k;
     };
-    rows.iter().map(|r| row_h(r, &ws, k)).sum()
+    top_h(t, &ws, k) + rows.iter().map(|r| row_h(r, &ws, k)).sum::<f32>()
 }
 
 /// Height of the table piece in a column of width `w`.
 pub(crate) fn height(t: &TablePiece, k: f32, w: f32) -> f32 {
-    top_h(t, k) + rows_h(t, &t.rows, k, w) + AFTER * k
+    body_h(t, &t.rows, k, w) + AFTER * k
 }
 
 /// Smallest height of a head part (the header and the first rows).
@@ -195,13 +244,13 @@ pub(crate) fn min_height(t: &TablePiece, k: f32, w: f32) -> f32 {
     if t.rows.len() <= 2 * MIN_ROWS {
         return height(t, k, w);
     }
-    top_h(t, k) + rows_h(t, &t.rows[..MIN_ROWS], k, w) + AFTER * k
+    body_h(t, &t.rows[..MIN_ROWS], k, w) + AFTER * k
 }
 
 /// Split between rows so the head fits `room`; both parts keep at least [`MIN_ROWS`] rows.
 pub(crate) fn split(t: &TablePiece, k: f32, w: f32, room: f32) -> Option<(TablePiece, TablePiece)> {
     let ws = widths(&t.header, &t.rows, k, w)?;
-    let mut used = top_h(t, k) + AFTER * k;
+    let mut used = top_h(t, &ws, k) + AFTER * k;
     let mut fit = 0;
     for r in &t.rows {
         let h = row_h(r, &ws, k);
@@ -252,15 +301,16 @@ pub(crate) fn draw(c: &mut Canvas, t: &TablePiece, (x, y, w): (f32, f32, f32)) {
     // Caps labels as the other sheet tables (`TH` cells in a header row).
     c.header_row(|c| {
         for (i, cx) in xs.iter().enumerate() {
-            c.label(
-                cx + PAD_X,
-                top + 6.5 * k,
-                Align::Start,
-                &head_label(cell(&t.header, i)),
-            );
+            let (base, label) = (top + 6.5 * k, head_label(cell(&t.header, i)));
+            let lines = head_lines(&t.header, i, k, ws[i]);
+            if lines.len() > 1 {
+                c.label_lines(cx + PAD_X, base, HEAD_LEAD * k, &lines);
+            } else {
+                c.label(cx + PAD_X, base, Align::Start, &label);
+            }
         }
     });
-    top += HEAD_ROW_H * k;
+    top += head_h(t, &ws, k);
     c.hline(x, x + w, top, c.pal.ink, 0.9);
     let body = Txt::new(CELL_SIZE * k, Style::Sans, c.pal.ink);
     let lead = CELL_SIZE * k * CELL_LEAD;
@@ -283,10 +333,43 @@ pub(crate) fn draw(c: &mut Canvas, t: &TablePiece, (x, y, w): (f32, f32, f32)) {
     c.close_table();
 }
 
-/// The text of feature `f` without the row sentences of the tables drawn as tables in width
-/// `w`, and those tables in order. Tables without room keep their rows in the text.
-pub(crate) fn split_off_tables(f: &FeatureData, k: f32, w: f32) -> (String, Vec<TablePiece>) {
-    let drawn: Vec<&TextTable> = f
+/// The prose of `text` around `tables` (their row sentences left out): the paragraphs before
+/// the first table, then the paragraphs after each table up to the next one (blank paragraphs
+/// at either end of a later segment dropped). One more segment than tables.
+pub(crate) fn prose_segments(text: &str, tables: &[&TextTable]) -> Vec<String> {
+    let mut starts: Vec<&TextTable> = tables.to_vec();
+    starts.sort_by_key(|t| t.lines.start);
+    let mut segments: Vec<Vec<&str>> = vec![Vec::new(); starts.len() + 1];
+    for (i, line) in text.split('\n').enumerate() {
+        if starts.iter().any(|t| t.lines.contains(&i)) {
+            continue;
+        }
+        let seg = starts.iter().filter(|t| t.lines.start <= i).count();
+        segments[seg].push(line);
+    }
+    segments
+        .into_iter()
+        .enumerate()
+        .map(|(n, lines)| {
+            let joined = lines.join("\n");
+            if n == 0 {
+                joined
+            } else {
+                joined.trim_matches('\n').to_string()
+            }
+        })
+        .collect()
+}
+
+/// The text of feature `f` before its first table drawn as a table in width `w`, and those
+/// tables in order, each with the prose that follows it (printed below the table). Tables
+/// without room keep their rows in the text.
+pub(crate) fn split_off_tables(
+    f: &FeatureData,
+    k: f32,
+    w: f32,
+) -> (String, Vec<(TablePiece, String)>) {
+    let mut drawn: Vec<&TextTable> = f
         .tables
         .iter()
         .filter(|t| widths(&t.header, &t.rows, k, w).is_some())
@@ -294,23 +377,64 @@ pub(crate) fn split_off_tables(f: &FeatureData, k: f32, w: f32) -> (String, Vec<
     if drawn.is_empty() {
         return (f.text.clone(), Vec::new());
     }
-    let text = f
-        .text
-        .split('\n')
-        .enumerate()
-        .filter(|(i, _)| !drawn.iter().any(|t| t.lines.contains(i)))
-        .map(|(_, l)| l)
-        .collect::<Vec<_>>()
-        .join("\n");
+    drawn.sort_by_key(|t| t.lines.start);
+    let mut segments = prose_segments(&f.text, &drawn).into_iter();
+    let text = segments.next().unwrap_or_default();
     let pieces = drawn
         .into_iter()
-        .map(|t| TablePiece {
-            name: f.name.clone(),
-            header: t.header.clone(),
-            rows: t.rows.clone(),
-            cont: false,
-            group: String::new(),
+        .zip(segments)
+        .map(|(t, after)| {
+            let piece = TablePiece {
+                name: f.name.clone(),
+                header: t.header.clone(),
+                rows: t.rows.clone(),
+                cont: false,
+                group: String::new(),
+            };
+            (piece, after)
         })
         .collect();
     (text, pieces)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn headers_wrap_only_when_one_line_does_not_fit() {
+        let head: Vec<String> = (0..3)
+            .map(|c| format!("Extraordinarily long heading label {c}"))
+            .collect();
+        let rows = vec![vec!["a".to_string(), "b".into(), "c".into()]];
+        let one_line: f32 = head
+            .iter()
+            .map(|h| tracked_width(Style::SansBold, &head_label(h), HEAD_SIZE) + 2.0 * PAD_X)
+            .sum();
+        let w = 240.0;
+        assert!(
+            one_line > w,
+            "the labels do not fit on one line ({one_line})"
+        );
+        let ws = widths(&head, &rows, 1.0, w).expect("drawn with wrapped headers");
+        assert!(head_lines(&head, 0, 1.0, ws[0]).len() > 1);
+        let short: Vec<String> = ["A", "B", "C"].map(String::from).to_vec();
+        let ws = widths(&short, &rows, 1.0, w).unwrap();
+        assert_eq!(head_lines(&short, 0, 1.0, ws[0]), ["A"]);
+    }
+
+    #[test]
+    fn prose_segments_follow_their_tables() {
+        let t = |lines: std::ops::Range<usize>| TextTable {
+            header: Vec::new(),
+            rows: Vec::new(),
+            lines,
+        };
+        let (a, b) = (t(1..3), t(4..5));
+        let text = "before\nrow\nrow\nbetween\nrow\n\nafter";
+        assert_eq!(
+            prose_segments(text, &[&b, &a]),
+            ["before", "between", "after"]
+        );
+    }
 }

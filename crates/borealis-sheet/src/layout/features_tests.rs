@@ -7,7 +7,7 @@ use crate::layout::grid::Grid;
 use crate::layout::page_story;
 use crate::layout::{chrome, LayoutOptions};
 use crate::model_fixtures::{
-    cleric_2014, table_feature, with_sample_extras, wizard_2014, wizard_2024,
+    cleric_2014, table_feature, table_feature_with, with_sample_extras, wizard_2014, wizard_2024,
 };
 use crate::model_types::{
     Edition, FeatureData, FeatureGroup, GearItem, SheetData, SpellFactsMap, StoryData,
@@ -699,12 +699,22 @@ fn header_cells(pages: &[PdfPage]) -> Vec<String> {
         .collect()
 }
 
+/// A text field of feature 1: `feat.1.text`, or a later part of it (`feat.1.text.2`, on any
+/// page).
+fn is_feat1_text(name: &str) -> bool {
+    let base = base_id(name);
+    base == "feat.1.text"
+        || base
+            .strip_prefix("feat.1.text.")
+            .is_some_and(|n| n.parse::<u32>().is_ok())
+}
+
 fn feature_text_value(pages: &[PdfPage]) -> String {
     pages
         .iter()
         .flat_map(|p| &p.ops)
         .filter_map(|o| match o {
-            PageOp::Field(f) if base_id(&f.name) == "feat.1.text" => match &f.kind {
+            PageOp::Field(f) if is_feat1_text(&f.name) => match &f.kind {
                 FieldKind::Text(t) => Some(t.value.clone()),
                 _ => None,
             },
@@ -776,6 +786,62 @@ fn a_table_without_room_stays_as_text() {
         text.contains("Option 0. Head 1:"),
         "row sentences kept: {text}"
     );
+}
+
+/// Top of the feature text field whose value contains `needle`, and its page.
+fn text_field_at(pages: &[PdfPage], needle: &str) -> Option<(usize, f32, String)> {
+    pages.iter().enumerate().find_map(|(p, page)| {
+        page.ops.iter().find_map(|o| match o {
+            PageOp::Field(f) if is_feat1_text(&f.name) => match &f.kind {
+                FieldKind::Text(t) if t.value.contains(needle) => Some((p, f.y, f.name.clone())),
+                _ => None,
+            },
+            _ => None,
+        })
+    })
+}
+
+#[test]
+fn prose_after_a_feature_table_prints_below_it() {
+    for base in [data(&wizard_2014()), data(&wizard_2024())] {
+        let mut d = base;
+        d.features.insert(0, table_feature(4, 3, "Short value"));
+        let (pages, _) = pages_of(&d, &LayoutOptions::default());
+        let (p0, y0, first) = text_field_at(&pages, "Choose one option.").expect("prose before");
+        let (p1, y1, after) = text_field_at(&pages, "Then rest.").expect("prose after");
+        assert_ne!(
+            first, after,
+            "{:?}: the later prose has a field of its own",
+            d.edition
+        );
+        let last_row = pages[p1].ops.iter().find_map(|o| match o {
+            PageOp::Text { text, y, .. } if text == "Option 3" => Some(*y),
+            _ => None,
+        });
+        let row_y = last_row.expect("the last row is on the page of the later prose");
+        assert!(p1 > p0 || y1 > y0, "{:?}: order kept", d.edition);
+        assert!(
+            y1 > row_y,
+            "{:?}: prose {y1} below the last row {row_y}",
+            d.edition
+        );
+    }
+}
+
+#[test]
+fn a_header_too_long_for_one_line_wraps_and_the_table_is_drawn() {
+    let mut d = data(&wizard_2014());
+    let head = "Extraordinarily long heading label";
+    d.features
+        .insert(0, table_feature_with(3, 3, "Short value", head));
+    let (pages, _) = pages_of(&d, &LayoutOptions::default());
+    let text = feature_text_value(&pages);
+    assert!(!text.contains("Option 0. "), "rows leave the text: {text}");
+    let heads = header_cells(&pages);
+    let label = format!("{} 1", head.to_uppercase());
+    assert!(heads.contains(&label), "{label} in {heads:?}");
+    let texts: Vec<&str> = pages.iter().flat_map(page_texts).collect();
+    assert!(texts.contains(&"Option 2"));
 }
 
 #[test]

@@ -30,7 +30,7 @@ use crate::model_ids as id;
 use crate::model_types::{Edition, EditionFields, FeatureGroup, SheetData};
 use crate::pdf::PdfPage;
 use features_flow::{
-    feature_piece, fill_last, height, ContMark, Cx, Piece, HEAD_H, PORTRAIT_H, PORTRAIT_W,
+    feature_piece, fill_last, height, ContMark, Cx, Feat, Piece, HEAD_H, PORTRAIT_H, PORTRAIT_W,
 };
 use features_pages::{columns, draw_marks, new_canvas, Env, Seq};
 use std::collections::{HashSet, VecDeque};
@@ -126,12 +126,20 @@ fn feature_pieces(
         return vec![Piece::Feature(f)];
     }
     let (text, tables) = features_tables::split_off_tables(&d.features[i], k, w);
-    f.text = text;
-    let mut out = vec![Piece::Feature(f)];
-    out.extend(tables.into_iter().map(|mut t| {
+    let after_table = |text: String| Feat {
+        text,
+        after_table: true,
+        ..f.clone()
+    };
+    let mut out = Vec::with_capacity(1 + 2 * tables.len());
+    for (mut t, after) in tables {
         t.group = group.to_string();
-        Piece::Table(t)
-    }));
+        out.push(Piece::Table(t));
+        if !after.trim().is_empty() {
+            out.push(Piece::Feature(after_table(after)));
+        }
+    }
+    out.insert(0, Piece::Feature(Feat { text, ..f }));
     out
 }
 

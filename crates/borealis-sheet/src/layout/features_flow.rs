@@ -54,6 +54,9 @@ pub(crate) struct Feat {
     /// Heading of the block's group ("Feats"), repeated as "Feats (continued)" when the group
     /// goes on on a new page (empty: none).
     pub group: String,
+    /// Prose that follows a table of the feature: printed right below the table, without the
+    /// name row (a later split part of it is a `cont` chunk as usual).
+    pub after_table: bool,
 }
 
 /// A heading plus a ruled write-in area (a multi-line field).
@@ -143,6 +146,8 @@ fn text_lines(k: f32, w: f32, text: &str) -> usize {
 fn feat_rows(f: &Feat, k: f32) -> f32 {
     if f.cont {
         CONT_H * k
+    } else if f.after_table {
+        0.0
     } else {
         NAME_H * k
     }
@@ -220,6 +225,7 @@ fn split(p: &Piece, k: f32, w: f32, room: f32) -> Option<(Piece, Piece)> {
             let b = Feat {
                 text: tail,
                 cont: true,
+                after_table: false,
                 ..f.clone()
             };
             Some((Piece::Feature(a), Piece::Feature(b)))
@@ -304,6 +310,7 @@ pub(crate) fn feature_piece(d: &SheetData, i: usize, summary: bool) -> Feat {
         cont: false,
         detail: false,
         summarised: summary && f.summary != f.text,
+        after_table: false,
         group: String::new(),
     }
 }
@@ -317,6 +324,8 @@ fn draw_feature(cx: &mut Cx, f: &Feat, (x, y, w): (f32, f32, f32)) {
         let t = Txt::new(7.0 * k, Style::SansItalic, cx.c.pal.ink2).within(w);
         cx.c.put(x, y + 7.0 * k, &t, &format!("{} (continued)", f.name));
         y_text = y + CONT_H * k;
+    } else if f.after_table {
+        y_text = y;
     } else {
         let t = Txt::new(8.2 * k, Style::SansBold, ink);
         let nw = (text_width(Style::SansBold, &f.name, 8.2 * k) + 3.0).min(w * 0.62);
