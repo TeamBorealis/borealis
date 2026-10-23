@@ -254,15 +254,12 @@ jobs:
     # start page and the content screen opens, driven through tauri-driver (WebDriver). Fresh install,
     # bundled content only: no corpus, no secret.
     # Linux: release deb installed; WebKitWebDriver (webkit2gtk-driver) under Xvfb drives the INSTALLED app.
-    # Windows: the BLOCKING proof is the launch check: the NSIS-installed exe starts, stays up and shows a
-    # window titled Borealis. WebDriver on Windows is NON-BLOCKING: on the hosted runner msedgedriver
-    # starts the app (it runs: window, WebView2 processes, clean log) but the WebView2 browser never
-    # writes DevToolsActivePort within msedgedriver's 60 s, with release, debug, installed and
-    # target/debug exes alike and the driver = WebView2 runtime = Edge version (runs 39317258271,
-    # 39332189035, 39345166739). The steps that follow record why: tauri-driver on target/debug (as
-    # Tauri's WebDriver docs), msedgedriver direct with its verbose launch lines, then a probe that starts
-    # the app with a fixed remote-debugging port and, if that port answers, attaches msedgedriver to it
-    # (debuggerAddress, Microsoft's documented WebView2 attach) and runs the same smoke.
+    # Windows: the NSIS-installed exe starts, stays up and shows a window titled Borealis, then WebDriver
+    # drives the target/debug exe. Both steps block. wry hands WebView2 its own browser arguments,
+    # which hid the remote-debugging port msedgedriver passes through WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS
+    # ("DevToolsActivePort file doesn't exist"), so debug builds append that variable themselves
+    # (src-tauri/src/webview_args.rs, B-28; CI 39948547472). On a Windows failure the next step reruns
+    # msedgedriver directly with its verbose launch lines.
     name: installed app smoke (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
@@ -411,8 +408,6 @@ jobs:
 
       - name: WebDriver smoke (Linux installed app, Windows target/debug exe)
         id: smoke
-        # Blocking on Linux; recorded only on Windows (see the job comment).
-        continue-on-error: ${{ runner.os == 'Windows' }}
         env:
           APP: ${{ steps.install-linux.outputs.app || format('{0}\target\debug\borealis.exe', github.workspace) }}
           NATIVE_DRIVER: ${{ steps.edgedriver.outputs.driver }}
@@ -438,44 +433,9 @@ jobs:
           APP: ${{ format('{0}\target\debug\borealis.exe', github.workspace) }}
           NATIVE_DRIVER: ${{ steps.edgedriver.outputs.driver }}
         run: |
-          echo "::warning::Windows WebDriver smoke failed (non-blocking; the launch check is the Windows proof)"
           python -I tools/ci/webdriver_smoke.py --msedgedriver "$NATIVE_DRIVER" --port 4446 --timeout 90 \
             --app "$APP" --driver-log "$RUNNER_TEMP/msedgedriver-verbose.log" || true
           rm -f "$RUNNER_TEMP/msedgedriver-verbose.log"
-      - name: WebDriver attach probe, app started with a remote-debugging port (Windows, on failure)
-        if: ${{ !cancelled() && runner.os == 'Windows' && steps.smoke.outcome == 'failure' }}
-        continue-on-error: true
-        shell: pwsh
-        env:
-          APP: ${{ format('{0}\target\debug\borealis.exe', github.workspace) }}
-          NATIVE_DRIVER: ${{ steps.edgedriver.outputs.driver }}
-        run: |
-          # B-28: debug builds append WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS to wry's WebView2 arguments
-          # (src-tauri/src/webview_args.rs), so a fixed remote-debugging port reaches WebView2 and msedgedriver
-          # attaches to it (debuggerAddress). Flags and counts only.
-          $port = 9222
-          $flag = "--remote-debugging-port=$port"
-          function Stop-App { Get-Process borealis, msedgewebview2 -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Seconds 2 }
-          Write-Output "probe: WebView2 driver $(& $env:NATIVE_DRIVER --version)"
-          Stop-App
-          $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = $flag
-          $p = Start-Process -FilePath $env:APP -PassThru
-          Remove-Item Env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS
-          Start-Sleep -Seconds 20
-          $wv = @(Get-CimInstance Win32_Process -Filter "Name='msedgewebview2.exe'")
-          $with = @($wv | Where-Object { $_.CommandLine -match [regex]::Escape($flag) }).Count
-          $ok = $false
-          try { Invoke-RestMethod "http://127.0.0.1:$port/json/version" -TimeoutSec 10 | Out-Null; $ok = $true } catch {}
-          Write-Output "probe: msedgewebview2 $($wv.Count), with the port flag $with, port answers $ok"
-          $rc = 1
-          if ($ok) {
-            python -I tools/ci/webdriver_smoke.py --msedgedriver $env:NATIVE_DRIVER --port 4447 --timeout 90 `
-              --debugger-address "127.0.0.1:$port"
-            $rc = $LASTEXITCODE
-          }
-          Stop-App
-          Write-Output "probe: attach smoke exit $rc"
-          exit $rc
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
