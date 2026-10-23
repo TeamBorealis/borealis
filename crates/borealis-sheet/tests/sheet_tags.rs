@@ -129,6 +129,11 @@ fn check(edition_2024: bool, fillable: bool, legacy: bool, ink: bool) {
     let doc = Document::load_mem(&pdf).unwrap();
     let catalog = doc.catalog().unwrap();
     assert!(catalog.get(b"Lang").is_ok(), "{label}: /Lang");
+    // PDF/A-2b: a form must carry its own appearances, never ask the viewer to make them.
+    assert!(
+        !String::from_utf8_lossy(&pdf).contains("NeedAppearances"),
+        "{label}: no /NeedAppearances"
+    );
     let mark = dict(&doc, catalog.get(b"MarkInfo").expect("MarkInfo"));
     assert_eq!(mark.get(b"Marked").unwrap(), &Object::Boolean(true));
     let root = dict(
@@ -218,6 +223,7 @@ fn check(edition_2024: bool, fillable: bool, legacy: bool, ink: bool) {
                 let el = dict(&doc, tree.get(&sp).expect("widget key in ParentTree"));
                 assert_eq!(name_of(el, b"S").as_deref(), Some("Form"), "{label}");
                 assert!(w.get(b"TU").is_ok(), "{label}: widget without /TU");
+                assert!(w.get(b"AP").is_ok(), "{label}: widget without /AP");
             }
         }
     }

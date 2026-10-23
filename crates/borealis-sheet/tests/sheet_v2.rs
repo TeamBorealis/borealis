@@ -370,6 +370,34 @@ fn write_samples() {
         for (tag, o) in [
             ("colour", opts()),
             (
+                "cards-compact",
+                SheetOptions {
+                    compact: true,
+                    cards: borealis_sheet::CardKinds {
+                        spell: true,
+                        item: true,
+                        attack: true,
+                        feature: true,
+                    },
+                    ..opts()
+                },
+            ),
+            (
+                "legacy-a4",
+                SheetOptions {
+                    legacy_spellcasting: true,
+                    paper: Paper::A4,
+                    ..opts()
+                },
+            ),
+            (
+                "flat",
+                SheetOptions {
+                    form_fillable: false,
+                    ..opts()
+                },
+            ),
+            (
                 "ink",
                 SheetOptions {
                     theme: SheetTheme::Ink,
