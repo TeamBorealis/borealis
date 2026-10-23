@@ -241,7 +241,11 @@ fn feature_text(f: &FeatureDetail, name: &str) -> String {
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map_or_else(
-            || crate::card_model::plain(&crate::table_text::tables_as_rows(&f.description)),
+            || {
+                crate::card_model::plain_paragraphs(&crate::table_text::tables_as_rows(
+                    &f.description,
+                ))
+            },
             str::to_string,
         );
     evaluate_formulas(&strip_own_name(name, &raw))

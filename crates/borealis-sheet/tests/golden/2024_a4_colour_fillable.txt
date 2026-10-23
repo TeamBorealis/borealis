@@ -102,7 +102,7 @@ page 1
     use.2.box.1
 page 2
   roles: Artifact=36 H2=11 Lbl=18 P=43 TH=4
-  text-ops: 184
+  text-ops: 188
   colours (10): 0.122 0.153 0.169 RG; 0.122 0.153 0.169 rg; 0.188 0.341 0.329 rg; 0.306 0.345 0.365 RG; 0.306 0.345 0.365 rg; 0.702 0.502 0.000 RG; 0.702 0.502 0.000 rg; 0.812 0.788 0.737 RG; 0.953 0.937 0.902 rg; 0.984 0.976 0.957 rg
   fields (15):
     attune.1
@@ -122,7 +122,7 @@ page 2
     story.treasure
 page 3
   roles: Artifact=9 H2=2 Lbl=5 P=15
-  text-ops: 88
+  text-ops: 93
   colours (6): 0.122 0.153 0.169 rg; 0.188 0.341 0.329 rg; 0.306 0.345 0.365 rg; 0.702 0.502 0.000 rg; 0.812 0.788 0.737 RG; 0.984 0.976 0.957 rg
   fields (4):
     char.alignment@3

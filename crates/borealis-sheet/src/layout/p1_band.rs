@@ -22,6 +22,8 @@ const LABEL_H: f32 = 8.0;
 const GAP: f32 = 10.0;
 /// Coin labels and boxes.
 const COIN_H: f32 = 25.0;
+/// Column labels above the equipment lines.
+const COLHEAD_H: f32 = 8.0;
 /// Width of the quantity column of the equipment lines.
 const QTY_W: f32 = 18.0;
 /// Aurora's character page lists the first 15 inventory rows.
@@ -113,7 +115,7 @@ pub(crate) fn plan(d: &SheetData, k: f32, col: (f32, f32), top: f32, bottom: f32
     let (pitch, size) = (PITCH * k, body_size(k));
     let h = bottom - top;
     let total = ((h - HEAD_H * k - 4.0 * LABEL_H * k) / pitch).floor();
-    let rows = ((h - (HEAD_H + COIN_H) * k) / pitch).floor();
+    let rows = ((h - (HEAD_H + COIN_H + COLHEAD_H) * k) / pitch).floor();
     if total < 4.0 || rows < MIN_ROWS as f32 {
         return None;
     }
@@ -206,7 +208,8 @@ fn equipment(
         );
     }
     let pitch = PITCH * k;
-    let mut row_top = top + COIN_H * k;
+    let head = top + COIN_H * k;
+    let mut row_top = head + COLHEAD_H * k;
     let rows = (((bottom - row_top) / pitch).floor().max(0.0) as usize).min(MAX_ROWS);
     let over = g.items.len().saturating_sub(rows);
     let shown = if over > 0 {
@@ -215,15 +218,28 @@ fn equipment(
         g.items.len()
     };
     let hidden = g.items.len() - shown;
+    // The summary is a table (design §8: Table > TR > TH/TD) of the lines it prints.
+    c.open_table();
+    c.header_row(|c| {
+        c.label(x + QTY_W - 3.0, head + 6.0 * k, Align::End, "QTY");
+        c.label(x + QTY_W, head + 6.0 * k, Align::Start, "ITEM");
+    });
+    c.hline(x, x + w, row_top, c.pal.ink, 0.9);
     let t = Txt::new(c.s(7.2), Style::Sans, c.pal.ink);
     let qty = t.align(Align::End).within(QTY_W - 3.0);
     let name = t.within(w - QTY_W - 2.0);
-    for row in 0..rows {
+    for item in g.items.iter().take(shown) {
         let base = row_top + pitch - 3.4 * k;
-        if let Some(item) = g.items.get(row).filter(|_| row < shown) {
+        c.group("TR", |c| {
             c.put(x + QTY_W - 3.0, base, &qty, &item.quantity.to_string());
             c.put(x + QTY_W, base, &name, &item.name);
-        } else if hidden > 0 && row == shown {
+        });
+        row_top += pitch;
+        c.hline(x, x + w, row_top, c.pal.rule, 0.5);
+    }
+    c.close_table();
+    for row in shown..rows {
+        if hidden > 0 && row == shown {
             let note = Txt::new(c.s(6.4), Style::SansItalic, c.pal.ink2)
                 .align(Align::End)
                 .within(w);
@@ -231,7 +247,7 @@ fn equipment(
                 Some(p) => format!("+{hidden} more on page {p}"),
                 None => format!("+{hidden} more"),
             };
-            c.put(x + w, base, &note, &text);
+            c.put(x + w, row_top + pitch - 3.4 * k, &note, &text);
         }
         row_top += pitch;
         c.hline(x, x + w, row_top, c.pal.rule, 0.5);

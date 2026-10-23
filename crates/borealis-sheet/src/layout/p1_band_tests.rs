@@ -145,6 +145,21 @@ fn a_long_equipment_list_points_at_the_inventory_page() {
     assert!((2..15).contains(&shown), "{shown} lines");
     let note = format!("+{} more on page 5", 40 - shown);
     assert!(t.contains(&note.as_str()), "{note}");
+    // A tagged table: a header row plus one TR per printed line, after the Equipment heading.
+    let at = p
+        .ops
+        .iter()
+        .position(|o| matches!(o, PageOp::Text { text, .. } if text == "Equipment"))
+        .expect("heading");
+    let rows = p.ops[at..]
+        .iter()
+        .filter(|o| matches!(o, PageOp::Group("TR")))
+        .count();
+    let tables = p.ops[at..]
+        .iter()
+        .filter(|o| matches!(o, PageOp::Group("Table")))
+        .count();
+    assert_eq!((tables, rows), (1, shown + 1));
 }
 
 #[test]

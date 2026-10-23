@@ -65,6 +65,79 @@ pub(crate) fn plain(html: &str) -> String {
     out.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
+/// Tags that start or end a paragraph of [`plain_paragraphs`].
+const BLOCK_TAGS: &[&str] = &[
+    "p",
+    "div",
+    "br",
+    "li",
+    "ul",
+    "ol",
+    "tr",
+    "table",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "blockquote",
+    "pre",
+];
+
+/// Bullet that starts a list item.
+const BULLET: &str = "\u{2022} ";
+
+/// Name of the tag whose text (between `<` and `>`) is `inner`, lower case: `p` for `</p>`.
+fn tag_name(inner: &str) -> String {
+    inner
+        .trim_start_matches('/')
+        .trim_start()
+        .chars()
+        .take_while(char::is_ascii_alphanumeric)
+        .collect::<String>()
+        .to_ascii_lowercase()
+}
+
+/// [`plain`] that keeps the paragraphs: every block element (paragraph, heading, list item,
+/// table row, line break) starts a new line, a list item with a bullet, so a run-in heading
+/// ("Spell Slots.") opens its own paragraph instead of joining one long run (M6). Lines are
+/// joined with `\n` (the multi-line field's paragraph break); empty ones are dropped.
+pub(crate) fn plain_paragraphs(html: &str) -> String {
+    let mut paras: Vec<String> = Vec::new();
+    let mut cur = String::new();
+    let mut rest = html;
+    let flush = |cur: &mut String, paras: &mut Vec<String>| {
+        let p = cur.split_whitespace().collect::<Vec<_>>().join(" ");
+        if !p.is_empty() && p != BULLET.trim() {
+            paras.push(p);
+        }
+        cur.clear();
+    };
+    while let Some(open) = rest.find('<') {
+        cur.push_str(&rest[..open]);
+        let Some(len) = rest[open..].find('>') else {
+            rest = &rest[open..];
+            break;
+        };
+        let inner = &rest[open + 1..open + len];
+        let name = tag_name(inner);
+        if BLOCK_TAGS.contains(&name.as_str()) {
+            flush(&mut cur, &mut paras);
+            if name == "li" && !inner.starts_with('/') {
+                cur.push_str(BULLET);
+            }
+        } else if matches!(name.as_str(), "td" | "th") {
+            cur.push(' ');
+        }
+        // Inline tags (`strong`, `em`, `span`) join their text as written.
+        rest = &rest[open + len + 1..];
+    }
+    cur.push_str(rest);
+    flush(&mut cur, &mut paras);
+    paras.join("\n")
+}
+
 /// Left footer of a spell card (section 10.3).
 pub(crate) fn spell_footer(sp: &SpellEntry, caster: &str) -> String {
     let Some(g) = &sp.granted_by else {

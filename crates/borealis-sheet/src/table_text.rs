@@ -1,5 +1,5 @@
-//! Tables in feature descriptions, written as one sentence per row so a flattened table does not
-//! print as a run-on paragraph (M6), and the raw text copy of a table dropped (it only repeats the
+//! Tables in feature descriptions, written as one sentence per row (one paragraph each with
+//! `card_model::plain_paragraphs`) so a flattened table does not print as a run-on paragraph (M6), and the raw text copy of a table dropped (it only repeats the
 //! table, often cut off).
 
 const TABLE_OPEN: &str = "<table";
@@ -87,13 +87,14 @@ fn rows_text(table: &str) -> String {
                 .iter()
                 .enumerate()
                 .skip(1)
+                .map(|(i, v)| (i, v.trim_end_matches('.')))
                 .filter(|(_, v)| !v.is_empty())
                 .map(|(i, v)| match head.get(i) {
                     Some(h) if !h.is_empty() => format!("{h}: {v}"),
-                    _ => v.clone(),
+                    _ => v.to_string(),
                 })
                 .collect();
-            format!("<p>{label}. {}</p>", rest.join("; "))
+            format!("<p>{label}. {}.</p>", rest.join("; "))
         })
         .collect::<Vec<_>>()
         .join("")
@@ -107,11 +108,23 @@ mod tests {
 
     #[test]
     fn writes_each_row_as_a_labelled_sentence() {
-        let t = crate::card_model::plain(&tables_as_rows(ELVEN));
+        let t = crate::card_model::plain_paragraphs(&tables_as_rows(ELVEN));
         assert_eq!(
             t,
-            "Pick one. Drow. Level 1: Darkvision 120 feet.; Level 3: Faerie Fire Wood Elf. Level 1: Speed 35 feet.; Level 3: Longstrider After."
+            "Pick one.\nDrow. Level 1: Darkvision 120 feet; Level 3: Faerie Fire.\nWood Elf. Level 1: Speed 35 feet; Level 3: Longstrider.\nAfter."
         );
+    }
+
+    #[test]
+    fn run_in_headings_and_list_items_start_their_own_paragraph() {
+        let h = "<p><strong>Spell Slots.</strong> The table shows <em>how many</em>.</p>\
+                 <p><strong>Spellbook.</strong> It holds spells:</p><ul><li>one</li><li>two</li></ul>\
+                 line<br>break";
+        assert_eq!(
+            crate::card_model::plain_paragraphs(h),
+            "Spell Slots. The table shows how many.\nSpellbook. It holds spells:\n\u{2022} one\n\u{2022} two\nline\nbreak"
+        );
+        assert_eq!(crate::card_model::plain_paragraphs("<p> </p><p>x</p>"), "x");
     }
 
     #[test]
