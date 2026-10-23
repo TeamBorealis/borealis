@@ -408,6 +408,82 @@ fn non_latin_name_is_embedded_and_extractable() {
 }
 
 #[test]
+fn arabic_name_is_shaped_in_the_embedded_arabic_face() {
+    let (mut c, snap) = fixture();
+    // Synthetic: seen-lam-alef-meem, then Latin.
+    let name = "\u{633}\u{644}\u{627}\u{645} Ægir";
+    c.meta.name = name.into();
+    let opts = flat();
+    let pdf = render_pdf(&c, &snap, &opts).unwrap();
+    assert_eq!(pdf, render_pdf(&c, &snap, &opts).unwrap(), "deterministic");
+    let objs = parse_pdf(&pdf);
+    let arabic: Vec<&Obj> = objs
+        .iter()
+        .filter(|o| o.dict.contains("/Subtype /Type0") && o.dict.contains("+NotoSansArabic-"))
+        .collect();
+    assert!(!arabic.is_empty(), "an Arabic subset is embedded");
+    // Its ToUnicode map covers the four letters (contextual forms map back to them).
+    for font in &arabic {
+        let uni: usize = font
+            .dict
+            .split("/ToUnicode ")
+            .nth(1)
+            .and_then(|s| s.split_whitespace().next())
+            .and_then(|s| s.parse().ok())
+            .unwrap();
+        let cmap = parse_cmap(&objs.iter().find(|o| o.id == uni).unwrap().text_stream());
+        let mapped: String = {
+            let mut v: Vec<&String> = cmap.values().collect();
+            v.sort();
+            v.into_iter().map(String::as_str).collect()
+        };
+        for ch in ['\u{633}', '\u{644}', '\u{627}', '\u{645}'] {
+            assert!(mapped.contains(ch), "{ch:?} in {mapped:?}");
+        }
+    }
+    // Shaped runs are positioned TJ arrays with no .notdef glyph.
+    let content: String = objs
+        .iter()
+        .filter(|o| {
+            o.stream.is_some() && !o.dict.contains("/Subtype") && !o.dict.contains("/Length1")
+        })
+        .map(Obj::text_stream)
+        .collect();
+    let tj: Vec<&str> = content.lines().filter(|l| l.contains("] TJ")).collect();
+    assert!(!tj.is_empty(), "shaped text is drawn with TJ");
+    assert!(tj.iter().all(|l| !l.contains("<0000>")), "{tj:?}");
+    // Reading order survives for search and copy.
+    assert!(actual_texts(&objs).iter().any(|t| t == name));
+}
+
+#[test]
+fn cjk_name_uses_a_system_font_when_the_machine_has_one() {
+    let (mut c, snap) = fixture();
+    let name = "\u{65E5}\u{672C} \u{D55C} Ægir";
+    c.meta.name = name.into();
+    let opts = flat();
+    let pdf = render_pdf(&c, &snap, &opts).unwrap();
+    assert_eq!(pdf, render_pdf(&c, &snap, &opts).unwrap(), "deterministic");
+    let objs = parse_pdf(&pdf);
+    let system = objs
+        .iter()
+        .filter(|o| o.dict.contains("/Subtype /Type0") && !o.dict.contains("+Noto"))
+        .count();
+    if system == 0 {
+        eprintln!("no system CJK font on this machine; skipped");
+        return;
+    }
+    for line in content_lines(&objs) {
+        assert!(!line.cids.contains(&0), "notdef glyph in {:?}", line.text);
+    }
+    assert!(
+        pdf_lines(&pdf).iter().any(|l| l == name),
+        "{:?}",
+        pdf_lines(&pdf)
+    );
+}
+
+#[test]
 fn pdf_size_is_reported_for_the_default_sheet() {
     let (c, snap) = fixture();
     let pdf = render_pdf(&c, &snap, &flat()).unwrap();
@@ -642,6 +718,15 @@ fn write_samples() {
     std::fs::write(
         Path::new(&dir).join("sheet.pdf"),
         render_pdf(&c, &snap, &o).unwrap(),
+    )
+    .unwrap();
+    // Synthetic mixed-script name: Arabic with marks and lam-alef, Han, Hangul, Latin.
+    let mut scripts = c.clone();
+    scripts.meta.name =
+        "\u{628}\u{64E}\u{633}\u{644}\u{627}\u{645} \u{65E5}\u{672C} \u{D55C} Ægir".into();
+    std::fs::write(
+        Path::new(&dir).join("scripts.pdf"),
+        render_pdf(&scripts, &snap, &o).unwrap(),
     )
     .unwrap();
     let fill = SheetOptions {

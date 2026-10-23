@@ -1,8 +1,9 @@
 //! Type0/CIDFontType2 (Identity-H) font embedding: per-face glyph subsetting, `/W` widths and a
 //! `ToUnicode` CMap so the text stays selectable and searchable.
 
-use crate::bidi::visual_order;
+use crate::bidi::{unreverse, visual_order};
 use crate::fonts::{glyph, Face, Style};
+use crate::shaping::{is_joiner, shape_rtl, ShapedGlyph};
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use subsetter::GlyphRemapper;
@@ -10,8 +11,7 @@ use subsetter::GlyphRemapper;
 /// A run of glyphs from one face, in left-to-right display order.
 pub(crate) struct Run {
     pub face: Face,
-    /// (original glyph id, source character)
-    pub glyphs: Vec<(u16, char)>,
+    pub glyphs: Vec<ShapedGlyph>,
 }
 
 /// A shaped line: runs in display order plus whether display order differs from logical order.
@@ -20,7 +20,40 @@ pub(crate) struct Shaped {
     pub reordered: bool,
 }
 
-/// Map text to glyph runs (bidi reordering, per-style fallback faces).
+impl Shaped {
+    /// Total advance in 1/1000 em.
+    pub fn width(&self) -> f32 {
+        self.runs
+            .iter()
+            .flat_map(|r| &r.glyphs)
+            .map(|g| g.advance)
+            .sum()
+    }
+}
+
+fn plain(gid: u16, c: char, advance: f32) -> ShapedGlyph {
+    ShapedGlyph {
+        gid,
+        text: c.to_string(),
+        advance,
+        dx: 0.0,
+        dy: 0.0,
+    }
+}
+
+/// Replace a run of a shaped (Arabic) face by the shaper's output. The run holds display-order
+/// characters; the shaper wants them logical.
+fn reshape(run: &mut Run) {
+    let visual: Vec<char> = run.glyphs.iter().flat_map(|g| g.text.chars()).collect();
+    if let Some(glyphs) = shape_rtl(run.face, &unreverse(&visual)) {
+        run.glyphs = glyphs;
+    } else {
+        run.glyphs
+            .retain(|g| g.gid != 0 || !g.text.chars().all(is_joiner));
+    }
+}
+
+/// Map text to glyph runs (bidi reordering, per-style fallback faces, Arabic shaping).
 pub(crate) fn shape(style: impl Into<Style>, text: &str) -> Shaped {
     let font = style.into();
     let visual = visual_order(text);
@@ -28,21 +61,31 @@ pub(crate) fn shape(style: impl Into<Style>, text: &str) -> Shaped {
     let chars = visual.unwrap_or_else(|| text.chars().collect());
     let mut runs: Vec<Run> = Vec::new();
     for c in chars {
+        // Joiners draw nothing but steer Arabic joining, so they stay with an Arabic run.
+        if is_joiner(c) {
+            if let Some(run) = runs.last_mut().filter(|r| r.face.shaped()) {
+                run.glyphs.push(plain(0, c, 0.0));
+            }
+            continue;
+        }
         let Some(g) = glyph(font, c) else { continue };
         match runs.last_mut() {
-            Some(run) if run.face == g.face => run.glyphs.push((g.gid, c)),
+            Some(run) if run.face == g.face => run.glyphs.push(plain(g.gid, c, g.advance)),
             _ => runs.push(Run {
                 face: g.face,
-                glyphs: vec![(g.gid, c)],
+                glyphs: vec![plain(g.gid, c, g.advance)],
             }),
         }
+    }
+    for run in runs.iter_mut().filter(|r| r.face.shaped()) {
+        reshape(run);
     }
     Shaped { runs, reordered }
 }
 
-/// Glyphs used per face, then frozen into subset plans.
+/// Glyphs used per face (with the text each stands for), then frozen into subset plans.
 pub(crate) struct Usage {
-    used: Vec<BTreeMap<u16, char>>,
+    used: Vec<BTreeMap<u16, String>>,
 }
 
 impl Default for Usage {
@@ -62,8 +105,11 @@ impl Usage {
     pub fn record(&mut self, shaped: &Shaped) {
         for run in &shaped.runs {
             let map = &mut self.used[run.face.index()];
-            for (gid, c) in &run.glyphs {
-                map.entry(*gid).or_insert(*c);
+            for g in &run.glyphs {
+                let text = map.entry(g.gid).or_default();
+                if text.is_empty() {
+                    text.clone_from(&g.text);
+                }
             }
         }
     }
@@ -93,7 +139,7 @@ impl Usage {
 /// The glyph set chosen for one face.
 pub(crate) struct SubsetPlan {
     pub face: Face,
-    used: BTreeMap<u16, char>,
+    used: BTreeMap<u16, String>,
     remap: GlyphRemapper,
 }
 
@@ -115,6 +161,8 @@ pub(crate) struct FontParts {
     pub descent: i32,
     pub cap_height: i32,
     pub italic_angle: f32,
+    /// CFF outlines (embedded as `CIDFontType0` / `FontFile3`), else TrueType.
+    pub cff: bool,
 }
 
 fn scaled(v: i16, upem: f32) -> i32 {
@@ -137,20 +185,16 @@ fn tag(face: Face, gids: impl Iterator<Item = u16>) -> String {
         .collect()
 }
 
-fn utf16_hex(c: char) -> String {
-    let mut buf = [0u16; 2];
-    c.encode_utf16(&mut buf)
-        .iter()
-        .map(|u| format!("{u:04X}"))
-        .collect()
+fn utf16_hex(text: &str) -> String {
+    text.encode_utf16().map(|u| format!("{u:04X}")).collect()
 }
 
 fn cmap(plan: &SubsetPlan) -> String {
-    let mut entries: Vec<(u16, char)> = plan
+    let mut entries: Vec<(u16, &str)> = plan
         .used
         .iter()
-        .filter(|(gid, _)| **gid != 0)
-        .map(|(gid, c)| (plan.cid(*gid), *c))
+        .filter(|(gid, text)| **gid != 0 && !text.is_empty())
+        .map(|(gid, text)| (plan.cid(*gid), text.as_str()))
         .collect();
     entries.sort_unstable();
     let mut s = String::from(
@@ -162,7 +206,7 @@ fn cmap(plan: &SubsetPlan) -> String {
     for chunk in entries.chunks(100) {
         let _ = writeln!(s, "{} beginbfchar", chunk.len());
         for (cid, c) in chunk {
-            let _ = writeln!(s, "<{cid:04X}> <{}>", utf16_hex(*c));
+            let _ = writeln!(s, "<{cid:04X}> <{}>", utf16_hex(c));
         }
         s.push_str("endbfchar\n");
     }
@@ -173,7 +217,7 @@ fn cmap(plan: &SubsetPlan) -> String {
 /// Subset the face and build its widths and `ToUnicode` data. `None` if subsetting fails.
 pub(crate) fn build(plan: &SubsetPlan) -> Option<FontParts> {
     let face = plan.face;
-    let subset = match subsetter::subset(face.data(), 0, &plan.remap) {
+    let subset = match subsetter::subset(face.data(), face.collection_index(), &plan.remap) {
         Ok(s) => s,
         Err(e) => {
             tracing::error!("font subsetting failed for {}: {e}", face.ps_name());
@@ -227,6 +271,7 @@ pub(crate) fn build(plan: &SubsetPlan) -> Option<FontParts> {
         descent: scaled(parsed.descender(), upem),
         cap_height: parsed.capital_height().map_or(700, |h| scaled(h, upem)),
         italic_angle: parsed.italic_angle(),
+        cff: parsed.tables().cff.is_some() && parsed.tables().glyf.is_none(),
     })
 }
 
@@ -263,6 +308,11 @@ impl EmbeddedFonts {
         Self { faces }
     }
 
+    /// Whether any embedded subset has CFF outlines.
+    pub fn has_cff(&self) -> bool {
+        self.faces.iter().flatten().any(|f| f.parts.cff)
+    }
+
     pub fn get(&self, face: Face) -> Option<&EmbeddedFont> {
         self.faces.get(face.index()).and_then(Option::as_ref)
     }
@@ -275,21 +325,69 @@ impl EmbeddedFonts {
             let Some(font) = self.get(run.face) else {
                 continue;
             };
-            let hex: String = run
-                .glyphs
-                .iter()
-                .map(|(gid, _)| format!("{:04X}", font.plan.cid(*gid)))
-                .collect();
             if !ops.is_empty() {
                 ops.push(' ');
             }
-            let _ = write!(ops, "/{} {size:.2} Tf <{hex}> Tj", run.face.resource());
+            let _ = write!(ops, "/{} {size:.2} Tf ", run.face.resource());
+            if run.face.shaped() {
+                ops.push_str(&positioned(font, run, size));
+            } else {
+                let hex: String = run
+                    .glyphs
+                    .iter()
+                    .map(|g| format!("{:04X}", font.plan.cid(g.gid)))
+                    .collect();
+                let _ = write!(ops, "<{hex}> Tj");
+            }
         }
         (!ops.is_empty()).then_some(EncodedText {
             ops,
             reordered: shaped.reordered,
         })
     }
+}
+
+/// A shaped run as `TJ` arrays: kerning numbers move each glyph from where its `/W` width
+/// leaves the pen to where the shaper put it, and `Ts` (text rise) carries vertical mark offsets.
+fn positioned(font: &EmbeddedFont, run: &Run, size: f32) -> String {
+    let face = run.face;
+    let mut out = String::new();
+    let mut array = String::new();
+    let mut rise = 0.0_f32;
+    // Pending horizontal move, in 1/1000 em (positive = right).
+    let mut shift = run.glyphs.first().map_or(0.0, |g| g.dx);
+    let flush = |out: &mut String, array: &mut String| {
+        if !array.is_empty() {
+            let _ = write!(out, "[{array}] TJ ");
+            array.clear();
+        }
+    };
+    for (i, g) in run.glyphs.iter().enumerate() {
+        let dy = (g.dy * size / 1000.0 * 100.0).round() / 100.0;
+        if dy != rise {
+            flush(&mut out, &mut array);
+            let _ = write!(out, "{dy:.2} Ts ");
+            rise = dy;
+        }
+        let kern = shift.round();
+        if kern != 0.0 {
+            let _ = write!(array, "{} ", -kern);
+        }
+        let _ = write!(array, "<{:04X}> ", font.plan.cid(g.gid));
+        let next_dx = run.glyphs.get(i + 1).map_or(0.0, |n| n.dx);
+        // The viewer advances by the rounded `/W` width, which `build` writes per glyph.
+        let width = crate::fonts::advance(face, g.gid).round();
+        shift = g.advance - width - g.dx + next_dx + (shift - kern);
+    }
+    let kern = shift.round();
+    if kern != 0.0 {
+        let _ = write!(array, "{} ", -kern);
+    }
+    flush(&mut out, &mut array);
+    if rise != 0.0 {
+        out.push_str("0.00 Ts ");
+    }
+    out.trim_end().to_string()
 }
 
 #[cfg(test)]
@@ -305,5 +403,68 @@ mod tests {
         // CID 0 is .notdef, so the first used glyph of each face is CID 1.
         assert_eq!(enc.ops, "/F4 10.00 Tf <0001> Tj /F6 10.00 Tf <0001> Tj");
         assert!(fonts.get(Face::Sans).is_none());
+    }
+
+    #[test]
+    fn mixed_line_keeps_latin_left_and_shapes_the_arabic_word() {
+        // Logical: Latin word, space, seen-lam-alef-meem.
+        let shaped = shape(Style::Sans, "Ægir \u{633}\u{644}\u{627}\u{645}");
+        assert!(shaped.reordered);
+        let faces: Vec<Face> = shaped.runs.iter().map(|r| r.face).collect();
+        assert_eq!(faces, [Face::Sans, Face::Arabic]);
+        let latin: String = shaped.runs[0]
+            .glyphs
+            .iter()
+            .map(|g| g.text.as_str())
+            .collect();
+        assert_eq!(latin, "Ægir ");
+        // The Arabic run is in display order: the last letter (meem) is leftmost.
+        let arabic: Vec<&str> = shaped.runs[1]
+            .glyphs
+            .iter()
+            .map(|g| g.text.as_str())
+            .collect();
+        assert_eq!(arabic, ["\u{645}", "\u{627}", "\u{644}", "\u{633}"]);
+        let isolated = crate::fonts::glyph(Style::Sans, '\u{633}').unwrap().gid;
+        assert_ne!(
+            shaped.runs[1].glyphs[3].gid, isolated,
+            "seen takes its initial form"
+        );
+        // Layout measures the shaped advances.
+        let w = crate::fonts::text_width(Style::Sans, "\u{633}\u{644}\u{627}\u{645}", 10.0);
+        let shaped_w = shape(Style::Sans, "\u{633}\u{644}\u{627}\u{645}").width() / 100.0;
+        assert!((w - shaped_w).abs() < 1e-3 && w > 5.0, "{w} {shaped_w}");
+    }
+
+    #[test]
+    fn shaped_marks_are_positioned_with_kerning_and_rise() {
+        // beh + fatha: dot and fatha are zero-advance marks with offsets.
+        let text = "\u{628}\u{64E}";
+        let mut usage = Usage::default();
+        usage.record_text(Style::Sans, text);
+        let fonts = EmbeddedFonts::embed(usage);
+        let enc = fonts.encode(Style::Sans, text, 10.0).unwrap();
+        assert!(enc.reordered);
+        assert!(enc.ops.starts_with("/F9 10.00 Tf "), "{}", enc.ops);
+        assert!(
+            enc.ops.contains("] TJ") && enc.ops.contains(" Ts "),
+            "{}",
+            enc.ops
+        );
+        // Text rise is graphics state that outlives ET, so the run always ends at rise 0.
+        let parts: Vec<&str> = enc.ops.split(" Ts").collect();
+        let last_rise = parts[parts.len() - 2].rsplit(' ').next();
+        assert_eq!(last_rise, Some("0.00"), "rise is reset: {}", enc.ops);
+        assert!(!enc.ops.contains("<0000>"), "{}", enc.ops);
+    }
+
+    #[test]
+    fn unshaped_text_is_unchanged_by_the_arabic_path() {
+        let mut usage = Usage::default();
+        usage.record_text(Style::Sans, "Ab");
+        let fonts = EmbeddedFonts::embed(usage);
+        let enc = fonts.encode(Style::Sans, "Ab", 10.0).unwrap();
+        assert_eq!(enc.ops, "/F1 10.00 Tf <00010002> Tj");
+        assert!(!enc.reordered && !fonts.has_cff());
     }
 }

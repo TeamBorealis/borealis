@@ -435,9 +435,16 @@ pub(crate) struct Writer {
 }
 
 impl Writer {
-    fn new() -> Writer {
+    /// A writer whose header declares PDF 1.4, or 1.6 when `opentype_fonts` (an embedded
+    /// `FontFile3 /OpenType` needs 1.6).
+    fn new(opentype_fonts: bool) -> Writer {
+        let header: &[u8] = if opentype_fonts {
+            b"%PDF-1.6\n%\xE2\xE3\xCF\xD3\n"
+        } else {
+            b"%PDF-1.4\n%\xE2\xE3\xCF\xD3\n"
+        };
         Writer {
-            buf: b"%PDF-1.4\n%\xE2\xE3\xCF\xD3\n".to_vec(),
+            buf: header.to_vec(),
             offsets: Vec::new(),
             next: FIRST_FREE_OBJ,
         }
@@ -554,12 +561,19 @@ fn font_objects(w: &mut Writer, first: usize, font: &EmbeddedFont) {
         )
         .as_bytes(),
     );
+    // CFF subsets are CID-keyed with CID = glyph id (subsetter guarantees it), so neither kind
+    // needs more than the identity mapping.
+    let (subtype, gid_map, file_key) = if p.cff {
+        ("CIDFontType0", "", "FontFile3")
+    } else {
+        ("CIDFontType2", "/CIDToGIDMap /Identity ", "FontFile2")
+    };
     w.object(
         cid,
         format!(
-            "<< /Type /Font /Subtype /CIDFontType2 /BaseFont /{} \
+            "<< /Type /Font /Subtype /{subtype} /BaseFont /{} \
              /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> \
-             /FontDescriptor {desc} 0 R /CIDToGIDMap /Identity /DW 1000 /W {} >>",
+             /FontDescriptor {desc} 0 R {gid_map}/DW 1000 /W {} >>",
             p.base_font, p.widths
         )
         .as_bytes(),
@@ -569,12 +583,16 @@ fn font_objects(w: &mut Writer, first: usize, font: &EmbeddedFont) {
         desc,
         format!(
             "<< /Type /FontDescriptor /FontName /{} /Flags 32 /FontBBox [ {x0} {y0} {x1} {y1} ] \
-             /ItalicAngle {:.1} /Ascent {} /Descent {} /CapHeight {} /StemV 80 /FontFile2 {file} 0 R >>",
+             /ItalicAngle {:.1} /Ascent {} /Descent {} /CapHeight {} /StemV 80 /{file_key} {file} 0 R >>",
             p.base_font, p.italic_angle, p.ascent, p.descent, p.cap_height
         )
         .as_bytes(),
     );
-    w.flate_stream(file, &format!("/Length1 {}", p.subset.len()), &p.subset);
+    if p.cff {
+        w.flate_stream(file, "/Subtype /OpenType", &p.subset);
+    } else {
+        w.flate_stream(file, &format!("/Length1 {}", p.subset.len()), &p.subset);
+    }
     w.stream(uni, "", p.to_unicode.as_bytes());
 }
 
@@ -610,7 +628,7 @@ fn alphas(doc: &PdfDocument<'_>) -> BTreeSet<u16> {
 /// Serialise `doc`.
 pub(crate) fn write_document(doc: &PdfDocument<'_>) -> Vec<u8> {
     let fonts = EmbeddedFonts::embed(font_usage(doc));
-    let mut w = Writer::new();
+    let mut w = Writer::new(fonts.has_cff());
     let font_res: String = Face::ALL
         .iter()
         .filter_map(|face| {

@@ -28,9 +28,9 @@ authors of Aurora Builder.
 
 3. Fonts
 
-   - Noto Sans (Regular/Bold/Italic), Noto Serif (Regular/Bold/Italic), Noto Sans Hebrew (Regular/Bold)
-     (Copyright 2022 The Noto Project Authors), SIL Open Font License 1.1, in crates/borealis-sheet/fonts/
-     (licence texts OFL-*.txt there). Unmodified.
+   - Noto Sans (Regular/Bold/Italic), Noto Serif (Regular/Bold/Italic), Noto Sans Hebrew (Regular/Bold),
+     Noto Sans Arabic (Regular/Bold) (Copyright 2022 The Noto Project Authors), SIL Open Font License 1.1,
+     in crates/borealis-sheet/fonts/ (licence texts OFL-*.txt there). Unmodified.
    - Selawik (Copyright 2015 Microsoft Corporation, Reserved Font Name "Selawik"), SIL Open Font License 1.1,
      in ui/src/assets/fonts/ (Selawik-LICENSE.txt). Unmodified woff2.
 

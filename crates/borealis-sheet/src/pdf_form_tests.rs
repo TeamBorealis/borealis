@@ -440,13 +440,20 @@ fn non_latin_values_round_trip_through_to_unicode() {
     let content = page_content(&doc);
     assert_eq!(page_text(&doc), "ןולא");
     assert!(content.contains("/ActualText <FEFF05D005DC05D505DF>"));
-    // Coverage limit: CJK has no embedded face; it draws .notdef boxes (never '?').
+    // CJK has no embedded face: it comes from a system font when the machine has one, else it
+    // draws .notdef boxes (never '?').
     let doc = load(&pdf(
         FormMode::Fillable,
         vec![text_field("n", "日本", Style::Sans)],
     ));
     let content = page_content(&doc);
-    assert!(content.contains("<00000000> Tj") && !content.contains('?'));
+    if crate::fonts::Face::Cjk.available() {
+        assert_eq!(page_text(&doc), "日本");
+        assert!(!content.contains("<0000"), "{content}");
+    } else {
+        eprintln!("no system CJK font; checking the .notdef fallback");
+        assert!(content.contains("<00000000> Tj") && !content.contains('?'));
+    }
 }
 
 #[test]
