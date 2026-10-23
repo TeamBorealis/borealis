@@ -51,6 +51,7 @@ pub mod companion_block;
 pub mod compendium;
 mod compendium_monster;
 // The only module allowed `unsafe` (Windows console FFI); see src-tauri/Cargo.toml [lints].
+pub mod base_items;
 #[allow(unsafe_code)]
 pub mod console_attach;
 pub mod content_auto;
@@ -317,6 +318,7 @@ pub fn run() {
             commands_gear::explain_stat,
             commands_gear::search_items,
             commands_gear::list_item_categories,
+            commands_gear::list_base_items,
             commands_gear::add_item,
             commands_gear::remove_item,
             commands_gear::equip_item,

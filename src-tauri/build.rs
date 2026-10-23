@@ -44,6 +44,7 @@ const COMMANDS: &[&str] = &[
     "explain_stat",
     "search_items",
     "list_item_categories",
+    "list_base_items",
     "add_item",
     "remove_item",
     "equip_item",

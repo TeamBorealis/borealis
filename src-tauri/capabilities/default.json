@@ -48,6 +48,7 @@
     "allow-explain-stat",
     "allow-search-items",
     "allow-list-item-categories",
+    "allow-list-base-items",
     "allow-add-item",
     "allow-remove-item",
     "allow-equip-item",

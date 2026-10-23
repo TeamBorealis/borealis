@@ -66,6 +66,16 @@ pub fn list_item_categories(state: S<'_>, character_id: String) -> ApiResult<Vec
     state.list_item_categories(&character_id)
 }
 
+/// The base items a generic magic weapon or armor can be added on (empty: it needs none).
+#[tauri::command(async)]
+pub fn list_base_items(
+    state: S<'_>,
+    character_id: String,
+    item_id: String,
+) -> ApiResult<Vec<ItemSummary>> {
+    state.list_base_items(&character_id, &item_id)
+}
+
 #[tauri::command(async)]
 pub fn add_item(
     state: S<'_>,

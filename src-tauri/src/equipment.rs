@@ -179,6 +179,12 @@ impl AppState {
                 .filter(|e| is_item(e))
                 .ok_or_else(|| ApiError::not_found("That item does not exist."))?;
             let stackable = in_store.is_some();
+            // Aurora adds a generic magic weapon or armor only on a base chosen in its second list.
+            crate::base_items::check_base(
+                engine.universe(d.character.build.ruleset),
+                item_id,
+                base_item_id,
+            )?;
             let (base, adorner) = match base_item_id {
                 Some(b) => (b, Some(item_id)),
                 None => (item_id, None),
@@ -577,7 +583,10 @@ fn proxy_row(p: &ProxyEntry<'_>) -> ItemSummary {
     }
 }
 
-fn item_row(store: &borealis_content::ContentStore, e: &borealis_content::Element) -> ItemSummary {
+pub(crate) fn item_row(
+    store: &borealis_content::ContentStore,
+    e: &borealis_content::Element,
+) -> ItemSummary {
     let row: ElementSummary = summary(store, e);
     ItemSummary {
         summary: row,

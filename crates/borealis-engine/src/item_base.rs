@@ -74,6 +74,67 @@ pub fn implied_base<'u>(uni: &'u Universe, e: &UElem) -> Option<&'u UElem> {
         .find(|b| b.el.id != e.el.id)
 }
 
+/// The base type (`"Weapon"` / `"Armor"`) and the setter naming the allowed bases of a magic
+/// weapon or armor.
+fn base_kind(e: &UElem) -> Option<(&'static str, &'static str)> {
+    if e.el.ty != "Magic Item" {
+        return None;
+    }
+    let kind = e.el.setter_value("type")?.trim().to_lowercase();
+    BASES
+        .iter()
+        .find(|(k, _, _)| *k == kind)
+        .map(|(_, ty, setter)| (*ty, *setter))
+}
+
+/// A generic magic weapon or armor ("Armor, +1", "Weapon, +1") that names no single base: it is
+/// added on a base item the user chooses, as in Aurora's second list.
+#[must_use]
+pub fn needs_base(uni: &Universe, e: &UElem) -> bool {
+    base_kind(e).is_some() && implied_base(uni, e).is_none()
+}
+
+/// Whether `base` is one of the bases the magic weapon or armor `adorner` can be applied to:
+/// a base of its kind matching its `weapon` / `armor` setter (a supports expression of group
+/// ids and names, `(ID_..._MEDIUM||ID_..._HEAVY),!Hide`, or a `|` list of names). No setter
+/// allows every base of that kind.
+#[must_use]
+pub fn can_adorn(adorner: &UElem, base: &UElem) -> bool {
+    let Some((base_ty, setter)) = base_kind(adorner) else {
+        return false;
+    };
+    if base.el.ty != base_ty {
+        return false;
+    }
+    let Some(v) = adorner
+        .el
+        .setter_value(setter)
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+    else {
+        return true;
+    };
+    let name = key(&base.el.name);
+    let term = |t: &str| {
+        let t = t.trim();
+        if t.starts_with("ID_") {
+            base.el.id == t || base.supports.iter().any(|s| s == t)
+        } else {
+            key(t) == name
+        }
+    };
+    if !v.contains("ID_") {
+        return v.split('|').any(term);
+    }
+    match borealis_content::expr::SupportsExpr::parse(v) {
+        Ok(Some(expr)) => crate::eval::eval_bool(expr.root(), &|leaf| match leaf {
+            borealis_content::expr::SupportsLeaf::Tag(t) => term(t),
+            borealis_content::expr::SupportsLeaf::Dynamic(_) => false,
+        }),
+        _ => false,
+    }
+}
+
 /// The base element and adorner an inventory line is used as: its own (base, adorner), or a
 /// magic item without an adorner as its implied base adorned with itself.
 #[must_use]

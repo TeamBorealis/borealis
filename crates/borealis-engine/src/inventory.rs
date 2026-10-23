@@ -257,7 +257,14 @@ pub fn item_weight(uni: &Universe, it: &InventoryItem) -> f64 {
         }
         s.attribute("lb").and_then(|v| v.trim().parse::<f64>().ok())
     };
-    let base = uni.get(&it.item).and_then(lb).unwrap_or(0.0);
+    let own = uni.get(&it.item);
+    // A magic item used on its own as the one base it names weighs what that base weighs.
+    let implied = || {
+        own.filter(|_| it.adorner.is_none())
+            .and_then(|e| crate::item_base::implied_base(uni, e))
+            .and_then(lb)
+    };
+    let base = own.and_then(lb).or_else(implied).unwrap_or(0.0);
     let w = it
         .adorner
         .as_deref()

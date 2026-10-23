@@ -24,6 +24,7 @@ pub mod invariants;
 pub mod inventory;
 pub mod item_base;
 pub mod item_conds;
+pub mod item_name;
 pub mod item_prof;
 pub mod item_spells;
 pub mod legacy_subclass;

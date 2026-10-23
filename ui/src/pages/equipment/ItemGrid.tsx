@@ -2,11 +2,11 @@ import type { ItemSummary } from "../../api/contract";
 import { ARMOR_COLUMNS, DEFAULT_COLUMNS, columnsFor } from "./itemColumns";
 
 /** Catalogue grid; the column set follows the category like the classic builder (armor, weapons, everything else). */
-export function ItemGrid({ items, category, picked, onPick, onAdd }: { items: ItemSummary[]; category: string; picked: string | null; onPick: (i: ItemSummary) => void; onAdd: (i: ItemSummary) => void }) {
+export function ItemGrid({ items, category, picked, onPick, onAdd, label = "Item catalog" }: { items: ItemSummary[]; category: string; picked: string | null; onPick: (i: ItemSummary) => void; onAdd: (i: ItemSummary) => void; label?: string }) {
   const cols = columnsFor(category);
   return (
     <div className="ap-scroll eq-scroll">
-      <table className={`ap-grid eq-grid ${cols === DEFAULT_COLUMNS ? "" : "eq-ital"} ${cols === ARMOR_COLUMNS ? "eq-armor" : ""}`} aria-label="Item catalog">
+      <table className={`ap-grid eq-grid ${cols === DEFAULT_COLUMNS ? "" : "eq-ital"} ${cols === ARMOR_COLUMNS ? "eq-armor" : ""}`} aria-label={label}>
         <thead>
           <tr>
             <th scope="col">Name</th>

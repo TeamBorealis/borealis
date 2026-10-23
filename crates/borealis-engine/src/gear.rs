@@ -76,7 +76,7 @@ pub fn inventory_snapshot(
             );
         }
         let name = it.alt_name.clone().unwrap_or_else(|| match adorner {
-            Some(a) => format!("{} ({})", e.el.name, a.el.name),
+            Some(a) => crate::item_name::adorned_name(e, a),
             None => e.el.name.clone(),
         });
         items.push(ItemSnapshot {
@@ -297,10 +297,7 @@ pub fn attacks_with(
             die_floor: am.die_floor,
             offhand_damage,
             uid: it.uid.clone(),
-            name: it.alt_name.clone().unwrap_or_else(|| {
-                uni.get(&it.item)
-                    .map_or_else(|| e.el.name.clone(), |own| own.el.name.clone())
-            }),
+            name: crate::item_name::attack_name(uni, it).unwrap_or_else(|| e.el.name.clone()),
             range: e.el.setter_value("range").unwrap_or("").to_string(),
             attack: atk,
             damage: if dice.is_empty() {

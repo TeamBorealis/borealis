@@ -62,24 +62,34 @@ export function EquipmentTab() {
   const characterId = snapshot?.id;
   const sources = useAsync(() => api.listSources(), [api]);
   const items = useAsync(() => searchAllItems(api, { category, query: q || undefined, source: source || undefined, characterId }), [api, category, q, source, characterId]);
+  const pickedId = pickedItem?.id ?? "";
+  // A generic magic weapon or armor is added on a base picked in a second list, as in the classic builder.
+  const bases = useAsync(() => (pickedId && characterId ? api.listBaseItems({ characterId, itemId: pickedId }) : Promise.resolve([] as ItemSummary[])), [api, pickedId, characterId]);
+  const [base, setBase] = useState<ItemSummary | null>(null);
   if (!snapshot) return null;
   const inv = snapshot.inventory;
+  const baseList = bases.data ?? [];
+  const needsBase = baseList.length > 0;
+  const chosenBase = needsBase && base && baseList.some((b) => b.id === base.id) ? base : null;
+  const canAdd = !!pickedItem && !bases.loading && (!needsBase || !!chosenBase);
 
   // The status bar reports the result ("You have added N x 'X' to your inventory."), as in the classic builder.
   const add = async (item: ItemSummary, qty: number, buy: boolean) => {
+    const baseItemId = item.id === pickedId && chosenBase ? chosenBase.id : undefined;
     await mutate(async (a, id) => {
       try {
-        return await a.addItem({ characterId: id, itemId: item.id, quantity: qty, buy });
+        return await a.addItem({ characterId: id, itemId: item.id, quantity: qty, buy, baseItemId });
       } catch (e) {
-        if (buy && isApiError(e) && e.code === "requirement_failed") {
+        if (buy && isApiError(e) && e.code === "requirement_failed" && !(needsBase && !baseItemId)) {
           const r = await confirm({ title: "Not enough funds", body: "You cannot afford this. Add it without paying?", confirmLabel: "Add anyway" });
-          if (r === "confirm") return a.addItem({ characterId: id, itemId: item.id, quantity: qty, buy: false });
+          if (r === "confirm") return a.addItem({ characterId: id, itemId: item.id, quantity: qty, buy: false, baseItemId });
         }
         throw e;
       }
     });
   };
-  const pick = (i: ItemSummary) => { setPickedItem(i); setDescId(i.id); };
+  const pick = (i: ItemSummary) => { setPickedItem(i); setDescId(i.id); if (i.id !== pickedId) setBase(null); };
+  const pickBase = (b: ItemSummary) => { setBase(b); setDescId(b.id); };
   const label = (c: ItemCategory) => `${c.name} (${c.count})`;
   const left = (
     <div className="eq-layout">
@@ -98,11 +108,18 @@ export function EquipmentTab() {
         {cats.error && <Alert tone="danger">{cats.error}</Alert>}
         {items.error && <Alert tone="danger">{items.error}</Alert>}
         <ItemGrid items={items.data?.items ?? []} category={category} picked={pickedItem?.id ?? null} onPick={pick} onAdd={(i) => void add(i, addQty, false)} />
+        {bases.error && <Alert tone="danger">{bases.error}</Alert>}
+        {needsBase && pickedItem && (
+          <div className="eq-bases">
+            <Band title={`Base item for ${pickedItem.name}`} />
+            <ItemGrid label="Base items" items={baseList} category={baseList[0]!.category} picked={chosenBase?.id ?? null} onPick={pickBase} onAdd={(b) => { setBase(b); }} />
+          </div>
+        )}
       </div>
       <div className="eq-tools">
         <span className="eq-cmds">
-          <QtyCommand label="Add" value={addQty} onChange={setAddQty} disabled={!pickedItem} onRun={() => pickedItem && void add(pickedItem, addQty, false)} />
-          <QtyCommand label="Buy" value={buyQty} onChange={setBuyQty} disabled={!pickedItem} onRun={() => pickedItem && void add(pickedItem, buyQty, true)} />
+          <QtyCommand label="Add" value={addQty} onChange={setAddQty} disabled={!canAdd} onRun={() => pickedItem && canAdd && void add(pickedItem, addQty, false)} />
+          <QtyCommand label="Buy" value={buyQty} onChange={setBuyQty} disabled={!canAdd} onRun={() => pickedItem && canAdd && void add(pickedItem, buyQty, true)} />
         </span>
         <button type="button" className="eq-filter-tile" aria-label="Filter items" aria-pressed={filterOn} title="Turn the name filter on or off" onClick={() => setFilterOn((v) => !v)}><Glyph name="filter" /></button>
         <span className="eq-filter"><input type="text" aria-label="Filter text" placeholder="filter name and keywords..." value={query} onChange={(e) => setQuery(e.target.value)} /><button type="button" aria-label="Clear" onClick={() => setQuery("")}><Glyph name="x" /></button></span>

@@ -1,7 +1,7 @@
 import type { Api, ApiEvents, EventName, SlotOption, SlotOptionsArgs } from "../contract";
 import type {
   AiHostStatus,
-  AppSettings, Attack, CharacterSnapshot, CharacterSummary, ExportResult, ImportReport, MissingContentItem, Page, RecheckReport, RestrictionPreview, CompatibilityReport,
+  AppSettings, Attack, CharacterSnapshot, CharacterSummary, ExportResult, ImportReport, ItemSummary, MissingContentItem, Page, RecheckReport, RestrictionPreview, CompatibilityReport,
   AiSetupProviderId, ImportFileInput, OpenedFile, PickPurpose, RulesetProfile, SheetPreview, StatTrace, Unsubscribe,
 } from "../types";
 import { MockAi } from "./ai";
@@ -413,6 +413,8 @@ export class MockApi implements Api {
     const s = this.snap(this.get(characterId));
     return this.content.itemCategories(s.spellcasting.classes.map((c) => c.className), s.sourceRestrictions);
   }
+  /** The sample items have no generic magic weapon or armor: nothing needs a base. */
+  async listBaseItems(_: { characterId: string; itemId: string }): Promise<ItemSummary[]> { await this.tick(); return []; }
   async addItem(a: { characterId: string; itemId: string; quantity: number; buy: boolean }) { return this.mutate(a.characterId, (c) => rolled.rollGained(c, eq.addItem(c, a.itemId, a.quantity, a.buy, this.content.proxyLine(a.itemId)), this.rng)); }
   async removeItem(a: { characterId: string; inventoryId: string; all: boolean }) { return this.mutate(a.characterId, (c) => eq.removeItem(c, a.inventoryId, a.all)); }
   async equipItem(a: { characterId: string; inventoryId: string; slot: Parameters<typeof eq.equipItem>[2] }) { return this.mutate(a.characterId, (c) => eq.equipItem(c, a.inventoryId, a.slot)); }

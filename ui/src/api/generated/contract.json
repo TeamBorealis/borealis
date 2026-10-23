@@ -782,6 +782,20 @@
     }
    }
   },
+  "list_base_items": {
+   "args": {
+    "characterId": false,
+    "itemId": false
+   },
+   "method": "listBaseItems",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "ItemSummary"
+    }
+   }
+  },
   "list_characters": {
    "args": {},
    "method": "listCharacters",

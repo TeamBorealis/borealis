@@ -197,6 +197,8 @@ export interface ApiMethods {
   searchItems(args: ItemQuery & { characterId?: string }): Promise<Page<ItemSummary>>;
   /** The equipment screen's categories for the character, in the classic builder's order, with item counts. */
   listItemCategories(args: Cid): Promise<ItemCategory[]>;
+  /** The base items a generic magic weapon or armor can be added on, by name (the classic builder's second list); empty when it needs none. */
+  listBaseItems(args: Cid & { itemId: string }): Promise<ItemSummary[]>;
   addItem(args: Cid & { itemId: string; quantity: number; buy: boolean; baseItemId?: string }): Promise<CharacterSnapshot>;
   removeItem(args: Cid & { inventoryId: string; all: boolean }): Promise<CharacterSnapshot>;
   equipItem(args: Cid & { inventoryId: string; slot: EquipRequest }): Promise<CharacterSnapshot>;
@@ -423,6 +425,7 @@ export const COMMANDS = {
   chooseEquipmentPackage: "choose_equipment_package",
   searchItems: "search_items",
   listItemCategories: "list_item_categories",
+  listBaseItems: "list_base_items",
   addItem: "add_item",
   removeItem: "remove_item",
   equipItem: "equip_item",
