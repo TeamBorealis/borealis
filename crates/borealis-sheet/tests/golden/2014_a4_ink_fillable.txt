@@ -1,9 +1,9 @@
 pages: 4
 page 1
-  roles: Artifact=140 H2=7 Lbl=27 P=135 TH=4
-  text-ops: 385
+  roles: Artifact=155 H2=8 Lbl=36 P=141 TH=4
+  text-ops: 435
   colours (10): 0.100 0.100 0.100 RG; 0.100 0.100 0.100 rg; 0.300 0.300 0.300 RG; 0.300 0.300 0.300 rg; 0.330 0.330 0.330 RG; 0.330 0.330 0.330 rg; 0.550 0.550 0.550 rg; 0.720 0.720 0.720 RG; 0.950 0.950 0.950 rg; 1.000 1.000 1.000 rg
-  fields (86):
+  fields (90):
     ac.note
     char.alignment
     char.player
@@ -89,12 +89,16 @@ page 1
     skill.stealth.prof
     skill.survival.exp
     skill.survival.prof
+    story.bonds
+    story.flaws
+    story.ideals
+    story.traits
     use.1.box.1
 page 2
-  roles: Artifact=59 H2=16 Lbl=14 P=17
-  text-ops: 116
+  roles: Artifact=47 H2=12 Lbl=14 P=17
+  text-ops: 112
   colours (9): 0.100 0.100 0.100 rg; 0.300 0.300 0.300 RG; 0.300 0.300 0.300 rg; 0.330 0.330 0.330 RG; 0.330 0.330 0.330 rg; 0.550 0.550 0.550 rg; 0.720 0.720 0.720 RG; 0.720 0.720 0.720 rg; 0.950 0.950 0.950 rg
-  fields (25):
+  fields (21):
     char.alignment@2
     char.deity
     char.player@2
@@ -104,18 +108,14 @@ page 2
     story.age
     story.allies
     story.backstory
-    story.bonds
     story.eyes
-    story.flaws
     story.gender
     story.hair
     story.height
-    story.ideals
     story.notes
     story.organization
     story.quest
     story.skin
-    story.traits
     story.treasure
     story.trinket
     story.weight

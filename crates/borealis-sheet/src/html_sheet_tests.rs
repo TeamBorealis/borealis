@@ -326,3 +326,28 @@ fn legacy_spellcasting_page_gives_full_levels_the_blank_rows_of_others() {
     let normal = render_sheet(&d, &HtmlOptions::default());
     assert!(normal.contains("data-page=\"spellcasting\"") && !normal.contains("legacy.1."));
 }
+
+#[test]
+fn page_1_of_2014_has_personality_and_equipment_with_coins() {
+    let mut d = with_story(data(&cleric_2014()));
+    d.story.flaws = "Stubborn.".into();
+    d.gear.coins = [0, 0, 0, 1234, 0];
+    let html = render_sheet(&d, &HtmlOptions::default());
+    let page = |kind: &str| {
+        let at = html
+            .find(&format!("data-page=\"{kind}\""))
+            .unwrap_or_else(|| panic!("{kind} page"));
+        let end = html[at..].find("</section>").map_or(html.len(), |e| at + e);
+        html[at..end].to_string()
+    };
+    let p1 = page("character");
+    assert!(p1.contains(">Personality<") && p1.contains(">Equipment<"));
+    assert!(p1.contains("data-field=\"story.flaws\"") && p1.contains("Stubborn."));
+    assert!(p1.contains("1,234"));
+    assert!(p1.contains(&d.gear.items[0].name));
+    assert!(!page("details").contains("data-field=\"story.flaws\""));
+    // 2024 keeps them on the story page.
+    let h24 = render_sheet(&with_story(data(&wizard_2024())), &HtmlOptions::default());
+    let at = h24.find("data-page=\"story\"").expect("story page");
+    assert!(h24[at..].contains("data-field=\"story.flaws\""));
+}

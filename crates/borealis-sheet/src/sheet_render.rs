@@ -152,15 +152,17 @@ pub(crate) fn build_pages(
     let mut pages: Vec<PdfPage> = Vec::new();
     let mut images: Vec<PdfImage> = Vec::new();
 
-    if want.page_one {
-        let p1 = layout::build_page_one(data, &lopts, &g, layout::CONTINUATION_PAGE);
-        pages.push(p1.page);
-        if layout::overflow_needed(data) {
-            pages.push(layout::build_overflow(data, &lopts, &g));
-        }
-    }
-    let first_main = pages.len() as u32 + 1;
-    let mut features = layout::build_features(data, &lopts, &g, first_main);
+    // Page 1 points at later pages (2014 Details and Inventory), so it is built last and put
+    // in front; `lead` counts it and its overflow page.
+    let band = if want.page_one {
+        layout::page_one_band(data, &lopts, &g)
+    } else {
+        None
+    };
+    let overflow = want.page_one && layout::overflow_needed(data);
+    let lead = u32::from(want.page_one) + u32::from(overflow);
+    let first_main = lead + 1;
+    let mut features = layout::build_features(data, &lopts, &g, first_main, band.as_ref());
     let portrait = portrait_bytes(character).and_then(|(m, b)| decode_portrait(m, b));
     let mut main = if want.main {
         std::mem::take(&mut features.main)
@@ -179,7 +181,7 @@ pub(crate) fn build_pages(
     }
     pages.append(&mut main);
     if want.spells {
-        let first = pages.len() as u32 + 1;
+        let first = lead + pages.len() as u32 + 1;
         if options.legacy_spellcasting {
             pages.extend(layout::build_legacy_spells(
                 data,
@@ -197,12 +199,17 @@ pub(crate) fn build_pages(
             ));
         }
     }
+    let mut inventory_page = None;
     if want.inventory {
-        let first = pages.len() as u32 + 1;
-        pages.extend(features.numbered_inventory(&lopts, first));
+        let first = lead + pages.len() as u32 + 1;
+        let inv = features.numbered_inventory(&lopts, first);
+        if !inv.is_empty() {
+            inventory_page = Some(first);
+        }
+        pages.extend(inv);
     }
     if want.story {
-        let first = pages.len() as u32 + 1;
+        let first = lead + pages.len() as u32 + 1;
         let mut story = layout::build_story(data, &lopts, &g, first);
         if let (Some(img), Some(p)) = (portrait, story.first_mut()) {
             place_portrait(
@@ -218,6 +225,20 @@ pub(crate) fn build_pages(
         pages.extend(layout::build_companion(data, &lopts, &g));
     }
     pages.extend(layout::build_cards(&card_pages, data, &lopts, &g));
+    if want.page_one {
+        let refs = layout::PageRefs {
+            continuation: layout::CONTINUATION_PAGE,
+            band: layout::BandRefs {
+                details: first_main,
+                inventory: inventory_page,
+            },
+        };
+        let mut front = vec![layout::build_page_one(data, &lopts, &g, refs, band.as_ref()).page];
+        if overflow {
+            front.push(layout::build_overflow(data, &lopts, &g));
+        }
+        pages.splice(0..0, front);
+    }
     if pages.is_empty() {
         return Err(SheetError::NoPages);
     }

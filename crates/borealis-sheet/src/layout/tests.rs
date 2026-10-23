@@ -22,7 +22,15 @@ fn data(
 }
 
 fn page1(d: &SheetData, o: &LayoutOptions) -> Page1 {
-    page_core::build(d, o, &Grid::new(o.paper), 2)
+    let g = Grid::new(o.paper);
+    let refs = page_core::PageRefs {
+        continuation: 2,
+        band: super::BandRefs {
+            details: 2,
+            inventory: Some(4),
+        },
+    };
+    page_core::build(d, o, &g, refs, page_core::band(d, o, &g).as_ref())
 }
 
 fn fixtures() -> Vec<SheetData> {

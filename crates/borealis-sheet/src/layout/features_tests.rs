@@ -116,7 +116,7 @@ fn overflow(mut d: SheetData, n_feats: usize, n_items: usize) -> SheetData {
 
 fn pages_of(d: &SheetData, o: &LayoutOptions) -> (Vec<PdfPage>, Vec<Vec<(usize, f32)>>) {
     let g = Grid::new(o.paper);
-    let (f, mut limits) = build_with_limits(d, o, &g, 2);
+    let (f, mut limits) = build_with_limits(d, o, &g, 2, None);
     let (st, st_limits) = page_story::build_with_limits(d, o, &g, 3);
     let mut pages = f.all();
     pages.extend(st);
@@ -518,7 +518,7 @@ fn feature_details_use_the_room_left_on_the_last_continuation_page() {
     let g = Grid::new(Paper::Letter);
     for n_feats in [10, 18] {
         let d = overflow(with_story(data(&wizard_2024())), n_feats, 0);
-        let (f, _) = build_with_limits(&d, &LayoutOptions::default(), &g, 2);
+        let (f, _) = build_with_limits(&d, &LayoutOptions::default(), &g, 2, None);
         let last = f.main.len() - 1;
         for (i, p) in f.main.iter().enumerate().take(last) {
             assert!(

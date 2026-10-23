@@ -54,16 +54,24 @@ fn text_section(title: &str, i: &str, text: &str, grow: bool) -> String {
     )
 }
 
-/// Story sections in two columns (left, right).
-pub(super) fn columns(d: &SheetData, o: &HtmlOptions) -> (String, String) {
+/// Story sections in two columns (left, right). `personality` = with the traits, ideals, bonds
+/// and flaws (the 2014 sheet prints them on page 1).
+pub(super) fn columns(d: &SheetData, o: &HtmlOptions, personality: bool) -> (String, String) {
     let s = &d.story;
+    let traits = if personality {
+        format!(
+            "{}{}{}{}",
+            text_section("Personality traits", "story.traits", &s.traits, false),
+            text_section("Ideals", "story.ideals", &s.ideals, false),
+            text_section("Bonds", "story.bonds", &s.bonds, false),
+            text_section("Flaws", "story.flaws", &s.flaws, false),
+        )
+    } else {
+        String::new()
+    };
     let left = format!(
-        "{}{}{}{}{}{}",
+        "{}{traits}{}",
         appearance(d, o),
-        text_section("Personality traits", "story.traits", &s.traits, false),
-        text_section("Ideals", "story.ideals", &s.ideals, false),
-        text_section("Bonds", "story.bonds", &s.bonds, false),
-        text_section("Flaws", "story.flaws", &s.flaws, false),
         text_section("Trinket", "story.trinket", &s.trinket, false),
     );
     let companion = format!(
@@ -83,7 +91,7 @@ pub(super) fn columns(d: &SheetData, o: &HtmlOptions) -> (String, String) {
 
 /// Whole 2024 story page body.
 pub(super) fn page(d: &SheetData, o: &HtmlOptions) -> String {
-    let (l, r) = columns(d, o);
+    let (l, r) = columns(d, o, true);
     format!("<div class=\"two\"><div class=\"col\">{l}</div><div class=\"col\">{r}</div></div>")
 }
 
@@ -93,7 +101,7 @@ pub(super) fn details_2014(d: &SheetData, o: &HtmlOptions) -> String {
     if !d.story.has_content() {
         return format!("<div class=\"col\">{features}</div>");
     }
-    let (l, r) = columns(d, o);
+    let (l, r) = columns(d, o, false);
     format!(
         "<div class=\"two\"><div class=\"col\">{features}</div><div class=\"col\">{l}{r}</div></div>"
     )

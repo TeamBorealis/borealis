@@ -1,6 +1,8 @@
 //! Page 1 (Character) of the HTML sheet, both editions.
 
-use super::parts::{ability_card, blank, dot, esc, fld, h2, skill_mark, sq, thousands};
+use super::parts::{
+    ability_card, area, blank, dot, esc, fld, h2, pounds, skill_mark, sq, thousands,
+};
 use super::HtmlOptions;
 use crate::model_common::signed_text as signed;
 use crate::model_ids as id;
@@ -410,6 +412,64 @@ fn features_summary(d: &SheetData) -> String {
     out
 }
 
+/// Inventory lines in the 2014 page-1 equipment summary (Aurora prints the first 15).
+const EQUIPMENT_LINES_2014: usize = 15;
+
+/// 2014 page-1 equipment summary: carried weight, coins and the first inventory lines. Printed
+/// text; the fields are on the inventory page.
+fn equipment_2014(d: &SheetData) -> String {
+    let g = &d.gear;
+    let mut out = format!(
+        "<div class=\"sec\">{}<div class=\"coins\">",
+        h2("Equipment", &format!("{} lb carried", pounds(g.weight)))
+    );
+    for (label, v) in ["CP", "SP", "EP", "GP", "PP"].iter().zip(g.coins) {
+        let _ = write!(
+            out,
+            "<div><div class=\"lbl\">{label}</div><span class=\"f\">{}</span></div>",
+            thousands(v)
+        );
+    }
+    out.push_str("</div><table>");
+    for it in g.items.iter().take(EQUIPMENT_LINES_2014) {
+        let _ = write!(
+            out,
+            "<tr><td class=\"c\">{}</td><td dir=\"auto\">{}</td></tr>",
+            it.quantity,
+            esc(&it.name)
+        );
+    }
+    let more = g.items.len().saturating_sub(EQUIPMENT_LINES_2014);
+    if more > 0 {
+        let _ = write!(
+            out,
+            "<tr><td></td><td class=\"note\">+{more} more on the inventory page</td></tr>"
+        );
+    }
+    out.push_str("</table></div>");
+    out
+}
+
+/// 2014 page-1 personality blocks (design §4).
+fn personality_2014(d: &SheetData) -> String {
+    let s = &d.story;
+    let mut out = format!("<div class=\"sec\">{}", h2("Personality", ""));
+    for (title, i, text) in [
+        ("Personality traits", "story.traits", &s.traits),
+        ("Ideals", "story.ideals", &s.ideals),
+        ("Bonds", "story.bonds", &s.bonds),
+        ("Flaws", "story.flaws", &s.flaws),
+    ] {
+        let _ = write!(
+            out,
+            "<div class=\"lbl\">{title}</div>{}",
+            area(i, text, true)
+        );
+    }
+    out.push_str("</div>");
+    out
+}
+
 fn skill_list_2014(d: &SheetData) -> String {
     let mut skills: Vec<_> = d.skills.iter().collect();
     skills.sort_by(|a, b| a.name.cmp(&b.name));
@@ -471,7 +531,7 @@ fn body_2014(d: &SheetData, o: &HtmlOptions) -> String {
     );
     let _ = write!(
         out,
-        "<div class=\"main\">{}{}<div class=\"sub\">{}<div class=\"col\">{}{}{}{}</div></div>{}{}</div></div>",
+        "<div class=\"main\">{}{}<div class=\"sub\">{}<div class=\"col\">{}{}{}{}</div></div>{}{}<div class=\"two\"><div class=\"col\">{}</div><div class=\"col\">{}</div></div></div></div>",
         vitals(d),
         strip(d),
         skill_list_2014(d),
@@ -481,6 +541,8 @@ fn body_2014(d: &SheetData, o: &HtmlOptions) -> String {
         conditions(d),
         limited_uses(d),
         features_summary(d),
+        equipment_2014(d),
+        personality_2014(d),
     );
     out
 }

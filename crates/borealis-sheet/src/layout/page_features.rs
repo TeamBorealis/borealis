@@ -22,7 +22,7 @@ pub(crate) mod features_text;
 
 use super::grid::{Align, Grid, Txt};
 use super::page_story::story_regions;
-use super::LayoutOptions;
+use super::{Band, LayoutOptions};
 use crate::fonts::Style;
 use crate::model_ids as id;
 use crate::model_types::{Edition, EditionFields, FeatureGroup, SheetData};
@@ -252,13 +252,15 @@ fn detail_queue(d: &SheetData, summarised: &HashSet<usize>) -> VecDeque<Piece> {
 
 /// Build the features and gear pages. `first_page_no` is the printed number of the first page
 /// returned (used for the "full text on page N" notes).
+/// `band` is page 1's 2014 band (the personality text that goes on on the Details page).
 pub(crate) fn build(
     data: &SheetData,
     opts: &LayoutOptions,
     grid: &Grid,
     first_page_no: u32,
+    band: Option<&Band>,
 ) -> FeaturePages {
-    build_with_limits(data, opts, grid, first_page_no).0
+    build_with_limits(data, opts, grid, first_page_no, band).0
 }
 
 /// [`build`] plus the width limit of every text op, per page (main pages, then inventory).
@@ -267,6 +269,7 @@ pub(crate) fn build_with_limits(
     opts: &LayoutOptions,
     grid: &Grid,
     first_page_no: u32,
+    band: Option<&Band>,
 ) -> (FeaturePages, Vec<Vec<(usize, f32)>>) {
     let env = Env {
         d: data,
@@ -275,7 +278,7 @@ pub(crate) fn build_with_limits(
     };
     match data.edition {
         Edition::Dnd2024 => build_2024(&env, first_page_no),
-        Edition::Dnd2014 => build_2014(&env, first_page_no),
+        Edition::Dnd2014 => build_2014(&env, first_page_no, band),
     }
 }
 
@@ -348,14 +351,18 @@ fn deity_row(cx: &mut Cx, (x, y, w): (f32, f32, f32)) {
     );
 }
 
-fn build_2014(env: &Env, first_page_no: u32) -> (FeaturePages, Vec<Vec<(usize, f32)>>) {
+fn build_2014(
+    env: &Env,
+    first_page_no: u32,
+    band: Option<&Band>,
+) -> (FeaturePages, Vec<Vec<(usize, f32)>>) {
     let (d, g) = (env.d, env.g);
     let [a, b] = columns(g);
     // Details page.
     let mut details = Seq::default();
     let (mut c, top) = new_canvas(env, None);
     let mut left = feature_queue(d, &HashSet::new());
-    let mut right = story_regions::details_2014(d);
+    let mut right = story_regions::details_2014(d, band);
     {
         let mut cx = Cx {
             c: &mut c,

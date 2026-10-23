@@ -1,6 +1,7 @@
 //! Story write-in regions: which story field becomes which ruled region, per page.
 
-use crate::layout::page_features::features_flow::{AppKind, Piece, Region};
+use crate::layout::page_features::features_flow::{continued, AppKind, Piece, Region};
+use crate::layout::Band;
 use crate::model_types::SheetData;
 use std::collections::VecDeque;
 
@@ -72,17 +73,35 @@ pub(crate) fn story_2024(d: &SheetData) -> (VecDeque<Piece>, VecDeque<Piece>) {
     (left, right)
 }
 
-/// 2014 Details page right column.
-pub(crate) fn details_2014(d: &SheetData) -> VecDeque<Piece> {
+/// 2014 Details page right column. With page 1's band the personality blocks are on page 1
+/// and only the text that did not fit there goes on here (`story.<key>@2`).
+pub(crate) fn details_2014(d: &SheetData, band: Option<&Band>) -> VecDeque<Piece> {
     let mut q: VecDeque<Piece> = VecDeque::new();
     q.push_back(Piece::Appearance(AppKind::Details));
+    match band {
+        Some(b) => q.extend(b.traits.iter().filter_map(|t| {
+            Some(Piece::Region(Region {
+                id: format!("{}@2", t.id),
+                tip: t.title.to_string(),
+                title: continued(t.title),
+                text: t.tail.clone()?,
+                min_lines: 1,
+                fill: false,
+            }))
+        })),
+        None => q.extend(all(
+            d,
+            &[
+                ("story.traits", "Personality traits", 2, false),
+                ("story.ideals", "Ideals", 1, false),
+                ("story.bonds", "Bonds", 1, false),
+                ("story.flaws", "Flaws", 1, false),
+            ],
+        )),
+    }
     q.extend(all(
         d,
         &[
-            ("story.traits", "Personality traits", 2, false),
-            ("story.ideals", "Ideals", 1, false),
-            ("story.bonds", "Bonds", 1, false),
-            ("story.flaws", "Flaws", 1, false),
             ("story.trinket", "Trinket", 1, false),
             ("story.backstory", "Backstory", 6, false),
             ("story.organization", "Organisation", 1, false),

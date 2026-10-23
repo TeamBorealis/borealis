@@ -7,6 +7,7 @@ mod chrome;
 mod grid;
 mod legacy_plan;
 mod lists;
+mod p1_band;
 mod page_cards;
 mod page_companion;
 mod page_core;
@@ -63,10 +64,11 @@ pub(crate) use grid::Grid;
 pub(crate) use legacy_plan::{
     dropped_note as legacy_dropped_note, level_title as legacy_level_title, plan as legacy_plan,
 };
+pub(crate) use p1_band::{Band, BandRefs};
 pub(crate) use page_cards::build as build_cards;
 pub(crate) use page_companion::build as build_companion;
 pub(crate) use page_companion::ABILITIES as COMPANION_ABILITIES;
-pub(crate) use page_core::build as build_page_one;
+pub(crate) use page_core::{band as page_one_band, build as build_page_one, PageRefs};
 pub(crate) use page_features::{build as build_features, details_portrait_rect};
 pub(crate) use page_legacy_spells::{build as build_legacy_spells, columns_avail as legacy_avail};
 pub(crate) use page_overflow::{build as build_overflow, needed as overflow_needed};
@@ -77,7 +79,15 @@ pub(crate) use page_story::{build as build_story, portrait_rect as story_portrai
 #[cfg(test)]
 pub(crate) fn build_document(data: &SheetData, opts: &LayoutOptions) -> PdfDocument<'static> {
     let g = grid::Grid::new(opts.paper);
-    let mut pages = vec![page_core::build(data, opts, &g, CONTINUATION_PAGE).page];
+    let refs = PageRefs {
+        continuation: CONTINUATION_PAGE,
+        band: BandRefs {
+            details: CONTINUATION_PAGE,
+            inventory: None,
+        },
+    };
+    let band = page_core::band(data, opts, &g);
+    let mut pages = vec![page_core::build(data, opts, &g, refs, band.as_ref()).page];
     chrome::footers(&mut pages, &g, data, opts.ink);
     document(pages, Vec::new(), data, opts)
 }
