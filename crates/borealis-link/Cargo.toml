@@ -11,7 +11,9 @@ description = "Device identity, pairing, certificate pinning, secure store and t
 workspace = true
 
 [features]
-default = []
+# Everything on for this crate's own build and tests (`cargo test -p borealis-link`). Dependents
+# use the workspace entry, which sets default-features = false, and opt in per feature.
+default = ["tcp", "platform-store"]
 # rustls (aws-lc-rs) pinned-certificate TLS: device identity, server/client configs, pin verifiers.
 # No sockets; borealis-ai's LAN host and remote client build on it.
 tls = ["dep:rustls", "dep:rcgen"]

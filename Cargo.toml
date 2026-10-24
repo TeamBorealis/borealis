@@ -44,7 +44,8 @@ borealis-sheet = { path = "crates/borealis-sheet" }
 borealis-ai = { path = "crates/borealis-ai" }
 borealis-assist = { path = "crates/borealis-assist" }
 borealis-search = { path = "crates/borealis-search" }
-borealis-link = { path = "crates/borealis-link" }
+# default-features = false: dependents opt into the network stack and OS store explicitly.
+borealis-link = { path = "crates/borealis-link", default-features = false }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
