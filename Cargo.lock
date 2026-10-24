@@ -702,6 +702,7 @@ dependencies = [
  "objc2",
  "objc2-foundation",
  "objc2-ui-kit",
+ "reqwest",
  "serde",
  "serde_json",
  "sha2 0.10.9",
