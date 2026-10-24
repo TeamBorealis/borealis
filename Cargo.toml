@@ -10,6 +10,7 @@ members = [
   "crates/borealis-assist",
   "crates/borealis-import-5etools",
   "crates/borealis-mcp",
+  "crates/borealis-search",
   "crates/borealis-android-assets",
   "src-tauri",
 ]
@@ -40,6 +41,7 @@ borealis-migrate = { path = "crates/borealis-migrate" }
 borealis-sheet = { path = "crates/borealis-sheet" }
 borealis-ai = { path = "crates/borealis-ai" }
 borealis-assist = { path = "crates/borealis-assist" }
+borealis-search = { path = "crates/borealis-search" }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

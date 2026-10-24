@@ -1,0 +1,25 @@
+[package]
+name = "borealis-search"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+description = "Local keyword search (Tantivy) over rules text and lore content"
+
+[lints]
+workspace = true
+
+[dependencies]
+borealis-content.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+# Spec local-search-spec.md section 2: no columnar-zstd-compression (keeps the build pure Rust for iOS/Android).
+tantivy = { version = "0.26", default-features = false, features = ["mmap", "stopwords", "lz4-compression", "stemmer"] }
+toml = { version = "1", default-features = false, features = ["std", "parse", "serde"] }
+sha2 = "0.10"
+
+[dev-dependencies]
+tempfile = "3"

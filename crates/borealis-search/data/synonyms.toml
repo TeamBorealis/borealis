@@ -1,0 +1,100 @@
+# Query-time synonym table (local-search-spec.md section 5, tweak 6).
+#
+# Bump `version` on any change: it is part of the index manifest and forces a rebuild check.
+# Every expansion must resolve to text present in a bundled SRD (unit test `expansions_resolve_to_srd_text`).
+#
+# [[group]]  every term expands to all the other terms of the group (both directions).
+# [[rename]] one-way: a query containing `from` also looks for the `to` terms (2014 -> 2024 renames).
+
+version = 1
+
+[[group]]
+terms = ["ac", "armor class"]
+
+[[group]]
+terms = ["hp", "hit points"]
+
+[[group]]
+terms = ["thp", "temporary hit points"]
+
+[[group]]
+terms = ["dc", "difficulty class"]
+
+[[group]]
+terms = ["cr", "challenge rating"]
+
+[[group]]
+terms = ["xp", "experience points"]
+
+[[group]]
+terms = ["pb", "proficiency bonus"]
+
+[[group]]
+terms = ["asi", "ability score improvement"]
+
+[[group]]
+terms = ["oa", "aoo", "opportunity attack", "attack of opportunity"]
+
+[[group]]
+terms = ["aoe", "area of effect"]
+
+[[group]]
+terms = ["conc", "concentration"]
+
+[[group]]
+terms = ["twf", "two-weapon fighting"]
+
+[[group]]
+terms = ["adv", "advantage"]
+
+[[group]]
+terms = ["disadv", "disadvantage"]
+
+[[group]]
+terms = ["str", "strength"]
+
+[[group]]
+terms = ["dex", "dexterity"]
+
+[[group]]
+terms = ["con", "constitution"]
+
+[[group]]
+terms = ["int", "intelligence"]
+
+[[group]]
+terms = ["wis", "wisdom"]
+
+[[group]]
+terms = ["cha", "charisma"]
+
+[[group]]
+terms = ["dm", "gm", "dungeon master", "game master"]
+
+[[group]]
+terms = ["nat 20", "natural 20", "critical hit"]
+
+[[group]]
+terms = ["crit", "critical hit"]
+
+[[group]]
+terms = ["lr", "long rest"]
+
+[[group]]
+terms = ["sr", "short rest"]
+
+[[rename]]
+from = "race"
+to = ["species"]
+
+[[rename]]
+from = "subrace"
+to = ["lineage"]
+
+[[rename]]
+from = "ki"
+to = ["focus points"]
+
+[[rename]]
+from = "inspiration"
+to = ["heroic inspiration"]
