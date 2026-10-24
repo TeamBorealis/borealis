@@ -1,13 +1,14 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import type { LinkPackChoice, LinkSelection } from "../../api/contract";
+import type { BundleShare, LinkPackChoice, LinkSelection } from "../../api/contract";
 import { Alert, Button, Dialog, MessageBox } from "../../components";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { usePlatform } from "../../state/platform";
 import { setStatus } from "../../state/status";
 import { errorMessage, useAsync } from "../../state/useAsync";
-import { isFinal, statusLine } from "./messages";
-import type { TransferRole } from "./openTransfer";
+import { downloadBase64 } from "../../lib/files";
+import { bundleExportedLine, bundleSharedLine, formatBytes, isFinal, statusLine } from "./messages";
+import type { TransferMode, TransferRole } from "./openTransfer";
 import { ScanOverlay } from "./ScanOverlay";
 import { isIos, scanner } from "./scanner";
 import { MethodView, PickView, SessionView, ShowView, TypeView } from "./TransferViews";
@@ -34,9 +35,12 @@ function rememberLocalNetworkExplained(): void {
   try { localStorage.setItem(LOCAL_NETWORK_KEY, "1"); } catch { /* shown again after a restart */ }
 }
 
-/** Where a role starts: Send picks first; Receive shows the code (desktop) or the connect choices (phones). */
-function firstStep(role: TransferRole, mobile: boolean): Step {
-  if (role === "send") return "pick";
+const EXPORT_INTRO = "Choose what goes into the file. On the other device, open it with Borealis (File > Open bundle... on a computer, or from the Files or share sheet on a phone). It lists what will change before anything is written.";
+const BUNDLE_MIME = "application/octet-stream";
+
+/** Where a role starts: Send and export pick first; Receive shows the code (desktop) or the connect choices (phones). */
+function firstStep(role: TransferMode, mobile: boolean): Step {
+  if (role === "send" || role === "export") return "pick";
   return mobile ? "method" : "show";
 }
 
@@ -44,13 +48,16 @@ function firstStep(role: TransferRole, mobile: boolean): Step {
  * "Send to device" / "Receive from device" (spec 4): the device that shows the QR listens, the scanning device
  * connects, and the button pressed decides which way the data goes. Results land in the status bar.
  */
-export function TransferDialog({ role, initialIds, onClose }: { role: TransferRole; initialIds: string[]; onClose: () => void }) {
+export function TransferDialog({ role: mode, initialIds, onClose }: { role: TransferMode; initialIds: string[]; onClose: () => void }) {
+  const exporting = mode === "export";
+  const role: TransferRole = exporting ? "send" : mode;
   const api = useApi();
   const { mobile } = usePlatform();
   const { snapshot } = useCharacter();
   const session = useLinkSession(api);
   const s = session.status;
-  const [step, setStep] = useState<Step>(firstStep(role, mobile));
+  const [step, setStep] = useState<Step>(firstStep(mode, mobile));
+  const [ready, setReady] = useState<BundleShare | null>(null);
   const [chosen, setChosen] = useState<Set<string>>(() => new Set(initialIds.length ? initialIds : snapshot ? [snapshot.id] : []));
   const [packs, setPacks] = useState<LinkPackChoice>("required");
   const [code, setCode] = useState("");
@@ -62,7 +69,7 @@ export function TransferDialog({ role, initialIds, onClose }: { role: TransferRo
   const scanRun = useRef(0);
   const characters = useAsync(() => (role === "send" ? api.listCharacters() : Promise.resolve([])), [api, role]);
   const selection: LinkSelection = { characterIds: [...chosen], packs };
-  const title = role === "send" ? "Send to device" : "Receive from device";
+  const title = exporting ? (mobile ? "Share as a file" : "Export to bundle") : role === "send" ? "Send to device" : "Receive from device";
 
   /** iOS asks for Local Network access on the first LAN connection: say so just before it (once). */
   const gated = useCallback((run: () => void) => () => {
@@ -84,6 +91,32 @@ export function TransferDialog({ role, initialIds, onClose }: { role: TransferRo
     session.adopt(await api.linkConnect({ target, host: address?.trim() || undefined, selection: role === "send" ? selection : undefined }));
   });
   const submitCode = gated(() => void connect(code.trim(), host));
+
+  /** Desktop: the backend asks where to save the `.borealis` file; a cancelled dialog keeps this one open. */
+  const exportFile = () => call(async () => {
+    const r = await api.bundleExport({ selection });
+    if (!r.path) return;
+    setStatus(bundleExportedLine(r.fileName, r.characters, r.packs));
+    onClose();
+  });
+  /** Phones: Android opens the share sheet from the backend; elsewhere the bytes wait for a fresh tap (share needs a user gesture). */
+  const shareFile = () => call(async () => {
+    const r = await api.bundleShare({ selection });
+    if (r.shared) { setStatus(bundleSharedLine(r.fileName)); onClose(); return; }
+    setReady(r);
+  });
+  const shareReady = (r: BundleShare) => call(async () => {
+    const file = new File([Uint8Array.from(atob(r.dataBase64 ?? ""), (c) => c.charCodeAt(0))], r.fileName, { type: BUNDLE_MIME });
+    const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean; share?: (d: { files: File[]; title: string }) => Promise<void> };
+    if (typeof nav.share === "function" && nav.canShare?.({ files: [file] })) {
+      try { await nav.share({ files: [file], title: "Borealis bundle" }); } catch (e) { if ((e as { name?: string }).name === "AbortError") return; throw e; }
+      setStatus(bundleSharedLine(r.fileName));
+    } else {
+      downloadBase64(r.fileName, BUNDLE_MIME, r.dataBase64 ?? "");
+      setStatus(`Saved ${r.fileName}. Send it to the other device and open it with Borealis.`);
+    }
+    onClose();
+  });
   const startScan = gated(() => {
     const run = ++scanRun.current;
     setNotice(null);
@@ -151,10 +184,23 @@ export function TransferDialog({ role, initialIds, onClose }: { role: TransferRo
     } else if (s.phase === "failed" || s.phase === "expired") {
       footer = [<Button key="retry" variant="highlight" onClick={retry}>{s.phase === "expired" ? "New code" : "Try again"}</Button>, <Button key="close" onClick={onClose}>Close</Button>];
     } else footer = [cancelBtn];
+  } else if (ready) {
+    body = <p className="xfer-wait" role="status"><strong>{ready.fileName}</strong> is ready ({formatBytes(ready.bytes)}). Share it to Messages, Mail, AirDrop or Files, and open it with Borealis on the other device.</p>;
+    footer = [<Button key="share" variant="highlight" disabled={busy} onClick={() => void shareReady(ready)} data-autofocus>Share</Button>, cancelBtn];
   } else if (step === "pick") {
-    body = <PickView characters={characters.data} chosen={chosen} onChosen={setChosen} packs={packs} onPacks={setPacks} unsavedName={snapshot?.dirty && chosen.has(snapshot.id) ? snapshot.name : null} />;
-    footer = mobile
-      ? [<Button key="next" variant="highlight" disabled={!canSend} onClick={() => setStep("method")}>Next</Button>, cancelBtn]
+    body = (
+      <>
+        {error && <Alert tone="danger" role="alert">{error}</Alert>}
+        <PickView characters={characters.data} chosen={chosen} onChosen={setChosen} packs={packs} onPacks={setPacks} intro={exporting ? EXPORT_INTRO : undefined}
+          unsavedName={snapshot?.dirty && chosen.has(snapshot.id) ? snapshot.name : null} />
+      </>
+    );
+    footer = exporting
+      ? [mobile
+        ? <Button key="share" variant="highlight" disabled={!canSend || busy} onClick={() => void shareFile()}>Share</Button>
+        : <Button key="export" variant="highlight" disabled={!canSend || busy} onClick={() => void exportFile()}>Export...</Button>, cancelBtn]
+      : mobile
+      ? [<Button key="next" variant="highlight" disabled={!canSend} onClick={() => setStep("method")}>Next</Button>, <Button key="file" disabled={!canSend || busy} onClick={() => void shareFile()}>Share as a file</Button>, cancelBtn]
       : [<Button key="show" variant="highlight" disabled={!canSend || busy} onClick={startShow}>Show code</Button>, <Button key="type" disabled={!canSend} onClick={() => setStep("type")}>Enter a code</Button>, cancelBtn];
   } else if (step === "method") {
     body = <MethodView role={role} onScan={startScan} onShow={startShow} onType={() => { setNotice(null); setStep("type"); }} />;
@@ -178,7 +224,7 @@ export function TransferDialog({ role, initialIds, onClose }: { role: TransferRo
   return (
     <>
       <Dialog title={title} onClose={close} className="xfer-dlg" footer={footer}>
-        {error && step !== "type" && step !== "scan" && <Alert tone="danger" role="alert">{error}</Alert>}
+        {error && step !== "type" && step !== "scan" && step !== "pick" && <Alert tone="danger" role="alert">{error}</Alert>}
         {body}
       </Dialog>
       {step === "scan" && <ScanOverlay title="Scan the code" onType={() => leaveScan("type")} onCancel={() => leaveScan("method")} />}

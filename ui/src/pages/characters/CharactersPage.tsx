@@ -10,6 +10,7 @@ import { usePlatform } from "../../state/platform";
 import { useSettings } from "../../state/SettingsContext";
 import { errorMessage, useAsync } from "../../state/useAsync";
 import { type CharacterImportEntry, CharacterImportReportDialog } from "./CharacterImportReportDialog";
+import { onBundleApplied } from "../transfer/openBundle";
 import { CharacterTile } from "./CharacterTile";
 import "./characters.css";
 import { type NewCharacterForm, NewCharacterDialog, applyStandardArray } from "./NewCharacterDialog";
@@ -45,6 +46,7 @@ export function CharactersPage() {
   // Receive from device wrote new or newer characters: list again.
   const reloadList = list.reload;
   useEffect(() => api.subscribe("link:status", (s) => { if (s.role === "receive" && s.phase === "done") reloadList(); }), [api, reloadList]);
+  useEffect(() => onBundleApplied(reloadList), [reloadList]);
   const [query, setQuery] = useState("");
   const [finding, setFinding] = useState(false);
   const [creating, setCreating] = useState(false);

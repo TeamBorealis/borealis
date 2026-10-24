@@ -6,7 +6,11 @@ import { CHARACTER_MENU, type MenuEntry, openProjectSite, visibleMenus } from ".
 import { useShell } from "./ShellContext";
 import { openEditionFlyout } from "../../pages/manage/EditionFlyout";
 import { useShellActions } from "./useShellActions";
-import { openReceiveFromDevice, openSendToDevice } from "../../pages/transfer/openTransfer";
+import { openExportBundle, openReceiveFromDevice, openSendToDevice } from "../../pages/transfer/openTransfer";
+import { pickAndOpenBundle } from "../../pages/transfer/openBundle";
+import { useApi } from "../../state/ApiContext";
+import { setStatus } from "../../state/status";
+import { errorMessage } from "../../state/useAsync";
 
 interface MenuModel { id: string; label: ReactNode; entries: readonly MenuEntry[]; gold?: boolean }
 
@@ -60,6 +64,7 @@ export function MenuBar() {
 /** Runs a menu entry: route, project-site link, flyout, or shell action. */
 function useActivate() {
   const nav = useNavigate();
+  const api = useApi();
   const { run } = useShellActions();
   const { setLevelUpOpen, setPortraitsOpen, openSettings, setBorealisSettingsOpen } = useShell();
   return (e: MenuEntry) => {
@@ -72,6 +77,8 @@ function useActivate() {
     else if (e.action === "edition") openEditionFlyout();
     else if (e.action === "send-to-device") openSendToDevice();
     else if (e.action === "receive-from-device") openReceiveFromDevice();
+    else if (e.action === "export-bundle") openExportBundle();
+    else if (e.action === "open-bundle") void pickAndOpenBundle(api).catch((err) => setStatus(errorMessage(err)));
     else if (e.action) run(e.action);
   };
 }

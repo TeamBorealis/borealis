@@ -1,5 +1,5 @@
 import { useId } from "react";
-import type { CharacterSummary, LinkPackChoice, LinkPreviewItem, LinkStatus } from "../../api/contract";
+import type { CharacterSummary, LinkPackChoice, LinkPreview, LinkPreviewItem, LinkStatus } from "../../api/contract";
 import { Alert, CheckBox, ComboBox, Icon, MetroProgressBar, TextBox, triState } from "../../components";
 import { QrCode } from "../settings/QrCode";
 import { FieldLabel, Help } from "../settings/rows";
@@ -13,9 +13,11 @@ const PACK_OPTIONS: { value: LinkPackChoice; label: string }[] = [
 ];
 
 /** Send, step 1: tick characters, choose which packs travel. */
-export function PickView({ characters, chosen, onChosen, packs, onPacks, unsavedName }: {
+export function PickView({ characters, chosen, onChosen, packs, onPacks, unsavedName, intro }: {
   characters: CharacterSummary[] | null; chosen: ReadonlySet<string>; onChosen: (next: Set<string>) => void;
   packs: LinkPackChoice; onPacks: (p: LinkPackChoice) => void; unsavedName: string | null;
+  /** The sentence above the list (Send explains the other device's preview; export explains the file). */
+  intro?: string;
 }) {
   const packsId = useId();
   const list = characters ?? [];
@@ -27,7 +29,7 @@ export function PickView({ characters, chosen, onChosen, packs, onPacks, unsaved
   };
   return (
     <>
-      <p className="xfer-instr">Choose what to send. The other device lists what will change before anything is written.</p>
+      <p className="xfer-instr">{intro ?? "Choose what to send. The other device lists what will change before anything is written."}</p>
       <FieldLabel>CHARACTERS</FieldLabel>
       {characters === null ? <Help>Loading your characters...</Help> : list.length === 0 ? <Help>There are no saved characters yet.</Help> : (
         <div className="xfer-pick" role="group" aria-label="Characters to send">
@@ -136,6 +138,16 @@ function PreviewRow({ item }: { item: LinkPreviewItem }) {
 
 const peerName = (s: LinkStatus) => s.peerName ?? "The other device";
 
+/** What Accept would do, one row per item: shared by the device-transfer preview and the open-bundle preview. */
+export function PreviewList({ preview }: { preview: LinkPreview }) {
+  return (
+    <>
+      <ul className="xfer-prev" aria-label="What Accept changes">{preview.items.map((i) => <PreviewRow key={`${i.kind}:${i.key}`} item={i} />)}</ul>
+      <Help>The most recently edited copy wins. A replaced copy stays in the sync trash for 30 days.</Help>
+    </>
+  );
+}
+
 /** Connected: connecting, waiting for the other side, the receiver's preview, progress, or what failed. */
 export function SessionView({ status }: { status: LinkStatus }) {
   const peer = peerName(status);
@@ -155,8 +167,7 @@ export function SessionView({ status }: { status: LinkStatus }) {
       return (
         <>
           <p className="xfer-instr"><strong>{peer}</strong> wants to send {items.length === 1 ? "1 item" : `${items.length} items`} ({formatBytes(status.preview?.totalBytes ?? 0)}):</p>
-          <ul className="xfer-prev" aria-label="What Accept changes">{items.map((i) => <PreviewRow key={`${i.kind}:${i.key}`} item={i} />)}</ul>
-          <Help>The most recently edited copy wins. A replaced copy stays in the sync trash for 30 days.</Help>
+          <PreviewList preview={{ items, totalBytes: status.preview?.totalBytes ?? 0 }} />
         </>
       );
     }

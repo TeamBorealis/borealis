@@ -90,3 +90,21 @@ export const PLATFORM_LABEL: Record<LinkPlatform, string> = {
 export function formatDay(unixSecs: number): string {
   return new Date(unixSecs * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
+
+const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
+
+/** Status-bar line after "Open bundle": what the file changed here. */
+export function bundleOpenedLine(fileName: string, s: LinkSummary): string {
+  return `Opened ${fileName}: ${summaryText(s, true)}.`;
+}
+
+/** Status-bar line after "Export to bundle" wrote a file. */
+export function bundleExportedLine(fileName: string, characters: number, packs: number): string {
+  const packText = packs > 0 ? ` and ${plural(packs, "content pack", "content packs")}` : "";
+  return `Exported ${plural(characters, "character", "characters")}${packText} to ${fileName}.`;
+}
+
+/** Status-bar line after the share sheet took the bundle. */
+export function bundleSharedLine(fileName: string): string {
+  return `Shared ${fileName}. Open it with Borealis on the other device.`;
+}

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { classifyImport, RULES_IMPORT_ACCEPT, unsupportedImportMessage } from "../lib/importRouting";
 import { base64ToFile, fileToBase64, filesToInputs } from "../lib/files";
 import { ImportPreviewHost } from "../pages/content/ImportPreviewDialog";
+import { openBundleFile, openOsBundles } from "../pages/transfer/openBundle";
 import { startImportPreview } from "../state/importPreview";
 import { useApi } from "../state/ApiContext";
 import { stashImportFiles } from "../state/importInbox";
@@ -59,6 +60,8 @@ export function GlobalImport() {
     const drain = async () => {
       const opened = await api.takeOpenedFiles().catch(() => []);
       if (opened.length) void route(opened.map((o) => base64ToFile(o.fileName, o.contentBase64)));
+      // `.borealis` bundles are kept as files by the backend; ask for them after the other files were taken.
+      await openOsBundles(api);
     };
     void drain();
     const off = api.subscribe("content:open-file", () => void drain());
@@ -71,6 +74,7 @@ export function GlobalImport() {
   useEffect(() => api.subscribe("files:dropped", (drop) => {
     void (async () => {
       if (drop.rejected.length) toast.push(unsupportedImportMessage(drop.rejected, mobile), "error");
+      drop.bundles.forEach((b) => openBundleFile({ token: b.token, name: b.name }));
       const [folder] = drop.folders;
       if (folder && (await notice.ensure())) {
         await startImportPreview(api, { folder: folder.token }, (m) => toast.push(m, "error"));

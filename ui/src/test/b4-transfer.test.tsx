@@ -32,12 +32,12 @@ afterEach(() => {
 });
 
 describe("B4 Send to device / Receive from device (desktop)", () => {
-  it("File menu lists both entries after the classic items, before Exit", async () => {
+  it("File menu lists the device entries and the bundle entries after the classic items, before Exit", async () => {
     const user = userEvent.setup();
     renderApp("/characters");
     await user.click(await screen.findByRole("menuitem", { name: "File" }));
     const items = within(await screen.findByRole("menu")).getAllByRole("menuitem").map((i) => i.textContent);
-    expect(items.slice(-3)).toEqual(["Send to device...", "Receive from device...", "Exit Application"]);
+    expect(items.slice(-5)).toEqual(["Send to device...", "Receive from device...", "Export to bundle...", "Open bundle...", "Exit Application"]);
   });
 
   it("Receive: shows QR, code and fingerprint; the phone sends; preview with per-item actions; Accept reports in the status bar", async () => {

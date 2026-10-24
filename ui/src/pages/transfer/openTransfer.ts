@@ -1,9 +1,12 @@
 /** Which way the data goes: the button the user pressed decides (spec 4). */
 export type TransferRole = "send" | "receive";
 
+/** The transfer dialog also exports to a file: "export" writes a bundle (desktop) or shares it as a file (phones). */
+export type TransferMode = TransferRole | "export";
+
 export interface TransferRequest {
-  role: TransferRole;
-  /** Send: characters ticked when the dialog opens. */
+  role: TransferMode;
+  /** Send / export: characters ticked when the dialog opens. */
   characterIds?: string[];
 }
 
@@ -17,6 +20,11 @@ export function openSendToDevice(characterIds: string[] = []): void {
 /** File > Receive from device... (desktop) / More > Receive from device (phones). */
 export function openReceiveFromDevice(): void {
   window.dispatchEvent(new CustomEvent<TransferRequest>(OPEN_EVENT, { detail: { role: "receive" } }));
+}
+
+/** File > Export to bundle... (desktop) / More > Share as a file (phones): pick, then write or share a `.borealis` file. */
+export function openExportBundle(characterIds: string[] = []): void {
+  window.dispatchEvent(new CustomEvent<TransferRequest>(OPEN_EVENT, { detail: { role: "export", characterIds } }));
 }
 
 /** Subscribe to open requests (the shell's TransferHost). */
