@@ -19,3 +19,5 @@ zip = { version = "8", default-features = false, features = ["deflate"] }
 
 [dev-dependencies]
 tempfile = "3.27.0"
+# Only for the test that every device-link data path is excluded.
+borealis-link.workspace = true

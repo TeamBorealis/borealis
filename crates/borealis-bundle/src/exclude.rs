@@ -4,7 +4,8 @@
 use serde_json::{Map, Value};
 
 /// Directory names (any depth, case-insensitive) that never travel: search indexes and extracted
-/// text, embedding models, import drafts, the AI profile, sync state/trash, logs.
+/// text, embedding models, import drafts, the AI profile, sync state/trash, logs, and the device
+/// link state (`link/`: paired-device registry; borealis-link `DATA_PATHS`).
 const EXCLUDED_DIRS: &[&str] = &[
     "search",
     "models",
@@ -13,6 +14,7 @@ const EXCLUDED_DIRS: &[&str] = &[
     "sync",
     "logs",
     "extracted",
+    "link",
 ];
 
 /// File names (case-insensitive) that never travel: device identity and secrets, device-local

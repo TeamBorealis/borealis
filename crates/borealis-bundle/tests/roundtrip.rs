@@ -36,12 +36,14 @@ fn fixture() -> Fixture {
     write(&pack.join("search/index.bin"), b"derived");
     write(&pack.join("host.key"), b"secret");
     write(&pack.join("ai-host-key.der"), b"secret");
+    write(&pack.join("link/devices.json"), b"{\"devices\":[]}");
     // A second user pack nobody needs.
     let other = data.join("library/pack-b");
     write(&other.join("pack.json"), b"{\"id\":\"pack-b\"}");
     write(&other.join("content.json"), &pack_json("ID_TEST_ELEM_B"));
     // Data-dir decoys outside the library.
     write(&data.join("ai-host-key.der"), b"secret");
+    write(&data.join("link/devices.json"), b"{\"devices\":[]}");
     write(&data.join("models/m.bin"), b"model");
     write(
         &data.join("settings.json"),
@@ -182,6 +184,7 @@ fn exclusions_are_enforced_and_settings_are_portable_only() {
             ".der",
             "models",
             "ai-host",
+            "link/",
             "settings.json",
         ] {
             assert!(!n.contains(banned), "{n} contains {banned}");
