@@ -25,7 +25,7 @@
                 <!-- AndroidTV support -->
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
-            <!-- Open with / share to Borealis: content XML, .index, .zip and .dnd5e characters -->
+            <!-- Open with / share to Borealis: content XML, .index, .zip, .dnd5e characters and .borealis bundles -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -45,13 +45,15 @@
                 <data android:scheme="file" />
                 <data android:mimeType="*/*" />
                 <data android:host="*" />
+                <data android:pathPattern=".*\\.borealis" />
                 <data android:pathPattern=".*\\.dnd5e" />
                 <data android:pathPattern=".*\\.index" />
                 <data android:pathPattern=".*\\.xml" />
                 <data android:pathPattern=".*\\.zip" />
             </intent-filter>
             <!-- The Downloads provider names files by an opaque id (content://…/document/msf:123), so the
-                 path patterns above never match; .dnd5e and .index arrive there as octet-stream. -->
+                 path patterns above never match; .dnd5e, .index and .borealis arrive there as
+                 octet-stream (the display name still ends in .borealis; see MainActivity). -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -76,6 +78,15 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:mimeType="application/x-dnd5e" />
                 <data android:pathPattern=".*\\.dnd5e" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:mimeType="application/x-borealis-bundle" />
+                <data android:pathPattern=".*\\.borealis" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

@@ -66,13 +66,18 @@ targets:
           - CFBundleTypeName: Borealis content and characters
             CFBundleTypeRole: Viewer
             LSHandlerRank: Alternate
-            LSItemContentTypes: [public.xml, com.pkware.zip-archive, app.borealis.dnd5e, app.borealis.index]
+            LSItemContentTypes: [public.xml, com.pkware.zip-archive, app.borealis.dnd5e, app.borealis.index, app.borealis.bundle]
         UTImportedTypeDeclarations:
           - UTTypeIdentifier: app.borealis.dnd5e
             UTTypeDescription: 5e character
             UTTypeConformsTo: [public.data]
             UTTypeTagSpecification:
               public.filename-extension: [dnd5e]
+          - UTTypeIdentifier: app.borealis.bundle
+            UTTypeDescription: Borealis bundle
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification:
+              public.filename-extension: [borealis]
           - UTTypeIdentifier: app.borealis.index
             UTTypeDescription: Content index
             UTTypeConformsTo: [public.xml]

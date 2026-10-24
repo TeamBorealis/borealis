@@ -60,6 +60,16 @@
       },
       {
         "ext": [
+          "borealis"
+        ],
+        "name": "Borealis bundle",
+        "description": "Borealis characters and content packs",
+        "role": "Editor",
+        "rank": "Owner",
+        "mimeType": "application/x-borealis-bundle"
+      },
+      {
+        "ext": [
           "index"
         ],
         "name": "Content index",

@@ -12,6 +12,15 @@
         "mimeType": "application/x-dnd5e"
       },
       {
+        "ext": ["borealis"],
+        "contentTypes": ["app.borealis.bundle"],
+        "name": "Borealis bundle",
+        "description": "Borealis characters and content packs",
+        "role": "Editor",
+        "rank": "Owner",
+        "mimeType": "application/x-borealis-bundle"
+      },
+      {
         "ext": ["index"],
         "contentTypes": ["app.borealis.index"],
         "name": "Content index",

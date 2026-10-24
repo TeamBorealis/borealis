@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Registers the .dnd5e character file type (installed to /usr/share/mime/packages by deb/rpm). -->
+<!-- Registers the .dnd5e character and .borealis bundle file types (installed to /usr/share/mime/packages by deb/rpm). -->
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
   <mime-type type="application/x-dnd5e">
     <comment>5e character</comment>
     <sub-class-of type="application/xml"/>
     <glob pattern="*.dnd5e"/>
+  </mime-type>
+  <mime-type type="application/x-borealis-bundle">
+    <comment>Borealis bundle</comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.borealis"/>
   </mime-type>
 </mime-info>

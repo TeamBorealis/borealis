@@ -47,6 +47,22 @@
 		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
+				<string>borealis</string>
+			</array>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>app.borealis.bundle</string>
+			</array>
+			<key>CFBundleTypeName</key>
+			<string>Borealis bundle</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
 				<string>index</string>
 			</array>
 			<key>LSItemContentTypes</key>
@@ -109,6 +125,23 @@
 				<key>public.filename-extension</key>
 				<array>
 					<string>dnd5e</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>app.borealis.bundle</string>
+			<key>UTTypeDescription</key>
+			<string>Borealis bundle</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>borealis</string>
 				</array>
 			</dict>
 		</dict>

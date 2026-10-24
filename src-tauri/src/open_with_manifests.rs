@@ -7,6 +7,9 @@ const INFO_PLIST: &str = include_str!("../gen/apple/borealis_iOS/Info.plist");
 const ANDROID_MANIFEST: &str = include_str!("../gen/android/app/src/main/AndroidManifest.xml");
 const CONFIG: &str = include_str!("../tauri.conf.json");
 const IOS_CONFIG: &str = include_str!("../tauri.ios.conf.json");
+const WINDOWS_CONFIG: &str = include_str!("../tauri.windows.conf.json");
+const LINUX_MIME: &str = include_str!("../linux/borealis-mime.xml");
+const PROJECT_YML: &str = include_str!("../gen/apple/project.yml");
 
 fn associations(config: &str) -> Vec<serde_json::Value> {
     let v: serde_json::Value = serde_json::from_str(config).expect("config parses");
@@ -72,6 +75,7 @@ fn ios_document_types_name_their_content_types() {
     // LSItemContentTypes never offers Borealis in Files > Share (seen for .dnd5e on the simulator).
     for (ext, uti) in [
         ("dnd5e", "app.borealis.dnd5e"),
+        ("borealis", "app.borealis.bundle"),
         ("index", "app.borealis.index"),
         ("xml", "public.xml"),
         ("zip", "public.zip-archive"),
@@ -94,7 +98,11 @@ fn ios_declares_the_borealis_utis() {
         .split("<key>UTImportedTypeDeclarations</key>")
         .nth(1)
         .expect("imported type declarations");
-    for uti in ["app.borealis.dnd5e", "app.borealis.index"] {
+    for uti in [
+        "app.borealis.dnd5e",
+        "app.borealis.index",
+        "app.borealis.bundle",
+    ] {
         assert!(
             imported.contains(&format!("<string>{uti}</string>")),
             "{uti} is declared"
@@ -118,4 +126,64 @@ fn android_offers_borealis_for_downloads_provider_files() {
         .expect("a VIEW filter for application/octet-stream without a path pattern");
     assert!(filter.contains(r#"android:scheme="content""#));
     assert!(filter.contains("android.intent.category.DEFAULT"));
+}
+
+fn association<'a>(list: &'a [serde_json::Value], ext: &str) -> &'a serde_json::Value {
+    list.iter()
+        .find(|a| a["ext"].as_array().is_some_and(|e| e.iter().any(|x| x == ext)))
+        .unwrap_or_else(|| panic!("no association for .{ext}"))
+}
+
+#[test]
+fn every_desktop_config_registers_the_bundle_file_type() {
+    // macOS and Linux read the base config (Linux also the shared-mime-info file below); Windows has
+    // its own list, which replaces the base one.
+    for (label, config) in [("base", CONFIG), ("windows", WINDOWS_CONFIG)] {
+        let list = associations(config);
+        let a = association(&list, "borealis");
+        assert_eq!(a["mimeType"], "application/x-borealis-bundle", "{label}");
+        assert_eq!(a["role"], "Editor", "{label}");
+        assert!(a.get("contentTypes").is_none(), "{label}");
+    }
+    let names: Vec<_> = associations(WINDOWS_CONFIG)
+        .iter()
+        .map(|a| a["name"].as_str().unwrap_or_default().to_string())
+        .collect();
+    let unique: std::collections::BTreeSet<_> = names.iter().collect();
+    assert_eq!(unique.len(), names.len(), "Windows ProgIDs are distinct");
+    assert!(LINUX_MIME.contains(r#"<mime-type type="application/x-borealis-bundle">"#));
+    assert!(LINUX_MIME.contains(r#"<glob pattern="*.borealis"/>"#));
+}
+
+#[test]
+fn the_ios_project_spec_declares_the_bundle_type_too() {
+    // The project spec regenerates Info.plist, so both must carry it.
+    assert!(PROJECT_YML.contains("app.borealis.bundle"));
+    assert!(PROJECT_YML.contains("public.filename-extension: [borealis]"));
+}
+
+#[test]
+fn android_matches_borealis_bundles_by_name_and_by_mime_type() {
+    let filters: Vec<&str> = ANDROID_MANIFEST
+        .split("<intent-filter>")
+        .skip(1)
+        .map(|f| f.split("</intent-filter>").next().unwrap_or_default())
+        .collect();
+    let has_pattern = |f: &&str| f.contains(r#"android:pathPattern=".*\\.borealis""#);
+    // The hand-written VIEW filter (content and file URIs with a readable name).
+    assert!(
+        filters
+            .iter()
+            .any(|f| has_pattern(f) && f.contains(r#"android:scheme="content""#)),
+        "a VIEW filter with the .borealis path pattern"
+    );
+    // The generated block: VIEW and SEND with the bundle MIME type.
+    let generated = filters
+        .iter()
+        .find(|f| f.contains(r#"android:mimeType="application/x-borealis-bundle""#))
+        .expect("a filter for the bundle MIME type");
+    assert!(has_pattern(generated));
+    assert!(generated.contains("android.intent.action.SEND"));
+    assert!(generated.contains("android.intent.action.VIEW"));
+    // Downloads URIs carry no extension: the octet-stream filter (tested above) is what opens them.
 }
