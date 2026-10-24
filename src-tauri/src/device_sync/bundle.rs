@@ -35,14 +35,23 @@ pub fn incoming_dir(state: &crate::state::AppState) -> PathBuf {
     sync_dir(state).join("incoming")
 }
 
-/// Files in our incoming folder or in the iOS `Inbox` are ours to delete after use; a file the
-/// user picked or dropped is never touched.
+/// Files in our incoming folder or in the iOS document inbox are ours to delete after use; a file
+/// the user picked or dropped is never touched (a folder that is merely called `Inbox` on a
+/// desktop is the user's).
 fn is_temp_copy(state: &crate::state::AppState, path: &Path) -> bool {
-    path.starts_with(incoming_dir(state))
-        || path
-            .parent()
+    path.starts_with(incoming_dir(state)) || (cfg!(target_os = "ios") && is_ios_inbox_copy(path))
+}
+
+/// iOS copies a document opened with the app to `<app container>/Documents/Inbox/<name>`.
+fn is_ios_inbox_copy(path: &Path) -> bool {
+    let inbox = path.parent();
+    inbox
+        .and_then(Path::file_name)
+        .is_some_and(|n| n == "Inbox")
+        && inbox
+            .and_then(Path::parent)
             .and_then(Path::file_name)
-            .is_some_and(|n| n == "Inbox")
+            .is_some_and(|n| n == "Documents")
 }
 
 fn plain(e: TransferError) -> ApiError {
@@ -231,4 +240,24 @@ fn write_atomically(src: &Path, dest: &Path) -> ApiResult<()> {
         return Err(ApiError::io("save the bundle", e));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_ios_inbox_copy;
+    use std::path::Path;
+
+    #[test]
+    fn only_the_documents_inbox_counts_as_the_ios_copy() {
+        assert!(is_ios_inbox_copy(Path::new(
+            "/var/mobile/Containers/Data/Application/X/Documents/Inbox/Mira.borealis"
+        )));
+        for user in [
+            "/Users/me/Mail/Inbox/Mira.borealis",
+            "/Users/me/Documents/Mira.borealis",
+            "/Users/me/Documents/Inbox/sub/Mira.borealis",
+        ] {
+            assert!(!is_ios_inbox_copy(Path::new(user)), "{user}");
+        }
+    }
 }

@@ -371,6 +371,29 @@ fn a_bundle_copied_by_the_app_is_deleted_after_accept_or_discard() {
     assert!(!mine.exists(), "and after Cancel");
 }
 
+/// Z: only the iOS document inbox is the app's own; a user's file that merely sits in a folder
+/// called `Inbox` (mail exports, a Downloads subfolder) is never deleted, whether it is
+/// accepted, cancelled or refused.
+#[test]
+fn a_users_file_in_a_folder_named_inbox_is_never_deleted() {
+    let (a, b) = (dev("Mac"), dev("PC"));
+    put_character(&a, "Mira", Duration::from_secs(60));
+    let files = tempfile::tempdir().unwrap();
+    let inbox_dir = files.path().join("Inbox");
+    std::fs::create_dir_all(&inbox_dir).unwrap();
+    let file = export(&a, &inbox_dir);
+    let p = open(&b, &file);
+    b.sync.discard_bundle(&p.bundle_id);
+    assert!(file.exists(), "kept after Cancel");
+    let p = open(&b, &file);
+    b.sync.accept_bundle(&p.bundle_id).unwrap();
+    assert!(file.exists(), "kept after Accept");
+    let junk = inbox_dir.join("junk.borealis");
+    std::fs::write(&junk, b"not a zip").unwrap();
+    assert!(b.sync.open_bundle(&token(&b, &junk)).is_err());
+    assert!(junk.exists(), "kept after a refusal");
+}
+
 #[test]
 fn the_dtos_match_the_ts_contract() {
     let (a, b) = (dev("Mac"), dev("Phone"));
