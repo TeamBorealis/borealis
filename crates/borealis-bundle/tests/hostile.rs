@@ -147,6 +147,42 @@ fn excluded_content_in_a_bundle_is_refused() {
     }
 }
 
+/// Z: a Windows device name inside a pack (`nul.xml`, `COM1/x.json`) or as a pack key would reach
+/// a device, not a file, on a Windows receiver; it is refused like any unsafe path.
+#[test]
+fn windows_device_names_are_refused() {
+    let pack = |key: &str, rel: &str| -> (Item, String) {
+        let name = format!("packs/{key}/{rel}");
+        let f = file_entry(&name, b"{}");
+        let item = Item {
+            kind: ItemKind::Pack,
+            key: key.into(),
+            sha256: f.sha256.clone(),
+            size: f.size,
+            edited_at_ms: 1,
+            files: vec![f],
+            required_packs: Vec::new(),
+        };
+        (item, name)
+    };
+    for (key, rel) in [
+        ("p", "nul.xml"),
+        ("p", "CON"),
+        ("p", "aux.tar.json"),
+        ("p", "COM1/x.json"),
+        ("p", "sub/lpt3.json"),
+        ("NUL", "pack.json"),
+    ] {
+        let (item, name) = pack(key, rel);
+        let m = manifest_of(vec![item]);
+        let z = raw_zip(&[("manifest.json", &manifest_bytes(&m)), (&name, b"{}")]);
+        assert!(
+            matches!(open(z), Err(BundleError::UnsafePath(_))),
+            "accepted {name}"
+        );
+    }
+}
+
 #[test]
 fn non_portable_settings_are_refused() {
     let (ch, mut m) = good_parts();

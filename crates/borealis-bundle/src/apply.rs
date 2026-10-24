@@ -12,7 +12,7 @@
 //! files keep only the relative paths the reader already proved safe.
 
 use crate::error::{BundleError, Result};
-use crate::exclude::is_safe_rel_path;
+use crate::exclude::{is_safe_rel_path, is_windows_reserved};
 use crate::manifest::ItemKind;
 use crate::plan::{Action, Plan};
 use crate::reader::Bundle;
@@ -68,7 +68,7 @@ pub struct ApplyReport {
 }
 
 /// A key that is safe as a file or folder name on every platform: ASCII letters, digits, `_`
-/// and `-`, not starting with `-`, at most [`MAX_KEY_LEN`].
+/// and `-`, not starting with `-`, at most [`MAX_KEY_LEN`], not a Windows device name.
 #[must_use]
 pub fn is_plain_key(key: &str) -> bool {
     !key.is_empty()
@@ -77,6 +77,7 @@ pub fn is_plain_key(key: &str) -> bool {
         && key
             .bytes()
             .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
+        && !is_windows_reserved(key)
 }
 
 fn rejected(kind: ItemKind, key: &str, why: impl std::fmt::Display) -> BundleError {
@@ -324,6 +325,16 @@ mod tests {
         }
         for bad in ["", "-x", "a b", "a/b", "..", "a.json", "é", &"x".repeat(65)] {
             assert!(!is_plain_key(bad), "{bad}");
+        }
+    }
+
+    #[test]
+    fn windows_device_names_are_not_keys() {
+        for bad in ["CON", "con", "Nul", "aux", "PRN", "COM1", "lpt9", "com0"] {
+            assert!(!is_plain_key(bad), "{bad}");
+        }
+        for ok in ["CONSOLE", "nulls", "COM10", "LPT", "auxiliary", "c_con"] {
+            assert!(is_plain_key(ok), "{ok}");
         }
     }
 

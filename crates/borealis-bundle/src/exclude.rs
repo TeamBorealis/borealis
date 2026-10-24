@@ -95,7 +95,29 @@ pub fn is_portable_only(settings: &Value) -> bool {
     })
 }
 
-/// A safe single path segment: non-empty, no separators or control characters, no leading dot.
+/// True for a Windows device name (`CON`, `NUL`, `COM1`, `LPT9`, ... with or without an
+/// extension, any case): writing `nul.xml` or a folder `CON` on Windows reaches a device, not a
+/// file, so such names never travel.
+#[must_use]
+pub fn is_windows_reserved(segment: &str) -> bool {
+    let stem = segment
+        .split('.')
+        .next()
+        .unwrap_or_default()
+        .trim_end_matches(' ')
+        .to_ascii_uppercase();
+    if matches!(stem.as_str(), "CON" | "PRN" | "AUX" | "NUL") {
+        return true;
+    }
+    let mut chars = stem.chars();
+    let prefix: String = chars.by_ref().take(3).collect();
+    let rest: Vec<char> = chars.collect();
+    matches!(prefix.as_str(), "COM" | "LPT")
+        && matches!(rest.as_slice(), [d] if d.is_ascii_digit() || matches!(d, '¹' | '²' | '³'))
+}
+
+/// A safe single path segment: non-empty, no separators or control characters, no leading dot,
+/// not a Windows device name.
 #[must_use]
 pub fn is_safe_segment(s: &str) -> bool {
     const MAX_SEGMENT: usize = 128;
@@ -106,6 +128,7 @@ pub fn is_safe_segment(s: &str) -> bool {
         && !s.ends_with('.')
         && s.chars()
             .all(|c| c.is_alphanumeric() || matches!(c, '.' | '_' | '-' | ' ' | '(' | ')'))
+        && !is_windows_reserved(s)
 }
 
 /// A safe `/`-separated relative path of at most `max_depth` segments.
