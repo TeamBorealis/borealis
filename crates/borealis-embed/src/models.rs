@@ -2,8 +2,9 @@
 //!
 //! T2/T3 download the unmodified ggml-org `Q8_0` (310 MB). T1 downloads our re-quantised `Q6_K` body with a
 //! `Q4_K` token embedding (211 MB): our plain `Q4_K_M` failed the cosine gate (0.966 < 0.99), the mix passes
-//! (0.9926 at 768, 0.9931 at 256). The T1 file exists only on the Borealis mirror (GitHub Releases); its URL is
-//! filled in when the mirror release is published (S3.2, B-46).
+//! (0.9926 at 768, 0.9931 at 256). The T1 file exists only on the Borealis mirror (GitHub Releases of
+//! `alon-mini/borealis`). The mirror URLs below are the planned ones; nothing requests them until the release is
+//! published and [`MIRROR_PUBLISHED`] flips (TODO(B-46)). Until then T1 devices report "not available yet".
 
 /// Model family id (vector headers, logs).
 pub const MODEL_ID: &str = "embeddinggemma-2";
@@ -11,6 +12,34 @@ pub const MODEL_ID: &str = "embeddinggemma-2";
 pub const NATIVE_DIMS: usize = 768;
 /// ggml-org/embeddinggemma-2-GGUF commit the Hugging Face URLs pin.
 pub const HF_GGUF_COMMIT: &str = "58faf90940886df2d62be555c8765d00dac362c5";
+
+/// Release tag of the Borealis model mirror on GitHub Releases (`alon-mini/borealis`).
+pub const MIRROR_RELEASE_TAG: &str = "models-embeddinggemma-2-v1";
+/// Prefix of every mirror URL: `https://github.com/alon-mini/borealis/releases/download/<tag>/`.
+pub const MIRROR_RELEASE_BASE: &str =
+    "https://github.com/alon-mini/borealis/releases/download/models-embeddinggemma-2-v1/";
+/// The mirror release exists. TODO(B-46): set to `true` once the user approved and published the release with
+/// both files plus `embeddinggemma-2-LICENSE.txt` and `embeddinggemma-2-NOTICE.txt` next to them (EM6).
+pub const MIRROR_PUBLISHED: bool = false;
+
+/// Mirror URL of a file name (string literal), kept equal to [`MIRROR_RELEASE_BASE`] + name by a test.
+macro_rules! mirror_url {
+    ($file:literal) => {
+        concat!(
+            "https://github.com/alon-mini/borealis/releases/download/models-embeddinggemma-2-v1/",
+            $file
+        )
+    };
+}
+
+/// Apache-2.0 text the model is licensed under (Google's licence page, verbatim; S0.2 sec. 2).
+pub const MODEL_LICENSE: &str = include_str!("../licenses/embeddinggemma-2-LICENSE.txt");
+/// NOTICE shipped next to the model file and in Settings > About (S0.2 sec. 2, Apache-2.0 sec. 4b for our file).
+pub const MODEL_NOTICE: &str = include_str!("../licenses/embeddinggemma-2-NOTICE.txt");
+/// File name of [`MODEL_LICENSE`] next to the model in `<app-data>/models/`.
+pub const LICENSE_FILE_NAME: &str = "embeddinggemma-2-LICENSE.txt";
+/// File name of [`MODEL_NOTICE`] next to the model.
+pub const NOTICE_FILE_NAME: &str = "embeddinggemma-2-NOTICE.txt";
 
 /// One downloadable weights file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -25,8 +54,8 @@ pub struct ModelFile {
     pub sha256: &'static str,
     /// Pinned Hugging Face `resolve/<commit>/<file>` URL, when the file is published there.
     pub huggingface_url: Option<&'static str>,
-    /// Pinned Borealis mirror URL (GitHub Releases), once published.
-    pub mirror_url: Option<&'static str>,
+    /// Planned Borealis mirror URL (GitHub Releases). Used only once [`MIRROR_PUBLISHED`] is true.
+    pub mirror_url: &'static str,
     /// Size text for the consent dialog.
     pub size_text: &'static str,
 }
@@ -40,7 +69,7 @@ pub const Q8_0: ModelFile = ModelFile {
     huggingface_url: Some(
         "https://huggingface.co/ggml-org/embeddinggemma-2-GGUF/resolve/58faf90940886df2d62be555c8765d00dac362c5/embeddinggemma-2-Q8_0.gguf",
     ),
-    mirror_url: None,
+    mirror_url: mirror_url!("embeddinggemma-2-Q8_0.gguf"),
     size_text: CONSENT_SIZE_Q8_0,
 };
 
@@ -51,9 +80,28 @@ pub const Q6_K_TE_Q4_K: ModelFile = ModelFile {
     bytes: 211_161_312,
     sha256: "14b38ee0dc8556da0d420f8c920ecea9c0588a13ce440448697b7e0467413913",
     huggingface_url: None,
-    mirror_url: None,
+    mirror_url: mirror_url!("embeddinggemma-2-Q6_K-te-Q4_K.gguf"),
     size_text: CONSENT_SIZE_T1,
 };
+
+/// Every model file the app may have downloaded (delete removes exactly these names).
+pub const ALL_FILES: [ModelFile; 2] = [Q8_0, Q6_K_TE_Q4_K];
+
+impl ModelFile {
+    /// The URLs a download may use, in order: the pinned Hugging Face URL, then the mirror once published.
+    /// Empty = the file cannot be downloaded yet (the T1 file before B-46).
+    #[must_use]
+    pub fn download_sources(&self) -> Vec<&'static str> {
+        self.download_sources_with(MIRROR_PUBLISHED)
+    }
+
+    fn download_sources_with(&self, mirror_published: bool) -> Vec<&'static str> {
+        self.huggingface_url
+            .into_iter()
+            .chain(mirror_published.then_some(self.mirror_url))
+            .collect()
+    }
+}
 
 /// Consent size text of the full (Q8_0) model.
 pub const CONSENT_SIZE_Q8_0: &str = "about 310 MB";
@@ -113,6 +161,53 @@ mod tests {
         let url = Q8_0.huggingface_url.expect("url");
         assert!(url.contains(HF_GGUF_COMMIT));
         assert!(url.ends_with(Q8_0.file_name));
+    }
+
+    #[test]
+    fn mirror_urls_are_planned_https_release_assets() {
+        for f in ALL_FILES {
+            assert_eq!(
+                f.mirror_url,
+                format!("{MIRROR_RELEASE_BASE}{}", f.file_name)
+            );
+            assert!(MIRROR_RELEASE_BASE.contains(MIRROR_RELEASE_TAG));
+            for url in f.download_sources_with(true) {
+                assert!(url.starts_with("https://"), "{url}");
+            }
+            assert!(f
+                .file_name
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || "._-".contains(c)));
+        }
+    }
+
+    #[test]
+    fn sources_skip_the_mirror_until_it_is_published() {
+        assert_eq!(Q8_0.download_sources(), vec![Q8_0.huggingface_url.unwrap()]);
+        assert!(
+            Q6_K_TE_Q4_K.download_sources().is_empty(),
+            "T1 has no source yet"
+        );
+        assert_eq!(
+            Q8_0.download_sources_with(true),
+            vec![Q8_0.huggingface_url.unwrap(), Q8_0.mirror_url]
+        );
+        assert_eq!(
+            Q6_K_TE_Q4_K.download_sources_with(true),
+            vec![Q6_K_TE_Q4_K.mirror_url]
+        );
+    }
+
+    #[test]
+    fn licence_and_notice_are_bundled() {
+        assert!(MODEL_LICENSE.contains("Apache License"));
+        assert!(MODEL_LICENSE.contains("Version 2.0, January 2004"));
+        assert!(MODEL_LICENSE
+            .trim_end()
+            .ends_with("END OF TERMS AND CONDITIONS"));
+        assert!(MODEL_NOTICE.contains(HF_GGUF_COMMIT));
+        assert!(MODEL_NOTICE.contains(LICENSE_FILE_NAME));
+        assert!(MODEL_NOTICE.contains(Q6_K_TE_Q4_K.file_name) && MODEL_NOTICE.contains("MODIFIED"));
     }
 
     #[test]

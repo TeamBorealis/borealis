@@ -11,9 +11,14 @@
 //! * [`fusion`]: reciprocal rank fusion of keyword and vector hits with pinned exact names, and the vector-only
 //!   snippet rule. Pure functions over keys, so `borealis-search` can use them without a dependency cycle.
 //!
-//! Nothing here touches the network (C4); embedding inputs and queries never leave the device.
+//! * [`download`]: the consented model download (pinned URLs, compiled SHA-256 and size, `Range` resume, atomic
+//!   rename, other-URL retry, pause / cancel, delete).
+//!
+//! The only network code is [`download`], which the app runs after the user accepted the consent dialog (spec
+//! sec. 8). Embedding inputs and queries never leave the device (C4).
 
 pub mod device;
+pub mod download;
 pub mod embedder;
 pub mod error;
 pub mod fake;
@@ -42,3 +47,17 @@ pub use scheduler::{
 pub use store::{OpenStatus, StoreId, VectorStore};
 pub use tier::{DeviceProfile, FormFactor, Tier, TierConfig, TierOverride};
 pub use vector::{truncate_normalise, Degeneracy, MATRYOSHKA_DIMS};
+
+/// A real embedding backend is linked into this build. False until the llama.cpp binding lands (B-46): the app
+/// can download the model, but semantic search stays off and Settings says it arrives in a later update.
+#[must_use]
+pub const fn backend_available() -> bool {
+    #[cfg(feature = "llama")]
+    {
+        llama::LINKED
+    }
+    #[cfg(not(feature = "llama"))]
+    {
+        false
+    }
+}

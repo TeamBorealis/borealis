@@ -21,6 +21,9 @@
 use crate::embedder::{Embedder, ModelInfo};
 use crate::error::{EmbedError, Result};
 
+/// The binding is linked (the real backend sets this to `true`; see [`crate::backend_available`]).
+pub const LINKED: bool = false;
+
 /// Placeholder for the llama.cpp embedder.
 #[derive(Debug)]
 pub struct LlamaEmbedder {

@@ -1,0 +1,11 @@
+EmbeddingGemma 2 model weights
+Copyright Google LLC / Google DeepMind. Licensed under the Apache License, Version 2.0 (see
+embeddinggemma-2-LICENSE.txt).
+Source: https://huggingface.co/google/embeddinggemma-2 @ 914f7f89142e33e77833254d9c9b90c3cef7303b
+GGUF: https://huggingface.co/ggml-org/embeddinggemma-2-GGUF @ 58faf90940886df2d62be555c8765d00dac362c5
+embeddinggemma-2-Q8_0.gguf is redistributed unmodified.
+embeddinggemma-2-Q6_K-te-Q4_K.gguf was MODIFIED by the Borealis project: re-quantised from
+embeddinggemma-2-BF16.gguf with llama.cpp llama-quantize (commit 2639a3b, build b11642).
+Google publishes no NOTICE file for this model.
+Google's model card asks deployments to follow the Gemma Prohibited Use Policy:
+https://ai.google.dev/gemma/prohibited_use_policy
