@@ -65,7 +65,8 @@ impl fmt::Debug for PeerIdentity {
     }
 }
 
-/// One authenticated, framed connection. Frames arrive whole and in order.
+/// One authenticated, framed connection. Frames arrive whole and in order. After any error
+/// (including a timeout, which may interrupt a frame) the connection must be dropped.
 pub trait Connection: Send {
     /// The authenticated peer.
     fn peer(&self) -> &PeerIdentity;
@@ -120,7 +121,10 @@ pub trait Transport: Send + Sync {
     /// The listener type.
     type Listener: Listener<Conn = Self::Conn, Addr = Self::Addr>;
 
-    /// Connect to `addr`, accepting only a server that `policy` allows.
+    /// Connect to `addr`, accepting only a server that `policy` allows. A server certificate
+    /// outside the policy fails with [`LinkError::PinMismatch`]. In TLS 1.3 the server judges
+    /// *this* device's certificate after the client finished, so a refusal by the server shows
+    /// up as an error on the first [`Connection::recv`].
     fn connect(
         &self,
         addr: Self::Addr,

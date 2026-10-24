@@ -1,11 +1,11 @@
 //! Device link: identity, pairing, certificate pinning, the secure store, the paired-device
-//! registry and the authenticated device-to-device [`Transport`](transport::Transport).
+//! registry and the authenticated device-to-device [`Transport`].
 //!
 //! Shared by the LAN AI host (`borealis-ai` features `host`/`remote`) and device sync
 //! (specs/device-sync-investigation.md, WP B1). Features:
 //! * none: fingerprints, pairing strings and codes, pairing limits, registry, store trait.
 //! * `tls`: rustls (aws-lc-rs) identities, pinned client/server configs. No sockets.
-//! * `tcp`: the tokio + rustls TCP [`Transport`](transport::Transport) (desktop and mobile).
+//! * `tcp`: the tokio + rustls TCP [`Transport`] (desktop and mobile).
 //! * `platform-store`: [`PlatformStore`](store::PlatformStore) on the OS secure store.
 //!
 //! Secrets (private keys, tokens) are only ever held in a [`store::SecureStore`] or in memory;
