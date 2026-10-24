@@ -157,12 +157,54 @@ pub fn preview(
                 .map_or_else(|| e.key.clone(), |l| clean_name(l)),
             action: e.action.into(),
             size: sizes.get(&(e.kind, e.key.as_str())).copied().unwrap_or(0),
-            missing_packs: e.missing_packs.iter().map(|p| p.id.clone()).collect(),
+            // Peer-supplied names: cleaned like every other label before they are shown.
+            missing_packs: e.missing_packs.iter().map(|p| clean_name(&p.id)).collect(),
         })
         .collect();
     Preview {
         peer: peer.clone(),
         items,
         total_bytes: bundle_size,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use borealis_bundle::{PackRef, PlanEntry};
+    use borealis_link::Platform;
+
+    #[test]
+    fn peer_supplied_missing_pack_names_are_cleaned() {
+        let manifest = Manifest {
+            format: FORMAT.into(),
+            app_version: "1".into(),
+            created_ms: 0,
+            source_device: "x".into(),
+            items: Vec::new(),
+            settings: None,
+            campaigns: Vec::new(),
+        };
+        let plan = Plan {
+            entries: vec![PlanEntry {
+                kind: ItemKind::Character,
+                key: "c_a".into(),
+                action: Action::New,
+                incoming_edited_at_ms: 1,
+                local_edited_at_ms: None,
+                missing_packs: vec![PackRef {
+                    id: format!("evil\u{202E}\n{}", "x".repeat(500)),
+                    bundled: false,
+                }],
+            }],
+        };
+        let peer = PeerInfo {
+            name: "Mac".into(),
+            platform: Platform::Macos,
+        };
+        let p = preview(&peer, &manifest, &plan, &BTreeMap::new(), 1);
+        let shown = &p.items[0].missing_packs[0];
+        assert!(shown.starts_with("evilxx"), "{shown}");
+        assert!(shown.chars().count() <= borealis_link::registry::MAX_NAME_CHARS);
     }
 }
