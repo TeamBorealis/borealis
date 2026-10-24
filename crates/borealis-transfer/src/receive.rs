@@ -76,7 +76,7 @@ pub async fn receive<C: Connection>(
         let _ = send_ctl(
             conn,
             &Control::Failed {
-                reason: e.to_string(),
+                reason: e.for_peer(),
             },
         )
         .await;
@@ -116,7 +116,7 @@ pub async fn receive<C: Connection>(
             let _ = send_ctl(
                 conn,
                 &Control::Failed {
-                    reason: e.to_string(),
+                    reason: e.for_peer(),
                 },
             )
             .await;
@@ -189,7 +189,7 @@ async fn download<C: Connection>(
         let _ = send_ctl(
             conn,
             &Control::Failed {
-                reason: e.to_string(),
+                reason: e.for_peer(),
             },
         )
         .await;

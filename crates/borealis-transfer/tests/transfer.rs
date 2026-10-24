@@ -354,3 +354,48 @@ async fn an_invalid_character_refuses_the_whole_bundle() {
     assert_refused(&got);
     assert!(device.files().is_empty(), "{:?}", device.files());
 }
+
+/// Z: a hostile receiver's `Failed` reason is shown to the sending user; it arrives without
+/// control or bidi characters and capped, so it cannot flood or reorder the status line.
+#[tokio::test(flavor = "multi_thread")]
+async fn a_hostile_receivers_reason_is_cleaned_and_capped() {
+    let src = tempfile::tempdir().unwrap();
+    let (path, manifest) = bundle_file(src.path(), &[("c_one", character("Mira"))], &[]);
+    let (a, mut evil) = pair().await;
+    let reason = format!("\u{202E}call\n{}\u{0}", "A".repeat(100_000));
+    let attacker = async move {
+        let _ = evil.recv().await;
+        let hello = Control::Hello {
+            v: PROTOCOL,
+            name: "evil".into(),
+            platform: borealis_link::Platform::Unknown,
+            role: Role::Receive,
+        };
+        evil.send(&control(&hello)).await.unwrap();
+        let _ = evil.recv().await;
+        evil.send(&control(&Control::Failed { reason }))
+            .await
+            .unwrap();
+        let _ = evil.recv().await;
+    };
+    let sender = async {
+        let mut a = a;
+        let out = Outgoing {
+            bundle: &path,
+            manifest: &manifest,
+            labels: BTreeMap::new(),
+        };
+        let limits = TransferLimits::default();
+        let rec = Recorder::default();
+        send(&mut a, &local("PC"), &out, &Cancel::new(), &rec, &limits).await
+    };
+    let (_, sent) = tokio::join!(attacker, sender);
+    let Err(TransferError::Refused(shown)) = sent else {
+        panic!("{sent:?}");
+    };
+    assert!(shown.chars().count() <= borealis_transfer::MAX_PEER_REASON_CHARS);
+    assert!(shown.starts_with("callAAA"), "{shown}");
+    assert!(!shown
+        .chars()
+        .any(borealis_link::registry::is_unsafe_display_char));
+}

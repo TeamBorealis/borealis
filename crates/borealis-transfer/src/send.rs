@@ -8,7 +8,7 @@ use borealis_bundle::Manifest;
 use borealis_link::Connection;
 use sha2::{Digest, Sha256};
 
-use crate::error::TransferError;
+use crate::error::{peer_reason, TransferError};
 use crate::limits::{Cancel, TransferLimits};
 use crate::session::{hello, recv_ctl, send_ctl, Event, Events, Local};
 use crate::wire::{link, Control, Role, Summary, TAG_CHUNK};
@@ -71,7 +71,7 @@ pub async fn send<C: Connection>(
             Control::Waiting => {}
             Control::Accept => break,
             Control::Decline => return Err(TransferError::Declined),
-            Control::Failed { reason } => return Err(TransferError::Refused(reason)),
+            Control::Failed { reason } => return Err(TransferError::Refused(peer_reason(&reason))),
             _ => {
                 return Err(TransferError::Protocol(
                     "unexpected reply to the offer".into(),
@@ -83,7 +83,7 @@ pub async fn send<C: Connection>(
     send_ctl(conn, &Control::Done).await?;
     match recv_ctl(conn, cancel, limits).await? {
         Control::Finished { summary } => Ok(summary),
-        Control::Failed { reason } => Err(TransferError::Refused(reason)),
+        Control::Failed { reason } => Err(TransferError::Refused(peer_reason(&reason))),
         _ => Err(TransferError::Protocol(
             "unexpected reply after the data".into(),
         )),

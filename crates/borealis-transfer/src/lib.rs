@@ -15,7 +15,7 @@ mod send;
 mod session;
 pub mod wire;
 
-pub use error::{plain_reason, TransferError};
+pub use error::{peer_reason, plain_reason, TransferError, MAX_PEER_REASON_CHARS};
 pub use file::{apply_bundle_file, open_bundle_file};
 pub use limits::{Cancel, TransferLimits};
 pub use preview::{check_manifest, check_offer, Preview, PreviewAction, PreviewItem};

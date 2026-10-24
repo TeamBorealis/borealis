@@ -122,11 +122,25 @@ impl PairedDevice {
     }
 }
 
-/// Trim, drop control characters and cap at [`MAX_NAME_CHARS`]; empty becomes "Device".
+/// True for characters a peer must not get onto this device's screen: control characters and
+/// invisible formatting (bidi overrides and isolates, zero-width marks, BOM), which could reorder
+/// or hide the surrounding text ("Mira" + RLO + "nosj.exe").
+#[must_use]
+pub fn is_unsafe_display_char(c: char) -> bool {
+    c.is_control()
+        || matches!(
+            c,
+            '\u{061C}' | '\u{200B}'..='\u{200F}' | '\u{202A}'..='\u{202E}' | '\u{2060}'..='\u{2069}'
+                | '\u{FEFF}'
+        )
+}
+
+/// Trim, drop control and invisible formatting characters and cap at [`MAX_NAME_CHARS`]; empty
+/// becomes "Device".
 pub fn clean_name(name: &str) -> String {
     let cleaned: String = name
         .chars()
-        .filter(|c| !c.is_control())
+        .filter(|c| !is_unsafe_display_char(*c))
         .take(MAX_NAME_CHARS)
         .collect();
     let trimmed = cleaned.trim();
@@ -380,6 +394,9 @@ mod tests {
         assert_eq!(clean_name("  Phone\u{0}\n  "), "Phone");
         assert_eq!(clean_name("\u{7}"), "Device");
         assert_eq!(clean_name(&"x".repeat(100)).chars().count(), MAX_NAME_CHARS);
+        assert_eq!(clean_name("Mira\u{202E}nosj.exe"), "Miranosj.exe");
+        assert_eq!(clean_name("\u{2066}Mac\u{2069}\u{200B}\u{FEFF}"), "Mac");
+        assert_eq!(clean_name("Zoë の Mac"), "Zoë の Mac");
     }
 
     #[test]

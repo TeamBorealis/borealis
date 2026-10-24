@@ -41,6 +41,36 @@ impl TransferError {
     }
 }
 
+/// Longest text taken from a peer's `Failed` reason.
+pub const MAX_PEER_REASON_CHARS: usize = 200;
+
+impl TransferError {
+    /// The reason this device sends in `Failed`: a local file or apply problem is described in
+    /// general words, never with this device's paths or OS error texts.
+    pub fn for_peer(&self) -> String {
+        match self {
+            Self::Local(_) => "the receiving device could not save the items".into(),
+            other => other.to_string(),
+        }
+    }
+}
+
+/// A peer's free-text reason as this device shows it: control and invisible formatting
+/// characters removed, at most [`MAX_PEER_REASON_CHARS`].
+pub fn peer_reason(text: &str) -> String {
+    let cleaned: String = text
+        .chars()
+        .filter(|c| !borealis_link::registry::is_unsafe_display_char(*c))
+        .take(MAX_PEER_REASON_CHARS)
+        .collect();
+    let trimmed = cleaned.trim();
+    if trimmed.is_empty() {
+        "no reason given".into()
+    } else {
+        trimmed.to_string()
+    }
+}
+
 impl From<std::io::Error> for TransferError {
     fn from(e: std::io::Error) -> Self {
         Self::Local(format!("file error: {e}"))
