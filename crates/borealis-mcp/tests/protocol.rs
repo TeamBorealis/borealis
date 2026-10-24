@@ -5,8 +5,12 @@ mod common;
 use common::{Session, MODERN};
 use serde_json::json;
 
-const TOOLS: [&str; 6] = [
+/// Without a session scope: `search_sessions` is absent.
+const TOOLS: [&str; 9] = [
     "search_content",
+    "search_rules",
+    "search_lore",
+    "get_passage",
     "get_element",
     "list_core_ids",
     "validate_element",

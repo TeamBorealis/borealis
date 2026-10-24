@@ -4,8 +4,10 @@ mod element;
 mod glossary;
 mod ids;
 mod overlay;
+mod passage;
 mod schemas;
 mod search;
+mod sessions;
 mod sweep;
 mod validate;
 
@@ -18,7 +20,11 @@ use borealis_content::{ContentStore, ContentStoreBuilder, Ruleset};
 use serde::de::DeserializeOwned;
 use serde_json::{json, Value};
 
-use crate::config::{load_base, McpConfig};
+use borealis_search::SearchEngine;
+
+use crate::config::{load_base, open_search, McpConfig, SessionScope};
+
+pub use sessions::{NoSessions, SessionChunk, SessionSource};
 
 /// Hard cap on the text of one tool result.
 pub const MAX_OUTPUT_CHARS: usize = 24_000;
@@ -30,6 +36,10 @@ pub struct Tools {
     index: OnceLock<RetrievalIndex>,
     schema: OnceLock<JsonSchemaValidator>,
     baseline: OnceLock<HashSet<String>>,
+    search_dir: Option<std::path::PathBuf>,
+    engine: OnceLock<Option<SearchEngine>>,
+    pub(crate) scope: SessionScope,
+    pub(crate) sessions: Box<dyn SessionSource>,
 }
 
 impl Tools {
@@ -45,7 +55,36 @@ impl Tools {
             index: OnceLock::new(),
             schema: OnceLock::new(),
             baseline: OnceLock::new(),
+            search_dir: config.search_dir.clone(),
+            engine: OnceLock::new(),
+            scope: config.session_scope.clone(),
+            sessions: Box::new(NoSessions),
         })
+    }
+
+    /// Use `sessions` as the source of campaign notes (reachable only inside the session scope).
+    #[must_use]
+    pub fn with_sessions(mut self, sessions: Box<dyn SessionSource>) -> Self {
+        self.sessions = sessions;
+        self
+    }
+
+    /// The app's search index, opened read-only on first use. `None` when it does not exist yet
+    /// or cannot be used; the search tools then answer from the in-memory content index.
+    pub(crate) fn search_engine(&self) -> Option<&SearchEngine> {
+        self.engine
+            .get_or_init(|| {
+                let dir = self.search_dir.as_deref()?;
+                match open_search(dir) {
+                    Ok(engine) => Some(engine),
+                    Err(borealis_search::SearchError::NotBuilt) => None,
+                    Err(e) => {
+                        eprintln!("borealis-mcp: search index unavailable: {e}");
+                        None
+                    }
+                }
+            })
+            .as_ref()
     }
 
     /// Number of loaded elements.
@@ -78,7 +117,7 @@ impl Tools {
     /// `tools/list` entries in deterministic order; `with_output_schema` adds `outputSchema`.
     #[must_use]
     pub fn list(&self, with_output_schema: bool) -> Value {
-        schemas::tool_list(with_output_schema)
+        schemas::tool_list(with_output_schema, self.scope.campaign().is_some())
     }
 
     /// Run a tool. `None` when the tool does not exist; otherwise the MCP tool result
@@ -86,7 +125,13 @@ impl Tools {
     #[must_use]
     pub fn call(&self, name: &str, args: &Value, structured: bool) -> Option<Value> {
         let outcome = match name {
-            "search_content" => search::run(self, args),
+            "search_content" => search::content(self, args),
+            "search_rules" => search::rules(self, args),
+            "search_lore" => search::lore(self, args),
+            // Without a session scope the tool does not exist: same answer as for any unknown name.
+            schemas::SEARCH_SESSIONS if self.scope.campaign().is_none() => return None,
+            schemas::SEARCH_SESSIONS => sessions::run(self, args),
+            "get_passage" => passage::run(self, args),
             "get_element" => element::run(self, args),
             "list_core_ids" => ids::run(self, args),
             "validate_element" => validate::run(self, args),

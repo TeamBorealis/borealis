@@ -3,6 +3,7 @@
 use std::collections::BTreeSet;
 use std::path::PathBuf;
 
+use borealis_mcp::config::SessionScope;
 use borealis_mcp::{run_stdio, McpConfig};
 
 fn parse_args() -> Result<McpConfig, String> {
@@ -26,11 +27,22 @@ fn parse_args() -> Result<McpConfig, String> {
                     .collect();
                 config.enabled_packs = Some(set);
             }
+            "--search-dir" => {
+                let dir = args.next().ok_or("--search-dir needs a directory")?;
+                config.search_dir = Some(PathBuf::from(dir));
+            }
+            "--session-scope" => {
+                let id = args.next().ok_or("--session-scope needs a campaign id")?;
+                if id.trim().is_empty() {
+                    return Err("--session-scope needs a non-empty campaign id".into());
+                }
+                config.session_scope = SessionScope::Campaign(id);
+            }
             other => return Err(format!("unknown argument: {other}")),
         }
     }
     if config.content_dirs.is_empty() {
-        return Err("usage: borealis-mcp --content <dir> [--library <dir>] [--packs a,b]".into());
+        return Err("usage: borealis-mcp --content <dir> [--library <dir>] [--packs a,b] [--search-dir <dir>] [--session-scope <campaign>]".into());
     }
     Ok(config)
 }

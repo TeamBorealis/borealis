@@ -17,10 +17,28 @@ fn tool(name: &str, description: &str, schema: &Value, output: &Value) -> Value 
     })
 }
 
+/// The tool that exists only inside a session scope.
+pub const SEARCH_SESSIONS: &str = "search_sessions";
+
+/// Output schema of every search tool: hits that carry their citation key.
+fn hits_output() -> Value {
+    json!({"type":"object","properties":{"count":{"type":"integer"},"hits":{"type":"array","items":{"type":"object","properties":{
+        "cite":{"type":"string","description":"Citation key: pass to get_passage and cite as [[cite]]."},
+        "id":{"type":"string"},"name":{"type":"string"},"type":{"type":"string"},"path":{"type":"string"},
+        "ruleset":{"type":["string","null"]},"source":{"type":"string"},"snippet":{"type":"string"}},
+        "required":["cite","name","type"]}}},"required":["count","hits"]})
+}
+
 /// All tools in a fixed order. Every tool is read-only. Schemas are JSON Schema 2020-12.
 /// `with_output_schema` is false only for the oldest legacy protocol (2024-11-05).
-pub fn tool_list(with_output_schema: bool) -> Value {
+/// `search_sessions` is listed only when `with_sessions` (a session scope was granted for this run).
+pub fn tool_list(with_output_schema: bool, with_sessions: bool) -> Value {
     let mut tools = all_tools();
+    if !with_sessions {
+        if let Some(items) = tools.as_array_mut() {
+            items.retain(|t| t["name"] != SEARCH_SESSIONS);
+        }
+    }
     if !with_output_schema {
         for t in tools.as_array_mut().into_iter().flatten() {
             if let Some(obj) = t.as_object_mut() {
@@ -40,7 +58,7 @@ fn all_tools() -> Value {
         "type": ["object", "array", "string"]
     });
     json!([
-        tool("search_content", "BM25 search over loaded content (rules text, conditions, spells, classes, items...). Returns ids, names, types and snippets.", &json!({
+        tool("search_content", "Search rules text and content elements together (alias of search_rules + search_lore). Returns cite keys, ids, names, types and snippets.", &json!({
             "type": "object",
             "properties": {
                 "query": {"type": "string", "description": "Search words."},
@@ -49,7 +67,39 @@ fn all_tools() -> Value {
                 "k": {"type": "integer", "minimum": 1, "maximum": 20, "default": 8}
             },
             "required": ["query"], "additionalProperties": false
-        }), &json!({"type":"object","properties":{"count":{"type":"integer"},"hits":{"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"name":{"type":"string"},"type":{"type":"string"},"ruleset":{"type":["string","null"]},"source":{"type":"string"},"snippet":{"type":"string"}},"required":["id","name","type"]}}},"required":["count","hits"]})),
+        }), &hits_output()),
+        tool("search_rules", "Keyword search over the rules text (SRD sections, conditions, glossary). Each hit has a `cite` key: quote it as [[cite]] and read the whole passage with get_passage.", &json!({
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Search words."},
+                "ruleset": ruleset,
+                "k": {"type": "integer", "minimum": 1, "maximum": 20, "default": 8}
+            },
+            "required": ["query"], "additionalProperties": false
+        }), &hits_output()),
+        tool("search_lore", "Keyword search over spells, monsters, classes, items and other content elements. Each hit has a `cite` key: quote it as [[cite]] and read the whole passage with get_passage.", &json!({
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Search words."},
+                "type": {"type": "string", "description": "Element type filter, e.g. Spell, Monster, Class Feature."},
+                "ruleset": ruleset,
+                "k": {"type": "integer", "minimum": 1, "maximum": 20, "default": 8}
+            },
+            "required": ["query"], "additionalProperties": false
+        }), &hits_output()),
+        tool(SEARCH_SESSIONS, "Keyword search over the notes of the one campaign the user chose to share for this question. Cite hits as [[session:...]] keys.", &json!({
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Search words."},
+                "k": {"type": "integer", "minimum": 1, "maximum": 20, "default": 8}
+            },
+            "required": ["query"], "additionalProperties": false
+        }), &hits_output()),
+        tool("get_passage", "Read the full text (at most 4,000 characters) of one search hit by its `cite` key.", &json!({
+            "type": "object",
+            "properties": {"cite": {"type": "string", "description": "The `cite` of a search hit, e.g. ID_2024_CONDITION_GRAPPLED or rules:srd-5.2.1-rules-text/combat."}},
+            "required": ["cite"], "additionalProperties": false
+        }), &json!({"type":"object","properties":{"cite":{"type":"string"},"title":{"type":"string"},"path":{"type":"string"},"type":{"type":"string"},"ruleset":{"type":["string","null"]},"source":{"type":"string"},"text":{"type":"string"},"truncated":{"type":"boolean"}},"required":["cite","title","text","truncated"]})),
         tool("get_element", "Fetch one element by id: trimmed JSON (setters, rules, spellcasting) with the description as plain text.", &json!({
             "type": "object",
             "properties": {"id": {"type": "string", "description": "Element id, e.g. ID_2024_CONDITION_GRAPPLED."}},

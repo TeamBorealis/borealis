@@ -1,16 +1,41 @@
 //! Server configuration and read-only pack loading.
 //!
 //! The only filesystem access of the whole crate happens here: reading `pack.json` and the files
-//! it lists below the configured content directories.
+//! it lists below the configured content directories, and opening the app's search index
+//! **read-only** ([`open_search`]). Nothing here ever creates, writes or deletes a file.
 
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 use borealis_content::file::PackManifest;
 use borealis_content::{ContentStore, ContentStoreBuilder};
+use borealis_search::{SearchEngine, SearchError};
 
 /// Id of the always-loaded base pack.
 pub const CORE_PACK: &str = "core";
+
+/// Which campaign's notes the model may read in this run (spec 11, "Session consent per use").
+///
+/// Fixed by the host in the per-invocation MCP launch arguments; no tool argument can change it.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum SessionScope {
+    /// No session text is reachable: `search_sessions` is not listed and is rejected if called.
+    #[default]
+    None,
+    /// Only this campaign's notes.
+    Campaign(String),
+}
+
+impl SessionScope {
+    /// The granted campaign id, if any.
+    #[must_use]
+    pub fn campaign(&self) -> Option<&str> {
+        match self {
+            Self::None => None,
+            Self::Campaign(id) => Some(id),
+        }
+    }
+}
 
 /// What the server may read.
 #[derive(Debug, Clone, Default)]
@@ -20,6 +45,20 @@ pub struct McpConfig {
     pub content_dirs: Vec<PathBuf>,
     /// Pack ids to load; `None` loads every pack found. `core` is always loaded.
     pub enabled_packs: Option<BTreeSet<String>>,
+    /// The app's `<app-data>/search/v1` folder. Opened read-only and lazily; when it is absent or
+    /// unusable the search tools answer from the in-memory content index.
+    pub search_dir: Option<PathBuf>,
+    /// Session notes granted to this run. Default: none.
+    pub session_scope: SessionScope,
+}
+
+/// Open the app's search index for reading. `ReloadPolicy::Manual`, no writer is ever created.
+///
+/// # Errors
+/// [`SearchError::NotBuilt`] before the app's first index build, [`SearchError::Stale`] when the
+/// app's index was built by other versions, or an I/O / index error.
+pub fn open_search(dir: &Path) -> Result<SearchEngine, SearchError> {
+    SearchEngine::open_read_only(dir)
 }
 
 /// Packs found on disk: `(pack id, directory)`.
@@ -103,6 +142,7 @@ mod tests {
         let base = McpConfig {
             content_dirs: vec![content.clone()],
             enabled_packs: None,
+            ..McpConfig::default()
         };
         let (_, baseline) = load_base(&base).expect("baseline");
         let lib = std::env::temp_dir().join(format!("borealis-mcp-shadow-{}", std::process::id()));
@@ -113,6 +153,7 @@ mod tests {
         let shadowed = McpConfig {
             content_dirs: vec![content, lib.clone()],
             enabled_packs: None,
+            ..McpConfig::default()
         };
         let loaded = load_base(&shadowed);
         let _ = std::fs::remove_dir_all(&lib);

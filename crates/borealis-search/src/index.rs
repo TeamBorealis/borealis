@@ -78,6 +78,29 @@ pub struct Hit {
     pub score: f32,
 }
 
+/// One stored chunk read back by its exact `doc_key` (the `get_passage` MCP tool).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Passage {
+    /// The key it was found under.
+    pub doc_key: String,
+    /// Title or element name.
+    pub title: String,
+    /// Heading path or element type.
+    pub path: String,
+    /// Element type.
+    pub ty: String,
+    /// `2014`, `2024` or `none`.
+    pub ruleset: String,
+    /// Pack id.
+    pub pack: String,
+    /// Source name.
+    pub source: String,
+    /// Campaign id (sessions only).
+    pub campaign: Option<String>,
+    /// The full plain text of the chunk.
+    pub body: String,
+}
+
 /// An opened corpus index.
 pub struct CorpusIndex {
     index: Index,
@@ -300,6 +323,43 @@ impl CorpusIndex {
             hits = collapse(hits);
         }
         Ok(hits.into_iter().skip(req.offset).take(req.limit).collect())
+    }
+
+    /// The chunk stored under exactly `doc_key`, if any.
+    ///
+    /// # Errors
+    /// Tantivy errors.
+    pub fn passage(&self, doc_key: &str) -> Result<Option<Passage>> {
+        if self.mode == Mode::ReadOnly {
+            self.reader.reload()?;
+        }
+        let searcher = self.reader.searcher();
+        let term = Term::from_field_text(self.fields.doc_key, doc_key);
+        let query = TermQuery::new(term, IndexRecordOption::Basic);
+        let top = searcher.search(&query, &TopDocs::with_limit(1).order_by_score())?;
+        let Some((_, address)) = top.into_iter().next() else {
+            return Ok(None);
+        };
+        let doc: TantivyDocument = searcher.doc(address)?;
+        let f = &self.fields;
+        let text = |field| {
+            doc.get_first(field)
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string()
+        };
+        let campaign = text(f.campaign);
+        Ok(Some(Passage {
+            doc_key: text(f.doc_key),
+            title: text(f.name),
+            path: text(f.headings),
+            ty: text(f.ty),
+            ruleset: text(f.ruleset),
+            pack: text(f.pack),
+            source: text(f.source),
+            campaign: (!campaign.is_empty()).then_some(campaign),
+            body: text(f.body),
+        }))
     }
 
     fn hit_from(&self, doc: &TantivyDocument, snippets: &SnippetGenerator, score: f32) -> Hit {

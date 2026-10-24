@@ -349,3 +349,23 @@ fn only_one_writer_process_can_hold_the_index() {
     a.sync(Corpus::Lore, &[pack_of("a", "alpha", 1)]).unwrap();
     b.sync(Corpus::Lore, &[pack_of("b", "beta", 1)]).unwrap();
 }
+
+#[test]
+fn a_chunk_is_read_back_whole_by_its_exact_key() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let (mut engine, _) = open(dir.path());
+        engine
+            .sync(Corpus::Lore, &[pack_of("a", "alpha", 2)])
+            .unwrap();
+        engine.sync(Corpus::Rules, &[]).unwrap();
+    }
+    let reader = SearchEngine::open_read_only(dir.path()).unwrap();
+    let got = reader.passage(Corpus::Lore, "a-1").unwrap().unwrap();
+    assert_eq!(got.title, "alpha 1");
+    assert_eq!(got.body, "alpha text number 1");
+    assert_eq!(got.pack, "a");
+    assert!(got.campaign.is_none());
+    assert!(reader.passage(Corpus::Lore, "a-9").unwrap().is_none());
+    assert!(reader.passage(Corpus::Rules, "a-1").unwrap().is_none());
+}

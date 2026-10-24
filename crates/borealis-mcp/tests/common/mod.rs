@@ -32,6 +32,18 @@ impl Session {
         if let Some(dir) = library {
             command.arg("--library").arg(dir);
         }
+        Self::spawn(command)
+    }
+
+    /// Start with the bundled content plus extra launch arguments (`--search-dir`, `--session-scope`).
+    pub fn start_with_args(args: &[&std::ffi::OsStr]) -> Self {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_borealis-mcp"));
+        command.arg("--content").arg(content_root());
+        command.args(args);
+        Self::spawn(command)
+    }
+
+    fn spawn(mut command: Command) -> Self {
         let mut child = command
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -103,4 +115,33 @@ impl Drop for Session {
         let _ = self.child.kill();
         let _ = self.child.wait();
     }
+}
+
+/// Build the app's search index (SRD packs) in `dir` exactly as the app does, then drop the writer.
+pub fn build_index(dir: &std::path::Path) {
+    use borealis_content::ContentStoreBuilder;
+    use borealis_search::{corpus, Corpus, SearchEngine, WriterBudget};
+    let root = content_root();
+    let mut builder = ContentStoreBuilder::new();
+    for id in [
+        "srd-5.1",
+        "srd-5.1-monsters",
+        "srd-5.2.1",
+        "srd-5.2.1-monsters",
+    ] {
+        builder = builder.add_pack_dir(&root.join(id)).unwrap();
+    }
+    let store = builder.build();
+    let docs: Vec<String> = ["srd-5.1-rules-text", "srd-5.2.1-rules-text"]
+        .iter()
+        .map(|id| std::fs::read_to_string(root.join(id).join("docs.json")).unwrap())
+        .collect();
+    let refs: Vec<&str> = docs.iter().map(String::as_str).collect();
+    let (mut engine, _) = SearchEngine::open(dir, WriterBudget::DESKTOP).unwrap();
+    engine
+        .sync(Corpus::Rules, &corpus::rules_packs(&refs, &store).unwrap())
+        .unwrap();
+    engine
+        .sync(Corpus::Lore, &corpus::lore_packs(&store))
+        .unwrap();
 }

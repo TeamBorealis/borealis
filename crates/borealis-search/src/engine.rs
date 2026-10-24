@@ -349,6 +349,14 @@ impl SearchEngine {
         Ok(report)
     }
 
+    /// The chunk stored under exactly `doc_key` in `corpus`.
+    ///
+    /// # Errors
+    /// Index errors.
+    pub fn passage(&self, corpus: Corpus, doc_key: &str) -> Result<Option<crate::index::Passage>> {
+        self.corpus_index(corpus).passage(doc_key)
+    }
+
     /// Search one corpus.
     ///
     /// # Errors

@@ -25,6 +25,6 @@ pub use chunk::{Chunk, EditionTag, PackInput};
 pub use corpus::{parse_rules_key, DocsPack, DocsSectionRef};
 pub use engine::{Corpus, Manifest, OpenReport, SearchEngine, SyncReport};
 pub use error::{Result, SearchError};
-pub use index::{base_key, CorpusIndex, Hit, WriterBudget};
+pub use index::{base_key, CorpusIndex, Hit, Passage, WriterBudget};
 pub use query::{Edition, EditionScope, SearchConfig, SearchRequest, Tweaks, Weights};
 pub use synonyms::Synonyms;
