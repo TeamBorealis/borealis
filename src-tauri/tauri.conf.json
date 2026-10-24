@@ -43,6 +43,8 @@
       "../content/srd-5.2.1": "content/srd-5.2.1",
       "../content/srd-5.1-monsters": "content/srd-5.1-monsters",
       "../content/srd-5.2.1-monsters": "content/srd-5.2.1-monsters",
+      "../content/srd-5.1-rules-text": "content/srd-5.1-rules-text",
+      "../content/srd-5.2.1-rules-text": "content/srd-5.2.1-rules-text",
       "../crates/borealis-ai/profile-assets": "ai-profile"
     },
     "fileAssociations": [

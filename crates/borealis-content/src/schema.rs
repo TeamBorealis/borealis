@@ -7,6 +7,9 @@ use std::sync::OnceLock;
 /// The content file schema (JSON Schema draft 2020-12) shipped with the crate.
 pub const CONTENT_SCHEMA_JSON: &str = include_str!("../schema/content-format.schema.json");
 
+/// The rules-text pack schema (`borealis-docs/1`, see `docs/rules-text-format.md`).
+pub const DOCS_SCHEMA_JSON: &str = include_str!("../schema/docs-format.schema.json");
+
 /// One schema violation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SchemaViolation {
@@ -106,6 +109,29 @@ pub fn validate_content(doc: &Value) -> Result<Vec<SchemaViolation>, ContentErro
     validate_document(DocumentKind::Content, doc)
 }
 
+/// Validate a rules-text pack document (`docs.json`, format `borealis-docs/1`).
+///
+/// Returns the list of violations (empty when valid).
+///
+/// # Errors
+/// [`ContentError::Schema`] if the embedded schema is not valid JSON or cannot be compiled (a build defect).
+pub fn validate_docs(doc: &Value) -> Result<Vec<SchemaViolation>, ContentError> {
+    static DOCS: OnceLock<Result<jsonschema::Validator, String>> = OnceLock::new();
+    let built = DOCS.get_or_init(|| {
+        let schema: Value = serde_json::from_str(DOCS_SCHEMA_JSON).map_err(|e| e.to_string())?;
+        jsonschema::validator_for(&schema).map_err(|e| e.to_string())
+    });
+    let v = built
+        .as_ref()
+        .map_err(|e| ContentError::Schema(e.clone()))?;
+    Ok(v.iter_errors(doc)
+        .map(|e| SchemaViolation {
+            pointer: e.instance_path.to_string(),
+            message: e.to_string(),
+        })
+        .collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -115,6 +141,24 @@ mod tests {
         let ok = json!({"format":"borealis-content/1","elements":[
             {"id":"ID_A","name":"A","type":"Anything Goes","source":"Core"}]});
         assert!(validate_content(&ok).unwrap().is_empty());
+    }
+
+    #[test]
+    fn docs_schema_accepts_a_section_and_rejects_missing_page_or_path() {
+        let sha = "0".repeat(64);
+        let mut doc = json!({"format":"borealis-docs/1","ruleset":"dnd2024",
+            "info":{"id":"p","name":"P","version":"1.0.0","license":"CC-BY-4.0","attribution":"a","description":"d",
+                    "source":{"document":"SRD","pdf":"x.pdf","pdf_sha256":sha}},
+            "sections":[{"id":"combat/cover","path":["Combat","Cover"],"page":15,"html":"<p>x</p>"}]});
+        assert!(validate_docs(&doc).unwrap().is_empty());
+        doc["sections"][0]["page"] = json!(0);
+        doc["sections"][0]["path"] = json!([]);
+        let v = validate_docs(&doc).unwrap();
+        assert!(v.iter().any(|x| x.pointer == "/sections/0/page"));
+        assert!(v.iter().any(|x| x.pointer == "/sections/0/path"));
+        assert!(!validate_docs(&json!({"format":"borealis-docs/2"}))
+            .unwrap()
+            .is_empty());
     }
 
     #[test]

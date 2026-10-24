@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://borealis.invalid/schemas/docs-format.schema.json",
+  "title": "Borealis rules-text pack (borealis-docs/1)",
+  "description": "Searchable rules text: one section per SRD heading with its heading path and page. Loaded only by search, never by the content store. See docs/rules-text-format.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "info", "ruleset", "sections"],
+  "properties": {
+    "format": { "const": "borealis-docs/1" },
+    "info": { "$ref": "#/$defs/DocsInfo" },
+    "ruleset": { "enum": ["dnd2014", "dnd2024", "any"] },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/DocsSection" }
+    }
+  },
+  "$defs": {
+    "DocsInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "version", "license", "attribution", "description", "source"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9.-]*$" },
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "license": { "type": "string", "minLength": 1 },
+        "attribution": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["document", "pdf", "pdf_sha256"],
+          "properties": {
+            "document": { "type": "string", "minLength": 1 },
+            "pdf": { "type": "string", "minLength": 1 },
+            "pdf_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          }
+        }
+      }
+    },
+    "DocsSection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "page", "html"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable slug of the heading path, unique within the pack; search builds the citation key rules:<pack>/<id> from it.",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*(/[a-z0-9]+(-[a-z0-9]+)*)*$"
+        },
+        "path": {
+          "type": "array",
+          "description": "Heading texts from the chapter (H1) down to this section's own heading; the last entry is the section title.",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-based PDF page of the heading (equal to the printed page number in both SRDs)."
+        },
+        "html": {
+          "type": "string",
+          "description": "The section's own text (not its sub-sections') as an HTML fragment of p, ul/li, table/tr/th/td, b and i. May be empty when a heading is followed directly by a sub-heading."
+        }
+      }
+    }
+  }
+}

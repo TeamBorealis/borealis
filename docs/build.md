@@ -15,7 +15,8 @@ Measured: ~3m47s wall (cold crates), release binary 25 MB.
 | DMG | target/release/bundle/dmg/Borealis_1.0.0_aarch64.dmg | 11 MB |
 
 Identifier `app.borealis`, name `Borealis`, version 1.0.0 (Info.plist verified).
-Resources in `Contents/Resources`: `content/{core,srd-5.1,srd-5.2.1,srd-5.1-monsters,srd-5.2.1-monsters}`,
+Resources in `Contents/Resources`: `content/{core,srd-5.1,srd-5.2.1,srd-5.1-monsters,srd-5.2.1-monsters,srd-5.1-rules-text,srd-5.2.1-rules-text}`
+(the two `*-rules-text` folders are `borealis-docs/1` text packs for search, not content packs: they are not in `BUNDLED_PACKS`),
 `ai-profile/{claude,codex}`. The UI bundles the Selawik woff2 fonts (`ui/src/assets/fonts/`, OFL); the sheet renderer embeds Noto fonts (`crates/borealis-sheet/fonts/`, OFL). See `NOTICE`.
 
 ### Smoke checks

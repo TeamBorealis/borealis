@@ -1,7 +1,7 @@
 # content-tools
 
 Maintainer-only scripts that generated the bundled content packs in `content/`
-(`srd-5.1`, `srd-5.1-monsters`, `srd-5.2.1`, `srd-5.2.1-monsters`). They are not needed to build or run
+(`srd-5.1`, `srd-5.1-monsters`, `srd-5.2.1`, `srd-5.2.1-monsters`, `srd-5.1-rules-text`, `srd-5.2.1-rules-text`). They are not needed to build or run
 Borealis: the shipped packs are **generated output**, committed as JSON. Regenerating them is only
 useful if you change how the packs are produced.
 
@@ -25,6 +25,8 @@ themselves, and the committed packs remain valid.
 
 - `srd51/`, `srd521/`: rules packs (classes, species, spells, items, rules).
 - `srd51-monsters/`, `srd521-monsters/`: typed monster stat blocks.
+- `rules-text/`: the `srd-5.1-rules-text` and `srd-5.2.1-rules-text` search packs (`borealis-docs/1`, see
+  `docs/rules-text-format.md`). `python3 -I content-tools/rules-text/build.py` rebuilds both byte-identically.
 - `../crates/borealis-engine/tools/gen_core_pack.py`: generates `content/core`.
 
 Intermediate files (`*.pkl`, raw text dumps) are scratch output of the extraction steps.
