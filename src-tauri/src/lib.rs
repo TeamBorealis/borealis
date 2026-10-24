@@ -108,6 +108,7 @@ pub mod magic;
 pub mod manage;
 pub mod mcp_mode;
 pub mod native_share;
+pub mod no_backup;
 pub mod picked_files;
 pub mod picked_paths;
 pub mod play_api;

@@ -62,11 +62,28 @@ impl PlatformStore {
     }
 
     fn entry(&self, name: &SecretName) -> Result<Entry, StoreError> {
+        let modifiers: std::collections::HashMap<&str, &str> =
+            ENTRY_MODIFIERS.iter().copied().collect();
         self.inner
-            .build(SERVICE, name.as_str(), None)
+            .build(
+                SERVICE,
+                name.as_str(),
+                (!modifiers.is_empty()).then_some(&modifiers),
+            )
             .map_err(map_err)
     }
 }
+
+/// iOS: keychain items are `ThisDeviceOnly`, so an encrypted backup restored to another phone
+/// never carries this device's identity or pair keys (threat model "Cloned identity"); readable
+/// after the first unlock so a transfer works while the phone is locked again.
+#[cfg(target_os = "ios")]
+const ENTRY_MODIFIERS: &[(&str, &str)] =
+    &[("access-policy", "after-first-unlock-this-device-only")];
+
+/// Other targets: the store's defaults (no iCloud-style sync of these stores).
+#[cfg(not(target_os = "ios"))]
+const ENTRY_MODIFIERS: &[(&str, &str)] = &[];
 
 impl SecureStore for PlatformStore {
     fn get(&self, name: &SecretName) -> Result<Option<Secret>, StoreError> {
@@ -143,6 +160,16 @@ fn open_native() -> Result<(Arc<CredentialStore>, StoreBackend), StoreError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ios_keychain_items_stay_on_the_device() {
+        let ios: &[(&str, &str)] = &[("access-policy", "after-first-unlock-this-device-only")];
+        if cfg!(target_os = "ios") {
+            assert_eq!(ENTRY_MODIFIERS, ios);
+        } else {
+            assert!(ENTRY_MODIFIERS.is_empty());
+        }
+    }
 
     /// Touches the real OS store (keychain prompt possible on macOS): run by hand with
     /// `cargo test -p borealis-link --features platform-store -- --ignored`.

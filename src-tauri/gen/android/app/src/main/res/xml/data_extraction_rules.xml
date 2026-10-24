@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+: cloud backup and device-to-device transfer keep characters, packs and settings, but
+     never this device's link state (link/), sync state and trash (sync/), the search index (search/)
+     or the secure-store preferences (keyring-default.xml). Kept in step with src-tauri/src/no_backup.rs
+     (test android_backups_leave_out_device_state). The app data folder is the app's dataDir (domain root). -->
+<data-extraction-rules>
+  <cloud-backup>
+    <exclude domain="root" path="link" />
+    <exclude domain="root" path="sync" />
+    <exclude domain="root" path="search" />
+    <exclude domain="sharedpref" path="keyring-default.xml" />
+  </cloud-backup>
+  <device-transfer>
+    <exclude domain="root" path="link" />
+    <exclude domain="root" path="sync" />
+    <exclude domain="root" path="search" />
+    <exclude domain="sharedpref" path="keyring-default.xml" />
+  </device-transfer>
+</data-extraction-rules>

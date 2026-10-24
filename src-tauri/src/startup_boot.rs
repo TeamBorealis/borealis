@@ -111,6 +111,10 @@ fn boot(handle: &AppHandle, startup: &Startup, began: Instant) {
 fn load(handle: &AppHandle, startup: &Startup) -> Result<(), String> {
     startup.report(&Stage::Directories);
     let data = handle.path().app_data_dir().map_err(|e| e.to_string())?;
+    // iOS backs up the app data folder: keep link, sync and search state out (Android does
+    // this with its backup rules in the manifest).
+    #[cfg(target_os = "ios")]
+    crate::no_backup::exclude_from_backup(&data);
     let (content_root, extract_error) = crate::content_root(handle);
     let paths = AppPaths {
         content_root,

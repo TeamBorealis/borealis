@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and older (fullBackupContent): same exclusions as data_extraction_rules.xml. Kept in step
+     with src-tauri/src/no_backup.rs (test android_backups_leave_out_device_state). -->
+<full-backup-content>
+  <exclude domain="root" path="link" />
+  <exclude domain="root" path="sync" />
+  <exclude domain="root" path="search" />
+  <exclude domain="sharedpref" path="keyring-default.xml" />
+</full-backup-content>
