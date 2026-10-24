@@ -60,7 +60,7 @@ fn lookup(tools: &Tools, corpus: Corpus, cite: &str) -> Option<Passage> {
         }
     });
     // Rules and Lore never hold campaign text; refuse a chunk that claims a campaign anyway.
-    found.filter(|p| p.campaign.is_none())
+    found.filter(|p| p.campaign.is_none() && tools.pack_allowed(&p.pack))
 }
 
 /// An element straight from the loaded content (no index, or the index lacks it).

@@ -87,7 +87,7 @@ fn search(tools: &Tools, scope: Scope, a: Args) -> Result<Value, String> {
     let ruleset = a.ruleset.as_deref().map(parse_ruleset).transpose()?;
     let hits = tools
         .search_engine()
-        .and_then(|engine| indexed(engine, scope, &a, ruleset, k))
+        .and_then(|engine| indexed(engine, tools.allowed_packs(), scope, &a, ruleset, k))
         .unwrap_or_else(|| in_memory(tools, scope, &a, ruleset, k));
     Ok(json!({"count": hits.len(), "hits": hits}))
 }
@@ -103,6 +103,7 @@ fn edition_scope(ruleset: Option<Ruleset>) -> EditionScope {
 /// `None` when the index fails (stale, being rebuilt): the caller falls back to memory.
 fn indexed(
     engine: &SearchEngine,
+    packs: Option<&[String]>,
     scope: Scope,
     a: &Args,
     ruleset: Option<Ruleset>,
@@ -112,6 +113,7 @@ fn indexed(
         edition: edition_scope(ruleset),
         types: a.ty.iter().cloned().collect(),
         limit: k,
+        packs: packs.map(<[String]>::to_vec),
         ..SearchRequest::new(a.query.clone())
     };
     let config = SearchConfig::default();

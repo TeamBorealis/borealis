@@ -37,6 +37,8 @@ pub struct Tools {
     schema: OnceLock<JsonSchemaValidator>,
     baseline: OnceLock<HashSet<String>>,
     search_dir: Option<std::path::PathBuf>,
+    /// Index pack ids this run may return (`None` = every pack).
+    allowed_packs: Option<Vec<String>>,
     engine: OnceLock<Option<SearchEngine>>,
     pub(crate) scope: SessionScope,
     pub(crate) sessions: Box<dyn SessionSource>,
@@ -56,6 +58,7 @@ impl Tools {
             schema: OnceLock::new(),
             baseline: OnceLock::new(),
             search_dir: config.search_dir.clone(),
+            allowed_packs: config.enabled_packs.as_ref().map(index_packs),
             engine: OnceLock::new(),
             scope: config.session_scope.clone(),
             sessions: Box::new(NoSessions),
@@ -71,6 +74,18 @@ impl Tools {
 
     /// The app's search index, opened read-only on first use. `None` when it does not exist yet
     /// or cannot be used; the search tools then answer from the in-memory content index.
+    /// The packs the index path may return, if restricted.
+    pub(crate) fn allowed_packs(&self) -> Option<&[String]> {
+        self.allowed_packs.as_deref()
+    }
+
+    /// Whether a pack id of the index is enabled for this run.
+    pub(crate) fn pack_allowed(&self, pack: &str) -> bool {
+        self.allowed_packs
+            .as_ref()
+            .map_or(true, |list| list.iter().any(|p| p == pack))
+    }
+
     pub(crate) fn search_engine(&self) -> Option<&SearchEngine> {
         self.engine
             .get_or_init(|| {
@@ -141,6 +156,17 @@ impl Tools {
         };
         Some(tool_result(outcome, structured))
     }
+}
+
+/// Index pack ids for the enabled content packs: `core`, each enabled pack, and the rules-text
+/// pack that belongs to it (`<pack>-rules-text`).
+fn index_packs(enabled: &std::collections::BTreeSet<String>) -> Vec<String> {
+    let mut out = vec![crate::config::CORE_PACK.to_string()];
+    for id in enabled {
+        out.push(id.clone());
+        out.push(format!("{id}-rules-text"));
+    }
+    out
 }
 
 /// The MCP tool result for a tool outcome: `content` and `isError`, plus `structuredContent`

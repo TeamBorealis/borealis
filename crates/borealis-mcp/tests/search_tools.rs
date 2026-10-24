@@ -391,3 +391,49 @@ fn an_empty_session_scope_argument_is_refused_at_startup() {
         .unwrap();
     assert!(!status.success());
 }
+
+#[test]
+fn packs_not_enabled_for_the_run_never_appear_in_search_or_passages() {
+    let dir = tempfile::tempdir().unwrap();
+    build_index(dir.path());
+    // Index holds SRD 5.1 and 5.2.1; this run enables only SRD 5.1.
+    let mut s = Session::start_with_args(&[
+        OsStr::new("--search-dir"),
+        dir.path().as_os_str(),
+        OsStr::new("--packs"),
+        OsStr::new("srd-5.1"),
+    ]);
+    for tool in ["search_rules", "search_lore", "search_content"] {
+        for q in ["grappled", "fireball", "opportunity attack", "prone"] {
+            let out = ok(&mut s, tool, json!({"query": q, "k": 20}));
+            for h in out["hits"].as_array().unwrap() {
+                let cite = h["cite"].as_str().unwrap();
+                assert!(
+                    !cite.contains("2024") && !cite.contains("5.2.1") && h["ruleset"] != "2024",
+                    "{tool} {q}: {h}"
+                );
+                assert_ne!(h["source"], "SRD 5.2.1", "{h}");
+            }
+        }
+    }
+    let on = ok(&mut s, "search_lore", json!({"query": "fireball"}));
+    assert_eq!(
+        on["hits"][0]["name"], "Fireball",
+        "enabled pack still found"
+    );
+    let p = s.call("get_passage", json!({"cite": "ID_2024_CONDITION_GRAPPLED"}));
+    assert_eq!(p["isError"], true, "{p}");
+    assert!(p["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("no passage"));
+    let r = s.call(
+        "get_passage",
+        json!({"cite": "rules:srd-5.2.1-rules-text/combat"}),
+    );
+    assert_eq!(r["isError"], true, "{r}");
+    assert!(r["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains("no passage"));
+}
