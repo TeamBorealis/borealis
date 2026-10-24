@@ -43,6 +43,10 @@ import type {
   CompanionState,
   CompendiumFacets,
   CompendiumQuery,
+  SearchHit,
+  SearchIndexStatus,
+  SearchPassage,
+  SearchQuery,
   ContentIndex,
   ContentPack,
   ContentProgress,
@@ -241,6 +245,11 @@ export interface ApiMethods {
   searchCompendium(args: { query: CompendiumQuery }): Promise<Page<ElementSummary>>;
   getElement(args: { elementId: string }): Promise<ElementDetail>;
   compendiumFacets(): Promise<CompendiumFacets>;
+  /** Keyword search over Rules, Lore or both (local-search-spec.md section 11). */
+  search(args: { request: SearchQuery }): Promise<Page<SearchHit>>;
+  searchIndexStatus(): Promise<SearchIndexStatus>;
+  /** The rules-text section behind a `rules:` hit. */
+  getSearchPassage(args: { docKey: string }): Promise<SearchPassage>;
 
   /* Content */
   listPacks(): Promise<ContentPack[]>;
@@ -447,6 +456,9 @@ export const COMMANDS = {
   searchCompendium: "search_compendium",
   getElement: "get_element",
   compendiumFacets: "compendium_facets",
+  search: "search",
+  searchIndexStatus: "search_index_status",
+  getSearchPassage: "get_search_passage",
   listPacks: "list_packs",
   importPack: "import_pack",
   previewImportPack: "preview_import_pack",
@@ -534,6 +546,8 @@ export interface ApiEvents {
   "content:open-file": Record<string, never>;
   /** Files dropped on the window from the OS: tokens and names only; read them with `takePickedFiles`. */
   "files:dropped": FileDrop;
+  /** Keyword index build / update progress. */
+  "search:index-status": SearchIndexStatus;
 }
 export type EventName = keyof ApiEvents;
 
@@ -548,6 +562,7 @@ export const EVENTS = {
   "content:reloaded": "borealis://content-reloaded",
   "content:open-file": "borealis://open-file",
   "files:dropped": "borealis://file-drop",
+  "search:index-status": "search://index-status",
 } as const satisfies Record<EventName, string>;
 
 export interface Api extends ApiMethods {

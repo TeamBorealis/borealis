@@ -8,6 +8,7 @@ import { isProxyId, itemCategoryList, matchesItemSearch, proxyRows, type ProxyRo
 import type { MockElement } from "./data-types";
 import { apiError } from "./errors";
 import { SOURCE_2014, SOURCE_2024 } from "./content";
+import type { MockSearchDoc } from "./search";
 
 const PROXY_PREFIX = "proxy:";
 const PROXY_HINT = "Equip this item to gain what it grants. It stays off the inventory on the character sheet.";
@@ -63,6 +64,11 @@ export class ContentService {
       return e.name.toLowerCase().includes(text) || e.shortDescription.toLowerCase().includes(text) || (e.tags ?? []).some((t) => t.toLowerCase().includes(text));
     }).sort((a, b) => a.name.localeCompare(b.name));
     return { total: hits.length, items: hits.slice(q.offset, q.offset + q.limit).map((e) => this.summary(e)) };
+  }
+
+  /** What the mock `search` ranks over (the Lore corpus). */
+  searchDocs(): MockSearchDoc[] {
+    return this.all().map((e) => ({ id: e.id, name: e.name, type: e.type, source: e.source, sourceName: e.sourceName, rulesets: e.rulesets, text: `${e.shortDescription} ${stripHtml(e.description)}`.trim() }));
   }
 
   element(id: string): ElementDetail {

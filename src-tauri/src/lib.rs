@@ -110,6 +110,8 @@ pub mod play_api;
 pub mod play_dto;
 pub mod renamed_ids;
 pub mod sanitize;
+pub mod search_api;
+pub mod search_service;
 pub mod secondary_content;
 pub mod session;
 pub mod settings;
@@ -137,10 +139,16 @@ fn content_root(app: &AppHandle) -> (PathBuf, Option<String>) {
         Ok(d) => d.join("bundled-content"),
         Err(e) => return (PathBuf::new(), Some(format!("no app data folder: {e}"))),
     };
+    // Element packs plus the rules-text packs that only search reads.
+    let packs: Vec<&str> = state::BUNDLED_PACKS
+        .iter()
+        .chain(search_service::RULES_TEXT_PACKS.iter())
+        .copied()
+        .collect();
     let outcome = bundled_content::sync(
         &bundled_content::ApkAssets,
         "content",
-        &state::BUNDLED_PACKS,
+        &packs,
         &target,
         env!("CARGO_PKG_VERSION"),
     );
@@ -338,6 +346,12 @@ pub fn run() {
             commands_gear::search_compendium,
             commands_gear::get_element,
             commands_gear::compendium_facets,
+            commands_gear::search,
+            commands_gear::search_index_status,
+            commands_gear::get_search_passage,
+            commands_gear::search,
+            commands_gear::search_index_status,
+            commands_gear::get_search_passage,
             commands_content::update_details,
             commands_content::upsert_attack,
             commands_content::remove_attack,

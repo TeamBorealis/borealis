@@ -12,4 +12,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   ai: { enabled: false, provider: "claude", pairedHost: null, overridePath: null },
   documentsDir: null, secondaryContentDir: null, autoContentUpdate: true, checkAppUpdates: true, rowHeight: "medium",
   skillsPanelExpanded: true, savingThrowsExpanded: false, accentColor: "default", portraitSize: 150, showImportNotice: true, mobile: false,
+  search: { semantic: false, tierOverride: "auto", indexOnBattery: false, defaultEdition: "character" },
 };

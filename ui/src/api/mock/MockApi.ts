@@ -30,6 +30,7 @@ import { buildSlotDefs } from "./slots";
 import { buildName, buildSnapshot } from "./snapshot";
 import { type MockCharacter, type RuleSettings, levelOf } from "./state";
 import { findByWireId, toWireSlotId } from "./slot-ids";
+import { MOCK_INDEX_STATUS, mockPassage, mockSearch } from "./search";
 
 export interface MockApiOptions {
   /** Artificial latency per call in ms (default 0). */
@@ -504,6 +505,9 @@ export class MockApi implements Api {
   async searchCompendium({ query }: Parameters<Api["searchCompendium"]>[0]) { await this.tick(); return this.content.search(query); }
   async getElement({ elementId }: { elementId: string }) { await this.tick(); return this.content.element(elementId); }
   async compendiumFacets() { await this.tick(); return this.content.facets(); }
+  async search({ request }: Parameters<Api["search"]>[0]) { await this.tick(); return mockSearch(this.content.searchDocs(), request); }
+  async searchIndexStatus() { await this.tick(); return { ...MOCK_INDEX_STATUS }; }
+  async getSearchPassage({ docKey }: { docKey: string }) { await this.tick(); return mockPassage(docKey); }
   async listPacks() { await this.tick(); return this.content.packs(); }
   async importPack({ request }: Parameters<Api["importPack"]>[0]) { await this.tick(); return this.content.import(request); }
   /** Files a mock "choose folder" yields (tests set this; the real backend reads the picked folder). */

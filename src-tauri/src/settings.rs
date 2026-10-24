@@ -140,6 +140,48 @@ pub struct AppSettings {
     pub show_import_notice: bool,
     /// "Check for new versions of Borealis": at startup, ask GitHub for the latest version number (default on).
     pub check_app_updates: bool,
+    /// Local search (local-search-spec.md section 9).
+    pub search: SearchSettings,
+}
+
+/// Device tier override for semantic search (S3; keyword search ignores it).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SearchTier {
+    #[default]
+    Auto,
+    T1,
+    T2,
+    T3,
+}
+
+/// Edition the search surface opens with.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum SearchEdition {
+    /// The open character's edition, both without a character.
+    #[default]
+    #[serde(rename = "character")]
+    Character,
+    #[serde(rename = "both")]
+    Both,
+    #[serde(rename = "2014")]
+    Y2014,
+    #[serde(rename = "2024")]
+    Y2024,
+}
+
+/// `AppSettings.search`.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct SearchSettings {
+    /// Semantic search is on (needs the consented model download, S3; off by default).
+    pub semantic: bool,
+    /// Device tier override.
+    pub tier_override: SearchTier,
+    /// Mobile: build semantic indexes on battery too (default off).
+    pub index_on_battery: bool,
+    /// Edition toggle default.
+    pub default_edition: SearchEdition,
 }
 
 impl Default for CardSettings {
@@ -213,6 +255,7 @@ impl Default for AppSettings {
             portrait_size: 150,
             show_import_notice: true,
             check_app_updates: true,
+            search: SearchSettings::default(),
         }
     }
 }

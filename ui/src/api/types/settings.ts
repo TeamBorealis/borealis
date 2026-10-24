@@ -43,6 +43,17 @@ export interface AiSettings {
   overridePath: string | null;
 }
 
+/** Local search settings (local-search-spec.md section 9). */
+export interface SearchSettings {
+  /** Semantic search (consented model download, not built yet; default off). */
+  semantic: boolean;
+  tierOverride: "auto" | "t1" | "t2" | "t3";
+  /** Mobile: build semantic indexes on battery too (default off). */
+  indexOnBattery: boolean;
+  /** Edition the search flyout opens with ("character" = the open character's edition, both without one). */
+  defaultEdition: "character" | "both" | "2014" | "2024";
+}
+
 export interface AppSettings {
   playerName: string;
   defaultRuleset: Ruleset;
@@ -82,6 +93,7 @@ export interface AppSettings {
   portraitSize: number;
   /** Show the "Import only content you own" notice before every content import (default on; "Don't show this again" turns it off). */
   showImportNotice: boolean;
+  search: SearchSettings;
 }
 
 /** Settings > DATA FILES folders (display only; paths never go back to the backend). */

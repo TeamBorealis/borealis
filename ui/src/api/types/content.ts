@@ -30,6 +30,63 @@ export interface CompendiumQuery {
   offset: number;
 }
 
+/** Keyword search scope (local-search-spec.md section 11); `sessions` stays hidden until campaigns exist. */
+export type SearchScope = "all" | "rules" | "lore" | "sessions";
+
+/** `search` request. */
+export interface SearchQuery {
+  scope: SearchScope;
+  query: string;
+  edition?: Ruleset | "any";
+  campaign?: string;
+  limit: number;
+  offset: number;
+  /** Contract element types to keep; `"rules"` keeps rules-text sections. */
+  types?: (ElementType | "rules")[];
+  sources?: string[];
+}
+
+/** One keyword search result. */
+export interface SearchHit {
+  /** Citation key: `<element id>[#n]` or `rules:<pack>/<section>[#n]`. */
+  docKey: string;
+  title: string;
+  /** Heading path of a rules section (`Combat > Actions > Dash`); empty for elements. */
+  path: string;
+  /** Contract element type, or `"rules"` for a rules-text section. */
+  type: ElementType | "rules";
+  ruleset: Ruleset | null;
+  /** Source display name. */
+  source: string;
+  snippet: string;
+  /** `[start, end)` ranges in `snippet` (JavaScript string offsets). */
+  highlights: [number, number][];
+  /** The element to open; null for a rules section (`getSearchPassage`). */
+  elementId: string | null;
+}
+
+/** A rules-text section with its licence attribution. */
+export interface SearchPassage {
+  docKey: string;
+  title: string;
+  path: string;
+  /** Sanitised HTML. */
+  html: string;
+  source: string;
+  ruleset: Ruleset;
+  page: number | null;
+  license: string;
+  attribution: string;
+}
+
+/** Keyword index state (`search_index_status`, `search://index-status`). */
+export interface SearchIndexStatus {
+  state: "idle" | "building" | "ready" | "failed";
+  done: number;
+  total: number;
+  message: string | null;
+}
+
 export interface Facet {
   id: string;
   label: string;

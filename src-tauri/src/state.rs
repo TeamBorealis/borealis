@@ -294,6 +294,8 @@ pub struct AppState {
     pub picked: crate::picked_paths::PickedPaths,
     /// Outcome of the automatic content update at startup (Settings > "Automatic Updates").
     pub(crate) content_update: Mutex<crate::settings_dto::ContentUpdateStatus>,
+    /// Local keyword search: the single index writer (re-synced on every content snapshot swap).
+    pub search: crate::search_service::SearchService,
 }
 
 impl AppState {
@@ -352,8 +354,10 @@ impl AppState {
             .map_or(0x9E37_79B9_7F4A_7C15, |d| {
                 u64::try_from(d.as_nanos() & u128::from(u64::MAX)).unwrap_or(1)
             });
+        let search = crate::search_service::SearchService::new(&paths.data, &paths.content_root);
         Self {
             paths,
+            search,
             content: RwLock::new(Arc::new(hub)),
             settings: RwLock::new(settings),
             sessions: Mutex::new(HashMap::new()),
@@ -375,13 +379,17 @@ impl AppState {
         Ok(Arc::clone(&guard))
     }
 
-    /// Replace the content snapshot.
+    /// Replace the content snapshot; the keyword indexes follow incrementally (pack add, remove, update,
+    /// enable and disable all end here).
     ///
     /// # Errors
     /// `internal` if the lock is poisoned.
     pub fn set_hub(&self, hub: ContentHub) -> ApiResult<()> {
+        let hub = Arc::new(hub);
         let mut guard: RwLockWriteGuard<'_, Arc<ContentHub>> = self.content.write()?;
-        *guard = Arc::new(hub);
+        *guard = Arc::clone(&hub);
+        drop(guard);
+        self.search.content_changed(hub);
         Ok(())
     }
 

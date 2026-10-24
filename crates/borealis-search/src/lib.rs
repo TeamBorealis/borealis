@@ -7,7 +7,8 @@
 //!   open for the MCP process, [`SearchEngine::search`].
 //! * [`query`]: the ranking tweaks 1-7, each behind a flag of [`Tweaks`].
 //!
-//! Nothing here is wired into the app yet (S1.5, S1.6). Data stays local (C4): the crate never touches the network.
+//! The app (S1.5) owns the single writer; the MCP process (S1.6) opens read-only. Data stays local (C4): the crate
+//! never touches the network.
 
 pub mod analyzer;
 pub mod chunk;
@@ -21,8 +22,9 @@ pub mod synonyms;
 pub mod text;
 
 pub use chunk::{Chunk, EditionTag, PackInput};
+pub use corpus::{parse_rules_key, DocsPack, DocsSectionRef};
 pub use engine::{Corpus, Manifest, OpenReport, SearchEngine, SyncReport};
 pub use error::{Result, SearchError};
-pub use index::{CorpusIndex, Hit, WriterBudget};
+pub use index::{base_key, CorpusIndex, Hit, WriterBudget};
 pub use query::{Edition, EditionScope, SearchConfig, SearchRequest, Tweaks, Weights};
 pub use synonyms::Synonyms;

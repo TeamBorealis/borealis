@@ -482,6 +482,16 @@
     "name": "RulesetProfile"
    }
   },
+  "get_search_passage": {
+   "args": {
+    "docKey": false
+   },
+   "method": "getSearchPassage",
+   "response": {
+    "k": "ref",
+    "name": "SearchPassage"
+   }
+  },
   "get_settings": {
    "args": {},
    "method": "getSettings",
@@ -1115,6 +1125,16 @@
     "name": "FiveToolsScan"
    }
   },
+  "search": {
+   "args": {
+    "request": false
+   },
+   "method": "search",
+   "response": {
+    "k": "ref",
+    "name": "Page<SearchHit>"
+   }
+  },
   "search_compendium": {
    "args": {
     "query": false
@@ -1123,6 +1143,14 @@
    "response": {
     "k": "ref",
     "name": "Page<ElementSummary>"
+   }
+  },
+  "search_index_status": {
+   "args": {},
+   "method": "searchIndexStatus",
+   "response": {
+    "k": "ref",
+    "name": "SearchIndexStatus"
    }
   },
   "search_items": {
@@ -2421,6 +2449,13 @@
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    },
+    "search": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "SearchSettings"
      }
     },
     "secondaryContentDir": {
@@ -6441,6 +6476,27 @@
     }
    }
   },
+  "Page<SearchHit>": {
+   "k": "object",
+   "props": {
+    "items": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "SearchHit"
+      }
+     }
+    },
+    "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "Page<SlotOption>": {
    "k": "object",
    "props": {
@@ -7692,6 +7748,188 @@
      }
     },
     "weaponMastery": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SearchHit": {
+   "k": "object",
+   "props": {
+    "docKey": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "elementId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "highlights": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "array",
+       "t": {
+        "k": "any"
+       }
+      }
+     }
+    },
+    "path": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "ruleset": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "snippet": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "title": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "type": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SearchIndexStatus": {
+   "k": "object",
+   "props": {
+    "done": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "message": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "state": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SearchPassage": {
+   "k": "object",
+   "props": {
+    "attribution": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "docKey": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "html": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "license": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "page": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "path": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "ruleset": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "title": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SearchSettings": {
+   "k": "object",
+   "props": {
+    "defaultEdition": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "indexOnBattery": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "semantic": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "tierOverride": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -9268,6 +9506,10 @@
   "import:event": {
    "k": "ref",
    "name": "ImportEvent"
+  },
+  "search:index-status": {
+   "k": "ref",
+   "name": "SearchIndexStatus"
   }
  }
 }

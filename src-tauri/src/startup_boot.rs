@@ -132,6 +132,18 @@ fn load(handle: &AppHandle, startup: &Startup) -> Result<(), String> {
     #[cfg(mobile)]
     let _ = data;
     handle.manage::<AppState>(state);
+    // Keyword search: build (or bring up to date) the Rules and Lore indexes in the background.
+    {
+        let state = handle.state::<AppState>();
+        state
+            .search
+            .set_sink(Arc::new(crate::commands_content::SearchEvents(
+                handle.clone(),
+            )));
+        if let Err(e) = state.start_search_index() {
+            tracing::warn!("search: indexing not started: {}", e.message);
+        }
+    }
     // S5 acceptance (debug builds only): answer a pending digest request once the content is loaded.
     #[cfg(debug_assertions)]
     {

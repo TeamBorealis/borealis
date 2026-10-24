@@ -8,6 +8,8 @@ use crate::dto_ext::{
 #[cfg(desktop)]
 use crate::error::ApiError;
 use crate::error::ApiResult;
+use crate::search_api::{SearchHit, SearchPassage, SearchQuery};
+use crate::search_service::IndexStatus;
 use crate::sheet_api::SheetFile;
 use crate::state::AppState;
 use tauri::State;
@@ -292,4 +294,19 @@ pub fn get_element(state: S<'_>, element_id: String) -> ApiResult<ElementDetail>
 #[tauri::command(async)]
 pub fn compendium_facets(state: S<'_>) -> ApiResult<CompendiumFacets> {
     state.compendium_facets()
+}
+
+#[tauri::command(async)]
+pub fn search(state: S<'_>, request: SearchQuery) -> ApiResult<Page<SearchHit>> {
+    state.search(&request)
+}
+
+#[tauri::command]
+pub fn search_index_status(state: S<'_>) -> IndexStatus {
+    state.search_index_status()
+}
+
+#[tauri::command(async)]
+pub fn get_search_passage(state: S<'_>, doc_key: String) -> ApiResult<SearchPassage> {
+    state.get_search_passage(&doc_key)
 }

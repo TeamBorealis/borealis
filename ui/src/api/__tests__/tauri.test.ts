@@ -34,7 +34,8 @@ describe("TauriApi", () => {
   it("has unique command names and one event name per event", () => {
     const names = Object.values(COMMANDS);
     expect(new Set(names).size).toBe(names.length);
-    expect(Object.values(EVENTS).every((e) => e.startsWith("borealis://"))).toBe(true);
+    // local-search-spec.md section 11 names its event `search://index-status`; every other event is `borealis://`.
+    expect(Object.values(EVENTS).every((e) => e.startsWith("borealis://") || e === "search://index-status")).toBe(true);
   });
 
   it("normalises string failures into ApiError", async () => {

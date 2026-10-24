@@ -46,6 +46,18 @@ impl EventSink for TauriSink {
     }
 }
 
+/// Keyword index status changes (`search:index-status` in the UI contract).
+pub const EVENT_SEARCH_STATUS: &str = "search://index-status";
+
+/// Emits `search://index-status` through the Tauri app handle.
+pub struct SearchEvents(pub AppHandle);
+
+impl crate::search_service::StatusSink for SearchEvents {
+    fn index_status(&self, status: &crate::search_service::IndexStatus) {
+        let _ = self.0.emit(EVENT_SEARCH_STATUS, status);
+    }
+}
+
 pub(crate) async fn blocking<T, F>(app: AppHandle, f: F) -> ApiResult<T>
 where
     T: Send + 'static,

@@ -10,16 +10,16 @@ use crate::ids::{title_case, ui_type};
 use crate::sanitize::sanitize_html;
 use crate::state::AppState;
 use borealis_content::{ContentStore, Element, Rule, Ruleset};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 
 const DEFAULT_PAGE: usize = 50;
 const MAX_PAGE: usize = 500;
-const MAX_QUERY_CHARS: usize = 200;
+pub(crate) const MAX_QUERY_CHARS: usize = 200;
 /// Plumbing types the compendium never lists.
 const HIDDEN_TYPES: [&str; 4] = ["multiclass", "asi", "list", "source"];
 /// Engine-derived type searchable on request (`types: ["multiclass"]`): the level-up flyout reads
 /// each class's multiclass prerequisite from it.
-const MULTICLASS_TYPE: &str = "Multiclass";
+pub(crate) const MULTICLASS_TYPE: &str = "Multiclass";
 const TYPE_LABELS: [(&str, &str); 16] = [
     ("race", "Races"),
     ("subrace", "Subraces"),
@@ -59,7 +59,7 @@ fn type_label(ty: &str) -> String {
     )
 }
 
-fn is_listed(el: &Element, wanted_types: Option<&[String]>) -> bool {
+pub(crate) fn is_listed(el: &Element, wanted_types: Option<&[String]>) -> bool {
     let ty = ui_type(&el.ty);
     match wanted_types {
         Some(t) if !t.is_empty() => t.iter().any(|w| w == ty),
@@ -68,7 +68,7 @@ fn is_listed(el: &Element, wanted_types: Option<&[String]>) -> bool {
 }
 
 /// 0 exact, 1 prefix, 2 word prefix, 3 substring of the name; `None` when the name misses.
-fn name_rank(name: &str, needle: &str) -> Option<u8> {
+pub(crate) fn name_rank(name: &str, needle: &str) -> Option<u8> {
     let n = name.to_lowercase();
     if n == needle {
         Some(0)
@@ -88,7 +88,7 @@ fn name_rank(name: &str, needle: &str) -> Option<u8> {
 
 const DESCRIPTION_RANK: u8 = 4;
 
-fn parse_ruleset(text: Option<&str>) -> ApiResult<Option<Ruleset>> {
+pub(crate) fn parse_ruleset(text: Option<&str>) -> ApiResult<Option<Ruleset>> {
     match text {
         None | Some("any" | "") => Ok(None),
         Some("dnd2014") => Ok(Some(Ruleset::Dnd2014)),
@@ -99,7 +99,9 @@ fn parse_ruleset(text: Option<&str>) -> ApiResult<Option<Ruleset>> {
 
 impl AppState {
     /// Search the whole content store. Name matches rank above description matches; ties sort by
-    /// element type then name.
+    /// element type then name. Once the Lore keyword index is ready, the description tier comes from it
+    /// (stemmed, typo tolerant, ordered by relevance) instead of a substring scan of every description; the name
+    /// tiers and every filter are unchanged.
     ///
     /// # Errors
     /// `invalid_argument` for an overlong query or unknown ruleset.
@@ -110,28 +112,33 @@ impl AppState {
         let ruleset = parse_ruleset(q.ruleset.as_deref())?;
         let hub = self.hub()?;
         let needle = q.query.trim().to_lowercase();
+        let wanted = |e: &Element| {
+            is_listed(e, q.types.as_deref())
+                && q.sources
+                    .as_ref()
+                    .map_or(true, |s| s.is_empty() || s.contains(&e.source))
+                && ruleset.map_or(true, |r| e.ruleset.map_or(true, |x| x.compatible_with(r)))
+        };
+        let indexed = if needle.is_empty() {
+            None
+        } else {
+            self.lore_element_ids(&hub, &needle, q.types.as_deref())
+        };
         let mut hits: Vec<(u8, &Element)> = hub
             .store
             .iter()
             .map(|s| &s.element)
             .chain(hub.derived_elements(MULTICLASS_TYPE))
-            .filter(|e| is_listed(e, q.types.as_deref()))
-            .filter(|e| {
-                q.sources
-                    .as_ref()
-                    .map_or(true, |s| s.is_empty() || s.contains(&e.source))
-            })
-            .filter(|e| ruleset.map_or(true, |r| e.ruleset.map_or(true, |x| x.compatible_with(r))))
+            .filter(|e| wanted(e))
             .filter_map(|e| {
                 if needle.is_empty() {
                     return Some((0, e));
                 }
                 name_rank(&e.name, &needle)
                     .or_else(|| {
-                        plain_text(&e.description)
-                            .to_lowercase()
-                            .contains(&needle)
-                            .then_some(DESCRIPTION_RANK)
+                        (indexed.is_none()
+                            && plain_text(&e.description).to_lowercase().contains(&needle))
+                        .then_some(DESCRIPTION_RANK)
                     })
                     .map(|r| (r, e))
             })
@@ -142,6 +149,17 @@ impl AppState {
                 .then_with(|| a.1.name.to_lowercase().cmp(&b.1.name.to_lowercase()))
                 .then_with(|| a.1.id.cmp(&b.1.id))
         });
+        if let Some(ids) = indexed {
+            let named: HashSet<&str> = hits.iter().map(|(_, e)| e.id.as_str()).collect();
+            let extra: Vec<(u8, &Element)> = ids
+                .iter()
+                .filter(|id| !named.contains(id.as_str()))
+                .filter_map(|id| hub.element(id))
+                .filter(|e| wanted(e))
+                .map(|e| (DESCRIPTION_RANK, e))
+                .collect();
+            hits.extend(extra);
+        }
         let total = hits.len();
         let take = if q.limit == 0 {
             DEFAULT_PAGE

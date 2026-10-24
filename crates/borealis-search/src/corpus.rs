@@ -25,6 +25,10 @@ struct DocsInfo {
     id: String,
     #[serde(default)]
     name: String,
+    #[serde(default)]
+    license: String,
+    #[serde(default)]
+    attribution: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -32,7 +36,30 @@ struct DocsSection {
     id: String,
     path: Vec<String>,
     #[serde(default)]
+    page: Option<u32>,
+    #[serde(default)]
     html: String,
+}
+
+/// One section of a rules-text pack as read for display (the passage behind a `rules:` doc key).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DocsSectionRef<'a> {
+    /// Section id (the part of the doc key after `rules:<pack>/`).
+    pub id: &'a str,
+    /// Heading path, outermost first.
+    pub path: &'a [String],
+    /// Page in the source PDF.
+    pub page: Option<u32>,
+    /// The section's HTML fragment (pack text, not sanitised).
+    pub html: &'a str,
+}
+
+/// Split a rules doc key (`rules:<pack>/<section>[#n]`) into pack id and section id.
+#[must_use]
+pub fn parse_rules_key(doc_key: &str) -> Option<(&str, &str)> {
+    let rest = crate::index::base_key(doc_key).strip_prefix("rules:")?;
+    let (pack, section) = rest.split_once('/')?;
+    (!pack.is_empty() && !section.is_empty()).then_some((pack, section))
 }
 
 /// A parsed `borealis-docs/1` rules-text pack.
@@ -70,6 +97,38 @@ impl DocsPack {
     #[must_use]
     pub fn name(&self) -> &str {
         &self.info.name
+    }
+
+    /// Licence id of the text (`CC-BY-4.0`).
+    #[must_use]
+    pub fn license(&self) -> &str {
+        &self.info.license
+    }
+
+    /// The attribution statement the licence requires.
+    #[must_use]
+    pub fn attribution(&self) -> &str {
+        &self.info.attribution
+    }
+
+    /// Ruleset of the text.
+    #[must_use]
+    pub fn ruleset(&self) -> Ruleset {
+        self.ruleset
+    }
+
+    /// The section with this id.
+    #[must_use]
+    pub fn section(&self, id: &str) -> Option<DocsSectionRef<'_>> {
+        self.sections
+            .iter()
+            .find(|s| s.id == id)
+            .map(|s| DocsSectionRef {
+                id: &s.id,
+                path: &s.path,
+                page: s.page,
+                html: &s.html,
+            })
     }
 
     /// Number of sections, empty ones included.
@@ -363,5 +422,24 @@ mod tests {
             DocsPack::parse(&bad),
             Err(SearchError::InvalidDocs(_))
         ));
+    }
+
+    #[test]
+    fn rules_keys_resolve_to_their_section() {
+        assert_eq!(
+            parse_rules_key("rules:t-rules-text/combat/dash#2"),
+            Some(("t-rules-text", "combat/dash"))
+        );
+        assert_eq!(parse_rules_key("ID_SPELL_FIREBALL"), None);
+        assert_eq!(parse_rules_key("rules:nopath"), None);
+        let docs = DocsPack::parse(DOCS).unwrap();
+        let s = docs.section("combat/dash").expect("section");
+        assert_eq!(
+            (s.path.join(PATH_SEPARATOR).as_str(), s.page),
+            ("Combat > Dash", Some(2))
+        );
+        assert_eq!(s.html, "<p>Gain extra movement.</p>");
+        assert!(docs.section("combat/missing").is_none());
+        assert_eq!(docs.ruleset(), Ruleset::Dnd2014);
     }
 }
