@@ -1,0 +1,26 @@
+[package]
+name = "borealis-transfer"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+description = "One-shot device transfer: offer a borealis-bundle/1, preview, accept, stream, verify, apply (B3)"
+
+[lints]
+workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+sha2 = "0.10"
+tempfile = "3"
+tokio = { workspace = true, features = ["time", "sync", "macros", "fs", "io-util"] }
+borealis-bundle = { path = "../borealis-bundle" }
+borealis-link = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["time", "sync", "macros", "rt-multi-thread", "net"] }
+borealis-link = { workspace = true, features = ["tcp"] }

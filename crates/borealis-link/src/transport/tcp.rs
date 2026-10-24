@@ -34,7 +34,8 @@ pub struct TcpConfig {
     pub connect_timeout: Duration,
     /// TLS handshake (both sides).
     pub handshake_timeout: Duration,
-    /// Longest wait for the next frame in [`Connection::recv`] (`ZERO` = wait forever).
+    /// Longest wait for the next frame in [`Connection::recv`], and for one frame to be written in
+    /// [`Connection::send`] (`ZERO` = wait forever).
     pub idle_timeout: Duration,
     /// Largest frame either side may send.
     pub max_frame: usize,
@@ -124,7 +125,14 @@ impl Connection for TcpConnection {
     }
 
     async fn send(&mut self, frame: &[u8]) -> Result<(), LinkError> {
-        write_frame(&mut self.stream, frame, self.max_frame).await
+        let max = self.max_frame;
+        if self.idle_timeout.is_zero() {
+            return write_frame(&mut self.stream, frame, max).await;
+        }
+        // A peer that stops reading must not stall the sender forever.
+        tokio::time::timeout(self.idle_timeout, write_frame(&mut self.stream, frame, max))
+            .await
+            .map_err(|_| LinkError::Timeout("sending to the peer"))?
     }
 
     async fn recv(&mut self) -> Result<Option<Vec<u8>>, LinkError> {

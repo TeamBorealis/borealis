@@ -11,6 +11,7 @@ members = [
   "crates/borealis-import-5etools",
   "crates/borealis-bundle",
   "crates/borealis-link",
+  "crates/borealis-transfer",
   "crates/borealis-mcp",
   "crates/borealis-search",
   "crates/borealis-android-assets",
@@ -46,6 +47,8 @@ borealis-assist = { path = "crates/borealis-assist" }
 borealis-search = { path = "crates/borealis-search" }
 # default-features = false: dependents opt into the network stack and OS store explicitly.
 borealis-link = { path = "crates/borealis-link", default-features = false }
+borealis-bundle = { path = "crates/borealis-bundle" }
+borealis-transfer = { path = "crates/borealis-transfer" }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
