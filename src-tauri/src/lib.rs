@@ -43,6 +43,7 @@ pub mod commands_pick;
 pub mod commands_play;
 #[cfg(desktop)]
 pub mod commands_report;
+pub mod commands_semantic;
 pub mod commands_settings;
 #[cfg(feature = "device-link")]
 pub mod commands_sync;
@@ -118,7 +119,9 @@ pub mod sanitize;
 pub mod search_api;
 pub mod search_service;
 pub mod secondary_content;
+pub mod semantic_api;
 pub mod semantic_device;
+pub mod semantic_service;
 pub mod session;
 pub mod settings;
 pub mod settings_dto;
@@ -507,6 +510,12 @@ pub fn run() {
             commands_settings::restore_default_settings,
             commands_settings::clear_caches,
             commands_settings::content_update_status,
+            commands_semantic::semantic_status,
+            commands_semantic::semantic_download_start,
+            commands_semantic::semantic_download_pause,
+            commands_semantic::semantic_download_cancel,
+            commands_semantic::semantic_delete_model,
+            commands_semantic::semantic_model_license,
             commands_app_update::app_update_status,
             commands_app_update::check_app_update,
             commands_app_update::open_download_page,

@@ -303,6 +303,8 @@ pub struct AppState {
     pub(crate) content_update: Mutex<crate::settings_dto::ContentUpdateStatus>,
     /// Local keyword search: the single index writer (re-synced on every content snapshot swap).
     pub search: crate::search_service::SearchService,
+    /// Semantic search model: consented download, pause / cancel, delete (S3.2). Makes no request on its own.
+    pub semantic: crate::semantic_service::SemanticService,
 }
 
 impl AppState {
@@ -362,9 +364,11 @@ impl AppState {
                 u64::try_from(d.as_nanos() & u128::from(u64::MAX)).unwrap_or(1)
             });
         let search = crate::search_service::SearchService::new(&paths.data, &paths.content_root);
+        let semantic = crate::semantic_service::SemanticService::new(&paths.data);
         Self {
             paths,
             search,
+            semantic,
             content: RwLock::new(Arc::new(hub)),
             settings: RwLock::new(settings),
             sessions: Mutex::new(HashMap::new()),

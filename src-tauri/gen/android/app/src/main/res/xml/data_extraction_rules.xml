@@ -8,12 +8,14 @@
     <exclude domain="root" path="link" />
     <exclude domain="root" path="sync" />
     <exclude domain="root" path="search" />
+    <exclude domain="root" path="models" />
     <exclude domain="sharedpref" path="keyring-default.xml" />
   </cloud-backup>
   <device-transfer>
     <exclude domain="root" path="link" />
     <exclude domain="root" path="sync" />
     <exclude domain="root" path="search" />
+    <exclude domain="root" path="models" />
     <exclude domain="sharedpref" path="keyring-default.xml" />
   </device-transfer>
 </data-extraction-rules>

@@ -139,6 +139,8 @@ fn load(handle: &AppHandle, startup: &Startup) -> Result<(), String> {
     // Device transfer (B3): the service only; nothing listens until a Send/Receive dialog opens.
     #[cfg(feature = "device-link")]
     crate::commands_sync::install(handle);
+    // Semantic model: progress events only; a download starts only from the consent dialog (S3.2).
+    crate::commands_semantic::install(handle);
     // Keyword search: build (or bring up to date) the Rules and Lore indexes in the background.
     {
         let state = handle.state::<AppState>();
