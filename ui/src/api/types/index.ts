@@ -8,3 +8,4 @@ export * from "./import";
 export * from "./play";
 export * from "./picks";
 export * from "./importPreview";
+export * from "./sync";

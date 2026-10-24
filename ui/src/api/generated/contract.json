@@ -745,6 +745,76 @@
     "name": "CharacterSnapshot"
    }
   },
+  "link_accept": {
+   "args": {
+    "sessionId": false
+   },
+   "method": "linkAccept",
+   "response": {
+    "k": "ref",
+    "name": "LinkStatus"
+   }
+  },
+  "link_cancel": {
+   "args": {
+    "sessionId": false
+   },
+   "method": "linkCancel",
+   "response": {
+    "k": "ref",
+    "name": "LinkStatus"
+   }
+  },
+  "link_connect": {
+   "args": {
+    "host": true,
+    "selection": true,
+    "target": false
+   },
+   "method": "linkConnect",
+   "response": {
+    "k": "ref",
+    "name": "LinkStatus"
+   }
+  },
+  "link_decline": {
+   "args": {
+    "sessionId": false
+   },
+   "method": "linkDecline",
+   "response": {
+    "k": "ref",
+    "name": "LinkStatus"
+   }
+  },
+  "link_start_receive": {
+   "args": {},
+   "method": "linkStartReceive",
+   "response": {
+    "k": "ref",
+    "name": "LinkStatus"
+   }
+  },
+  "link_start_send": {
+   "args": {
+    "selection": false
+   },
+   "method": "linkStartSend",
+   "response": {
+    "k": "ref",
+    "name": "LinkStatus"
+   }
+  },
+  "link_status": {
+   "args": {
+    "sessionId": false
+   },
+   "method": "linkStatus",
+   "response": {
+    "k": "ref",
+    "name": "LinkStatus"
+   }
+  },
   "list_5etools_urls": {
    "args": {},
    "method": "list5etoolsUrls",
@@ -6158,6 +6228,197 @@
     }
    }
   },
+  "LinkPreview": {
+   "k": "object",
+   "props": {
+    "items": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "LinkPreviewItem"
+      }
+     }
+    },
+    "totalBytes": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "LinkPreviewItem": {
+   "k": "object",
+   "props": {
+    "action": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "key": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "kind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "label": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "missingPacks": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "size": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "LinkStatus": {
+   "k": "object",
+   "props": {
+    "address": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "bytesDone": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "bytesTotal": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "code": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "error": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "errorCode": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "expiresInSecs": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "fingerprint": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "peerName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "phase": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "preview": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "LinkPreview"
+     }
+    },
+    "qrPayload": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "role": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sessionId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "summary": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "LinkSummary"
+     }
+    }
+   }
+  },
+  "LinkSummary": {
+   "k": "object",
+   "props": {
+    "added": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "identical": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "keptLocal": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "replaced": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "MigrationIssue": {
    "k": "object",
    "props": {
@@ -9506,6 +9767,10 @@
   "import:event": {
    "k": "ref",
    "name": "ImportEvent"
+  },
+  "link:status": {
+   "k": "ref",
+   "name": "LinkStatus"
   },
   "search:index-status": {
    "k": "ref",

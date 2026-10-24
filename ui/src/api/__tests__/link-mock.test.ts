@@ -1,0 +1,32 @@
+import { describe, expect, it } from "vitest";
+import { MockApi } from "../mock";
+import type { LinkStatus } from "../types";
+
+describe("mock device transfer", () => {
+  it("receive by QR: preview, accept, done, with status events", async () => {
+    const api = new MockApi({ seed: false });
+    const seen: LinkStatus[] = [];
+    api.subscribe("link:status", (s) => seen.push(s));
+    const shown = await api.linkStartSend({ selection: { characterIds: ["c_1"] } });
+    expect(shown.phase).toBe("waiting");
+    expect(shown.qrPayload).toMatch(/^borealis-link:v1\?.*&m=send$/);
+    expect(shown.code).toBe("42-ember-lantern");
+    const scan = await api.linkConnect({ target: shown.qrPayload! });
+    expect(scan.phase).toBe("preview");
+    expect(scan.preview?.items[0]).toMatchObject({ label: "Mira", action: "new" });
+    const done = await api.linkAccept({ sessionId: scan.sessionId });
+    expect(done.phase).toBe("done");
+    expect(done.summary?.added).toBe(1);
+    expect(seen.map((s) => s.phase)).toContain("transferring");
+  });
+
+  it("refuses a QR for the wrong direction and a malformed code", async () => {
+    const api = new MockApi({ seed: false });
+    const shown = await api.linkStartReceive();
+    await expect(api.linkConnect({ target: shown.qrPayload! })).rejects.toMatchObject({ code: "invalid_argument" });
+    await expect(api.linkConnect({ target: "ember lantern" })).rejects.toMatchObject({ code: "invalid_argument" });
+    const typed = await api.linkConnect({ target: "42-ember-lantern", host: "192.168.1.20:41234", selection: { characterIds: ["c_1"] } });
+    expect(typed.phase).toBe("waiting_for_peer");
+    expect((await api.linkCancel({ sessionId: shown.sessionId })).phase).toBe("cancelled");
+  });
+});

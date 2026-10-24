@@ -11,6 +11,8 @@
  */
 import type {
   AbilityKey,
+  LinkSelection,
+  LinkStatus,
   AbilityMethod,
   AiEvent,
   AiHostStatus,
@@ -341,6 +343,21 @@ export interface ApiMethods {
   aiHostBeginPairing(): Promise<AiHostStatus>;
   aiHostRevoke(args: { deviceId: string }): Promise<AiHostStatus>;
 
+  /* Device transfer ("Send to device" / "Receive from device"); updates stream on `link:status`.
+   * The device that shows the QR / code listens (only while the dialog is open, 5 minutes, one attempt). */
+  /** Open a window to send `selection`: returns the QR payload, the typed code and the address to show. */
+  linkStartSend(args: { selection: LinkSelection }): Promise<LinkStatus>;
+  /** Open a window to receive. */
+  linkStartReceive(): Promise<LinkStatus>;
+  /** Connect to another device's window: `target` is a scanned `borealis-link:v1?...` payload or a typed code; `host` (`ip:port`) goes with a code where discovery is unavailable. With `selection` this device sends. */
+  linkConnect(args: { target: string; host?: string; selection?: LinkSelection }): Promise<LinkStatus>;
+  linkStatus(args: { sessionId: string }): Promise<LinkStatus>;
+  /** Receiver: accept the previewed items. */
+  linkAccept(args: { sessionId: string }): Promise<LinkStatus>;
+  linkDecline(args: { sessionId: string }): Promise<LinkStatus>;
+  /** Close the window or stop the transfer; nothing partial is kept. */
+  linkCancel(args: { sessionId: string }): Promise<LinkStatus>;
+
   /* First-run AI setup (desktop). Install output streams on `aisetup:event`. */
   aiSetupStatus(): Promise<AiSetupStatus>;
   /** Step 1 of an install: the UI calls this only after the user accepts the consent dialog. */
@@ -510,6 +527,13 @@ export const COMMANDS = {
   aiHostStatus: "ai_host_status",
   aiHostBeginPairing: "ai_host_begin_pairing",
   aiHostRevoke: "ai_host_revoke",
+  linkStartSend: "link_start_send",
+  linkStartReceive: "link_start_receive",
+  linkConnect: "link_connect",
+  linkStatus: "link_status",
+  linkAccept: "link_accept",
+  linkDecline: "link_decline",
+  linkCancel: "link_cancel",
   aiSetupStatus: "ai_setup_status",
   aiSetupConfirmInstall: "ai_setup_confirm_install",
   aiSetupInstall: "ai_setup_install",
@@ -548,6 +572,8 @@ export interface ApiEvents {
   "files:dropped": FileDrop;
   /** Keyword index build / update progress. */
   "search:index-status": SearchIndexStatus;
+  /** A device transfer session changed (phase, preview, progress, result). */
+  "link:status": LinkStatus;
 }
 export type EventName = keyof ApiEvents;
 
@@ -563,6 +589,7 @@ export const EVENTS = {
   "content:open-file": "borealis://open-file",
   "files:dropped": "borealis://file-drop",
   "search:index-status": "search://index-status",
+  "link:status": "borealis://link-status",
 } as const satisfies Record<EventName, string>;
 
 export interface Api extends ApiMethods {

@@ -4,6 +4,8 @@
 //! character refused by the real character parser.
 #![cfg(feature = "device-link")]
 
+mod contract_support;
+
 use std::net::{IpAddr, Ipv4Addr};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -102,6 +104,13 @@ async fn wait(d: &Dev, id: &str, want: LinkPhase) -> LinkStatus {
     }
 }
 
+/// Every status the UI sees matches the TS `LinkStatus` type in the generated contract.
+fn assert_contract(status: &LinkStatus) {
+    let value = serde_json::to_value(status).unwrap();
+    let errs = contract_support::Contract::load().def("LinkStatus", &value);
+    assert!(errs.is_empty(), "{errs:?}\n{value:#}");
+}
+
 fn received(d: &Dev) -> Character {
     Character::load(&d.state.characters_dir().join(format!("{ID}.json"))).unwrap()
 }
@@ -125,6 +134,8 @@ async fn listener_sends(sender: &Dev, receiver: &Dev) {
     assert!(qr.starts_with("borealis-link:v1?") && qr.ends_with("&m=send"));
     let scan = receiver.sync.connect(&qr, None, None).await.unwrap();
     let preview = wait(receiver, &scan.session_id, LinkPhase::Preview).await;
+    assert_contract(&shown);
+    assert_contract(&preview);
     let rows = preview.preview.unwrap().items;
     assert_eq!(rows.len(), 1);
     assert_eq!(
@@ -133,6 +144,7 @@ async fn listener_sends(sender: &Dev, receiver: &Dev) {
     );
     receiver.sync.decide(&scan.session_id, true).unwrap();
     let done = wait(receiver, &scan.session_id, LinkPhase::Done).await;
+    assert_contract(&done);
     assert_eq!(done.summary.unwrap().added, 1);
     wait(sender, &shown.session_id, LinkPhase::Done).await;
     assert_eq!(received(receiver).meta.name, "Mira");
@@ -201,6 +213,7 @@ async fn a_wrong_typed_code_fails_both_sides_and_kills_the_code() {
         .await
         .unwrap();
     let failed = wait(&pc2, &dial.session_id, LinkPhase::Failed).await;
+    assert_contract(&failed);
     assert_eq!(failed.error_code.as_deref(), Some("wrong_code"));
     let closed = wait(&pc1, &shown.session_id, LinkPhase::Failed).await;
     assert_eq!(closed.error_code.as_deref(), Some("wrong_code"));

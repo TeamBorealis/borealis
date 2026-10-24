@@ -1,6 +1,7 @@
 import type { Api, ApiEvents, EventName, SlotOption, SlotOptionsArgs } from "../contract";
 import type {
   AiHostStatus,
+  LinkSelection,
   AppSettings, Attack, CharacterSnapshot, CharacterSummary, ExportResult, ImportReport, ItemSummary, MissingContentItem, Page, RecheckReport, RestrictionPreview, CompatibilityReport,
   AiSetupProviderId, ImportFileInput, OpenedFile, PickPurpose, RulesetProfile, SheetPreview, StatTrace, Unsubscribe,
 } from "../types";
@@ -14,6 +15,7 @@ import { MockImportReports } from "./import-report";
 import * as rolled from "./rolled-charges";
 import { MockAppUpdate } from "./app-update";
 import { MockDataFiles } from "./data-files";
+import { MockDeviceLink } from "./link";
 import { validateHomebrew } from "./ai";
 import { ContentService } from "./content-service";
 import { getClass, getElement } from "./content";
@@ -645,6 +647,17 @@ export class MockApi implements Api {
   async aiStatus() { await this.tick(); return this.ai.status(); }
   async aiStartTask({ request }: Parameters<Api["aiStartTask"]>[0]) { await this.tick(); return { taskId: this.ai.start(request) }; }
   async aiCancelTask({ taskId }: { taskId: string }) { this.ai.cancel(taskId); }
+  /* ---------- Device transfer ---------- */
+
+  readonly link = new MockDeviceLink((st) => this.emit("link:status", st));
+  async linkStartSend({ selection }: { selection: LinkSelection }) { await this.tick(); return this.link.startSend(selection); }
+  async linkStartReceive() { await this.tick(); return this.link.startReceive(); }
+  async linkConnect({ target, selection }: { target: string; host?: string; selection?: LinkSelection }) { await this.tick(); return this.link.connect(target, selection); }
+  async linkStatus({ sessionId }: { sessionId: string }) { await this.tick(); return this.link.status(sessionId); }
+  async linkAccept({ sessionId }: { sessionId: string }) { await this.tick(); return this.link.decide(sessionId, true); }
+  async linkDecline({ sessionId }: { sessionId: string }) { await this.tick(); return this.link.decide(sessionId, false); }
+  async linkCancel({ sessionId }: { sessionId: string }) { await this.tick(); return this.link.cancel(sessionId); }
+
   private host: AiHostStatus = { enabled: false, supported: true, address: null, pairingCode: null, pairingExpiresInSecs: null, pairingUri: null, fingerprint: null, devices: [] };
   private requireConsent(allowed: boolean | undefined) {
     if (this.codexOnly && !allowed) throw apiError("consent_required", "This content comes from outside Borealis, and codex can run commands that read files on this computer if the content tells it to.");
