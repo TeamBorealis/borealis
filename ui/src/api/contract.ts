@@ -52,6 +52,9 @@ import type {
   CompendiumQuery,
   SearchHit,
   SearchIndexStatus,
+  SemanticDownload,
+  SemanticLicense,
+  SemanticStatus,
   SearchPassage,
   SearchQuery,
   ContentIndex,
@@ -257,6 +260,21 @@ export interface ApiMethods {
   searchIndexStatus(): Promise<SearchIndexStatus>;
   /** The rules-text section behind a `rules:` hit. */
   getSearchPassage(args: { docKey: string }): Promise<SearchPassage>;
+
+  /* Semantic search model (Settings > Search, S3.2). Progress streams on `semantic:download`. */
+  /** Tier, file, consent text and download state; reads the device only, never the network. */
+  semanticStatus(): Promise<SemanticStatus>;
+  /** The user accepted the consent dialog (or pressed Resume): download this device's file and turn semantic search on.
+   * Throws `requirement_failed` when the device has no file or no URL serves it yet. */
+  semanticDownloadStart(): Promise<SemanticStatus>;
+  /** Pause; the partial is kept and Resume continues where it stopped. */
+  semanticDownloadPause(): Promise<SemanticStatus>;
+  /** Cancel: the partial is deleted and semantic search turns off. */
+  semanticDownloadCancel(): Promise<SemanticStatus>;
+  /** "Delete model and semantic indexes": model files and vectors go, keyword indexes stay, semantic search turns off. */
+  semanticDeleteModel(): Promise<SemanticStatus>;
+  /** The model's licence and NOTICE (Settings > About). */
+  semanticModelLicense(): Promise<SemanticLicense>;
 
   /* Content */
   listPacks(): Promise<ContentPack[]>;
@@ -499,6 +517,12 @@ export const COMMANDS = {
   search: "search",
   searchIndexStatus: "search_index_status",
   getSearchPassage: "get_search_passage",
+  semanticStatus: "semantic_status",
+  semanticDownloadStart: "semantic_download_start",
+  semanticDownloadPause: "semantic_download_pause",
+  semanticDownloadCancel: "semantic_download_cancel",
+  semanticDeleteModel: "semantic_delete_model",
+  semanticModelLicense: "semantic_model_license",
   listPacks: "list_packs",
   importPack: "import_pack",
   previewImportPack: "preview_import_pack",
@@ -603,6 +627,8 @@ export interface ApiEvents {
   "files:dropped": FileDrop;
   /** Keyword index build / update progress. */
   "search:index-status": SearchIndexStatus;
+  /** Semantic model download progress (start, pause, cancel, verify, done, failure). */
+  "semantic:download": SemanticDownload;
   /** A device transfer session changed (phase, preview, progress, result). */
   "link:status": LinkStatus;
 }
@@ -620,6 +646,7 @@ export const EVENTS = {
   "content:open-file": "borealis://open-file",
   "files:dropped": "borealis://file-drop",
   "search:index-status": "search://index-status",
+  "semantic:download": "semantic://download",
   "link:status": "borealis://link-status",
 } as const satisfies Record<EventName, string>;
 

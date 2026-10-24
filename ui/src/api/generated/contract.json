@@ -1311,6 +1311,54 @@
     "name": "Page<ItemSummary>"
    }
   },
+  "semantic_delete_model": {
+   "args": {},
+   "method": "semanticDeleteModel",
+   "response": {
+    "k": "ref",
+    "name": "SemanticStatus"
+   }
+  },
+  "semantic_download_cancel": {
+   "args": {},
+   "method": "semanticDownloadCancel",
+   "response": {
+    "k": "ref",
+    "name": "SemanticStatus"
+   }
+  },
+  "semantic_download_pause": {
+   "args": {},
+   "method": "semanticDownloadPause",
+   "response": {
+    "k": "ref",
+    "name": "SemanticStatus"
+   }
+  },
+  "semantic_download_start": {
+   "args": {},
+   "method": "semanticDownloadStart",
+   "response": {
+    "k": "ref",
+    "name": "SemanticStatus"
+   }
+  },
+  "semantic_model_license": {
+   "args": {},
+   "method": "semanticModelLicense",
+   "response": {
+    "k": "ref",
+    "name": "SemanticLicense"
+   }
+  },
+  "semantic_status": {
+   "args": {},
+   "method": "semanticStatus",
+   "response": {
+    "k": "ref",
+    "name": "SemanticStatus"
+   }
+  },
   "set_ability_method": {
    "args": {
     "characterId": false,
@@ -8688,6 +8736,196 @@
     }
    }
   },
+  "SemanticConsent": {
+   "k": "object",
+   "props": {
+    "accept": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "body": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "decline": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "title": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SemanticDownload": {
+   "k": "object",
+   "props": {
+    "done": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "message": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "state": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SemanticFile": {
+   "k": "object",
+   "props": {
+    "bytes": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "fileName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "quant": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sizeText": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SemanticLicense": {
+   "k": "object",
+   "props": {
+    "license": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "model": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "notice": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SemanticStatus": {
+   "k": "object",
+   "props": {
+    "active": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "available": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "backendAvailable": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "consent": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "SemanticConsent"
+     }
+    },
+    "download": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "SemanticDownload"
+     }
+    },
+    "file": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "SemanticFile"
+     }
+    },
+    "mobile": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "modelPresent": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "probedTier": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "semantic": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "tier": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "unavailableReason": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "SheetPreview": {
    "k": "object",
    "props": {
@@ -10016,6 +10254,10 @@
   "search:index-status": {
    "k": "ref",
    "name": "SearchIndexStatus"
+  },
+  "semantic:download": {
+   "k": "ref",
+   "name": "SemanticDownload"
   }
  }
 }

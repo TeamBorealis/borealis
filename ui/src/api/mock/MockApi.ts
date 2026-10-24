@@ -18,6 +18,7 @@ import { MockAppUpdate } from "./app-update";
 import { MockDataFiles } from "./data-files";
 import { MockBundles } from "./bundles";
 import { MockDeviceLink } from "./link";
+import { MockSemantic, type MockSemanticOptions } from "./semantic";
 import { validateHomebrew } from "./ai";
 import { ContentService } from "./content-service";
 import { getClass, getElement } from "./content";
@@ -59,6 +60,8 @@ export interface MockApiOptions {
   linkDevices?: LinkDevice[];
   /** The file name the first "Open bundle..." picks (default `Mira.borealis`). */
   bundleFile?: string | null;
+  /** Semantic search model (Settings > Search): tier, backend, mirror, an installed model, step delay. */
+  semantic?: Partial<MockSemanticOptions>;
 }
 
 const PROFILES: Record<"dnd2014" | "dnd2024", RulesetProfile> = {
@@ -112,6 +115,7 @@ export class MockApi implements Api {
       mobile: this.mobile, peerAfterMs: opts.linkPeerAfterMs ?? null, devices: opts.linkDevices,
       onReceived: (names) => this.addReceived(names),
     });
+    this.semantic = new MockSemantic((d) => this.emit("semantic:download", d), this.mobile, opts.semantic);
     if (opts.bundleFile) this.picks.next = `/home/me/Downloads/${opts.bundleFile.replace(/[^A-Za-z0-9 ._-]/g, "_")}`;
     this.bundles = new MockBundles((token) => this.picks.take(token, "bundle-file"), (path) => this.picks.grantBundle(path), (names) => this.addReceived(names));
     if (opts.seed !== false) for (const c of seedLibrary()) { this.chars.set(c.id, c); this.saved.set(c.id, c); }
@@ -635,6 +639,15 @@ export class MockApi implements Api {
   }
   async restoreDefaultSettings() { await this.tick(); this.settings = this.dataFiles.restore(this.settings); return this.settings; }
   async clearCaches() { await this.tick(); return this.dataFiles.clearCaches(); }
+  /* Semantic model: `semantic.starts` counts consented downloads (the mock's network requests). */
+  readonly semantic: MockSemantic;
+  private setSemantic(on: boolean) { this.settings = { ...this.settings, search: { ...this.settings.search, semantic: on } }; }
+  async semanticStatus() { await this.tick(); return this.semantic.status(this.settings.search); }
+  async semanticDownloadStart() { await this.tick(); this.semantic.start(this.settings.search); this.setSemantic(true); return this.semantic.status(this.settings.search); }
+  async semanticDownloadPause() { await this.tick(); this.semantic.pause(); return this.semantic.status(this.settings.search); }
+  async semanticDownloadCancel() { await this.tick(); this.semantic.cancel(); this.setSemantic(false); return this.semantic.status(this.settings.search); }
+  async semanticDeleteModel() { await this.tick(); this.semantic.delete(); this.setSemantic(false); return this.semantic.status(this.settings.search); }
+  async semanticModelLicense() { await this.tick(); return this.semantic.license(); }
   async contentUpdateStatus() { await this.tick(); return { ...this.dataFiles.status }; }
   async appUpdateStatus() { await this.tick(); return { ...this.appUpdate.status }; }
   async checkAppUpdate() { await this.tick(); this.appUpdate.requests += 1; this.emit("appupdate:status", { ...this.appUpdate.status }); return { ...this.appUpdate.status }; }
