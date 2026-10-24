@@ -465,11 +465,26 @@ fn cjk_name_uses_a_system_font_when_the_machine_has_one() {
     let pdf = render_pdf(&c, &snap, &opts).unwrap();
     assert_eq!(pdf, render_pdf(&c, &snap, &opts).unwrap(), "deterministic");
     let objs = parse_pdf(&pdf);
+    // The bundled faces (crates/borealis-sheet/fonts) are not system fonts; a system Noto Sans
+    // CJK (the usual Linux one) is.
+    const BUNDLED: [&str; 4] = [
+        "+NotoSans-",
+        "+NotoSansArabic-",
+        "+NotoSansHebrew-",
+        "+NotoSerif-",
+    ];
     let system = objs
         .iter()
-        .filter(|o| o.dict.contains("/Subtype /Type0") && !o.dict.contains("+Noto"))
+        .filter(|o| {
+            o.dict.contains("/Subtype /Type0") && !BUNDLED.iter().any(|b| o.dict.contains(b))
+        })
         .count();
     if system == 0 {
+        // CI sets this where it installs a CJK font, so a lookup regression fails there.
+        assert!(
+            std::env::var_os("BOREALIS_REQUIRE_CJK_FONT").is_none(),
+            "BOREALIS_REQUIRE_CJK_FONT is set but no system CJK font was embedded"
+        );
         eprintln!("SKIPPED: no system CJK font found on this machine, so no CJK font was embedded");
         return;
     }
