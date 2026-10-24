@@ -141,7 +141,7 @@ pub fn chunk_text(text: &str) -> Vec<Chunk> {
         .filter(|&i| is_heading(&lines, i))
         .collect();
     let mut bounds: Vec<usize> = Vec::new();
-    if starts.first().map_or(true, |&s| s > 0) {
+    if starts.first().is_none_or(|&s| s > 0) {
         bounds.push(0);
     }
     bounds.extend(&starts);

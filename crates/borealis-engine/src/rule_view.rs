@@ -42,9 +42,7 @@ impl Live<'_> {
 /// character level elsewhere)?
 #[must_use]
 pub fn level_met(graph: &Graph<'_>, node: NodeId, level: Option<u64>) -> bool {
-    level.map_or(true, |l| {
-        u64::from(graph.mgr_level(graph.nodes[node].mgr)) >= l
-    })
+    level.is_none_or(|l| u64::from(graph.mgr_level(graph.nodes[node].mgr)) >= l)
 }
 
 /// Is a custom rule of `node` live: its `level` gate met and its `requirements` expression (if
@@ -60,7 +58,7 @@ pub fn rule_live(graph: &Graph<'_>, node: NodeId, c: &CustomRule) -> bool {
 #[must_use]
 pub fn carried_rule_live(graph: &Graph<'_>, c: &CustomRule) -> bool {
     let level = c.fields.get("level").and_then(Value::as_u64);
-    level.map_or(true, |l| u64::from(graph.total_level()) >= l) && requirements_met(graph, c)
+    level.is_none_or(|l| u64::from(graph.total_level()) >= l) && requirements_met(graph, c)
 }
 
 fn requirements_met(graph: &Graph<'_>, c: &CustomRule) -> bool {

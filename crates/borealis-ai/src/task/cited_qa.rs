@@ -382,8 +382,8 @@ fn uncited_sentences(text: &str) -> Vec<String> {
         let chars: Vec<char> = line.chars().collect();
         for (n, &c) in chars.iter().enumerate() {
             current.push(c);
-            let ends = matches!(c, '.' | '!' | '?')
-                && chars.get(n + 1).map_or(true, |x| x.is_whitespace());
+            let ends =
+                matches!(c, '.' | '!' | '?') && chars.get(n + 1).is_none_or(|x| x.is_whitespace());
             if ends {
                 push_if_uncited(&mut found, &current);
                 current.clear();

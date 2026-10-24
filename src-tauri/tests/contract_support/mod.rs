@@ -228,7 +228,7 @@ impl Contract {
                     if e.is_empty() {
                         return;
                     }
-                    if best.as_ref().map_or(true, |b| e.len() < b.len()) {
+                    if best.as_ref().is_none_or(|b| e.len() < b.len()) {
                         best = Some(e);
                     }
                 }

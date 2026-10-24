@@ -179,7 +179,7 @@ pub(super) fn judge(p: &Pixels) -> Ink {
         return Ink::Unknown;
     }
     let step = p.width.div_ceil(MAX_COLUMNS).max(1);
-    let opaque = |i: usize| p.alpha.as_ref().map_or(true, |a| a[i] >= OPAQUE);
+    let opaque = |i: usize| p.alpha.as_ref().is_none_or(|a| a[i] >= OPAQUE);
     let mut hist = [0usize; BINS];
     for y in 0..p.height {
         for x in (0..p.width).step_by(step) {

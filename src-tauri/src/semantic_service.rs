@@ -487,7 +487,7 @@ impl SemanticService {
                 message: None,
             };
             self.job().progress = progress.clone();
-            let due = last_emit.map_or(true, |(at, phase)| {
+            let due = last_emit.is_none_or(|(at, phase)| {
                 phase != p.phase || at.elapsed() >= PROGRESS_EVERY || p.done == p.total
             });
             if due {

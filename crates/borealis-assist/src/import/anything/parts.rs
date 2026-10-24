@@ -435,7 +435,7 @@ fn continues_section(
         return false;
     };
     planned.role == Role::Text
-        && own_end.map_or(true, |e| at < e + MAX_EXTENSION_LINES)
+        && own_end.is_none_or(|e| at < e + MAX_EXTENSION_LINES)
         && !title.split(' ').any(|w| BOUNDARY_WORDS.contains(&w))
         && !super::passage::end_matter(&title)
         && !names_planned(plan, &planned.id, &title)

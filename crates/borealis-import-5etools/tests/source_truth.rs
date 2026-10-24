@@ -581,7 +581,7 @@ impl Audit<'_> {
                 let from_ok = c
                     .from
                     .as_ref()
-                    .map_or(true, |f| g.option_names().iter().all(|n| f.contains(n)));
+                    .is_none_or(|f| g.option_names().iter().all(|n| f.contains(n)));
                 kind_ok && from_ok
             };
             let exact = groups

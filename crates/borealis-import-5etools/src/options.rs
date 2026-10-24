@@ -59,7 +59,7 @@ impl ImportOptions {
     pub fn allows_source(&self, source: &str) -> bool {
         self.sources
             .as_ref()
-            .map_or(true, |set| set.contains(&source.to_uppercase()))
+            .is_none_or(|set| set.contains(&source.to_uppercase()))
     }
 }
 

@@ -541,7 +541,7 @@ impl Doc<'_> {
     /// A title-like line alone in its paragraph (a wrapped body line has a continuation). A
     /// run-in paragraph whose sentence lacks its final stop ("Size. You are Small") is no title.
     fn standalone_title(&self, i: usize) -> bool {
-        let blank = |k: usize| self.lines.get(k).map_or(true, |l| l.trim().is_empty());
+        let blank = |k: usize| self.lines.get(k).is_none_or(|l| l.trim().is_empty());
         i > 0
             && blank(i - 1)
             && blank(i + 1)

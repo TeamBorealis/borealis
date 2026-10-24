@@ -128,7 +128,7 @@ fn parse(args: &[String]) -> Result<Command, DriveError> {
                 })?;
                 let is_flag = schema["type"] == "boolean"
                     && inline.is_none()
-                    && args.get(i).map_or(true, |n| n.starts_with("--"));
+                    && args.get(i).is_none_or(|n| n.starts_with("--"));
                 let typed_value = if is_flag {
                     json!(true)
                 } else {

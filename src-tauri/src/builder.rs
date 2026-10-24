@@ -165,7 +165,7 @@ impl AppState {
             let matches = |name: &str| {
                 needle
                     .as_ref()
-                    .map_or(true, |n| name.to_lowercase().contains(n))
+                    .is_none_or(|n| name.to_lowercase().contains(n))
             };
             let skip = offset.unwrap_or(0);
             let take = limit.unwrap_or(DEFAULT_PAGE).min(MAX_PAGE);

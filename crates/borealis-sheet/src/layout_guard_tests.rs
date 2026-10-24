@@ -300,8 +300,8 @@ fn options(paper: Paper, ink: bool, fillable: bool, variant: usize) -> SheetOpti
         },
         form_fillable: fillable,
         cards: CardKinds {
-            spell: variant % 2 == 0,
-            item: variant % 2 == 0,
+            spell: variant.is_multiple_of(2),
+            item: variant.is_multiple_of(2),
             attack: variant % 2 == 1,
             feature: variant % 2 == 1,
         },

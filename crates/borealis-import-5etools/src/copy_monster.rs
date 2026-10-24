@@ -29,7 +29,7 @@ fn proficiency_of(cr: Option<&Value>) -> Option<i64> {
 fn without_cr(target: &Value) -> bool {
     match target.get("cr") {
         None | Some(Value::Null) => true,
-        Some(Value::Object(o)) => o.get("cr").map_or(true, Value::is_null),
+        Some(Value::Object(o)) => o.get("cr").is_none_or(Value::is_null),
         Some(_) => false,
     }
 }

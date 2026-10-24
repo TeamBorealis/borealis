@@ -109,7 +109,7 @@ pub fn apply(raw: &mut Value, text: &str) -> Result<Vec<String>, String> {
 }
 
 fn apply_one(raw: &mut Value, c: &Correction) -> Result<(), String> {
-    if c.kind == Kind::AuthorMissedPrinted && c.evidence.as_deref().map_or(true, str_blank) {
+    if c.kind == Kind::AuthorMissedPrinted && c.evidence.as_deref().is_none_or(str_blank) {
         return Err(format!("{}: author_missed_printed needs evidence", c.id));
     }
     let section = match c.kind {

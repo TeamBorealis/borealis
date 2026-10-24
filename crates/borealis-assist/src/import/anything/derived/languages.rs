@@ -120,7 +120,7 @@ fn list_start(sentence: &str) -> Option<usize> {
             let word_start = lower[..i]
                 .chars()
                 .next_back()
-                .map_or(true, |c| !c.is_alphanumeric());
+                .is_none_or(|c| !c.is_alphanumeric());
             word_start.then_some(i + v.len())
         })
     })
@@ -273,7 +273,7 @@ pub(super) fn languages(plan: &ImportPlan, store: &ContentStore, d: &mut Derived
                 .into_iter()
                 .find(|(_, n)| norm(n) == norm(name))
                 .map(|(lid, _)| lid);
-            made |= hit.as_ref().map_or(true, |lid| store.get(lid).is_none());
+            made |= hit.as_ref().is_none_or(|lid| store.get(lid).is_none());
             wanted.push(hit.unwrap_or_else(|| new_language(plan, store, name, &source, d)));
         }
         let had = language_grants(&d.docs[i]);

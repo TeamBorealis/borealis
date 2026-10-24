@@ -68,7 +68,7 @@ impl Fake {
     }
     /// `url` fails with `e` `times` times, then answers.
     fn flaky(self, rel: &str, e: FetchError, times: usize) -> Self {
-        let queue = std::iter::repeat(e).take(times).collect();
+        let queue = std::iter::repeat_n(e, times).collect();
         self.errors.lock().unwrap().insert(url(rel), (queue, false));
         self
     }

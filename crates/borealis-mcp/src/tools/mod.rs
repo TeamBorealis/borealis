@@ -83,7 +83,7 @@ impl Tools {
     pub(crate) fn pack_allowed(&self, pack: &str) -> bool {
         self.allowed_packs
             .as_ref()
-            .map_or(true, |list| list.iter().any(|p| p == pack))
+            .is_none_or(|list| list.iter().any(|p| p == pack))
     }
 
     pub(crate) fn search_engine(&self) -> Option<&SearchEngine> {

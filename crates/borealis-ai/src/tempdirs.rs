@@ -55,7 +55,7 @@ pub fn sweep_stale_in(root: &Path, max_age: Duration, now: SystemTime) -> io::Re
             .modified()
             .ok()
             .and_then(|m| now.duration_since(m).ok());
-        if age.map_or(true, |a| a < max_age) {
+        if age.is_none_or(|a| a < max_age) {
             continue;
         }
         // remove_dir_all does not follow symlinks inside the tree.

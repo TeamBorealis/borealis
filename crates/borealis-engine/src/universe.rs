@@ -1177,7 +1177,7 @@ impl Universe {
     pub fn class_named(&self, name: &str) -> Option<&UElem> {
         let mut foreign = None;
         for c in self.by_type("Class").filter(|c| c.el.name == name) {
-            if !c.edition.is_foreign() && c.el.ruleset.map_or(true, |r| r == self.ruleset) {
+            if !c.edition.is_foreign() && c.el.ruleset.is_none_or(|r| r == self.ruleset) {
                 return Some(c);
             }
             foreign.get_or_insert(c);

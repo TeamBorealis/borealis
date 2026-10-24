@@ -112,7 +112,7 @@ mod tests {
         let text = character(r#"{"file_name":"x.svg","data_base64":"PHN2Zz4="}"#);
         let out = AppValidator.character(ID, text.as_bytes()).unwrap();
         let v: serde_json::Value = serde_json::from_slice(&out).unwrap();
-        assert!(v.get("portrait").map_or(true, serde_json::Value::is_null));
+        assert!(v.get("portrait").is_none_or(serde_json::Value::is_null));
     }
 
     #[test]

@@ -602,9 +602,7 @@ fn oracle(
         // a Companion select drops a typed monster named like an offered companion
         let missing: Vec<&&str> = expected
             .difference(&listed)
-            .filter(|id| {
-                s.ty != "Companion" || name(id).map_or(true, |n| !listed_names.contains(&n))
-            })
+            .filter(|id| s.ty != "Companion" || name(id).is_none_or(|n| !listed_names.contains(&n)))
             .take(5)
             .collect();
         if !extra.is_empty() || !missing.is_empty() {

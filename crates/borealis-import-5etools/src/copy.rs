@@ -685,7 +685,7 @@ fn apply_one(target: &mut Value, key: &str, m: &Value, notes: &mut Vec<String>) 
                 arr.retain(|item| {
                     item.get("name")
                         .and_then(Value::as_str)
-                        .map_or(true, |n| !names.contains(&n))
+                        .is_none_or(|n| !names.contains(&n))
                 });
             } else if let Some(items) = m.get("items") {
                 let items = as_list(items);

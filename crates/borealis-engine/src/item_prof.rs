@@ -53,7 +53,7 @@ fn property_tag(name: &str) -> String {
 /// optional `properties_any`)?
 fn filter_matches(filter: &crate::rule_view::Live<'_>, e: &UElem) -> bool {
     let has = |tag: &str| e.supports.iter().any(|s| s == tag);
-    let category_ok = filter.str("weapon_category").map_or(true, |c| {
+    let category_ok = filter.str("weapon_category").is_none_or(|c| {
         let c = crate::universe::sanitize_id(c.trim());
         ["MELEE", "RANGED"]
             .iter()

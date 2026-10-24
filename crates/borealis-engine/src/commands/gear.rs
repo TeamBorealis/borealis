@@ -36,9 +36,8 @@ fn next_uid(state: &CharacterState) -> String {
 /// Can inventory line `i` be equipped (an unknown item counts as equippable)?
 fn can_equip(engine: &Engine, state: &CharacterState, i: usize) -> bool {
     let uni = engine.universe(state.ruleset);
-    uni.get(&state.inventory.items[i].item).map_or(true, |e| {
-        crate::item_base::effective_facts(uni, e).equippable
-    })
+    uni.get(&state.inventory.items[i].item)
+        .is_none_or(|e| crate::item_base::effective_facts(uni, e).equippable)
 }
 
 /// Add an item with a generated uid.

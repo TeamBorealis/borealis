@@ -104,7 +104,7 @@ impl AppState {
         let query = filter.query.as_deref().unwrap_or("").trim();
         let needle = Some(query.to_lowercase()).filter(|q| !q.is_empty());
         let category = filter.category.as_deref();
-        let source_ok = |s: &str| filter.source.as_deref().map_or(true, |f| f == s);
+        let source_ok = |s: &str| filter.source.as_deref().is_none_or(|f| f == s);
         // Inside a category: Aurora's filter (every word in the name or a keyword), by name.
         // Without one: a name search ranked prefix-first, over the content items only (IM13 D4).
         let rank = |name: &str, keywords: &dyn Fn() -> Vec<String>| match (category, &needle) {
@@ -117,7 +117,7 @@ impl AppState {
             .iter()
             .map(|s| &s.element)
             .filter(|e| is_item(e) && scope.admits(e) && source_ok(&e.source))
-            .filter(|e| category.map_or(true, |c| list_category(e) == c))
+            .filter(|e| category.is_none_or(|c| list_category(e) == c))
             .filter_map(|e| rank(&e.name, &|| keywords(e)).map(|r| (r, Hit::Item(e))))
             .collect();
         if let Some(c) = category {

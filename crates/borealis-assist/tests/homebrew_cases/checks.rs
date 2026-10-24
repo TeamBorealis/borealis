@@ -283,14 +283,14 @@ fn choice(s: &CharacterSnapshot, check: &CharCheck) -> Result<(), String> {
         .filter(|x| {
             name_contains
                 .as_deref()
-                .map_or(true, |n| norm(&x.name).contains(&norm(n)))
+                .is_none_or(|n| norm(&x.name).contains(&norm(n)))
                 && !name_excludes
                     .iter()
                     .any(|n| norm(&x.name).contains(&norm(n)))
-                && ty.as_deref().map_or(true, |t| name_matches(t, &x.ty))
+                && ty.as_deref().is_none_or(|t| name_matches(t, &x.ty))
                 && owner
                     .as_deref()
-                    .map_or(true, |o| name_matches(o, &x.owner.name))
+                    .is_none_or(|o| name_matches(o, &x.owner.name))
                 && options_include_ids.iter().all(|id| offers_id(x, id))
                 && options_include_names.iter().all(|n| offers_name(x, n))
         })
@@ -476,7 +476,7 @@ fn same_ability(a: &str, b: &str) -> bool {
 fn caster<'a>(s: &'a CharacterSnapshot, name: Option<&str>) -> Option<&'a SpellcastingSnapshot> {
     s.spellcasting
         .iter()
-        .find(|c| name.map_or(true, |n| name_matches(n, &c.name)))
+        .find(|c| name.is_none_or(|n| name_matches(n, &c.name)))
 }
 
 fn spellcasting(s: &CharacterSnapshot, check: &CharCheck) -> Result<(), String> {
@@ -590,7 +590,7 @@ fn advantage(
     absent: Option<bool>,
 ) -> Result<(), String> {
     let found = s.advantages.iter().any(|a| {
-        roll.map_or(true, |r| name_matches(r, &a.roll))
+        roll.is_none_or(|r| name_matches(r, &a.roll))
             && text.iter().all(|t| norm(&a.text).contains(&norm(t)))
     });
     match (found, absent == Some(true)) {

@@ -208,7 +208,7 @@ fn github(
     path: Option<&str>,
 ) -> Result<FiveToolsLocation, String> {
     let repo = repo.strip_suffix(".git").unwrap_or(repo);
-    let refs_ok = git_ref.map_or(true, segment_ok) && path.map_or(true, path_ok);
+    let refs_ok = git_ref.is_none_or(segment_ok) && path.is_none_or(path_ok);
     if !segment_ok(owner) || !segment_ok(repo) || !refs_ok {
         return Err(BAD_ADDRESS.into());
     }
@@ -584,7 +584,7 @@ pub fn download_folder(
             }
         }
     }
-    let changed = previous.map_or(true, |p| !same_content(p, &files));
+    let changed = previous.is_none_or(|p| !same_content(p, &files));
     if changed && !stale.is_empty() {
         let all: BTreeSet<String> = stale.iter().cloned().collect();
         let again = fetch_all(f, base, &stale, None, &all, sink).map_err(|e| {

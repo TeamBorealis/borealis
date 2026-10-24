@@ -310,7 +310,7 @@ fn listed_rules(
     other
         .iter()
         .filter(|o| !is_narrative(&o.what) && !rows.contains(&norm(&o.name)))
-        .filter(|o| heading.map_or(true, |(_, t)| norm(t) != norm(&o.name)))
+        .filter(|o| heading.is_none_or(|(_, t)| norm(t) != norm(&o.name)))
         .filter(|o| {
             let rule = stems(&o.name);
             named.iter().any(|n| holds(n, &rule))
@@ -357,7 +357,7 @@ fn rule_section(
     heading: Option<&(usize, String)>,
 ) -> String {
     heading_of(lines, owner)
-        .filter(|&h| h < first && heading.map_or(true, |(k, _)| *k != h))
+        .filter(|&h| h < first && heading.is_none_or(|(k, _)| *k != h))
         .map(|h| {
             // Its opening only: to its first sub-heading at most.
             let end = (h + 1..first.min(h + 1 + LEAD_SPAN))
@@ -562,9 +562,8 @@ fn attach_to_rule(groups: &mut Vec<PlanGroup>, t: &OptionTable) -> Option<String
         .filter(|r| !planned.contains(&norm(r)) && norm(r) != norm(&t.owner))
         .collect();
     let owner_at = groups.iter().position(|g| norm(&g.name) == norm(&t.owner));
-    let text_owner = owner_at.map_or(true, |k| {
-        matches!(groups[k].kind, ImportKind::Rules | ImportKind::Condition)
-    });
+    let text_owner = owner_at
+        .is_none_or(|k| matches!(groups[k].kind, ImportKind::Rules | ImportKind::Condition));
     if rows.len() < MIN_OPTION_ROWS || !text_owner {
         return None;
     }

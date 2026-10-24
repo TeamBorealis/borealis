@@ -362,9 +362,7 @@ impl Builder<'_> {
             let choose = picks_of(&f.choose, first);
             let opening = choose.first().map_or(first, |c| c.level);
             // A prerequisite that would leave the first pick empty is not one.
-            let usable = options
-                .iter()
-                .any(|o| o.level.map_or(true, |l| l <= opening));
+            let usable = options.iter().any(|o| o.level.is_none_or(|l| l <= opening));
             for o in &options {
                 let id = self.push_child(ty, o, Role::Option, level, parent_id);
                 if let (true, Some(l)) = (usable, o.level.filter(|l| *l > opening)) {

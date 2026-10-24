@@ -140,7 +140,7 @@ pub fn loaded(uni: &Universe, state: &CharacterState, weapon: &UElem) -> Option<
             continue;
         }
         let key = (it.equipped.is_some(), enhancement);
-        if best.as_ref().map_or(true, |b| key > (b.0, b.1)) {
+        if best.as_ref().is_none_or(|b| key > (b.0, b.1)) {
             let name = it.alt_name.clone().unwrap_or_else(|| match adorner {
                 Some(a) => format!("{} ({})", base.el.name, a.el.name),
                 None => base.el.name.clone(),

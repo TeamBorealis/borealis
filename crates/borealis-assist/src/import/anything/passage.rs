@@ -506,7 +506,7 @@ pub(crate) fn end_matter_title(lines: &[&str], k: usize) -> bool {
     if heading(t).is_some() {
         return end_matter(&heading_title(t));
     }
-    let blank = |i: usize| lines.get(i).map_or(true, |l| l.trim().is_empty());
+    let blank = |i: usize| lines.get(i).is_none_or(|l| l.trim().is_empty());
     let alone = (k == 0 || blank(k - 1)) && blank(k + 1);
     alone
         && !t.is_empty()

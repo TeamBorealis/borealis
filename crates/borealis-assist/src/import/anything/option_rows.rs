@@ -276,7 +276,7 @@ fn same_table(gap: &[&str], width: Option<usize>) -> bool {
     if width.is_none() {
         return gap.len() <= MAX_FLAT_GAP && gap.iter().all(|l| l.trim().is_empty());
     }
-    let same_width = |l: &str| cells(l).is_some_and(|c| width.map_or(true, |w| c.len() == w));
+    let same_width = |l: &str| cells(l).is_some_and(|c| width.is_none_or(|w| c.len() == w));
     gap.len() <= MAX_ROW_GAP
         && gap
             .iter()

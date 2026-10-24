@@ -161,9 +161,7 @@ pub fn defenses(graph: &Graph<'_>, toggles: &[ToggleSnapshot]) -> Defenses {
     }
     for l in live_rules(graph, &["condition_immunity", "condition_immunity_while"]) {
         let toggle = l.str("toggle").map(str::to_string);
-        let active = toggle
-            .as_deref()
-            .map_or(true, |t| toggle_active(toggles, t));
+        let active = toggle.as_deref().is_none_or(|t| toggle_active(toggles, t));
         for cond in l.list("conditions") {
             push_unique(
                 &mut d.condition_immunities,

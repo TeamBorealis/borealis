@@ -44,7 +44,7 @@ fn escape(s: &str) -> String {
 /// Escaped text with paired `**` runs as bold (an unpaired `**` stays as printed).
 fn inline(s: &str) -> String {
     let parts: Vec<&str> = s.split("**").collect();
-    if parts.len() < 3 || parts.len() % 2 == 0 {
+    if parts.len() < 3 || parts.len().is_multiple_of(2) {
         return escape(s);
     }
     parts

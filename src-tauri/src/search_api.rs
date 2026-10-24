@@ -181,15 +181,15 @@ impl Filters<'_> {
         is_listed(e, self.types)
             && self
                 .sources
-                .map_or(true, |s| s.is_empty() || s.contains(&e.source))
+                .is_none_or(|s| s.is_empty() || s.contains(&e.source))
     }
 
     fn section(&self, source: &str) -> bool {
-        self.types.map_or(true, |t| {
-            t.is_empty() || t.iter().any(|x| x == RULES_HIT_TYPE)
-        }) && self
-            .sources
-            .map_or(true, |s| s.is_empty() || s.iter().any(|x| x == source))
+        self.types
+            .is_none_or(|t| t.is_empty() || t.iter().any(|x| x == RULES_HIT_TYPE))
+            && self
+                .sources
+                .is_none_or(|s| s.is_empty() || s.iter().any(|x| x == source))
     }
 }
 

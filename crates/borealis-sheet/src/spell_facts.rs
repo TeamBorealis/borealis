@@ -202,7 +202,7 @@ fn first_sentence(text: &str) -> String {
     let mut end = text.len();
     let bytes = text.as_bytes();
     for (i, b) in bytes.iter().enumerate() {
-        if matches!(b, b'.' | b'!' | b'?') && bytes.get(i + 1).map_or(true, |n| *n == b' ') {
+        if matches!(b, b'.' | b'!' | b'?') && bytes.get(i + 1).is_none_or(|n| *n == b' ') {
             end = i + 1;
             break;
         }

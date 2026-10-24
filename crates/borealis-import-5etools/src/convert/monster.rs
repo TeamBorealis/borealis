@@ -435,7 +435,7 @@ fn is_dice(s: &str) -> bool {
     };
     let digits = |t: &str| !t.is_empty() && t.chars().all(|c| c.is_ascii_digit());
     // a one-sided die (`50d1`, an object's fixed hit points) is no dice formula
-    digits(n) && digits(sides) && sides != "1" && modifier.map_or(true, digits)
+    digits(n) && digits(sides) && sides != "1" && modifier.is_none_or(digits)
 }
 
 fn armor(raw: &Value, lost: &mut Vec<String>) -> Result<Vec<ArmorClass>, NotANumber> {

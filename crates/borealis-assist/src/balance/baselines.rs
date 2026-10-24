@@ -34,8 +34,7 @@ pub struct Baselines {
 }
 
 fn in_scope(el: &Element, ruleset: Ruleset) -> bool {
-    el.ruleset
-        .map_or(true, |r| r == ruleset || r == Ruleset::Any)
+    el.ruleset.is_none_or(|r| r == ruleset || r == Ruleset::Any)
 }
 
 impl Baselines {

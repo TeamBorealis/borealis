@@ -142,7 +142,7 @@ fn tokens(text: &str) -> Vec<String> {
             && i > 0
             && chars[i - 1].is_ascii_digit()
             && chars.get(i + 1).is_some_and(char::is_ascii_digit)
-            && chars.get(i + 4).map_or(true, |c| !c.is_ascii_digit());
+            && chars.get(i + 4).is_none_or(|c| !c.is_ascii_digit());
         if !thousands {
             clean.extend(c.to_lowercase());
         }
@@ -794,7 +794,7 @@ async fn heal_filtered(
                 r.len(),
             )
         })
-        .filter(|(id, _, n)| *n > 0 && only.map_or(true, |o| o == id))
+        .filter(|(id, _, n)| *n > 0 && only.is_none_or(|o| o == id))
         .collect();
     todo.sort_by_key(|t| std::cmp::Reverse(t.2));
     todo.truncate(MAX_HEAL_REPAIRS);

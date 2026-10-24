@@ -760,7 +760,7 @@ fn edition(
     // another item host offered: each one is picked once, to see that it applies)
     let by_item = |id: &str| {
         let label = found.0.found.get(id).or_else(|| total.0.found.get(id));
-        label.map_or(true, |l| l.starts_with(items::ITEM_LABEL))
+        label.is_none_or(|l| l.starts_with(items::ITEM_LABEL))
             && !found.0.applied.contains_key(id)
             && !total.0.applied.contains_key(id)
     };
@@ -896,7 +896,7 @@ fn record(src: &str, app: &AppState, ins: &Installed, offers: &Offers, scope: Sc
     let selects = select_index(&ins.store);
     // a community repo's rows: a content defect (see [`defects`]) asserts that verdict
     let hub = app.hub().ok();
-    let defined = |id: &str| hub.as_ref().map_or(true, |h| h.element(id).is_some());
+    let defined = |id: &str| hub.as_ref().is_none_or(|h| h.element(id).is_some());
     let defects = (scope == Scope::Repo).then(|| defects::Defects::new(&ins.store, &defined));
     let mut defect_rows = 0;
     // 2014 archetypes the engine supersedes with a loaded 2024 reprint (B-44): never offered

@@ -284,7 +284,7 @@ mod tests {
             json!({"type":"object","required":["n"],"properties":{"n":{"type":"integer"}},"additionalProperties":false})
         }
         fn check(&self, o: &Out) -> Vec<String> {
-            if o.n % 2 == 0 {
+            if o.n.is_multiple_of(2) {
                 vec![]
             } else {
                 vec![format!("n={} is odd", o.n)]

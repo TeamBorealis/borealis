@@ -80,7 +80,7 @@ fn srd51_pack_is_schema_valid_and_resolves_every_reference() {
             && !matches!(i.code, IssueCode::UndefinedSource)
             && i.file
                 .as_deref()
-                .map_or(true, |f| f.starts_with("srd-5.1") || f.contains("srd-5.1"));
+                .is_none_or(|f| f.starts_with("srd-5.1") || f.contains("srd-5.1"));
         if interesting {
             bad += 1;
             if bad <= 200 {

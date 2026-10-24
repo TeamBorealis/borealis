@@ -81,13 +81,13 @@ impl SrdFeature {
     /// next printing; the first printing also takes the rules gained before it.
     #[must_use]
     pub fn rules_for(&self, level: u32, levels: &[u32]) -> Vec<Rule> {
-        let first = levels.iter().min().map_or(true, |m| level <= *m);
+        let first = levels.iter().min().is_none_or(|m| level <= *m);
         let next = levels.iter().filter(|l| **l > level).min().copied();
         self.rules
             .iter()
             .filter(|r| {
                 let at = rule_level(r).unwrap_or(self.level);
-                (first || at >= level) && next.map_or(true, |n| at < n)
+                (first || at >= level) && next.is_none_or(|n| at < n)
             })
             .cloned()
             .collect()

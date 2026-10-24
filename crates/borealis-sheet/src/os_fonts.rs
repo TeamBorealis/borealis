@@ -442,7 +442,7 @@ mod tests {
         let header_len = out.len() + 4 * fonts.len();
         out.resize(header_len, 0);
         for (i, font) in fonts.iter().enumerate() {
-            while out.len() % 4 != 0 {
+            while !out.len().is_multiple_of(4) {
                 out.push(0);
             }
             let base = u32::try_from(out.len()).unwrap();

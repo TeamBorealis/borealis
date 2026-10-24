@@ -167,7 +167,7 @@ fn legacy_lists() -> Vec<Vec<u32>> {
     let lop = |pairs: &[(u32, usize)]| {
         pairs
             .iter()
-            .flat_map(|&(l, n)| std::iter::repeat(l).take(n))
+            .flat_map(|&(l, n)| std::iter::repeat_n(l, n))
             .collect::<Vec<u32>>()
     };
     vec![

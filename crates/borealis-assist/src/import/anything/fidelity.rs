@@ -355,7 +355,7 @@ pub(crate) fn sanitize_brief(brief: &str) -> String {
     let b = brief.as_bytes();
     for (i, c) in brief.char_indices() {
         let end = i + c.len_utf8();
-        if matches!(c, '.' | '!' | '?') && b.get(end).map_or(true, u8::is_ascii_whitespace) {
+        if matches!(c, '.' | '!' | '?') && b.get(end).is_none_or(u8::is_ascii_whitespace) {
             out.push(&brief[start..end]);
             start = end;
         }

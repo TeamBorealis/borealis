@@ -49,7 +49,7 @@ fn named<'u>(uni: &'u Universe, ty: &str, r: &str) -> Option<&'u UElem> {
     let k = key(r);
     let mut foreign = None;
     for e in uni.by_type(ty).filter(|e| key(&e.el.name) == k) {
-        if !e.edition.is_foreign() && e.el.ruleset.map_or(true, |rs| rs == uni.ruleset()) {
+        if !e.edition.is_foreign() && e.el.ruleset.is_none_or(|rs| rs == uni.ruleset()) {
             return Some(e);
         }
         foreign.get_or_insert(e);

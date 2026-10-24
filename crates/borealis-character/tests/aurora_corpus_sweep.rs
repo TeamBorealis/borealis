@@ -477,11 +477,11 @@ impl Sweeper<'_> {
                     if g.ty.as_deref() == Some("Class Feature")
                         && g.requirements
                             .as_deref()
-                            .map_or(true, |r| r.trim().is_empty())
+                            .is_none_or(|r| r.trim().is_empty())
                         && self
                             .store
                             .element(&g.id)
-                            .map_or(true, |e| e.requirements.trim().is_empty()) =>
+                            .is_none_or(|e| e.requirements.trim().is_empty()) =>
                 {
                     Some((g.id.as_str(), g.level.unwrap_or(1)))
                 }
@@ -932,7 +932,7 @@ fn run(label: &str, packs: &[PathBuf], ours_pack: &str, limit: usize) -> usize {
                 let offered = catch_unwind(AssertUnwindSafe(|| sw.archetypes_of(&id, origin)))
                     .unwrap_or_default();
                 for (a, _) in offered {
-                    if only.map_or(true, |o| o == a) {
+                    if only.is_none_or(|o| o == a) {
                         parent
                             .entry(a)
                             .or_insert_with(|| (id.clone(), origin.clone()));

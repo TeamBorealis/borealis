@@ -104,7 +104,7 @@ impl Host {
     fn fail(&self, rel: &str, fault: Fault, times: usize) {
         let mut faults = self.faults.lock().unwrap();
         let queue = faults.entry(rel.to_string()).or_default();
-        queue.extend(std::iter::repeat(fault).take(times));
+        queue.extend(std::iter::repeat_n(fault, times));
     }
 
     fn heal(&self) {

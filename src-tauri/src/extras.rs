@@ -559,7 +559,7 @@ pub fn attacks(c: &Character, snap: &Engine) -> Vec<Attack> {
                     .items
                     .iter()
                     .find(|i| i.uid == a.uid)
-                    .map_or(true, |i| i.show_card)
+                    .is_none_or(|i| i.show_card)
             }),
         mastery: a.mastery.as_ref().map(|m| crate::play_dto::MasteryDto {
             name: m.name.clone(),
@@ -601,7 +601,7 @@ pub fn available_options(input: &MapInput<'_>) -> Vec<OptionDef> {
         .by_type("Option")
         .map(|s| &s.element)
         .filter(|e| !BUILT_IN_OPTIONS.contains(&e.id.as_str()))
-        .filter(|e| e.ruleset.map_or(true, |r| r.compatible_with(ruleset)))
+        .filter(|e| e.ruleset.is_none_or(|r| r.compatible_with(ruleset)))
         .filter(|e| input.hub.engine.has_element(ruleset, &e.id))
         .map(|e| OptionDef {
             id: e.id.clone(),

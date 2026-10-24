@@ -60,7 +60,7 @@ pub(crate) fn tab_stops(runs: &[Run]) -> Vec<f32> {
         let mut ys: Vec<f32> = Vec::new();
         while j < starts.len() && starts[j].0 - starts[i].0 <= STOP_SLACK {
             // A run continuing a word or after a word space does not make a stop.
-            let after_gap = starts[j].2.map_or(true, |(gap, _)| gap >= CELL_GAP);
+            let after_gap = starts[j].2.is_none_or(|(gap, _)| gap >= CELL_GAP);
             if after_gap && !ys.iter().any(|y| (y - starts[j].1).abs() < 1.0) {
                 ys.push(starts[j].1);
             }
@@ -207,7 +207,7 @@ fn rows(block: &[Fragment]) -> Option<Vec<Fragment>> {
     edges.sort_by(f32::total_cmp);
     let mut cols: Vec<f32> = Vec::new();
     for e in edges {
-        if cols.last().map_or(true, |c| e - c > 3.0 * STOP_SLACK) {
+        if cols.last().is_none_or(|c| e - c > 3.0 * STOP_SLACK) {
             cols.push(e);
         }
     }

@@ -187,7 +187,7 @@ fn in_memory(
         .index()
         .retrieve(&a.query, fetch, &filters)
         .into_iter()
-        .filter(|h| want.as_ref().map_or(true, |w| h.ty.to_lowercase() == *w))
+        .filter(|h| want.as_ref().is_none_or(|w| h.ty.to_lowercase() == *w))
         .filter(|h| match scope {
             Scope::Both => true,
             Scope::Rules => is_rules_type(&h.ty),

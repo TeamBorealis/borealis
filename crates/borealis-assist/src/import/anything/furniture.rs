@@ -134,7 +134,7 @@ fn is_heading(t: &str) -> bool {
 /// The page furniture of `source`.
 pub(crate) fn furniture(source: &str) -> Furniture {
     let lines: Vec<&str> = source.lines().map(str::trim).collect();
-    let blank = |i: Option<usize>| i.and_then(|i| lines.get(i)).map_or(true, |l| l.is_empty());
+    let blank = |i: Option<usize>| i.and_then(|i| lines.get(i)).is_none_or(|l| l.is_empty());
     let isolated = |i: usize| blank(i.checked_sub(1)) && blank(Some(i + 1));
     let mut shapes: HashMap<String, usize> = HashMap::new();
     // Printings of each line, and whether two of them are less than a page apart (a footer is
@@ -160,7 +160,7 @@ pub(crate) fn furniture(source: &str) -> Furniture {
         .collect();
     // A footer sentence stands alone between blank lines and page marks, on many pages, in a
     // source that marks its pages.
-    let apart = |k: Option<usize>| k.map_or(true, |k| blank(Some(k)) || marks.contains(&k));
+    let apart = |k: Option<usize>| k.is_none_or(|k| blank(Some(k)) || marks.contains(&k));
     let mut alone: HashMap<&str, usize> = HashMap::new();
     for i in (0..lines.len()).filter(|&i| content(&lines[i])) {
         if apart(i.checked_sub(1)) && apart(Some(i + 1)) {

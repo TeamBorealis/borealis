@@ -110,11 +110,7 @@ pub fn same(c: &mut Checks, phase: &str, then: &Measure, now: &Measure) {
     let diff = |f: &dyn Fn(&super::lifecycle_sample::Seen) -> &String| {
         then.chars
             .iter()
-            .filter(|(id, s)| {
-                now.chars
-                    .get(*id)
-                    .map_or(true, |n| f(n) != f(s) || !n.opened)
-            })
+            .filter(|(id, s)| now.chars.get(*id).is_none_or(|n| f(n) != f(s) || !n.opened))
             .map(|(id, _)| id.clone())
             .collect::<BTreeSet<String>>()
     };

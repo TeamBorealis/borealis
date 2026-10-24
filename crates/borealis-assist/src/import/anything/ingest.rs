@@ -227,7 +227,7 @@ async fn transcribe(
             ));
         }
         let score = gaps.len() + found.len() + reworded;
-        if best.as_ref().map_or(true, |(n, _, _)| score < *n) {
+        if best.as_ref().is_none_or(|(n, _, _)| score < *n) {
             best = Some((score, found.clone(), reply.text));
         }
         problems = found;

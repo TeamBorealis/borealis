@@ -120,7 +120,7 @@ fn select(fixture: &Fixture, queries: &[EvalQuery], qrels: &harness::data::Qrels
             let d = stats::decide(&base, &cand);
             print!("  +t{k}: ");
             print_decision(&d);
-            if d.adopted && best.map_or(true, |(_, delta)| d.delta > delta) {
+            if d.adopted && best.is_none_or(|(_, delta)| d.delta > delta) {
                 best = Some((k, d.delta));
             }
         }

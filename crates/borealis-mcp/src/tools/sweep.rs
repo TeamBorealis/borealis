@@ -39,7 +39,7 @@ fn resolve_subclass(
     store
         .by_type("Archetype")
         .map(|s| &s.element)
-        .filter(|e| e.ruleset.map_or(true, |r| r.compatible_with(ruleset)))
+        .filter(|e| e.ruleset.is_none_or(|r| r.compatible_with(ruleset)))
         .find(|e| e.id == wanted || e.name.to_lowercase() == lower)
         .map(|e| e.id.clone())
         .ok_or_else(|| format!("no subclass (Archetype) {wanted:?} in the loaded content"))

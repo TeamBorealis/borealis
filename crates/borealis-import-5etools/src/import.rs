@@ -182,7 +182,7 @@ fn resolved(
     }
     for ((name, reason), origin) in r.failed.iter().zip(&r.failed_origins) {
         let source = raw[*origin].get("source").and_then(Value::as_str);
-        if source.map_or(true, |s| opts.allows_source(s)) {
+        if source.is_none_or(|s| opts.allows_source(s)) {
             let msg = format!("cannot resolve _copy: {reason}");
             st.report.skipped(&entries[*origin].file, prop, name, &msg);
         }
@@ -223,7 +223,7 @@ fn to_ents(
         let ruleset = ruleset_of_entry(&raw);
         let srd = is_srd(&raw);
         let wanted = opts.allows_source(&source)
-            && opts.ruleset.map_or(true, |r| r == ruleset)
+            && opts.ruleset.is_none_or(|r| r == ruleset)
             && (!opts.only_srd || srd);
         if !wanted {
             continue;

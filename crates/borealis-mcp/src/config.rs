@@ -99,7 +99,7 @@ pub fn load_base(config: &McpConfig) -> Result<(ContentStoreBuilder, ContentStor
                 || config
                     .enabled_packs
                     .as_ref()
-                    .map_or(true, |set| set.contains(id))
+                    .is_none_or(|set| set.contains(id))
         })
         .collect();
     // A later pack must never shadow an earlier one with the same id (bundled dirs come first),

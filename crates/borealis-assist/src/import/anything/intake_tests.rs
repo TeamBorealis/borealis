@@ -381,7 +381,7 @@ fn an_items_roll_table_gives_its_versions_never_options() {
             && g.item_type == Some(super::super::types::ItemType::MagicItem)));
     assert!(groups
         .iter()
-        .all(|g| g.outline.as_ref().map_or(true, |o| o.features.is_empty())));
+        .all(|g| g.outline.as_ref().is_none_or(|o| o.features.is_empty())));
     // With no item planned, a roll table is no options table either.
     let mut texts: Vec<PlanGroup> = detected
         .iter()

@@ -230,7 +230,7 @@ fn with_separators(n: u64) -> String {
     let digits = n.to_string();
     let mut out = String::new();
     for (i, c) in digits.chars().enumerate() {
-        if i > 0 && (digits.len() - i) % 3 == 0 {
+        if i > 0 && (digits.len() - i).is_multiple_of(3) {
             out.push(',');
         }
         out.push(c);
@@ -577,7 +577,7 @@ fn silent_drop_rows(case: &CaseFile, l: &Loaded) -> Vec<Row> {
         .map(|o| {
             let as_element = l.elements.iter().any(|e| {
                 name_matches(&o.name, &e.name)
-                    && o.ty.as_deref().map_or(true, |t| name_matches(t, &e.ty))
+                    && o.ty.as_deref().is_none_or(|t| name_matches(t, &e.ty))
             });
             let as_text = texts
                 .iter()
@@ -611,7 +611,7 @@ fn candidates<'a>(
 ) -> impl Iterator<Item = &'a Element> + 'a {
     l.elements
         .iter()
-        .filter(move |e| name_matches(name, &e.name) && ty.map_or(true, |t| name_matches(t, &e.ty)))
+        .filter(move |e| name_matches(name, &e.name) && ty.is_none_or(|t| name_matches(t, &e.ty)))
 }
 
 /// The value of `"setter"` or `"setter@attribute"`.
@@ -888,7 +888,7 @@ fn check_mention(l: &Loaded, x: &MentionExpect) -> Result<(), String> {
 }
 
 fn filter_matches(l: &Loaded, f: &ElementFilter, e: &Element) -> bool {
-    f.ty.as_deref().map_or(true, |t| name_matches(t, &e.ty))
+    f.ty.as_deref().is_none_or(|t| name_matches(t, &e.ty))
         && f.setters.iter().all(|(k, v)| setter_ok(e, k, v).is_ok())
         && f.supports_names.iter().all(|n| supports_name(l, e, n))
 }
@@ -921,7 +921,7 @@ fn check_pack_empty(l: &Loaded, x: &PackEmptyExpect) -> Result<(), String> {
         .filter(|e| {
             x.except_types
                 .as_deref()
-                .map_or(true, |t| !name_matches(t, &e.ty))
+                .is_none_or(|t| !name_matches(t, &e.ty))
         })
         .map(|e| format!("{} ({})", e.name, e.ty))
         .collect();
@@ -941,8 +941,7 @@ fn check_absent(l: &Loaded, x: &AbsentExpect) -> Result<(), String> {
         .elements
         .iter()
         .filter(|e| {
-            name_matches(&x.name, &e.name)
-                && x.ty.as_deref().map_or(true, |t| name_matches(t, &e.ty))
+            name_matches(&x.name, &e.name) && x.ty.as_deref().is_none_or(|t| name_matches(t, &e.ty))
         })
         .map(|e| e.id.as_str())
         .collect();

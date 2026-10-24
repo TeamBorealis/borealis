@@ -224,11 +224,7 @@ pub fn slots(d: &Drive, a: &SlotsArgs) -> DriveResult<Value> {
         .slots
         .iter()
         .filter(|s| !a.open_only || s.chosen.is_none())
-        .filter(|s| {
-            a.tab
-                .as_ref()
-                .map_or(true, |t| s.tab.eq_ignore_ascii_case(t))
-        })
+        .filter(|s| a.tab.as_ref().is_none_or(|t| s.tab.eq_ignore_ascii_case(t)))
         .map(view::slot)
         .collect();
     Ok(json!({"count": rows.len(), "slots": rows}))

@@ -130,7 +130,7 @@ pub(crate) fn without_continuations(text: &str) -> String {
     }
     let mut out: Vec<&str> = Vec::with_capacity(lines.len());
     for (i, l) in lines.iter().enumerate() {
-        let after_blank = out.last().map_or(true, |p| p.trim().is_empty());
+        let after_blank = out.last().is_none_or(|p| p.trim().is_empty());
         if drop[i] || (l.trim().is_empty() && after_blank && i > 0 && drop[i - 1]) {
             continue;
         }

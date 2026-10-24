@@ -188,7 +188,7 @@ fn ability_problems(c: &CustomRule) -> Vec<String> {
     };
     let good = |o: &Value| {
         let n = o.get("abilities");
-        o.get("amount").map_or(true, Value::is_i64)
+        o.get("amount").is_none_or(Value::is_i64)
             && (n
                 .and_then(Value::as_u64)
                 .is_some_and(|k| (1..=6).contains(&k))

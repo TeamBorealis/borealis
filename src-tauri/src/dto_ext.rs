@@ -297,5 +297,5 @@ impl From<&StatTrace> for StatTraceDto {
 /// Does an element of `ruleset` belong in a listing for `wanted`?
 #[must_use]
 pub fn ruleset_matches(element: Option<Ruleset>, wanted: Ruleset) -> bool {
-    element.map_or(true, |r| r.compatible_with(wanted))
+    element.is_none_or(|r| r.compatible_with(wanted))
 }

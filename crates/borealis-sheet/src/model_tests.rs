@@ -476,7 +476,7 @@ fn level_5_cantrip_rows_of_the_2014_pack_take_the_engine_damage() {
         .cantrips
         .iter()
         .find(|r| r.name == "Dancing Lights");
-    assert!(utility.map_or(true, |r| r.damage.is_none()));
+    assert!(utility.is_none_or(|r| r.damage.is_none()));
 }
 
 #[test]

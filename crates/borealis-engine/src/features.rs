@@ -35,7 +35,7 @@ impl Evaluation<'_> {
                 continue;
             }
             let summary = self.sheet_text(id);
-            let displayed = el.sheet.as_ref().map_or(true, |s| s.is_displayed());
+            let displayed = el.sheet.as_ref().is_none_or(|s| s.is_displayed());
             if displayed {
                 if let Some(t) = &summary {
                     lines.push(format!("{}: {t}", el.name));

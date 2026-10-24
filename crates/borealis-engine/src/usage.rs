@@ -198,7 +198,7 @@ fn node_pool(graph: &Graph<'_>, stats: &StatSet, id: NodeId) -> Option<ResourceS
     if !FEATURE_TYPES.contains(&el.ty.as_str()) || has_resource_rule(el) {
         return None;
     }
-    if !el.sheet.as_ref().map_or(true, |s| s.is_displayed()) {
+    if !el.sheet.as_ref().is_none_or(|s| s.is_displayed()) {
         return None;
     }
     let usage = effective_usage(el, graph.mgr_level(node.mgr))?;

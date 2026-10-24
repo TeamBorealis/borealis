@@ -74,7 +74,7 @@ impl ItemScope {
     pub fn admits_parts(&self, ruleset: Option<Ruleset>, source: &str) -> bool {
         let ruleset_ok = self
             .ruleset
-            .map_or(true, |r| ruleset.map_or(true, |x| x.compatible_with(r)));
+            .is_none_or(|r| ruleset.is_none_or(|x| x.compatible_with(r)));
         ruleset_ok && !self.restricted.iter().any(|r| r == source)
     }
 

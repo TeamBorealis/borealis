@@ -116,8 +116,8 @@ impl AppState {
             is_listed(e, q.types.as_deref())
                 && q.sources
                     .as_ref()
-                    .map_or(true, |s| s.is_empty() || s.contains(&e.source))
-                && ruleset.map_or(true, |r| e.ruleset.map_or(true, |x| x.compatible_with(r)))
+                    .is_none_or(|s| s.is_empty() || s.contains(&e.source))
+                && ruleset.is_none_or(|r| e.ruleset.is_none_or(|x| x.compatible_with(r)))
         };
         let indexed = if needle.is_empty() {
             None

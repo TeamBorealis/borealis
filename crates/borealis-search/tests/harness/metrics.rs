@@ -161,7 +161,7 @@ impl VariantRun {
     pub fn select<'a>(&'a self, category: Option<&'a str>) -> impl Iterator<Item = &'a QueryRun> {
         self.queries
             .iter()
-            .filter(move |q| category.map_or(true, |c| q.category == c))
+            .filter(move |q| category.is_none_or(|c| q.category == c))
     }
 
     pub fn mean_of(&self, category: Option<&str>, f: impl Fn(&QueryRun) -> f64) -> f64 {
