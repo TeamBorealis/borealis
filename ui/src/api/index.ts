@@ -15,5 +15,7 @@ export function createApi(): Api {
   const mobile = new URLSearchParams(window.location.search).get("mock") === "mobile";
   // `?mockPeer=<ms>` makes a simulated other device answer Send/Receive windows (web e2e of the device transfer).
   const peer = Number(new URLSearchParams(window.location.search).get("mockPeer"));
-  return new MockApi({ aiChunkDelayMs: 30, mobile, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null });
+  // `?mockBundle=<file name>` is the file File > Open bundle... "picks" (`tampered.borealis` and `notabundle.borealis` are refused).
+  const bundle = new URLSearchParams(window.location.search).get("mockBundle");
+  return new MockApi({ aiChunkDelayMs: 30, mobile, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null, bundleFile: bundle });
 }

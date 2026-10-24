@@ -57,6 +57,8 @@ export interface MockApiOptions {
   linkPeerAfterMs?: number | null;
   /** Device transfer: paired devices to start with (Settings > Devices). */
   linkDevices?: LinkDevice[];
+  /** The file name the first "Open bundle..." picks (default `Mira.borealis`). */
+  bundleFile?: string | null;
 }
 
 const PROFILES: Record<"dnd2014" | "dnd2024", RulesetProfile> = {
@@ -110,6 +112,7 @@ export class MockApi implements Api {
       mobile: this.mobile, peerAfterMs: opts.linkPeerAfterMs ?? null, devices: opts.linkDevices,
       onReceived: (names) => this.addReceived(names),
     });
+    if (opts.bundleFile) this.picks.next = `/home/me/Downloads/${opts.bundleFile.replace(/[^A-Za-z0-9 ._-]/g, "_")}`;
     this.bundles = new MockBundles((token) => this.picks.take(token, "bundle-file"), (path) => this.picks.grantBundle(path), (names) => this.addReceived(names));
     if (opts.seed !== false) for (const c of seedLibrary()) { this.chars.set(c.id, c); this.saved.set(c.id, c); }
   }
