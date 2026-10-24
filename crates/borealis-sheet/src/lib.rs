@@ -26,6 +26,7 @@ pub mod model_ids;
 mod model_tests;
 mod model_text;
 pub mod model_types;
+mod os_font_paths;
 mod os_fonts;
 mod pdf;
 mod pdf_draw;

@@ -6,6 +6,7 @@
 //! machine) and later subset like the embedded faces. Without a usable font the characters keep
 //! drawing `.notdef`, as before.
 
+use crate::os_font_paths as paths;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use ttf_parser::Face as Parsed;
@@ -65,75 +66,28 @@ fn probe(slot: Slot) -> char {
 
 #[cfg(target_os = "macos")]
 fn candidates(slot: Slot) -> Vec<PathBuf> {
-    let han = [
-        "/System/Library/Fonts/PingFang.ttc",
-        "/System/Library/Fonts/Hiragino Sans GB.ttc",
-        "/System/Library/Fonts/STHeiti Light.ttc",
-        "/System/Library/Fonts/Supplemental/Songti.ttc",
-        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
-        "/Library/Fonts/Arial Unicode.ttf",
-    ];
-    let hangul = [
-        "/System/Library/Fonts/AppleSDGothicNeo.ttc",
-        "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
-        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
-        "/Library/Fonts/Arial Unicode.ttf",
-    ];
-    let list: &[&str] = match slot {
-        Slot::Han => &han,
-        Slot::Hangul => &hangul,
-    };
-    list.iter().map(PathBuf::from).collect()
+    paths::macos_candidates(slot)
 }
 
 #[cfg(target_os = "ios")]
 fn candidates(_slot: Slot) -> Vec<PathBuf> {
-    [
-        "/System/Library/Fonts/Core/PingFang.ttc",
-        "/System/Library/Fonts/LanguageSupport/PingFang.ttc",
-        "/System/Library/Fonts/CoreAddition/PingFang.ttc",
-        "/System/Library/Fonts/Core/AppleSDGothicNeo.ttc",
-        "/System/Library/Fonts/CoreAddition/AppleSDGothicNeo.ttc",
-    ]
-    .iter()
-    .map(PathBuf::from)
-    .collect()
+    paths::ios_candidates()
 }
 
 #[cfg(target_os = "windows")]
 fn candidates(slot: Slot) -> Vec<PathBuf> {
-    let root =
+    let windir =
         std::env::var_os("WINDIR").map_or_else(|| PathBuf::from(r"C:\Windows"), PathBuf::from);
-    let fonts = root.join("Fonts");
-    let han = [
-        "msyh.ttc",
-        "msyh.ttf",
-        "msgothic.ttc",
-        "simsun.ttc",
-        "YuGothR.ttc",
-        "malgun.ttf",
-    ];
-    let hangul = ["malgun.ttf", "gulim.ttc", "batang.ttc", "msyh.ttc"];
-    let list: &[&str] = match slot {
-        Slot::Han => &han,
-        Slot::Hangul => &hangul,
-    };
-    list.iter().map(|f| fonts.join(f)).collect()
+    let mut dirs = vec![windir.join("Fonts")];
+    if let Some(local) = std::env::var_os("LOCALAPPDATA") {
+        dirs.push(PathBuf::from(local).join(r"Microsoft\Windows\Fonts"));
+    }
+    paths::windows_candidates(slot, &dirs)
 }
 
 #[cfg(target_os = "android")]
 fn candidates(_slot: Slot) -> Vec<PathBuf> {
-    [
-        "/system/fonts/NotoSansCJK-Regular.ttc",
-        "/system/fonts/NotoSerifCJK-Regular.ttc",
-        "/system/fonts/NotoSansSC-Regular.otf",
-        "/system/fonts/NotoSansKR-Regular.otf",
-        "/system/fonts/DroidSansFallback.ttf",
-        "/system/fonts/DroidSansFallbackFull.ttf",
-    ]
-    .iter()
-    .map(PathBuf::from)
-    .collect()
+    paths::android_candidates()
 }
 
 #[cfg(all(
@@ -141,72 +95,13 @@ fn candidates(_slot: Slot) -> Vec<PathBuf> {
     not(any(target_os = "macos", target_os = "ios", target_os = "android"))
 ))]
 fn candidates(_slot: Slot) -> Vec<PathBuf> {
-    let mut roots = vec![
-        PathBuf::from("/usr/share/fonts"),
-        PathBuf::from("/usr/local/share/fonts"),
-    ];
-    if let Some(home) = std::env::var_os("HOME") {
-        roots.push(PathBuf::from(home).join(".local/share/fonts"));
-    }
+    let home = std::env::var_os("HOME").map(PathBuf::from);
+    let xdg = std::env::var_os("XDG_DATA_HOME").map(PathBuf::from);
     let mut found = Vec::new();
-    for root in &roots {
-        scan(root, LINUX_SCAN_DEPTH, &mut found);
+    for root in paths::linux_roots(home.as_deref(), xdg.as_deref()) {
+        paths::scan_font_dir(&root, paths::SCAN_DEPTH, &mut found);
     }
-    // Priority by file-name prefix, then path, so the choice does not depend on directory order.
-    found.sort_by_key(|p| {
-        let name = p.file_name().map(|n| n.to_string_lossy().into_owned());
-        let rank = name.as_deref().map_or(usize::MAX, |n| {
-            LINUX_PREFIXES
-                .iter()
-                .position(|pre| n.starts_with(pre))
-                .unwrap_or(usize::MAX)
-        });
-        (rank, p.clone())
-    });
-    found
-}
-
-#[cfg(all(
-    unix,
-    not(any(target_os = "macos", target_os = "ios", target_os = "android"))
-))]
-const LINUX_PREFIXES: [&str; 6] = [
-    "NotoSansCJK-Regular",
-    "NotoSansCJK",
-    "NotoSerifCJK",
-    "SourceHanSans",
-    "wqy-microhei",
-    "wqy-zenhei",
-];
-
-#[cfg(all(
-    unix,
-    not(any(target_os = "macos", target_os = "ios", target_os = "android"))
-))]
-const LINUX_SCAN_DEPTH: u32 = 4;
-
-/// Font files under `dir` whose names match a known CJK family (depth-limited).
-#[cfg(all(
-    unix,
-    not(any(target_os = "macos", target_os = "ios", target_os = "android"))
-))]
-fn scan(dir: &Path, depth: u32, out: &mut Vec<PathBuf>) {
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.is_dir() {
-            if depth > 0 {
-                scan(&path, depth - 1, out);
-            }
-        } else if path.file_name().is_some_and(|n| {
-            let n = n.to_string_lossy();
-            LINUX_PREFIXES.iter().any(|pre| n.starts_with(pre))
-        }) {
-            out.push(path);
-        }
-    }
+    paths::linux_candidates(&found)
 }
 
 #[cfg(not(any(unix, target_os = "windows")))]

@@ -470,7 +470,7 @@ fn cjk_name_uses_a_system_font_when_the_machine_has_one() {
         .filter(|o| o.dict.contains("/Subtype /Type0") && !o.dict.contains("+Noto"))
         .count();
     if system == 0 {
-        eprintln!("no system CJK font on this machine; skipped");
+        eprintln!("SKIPPED: no system CJK font found on this machine, so no CJK font was embedded");
         return;
     }
     for line in content_lines(&objs) {
