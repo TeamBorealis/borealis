@@ -1,4 +1,4 @@
-//! Validates the evaluation query set (`eval/queries.jsonl`, `eval/qrels.jsonl`, spec section 6).
+//! Validates the evaluation query set (`eval/queries.jsonl`, `eval/qrels.jsonl`, `eval/qrels-pool.jsonl`, spec section 6).
 mod common;
 
 use serde::Deserialize;
@@ -59,7 +59,13 @@ fn corpus_keys() -> HashSet<String> {
         .into_iter()
         .chain(lore)
         .flat_map(|p| p.chunks)
-        .map(|c| c.doc_key)
+        // Split documents are `<key>#n`; the pooled judge's keys are canonical (no `#n`), so accept both.
+        .flat_map(|c| {
+            [
+                borealis_search::index::base_key(&c.doc_key).to_string(),
+                c.doc_key,
+            ]
+        })
         .collect()
 }
 
@@ -117,7 +123,8 @@ fn edition_filtered_queries_carry_a_ruleset() {
 fn qrels_reference_known_queries_and_real_documents() {
     let queries: Vec<EvalQuery> = read_jsonl("queries.jsonl");
     let ids: HashSet<&str> = queries.iter().map(|q| q.id.as_str()).collect();
-    let qrels: Vec<Qrel> = read_jsonl("qrels.jsonl");
+    let mut qrels: Vec<Qrel> = read_jsonl("qrels.jsonl");
+    qrels.extend(read_jsonl::<Qrel>("qrels-pool.jsonl"));
     let keys = corpus_keys();
     let mut pairs = HashSet::new();
     for r in &qrels {

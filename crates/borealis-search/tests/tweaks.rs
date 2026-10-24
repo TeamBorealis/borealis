@@ -100,6 +100,31 @@ fn tweak3_prefix_finds_names_by_their_start_only() {
 }
 
 #[test]
+fn tweak3_prefix_skips_sentences_and_known_abbreviations() {
+    let dir = tempfile::tempdir().unwrap();
+    let engine = lore_engine(
+        dir.path(),
+        vec![
+            chunk("a", "Acid Arrow", "Spell", "a shimmering green arrow", NONE),
+            chunk("b", "Fireball", "Spell", "a bright streak", NONE),
+        ],
+    );
+    let on = only(|t| t.prefix = true);
+    // Up to three words are a name being typed; a longer sentence is not.
+    assert_eq!(titles(&engine, "cast fireb", on), ["Fireball"]);
+    assert!(titles(&engine, "how do i cast fireb", on).is_empty());
+    // `AC` is a known abbreviation (synonym table), so it is not the start of "Acid Arrow".
+    assert!(titles(&engine, "ac", on).is_empty());
+}
+
+#[test]
+fn default_tweaks_are_the_adopted_configuration() {
+    let t = Tweaks::default();
+    assert!(t.prefix && t.typo && t.synonyms && t.edition);
+    assert!(!t.field_weights && !t.exact_name && !t.phrase);
+}
+
+#[test]
 fn tweak3_prefix_does_not_match_body_text() {
     let dir = tempfile::tempdir().unwrap();
     let engine = lore_engine(

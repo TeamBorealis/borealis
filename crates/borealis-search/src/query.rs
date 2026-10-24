@@ -19,8 +19,9 @@ use tantivy::schema::{Field, IndexRecordOption};
 use tantivy::tokenizer::TokenizerManager;
 use tantivy::Term;
 
-/// Which of the ranking tweaks are active. `Tweaks::default()` is every tweak on (the candidate configuration);
-/// `Tweaks::none()` is plain multi-field BM25 (variant V1 of the evaluation).
+/// Which of the ranking tweaks are active. `Tweaks::default()` is the configuration adopted by the evaluation
+/// (`specs/search-eval-1.md`): tweaks 3, 4, 6 and 7. `Tweaks::ALL` turns every tweak on (variant V2) and
+/// `Tweaks::none()` is plain multi-field BM25 (variant V1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Tweaks {
     /// 1. Field weights: `name` x4, `headings` x2, `body` x1.
@@ -67,8 +68,18 @@ impl Tweaks {
 }
 
 impl Default for Tweaks {
+    /// Adopted by the S1.3 evaluation. Off by decision (adoption rule, spec section 6): 1 field weights (no
+    /// weighting helped; sweep name 1.5-8 x headings 1-3), 2 exact-name boost (redundant with the whole-name
+    /// clause of 4), 5 phrase (+0.0086 nDCG@10, below the 0.01 gain threshold). 7 stays on because it is the
+    /// user-visible edition filter, not only a ranking choice.
     fn default() -> Self {
-        Self::ALL
+        Self {
+            prefix: true,
+            typo: true,
+            synonyms: true,
+            edition: true,
+            ..Self::none()
+        }
     }
 }
 
@@ -85,6 +96,8 @@ pub struct Weights {
     pub exact_name: f32,
     /// Prefix boost (tweak 3).
     pub prefix: f32,
+    /// Longest query (in words) that gets the prefix clause: a sentence is not a name being typed (tweak 3).
+    pub prefix_max_words: usize,
     /// Fuzzy boost on `name` (tweak 4).
     pub fuzzy_name: f32,
     /// Fuzzy boost on `body` (tweak 4).
@@ -114,6 +127,7 @@ impl Default for Weights {
             body: 1.0,
             exact_name: 10.0,
             prefix: 1.5,
+            prefix_max_words: 3,
             fuzzy_name: 0.6,
             fuzzy_body: 0.3,
             fuzzy_exact_name: 40.0,
@@ -317,7 +331,11 @@ impl Ctx<'_> {
         if !ends_open {
             return;
         }
-        let Some(word) = plain_words(query).pop() else {
+        let mut words = plain_words(query);
+        if words.len() > self.cfg.weights.prefix_max_words {
+            return;
+        }
+        let Some(word) = words.pop() else {
             return;
         };
         let Some((_, token)) = analyze(self.tokenizers, NAME_PREFIX, &word).pop() else {
@@ -442,7 +460,8 @@ pub fn build_query(
     if t.exact_name {
         ctx.exact_clause(&req.query, &mut should);
     }
-    if t.prefix {
+    // A known abbreviation (OA, AC, HP) is a complete term, not the start of a name being typed.
+    if t.prefix && synonyms.expand(&req.query).is_empty() {
         ctx.prefix_clause(&req.query, &mut should);
     }
     if t.typo {

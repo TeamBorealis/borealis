@@ -11,7 +11,10 @@ No 5etools, `corpus/` or `re-private/` content is used.
 - `qrels.jsonl`: `{query_id, doc_key, grade}` with grade 3 = the answer / target element,
   2 = directly relevant section, 1 = related, 0 = judged irrelevant (used for documents of the other edition
   on edition-filtered queries, so a ruleset filter can be checked).
-- `baseline.json` is produced later by the harness; it does not exist yet.
+- `qrels-pool.jsonl`: same shape; the pooled judge's grades (protocol B below). The harness loads both files;
+  on a conflict the labeller's grade wins.
+- `baseline.json`: the adopted configuration and its nDCG@10 (overall and per category); the CI regression test
+  `tests/regression.rs` reads it. Written with `--write-baseline`.
 - `tests/eval_files.rs` validates all of the above (JSON shape, unique ids, every `query_id` and `doc_key`
   exists in the built corpora, category minimums, every query has a grade 2 or 3 document).
 
@@ -29,8 +32,13 @@ No 5etools, `corpus/` or `re-private/` content is used.
 Labelling is blind, as in HB1: labeller agent A wrote the queries and the judgements from the corpus text alone
 (a throwaway script listed every `doc_key` with its title, heading path and text; relevant documents were found by
 reading and plain text search, not by any ranker). No search, ranker, query code, synonym table or search result
-was run or read before the labels were fixed. The next phase pools the union of the top 20 of every variant and
-agent B judges unlabelled pairs without seeing which variant produced them.
+was run or read before the labels were fixed.
+
+Pooling (protocol B): the union of the top 20 of every variant (V0, V1, V2, V2b and the seven V2 ablations) minus the
+labelled pairs, 5,701 pairs, was shuffled and judged by a separate blind judge that saw only query text, document
+title and a 700-character excerpt (no variant, rank, ruleset field or edition tag). Its grades are in
+`qrels-pool.jsonl`. The pool file itself (`pool.jsonl`, 3.5 MB) is not committed: `--pool` regenerates it
+(deterministic, fixed seed; it now lists only pairs that are still unjudged, e.g. after a ranker change).
 
 Both editions are covered. A query without `ruleset` treats the same element in both editions as the target
 (both get grade 3); a query with `ruleset` marks the other edition's document grade 0 where it is the obvious
@@ -54,6 +62,23 @@ recorder is not built yet. It is added with the recorder.
 
 ## Judgements
 
-1315 judgements over 203 queries; every query has at least one grade 3 or grade 2 document. Grade histogram:
-grade 3 = 593, grade 2 = 288, grade 1 = 413, grade 0 = 21. Unlabelled pairs are unjudged and are filled in by
-the pooling step.
+- Labeller A (`qrels.jsonl`): 1,315 judgements over 203 queries; grade 3 = 593, grade 2 = 288, grade 1 = 413,
+  grade 0 = 21. Every query has at least one grade 3 or 2 document.
+- Pooled judge B (`qrels-pool.jsonl`): 5,701 judgements, none overlapping A's; grade 3 = 26, grade 2 = 569,
+  grade 1 = 1,898, grade 0 = 3,208.
+- Total 7,016. Unjudged pairs count as grade 0; with both files `judged@10` is 1.00 for every variant.
+
+## Harness (phase B)
+
+- `cargo run --release -p borealis-search --example eval -- --variant V2` prints the category x metric table
+  (also `--variant all`, `--compare A B`, `--pool`, `--write-baseline V`). Variants: V0 (borealis-ai BM25), V1, V2,
+  V2b (combined-field BM25F emulation), V2-t1..V2-t7 (V2 minus one tweak); V3/V4 are hooks for S1.4/S3.3.
+- `--pool` writes `pool.jsonl` (git-ignored): the union of every variant's top 20 per query minus judged pairs,
+  shuffled with a fixed seed, no variant information.
+- Variants can also be given as tweak sets: `T3,4,6,7` (exactly those tweaks, Tantivy fields), `B3,4,6,7` (same on
+  the combined-field BM25F index). `--select` runs greedy forward selection from V1 under the adoption rule and
+  `--sweep <mask>` sweeps the tweak 1 field weights.
+- The adopted configuration is `T3,4,6,7` (prefix, typo, synonyms, edition); it is the crate default
+  (`Tweaks::default()`). Results and p-values: `specs/search-eval-1.md`.
+- `tests/regression.rs` fails when the config named in `baseline.json` drops more than 0.01 nDCG@10 below it (or a
+  category more than 0.02).
