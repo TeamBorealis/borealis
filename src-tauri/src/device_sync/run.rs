@@ -30,6 +30,9 @@ use crate::sync_dto::{LinkPhase, LinkPreview, LinkPreviewItem, LinkStatus, LinkS
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 const DISCOVERY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(4);
 
+/// A running mDNS advertisement (withdrawn when dropped).
+type Advert = Box<dyn Send>;
+
 /// What the dialing side connects to.
 pub(crate) enum Target {
     Qr(LinkUri),
@@ -192,22 +195,19 @@ pub(crate) async fn listen(
 }
 
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
-fn advertise(
-    sync: &DeviceSync,
-    nameplate: u16,
-    ip: IpAddr,
-    port: u16,
-) -> Option<borealis_link::discovery::Advertisement> {
+fn advertise(sync: &DeviceSync, nameplate: u16, ip: IpAddr, port: u16) -> Option<Advert> {
     if !sync.config.discovery {
         return None;
     }
     borealis_link::discovery::Advertisement::start(nameplate, ip, port)
+        .map(|a| Box::new(a) as Advert)
         .map_err(|e| tracing::info!("device sync: mDNS advertise unavailable: {e}"))
         .ok()
 }
 
+/// Phones advertise nothing (see `borealis_link::discovery`); the QR carries `ip:port`.
 #[cfg(any(target_os = "android", target_os = "ios"))]
-fn advertise(_: &DeviceSync, _: u16, _: IpAddr, _: u16) -> Option<()> {
+fn advertise(_: &DeviceSync, _: u16, _: IpAddr, _: u16) -> Option<Advert> {
     None
 }
 
@@ -230,9 +230,29 @@ async fn accept_one(
             }
         };
         update(sync, ctl, |s| s.phase = LinkPhase::Connecting);
-        match accept_auth(&mut conn, window).await {
+        let attempt = tokio::select! {
+            r = accept_auth(&mut conn, window) => r,
+            () = ctl.cancel.cancelled() => {
+                window.close();
+                update(sync, ctl, |s| { s.phase = LinkPhase::Cancelled; s.qr_payload = None; s.code = None; });
+                return None;
+            }
+        };
+        match attempt {
             Ok(auth) => return Some((conn, auth)),
-            Err(e) if e.auth() == Some(AuthError::Busy) => continue,
+            // A connection that never started an attempt (silent, busy, or broken before its
+            // first message) leaves the window open: keep listening.
+            Err(_) if window.is_open() && !window.is_dead() => {
+                update(sync, ctl, |s| s.phase = LinkPhase::Waiting);
+            }
+            Err(e) if e.auth() == Some(AuthError::Expired) => {
+                update(sync, ctl, |s| {
+                    s.phase = LinkPhase::Expired;
+                    s.qr_payload = None;
+                    s.code = None;
+                });
+                return None;
+            }
             Err(e) => {
                 tracing::info!("device sync: authentication failed: {e}");
                 fail(

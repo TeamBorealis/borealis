@@ -18,6 +18,12 @@
 	<string>1.0.0</string>
 	<key>CFBundleVersion</key>
 	<string>1.0.0</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Borealis connects to your other devices on this Wi-Fi to send and receive characters.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_borealis-link._tcp</string>
+	</array>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
