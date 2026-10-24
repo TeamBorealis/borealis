@@ -543,6 +543,7 @@ dependencies = [
  "borealis-import-5etools",
  "borealis-mcp",
  "borealis-migrate",
+ "borealis-search",
  "borealis-sheet",
  "ed25519-dalek",
  "miniz_oxide 0.9.1",
