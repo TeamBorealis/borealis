@@ -4,6 +4,11 @@
 //! ONLY from those excerpts and to cite ids inline as `[[ID_...]]`, then post-validates the
 //! answer: ids that were not retrieved are stripped (and confidence lowered), and sentences
 //! without any citation are flagged.
+//!
+//! Three kinds of citation key exist ([`CiteKind`]): element ids (`[[ID_...]]`), rules-text
+//! sections (`[[rules:<pack>/<section>]]`) and campaign notes (`[[session:<entry>#n]]`). Keys come
+//! from the search tools of the MCP server (`cite`); a key the run did not retrieve is stripped
+//! whatever its kind (see [`validate_with_sources`]).
 
 use std::collections::HashSet;
 
@@ -79,6 +84,30 @@ pub struct CitedSource {
     /// Element type.
     #[serde(rename = "type")]
     pub ty: String,
+}
+
+/// What a citation key points at.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CiteKind {
+    /// A content element id (`ID_...`, optionally `#n` for a chunk of a long description).
+    Element,
+    /// A rules-text section (`rules:<pack>/<section>[#n]`).
+    Rules,
+    /// A campaign note (`session:<entry>#n`): shown only with the user's per-ask consent.
+    Session,
+}
+
+/// The kind of a citation key, from its prefix.
+#[must_use]
+pub fn cite_kind(key: &str) -> CiteKind {
+    if key.starts_with("rules:") {
+        CiteKind::Rules
+    } else if key.starts_with("session:") {
+        CiteKind::Session
+    } else {
+        CiteKind::Element
+    }
 }
 
 /// Final answer after post-validation.
@@ -244,6 +273,22 @@ fn lower(c: Confidence) -> Confidence {
 /// Post-validate `raw` against the retrieved `hits`.
 #[must_use]
 pub fn validate_answer(raw: RawCitedAnswer, hits: &[Hit]) -> CitedAnswer {
+    let retrieved: Vec<CitedSource> = hits
+        .iter()
+        .map(|h| CitedSource {
+            id: h.id.clone(),
+            name: h.name.clone(),
+            ty: h.ty.clone(),
+        })
+        .collect();
+    validate_with_sources(raw, &retrieved)
+}
+
+/// Post-validate `raw` against every citation key the run retrieved (`cite` values of the MCP
+/// search tools: element ids, `rules:` and `session:` keys). Any other key is stripped, so a key
+/// survives only if a tool call in this run returned it.
+#[must_use]
+pub fn validate_with_sources(raw: RawCitedAnswer, hits: &[CitedSource]) -> CitedAnswer {
     let allowed: HashSet<&str> = hits.iter().map(|h| h.id.as_str()).collect();
     if raw.not_covered {
         return CitedAnswer {
@@ -287,11 +332,7 @@ pub fn validate_answer(raw: RawCitedAnswer, hits: &[Hit]) -> CitedAnswer {
     let sources = citations
         .iter()
         .filter_map(|id| hits.iter().find(|h| &h.id == id))
-        .map(|h| CitedSource {
-            id: h.id.clone(),
-            name: h.name.clone(),
-            ty: h.ty.clone(),
-        })
+        .cloned()
         .collect();
     CitedAnswer {
         answer_markdown: text,
@@ -461,6 +502,114 @@ mod tests {
             vec!["Everyone also loses their reaction entirely."]
         );
         assert_eq!(a.confidence, Confidence::Medium);
+    }
+
+    fn source(id: &str, ty: &str) -> CitedSource {
+        CitedSource {
+            id: id.into(),
+            name: format!("Name {id}"),
+            ty: ty.into(),
+        }
+    }
+
+    #[test]
+    fn cite_kinds_follow_the_key_prefix() {
+        assert_eq!(cite_kind("ID_2024_CONDITION_GRAPPLED"), CiteKind::Element);
+        assert_eq!(cite_kind("ID_X_SPELL#2"), CiteKind::Element);
+        assert_eq!(
+            cite_kind("rules:srd-5.2.1-rules-text/combat"),
+            CiteKind::Rules
+        );
+        assert_eq!(cite_kind("session:entry-4#1"), CiteKind::Session);
+        assert_eq!(
+            cite_kind("RULES:x/y"),
+            CiteKind::Element,
+            "prefixes are exact"
+        );
+    }
+
+    #[test]
+    fn element_rules_and_session_cites_retrieved_in_the_run_are_kept() {
+        let retrieved = [
+            source("ID_2024_CONDITION_GRAPPLED", "Condition"),
+            source("rules:srd-5.2.1-rules-text/combat/actions", "Rules"),
+            source("session:entry-4#1", "Session note"),
+        ];
+        let a = validate_with_sources(
+            raw(
+                "Grappled sets speed to 0 [[ID_2024_CONDITION_GRAPPLED]]. Escaping takes an action [[rules:srd-5.2.1-rules-text/combat/actions]]. The party met the duke earlier [[session:entry-4#1]].",
+                &[],
+                Confidence::High,
+                false,
+            ),
+            &retrieved,
+        );
+        assert_eq!(
+            a.citations,
+            vec![
+                "ID_2024_CONDITION_GRAPPLED",
+                "rules:srd-5.2.1-rules-text/combat/actions",
+                "session:entry-4#1"
+            ]
+        );
+        assert!(a.stripped_citations.is_empty());
+        assert!(a
+            .answer_markdown
+            .contains("[[rules:srd-5.2.1-rules-text/combat/actions]]"));
+        assert!(a.answer_markdown.contains("[[session:entry-4#1]]"));
+        assert_eq!(a.sources.len(), 3);
+        assert_eq!(a.sources[1].ty, "Rules");
+        assert_eq!(a.confidence, Confidence::High);
+    }
+
+    #[test]
+    fn rules_and_session_cites_not_retrieved_are_stripped() {
+        // The run retrieved no session note (no consent): a session cite is invented.
+        let retrieved = [
+            source("ID_A", "Condition"),
+            source("rules:p/combat#2", "Rules"),
+        ];
+        let a = validate_with_sources(
+            raw(
+                "Speed is 0 [[ID_A]]. The duke is a dragon [[session:entry-9#1]]. Reactions end [[rules:p/other]] and also [[rules:p/combat]].",
+                &["rules:p/ghost", "session:entry-9#1"],
+                Confidence::High,
+                false,
+            ),
+            &retrieved,
+        );
+        assert_eq!(a.citations, vec!["ID_A"]);
+        assert_eq!(
+            a.stripped_citations,
+            vec![
+                "session:entry-9#1",
+                "rules:p/other",
+                "rules:p/combat",
+                "rules:p/ghost"
+            ],
+            "exact keys only: a base key is not the retrieved chunk"
+        );
+        assert!(!a.answer_markdown.contains("session:"));
+        assert!(!a.answer_markdown.contains("rules:"));
+        assert_eq!(a.confidence, Confidence::Medium);
+    }
+
+    #[test]
+    fn hits_and_sources_validate_identically() {
+        let text = "Speed is 0 [[ID_A]] but not here [[ID_B]].";
+        let from_hits = validate_answer(
+            raw(text, &["ID_A"], Confidence::High, false),
+            &[hit("ID_A")],
+        );
+        let from_sources = validate_with_sources(
+            raw(text, &["ID_A"], Confidence::High, false),
+            &[CitedSource {
+                id: "ID_A".into(),
+                name: "Name ID_A".into(),
+                ty: "Condition".into(),
+            }],
+        );
+        assert_eq!(from_hits, from_sources);
     }
 
     #[test]
