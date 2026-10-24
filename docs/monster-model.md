@@ -64,10 +64,10 @@ SRD 5.2.1 spell when it exists. Elements also carry `maps_to {dnd2014, kind: app
 and `renamed_from` (5.1 name) when the 2024 name differs.
 
 A stat block without a `cr` (IM12) carries no CR support tag in the engine, so a select restricted by CR (companion,
-familiar or conjure lists), Wild Shape forms and the encounter / balance tools never offer it; a select without a CR
+familiar or conjure lists), Wild Shape forms and the balance tools never offer it; a select without a CR
 restriction (`Beast`) may. The compendium and sheet cards show `challenge_text()` and no XP.
 
-A stat block whose AC or HP is a note (IM12a) has no number to compute with: Wild Shape forms, the encounter index and
+A stat block whose AC or HP is a note (IM12a) has no number to compute with: Wild Shape forms and
 the balance measures leave it out, and the compendium / sheet cards and the companion tab show the note where the
 number would be (`Armor Class` / `Hit Points` facts, `CompanionState.armorClassNote` / `hpNote`).
 

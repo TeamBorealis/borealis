@@ -640,9 +640,6 @@ export class MockApi implements Api {
   async aiStatus() { await this.tick(); return this.ai.status(); }
   async aiStartTask({ request }: Parameters<Api["aiStartTask"]>[0]) { await this.tick(); return { taskId: this.ai.start(request) }; }
   async aiCancelTask({ taskId }: { taskId: string }) { this.ai.cancel(taskId); }
-  async applyPlan({ characterId }: { characterId: string; plan: Record<string, unknown>; upToLevel: number }) { await this.tick(); return this.snap(this.get(characterId)); }
-  async encounterEvaluate(_: { args: unknown }) { await this.tick(); return { report: { band: "Moderate", partySize: 4, totalXp: 200 }, monsters: [] }; }
-  async encounterSuggest(_: { args: unknown }) { await this.tick(); return { target: "Moderate", reached: true, monsters: [], report: { band: "Moderate", partySize: 4 } }; }
   private host: AiHostStatus = { enabled: false, supported: true, address: null, pairingCode: null, pairingExpiresInSecs: null, pairingUri: null, fingerprint: null, devices: [] };
   private requireConsent(allowed: boolean | undefined) {
     if (this.codexOnly && !allowed) throw apiError("consent_required", "This content comes from outside Borealis, and codex can run commands that read files on this computer if the content tells it to.");

@@ -16,10 +16,6 @@ function replyFor(req: AiTaskRequest): string {
       return "Build advice:\n1. Raise your primary ability to 16+ before taking a feat.\n2. Your next level grants an ability score improvement; Tough or Alert are solid picks.\n3. Consider a defensive subclass if you often hold the front line.";
     case "explain":
       return "Your Armor Class is 10 plus your Dexterity modifier, plus any armor and shield bonuses. (Mock explanation from the sample trace.)";
-    case "build_plan":
-      return "Planned 2 levels. (Mock plan: nothing is applied until you choose Apply.)";
-    case "encounter":
-      return "Open with the ranged creatures behind the front line, and focus the weakest party member first. (Mock tactics.)";
     case "npc":
     case "backstory":
       return `Backstory draft:\n\nRaised at the edge of a quiet border town, your character learned early that kindness and caution are both survival skills. A debt of honor, never fully explained, set them on the road. ${p ? `Seed idea: ${p}.` : ""}`;
@@ -63,10 +59,6 @@ function typedResultFor(req: AiTaskRequest): AiTypedResult | null {
       };
     case "explain":
       return { kind: "explain", data: { stat: req.params?.stat ?? req.prompt, source: "template", text: "Armor Class is 10 plus Dexterity modifier." } };
-    case "build_plan":
-      return { kind: "build_plan", data: { complete: true, levels: [], unresolved: [], plan: { steps: [] } } };
-    case "encounter":
-      return { kind: "encounter", data: { source: "deterministic", monsters: [], tactics: "Mock tactics." } };
     default:
       return null;
   }

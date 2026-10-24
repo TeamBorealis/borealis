@@ -19,8 +19,6 @@ import type {
   AiSetupEvent,
   AiSetupProviderId,
   AiSetupStatus,
-  EncounterEvaluateArgs,
-  EncounterSuggestArgs,
   AiMessage,
   AiMode,
   AiStatus,
@@ -322,12 +320,6 @@ export interface ApiMethods {
   aiCancelTask(args: { taskId: string }): Promise<void>;
   aiValidateHomebrew(args: { json: Record<string, unknown> }): Promise<ValidationReport>;
   aiAddHomebrewToPack(args: { json: Record<string, unknown>; packId?: string }): Promise<ContentPack>;
-  /** Apply the first levels of a build plan (`plan` as returned in `build_plan` data) to an open character. */
-  applyPlan(args: Cid & { plan: Record<string, unknown>; upToLevel: number }): Promise<CharacterSnapshot>;
-  /** Deterministic encounter verdict (no model): `{ report, monsters }`. */
-  encounterEvaluate(args: { args: EncounterEvaluateArgs }): Promise<Record<string, unknown>>;
-  /** Deterministic encounter for a band (no model). */
-  encounterSuggest(args: { args: EncounterSuggestArgs }): Promise<Record<string, unknown>>;
   /** Desktop LAN host (see `AiHostStatus`). */
   /** Throws `consent_required` when only Codex is installed; retry with `allowUntrustedWithCodex: true` after the user agrees. */
   aiHostEnable(args?: { allowUntrustedWithCodex?: boolean }): Promise<AiHostStatus>;
@@ -497,9 +489,6 @@ export const COMMANDS = {
   aiCancelTask: "ai_cancel_task",
   aiValidateHomebrew: "ai_validate_homebrew",
   aiAddHomebrewToPack: "ai_add_homebrew_to_pack",
-  applyPlan: "apply_plan",
-  encounterEvaluate: "encounter_evaluate",
-  encounterSuggest: "encounter_suggest",
   aiHostEnable: "ai_host_enable",
   aiHostDisable: "ai_host_disable",
   aiHostStatus: "ai_host_status",

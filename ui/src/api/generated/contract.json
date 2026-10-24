@@ -222,18 +222,6 @@
     "name": "ConversionApplied"
    }
   },
-  "apply_plan": {
-   "args": {
-    "characterId": false,
-    "plan": false,
-    "upToLevel": false
-   },
-   "method": "applyPlan",
-   "response": {
-    "k": "ref",
-    "name": "CharacterSnapshot"
-   }
-  },
   "apply_selection": {
    "args": {
     "characterId": false,
@@ -392,30 +380,6 @@
    "response": {
     "k": "ref",
     "name": "CharacterSummary"
-   }
-  },
-  "encounter_evaluate": {
-   "args": {
-    "args": false
-   },
-   "method": "encounterEvaluate",
-   "response": {
-    "k": "record",
-    "t": {
-     "k": "any"
-    }
-   }
-  },
-  "encounter_suggest": {
-   "args": {
-    "args": false
-   },
-   "method": "encounterSuggest",
-   "response": {
-    "k": "record",
-    "t": {
-     "k": "any"
-    }
    }
   },
   "equip_item": {

@@ -5,8 +5,6 @@ export type AiMode =
   | "build_advisor"
   | "backstory"
   | "explain"
-  | "build_plan"
-  | "encounter"
   | "npc";
 
 export type AiAvailability = "ready" | "unavailable" | "needs_pairing";
@@ -40,10 +38,7 @@ export interface AiTaskRequest {
   prompt: string;
   characterId?: string | null;
   history?: AiMessage[];
-  /**
-   * Mode parameters: explain `{ stat }`; build_plan `{ targetLevel }`; encounter `{ partyIds | partyLevels, band,
-   * ruleset?, constraints?: { types?, maxCount?, themeTags? } }`; backstory/npc `{ tone?, length?, kind? }`.
-   */
+  /** Mode parameters: explain `{ stat }`; backstory/npc `{ tone?, length?, kind? }`. */
   params?: Record<string, unknown>;
 }
 
@@ -60,7 +55,7 @@ export interface HomebrewDraft {
 /** Typed result of a non-homebrew task. `data` keys are camelCase; see docs/ui-api-contract.md for the shapes. */
 export type AiTypedResult =
   | { kind: "rules_qa"; data: CitedAnswerData }
-  | { kind: "explain" | "level_up" | "build_plan" | "encounter" | "narrative"; data: Record<string, unknown> };
+  | { kind: "explain" | "level_up" | "narrative"; data: Record<string, unknown> };
 
 /** One validated citation of a `rules_qa` answer, resolved to its content element. */
 export interface CitedSource {
@@ -114,28 +109,6 @@ export interface AiHostStatus {
   /** Short certificate fingerprint to compare on the phone; while the host runs. */
   fingerprint: string | null;
   devices: AiHostDevice[];
-}
-
-export interface EncounterConstraints {
-  types?: string[];
-  maxCount?: number;
-  themeTags?: string[];
-}
-
-/** Party by open character ids and/or explicit levels. */
-export interface EncounterPartyArgs {
-  partyIds?: string[];
-  partyLevels?: number[];
-  ruleset?: "dnd2014" | "dnd2024";
-}
-
-export interface EncounterSuggestArgs extends EncounterPartyArgs {
-  band?: "low" | "moderate" | "high" | "extreme";
-  constraints?: EncounterConstraints;
-}
-
-export interface EncounterEvaluateArgs extends EncounterPartyArgs {
-  monsters: { id: string; count: number }[];
 }
 
 /* ---------- First-run AI setup ---------- */
