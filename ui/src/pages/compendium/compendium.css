@@ -27,6 +27,9 @@
 .v4-el .p::after { content: " >"; }
 .v4-el .snip { flex: 1 0 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 0 3px; font-size: var(--fs-xs); line-height: 14px; color: var(--text-secondary); }
 .v4-el .snip mark { background: transparent; color: #e6e6e6; font-weight: 600; }
+.v4-comp-hint { margin: 8px 0 0; font-size: 11px; color: var(--text-secondary); }
+.v4-comp-hint-link { padding: 0; border: 0; background: none; font: inherit; color: var(--highlight); cursor: pointer; text-decoration: underline; }
+.v4-comp-hint-link:hover { color: var(--gold); }
 .v4-comp-foot { position: sticky; bottom: -20px; margin: auto 0 0; border-top: 14px solid var(--flyout-bg); padding: 6px 0 4px; background: var(--flyout-bg); font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); }
 .v4-desc .v4-desc-src { margin: 0; font-size: var(--fs-md); }
 .v4-desc .v4-desc-attr { margin: 10px 0 0; font-size: var(--fs-xs); line-height: 1.45; color: var(--text-secondary); }

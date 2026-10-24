@@ -1,4 +1,4 @@
-import type { ElementSummary, Ruleset, SearchHit, SearchIndexStatus, SearchScope, SearchSettings } from "../../api/contract";
+import type { ElementSummary, Ruleset, SearchHit, SearchIndexStatus, SemanticStatus, SearchScope, SearchSettings } from "../../api/contract";
 
 /** The scopes the flyout offers (Sessions stays hidden until campaigns exist, spec section 11). */
 export const SCOPES: { id: Exclude<SearchScope, "sessions">; label: string }[] = [
@@ -77,9 +77,16 @@ export function badgeOf(row: ResultRow, preferred: Ruleset): "2014" | "2024" | n
   return row.ruleset === "dnd2024" ? "2024" : "2014";
 }
 
-/** Footer line: the mode, plus progress while the keyword indexes build. */
-export function footerText(status: SearchIndexStatus | null): string {
-  if (status?.state === "building") return `Keyword search - indexing ${status.done}/${status.total}`;
-  if (status?.state === "failed") return "Keyword search - index unavailable";
-  return "Keyword search";
+/** Footer line: the mode ("Keyword + semantic" only while embeddings really answer), plus keyword index progress. */
+export function footerText(status: SearchIndexStatus | null, semanticActive = false): string {
+  const mode = semanticActive ? "Keyword + semantic" : "Keyword search";
+  if (status?.state === "building") return `${mode} - indexing ${status.done}/${status.total}`;
+  if (status?.state === "failed") return `${mode} - index unavailable`;
+  return mode;
+}
+
+/** The one-line hint under results (spec section 8): only where semantic search is off but can really be turned on
+ * (a file this device can download or already has, and a linked embedding backend). Never a first-run prompt. */
+export function showSemanticHint(s: SemanticStatus | null): boolean {
+  return !!s && !s.semantic && !!s.file && (s.available || s.modelPresent) && s.backendAvailable;
 }

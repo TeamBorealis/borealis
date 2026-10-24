@@ -10,7 +10,8 @@ import { useCharacter } from "../../state/CharacterContext";
 import { usePlatform } from "../../state/platform";
 import { useSettings } from "../../state/SettingsContext";
 import { useAsync, useDebounced } from "../../state/useAsync";
-import { RULES_GROUP, SCOPES, badgeOf, footerText, groupRows, highlightParts, initialEdition, rowOfElement, rowOfHit, type ResultRow } from "./searchModel";
+import { RULES_GROUP, SCOPES, badgeOf, footerText, groupRows, highlightParts, initialEdition, rowOfElement, rowOfHit, showSemanticHint, type ResultRow } from "./searchModel";
+import { useSemanticStatus } from "../../state/semantic";
 import "./compendium.css";
 
 const PAGE = 40;
@@ -99,6 +100,8 @@ export function CompendiumBrowser({ initialQuery = "", initialSource = "", initi
   const [selected, setSelected] = useState<string | null>(initialSelected);
   const [limit, setLimit] = useState(PAGE);
   const status = useIndexStatus();
+  const { status: semantic } = useSemanticStatus();
+  const { openBorealisSettings } = useShell();
   const facets = useAsync(() => api.compendiumFacets(), [api]);
   const rules = scope === "rules";
   const types = type && !rules ? [type as ElementSummary["type"]] : undefined;
@@ -157,7 +160,10 @@ export function CompendiumBrowser({ initialQuery = "", initialSource = "", initi
         ))}
         {results.data && rows.length === 0 && <p className="v4-comp-count">{rules && !q ? "Type to search the rules." : "No entries match."}</p>}
         {results.data && results.data.total > rows.length && <div className="v4-comp-more"><Button onClick={() => setLimit((l) => l + PAGE)}>Show more</Button></div>}
-        <p className="v4-comp-foot" role="note" aria-label="Search mode">{footerText(status)}</p>
+        {q && results.data && showSemanticHint(semantic) && (
+          <p className="v4-comp-hint">Better results for descriptive questions: <button type="button" className="v4-comp-hint-link" onClick={() => openBorealisSettings("search")}>turn on semantic search</button></p>
+        )}
+        <p className="v4-comp-foot" role="note" aria-label="Search mode">{footerText(status, semantic?.active ?? false)}</p>
       </div>
       <aside className="v4-desc" aria-label="Element description">
         <Button className="back" variant="ghost" icon="back" onClick={() => setSelected(null)}>Back to results</Button>

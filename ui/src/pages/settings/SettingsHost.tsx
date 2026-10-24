@@ -6,11 +6,11 @@ import { BorealisSettings } from "./BorealisSettings";
 
 /** Mounts whichever settings window is open (ShellContext flags); lives in the shell so it sits over the current screen. */
 export function SettingsHost() {
-  const { settingsTab, closeSettings, borealisSettingsOpen, setBorealisSettingsOpen } = useShell();
+  const { settingsTab, closeSettings, borealisSettingsOpen, setBorealisSettingsOpen, borealisSettingsTab } = useShell();
   return (
     <>
       {settingsTab !== null && <ApplicationSettings initialTab={settingsTab} onClose={closeSettings} />}
-      {borealisSettingsOpen && <BorealisSettings onClose={() => setBorealisSettingsOpen(false)} />}
+      {borealisSettingsOpen && <BorealisSettings initialTab={borealisSettingsTab} onClose={() => setBorealisSettingsOpen(false)} />}
     </>
   );
 }

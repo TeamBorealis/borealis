@@ -646,7 +646,7 @@ export const EVENTS = {
   "content:open-file": "borealis://open-file",
   "files:dropped": "borealis://file-drop",
   "search:index-status": "search://index-status",
-  "semantic:download": "semantic://download",
+  "semantic:download": "borealis://semantic-download",
   "link:status": "borealis://link-status",
 } as const satisfies Record<EventName, string>;
 

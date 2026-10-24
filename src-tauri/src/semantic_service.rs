@@ -46,7 +46,7 @@ pub enum DownloadState {
     Done,
 }
 
-/// `semantic://download` payload, also inside [`SemanticStatus`].
+/// `borealis://semantic-download` payload, also inside [`SemanticStatus`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SemanticDownload {

@@ -9,12 +9,13 @@ import { errorMessage, useAsync } from "../../state/useAsync";
 import { UnverifiedBadge } from "../content/IndexesTab";
 import { AiHostPanel } from "./AiHostPanel";
 import { DevicesTab } from "./DevicesTab";
+import { SearchTab } from "./SearchTab";
 import { checkAppUpdateNow, openDownload, useAppUpdateView } from "../../state/appUpdate";
 import { DescCheck, FieldLabel, Help, NumberField, SectionDesc } from "./rows";
 import { SettingsWindow } from "./SettingsWindow";
 
 export const BOREALIS_TABS = [
-  { id: "ai", label: "AI assistant" }, { id: "phones", label: "Phones" }, { id: "devices", label: "Devices" }, { id: "content", label: "Content" }, { id: "general", label: "General" },
+  { id: "ai", label: "AI assistant" }, { id: "phones", label: "Phones" }, { id: "devices", label: "Devices" }, { id: "content", label: "Content" }, { id: "search", label: "Search" }, { id: "general", label: "General" },
 ] as const;
 
 type Tab = (typeof BOREALIS_TABS)[number]["id"];
@@ -28,13 +29,13 @@ function visibleTabs(mobile: boolean, aiEnabled: boolean) {
  * Borealis Settings: what the classic builder has no equivalent for. Same window chrome and rows as Application Settings,
  * but each change applies at once (the footer only closes the window).
  */
-export function BorealisSettings({ onClose, initialTab }: { onClose: () => void; initialTab?: Tab }) {
+export function BorealisSettings({ onClose, initialTab }: { onClose: () => void; initialTab?: string }) {
   const api = useApi();
   const nav = useNavigate();
   const { settings: s, update, replace } = useSettings();
   const { mobile, aiEnabled } = usePlatform();
   const tabs = visibleTabs(mobile, aiEnabled);
-  const [picked, setTab] = useState<Tab | undefined>(initialTab);
+  const [picked, setTab] = useState<Tab | undefined>(initialTab as Tab | undefined);
   const tab: Tab = tabs.some((t) => t.id === picked) ? picked! : tabs[0]!.id;
   const [aiError, setAiError] = useState<string | null>(null);
   const provider = useId();
@@ -92,6 +93,7 @@ export function BorealisSettings({ onClose, initialTab }: { onClose: () => void;
         </>
       )}
       {tab === "devices" && <DevicesTab />}
+      {tab === "search" && <SearchTab />}
       {tab === "content" && (
         <>
           <h3 className="aur-set-title13 first flush">CONTENT</h3>

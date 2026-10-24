@@ -11,7 +11,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 type S<'a> = State<'a, AppState>;
 
 /// Download progress event (payload [`SemanticDownload`]).
-pub const EVENT_SEMANTIC_DOWNLOAD: &str = "semantic://download";
+pub const EVENT_SEMANTIC_DOWNLOAD: &str = "borealis://semantic-download";
 
 /// Forwards download progress to the web view.
 pub struct SemanticEvents(pub AppHandle);

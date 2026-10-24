@@ -150,12 +150,12 @@ describe("Borealis Settings window", () => {
     expect(items[at + 1]).toContain("Borealis Settings");
     await user.click(screen.getByRole("menuitem", { name: "Borealis Settings" }));
     const dialog = await screen.findByRole("dialog", { name: "Borealis Settings" });
-    expect(within(dialog).getAllByRole("tab").map((t) => t.textContent)).toEqual(["AI assistant", "Devices", "Content", "General"]);
+    expect(within(dialog).getAllByRole("tab").map((t) => t.textContent)).toEqual(["AI assistant", "Devices", "Content", "Search", "General"]);
     // AI is off on a fresh profile: only the switch shows; the provider controls appear once it is on.
     expect(within(dialog).queryByLabelText("AI PROVIDER")).toBeNull();
     await user.click(within(dialog).getByRole("checkbox", { name: "Enable AI assistant (optional)" }));
     expect(await within(dialog).findByLabelText("AI PROVIDER")).toBeTruthy();
-    expect(within(dialog).getAllByRole("tab").map((t) => t.textContent)).toEqual(["AI assistant", "Phones", "Devices", "Content", "General"]);
+    expect(within(dialog).getAllByRole("tab").map((t) => t.textContent)).toEqual(["AI assistant", "Phones", "Devices", "Content", "Search", "General"]);
     await user.click(within(dialog).getByRole("tab", { name: "General" }));
     expect(within(dialog).getByRole("checkbox", { name: "Autosave" })).toBeTruthy();
     await user.click(within(dialog).getByRole("tab", { name: "Content" }));

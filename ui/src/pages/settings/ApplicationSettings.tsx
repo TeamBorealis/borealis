@@ -8,6 +8,7 @@ import { errorMessage, useAsync } from "../../state/useAsync";
 import { AppearanceTab } from "./AppearanceTab";
 import { DataFilesTab, type HeldPicks } from "./DataFilesTab";
 import { BuildTab, EquipmentTab, GeneralTab } from "./GeneralBuildTabs";
+import { ModelLicence } from "./ModelLicence";
 import { SectionDesc } from "./rows";
 import { SettingsWindow } from "./SettingsWindow";
 import { SheetTab } from "./SheetTab";
@@ -133,6 +134,7 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
           <h3 className="aur-set-title13 first flush">BOREALIS</h3>
           <div className="aur-set-version">{version.data ? `v${version.data}` : ""}</div>
           <p className="aur-set-text">A character builder for fifth edition. Borealis collects no telemetry. Import bug reports are only sent when you choose to send one.</p>
+          <ModelLicence />
         </div>
       );
     }
