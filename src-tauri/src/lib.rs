@@ -117,6 +117,7 @@ pub mod sanitize;
 pub mod search_api;
 pub mod search_service;
 pub mod secondary_content;
+pub mod semantic_device;
 pub mod session;
 pub mod settings;
 pub mod settings_dto;
@@ -288,8 +289,11 @@ pub fn run() {
     let builder = builder.plugin(native_share::init());
     builder
         .plugin(tauri_plugin_dialog::init())
+        // Semantic search device facts: tier RAM, battery / thermal / background state (S3.1).
+        .plugin(semantic_device::init())
         .on_window_event(|window, event| {
             startup_boot::on_window_event(window, event);
+            semantic_device::on_window_event(window, event);
             #[cfg(desktop)]
             picked_files::on_window_event(window, event);
         })
