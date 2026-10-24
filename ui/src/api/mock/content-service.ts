@@ -68,7 +68,7 @@ export class ContentService {
 
   /** What the mock `search` ranks over (the Lore corpus). */
   searchDocs(): MockSearchDoc[] {
-    return this.all().map((e) => ({ id: e.id, name: e.name, type: e.type, source: e.source, sourceName: e.sourceName, rulesets: e.rulesets, text: `${e.shortDescription} ${stripHtml(e.description)}`.trim() }));
+    return this.all().map((e) => ({ id: e.id, name: e.name, type: e.type, source: e.source, sourceName: e.sourceName, rulesets: e.rulesets, text: [...new Set([e.shortDescription, stripHtml(e.description)])].join(" ").trim() }));
   }
 
   element(id: string): ElementDetail {

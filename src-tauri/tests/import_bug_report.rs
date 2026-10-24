@@ -265,3 +265,53 @@ fn recent_logs_are_in_the_preview_only_when_ticked() {
         .def("ImportReportPreview", &serde_json::to_value(&on).unwrap());
     assert!(errs.is_empty(), "{errs:?}");
 }
+
+#[test]
+fn no_search_index_path_or_indexed_text_enters_a_report() {
+    // BR2 (local-search-spec.md section 11): keyword indexes are local derived data; a report built after
+    // indexing an imported pack carries no `search/` path, no index file name and none of the indexed text.
+    let h = imported_draft();
+    let pack = h
+        .state
+        .import_finalize(&h.draft, "Stone Pack", "stone", &Quiet)
+        .unwrap();
+    h.state.build_search_index_now().unwrap();
+    let search_dir = h.state.paths.data.join("search");
+    let manifest = std::fs::read_to_string(search_dir.join("v1/manifest.json")).unwrap();
+    assert!(
+        manifest.contains(&format!("\"{}\"", pack.id)),
+        "the imported pack is indexed locally: {manifest}"
+    );
+    let logs = h.state.paths.logs();
+    std::fs::create_dir_all(&logs).unwrap();
+    std::fs::write(
+        logs.join("borealis-2026-10-24.log"),
+        format!(
+            "INFO borealis_lib: Borealis started\nWARN search: index at {}/v1/lore rebuilt\n",
+            search_dir.display()
+        ),
+    )
+    .unwrap();
+    let outbox = ReportOutbox::new(REPORT_ENDPOINT, Arc::new(FakePost::default()));
+    let req = ReportRequest {
+        pack_id: Some(pack.id.clone()),
+        include_logs: true,
+        include_source: true,
+        ..ReportRequest::default()
+    };
+
+    let p = h.state.import_report_preview(&outbox, req).unwrap();
+
+    let body = p.payload.to_string();
+    assert!(body.contains("Borealis started"), "other log lines stay");
+    for leak in [
+        "search/",
+        "search\\\\",
+        "manifest.json",
+        "meta.json",
+        ".tantivy",
+        "Quillfeather",
+    ] {
+        assert!(!body.contains(leak), "{leak} reached the report: {body}");
+    }
+}

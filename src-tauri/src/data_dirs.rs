@@ -232,7 +232,8 @@ impl AppState {
 
     /// Clear Borealis's caches (the reference app's "Clear News Articles Cache"; Borealis has no news feed):
     /// stale scratch folders in the data folder, stale AI session folders (`ai_sweep`), and the
-    /// cached results of index checks. Pinned index keys and installed content are kept.
+    /// cached results of index checks, and the keyword search indexes (rebuilt on the next search). Pinned index
+    /// keys and installed content are kept.
     ///
     /// # Errors
     /// `internal` if a lock is poisoned; `io_error` if the content settings cannot be written.
