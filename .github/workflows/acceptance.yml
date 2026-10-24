@@ -88,6 +88,12 @@ jobs:
         working-directory: ui
       - name: Importer and content crates (incl. the AI-free import guard)
         run: cargo test -p borealis-migrate -p borealis-import-5etools -p borealis-content
+      # The sheet's OS font lookup (CJK) differs per OS; give Linux a real CJK font to load.
+      - name: CJK font (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y fonts-noto-cjk
+      - name: Sheet crate (per-OS CJK font lookup)
+        run: cargo test -p borealis-sheet -- --nocapture
       - name: App import tests on fixtures
         run: >-
           cargo test -p borealis
