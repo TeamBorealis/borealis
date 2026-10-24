@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The FileProvider serves only cache/share/: the copies SharePlugin.kt writes for "Share logs" and
+     "Share as a file" (read grant for the receiving app only). Nothing else of the app's storage has a
+     content URI. Test: open_with_manifests.rs the_file_provider_serves_only_the_share_folder. -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-  <external-path name="my_images" path="." />
-  <cache-path name="my_cache_images" path="." />
+  <cache-path name="share" path="share/" />
 </paths>

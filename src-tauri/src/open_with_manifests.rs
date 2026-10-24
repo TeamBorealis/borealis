@@ -191,3 +191,38 @@ fn android_matches_borealis_bundles_by_name_and_by_mime_type() {
     assert!(generated.contains("android.intent.action.VIEW"));
     // Downloads URIs carry no extension: the octet-stream filter (tested above) is what opens them.
 }
+
+const FILE_PATHS: &str = include_str!("../gen/android/app/src/main/res/xml/file_paths.xml");
+const SHARE_PLUGIN: &str =
+    include_str!("../gen/android/app/src/main/java/app/borealis/SharePlugin.kt");
+
+/// Z: the FileProvider gives content URIs only to `cache/share/`, the folder SharePlugin copies
+/// shared logs and bundles into; never the whole cache, the app's files or external storage.
+#[test]
+fn the_file_provider_serves_only_the_share_folder() {
+    let paths: Vec<&str> = FILE_PATHS
+        .split('<')
+        .skip(1)
+        .filter(|t| t.ends_with("/>\n") || t.trim_end().ends_with("/>"))
+        .collect();
+    assert_eq!(paths.len(), 1, "{paths:?}");
+    let only = paths[0];
+    assert!(only.starts_with("cache-path "), "{only}");
+    assert!(only.contains(r#"path="share/""#), "{only}");
+    for broad in [
+        "external-path",
+        "files-path",
+        "root-path",
+        "external-files-path",
+        "external-cache-path",
+        r#"path=".""#,
+    ] {
+        assert!(!FILE_PATHS.contains(broad), "{broad}");
+    }
+    assert!(SHARE_PLUGIN.contains(r#"private const val SHARE_DIR = "share""#));
+    assert!(
+        ANDROID_MANIFEST.contains(r#"android:exported="false""#)
+            && ANDROID_MANIFEST.contains(r#"android:grantUriPermissions="true""#),
+        "the provider stays private; access only through per-share grants"
+    );
+}
