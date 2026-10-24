@@ -20,6 +20,12 @@ tracing.workspace = true
 tantivy = { version = "0.26", default-features = false, features = ["mmap", "stopwords", "lz4-compression", "stemmer"] }
 toml = { version = "1", default-features = false, features = ["std", "parse", "serde"] }
 sha2 = "0.10"
+# Hybrid ranking (spec sec. 7, 12): RRF fusion and the vector store live in borealis-embed (no llama.cpp there
+# unless its own `llama` feature is on).
+borealis-embed = { workspace = true, optional = true }
+
+[features]
+embed = ["dep:borealis-embed"]
 
 [dev-dependencies]
 tempfile = "3"

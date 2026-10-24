@@ -15,6 +15,8 @@ pub mod chunk;
 pub mod corpus;
 pub mod engine;
 pub mod error;
+#[cfg(feature = "embed")]
+pub mod hybrid;
 pub mod index;
 pub mod query;
 pub mod schema;
