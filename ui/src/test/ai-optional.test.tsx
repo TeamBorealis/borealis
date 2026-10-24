@@ -80,7 +80,7 @@ describe("No AI on mobile", () => {
     await user.click(await screen.findByRole("menuitem", { name: "View" }));
     await user.click(await screen.findByRole("menuitem", { name: "Borealis Settings" }));
     const dialog = await screen.findByRole("dialog", { name: "Borealis Settings" });
-    expect(within(dialog).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Content", "General"]);
+    expect(within(dialog).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Devices", "Content", "General"]);
     expect(dialog.textContent).not.toMatch(AI_TEXT);
     await api.saveSettings({ patch: { ai: { ...DEFAULT_SETTINGS.ai, enabled: true } } });
     expect((await api.getSettings()).ai.enabled).toBe(false);

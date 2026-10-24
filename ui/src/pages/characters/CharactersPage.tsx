@@ -42,6 +42,9 @@ export function CharactersPage() {
   // Open-with imports (GlobalImport) navigate here with a fresh `imported` state: list again even when already showing.
   const imported = (useLocation().state as { imported?: number } | null)?.imported;
   const list = useAsync(() => api.listCharacters(), [api, imported]);
+  // Receive from device wrote new or newer characters: list again.
+  const reloadList = list.reload;
+  useEffect(() => api.subscribe("link:status", (s) => { if (s.role === "receive" && s.phase === "done") reloadList(); }), [api, reloadList]);
   const [query, setQuery] = useState("");
   const [finding, setFinding] = useState(false);
   const [creating, setCreating] = useState(false);

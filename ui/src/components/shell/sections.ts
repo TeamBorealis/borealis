@@ -46,7 +46,7 @@ export function activeTab(pathname: string): MainTabDef {
   return MAIN_TABS.find((t) => t.match.some((m) => pathname === m || pathname.startsWith(`${m}/`))) ?? MAIN_TABS[0]!;
 }
 
-export type ShellAction = "new" | "save" | "next" | "flow" | "exit" | "close" | "compendium" | "options" | "levelup" | "portraits" | "edition" | "settings" | "borealis-settings";
+export type ShellAction = "new" | "save" | "next" | "flow" | "exit" | "close" | "compendium" | "options" | "levelup" | "portraits" | "edition" | "settings" | "borealis-settings" | "send-to-device" | "receive-from-device";
 
 export interface MenuEntry {
   id: string;
@@ -76,6 +76,9 @@ export const MENUS: readonly MenuDef[] = [
     { id: "find", label: "Search Characters", to: "/characters?find=1" },
     { id: "import", label: "Import Characters", to: "/import", noAiTo: "/characters?load=1" },
     { id: "s1", label: "", separator: true },
+    { id: "send", label: "Send to device…", action: "send-to-device" },
+    { id: "receive", label: "Receive from device…", action: "receive-from-device" },
+    { id: "s2", label: "", separator: true },
     { id: "exit", label: "Exit Application", action: "exit" },
   ] },
   { id: "view", label: "View", entries: [

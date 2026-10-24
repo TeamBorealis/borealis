@@ -8,12 +8,13 @@ import { useSettings } from "../../state/SettingsContext";
 import { errorMessage, useAsync } from "../../state/useAsync";
 import { UnverifiedBadge } from "../content/IndexesTab";
 import { AiHostPanel } from "./AiHostPanel";
+import { DevicesTab } from "./DevicesTab";
 import { checkAppUpdateNow, openDownload, useAppUpdateView } from "../../state/appUpdate";
 import { DescCheck, FieldLabel, Help, NumberField, SectionDesc } from "./rows";
 import { SettingsWindow } from "./SettingsWindow";
 
 export const BOREALIS_TABS = [
-  { id: "ai", label: "AI assistant" }, { id: "phones", label: "Phones" }, { id: "content", label: "Content" }, { id: "general", label: "General" },
+  { id: "ai", label: "AI assistant" }, { id: "phones", label: "Phones" }, { id: "devices", label: "Devices" }, { id: "content", label: "Content" }, { id: "general", label: "General" },
 ] as const;
 
 type Tab = (typeof BOREALIS_TABS)[number]["id"];
@@ -90,6 +91,7 @@ export function BorealisSettings({ onClose, initialTab }: { onClose: () => void;
           <AiHostPanel />
         </>
       )}
+      {tab === "devices" && <DevicesTab />}
       {tab === "content" && (
         <>
           <h3 className="aur-set-title13 first flush">CONTENT</h3>

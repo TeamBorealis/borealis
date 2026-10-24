@@ -6,6 +6,7 @@ import { CHARACTER_MENU, type MenuEntry, openProjectSite, visibleMenus } from ".
 import { useShell } from "./ShellContext";
 import { openEditionFlyout } from "../../pages/manage/EditionFlyout";
 import { useShellActions } from "./useShellActions";
+import { openReceiveFromDevice, openSendToDevice } from "../../pages/transfer/openTransfer";
 
 interface MenuModel { id: string; label: ReactNode; entries: readonly MenuEntry[]; gold?: boolean }
 
@@ -69,6 +70,8 @@ function useActivate() {
     else if (e.action === "settings") openSettings();
     else if (e.action === "borealis-settings") setBorealisSettingsOpen(true);
     else if (e.action === "edition") openEditionFlyout();
+    else if (e.action === "send-to-device") openSendToDevice();
+    else if (e.action === "receive-from-device") openReceiveFromDevice();
     else if (e.action) run(e.action);
   };
 }

@@ -1,0 +1,62 @@
+/* Send to device / Receive from device: classic builder dialog window (accent title bar, flat body, footer row). */
+.dialog.xfer-dlg { width: min(100%, 520px); }
+.xfer-dlg .dialog-body { padding: 15px 20px 20px; }
+.xfer-dlg .aur-set-field:first-of-type { margin-top: 0; }
+.xfer-instr { margin: 0 0 10px; font-size: 11px; line-height: 1.45; color: var(--text-secondary); }
+.xfer-instr strong { color: var(--text-primary-header); font-weight: 600; }
+.xfer-wait { margin: 0 0 6px; font-size: 11px; color: var(--text-body); }
+.xfer-wait strong { font-weight: 600; color: var(--gold); font-variant-numeric: tabular-nums; }
+.xfer-dlg .aur-progress { margin: 4px 0 8px; }
+.xfer-dlg .alert { margin-bottom: 10px; }
+
+/* QR on the left with the code, address and fingerprint below it; the instruction beside it */
+.xfer-show { display: grid; grid-template-columns: 168px 1fr; gap: 20px; align-items: start; }
+.xfer-qr-col svg { display: block; }
+.xfer-qr-col .aur-set-field { margin-top: 10px; }
+.xfer-code { font-size: 18px; font-weight: 600; letter-spacing: 0.02em; color: var(--gold); overflow-wrap: anywhere; user-select: all; }
+.xfer-mono { font-family: var(--font-mono); font-size: 11px; color: var(--text-body); overflow-wrap: anywhere; user-select: all; }
+
+/* Send: character checklist */
+.xfer-pick { max-height: 220px; overflow-y: auto; border: 1px solid var(--border); background: var(--description-bg); }
+.xfer-pick-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 0 4px; min-height: 26px; padding: 0 6px; font-size: 11px; cursor: pointer; }
+.xfer-pick-row + .xfer-pick-row { border-top: 1px solid var(--light-1); }
+.xfer-pick-row:hover { background: var(--light-2); }
+.xfer-pick-row.all { font-weight: 600; }
+.xfer-pick-row .v4-cb { margin: 0; }
+.xfer-pick-name { font-weight: 600; color: var(--text-primary-header); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.xfer-pick-build { color: var(--text-secondary); white-space: nowrap; }
+.xfer-dlg .aur-combo, .xfer-dlg .aur-textbox { display: flex; margin: 0; }
+
+/* Phones: connect choices */
+.xfer-methods { margin-top: 4px; }
+.xfer-methods .v5-row .icon { width: 18px; height: 18px; }
+
+/* Receiver preview: one row per item, what Accept does on the right */
+.xfer-prev { list-style: none; margin: 0 0 8px; padding: 0; border: 1px solid var(--border); background: var(--description-bg); max-height: 240px; overflow-y: auto; }
+.xfer-prev-row { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; min-height: 28px; padding: 3px 8px; font-size: 11px; }
+.xfer-prev-row + .xfer-prev-row { border-top: 1px solid var(--light-1); }
+.xfer-prev-row .icon { width: 16px; height: 16px; color: var(--text-secondary); }
+.xfer-prev-name { font-weight: 600; color: var(--text-primary-header); min-width: 0; overflow-wrap: anywhere; }
+.xfer-prev-miss { display: block; font-weight: 400; color: var(--aur-warning-bright, var(--warning)); }
+.xfer-prev-size { color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.xfer-prev-act { white-space: nowrap; color: var(--text-secondary); }
+.xfer-prev-row.new .xfer-prev-act { color: var(--aur-success-bright, var(--success)); }
+.xfer-prev-row.replace .xfer-prev-act { color: var(--gold); }
+
+/* Scan screen over the camera (scanner windowed mode: the web view is transparent) */
+html.aur-scanning, html.aur-scanning body, html.aur-scanning #root, html.aur-scanning .aur-window { background: transparent !important; }
+html.aur-scanning .aur-window > :not(.xfer-scan) { visibility: hidden; }
+.xfer-scan { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; padding-top: var(--safe-t); padding-bottom: var(--safe-b); }
+.xfer-scan .dialog-head { flex: none; }
+.xfer-scan-view { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; overflow: hidden; }
+.xfer-scan-frame { width: min(64vw, 260px); aspect-ratio: 1; border: 2px solid var(--gray-5); box-shadow: 0 0 0 100vmax rgba(17, 17, 18, 0.5); }
+.xfer-scan-hint { position: relative; margin: 0; padding: 0 20px; font-size: 12px; color: #fff; text-align: center; }
+.xfer-scan .dialog-foot { flex: none; }
+
+@media (max-width: 639px) {
+  .xfer-show { grid-template-columns: 1fr; justify-items: center; gap: 10px; }
+  .xfer-qr-col { display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .xfer-side { width: 100%; }
+  .xfer-pick { max-height: 40dvh; }
+  .xfer-pick-row, .xfer-prev-row { min-height: var(--target); }
+}

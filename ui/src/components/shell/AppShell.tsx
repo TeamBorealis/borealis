@@ -15,6 +15,7 @@ import { useShellActions } from "./useShellActions";
 import { useCharacter } from "../../state/CharacterContext";
 import { OptionsFlyout } from "../../pages/manage/OptionsFlyout";
 import { SaveFlyout } from "./SaveFlyout";
+import { TransferHost } from "../../pages/transfer/TransferHost";
 import { EditionFlyout } from "../../pages/manage/EditionFlyout";
 import { SettingsHost } from "../../pages/settings/SettingsHost";
 import { CompendiumFlyout } from "../../pages/compendium/CompendiumFlyout";
@@ -99,6 +100,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <SaveFlyout />
           <UpdateFlyout />
           <SettingsHost />
+          <TransferHost />
           {narrow && menuOpen && (
             <Flyout title="Menu" position="left" width="settings" onClose={() => setMenuOpen(false)}>
               <MenuTree onDone={() => setMenuOpen(false)} />

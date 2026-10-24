@@ -5,7 +5,7 @@ import {
   mdiHammer, mdiInformationOutline, mdiLink, mdiLock, mdiMagnify, mdiMenu, mdiMinus, mdiOpenInApp, mdiPackageVariantClosed,
   mdiPencil, mdiPlus, mdiRobotOutline, mdiScriptText, mdiSend, mdiShield, mdiStar, mdiStop, mdiSwordCross, mdiTrashCanOutline,
   mdiUpload, mdiWeb, mdiCheckboxMarkedOutline, mdiDotsVertical, mdiTagMultiple, mdiImageMultipleOutline, mdiMicrophone,
-  mdiFolderSearchOutline, mdiFolderRemoveOutline, mdiBackupRestore, mdiChevronDoubleDown,
+  mdiFolderSearchOutline, mdiFolderRemoveOutline, mdiBackupRestore, mdiChevronDoubleDown, mdiQrcode, mdiQrcodeScan, mdiKeyboardOutline, mdiDevices,
 } from "@mdi/js";
 
 /** Icon set: Material Design Icons (Apache-2.0) via @mdi/js. */
@@ -63,6 +63,10 @@ const PATHS = {
   "folder-remove": mdiFolderRemoveOutline,
   restore: mdiBackupRestore,
   update: mdiChevronDoubleDown,
+  qr: mdiQrcode,
+  "qr-scan": mdiQrcodeScan,
+  keyboard: mdiKeyboardOutline,
+  devices: mdiDevices,
 } as const;
 
 export type IconName = keyof typeof PATHS;
