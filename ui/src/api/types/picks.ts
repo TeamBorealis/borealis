@@ -5,6 +5,8 @@
  */
 export type PickPurpose = "import-file" | "5etools-folder" | "content-folder" | "ai-override" | "documents-dir" | "secondary-content-dir"
   | "character-file"
+  /** A `.borealis` bundle for `bundleOpen` (opened by path in the backend, never read into the webview). */
+  | "bundle-file"
   /** Minted only by the backend's native drag-drop handler; `pickPath` refuses it. */
   | "dropped-file";
 
@@ -30,5 +32,7 @@ export interface DroppedFile {
 export interface FileDrop {
   files: DroppedFile[];
   folders: DroppedFile[];
+  /** `.borealis` bundles as `bundle-file` tokens: open them with `bundleOpen`. */
+  bundles: DroppedFile[];
   rejected: string[];
 }

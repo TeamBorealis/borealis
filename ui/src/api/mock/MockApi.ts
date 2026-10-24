@@ -16,6 +16,7 @@ import { MockImportReports } from "./import-report";
 import * as rolled from "./rolled-charges";
 import { MockAppUpdate } from "./app-update";
 import { MockDataFiles } from "./data-files";
+import { MockBundles } from "./bundles";
 import { MockDeviceLink } from "./link";
 import { validateHomebrew } from "./ai";
 import { ContentService } from "./content-service";
@@ -107,13 +108,9 @@ export class MockApi implements Api {
     this.imp = new MockImport((e) => this.emit("import:event", e), opts.importStepMs ?? 300);
     this.link = new MockDeviceLink((st) => this.emit("link:status", st), {
       mobile: this.mobile, peerAfterMs: opts.linkPeerAfterMs ?? null, devices: opts.linkDevices,
-      onReceived: (names) => names.forEach((name) => {
-        const c = createCharacter({ name, ruleset: "dnd2024", startingLevel: 1, gender: "Female", abilityMethod: "manual", options: {} }, { playerName: this.settings.playerName });
-        const saved = { ...c, dirty: false };
-        this.chars.set(saved.id, saved);
-        this.saved.set(saved.id, saved);
-      }),
+      onReceived: (names) => this.addReceived(names),
     });
+    this.bundles = new MockBundles((token) => this.picks.take(token, "bundle-file"), (path) => this.picks.grantBundle(path), (names) => this.addReceived(names));
     if (opts.seed !== false) for (const c of seedLibrary()) { this.chars.set(c.id, c); this.saved.set(c.id, c); }
   }
 
@@ -664,6 +661,26 @@ export class MockApi implements Api {
   /* ---------- Device transfer ---------- */
 
   readonly link: MockDeviceLink;
+  /** Bundles as files; tests read `bundles.exported` / `bundles.shared` and queue OS opens with `bundles.queueOpened`. */
+  readonly bundles: MockBundles;
+  /** New characters that arrived by transfer or bundle land in the mock library. */
+  private addReceived(names: string[]): void {
+    for (const name of names) {
+      const c = createCharacter({ name, ruleset: "dnd2024", startingLevel: 1, gender: "Female", abilityMethod: "manual", options: {} }, { playerName: this.settings.playerName });
+      const saved = { ...c, dirty: false };
+      this.chars.set(saved.id, saved);
+      this.saved.set(saved.id, saved);
+    }
+  }
+  private characterNames(selection: LinkSelection): string[] {
+    return selection.characterIds.map((id) => this.chars.get(id)?.name ?? "Character");
+  }
+  async bundleExport({ selection }: { selection: LinkSelection }) { await this.tick(); return this.bundles.export(selection, this.characterNames(selection)); }
+  async bundleShare({ selection }: { selection: LinkSelection }) { await this.tick(); return this.bundles.share(selection, this.characterNames(selection)); }
+  async bundleOpen({ token }: { token: string }) { await this.tick(); return this.bundles.openFile(token); }
+  async bundleAccept({ bundleId }: { bundleId: string }) { await this.tick(); return this.bundles.accept(bundleId); }
+  async bundleDiscard({ bundleId }: { bundleId: string }) { await this.tick(); this.bundles.discard(bundleId); }
+  async takeOpenedBundles() { await this.tick(); return this.bundles.takeOpened(); }
   async linkStartSend({ selection }: { selection: LinkSelection }) { await this.tick(); return this.link.startSend(selection); }
   async linkStartReceive() { await this.tick(); return this.link.startReceive(); }
   async linkConnect({ target, selection }: { target: string; host?: string; selection?: LinkSelection }) { await this.tick(); return this.link.connect(target, selection); }

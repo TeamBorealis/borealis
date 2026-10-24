@@ -3,6 +3,8 @@
 //! and nothing is written.
 #![cfg(feature = "device-link")]
 
+mod contract_support;
+
 use std::io::{Read, Write};
 use std::net::{IpAddr, Ipv4Addr};
 use std::path::{Path, PathBuf};
@@ -339,4 +341,31 @@ fn a_bundle_copied_by_the_app_is_deleted_after_accept_or_discard() {
     let p = open(&b, &mine);
     b.sync.discard_bundle(&p.bundle_id);
     assert!(!mine.exists(), "and after Cancel");
+}
+
+#[test]
+fn the_dtos_match_the_ts_contract() {
+    let (a, b) = (dev("Mac"), dev("Phone"));
+    put_character(&a, "Mira", Duration::from_secs(60));
+    let files = tempfile::tempdir().unwrap();
+    let built = a.sync.build_bundle_file(&selection()).unwrap();
+    let exported = DeviceSync::save_bundle(&built, &files.path().join("Mira.borealis")).unwrap();
+    let preview = open(&b, &files.path().join("Mira.borealis"));
+    let shared = borealis_lib::sync_dto::BundleShare {
+        file_name: "Mira.borealis".into(),
+        characters: 1,
+        packs: 0,
+        bytes: 10,
+        shared: false,
+        data_base64: Some("UEs=".into()),
+    };
+    let contract = contract_support::Contract::load();
+    for (name, value) in [
+        ("BundleExport", serde_json::to_value(&exported).unwrap()),
+        ("BundlePreview", serde_json::to_value(&preview).unwrap()),
+        ("BundleShare", serde_json::to_value(&shared).unwrap()),
+    ] {
+        let errs = contract.def(name, &value);
+        assert!(errs.is_empty(), "{name}: {errs:?}\n{value:#}");
+    }
 }

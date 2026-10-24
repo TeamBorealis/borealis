@@ -11,6 +11,7 @@ const MOCK_PICKS: Record<PickPurpose, string> = {
   "secondary-content-dir": "/home/me/Documents/Custom Content",
   "character-file": "/home/me/Documents/Mira.dnd5e",
   "dropped-file": "",
+  "bundle-file": "/home/me/Documents/Mira.borealis",
 };
 
 /** Mirrors `picked_files.rs`: what a drop may carry and what each purpose may read. */
@@ -49,13 +50,19 @@ export class MockPicks {
   dropFolder(name: string): FileDrop {
     const token = `pick_mock_${++this.seq}`;
     this.picks.set(token, { path: `/home/me/Desktop/${name}`, purpose: "content-folder" });
-    return { files: [], folders: [{ token, name }], rejected: [] };
+    return { files: [], folders: [{ token, name }], bundles: [], rejected: [] };
   }
 
   /** A native drop: tokens for the allowed files, names of the rest. */
   drop(files: { name: string; contentBase64: string }[]): FileDrop {
-    const out: FileDrop = { files: [], folders: [], rejected: [] };
+    const out: FileDrop = { files: [], folders: [], bundles: [], rejected: [] };
     for (const f of files) {
+      if (ext(f.name) === "borealis") {
+        const token = `pick_mock_${++this.seq}`;
+        this.picks.set(token, { path: `/home/me/Desktop/${f.name}`, purpose: "bundle-file" });
+        out.bundles.push({ token, name: f.name });
+        continue;
+      }
       if (!DROP_EXT.includes(ext(f.name))) { out.rejected.push(f.name); continue; }
       const path = `/home/me/Desktop/${f.name}`;
       const token = `pick_mock_${++this.seq}`;
@@ -92,6 +99,13 @@ export class MockPicks {
     if (bad) throw apiError("invalid_argument", `${baseName(bad)} is not a file Borealis can open here.`);
     tokens.forEach((t) => this.picks.delete(t));
     return paths.map((p) => ({ fileName: baseName(p), contentBase64: this.contents.get(p) ?? btoa("{}") }));
+  }
+
+  /** A `bundle-file` token for a path the OS opened with the app. */
+  grantBundle(path: string): PickedPath {
+    const token = `pick_mock_${++this.seq}`;
+    this.picks.set(token, { path, purpose: "bundle-file" });
+    return { token, name: baseName(path), path };
   }
 
   take(token: string, purpose: PickPurpose): string {

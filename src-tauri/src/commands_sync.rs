@@ -138,7 +138,8 @@ pub fn bundle_export(
 /// Phones have no save dialog: sharing is the export (`bundle_share`).
 #[cfg(not(desktop))]
 #[tauri::command(async)]
-pub fn bundle_export(_sync: S<'_>, _selection: LinkSelection) -> ApiResult<BundleExport> {
+pub fn bundle_export(_sync: S<'_>, selection: LinkSelection) -> ApiResult<BundleExport> {
+    drop(selection);
     Err(ApiError::invalid("Use Share as a file on this device."))
 }
 

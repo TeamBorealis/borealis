@@ -11,9 +11,13 @@
  */
 import type {
   AbilityKey,
+  BundleExport,
+  BundlePreview,
+  BundleShare,
   LinkDevice,
   LinkSelection,
   LinkStatus,
+  LinkSummary,
   AbilityMethod,
   AiEvent,
   AiHostStatus,
@@ -363,6 +367,20 @@ export interface ApiMethods {
   /** Remove a device: its key is refused from now on. Returns the remaining list. */
   linkForgetDevice(args: { deviceId: string }): Promise<LinkDevice[]>;
 
+  /* Bundles as files (Stage 0, no network): the same `borealis-bundle/1` a device transfer sends. */
+  /** Desktop: build a bundle of `selection` and save it where the native save dialog says; `path` is null when cancelled. */
+  bundleExport(args: { selection: LinkSelection }): Promise<BundleExport>;
+  /** Phones: build a bundle and open the system share sheet (Android from the backend; elsewhere `dataBase64` is for the web view's share sheet). */
+  bundleShare(args: { selection: LinkSelection }): Promise<BundleShare>;
+  /** Preview a `.borealis` file (a `bundle-file` token from `pickPath`, a drop or `takeOpenedBundles`). Throws a plain message for a damaged, oversize or foreign file; nothing is written. */
+  bundleOpen(args: { token: string }): Promise<BundlePreview>;
+  /** Apply a previewed bundle through the same validated path as a device transfer (newest edit wins; replaced copies go to the sync trash for 30 days). */
+  bundleAccept(args: { bundleId: string }): Promise<LinkSummary>;
+  /** Close a previewed bundle without applying it. */
+  bundleDiscard(args: { bundleId: string }): Promise<void>;
+  /** `.borealis` files the OS opened with the app, as `bundle-file` tokens. Call after `takeOpenedFiles`. */
+  takeOpenedBundles(): Promise<PickedPath[]>;
+
   /* First-run AI setup (desktop). Install output streams on `aisetup:event`. */
   aiSetupStatus(): Promise<AiSetupStatus>;
   /** Step 1 of an install: the UI calls this only after the user accepts the consent dialog. */
@@ -541,6 +559,12 @@ export const COMMANDS = {
   linkCancel: "link_cancel",
   linkDevices: "link_devices",
   linkForgetDevice: "link_forget_device",
+  bundleExport: "bundle_export",
+  bundleShare: "bundle_share",
+  bundleOpen: "bundle_open",
+  bundleAccept: "bundle_accept",
+  bundleDiscard: "bundle_discard",
+  takeOpenedBundles: "take_opened_bundles",
   aiSetupStatus: "ai_setup_status",
   aiSetupConfirmInstall: "ai_setup_confirm_install",
   aiSetupInstall: "ai_setup_install",

@@ -246,6 +246,55 @@
     "name": "CharacterSnapshot"
    }
   },
+  "bundle_accept": {
+   "args": {
+    "bundleId": false
+   },
+   "method": "bundleAccept",
+   "response": {
+    "k": "ref",
+    "name": "LinkSummary"
+   }
+  },
+  "bundle_discard": {
+   "args": {
+    "bundleId": false
+   },
+   "method": "bundleDiscard",
+   "response": {
+    "k": "nil"
+   }
+  },
+  "bundle_export": {
+   "args": {
+    "selection": false
+   },
+   "method": "bundleExport",
+   "response": {
+    "k": "ref",
+    "name": "BundleExport"
+   }
+  },
+  "bundle_open": {
+   "args": {
+    "token": false
+   },
+   "method": "bundleOpen",
+   "response": {
+    "k": "ref",
+    "name": "BundlePreview"
+   }
+  },
+  "bundle_share": {
+   "args": {
+    "selection": false
+   },
+   "method": "bundleShare",
+   "response": {
+    "k": "ref",
+    "name": "BundleShare"
+   }
+  },
   "cancel_import_preview": {
    "args": {
     "previewId": false
@@ -1552,6 +1601,17 @@
     "name": "CharacterSnapshot"
    }
   },
+  "take_opened_bundles": {
+   "args": {},
+   "method": "takeOpenedBundles",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "PickedPath"
+    }
+   }
+  },
   "take_opened_files": {
    "args": {},
    "method": "takeOpenedFiles",
@@ -2809,6 +2869,112 @@
      }
     },
     "text": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "BundleExport": {
+   "k": "object",
+   "props": {
+    "bytes": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "characters": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "fileName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "packs": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "path": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "BundlePreview": {
+   "k": "object",
+   "props": {
+    "bundleId": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "fileName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "preview": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "LinkPreview"
+     }
+    },
+    "sourceDevice": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "BundleShare": {
+   "k": "object",
+   "props": {
+    "bytes": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "characters": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "dataBase64": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "fileName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "packs": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "shared": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -4811,6 +4977,16 @@
   "FileDrop": {
    "k": "object",
    "props": {
+    "bundles": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "DroppedFile"
+      }
+     }
+    },
     "files": {
      "opt": false,
      "t": {

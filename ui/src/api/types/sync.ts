@@ -92,3 +92,35 @@ export interface LinkDevice {
   /** The pairing lapses 180 days after the last transfer; re-pair by QR or code. */
   expiresAt: number;
 }
+
+/* ---------- Bundles as files (Export to bundle / Open bundle / Share as a file, A2) ---------- */
+
+/** A `.borealis` file opened for preview: the same rows a device transfer shows. Nothing is written until `bundleAccept`. */
+export interface BundlePreview {
+  /** Pass to `bundleAccept` / `bundleDiscard`. */
+  bundleId: string;
+  /** The file's name (never a path). */
+  fileName: string;
+  /** The device that made the bundle (display only). */
+  sourceDevice: string;
+  preview: LinkPreview;
+}
+
+/** `bundleExport` result (desktop). `path` is null when the user cancelled the save dialog. */
+export interface BundleExport {
+  fileName: string;
+  path: string | null;
+  characters: number;
+  packs: number;
+  bytes: number;
+}
+
+/** `bundleShare` result (phones). Android opens the system share sheet itself (`shared`); elsewhere `dataBase64` is for the web view's share sheet. */
+export interface BundleShare {
+  fileName: string;
+  characters: number;
+  packs: number;
+  bytes: number;
+  shared: boolean;
+  dataBase64: string | null;
+}
