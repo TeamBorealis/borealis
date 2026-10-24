@@ -40,7 +40,7 @@ pub use code::{TypedCode, TypedCodeError};
 pub use error::{LinkError, StoreError};
 pub use fingerprint::{CertFingerprint, DeviceId};
 pub use fs::write_private_file;
-pub use link_uri::{LinkMode, LinkSecret, LinkUri, LinkUriError, LINK_URI_PREFIX};
+pub use link_uri::{is_local_ip, LinkMode, LinkSecret, LinkUri, LinkUriError, LINK_URI_PREFIX};
 pub use pairing::{PairingUri, PairingUriError, PAIRING_CODE_LEN, PAIRING_URI_PREFIX};
 pub use registry::{DeviceRegistry, PairedDevice, Platform};
 pub use store::{MemoryStore, Secret, SecretName, SecureStore, StoreBackend};

@@ -7,7 +7,7 @@
 //! once, no unknown keys, bounded length, no control characters in the name.
 
 use std::fmt;
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
@@ -134,9 +134,30 @@ fn valid_name(name: &str) -> bool {
         && name.trim() == name
 }
 
+/// Why a payload with an address outside the local network is refused (SY1 "same network only").
+pub const NOT_LOCAL: &str = "the address is not on the same network";
+
+/// True for an address on the local network (SY1 / SY8): IPv4 private ranges (10/8, 172.16/12,
+/// 192.168/16), link-local 169.254/16, loopback 127/8, and IPv6 link-local fe80::/10, unique-local
+/// fc00::/7 and `::1`. IPv4-mapped IPv6 is judged as its IPv4 address. Everything else (public
+/// internet addresses, CGNAT, multicast, unspecified) is refused: a QR or typed address must never
+/// make Borealis connect beyond the user's own network.
+#[must_use]
+pub fn is_local_ip(ip: IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(v4) => v4.is_private() || v4.is_link_local() || v4.is_loopback(),
+        IpAddr::V6(v6) => {
+            if let Some(v4) = v6.to_ipv4_mapped() {
+                return is_local_ip(IpAddr::V4(v4));
+            }
+            let first = v6.segments()[0];
+            v6.is_loopback() || (first & 0xffc0) == 0xfe80 || (first & 0xfe00) == 0xfc00
+        }
+    }
+}
+
 fn valid_addr(addr: &SocketAddr) -> bool {
-    let ip = addr.ip();
-    addr.port() != 0 && !ip.is_unspecified() && !ip.is_multicast()
+    addr.port() != 0 && is_local_ip(addr.ip())
 }
 
 impl FromStr for LinkUri {
@@ -163,10 +184,15 @@ impl FromStr for LinkUri {
             }
         }
         let [h, fp, c, n, m] = slots;
+        // An IP literal only: no host names, so nothing is resolved and nothing can point the
+        // scanner beyond the local network.
         let addr = h
             .and_then(|v| v.parse::<SocketAddr>().ok())
-            .filter(valid_addr)
+            .filter(|a| a.port() != 0 && !a.ip().is_unspecified() && !a.ip().is_multicast())
             .ok_or(LinkUriError("missing or bad host address"))?;
+        if !valid_addr(&addr) {
+            return Err(LinkUriError(NOT_LOCAL));
+        }
         let fingerprint = fp
             .filter(|v| v.len() == 43)
             .and_then(CertFingerprint::from_base64url)
@@ -270,6 +296,56 @@ mod tests {
         let uri = sample();
         let dbg = format!("{uri:?}");
         assert!(!dbg.contains(&uri.secret.to_base64url()));
+    }
+
+    #[test]
+    fn only_same_network_addresses_are_accepted() {
+        for ok in [
+            "10.0.0.5:4000",
+            "172.16.0.1:4000",
+            "172.31.255.254:4000",
+            "192.168.1.20:4000",
+            "169.254.10.1:4000",
+            "127.0.0.1:4000",
+            "[fe80::1]:4000",
+            "[fd12:3456::1]:4000",
+            "[fc00::1]:4000",
+            "[::1]:4000",
+            "[::ffff:192.168.1.9]:4000",
+        ] {
+            let a: SocketAddr = ok.parse().unwrap();
+            assert!(is_local_ip(a.ip()), "{ok}");
+            let uri = LinkUri {
+                addr: a,
+                ..sample()
+            };
+            assert_eq!(uri.to_string().parse::<LinkUri>(), Ok(uri), "{ok}");
+        }
+        for far in [
+            "8.8.8.8:4000",
+            "1.2.3.4:4000",
+            "172.32.0.1:4000",
+            "100.64.0.1:4000",
+            "192.0.2.1:4000",
+            "[2001:db8::1]:4000",
+            "[2606:4700::1111]:4000",
+            "[::ffff:8.8.8.8]:4000",
+        ] {
+            let a: SocketAddr = far.parse().unwrap();
+            assert!(!is_local_ip(a.ip()), "{far}");
+            let uri = LinkUri {
+                addr: a,
+                ..sample()
+            };
+            assert_eq!(
+                uri.to_string().parse::<LinkUri>(),
+                Err(LinkUriError(NOT_LOCAL)),
+                "{far}"
+            );
+        }
+        // Host names are never resolved: only IP literals are accepted.
+        let named = sample().to_string().replace("192.168.1.20", "router.local");
+        assert!(named.parse::<LinkUri>().is_err());
     }
 
     #[test]

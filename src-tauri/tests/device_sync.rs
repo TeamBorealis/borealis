@@ -38,6 +38,10 @@ struct Dev {
 }
 
 fn dev(name: &str) -> Dev {
+    dev_on(name, IpAddr::V4(Ipv4Addr::LOCALHOST))
+}
+
+fn dev_on(name: &str, bind_ip: IpAddr) -> Dev {
     let data = tempfile::tempdir().unwrap();
     let paths = AppPaths {
         content_root: PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../content"),
@@ -47,7 +51,7 @@ fn dev(name: &str) -> Dev {
     let store = Arc::new(MemoryStore::default());
     let s = Arc::clone(&store);
     let config = SyncConfig {
-        bind_ip: Some(IpAddr::V4(Ipv4Addr::LOCALHOST)),
+        bind_ip: Some(bind_ip),
         device_name: name.into(),
         discovery: false,
     };
@@ -297,6 +301,56 @@ async fn an_accept_before_the_preview_is_refused_and_approves_nothing() {
     assert_eq!(still.phase, LinkPhase::Preview, "nothing was applied");
     assert!(pc.sync.decide(&shown.session_id, false).is_ok());
     wait(&pc, &shown.session_id, LinkPhase::Declined).await;
+}
+
+/// Z / SY1 "same network only": a QR, a typed address or this device's own window address
+/// outside the local network is refused with a plain message before anything connects.
+#[tokio::test(flavor = "multi_thread")]
+async fn addresses_outside_the_local_network_are_refused() {
+    const MSG: &str = "Borealis only connects to devices on the same network.";
+    let (pc, phone) = (dev("PC"), dev("Phone"));
+    put_character(&phone, "Tam");
+    let shown = pc.sync.start_receive().await.unwrap();
+    let qr = shown.qr_payload.clone().unwrap();
+    assert!(qr.contains("h=127.0.0.1:"), "{qr}");
+    for far in ["8.8.8.8", "100.64.0.1", "[2001:db8::1]"] {
+        let evil = qr.replacen("127.0.0.1", far, 1);
+        let err = phone
+            .sync
+            .connect(&evil, None, Some(selection()))
+            .await
+            .unwrap_err();
+        assert_eq!(err.message, MSG, "{far}");
+    }
+    let code = shown.code.clone().unwrap();
+    for far in [
+        "8.8.8.8:41234",
+        "[2606:4700::1111]:41234",
+        "[::ffff:1.1.1.1]:5",
+    ] {
+        let err = phone
+            .sync
+            .connect(&code, Some(far), Some(selection()))
+            .await
+            .unwrap_err();
+        assert_eq!(err.message, MSG, "{far}");
+    }
+    let err = phone
+        .sync
+        .connect(&code, Some("router.example:41234"), Some(selection()))
+        .await
+        .unwrap_err();
+    assert!(
+        err.message.contains("Enter the address as shown"),
+        "{}",
+        err.message
+    );
+    pc.sync.cancel(&shown.session_id).unwrap();
+    wait(&pc, &shown.session_id, LinkPhase::Cancelled).await;
+
+    let public = dev_on("Public PC", IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)));
+    let err = public.sync.start_receive().await.unwrap_err();
+    assert_eq!(err.message, MSG);
 }
 
 #[tokio::test(flavor = "multi_thread")]

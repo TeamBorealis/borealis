@@ -30,6 +30,9 @@ use crate::sync_dto::{LinkPhase, LinkPreview, LinkPreviewItem, LinkStatus, LinkS
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 const DISCOVERY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(4);
 
+/// What the user sees when an address is outside the local network (SY1 "same network only").
+pub(crate) const SAME_NETWORK_ONLY: &str = "Borealis only connects to devices on the same network.";
+
 /// A running mDNS advertisement (withdrawn when dropped).
 type Advert = Box<dyn Send>;
 
@@ -54,9 +57,13 @@ pub(crate) fn is_final(phase: LinkPhase) -> bool {
 pub(crate) fn parse_target(target: &str, host: Option<&str>, sending: bool) -> ApiResult<Target> {
     let target = target.trim();
     if target.starts_with(borealis_link::LINK_URI_PREFIX) {
-        let uri: LinkUri = target
-            .parse()
-            .map_err(|e: borealis_link::LinkUriError| ApiError::invalid(e.to_string()))?;
+        let uri: LinkUri = target.parse().map_err(|e: borealis_link::LinkUriError| {
+            if e.0 == borealis_link::link_uri::NOT_LOCAL {
+                ApiError::invalid(SAME_NETWORK_ONLY)
+            } else {
+                ApiError::invalid(e.to_string())
+            }
+        })?;
         // The QR says what the *showing* device does; this device must do the opposite.
         let wants = if sending {
             LinkMode::Receive
@@ -76,6 +83,7 @@ pub(crate) fn parse_target(target: &str, host: Option<&str>, sending: bool) -> A
     let code: TypedCode = target.parse().map_err(|_| {
         ApiError::invalid("That code is not valid. It looks like 42-ember-lantern.")
     })?;
+    // An IP literal only (host names are never resolved), and only on the local network.
     let addr = host
         .map(str::trim)
         .filter(|h| !h.is_empty())
@@ -85,6 +93,9 @@ pub(crate) fn parse_target(target: &str, host: Option<&str>, sending: bool) -> A
             })
         })
         .transpose()?;
+    if addr.is_some_and(|a| !borealis_link::is_local_ip(a.ip())) {
+        return Err(ApiError::invalid(SAME_NETWORK_ONLY));
+    }
     Ok(Target::Code(code, addr))
 }
 
@@ -105,9 +116,15 @@ fn transport(sync: &DeviceSync) -> ApiResult<(TcpTransport, borealis_link::CertF
 }
 
 fn bind_ip(sync: &DeviceSync) -> ApiResult<IpAddr> {
-    sync.config.bind_ip.or_else(detect_lan_ip).ok_or_else(|| {
+    let ip = sync.config.bind_ip.or_else(detect_lan_ip).ok_or_else(|| {
         ApiError::invalid("No network found. Connect both devices to the same Wi-Fi.")
-    })
+    })?;
+    // A window on a public address could be reached from outside the user's network, and the
+    // other device would refuse its QR anyway.
+    if !borealis_link::is_local_ip(ip) {
+        return Err(ApiError::invalid(SAME_NETWORK_ONLY));
+    }
+    Ok(ip)
 }
 
 fn new_ctl(
@@ -321,7 +338,9 @@ async fn resolve(
         .await
         .ok()
         .and_then(Result::ok)
-        .flatten();
+        .flatten()
+        // An advert is never trusted: a squatter must not steer the dialer off the network.
+        .filter(|a: &SocketAddr| borealis_link::is_local_ip(a.ip()));
         return found.ok_or_else(not_found);
     }
     let _ = (sync, code);
