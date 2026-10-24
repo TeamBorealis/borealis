@@ -76,6 +76,8 @@ pub(crate) struct HtmlOptions {
     pub lang: String,
     /// Portrait image, when the character has one.
     pub portrait: Option<PortraitImage>,
+    /// Companion portrait image, when the companion has one.
+    pub companion_portrait: Option<PortraitImage>,
     /// Card pages (at most nine cards each), shown after the sheet pages.
     pub cards: Vec<Vec<Card>>,
 }
@@ -93,6 +95,7 @@ impl Default for HtmlOptions {
             pages: PageSelection::default(),
             lang: "en".into(),
             portrait: None,
+            companion_portrait: None,
             cards: Vec::new(),
         }
     }
@@ -309,7 +312,7 @@ fn page_specs(d: &SheetData, o: &HtmlOptions) -> Vec<PageSpec> {
             .extras
             .companion
             .as_ref()
-            .map_or_else(String::new, |c| c.title());
+            .map_or_else(|| "Companion".to_string(), |c| c.title());
         v.push(spec("companion", "Companion", &title, body));
     }
     for (i, page) in o.cards.iter().enumerate() {

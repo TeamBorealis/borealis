@@ -67,6 +67,7 @@ pub(crate) use legacy_plan::{
 pub(crate) use p1_band::{Band, BandRefs};
 pub(crate) use page_cards::build as build_cards;
 pub(crate) use page_companion::build as build_companion;
+pub(crate) use page_companion::has_page as has_companion_page;
 pub(crate) use page_companion::ABILITIES as COMPANION_ABILITIES;
 pub(crate) use page_core::{band as page_one_band, build as build_page_one, PageRefs};
 pub(crate) use page_features::features_tables::prose_segments;

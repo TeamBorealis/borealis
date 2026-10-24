@@ -107,11 +107,31 @@ pub(super) fn details_2014(d: &SheetData, o: &HtmlOptions) -> String {
     )
 }
 
+/// The companion portrait box (empty frame when the picture is missing or not allow-listed).
+fn companion_portrait(o: &HtmlOptions) -> String {
+    match &o.companion_portrait {
+        Some(p) if p.is_valid() => format!(
+            "<img class=\"portrait companion-portrait\" alt=\"Companion portrait\" src=\"data:{};base64,{}\">",
+            esc(&p.mime),
+            esc(&p.base64)
+        ),
+        _ => "<div class=\"portrait companion-portrait empty\"></div>".into(),
+    }
+}
+
 /// Companion page: the stat block regions in two columns (statistics and skills left, the
-/// creature's traits, actions and reactions right). `None` without a stat block.
+/// creature's traits, actions and reactions right), the portrait box on top of the left column.
+/// A portrait alone prints just the box. `None` with neither.
 pub(super) fn companion_page(d: &SheetData, o: &HtmlOptions) -> Option<String> {
-    let c = d.extras.companion.as_ref()?;
-    let (mut left, mut right) = (String::new(), String::new());
+    let portrait = if d.extras.has_companion_portrait {
+        companion_portrait(o)
+    } else {
+        String::new()
+    };
+    let Some(c) = d.extras.companion.as_ref() else {
+        return d.extras.has_companion_portrait.then_some(portrait);
+    };
+    let (mut left, mut right) = (portrait, String::new());
     for (i, title, text) in c.regions_for(false) {
         let col = if matches!(i, "companion.stats" | "companion.skills") {
             &mut left
@@ -139,7 +159,8 @@ fn score_cards(scores: &[i32; 6], o: &HtmlOptions) -> String {
             ),
             (&format!("companion.{key}.score"), &score.to_string()),
         ));
-        out.push_str("</div>");
+        // `card_top` opens the card and its top row.
+        out.push_str("</div></div>");
     }
     out
 }

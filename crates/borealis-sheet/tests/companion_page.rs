@@ -126,3 +126,186 @@ fn html_preview_has_a_companion_page() {
     let none = render_html_with(&c, &s, &SheetOptions::default(), &content(None)).expect("html");
     assert!(!none.contains("companion.stats"));
 }
+
+const B64_TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+fn base64_encode(data: &[u8]) -> String {
+    let mut out = String::new();
+    for ch in data.chunks(3) {
+        let n = ch
+            .iter()
+            .enumerate()
+            .fold(0u32, |a, (i, b)| a | (u32::from(*b) << (16 - 8 * i)));
+        for i in 0..4 {
+            if i <= ch.len() {
+                out.push(char::from(B64_TABLE[((n >> (18 - 6 * i)) & 63) as usize]));
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
+}
+
+/// A 40x50 PNG, generated here.
+fn synthetic_png() -> Vec<u8> {
+    let (w, h) = (40u32, 50u32);
+    let mut out = Vec::new();
+    let mut enc = png::Encoder::new(&mut out, w, h);
+    enc.set_color(png::ColorType::Rgb);
+    enc.set_depth(png::BitDepth::Eight);
+    let mut writer = enc.write_header().unwrap();
+    let px: Vec<u8> = (0..w * h)
+        .flat_map(|i| [u8::try_from(i % 251).unwrap(), 90, 160])
+        .collect();
+    writer.write_image_data(&px).unwrap();
+    drop(writer);
+    out
+}
+
+fn with_portrait(companion: Option<CompanionSheet>, bytes: &[u8]) -> SheetContent {
+    SheetContent {
+        companion,
+        companion_portrait: Some(borealis_character::Portrait {
+            file_name: "companion.png".into(),
+            data_base64: base64_encode(bytes),
+        }),
+        ..SheetContent::default()
+    }
+}
+
+/// Pages (1-based) whose content draws an image XObject, and the page count.
+fn image_pages(pdf: &[u8]) -> (Vec<u32>, usize) {
+    use lopdf::Object;
+    let doc = Document::load_mem(pdf).expect("parses");
+    let pages = doc.get_pages();
+    let is_image = |id: lopdf::ObjectId| {
+        doc.get_object(id)
+            .and_then(Object::as_stream)
+            .is_ok_and(|s| {
+                s.dict
+                    .get(b"Subtype")
+                    .and_then(Object::as_name)
+                    .is_ok_and(|n| n == b"Image")
+            })
+    };
+    let mut drawing = Vec::new();
+    for (n, id) in &pages {
+        let (res, _) = doc.get_page_resources(*id).expect("resources");
+        let names: Vec<String> = res
+            .and_then(|r| r.get(b"XObject").ok())
+            .and_then(|x| match x {
+                Object::Dictionary(d) => Some(d),
+                Object::Reference(r) => doc.get_dictionary(*r).ok(),
+                _ => None,
+            })
+            .map(|d| {
+                d.iter()
+                    .filter(|(_, v)| v.as_reference().is_ok_and(is_image))
+                    .map(|(k, _)| String::from_utf8_lossy(k).into_owned())
+                    .collect()
+            })
+            .unwrap_or_default();
+        let content = String::from_utf8_lossy(&doc.get_page_content(*id)).into_owned();
+        if names
+            .iter()
+            .any(|name| content.contains(&format!("/{name} Do")))
+        {
+            drawing.push(*n);
+        }
+    }
+    (drawing, pages.len())
+}
+
+#[test]
+fn companion_portrait_is_embedded_on_the_companion_page() {
+    let (c, s) = common::wizard_2024();
+    let plain = render_pdf_with(&c, &s, &flat(), &content(Some(hound(1)))).expect("pdf");
+    let content = with_portrait(Some(hound(1)), &synthetic_png());
+    let pdf = render_pdf_with(&c, &s, &flat(), &content).expect("pdf");
+    let (plain_images, plain_pages) = image_pages(&plain);
+    let (images, pages) = image_pages(&pdf);
+    assert!(plain_images.is_empty(), "the wizard has no other image");
+    assert_eq!(pages, plain_pages, "the portrait box adds no page");
+    // The companion page is the last page of this sheet (no cards selected).
+    assert_eq!(images, vec![u32::try_from(pages).unwrap()]);
+    assert!(all_text(&pdf).contains("Synthetic Hound"));
+    if let Ok(dir) = std::env::var("BOREALIS_E2C_OUT") {
+        std::fs::write(format!("{dir}/companion-portrait.pdf"), &pdf).unwrap();
+        let html = render_html_with(&c, &s, &SheetOptions::default(), &content).expect("html");
+        std::fs::write(format!("{dir}/companion-portrait.html"), html).unwrap();
+    }
+}
+
+#[test]
+fn companion_without_portrait_embeds_nothing_and_is_unchanged() {
+    let (c, s) = common::wizard_2024();
+    let a = render_pdf_with(&c, &s, &flat(), &content(Some(hound(1)))).expect("pdf");
+    assert!(image_pages(&a).0.is_empty());
+    let html =
+        render_html_with(&c, &s, &SheetOptions::default(), &content(Some(hound(1)))).expect("html");
+    assert!(!html.contains("class=\"portrait companion-portrait"));
+    assert!(!html.contains("Companion portrait"));
+    // The only difference a portrait makes is its box: the stat-block text is the same.
+    let with = render_pdf_with(
+        &c,
+        &s,
+        &flat(),
+        &with_portrait(Some(hound(1)), &synthetic_png()),
+    )
+    .expect("pdf");
+    assert_eq!(all_text(&a), all_text(&with));
+}
+
+#[test]
+fn portrait_alone_still_prints_the_companion_page() {
+    for (label, (c, s)) in [
+        ("2014", common::wizard_2014()),
+        ("2024", common::wizard_2024()),
+    ] {
+        let without = render_pdf_with(&c, &s, &flat(), &content(None)).expect("pdf");
+        let only = with_portrait(None, &synthetic_png());
+        let pdf = render_pdf_with(&c, &s, &flat(), &only).expect("pdf");
+        let (images, pages) = image_pages(&pdf);
+        assert_eq!(pages, image_pages(&without).1 + 1, "{label}: no page");
+        assert_eq!(images, vec![u32::try_from(pages).unwrap()], "{label}");
+        let text = all_text(&pdf);
+        assert!(text.contains("Companion"), "{label}");
+        assert!(!text.contains("Statistics"), "{label}: no stat block given");
+
+        let html = render_html_with(&c, &s, &SheetOptions::default(), &only).expect("html");
+        assert!(html.contains("alt=\"Companion portrait\""), "{label}");
+        assert!(html.contains("data:image/png;base64,"), "{label}");
+    }
+}
+
+#[test]
+fn unreadable_companion_portrait_leaves_an_empty_box() {
+    let (c, s) = common::wizard_2024();
+    let junk = with_portrait(Some(hound(1)), b"not an image at all");
+    let pdf = render_pdf_with(&c, &s, &flat(), &junk).expect("pdf still renders");
+    assert!(image_pages(&pdf).0.is_empty());
+    let html = render_html_with(&c, &s, &SheetOptions::default(), &junk).expect("html");
+    assert!(!html.contains("<img class=\"portrait companion-portrait\""));
+}
+
+#[test]
+fn html_companion_portrait_sits_in_its_box_on_the_companion_page() {
+    let (c, s) = common::wizard_2024();
+    let content = with_portrait(Some(hound(1)), &synthetic_png());
+    let html = render_html_with(&c, &s, &SheetOptions::default(), &content).expect("html");
+    let page = html
+        .find("data-page=\"companion\"")
+        .expect("companion page present");
+    let img = html.find("Companion portrait").expect("portrait embedded");
+    assert!(page < img, "portrait is on the companion page");
+    assert!(!html[..page].contains("Companion portrait"));
+    // The six score cards are siblings of the grid, not nested in each other.
+    let companion = &html[page..];
+    assert_eq!(
+        companion.matches("<div class=\"ab\">").count(),
+        6,
+        "six score cards"
+    );
+    assert!(companion.contains("</div></div><div class=\"ab\">"));
+}

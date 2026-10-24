@@ -24,7 +24,7 @@ use crate::pdf::{PageOp, PdfPage};
 use crate::{
     card_model, sheet_data_for, PageSelection, SheetContent, SheetError, SheetOptions, SheetTheme,
 };
-use borealis_character::Character;
+use borealis_character::{Character, Portrait};
 use borealis_engine::CharacterSnapshot;
 
 /// Marker of one page in the HTML preview.
@@ -57,8 +57,8 @@ fn sniff_mime(bytes: &[u8]) -> Option<&'static str> {
 }
 
 /// Decoded portrait bytes with their sniffed MIME type (`None` when absent or unsupported).
-fn portrait_bytes(character: &Character) -> Option<(&'static str, Vec<u8>)> {
-    let p = character.portrait.as_ref()?;
+fn portrait_bytes(portrait: Option<&Portrait>) -> Option<(&'static str, Vec<u8>)> {
+    let p = portrait?;
     let bytes = base64::decode(&p.data_base64)?;
     let mime = sniff_mime(&bytes)?;
     Some((mime, bytes))
@@ -86,7 +86,7 @@ fn plan(data: &SheetData, sel: PageSelection) -> Plan {
         spells: sel.spellcasting,
         inventory: !is24 && sel.inventory,
         story: is24 && sel.story,
-        companion: data.extras.companion.is_some() && sel.story,
+        companion: layout::has_companion_page(data) && sel.story,
     }
 }
 
@@ -121,6 +121,7 @@ fn data_with_companion(
 ) -> SheetData {
     let mut data = sheet_data_for(character, snapshot, &content.spell_facts, options.edition);
     data.extras.companion = content.companion.clone();
+    data.extras.has_companion_portrait = content.companion_portrait.is_some();
     data
 }
 
@@ -163,7 +164,8 @@ pub(crate) fn build_pages(
     let lead = u32::from(want.page_one) + u32::from(overflow);
     let first_main = lead + 1;
     let mut features = layout::build_features(data, &lopts, &g, first_main, band.as_ref());
-    let portrait = portrait_bytes(character).and_then(|(m, b)| decode_portrait(m, b));
+    let portrait =
+        portrait_bytes(character.portrait.as_ref()).and_then(|(m, b)| decode_portrait(m, b));
     let mut main = if want.main {
         std::mem::take(&mut features.main)
     } else {
@@ -222,7 +224,16 @@ pub(crate) fn build_pages(
         pages.append(&mut story);
     }
     if want.companion {
-        pages.extend(layout::build_companion(data, &lopts, &g));
+        let built = layout::build_companion(data, &lopts, &g);
+        let image = portrait_bytes(content.companion_portrait.as_ref())
+            .and_then(|(m, b)| decode_portrait(m, b));
+        let mut companion_pages = built.pages;
+        if let (Some(img), Some(rect), Some(p)) =
+            (image, built.portrait, companion_pages.first_mut())
+        {
+            place_portrait(p, &mut images, rect, img);
+        }
+        pages.append(&mut companion_pages);
     }
     pages.extend(layout::build_cards(&card_pages, data, &lopts, &g));
     if want.page_one {
@@ -254,10 +265,14 @@ pub(crate) fn render_html(
     content: &SheetContent,
 ) -> Result<String, SheetError> {
     let data = data_with_companion(character, snapshot, options, content);
-    let portrait = portrait_bytes(character).map(|(mime, bytes)| PortraitImage {
-        mime: mime.to_string(),
-        base64: base64::encode(&bytes),
-    });
+    let to_image = |p: Option<&Portrait>| {
+        portrait_bytes(p).map(|(mime, bytes)| PortraitImage {
+            mime: mime.to_string(),
+            base64: base64::encode(&bytes),
+        })
+    };
+    let portrait = to_image(character.portrait.as_ref());
+    let companion_portrait = to_image(content.companion_portrait.as_ref());
     let opts = HtmlOptions {
         cards: card_model::pages(character, snapshot, options, content),
         ink: options.theme == SheetTheme::Ink,
@@ -270,6 +285,7 @@ pub(crate) fn render_html(
         pages: options.pages,
         lang: DEFAULT_LANG.to_string(),
         portrait,
+        companion_portrait,
     };
     let html = html_sheet::render_sheet(&data, &opts);
     if html.contains(HTML_PAGE_MARKER) {

@@ -89,9 +89,11 @@ fn sheet_content(
     store: &borealis_content::ContentStore,
     snap: &CharacterSnapshot,
     companion: Option<borealis_sheet::CompanionSheet>,
+    companion_portrait: Option<borealis_character::Portrait>,
 ) -> SheetContent {
     let mut out = SheetContent {
         companion,
+        companion_portrait,
         ..SheetContent::default()
     };
     let mut seen = HashSet::new();
@@ -131,6 +133,12 @@ fn companion_sheet(
         warnings: &[],
     };
     crate::companion::companion(&input, snap).and_then(|c| crate::companion::sheet_block(&c))
+}
+
+/// The companion's portrait picture; a stored picture that no longer validates is left out.
+fn companion_portrait(session: &crate::state::Session) -> Option<borealis_character::Portrait> {
+    let url = crate::extras::ui_extras(&session.character).companion_portrait?;
+    crate::extras::portrait_from_data_url(&url).ok()
 }
 
 const PAGE_MARKER: &str = "<section class=\"page ";
@@ -182,7 +190,12 @@ impl AppState {
         let settings = self.settings()?.sheet;
         self.read(id, |ctx, s| {
             let snap = ctx.hub.engine.derive(&s.character.build);
-            let content = sheet_content(&ctx.hub.store, &snap, companion_sheet(ctx, id, s, &snap));
+            let content = sheet_content(
+                &ctx.hub.store,
+                &snap,
+                companion_sheet(ctx, id, s, &snap),
+                companion_portrait(s),
+            );
             let html = render_html_with(&s.character, &snap, &sheet_options(&settings), &content)
                 .map_err(|e| sheet_error(&e))?;
             Ok(SheetPreview {
@@ -202,7 +215,12 @@ impl AppState {
         let settings = self.settings()?.sheet;
         self.read(id, |ctx, s| {
             let snap = ctx.hub.engine.derive(&s.character.build);
-            let content = sheet_content(&ctx.hub.store, &snap, companion_sheet(ctx, id, s, &snap));
+            let content = sheet_content(
+                &ctx.hub.store,
+                &snap,
+                companion_sheet(ctx, id, s, &snap),
+                companion_portrait(s),
+            );
             let render_options = sheet_options(&settings);
             let stem = file_stem(&s.character.meta.name);
             if html {

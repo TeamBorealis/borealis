@@ -1,10 +1,13 @@
 //! Companion page (S6): the companion creature's stat block, poured into the same two ruled
-//! columns as the Story page. Printed only when the app supplied a stat block
-//! (`SheetData::extras.companion`).
+//! columns as the Story page. Printed when the app supplied a stat block
+//! (`SheetData::extras.companion`) or a portrait (`has_companion_portrait`); a portrait alone
+//! prints the page with just the portrait box.
 
 use crate::layout::abilities::{header_with_ids, CardIds, HEADER_CARD_H};
-use crate::layout::grid::{Canvas, Grid};
-use crate::layout::page_features::features_flow::{fill, Cx, Piece, Region};
+use crate::layout::grid::{Canvas, Grid, Rect};
+use crate::layout::page_features::features_flow::{
+    fill, Cx, Piece, Region, PORTRAIT_H, PORTRAIT_W,
+};
 use crate::layout::page_features::features_pages::{columns, new_canvas, Env, Seq};
 use crate::layout::LayoutOptions;
 use crate::model_types::{AbilityData, SheetData};
@@ -90,23 +93,59 @@ fn score_boxes(c: &mut Canvas, env: &Env, scores: [i32; 6], top: f32) -> f32 {
     y - BOX_GAP + BOXES_BELOW
 }
 
-/// Build the Companion page (and its continuation pages). Empty without a stat block.
-pub(crate) fn build(data: &SheetData, opts: &LayoutOptions, grid: &Grid) -> Vec<PdfPage> {
-    let Some(companion) = &data.extras.companion else {
-        return Vec::new();
-    };
+/// The Companion pages and where the portrait picture goes on the first one.
+pub(crate) struct Built {
+    /// The pages (empty without a stat block or portrait).
+    pub pages: Vec<PdfPage>,
+    /// The portrait box on the first page, when a portrait was supplied.
+    pub portrait: Option<Rect>,
+}
+
+/// Whether the Companion page is printed: a stat block or a portrait is present.
+pub(crate) fn has_page(data: &SheetData) -> bool {
+    data.extras.companion.is_some() || data.extras.has_companion_portrait
+}
+
+/// Draw the empty portrait frame (the picture is placed over it) at `(x, y)`.
+fn portrait_box(c: &mut Canvas, (x, y): (f32, f32)) -> Rect {
+    let rect = (x, y, PORTRAIT_W, PORTRAIT_H);
+    c.artifact(|c| c.card(rect, 3.0, None));
+    rect
+}
+
+/// Build the Companion page (and its continuation pages).
+pub(crate) fn build(data: &SheetData, opts: &LayoutOptions, grid: &Grid) -> Built {
+    if !has_page(data) {
+        return Built {
+            pages: Vec::new(),
+            portrait: None,
+        };
+    }
     let env = Env {
         d: data,
         o: opts,
         g: grid,
     };
-    let title = companion.title();
+    let title = data
+        .extras
+        .companion
+        .as_ref()
+        .map_or_else(|| "Companion".to_string(), |c| c.title());
     let continued = format!("{title} (continued)");
     let mut seq = Seq::default();
     let (mut left, mut right) = queues(data);
     let (mut c, top) = new_canvas(&env, Some(&title));
     let [a, b] = columns(grid);
-    let top = score_boxes(&mut c, &env, companion.abilities, top);
+    let top = match &data.extras.companion {
+        Some(companion) => score_boxes(&mut c, &env, companion.abilities, top),
+        None => top,
+    };
+    let mut left_top = top;
+    let portrait = data.extras.has_companion_portrait.then(|| {
+        let rect = portrait_box(&mut c, (a.0, top));
+        left_top = top + PORTRAIT_H + BOXES_BELOW;
+        rect
+    });
     {
         let mut cx = Cx {
             c: &mut c,
@@ -117,10 +156,13 @@ pub(crate) fn build(data: &SheetData, opts: &LayoutOptions, grid: &Grid) -> Vec<
             refs: &mut seq.refs,
             landed: &mut seq.landed,
         };
-        fill(&mut cx, &mut left, (a.0, top, a.1), grid.body_bottom);
+        fill(&mut cx, &mut left, (a.0, left_top, a.1), grid.body_bottom);
         fill(&mut cx, &mut right, (b.0, top, b.1), grid.body_bottom);
     }
     seq.push(c);
     seq.flow_pages(&env, 1, (&continued, &continued), left, right);
-    seq.pages
+    Built {
+        pages: seq.pages,
+        portrait,
+    }
 }

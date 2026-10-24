@@ -117,6 +117,7 @@ tr.lvhead td{background:var(--field);font-weight:700;font-size:6.3pt;letter-spac
 .story .f{min-height:16pt;font-weight:700}
 .portrait{width:100%;max-height:170pt;object-fit:contain;border:.7pt solid var(--rule);border-radius:3pt;display:block}
 .portrait.empty{height:120pt;display:grid;place-items:center;color:var(--ink-3);font-size:6pt}
+.portrait.companion-portrait{width:84pt;height:108pt;max-height:none}
 .txtbox{white-space:pre-wrap;min-height:30pt}
 .cards{flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:6pt;min-height:0}
 .card{border:.8pt solid var(--rule);border-radius:4pt;padding:5pt;display:flex;flex-direction:column;overflow:hidden;min-height:0}

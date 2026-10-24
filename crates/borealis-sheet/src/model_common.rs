@@ -645,6 +645,7 @@ fn extras(character: &Character, snap: &CharacterSnapshot) -> ExtrasData {
         advantages: snap.advantages.iter().map(|a| a.text.clone()).collect(),
         companion_name: character.details.companion_name.trim().into(),
         companion: None,
+        has_companion_portrait: false,
         has_wild_shape: snap.wild_shape.is_some(),
     }
 }

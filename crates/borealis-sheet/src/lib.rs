@@ -218,6 +218,10 @@ pub struct SheetContent {
     pub spell_facts: model_types::SpellFactsMap,
     /// The companion creature's stat block (printed as its own page when set).
     pub companion: Option<CompanionSheet>,
+    /// The companion's portrait picture. Printed in the companion page's portrait box; with no
+    /// stat block the page prints with the portrait alone. Same formats and failure behaviour as
+    /// the character portrait (an unreadable picture leaves the box empty).
+    pub companion_portrait: Option<borealis_character::Portrait>,
 }
 
 /// Rendering failures.

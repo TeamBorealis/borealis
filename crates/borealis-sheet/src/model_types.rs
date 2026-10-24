@@ -661,6 +661,8 @@ pub struct ExtrasData {
     pub companion_name: String,
     /// The companion's stat block, when the app supplied one (`SheetContent::companion`).
     pub companion: Option<crate::CompanionSheet>,
+    /// A companion portrait was supplied (`SheetContent::companion_portrait`).
+    pub has_companion_portrait: bool,
     /// The character has Wild Shape.
     pub has_wild_shape: bool,
 }
