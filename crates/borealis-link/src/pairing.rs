@@ -1,77 +1,31 @@
-//! Pairing string (shown as text and QR on the desktop) and the pinned certificate fingerprint.
+//! Pairing string (shown as text and QR on the desktop) and pairing-code generation.
 //!
 //! Format: `borealis-pair:v2?h=<ip:port>&c=<8 digits>&fp=<base64url SHA-256 of the cert DER>`.
 
 use std::fmt;
 use std::net::SocketAddr;
 
-use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use base64::Engine as _;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use sha2::{Digest, Sha256};
+use crate::error::LinkError;
+use crate::fingerprint::CertFingerprint;
+use crate::random::random_bytes;
 
 /// URI prefix of a v2 pairing string.
 pub const PAIRING_URI_PREFIX: &str = "borealis-pair:v2?";
 /// Number of digits in a pairing code.
 pub const PAIRING_CODE_LEN: usize = 8;
+const PAIRING_CODE_SPACE: u32 = 100_000_000; // 10^PAIRING_CODE_LEN
 
-/// SHA-256 of the host's DER certificate. Serialized as unpadded base64url.
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct CertFingerprint(pub [u8; 32]);
-
-impl CertFingerprint {
-    /// Fingerprint of a DER-encoded certificate.
-    pub fn of_der(der: &[u8]) -> Self {
-        Self(Sha256::digest(der).into())
-    }
-
-    /// Unpadded base64url (43 chars).
-    pub fn to_base64url(&self) -> String {
-        URL_SAFE_NO_PAD.encode(self.0)
-    }
-
-    /// Parse unpadded base64url; must decode to exactly 32 bytes.
-    pub fn from_base64url(s: &str) -> Option<Self> {
-        let bytes = URL_SAFE_NO_PAD.decode(s.trim()).ok()?;
-        Some(Self(bytes.try_into().ok()?))
-    }
-
-    /// Short human-comparable form (first 8 bytes, hex, grouped): `ab12 cd34 ...`.
-    pub fn short_hex(&self) -> String {
-        self.0[..8]
-            .chunks(2)
-            .map(|c| format!("{:02x}{:02x}", c[0], c[1]))
-            .collect::<Vec<_>>()
-            .join(" ")
-    }
-
-    /// Constant-time equality.
-    pub fn ct_eq(&self, other: &Self) -> bool {
-        self.0
-            .iter()
-            .zip(other.0.iter())
-            .fold(0u8, |acc, (a, b)| acc | (a ^ b))
-            == 0
-    }
-}
-
-impl fmt::Debug for CertFingerprint {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "CertFingerprint({})", self.to_base64url())
-    }
-}
-
-impl Serialize for CertFingerprint {
-    fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-        s.serialize_str(&self.to_base64url())
-    }
-}
-
-impl<'de> Deserialize<'de> for CertFingerprint {
-    fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
-        let s = String::deserialize(d)?;
-        Self::from_base64url(&s)
-            .ok_or_else(|| serde::de::Error::custom("fingerprint must be 32 bytes base64url"))
+/// Uniform eight-digit pairing code from the OS CSPRNG (rejection sampling, no modulo bias).
+///
+/// # Errors
+/// [`LinkError::Random`] when the OS has no secure randomness.
+pub fn random_pairing_code() -> Result<String, LinkError> {
+    let limit = u32::MAX - (u32::MAX % PAIRING_CODE_SPACE);
+    loop {
+        let n = u32::from_le_bytes(random_bytes::<4>()?);
+        if n < limit {
+            return Ok(format!("{:08}", n % PAIRING_CODE_SPACE));
+        }
     }
 }
 
@@ -178,12 +132,11 @@ mod tests {
     }
 
     #[test]
-    fn fingerprint_serde_and_ct_eq() {
-        let a = CertFingerprint::of_der(b"x");
-        let json = serde_json::to_string(&a).unwrap();
-        let back: CertFingerprint = serde_json::from_str(&json).unwrap();
-        assert!(a.ct_eq(&back));
-        assert!(!a.ct_eq(&CertFingerprint::of_der(b"y")));
-        assert_eq!(a.short_hex().len(), 19);
+    fn codes_are_eight_uniform_digits() {
+        for _ in 0..200 {
+            let c = random_pairing_code().unwrap();
+            assert_eq!(c.len(), PAIRING_CODE_LEN);
+            assert!(c.bytes().all(|b| b.is_ascii_digit()));
+        }
     }
 }

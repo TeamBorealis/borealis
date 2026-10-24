@@ -4,8 +4,6 @@
 //! pairing string (`borealis-pair:v2?...`). Store [`PairedHost`] (pin + token) after pairing and
 //! rebuild the client with [`RemoteClient::from_paired`].
 
-mod pin;
-
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -30,6 +28,13 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(15);
 /// The host sends a keep-alive every 15 s, so silence longer than this means a dead link.
 const STREAM_IDLE_TIMEOUT: Duration = Duration::from_secs(60);
 const STREAM_TOTAL_TIMEOUT: Duration = Duration::from_secs(900);
+const ALPN_HTTP1: &[u8] = b"http/1.1";
+
+/// TLS 1.3 client config trusting only `pin` (borealis-link's pin verifier), plus its mismatch
+/// flag.
+fn pinned_config(pin: CertFingerprint) -> Result<(rustls::ClientConfig, Arc<AtomicBool>), AiError> {
+    borealis_link::tls::pinned_client_config(pin, &[ALPN_HTTP1]).map_err(transport)
+}
 
 /// Errors from the remote client.
 #[derive(Debug, thiserror::Error)]
@@ -97,9 +102,7 @@ fn unix_now() -> u64 {
 /// # Errors
 /// Only if the crypto provider lacks TLS 1.3 (never with aws-lc-rs).
 pub fn pinned_tls_config(pin: CertFingerprint) -> Result<rustls::ClientConfig, AiError> {
-    pin::pinned_config(pin)
-        .map(|(cfg, _)| cfg)
-        .map_err(transport)
+    pinned_config(pin).map(|(cfg, _)| cfg)
 }
 
 impl RemoteClient {
@@ -108,7 +111,7 @@ impl RemoteClient {
     /// # Errors
     /// TLS or HTTP client construction failure.
     pub fn new(addr: SocketAddr, pin: CertFingerprint) -> Result<Self, RemoteError> {
-        let (tls, mismatch) = pin::pinned_config(pin).map_err(transport)?;
+        let (tls, mismatch) = pinned_config(pin)?;
         let http = Client::builder()
             .connect_timeout(CONNECT_TIMEOUT)
             .https_only(true)

@@ -6,7 +6,6 @@
 //! a random bearer token that expires; only a SHA-256 hash of each token is kept.
 
 mod identity;
-mod limits;
 mod serve;
 
 use std::collections::HashMap;
@@ -23,15 +22,15 @@ use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
+use borealis_link::limits::{Guess, GuessLimits, PairingState, RateLimiter};
+use borealis_link::random::{hex, sha256_hex};
 use futures_util::stream::{self, Stream};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use tokio::sync::{mpsc, oneshot, Semaphore};
 use tokio::task::JoinHandle;
 use tower_http::timeout::TimeoutLayer;
 
 pub use identity::{write_private_file, HostIdentity, CERT_FILE, KEY_FILE};
-use limits::{Guess, GuessLimits, PairingState, RateLimiter};
 
 use crate::protocol::{
     CertFingerprint, ErrorBody, InfoResponse, PairRequest, PairResponse, PairingUri, PATH_INFO,
@@ -43,7 +42,6 @@ use crate::task::request::{TaskRequest, TaskResponse};
 use crate::task::{AiRunner, ContentValidator, RunOptions, DEFAULT_MAX_REPAIRS};
 use crate::{AiError, AiEvent};
 
-const PAIRING_CODE_SPACE: u32 = 100_000_000; // 8 digits
 const SSE_KEEPALIVE: Duration = Duration::from_secs(15);
 const SHUTDOWN_GRACE: Duration = Duration::from_secs(3);
 const MAX_DEVICE_NAME_CHARS: usize = 64;
@@ -231,36 +229,13 @@ fn unix_now() -> u64 {
         .map_or(0, |d| d.as_secs())
 }
 
-fn sha256_hex(s: &str) -> String {
-    hex(&Sha256::digest(s.as_bytes()))
-}
-
-fn hex(bytes: &[u8]) -> String {
-    use std::fmt::Write;
-    bytes
-        .iter()
-        .fold(String::with_capacity(bytes.len() * 2), |mut s, b| {
-            let _ = write!(s, "{b:02x}");
-            s
-        })
-}
-
 fn random_bytes<const N: usize>() -> Result<[u8; N], AiError> {
-    let mut b = [0u8; N];
-    getrandom::fill(&mut b)
-        .map_err(|e| AiError::Transport(format!("no secure randomness: {e}")))?;
-    Ok(b)
+    borealis_link::random::random_bytes::<N>().map_err(|e| AiError::Transport(e.to_string()))
 }
 
 /// Uniform eight-digit code via rejection sampling.
 fn random_code() -> Result<String, AiError> {
-    let limit = u32::MAX - (u32::MAX % PAIRING_CODE_SPACE);
-    loop {
-        let n = u32::from_le_bytes(random_bytes::<4>()?);
-        if n < limit {
-            return Ok(format!("{:08}", n % PAIRING_CODE_SPACE));
-        }
-    }
+    borealis_link::pairing::random_pairing_code().map_err(|e| AiError::Transport(e.to_string()))
 }
 
 /// Best-effort LAN IPv4 address of this machine (no packets are sent).

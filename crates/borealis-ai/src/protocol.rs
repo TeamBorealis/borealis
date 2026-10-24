@@ -2,9 +2,10 @@
 
 use serde::{Deserialize, Serialize};
 
-mod pairing;
-pub use pairing::{
-    CertFingerprint, PairingUri, PairingUriError, PAIRING_CODE_LEN, PAIRING_URI_PREFIX,
+// Pairing string and pinned fingerprint live in borealis-link (shared with device sync).
+pub use borealis_link::fingerprint::CertFingerprint;
+pub use borealis_link::pairing::{
+    PairingUri, PairingUriError, PAIRING_CODE_LEN, PAIRING_URI_PREFIX,
 };
 
 /// Protocol major version, returned by `GET /v1/info`. v2: TLS with a pinned certificate.

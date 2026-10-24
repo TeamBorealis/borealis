@@ -5,19 +5,20 @@ use std::net::IpAddr;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-use super::lock;
+use crate::random::ct_eq;
 
 const RATE_WINDOW: Duration = Duration::from_secs(60);
 const LIMITER_GC_THRESHOLD: usize = 1024;
 
 /// Fixed-window counter per key.
-pub(super) struct RateLimiter {
+pub struct RateLimiter {
     limit: u32,
     hits: Mutex<HashMap<String, (Instant, u32)>>,
 }
 
 impl RateLimiter {
-    pub(super) fn new(limit: u32) -> Self {
+    /// At most `limit` hits per key per minute.
+    pub fn new(limit: u32) -> Self {
         Self {
             limit,
             hits: Mutex::new(HashMap::new()),
@@ -25,7 +26,7 @@ impl RateLimiter {
     }
 
     /// Returns `false` when the key is over its limit for the current window.
-    pub(super) fn allow(&self, key: &str) -> bool {
+    pub fn allow(&self, key: &str) -> bool {
         let now = Instant::now();
         let mut hits = lock(&self.hits);
         if hits.len() > LIMITER_GC_THRESHOLD {
@@ -42,7 +43,7 @@ impl RateLimiter {
 
 /// Outcome of a pairing guess.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum Guess {
+pub enum Guess {
     /// Correct code from a sender that is not locked out: the code is consumed.
     Accepted,
     /// Wrong code, sender locked out, or the window expired.
@@ -50,7 +51,7 @@ pub(super) enum Guess {
 }
 
 /// An open pairing window.
-pub(super) struct PairingState {
+pub struct PairingState {
     code: String,
     expires: Instant,
     failures_total: u32,
@@ -59,13 +60,16 @@ pub(super) struct PairingState {
 
 /// Per-sender and global failure caps for one code.
 #[derive(Debug, Clone, Copy)]
-pub(super) struct GuessLimits {
+pub struct GuessLimits {
+    /// Wrong guesses one source IP may make before it is locked out of the code.
     pub per_ip: u32,
+    /// Wrong guesses from everyone before the code is destroyed.
     pub total: u32,
 }
 
 impl PairingState {
-    pub(super) fn new(code: String, ttl: Duration) -> Self {
+    /// A window for `code` that closes after `ttl`.
+    pub fn new(code: String, ttl: Duration) -> Self {
         Self {
             code,
             expires: Instant::now() + ttl,
@@ -77,7 +81,7 @@ impl PairingState {
     /// Check a guess. Wrong guesses lock out only the sending IP after `per_ip` misses; the code
     /// itself dies after `total` misses from all senders (bounds brute force with many IPs).
     /// Returns the outcome and whether the window must be closed.
-    pub(super) fn guess(&mut self, ip: IpAddr, code: &str, lim: GuessLimits) -> (Guess, bool) {
+    pub fn guess(&mut self, ip: IpAddr, code: &str, lim: GuessLimits) -> (Guess, bool) {
         if self.expires <= Instant::now() {
             return (Guess::Rejected, true);
         }
@@ -94,13 +98,8 @@ impl PairingState {
     }
 }
 
-/// Constant-time string equality (length is not secret).
-pub(super) fn ct_eq(a: &str, b: &str) -> bool {
-    a.len() == b.len()
-        && a.bytes()
-            .zip(b.bytes())
-            .fold(0u8, |acc, (x, y)| acc | (x ^ y))
-            == 0
+fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
+    m.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 #[cfg(test)]
@@ -122,13 +121,6 @@ mod tests {
         assert!(l.allow("a") && l.allow("a"));
         assert!(!l.allow("a"));
         assert!(l.allow("b"));
-    }
-
-    #[test]
-    fn constant_time_compare() {
-        assert!(ct_eq("12345678", "12345678"));
-        assert!(!ct_eq("12345678", "12345679"));
-        assert!(!ct_eq("1234567", "12345678"));
     }
 
     #[test]
