@@ -143,7 +143,7 @@ impl Face {
             Face::SerifItalic => include_bytes!("../fonts/NotoSerif-Italic.ttf"),
             Face::Arabic => include_bytes!("../fonts/NotoSansArabic-Regular.ttf"),
             Face::ArabicBold => include_bytes!("../fonts/NotoSansArabic-Bold.ttf"),
-            Face::Cjk | Face::Hangul => self.os().map_or(&[], |o| o.font.data.as_slice()),
+            Face::Cjk | Face::Hangul => self.os().map_or(&[], |o| o.font.data),
         }
     }
 
