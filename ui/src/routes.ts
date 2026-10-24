@@ -20,6 +20,7 @@ export const ROUTES: readonly RouteDef[] = [
   { path: "/equipment", label: "Gear", icon: "backpack", needsCharacter: true, secondary: false },
   { path: "/manage", label: "Manage", icon: "pen", needsCharacter: true, secondary: true },
   { path: "/sheet", label: "Sheet", icon: "scroll", needsCharacter: true, secondary: true },
+  { path: "/search", label: "Search", icon: "book-search", needsCharacter: false, secondary: true },
   { path: "/compendium", label: "Compendium", icon: "book", needsCharacter: false, secondary: true },
   { path: "/content", label: "Content", icon: "box", needsCharacter: false, secondary: true },
   { path: "/import", label: "Import", icon: "upload", needsCharacter: false, secondary: true, ai: true },

@@ -17,6 +17,18 @@
 .v4-el .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .v4-el .s { font-weight: 600; font-size: var(--fs-sm); color: #e6e6e6; white-space: nowrap; max-width: 45%; overflow: hidden; text-overflow: ellipsis; }
 .v4-comp-more { margin-top: 10px; }
+/* Local search (S1.5): scope link-tabs in the app's sub-tab style (14 px SemiBold uppercase, no underline), text aligned
+   with the filter row; keyword rows add a heading path, an R6 edition badge and a one-line snippet under the name. */
+.v4-comp-left > .tabs.sub { margin: 0 0 6px -10px; }
+.v4-comp-left > .tabs.sub .tab { height: 26px; }
+.v4-el button { flex-wrap: wrap; column-gap: 10px; row-gap: 0; }
+.v4-el .p { flex: none; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); font-size: var(--fs-sm); }
+.v4-el .p::after { content: " >"; }
+.v4-el .snip { flex: 1 0 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 0 3px; font-size: var(--fs-xs); line-height: 14px; color: var(--text-secondary); }
+.v4-el .snip mark { background: transparent; color: #e6e6e6; font-weight: 600; }
+.v4-comp-foot { position: sticky; bottom: -20px; margin: 14px 0 0; padding: 6px 0 4px; background: var(--flyout-bg); font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); }
+.v4-desc .v4-desc-src { margin: 0; font-size: var(--fs-md); }
+.v4-desc .v4-desc-attr { margin: 10px 0 0; font-size: var(--fs-xs); line-height: 1.45; color: var(--text-secondary); }
 .v4-desc { background: var(--description-bg); overflow-y: scroll; padding: 10px 20px 30px; min-width: 0; }
 .v4-desc h2 { margin: 6px 0 4px; font-size: 24px; font-weight: 600; text-transform: uppercase; color: #e6e6e6; line-height: 1.1; }
 .v4-desc .flavour { margin: 0 0 10px; font-style: italic; color: var(--text-secondary); font-size: var(--fs-md); }

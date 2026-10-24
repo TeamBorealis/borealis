@@ -41,6 +41,7 @@ export function App() {
         <Route path="/manage" element={<ManagePage />} />
         <Route path="/sheet" element={<SheetPage />} />
         <Route path="/compendium" element={<CompendiumRoute />} />
+        <Route path="/search" element={<CompendiumRoute />} />
         <Route path="/content" element={<ContentPage />} />
         <Route path="/content/sources" element={<SourcesPage />} />
         <Route path="/import" element={<AiOnly><ImportPage /></AiOnly>} />

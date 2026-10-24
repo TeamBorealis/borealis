@@ -17,7 +17,7 @@ export interface MainTabDef {
 
 /** Classic builder main tab order, plus PLAY (Borealis play mode). START also owns every non-character screen. */
 export const MAIN_TABS: readonly MainTabDef[] = [
-  { id: "start", label: "Start", short: "Start", to: "/characters", icon: "users", needsCharacter: false, match: ["/characters", "/compendium", "/content", "/import", "/ai", "/setup", "/settings", "/more"] },
+  { id: "start", label: "Start", short: "Start", to: "/characters", icon: "users", needsCharacter: false, match: ["/characters", "/compendium", "/search", "/content", "/import", "/ai", "/setup", "/settings", "/more"] },
   { id: "build", label: "Build", short: "Build", to: "/builder", icon: "hammer", needsCharacter: true, match: ["/builder"] },
   { id: "magic", label: "Magic", short: "Magic", to: "/spells", icon: "sparkles", needsCharacter: true, match: ["/spells"] },
   { id: "equipment", label: "Equipment", short: "Gear", to: "/equipment", icon: "backpack", needsCharacter: true, match: ["/equipment"] },
@@ -134,6 +134,7 @@ export function shellReachableTargets(): string[] {
   MAIN_TABS.forEach((t) => targets.add(t.to));
   START_SUBNAV.forEach((t) => targets.add(t.to));
   targets.add("/compendium"); // View > Compendium and the search box open the flyout; the route is its deep link
+  targets.add("/search"); // phones: More > Search opens the same flyout full screen
   [...MENUS.flatMap((m) => m.entries), ...CHARACTER_MENU].forEach((e) => e.to && targets.add(e.to));
   return [...targets];
 }
