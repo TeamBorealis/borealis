@@ -78,7 +78,22 @@ fn new_id() -> ApiResult<String> {
 
 fn forget_temp(open: &OpenBundle) {
     if open.temp {
-        let _ = std::fs::remove_file(&open.path);
+        remove_copy(&open.path);
+    }
+}
+
+/// Delete one of our copies, and the per-open folder it sits in (Android opens).
+fn remove_copy(path: &Path) {
+    let _ = std::fs::remove_file(path);
+    let own_folder = path.parent().filter(|dir| {
+        dir.file_name().is_some_and(|n| {
+            n.to_string_lossy()
+                .starts_with(super::inbox::OPEN_DIR_PREFIX)
+        })
+    });
+    if let Some(dir) = own_folder {
+        // Only ever empty here: `remove_dir` refuses a folder that still holds anything.
+        let _ = std::fs::remove_dir(dir);
     }
 }
 
@@ -129,7 +144,7 @@ impl DeviceSync {
             Ok(ok) => ok,
             Err(e) => {
                 if temp {
-                    let _ = std::fs::remove_file(&path);
+                    remove_copy(&path);
                 }
                 return Err(plain(e));
             }

@@ -62,6 +62,41 @@ pub fn take_opened_paths() -> Vec<PathBuf> {
         .unwrap_or_default()
 }
 
+/// Prefix of the per-open folders in `<data>/sync/incoming`.
+pub(crate) const OPEN_DIR_PREFIX: &str = "open-";
+/// Longest kept name (characters) before `.borealis`.
+const MAX_NAME_CHARS: usize = 120;
+const FALLBACK_STEM: &str = "bundle";
+
+/// The name the app's copy gets: the provider's display name without any folder part, with path
+/// and control characters replaced, capped, and ending in `.borealis`.
+fn copy_name(given: &str) -> String {
+    let last = given.rsplit(['/', '\\']).next().unwrap_or_default();
+    let stem = if is_bundle_name(last) {
+        &last[..last.len() - BUNDLE_EXTENSION.len() - 1]
+    } else {
+        last
+    };
+    let clean: String = stem
+        .chars()
+        .map(|c| {
+            if c.is_control() || matches!(c, ':' | '*' | '?' | '"' | '<' | '>' | '|') {
+                '_'
+            } else {
+                c
+            }
+        })
+        .take(MAX_NAME_CHARS)
+        .collect();
+    let clean = clean.trim_matches(|c: char| c == '.' || c.is_whitespace());
+    let stem = if clean.is_empty() {
+        FALLBACK_STEM
+    } else {
+        clean
+    };
+    format!("{stem}.{BUNDLE_EXTENSION}")
+}
+
 /// A name with no extension at all, like the opaque ids some providers hand out.
 fn has_no_extension(name: &str) -> bool {
     !name.contains('.')
@@ -88,12 +123,39 @@ pub fn claim_bundles(state: &AppState, files: Vec<OpenedFile>) -> Vec<OpenedFile
             rest.push(file);
             continue;
         }
-        let dir = super::incoming_dir(state);
-        let path = dir.join(format!("open-{}.borealis", uuid::Uuid::new_v4().simple()));
+        // A folder per open keeps the user's own file name (shown in the preview and the status
+        // line) without two opens of the same name colliding.
+        let dir = super::incoming_dir(state).join(format!(
+            "{OPEN_DIR_PREFIX}{}",
+            uuid::Uuid::new_v4().simple()
+        ));
+        let path = dir.join(copy_name(&file.file_name));
         match std::fs::create_dir_all(&dir).and_then(|()| std::fs::write(&path, bytes)) {
             Ok(()) => queue(path),
             Err(e) => tracing::warn!("could not keep an opened bundle: {e}"),
         }
     }
     rest
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn copies_keep_a_safe_form_of_the_users_file_name() {
+        assert_eq!(copy_name("Mira.borealis"), "Mira.borealis");
+        assert_eq!(copy_name("Mira.BOREALIS"), "Mira.borealis");
+        assert_eq!(copy_name("a/b\\c.borealis"), "c.borealis");
+        assert_eq!(copy_name("msf:1234"), "msf_1234.borealis");
+        assert_eq!(copy_name("x\u{0}y\n.borealis"), "x_y_.borealis");
+        assert_eq!(copy_name(".borealis"), "bundle.borealis");
+        assert_eq!(copy_name("../.."), "bundle.borealis");
+        assert_eq!(copy_name(""), "bundle.borealis");
+        let long = copy_name(&"é".repeat(500));
+        assert_eq!(
+            long.chars().count(),
+            MAX_NAME_CHARS + 1 + BUNDLE_EXTENSION.len()
+        );
+    }
 }

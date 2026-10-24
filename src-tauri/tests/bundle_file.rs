@@ -371,6 +371,51 @@ fn a_bundle_copied_by_the_app_is_deleted_after_accept_or_discard() {
     assert!(!mine.exists(), "and after Cancel");
 }
 
+/// Android hands the bundle over as bytes; the preview and the status line must still name the
+/// file the user opened (seen on the emulator as "Opened open-<uuid>.borealis"), and the app's
+/// copy (with its folder) is gone after Accept or Cancel.
+#[test]
+fn an_android_opened_bundle_keeps_its_own_name_and_its_copy_is_removed() {
+    use base64::engine::general_purpose::STANDARD;
+    use base64::Engine as _;
+    let (a, b) = (dev("Mac"), dev("Phone"));
+    put_character(&a, "Mira", Duration::from_secs(60));
+    let files = tempfile::tempdir().unwrap();
+    let bytes = std::fs::read(export(&a, files.path())).unwrap();
+    let incoming = borealis_lib::device_sync::incoming_dir(&b.state);
+    let opened = |name: &str| borealis_lib::content_preview::OpenedFile {
+        file_name: name.into(),
+        content_base64: STANDARD.encode(&bytes),
+    };
+    for (given, shown) in [
+        (
+            "Mira from the phone.borealis",
+            "Mira from the phone.borealis",
+        ),
+        ("../../evil/x.borealis", "x.borealis"),
+        ("msf:1234", "msf_1234.borealis"),
+    ] {
+        assert!(inbox::claim_bundles(&b.state, vec![opened(given)]).is_empty());
+        let queued = inbox::take_opened_paths();
+        assert_eq!(queued.len(), 1, "{given}");
+        assert!(
+            queued[0].starts_with(&incoming),
+            "{given}: copy stays in sync/incoming"
+        );
+        let p = open(&b, &queued[0]);
+        assert_eq!(p.file_name, shown, "{given}");
+        b.sync.discard_bundle(&p.bundle_id);
+        assert!(!queued[0].exists(), "{given}: copy removed after Cancel");
+    }
+    assert!(inbox::claim_bundles(&b.state, vec![opened("Mira.borealis")]).is_empty());
+    let queued = inbox::take_opened_paths();
+    let p = open(&b, &queued[0]);
+    b.sync.accept_bundle(&p.bundle_id).unwrap();
+    assert!(!queued[0].exists(), "copy removed after Accept");
+    let left: Vec<_> = std::fs::read_dir(&incoming).unwrap().collect();
+    assert!(left.is_empty(), "no per-open folders left behind: {left:?}");
+}
+
 /// Z privacy gate (BR2/EM3 extended to bundles, local-search-spec section 11): with the app's
 /// search index built, a paired device in the registry, the AI host key in the data folder and
 /// planted copies of all of them inside a user pack, an "everything" export carries no `search/`
