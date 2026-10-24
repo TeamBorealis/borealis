@@ -6,29 +6,41 @@
 //! * none: fingerprints, pairing strings and codes, pairing limits, registry, store trait.
 //! * `tls`: rustls (aws-lc-rs) identities, pinned client/server configs. No sockets.
 //! * `tcp`: the tokio + rustls TCP [`Transport`] (desktop and mobile).
+//! * `pake`: session authentication (QR secret proof, SPAKE2 typed codes) bound to the TLS
+//!   exporter ([`auth`]).
+//! * `mdns`: advertise/browse an open window by nameplate (desktop).
 //! * `platform-store`: [`PlatformStore`](store::PlatformStore) on the OS secure store.
 //!
 //! Secrets (private keys, tokens) are only ever held in a [`store::SecureStore`] or in memory;
 //! `Debug` output of every secret-bearing type is redacted, and nothing secret is logged.
 
+#[cfg(feature = "pake")]
+pub mod auth;
+pub mod code;
+#[cfg(feature = "mdns")]
+pub mod discovery;
 pub mod error;
 pub mod fingerprint;
 pub mod fs;
 pub mod limits;
+pub mod link_uri;
 pub mod pairing;
 pub mod random;
 pub mod registry;
 pub mod store;
 pub mod transport;
+pub mod wordlist;
 
 #[cfg(feature = "tls")]
 pub mod device;
 #[cfg(feature = "tls")]
 pub mod tls;
 
+pub use code::{TypedCode, TypedCodeError};
 pub use error::{LinkError, StoreError};
 pub use fingerprint::{CertFingerprint, DeviceId};
 pub use fs::write_private_file;
+pub use link_uri::{LinkMode, LinkSecret, LinkUri, LinkUriError, LINK_URI_PREFIX};
 pub use pairing::{PairingUri, PairingUriError, PAIRING_CODE_LEN, PAIRING_URI_PREFIX};
 pub use registry::{DeviceRegistry, PairedDevice, Platform};
 pub use store::{MemoryStore, Secret, SecretName, SecureStore, StoreBackend};

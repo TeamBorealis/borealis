@@ -13,13 +13,18 @@ workspace = true
 [features]
 # Everything on for this crate's own build and tests (`cargo test -p borealis-link`). Dependents
 # use the workspace entry, which sets default-features = false, and opt in per feature.
-default = ["tcp", "platform-store"]
+default = ["tcp", "platform-store", "mdns"]
 # rustls (aws-lc-rs) pinned-certificate TLS: device identity, server/client configs, pin verifiers.
 # No sockets; borealis-ai's LAN host and remote client build on it.
 tls = ["dep:rustls", "dep:rcgen"]
 # The tokio + rustls TCP implementation of `Transport`. Builds for desktop, iOS and Android; the app
 # enables it only where a network stack is wanted (mobile links none without it).
-tcp = ["tls", "dep:tokio", "dep:tokio-rustls"]
+tcp = ["tls", "pake", "dep:tokio", "dep:tokio-rustls"]
+# Session authentication over a connection: QR secret proof and SPAKE2 typed codes, both bound
+# to the TLS exporter (B2).
+pake = ["dep:spake2", "dep:hmac", "dep:hkdf", "dep:tokio"]
+# mDNS advertise/browse of an open window by nameplate (desktop; see discovery.rs for mobile).
+mdns = ["dep:mdns-sd"]
 # Platform secure store: Keychain (macOS/iOS), Android Keystore, Windows Credential Manager,
 # Linux Secret Service. Without it only `MemoryStore` exists.
 platform-store = [
@@ -45,6 +50,10 @@ rcgen = { version = "0.14", optional = true, default-features = false, features 
 tokio = { workspace = true, optional = true, features = ["net", "time", "io-util", "rt", "sync", "macros"] }
 tokio-rustls = { version = "0.26", optional = true, default-features = false, features = ["aws_lc_rs"] }
 keyring-core = { version = "1", optional = true }
+spake2 = { version = "0.4.0", optional = true }
+hmac = { version = "0.12", optional = true }
+hkdf = { version = "0.12", optional = true }
+mdns-sd = { version = "0.21.6", optional = true }
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
 # macOS: the login keychain (works for unsigned dev builds); iOS: the data-protection keychain.
