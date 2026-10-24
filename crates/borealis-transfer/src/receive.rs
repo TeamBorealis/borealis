@@ -39,7 +39,7 @@ pub trait ReceiveHost: Send + Sync {
     fn incoming_dir(&self) -> PathBuf;
 }
 
-fn summary(r: &ApplyReport) -> Summary {
+pub(crate) fn summary(r: &ApplyReport) -> Summary {
     Summary {
         added: r.added.len(),
         replaced: r.replaced.len(),
@@ -200,13 +200,13 @@ async fn download<C: Connection>(
     Ok(file)
 }
 
-fn verify_and_apply(
+pub(crate) fn verify_and_apply(
     file: std::fs::File,
     offered: &Manifest,
     host: &dyn ReceiveHost,
     limits: &TransferLimits,
 ) -> Result<ApplyReport, TransferError> {
-    let refused = |e: borealis_bundle::BundleError| TransferError::Refused(e.to_string());
+    let refused = |e: borealis_bundle::BundleError| TransferError::Refused(crate::error::plain_reason(&e));
     let mut bundle = Bundle::open_with(file, limits.bundle).map_err(refused)?;
     if bundle.manifest() != offered {
         return Err(TransferError::Refused(

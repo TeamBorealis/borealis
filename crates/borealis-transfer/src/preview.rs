@@ -77,6 +77,29 @@ pub fn check_offer(
     labels: &BTreeMap<String, String>,
     limits: &TransferLimits,
 ) -> Result<(), TransferError> {
+    if bundle_sha256.len() != 64
+        || !bundle_sha256
+            .bytes()
+            .all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
+    {
+        return Err(refused("bad checksum"));
+    }
+    if labels.len() > manifest.items.len() {
+        return Err(refused("too many items"));
+    }
+    check_manifest(manifest, bundle_size, limits)
+}
+
+/// The caps a bundle must meet whether it arrives over the wire or as a file: format, no
+/// campaigns, size, item count, plain keys and per-item sizes.
+///
+/// # Errors
+/// [`TransferError::Refused`].
+pub fn check_manifest(
+    manifest: &Manifest,
+    bundle_size: u64,
+    limits: &TransferLimits,
+) -> Result<(), TransferError> {
     if manifest.format != FORMAT {
         return Err(refused("unsupported bundle format"));
     }
@@ -86,14 +109,7 @@ pub fn check_offer(
     if bundle_size == 0 || bundle_size > limits.max_bundle_bytes {
         return Err(refused("the bundle is too large"));
     }
-    if bundle_sha256.len() != 64
-        || !bundle_sha256
-            .bytes()
-            .all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
-    {
-        return Err(refused("bad checksum"));
-    }
-    if manifest.items.len() > limits.bundle.max_items || labels.len() > manifest.items.len() {
+    if manifest.items.len() > limits.bundle.max_items {
         return Err(refused("too many items"));
     }
     let mut total = 0u64;

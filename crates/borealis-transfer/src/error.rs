@@ -46,3 +46,23 @@ impl From<std::io::Error> for TransferError {
         Self::Local(format!("file error: {e}"))
     }
 }
+
+/// A bundle problem in words a person can act on (no paths, no zip jargon).
+pub fn plain_reason(e: &borealis_bundle::BundleError) -> String {
+    use borealis_bundle::BundleError as B;
+    match e {
+        B::NotABundle(_) => "it is not a Borealis bundle".into(),
+        B::UnsupportedFormat(_) | B::UnsupportedFeature(_) => {
+            "it was made by a newer version of Borealis, so update Borealis to open it".into()
+        }
+        B::LimitExceeded(_) => "it is larger than Borealis accepts".into(),
+        B::Rejected(why) => why.clone(),
+        B::Io { .. } => "it could not be read".into(),
+        B::UnsafePath(_)
+        | B::Excluded(_)
+        | B::HashMismatch(_)
+        | B::Inconsistent(_)
+        | B::Json { .. }
+        | B::Zip(_) => "it is damaged or was changed after it was made".into(),
+    }
+}

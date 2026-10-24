@@ -7,6 +7,7 @@
 //! no Tauri: the app supplies a [`ReceiveHost`] and [`Events`]. Protocol: [`wire`].
 
 mod error;
+mod file;
 mod limits;
 mod preview;
 mod receive;
@@ -14,9 +15,10 @@ mod send;
 mod session;
 pub mod wire;
 
-pub use error::TransferError;
+pub use error::{plain_reason, TransferError};
 pub use limits::{Cancel, TransferLimits};
-pub use preview::{check_offer, Preview, PreviewAction, PreviewItem};
+pub use file::{apply_bundle_file, open_bundle_file};
+pub use preview::{check_manifest, check_offer, Preview, PreviewAction, PreviewItem};
 pub use receive::{receive, ReceiveHost};
 pub use send::{send, Outgoing};
 pub use session::{Event, Events, Local, PeerInfo};
