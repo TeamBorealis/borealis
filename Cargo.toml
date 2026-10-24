@@ -9,6 +9,7 @@ members = [
   "crates/borealis-ai",
   "crates/borealis-assist",
   "crates/borealis-import-5etools",
+  "crates/borealis-bundle",
   "crates/borealis-mcp",
   "crates/borealis-search",
   "crates/borealis-android-assets",
