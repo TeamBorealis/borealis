@@ -8150,6 +8150,12 @@
       "name": "ArmorFacts"
      }
     },
+    "converted": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "disabledReason": {
      "opt": true,
      "t": {
@@ -8160,6 +8166,15 @@
      "opt": true,
      "t": {
       "k": "prim"
+     }
+    },
+    "editionNotes": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
      }
     },
     "id": {

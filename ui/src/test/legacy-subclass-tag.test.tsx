@@ -37,8 +37,11 @@ describe("Legacy subclass edition tag (B-44)", () => {
     );
     const list = await screen.findByRole("list", { name: "Subclass options" });
     const legacy = await within(list).findByRole("button", { name: "Old Lantern Way, Test Book (2014)" });
-    expect(legacy.querySelector(".pick-src")?.textContent).toBe("Test Book (2014)");
+    // R6 (B-18): the edition is now a badge after the source name.
+    expect(legacy.querySelector(".pick-src-name")?.textContent).toBe("Test Book");
+    expect(legacy.querySelector(".pick-src .ed-badge")?.textContent).toBe("2014");
     const native = within(list).getByRole("button", { name: "Tidewarden, Test Book" });
     expect(native.querySelector(".pick-src")?.textContent).toBe("Test Book");
+    expect(native.querySelector(".ed-badge")).toBeNull();
   });
 });

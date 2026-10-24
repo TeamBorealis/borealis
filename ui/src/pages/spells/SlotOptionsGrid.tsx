@@ -1,5 +1,6 @@
-import { type KeyboardEvent, useMemo } from "react";
+import { type KeyboardEvent, useMemo, useState } from "react";
 import type { ClassSpellcasting, SelectionSlot, SlotOption } from "../../api/contract";
+import { ConvertedTag, EditionBadge, editionMarks, EditionNotes } from "../../components";
 import { useApi } from "../../state/ApiContext";
 import { useAsync } from "../../state/useAsync";
 import { Glyph } from "../equipment/Glyph";
@@ -28,6 +29,8 @@ export function SlotOptionsGrid({ characterId, cls, slot, picked, onPick, onChoo
     const items = [...(options.data?.items ?? [])].sort((a, b) => a.name.localeCompare(b.name));
     return mergeRows(items, slot.chosen ? [slot.chosen] : []);
   }, [options.data, slot.chosen]);
+
+  const [notesFor, setNotesFor] = useState<string | null>(null);
 
   const choose = (o: (typeof rows)[number]) => {
     if (o.disabledReason || slot.chosen?.id === o.id) return;
@@ -58,6 +61,9 @@ export function SlotOptionsGrid({ characterId, cls, slot, picked, onPick, onChoo
           {!options.error && rows.length === 0 && <tr className="ap-empty-row"><td colSpan={7}>{options.loading ? "Loading..." : "No spells to show."}</td></tr>}
           {rows.map((o) => {
             const sel = slot.chosen?.id === o.id;
+            const marks = editionMarks(o);
+            const notesId = `sp-notes-${slot.id}-${o.id}`;
+            const notesOpen = notesFor === o.id;
             return (
               <tr key={o.id} data-spell-id={o.id} className={picked === o.id ? "sel" : ""} onMouseDown={() => onPick(o.id)} onDoubleClick={() => choose(o)} onKeyDown={(e) => arrowNav(e, onPick)}>
                 <td className="sp-ck">{sel && <span className="sp-mark"><Glyph name="tick" label="Registered" /></span>}</td>
@@ -67,7 +73,14 @@ export function SlotOptionsGrid({ characterId, cls, slot, picked, onPick, onChoo
                 </td>
                 <td className="sp-lvl">{levelText(o)}</td>
                 <ComponentCells casting={o.spell ?? null} />
-                <td className="sp-src">{o.sourceName ?? ""}</td>
+                <td className="sp-src">
+                  <span className="sp-src-line">
+                    <span className="sp-src-name">{o.sourceName ?? ""}</span>
+                    <EditionBadge marks={marks} />
+                    <ConvertedTag marks={marks} open={notesOpen} notesId={notesId} onToggle={() => setNotesFor(notesOpen ? null : o.id)} />
+                  </span>
+                  <EditionNotes marks={marks} id={notesId} open={notesOpen} />
+                </td>
               </tr>
             );
           })}

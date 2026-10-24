@@ -21,6 +21,10 @@
 .sp-grid .sp-lvl { min-width: 200px; }
 .sp-grid .sp-vsm { width: 75px; min-width: 75px; }
 .sp-grid .sp-src { min-width: 180px; width: 100%; }
+/* R6: source name, then the edition badge and "converted" tag on other-edition rows only. */
+.sp-src-line { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; vertical-align: middle; }
+.sp-src-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp-src-line .ed-tag { align-self: center; padding: 0; }
 .sp-grid th.sp-ck, .sp-grid td.sp-ck { width: 24px; text-align: center; padding: 0 4px; }
 .sp-grid th.sp-ck { color: var(--gold); }
 .sp-grid th.sp-ck .eq-glyph { width: 12px; height: 12px; vertical-align: middle; }

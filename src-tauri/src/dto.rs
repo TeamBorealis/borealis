@@ -126,6 +126,13 @@ pub struct SlotOption {
     /// class): the edition it was written for, shown as a tag next to its source.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub edition: Option<Ruleset>,
+    /// R6: the edition adapter changed this other-edition option (the picker's "converted" tag).
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub converted: bool,
+    /// R6: the adapter's notes on an other-edition option (what changed, or "used as written"),
+    /// shown on hover/tap of its edition badge or "converted" tag.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub edition_notes: Vec<String>,
 }
 
 /// A page of results.

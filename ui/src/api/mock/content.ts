@@ -214,6 +214,12 @@ export const ITEMS: ItemDef[] = [
   { id: "potion-of-healing", category: "Magic Items", costCp: 5000, weight: 0.5, description: "Restore 2d4+2 hit points." },
 ];
 
+/** R6: subclasses written for one edition only, so the other edition's pickers show the edition marks. */
+const ONE_EDITION_SUBCLASS: Record<string, Partial<MockElement>> = {
+  "light-domain": { rulesets: ["dnd2014"] },
+  "shadow-blade": { rulesets: ["dnd2024"], source: SOURCE_2024 },
+};
+
 function mk(): MockElement[] {
   const out: MockElement[] = [];
   for (const r of RACES) {
@@ -232,7 +238,7 @@ function mk(): MockElement[] {
     out.push(el(`multi-${c.id}`, "multiclass", title(c.id), classText[c.id]!, {
       prerequisites: `${c.multiclassAbility.map((a) => ABILITY_NAMES[a]).join(" or ")} 13`,
     }));
-    for (const s of c.subclasses) out.push(el(s, "archetype", title(s), subText[s]!));
+    for (const s of c.subclasses) out.push(el(s, "archetype", title(s), subText[s]!, ONE_EDITION_SUBCLASS[s] ?? {}));
   }
   for (const b of BACKGROUNDS) {
     out.push(el(b.id, "background", title(b.id), `Skills: ${b.skills.join(", ")}.`, {

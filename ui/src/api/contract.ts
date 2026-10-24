@@ -106,6 +106,10 @@ export interface SlotOption extends ElementSummary {
   disabledReason?: string;
   /** Present when the option comes from the other edition (a 2014 subclass on a 2024 class): the edition it was written for. */
   edition?: Ruleset;
+  /** R6: present (true) when the edition adapter changed this other-edition option (the "converted" tag). */
+  converted?: boolean;
+  /** R6: the adapter's notes on an other-edition option (what it changed, or "used as written"). */
+  editionNotes?: string[];
 }
 
 /** All request/response commands. Keep in sync with `COMMANDS`. */

@@ -81,7 +81,14 @@
 .pick-name.disabled { color: var(--aur-danger-bright); }
 .pick-sub { font-style: italic; color: var(--text-secondary); font-size: var(--fs-xs); }
 .pick-desc { min-width: 0; overflow: hidden; white-space: nowrap; font-style: italic; }
-.pick-src { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
+/* R6: the source cell holds the source name and, on other-edition rows only, the edition badge after it. */
+.pick-src { display: flex; align-items: center; justify-content: flex-end; gap: 5px; min-width: 0; overflow: hidden; white-space: nowrap; }
+.pick-src-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pick-row.is-converted { flex-wrap: wrap; }
+.pick-row.is-converted > .pick-main { flex: 1 1 0; }
+.pick-row:hover > .ed-tag { background: var(--accent-20); }
+.pick-row.hl > .ed-tag, .pick-row.selected > .ed-tag { background: var(--bp-sel); }
+.pick-notes { flex: 1 0 100%; padding: 2px 8px 4px 5px; }
 .pick-x { flex: none; width: 28px; align-self: stretch; display: grid; place-items: center; background: transparent; border: 0; color: #b4b4b4; cursor: pointer; }
 .pick-x .icon { width: 10px; height: 10px; }
 .pick-x:hover { color: var(--aur-danger-bright); }

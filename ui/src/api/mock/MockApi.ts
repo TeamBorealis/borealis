@@ -18,6 +18,7 @@ import { validateHomebrew } from "./ai";
 import { ContentService } from "./content-service";
 import { getClass, getElement } from "./content";
 import { DEFAULT_SETTINGS } from "./default-settings";
+import { mockEditionMarks } from "./edition-marks";
 import { apiError } from "./errors";
 import { createCharacter, seedLibrary } from "./library";
 import * as abil from "./ops-abilities";
@@ -268,7 +269,7 @@ export class MockApi implements Api {
         return !!cls && cls.multiclassAbility.some((k) => snapshot.abilities.final[k] >= 13);
       })
       .filter((e) => !q || e.name.toLowerCase().includes(q) || e.shortDescription.toLowerCase().includes(q))
-      .map(({ description: _d, facts: _f, grants: _g, ...rest }) => rest);
+      .map(({ description: _d, facts: _f, grants: _g, ...rest }) => ({ ...rest, ...mockEditionMarks(rest, c.ruleset) }));
     const total = items.length;
     return { total, items: items.slice(a.offset ?? 0, (a.offset ?? 0) + (a.limit ?? 200)) };
   }

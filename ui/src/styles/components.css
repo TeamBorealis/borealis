@@ -305,3 +305,22 @@ table.data th { color: var(--dark-4b); font-weight: 600; font-size: var(--fs-2xs
 .v4-cb:indeterminate::after { content: ""; position: absolute; left: 4px; top: 4px; width: 10px; height: 10px; background: #111; border: 0; transform: none; }
 .v4-cb:disabled { opacity: 0.5; cursor: default; }
 .v4-cb:focus-visible { outline: 1px solid var(--gold); outline-offset: 1px; }
+
+/* R6 / R6a (deliberate exception to Aurora parity): picker edition badge, "converted" tag and adapter notes. Square,
+   1 px outlined, 9 px SemiBold uppercase like the source column's chrome; the badge is neutral grey, the tag warning orange. */
+.ed-badge, .ed-chip {
+  flex: none; display: inline-block; padding: 0 3px; border: 1px solid var(--border-strong); border-radius: 0;
+  font-size: 9px; line-height: 11px; font-weight: 600; font-style: normal; letter-spacing: 0.02em; text-transform: uppercase;
+  color: var(--text-secondary); white-space: nowrap;
+}
+.ed-chip { border-color: var(--warning); color: var(--warning); }
+.ed-tag {
+  flex: none; display: inline-flex; align-items: center; align-self: stretch; padding: 0 5px 0 0; margin: 0;
+  background: transparent; border: 0; cursor: pointer; font: inherit;
+}
+.ed-tag:hover .ed-chip, .ed-tag[aria-expanded="true"] .ed-chip { background: var(--warning-soft); }
+.ed-tag:focus-visible { outline: 1px solid var(--gold); outline-offset: -1px; }
+.ed-notes { display: block; font-size: var(--fs-xs); font-style: italic; line-height: 14px; color: var(--text-secondary); white-space: normal; text-align: left; }
+.ed-notes[hidden] { display: none; }
+.ed-notes-head { font-style: normal; font-weight: 600; color: var(--warning); }
+@media (pointer: coarse), (max-width: 899px) { .ed-tag { padding: 0 8px; min-width: 44px; justify-content: center; } }

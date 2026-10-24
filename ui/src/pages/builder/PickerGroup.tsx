@@ -1,7 +1,7 @@
-import { useMemo, type CSSProperties, type KeyboardEvent } from "react";
+import { useMemo, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { useNavigate } from "react-router";
 import type { ElementRef, SelectionSlot, SlotOption } from "../../api/contract";
-import { Expander, FocusBar, Icon } from "../../components";
+import { ConvertedTag, EditionBadge, editionMarks, EditionNotes, Expander, FocusBar, Icon } from "../../components";
 import { useApi } from "../../state/ApiContext";
 import { useAsync } from "../../state/useAsync";
 import { useSettings } from "../../state/SettingsContext";
@@ -85,6 +85,7 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
   const rows = useMemo(() => mergeRows(items, slot.chosen ? [slot.chosen] : []), [items, slot.chosen]);
   const showDescription = slot.elementType === "class";
   const title = group.title.toUpperCase();
+  const [notesFor, setNotesFor] = useState<string | null>(null);
 
   const onRowKey = (e: KeyboardEvent<HTMLButtonElement>, o: Row, disabled: boolean) => {
     if (e.key === "Enter") {
@@ -116,8 +117,11 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
               const sel = slot.chosen?.id === o.id;
               const hl = describedId === o.id;
               const disabled = !!o.disabledReason;
+              const marks = editionMarks(o);
+              const notesId = `pick-notes-${slot.id}-${o.id}`;
+              const notesOpen = notesFor === o.id;
               return (
-                <li key={o.id} className={`pick-row ${sel ? "selected" : ""} ${hl ? "hl" : ""}`}>
+                <li key={o.id} className={`pick-row ${sel ? "selected" : ""} ${hl ? "hl" : ""} ${marks.converted ? "is-converted" : ""}`}>
                   <button type="button" className="pick-main" aria-pressed={sel} aria-disabled={disabled || undefined} title={o.disabledReason}
                     aria-label={[o.name, o.level !== undefined ? (o.level === 0 ? "Cantrip" : `Level ${o.level}`) : "", o.sourceName ? `${o.sourceName}${editionTag(o.edition)}` : ""].filter(Boolean).join(", ")}
                     onClick={() => onDescribe(o.id, !isListSlot(slot))} onKeyDown={(e) => onRowKey(e, o, disabled)}
@@ -127,8 +131,13 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
                       {o.prerequisites && <span className="pick-sub"> - Requires {o.prerequisites}</span>}
                     </span>
                     {showDescription && <span className="pick-desc" aria-hidden="true">{o.shortDescription}</span>}
-                    <span className="pick-src" aria-hidden="true">{o.sourceName ?? (isListSlot(slot) ? null : <ElementSource id={o.id} />)}{editionTag(o.edition)}</span>
+                    <span className="pick-src" aria-hidden="true">
+                      <span className="pick-src-name">{o.sourceName ?? (isListSlot(slot) ? null : <ElementSource id={o.id} />)}</span>
+                      <EditionBadge marks={marks} />
+                    </span>
                   </button>
+                  <ConvertedTag marks={marks} open={notesOpen} notesId={notesId} onToggle={() => setNotesFor(notesOpen ? null : o.id)} />
+                  <EditionNotes marks={marks} id={notesId} open={notesOpen} className="pick-notes" />
                 </li>
               );
             })}

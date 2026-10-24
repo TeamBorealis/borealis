@@ -15,7 +15,7 @@ use borealis_engine::commands::{self, CommandOutcome};
 use borealis_engine::ids as engine_ids;
 use borealis_engine::profile::{profile_for, AbilityScoreSource};
 use borealis_engine::state::AbilityMethod;
-use borealis_engine::{CharacterState, Choice, ClassSlot};
+use borealis_engine::{CharacterState, Choice, ClassSlot, EditionBadge};
 
 const MAX_LEVEL: u32 = 20;
 const DEFAULT_PAGE: usize = 200;
@@ -194,11 +194,7 @@ impl AppState {
                     .iter()
                     .skip(skip)
                     .take(take)
-                    .map(|(o, el)| SlotOption {
-                        summary: summary(&ctx.hub.store, el),
-                        disabled_reason: None,
-                        edition: o.edition.as_ref().map(|b| b.from),
-                    })
+                    .map(|(o, el)| element_option(summary(&ctx.hub.store, el), o.edition.as_ref()))
                     .collect();
                 (rows.len(), items)
             };
@@ -561,6 +557,20 @@ fn list_option(item: i64, text: &str, source: &str) -> SlotOption {
         },
         disabled_reason: None,
         edition: None,
+        converted: false,
+        edition_notes: Vec::new(),
+    }
+}
+
+/// An element option row with its R6 edition marks: the edition it was written for, whether the
+/// adapter converted it and the adapter's notes (all empty for same-edition options).
+fn element_option(summary: ElementSummary, badge: Option<&EditionBadge>) -> SlotOption {
+    SlotOption {
+        summary,
+        disabled_reason: None,
+        edition: badge.map(|b| b.from),
+        converted: badge.is_some_and(|b| b.converted),
+        edition_notes: badge.map(|b| b.notes.clone()).unwrap_or_default(),
     }
 }
 
@@ -607,5 +617,53 @@ pub fn ruleset_profile(ruleset: Ruleset) -> RulesetProfileDto {
         background_asi: p
             .ability_score_sources()
             .contains(&AbilityScoreSource::Background),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::{json, Value};
+
+    fn row(badge: Option<&EditionBadge>) -> Value {
+        let summary = list_option(1, "Old Lantern Way", "Test Book").summary;
+        serde_json::to_value(element_option(summary, badge)).unwrap()
+    }
+
+    #[test]
+    fn same_edition_option_carries_no_edition_marks() {
+        let v = row(None);
+        for key in ["edition", "converted", "editionNotes"] {
+            assert!(v.get(key).is_none(), "{key} must be omitted: {v}");
+        }
+    }
+
+    #[test]
+    fn converted_option_carries_edition_flag_and_adapter_notes() {
+        let badge = EditionBadge {
+            from: Ruleset::Dnd2014,
+            converted: true,
+            notes: vec!["Features below level 3 arrive at 3".into()],
+        };
+        let v = row(Some(&badge));
+        assert_eq!(v["edition"], json!("dnd2014"));
+        assert_eq!(v["converted"], json!(true));
+        assert_eq!(
+            v["editionNotes"],
+            json!(["Features below level 3 arrive at 3"])
+        );
+    }
+
+    #[test]
+    fn unconverted_foreign_option_keeps_its_notes_but_no_converted_flag() {
+        let badge = EditionBadge {
+            from: Ruleset::Dnd2024,
+            converted: false,
+            notes: vec![borealis_engine::adapter::USED_AS_WRITTEN.into()],
+        };
+        let v = row(Some(&badge));
+        assert_eq!(v["edition"], json!("dnd2024"));
+        assert!(v.get("converted").is_none(), "{v}");
+        assert_eq!(v["editionNotes"], json!(["used as written"]));
     }
 }
