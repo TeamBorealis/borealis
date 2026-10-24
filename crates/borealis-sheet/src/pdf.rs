@@ -72,6 +72,8 @@ pub(crate) enum PageOp {
         w: f32,
         h: f32,
         index: usize,
+        /// Alt text of the tagged figure.
+        alt: &'static str,
     },
     /// An art piece drawn through a shared Form XObject (one per piece per document). Piece
     /// units map to page space with `(sx, sy)` points per unit (y down) and origin `(x, y)`.
@@ -424,6 +426,7 @@ fn page_content(ops: &[PageOp], cx: &PageCtx<'_>) -> String {
                 w,
                 h: ih,
                 index,
+                ..
             } => {
                 let _ = writeln!(
                     s,

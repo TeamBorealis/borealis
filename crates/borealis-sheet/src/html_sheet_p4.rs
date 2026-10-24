@@ -121,15 +121,13 @@ fn companion_portrait(o: &HtmlOptions) -> String {
 
 /// Companion page: the stat block regions in two columns (statistics and skills left, the
 /// creature's traits, actions and reactions right), the portrait box on top of the left column.
-/// A portrait alone prints just the box. `None` with neither.
+/// `None` without a stat block, even when a portrait is set.
 pub(super) fn companion_page(d: &SheetData, o: &HtmlOptions) -> Option<String> {
+    let c = d.extras.companion.as_ref()?;
     let portrait = if d.extras.has_companion_portrait {
         companion_portrait(o)
     } else {
         String::new()
-    };
-    let Some(c) = d.extras.companion.as_ref() else {
-        return d.extras.has_companion_portrait.then_some(portrait);
     };
     let (mut left, mut right) = (portrait, String::new());
     for (i, title, text) in c.regions_for(false) {

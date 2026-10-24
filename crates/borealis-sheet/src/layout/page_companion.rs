@@ -101,9 +101,10 @@ pub(crate) struct Built {
     pub portrait: Option<Rect>,
 }
 
-/// Whether the Companion page is printed: a stat block or a portrait is present.
+/// Whether the Companion page is printed: only with a companion stat block (character-sheet.md
+/// 5); a portrait alone adds no page.
 pub(crate) fn has_page(data: &SheetData) -> bool {
-    data.extras.companion.is_some() || data.extras.has_companion_portrait
+    data.extras.companion.is_some()
 }
 
 /// Draw the empty portrait frame (the picture is placed over it) at `(x, y)`.

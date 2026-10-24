@@ -91,7 +91,6 @@ fn sheet_content(
     companion: Option<borealis_sheet::CompanionSheet>,
     companion_portrait: Option<borealis_character::Portrait>,
 ) -> SheetContent {
-    let companion_portrait = page_portrait(companion.as_ref(), companion_portrait);
     let mut out = SheetContent {
         companion,
         companion_portrait,
@@ -134,14 +133,6 @@ fn companion_sheet(
         warnings: &[],
     };
     crate::companion::companion(&input, snap).and_then(|c| crate::companion::sheet_block(&c))
-}
-
-/// The picture prints on the companion page only; a picture without a creature adds no page.
-fn page_portrait(
-    companion: Option<&borealis_sheet::CompanionSheet>,
-    portrait: Option<borealis_character::Portrait>,
-) -> Option<borealis_character::Portrait> {
-    companion.and(portrait)
 }
 
 /// The companion's portrait picture; a stored picture that no longer validates is left out.
@@ -255,18 +246,6 @@ impl AppState {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn a_companion_picture_without_a_creature_adds_no_page() {
-        let pic = || borealis_character::Portrait {
-            file_name: "c.png".into(),
-            data_base64: "AA==".into(),
-        };
-        assert_eq!(page_portrait(None, Some(pic())), None);
-        let block = borealis_sheet::CompanionSheet::default();
-        assert_eq!(page_portrait(Some(&block), Some(pic())), Some(pic()));
-        assert_eq!(page_portrait(Some(&block), None), None);
-    }
 
     #[test]
     fn persisted_theme_and_edition_reach_the_render_options() {

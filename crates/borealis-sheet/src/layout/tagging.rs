@@ -11,8 +11,6 @@ use crate::pdf::{FormMode, PageOp, PdfPage};
 use crate::pdf_form::{is_widget, FormField};
 use crate::pdf_tags::{LeafOpts, Scope, StructBuilder};
 
-/// Alt text of the portrait image.
-const PORTRAIT_ALT: &str = "Character portrait";
 /// Group role of the character name; only the first one in the document stays a heading.
 const NAME_ROLE: &str = "H1";
 
@@ -177,12 +175,12 @@ impl PageTagger<'_> {
                 self.start_artifact();
                 self.out.push(op);
             }
-            PageOp::Image { .. } => {
+            PageOp::Image { alt, .. } => {
                 self.close_run();
                 self.begin_leaf(
                     "Figure",
                     LeafOpts {
-                        alt: Some(PORTRAIT_ALT.to_string()),
+                        alt: Some(alt.to_string()),
                         ..LeafOpts::default()
                     },
                 );

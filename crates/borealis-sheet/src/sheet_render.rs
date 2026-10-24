@@ -90,12 +90,18 @@ fn plan(data: &SheetData, sel: PageSelection) -> Plan {
     }
 }
 
+/// Alt text of the character's portrait.
+const PORTRAIT_ALT: &str = "Character portrait";
+/// Alt text of the companion's portrait.
+const COMPANION_PORTRAIT_ALT: &str = "Companion portrait";
+
 /// Embed the portrait into `page` inside `rect` (contain, centred).
 fn place_portrait(
     page: &mut PdfPage,
     images: &mut Vec<PdfImage>,
     rect: (f32, f32, f32, f32),
     img: PdfImage,
+    alt: &'static str,
 ) {
     let (x, y, w, h) = rect;
     let (bw, bh) = (w - 2.0 * PORTRAIT_INSET, h - 2.0 * PORTRAIT_INSET);
@@ -109,6 +115,7 @@ fn place_portrait(
         w: iw,
         h: ih,
         index,
+        alt,
     });
 }
 
@@ -179,6 +186,7 @@ pub(crate) fn build_pages(
             &mut images,
             layout::details_portrait_rect(&g, lopts.compact),
             img,
+            PORTRAIT_ALT,
         );
     }
     pages.append(&mut main);
@@ -219,6 +227,7 @@ pub(crate) fn build_pages(
                 &mut images,
                 layout::story_portrait_rect(&g, lopts.compact),
                 img,
+                PORTRAIT_ALT,
             );
         }
         pages.append(&mut story);
@@ -231,7 +240,7 @@ pub(crate) fn build_pages(
         if let (Some(img), Some(rect), Some(p)) =
             (image, built.portrait, companion_pages.first_mut())
         {
-            place_portrait(p, &mut images, rect, img);
+            place_portrait(p, &mut images, rect, img, COMPANION_PORTRAIT_ALT);
         }
         pages.append(&mut companion_pages);
     }

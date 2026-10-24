@@ -237,6 +237,36 @@ fn companion_portrait_is_embedded_on_the_companion_page() {
     }
 }
 
+/// Every `/Alt` text in the document's structure tree.
+fn alt_texts(pdf: &[u8]) -> Vec<String> {
+    let doc = Document::load_mem(pdf).expect("parses");
+    doc.objects
+        .values()
+        .filter_map(|o| o.as_dict().ok())
+        .filter_map(|d| d.get(b"Alt").ok())
+        .filter_map(|a| a.as_str().ok())
+        .map(|b| {
+            let units: Vec<u16> = b
+                .strip_prefix(&[0xFE, 0xFF])
+                .unwrap_or(b)
+                .chunks(2)
+                .map(|c| u16::from_be_bytes([c[0], *c.get(1).unwrap_or(&0)]))
+                .collect();
+            String::from_utf16_lossy(&units)
+        })
+        .collect()
+}
+
+#[test]
+fn tagged_companion_portrait_has_its_own_alt_text() {
+    let (c, s) = common::wizard_2024();
+    let content = with_portrait(Some(hound(1)), &synthetic_png());
+    let pdf = render_pdf_with(&c, &s, &flat(), &content).expect("pdf");
+    let alts = alt_texts(&pdf);
+    assert!(alts.iter().any(|a| a == "Companion portrait"), "{alts:?}");
+    assert!(!alts.iter().any(|a| a == "Character portrait"), "{alts:?}");
+}
+
 #[test]
 fn companion_without_portrait_embeds_nothing_and_is_unchanged() {
     let (c, s) = common::wizard_2024();
@@ -258,7 +288,7 @@ fn companion_without_portrait_embeds_nothing_and_is_unchanged() {
 }
 
 #[test]
-fn portrait_alone_still_prints_the_companion_page() {
+fn portrait_alone_adds_no_companion_page() {
     for (label, (c, s)) in [
         ("2014", common::wizard_2014()),
         ("2024", common::wizard_2024()),
@@ -267,15 +297,11 @@ fn portrait_alone_still_prints_the_companion_page() {
         let only = with_portrait(None, &synthetic_png());
         let pdf = render_pdf_with(&c, &s, &flat(), &only).expect("pdf");
         let (images, pages) = image_pages(&pdf);
-        assert_eq!(pages, image_pages(&without).1 + 1, "{label}: no page");
-        assert_eq!(images, vec![u32::try_from(pages).unwrap()], "{label}");
-        let text = all_text(&pdf);
-        assert!(text.contains("Companion"), "{label}");
-        assert!(!text.contains("Statistics"), "{label}: no stat block given");
+        assert_eq!(pages, image_pages(&without).1, "{label}: no extra page");
+        assert!(images.is_empty(), "{label}: nothing embedded");
 
         let html = render_html_with(&c, &s, &SheetOptions::default(), &only).expect("html");
-        assert!(html.contains("alt=\"Companion portrait\""), "{label}");
-        assert!(html.contains("data:image/png;base64,"), "{label}");
+        assert!(!html.contains("Companion portrait"), "{label}");
     }
 }
 
