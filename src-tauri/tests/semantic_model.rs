@@ -100,7 +100,12 @@ struct App {
     spec: DownloadSpec,
 }
 
+/// A backend counts as linked (the post-B-46 flow); [`app_full`] chooses.
 fn app_with(delay: Duration, catalog: impl FnOnce(&DownloadSpec) -> Catalog) -> App {
+    app_full(delay, catalog, true)
+}
+
+fn app_full(delay: Duration, catalog: impl FnOnce(&DownloadSpec) -> Catalog, backend: bool) -> App {
     let dir = tempfile::tempdir().unwrap();
     let paths = AppPaths {
         content_root: PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../content"),
@@ -117,13 +122,14 @@ fn app_with(delay: Duration, catalog: impl FnOnce(&DownloadSpec) -> Catalog) -> 
     });
     let clients = Arc::new(AtomicUsize::new(0));
     let (t, c) = (Arc::clone(&transport), Arc::clone(&clients));
-    state.semantic = SemanticService::with_backend(
+    state.semantic = SemanticService::with_parts(
         &data_dir,
         catalog(&spec),
         Box::new(move || {
             c.fetch_add(1, Ordering::SeqCst);
             Ok(Arc::clone(&t) as Arc<dyn Transport>)
         }),
+        backend,
     );
     let events = Arc::new(Events::default());
     state
@@ -218,15 +224,8 @@ fn no_request_before_consent_then_the_consented_download_installs_the_model() {
     let st = a.state.semantic_status(&a.ctx());
     assert!(st.model_present && st.semantic);
     assert_eq!(st.download.state, DownloadState::Done);
-    assert!(
-        !st.backend_available && !st.active,
-        "no backend linked yet (B-46)"
-    );
-    assert!(st
-        .download
-        .message
-        .as_deref()
-        .is_some_and(|m| m.contains("arrives in a later update")));
+    assert!(st.backend_available && st.active, "semantic search answers");
+    assert_eq!(st.download.message, None);
     assert!(a.state.settings().unwrap().search.semantic);
     let events = a.events.0.lock().unwrap();
     assert_eq!(events.last().map(|e| e.state), Some(DownloadState::Done));
@@ -404,4 +403,53 @@ fn consent_text_is_the_spec_wording() {
         (c.accept.as_str(), c.decline.as_str()),
         ("Download and turn on", "Not now")
     );
+}
+
+#[test]
+fn without_a_backend_the_download_command_refuses_and_makes_no_request() {
+    let a = app_full(
+        Duration::ZERO,
+        |s| Catalog::for_tests(None, Some(s.clone())),
+        false,
+    );
+    let st = a.state.semantic_status(&a.ctx());
+    assert!(!st.backend_available && !st.active);
+    let err = a.state.semantic_start(&a.ctx(), None).unwrap_err();
+    assert_eq!(err.code, borealis_lib::error::ErrorCode::RequirementFailed);
+    assert_eq!(err.message, borealis_lib::semantic_service::NO_BACKEND_YET);
+    assert_eq!(err.message, "Semantic search (search by meaning) arrives in a later update. Search uses keywords until then.");
+    // A leftover partial is not resumed either.
+    std::fs::create_dir_all(a.partial().parent().unwrap()).unwrap();
+    std::fs::write(a.partial(), &data()[..1000]).unwrap();
+    assert!(a.state.semantic_start(&a.ctx(), None).is_err());
+    assert_eq!(a.clients.load(Ordering::SeqCst), 0, "no HTTPS client");
+    assert!(a.requests().is_empty(), "no request");
+    assert!(
+        !a.state.settings().unwrap().search.semantic,
+        "not turned on"
+    );
+    assert!(!a.model().exists());
+}
+
+#[test]
+fn without_a_backend_an_existing_model_can_still_be_deleted() {
+    let a = app_full(
+        Duration::ZERO,
+        |s| Catalog::for_tests(None, Some(s.clone())),
+        false,
+    );
+    touch(&a.model());
+    std::fs::write(a.model(), data()).unwrap();
+    touch(&a.data_dir.join("search/v1/rules/vectors-0123abcd-256.bin"));
+    let st = a.state.semantic_status(&a.ctx());
+    assert!(st.model_present && !st.active);
+    assert_eq!(st.download.state, DownloadState::Done);
+    let st = a.state.semantic_delete(&a.ctx()).unwrap();
+    assert!(!st.model_present);
+    assert!(!a.model().exists());
+    assert!(!a
+        .data_dir
+        .join("search/v1/rules/vectors-0123abcd-256.bin")
+        .exists());
+    assert!(a.requests().is_empty());
 }

@@ -11,6 +11,7 @@ const Q8_0: SemanticFile = { quant: "Q8_0", fileName: "embeddinggemma-2-Q8_0.ggu
 const T1_FILE: SemanticFile = { quant: "Q6_K-te-Q4_K", fileName: "embeddinggemma-2-Q6_K-te-Q4_K.gguf", bytes: 211_161_312, sizeText: "210 MB" };
 const NOT_AVAILABLE = "The model for this device is not available yet.";
 const NO_BACKEND = "Model downloaded. Semantic search arrives in a later update of Borealis; until then search uses keywords.";
+const NO_BACKEND_YET = "Semantic search (search by meaning) arrives in a later update. Search uses keywords until then.";
 const T0_REASON = "Semantic search needs at least 3 GB of memory. Keyword search works fully.";
 
 /** Spec section 8 consent body for `file` (the "; N on this device" clause only for the smaller file, charging only on mobile). */
@@ -83,6 +84,7 @@ export class MockSemantic {
 
   start(search: SearchSettings): void {
     const st = this.status(search);
+    if (!this.opts.backendAvailable) throw apiError("requirement_failed", NO_BACKEND_YET);
     if (!st.file) throw apiError("requirement_failed", "Semantic search is not available on this device.");
     if (!st.available && !st.modelPresent) throw apiError("requirement_failed", NOT_AVAILABLE);
     if (st.modelPresent || this.download.state === "downloading") return;

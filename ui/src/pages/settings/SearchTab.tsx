@@ -16,6 +16,8 @@ const TIER_LABEL: Record<SemanticTier, string> = {
   t3: "Tier 3: full model, most detail",
 };
 const TIERS: SemanticTier[] = ["t1", "t2", "t3"];
+/** Shown instead of the switch text while no embedding backend is linked (B-46); the backend refuses downloads too. */
+export const NO_BACKEND_YET = "Semantic search (search by meaning) arrives in a later update. Search uses keywords until then.";
 
 /** The consent dialog (spec section 8 wording, Aurora message box). Nothing downloads unless the first button is pressed. */
 export function SemanticConsentDialog({ consent, onResult }: { consent: SemanticConsent; onResult: (accepted: boolean) => void }) {
@@ -28,6 +30,7 @@ export function SemanticConsentDialog({ consent, onResult }: { consent: Semantic
 
 /** The line under the semantic switch. */
 function switchText(st: SemanticStatus): string {
+  if (!st.backendAvailable) return NO_BACKEND_YET;
   if (!st.available && !st.modelPresent) return st.unavailableReason ?? "";
   if (st.modelPresent && !st.backendAvailable) return st.download.message ?? "Model downloaded. Semantic search arrives in a later update of Borealis.";
   if (st.active) return "On: search also finds rules, lore and session notes by meaning.";
@@ -76,6 +79,7 @@ export function SearchTab() {
   const resumable = d.state === "paused" || d.state === "failed";
 
   const toggle = (on: boolean) => {
+    if (!st.backendAvailable) return;
     if (!on) {
       if (busy || resumable) void act(() => api.semanticDownloadCancel());
       else setSearch({ semantic: false });
@@ -106,8 +110,8 @@ export function SearchTab() {
       {!st.file && <Help>{st.unavailableReason}</Help>}
       {st.file && (
         <>
-          <DescCheck title="Semantic search (optional)" description={switchText(st)} checked={search.semantic}
-            onChange={(v) => toggle(v)} />
+          <DescCheck title="Semantic search (optional)" description={switchText(st)} checked={search.semantic && st.backendAvailable}
+            disabled={!st.backendAvailable} onChange={(v) => toggle(v)} />
           {(busy || resumable) && (
             <>
               <FieldLabel>MODEL DOWNLOAD</FieldLabel>
@@ -115,7 +119,7 @@ export function SearchTab() {
               <p className="aur-set-help" role="status">{progressText(st)}</p>
               <div className="aur-set-buttons">
                 {d.state === "downloading" && <Button onClick={() => void act(() => api.semanticDownloadPause())}>Pause</Button>}
-                {resumable && st.available && <Button onClick={() => void act(() => api.semanticDownloadStart())}>{d.state === "failed" ? "Try again" : "Resume"}</Button>}
+                {resumable && st.available && st.backendAvailable && <Button onClick={() => void act(() => api.semanticDownloadStart())}>{d.state === "failed" ? "Try again" : "Resume"}</Button>}
                 <Button variant="clear" onClick={() => void act(() => api.semanticDownloadCancel())}>Cancel</Button>
               </div>
               {st.mobile && <Help>The download pauses while Borealis is in the background; press Resume to continue.</Help>}

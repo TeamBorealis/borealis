@@ -23,13 +23,13 @@ export function Help({ children }: { children: ReactNode }) {
 }
 
 /** DescriptionCheckBox: header text beside the box, wrapped description indented 24 px under it. `sub` = 20 px sub-option. */
-export function DescCheck({ title, description, checked, onChange, sub, spaced, tooltip }: {
-  title: string; description?: ReactNode; checked: boolean; onChange: (v: boolean) => void; sub?: boolean; spaced?: boolean; tooltip?: string;
+export function DescCheck({ title, description, checked, onChange, sub, spaced, tooltip, disabled }: {
+  title: string; description?: ReactNode; checked: boolean; onChange: (v: boolean) => void; sub?: boolean; spaced?: boolean; tooltip?: string; disabled?: boolean;
 }) {
   const id = useId();
   return (
     <div className={`aur-set-check ${sub ? "sub" : ""} ${spaced ? "spaced" : ""}`} title={tooltip}>
-      <CheckBox aria-labelledby={`${id}-t`} aria-describedby={description ? `${id}-d` : undefined} checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <CheckBox disabled={disabled} aria-labelledby={`${id}-t`} aria-describedby={description ? `${id}-d` : undefined} checked={checked} onChange={(e) => onChange(e.target.checked)} />
       <span className="aur-set-check-head" id={`${id}-t`}>{title}</span>
       {description && <span className="aur-set-check-desc" id={`${id}-d`}>{description}</span>}
     </div>

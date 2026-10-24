@@ -26,7 +26,7 @@ const desktop = (opts: ConstructorParameters<typeof MockApi>[0] = {}) => new Moc
 describe("Settings > Search: consent", () => {
   it("shows the spec consent text and downloads nothing on Not now", async () => {
     // Arrange
-    const api = desktop();
+    const api = desktop({ semantic: { backendAvailable: true } });
     const { user, dialog } = await openSearchTab(api);
 
     // Act
@@ -43,9 +43,9 @@ describe("Settings > Search: consent", () => {
     expect((await api.getSettings()).search.semantic).toBe(false);
   });
 
-  it("Download and turn on downloads once and then says semantic search arrives in a later update", async () => {
+  it("Download and turn on downloads once and then semantic search is on", async () => {
     // Arrange
-    const api = desktop({ semantic: { stepMs: 5 } });
+    const api = desktop({ semantic: { stepMs: 5, backendAvailable: true } });
     const { user, dialog } = await openSearchTab(api);
 
     // Act
@@ -53,7 +53,7 @@ describe("Settings > Search: consent", () => {
     await user.click(await screen.findByRole("button", { name: "Download and turn on" }));
 
     // Assert
-    expect(await within(dialog).findByText(/Semantic search arrives in a later update/)).toBeTruthy();
+    expect(await within(dialog).findByText(/^On: search also finds/)).toBeTruthy();
     expect(api.semantic.starts).toBe(1);
     expect((await api.getSettings()).search.semantic).toBe(true);
     expect((within(dialog).getByRole("checkbox", { name: SWITCH }) as HTMLInputElement).checked).toBe(true);
@@ -68,10 +68,35 @@ describe("Settings > Search: consent", () => {
   });
 });
 
+describe("Settings > Search before the embedding backend exists (B-46)", () => {
+  it("the switch is disabled with one plain line, and no download can start", async () => {
+    // Arrange
+    const api = desktop();
+    expect(api.semantic.opts.backendAvailable).toBe(false);
+    const { user, dialog } = await openSearchTab(api);
+
+    // Act
+    const sw = within(dialog).getByRole("checkbox", { name: SWITCH }) as HTMLInputElement;
+    await user.click(sw);
+
+    // Assert
+    expect(sw.disabled).toBe(true);
+    expect(sw.checked).toBe(false);
+    expect(within(dialog).getByText("Semantic search (search by meaning) arrives in a later update. Search uses keywords until then.")).toBeTruthy();
+    expect(screen.queryByRole("dialog", { name: "Turn on semantic search?" })).toBeNull();
+    expect(api.semantic.starts).toBe(0);
+    await expect(api.semanticDownloadStart()).rejects.toMatchObject({ code: "requirement_failed" });
+    expect(api.semantic.starts).toBe(0);
+    expect((await api.getSettings()).search.semantic).toBe(false);
+    // Tier display and override stay.
+    expect(within(dialog).getByLabelText("DEVICE TIER")).toBeTruthy();
+  });
+});
+
 describe("Settings > Search: download controls", () => {
   it("pause keeps progress, resume continues, cancel removes it and turns semantic search off", async () => {
     // Arrange
-    const api = desktop({ semantic: { stepMs: 400 } });
+    const api = desktop({ semantic: { stepMs: 400, backendAvailable: true } });
     const { user, dialog } = await openSearchTab(api);
     await user.click(within(dialog).getByRole("checkbox", { name: SWITCH }));
     await user.click(await screen.findByRole("button", { name: "Download and turn on" }));
@@ -124,7 +149,7 @@ describe("Settings > Search: download controls", () => {
 describe("Settings > Search on phones", () => {
   it("a T1 phone reports the model as not available yet and never opens the consent", async () => {
     // Arrange
-    const api = new MockApi({ mobile: true, semantic: { probedTier: "t1" } });
+    const api = new MockApi({ mobile: true, semantic: { probedTier: "t1", backendAvailable: true } });
     const user = userEvent.setup();
     renderApp("/more", { api });
 

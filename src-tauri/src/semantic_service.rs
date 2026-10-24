@@ -5,8 +5,9 @@
 //! `semantic_download_start` command reaches, after the user pressed "Download and turn on" in the consent dialog.
 //! A partial left by an earlier run shows as paused; it resumes only when the user presses Resume.
 //!
-//! No embedding backend is linked yet (B-46): a downloaded model shows "semantic search arrives in a later
-//! update" and search stays keyword-only. [`borealis_embed::backend_available`] flips that once it is linked.
+//! No embedding backend is linked yet (B-46): until [`borealis_embed::backend_available`] is true, `start` refuses
+//! (no 310 MB download that does nothing), Settings says semantic search arrives in a later update, and search stays
+//! keyword-only. A model that is somehow present can still be deleted.
 
 use borealis_embed::download::{
     self, Control, DownloadError, DownloadSpec, ModelDir, Outcome, Phase, Transport,
@@ -27,6 +28,10 @@ pub const VECTOR_CORPORA: [&str; 3] = ["rules", "lore", "sessions"];
 const PROGRESS_EVERY: Duration = Duration::from_millis(250);
 const DOWNLOADED_NO_BACKEND: &str =
     "Model downloaded. Semantic search arrives in a later update of Borealis; until then search uses keywords.";
+/// Settings line, and the refusal of `start`, while no embedding backend is linked (B-46): no one downloads a model
+/// that cannot be used yet.
+pub const NO_BACKEND_YET: &str =
+    "Semantic search (search by meaning) arrives in a later update. Search uses keywords until then.";
 const PAUSED_IN_BACKGROUND: &str = "Paused while Borealis was in the background.";
 
 /// Where the download stands.
@@ -209,6 +214,8 @@ struct Inner {
     search_root: PathBuf,
     catalog: Catalog,
     make_transport: TransportFactory,
+    /// An embedding backend is linked (`borealis_embed::backend_available`, or the test's choice).
+    backend: bool,
     transport: Mutex<Option<Arc<dyn Transport>>>,
     job: Mutex<Job>,
     /// Serialises start / cancel / delete, so a start cannot slip in while a delete waits for the old thread.
@@ -250,9 +257,25 @@ impl SemanticService {
         Self::with_backend(data, Catalog::compiled(), Box::new(https_transport))
     }
 
-    /// Same, with another catalog and transport (network-mocked tests).
+    /// Same, with another catalog and transport (network-mocked tests); the backend flag is this build's.
     #[must_use]
     pub fn with_backend(data: &Path, catalog: Catalog, make_transport: TransportFactory) -> Self {
+        Self::with_parts(
+            data,
+            catalog,
+            make_transport,
+            borealis_embed::backend_available(),
+        )
+    }
+
+    /// Same, also choosing whether an embedding backend counts as linked (tests of the post-B-46 flow).
+    #[must_use]
+    pub fn with_parts(
+        data: &Path,
+        catalog: Catalog,
+        make_transport: TransportFactory,
+        backend: bool,
+    ) -> Self {
         Self(Arc::new(Inner {
             models: ModelDir::new(data.join(MODELS_DIR)),
             search_root: data
@@ -260,6 +283,7 @@ impl SemanticService {
                 .join(crate::search_service::LAYOUT_DIR),
             catalog,
             make_transport,
+            backend,
             transport: Mutex::new(None),
             job: Mutex::new(Job {
                 file_name: None,
@@ -312,7 +336,7 @@ impl SemanticService {
         let spec = self.0.catalog.spec(ctx.tier);
         let present = spec.is_some_and(|s| self.0.models.is_installed(s));
         let available = spec.is_some_and(|s| !s.sources.is_empty());
-        let backend = borealis_embed::backend_available();
+        let backend = self.0.backend;
         let unavailable_reason = match spec {
             None => Some(
                 ctx.t0_reason
@@ -383,9 +407,13 @@ impl SemanticService {
     /// (consent dialog, or Resume of a download they started). A running download is left alone.
     ///
     /// # Errors
-    /// The plain reason when the tier has no file or no URL serves it, or the HTTPS client cannot be built.
+    /// The plain reason when no embedding backend is linked yet ([`NO_BACKEND_YET`]), the tier has no file or no URL
+    /// serves it, or the HTTPS client cannot be built.
     pub fn start(&self, tier: Tier, lifecycle: Option<Lifecycle>) -> Result<(), String> {
         let _ops = self.ops();
+        if !self.0.backend {
+            return Err(NO_BACKEND_YET.to_owned());
+        }
         let spec = self
             .0
             .catalog
@@ -474,8 +502,7 @@ impl SemanticService {
                 state: DownloadState::Done,
                 done: spec.bytes,
                 total: spec.bytes,
-                message: (!borealis_embed::backend_available())
-                    .then(|| DOWNLOADED_NO_BACKEND.to_owned()),
+                message: (!self.0.backend).then(|| DOWNLOADED_NO_BACKEND.to_owned()),
             },
             Ok(Outcome::Paused { have }) => SemanticDownload {
                 state: DownloadState::Paused,
