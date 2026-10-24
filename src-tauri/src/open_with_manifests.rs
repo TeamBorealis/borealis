@@ -192,6 +192,26 @@ fn android_matches_borealis_bundles_by_name_and_by_mime_type() {
     // Downloads URIs carry no extension: the octet-stream filter (tested above) is what opens them.
 }
 
+const MAIN_ACTIVITY: &str =
+    include_str!("../gen/android/app/src/main/java/app/borealis/MainActivity.kt");
+const OPENED_URI_RULES: &str =
+    include_str!("../gen/android/app/src/main/java/app/borealis/OpenedUriRules.kt");
+
+/// Z: Android reads an opened file only through `OpenedUriRules`: `content:` URIs of other apps
+/// (never `file:` or Borealis's own providers), streamed with the bundle reader's per-file cap,
+/// never `readBytes()` of an unbounded stream. The rules themselves are unit-tested in Kotlin
+/// (`app/src/test/.../OpenedUriRulesTest.kt`).
+#[test]
+fn android_reads_opened_files_only_through_the_capped_rules() {
+    assert!(MAIN_ACTIVITY.contains("OpenedUriRules.refusal(uri.scheme, uri.authority, own)"));
+    assert!(MAIN_ACTIVITY.contains("OpenedUriRules.readCapped(it)"));
+    assert!(!MAIN_ACTIVITY.contains("readBytes()"), "no unbounded read");
+    let cap = borealis_bundle::Limits::default().max_file_bytes;
+    assert_eq!(cap, 64 * 1024 * 1024);
+    assert!(OPENED_URI_RULES.contains("const val MAX_OPEN_BYTES: Int = 64 * 1024 * 1024"));
+    assert!(OPENED_URI_RULES.contains(r#"scheme.equals("content", ignoreCase = true)"#));
+}
+
 const FILE_PATHS: &str = include_str!("../gen/android/app/src/main/res/xml/file_paths.xml");
 const SHARE_PLUGIN: &str =
     include_str!("../gen/android/app/src/main/java/app/borealis/SharePlugin.kt");

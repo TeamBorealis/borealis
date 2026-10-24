@@ -1,10 +1,12 @@
 package app.borealis
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.util.Base64
+import android.util.Log
 import android.webkit.WebView
 import androidx.activity.enableEdgeToEdge
 import org.json.JSONArray
@@ -45,15 +47,34 @@ class MainActivity : TauriActivity() {
         intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)?.let { uris.addAll(it) }
     }
     var added = false
+    val own = ownAuthorities()
     for (uri in uris) {
+      val why = OpenedUriRules.refusal(uri.scheme, uri.authority, own)
+      if (why != null) {
+        Log.w(TAG, "not opening a shared file: $why")
+        continue
+      }
+      // Streamed with the cap: an oversized or endless stream is dropped, never buffered whole.
       val bytes = try {
-        contentResolver.openInputStream(uri)?.use { it.readBytes() }
+        contentResolver.openInputStream(uri)?.use { OpenedUriRules.readCapped(it) }
       } catch (e: Exception) { null } ?: continue
-      if (bytes.isEmpty() || bytes.size > MAX_OPEN_BYTES) continue
+      if (bytes.isEmpty()) continue
       OpenedFiles.add(displayName(uri), Base64.encodeToString(bytes, Base64.NO_WRAP))
       added = true
     }
     if (added) nudge()
+  }
+
+  /** Authorities of this app's own content providers (FileProvider, library providers). */
+  private fun ownAuthorities(): Set<String> {
+    val declared = try {
+      @Suppress("DEPRECATION")
+      packageManager.getPackageInfo(packageName, PackageManager.GET_PROVIDERS).providers
+        ?.flatMap { (it.authority ?: "").split(';') }
+        ?.filter { it.isNotEmpty() }
+        .orEmpty()
+    } catch (e: Exception) { emptyList() }
+    return (declared + "$packageName.fileprovider").toSet()
   }
 
   /** The file's own name: providers such as Downloads use opaque ids (`msf:123`) in the URI. */
@@ -75,7 +96,7 @@ class MainActivity : TauriActivity() {
   }
 
   companion object {
-    private const val MAX_OPEN_BYTES = 64 * 1024 * 1024
+    private const val TAG = "Borealis"
   }
 }
 
