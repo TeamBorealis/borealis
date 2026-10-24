@@ -190,3 +190,52 @@ impl LinkDevice {
         }
     }
 }
+
+/// A `.borealis` file opened for preview (`bundle_open`): the same rows a device transfer shows.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BundlePreview {
+    /// Opaque id for `bundle_accept` / `bundle_discard`.
+    pub bundle_id: String,
+    /// The file's name (never a path).
+    pub file_name: String,
+    /// The device that made the bundle (display only).
+    pub source_device: String,
+    /// What Accept would do, one row per item.
+    pub preview: LinkPreview,
+}
+
+/// Result of `bundle_export`: the file was written (desktop) or the save dialog was cancelled.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BundleExport {
+    /// Suggested / written file name.
+    pub file_name: String,
+    /// Full path when the file was written; `None` when the user cancelled the dialog.
+    pub path: Option<String>,
+    /// Characters in the bundle.
+    pub characters: usize,
+    /// Content packs in the bundle.
+    pub packs: usize,
+    /// Size of the bundle file.
+    pub bytes: u64,
+}
+
+/// Result of `bundle_share` (phones): Android opens the share sheet from the backend; elsewhere
+/// the bytes come back for the web view's own share sheet.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BundleShare {
+    /// File name to share.
+    pub file_name: String,
+    /// Characters in the bundle.
+    pub characters: usize,
+    /// Content packs in the bundle.
+    pub packs: usize,
+    /// Size of the bundle file.
+    pub bytes: u64,
+    /// True when the backend already opened the system share sheet.
+    pub shared: bool,
+    /// The bundle, base64, when the UI has to share it (`shared` is false).
+    pub data_base64: Option<String>,
+}

@@ -5,8 +5,10 @@
 //! with `start_send` / `start_receive`, accepts **one** authentication attempt, and closes when
 //! the window expires (5 minutes), on cancel, or once a session started. No plaintext fallback.
 
+mod bundle;
 mod devices;
 mod host;
+pub mod inbox;
 mod run;
 pub mod validate;
 
@@ -25,7 +27,8 @@ use crate::error::{ApiError, ApiResult, ErrorCode};
 use crate::state::AppState;
 use crate::sync_dto::{LinkSelection, LinkStatus};
 
-pub use host::sync_dir;
+pub use bundle::{export_dto, incoming_dir, suggested_file_name};
+pub use host::{sync_dir, OutgoingBundle};
 
 /// Event name of session status updates.
 pub const EVENT_LINK_STATUS: &str = "borealis://link-status";
@@ -81,6 +84,7 @@ pub struct DeviceSync {
     store_factory: StoreFactory,
     store: OnceLock<Arc<dyn SecureStore>>,
     sessions: Mutex<HashMap<String, Arc<SessionCtl>>>,
+    bundles: bundle::OpenBundles,
 }
 
 pub(crate) fn now_ms() -> u64 {
@@ -114,6 +118,7 @@ impl DeviceSync {
             store_factory: Box::new(store),
             store: OnceLock::new(),
             sessions: Mutex::new(HashMap::new()),
+            bundles: Mutex::new(HashMap::new()),
         }
     }
 

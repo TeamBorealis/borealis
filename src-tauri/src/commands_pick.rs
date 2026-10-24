@@ -106,6 +106,11 @@ fn native_pick(
             .blocking_pick_files()
             .unwrap_or_default(),
         PickPurpose::AiOverride => dialog.blocking_pick_file().into_iter().collect(),
+        PickPurpose::BundleFile => dialog
+            .add_filter("Borealis bundles", &[crate::picked_files::BUNDLE_EXTENSION])
+            .blocking_pick_file()
+            .into_iter()
+            .collect(),
         PickPurpose::SaveCharacter => {
             return Err(ApiError::invalid("Use Save as to choose where to save."));
         }

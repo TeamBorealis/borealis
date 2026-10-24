@@ -198,6 +198,11 @@ pub fn cancel_import_preview(state: S<'_>, preview_id: String) -> ApiResult<()> 
 pub fn take_opened_files(app: AppHandle) -> Vec<OpenedFile> {
     let mut files = crate::content_preview::take_opened_files();
     files.extend(crate::native_share::take_opened_files(&app));
+    // Android hands bundles over as bytes: set them aside as files (`take_opened_bundles` returns them).
+    #[cfg(feature = "device-link")]
+    if let Some(state) = app.try_state::<crate::state::AppState>() {
+        files = crate::device_sync::inbox::claim_bundles(&state, files);
+    }
     files
 }
 

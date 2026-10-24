@@ -620,6 +620,11 @@ fn convert_json_single(
 
 /// Park a file the OS opened with Borealis until the UI asks for it.
 pub fn push_opened_file(path: &Path) {
+    // A `.borealis` bundle is opened by path (`bundle_open`), never read into memory here.
+    #[cfg(feature = "device-link")]
+    if crate::device_sync::inbox::push_opened_path(path) {
+        return;
+    }
     let lower = path.to_string_lossy().to_lowercase();
     let known = [".xml", ".index", ".zip", ".dnd5e", ".json"];
     if !known.iter().any(|e| lower.ends_with(e)) {

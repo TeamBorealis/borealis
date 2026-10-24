@@ -111,6 +111,56 @@ pub fn share_text<R: tauri::Runtime>(
     Err(ApiError::new(ErrorCode::InvalidArgument, NOT_AVAILABLE))
 }
 
+/// What the Kotlin `shareFile` command receives.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ShareFileArgs<'a> {
+    pub path: &'a str,
+    pub file_name: &'a str,
+    pub mime: &'a str,
+    pub title: &'a str,
+}
+
+/// Open the system share sheet with an existing file (Android: `ACTION_SEND` with a `FileProvider`
+/// URI of a copy in the cache folder). Answers whether the sheet opened; `false` off Android, where
+/// the web view's own share sheet takes over.
+///
+/// # Errors
+/// `Io` when the share sheet cannot open.
+#[cfg(target_os = "android")]
+pub fn share_file<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    args: &ShareFileArgs<'_>,
+) -> ApiResult<bool> {
+    use tauri::Manager;
+    let Some(handle) = app.try_state::<android::ShareHandle<R>>() else {
+        return Ok(false);
+    };
+    handle
+        .0
+        .run_mobile_plugin::<serde_json::Value>("shareFile", args)
+        .map(|_| true)
+        .map_err(|e| {
+            tracing::warn!("share sheet failed to open");
+            ApiError::new(
+                ErrorCode::IoError,
+                format!("The share sheet could not open: {e}"),
+            )
+        })
+}
+
+/// Off Android there is no native file share here (see the module docs).
+///
+/// # Errors
+/// Never.
+#[cfg(not(target_os = "android"))]
+pub fn share_file<R: tauri::Runtime>(
+    _app: &tauri::AppHandle<R>,
+    _args: &ShareFileArgs<'_>,
+) -> ApiResult<bool> {
+    Ok(false)
+}
+
 /// What the Kotlin `takeOpenedFiles` command answers.
 #[derive(Debug, Default, serde::Deserialize)]
 pub struct TakenFiles {

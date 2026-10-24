@@ -20,6 +20,8 @@ pub const EVENT_FILE_DROP: &str = "borealis://file-drop";
 
 /// What a drop may carry: rules content (XML, `.index`, `.zip`, JSON) and character files.
 pub const DROP_EXTENSIONS: &[&str] = &["xml", "index", "zip", "json", "dnd5e"];
+/// The extension of a Borealis bundle (`borealis-bundle/1`); opened by path through `bundle_open`.
+pub const BUNDLE_EXTENSION: &str = "borealis";
 /// What the "Load Character" panel may return.
 pub const CHARACTER_EXTENSIONS: &[&str] = &["dnd5e", "json"];
 /// Most bytes one `take_picked_files` call reads in total.
@@ -41,6 +43,8 @@ pub struct DroppedFile {
 pub struct FileDrop {
     pub files: Vec<DroppedFile>,
     pub folders: Vec<DroppedFile>,
+    /// `.borealis` bundles, as `bundle-file` tokens for `bundle_open` (never read into the webview).
+    pub bundles: Vec<DroppedFile>,
     pub rejected: Vec<String>,
 }
 
@@ -72,6 +76,17 @@ pub fn grant_drop(picks: &PickedPaths, paths: &[PathBuf]) -> ApiResult<FileDrop>
         if path.is_dir() && drop.folders.is_empty() {
             let picked = picks.grant(path.clone(), PickPurpose::ContentFolder)?;
             drop.folders.push(DroppedFile {
+                token: picked.token,
+                name: picked.name,
+            });
+            continue;
+        }
+        if path.is_file()
+            && has_extension(path, &[BUNDLE_EXTENSION])
+            && drop.bundles.len() < MAX_PICKS
+        {
+            let picked = picks.grant(path.clone(), PickPurpose::BundleFile)?;
+            drop.bundles.push(DroppedFile {
                 token: picked.token,
                 name: picked.name,
             });
@@ -180,6 +195,25 @@ mod tests {
                 p
             })
             .collect()
+    }
+
+    #[test]
+    fn a_dropped_bundle_gets_a_bundle_token_and_is_never_read_as_content() {
+        let dir = tempfile::tempdir().unwrap();
+        let paths = files(dir.path(), &["Mira.borealis", "Other.BOREALIS", "hero.dnd5e"]);
+        let picks = PickedPaths::default();
+        let drop = grant_drop(&picks, &paths).unwrap();
+        let bundles: Vec<_> = drop.bundles.iter().map(|f| f.name.as_str()).collect();
+        assert_eq!(bundles, ["Mira.borealis", "Other.BOREALIS"]);
+        let files: Vec<_> = drop.files.iter().map(|f| f.name.as_str()).collect();
+        assert_eq!(files, ["hero.dnd5e"]);
+        let token = drop.bundles[0].token.clone();
+        assert!(picks.resolve(&token, PickPurpose::DroppedFile).is_err());
+        assert!(
+            take_picked_files(&picks, PickPurpose::BundleFile, &[token.clone()]).is_err(),
+            "bundles are opened by path, not read into the webview"
+        );
+        assert!(picks.resolve(&token, PickPurpose::BundleFile).is_ok());
     }
 
     #[test]

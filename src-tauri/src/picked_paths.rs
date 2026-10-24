@@ -42,6 +42,9 @@ pub enum PickPurpose {
     /// A file dropped on the window from the OS. Minted only by the native drag-drop handler
     /// (`picked_files::grant_drop`), never by `pick_path`.
     DroppedFile,
+    /// A `.borealis` bundle to preview and apply (File > Open bundle, a drop on the window, or the
+    /// OS "open with"). It is opened by path in the backend, never read into the webview.
+    BundleFile,
 }
 
 /// `pick_path` result: the token plus what to show the user.
@@ -220,6 +223,7 @@ mod tests {
             PickPurpose::AiOverride,
             PickPurpose::CharacterFile,
             PickPurpose::DroppedFile,
+            PickPurpose::BundleFile,
         ]
         .iter()
         .map(|p| {
@@ -238,7 +242,8 @@ mod tests {
                 "5etools-folder",
                 "ai-override",
                 "character-file",
-                "dropped-file"
+                "dropped-file",
+                "bundle-file"
             ]
         );
     }

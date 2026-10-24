@@ -411,7 +411,7 @@ fn platform_of(peer: &PeerInfo) -> Platform {
     peer.platform
 }
 
-fn preview_dto(p: &Preview) -> LinkPreview {
+pub(crate) fn preview_dto(p: &Preview) -> LinkPreview {
     LinkPreview {
         items: p
             .items

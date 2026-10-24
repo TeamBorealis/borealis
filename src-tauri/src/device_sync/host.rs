@@ -146,7 +146,8 @@ impl ReceiveHost for AppReceiver {
         let _ = sweep_trash(&t.trash_dir, now_ms());
         let report = {
             let _guard = state.content_lock().map_err(|e| e.message)?;
-            apply_plan(bundle, plan, &t, &AppValidator).map_err(|e| e.to_string())?
+            apply_plan(bundle, plan, &t, &AppValidator)
+                .map_err(|e| borealis_transfer::plain_reason(&e))?
         };
         let packs_changed = report
             .added

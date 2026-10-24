@@ -412,6 +412,18 @@ pub fn run() {
             commands_sync::link_devices,
             #[cfg(feature = "device-link")]
             commands_sync::link_forget_device,
+            #[cfg(feature = "device-link")]
+            commands_sync::bundle_export,
+            #[cfg(feature = "device-link")]
+            commands_sync::bundle_share,
+            #[cfg(feature = "device-link")]
+            commands_sync::bundle_open,
+            #[cfg(feature = "device-link")]
+            commands_sync::bundle_accept,
+            #[cfg(feature = "device-link")]
+            commands_sync::bundle_discard,
+            #[cfg(feature = "device-link")]
+            commands_sync::take_opened_bundles,
             #[cfg(desktop)]
             commands_ai::ai_status,
             #[cfg(desktop)]
