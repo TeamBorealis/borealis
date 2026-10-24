@@ -4,7 +4,8 @@
 //! Hand-rolled JSON-RPC 2.0 (`initialize`, `ping`, `tools/list`, `tools/call`), newline-delimited,
 //! instead of the `rmcp` SDK: the surface is tiny, it keeps the dependency tree and the
 //! read-only guarantee auditable. No writes, no network; the only filesystem access is reading the
-//! configured content directories at startup. Logs go to stderr only. A host may add its own
+//! configured content directories at startup and opening the app's search index read-only
+//! (`config.rs`); a `session_scope` launch argument gates the campaign-notes tool. Logs go to stderr only. A host may add its own
 //! tools through [`ToolExtension`] (the desktop app's explicit `--allow-write` mode); without
 //! one the server is exactly the read-only tool set.
 

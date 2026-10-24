@@ -1,13 +1,14 @@
 //! `--mcp` mode, AI profile startup and first-run setup.
 
 use borealis_ai::provider::DetectConfig;
-use borealis_lib::ai_profile::{ensure_profile, mcp_command, ProfileOutcome};
+use borealis_lib::ai_profile::{ensure_profile, mcp_command, mcp_command_scoped, ProfileOutcome};
 use borealis_lib::ai_service::AiService;
 #[cfg(unix)]
 use borealis_lib::ai_setup::{SetupEvent, SetupSink};
 use borealis_lib::error::ErrorCode;
 use borealis_lib::mcp_mode;
 use borealis_lib::state::{AppPaths, AppState};
+use borealis_mcp::config::SessionScope;
 use serde_json::{json, Value};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -208,6 +209,49 @@ fn mcp_command_carries_content_dirs_and_packs() {
             "core,srd-5.1"
         ])
     );
+}
+
+#[test]
+fn the_session_scope_is_only_in_the_launch_of_the_ask_that_got_it() {
+    let dirs = [PathBuf::from("/c")];
+    let exe = Path::new("/App/borealis");
+    let plain = mcp_command_scoped(exe, &dirs, None, None);
+    assert_eq!(plain.args, mcp_command(exe, &dirs, None).args);
+    assert!(!plain.args.iter().any(|a| a == "--session-scope"));
+    let scoped = mcp_command_scoped(exe, &dirs, None, Some("camp-1"));
+    assert_eq!(
+        scoped.args,
+        strs(&["--mcp", "--content-dir", "/c", "--session-scope", "camp-1"])
+    );
+}
+
+#[test]
+fn mcp_mode_parses_search_dir_and_session_scope() {
+    let app = tempfile::tempdir().unwrap();
+    let exe = app.path().join("borealis");
+    let base = ["--mcp", "--content-dir", "/a"];
+    let none = mcp_mode::parse_args_with(&strs(&base), &exe, None).unwrap();
+    assert_eq!(
+        none.session_scope,
+        SessionScope::None,
+        "default is no scope"
+    );
+    assert!(none.search_dir.is_none());
+    let mut args = strs(&base);
+    args.extend(strs(&["--search-dir", "/idx", "--session-scope", "camp-1"]));
+    let cfg = mcp_mode::parse_args_with(&args, &exe, None).unwrap();
+    assert_eq!(cfg.search_dir, Some(PathBuf::from("/idx")));
+    assert_eq!(cfg.session_scope, SessionScope::Campaign("camp-1".into()));
+    for bad in [
+        strs(&["--mcp", "--content-dir", "/a", "--session-scope"]),
+        strs(&["--mcp", "--content-dir", "/a", "--session-scope", " "]),
+        strs(&["--mcp", "--content-dir", "/a", "--search-dir"]),
+    ] {
+        assert!(
+            mcp_mode::parse_args_with(&bad, &exe, None).is_err(),
+            "{bad:?}"
+        );
+    }
 }
 
 #[cfg(unix)]

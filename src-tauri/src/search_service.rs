@@ -18,7 +18,7 @@ use std::time::{Duration, Instant};
 /// Folder of all search data under the app data folder (derived, cleared by "Clear caches").
 pub const SEARCH_DIR: &str = "search";
 /// Layout version folder inside [`SEARCH_DIR`].
-const LAYOUT_DIR: &str = "v1";
+pub const LAYOUT_DIR: &str = "v1";
 /// Bundled rules-text packs (`borealis-docs/1`, loaded only by search; never in the content store).
 pub const RULES_TEXT_PACKS: [&str; 2] = ["srd-5.1-rules-text", "srd-5.2.1-rules-text"];
 const DOCS_FILE: &str = "docs.json";

@@ -82,6 +82,24 @@ pub fn mcp_command(
     }
 }
 
+/// [`mcp_command`] for one ask that shares one campaign's notes: adds `--session-scope <campaign>`.
+/// Only the ask the user ticked "Include notes from <campaign>" for gets it; the default launch has
+/// no scope, so `search_sessions` does not exist for the model.
+#[must_use]
+pub fn mcp_command_scoped(
+    exe: &Path,
+    content_dirs: &[PathBuf],
+    packs: Option<&BTreeSet<String>>,
+    session_campaign: Option<&str>,
+) -> McpCommand {
+    let mut command = mcp_command(exe, content_dirs, packs);
+    if let Some(id) = session_campaign {
+        command.args.push("--session-scope".into());
+        command.args.push(id.to_string());
+    }
+    command
+}
+
 /// Everything needed to build a [`ProfileConfig`] per run (the pack list changes with the user's choices).
 #[derive(Debug, Clone)]
 pub struct ProfileBase {
@@ -100,6 +118,19 @@ impl ProfileBase {
         ProfileConfig::new(
             self.dir.clone(),
             mcp_command(&self.exe, &self.content_dirs, packs),
+        )
+    }
+
+    /// [`Self::config`] for an ask that was granted `session_campaign`'s notes.
+    #[must_use]
+    pub fn config_with_sessions(
+        &self,
+        packs: Option<&BTreeSet<String>>,
+        session_campaign: Option<&str>,
+    ) -> ProfileConfig {
+        ProfileConfig::new(
+            self.dir.clone(),
+            mcp_command_scoped(&self.exe, &self.content_dirs, packs, session_campaign),
         )
     }
 }

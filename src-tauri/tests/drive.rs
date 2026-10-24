@@ -15,7 +15,9 @@ const SPECIES: &str = "ID_2024_SPECIES_HUMAN";
 const CLASS: &str = "ID_2024_CLASS_CLERIC";
 const BACKGROUND: &str = "ID_2024_BACKGROUND_ACOLYTE";
 const WEAPON: &str = "ID_2024_WEAPON_MACE";
-const READ_ONLY_TOOLS: usize = 6;
+/// The read-only MCP tools: search_content/rules/lore, get_passage, get_element, list_core_ids,
+/// validate_element, class_sweep, explain_rules_term (`search_sessions` needs a session scope).
+const READ_ONLY_TOOLS: usize = 9;
 
 fn content_dir() -> String {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))

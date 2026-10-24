@@ -1,11 +1,15 @@
 //! `borealis --mcp`: run the read-only Borealis MCP server on stdio instead of the GUI.
 //!
-//! Arguments: `--mcp [--content-dir <dir>]... [--packs a,b] [--allow-write --library <dir>]`.
+//! Arguments: `--mcp [--content-dir <dir>]... [--packs a,b] [--search-dir <dir>]
+//! [--session-scope <campaign>] [--allow-write --library <dir>]`. `--search-dir` defaults to the
+//! app's `<app-data>/search/v1` when it exists (opened read-only); `--session-scope` grants one
+//! ask one campaign's notes (default: none).
 //! Without `--content-dir` the bundled content next to the executable is used (installed bundle
 //! layouts), so the command also works when launched by a CLI from the app bundle path.
 //! `--allow-write --library <dir>` (desktop only, AI15) adds the character tools of
 //! [`crate::drive`], scoped to that library folder; without it the server is read-only.
 
+use borealis_mcp::config::SessionScope;
 use borealis_mcp::McpConfig;
 use std::collections::BTreeSet;
 use std::io::{BufRead, Write};
@@ -87,12 +91,25 @@ fn user_library_dir() -> Option<PathBuf> {
     dir.is_dir().then_some(dir)
 }
 
+/// The app's search index folder of this machine (`<app-data>/search/v1`), when the app built one.
+fn user_search_dir() -> Option<PathBuf> {
+    let env = |name: &str| std::env::var(name).ok();
+    let dir = user_data_dir(Platform::current(), &env)?
+        .join(crate::search_service::SEARCH_DIR)
+        .join(crate::search_service::LAYOUT_DIR);
+    dir.is_dir().then_some(dir)
+}
+
 /// Parse MCP-mode arguments.
 ///
 /// # Errors
 /// A message for unknown or incomplete arguments.
 pub fn parse_args(args: &[String], exe: &Path) -> Result<McpConfig, String> {
-    parse_args_with(args, exe, user_library_dir())
+    let mut config = parse_args_with(args, exe, user_library_dir())?;
+    if config.search_dir.is_none() {
+        config.search_dir = user_search_dir();
+    }
+    Ok(config)
 }
 
 /// [`parse_args`] with the user content library given (`None` = the user has none).
@@ -122,6 +139,17 @@ pub fn parse_args_with(
                     .map(String::from)
                     .collect();
                 config.enabled_packs = Some(set);
+            }
+            "--search-dir" => {
+                let dir = it.next().ok_or("--search-dir needs a directory")?;
+                config.search_dir = Some(PathBuf::from(dir));
+            }
+            "--session-scope" => {
+                let id = it.next().ok_or("--session-scope needs a campaign id")?;
+                if id.trim().is_empty() {
+                    return Err("--session-scope needs a non-empty campaign id".into());
+                }
+                config.session_scope = SessionScope::Campaign(id.clone());
             }
             other => return Err(format!("unknown argument: {other}")),
         }

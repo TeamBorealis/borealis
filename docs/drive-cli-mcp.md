@@ -86,11 +86,34 @@ then `level_up` with its `class_slot_id`.
 
 ## MCP
 
-Without `--allow-write`, `borealis --mcp` is the read-only content server (6 tools: content
-search, element lookup, validation, class sweep, rules terms). With
-`--allow-write --library <dir>` the character tools above are added after them; `tools/list`
-reflects the mode. Both flags are needed together. Same protocol as the read-only server
-(MCP 2026-07-28 with the `initialize` handshake for older clients).
+Without `--allow-write`, `borealis --mcp` is the read-only content server (9 tools: content
+search, rules and lore search, passage reader, element lookup, validation, class sweep, rules
+terms). With `--allow-write --library <dir>` the character tools above are added after them;
+`tools/list` reflects the mode. Both flags are needed together. Same protocol as the read-only
+server (MCP 2026-07-28 with the `initialize` handshake for older clients).
+
+Search tools (desktop). Every hit carries `cite`, a stable key; quote it as `[[cite]]` in an answer
+and read its full text (at most 4,000 characters) with `get_passage`:
+
+| Tool | Arguments | Searches |
+|---|---|---|
+| `search_rules` | `query`, `ruleset?`, `k?` | rules-text sections, conditions, glossary. Cites: `rules:<pack>/<section>[#n]` or an element id |
+| `search_lore` | `query`, `type?`, `ruleset?`, `k?` | spells, monsters, classes, items and other elements. Cites: `ID_...[#n]` |
+| `search_content` | `query`, `type?`, `ruleset?`, `k?` | alias: Rules and Lore together |
+| `get_passage` | `cite` | the whole chunk behind a hit |
+| `search_sessions` | `query`, `k?` | notes of one campaign. Listed only inside a session scope (below). Cites: `session:<entry>#n` |
+
+The server reads the app's keyword index (`<app-data>/search/v1`, `--search-dir <dir>` to point
+elsewhere) strictly read-only: it never builds, repairs or writes it. Before the app has built the
+index, or when the index was built by another version, the tools answer from the in-memory content
+as before (`get_passage` then serves elements only).
+
+Session notes need a per-ask grant: `--session-scope <campaign_id>` in the launch arguments. The
+default has no scope, so `search_sessions` is absent from `tools/list` and a call is rejected like
+an unknown tool, and `get_passage` refuses `session:` cites. With a scope, only that campaign's
+notes are reachable; no tool argument can name another campaign, and a cite of another campaign
+reads as "no passage". The app adds the flag only for the ask where the user ticked "Include notes
+from <campaign>".
 
 Claude Code:
 
