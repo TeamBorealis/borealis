@@ -13,5 +13,7 @@ export function createApi(): Api {
   if (isTauri() && !forceMock) return createTauriApi();
   // `?mock=mobile` simulates a phone build (no AI at all); used by the web e2e suites.
   const mobile = new URLSearchParams(window.location.search).get("mock") === "mobile";
-  return new MockApi({ aiChunkDelayMs: 30, mobile });
+  // `?mockPeer=<ms>` makes a simulated other device answer Send/Receive windows (web e2e of the device transfer).
+  const peer = Number(new URLSearchParams(window.location.search).get("mockPeer"));
+  return new MockApi({ aiChunkDelayMs: 30, mobile, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null });
 }

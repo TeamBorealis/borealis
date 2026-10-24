@@ -157,3 +157,36 @@ impl LinkStatus {
         }
     }
 }
+
+/// One paired device (Settings > Devices, C1). Times are unix seconds.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LinkDevice {
+    /// Stable id derived from the device's certificate (16 hex characters).
+    pub id: String,
+    /// The name the device gave when pairing (display only).
+    pub name: String,
+    /// `macos`, `windows`, `linux`, `ios`, `android` or `unknown`.
+    pub platform: borealis_link::Platform,
+    /// First paired (or re-paired) at.
+    pub paired_at: u64,
+    /// Last successful Send/Receive with it.
+    pub last_synced_at: u64,
+    /// The pairing lapses at this time (180 days after the last transfer); re-pair by QR.
+    pub expires_at: u64,
+}
+
+impl LinkDevice {
+    /// The DTO of a registry entry.
+    #[must_use]
+    pub fn of(d: &borealis_link::PairedDevice) -> Self {
+        Self {
+            id: d.device_id.to_string(),
+            name: d.name.clone(),
+            platform: d.platform,
+            paired_at: d.paired_at,
+            last_synced_at: d.last_seen,
+            expires_at: d.expires_at,
+        }
+    }
+}

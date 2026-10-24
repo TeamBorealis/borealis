@@ -108,6 +108,8 @@
     "allow-link-accept",
     "allow-link-decline",
     "allow-link-cancel",
+    "allow-link-devices",
+    "allow-link-forget-device",
     "allow-ai-status",
     "allow-ai-start-task",
     "allow-ai-cancel-task",

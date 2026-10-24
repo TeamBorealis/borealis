@@ -787,6 +787,30 @@
     "name": "LinkStatus"
    }
   },
+  "link_devices": {
+   "args": {},
+   "method": "linkDevices",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "LinkDevice"
+    }
+   }
+  },
+  "link_forget_device": {
+   "args": {
+    "deviceId": false
+   },
+   "method": "linkForgetDevice",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "LinkDevice"
+    }
+   }
+  },
   "link_start_receive": {
    "args": {},
    "method": "linkStartReceive",
@@ -6221,6 +6245,47 @@
      }
     },
     "xp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "LinkDevice": {
+   "k": "object",
+   "props": {
+    "expiresAt": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "lastSyncedAt": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "pairedAt": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "platform": {
      "opt": false,
      "t": {
       "k": "prim"

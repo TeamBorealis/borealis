@@ -29,4 +29,32 @@ describe("mock device transfer", () => {
     expect(typed.phase).toBe("waiting_for_peer");
     expect((await api.linkCancel({ sessionId: shown.sessionId })).phase).toBe("cancelled");
   });
+
+  it("a simulated peer answers an open window, the receive lands in the library and pairs the device", async () => {
+    const api = new MockApi({ seed: false });
+    const shown = await api.linkStartReceive();
+    const preview = api.link.simulatePeer(shown.sessionId);
+    expect(preview.phase).toBe("preview");
+    expect(preview.preview?.items.map((i) => i.action)).toEqual(["new", "replace", "keep_local"]);
+    const done = await api.linkAccept({ sessionId: shown.sessionId });
+    expect(done.summary).toEqual({ added: 1, replaced: 1, keptLocal: 1, identical: 0 });
+    expect((await api.listCharacters()).map((c) => c.name)).toEqual(["Mira"]);
+    const devices = await api.linkDevices();
+    expect(devices).toHaveLength(1);
+    expect(devices[0]!.expiresAt - devices[0]!.lastSyncedAt).toBe(180 * 86_400);
+
+    const sending = await api.linkStartSend({ selection: { characterIds: ["c_1"] } });
+    expect(api.link.simulatePeer(sending.sessionId).phase).toBe("waiting_for_peer");
+    expect(api.link.simulatePeer(sending.sessionId).phase).toBe("done");
+  });
+
+  it("devices: expired pairings drop out, Remove forgets one, malformed ids are refused", async () => {
+    const now = 1_800_000_000;
+    const dev = (id: string, lastSyncedAt: number) => ({ id, name: id, platform: "android" as const, pairedAt: 1, lastSyncedAt, expiresAt: lastSyncedAt + 180 * 86_400 });
+    const api = new MockApi({ seed: false, linkDevices: [dev("00000000000000aa", now - 200 * 86_400), dev("00000000000000bb", now - 10), dev("00000000000000cc", now)] });
+    (api.link as unknown as { now: () => number }).now = () => now;
+    expect((await api.linkDevices()).map((d) => d.id)).toEqual(["00000000000000cc", "00000000000000bb"]);
+    expect((await api.linkForgetDevice({ deviceId: "00000000000000cc" })).map((d) => d.id)).toEqual(["00000000000000bb"]);
+    await expect(api.linkForgetDevice({ deviceId: "../x" })).rejects.toMatchObject({ code: "invalid_argument" });
+  });
 });

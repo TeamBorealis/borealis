@@ -11,6 +11,7 @@
  */
 import type {
   AbilityKey,
+  LinkDevice,
   LinkSelection,
   LinkStatus,
   AbilityMethod,
@@ -357,6 +358,10 @@ export interface ApiMethods {
   linkDecline(args: { sessionId: string }): Promise<LinkStatus>;
   /** Close the window or stop the transfer; nothing partial is kept. */
   linkCancel(args: { sessionId: string }): Promise<LinkStatus>;
+  /** Settings > Devices: paired devices, most recently synced first (expired pairings are dropped). */
+  linkDevices(): Promise<LinkDevice[]>;
+  /** Remove a device: its key is refused from now on. Returns the remaining list. */
+  linkForgetDevice(args: { deviceId: string }): Promise<LinkDevice[]>;
 
   /* First-run AI setup (desktop). Install output streams on `aisetup:event`. */
   aiSetupStatus(): Promise<AiSetupStatus>;
@@ -534,6 +539,8 @@ export const COMMANDS = {
   linkAccept: "link_accept",
   linkDecline: "link_decline",
   linkCancel: "link_cancel",
+  linkDevices: "link_devices",
+  linkForgetDevice: "link_forget_device",
   aiSetupStatus: "ai_setup_status",
   aiSetupConfirmInstall: "ai_setup_confirm_install",
   aiSetupInstall: "ai_setup_install",

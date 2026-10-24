@@ -104,6 +104,8 @@ const COMMANDS: &[&str] = &[
     "link_accept",
     "link_decline",
     "link_cancel",
+    "link_devices",
+    "link_forget_device",
     "ai_status",
     "ai_start_task",
     "ai_cancel_task",

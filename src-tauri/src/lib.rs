@@ -401,6 +401,10 @@ pub fn run() {
             commands_sync::link_decline,
             #[cfg(feature = "device-link")]
             commands_sync::link_cancel,
+            #[cfg(feature = "device-link")]
+            commands_sync::link_devices,
+            #[cfg(feature = "device-link")]
+            commands_sync::link_forget_device,
             #[cfg(desktop)]
             commands_ai::ai_status,
             #[cfg(desktop)]

@@ -76,3 +76,19 @@ export interface LinkStatus {
   errorCode: string | null;
   error: string | null;
 }
+
+/** Operating system of a paired device. */
+export type LinkPlatform = "macos" | "windows" | "linux" | "ios" | "android" | "unknown";
+
+/** One paired device (Settings > Devices). Times are unix seconds. */
+export interface LinkDevice {
+  id: string;
+  /** The name it gave when pairing (display only). */
+  name: string;
+  platform: LinkPlatform;
+  pairedAt: number;
+  /** Last Send/Receive with it. */
+  lastSyncedAt: number;
+  /** The pairing lapses 180 days after the last transfer; re-pair by QR or code. */
+  expiresAt: number;
+}

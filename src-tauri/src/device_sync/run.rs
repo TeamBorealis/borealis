@@ -387,16 +387,20 @@ impl SessionEvents {
         let fp = auth.peer.fingerprint;
         let data = &self.sync.state.state().paths.data;
         let now = super::now_ms() / 1000;
+        let id = DeviceId::of(&fp);
+        // A known, unexpired device keeps its pairing date and gets a fresh "last synced";
+        // anything else (new, expired, removed) is paired anew.
         let saved = DeviceRegistry::load(data)
-            .and_then(|reg| {
-                reg.with_paired(PairedDevice::new(&peer.name, platform_of(peer), fp, now))
+            .and_then(|reg| match reg.get(&id) {
+                Some(d) if !d.is_expired(now) => Ok(reg.with_seen(&id, now)),
+                _ => reg.with_paired(PairedDevice::new(&peer.name, platform_of(peer), fp, now)),
             })
             .and_then(|reg| reg.save(data));
         if let Err(e) = saved {
             tracing::warn!("device sync: could not remember the device: {e}");
         }
         if let Ok(store) = self.sync.store() {
-            if let Err(e) = save_peer_token(store.as_ref(), &DeviceId::of(&fp), &auth.pair_key) {
+            if let Err(e) = save_peer_token(store.as_ref(), &id, &auth.pair_key) {
                 tracing::warn!("device sync: could not store the pairing key: {e}");
             }
         }

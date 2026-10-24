@@ -287,3 +287,65 @@ async fn a_scanned_qr_must_match_the_chosen_direction() {
     pc.sync.cancel(&shown.session_id).unwrap();
     wait(&pc, &shown.session_id, LinkPhase::Cancelled).await;
 }
+
+/// Settings > Devices (C1): both sides list each other after a transfer (name, platform,
+/// last synced, 180-day expiry); a second transfer keeps the pairing date; Remove deletes the
+/// registry entry and the pair key; an expired pairing is dropped when the list is read.
+#[tokio::test(flavor = "multi_thread")]
+async fn devices_lists_paired_peers_and_remove_forgets_them() {
+    let (pc, phone) = (dev("PC"), dev("Phone"));
+    listener_sends(&pc, &phone).await;
+    let listed = pc.sync.devices().unwrap();
+    assert_eq!(listed.len(), 1);
+    let d = listed[0].clone();
+    assert_eq!(d.name, "Phone");
+    assert_eq!(d.platform, borealis_link::Platform::current());
+    assert_eq!(d.expires_at, d.last_synced_at + 180 * 86_400);
+    let value = serde_json::to_value(&listed).unwrap();
+    let errs = contract_support::Contract::load().def("LinkDevice", &value[0]);
+    assert!(errs.is_empty(), "{errs:?}\n{value:#}");
+
+    // A second Send (same character, now identical) keeps the original pairing date.
+    let shown = pc.sync.start_send(selection()).await.unwrap();
+    let scan = phone
+        .sync
+        .connect(shown.qr_payload.as_deref().unwrap(), None, None)
+        .await
+        .unwrap();
+    wait(&phone, &scan.session_id, LinkPhase::Preview).await;
+    phone.sync.decide(&scan.session_id, true).unwrap();
+    wait(&pc, &shown.session_id, LinkPhase::Done).await;
+    let again = pc.sync.devices().unwrap();
+    assert_eq!(again.len(), 1);
+    assert_eq!(again[0].paired_at, d.paired_at);
+
+    let id = DeviceId::parse(&d.id).unwrap();
+    let key = |dev: &Dev| borealis_link::store::peer_token(dev.store.as_ref(), &id).unwrap();
+    assert!(key(&pc).is_some());
+    assert!(pc.sync.forget_device(&d.id).unwrap().is_empty());
+    assert!(borealis_link::DeviceRegistry::load(&pc.state.paths.data)
+        .unwrap()
+        .get(&id)
+        .is_none());
+    assert!(key(&pc).is_none(), "the removed device's key is deleted");
+    // Removing again is a no-op; a malformed id is refused.
+    assert!(pc.sync.forget_device(&d.id).unwrap().is_empty());
+    assert!(pc.sync.forget_device("../etc").is_err());
+    // The phone still lists the PC until it is removed there (no ongoing sync in stage 1).
+    assert_eq!(phone.sync.devices().unwrap().len(), 1);
+
+    // A pairing past its expiry disappears from the list (and the file) when read.
+    let data = &phone.state.paths.data;
+    let mut reg = borealis_link::DeviceRegistry::load(data).unwrap();
+    for paired in &mut reg.devices {
+        paired.paired_at = 1;
+        paired.last_seen = 1;
+        paired.expires_at = 2;
+    }
+    reg.save(data).unwrap();
+    assert!(phone.sync.devices().unwrap().is_empty());
+    assert!(borealis_link::DeviceRegistry::load(data)
+        .unwrap()
+        .devices
+        .is_empty());
+}

@@ -11,7 +11,7 @@ use crate::content_packs::EventSink;
 use crate::device_sync::{DeviceSync, StateRef, SyncConfig, SyncEvents, EVENT_LINK_STATUS};
 use crate::error::ApiResult;
 use crate::state::AppState;
-use crate::sync_dto::{LinkSelection, LinkStatus};
+use crate::sync_dto::{LinkDevice, LinkSelection, LinkStatus};
 
 type S<'a> = State<'a, Arc<DeviceSync>>;
 
@@ -100,4 +100,16 @@ pub fn link_decline(sync: S<'_>, session_id: String) -> ApiResult<LinkStatus> {
 #[tauri::command]
 pub fn link_cancel(sync: S<'_>, session_id: String) -> ApiResult<LinkStatus> {
     sync.cancel(&session_id)
+}
+
+/// Settings > Devices: paired devices, most recently synced first (expired ones are dropped).
+#[tauri::command]
+pub fn link_devices(sync: S<'_>) -> ApiResult<Vec<LinkDevice>> {
+    sync.devices()
+}
+
+/// Settings > Devices > Remove: the device is refused from now on (re-pair by QR or code).
+#[tauri::command]
+pub fn link_forget_device(sync: S<'_>, device_id: String) -> ApiResult<Vec<LinkDevice>> {
+    sync.forget_device(&device_id)
 }

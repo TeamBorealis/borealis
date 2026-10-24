@@ -5,6 +5,7 @@
 //! with `start_send` / `start_receive`, accepts **one** authentication attempt, and closes when
 //! the window expires (5 minutes), on cancel, or once a session started. No plaintext fallback.
 
+mod devices;
 mod host;
 mod run;
 pub mod validate;

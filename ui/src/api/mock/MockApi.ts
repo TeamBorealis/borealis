@@ -1,6 +1,7 @@
 import type { Api, ApiEvents, EventName, SlotOption, SlotOptionsArgs } from "../contract";
 import type {
   AiHostStatus,
+  LinkDevice,
   LinkSelection,
   AppSettings, Attack, CharacterSnapshot, CharacterSummary, ExportResult, ImportReport, ItemSummary, MissingContentItem, Page, RecheckReport, RestrictionPreview, CompatibilityReport,
   AiSetupProviderId, ImportFileInput, OpenedFile, PickPurpose, RulesetProfile, SheetPreview, StatTrace, Unsubscribe,
@@ -51,6 +52,10 @@ export interface MockApiOptions {
   aiEnabled?: boolean;
   /** Simulates an iOS/Android build: `settings.mobile` is true and AI is forced off. */
   mobile?: boolean;
+  /** Device transfer: a simulated other device connects to an open Send/Receive window after this many ms (default: never). */
+  linkPeerAfterMs?: number | null;
+  /** Device transfer: paired devices to start with (Settings > Devices). */
+  linkDevices?: LinkDevice[];
 }
 
 const PROFILES: Record<"dnd2014" | "dnd2024", RulesetProfile> = {
@@ -100,6 +105,15 @@ export class MockApi implements Api {
     this.ai = new MockAi((e) => this.emit("ai:event", e), { chunkDelayMs: opts.aiChunkDelayMs ?? 25, available: opts.aiAvailable ?? true });
     this.setup = new MockAiSetup((e) => this.emit("aisetup:event", e), opts.aiSetup);
     this.imp = new MockImport((e) => this.emit("import:event", e), opts.importStepMs ?? 300);
+    this.link = new MockDeviceLink((st) => this.emit("link:status", st), {
+      mobile: this.mobile, peerAfterMs: opts.linkPeerAfterMs ?? null, devices: opts.linkDevices,
+      onReceived: (names) => names.forEach((name) => {
+        const c = createCharacter({ name, ruleset: "dnd2024", startingLevel: 1, gender: "Female", abilityMethod: "manual", options: {} }, { playerName: this.settings.playerName });
+        const saved = { ...c, dirty: false };
+        this.chars.set(saved.id, saved);
+        this.saved.set(saved.id, saved);
+      }),
+    });
     if (opts.seed !== false) for (const c of seedLibrary()) { this.chars.set(c.id, c); this.saved.set(c.id, c); }
   }
 
@@ -649,7 +663,7 @@ export class MockApi implements Api {
   async aiCancelTask({ taskId }: { taskId: string }) { this.ai.cancel(taskId); }
   /* ---------- Device transfer ---------- */
 
-  readonly link = new MockDeviceLink((st) => this.emit("link:status", st));
+  readonly link: MockDeviceLink;
   async linkStartSend({ selection }: { selection: LinkSelection }) { await this.tick(); return this.link.startSend(selection); }
   async linkStartReceive() { await this.tick(); return this.link.startReceive(); }
   async linkConnect({ target, selection }: { target: string; host?: string; selection?: LinkSelection }) { await this.tick(); return this.link.connect(target, selection); }
@@ -657,6 +671,8 @@ export class MockApi implements Api {
   async linkAccept({ sessionId }: { sessionId: string }) { await this.tick(); return this.link.decide(sessionId, true); }
   async linkDecline({ sessionId }: { sessionId: string }) { await this.tick(); return this.link.decide(sessionId, false); }
   async linkCancel({ sessionId }: { sessionId: string }) { await this.tick(); return this.link.cancel(sessionId); }
+  async linkDevices() { await this.tick(); return this.link.listDevices(); }
+  async linkForgetDevice({ deviceId }: { deviceId: string }) { await this.tick(); return this.link.forgetDevice(deviceId); }
 
   private host: AiHostStatus = { enabled: false, supported: true, address: null, pairingCode: null, pairingExpiresInSecs: null, pairingUri: null, fingerprint: null, devices: [] };
   private requireConsent(allowed: boolean | undefined) {
