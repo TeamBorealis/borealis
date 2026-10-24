@@ -211,6 +211,8 @@ struct Inner {
     make_transport: TransportFactory,
     transport: Mutex<Option<Arc<dyn Transport>>>,
     job: Mutex<Job>,
+    /// Serialises start / cancel / delete, so a start cannot slip in while a delete waits for the old thread.
+    ops: Mutex<()>,
     sink: RwLock<Option<Arc<dyn SemanticSink>>>,
 }
 
@@ -265,6 +267,7 @@ impl SemanticService {
                 control: None,
                 handle: None,
             }),
+            ops: Mutex::new(()),
             sink: RwLock::new(None),
         }))
     }
@@ -284,6 +287,13 @@ impl SemanticService {
     fn job(&self) -> MutexGuard<'_, Job> {
         self.0
             .job
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    fn ops(&self) -> MutexGuard<'_, ()> {
+        self.0
+            .ops
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
@@ -375,6 +385,7 @@ impl SemanticService {
     /// # Errors
     /// The plain reason when the tier has no file or no URL serves it, or the HTTPS client cannot be built.
     pub fn start(&self, tier: Tier, lifecycle: Option<Lifecycle>) -> Result<(), String> {
+        let _ops = self.ops();
         let spec = self
             .0
             .catalog
@@ -499,6 +510,7 @@ impl SemanticService {
     /// # Errors
     /// The partial could not be deleted.
     pub fn cancel(&self) -> std::io::Result<()> {
+        let _ops = self.ops();
         self.stop_job();
         for spec in self.0.catalog.all() {
             let part = self.0.models.partial_path(&spec);
@@ -532,6 +544,7 @@ impl SemanticService {
     /// # Errors
     /// A file could not be deleted.
     pub fn delete_model_and_vectors(&self) -> std::io::Result<()> {
+        let _ops = self.ops();
         self.stop_job();
         self.0.models.delete(&self.0.catalog.all())?;
         for corpus in VECTOR_CORPORA {
