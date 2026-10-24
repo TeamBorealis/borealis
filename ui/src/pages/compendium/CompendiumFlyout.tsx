@@ -73,17 +73,29 @@ function Snippet({ row }: { row: ResultRow }) {
   return <span className="snip">{highlightParts(row.snippet, row.highlights).map((p, i) => (p.hit ? <mark key={i}>{p.text}</mark> : <span key={i}>{p.text}</span>))}</span>;
 }
 
-/** Index state for the footer, kept current by `search://index-status`. */
-function useIndexStatus(): SearchIndexStatus | null {
+/**
+ * Index state for the footer, kept current by `search://index-status`. `builds` counts the times the
+ * index became ready after the flyout saw it not ready (the first run on a device), so a query typed
+ * meanwhile, answered by the plain name scan, is searched again.
+ */
+function useIndexStatus(): { status: SearchIndexStatus | null; builds: number } {
   const api = useApi();
   const [status, setStatus] = useState<SearchIndexStatus | null>(null);
+  const [builds, setBuilds] = useState(0);
+  const last = useRef<SearchIndexStatus["state"] | null>(null);
   useEffect(() => {
     let live = true;
-    api.searchIndexStatus().then((s) => { if (live) setStatus(s); }, () => undefined);
-    const off = api.subscribe("search:index-status", setStatus);
+    const seen = (s: SearchIndexStatus) => {
+      if (!live) return;
+      if (s.state === "ready" && last.current !== null && last.current !== "ready") setBuilds((n) => n + 1);
+      last.current = s.state;
+      setStatus(s);
+    };
+    api.searchIndexStatus().then(seen, () => undefined);
+    const off = api.subscribe("search:index-status", seen);
     return () => { live = false; off(); };
   }, [api]);
-  return status;
+  return { status, builds };
 }
 
 /** Classic builder element browser: expander lists on the left, description pane on the right. Typing searches the keyword indexes. */
@@ -99,7 +111,7 @@ export function CompendiumBrowser({ initialQuery = "", initialSource = "", initi
   const [ruleset, setRuleset] = useState<Ruleset | "any">(() => initialEdition(settings.search?.defaultEdition, snapshot?.ruleset ?? null));
   const [selected, setSelected] = useState<string | null>(initialSelected);
   const [limit, setLimit] = useState(PAGE);
-  const status = useIndexStatus();
+  const { status, builds } = useIndexStatus();
   const { status: semantic } = useSemanticStatus();
   const { openBorealisSettings } = useShell();
   const facets = useAsync(() => api.compendiumFacets(), [api]);
@@ -114,7 +126,7 @@ export function CompendiumBrowser({ initialQuery = "", initialSource = "", initi
     if (rules) return { total: 0, rows: [] };
     const page = await api.searchCompendium({ query: { query: "", types, sources, ruleset, limit, offset: 0 } });
     return { total: page.total, rows: page.items.map(rowOfElement) };
-  }, [api, q, scope, type, source, ruleset, limit]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [api, q, scope, type, source, ruleset, limit, builds]); // eslint-disable-line react-hooks/exhaustive-deps
   const rows = results.data?.rows ?? [];
   const preferred: Ruleset = snapshot?.ruleset ?? settings.defaultRuleset;
   const typeLabel = (t: string) => (t === "rules" ? RULES_GROUP : facets.data?.types.find((x) => x.id === t)?.label ?? t);

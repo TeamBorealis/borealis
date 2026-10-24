@@ -90,6 +90,47 @@ describe("search flyout (S1.5)", () => {
     await waitFor(() => expect(foot.textContent).toBe("Keyword search"));
   });
 
+  it("a query typed while the index builds is searched again once the index is ready", async () => {
+    // Arrange: the first run on a phone; before the index exists the backend answers from the
+    // plain name scan, which finds nothing for a typo (seen on the Android emulator: "0 results"
+    // that never updated).
+    const api = new MockApi({ aiChunkDelayMs: 2, rng: () => 0.5 });
+    vi.spyOn(api, "searchIndexStatus").mockResolvedValue({ state: "building", done: 0, total: 3, message: null });
+    const real = api.search.bind(api);
+    let built = false;
+    const search = vi.spyOn(api, "search").mockImplementation(async (args) => {
+      const page = await real(args);
+      return built ? page : { ...page, items: [], total: 0 };
+    });
+    const { dlg } = await openSearch("firball", api);
+    await waitFor(() => expect(search).toHaveBeenCalled());
+    await waitFor(() => expect(within(dlg).getByRole("status").textContent).toBe("0 results"));
+    const calls = search.mock.calls.length;
+
+    // Act
+    built = true;
+    const emit = (api as unknown as { emit: (e: string, p: SearchIndexStatus) => void }).emit.bind(api);
+    act(() => emit("search:index-status", { state: "ready", done: 3, total: 3, message: null }));
+
+    // Assert
+    await waitFor(() => expect(names(dlg)[0]).toBe("Fireball"));
+    expect(search.mock.calls.length).toBe(calls + 1);
+  });
+
+  it("an index that is already ready does not search twice", async () => {
+    // Arrange
+    const api = new MockApi({ aiChunkDelayMs: 2, rng: () => 0.5 });
+    const search = vi.spyOn(api, "search");
+
+    // Act
+    const { dlg } = await openSearch("firball", api);
+    await waitFor(() => expect(names(dlg)[0]).toBe("Fireball"));
+    await act(() => new Promise((r) => setTimeout(r, 300)));
+
+    // Assert
+    expect(search).toHaveBeenCalledTimes(1);
+  });
+
   it("an empty query lists the compendium like before (no snippets)", async () => {
     // Arrange
     const user = userEvent.setup();
