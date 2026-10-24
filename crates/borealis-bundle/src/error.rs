@@ -29,6 +29,10 @@ pub enum BundleError {
     /// The manifest contradicts the zip (missing, unlisted or duplicate entries, wrong sizes).
     #[error("inconsistent bundle: {0}")]
     Inconsistent(String),
+    /// An item failed the receiving app's validation (or its key is not a plain id); the whole
+    /// bundle was refused and nothing was written.
+    #[error("refused: {0}")]
+    Rejected(String),
     /// JSON that failed to parse.
     #[error("invalid JSON in `{path}`: {source}")]
     Json {

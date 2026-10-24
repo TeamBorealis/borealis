@@ -2,10 +2,12 @@
 //!
 //! * [`BundleWriter`] / [`build_bundle`] write it; [`Bundle`] reads it with caps and validation.
 //! * [`plan_receive`] decides, per item, what a receiving device does (latest edit wins, SY4).
+//! * [`apply_plan`] writes a plan's items after validating every one (two-phase, trash first).
 //! * [`is_excluded`] and [`portable_settings`] enforce what never travels.
 //!
 //! No network and no UI here. Format reference: `docs/bundle-format.md`.
 
+mod apply;
 mod build;
 mod error;
 mod exclude;
@@ -16,6 +18,9 @@ mod plan;
 mod reader;
 mod writer;
 
+pub use apply::{
+    apply_plan, is_plain_key, sweep_trash, ApplyReport, ApplyTargets, ItemValidator, MAX_KEY_LEN,
+};
 pub use build::{
     build_bundle, count_kind, trash_dir, BuildReport, BuildRequest, CharacterSelection,
     PackSelection, TRASH_RETENTION_DAYS,
