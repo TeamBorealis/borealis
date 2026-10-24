@@ -97,7 +97,7 @@ export function SearchTab() {
   const probed = TIERS.indexOf(st.probedTier as (typeof TIERS)[number]);
   const tierOptions = [{ value: "auto", label: `Automatic (${TIER_LABEL[st.probedTier]})` },
     ...TIERS.filter((_, i) => i < probed).map((t) => ({ value: t, label: TIER_LABEL[t] }))];
-  const hasFiles = st.modelPresent || d.done > 0;
+  const hasFiles = st.modelPresent || (!busy && d.done > 0);
 
   return (
     <>

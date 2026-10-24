@@ -17,5 +17,8 @@ export function createApi(): Api {
   const peer = Number(new URLSearchParams(window.location.search).get("mockPeer"));
   // `?mockBundle=<file name>` is the file File > Open bundle... "picks" (`tampered.borealis` and `notabundle.borealis` are refused).
   const bundle = new URLSearchParams(window.location.search).get("mockBundle");
-  return new MockApi({ aiChunkDelayMs: 30, mobile, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null, bundleFile: bundle });
+  // `?mockSemanticStep=<ms>` slows the simulated semantic model download (progress, pause and resume in web e2e).
+  const step = Number(new URLSearchParams(window.location.search).get("mockSemanticStep"));
+  const semantic = Number.isFinite(step) && step > 0 ? { stepMs: step } : undefined;
+  return new MockApi({ aiChunkDelayMs: 30, mobile, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null, bundleFile: bundle, semantic });
 }
