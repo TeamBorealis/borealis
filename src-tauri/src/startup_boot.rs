@@ -132,6 +132,9 @@ fn load(handle: &AppHandle, startup: &Startup) -> Result<(), String> {
     #[cfg(mobile)]
     let _ = data;
     handle.manage::<AppState>(state);
+    // Device transfer (B3): the service only; nothing listens until a Send/Receive dialog opens.
+    #[cfg(feature = "device-link")]
+    crate::commands_sync::install(handle);
     // Keyword search: build (or bring up to date) the Rules and Lore indexes in the background.
     {
         let state = handle.state::<AppState>();

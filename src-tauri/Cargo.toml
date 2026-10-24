@@ -20,10 +20,11 @@ unsafe_code = "deny"
 all = { level = "warn", priority = -1 }
 
 [features]
-# Device sync transport (tokio + rustls TCP) and the OS secure store (Keychain, Android Keystore,
-# Credential Manager, Secret Service). Off by default: mobile builds keep linking no network stack
-# until the transfer (B3) turns this on, as in the X0.1 spike.
-device-link = ["borealis-link/tcp", "borealis-link/platform-store"]
+default = ["device-link"]
+# Device transfer (B2/B3): tokio + rustls TCP, SPAKE2/QR authentication and the OS secure store
+# (Keychain, Android Keystore, Credential Manager, Secret Service). On by default since B3 on every
+# target (X0.1: GO on iOS and Android); mDNS discovery is desktop-only (see below).
+device-link = ["borealis-link/tcp", "borealis-link/platform-store", "dep:borealis-transfer"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -54,11 +55,14 @@ borealis-assist.workspace = true
 borealis-mcp = { path = "../crates/borealis-mcp" }
 # Local keyword search (Tantivy, pure Rust on every target; S0.1).
 borealis-search.workspace = true
-tokio = { workspace = true, features = ["time"] }
+tokio = { workspace = true, features = ["time", "rt", "sync", "macros"] }
 ed25519-dalek = { version = "2", default-features = false, features = ["std"] }
 # Device link (B1): registry paths and model on every target; the network stack and OS secure
 # store only with the `device-link` feature.
 borealis-link.workspace = true
+borealis-bundle.workspace = true
+borealis-transfer = { workspace = true, optional = true }
+tempfile = "3"
 
 [dev-dependencies]
 tempfile = "3"
@@ -66,6 +70,9 @@ tempfile = "3"
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 reqwest = { version = "0.13", default-features = false, features = ["blocking", "rustls"] }
 borealis-ai = { workspace = true, features = ["host"] }
+# mDNS nameplate discovery for typed codes: desktop only (iOS needs the multicast entitlement,
+# Android a MulticastLock; phones use the QR's host:port or a typed address instead).
+borealis-link = { workspace = true, features = ["mdns"] }
 
 # Phones only: opens the download page in the system browser (desktop spawns the OS opener itself).
 # The .index downloader verifies TLS against the bundled Mozilla roots (webpki-roots), not the OS

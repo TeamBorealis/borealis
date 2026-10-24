@@ -22,6 +22,15 @@ use crate::error::LinkError;
 use crate::fingerprint::CertFingerprint;
 use crate::tls::{mutual_client_config, mutual_server_config, SharedPolicy, TlsIdentity};
 
+/// Best-effort LAN IPv4 address of this machine, the address a Send/Receive window listens on
+/// (no packets are sent: `connect` on UDP only selects a route). `None` without a network.
+pub fn detect_lan_ip() -> Option<IpAddr> {
+    let sock = std::net::UdpSocket::bind("0.0.0.0:0").ok()?;
+    sock.connect("192.0.2.1:9").ok()?; // TEST-NET-1
+    let ip = sock.local_addr().ok()?.ip();
+    (!ip.is_unspecified() && !ip.is_loopback()).then_some(ip)
+}
+
 /// Name sent in SNI; the pin verifier ignores names.
 const SERVER_NAME: &str = "borealis-link";
 const ACCEPT_ERROR_BACKOFF: Duration = Duration::from_millis(50);

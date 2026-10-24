@@ -44,6 +44,8 @@ pub mod commands_play;
 #[cfg(desktop)]
 pub mod commands_report;
 pub mod commands_settings;
+#[cfg(feature = "device-link")]
+pub mod commands_sync;
 pub mod commands_system;
 pub mod companion;
 pub mod companion_block;
@@ -71,6 +73,8 @@ pub mod content_preview;
 pub mod content_report;
 pub mod data_dirs;
 pub mod derive_cache;
+#[cfg(feature = "device-link")]
+pub mod device_sync;
 #[cfg(desktop)]
 pub mod drive;
 pub mod dto;
@@ -121,6 +125,7 @@ pub mod snapshot_map;
 pub mod startup;
 pub mod startup_boot;
 pub mod state;
+pub mod sync_dto;
 pub mod webview_args;
 pub mod zip_read;
 
@@ -382,6 +387,20 @@ pub fn run() {
             commands_content::remove_5etools_url,
             commands_content::update_5etools_url,
             commands_content::import_5etools,
+            #[cfg(feature = "device-link")]
+            commands_sync::link_start_send,
+            #[cfg(feature = "device-link")]
+            commands_sync::link_start_receive,
+            #[cfg(feature = "device-link")]
+            commands_sync::link_connect,
+            #[cfg(feature = "device-link")]
+            commands_sync::link_status,
+            #[cfg(feature = "device-link")]
+            commands_sync::link_accept,
+            #[cfg(feature = "device-link")]
+            commands_sync::link_decline,
+            #[cfg(feature = "device-link")]
+            commands_sync::link_cancel,
             #[cfg(desktop)]
             commands_ai::ai_status,
             #[cfg(desktop)]
