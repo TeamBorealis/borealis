@@ -25,7 +25,7 @@ use tokio::sync::oneshot;
 use crate::content_packs::EventSink;
 use crate::error::{ApiError, ApiResult, ErrorCode};
 use crate::state::AppState;
-use crate::sync_dto::{LinkSelection, LinkStatus};
+use crate::sync_dto::{LinkPhase, LinkSelection, LinkStatus};
 
 pub use bundle::{export_dto, incoming_dir, suggested_file_name};
 pub use host::{sync_dir, OutgoingBundle};
@@ -221,6 +221,11 @@ impl DeviceSync {
     /// `not_found`; `invalid_argument` when no preview is waiting.
     pub fn decide(&self, session_id: &str, accept: bool) -> ApiResult<LinkStatus> {
         let ctl = self.get(session_id)?;
+        // Only an offer the user is looking at can be accepted: an early Accept must never
+        // apply an offer that has not been previewed yet.
+        if lock(&ctl.status).phase != LinkPhase::Preview {
+            return Err(ApiError::invalid("Nothing is waiting for a decision."));
+        }
         let tx = lock(&ctl.decision)
             .take()
             .ok_or_else(|| ApiError::invalid("Nothing is waiting for a decision."))?;

@@ -274,6 +274,31 @@ async fn a_character_the_parser_rejects_is_refused() {
     );
 }
 
+/// Z: Accept counts only while a preview is shown. An Accept sent before the offer arrived is
+/// refused and does not pre-approve the offer: the preview still waits for the user.
+#[tokio::test(flavor = "multi_thread")]
+async fn an_accept_before_the_preview_is_refused_and_approves_nothing() {
+    let (pc, phone) = (dev("PC"), dev("Phone"));
+    put_character(&phone, "Tam");
+    let shown = pc.sync.start_receive().await.unwrap();
+    assert!(pc.sync.decide(&shown.session_id, true).is_err());
+    phone
+        .sync
+        .connect(
+            shown.qr_payload.as_deref().unwrap(),
+            None,
+            Some(selection()),
+        )
+        .await
+        .unwrap();
+    wait(&pc, &shown.session_id, LinkPhase::Preview).await;
+    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    let still = pc.sync.status(&shown.session_id).unwrap();
+    assert_eq!(still.phase, LinkPhase::Preview, "nothing was applied");
+    assert!(pc.sync.decide(&shown.session_id, false).is_ok());
+    wait(&pc, &shown.session_id, LinkPhase::Declined).await;
+}
+
 #[tokio::test(flavor = "multi_thread")]
 async fn a_scanned_qr_must_match_the_chosen_direction() {
     let (pc, phone) = (dev("PC"), dev("Phone"));
