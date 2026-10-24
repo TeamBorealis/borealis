@@ -1,0 +1,38 @@
+[package]
+name = "borealis-embed"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+description = "Optional local embeddings (EmbeddingGemma 2): embedder trait, device tiers, indexing scheduler, vector store, RRF fusion"
+
+[lints]
+workspace = true
+
+[features]
+# The llama.cpp backend (spec sec. 7, option (b) fork). Off: the binding is not published yet (backlog B-46), so
+# this feature only compiles a stub and pulls no dependency. Nothing in the default build references it.
+llama = []
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+sha2 = "0.10"
+
+# Desktop RAM probe (spec sec. 7 tier table). Only the memory part ("system"), no disks/network/components.
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+sysinfo = { version = "0.36", default-features = false, features = ["system"] }
+
+# iOS shims: ProcessInfo (RAM, Low Power Mode, thermal state) and UIDevice (battery), through the safe objc2
+# bindings Tauri already links on iOS.
+[target.'cfg(target_os = "ios")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSProcessInfo"] }
+objc2-ui-kit = { version = "0.3", default-features = false, features = ["std", "UIDevice"] }
+dispatch2 = { version = "0.3", default-features = false, features = ["std"] }
+
+[dev-dependencies]
+tempfile = "3"

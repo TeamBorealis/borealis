@@ -14,6 +14,7 @@ members = [
   "crates/borealis-transfer",
   "crates/borealis-mcp",
   "crates/borealis-search",
+  "crates/borealis-embed",
   "crates/borealis-android-assets",
   "src-tauri",
 ]
@@ -45,6 +46,7 @@ borealis-sheet = { path = "crates/borealis-sheet" }
 borealis-ai = { path = "crates/borealis-ai" }
 borealis-assist = { path = "crates/borealis-assist" }
 borealis-search = { path = "crates/borealis-search" }
+borealis-embed = { path = "crates/borealis-embed" }
 # default-features = false: dependents opt into the network stack and OS store explicitly.
 borealis-link = { path = "crates/borealis-link", default-features = false }
 borealis-bundle = { path = "crates/borealis-bundle" }
