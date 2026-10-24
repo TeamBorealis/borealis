@@ -28,6 +28,8 @@ pub(crate) struct OsFont {
     /// PostScript name, reduced to characters valid in a PDF name.
     pub ps_name: String,
     pub path: PathBuf,
+    /// What the chooser saw in the face; the bold search matches language and weight against it.
+    info: FaceInfo,
 }
 
 /// A loaded font and its parsed face.
@@ -133,6 +135,9 @@ fn clean_ps_name(parsed: &Parsed<'_>, path: &Path) -> String {
 
 /// Weight the regular face aims for (OS/2 `usWeightClass`).
 const REGULAR_WEIGHT: u16 = 400;
+/// Weight the bold face aims for, and the lightest one still accepted as bold.
+const BOLD_WEIGHT: u16 = 700;
+const MIN_BOLD_WEIGHT: u16 = 600;
 
 /// A usable face inside a font file, with what the chooser ranks on.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -209,6 +214,18 @@ fn pick_regular(faces: &[FaceInfo]) -> Option<FaceInfo> {
         .min_by_key(|f| (f.rank, f.weight.abs_diff(REGULAR_WEIGHT), f.index))
 }
 
+/// The bold face matching a regular one: same language rank, at least semibold and heavier than
+/// the regular, the weight closest to 700, then the lowest index.
+fn pick_bold(faces: &[FaceInfo], regular: FaceInfo) -> Option<FaceInfo> {
+    faces
+        .iter()
+        .copied()
+        .filter(|f| {
+            f.rank == regular.rank && f.weight >= MIN_BOLD_WEIGHT && f.weight > regular.weight
+        })
+        .min_by_key(|f| (f.weight.abs_diff(BOLD_WEIGHT), f.index))
+}
+
 type SharedFiles = Mutex<Vec<(PathBuf, &'static [u8])>>;
 
 /// Font files already read, shared between the slots (one file often serves Han and Hangul).
@@ -239,6 +256,7 @@ fn font_at(data: &'static [u8], path: &Path, info: FaceInfo) -> Option<OsFont> {
         index: info.index,
         ps_name: clean_ps_name(&parsed, path),
         path: path.to_path_buf(),
+        info,
     })
 }
 
@@ -275,16 +293,55 @@ fn find(slot: Slot) -> Option<OsFont> {
     found
 }
 
-/// The system face for `slot`, loading it on first use. `None` when the machine has none.
-pub(crate) fn loaded(slot: Slot) -> Option<&'static Loaded> {
-    static HAN: OnceLock<Option<Loaded>> = OnceLock::new();
-    static HANGUL: OnceLock<Option<Loaded>> = OnceLock::new();
-    let cell = match slot {
-        Slot::Han => &HAN,
-        Slot::Hangul => &HANGUL,
-    };
+/// The bold companion of `regular`: a heavier face of the same file (collection), else the
+/// first sibling file that has one ([`paths::bold_siblings`]). `None` keeps bold text in the
+/// regular face.
+fn find_bold(regular: &OsFont, slot: Slot) -> Option<OsFont> {
+    let probe = probe(slot);
+    let in_file = pick_bold(&usable_faces(regular.data, slot, probe), regular.info)
+        .and_then(|info| font_at(regular.data, &regular.path, info));
+    let found = in_file.or_else(|| {
+        paths::bold_siblings(&regular.path).iter().find_map(|path| {
+            let data = match cached(path) {
+                Some(data) => data,
+                None => {
+                    let owned = std::fs::read(path).ok()?;
+                    pick_bold(&usable_faces(&owned, slot, probe), regular.info)?;
+                    remember(path, owned)
+                }
+            };
+            let info = pick_bold(&usable_faces(data, slot, probe), regular.info)?;
+            font_at(data, path, info)
+        })
+    });
+    // Faces of one collection can share a PostScript name; keep the embedded names distinct.
+    let found = found.map(|mut f| {
+        if f.ps_name == regular.ps_name {
+            f.ps_name.push_str("-Bold");
+        }
+        f
+    });
+    if let Some(f) = &found {
+        tracing::debug!(
+            "sheet: bold system font for {slot:?}: {} (face {})",
+            f.path.display(),
+            f.index
+        );
+    }
+    found
+}
+
+/// The system face for `slot` (regular, or bold when `bold`), loading it on first use. `None`
+/// when the machine has none; for bold, when the regular font has no bold companion.
+pub(crate) fn loaded(slot: Slot, bold: bool) -> Option<&'static Loaded> {
+    static CELLS: [OnceLock<Option<Loaded>>; 4] = [const { OnceLock::new() }; 4];
+    let cell = &CELLS[usize::from(slot == Slot::Hangul) * 2 + usize::from(bold)];
     cell.get_or_init(|| {
-        let font = find(slot)?;
+        let font = if bold {
+            find_bold(&loaded(slot, false)?.font, slot)?
+        } else {
+            find(slot)?
+        };
         // `open` already parsed this face once, so this cannot fail in practice.
         let parsed = Parsed::parse(font.data, font.index).ok()?;
         Some(Loaded { font, parsed })
@@ -310,7 +367,7 @@ mod tests {
     #[test]
     fn a_loaded_face_is_usable() {
         for slot in [Slot::Han, Slot::Hangul] {
-            let Some(l) = loaded(slot) else {
+            let Some(l) = loaded(slot, false) else {
                 eprintln!("no system font for {slot:?}; skipped");
                 continue;
             };
@@ -322,7 +379,55 @@ mod tests {
             );
             assert!(l.parsed.glyph_index(probe(slot)).is_some());
             assert!(!l.font.ps_name.is_empty());
+            match loaded(slot, true) {
+                Some(b) => {
+                    eprintln!(
+                        "{slot:?} bold: {} face {} ({})",
+                        b.font.path.display(),
+                        b.font.index,
+                        b.font.ps_name
+                    );
+                    assert!(b.parsed.glyph_index(probe(slot)).is_some());
+                    assert!(b.font.info.weight >= MIN_BOLD_WEIGHT);
+                    assert!(b.font.info.weight > l.font.info.weight);
+                }
+                None => eprintln!("{slot:?}: no bold companion; bold text uses the regular face"),
+            }
         }
+    }
+
+    fn face(index: u32, rank: u8, weight: u16) -> FaceInfo {
+        FaceInfo {
+            index,
+            rank,
+            weight,
+        }
+    }
+
+    #[test]
+    fn bold_is_the_heaviest_close_face_of_the_same_language() {
+        let regular = face(0, 0, 400);
+        let faces = [
+            regular,
+            face(1, 0, 300),
+            face(2, 0, 600),
+            face(3, 0, 700),
+            face(4, 0, 900),
+            face(5, 1, 700),
+        ];
+        assert_eq!(pick_bold(&faces, regular), Some(face(3, 0, 700)));
+        assert_eq!(pick_bold(&faces[..3], regular), Some(face(2, 0, 600)));
+    }
+
+    #[test]
+    fn no_bold_when_nothing_is_heavy_enough_or_the_language_differs() {
+        let regular = face(0, 0, 400);
+        assert_eq!(pick_bold(&[regular, face(1, 0, 500)], regular), None);
+        assert_eq!(pick_bold(&[regular, face(1, 1, 700)], regular), None);
+        // A font that is already bold has nothing heavier to offer.
+        let heavy = face(0, 0, 700);
+        assert_eq!(pick_bold(&[heavy], heavy), None);
+        assert_eq!(pick_bold(&[], regular), None);
     }
 
     const REGULAR: &[u8] = include_bytes!("../fonts/NotoSans-Regular.ttf");
@@ -372,6 +477,16 @@ mod tests {
         let reversed = collection(&[REGULAR, BOLD]);
         let faces = usable_faces(&reversed, Slot::Han, 'A');
         assert_eq!(pick_regular(&faces).unwrap().index, 0);
+    }
+
+    #[test]
+    fn a_collection_with_a_bold_face_yields_it_as_the_bold_companion() {
+        let ttc = collection(&[REGULAR, BOLD]);
+        let faces = usable_faces(&ttc, Slot::Han, 'A');
+        let regular = pick_regular(&faces).unwrap();
+        assert_eq!(pick_bold(&faces, regular).unwrap().index, 1);
+        let regular_only = usable_faces(REGULAR, Slot::Han, 'A');
+        assert_eq!(pick_bold(&regular_only, regular_only[0]), None);
     }
 
     #[test]

@@ -24,6 +24,10 @@ pub(crate) enum Face {
     Cjk,
     /// System font for Hangul text.
     Hangul,
+    /// Bold companion of the Han system font, when the machine has one.
+    CjkBold,
+    /// Bold companion of the Hangul system font, when the machine has one.
+    HangulBold,
 }
 
 /// A text style: what layout and form fields ask for.
@@ -47,7 +51,7 @@ impl Style {
 }
 
 impl Face {
-    pub const ALL: [Face; 12] = [
+    pub const ALL: [Face; 14] = [
         Face::Sans,
         Face::SansBold,
         Face::SansItalic,
@@ -60,6 +64,8 @@ impl Face {
         Face::ArabicBold,
         Face::Cjk,
         Face::Hangul,
+        Face::CjkBold,
+        Face::HangulBold,
     ];
 
     /// The faces compiled into the binary.
@@ -76,18 +82,21 @@ impl Face {
         Face::ArabicBold,
     ];
 
-    /// The system-font slot of a face loaded at render time.
-    fn os_slot(self) -> Option<Slot> {
+    /// The system-font slot of a face loaded at render time, and whether it is the bold one.
+    fn os_slot(self) -> Option<(Slot, bool)> {
         match self {
-            Face::Cjk => Some(Slot::Han),
-            Face::Hangul => Some(Slot::Hangul),
+            Face::Cjk => Some((Slot::Han, false)),
+            Face::Hangul => Some((Slot::Hangul, false)),
+            Face::CjkBold => Some((Slot::Han, true)),
+            Face::HangulBold => Some((Slot::Hangul, true)),
             _ => None,
         }
     }
 
     /// The loaded system font behind `self`, if it is a system face and the machine has one.
     fn os(self) -> Option<&'static os_fonts::Loaded> {
-        self.os_slot().and_then(os_fonts::loaded)
+        self.os_slot()
+            .and_then(|(slot, bold)| os_fonts::loaded(slot, bold))
     }
 
     /// Whether the face is usable: always for embedded faces, for system faces when a font was
@@ -126,7 +135,7 @@ impl Face {
             Face::SerifItalic => "NotoSerif-Italic",
             Face::Arabic => "NotoSansArabic-Regular",
             Face::ArabicBold => "NotoSansArabic-Bold",
-            Face::Cjk | Face::Hangul => "SystemCJK",
+            Face::Cjk | Face::Hangul | Face::CjkBold | Face::HangulBold => "SystemCJK",
         }
     }
 
@@ -143,7 +152,9 @@ impl Face {
             Face::SerifItalic => include_bytes!("../fonts/NotoSerif-Italic.ttf"),
             Face::Arabic => include_bytes!("../fonts/NotoSansArabic-Regular.ttf"),
             Face::ArabicBold => include_bytes!("../fonts/NotoSansArabic-Bold.ttf"),
-            Face::Cjk | Face::Hangul => self.os().map_or(&[], |o| o.font.data),
+            Face::Cjk | Face::Hangul | Face::CjkBold | Face::HangulBold => {
+                self.os().map_or(&[], |o| o.font.data)
+            }
         }
     }
 
@@ -201,11 +212,15 @@ fn chain(style: Style) -> &'static [Face] {
 
 /// System faces tried for a CJK character, its own script's slot first. Loading is lazy, so a
 /// machine without CJK text never reads a system font.
-fn os_chain(c: char) -> &'static [Face] {
-    match os_fonts::slot_for(c) {
-        Some(Slot::Han) => &[Face::Cjk, Face::Hangul],
-        Some(Slot::Hangul) => &[Face::Hangul, Face::Cjk],
-        None => &[],
+fn os_chain(c: char, bold: bool) -> &'static [Face] {
+    match (os_fonts::slot_for(c), bold) {
+        (Some(Slot::Han), false) => &[Face::Cjk, Face::Hangul],
+        (Some(Slot::Hangul), false) => &[Face::Hangul, Face::Cjk],
+        // A bold face only exists when the machine has a real one; the regular faces follow so
+        // bold text without a bold font looks as it always did.
+        (Some(Slot::Han), true) => &[Face::CjkBold, Face::Cjk, Face::HangulBold, Face::Hangul],
+        (Some(Slot::Hangul), true) => &[Face::HangulBold, Face::Hangul, Face::CjkBold, Face::Cjk],
+        (None, _) => &[],
     }
 }
 
@@ -231,13 +246,14 @@ pub(crate) fn glyph(style: impl Into<Style>, c: char) -> Option<Glyph> {
     if is_invisible(c) {
         return None;
     }
-    let faces = chain(style.into());
+    let style = style.into();
+    let faces = chain(style);
     for &face in faces {
         if let Some(id) = face.parsed().glyph_index(c) {
             return Some(resolved(face, id.0));
         }
     }
-    for &face in os_chain(c) {
+    for &face in os_chain(c, matches!(style, Style::SansBold | Style::SerifBold)) {
         if !face.available() {
             continue;
         }
@@ -304,6 +320,15 @@ mod tests {
         } else {
             assert_eq!(han.gid, 0, "CJK is not covered");
         }
+        // Bold CJK uses the bold system face when the machine has one, else the regular one.
+        let bold = glyph(Style::SansBold, '日').unwrap();
+        if Face::CjkBold.available() {
+            eprintln!("CJK bold face: {}", Face::CjkBold.ps_name());
+            assert_eq!((bold.face, bold.gid != 0), (Face::CjkBold, true));
+        } else if Face::Cjk.available() {
+            assert_eq!((bold.face, bold.gid != 0), (Face::Cjk, true));
+        }
+        assert_eq!(glyph(Style::Sans, '日').unwrap().face, han.face);
         assert!(glyph(Style::Sans, '\u{200F}').is_none());
         for style in [Style::Serif, Style::SerifItalic] {
             for c in ['A', 'é', 'Ж', 'α', '\u{2212}'] {
