@@ -81,23 +81,6 @@ fn all_tools() -> Value {
             },
             "required": ["class_json_bundle", "edition"], "additionalProperties": false
         }), &json!({"type":"object","properties":{"passed":{"type":"boolean"},"class":{"type":"string"},"subclass":{"type":["string","null"]},"edition":{"type":"string"},"levels_reached":{"type":"integer"},"engine_errors":{"type":"integer"},"load":{"type":"object"},"levels":{"type":"array","items":{"type":"object"}}},"required":["passed","class","levels_reached","levels"]})),
-        tool("encounter_evaluate", "Evaluate an encounter's difficulty (XP budget) for a party. Both editions use the SRD 5.2.1 XP-budget method (output has `method`); the classic 2014 DMG method needs user-supplied tables.", &json!({
-            "type": "object",
-            "properties": {
-                "party_levels": {"type": "array", "items": {"type": "integer", "minimum": 1, "maximum": 20}, "minItems": 1},
-                "monsters": {"type": "array", "items": {
-                    "type": "object",
-                    "properties": {
-                        "id": {"type": "string", "description": "Monster element id (uses its stored XP, the printed value for homebrew, and its CR)."},
-                        "cr": {"type": ["string", "number"], "description": "Challenge rating such as \"1/4\" or 3."},
-                        "count": {"type": "integer", "minimum": 1, "default": 1}
-                    },
-                    "additionalProperties": false
-                }},
-                "ruleset": ruleset
-            },
-            "required": ["party_levels", "monsters", "ruleset"], "additionalProperties": false
-        }), &json!({"type":"object","properties":{"party_size":{"type":"integer"},"monster_count":{"type":"integer"},"total_xp":{"type":"integer"},"adjusted_xp":{"type":"integer"},"thresholds":{"type":"object"},"band":{"type":"string"},"warnings":{"type":"array"},"monsters":{"type":"array","items":{"type":"object"}}},"required":["total_xp","band"]})),
         tool("explain_rules_term", "Look up a rules term (condition, glossary entry) and return its rules text.", &json!({
             "type": "object",
             "properties": {

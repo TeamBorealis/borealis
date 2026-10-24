@@ -5,13 +5,12 @@ mod common;
 use common::{Session, MODERN};
 use serde_json::json;
 
-const TOOLS: [&str; 7] = [
+const TOOLS: [&str; 6] = [
     "search_content",
     "get_element",
     "list_core_ids",
     "validate_element",
     "class_sweep",
-    "encounter_evaluate",
     "explain_rules_term",
 ];
 

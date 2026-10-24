@@ -19,10 +19,6 @@ pub enum AiMode {
     Backstory,
     /// "Explain this number".
     Explain,
-    /// Build planner.
-    BuildPlan,
-    /// Encounter assistant.
-    Encounter,
     /// NPC generator.
     Npc,
 }

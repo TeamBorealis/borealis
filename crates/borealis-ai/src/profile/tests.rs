@@ -179,11 +179,10 @@ fn default_settings_deny_shell_and_allow_only_borealis_tools() {
 
 #[test]
 fn shipped_skills_have_frontmatter_and_are_in_the_manifest() {
-    const SKILLS: [&str; 5] = [
+    const SKILLS: [&str; 4] = [
         "borealis-content-authoring",
         "borealis-class-and-subclass",
         "borealis-editions",
-        "borealis-balance",
         "borealis-tools",
     ];
     let t = installed();

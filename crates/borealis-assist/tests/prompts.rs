@@ -7,7 +7,6 @@ use borealis_ai::task::AiTask;
 use borealis_assist::advisor::AdviseLevelUp;
 use borealis_assist::explain::{render_trace, ExplainNumber};
 use borealis_assist::options::{ImprovementSpec, LevelPath, LevelUpOption, OptionAction};
-use borealis_assist::planner::{Feedback, PlanBuild};
 use borealis_engine::{StatTrace, StepKind, TraceStep};
 
 fn check(name: &str, actual: &str) {
@@ -112,31 +111,4 @@ fn level_up_advisor_prompt() {
         3,
     );
     check("level_up_advisor", &render(&t));
-}
-
-fn planner(feedback: Option<Feedback>, progress: Vec<String>) -> PlanBuild {
-    PlanBuild {
-        from_level: if feedback.is_some() { 4 } else { 2 },
-        target_level: 5,
-        brief: "level 1: Fighter 1; HP 12, AC 16, proficiency +2, STR 12 DEX 12".into(),
-        goals: "a grappler".into(),
-        feats: vec!["ID_PHB_FEAT_GRAPPLER | Grappler | Strength 13 or higher".into()],
-        decisions: "[main] Which class to level: Take the next level in Fighter (path main:level)"
-            .into(),
-        progress,
-        feedback,
-    }
-}
-
-#[test]
-fn build_planner_prompts() {
-    check("build_planner_first", &render(&planner(None, vec![])));
-    let fb = Feedback {
-        previous: "{\"steps\":[{\"level\":4}]}".into(),
-        problems: vec!["\"ID_PHB_FEAT_GRAPPLER\" is not an allowed choice for this slot".into()],
-    };
-    check(
-        "build_planner_repair",
-        &render(&planner(Some(fb), vec!["level 3: Fighter 3; HP 28".into()])),
-    );
 }

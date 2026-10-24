@@ -284,9 +284,6 @@ Fields added by the 5etools import gaps work:
 | `ai_cancel_task` | `{ taskId: string }` | `void` |
 | `ai_validate_homebrew` | `{ json: Record<string, unknown> }` | `ValidationReport` |
 | `ai_add_homebrew_to_pack` | `{ json: Record<string, unknown>; packId?: string }` | `ContentPack` |
-| `apply_plan` | `characterId, { plan, upToLevel }` | `CharacterSnapshot` |
-| `encounter_evaluate` | `{ args: EncounterEvaluateArgs }` | `{ report, monsters }` |
-| `encounter_suggest` | `{ args: EncounterSuggestArgs }` | `Suggestion` (camelCase) |
 | `ai_host_enable` / `ai_host_disable` / `ai_host_status` / `ai_host_begin_pairing` | none | `AiHostStatus` |
 | `ai_host_revoke` | `{ deviceId: string }` | `AiHostStatus` |
 
@@ -355,8 +352,6 @@ an expired preview `not_found`. Payloads over 1.4 MB are refused with `invalid_a
 | `rules_qa` | `prompt`; optional `characterId` (ruleset, source restriction, summary) | `rules_qa` (`CitedAnswerData`): retrieval is BM25 over the loaded packs (disabled packs are not loaded) filtered by ruleset; ids the model cites that were not retrieved are stripped (`strippedCitations`) |
 | `explain` | `characterId`, `params.stat` (or `prompt`) | `explain`: `{ stat, value, text, source: model\|template, fallbackReason, trace }`. Works **without a provider** (offline template) |
 | `build_advisor` | `characterId`, `prompt` = goals | `level_up`: `{ currentLevel, nextLevel, picks: [{ rank, option, rationale, effects, ... }], summary, dropped }` |
-| `build_plan` | `characterId`, `params.targetLevel`, `prompt` = goals | `build_plan`: `{ levels, unresolved, complete, repairRounds, plan, ... }`; send `plan` back to `apply_plan` |
-| `encounter` | `params.partyIds` or `partyLevels`, `band` (default moderate), `ruleset?`, `constraints?`, `prompt` = request text | `encounter`: proposal with engine report, `source: model\|deterministic` |
 | `backstory` / `npc` | optional `characterId`; `params.tone/length/kind`; `prompt` = ideas | `narrative`: `{ title, text, traits, ideals, bonds, flaws, hooks, npc }` |
 | `homebrew` | | not wired as a task: `invalid_argument` |
 
@@ -368,16 +363,13 @@ ids as keys are untouched).
 
 Provider detection: `ai_status.providers` lists installed CLIs, preferred first. `settings.ai.provider` (`claude`,
 `codex`; `none` = whichever is installed, claude first) picks the preference and `settings.ai.overridePath` is an explicit
-executable for that backend. Encounter math uses the SRD 5.2.1 budget for both editions (the 2014 DMG tables are not shipped). Each monster counts
-its stored XP (`xpEach`; the printed value for homebrew, decision HB5), not the table XP of its CR; a CR 0 monster
-stored at 10 XP counts 0.
-`apply_plan` is atomic: a plan the engine refuses (`requirement_failed`) leaves the character unchanged.
+executable for that backend.
 
 AI host (desktop, LAN): `ai_host_enable` starts the host and opens a pairing window (needs an installed provider);
 `pairingCode` is a 6-digit code valid for `pairingExpiresInSecs`; `ai_host_begin_pairing` reissues it. Paired devices are
 stored (token hashes only) in `ai-host.json` whenever `ai_host_status`/`revoke`/`disable` run. Mobile builds compile
 without the host: the host commands answer `invalid_argument` / `supported: false`. The `monsters` packs
-(`srd-5.1-monsters`, `srd-5.2.1-monsters`) are now bundled so encounter commands have creatures.
+(`srd-5.1-monsters`, `srd-5.2.1-monsters`) are bundled with the app.
 
 ### 3.1 Behaviour notes: play, equipment, sheet
 

@@ -46,7 +46,6 @@ borealis-import-5etools = { path = "../crates/borealis-import-5etools" }
 borealis-ai.workspace = true
 borealis-assist.workspace = true
 borealis-mcp = { path = "../crates/borealis-mcp" }
-borealis-encounter = { path = "../crates/borealis-encounter" }
 tokio = { workspace = true, features = ["time"] }
 ed25519-dalek = { version = "2", default-features = false, features = ["std"] }
 

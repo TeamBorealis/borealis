@@ -316,53 +316,6 @@ fn status_reports_the_detected_provider_and_honours_the_override_path() {
     assert_eq!(status.providers[0].source, "override");
 }
 
-#[test]
-fn apply_plan_returns_a_snapshot_and_refuses_bad_plans() {
-    let h = harness(false);
-    let hero = h.hero(Ruleset::Dnd2014, true);
-    let plan = json!({"steps": [{"level": 2, "path": {"kind": "main"}, "choices": [], "rationale": "Action Surge"}]});
-    let snap = h.state.apply_plan(&hero.id, plan.clone(), 2).unwrap();
-    assert_eq!(snap.level.total, 2);
-    let bad = json!({"steps": [{"level": 3, "path": {"kind": "new_multiclass", "class": "ID_NOPE"}, "choices": []}]});
-    assert!(h.state.apply_plan(&hero.id, bad, 3).is_err());
-    assert_eq!(
-        h.state.get_snapshot(&hero.id).unwrap().level.total,
-        2,
-        "unchanged after a refused plan"
-    );
-    assert_eq!(
-        h.state
-            .apply_plan(&hero.id, json!({"nonsense": 1}), 2)
-            .unwrap_err()
-            .code,
-        ErrorCode::InvalidArgument
-    );
-}
-
-#[test]
-fn deterministic_encounter_commands() {
-    let h = harness(false);
-    let s = h
-        .state
-        .encounter_suggest(
-            &json!({"partyLevels": [3, 3, 3, 3], "band": "moderate", "ruleset": "dnd2024"}),
-        )
-        .unwrap();
-    assert_eq!(s["target"], "Moderate");
-    assert!(!s["monsters"].as_array().unwrap().is_empty());
-    let first = s["monsters"][0]["id"].as_str().unwrap().to_string();
-    let e = h.state.encounter_evaluate(&json!({"partyLevels": [3, 3, 3, 3], "ruleset": "dnd2024", "monsters": [{"id": first, "count": 1}]})).unwrap();
-    assert_eq!(e["report"]["partySize"], 4);
-    assert!(h
-        .state
-        .encounter_evaluate(&json!({"partyLevels": [3], "monsters": [{"id": "nope", "count": 1}]}))
-        .is_err());
-    assert!(h
-        .state
-        .encounter_suggest(&json!({"partyLevels": []}))
-        .is_err());
-}
-
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[test]
 fn host_pairing_code_and_revocation() {

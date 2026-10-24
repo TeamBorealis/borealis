@@ -9,7 +9,6 @@ members = [
   "crates/borealis-ai",
   "crates/borealis-assist",
   "crates/borealis-import-5etools",
-  "crates/borealis-encounter",
   "crates/borealis-mcp",
   "crates/borealis-android-assets",
   "src-tauri",

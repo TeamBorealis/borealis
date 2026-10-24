@@ -3,10 +3,8 @@
 
 use crate::ai_dto::{AiHostStatus, AiSink, AiStatusDto, AiTaskHandle, AiTaskRequest, AiWireEvent};
 use crate::ai_service::AiService;
-use crate::dto::CharacterSnapshot;
 use crate::error::ApiResult;
 use crate::state::AppState;
-use serde_json::Value;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, State};
 
@@ -44,26 +42,6 @@ pub async fn ai_start_task(
 pub fn ai_cancel_task(ai: A<'_>, task_id: String) -> ApiResult<()> {
     ai.cancel(&task_id);
     Ok(())
-}
-
-#[tauri::command]
-pub fn apply_plan(
-    state: S<'_>,
-    character_id: String,
-    plan: Value,
-    up_to_level: u32,
-) -> ApiResult<CharacterSnapshot> {
-    state.apply_plan(&character_id, plan, up_to_level)
-}
-
-#[tauri::command]
-pub fn encounter_evaluate(state: S<'_>, args: Value) -> ApiResult<Value> {
-    state.encounter_evaluate(&args)
-}
-
-#[tauri::command]
-pub fn encounter_suggest(state: S<'_>, args: Value) -> ApiResult<Value> {
-    state.encounter_suggest(&args)
 }
 
 #[tauri::command]

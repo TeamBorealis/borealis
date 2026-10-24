@@ -86,8 +86,8 @@ then `level_up` with its `class_slot_id`.
 
 ## MCP
 
-Without `--allow-write`, `borealis --mcp` is the read-only content server (7 tools: content
-search, element lookup, validation, class sweep, encounter maths, rules terms). With
+Without `--allow-write`, `borealis --mcp` is the read-only content server (6 tools: content
+search, element lookup, validation, class sweep, rules terms). With
 `--allow-write --library <dir>` the character tools above are added after them; `tools/list`
 reflects the mode. Both flags are needed together. Same protocol as the read-only server
 (MCP 2026-07-28 with the `initialize` handshake for older clients).

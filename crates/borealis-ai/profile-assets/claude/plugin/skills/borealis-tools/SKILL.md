@@ -1,6 +1,6 @@
 ---
 name: borealis-tools
-description: Use before and while answering any Borealis content question. Explains when and how to call each mcp__borealis__ tool (search_content, get_element, list_core_ids, validate_element, class_sweep, encounter_evaluate, explain_rules_term) and the rule to never state numbers the tools did not produce.
+description: Use before and while answering any Borealis content question. Explains when and how to call each mcp__borealis__ tool (search_content, get_element, list_core_ids, validate_element, class_sweep, explain_rules_term) and the rule to never state numbers the tools did not produce.
 ---
 # Borealis MCP tools
 
@@ -14,7 +14,6 @@ Only `mcp__borealis__*` tools exist: no shell, files or web. The tools are read-
 | 4 | `explain_rules_term` | Check what a rules term means (`term`, optional `ruleset`) before writing text that depends on it. |
 | 5 | `validate_element` | Validate your draft (`json` as object/array/string, or `elements` array; optional `ruleset` `"2014"`/`"2024"` sets the file edition, and each element may carry `"ruleset": "dnd2014"`/`"dnd2024"`): schema first, then a store-level check (dangling ids, bad expressions, duplicate ids). |
 | 6 | `class_sweep` | Level a full class bundle 1-20 (`class_json_bundle`, `edition` `"2014"`/`"2024"`, optional `subclass`). |
-| 7 | `encounter_evaluate` | Rate encounter difficulty (`party_levels`, `monsters` as `{id}` or `{cr}` with `count`, `ruleset`). Both editions use the SRD 5.2.1 XP-budget method (see `method`); the classic 2014 method needs user-supplied tables. |
 
 ## Workflow
 1. Search for the thing the user wants (an element with a similar purpose, the parent class, the feat category). Do not skip this step even if you are confident.
@@ -24,11 +23,10 @@ Only `mcp__borealis__*` tools exist: no shell, files or web. The tools are read-
 5. Call `validate_element`. If `ok` is false: `stage: "schema"` means a structural fault listed in `schema_issues`; `stage: "store"` means the `report` has diagnostics
    (missing referenced id, unparsable `supports`/`requirements`, duplicate id). Fix each one and call again. Loop until `ok` is true.
 6. For classes run `class_sweep`; fix and rerun until `passed` is true with zero `engine_errors` (see borealis-class-and-subclass).
-7. For monsters or encounters call `encounter_evaluate` with the validated monsters.
-8. Answer with the final JSON and a one-paragraph summary of what you validated.
+7. Answer with the final JSON and a one-paragraph summary of what you validated.
 
 ## Rules of engagement
-- Never state a number that a tool did not produce as if it were a fact. This covers XP values, difficulty bands, thresholds, number of levels reached, count of errors,
+- Never state a number that a tool did not produce as if it were a fact. This covers thresholds, number of levels reached, count of errors,
   and "this is valid". If you estimate (for balance), label it "estimate" and name the basis.
 - Do not claim validation passed unless the last call returned `ok: true` for the exact content you are sending. Edits after validation require a new call.
 - If a tool errors, quote the error, fix the input and retry; if it keeps failing, say so plainly and show what you tried.

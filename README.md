@@ -139,8 +139,7 @@ Website and downloads: https://borealisbuilder.com
 | `crates/borealis-migrate` | XML to JSON migrator (lib + `borealis-migrate` CLI) |
 | `crates/borealis-sheet` | Sheet rendering (PDF / HTML preview) |
 | `crates/borealis-ai` | Local LLM CLI bridge (desktop only) |
-| `crates/borealis-assist` | Engine-grounded AI features (explain, advisor, planner, homebrew, import) |
-| `crates/borealis-encounter` | Deterministic encounter math (2014 and 2024 rules) |
+| `crates/borealis-assist` | Engine-grounded AI features (explain, advisor, homebrew, import) |
 | `crates/borealis-import-5etools` | Importer for a user's own local 5etools data |
 | `crates/borealis-mcp` | Read-only stdio MCP server (`borealis --mcp`) |
 | `crates/borealis-android-assets` | Reads the APK assets folder over JNI |

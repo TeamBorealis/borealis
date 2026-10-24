@@ -1,6 +1,6 @@
 //! The AI jobs: owned inputs prepared on the IPC thread (`prepare`), run later without any lock (`run_job`).
 
-use crate::ai_dto::{camelize, snakeize, AiMessage, AiMode, AiTaskRequest};
+use crate::ai_dto::{camelize, AiMessage, AiMode, AiTaskRequest};
 use crate::error::{ApiError, ApiResult, ErrorCode};
 use crate::state::{AppState, ContentHub};
 use borealis_ai::retrieval::{Filters, LazyIndex};
@@ -8,19 +8,13 @@ use borealis_ai::task::cited_qa::{answer_question, DEFAULT_TOP_K};
 use borealis_ai::task::narrative::{Length, Narrative, NarrativeInput, NarrativeKind};
 use borealis_ai::task::{run_task, AiRunner, Ruleset as AiRuleset, RunOptions};
 use borealis_ai::{AiEvent, AiRequest};
-use borealis_assist::{
-    build_planner, encounter_assistant, explain_number, explain_number_offline, level_up_advisor,
-    AdvisorOptions, Constraints, EncounterOptions, Method, Party, PlannerOptions,
-};
+use borealis_assist::{explain_number, explain_number_offline, level_up_advisor, AdvisorOptions};
 use borealis_content::{Ruleset, SourceRestriction};
-use borealis_encounter::Band;
 use borealis_engine::CharacterState;
 use serde_json::{json, Value};
 use std::sync::Arc;
 use tokio::sync::mpsc::UnboundedSender;
 
-/// Largest encounter party accepted.
-const MAX_PARTY: usize = 12;
 const CHAT_SYSTEM: &str =
     "You are the assistant of Borealis, a Dungeons & Dragons character builder. \
 Answer briefly and concretely. Say so when you are unsure; never invent rules text.";
@@ -51,22 +45,6 @@ pub enum Job {
         hub: Arc<ContentHub>,
         state: CharacterState,
         goals: String,
-    },
-    /// Build planner.
-    Plan {
-        hub: Arc<ContentHub>,
-        state: CharacterState,
-        target: u32,
-        goals: String,
-    },
-    /// Encounter assistant.
-    Encounter {
-        hub: Arc<ContentHub>,
-        party: Vec<u8>,
-        ruleset: Ruleset,
-        band: Band,
-        constraints: Constraints,
-        text: String,
     },
     /// Backstory / NPC.
     Narrative { input: NarrativeInput },
@@ -103,72 +81,6 @@ fn param<'a>(req: &'a AiTaskRequest, key: &str) -> Option<&'a Value> {
 
 fn param_str(req: &AiTaskRequest, key: &str) -> Option<String> {
     param(req, key).and_then(Value::as_str).map(str::to_string)
-}
-
-/// Parse `dnd2014` / `dnd2024` (any case) into a ruleset.
-pub fn parse_ruleset(text: &str) -> ApiResult<Ruleset> {
-    match text.to_ascii_lowercase().as_str() {
-        "dnd2014" => Ok(Ruleset::Dnd2014),
-        "dnd2024" => Ok(Ruleset::Dnd2024),
-        _ => Err(ApiError::invalid("Unknown ruleset.")),
-    }
-}
-
-/// Parse an encounter band name.
-pub fn parse_band(text: &str) -> ApiResult<Band> {
-    let mut chars = text.chars();
-    let cap: String = chars
-        .next()
-        .map(|c| c.to_ascii_uppercase().to_string() + &chars.as_str().to_ascii_lowercase())
-        .unwrap_or_default();
-    serde_json::from_value(Value::String(cap)).map_err(|_| {
-        ApiError::invalid("Unknown encounter band (use low, moderate, high or extreme).")
-    })
-}
-
-/// Party levels from open characters (`partyIds`) or explicit `partyLevels`, plus the party's ruleset.
-pub fn party_from(
-    state: &AppState,
-    params: Option<&Value>,
-) -> ApiResult<(Vec<u8>, Option<Ruleset>)> {
-    let get = |k: &str| params.and_then(|p| p.get(k));
-    let mut levels = Vec::new();
-    let mut ruleset = None;
-    if let Some(ids) = get("partyIds").and_then(Value::as_array) {
-        for id in ids.iter().filter_map(Value::as_str) {
-            let (level, rs) = state.read(id, |_, s| {
-                Ok((s.character.build.level(), s.character.ruleset()))
-            })?;
-            levels.push(u8::try_from(level).unwrap_or(20));
-            ruleset.get_or_insert(rs);
-        }
-    }
-    if let Some(list) = get("partyLevels").and_then(Value::as_array) {
-        for v in list {
-            let n = v
-                .as_u64()
-                .filter(|n| (1..=20).contains(n))
-                .ok_or_else(|| ApiError::invalid("Party levels must be 1 to 20."))?;
-            levels.push(u8::try_from(n).unwrap_or(20));
-        }
-    }
-    if levels.is_empty() || levels.len() > MAX_PARTY {
-        return Err(ApiError::invalid(
-            "Give 1 to 12 party members (partyIds or partyLevels).",
-        ));
-    }
-    Ok((levels, ruleset))
-}
-
-/// Constraints from camelCase params.
-pub fn constraints_from(params: Option<&Value>) -> ApiResult<Constraints> {
-    params.and_then(|p| p.get("constraints")).map_or_else(
-        || Ok(Constraints::default()),
-        |c| {
-            serde_json::from_value(snakeize(c.clone()))
-                .map_err(|e| ApiError::invalid(format!("Bad encounter constraints: {e}")))
-        },
-    )
 }
 
 fn character_summary(hub: &ContentHub, name: &str, state: &CharacterState) -> Value {
@@ -271,37 +183,6 @@ pub fn prepare(state: &AppState, req: &AiTaskRequest, index: &Arc<LazyIndex>) ->
                 hub,
                 state: state_c,
                 goals: goals(req),
-            })
-        }
-        AiMode::BuildPlan => {
-            let (state_c, _) = with_char(require_character(req)?)?;
-            let target = param(req, "targetLevel")
-                .and_then(Value::as_u64)
-                .and_then(|n| u32::try_from(n).ok());
-            let target =
-                target.ok_or_else(|| ApiError::invalid("params.targetLevel is required."))?;
-            Ok(Job::Plan {
-                hub,
-                state: state_c,
-                target,
-                goals: goals(req),
-            })
-        }
-        AiMode::Encounter => {
-            let (party, party_rs) = party_from(state, req.params.as_ref())?;
-            let ruleset = match param_str(req, "ruleset") {
-                Some(r) => parse_ruleset(&r)?,
-                None => party_rs.unwrap_or(settings.default_ruleset),
-            };
-            let band = parse_band(&param_str(req, "band").unwrap_or_else(|| "moderate".into()))?;
-            let constraints = constraints_from(req.params.as_ref())?;
-            Ok(Job::Encounter {
-                hub,
-                party,
-                ruleset,
-                band,
-                constraints,
-                text: req.prompt.clone(),
             })
         }
         AiMode::Backstory | AiMode::Npc => {
@@ -456,57 +337,6 @@ pub async fn run_job(
                 text,
                 kind: Some("level_up"),
                 data,
-            })
-        }
-        Job::Plan {
-            hub,
-            state,
-            target,
-            goals,
-        } => {
-            let o = PlannerOptions {
-                sink: Some(sink),
-                ..PlannerOptions::default()
-            };
-            let plan = build_planner(need()?, &hub.engine, &state, target, &goals, &o)
-                .await
-                .map_err(ai_err)?;
-            let mut data = to_value(&plan)?;
-            data["plan"] = to_value(&plan.plan())?;
-            let text = format!(
-                "Planned {} of {} levels.",
-                plan.levels.len(),
-                target.saturating_sub(plan.start_level)
-            );
-            Ok(JobOutput {
-                text,
-                kind: Some("build_plan"),
-                data,
-            })
-        }
-        Job::Encounter {
-            hub,
-            party,
-            ruleset,
-            band,
-            constraints,
-            text,
-        } => {
-            let o = EncounterOptions {
-                ruleset,
-                band,
-                method: Method::Srd521,
-                constraints: &constraints,
-                sink: Some(sink),
-            };
-            let p = encounter_assistant(need()?, &hub.store, &Party::Levels(party), &text, &o)
-                .await
-                .map_err(ai_err)?;
-            let tactics = p.tactics.clone();
-            Ok(JobOutput {
-                text: tactics,
-                kind: Some("encounter"),
-                data: to_value(&p)?,
             })
         }
         Job::Narrative { input } => {

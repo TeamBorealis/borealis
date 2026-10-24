@@ -80,7 +80,7 @@ const META_CAPABILITIES: &str = "io.modelcontextprotocol/clientCapabilities";
 const META_SERVER_INFO: &str = "io.modelcontextprotocol/serverInfo";
 /// Content is fixed for the process lifetime, so lists may be cached for an hour.
 const TTL_MS: u64 = 3_600_000;
-const INSTRUCTIONS: &str = "Read-only Borealis content tools: search, inspect, validate, class sweep, encounter maths. Use list_core_ids and search_content before inventing ids.";
+const INSTRUCTIONS: &str = "Read-only Borealis content tools: search, inspect, validate, class sweep, rules terms. Use list_core_ids and search_content before inventing ids.";
 
 fn error(id: Value, code: i64, message: &str, data: Option<Value>) -> Value {
     let mut error = json!({"code": code, "message": message});

@@ -8,14 +8,6 @@
 //!   a deterministic template fallback and an offline variant.
 //! * [`advisor`]: `level_up_advisor`, ranks the engine's legal next-level options and
 //!   attaches engine-computed deltas.
-//! * [`planner`]: `build_planner`, proposes a per-level plan, replays and repairs it with
-//!   engine feedback. Plans are data ([`plan::Plan`]).
-//!
-//! * [`encounter`]: the encounter balancer: a deterministic monster index, evaluator and
-//!   budget-filling suggester, plus `encounter_assistant`, where the model picks from a pre-filtered
-//!   candidate list and the engine recomputes the difficulty (one repair round, then a
-//!   deterministic fallback).
-//!
 //! * [`homebrew`]: `homebrew_with_balance`: generation with a repair loop, then a deterministic
 //!   balance report against SRD baselines computed from the enabled packs and an engine load check.
 //! * [`import`]: `import_text_to_pack`: text or PDF text layer to a `user-import` pack, chunked,
@@ -29,15 +21,12 @@
 
 pub mod advisor;
 pub mod balance;
-pub mod encounter;
 pub mod error;
 pub mod explain;
 pub mod homebrew;
 pub mod import;
 pub mod numbers;
 pub mod options;
-pub mod plan;
-pub mod planner;
 pub mod summary;
 
 use serde::{Deserialize, Serialize};
@@ -45,10 +34,6 @@ use serde::{Deserialize, Serialize};
 pub use advisor::{level_up_advisor, AdvisorOptions, LevelUpAdvice};
 pub use balance::{
     balance_report, load_into_engine, BalanceFlag, BalanceReport, Baselines, EngineCheck, Severity,
-};
-pub use encounter::{
-    encounter_assistant, evaluate, monster_index, suggest_deterministic, Constraints,
-    EncounterOptions, EncounterProposal, Method, MonsterEntry, Party, Suggestion,
 };
 pub use error::AssistError;
 pub use explain::{explain_number, explain_number_offline, Explanation};
@@ -63,8 +48,6 @@ pub use import::{
     ImportSource,
 };
 pub use options::{apply_option, legal_options, LevelPath, LevelUpOption};
-pub use plan::{apply_plan, replay_step, Plan, PlanStep};
-pub use planner::{build_planner, BuildPlan, PlannerOptions};
 
 /// Where a piece of prose came from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

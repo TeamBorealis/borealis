@@ -7,7 +7,6 @@
 #[cfg(desktop)]
 pub mod ai_dto;
 #[cfg(desktop)]
-pub mod ai_extra;
 #[cfg(desktop)]
 pub mod ai_host;
 #[cfg(desktop)]
@@ -376,11 +375,8 @@ pub fn run() {
             #[cfg(desktop)]
             commands_ai::ai_cancel_task,
             #[cfg(desktop)]
-            commands_ai::apply_plan,
             #[cfg(desktop)]
-            commands_ai::encounter_evaluate,
             #[cfg(desktop)]
-            commands_ai::encounter_suggest,
             #[cfg(desktop)]
             commands_ai::ai_host_enable,
             #[cfg(desktop)]

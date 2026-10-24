@@ -1,7 +1,6 @@
 //! Tool registry: schemas, argument parsing, dispatch and output caps.
 
 mod element;
-mod encounter;
 mod glossary;
 mod ids;
 mod overlay;
@@ -92,7 +91,6 @@ impl Tools {
             "list_core_ids" => ids::run(self, args),
             "validate_element" => validate::run(self, args),
             "class_sweep" => sweep::run(self, args),
-            "encounter_evaluate" => encounter::run(self, args),
             "explain_rules_term" => glossary::run(self, args),
             _ => return None,
         };

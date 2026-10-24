@@ -165,29 +165,6 @@ fn class_sweep_srd_fighter_passes_levels_1_to_20() {
 }
 
 #[test]
-fn encounter_evaluate_2024_and_2014_use_budget_method() {
-    let mut s = Session::start();
-    let out = structured(
-        &mut s,
-        "encounter_evaluate",
-        json!({"party_levels": [3, 3, 3, 3], "monsters": [{"cr": "1/4", "count": 4}, {"cr": 1}], "ruleset": "2024"}),
-    );
-    assert!(out["total_xp"].as_u64().unwrap() > 0);
-    assert_eq!(out["method"], "srd-5.2.1-budget");
-    let old = structured(
-        &mut s,
-        "encounter_evaluate",
-        json!({"party_levels": [3, 3, 3, 3], "monsters": [{"cr": "1/4", "count": 4}, {"cr": 1}], "ruleset": "2014"}),
-    );
-    assert_eq!(old["method"], "srd-5.2.1-budget");
-    assert_eq!(old["total_xp"], out["total_xp"]);
-    assert!(old["note"]
-        .as_str()
-        .unwrap()
-        .contains("user-supplied tables"));
-}
-
-#[test]
 fn explain_rules_term_exact_and_fuzzy() {
     let mut s = Session::start();
     let out = structured(
