@@ -170,8 +170,8 @@ pub fn companion(input: &MapInput<'_>, snap: &Engine) -> Option<CompanionState> 
     })
 }
 
-/// The companion's stat block for the printed sheet; `None` when no creature is chosen (a name
-/// alone adds no page; a picture alone prints the companion page with just the portrait).
+/// The companion's stat block for the printed sheet; `None` when no creature is chosen (a name or
+/// a picture alone adds no page).
 #[must_use]
 pub fn sheet_block(c: &CompanionState) -> Option<borealis_sheet::CompanionSheet> {
     use borealis_sheet::{CompanionEntry, CompanionSheet, CompanionSkillLine};
