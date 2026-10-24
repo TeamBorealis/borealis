@@ -1,0 +1,203 @@
+{"id": "ex-01", "text": "Fireball", "category": "exact"}
+{"id": "ex-02", "text": "Grappled", "category": "exact"}
+{"id": "ex-03", "text": "Eldritch Blast", "category": "exact"}
+{"id": "ex-04", "text": "Magic Missile", "category": "exact"}
+{"id": "ex-05", "text": "Counterspell", "category": "exact"}
+{"id": "ex-06", "text": "Prone", "category": "exact"}
+{"id": "ex-07", "text": "Barbarian", "category": "exact"}
+{"id": "ex-08", "text": "Rage", "category": "exact"}
+{"id": "ex-09", "text": "Sneak Attack", "category": "exact"}
+{"id": "ex-10", "text": "Wild Shape", "category": "exact"}
+{"id": "ex-11", "text": "Bag of Holding", "category": "exact"}
+{"id": "ex-12", "text": "Owlbear", "category": "exact"}
+{"id": "ex-13", "text": "Goblin", "category": "exact"}
+{"id": "ex-14", "text": "Adult Red Dragon", "category": "exact"}
+{"id": "ex-15", "text": "Lich", "category": "exact"}
+{"id": "ex-16", "text": "Longsword", "category": "exact"}
+{"id": "ex-17", "text": "Chain Mail", "category": "exact"}
+{"id": "ex-18", "text": "Potion of Healing", "category": "exact"}
+{"id": "ex-19", "text": "Healing Word", "category": "exact"}
+{"id": "ex-20", "text": "Divine Smite", "category": "exact"}
+{"id": "ex-21", "text": "Lay on Hands", "category": "exact"}
+{"id": "ex-22", "text": "Hold Person", "category": "exact"}
+{"id": "ex-23", "text": "Misty Step", "category": "exact"}
+{"id": "ex-24", "text": "Bardic Inspiration", "category": "exact"}
+{"id": "ex-25", "text": "Action Surge", "category": "exact"}
+{"id": "ex-26", "text": "Alert", "category": "exact"}
+{"id": "ex-27", "text": "Opportunity Attacks", "category": "exact"}
+{"id": "ex-28", "text": "Cover", "category": "exact"}
+{"id": "ex-29", "text": "Concentration", "category": "exact"}
+{"id": "ex-30", "text": "Heavy", "category": "exact"}
+{"id": "ex-31", "text": "Vex", "category": "exact"}
+{"id": "ex-32", "text": "Tiefling", "category": "exact"}
+{"id": "ex-33", "text": "Wizard", "category": "exact"}
+{"id": "ex-34", "text": "Tarrasque", "category": "exact"}
+{"id": "ex-35", "text": "Cloak of Protection", "category": "exact"}
+{"id": "ex-36", "text": "Rapier", "category": "exact"}
+{"id": "ex-37", "text": "Ring of Protection", "category": "exact"}
+{"id": "ex-38", "text": "Cone of Cold", "category": "exact"}
+{"id": "ex-39", "text": "Gelatinous Cube", "category": "exact"}
+{"id": "ex-40", "text": "Exhaustion", "category": "exact"}
+{"id": "ex-41", "text": "Dragonborn", "category": "exact"}
+{"id": "ex-42", "text": "Acolyte", "category": "exact"}
+{"id": "ex-43", "text": "Troll", "category": "exact"}
+{"id": "ty-01", "text": "firball", "category": "typo"}
+{"id": "ty-02", "text": "eldrich blast", "category": "typo"}
+{"id": "ty-03", "text": "polymorf", "category": "typo"}
+{"id": "ty-04", "text": "magic misile", "category": "typo"}
+{"id": "ty-05", "text": "cure woulds", "category": "typo"}
+{"id": "ty-06", "text": "countespell", "category": "typo"}
+{"id": "ty-07", "text": "grapeled", "category": "typo"}
+{"id": "ty-08", "text": "paralized", "category": "typo"}
+{"id": "ty-09", "text": "barbarain", "category": "typo"}
+{"id": "ty-10", "text": "sneek attack", "category": "typo"}
+{"id": "ty-11", "text": "bag of holdin", "category": "typo"}
+{"id": "ty-12", "text": "owlbaer", "category": "typo"}
+{"id": "ty-13", "text": "gelatinous cub", "category": "typo"}
+{"id": "ty-14", "text": "tarasque", "category": "typo"}
+{"id": "ty-15", "text": "longsowrd", "category": "typo"}
+{"id": "ty-16", "text": "mage hnad", "category": "typo"}
+{"id": "ty-17", "text": "hold peson", "category": "typo"}
+{"id": "ty-18", "text": "mistey step", "category": "typo"}
+{"id": "ty-19", "text": "bardic inspriation", "category": "typo"}
+{"id": "ty-20", "text": "action surg", "category": "typo"}
+{"id": "ty-21", "text": "wizzard", "category": "typo"}
+{"id": "ty-22", "text": "invisibilty", "category": "typo"}
+{"id": "ty-23", "text": "lightening bolt", "category": "typo"}
+{"id": "ty-24", "text": "dimention door", "category": "typo"}
+{"id": "ty-25", "text": "flameing sphere", "category": "typo"}
+{"id": "ty-26", "text": "shilleligh", "category": "typo"}
+{"id": "ty-27", "text": "poisened", "category": "typo"}
+{"id": "ty-28", "text": "frightend", "category": "typo"}
+{"id": "ty-29", "text": "minatour", "category": "typo"}
+{"id": "ty-30", "text": "dragonborne", "category": "typo"}
+{"id": "ty-31", "text": "rouge", "category": "typo"}
+{"id": "ty-32", "text": "cleirc", "category": "typo"}
+{"id": "pf-01", "text": "fire", "category": "prefix"}
+{"id": "pf-02", "text": "polym", "category": "prefix"}
+{"id": "pf-03", "text": "cure w", "category": "prefix"}
+{"id": "pf-04", "text": "mag", "category": "prefix"}
+{"id": "pf-05", "text": "hold p", "category": "prefix"}
+{"id": "pf-06", "text": "light", "category": "prefix"}
+{"id": "pf-07", "text": "dragon", "category": "prefix"}
+{"id": "pf-08", "text": "bless", "category": "prefix"}
+{"id": "pf-09", "text": "wall of", "category": "prefix"}
+{"id": "pf-10", "text": "detect", "category": "prefix"}
+{"id": "pf-11", "text": "cone", "category": "prefix"}
+{"id": "pf-12", "text": "barb", "category": "prefix"}
+{"id": "pf-13", "text": "wiz", "category": "prefix"}
+{"id": "pf-14", "text": "ele", "category": "prefix"}
+{"id": "pf-15", "text": "sneak", "category": "prefix"}
+{"id": "pf-16", "text": "grapp", "category": "prefix"}
+{"id": "pf-17", "text": "conj", "category": "prefix"}
+{"id": "pf-18", "text": "invis", "category": "prefix"}
+{"id": "pf-19", "text": "bag of", "category": "prefix"}
+{"id": "pf-20", "text": "ring of", "category": "prefix"}
+{"id": "pf-21", "text": "potion of", "category": "prefix"}
+{"id": "pf-22", "text": "dispel", "category": "prefix"}
+{"id": "pf-23", "text": "ancient", "category": "prefix"}
+{"id": "pf-24", "text": "tele", "category": "prefix"}
+{"id": "pf-25", "text": "pois", "category": "prefix"}
+{"id": "pf-26", "text": "shi", "category": "prefix"}
+{"id": "pa-01", "text": "spell that lets you fly", "category": "paraphrase"}
+{"id": "pa-02", "text": "make an enemy fall asleep", "category": "paraphrase"}
+{"id": "pa-03", "text": "bring a dead character back to life", "category": "paraphrase"}
+{"id": "pa-04", "text": "spell to heal an ally", "category": "paraphrase"}
+{"id": "pa-05", "text": "make myself invisible", "category": "paraphrase"}
+{"id": "pa-06", "text": "read someone’s mind", "category": "paraphrase"}
+{"id": "pa-07", "text": "summon animals to fight for me", "category": "paraphrase"}
+{"id": "pa-08", "text": "protect myself from fire damage", "category": "paraphrase"}
+{"id": "pa-09", "text": "teleport across the battlefield quickly", "category": "paraphrase"}
+{"id": "pa-10", "text": "talk to animals", "category": "paraphrase"}
+{"id": "pa-11", "text": "magical light source for a dark room", "category": "paraphrase"}
+{"id": "pa-12", "text": "open a locked door with magic", "category": "paraphrase"}
+{"id": "pa-13", "text": "find out if an item is magical", "category": "paraphrase"}
+{"id": "pa-14", "text": "shoot lightning at enemies in a line", "category": "paraphrase"}
+{"id": "pa-15", "text": "create a wall of flames", "category": "paraphrase"}
+{"id": "pa-16", "text": "look like another person", "category": "paraphrase"}
+{"id": "pa-17", "text": "freeze an enemy so it cannot move", "category": "paraphrase"}
+{"id": "pa-18", "text": "big area explosion damage", "category": "paraphrase"}
+{"id": "pa-19", "text": "reaction that gives plus 5 to armor class", "category": "paraphrase"}
+{"id": "pa-20", "text": "stop another caster from casting", "category": "paraphrase"}
+{"id": "pa-21", "text": "undead monster that paralyzes with its claws", "category": "paraphrase"}
+{"id": "pa-22", "text": "giant fire breathing flying lizard", "category": "paraphrase"}
+{"id": "pa-23", "text": "powerful undead wizard villain", "category": "paraphrase"}
+{"id": "pa-24", "text": "sword that bursts into flame", "category": "paraphrase"}
+{"id": "pa-25", "text": "extradimensional bag that holds lots of gear", "category": "paraphrase"}
+{"id": "pa-26", "text": "drink to move faster", "category": "paraphrase"}
+{"id": "pa-27", "text": "class that flies into a battle fury", "category": "paraphrase"}
+{"id": "pa-28", "text": "spellcaster with a pact and a patron", "category": "paraphrase"}
+{"id": "pa-29", "text": "take no damage when a spell lets you make a save for half", "category": "paraphrase"}
+{"id": "pa-30", "text": "healing touch that uses a pool of hit points", "category": "paraphrase"}
+{"id": "pa-31", "text": "monster that disguises itself as an object and grabs you", "category": "paraphrase"}
+{"id": "rq-01", "text": "can I use two reactions in a round", "category": "rules question"}
+{"id": "rq-02", "text": "how does grappling work 2024", "category": "rules question", "ruleset": "2024"}
+{"id": "rq-03", "text": "how does grappling work", "category": "rules question"}
+{"id": "rq-04", "text": "what happens when I drop to 0 hit points", "category": "rules question"}
+{"id": "rq-05", "text": "how do death saving throws work", "category": "rules question"}
+{"id": "rq-06", "text": "can I cast two spells in one turn", "category": "rules question"}
+{"id": "rq-07", "text": "what ends concentration on a spell", "category": "rules question"}
+{"id": "rq-08", "text": "does cover give a bonus to armor class", "category": "rules question"}
+{"id": "rq-09", "text": "do advantage and disadvantage cancel each other out", "category": "rules question"}
+{"id": "rq-10", "text": "how does surprise work in combat", "category": "rules question"}
+{"id": "rq-11", "text": "how does two-weapon fighting work", "category": "rules question"}
+{"id": "rq-12", "text": "do temporary hit points stack", "category": "rules question"}
+{"id": "rq-13", "text": "does the disengage action stop opportunity attacks", "category": "rules question"}
+{"id": "rq-14", "text": "what does the dodge action do", "category": "rules question"}
+{"id": "rq-15", "text": "how long is a short rest and what does it restore", "category": "rules question"}
+{"id": "rq-16", "text": "what does a long rest restore", "category": "rules question"}
+{"id": "rq-17", "text": "how do I stabilize a dying character", "category": "rules question"}
+{"id": "rq-18", "text": "how much damage do I take from falling", "category": "rules question"}
+{"id": "rq-19", "text": "how do I hide from enemies", "category": "rules question"}
+{"id": "rq-20", "text": "how does darkvision work", "category": "rules question"}
+{"id": "rq-21", "text": "how do critical hits work", "category": "rules question"}
+{"id": "rq-22", "text": "how do spell slots work when multiclassing", "category": "rules question"}
+{"id": "rq-23", "text": "how does readying an action work", "category": "rules question"}
+{"id": "rq-24", "text": "how many magic items can I attune to", "category": "rules question"}
+{"id": "rq-25", "text": "how much does difficult terrain slow me down", "category": "rules question"}
+{"id": "rq-26", "text": "what are the rules for fighting underwater", "category": "rules question"}
+{"id": "rq-27", "text": "how does mounted combat work", "category": "rules question"}
+{"id": "rq-28", "text": "how do I calculate my spell save DC", "category": "rules question"}
+{"id": "rq-29", "text": "do resistance and vulnerability stack", "category": "rules question"}
+{"id": "rq-30", "text": "how far can I jump", "category": "rules question"}
+{"id": "rq-31", "text": "what are the effects of exhaustion", "category": "rules question"}
+{"id": "rq-32", "text": "how do passive perception checks work", "category": "rules question"}
+{"id": "rq-33", "text": "what components does a spell need", "category": "rules question"}
+{"id": "rq-34", "text": "how does initiative work", "category": "rules question"}
+{"id": "rq-35", "text": "can I cast a ritual spell without using a spell slot", "category": "rules question"}
+{"id": "rq-36", "text": "how does weapon mastery work 2024", "category": "rules question", "ruleset": "2024"}
+{"id": "rq-37", "text": "can I knock a creature out instead of killing it", "category": "rules question"}
+{"id": "rq-38", "text": "what does the help action do", "category": "rules question"}
+{"id": "ab-01", "text": "OA", "category": "abbreviation/synonym"}
+{"id": "ab-02", "text": "AoO", "category": "abbreviation/synonym"}
+{"id": "ab-03", "text": "AC from shield", "category": "abbreviation/synonym"}
+{"id": "ab-04", "text": "elf race 2024", "category": "abbreviation/synonym", "ruleset": "2024"}
+{"id": "ab-05", "text": "half orc 2024", "category": "abbreviation/synonym", "ruleset": "2024"}
+{"id": "ab-06", "text": "half orc", "category": "abbreviation/synonym"}
+{"id": "ab-07", "text": "temp hp", "category": "abbreviation/synonym"}
+{"id": "ab-08", "text": "hit dice", "category": "abbreviation/synonym"}
+{"id": "ab-09", "text": "XP", "category": "abbreviation/synonym"}
+{"id": "ab-10", "text": "CR", "category": "abbreviation/synonym"}
+{"id": "ab-11", "text": "PC", "category": "abbreviation/synonym"}
+{"id": "ab-12", "text": "NPC", "category": "abbreviation/synonym"}
+{"id": "ab-13", "text": "DC", "category": "abbreviation/synonym"}
+{"id": "ab-14", "text": "ASI", "category": "abbreviation/synonym"}
+{"id": "ab-15", "text": "AC", "category": "abbreviation/synonym"}
+{"id": "ab-16", "text": "HP", "category": "abbreviation/synonym"}
+{"id": "ab-17", "text": "pally", "category": "abbreviation/synonym"}
+{"id": "ab-18", "text": "dex save", "category": "abbreviation/synonym"}
+{"id": "ab-19", "text": "conc check", "category": "abbreviation/synonym"}
+{"id": "ed-01a", "text": "grappling", "category": "edition-filtered", "ruleset": "2014"}
+{"id": "ed-01b", "text": "grappling", "category": "edition-filtered", "ruleset": "2024"}
+{"id": "ed-02a", "text": "bonus action", "category": "edition-filtered", "ruleset": "2014"}
+{"id": "ed-02b", "text": "bonus action", "category": "edition-filtered", "ruleset": "2024"}
+{"id": "ed-03a", "text": "exhaustion", "category": "edition-filtered", "ruleset": "2014"}
+{"id": "ed-03b", "text": "exhaustion", "category": "edition-filtered", "ruleset": "2024"}
+{"id": "ed-04a", "text": "divine smite", "category": "edition-filtered", "ruleset": "2014"}
+{"id": "ed-04b", "text": "divine smite", "category": "edition-filtered", "ruleset": "2024"}
+{"id": "ed-05a", "text": "hiding", "category": "edition-filtered", "ruleset": "2014"}
+{"id": "ed-05b", "text": "hiding", "category": "edition-filtered", "ruleset": "2024"}
+{"id": "ed-06a", "text": "initiative", "category": "edition-filtered", "ruleset": "2014"}
+{"id": "ed-06b", "text": "initiative", "category": "edition-filtered", "ruleset": "2024"}
+{"id": "ed-07a", "text": "paladin", "category": "edition-filtered", "ruleset": "2014"}
+{"id": "ed-07b", "text": "paladin", "category": "edition-filtered", "ruleset": "2024"}
