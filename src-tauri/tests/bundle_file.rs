@@ -371,6 +371,98 @@ fn a_bundle_copied_by_the_app_is_deleted_after_accept_or_discard() {
     assert!(!mine.exists(), "and after Cancel");
 }
 
+/// Z privacy gate (BR2/EM3 extended to bundles, local-search-spec section 11): with the app's
+/// search index built, a paired device in the registry, the AI host key in the data folder and
+/// planted copies of all of them inside a user pack, an "everything" export carries no `search/`
+/// or `link/` path, no key file, no registry data and none of the index files' bytes.
+#[test]
+fn an_everything_export_carries_no_search_index_link_state_or_keys() {
+    use borealis_link::{CertFingerprint, DeviceRegistry, PairedDevice, Platform};
+    let a = dev("Mac");
+    put_character(&a, "Mira", Duration::from_secs(60));
+    let data = a.data.path();
+    a.state.build_search_index_now().unwrap();
+    let index_manifest = std::fs::read(data.join("search/v1/manifest.json")).unwrap();
+    let peer = CertFingerprint::of_der(b"paired phone certificate");
+    DeviceRegistry::default()
+        .with_paired(PairedDevice::new(
+            "Quillphone",
+            Platform::Android,
+            peer,
+            1_800_000_000,
+        ))
+        .unwrap()
+        .save(data)
+        .unwrap();
+    std::fs::write(data.join("ai-host-key.der"), b"KEYMATERIAL-DO-NOT-SEND").unwrap();
+    let pack = a.state.paths.library().join("homebrew");
+    std::fs::create_dir_all(pack.join("search/v1")).unwrap();
+    std::fs::create_dir_all(pack.join("link")).unwrap();
+    std::fs::write(
+        pack.join("pack.json"),
+        r#"{"format":"borealis-pack/1","id":"homebrew","name":"Homebrew","version":"1.0.0","origin":"custom","rulesets":["dnd2024"],"files":[]}"#,
+    )
+    .unwrap();
+    std::fs::write(pack.join("search/v1/manifest.json"), &index_manifest).unwrap();
+    std::fs::copy(
+        a.state.paths.link_registry(),
+        pack.join("link/devices.json"),
+    )
+    .unwrap();
+    std::fs::write(pack.join("ai-host-key.der"), b"KEYMATERIAL-DO-NOT-SEND").unwrap();
+    std::fs::write(pack.join("device.pem"), b"KEYMATERIAL-DO-NOT-SEND").unwrap();
+
+    let built = a
+        .sync
+        .build_bundle_file(&LinkSelection {
+            character_ids: vec![ID.into()],
+            packs: LinkPackChoice::All,
+        })
+        .unwrap();
+    let out = tempfile::tempdir().unwrap();
+    let dest = out.path().join("all.borealis");
+    DeviceSync::save_bundle(&built, &dest).unwrap();
+
+    let mut zip = zip::ZipArchive::new(std::fs::File::open(&dest).unwrap()).unwrap();
+    let mut names = Vec::new();
+    let mut all = Vec::new();
+    for i in 0..zip.len() {
+        let mut entry = zip.by_index(i).unwrap();
+        names.push(entry.name().to_string());
+        entry.read_to_end(&mut all).unwrap();
+    }
+    assert!(
+        names.iter().any(|n| n == "packs/homebrew/pack.json"),
+        "{names:?}"
+    );
+    assert!(
+        names.iter().any(|n| n.starts_with("characters/")),
+        "{names:?}"
+    );
+    for n in &names {
+        let lower = n.to_lowercase();
+        assert!(
+            !lower.contains("search/") && !lower.contains("link/") && !lower.contains("ai-"),
+            "{n} reached the bundle"
+        );
+        assert!(!lower.ends_with(".der") && !lower.ends_with(".pem"), "{n}");
+    }
+    let text = String::from_utf8_lossy(&all);
+    for leak in [
+        peer.to_base64url().as_str(),
+        "Quillphone",
+        "borealis-link-devices",
+        "KEYMATERIAL",
+    ] {
+        assert!(!text.contains(leak), "{leak} reached the bundle");
+    }
+    assert!(
+        !all.windows(index_manifest.len())
+            .any(|w| w == index_manifest),
+        "the search index manifest reached the bundle"
+    );
+}
+
 /// Z: only the iOS document inbox is the app's own; a user's file that merely sits in a folder
 /// called `Inbox` (mail exports, a Downloads subfolder) is never deleted, whether it is
 /// accepted, cancelled or refused.
