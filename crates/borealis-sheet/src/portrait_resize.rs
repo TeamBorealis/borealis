@@ -27,12 +27,16 @@ pub struct ResizedPortrait {
 /// Scale `bytes` down so neither edge exceeds [`MAX_PORTRAIT_EDGE_PX`].
 ///
 /// Returns `None` when nothing should change: the image already fits, the format is not
-/// PNG/JPEG, or it cannot be decoded or encoded (the original is then kept as is). JPEG stays
-/// JPEG; everything else becomes PNG so transparency survives.
+/// PNG/JPEG/WebP, or it cannot be decoded or encoded (the original is then kept as is). JPEG stays
+/// JPEG; PNG and WebP become PNG (the image crate encodes WebP lossless only, and PNG keeps
+/// transparency).
 #[must_use]
 pub fn downscale_portrait(bytes: &[u8]) -> Option<ResizedPortrait> {
     let format = image::guess_format(bytes).ok()?;
-    if !matches!(format, ImageFormat::Png | ImageFormat::Jpeg) {
+    if !matches!(
+        format,
+        ImageFormat::Png | ImageFormat::Jpeg | ImageFormat::WebP
+    ) {
         return None;
     }
     let mut reader = ImageReader::with_format(Cursor::new(bytes), format);
@@ -111,6 +115,21 @@ mod tests {
             dims(&out.bytes),
             (MAX_PORTRAIT_EDGE_PX, MAX_PORTRAIT_EDGE_PX)
         );
+    }
+
+    #[test]
+    fn large_webp_is_scaled_and_stored_as_png() {
+        let out = downscale_portrait(&encode(2048, 1024, ImageFormat::WebP)).unwrap();
+        assert_eq!(out.extension, "png");
+        assert_eq!(
+            dims(&out.bytes),
+            (MAX_PORTRAIT_EDGE_PX, MAX_PORTRAIT_EDGE_PX / 2)
+        );
+    }
+
+    #[test]
+    fn small_webp_is_left_alone() {
+        assert!(downscale_portrait(&encode(300, 200, ImageFormat::WebP)).is_none());
     }
 
     #[test]
