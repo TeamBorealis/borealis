@@ -60,6 +60,13 @@ impl AppPaths {
     pub fn settings_file(&self) -> PathBuf {
         self.data.join("settings.json")
     }
+
+    /// Paired-device registry for device sync (`<data>/link/devices.json`, B1). Public data
+    /// only; device keys and tokens live in the OS secure store. Never synced or reported.
+    #[must_use]
+    pub fn link_registry(&self) -> PathBuf {
+        borealis_link::registry::registry_path(&self.data)
+    }
 }
 
 /// An immutable content snapshot: the store and the engine prepared for it.

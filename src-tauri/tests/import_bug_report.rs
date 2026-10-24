@@ -315,3 +315,49 @@ fn no_search_index_path_or_indexed_text_enters_a_report() {
         assert!(!body.contains(leak), "{leak} reached the report: {body}");
     }
 }
+
+/// BR2 + B1: device-link state (paired-device registry) and the AI host key in the data dir
+/// never reach a report, even with every opt-in ticked.
+#[test]
+fn device_link_state_and_keys_never_reach_a_report() {
+    use borealis_link::{CertFingerprint, DeviceRegistry, PairedDevice, Platform};
+    let h = imported_draft();
+    let data = &h.state.paths.data;
+    let peer = CertFingerprint::of_der(b"paired phone certificate");
+    let device = PairedDevice::new("Quillphone", Platform::Android, peer, 1_800_000_000);
+    DeviceRegistry::default()
+        .with_paired(device)
+        .unwrap()
+        .save(data)
+        .unwrap();
+    assert!(h.state.paths.link_registry().is_file());
+    std::fs::write(data.join("ai-host-key.der"), b"KEYMATERIAL-DO-NOT-SEND").unwrap();
+    let logs = h.state.paths.logs();
+    std::fs::create_dir_all(&logs).unwrap();
+    std::fs::write(
+        logs.join("borealis-2026-10-24.log"),
+        "INFO borealis_lib: Borealis started\n",
+    )
+    .unwrap();
+    let outbox = ReportOutbox::new(
+        "https://example.test/api/import-report",
+        Arc::new(FakePost::default()),
+    );
+    let req = ReportRequest {
+        include_logs: true,
+        include_source: true,
+        ..draft_req(&h)
+    };
+    let p = h.state.import_report_preview(&outbox, req).unwrap();
+    let text = p.payload.to_string();
+    assert!(text.contains("Borealis started"), "logs were attached");
+    for secret in [
+        peer.to_base64url().as_str(),
+        "Quillphone",
+        "devices.json",
+        "borealis-link-devices",
+        "KEYMATERIAL",
+    ] {
+        assert!(!text.contains(secret), "{secret} leaked into the report");
+    }
+}

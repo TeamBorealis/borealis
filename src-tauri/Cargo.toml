@@ -19,6 +19,12 @@ unsafe_code = "deny"
 [lints.clippy]
 all = { level = "warn", priority = -1 }
 
+[features]
+# Device sync transport (tokio + rustls TCP) and the OS secure store (Keychain, Android Keystore,
+# Credential Manager, Secret Service). Off by default: mobile builds keep linking no network stack
+# until the transfer (B3) turns this on, as in the X0.1 spike.
+device-link = ["borealis-link/tcp", "borealis-link/platform-store"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -50,6 +56,9 @@ borealis-mcp = { path = "../crates/borealis-mcp" }
 borealis-search.workspace = true
 tokio = { workspace = true, features = ["time"] }
 ed25519-dalek = { version = "2", default-features = false, features = ["std"] }
+# Device link (B1): registry paths and model on every target; the network stack and OS secure
+# store only with the `device-link` feature.
+borealis-link.workspace = true
 
 [dev-dependencies]
 tempfile = "3"
