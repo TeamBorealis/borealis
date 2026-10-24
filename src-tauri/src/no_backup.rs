@@ -70,6 +70,7 @@ mod apple {
             value: CFTypeRef,
             error: *mut CFTypeRef,
         ) -> Boolean;
+        #[cfg(test)]
         fn CFURLCopyResourcePropertyForKey(
             url: CFTypeRef,
             key: CFTypeRef,
