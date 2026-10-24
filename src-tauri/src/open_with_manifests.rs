@@ -130,7 +130,11 @@ fn android_offers_borealis_for_downloads_provider_files() {
 
 fn association<'a>(list: &'a [serde_json::Value], ext: &str) -> &'a serde_json::Value {
     list.iter()
-        .find(|a| a["ext"].as_array().is_some_and(|e| e.iter().any(|x| x == ext)))
+        .find(|a| {
+            a["ext"]
+                .as_array()
+                .is_some_and(|e| e.iter().any(|x| x == ext))
+        })
         .unwrap_or_else(|| panic!("no association for .{ext}"))
 }
 

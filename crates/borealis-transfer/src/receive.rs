@@ -206,7 +206,8 @@ pub(crate) fn verify_and_apply(
     host: &dyn ReceiveHost,
     limits: &TransferLimits,
 ) -> Result<ApplyReport, TransferError> {
-    let refused = |e: borealis_bundle::BundleError| TransferError::Refused(crate::error::plain_reason(&e));
+    let refused =
+        |e: borealis_bundle::BundleError| TransferError::Refused(crate::error::plain_reason(&e));
     let mut bundle = Bundle::open_with(file, limits.bundle).map_err(refused)?;
     if bundle.manifest() != offered {
         return Err(TransferError::Refused(

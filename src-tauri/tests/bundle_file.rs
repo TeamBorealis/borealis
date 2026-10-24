@@ -143,12 +143,18 @@ fn export_open_preview_accept_round_trip() {
     assert_eq!(preview.source_device, "Mac");
     let rows = &preview.preview.items;
     assert_eq!(rows.len(), 1);
-    assert_eq!((rows[0].label.as_str(), rows[0].action.as_str()), ("Mira", "new"));
+    assert_eq!(
+        (rows[0].label.as_str(), rows[0].action.as_str()),
+        ("Mira", "new")
+    );
     assert_eq!(local_name(&b), None, "previewing writes nothing");
 
     // Accept: applied through the validated apply path, with the source edit time stamped.
     let summary = b.sync.accept_bundle(&preview.bundle_id).unwrap();
-    assert_eq!((summary.added, summary.replaced, summary.kept_local), (1, 0, 0));
+    assert_eq!(
+        (summary.added, summary.replaced, summary.kept_local),
+        (1, 0, 0)
+    );
     assert_eq!(local_name(&b).as_deref(), Some("Mira"));
     let src_time = std::fs::metadata(a.state.characters_dir().join(format!("{ID}.json")))
         .unwrap()
@@ -185,7 +191,11 @@ fn newest_edit_wins_and_the_replaced_copy_goes_to_the_trash() {
     assert_eq!((summary.replaced, summary.added), (1, 0));
     assert_eq!(local_name(&b).as_deref(), Some("Mira"));
     let trash = b.data.path().join("sync").join("trash");
-    assert_eq!(std::fs::read_dir(trash).unwrap().count(), 1, "old copy kept");
+    assert_eq!(
+        std::fs::read_dir(trash).unwrap().count(),
+        1,
+        "old copy kept"
+    );
 
     // The phone's copy is newer than an old bundle: kept.
     let (c, d) = (dev("Mac 2"), dev("Phone 2"));
@@ -215,7 +225,8 @@ fn a_tampered_bundle_is_refused_with_a_plain_message_and_writes_nothing() {
     });
     let err = b.sync.open_bundle(&token(&b, &bad)).unwrap_err();
     assert!(
-        err.message.contains("damaged or was changed") && err.message.contains("Nothing was changed"),
+        err.message.contains("damaged or was changed")
+            && err.message.contains("Nothing was changed"),
         "{}",
         err.message
     );
@@ -236,7 +247,11 @@ fn a_file_changed_between_preview_and_accept_is_refused() {
     let swapped = export(&other, elsewhere.path());
     std::fs::copy(&swapped, &file).unwrap();
     let err = b.sync.accept_bundle(&preview.bundle_id).unwrap_err();
-    assert!(err.message.contains("Nothing was changed"), "{}", err.message);
+    assert!(
+        err.message.contains("Nothing was changed"),
+        "{}",
+        err.message
+    );
     assert_eq!(local_name(&b), None);
 }
 
@@ -247,7 +262,11 @@ fn something_that_is_not_a_bundle_or_is_oversize_is_refused_plainly() {
     let junk = files.path().join("notes.borealis");
     std::fs::write(&junk, b"just some text, not a zip").unwrap();
     let err = b.sync.open_bundle(&token(&b, &junk)).unwrap_err();
-    assert!(err.message.contains("not a Borealis bundle"), "{}", err.message);
+    assert!(
+        err.message.contains("not a Borealis bundle"),
+        "{}",
+        err.message
+    );
 
     // A zip with no manifest.
     let plain_zip = files.path().join("plain.borealis");
@@ -257,7 +276,11 @@ fn something_that_is_not_a_bundle_or_is_oversize_is_refused_plainly() {
     z.write_all(b"hi").unwrap();
     z.finish().unwrap();
     let err = b.sync.open_bundle(&token(&b, &plain_zip)).unwrap_err();
-    assert!(err.message.contains("not a Borealis bundle"), "{}", err.message);
+    assert!(
+        err.message.contains("not a Borealis bundle"),
+        "{}",
+        err.message
+    );
 
     // A file whose single entry is far over the per-file cap (64 MiB), compressed to almost nothing.
     let huge = files.path().join("huge.borealis");
@@ -284,7 +307,12 @@ fn an_unknown_or_foreign_token_is_refused() {
     let files = tempfile::tempdir().unwrap();
     let f = files.path().join("x.borealis");
     std::fs::write(&f, b"x").unwrap();
-    let t = b.state.picked.grant(f, PickPurpose::ImportFile).unwrap().token;
+    let t = b
+        .state
+        .picked
+        .grant(f, PickPurpose::ImportFile)
+        .unwrap()
+        .token;
     assert!(b.sync.open_bundle(&t).is_err());
 }
 

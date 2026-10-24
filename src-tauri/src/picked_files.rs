@@ -200,7 +200,10 @@ mod tests {
     #[test]
     fn a_dropped_bundle_gets_a_bundle_token_and_is_never_read_as_content() {
         let dir = tempfile::tempdir().unwrap();
-        let paths = files(dir.path(), &["Mira.borealis", "Other.BOREALIS", "hero.dnd5e"]);
+        let paths = files(
+            dir.path(),
+            &["Mira.borealis", "Other.BOREALIS", "hero.dnd5e"],
+        );
         let picks = PickedPaths::default();
         let drop = grant_drop(&picks, &paths).unwrap();
         let bundles: Vec<_> = drop.bundles.iter().map(|f| f.name.as_str()).collect();
@@ -210,7 +213,12 @@ mod tests {
         let token = drop.bundles[0].token.clone();
         assert!(picks.resolve(&token, PickPurpose::DroppedFile).is_err());
         assert!(
-            take_picked_files(&picks, PickPurpose::BundleFile, &[token.clone()]).is_err(),
+            take_picked_files(
+                &picks,
+                PickPurpose::BundleFile,
+                std::slice::from_ref(&token)
+            )
+            .is_err(),
             "bundles are opened by path, not read into the webview"
         );
         assert!(picks.resolve(&token, PickPurpose::BundleFile).is_ok());

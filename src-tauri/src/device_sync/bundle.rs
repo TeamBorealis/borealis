@@ -86,11 +86,7 @@ impl DeviceSync {
     /// # Errors
     /// Invalid selection, `io_error`.
     pub fn build_bundle_file(&self, selection: &LinkSelection) -> ApiResult<OutgoingBundle> {
-        build_outgoing(
-            self.state.state(),
-            selection,
-            &self.config.device_name,
-        )
+        build_outgoing(self.state.state(), selection, &self.config.device_name)
     }
 
     /// Write a built bundle to `dest` (chosen in a save dialog the backend opened). The file
