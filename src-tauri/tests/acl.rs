@@ -107,3 +107,37 @@ fn the_opener_plugin_is_phone_only_and_backend_only() {
         .iter()
         .all(|p| !p.contains("opener")));
 }
+
+/// B4: the QR scanner is a phone-only plugin; only the phone capability grants it, and only the
+/// four calls the scan screen makes (no app-settings jump, no vibration).
+#[test]
+fn the_barcode_scanner_is_phone_only_with_the_least_permissions() {
+    let cargo = std::fs::read_to_string(manifest_dir().join("Cargo.toml")).expect("Cargo.toml");
+    let dep_at = cargo
+        .find("tauri-plugin-barcode-scanner")
+        .expect("scanner dependency");
+    let table = cargo[..dep_at].rfind('[').expect("dependency table");
+    assert!(
+        cargo[table..dep_at].starts_with(
+            r#"[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]"#
+        ),
+        "tauri-plugin-barcode-scanner must be a phone-only dependency"
+    );
+    assert!(capability_permissions()
+        .iter()
+        .all(|p| !p.contains("barcode")));
+    let text = std::fs::read_to_string(manifest_dir().join("capabilities/mobile.json"))
+        .expect("capabilities/mobile.json");
+    let v: serde_json::Value = serde_json::from_str(&text).expect("capability json");
+    assert_eq!(v["platforms"], serde_json::json!(["iOS", "android"]));
+    assert_eq!(v["windows"], serde_json::json!(["main"]));
+    assert_eq!(
+        v["permissions"],
+        serde_json::json!([
+            "barcode-scanner:allow-check-permissions",
+            "barcode-scanner:allow-request-permissions",
+            "barcode-scanner:allow-scan",
+            "barcode-scanner:allow-cancel"
+        ])
+    );
+}

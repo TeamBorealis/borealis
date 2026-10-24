@@ -59,6 +59,9 @@ targets:
         CFBundleShortVersionString: 1.0.0
         CFBundleVersion: "1.0.0"
         LSSupportsOpeningDocumentsInPlace: false
+        NSLocalNetworkUsageDescription: Borealis connects to your other devices on this Wi-Fi to send and receive characters.
+        NSBonjourServices: [_borealis-link._tcp]
+        NSCameraUsageDescription: Borealis uses the camera only to scan the QR code shown by your other device when you send or receive characters.
         CFBundleDocumentTypes:
           - CFBundleTypeName: Borealis content and characters
             CFBundleTypeRole: Viewer

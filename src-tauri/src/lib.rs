@@ -280,6 +280,9 @@ pub fn run() {
             .open_js_links_on_click(false)
             .build(),
     );
+    // Phones: QR scanner for Send to device / Receive from device (windowed mode under our own scan screen).
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    let builder = builder.plugin(tauri_plugin_barcode_scanner::init());
     // Android: the in-app Kotlin plugin behind "Share logs" and opened files (see `native_share`).
     #[cfg(target_os = "android")]
     let builder = builder.plugin(native_share::init());

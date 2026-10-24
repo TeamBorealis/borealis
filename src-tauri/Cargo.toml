@@ -83,6 +83,9 @@ windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Storage
 
 [target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
 tauri-plugin-opener = "2"
+# Phones: scans the other device's Send/Receive QR (B4). The web view may call only scan, cancel and the
+# camera permission check/request (capabilities/mobile.json); desktop has no scanner (typed code instead).
+tauri-plugin-barcode-scanner = "2.5.3"
 reqwest = { version = "0.13", default-features = false, features = ["blocking", "rustls-no-provider"] }
 rustls = { version = "0.23", default-features = false, features = ["std", "tls12", "aws_lc_rs"] }
 webpki-roots = "1"

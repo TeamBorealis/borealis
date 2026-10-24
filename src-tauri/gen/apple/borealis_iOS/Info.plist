@@ -24,6 +24,8 @@
 	<array>
 		<string>_borealis-link._tcp</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Borealis uses the camera only to scan the QR code shown by your other device when you send or receive characters.</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
