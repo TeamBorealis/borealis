@@ -33,7 +33,7 @@ pub enum VariantId {
     Custom(u8),
     /// Like `Custom` on the combined-field (true BM25F emulation) index, written `B3,4,6,7`.
     Bm25f(u8),
-    /// BMX re-scorer (S1.4). Hook only.
+    /// BMX re-scorer (S1.4): evaluated, not adopted, code removed (specs/search-eval-1.md). Hook only.
     V3,
     /// Hybrid with embeddings (S3.3). Hook only.
     V4,
@@ -225,7 +225,11 @@ impl Fixture {
     pub fn ranker(&self, id: VariantId) -> Result<Box<dyn Ranker>, String> {
         let tweaks = match id {
             VariantId::V0 => return Err("V0 is provided by the example (links borealis-ai)".into()),
-            VariantId::V3 => return Err("V3 (BMX) is work package S1.4".into()),
+            VariantId::V3 => {
+                return Err(
+                    "V3 (BMX) was evaluated in S1.4 and not adopted; its code was removed".into(),
+                )
+            }
             VariantId::V4 => return Err("V4 (embeddings) is work package S3.3".into()),
             other => other.tweaks().expect("tantivy variant"),
         };
