@@ -692,8 +692,10 @@ dependencies = [
  "borealis-ai",
  "borealis-content",
  "borealis-engine",
+ "borealis-search",
  "serde",
  "serde_json",
+ "tempfile",
 ]
 
 [[package]]
