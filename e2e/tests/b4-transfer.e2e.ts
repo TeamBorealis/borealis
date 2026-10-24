@@ -30,7 +30,7 @@ async function fileMenu(ctx: Ctx, entry: string): Promise<void> {
 describe('b4', { tags: ['b4'] }, () => {
   test('PC receives: the QR window, the phone sends, preview, Accept, status bar, new tile', async (ctx) => {
     await bootToHome(ctx, `/?mockPeer=${PEER_MS}#/characters`);
-    await fileMenu(ctx, 'Receive from device…');
+    await fileMenu(ctx, 'Receive from device...');
     const dlg = ctx.screen.getByRole('dialog', 'Receive from device');
     await expect(dlg).toBeVisible();
     await expect(ctx.screen.getByRole('img', 'Connection QR code')).toBeVisible();
@@ -43,7 +43,7 @@ describe('b4', { tags: ['b4'] }, () => {
 
   test('PC sends: tick a character, Show code, the phone scans and accepts', async (ctx) => {
     await bootToHome(ctx, `/?mockPeer=${PEER_MS}#/characters`);
-    await fileMenu(ctx, 'Send to device…');
+    await fileMenu(ctx, 'Send to device...');
     await expect(ctx.screen.getByRole('dialog', 'Send to device')).toBeVisible();
     await ctx.screen.getByRole('checkbox', 'Seraphine Vale').tap();
     await ctx.screen.getByRole('button', 'Show code').tap();
@@ -54,7 +54,7 @@ describe('b4', { tags: ['b4'] }, () => {
 
   test('PC to PC: the sender types the receiving computer\'s code', async (ctx) => {
     await bootToHome(ctx, `/?mockPeer=${PEER_MS}#/characters`);
-    await fileMenu(ctx, 'Send to device…');
+    await fileMenu(ctx, 'Send to device...');
     await ctx.screen.getByRole('checkbox', 'Seraphine Vale').tap();
     await ctx.screen.getByRole('button', 'Enter a code').tap();
     await ctx.screen.getByLabel('CODE').fill('42-ember-lantern');

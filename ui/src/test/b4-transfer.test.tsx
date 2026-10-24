@@ -37,7 +37,7 @@ describe("B4 Send to device / Receive from device (desktop)", () => {
     renderApp("/characters");
     await user.click(await screen.findByRole("menuitem", { name: "File" }));
     const items = within(await screen.findByRole("menu")).getAllByRole("menuitem").map((i) => i.textContent);
-    expect(items.slice(-3)).toEqual(["Send to device…", "Receive from device…", "Exit Application"]);
+    expect(items.slice(-3)).toEqual(["Send to device...", "Receive from device...", "Exit Application"]);
   });
 
   it("Receive: shows QR, code and fingerprint; the phone sends; preview with per-item actions; Accept reports in the status bar", async () => {
@@ -45,7 +45,7 @@ describe("B4 Send to device / Receive from device (desktop)", () => {
     const api = new MockApi({ aiChunkDelayMs: 2, rng: () => 0.5 });
     const t = track(api);
     renderApp("/characters", { api });
-    await openFile(user, "Receive from device…");
+    await openFile(user, "Receive from device...");
     const dlg = await screen.findByRole("dialog", { name: "Receive from device" });
     expect(await within(dlg).findByRole("img", { name: "Connection QR code" })).toBeTruthy();
     expect(within(dlg).getByLabelText("Code").textContent).toBe("42-ember-lantern");
@@ -72,7 +72,7 @@ describe("B4 Send to device / Receive from device (desktop)", () => {
     const t = track(api);
     const start = vi.spyOn(api, "linkStartSend");
     renderApp("/characters", { api });
-    await openFile(user, "Send to device…");
+    await openFile(user, "Send to device...");
     const dlg = await screen.findByRole("dialog", { name: "Send to device" });
     const show = within(dlg).getByRole("button", { name: "Show code" });
     expect((show as HTMLButtonElement).disabled).toBe(true);
@@ -97,7 +97,7 @@ describe("B4 Send to device / Receive from device (desktop)", () => {
     const t = track(api);
     const connect = vi.spyOn(api, "linkConnect");
     renderApp("/characters", { api });
-    await openFile(user, "Send to device…");
+    await openFile(user, "Send to device...");
     const dlg = await screen.findByRole("dialog", { name: "Send to device" });
     await user.click(await within(dlg).findByRole("checkbox", { name: "All characters" }));
     await user.click(within(dlg).getByRole("button", { name: "Enter a code" }));
@@ -117,7 +117,7 @@ describe("B4 Send to device / Receive from device (desktop)", () => {
     const api = new MockApi({ aiChunkDelayMs: 2, rng: () => 0.5 });
     const cancel = vi.spyOn(api, "linkCancel");
     renderApp("/characters", { api });
-    await openFile(user, "Receive from device…");
+    await openFile(user, "Receive from device...");
     const dlg = await screen.findByRole("dialog", { name: "Receive from device" });
     await within(dlg).findByRole("img", { name: "Connection QR code" });
     await user.click(within(dlg).getByRole("button", { name: "Enter a code instead" }));
@@ -138,7 +138,7 @@ describe("B4 Send to device / Receive from device (desktop)", () => {
     const t = track(api);
     const start = vi.spyOn(api, "linkStartReceive");
     renderApp("/characters", { api });
-    await openFile(user, "Receive from device…");
+    await openFile(user, "Receive from device...");
     const dlg = await screen.findByRole("dialog", { name: "Receive from device" });
     await within(dlg).findByRole("img", { name: "Connection QR code" });
     act(() => { emit(api, { ...t.last(), phase: "expired", qrPayload: null, code: null }); });

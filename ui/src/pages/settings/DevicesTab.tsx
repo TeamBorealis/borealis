@@ -15,7 +15,7 @@ export function DevicesTab() {
   const devices = useAsync(() => api.linkDevices(), [api]);
   const [removing, setRemoving] = useState<LinkDevice | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const where = mobile ? "More > Send to device or Receive from device" : "File > Send to device… or Receive from device…";
+  const where = mobile ? "More > Send to device or Receive from device" : "File > Send to device... or Receive from device...";
 
   const remove = async (d: LinkDevice) => {
     setError(null);

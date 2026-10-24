@@ -29,7 +29,7 @@ export function PickView({ characters, chosen, onChosen, packs, onPacks, unsaved
     <>
       <p className="xfer-instr">Choose what to send. The other device lists what will change before anything is written.</p>
       <FieldLabel>CHARACTERS</FieldLabel>
-      {characters === null ? <Help>Loading your characters…</Help> : list.length === 0 ? <Help>There are no saved characters yet.</Help> : (
+      {characters === null ? <Help>Loading your characters...</Help> : list.length === 0 ? <Help>There are no saved characters yet.</Help> : (
         <div className="xfer-pick" role="group" aria-label="Characters to send">
           <label className="xfer-pick-row all">
             <CheckBox checked={all.checked} mixed={all.mixed} onChange={(e) => onChosen(e.target.checked ? new Set(list.map((c) => c.id)) : new Set())} aria-label="All characters" />
@@ -71,11 +71,11 @@ function showInstruction(role: TransferRole, mobile: boolean): string {
   if (role === "receive") {
     return mobile
       ? "On the other device, choose Send to device, pick what to send, then scan this code (or type the code and address)."
-      : "On your phone, open Borealis, choose More > Send to device, pick what to send and scan this code. On another computer, choose File > Send to device… and type the code.";
+      : "On your phone, open Borealis, choose More > Send to device, pick what to send and scan this code. On another computer, choose File > Send to device... and type the code.";
   }
   return mobile
     ? "On the other device, choose Receive from device, then scan this code (or type the code and address)."
-    : "On your phone, open Borealis, choose More > Receive from device and scan this code. On another computer, choose File > Receive from device…, Enter a code, and type this code.";
+    : "On your phone, open Borealis, choose More > Receive from device and scan this code. On another computer, choose File > Receive from device..., Enter a code, and type this code.";
 }
 
 /** The listening side: QR on the left, the code, address and fingerprint below it. */
@@ -92,7 +92,7 @@ export function ShowView({ status, remaining, role, mobile }: { status: LinkStat
       <div className="xfer-side">
         <p className="xfer-instr">{showInstruction(role, mobile)}</p>
         <p className="xfer-wait" role="status">
-          Waiting for the other device…{remaining !== null && <> The code works once and expires in <strong>{formatCountdown(remaining)}</strong>.</>}
+          Waiting for the other device...{remaining !== null && <> The code works once and expires in <strong>{formatCountdown(remaining)}</strong>.</>}
         </p>
         <MetroProgressBar label="Waiting for the other device" />
         <Help>Both devices must be on the same Wi-Fi. Borealis listens only while this window is open.</Help>
@@ -141,11 +141,11 @@ export function SessionView({ status }: { status: LinkStatus }) {
   const peer = peerName(status);
   switch (status.phase) {
     case "connecting":
-      return <><p className="xfer-wait" role="status">Connecting to {status.peerName ?? "the other device"}…</p><MetroProgressBar label="Connecting" /></>;
+      return <><p className="xfer-wait" role="status">Connecting to {status.peerName ?? "the other device"}...</p><MetroProgressBar label="Connecting" /></>;
     case "waiting_for_peer":
       return (
         <>
-          <p className="xfer-wait" role="status">Waiting for {peer} to accept…</p>
+          <p className="xfer-wait" role="status">Waiting for {peer} to accept...</p>
           <MetroProgressBar label="Waiting for the other device" />
           <Help>They see what will change before anything is written.</Help>
         </>
@@ -167,7 +167,7 @@ export function SessionView({ status }: { status: LinkStatus }) {
       const verb = status.phase === "applying" ? "Saving" : status.role === "receive" ? `Receiving from ${status.peerName ?? "the other device"}` : `Sending to ${status.peerName ?? "the other device"}`;
       return (
         <>
-          <p className="xfer-wait" role="status">{verb}…{total > 0 && ` ${formatBytes(done)} of ${formatBytes(total)}`}</p>
+          <p className="xfer-wait" role="status">{verb}...{total > 0 && ` ${formatBytes(done)} of ${formatBytes(total)}`}</p>
           <MetroProgressBar label="Transfer progress" value={total > 0 ? done : undefined} max={total || 1} />
         </>
       );

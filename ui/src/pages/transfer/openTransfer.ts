@@ -9,12 +9,12 @@ export interface TransferRequest {
 
 const OPEN_EVENT = "borealis:transfer";
 
-/** File > Send to device… (desktop) / More > Send to device (phones). */
+/** File > Send to device... (desktop) / More > Send to device (phones). */
 export function openSendToDevice(characterIds: string[] = []): void {
   window.dispatchEvent(new CustomEvent<TransferRequest>(OPEN_EVENT, { detail: { role: "send", characterIds } }));
 }
 
-/** File > Receive from device… (desktop) / More > Receive from device (phones). */
+/** File > Receive from device... (desktop) / More > Receive from device (phones). */
 export function openReceiveFromDevice(): void {
   window.dispatchEvent(new CustomEvent<TransferRequest>(OPEN_EVENT, { detail: { role: "receive" } }));
 }

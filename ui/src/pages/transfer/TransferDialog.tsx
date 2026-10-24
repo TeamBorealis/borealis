@@ -171,7 +171,7 @@ export function TransferDialog({ role, initialIds, onClose }: { role: TransferRo
     body = null;
     footer = [<Button key="retry" variant="highlight" onClick={startShow}>Try again</Button>, cancelBtn];
   } else {
-    body = <p className="xfer-wait" role="status">Opening the connection…</p>;
+    body = <p className="xfer-wait" role="status">Opening the connection...</p>;
     footer = [cancelBtn];
   }
 
