@@ -609,6 +609,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-barcode-scanner",
  "tauri-plugin-dialog",
+ "tauri-plugin-haptics",
  "tauri-plugin-opener",
  "tempfile",
  "thiserror 2.0.21",
@@ -1381,7 +1382,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d045de693cb712d0b22c6a64be5b953f67b3ce00ab5ad3dd5d8b441886ab8e1a"
 dependencies = [
  "quote",
- "syn 2.0.119",
+ "syn 3.0.6",
 ]
 
 [[package]]
@@ -5938,6 +5939,20 @@ dependencies = [
  "thiserror 2.0.21",
  "toml 1.1.7+spec-1.1.0",
  "url",
+]
+
+[[package]]
+name = "tauri-plugin-haptics"
+version = "2.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4ab6c843ce8255031547e6332c348ad8f2fbcb703f17b52a1a0dfacc5ad0e00"
+dependencies = [
+ "log",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-plugin",
+ "thiserror 2.0.21",
 ]
 
 [[package]]
