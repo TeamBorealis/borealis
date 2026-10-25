@@ -387,6 +387,7 @@ jobs:
           echo "BOREALIS_EMBED_MODEL=$model" >> "$GITHUB_ENV"
           mkdir -p embed-record
       - name: Build the release test binaries
+        id: build
         run: |
           cargo test -p borealis-embed --features llama --release --test llama_reference --no-run \
             --message-format=json-render-diagnostics > embed-build.json
@@ -402,10 +403,12 @@ jobs:
         shell: pwsh
         run: ./build/check-x86-baseline.ps1 target/release | Tee-Object -FilePath embed-record/baseline.txt
       - name: Cosine and speed record (S0.2 setup, 4 threads, context 2048)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
           "$REFERENCE_TEST" --ignored --nocapture | tee embed-record/native-s02.log
           grep -h '^{"' embed-record/native-s02.log > embed-record/native-s02.json
       - name: Cosine and speed record (the app's T2 x86 row on this runner, threads = cores / 2, cap 512)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
           cores=$(nproc 2>/dev/null || echo "$NUMBER_OF_PROCESSORS")
           threads=$(( cores / 2 )); [ "$threads" -ge 1 ] || threads=1; [ "$threads" -le 4 ] || threads=4
@@ -413,11 +416,13 @@ jobs:
             | tee embed-record/native-app.log
           grep -h '^{"' embed-record/native-app.log > embed-record/native-app.json
       - name: The app's speed check (hybrid or keyword-only on this runner)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
           cargo test -p borealis --release --test semantic_real_model -- --ignored --nocapture | tee embed-record/app-check.log
           grep -h '^{"' embed-record/app-check.log > embed-record/app-check.json
       # Negative control for both emulators: an AVX2 build of a tiny program must be stopped by them.
       - name: AVX probe program
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
           probe=$(cd "$RUNNER_TEMP" && pwd)/avxprobe
           mkdir -p "$probe"
@@ -431,7 +436,7 @@ jobs:
           "$probe/avxprobe$ext"
           echo "AVX_PROBE=$probe/avxprobe$ext" >> "$GITHUB_ENV"
       - name: Old CPU (Linux, qemu-user -cpu Conroe)
-        if: runner.os == 'Linux'
+        if: ${{ runner.os == 'Linux' && !cancelled() && steps.build.outcome == 'success' }}
         timeout-minutes: 180
         run: |
           echo "probe ymm instructions: $(objdump -d "$AVX_PROBE" | grep -c ymm)"
@@ -441,9 +446,9 @@ jobs:
           BOREALIS_EMBED_THREADS=4 qemu-x86_64 -cpu Conroe "$REFERENCE_TEST" --ignored --nocapture | tee embed-record/conroe.log
           grep -h '^{"' embed-record/conroe.log > embed-record/conroe.json
       - uses: petarpetrovt/setup-sde@6d2773bc0ef3005fd52e0ae0bb91782321793aec # v6.0
-        if: runner.os == 'Windows'
+        if: ${{ runner.os == 'Windows' && !cancelled() }}
       - name: Old CPU (Windows, Intel SDE -mrm)
-        if: runner.os == 'Windows'
+        if: ${{ runner.os == 'Windows' && !cancelled() && steps.build.outcome == 'success' }}
         timeout-minutes: 180
         run: |
           sde=$(find "$(cygpath -u "$SDE_PATH")" -name sde.exe | head -n 1)
