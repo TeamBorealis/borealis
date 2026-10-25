@@ -7,6 +7,7 @@
 //! BOREALIS_PEER=send cargo test -p borealis --test lan_peer -- --ignored --nocapture
 //! BOREALIS_PEER=dial-send|dial-receive BOREALIS_PEER_CODE=42-ember-lantern \
 //!   BOREALIS_PEER_HOST=127.0.0.1:41234 cargo test -p borealis --test lan_peer -- --ignored --nocapture
+//! BOREALIS_PEER=export BOREALIS_PEER_OUT=/path/Hero.borealis cargo test -p borealis --test lan_peer -- --ignored --nocapture
 //! ```
 //!
 //! The peer binds this computer's LAN address (as the app does), prints the typed code and the
@@ -196,6 +197,19 @@ async fn send(state: &AppState, sync: &Arc<DeviceSync>) {
     finish(sync, &shown.session_id).await;
 }
 
+/// Share as a file: write the outgoing selection as a `.borealis` bundle to `BOREALIS_PEER_OUT`.
+fn export(state: &AppState, sync: &DeviceSync) {
+    let out = PathBuf::from(env("BOREALIS_PEER_OUT").expect("BOREALIS_PEER_OUT"));
+    let selection = outgoing(state);
+    report(state);
+    let built = sync.build_bundle_file(&selection).unwrap();
+    let done = DeviceSync::save_bundle(&built, &out).unwrap();
+    println!(
+        "PEER-EXPORT {} characters={} packs={} bytes={}",
+        done.file_name, done.characters, done.packs, done.bytes
+    );
+}
+
 /// Type a code shown on the other device (`BOREALIS_PEER_CODE` at `BOREALIS_PEER_HOST`).
 async fn dial(state: &AppState, sync: &Arc<DeviceSync>, sending: bool, accept: bool) {
     let code = env("BOREALIS_PEER_CODE").expect("BOREALIS_PEER_CODE");
@@ -223,8 +237,11 @@ async fn desktop_peer() {
         "send" => send(&state, &sync).await,
         "dial-send" => dial(&state, &sync, true, accept).await,
         "dial-receive" => dial(&state, &sync, false, accept).await,
+        "export" => export(&state, &sync),
         other => {
-            panic!("BOREALIS_PEER must be receive, send, dial-send or dial-receive: {other:?}")
+            panic!(
+                "BOREALIS_PEER must be receive, send, dial-send, dial-receive or export: {other:?}"
+            )
         }
     }
 }
