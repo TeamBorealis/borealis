@@ -181,12 +181,12 @@ jobs:
           BIN=$(ls target/*/bundle/deb/*/data/usr/bin/borealis | head -n 1)
           build/linux/smoke.sh "$BIN" linux-smoke ci
       - uses: petarpetrovt/setup-sde@6d2773bc0ef3005fd52e0ae0bb91782321793aec # v6.0
-        if: runner.os == 'Windows' && github.event_name == 'workflow_dispatch'
+        if: ${{ !cancelled() && runner.os == 'Windows' && github.event_name == 'workflow_dispatch' }}
       # s3.3-1 sec. 7 item 3: the release app starts on a pre-AVX CPU (Intel SDE, Merom = Core 2). An AVX
       # instruction anywhere on the start path (C++ static initialisers of ggml-cpu included) stops it with an
       # SDE error. Checks the MCP mode (answers on stdio) and that the GUI process stays up.
       - name: Release app on a pre-AVX CPU (Windows, Intel SDE -mrm)
-        if: runner.os == 'Windows' && github.event_name == 'workflow_dispatch'
+        if: ${{ !cancelled() && runner.os == 'Windows' && github.event_name == 'workflow_dispatch' }}
         shell: pwsh
         run: |
           $sde = Get-ChildItem -Path $env:SDE_PATH -Recurse -Filter sde.exe | Select-Object -First 1 -ExpandProperty FullName

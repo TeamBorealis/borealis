@@ -53,7 +53,9 @@ foreach ($lib in $libs) {
         $n = @($hits | Where-Object Fn -eq $f).Count
         Write-Output ("  {0}: {1} AVX ({2})" -f $f, $n, $(if ($guarded[$f]) { 'behind an MSVC CPU check' } else { 'no CPU check in the function' }))
     }
-    foreach ($h in @(@($open) + @($hits) | Select-Object -First 1)) {
+    $show = @($open | Select-Object -First 1)
+    if ($show.Count -eq 0) { $show = @($hits | Select-Object -First 1) }
+    foreach ($h in $show) {
         Write-Output "  first hits in $($h.Fn): $($h.Line)"
         $h.Before | ForEach-Object { Write-Output "    | $_" }
     }
