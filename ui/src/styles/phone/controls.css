@@ -129,6 +129,8 @@ html.phone .empty strong { display: block; margin-bottom: 4px; font: 600 var(--p
 html.phone .aur-progress, html.phone .progress { height: 4px; border-radius: 2px; background: var(--ph-fill); }
 html.phone .aur-progress > span, html.phone .progress > span { border-radius: 2px; background: var(--ph-accent); }
 html.phone .alert { gap: 12px; padding: 12px var(--ph-gutter); border: 0; border-radius: var(--ph-r-lg); font: 400 var(--ph-t-sub)/1.45 var(--ph-font-ui); }
+/* Long ids (an uninstalled element) wrap inside the alert instead of widening it past the screen. */
+html.phone .alert > * { min-width: 0; overflow-wrap: anywhere; }
 html.phone .alert.info { background: var(--ph-accent-soft); }
 html.phone .alert.success { background: var(--ph-accent-soft); }
 html.phone .alert.warning { background: var(--ph-gold-soft); }

@@ -13,11 +13,15 @@ import kotlin.math.roundToInt
 object SystemInsets {
   @Volatile private var latest = "{}"
 
-  /** JSON `{"t","r","b","l"}` in CSS px (device px / density), never negative. */
-  fun json(top: Int, right: Int, bottom: Int, left: Int, density: Float): String {
+  /**
+   * JSON `{"t","r","b","l","k"}` in CSS px (device px / density), never negative. `k` is the on-screen keyboard (the
+   * IME inset, 0 when closed): drawn edge to edge, the WebView's visual viewport does not shrink for it (B-48 WP8), so
+   * the page takes `--kb` from here.
+   */
+  fun json(top: Int, right: Int, bottom: Int, left: Int, density: Float, ime: Int = 0): String {
     val d = if (density > 0f) density else 1f
     fun css(px: Int) = (px.coerceAtLeast(0) / d).roundToInt()
-    return "{\"t\":${css(top)},\"r\":${css(right)},\"b\":${css(bottom)},\"l\":${css(left)}}"
+    return "{\"t\":${css(top)},\"r\":${css(right)},\"b\":${css(bottom)},\"l\":${css(left)},\"k\":${css(ime)}}"
   }
 
   /** Script that hands `json` to the page (a no-op until the page installed its hook). */

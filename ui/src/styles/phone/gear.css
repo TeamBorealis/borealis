@@ -54,7 +54,7 @@ html.phone .eq-invgrid td { height: auto; line-height: 1.3; }
 html.phone .eq-invgrid tbody tr:first-child td { height: auto; }
 html.phone .eq-invgrid td.eq-ic, html.phone .eq-invgrid td.eq-ic + td.eq-ic { width: auto; padding: 0; }
 html.phone .eq-invgrid td.eq-invname { width: auto; padding: 4px 0 4px 4px; color: var(--ph-text-2); font-size: var(--ph-t-foot); }
-html.phone .eq-invgrid td.eq-invname .ap-name { display: inline-flex; width: auto; margin: 0; font-style: normal; font-weight: 400; color: var(--ph-text); vertical-align: middle; line-height: 1.3; }
+html.phone .eq-invgrid td.eq-invname .ap-name { display: inline-flex; width: auto; min-width: var(--ph-hit); margin: 0; font-style: normal; font-weight: 400; color: var(--ph-text); vertical-align: middle; line-height: 1.3; }
 html.phone .eq-invgrid tr.on td.eq-invname .ap-name { font-weight: 600; color: var(--ph-text); }
 html.phone .eq-invgrid td.eq-invname .muted { color: var(--ph-text-2); font-size: var(--ph-t-body); }
 html.phone .eq-stored { display: block; margin: 0 0 4px; font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); }

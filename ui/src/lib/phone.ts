@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import type { ThemeMode } from "../api/contract";
+import { bridgeSystemNight } from "./systemBars";
 
 /**
  * B-48 phone scope (mobile-facelift-spec sec. 0, U9b). The facelift layer applies only to iOS and Android builds (and the
@@ -112,9 +113,15 @@ export function installPlatformClasses(root: HTMLElement, env: PlatformEnv, matc
   return () => mq.removeEventListener("change", sync);
 }
 
-/** The phone's light or dark setting (`prefers-color-scheme`); false where the WebView cannot tell. */
+/**
+ * The phone's light or dark setting: Android's own answer where the app provides it (the System WebView's media query
+ * does not follow dark mode), else `prefers-color-scheme`; false where neither can tell.
+ */
 export function systemPrefersLight(): boolean {
-  return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-color-scheme: light)").matches;
+  if (typeof window === "undefined") return false;
+  const night = bridgeSystemNight(window);
+  if (night !== null) return !night;
+  return typeof window.matchMedia === "function" && window.matchMedia("(prefers-color-scheme: light)").matches;
 }
 
 /** The `data-theme` value for a theme setting; null leaves the default (dark). O9: "System" follows the phone's setting. */

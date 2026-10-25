@@ -85,3 +85,54 @@ describe("theme follows the system (O9)", () => {
     expect(screen.getByRole("radio", { name: "Dark" }).getAttribute("aria-checked")).toBe("false");
   });
 });
+
+describe("Android bar icons follow the effective theme (sec. 5.9)", () => {
+  type BarsWindow = Window & { BorealisSystemBars?: { setLight: (light: boolean) => void; isSystemNight?: () => boolean } };
+  let calls: boolean[] = [];
+  const install = () => { calls = []; (window as BarsWindow).BorealisSystemBars = { setLight: (l) => { calls.push(l); } }; };
+  afterEach(() => { delete (window as BarsWindow).BorealisSystemBars; });
+  const last = () => calls[calls.length - 1];
+
+  it("System: dark icons on a light phone, light icons on a dark one, switching live", async () => {
+    install();
+    start("system", true);
+    await waitFor(() => expect(last()).toBe(true));
+    scheme!.set(false);
+    await waitFor(() => expect(last()).toBe(false));
+  });
+
+  it("a Settings choice that differs from the phone's wins for the bars too", async () => {
+    install();
+    const { unmount } = start("light", false);
+    await waitFor(() => expect(themeAttr()).toBe("light"));
+    expect(last()).toBe(true);
+    unmount();
+    scheme!.restore();
+    install();
+    start("dark", true);
+    await waitFor(() => expect(themeAttr()).toBe("dark"));
+    expect(last()).toBe(false);
+  });
+
+  it("System follows the phone's night mode as Android reports it, also when the WebView's media query does not", async () => {
+    // HW (WP8): the Android System WebView kept answering prefers-color-scheme: light with the phone in dark mode.
+    let night = true;
+    install();
+    (window as BarsWindow).BorealisSystemBars!.isSystemNight = () => night;
+    start("system", true);
+    await screen.findAllByRole("button", { name: "Settings" });
+    await waitFor(() => expect(themeAttr()).toBeNull());
+    expect(last()).toBe(false);
+    night = false;
+    act(() => { window.dispatchEvent(new CustomEvent("borealis-system-theme")); });
+    await waitFor(() => expect(themeAttr()).toBe("light"));
+    expect(last()).toBe(true);
+  });
+
+  it("the desktop never calls the bridge", async () => {
+    install();
+    start("light", false, false);
+    await waitFor(() => expect(themeAttr()).toBe("light"));
+    expect(calls).toEqual([]);
+  });
+});

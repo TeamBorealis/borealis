@@ -3,6 +3,7 @@ import type { AppSettings } from "../api/contract";
 import { DEFAULT_SETTINGS } from "../api/mock/default-settings";
 import { applyAccent } from "../lib/accent";
 import { isPhone, resolveThemeAttr, systemPrefersLight, usePhone } from "../lib/phone";
+import { SYSTEM_THEME_EVENT, applySystemBars } from "../lib/systemBars";
 import { useApi } from "./ApiContext";
 
 interface SettingsCtx {
@@ -39,17 +40,23 @@ export function applyTheme(s: AppSettings): void {
   else root.removeAttribute("data-contrast");
   applyAccent(s.accentColor);
   root.setAttribute("data-row-height", s.rowHeight);
-  if (isPhone()) applyThemeColor(root);
+  if (isPhone()) {
+    applyThemeColor(root);
+    // Sec. 5.9: Android bar icons follow the theme the page now shows, even when it differs from the phone's setting.
+    applySystemBars(theme === "light");
+  }
 }
 
 /** Re-applies the theme when the phone's light/dark setting changes while "System" is chosen (O9). */
 function useSystemThemeFollow(s: AppSettings, phone: boolean): void {
   useEffect(() => {
-    if (!phone || s.theme !== "system" || typeof window.matchMedia !== "function") return;
-    const mq = window.matchMedia(LIGHT_QUERY);
+    if (!phone || s.theme !== "system") return;
     const on = () => applyTheme(s);
-    mq.addEventListener("change", on);
-    return () => mq.removeEventListener("change", on);
+    // Android reports its dark-mode changes itself (systemBars.ts); the media query covers iOS and the web mock.
+    window.addEventListener(SYSTEM_THEME_EVENT, on);
+    const mq = typeof window.matchMedia === "function" ? window.matchMedia(LIGHT_QUERY) : null;
+    mq?.addEventListener("change", on);
+    return () => { window.removeEventListener(SYSTEM_THEME_EVENT, on); mq?.removeEventListener("change", on); };
   }, [s, phone]);
 }
 

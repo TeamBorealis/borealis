@@ -1,3 +1,5 @@
+import { setNativeKeyboardInset } from "./keyboardInset";
+
 /**
  * Android system bars for the safe areas (HW1 A2). MainActivity reports the status bar, navigation bar and
  * display cutout in CSS px; tokens.css takes the larger of those and `env(safe-area-inset-*)`, which on
@@ -6,13 +8,19 @@
 const SIDES = [["t", "--sys-inset-t"], ["r", "--sys-inset-r"], ["b", "--sys-inset-b"], ["l", "--sys-inset-l"]] as const;
 /** Larger than any system bar; anything above is not an inset. */
 const MAX_INSET_PX = 400;
+/** Larger than any on-screen keyboard (WP8: the IME inset `k` is the keyboard height). */
+const MAX_KEYBOARD_PX = 2000;
 
 interface InsetsBridge { get: () => string }
 type InsetsWindow = Window & { BorealisInsets?: InsetsBridge; __borealisApplyInsets?: (raw: unknown) => void };
 
-const isInset = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= MAX_INSET_PX;
+const isPx = (v: unknown, max: number): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= max;
+const isInset = (v: unknown): v is number => isPx(v, MAX_INSET_PX);
 
-/** Apply `{t, r, b, l}` (CSS px) to the root; values that are not small non-negative numbers are ignored. */
+/**
+ * Apply `{t, r, b, l}` (CSS px) to the root, and `k` (the keyboard, WP8) to `--kb`; values that are not small
+ * non-negative numbers are ignored.
+ */
 export function applyInsets(raw: unknown, root: HTMLElement = document.documentElement): void {
   if (!raw || typeof raw !== "object") return;
   const insets = raw as Record<string, unknown>;
@@ -20,6 +28,7 @@ export function applyInsets(raw: unknown, root: HTMLElement = document.documentE
     const v = insets[key];
     if (isInset(v)) root.style.setProperty(name, `${Math.round(v)}px`);
   }
+  if (isPx(insets.k, MAX_KEYBOARD_PX)) setNativeKeyboardInset(insets.k);
 }
 
 function parse(text: string): unknown {

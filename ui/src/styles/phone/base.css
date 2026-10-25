@@ -26,3 +26,6 @@ html.phone .aur-content, html.phone .dialog-body, html.phone .flyout-body, html.
 html.phone .dialog-body, html.phone .flyout-body, html.phone .aur-set-scroll { overflow-x: hidden; }
 
 html.phone :focus-visible { outline: 2px solid var(--ph-accent); outline-offset: 2px; }
+
+/* Screen-reader-only text keeps its own casing: an inherited uppercase rule made TalkBack read "BUILD" (WP8). */
+html.phone .sr-only { text-transform: none; }

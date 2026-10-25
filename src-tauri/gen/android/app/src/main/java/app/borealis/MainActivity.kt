@@ -2,6 +2,7 @@ package app.borealis
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -22,10 +23,12 @@ import org.json.JSONObject
  */
 class MainActivity : TauriActivity() {
   private var webView: WebView? = null
+  private var lastNight: Boolean? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {
     enableEdgeToEdge()
     super.onCreate(savedInstanceState)
+    lastNight = SystemTheme.isNight(resources.configuration.uiMode)
     handleIntent(intent)
   }
 
@@ -38,14 +41,29 @@ class MainActivity : TauriActivity() {
     this.webView = webView
     super.onWebViewCreate(webView)
     webView.addJavascriptInterface(InsetsBridge(), "BorealisInsets")
+    webView.addJavascriptInterface(
+      SystemBarsBridge({ runOnUiThread(it) }, { SystemBars.apply(this, it) }, { SystemTheme.isNight(resources.configuration.uiMode) }),
+      "BorealisSystemBars",
+    )
     ViewCompat.setOnApplyWindowInsetsListener(webView) { view, insets ->
       val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-      val json = SystemInsets.json(bars.top, bars.right, bars.bottom, bars.left, resources.displayMetrics.density)
+      val ime = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+      val json = SystemInsets.json(bars.top, bars.right, bars.bottom, bars.left, resources.displayMetrics.density, ime)
       SystemInsets.update(json)
       view.post { webView.evaluateJavascript(SystemInsets.applyScript(json), null) }
       // Keep the WebView's own handling (safe-area env(), keyboard resize).
       ViewCompat.onApplyWindowInsets(view, insets)
     }
+  }
+
+  /** uiMode is in configChanges, so a dark-mode switch lands here: the page re-reads it (B-48 O9). */
+  override fun onConfigurationChanged(newConfig: Configuration) {
+    super.onConfigurationChanged(newConfig)
+    val night = SystemTheme.isNight(newConfig.uiMode)
+    if (night == lastNight) return
+    lastNight = night
+    val view = webView ?: return
+    view.post { view.evaluateJavascript(SystemTheme.CHANGED_SCRIPT, null) }
   }
 
   private fun handleIntent(intent: Intent?) {
