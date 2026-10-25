@@ -33,14 +33,21 @@ fn bad() -> ApiError {
     ApiError::invalid("That .zip file is damaged or uses an unsupported format.")
 }
 
-/// True for a relative, traversal-free entry name.
+/// True for a relative, traversal-free entry name that names the same file on every OS: no
+/// segment is a Windows device name (`nul.json` would write to the device), and none ends in a
+/// dot or space (Windows drops those, so `class./x.json` would land in `class/`).
 pub(crate) fn safe_name(name: &str) -> bool {
     !name.is_empty()
         && !name.starts_with('/')
         && !name.contains('\\')
         && !name.contains(':')
         && !name.contains('\0')
-        && name.split('/').all(|p| p != "..")
+        && name.split('/').all(|p| {
+            p == "."
+                || (p != ".."
+                    && !p.ends_with(['.', ' '])
+                    && !borealis_bundle::is_windows_reserved(p))
+        })
 }
 
 /// Caps and name policy for one archive.
@@ -323,6 +330,25 @@ mod tests {
             let err = for_each_entry(&z, &strict, |_| true, |_, _| Ok(())).unwrap_err();
             assert!(err.message.contains("outside"), "{evil}: {}", err.message);
             assert!(entry_names(&z, &strict).is_err(), "{evil}");
+        }
+    }
+
+    #[test]
+    fn names_windows_would_resolve_elsewhere_are_unsafe_on_every_host() {
+        for evil in [
+            "nul.json",
+            "class/CON.json",
+            "aux",
+            "bestiary/com1.json",
+            "LPT9.txt",
+            "class./x.json",
+            "class /x.json",
+            "x.json.",
+        ] {
+            assert!(!safe_name(evil), "{evil}");
+        }
+        for fine in ["class/class-x.json", "./races.json", "console.json", "nullable.json"] {
+            assert!(safe_name(fine), "{fine}");
         }
     }
 
