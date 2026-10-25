@@ -15,6 +15,7 @@ import { PortraitsFlyout } from "../../pages/manage/PortraitsFlyout";
 import { useCharacter } from "../../state/CharacterContext";
 import { useShellActions } from "./useShellActions";
 import { displayPath } from "../../lib/displayPath";
+import { usePhone } from "../../lib/phone";
 
 /** Quick search box (Alt+Q focuses it). Enter opens the compendium with the query. */
 export function SearchBox() {
@@ -168,14 +169,32 @@ export function QuickBar() {
 
 const STARTED_AT = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
 
+/** How long a plain status message stays on a phone before the line folds away (B-48 O7). */
+export const STATUS_FOLD_MS = 4000;
+
+/** O7: true once a plain message has been shown for 4 s. A pending choice or a running task keeps the line open. */
+function useStatusFold(text: string, keepOpen: boolean, enabled: boolean): boolean {
+  const [folded, setFolded] = useState(false);
+  useEffect(() => {
+    setFolded(false);
+    if (!enabled || keepOpen) return;
+    const t = setTimeout(() => setFolded(true), STATUS_FOLD_MS);
+    return () => clearTimeout(t);
+  }, [text, keepOpen, enabled]);
+  return enabled && !keepOpen && folded;
+}
+
 /** Bottom status bar (26px). `compact` (phones) drops the file label and version. */
 export function StatusBar({ compact, busy }: { compact?: boolean; busy?: boolean }) {
   const { snapshot, flow, setFlow, hasNext, goNext } = useShellActions();
   const { savedByUser } = useCharacter();
   const message = useStatusMessage();
+  const phone = usePhone();
+  const text = message || (snapshot ? `Loaded '${snapshot.name}'` : `Last checked for content updates at ${STARTED_AT}`);
+  const folded = useStatusFold(text, hasNext || !!busy, phone);
   return (
-    <footer className="aur-status" aria-label="Status">
-      <span className="status-msg" role="status">{message || (snapshot ? `Loaded '${snapshot.name}'` : `Last checked for content updates at ${STARTED_AT}`)}</span>
+    <footer className="aur-status" aria-label="Status" data-collapsed={phone ? String(folded) : undefined} data-pending={phone ? String(hasNext) : undefined}>
+      <span className="status-msg" role="status">{text}</span>
       {busy && <MetroProgressBar label="Working" width={150} />}
       <span className="spacer" />
       {!compact && (

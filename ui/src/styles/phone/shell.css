@@ -1,0 +1,110 @@
+/*
+ * B-48 WP2 phone shell (mobile-facelift-spec sec. 3.4, 3.5): the same five parts as today (title bar, sub-tabs, content,
+ * status line, bottom tab bar), only restyled. Phones only.
+ */
+
+/* The window: no 1 px frame on a phone; the keyboard inset lifts the bottom chrome above an open keyboard (sec. 5.4). */
+html.phone .aur-window { border: 0; background: var(--ph-bg); padding-bottom: var(--kb); }
+
+/* Title bar: hamburger, mark, title, settings. With a character, its name in a system serif, gold, over a 2 px aurora line. */
+html.phone .aur-title.mobile {
+  height: calc(var(--ph-bar) + var(--safe-t)); padding: var(--safe-t) 4px 0; gap: 0;
+  background: var(--ph-bg); color: var(--ph-text);
+}
+html.phone .aur-title.mobile .brand-mark { flex: none; margin: 0 4px; }
+html.phone .aur-title.mobile .aur-iconbtn {
+  width: var(--ph-hit); height: var(--ph-hit); margin: 0; border-radius: var(--ph-r-pill); color: var(--ph-text-2);
+  transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .aur-title.mobile .aur-iconbtn:active { background: var(--ph-fill); }
+html.phone .aur-title.mobile .aur-iconbtn .icon { width: 24px; height: 24px; }
+html.phone .aur-title.mobile .aur-iconbtn.aur-update-cmd { background: var(--ph-accent-soft); color: var(--ph-accent); }
+html.phone .aur-title.mobile .aur-title-text {
+  font: 600 var(--ph-t-body)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; letter-spacing: 0;
+}
+html.phone .aur-title.mobile .aur-title-text.gold { font: 600 var(--ph-t-name)/1.2 var(--ph-font-name); color: var(--ph-gold); letter-spacing: 0.2px; }
+html.phone .aur-title.mobile:has(.aur-title-text.gold)::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--ph-aurora); opacity: 0.85; pointer-events: none;
+}
+
+/* Sub-tab strip: 44 pt tabs, 15 px sentence case, current tab = weight plus a 3 px accent underline; edges fade where more tabs hide. */
+html.phone .aur-window.narrow .aur-subband { height: auto; min-height: var(--ph-hit); background: var(--ph-bg); border-bottom: 1px solid var(--ph-line); }
+html.phone .aur-window.narrow .aur-subtabs { padding-left: 8px; }
+html.phone .aur-window.narrow .aur-subband .tabs.sub {
+  gap: 2px;
+  background:
+    linear-gradient(to right, var(--ph-bg) 30%, transparent) left center / 28px 100% no-repeat local,
+    linear-gradient(to left, var(--ph-bg) 30%, transparent) right center / 28px 100% no-repeat local,
+    linear-gradient(to right, var(--ph-edge), transparent) left center / 16px 100% no-repeat scroll,
+    linear-gradient(to left, var(--ph-edge), transparent) right center / 16px 100% no-repeat scroll;
+}
+html.phone .aur-window.narrow .aur-subband .tabs.sub .tab {
+  position: relative; height: var(--ph-hit); padding: 0 12px; border-radius: var(--ph-r-md);
+  font: 500 var(--ph-t-sub)/1 var(--ph-font-ui); text-transform: none; letter-spacing: 0; color: var(--ph-text-2);
+  transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .aur-window.narrow .aur-subband .tabs.sub .tab:active { background: var(--ph-fill); }
+html.phone .aur-window.narrow .aur-subband .tabs.sub .tab[aria-current="page"], html.phone .aur-window.narrow .aur-subband .tabs.sub .tab[aria-selected="true"] {
+  color: var(--ph-text); font-weight: 600; letter-spacing: 0; background: transparent;
+}
+html.phone .aur-window.narrow .aur-subband .tabs.sub .tab[aria-current="page"]::after, html.phone .aur-window.narrow .aur-subband .tabs.sub .tab[aria-selected="true"]::after {
+  content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--ph-accent);
+}
+html.phone .aur-window.narrow .aur-subband .tabs.sub .tab .badge-count {
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--ph-gold); color: var(--ph-on-gold); font: 700 var(--ph-t-tab)/18px var(--ph-font-ui);
+}
+
+/* Status line (O7): 36 pt, 13 px sentence case; gold while a choice is pending, with Next selection as a gold pill. It folds away
+   4 s after a plain message (the element stays, so screen readers still hear it). */
+html.phone .aur-window.narrow .aur-status {
+  height: auto; min-height: var(--ph-status); padding: 4px max(8px, var(--safe-r)) 4px var(--ph-gutter);
+  background: var(--ph-bg); border-top: 1px solid var(--ph-line); color: var(--ph-text-2);
+  font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); text-transform: none;
+}
+html.phone .aur-window.narrow .aur-status .status-msg { margin: 0; }
+html.phone .aur-window.narrow .aur-status[data-pending="true"] .status-msg { color: var(--ph-gold); }
+html.phone .aur-window.narrow .aur-status[data-collapsed="true"] { min-height: 0; height: 0; padding-top: 0; padding-bottom: 0; border-top-width: 0; }
+html.phone .aur-window.narrow .aur-status .next {
+  position: relative; height: 32px; padding: 0 12px; gap: 6px; border-radius: var(--ph-r-pill);
+  background: var(--ph-gold-soft); color: var(--ph-gold); font: 600 var(--ph-t-foot)/1 var(--ph-font-ui); text-transform: none;
+  transition: transform var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .aur-window.narrow .aur-status .next::before { content: ""; position: absolute; top: -6px; bottom: -6px; left: -2px; right: -2px; }
+html.phone.android .aur-window.narrow .aur-status .next::before { top: -8px; bottom: -8px; }
+html.phone .aur-window.narrow .aur-status .next:active { transform: scale(0.97); }
+html.phone .aur-window.narrow .aur-status .next .icon { width: 16px; height: 16px; }
+
+/* Bottom tab bar (O1): six items, 26 px icons, 11 px sentence-case labels, never disabled. The current tab gets the accent plus a
+   shape cue: a bar over the icon on iOS, a pill behind it on Android. The Build badge is gold. */
+html.phone .aur-bottombar {
+  height: calc(var(--ph-tabbar) + var(--safe-b)); padding-bottom: var(--safe-b);
+  background: var(--ph-surface); border-top: 1px solid var(--ph-line);
+}
+html.phone .bb-item {
+  gap: 2px; color: var(--ph-text-2); opacity: 1;
+  font: 500 var(--ph-t-tab)/1.2 var(--ph-font-ui); text-transform: none; letter-spacing: 0;
+}
+html.phone .bb-item .icon { width: 26px; height: 26px; transition: transform var(--ph-d-press) var(--ph-ease-out); }
+html.phone .bb-item:active .icon { transform: scale(0.9); }
+html.phone .bb-item .bb-pill { display: grid; place-items: center; }
+html.phone .bb-item[data-selected="true"] { color: var(--ph-accent); font-weight: 600; }
+html.phone .bb-item[data-selected="true"]::before {
+  top: 0; left: 50%; width: 24px; height: 3px; margin-left: -12px; border: 0; border-radius: 0 0 3px 3px; background: var(--ph-accent);
+}
+html.phone .bb-item .badge-count {
+  top: 3px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  background: var(--ph-gold); color: var(--ph-on-gold); font: 700 var(--ph-t-tab)/18px var(--ph-font-ui);
+}
+html.phone.android .bb-item { gap: 4px; }
+html.phone.android .bb-item .bb-pill { width: 56px; height: 30px; border-radius: 15px; transition: background var(--ph-d-small) var(--ph-ease-out); }
+html.phone.android .bb-item[data-selected="true"] { color: var(--ph-text); }
+html.phone.android .bb-item[data-selected="true"]::before { content: none; }
+html.phone.android .bb-item[data-selected="true"] .bb-pill { background: var(--ph-accent-soft); color: var(--ph-accent); }
+html.phone.android .bb-item .badge-count { top: 2px; left: calc(50% + 10px); }
+
+/* "No character open" (O1): the way back to Start as a real button. */
+html.phone .empty .btn-primary {
+  min-height: var(--ph-hit); margin-top: 8px; padding: 0 20px; border: 0; border-radius: var(--ph-r-md);
+  background: var(--ph-accent); color: var(--ph-on-accent); font: 600 var(--ph-t-sub)/1 var(--ph-font-ui); text-transform: none; letter-spacing: 0;
+}
+html.phone .empty .btn-primary:active { transform: scale(0.97); }

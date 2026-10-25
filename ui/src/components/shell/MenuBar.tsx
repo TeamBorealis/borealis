@@ -11,6 +11,7 @@ import { pickAndOpenBundle } from "../../pages/transfer/openBundle";
 import { useApi } from "../../state/ApiContext";
 import { setStatus } from "../../state/status";
 import { errorMessage } from "../../state/useAsync";
+import { usePhone } from "../../lib/phone";
 
 interface MenuModel { id: string; label: ReactNode; entries: readonly MenuEntry[]; gold?: boolean }
 
@@ -126,6 +127,9 @@ export function MenuTree({ onDone }: { onDone: () => void }) {
   const activate = useActivate();
   const { flow, snapshot } = useShellActions();
   const { aiEnabled } = usePlatform();
+  // B-48 O15: phone apps are left with the home gesture, so the phone menu has no Exit Application.
+  const phone = usePhone();
+  const shown = (e: MenuEntry) => !e.separator && !(phone && e.action === "exit");
   const groups: MenuModel[] = [
     ...visibleMenus(aiEnabled).map((m) => ({ id: m.id, label: m.label, entries: m.entries })),
     ...(snapshot ? [{ id: "character", label: snapshot.name, entries: CHARACTER_MENU, gold: true }] : []),
@@ -135,7 +139,7 @@ export function MenuTree({ onDone }: { onDone: () => void }) {
       {groups.map((g) => (
         <div key={g.id} className="menu-tree-group">
           <div className={`menu-tree-head ${g.gold ? "gold" : ""}`}>{g.label}</div>
-          {visibleEntries(g.entries, !!snapshot).filter((e) => !e.separator).map((e) => (
+          {visibleEntries(g.entries, !!snapshot).filter(shown).map((e) => (
             <button key={e.id} type="button" className="menu-tree-item" disabled={e.needsCharacter} aria-pressed={e.checkable ? flow : undefined}
               onClick={() => { onDone(); activate(e); }}>
               <span className="aur-menu-icon">{e.checkable && flow ? <Icon name="check" /> : null}</span>{e.label}
