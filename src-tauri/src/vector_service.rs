@@ -28,12 +28,14 @@ use borealis_embed::{
     PauseReason, RunOutcome, Scheduler, SchedulerSettings, SemanticGuard, TierConfig, VectorStore,
 };
 use borealis_search::{Corpus, PackInput};
-use serde::Serialize;
 use std::collections::{HashMap, VecDeque};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError, RwLock};
 use std::time::{Duration, Instant};
+
+use crate::vector_status::probe_query_ms;
+pub use crate::vector_status::{pause_message, IndexingSink, IndexingState, SemanticIndexing};
 
 /// Vector folders under `search/v1/` (one per corpus inside).
 pub const VECTORS_DIR: &str = "vectors";
@@ -47,68 +49,8 @@ const BATCH: usize = 2;
 const CHECKPOINT: Duration = Duration::from_secs(30);
 /// Query vectors kept for repeated queries (typing, scope changes).
 const QUERY_CACHE: usize = 16;
-/// Typical short queries the speed check times (after one warm-up), for tiers with a query budget.
-const PROBE_QUERIES: [&str; 5] = [
-    "spell that lets you fly",
-    "how does grappling work",
-    "make an enemy fall asleep",
-    "resistance to fire damage",
-    "what happens at zero hit points",
-];
-
-/// Where semantic indexing stands (Settings > Search and the search footer).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub enum IndexingState {
-    /// Semantic search is off, unavailable on this tier, or the model is not on the device.
-    Off,
-    /// Loading the model.
-    Loading,
-    /// Embedding chunks.
-    Indexing,
-    /// Waiting for the device (`message` says why).
-    Paused,
-    /// Every corpus is indexed: search uses vectors.
-    Ready,
-    /// The NaN guard turned semantic search off (`message` has the report).
-    Disabled,
-    /// The model could not be loaded or the vectors could not be written (`message`).
-    Failed,
-}
-
-/// `borealis://semantic-index` payload, also in `SemanticStatus.indexing`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SemanticIndexing {
-    pub state: IndexingState,
-    /// Chunks embedded in this run.
-    pub done: u64,
-    /// Chunks this run had to embed.
-    pub total: u64,
-    /// Plain sentence: pause reason, guard report or failure (no paths, no indexed text).
-    pub message: Option<String>,
-    /// Search uses vectors right now.
-    pub queryable: bool,
-}
-
-impl SemanticIndexing {
-    /// Nothing loaded, nothing indexed.
-    #[must_use]
-    pub fn off() -> Self {
-        Self {
-            state: IndexingState::Off,
-            done: 0,
-            total: 0,
-            message: None,
-            queryable: false,
-        }
-    }
-}
-
-/// Receives indexing status changes (the Tauri event in the app, a recorder in tests).
-pub trait IndexingSink: Send + Sync {
-    fn indexing(&self, status: &SemanticIndexing);
-}
+/// How long a "too slow" verdict stands before a refresh measures again.
+const SLOW_RECHECK: Duration = Duration::from_secs(10 * 60);
 
 /// Chunks of every corpus, computed on the indexing thread.
 pub type CorpusInputs = Arc<dyn Fn() -> Vec<(Corpus, Vec<PackInput>)> + Send + Sync>;
@@ -180,8 +122,9 @@ struct Inner {
     stop: AtomicBool,
     last_query: Mutex<Option<Instant>>,
     worker: Mutex<Option<std::thread::JoinHandle<()>>>,
-    /// A load key whose query embedding missed the tier's budget, with the measured median (checked once per run).
-    too_slow: Mutex<Option<(LoadKey, u32)>>,
+    /// A load key whose query embedding missed the tier's budget, with the measured median and when; it is not
+    /// loaded again for [`SLOW_RECHECK`] (a busy machine at startup is checked again later).
+    too_slow: Mutex<Option<(LoadKey, u32, Instant)>>,
 }
 
 /// The app's semantic index and query side (cheap to clone).
@@ -220,23 +163,6 @@ fn llama_loader() -> EmbedLoader {
 #[cfg(not(feature = "llama"))]
 fn llama_loader() -> EmbedLoader {
     Arc::new(|_, _, _| Err("no embedding backend in this build".to_string()))
-}
-
-/// Plain sentence for a pause.
-#[must_use]
-pub fn pause_message(reason: PauseReason) -> &'static str {
-    match reason {
-        PauseReason::Unsupported => "Semantic search is not available on this device.",
-        PauseReason::SemanticOff => "Semantic search is off.",
-        PauseReason::GuardTripped => "Semantic search was turned off after an unusable vector.",
-        PauseReason::Backgrounded => "Indexing continues when Borealis is back in the foreground.",
-        PauseReason::LowPowerMode => "Indexing waits while Low Power Mode or Battery Saver is on.",
-        PauseReason::Thermal => "Indexing waits while the device is hot.",
-        PauseReason::NotCharging => "Indexing continues while the device is charging.",
-        PauseReason::BatteryLow => {
-            "Indexing continues while charging, or on battery at 50% or more."
-        }
-    }
 }
 
 impl VectorService {
@@ -527,8 +453,9 @@ impl VectorService {
         // Another model, tier or override: the old vectors belong to another store.
         self.unload();
         self.0.guard.reset();
-        let slow = lock(&self.0.too_slow).as_ref().and_then(|(k, ms)| {
-            (*k == key && tier.query_budget_ms.is_some_and(|b| *ms > b)).then_some(*ms)
+        let slow = lock(&self.0.too_slow).as_ref().and_then(|(k, ms, at)| {
+            let current = *k == key && at.elapsed() < SLOW_RECHECK;
+            (current && tier.query_budget_ms.is_some_and(|b| *ms > b)).then_some(*ms)
         });
         if let Some(ms) = slow {
             self.too_slow_status(ms, tier);
@@ -551,7 +478,7 @@ impl VectorService {
                     .and_then(|budget| probe_query_ms(&embedder).filter(|ms| *ms > budget))
                 {
                     tracing::warn!(ms, quant = file.quant, "semantic: query embedding too slow");
-                    *lock(&self.0.too_slow) = Some((key, ms));
+                    *lock(&self.0.too_slow) = Some((key, ms, Instant::now()));
                     self.too_slow_status(ms, tier);
                     return None;
                 }
@@ -779,20 +706,6 @@ impl VectorService {
         };
         Some(HybridQuery { vector, stores })
     }
-}
-
-/// Median query-embedding time in ms over [`PROBE_QUERIES`] after one warm-up; `None` when a probe fails (the
-/// guard then reports the reason).
-fn probe_query_ms(embedder: &GuardedEmbedder) -> Option<u32> {
-    embedder.embed_query(PROBE_QUERIES[0]).ok()?;
-    let mut ms = Vec::with_capacity(PROBE_QUERIES.len());
-    for q in PROBE_QUERIES {
-        let started = Instant::now();
-        embedder.embed_query(q).ok()?;
-        ms.push(started.elapsed().as_millis());
-    }
-    ms.sort_unstable();
-    u32::try_from(ms[ms.len() / 2]).ok()
 }
 
 /// The chunks of one pack as indexing items: title = element or section name, text = chunk body (the eval's V4

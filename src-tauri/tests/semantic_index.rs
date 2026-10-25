@@ -6,7 +6,7 @@
 
 mod contract_support;
 
-use borealis_embed::models::{ModelFile, Q8_0};
+use borealis_embed::models::{ModelFile, Q6_K_TE_Q4_K, Q8_0};
 use borealis_embed::{
     DeviceProfile, DeviceState, Embedder, FakeEmbedder, FormFactor, Power, SimulatedDevice,
     TierConfig,
@@ -96,10 +96,14 @@ fn app_with(poison: Option<&'static str>) -> App {
 impl App {
     /// The T2 / T3 model "on the device": a sparse file of the compiled size (the fake loader never reads it).
     fn install_model(&self) {
+        self.install(&Q8_0);
+    }
+
+    fn install(&self, file: &ModelFile) {
         let dir = self.data.join("models");
         std::fs::create_dir_all(&dir).unwrap();
-        let f = std::fs::File::create(dir.join(Q8_0.file_name)).unwrap();
-        f.set_len(Q8_0.bytes).unwrap();
+        let f = std::fs::File::create(dir.join(file.file_name)).unwrap();
+        f.set_len(file.bytes).unwrap();
     }
 
     fn settings(&self, patch: serde_json::Value) {
@@ -123,10 +127,14 @@ impl App {
     }
 
     fn vector_file(&self, corpus: &str, dims: usize) -> PathBuf {
+        self.vector_file_of(&Q8_0, corpus, dims)
+    }
+
+    fn vector_file_of(&self, file: &ModelFile, corpus: &str, dims: usize) -> PathBuf {
         self.data
             .join("search/v1/vectors")
             .join(corpus)
-            .join(format!("vectors-{}-{dims}.bin", &Q8_0.sha256[..8]))
+            .join(format!("vectors-{}-{dims}.bin", &file.sha256[..8]))
     }
 
     fn search(&self, query: &str) -> Vec<borealis_lib::search_api::SearchHit> {
@@ -192,15 +200,20 @@ fn indexing_is_incremental_and_a_tier_change_starts_a_new_store() {
     assert!(a.state.vectors.wait_idle(WAIT));
     assert_eq!(a.prompts(), first, "nothing re-embedded");
     assert_eq!(a.state.vectors.status().state, IndexingState::Ready);
-    // T3 (512 dims): a new store, everything embedded again; the 256 store is replaced.
+    // T3 has the same file, dims and (on this 8-core profile) threads as T2: the same embedder and store.
     a.settings(serde_json::json!({"tierOverride": "t3"}));
+    assert_eq!(a.loads.lock().unwrap().len(), 1);
+    assert_eq!(a.prompts(), first, "nothing re-embedded");
+    // T1 (its own file): a new embedder and store, everything embedded again; the Q8_0 store is replaced.
+    a.install(&Q6_K_TE_Q4_K);
+    a.settings(serde_json::json!({"tierOverride": "t1"}));
     assert_eq!(
         a.loads.lock().unwrap().len(),
         2,
         "the embedder was replaced"
     );
     assert!(a.prompts() >= 2 * first);
-    assert!(a.vector_file("lore", 512).is_file());
+    assert!(a.vector_file_of(&Q6_K_TE_Q4_K, "lore", 256).is_file());
     assert!(!a.vector_file("lore", 256).exists());
     // A restart (new service over the same folder) resumes from the stores: nothing to embed.
     let loads = Arc::new(Mutex::new(Vec::new()));
@@ -213,7 +226,8 @@ fn indexing_is_incremental_and_a_tier_change_starts_a_new_store() {
     state.refresh_semantic_index();
     assert!(state.vectors.wait_idle(WAIT));
     assert_eq!(state.vectors.status().state, IndexingState::Ready);
-    assert_eq!(loads.lock().unwrap()[0].prompts_embedded(), 0);
+    // Only the speed probe's queries (one warm-up and five timed): no document was embedded again.
+    assert_eq!(loads.lock().unwrap()[0].prompts_embedded(), 6);
 }
 
 #[test]

@@ -3,9 +3,14 @@
 //! | Tier | Devices | File | Dims | Threads | Index while |
 //! |---|---|---|---|---|---|
 //! | T0 | < 3 GB RAM, or a 32-bit build (armv7/i686 Android) | none (semantic hidden) | - | - | - |
-//! | T1 | phones 3-4 GB | Q6_K-te-Q4_K (211 MB) | 128 | 2 | charging only |
+//! | T1 | phones 3-4 GB | Q6_K-te-Q4_K (211 MB) | 256 | 2 | charging only |
 //! | T2 | phones/tablets > 4 GB, desktops < 8 GB | Q8_0 (310 MB) | 256 | min(4, cores/2) | charging, or battery >= 50% if allowed |
-//! | T3 | desktops >= 8 GB | Q8_0 | 512 | min(8, cores/2) | always (low priority) |
+//! | T3 | desktops >= 8 GB | Q8_0 | 256 | min(8, cores/2) | always (low priority) |
+//!
+//! **Dims from the V4 eval (S3.3, `specs/search-eval-1.md`):** the smallest setting within 0.01 nDCG@10 of
+//! Q8_0 / 768 is 256 for both files; 128 loses more than 0.01 and fails the category clause (prefix), so T1 was
+//! raised from 128 and T3 lowered from 512. Every semantic tier also carries the hybrid latency budget
+//! ([`QUERY_BUDGET_MS`]), checked on the device after the model loads.
 //!
 //! **RAM is compared in nominal GiB**: the OS reports less than the RAM on the box (Android's
 //! `ActivityManager.MemoryInfo.totalMem` leaves out the kernel and carve-outs, so a 4 GB phone reports about
@@ -29,16 +34,19 @@ const T3_FROM_HALVES: u64 = 16;
 pub const MAX_TOKENS: usize = 512;
 /// Document chunk cap in tokens on T1 (spec sec. 3).
 pub const T1_MAX_TOKENS: usize = 256;
-/// Query-embedding budget in ms on a [`PORTABLE_X86`] build: the hybrid may add at most 40 ms to a keyword query
-/// (spec sec. 6), and the query embedding is nearly all of it.
-pub const PORTABLE_X86_QUERY_BUDGET_MS: u32 = 40;
+/// The hybrid may add at most 40 ms to a keyword query (spec sec. 6). The query embedding is nearly all of it
+/// (S3.3: vector search and fusion take 1-4 ms), so the app times it on the device after loading the model and
+/// stays keyword-only when the median is above this.
+pub const QUERY_BUDGET_MS: u32 = 40;
 
-/// llama.cpp in this build uses only the x86_64 baseline SIMD (SSE2): llama-cpp-sys-2 enables AVX / AVX2 / FMA
-/// only when Rust's target features have them, and the release builds keep the default x86_64 target, so no
-/// x86_64 CPU can hit an illegal instruction. Its quantised dot products then run without AVX, several times
-/// slower than NEON on arm64 (b12-llama sec. 8 item 4; S3.3 handoff): such builds get the T2 row at most and a
-/// measured query-speed check ([`TierConfig::query_budget_ms`]). Runtime CPU dispatch (`GGML_CPU_ALL_VARIANTS`)
-/// would need shipping ggml's backend DLLs / shared objects with the installers, which is not done yet.
+/// llama.cpp in this build uses only the x86_64 baseline SIMD (SSE2), so no x86_64 CPU can hit an illegal
+/// instruction: `.cargo/config.toml` turns ggml's x86 options (SSE4.2, AVX, AVX2, BMI2, FMA, F16C) off, which ggml
+/// would otherwise turn on for every native build with `GGML_NATIVE=OFF`; llama-cpp-sys-2 turns one back on only
+/// when Rust's target features include it (`build/check-x86-baseline.sh` checks the libraries). The quantised dot
+/// products then run without AVX, several times slower than NEON on arm64: such builds get the T2 row at most, and
+/// the measured query-speed check ([`TierConfig::query_budget_ms`]) decides per machine. Runtime CPU dispatch
+/// (`GGML_CPU_ALL_VARIANTS`) would need ggml's backend DLLs / shared objects shipped with the installers, which is
+/// not done yet (S3.3 handoff).
 pub const PORTABLE_X86: bool = cfg!(all(target_arch = "x86_64", not(target_feature = "avx2")));
 
 /// Battery level T2 may index on, when the user allows it.
@@ -185,7 +193,7 @@ pub struct TierConfig {
     /// When background indexing may run.
     pub policy: IndexPolicy,
     /// When set, the app times the backend's query embedding right after loading it and keeps search
-    /// keyword-only if the median is above this many ms ([`PORTABLE_X86`] builds).
+    /// keyword-only if the median is above this many ms ([`QUERY_BUDGET_MS`] on every semantic tier).
     pub query_budget_ms: Option<u32>,
 }
 
@@ -207,11 +215,11 @@ impl Tier {
             Self::T1 => TierConfig {
                 tier: self,
                 model: Some(&Q6_K_TE_Q4_K),
-                dims: Some(128),
+                dims: Some(256),
                 threads: 2,
                 max_tokens: T1_MAX_TOKENS,
                 policy: IndexPolicy::ChargingOnly,
-                query_budget_ms: None,
+                query_budget_ms: Some(QUERY_BUDGET_MS),
             },
             Self::T2 => TierConfig {
                 tier: self,
@@ -222,22 +230,21 @@ impl Tier {
                 policy: IndexPolicy::ChargingOrBattery {
                     min_percent: T2_MIN_BATTERY_PERCENT,
                 },
-                query_budget_ms: None,
+                query_budget_ms: Some(QUERY_BUDGET_MS),
             },
             Self::T3 => TierConfig {
                 tier: self,
                 model: Some(&Q8_0),
-                dims: Some(512),
+                dims: Some(256),
                 threads: half.min(8),
                 max_tokens: MAX_TOKENS,
                 policy: IndexPolicy::Always,
-                query_budget_ms: None,
+                query_budget_ms: Some(QUERY_BUDGET_MS),
             },
         }
     }
 
-    /// The tier's row for this device (threads from its cores). On a [`PORTABLE_X86`] build T3 becomes T2 and the
-    /// query-speed check applies.
+    /// The tier's row for this device (threads from its cores). On a [`PORTABLE_X86`] build T3 becomes T2.
     #[must_use]
     pub fn config_for(self, profile: &DeviceProfile) -> TierConfig {
         portable_x86_row(self.config(profile.cores), PORTABLE_X86)
@@ -265,26 +272,18 @@ impl Tier {
 }
 
 /// The [`PORTABLE_X86`] adjustment (a parameter so tests run it on every host): a T3 row keeps its threads and
-/// power rule but takes T2's dims and file; every semantic tier gets the query-speed check.
+/// power rule but takes T2's file, dims and chunk cap.
 fn portable_x86_row(row: TierConfig, portable_x86: bool) -> TierConfig {
-    if !portable_x86 || row.tier == Tier::T0 {
+    if !portable_x86 || row.tier != Tier::T3 {
         return row;
     }
     let t2 = Tier::T2.config(1);
-    let capped = if row.tier == Tier::T3 {
-        TierConfig {
-            tier: Tier::T2,
-            model: t2.model,
-            dims: t2.dims,
-            max_tokens: t2.max_tokens,
-            ..row
-        }
-    } else {
-        row
-    };
     TierConfig {
-        query_budget_ms: Some(PORTABLE_X86_QUERY_BUDGET_MS),
-        ..capped
+        tier: Tier::T2,
+        model: t2.model,
+        dims: t2.dims,
+        max_tokens: t2.max_tokens,
+        ..row
     }
 }
 
@@ -405,7 +404,7 @@ mod tests {
         let t1 = Tier::T1.config(8);
         assert_eq!(t1.model.expect("file").quant, "Q6_K-te-Q4_K");
         assert_eq!(t1.model.expect("file").bytes, 211_161_312);
-        assert_eq!((t1.dims, t1.threads), (Some(128), 2));
+        assert_eq!((t1.dims, t1.threads), (Some(256), 2));
         assert_eq!(t1.policy, IndexPolicy::ChargingOnly);
 
         let t2 = Tier::T2.config(12);
@@ -420,7 +419,7 @@ mod tests {
 
         let t3 = Tier::T3.config(32);
         assert_eq!(t3.model.expect("file").bytes, 309_855_456);
-        assert_eq!((t3.dims, t3.threads), (Some(512), 8));
+        assert_eq!((t3.dims, t3.threads), (Some(256), 8));
         assert_eq!(t3.policy, IndexPolicy::Always);
         assert_eq!(Tier::T3.config(10).threads, 5);
     }
@@ -435,22 +434,25 @@ mod tests {
     }
 
     #[test]
-    fn portable_x86_builds_cap_t3_and_check_query_speed() {
+    fn portable_x86_builds_cap_t3_and_every_semantic_tier_has_the_query_budget() {
         let t3 = Tier::T3.config(16);
         let row = portable_x86_row(t3, true);
         assert_eq!(row.tier, Tier::T2);
         assert_eq!(row.dims, Tier::T2.config(16).dims);
         assert_eq!(row.threads, t3.threads, "desktop threads kept");
         assert_eq!(row.policy, IndexPolicy::Always);
-        assert_eq!(row.query_budget_ms, Some(PORTABLE_X86_QUERY_BUDGET_MS));
-        let t1 = portable_x86_row(Tier::T1.config(8), true);
-        assert_eq!((t1.tier, t1.dims), (Tier::T1, Some(128)));
-        assert!(t1.query_budget_ms.is_some());
+        assert_eq!(
+            portable_x86_row(Tier::T1.config(8), true),
+            Tier::T1.config(8)
+        );
         assert_eq!(
             portable_x86_row(Tier::T0.config(8), true),
             Tier::T0.config(8)
         );
         assert_eq!(portable_x86_row(t3, false), t3, "other builds unchanged");
-        assert!(Tier::T3.config(16).query_budget_ms.is_none());
+        for tier in [Tier::T1, Tier::T2, Tier::T3] {
+            assert_eq!(tier.config(8).query_budget_ms, Some(QUERY_BUDGET_MS));
+        }
+        assert_eq!(Tier::T0.config(8).query_budget_ms, None);
     }
 }
