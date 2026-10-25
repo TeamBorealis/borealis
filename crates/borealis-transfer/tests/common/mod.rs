@@ -121,7 +121,7 @@ impl Device {
         }
     }
 
-    /// Every file under the data folder, relative.
+    /// Every file under the data folder, relative and `/`-separated on every OS.
     pub fn files(&self) -> Vec<String> {
         fn walk(root: &Path, p: &Path, out: &mut Vec<String>) {
             for e in std::fs::read_dir(p).into_iter().flatten().flatten() {
@@ -129,7 +129,9 @@ impl Device {
                 if path.is_dir() {
                     walk(root, &path, out);
                 } else {
-                    out.push(path.strip_prefix(root).unwrap().display().to_string());
+                    let rel = path.strip_prefix(root).unwrap();
+                    let parts: Vec<_> = rel.iter().map(|c| c.to_string_lossy()).collect();
+                    out.push(parts.join("/"));
                 }
             }
         }
