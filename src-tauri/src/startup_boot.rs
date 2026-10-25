@@ -152,6 +152,8 @@ fn load(handle: &AppHandle, startup: &Startup) -> Result<(), String> {
         if let Err(e) = state.start_search_index() {
             tracing::warn!("search: indexing not started: {}", e.message);
         }
+        // Semantic index: loads the model and catches up incrementally, only when semantic search is on.
+        state.refresh_semantic_index();
     }
     // S5 acceptance (debug builds only): answer a pending digest request once the content is loaded.
     #[cfg(debug_assertions)]

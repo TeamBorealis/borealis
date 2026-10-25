@@ -23,7 +23,8 @@ use std::time::{Duration, Instant};
 
 /// Folder of downloaded models under the app data folder.
 pub const MODELS_DIR: &str = "models";
-/// Corpus folders under `search/v1/` that may hold `vectors-*` files (spec sec. 7 vector storage).
+/// Corpus folders that may hold `vectors-*` files (spec sec. 7 vector storage): `search/v1/vectors/<corpus>/`
+/// (S3.3) and, from before S3.3, `search/v1/<corpus>/`.
 pub const VECTOR_CORPORA: [&str; 3] = ["rules", "lore", "sessions"];
 /// Shortest gap between two progress events (the last chunk and phase changes always go out).
 const PROGRESS_EVERY: Duration = Duration::from_millis(250);
@@ -106,10 +107,13 @@ pub struct SemanticStatus {
     pub backend_available: bool,
     /// `settings.search.semantic`.
     pub semantic: bool,
-    /// Search really uses embeddings (`semantic`, model present, backend linked).
+    /// Search really uses embeddings: `semantic`, model present, backend linked **and** every corpus indexed
+    /// for the loaded model (S3.3; `AppState` fills this from the vector service).
     pub active: bool,
     pub consent: Option<SemanticConsent>,
     pub download: SemanticDownload,
+    /// Semantic indexing progress (`AppState` fills it in; `off` from this service alone).
+    pub indexing: crate::vector_service::SemanticIndexing,
 }
 
 /// What [`SemanticService::status`] needs from the device and the settings.
@@ -201,6 +205,8 @@ impl Catalog {
 }
 
 type TransportFactory = Box<dyn Fn() -> Result<Arc<dyn Transport>, String> + Send + Sync>;
+/// Called on the download thread once the model file is installed (the app starts semantic indexing).
+pub type InstalledHook = Arc<dyn Fn() + Send + Sync>;
 
 struct Job {
     /// The spec of the file the progress belongs to.
@@ -222,6 +228,7 @@ struct Inner {
     /// Serialises start / cancel / delete, so a start cannot slip in while a delete waits for the old thread.
     ops: Mutex<()>,
     sink: RwLock<Option<Arc<dyn SemanticSink>>>,
+    on_installed: RwLock<Option<InstalledHook>>,
 }
 
 /// The app's model download service (cheap to clone).
@@ -294,7 +301,15 @@ impl SemanticService {
             }),
             ops: Mutex::new(()),
             sink: RwLock::new(None),
+            on_installed: RwLock::new(None),
         }))
+    }
+
+    /// What to run when a download installs the model.
+    pub fn set_on_installed(&self, hook: InstalledHook) {
+        if let Ok(mut h) = self.0.on_installed.write() {
+            *h = Some(hook);
+        }
     }
 
     pub fn set_sink(&self, sink: Arc<dyn SemanticSink>) {
@@ -362,6 +377,7 @@ impl SemanticService {
             active: ctx.semantic && present && backend,
             consent,
             download: self.download_status(spec, present, backend),
+            indexing: crate::vector_service::SemanticIndexing::off(),
         }
     }
 
@@ -522,8 +538,15 @@ impl SemanticService {
                 }
             }
         };
+        let installed = end.state == DownloadState::Done;
         self.job().progress = end.clone();
         self.emit(&end);
+        if installed {
+            let hook = self.0.on_installed.read().ok().and_then(|h| h.clone());
+            if let Some(hook) = hook {
+                hook();
+            }
+        }
     }
 
     /// Pause a running download (the partial is kept).
@@ -575,10 +598,13 @@ impl SemanticService {
         let _ops = self.ops();
         self.stop_job();
         self.0.models.delete(&self.0.catalog.all())?;
+        let vectors = self.0.search_root.join(crate::vector_service::VECTORS_DIR);
         for corpus in VECTOR_CORPORA {
-            let dir = self.0.search_root.join(corpus);
-            if dir.is_dir() {
-                VectorStore::delete_all(&dir).map_err(|e| std::io::Error::other(e.to_string()))?;
+            for dir in [vectors.join(corpus), self.0.search_root.join(corpus)] {
+                if dir.is_dir() {
+                    VectorStore::delete_all(&dir)
+                        .map_err(|e| std::io::Error::other(e.to_string()))?;
+                }
             }
         }
         let progress = idle();

@@ -274,6 +274,18 @@ impl SearchService {
         }
     }
 
+    /// The chunks of every corpus for `hub` (what a sync writes; the semantic indexer embeds the same chunks).
+    #[must_use]
+    pub fn corpus_inputs(
+        &self,
+        hub: &ContentHub,
+    ) -> Vec<(Corpus, Vec<borealis_search::PackInput>)> {
+        vec![
+            (Corpus::Rules, self.rules_inputs(hub)),
+            (Corpus::Lore, corpus::lore_packs(&hub.store)),
+        ]
+    }
+
     fn rules_inputs(&self, hub: &ContentHub) -> Vec<borealis_search::PackInput> {
         let texts: Vec<String> = RULES_TEXT_PACKS
             .iter()

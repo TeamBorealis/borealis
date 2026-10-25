@@ -305,6 +305,8 @@ pub struct AppState {
     pub search: crate::search_service::SearchService,
     /// Semantic search model: consented download, pause / cancel, delete (S3.2). Makes no request on its own.
     pub semantic: crate::semantic_service::SemanticService,
+    /// Semantic index and query side: one embedder, incremental vectors per corpus (S3.3).
+    pub vectors: crate::vector_service::VectorService,
 }
 
 impl AppState {
@@ -365,10 +367,14 @@ impl AppState {
             });
         let search = crate::search_service::SearchService::new(&paths.data, &paths.content_root);
         let semantic = crate::semantic_service::SemanticService::new(&paths.data);
+        let vectors = crate::vector_service::VectorService::new(&paths.data);
+        let on_installed = vectors.clone();
+        semantic.set_on_installed(std::sync::Arc::new(move || on_installed.retry()));
         Self {
             paths,
             search,
             semantic,
+            vectors,
             content: RwLock::new(Arc::new(hub)),
             settings: RwLock::new(settings),
             sessions: Mutex::new(HashMap::new()),
@@ -400,7 +406,8 @@ impl AppState {
         let mut guard: RwLockWriteGuard<'_, Arc<ContentHub>> = self.content.write()?;
         *guard = Arc::clone(&hub);
         drop(guard);
-        self.search.content_changed(hub);
+        self.search.content_changed(std::sync::Arc::clone(&hub));
+        self.refresh_semantic_index_with(hub);
         Ok(())
     }
 

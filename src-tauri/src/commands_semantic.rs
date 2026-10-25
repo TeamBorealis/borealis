@@ -6,12 +6,15 @@ use crate::semantic_api::SemanticLicense;
 use crate::semantic_device::SemanticDevice;
 use crate::semantic_service::{SemanticContext, SemanticDownload, SemanticSink, SemanticStatus};
 use crate::state::AppState;
+use crate::vector_service::{IndexingSink, SemanticIndexing};
 use tauri::{AppHandle, Emitter, Manager, State};
 
 type S<'a> = State<'a, AppState>;
 
 /// Download progress event (payload [`SemanticDownload`]).
 pub const EVENT_SEMANTIC_DOWNLOAD: &str = "borealis://semantic-download";
+/// Semantic indexing progress event (payload [`SemanticIndexing`]).
+pub const EVENT_SEMANTIC_INDEX: &str = "borealis://semantic-index";
 
 /// Forwards download progress to the web view.
 pub struct SemanticEvents(pub AppHandle);
@@ -19,6 +22,15 @@ pub struct SemanticEvents(pub AppHandle);
 impl SemanticSink for SemanticEvents {
     fn download(&self, status: &SemanticDownload) {
         let _ = self.0.emit(EVENT_SEMANTIC_DOWNLOAD, status);
+    }
+}
+
+/// Forwards semantic indexing progress to the web view.
+pub struct SemanticIndexEvents(pub AppHandle);
+
+impl IndexingSink for SemanticIndexEvents {
+    fn indexing(&self, status: &SemanticIndexing) {
+        let _ = self.0.emit(EVENT_SEMANTIC_INDEX, status);
     }
 }
 
@@ -70,9 +82,20 @@ pub fn semantic_model_license() -> SemanticLicense {
     crate::semantic_api::model_license()
 }
 
-/// Startup: progress events go to the web view. No download starts here.
+/// Startup (off the main thread): download and indexing progress go to the web view, and the semantic indexer
+/// gets this device's tier probe and battery / thermal / background provider. No download starts here; indexing
+/// starts only when semantic search is on and the model is on the device.
 pub(crate) fn install(app: &AppHandle) {
-    app.state::<AppState>()
+    let state = app.state::<AppState>();
+    state
         .semantic
         .set_sink(std::sync::Arc::new(SemanticEvents(app.clone())));
+    state
+        .vectors
+        .set_sink(std::sync::Arc::new(SemanticIndexEvents(app.clone())));
+    if let Some(device) = app.try_state::<SemanticDevice>() {
+        state
+            .vectors
+            .set_device(device.profile(), device.provider());
+    }
 }

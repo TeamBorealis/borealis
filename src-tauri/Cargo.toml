@@ -57,7 +57,8 @@ borealis-ai.workspace = true
 borealis-assist.workspace = true
 borealis-mcp = { path = "../crates/borealis-mcp" }
 # Local keyword search (Tantivy, pure Rust on every target; S0.1).
-borealis-search.workspace = true
+# `embed`: hybrid RRF fusion of keyword and vector hits (S3.3).
+borealis-search = { workspace = true, features = ["embed"] }
 # Semantic search runtime: tiers, scheduler, device-state shims (S3.1); the llama.cpp backend via feature `llama`.
 borealis-embed.workspace = true
 tokio = { workspace = true, features = ["time", "rt", "sync", "macros"] }

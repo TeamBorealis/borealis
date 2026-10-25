@@ -1,6 +1,10 @@
 //! The search surface (local-search-spec.md section 11): the `search` command over the Rules and Lore keyword
 //! indexes, the rules passage behind a `rules:` hit, the index status, and the Lore-index lookup that
 //! `search_compendium` uses for its description tier.
+//!
+//! With semantic search active (`VectorService::query`), each corpus's keyword hits are fused with its vector
+//! hits by reciprocal rank fusion (spec sec. 7, `borealis_search::hybrid`): exact names stay first, vector-only
+//! documents pass the same edition and type filters as the keyword request.
 
 use crate::compendium::{is_listed, parse_ruleset, MAX_QUERY_CHARS};
 use crate::dto::Page;
@@ -10,10 +14,13 @@ use crate::ids::ui_type;
 use crate::sanitize::sanitize_html;
 use crate::search_service::IndexStatus;
 use crate::state::{AppState, ContentHub};
+use crate::vector_service::HybridQuery;
 use borealis_content::{Element, Ruleset};
+use borealis_embed::FUSION_DEPTH;
+use borealis_search::hybrid::fuse_with_engine;
 use borealis_search::{
-    base_key, parse_rules_key, Corpus, Edition, EditionScope, Hit, SearchConfig, SearchEngine,
-    SearchRequest,
+    base_key, parse_rules_key, Corpus, Edition, EditionScope, Hit, Passage, SearchConfig,
+    SearchEngine, SearchRequest,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -225,12 +232,22 @@ fn section_hit(hit: &Hit, filters: &Filters<'_>) -> Option<SearchHit> {
     })
 }
 
+/// A vector-only passage passes the keyword request's edition and type filters.
+fn passes(req: &SearchRequest, p: &Passage) -> bool {
+    let edition = match req.edition {
+        EditionScope::Only(e) => p.ruleset == e.tag().as_str() || p.ruleset == "none",
+        _ => true,
+    };
+    edition && (req.types.is_empty() || req.types.contains(&p.ty))
+}
+
 fn corpus_hits(
     engine: &SearchEngine,
     hub: &ContentHub,
     corpus: Corpus,
     q: &SearchQuery,
     ruleset: Option<Ruleset>,
+    hybrid: Option<&HybridQuery>,
 ) -> ApiResult<Vec<SearchHit>> {
     let filters = Filters {
         types: q.types.as_deref(),
@@ -247,9 +264,16 @@ fn corpus_hits(
         _ => Vec::new(),
     };
     let req = request(q.query.trim(), edition_scope(ruleset), types);
-    let hits = engine
+    let mut hits = engine
         .search(corpus, &req, &SearchConfig::default())
         .map_err(|e| ApiError::internal(format!("search failed: {e}")))?;
+    if let Some(h) = hybrid {
+        let vector = h.search(corpus, FUSION_DEPTH);
+        hits = fuse_with_engine(engine, corpus, &req.query, hits, &vector, POOL, |p| {
+            passes(&req, p)
+        })
+        .map_err(|e| ApiError::internal(format!("search failed: {e}")))?;
+    }
     Ok(hits
         .iter()
         .filter_map(|h| {
@@ -349,12 +373,14 @@ impl AppState {
         let Some(engine) = reader.as_ref().and_then(|g| g.as_ref()) else {
             return self.search_fallback(q, ruleset);
         };
+        let hybrid = self.vectors.query(q.query.trim());
+        let hybrid = hybrid.as_ref();
         let hits = match q.scope {
-            SearchScope::Rules => corpus_hits(engine, &hub, Corpus::Rules, q, ruleset)?,
-            SearchScope::Lore => corpus_hits(engine, &hub, Corpus::Lore, q, ruleset)?,
+            SearchScope::Rules => corpus_hits(engine, &hub, Corpus::Rules, q, ruleset, hybrid)?,
+            SearchScope::Lore => corpus_hits(engine, &hub, Corpus::Lore, q, ruleset, hybrid)?,
             SearchScope::All | SearchScope::Sessions => interleave(
-                corpus_hits(engine, &hub, Corpus::Lore, q, ruleset)?,
-                corpus_hits(engine, &hub, Corpus::Rules, q, ruleset)?,
+                corpus_hits(engine, &hub, Corpus::Lore, q, ruleset, hybrid)?,
+                corpus_hits(engine, &hub, Corpus::Rules, q, ruleset, hybrid)?,
             ),
         };
         Ok(page(hits, q))

@@ -29,6 +29,9 @@ impl AppState {
             self.set_hub(hub)?;
         }
         self.set_settings(next.clone())?;
+        if next.search != current.search {
+            self.refresh_semantic_index();
+        }
         Ok(next)
     }
 

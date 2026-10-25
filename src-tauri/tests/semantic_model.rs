@@ -225,7 +225,10 @@ fn no_request_before_consent_then_the_consented_download_installs_the_model() {
     let st = a.state.semantic_status(&a.ctx());
     assert!(st.model_present && st.semantic);
     assert_eq!(st.download.state, DownloadState::Done);
-    assert!(st.backend_available && st.active, "semantic search answers");
+    assert!(st.backend_available);
+    // Honest status (S3.3): `active` waits for the vectors. This catalog's test file is not the tier's model, so
+    // nothing is indexed and search stays keyword-only (tests/semantic_index.rs covers the indexed case).
+    assert!(!st.active && !st.indexing.queryable, "no vectors yet");
     assert_eq!(st.download.message, None);
     assert!(a.state.settings().unwrap().search.semantic);
     let events = a.events.0.lock().unwrap();

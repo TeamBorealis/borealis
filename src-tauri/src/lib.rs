@@ -131,6 +131,7 @@ pub mod startup;
 pub mod startup_boot;
 pub mod state;
 pub mod sync_dto;
+pub mod vector_service;
 pub mod webview_args;
 pub mod zip_read;
 

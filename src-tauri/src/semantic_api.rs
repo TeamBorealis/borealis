@@ -6,12 +6,14 @@
 
 use crate::error::{ApiError, ApiResult};
 use crate::semantic_service::{SemanticContext, SemanticStatus};
-use crate::settings::SearchTier;
-use crate::state::AppState;
+use crate::settings::{SearchSettings, SearchTier};
+use crate::state::{AppState, ContentHub};
+use crate::vector_service::{CorpusInputs, IndexRequest};
 use borealis_embed::tier::effective_tier;
-use borealis_embed::{DeviceProfile, Lifecycle, Tier, TierOverride};
+use borealis_embed::{DeviceProfile, Lifecycle, Tier, TierConfig, TierOverride};
 use serde::Serialize;
 use serde_json::json;
+use std::sync::Arc;
 
 /// `semantic_model_license` result: the model's licence and NOTICE (Settings > About, EM6).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -56,16 +58,55 @@ impl AppState {
 
     fn with_semantic(&self, ctx: &SemanticContext, on: bool) -> ApiResult<SemanticStatus> {
         let saved = self.save_settings(&json!({ "search": { "semantic": on } }))?;
-        Ok(self.semantic.status(&SemanticContext {
+        Ok(self.semantic_status(&SemanticContext {
             semantic: saved.search.semantic,
             ..*ctx
         }))
     }
 
-    /// Settings > Search status (no network).
+    /// Settings > Search status (no network). `active` holds only while search really uses vectors.
     #[must_use]
     pub fn semantic_status(&self, ctx: &SemanticContext) -> SemanticStatus {
-        self.semantic.status(ctx)
+        let mut status = self.semantic.status(ctx);
+        let indexing = self.vectors.status();
+        status.active = status.active && self.vectors.queryable();
+        status.indexing = crate::vector_service::SemanticIndexing {
+            queryable: status.active,
+            ..indexing
+        };
+        status
+    }
+
+    /// The tier row semantic indexing uses: the device probe lowered by `tierOverride`.
+    #[must_use]
+    pub fn semantic_tier_config(&self, search: &SearchSettings) -> TierConfig {
+        let profile = self.vectors.profile();
+        let tier = effective_tier(profile.tier(), tier_override(search.tier_override));
+        tier.config_for(&profile)
+    }
+
+    /// Bring the semantic index in line with the settings, tier and current content (background thread).
+    pub fn refresh_semantic_index(&self) {
+        match self.hub() {
+            Ok(hub) => self.refresh_semantic_index_with(hub),
+            Err(e) => tracing::warn!("semantic: index not refreshed: {}", e.message),
+        }
+    }
+
+    /// [`Self::refresh_semantic_index`] for a content snapshot that was just swapped in.
+    pub(crate) fn refresh_semantic_index_with(&self, hub: Arc<ContentHub>) {
+        let Ok(settings) = self.settings() else {
+            return;
+        };
+        let search = settings.search;
+        let service = self.search.clone();
+        let inputs: CorpusInputs = Arc::new(move || service.corpus_inputs(&hub));
+        self.vectors.refresh(IndexRequest {
+            semantic: search.semantic,
+            index_on_battery: search.index_on_battery,
+            tier: self.semantic_tier_config(&search),
+            inputs,
+        });
     }
 
     /// The user consented: start (or resume) the download for this device's tier and turn semantic search on.
@@ -88,7 +129,7 @@ impl AppState {
     #[must_use]
     pub fn semantic_pause(&self, ctx: &SemanticContext) -> SemanticStatus {
         self.semantic.pause();
-        self.semantic.status(ctx)
+        self.semantic_status(ctx)
     }
 
     /// Cancel the download, delete the partial and turn semantic search off.
@@ -108,6 +149,8 @@ impl AppState {
     /// # Errors
     /// `io_error` if a file or the settings cannot be written.
     pub fn semantic_delete(&self, ctx: &SemanticContext) -> ApiResult<SemanticStatus> {
+        // The indexer stops and drops the model first, so no store is written back after the delete.
+        self.vectors.shutdown();
         self.semantic
             .delete_model_and_vectors()
             .map_err(|e| ApiError::io("delete the semantic search model", e))?;

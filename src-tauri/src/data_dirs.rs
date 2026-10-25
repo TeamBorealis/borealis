@@ -240,10 +240,13 @@ impl AppState {
     pub fn clear_caches(&self, ai_sweep: fn() -> usize) -> ApiResult<ClearCachesResult> {
         let _guard = self.content_lock()?;
         let temp_folders_removed = remove_stale_scratch(&self.paths.data, SystemTime::now());
-        // Keyword indexes are derived data: dropped here, rebuilt on the next search (spec section 8).
+        // Keyword indexes and vectors are derived data: dropped here, rebuilt on the next search (spec section 8).
+        // The semantic indexer stops first, so it cannot write its stores back into the deleted folder.
+        self.vectors.shutdown();
         if let Err(e) = self.search.clear() {
             tracing::warn!("search: keyword indexes not cleared: {}", e.kind());
         }
+        self.refresh_semantic_index();
         let mut prefs = self.content_prefs();
         let mut indexes_reset = 0;
         for index in prefs
