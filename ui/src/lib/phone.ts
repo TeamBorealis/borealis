@@ -2,9 +2,9 @@ import { useSyncExternalStore } from "react";
 import type { ThemeMode } from "../api/contract";
 
 /**
- * B-48 phone scope (mobile-facelift-spec sec. 0). The facelift layer applies only to iOS and Android builds (and the web
- * mock's `?mock=mobile`), and only while the narrow shell is showing. A desktop window at any width never gets it, so the
- * desktop (Aurora-exact, U7) look cannot change.
+ * B-48 phone scope (mobile-facelift-spec sec. 0, U9b). The facelift layer applies only to iOS and Android builds (and the
+ * web mock's `?mock=mobile`): on a phone always, in either orientation; on a tablet while the narrow shell is showing.
+ * A desktop window at any width never gets it, so the desktop (Aurora-exact, U7) look cannot change.
  */
 export type PhoneOs = "ios" | "android";
 
@@ -71,18 +71,41 @@ export interface NarrowQuery {
 }
 export type MatchMedia = (query: string) => NarrowQuery;
 
+/** U9b: a device whose shortest side is below this (CSS px) is a phone in either orientation; larger ones are tablets. */
+export const PHONE_SHORT_SIDE = 600;
+
+/** The parts of `window` the shortest side is read from. */
+export interface DeviceShape {
+  screen?: { width: number; height: number };
+  innerWidth: number;
+  innerHeight: number;
+}
+
 /**
- * Adds `ios` / `android` once, and `phone` while the narrow shell shows. Returns a cleanup. On desktop it does nothing.
+ * The device's shortest side in CSS px. The screen is the source (WKWebView reports it in portrait, Android WebView and
+ * device emulation per orientation; the minimum is the same either way, and the keyboard never shrinks it); the viewport
+ * stands in only when the screen reports nothing.
  */
-export function installPlatformClasses(root: HTMLElement, env: PlatformEnv, matchMedia: MatchMedia): () => void {
+export function deviceShortSide(w: DeviceShape): number {
+  const s = w.screen;
+  if (s && s.width > 0 && s.height > 0) return Math.min(s.width, s.height);
+  return Math.min(w.innerWidth, w.innerHeight);
+}
+
+/**
+ * Adds `ios` / `android` once, and `phone` while the phone layout applies (U9b): always on a phone (shortest side under
+ * 600 px, in either orientation), and on a tablet while the narrow shell shows. Returns a cleanup. On desktop it does nothing.
+ */
+export function installPlatformClasses(root: HTMLElement, env: PlatformEnv, matchMedia: MatchMedia, shortSide: () => number = () => Infinity): () => void {
   const found = detectPhoneOs(env);
   if (!found) return () => undefined;
   os = found;
   root.classList.add(found);
   const mq = matchMedia(NARROW_QUERY);
   const sync = () => {
-    root.classList.toggle("phone", mq.matches);
-    setPhone(mq.matches);
+    const next = shortSide() < PHONE_SHORT_SIDE || mq.matches;
+    root.classList.toggle("phone", next);
+    setPhone(next);
   };
   sync();
   mq.addEventListener("change", sync);

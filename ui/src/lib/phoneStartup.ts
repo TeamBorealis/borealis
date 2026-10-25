@@ -1,7 +1,7 @@
 import { installAndroidBack, tauriBackButton } from "./androidBack";
 import { installAndroidInsets } from "./androidInsets";
 import { installKeyboardInset } from "./keyboardInset";
-import { detectPhoneOs, installPlatformClasses, type PlatformEnv } from "./phone";
+import { detectPhoneOs, deviceShortSide, installPlatformClasses, type PlatformEnv } from "./phone";
 import { isTauri } from "./tauri";
 // B-48 WP6/WP7 phone screen layer (html.phone only). main.tsx imports this module after every stylesheet, so these load last.
 import "../styles/phone/bridge.css";
@@ -25,7 +25,7 @@ export function startPhone(): () => void {
   if (!os) return () => undefined;
   const root = document.documentElement;
   const cleanups = [
-    installPlatformClasses(root, env, typeof window.matchMedia === "function" ? (q) => window.matchMedia(q) : noMedia),
+    installPlatformClasses(root, env, typeof window.matchMedia === "function" ? (q) => window.matchMedia(q) : noMedia, () => deviceShortSide(window)),
     installKeyboardInset(window, root),
     ...(os === "android" && env.isTauri ? [installAndroidBack(tauriBackButton)] : []),
   ];

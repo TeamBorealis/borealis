@@ -34,7 +34,7 @@ describe("phone platform classes (B-48 WP1, spec sec. 0)", () => {
     expect(detectPhoneOs(env({ isTauri: false, userAgent: WIN, search: "?mock=desktop" }))).toBeNull();
   });
 
-  it("sets html.phone and the OS class on a narrow phone, and follows the narrow query", () => {
+  it("sets html.phone and the OS class on a narrow tablet-sized screen, and follows the narrow query", () => {
     const root = document.documentElement;
     const media = fakeMedia(true);
     const off = installPlatformClasses(root, env({ userAgent: ANDROID }), media.matchMedia);
@@ -42,7 +42,7 @@ describe("phone platform classes (B-48 WP1, spec sec. 0)", () => {
     expect(root.classList.contains("android")).toBe(true);
     expect(root.classList.contains("ios")).toBe(false);
     expect(isPhone()).toBe(true);
-    media.set(false); // a phone turned to a wide landscape gets the wide shell, so the phone layer steps aside
+    media.set(false); // a tablet (no short side given) turned to a wide landscape gets the wide shell (U9b: phones keep it)
     expect(root.classList.contains("phone")).toBe(false);
     expect(isPhone()).toBe(false);
     media.set(true);
