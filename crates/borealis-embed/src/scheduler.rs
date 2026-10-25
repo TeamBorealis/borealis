@@ -258,7 +258,8 @@ impl IndexJob {
         self.removed
     }
 
-    /// Embed queued chunks batch by batch until done, paused, cancelled or disabled, checkpointing `store`.
+    /// Embed queued chunks batch by batch until done, paused, cancelled or disabled, checkpointing `store`. When
+    /// the queue empties the store is marked complete ([`VectorStore::mark_complete`]) before the last save.
     ///
     /// # Errors
     /// Store I/O errors and backend errors other than degenerate vectors (the checkpoint is saved first; the
@@ -271,23 +272,46 @@ impl IndexJob {
         options: RunOptions,
         cancel: &AtomicBool,
     ) -> Result<RunOutcome> {
+        self.run_observed(store, embedder, scheduler, options, cancel, &mut |_| {})
+    }
+
+    /// [`Self::run`], calling `checkpoint` with the store after every save (the app publishes a read snapshot
+    /// there).
+    ///
+    /// # Errors
+    /// As [`Self::run`].
+    pub fn run_observed(
+        &mut self,
+        store: &mut VectorStore,
+        embedder: &GuardedEmbedder,
+        scheduler: &Scheduler,
+        options: RunOptions,
+        cancel: &AtomicBool,
+        checkpoint: &mut dyn FnMut(&VectorStore),
+    ) -> Result<RunOutcome> {
         let mut embedded = 0;
         let mut last_checkpoint = Instant::now();
         let batch = options.batch.max(1);
+        let mut save = |store: &mut VectorStore| -> Result<()> {
+            store.save()?;
+            checkpoint(store);
+            Ok(())
+        };
         loop {
             if self.queue.is_empty() {
-                store.save()?;
+                store.mark_complete();
+                save(store)?;
                 return Ok(RunOutcome::Completed { embedded });
             }
             if cancel.load(Ordering::SeqCst) {
-                store.save()?;
+                save(store)?;
                 return Ok(RunOutcome::Cancelled {
                     embedded,
                     remaining: self.remaining(),
                 });
             }
             if let Decision::Pause(reason) = scheduler.decide() {
-                store.save()?;
+                save(store)?;
                 if reason == PauseReason::GuardTripped {
                     if let Some(report) = embedder.guard().report() {
                         return Ok(RunOutcome::Disabled { report });
@@ -303,7 +327,7 @@ impl IndexJob {
             match self.embed_front(store, embedder, n) {
                 Ok(()) => embedded += n,
                 Err(EmbedError::Degenerate(_) | EmbedError::Disabled(_)) => {
-                    store.save()?;
+                    save(store)?;
                     let report = embedder
                         .guard()
                         .report()
@@ -311,12 +335,12 @@ impl IndexJob {
                     return Ok(RunOutcome::Disabled { report });
                 }
                 Err(e) => {
-                    store.save()?;
+                    save(store)?;
                     return Err(e);
                 }
             }
             if last_checkpoint.elapsed() >= options.checkpoint_every {
-                store.save()?;
+                save(store)?;
                 last_checkpoint = Instant::now();
             }
         }

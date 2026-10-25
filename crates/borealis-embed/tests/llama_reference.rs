@@ -9,14 +9,16 @@
 //!   cargo test -p borealis-embed --features llama --release --test llama_reference -- --ignored --nocapture
 //! ```
 //! Optional: `BOREALIS_EMBED_THREADS` (default 4, as S0.2), `BOREALIS_EMBED_REF` (reference JSON; default
-//! `tests/fixtures/embeddinggemma-2-ref-fp32.json`, the spike's `ref-fp32.json`).
+//! `tests/fixtures/embeddinggemma-2-ref-fp32.json`, the spike's `ref-fp32.json`), `BOREALIS_EMBED_MAX_TOKENS`
+//! (a tier's chunk cap, e.g. 512 or 256: the context the app loads with, `LlamaOptions::for_max_tokens`; default
+//! the 2048 / 16 of S0.2).
 #![cfg(feature = "llama")]
 
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 use borealis_embed::download::file_sha256;
-use borealis_embed::llama::LlamaEmbedder;
+use borealis_embed::llama::{LlamaEmbedder, LlamaOptions};
 use borealis_embed::models::{self, ALL_FILES};
 use borealis_embed::vector::dot;
 use borealis_embed::{truncate_normalise, Embedder, ModelInfo};
@@ -88,6 +90,9 @@ fn ms(since: Instant) -> f64 {
     (since.elapsed().as_secs_f64() * 1e4).round() / 10.0
 }
 
+/// Query timings taken for the median.
+const QUERY_RUNS: usize = 10;
+
 /// Resident set size of this process in MB (desktop; the weights are mmapped, so mapped pages count once read).
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 fn rss_mb() -> Option<u64> {
@@ -102,7 +107,16 @@ fn rss_mb() -> Option<u64> {
     sys.process(pid).map(|p| p.memory() / 1_048_576)
 }
 
-#[cfg(any(target_os = "android", target_os = "ios"))]
+/// Android: `VmRSS` of `/proc/self/status` (kB).
+#[cfg(target_os = "android")]
+fn rss_mb() -> Option<u64> {
+    let status = std::fs::read_to_string("/proc/self/status").ok()?;
+    let line = status.lines().find(|l| l.starts_with("VmRSS:"))?;
+    let kb: u64 = line.split_whitespace().nth(1)?.parse().ok()?;
+    Some(kb / 1024)
+}
+
+#[cfg(target_os = "ios")]
 fn rss_mb() -> Option<u64> {
     None
 }
@@ -123,8 +137,13 @@ fn llama_backend_matches_the_fp32_reference() {
     let t = Instant::now();
     let sha_ok = file_sha256(&path).expect("hash") == info.sha256;
     let sha_ms = ms(t);
+    let max_tokens: Option<usize> = std::env::var("BOREALIS_EMBED_MAX_TOKENS")
+        .ok()
+        .and_then(|t| t.parse().ok());
+    let options = max_tokens.map_or_else(LlamaOptions::default, LlamaOptions::for_max_tokens);
     let t = Instant::now();
-    let embedder = LlamaEmbedder::load(&path, info.clone(), 256, threads).expect("load");
+    let embedder =
+        LlamaEmbedder::load_with(&path, info.clone(), 256, threads, options).expect("load");
     let load_ms = ms(t);
 
     // One string per call (as S0.2), then all 20 packed into decodes of several sequences.
@@ -156,11 +175,17 @@ fn llama_backend_matches_the_fp32_reference() {
     let t = Instant::now();
     embedder.embed_prompts(&chunks).expect("bench packed");
     let packed_per_s = BENCH_CHUNKS as f64 / t.elapsed().as_secs_f64();
-    let t = Instant::now();
-    embedder
-        .embed_query("how does grappling work")
-        .expect("query");
-    let query_ms = ms(t);
+    let mut query_ms: Vec<f64> = (0..QUERY_RUNS)
+        .map(|_| {
+            let t = Instant::now();
+            embedder
+                .embed_query("how does grappling work")
+                .expect("query");
+            ms(t)
+        })
+        .collect();
+    query_ms.sort_by(f64::total_cmp);
+    let query_ms = query_ms[QUERY_RUNS / 2];
 
     println!(
         "{}",
@@ -168,6 +193,8 @@ fn llama_backend_matches_the_fp32_reference() {
             "model": path.file_name().and_then(|n| n.to_str()),
             "quant": info.quant,
             "threads": threads,
+            "max_tokens": options.max_tokens,
+            "max_seqs": options.max_seqs,
             "sha_ms": sha_ms,
             "load_ms_incl_sha": load_ms,
             "min_cos_768_single": single_cos[0],
@@ -176,7 +203,7 @@ fn llama_backend_matches_the_fp32_reference() {
             "min_cos_256_packed": packed_cos[1],
             "chunks_per_s_sequential": (sequential_per_s * 10.0).round() / 10.0,
             "chunks_per_s_packed": (packed_per_s * 10.0).round() / 10.0,
-            "query_ms": query_ms,
+            "query_ms_median": query_ms,
             "rss_mb_after": rss_mb(),
         })
     );

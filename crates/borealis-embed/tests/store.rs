@@ -240,3 +240,38 @@ fn delete_all_removes_vectors_and_keys_only() {
         .collect();
     assert_eq!(left, ["meta.json"]);
 }
+
+#[test]
+fn completion_is_saved_and_a_new_model_or_dims_store_starts_incomplete() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let mut store = filled(tmp.path());
+    assert!(!store.is_complete());
+    store.mark_complete();
+    store.save().expect("save");
+    let snapshot = store.clone();
+    assert!(
+        snapshot.is_complete() && snapshot.len() == 4,
+        "a clone is a full snapshot"
+    );
+    let (reopened, status) = VectorStore::open(tmp.path(), id(256)).expect("reopen");
+    assert_eq!(status, OpenStatus::Loaded);
+    assert!(reopened.is_complete());
+    // Other dims: a new, empty and incomplete store.
+    let (other, status) = VectorStore::open(tmp.path(), id(128)).expect("open 128");
+    assert_eq!(status, OpenStatus::Created);
+    assert!(!other.is_complete() && other.is_empty());
+}
+
+#[test]
+fn a_keys_file_without_the_completion_field_reads_as_incomplete() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let mut store = filled(tmp.path());
+    store.save().expect("save");
+    let keys = fs::read_to_string(tmp.path().join(KEYS_FILE)).expect("keys");
+    assert!(
+        !keys.contains("complete"),
+        "the field is left out while false (S3.1 files)"
+    );
+    let (reopened, _) = VectorStore::open(tmp.path(), id(256)).expect("reopen");
+    assert!(!reopened.is_complete());
+}

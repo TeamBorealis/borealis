@@ -18,7 +18,9 @@
 //! `scale = max|x| / 127`. Rows are unit vectors before quantisation, so the dot product with an f32 query is
 //! `scale * sum(q[i] * query[i])`: exact brute force, no ANN (YAGNI below ~200k chunks).
 //!
-//! **Sidecar** `keys.json`: `{format, rows: [{key, hash, pack}]}`, row `n` describes binary row `n`. `key` is the
+//! **Sidecar** `keys.json`: `{format, rows: [{key, hash, pack}], complete}`, row `n` describes binary row `n`.
+//! `complete` (absent = false) records that one indexing run of this store finished: only then does search use
+//! it (S3.3), and later incremental runs keep it. `key` is the
 //! search `doc_key`, `hash` the chunk's content hash, `pack` the pack (or campaign) it came from, so a pack can be
 //! updated or dropped on its own (spec sec. 9).
 //!
@@ -136,10 +138,13 @@ struct KeyRow {
 struct KeysFile {
     format: String,
     rows: Vec<KeyRow>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    complete: bool,
 }
 
-/// Vectors of one corpus, in memory, with exact search.
-#[derive(Debug)]
+/// Vectors of one corpus, in memory, with exact search. A clone is a snapshot for readers (the app's query side
+/// reads a clone while the indexer keeps writing the original).
+#[derive(Debug, Clone)]
 pub struct VectorStore {
     dir: PathBuf,
     id: StoreId,
@@ -147,6 +152,7 @@ pub struct VectorStore {
     scales: Vec<f32>,
     data: Vec<i8>,
     index: HashMap<String, usize>,
+    complete: bool,
     dirty: bool,
 }
 
@@ -166,6 +172,7 @@ impl VectorStore {
             scales: Vec::new(),
             data: Vec::new(),
             index: HashMap::new(),
+            complete: false,
             dirty: false,
         };
         let bin = empty.bin_path();
@@ -202,6 +209,20 @@ impl VectorStore {
     #[must_use]
     pub fn len(&self) -> usize {
         self.keys.len()
+    }
+
+    /// True once an indexing run of this store (this model, quant, dims and prompt version) has finished.
+    #[must_use]
+    pub fn is_complete(&self) -> bool {
+        self.complete
+    }
+
+    /// Record that an indexing run finished (saved with the next [`Self::save`]).
+    pub fn mark_complete(&mut self) {
+        if !self.complete {
+            self.complete = true;
+            self.dirty = true;
+        }
     }
 
     #[must_use]
@@ -349,6 +370,7 @@ impl VectorStore {
         let keys_bytes = serde_json::to_vec(&KeysFile {
             format: KEYS_FORMAT.into(),
             rows: self.keys.clone(),
+            complete: self.complete,
         })
         .map_err(|e| EmbedError::Corrupt(e.to_string()))?;
         let body = self.body_bytes();
@@ -404,7 +426,7 @@ impl VectorStore {
         if Sha256::digest(body).as_slice() != header.body_sha256 {
             return Err(EmbedError::Corrupt("row digest mismatch".into()));
         }
-        let keys = self.read_keys(&header.keys_sha256)?;
+        let (keys, complete) = self.read_keys(&header.keys_sha256)?;
         if keys.len() != header.count {
             return Err(EmbedError::Corrupt(format!(
                 "{} keys for {} rows",
@@ -431,6 +453,7 @@ impl VectorStore {
             scales,
             data,
             index,
+            complete,
             dirty: false,
         })
     }
@@ -462,7 +485,7 @@ impl VectorStore {
 
     /// `keys.json` whose digest matches the header, falling back to a leftover `keys.json.tmp` (crash between
     /// the two renames of [`Self::save`]).
-    fn read_keys(&self, digest: &[u8; 32]) -> Result<Vec<KeyRow>> {
+    fn read_keys(&self, digest: &[u8; 32]) -> Result<(Vec<KeyRow>, bool)> {
         let path = self.dir.join(KEYS_FILE);
         for candidate in [path.clone(), tmp_path(&path)] {
             let Ok(bytes) = fs::read(&candidate) else {
@@ -479,7 +502,7 @@ impl VectorStore {
                     file.format
                 )));
             }
-            return Ok(file.rows);
+            return Ok((file.rows, file.complete));
         }
         Err(EmbedError::Corrupt(
             "keys.json missing or does not match".into(),

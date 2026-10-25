@@ -411,3 +411,55 @@ fn plan_drops_vanished_and_changed_rows_and_queues_only_new_hashes() {
     assert_eq!(job.remaining(), 0);
     assert_eq!(store.len(), 1);
 }
+
+#[test]
+fn a_finished_run_marks_the_store_complete_and_every_save_is_observed() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    let device = Arc::new(SimulatedDevice::new(on_battery(90)));
+    let (mut store, embedder, scheduler) = setup(tmp.path(), Tier::T1, device.clone(), ON);
+    let mut job = IndexJob::plan(&mut store, items("srd", 6));
+    let cancel = AtomicBool::new(false);
+    let mut seen = Vec::new();
+    // Unplugged: paused, saved and observed, not complete.
+    let out = job
+        .run_observed(
+            &mut store,
+            &embedder,
+            &scheduler,
+            opts(2),
+            &cancel,
+            &mut |s| {
+                seen.push((s.len(), s.is_complete()));
+            },
+        )
+        .expect("run");
+    assert!(matches!(out, RunOutcome::Paused { .. }));
+    assert_eq!(seen, vec![(0, false)]);
+    device.set(DeviceState::DESKTOP);
+    let out = job
+        .run_observed(
+            &mut store,
+            &embedder,
+            &scheduler,
+            opts(2),
+            &cancel,
+            &mut |s| {
+                seen.push((s.len(), s.is_complete()));
+            },
+        )
+        .expect("run");
+    assert_eq!(out, RunOutcome::Completed { embedded: 6 });
+    assert_eq!(
+        seen.last(),
+        Some(&(6, true)),
+        "complete before the last save"
+    );
+    // Reopened: still complete; an incremental plan with new work keeps the flag (search keeps using it).
+    let id = store.id().clone();
+    drop(store);
+    let (mut store, _) = VectorStore::open(tmp.path(), id).expect("reopen");
+    assert!(store.is_complete());
+    let job = IndexJob::plan(&mut store, items("srd", 8));
+    assert_eq!(job.remaining(), 2);
+    assert!(store.is_complete());
+}
