@@ -184,6 +184,22 @@ impl AppState {
         self.insert_session(id, character, path, false)
     }
 
+    /// The file of an open character was replaced from outside (device transfer, opened bundle):
+    /// its session reloads from disk, so the screen shows the received copy and a later (auto)save
+    /// cannot write the old copy back over it. A character that is not open is left alone.
+    ///
+    /// # Errors
+    /// `invalid_argument` for a bad id or an unreadable file.
+    pub fn reload_if_open(&self, id: &str) -> ApiResult<bool> {
+        if !self.sessions()?.contains_key(id) {
+            return Ok(false);
+        }
+        let path = self.character_path(id)?;
+        let character = Character::load(&path)?;
+        self.insert_session(id, character, path, false)?;
+        Ok(true)
+    }
+
     /// Save to the character's own file (silent save, also used by autosave).
     ///
     /// # Errors

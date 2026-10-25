@@ -209,6 +209,28 @@ fn newest_edit_wins_and_the_replaced_copy_goes_to_the_trash() {
     assert_eq!(local_name(&d).as_deref(), Some("Mira (mine)"));
 }
 
+/// HW1 S9 (emulator): a newer copy received while that character was open was written to disk, but
+/// the open session kept the old copy, showed it, and the next (auto)save wrote it back over the
+/// newer one. The open character now follows the received copy.
+#[test]
+fn an_open_character_follows_a_received_newer_copy() {
+    let (a, b) = (dev("Mac"), dev("Phone"));
+    let files = tempfile::tempdir().unwrap();
+    put_character(&b, "Mira (old)", Duration::from_secs(3600));
+    assert_eq!(b.state.load_character(ID).unwrap().name, "Mira (old)");
+    put_character(&a, "Mira", Duration::from_secs(60));
+    let preview = open(&b, &export(&a, files.path()));
+    assert_eq!(preview.preview.items[0].action, "replace");
+    b.sync.accept_bundle(&preview.bundle_id).unwrap();
+    assert_eq!(b.state.get_snapshot(ID).unwrap().name, "Mira");
+    b.state.save_character(ID).unwrap();
+    assert_eq!(
+        local_name(&b).as_deref(),
+        Some("Mira"),
+        "a save keeps the received copy"
+    );
+}
+
 #[test]
 fn a_tampered_bundle_is_refused_with_a_plain_message_and_writes_nothing() {
     let (a, b) = (dev("Mac"), dev("Phone"));

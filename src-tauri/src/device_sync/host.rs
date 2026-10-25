@@ -149,6 +149,15 @@ impl ReceiveHost for AppReceiver {
             apply_plan(bundle, plan, &t, &AppValidator)
                 .map_err(|e| borealis_transfer::plain_reason(&e))?
         };
+        for (_, id) in report
+            .replaced
+            .iter()
+            .filter(|(k, _)| *k == borealis_bundle::ItemKind::Character)
+        {
+            if let Err(e) = state.reload_if_open(id) {
+                tracing::warn!("device sync: open character not reloaded: {}", e.message);
+            }
+        }
         let packs_changed = report
             .added
             .iter()

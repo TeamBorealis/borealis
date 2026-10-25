@@ -1,6 +1,7 @@
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { Api, CharacterSnapshot } from "../api/contract";
 import { useToast } from "../components/Toast";
+import { onBundleApplied } from "../pages/transfer/openBundle";
 import { useApi } from "./ApiContext";
 import { useSettings } from "./SettingsContext";
 import { describeAdopt, describeChange, setStatus } from "./status";
@@ -133,6 +134,19 @@ export function CharacterProvider({ children, restore = true }: { children: Reac
     setSavedByUser(false);
     setSaveOpen(false);
     setStatus("");
+  }, [api]);
+
+  // A receive or an accepted bundle may have replaced the open character's file; the backend reloads its
+  // session from that file, so re-read it here too (HW1 S9: the screen kept the old copy).
+  useEffect(() => {
+    const reread = () => {
+      const id = idRef.current;
+      if (!id) return;
+      api.getSnapshot({ characterId: id }).then((s) => idRef.current === id && setSnapshot(s)).catch(() => undefined);
+    };
+    const offLink = api.subscribe("link:status", (s) => { if (s.role === "receive" && s.phase === "done") reread(); });
+    const offBundle = onBundleApplied(reread);
+    return () => { offLink(); offBundle(); };
   }, [api]);
 
   // Autosave draft (silent) after a quiet period.
