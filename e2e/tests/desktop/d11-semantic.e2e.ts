@@ -53,6 +53,7 @@ desktopSuite('d11', 'consent, download, index, then Keyword + semantic in Settin
   await screen.getByLabel('Compendium search').fill('spell that makes an enemy fall asleep');
   await pressKey(ctx, 'Enter');
   await expect(screen.getByLabel(/^Search mode/).first()).toBeVisible(SLOW);
-  await expect(screen.getByText(/^Keyword \+ semantic$/).first()).toBeVisible(SLOW);
+  // The footer is upper case on screen (CSS), and the macOS tree reports the rendered text.
+  await expect(screen.getByText(/^keyword \+ semantic$/i).first()).toBeVisible(SLOW);
   await app.screenshot('d11-6-footer');
 }, { timeout: 120 * 60_000, ...(skip ? { skip } : {}) });

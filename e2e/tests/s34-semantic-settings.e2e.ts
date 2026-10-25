@@ -59,7 +59,7 @@ async function waitLine(ctx: Ctx, label: string, want: string | RegExp): Promise
 }
 
 const semanticIndexLine = (ctx: Ctx): Promise<string> => ctx.browser.evaluate((_: null) =>
-  (document.querySelector('[role=status][aria-label="Semantic index"]') as HTMLElement | null)?.innerText.trim() ?? '', null);
+  (document.querySelector('[role=status].aur-set-index-line') as HTMLElement | null)?.innerText.trim() ?? '', null);
 
 async function consentAndDownload(ctx: Ctx, indexing: string): Promise<void> {
   await ctx.screen.getByRole('checkbox', SWITCH).tap();

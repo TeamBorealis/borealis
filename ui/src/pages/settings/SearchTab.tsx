@@ -142,7 +142,8 @@ export function SearchTab() {
             <>
               <FieldLabel>SEMANTIC INDEX</FieldLabel>
               {st.indexing.state === "indexing" && <MetroProgressBar label="Semantic index" value={st.indexing.done} max={Math.max(st.indexing.total, 1)} />}
-              <p className="aur-set-help" role="status" aria-label="Semantic index">{indexingText(st)}</p>
+              {/* No aria-label: it would replace the sentence for screen readers (Android reads only the name). */}
+              <p className="aur-set-help aur-set-index-line" role="status">{indexingText(st)}</p>
             </>
           )}
           {(busy || resumable) && (

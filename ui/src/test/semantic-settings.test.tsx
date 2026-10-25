@@ -277,7 +277,9 @@ describe("semantic index (S3.3)", () => {
     expect(await within(dialog).findByText(/^Building the semantic index: \d+ of 1200 passages\./)).toBeTruthy();
     expect(within(dialog).getByText("On: search uses keywords until the semantic index is built.")).toBeTruthy();
     expect(await within(dialog).findByText(/^On: search also finds/, {}, { timeout: 3000 })).toBeTruthy();
-    expect(within(dialog).getByRole("status", { name: "Semantic index" }).textContent).toBe(READY_LINE);
+    // The status line is read by its sentence, not a label that would hide it from screen readers.
+    const status = within(dialog).getAllByRole("status").find((e) => e.textContent === READY_LINE);
+    expect(status?.getAttribute("aria-label")).toBeNull();
   });
 
   it("a device too slow for the 40 ms budget stays keyword-only with the too-slow line (PH1)", async () => {
