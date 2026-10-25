@@ -31,6 +31,8 @@ export function BottomBar() {
   // B-48 O1: on phones the tabs stay tappable without a character (they show "No character open"); the icon sits in a pill (Android cue).
   const phone = usePhone();
   const icon = (name: (typeof MAIN_TABS)[number]["icon"]) => (phone ? <span className="bb-pill"><Icon name={name} /></span> : <Icon name={name} />);
+  // WP8: /more belongs to the Start section, so Start was drawn current next to More; on phones only More is (desktop: U7).
+  const current = (id: string) => id === active.id && !(phone && pathname === "/more");
   return (
     <nav className="aur-bottombar" aria-label="Main">
       {primary.map((t) => {
@@ -39,7 +41,7 @@ export function BottomBar() {
         const body = (<>{icon(t.icon)}<span className="label">{t.short}</span>{remaining > 0 && <span className="badge-count" aria-label={`${remaining} choices remaining`}>{remaining}</span>}</>);
         return off
           ? <span key={t.id} className="bb-item disabled" aria-disabled="true">{body}</span>
-          : <NavLink key={t.id} to={t.to} role="link" aria-label={remaining > 0 ? `${t.short}, ${remaining} choices remaining` : t.short} data-testid={`nav-${t.id}`} className="bb-item" aria-current={t.id === active.id ? "page" : undefined} data-selected={t.id === active.id}>{body}</NavLink>;
+          : <NavLink key={t.id} to={t.to} role="link" aria-label={remaining > 0 ? `${t.short}, ${remaining} choices remaining` : t.short} data-testid={`nav-${t.id}`} className="bb-item" aria-current={current(t.id) ? "page" : undefined} data-selected={current(t.id)}>{body}</NavLink>;
       })}
       <NavLink to="/more" role="link" aria-label="More" data-testid="nav-more" className="bb-item" data-selected={pathname === "/more" || (!primary.includes(active) && active.id !== "start")}>{icon("more")}<span className="label">More</span></NavLink>
     </nav>

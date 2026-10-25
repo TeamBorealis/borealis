@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { installKeyboardInset, keyboardInset } from "../lib/keyboardInset";
 
 /** A window with a visualViewport the test resizes, as the on-screen keyboard does. */
@@ -36,21 +36,29 @@ describe("--kb keyboard inset (B-48 WP1, spec sec. 5.4)", () => {
   it("keeps a focused field in view when the keyboard opens", () => {
     const root = document.documentElement;
     const { win, open } = fakeWindow(852);
+    // WP8: centred inside its own scroller (not scrollIntoView, which also scrolled the page on iOS).
+    const scroller = document.createElement("div");
+    scroller.style.overflowY = "auto";
+    Object.defineProperty(scroller, "scrollHeight", { value: 1000 });
+    Object.defineProperty(scroller, "clientHeight", { value: 300 });
+    let top = 0;
+    Object.defineProperty(scroller, "scrollTop", { get: () => top, set: (v: number) => { top = v; } });
+    const rect = (t: number, h: number) => () => ({ top: t, height: h, bottom: t + h, left: 0, right: 300, width: 300, x: 0, y: t, toJSON: () => ({}) });
+    scroller.getBoundingClientRect = rect(0, 300);
     const field = document.createElement("input");
-    document.body.appendChild(field);
-    const spy = vi.fn();
-    field.scrollIntoView = spy;
+    field.getBoundingClientRect = rect(500, 40);
+    scroller.appendChild(field);
+    document.body.appendChild(scroller);
     const off = installKeyboardInset(win as unknown as Window, root);
     field.focus();
     open(336);
-    expect(spy).toHaveBeenCalledWith({ block: "center", inline: "nearest" });
-    spy.mockClear();
+    expect(top).toBe(370);
     const button = document.createElement("button");
-    document.body.appendChild(button);
-    button.scrollIntoView = spy;
+    button.getBoundingClientRect = rect(800, 40);
+    scroller.appendChild(button);
     button.focus();
     open(320);
-    expect(spy).not.toHaveBeenCalled(); // only text entry brings up a keyboard
+    expect(top).toBe(370); // only text entry brings up a keyboard
     off();
   });
 

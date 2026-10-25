@@ -24,6 +24,32 @@ export function setNativeKeyboardInset(px: number): void {
 
 const TEXT_ENTRY = 'input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"]';
 
+/** The nearest ancestor that scrolls vertically (the sheet body or the content area), or null. */
+function scrollerOf(el: HTMLElement): HTMLElement | null {
+  const view = el.ownerDocument.defaultView;
+  if (!view) return null;
+  for (let a = el.parentElement; a && a !== el.ownerDocument.body; a = a.parentElement) {
+    const y = view.getComputedStyle(a).overflowY;
+    if ((y === "auto" || y === "scroll") && a.scrollHeight > a.clientHeight) return a;
+  }
+  return null;
+}
+
+/**
+ * Centres the focused field in its own scroller. Not `scrollIntoView`: on iOS that also scrolled the page itself (the
+ * shell never scrolls), which pushed fixed sheets up so the Settings footer sat under the keyboard bar (WP8, simulator).
+ * A page scroll iOS made on its own is undone; the sheets already keep above the keyboard through `--kb`.
+ */
+function revealInScroller(field: HTMLElement, win: Window): void {
+  const scroller = scrollerOf(field);
+  if (scroller) {
+    const f = field.getBoundingClientRect();
+    const s = scroller.getBoundingClientRect();
+    scroller.scrollTop += Math.round(f.top + f.height / 2 - (s.top + s.height / 2));
+  }
+  if (typeof win.scrollTo === "function" && (win.scrollY ?? 0) > 0) win.scrollTo(0, 0);
+}
+
 export function installKeyboardInset(win: Window, root: HTMLElement): () => void {
   const vv = win.visualViewport;
   if (!vv) return () => undefined;
@@ -35,7 +61,7 @@ export function installKeyboardInset(win: Window, root: HTMLElement): () => void
     last = kb;
     root.style.setProperty("--kb", `${kb}px`);
     const focused = root.ownerDocument.activeElement;
-    if (opened && focused instanceof HTMLElement && focused.matches(TEXT_ENTRY)) focused.scrollIntoView({ block: "center", inline: "nearest" });
+    if (opened && focused instanceof HTMLElement && focused.matches(TEXT_ENTRY)) revealInScroller(focused, win);
   };
   update();
   refresh = update;
