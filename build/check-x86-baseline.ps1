@@ -1,6 +1,6 @@
 # Windows counterpart of check-x86-baseline.sh (S3.3 handoff sec. 7 item 3; MSVC has no objdump): the built
 # llama.cpp static libraries (ggml-cpu.lib and the rest) must contain no AVX / AVX-512 code (no ymm / zmm register,
-# no VEX / EVEX `v`-prefixed mnemonic) outside code that MSVC itself guards with a CPU check, and every CMake cache
+# no VEX / EVEX `v`-prefixed mnemonic) outside code that MSVC itself guards with a run-time CPU check, and every CMake cache
 # must have GGML_AVX2 OFF and no x86 SIMD option ON.
 #   pwsh build/check-x86-baseline.ps1 target/release
 param([string]$Root = 'target', [int]$Context = 14)
@@ -19,6 +19,10 @@ if (-not ($libs | Where-Object Name -eq 'ggml-cpu.lib')) { Write-Output "no ggml
 # dumpbin /disasm: a function label at column 0 (`name:`), then `  0000000000000010: C5 FC 77    vzeroall`.
 $insn = '^\s+[0-9A-F]{8,16}: (?:[0-9A-F]{2} )+\s*([a-z][a-z0-9]*)'
 $label = '^(\S.*):$'
+# MSVC's own run-time CPU dispatch: the CRT's `__isa_available` (auto-vectoriser and CRT paths with AVX2 / AVX-512
+# variants) and the STL's `_Avx2WmemEnabled` (vectorised wmemchr in std::filesystem). Code behind them runs only on
+# CPUs that have the extension (S3.4: Intel SDE -mrm runs these libraries on a Core 2 without an SDE error).
+$guard = '__isa_available|_Avx2WmemEnabled'
 $bad = 0
 foreach ($lib in $libs) {
     $total = 0; $xmm = 0; $isa = 0
@@ -28,7 +32,7 @@ foreach ($lib in $libs) {
     & $dumpbin /nologo /disasm $lib.FullName | ForEach-Object {
         $line = $_
         if ($line -cmatch $label) { $fn = $Matches[1]; $recent.Clear() }
-        if ($line.Contains('__isa_available')) { $isa++; $guarded[$fn] = $true }
+        if ($line -cmatch $guard) { $isa++; $guarded[$fn] = $true }
         if ($line -cmatch $insn) {
             $total++
             $m = $Matches[1]
@@ -43,13 +47,13 @@ foreach ($lib in $libs) {
     }
     $open = @($hits | Where-Object { -not $guarded[$_.Fn] })
     $fns = @($hits | ForEach-Object Fn | Sort-Object -Unique)
-    Write-Output ("{0}: {1} instructions, {2} SSE (xmm); AVX/AVX-512 {3} in {4} functions, {5} outside a function that checks __isa_available ({6} references)" -f `
+    Write-Output ("{0}: {1} instructions, {2} SSE (xmm); AVX/AVX-512 {3} in {4} functions, {5} outside a block with an MSVC CPU check ({6} checks)" -f `
         $lib.Name, $total, $xmm, $hits.Count, $fns.Count, $open.Count, $isa)
     foreach ($f in $fns) {
         $n = @($hits | Where-Object Fn -eq $f).Count
-        Write-Output ("  {0}: {1} AVX ({2})" -f $f, $n, $(if ($guarded[$f]) { 'checks __isa_available' } else { 'no CPU check in the function' }))
+        Write-Output ("  {0}: {1} AVX ({2})" -f $f, $n, $(if ($guarded[$f]) { 'behind an MSVC CPU check' } else { 'no CPU check in the function' }))
     }
-    foreach ($h in @($hits | Select-Object -First 2)) {
+    foreach ($h in @(@($open) + @($hits) | Select-Object -First 1)) {
         Write-Output "  first hits in $($h.Fn): $($h.Line)"
         $h.Before | ForEach-Object { Write-Output "    | $_" }
     }
