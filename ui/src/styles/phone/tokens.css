@@ -135,7 +135,7 @@ html.phone.android {
   --ph-row: 52px;
   --ph-bar: 56px;
   --ph-tabbar: 64px;
-  --safe-b: max(env(safe-area-inset-bottom, 0px), 16px);
+  --safe-b: max(env(safe-area-inset-bottom, 0px), 16px, var(--sys-inset-b, 0px));
 }
 
 @media (prefers-reduced-motion: reduce) {

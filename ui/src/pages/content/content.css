@@ -63,6 +63,12 @@
 .v4-grid-row .nm em { font-style: normal; color: var(--text-secondary); }
 .v4-grid-empty { padding: 12px; color: var(--text-secondary); }
 @media (max-width: 899px) { .v4-sources-wrap { grid-template-columns: 1fr; } .v4-sources { padding: 8px 16px 90px; } .v4-grid-head, .v4-grid-row { grid-template-columns: 34px minmax(0, 3fr) minmax(0, 2fr); } .v4-grid-head > :nth-child(n+4), .v4-grid-row > :nth-child(n+4) { display: none; } }
+/* HW1 A3 (412 px phone): the column may shrink below the toolbar, which wraps instead of widening the page, and the list
+   keeps a height in landscape. Phones only: a narrow desktop window keeps today's layout (U7). */
+html.phone .v4-sources-wrap { grid-template-columns: minmax(0, 1fr); }
+html.phone .v4-grid-tools { flex-wrap: wrap; row-gap: 8px; }
+html.phone .v4-grid-tools .search { width: 100%; }
+html.phone .v4-grid { min-height: 180px; }
 
 .v4-badge { margin-left: 6px; min-width: 16px; padding: 0 4px; background: var(--gold); color: #111; font-size: 10px; font-weight: 600; line-height: 16px; text-align: center; display: inline-block; }
 .v4-status { margin: 10px 0 0; color: var(--text-secondary); font-size: var(--fs-sm); }

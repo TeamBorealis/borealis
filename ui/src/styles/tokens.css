@@ -250,5 +250,12 @@
   }
 }
 
-/* Android WebViews drawn edge to edge report no bottom inset: keep the bottom bar clear of the gesture bar. */
-:root.android { --safe-b: max(env(safe-area-inset-bottom, 0px), 20px); }
+/* Android WebViews drawn edge to edge report only the display cutout in env(): MainActivity sends the system
+   bars as --sys-inset-* (lib/androidInsets.ts), so the title bar clears the status bar in landscape too, and
+   the bottom bar keeps its floor above the gesture bar (HW1 A2). Android only: desktop never has html.android. */
+:root.android {
+  --safe-t: max(env(safe-area-inset-top, 0px), var(--sys-inset-t, 0px));
+  --safe-r: max(env(safe-area-inset-right, 0px), var(--sys-inset-r, 0px));
+  --safe-b: max(env(safe-area-inset-bottom, 0px), 20px, var(--sys-inset-b, 0px));
+  --safe-l: max(env(safe-area-inset-left, 0px), var(--sys-inset-l, 0px));
+}

@@ -88,7 +88,7 @@ describe("mobile CSS guards", () => {
     expect(css("base.css")).toMatch(/@media \(pointer: coarse\)[\s\S]*font-size: 16px/);
   });
   it("Android gets a bottom safe-area floor; the bottom bar and status bar respect safe areas", () => {
-    expect(css("tokens.css")).toMatch(/:root\.android \{ --safe-b: max\(env\(safe-area-inset-bottom, 0px\), \d+px\)/);
+    expect(css("tokens.css")).toMatch(/:root\.android \{[^}]*--safe-b: max\(env\(safe-area-inset-bottom, 0px\), \d+px/);
     expect(css("shell.css")).toMatch(/\.aur-bottombar \{[^}]*var\(--safe-b\)/);
     expect(css("shell.css")).toMatch(/\.aur-window\.narrow \.aur-status \.status-msg \{ flex: 1 1 0; min-width: 0/);
   });

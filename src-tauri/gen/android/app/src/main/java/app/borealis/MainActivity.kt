@@ -9,6 +9,8 @@ import android.util.Base64
 import android.util.Log
 import android.webkit.WebView
 import androidx.activity.enableEdgeToEdge
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -35,6 +37,15 @@ class MainActivity : TauriActivity() {
   override fun onWebViewCreate(webView: WebView) {
     this.webView = webView
     super.onWebViewCreate(webView)
+    webView.addJavascriptInterface(InsetsBridge(), "BorealisInsets")
+    ViewCompat.setOnApplyWindowInsetsListener(webView) { view, insets ->
+      val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+      val json = SystemInsets.json(bars.top, bars.right, bars.bottom, bars.left, resources.displayMetrics.density)
+      SystemInsets.update(json)
+      view.post { webView.evaluateJavascript(SystemInsets.applyScript(json), null) }
+      // Keep the WebView's own handling (safe-area env(), keyboard resize).
+      ViewCompat.onApplyWindowInsets(view, insets)
+    }
   }
 
   private fun handleIntent(intent: Intent?) {

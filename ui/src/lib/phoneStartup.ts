@@ -1,4 +1,5 @@
-import { installAndroidBack } from "./androidBack";
+import { installAndroidBack, tauriBackButton } from "./androidBack";
+import { installAndroidInsets } from "./androidInsets";
 import { installKeyboardInset } from "./keyboardInset";
 import { detectPhoneOs, installPlatformClasses, type PlatformEnv } from "./phone";
 import { isTauri } from "./tauri";
@@ -7,17 +8,20 @@ import { isTauri } from "./tauri";
 const noMedia = () => ({ matches: false, addEventListener: () => undefined, removeEventListener: () => undefined });
 
 /**
- * B-48 startup (mobile-facelift-spec sec. 0, 5): platform classes, the keyboard inset and, on Android, the back stack.
- * Does nothing on desktop builds.
+ * B-48 startup (mobile-facelift-spec sec. 0, 5): platform classes, the keyboard inset and, on Android, the system-bar insets
+ * (HW1 A2) and the back stack. Does nothing on desktop builds. Returns a cleanup (tests).
  */
-export function startPhone(): void {
+export function startPhone(): () => void {
   const env: PlatformEnv = { userAgent: navigator.userAgent, maxTouchPoints: navigator.maxTouchPoints ?? 0, search: window.location.search, isTauri: isTauri() };
   const os = detectPhoneOs(env);
-  if (!os) return;
+  if (!os) return () => undefined;
   const root = document.documentElement;
-  installPlatformClasses(root, env, typeof window.matchMedia === "function" ? (q) => window.matchMedia(q) : noMedia);
-  installKeyboardInset(window, root);
-  if (os === "android" && env.isTauri) {
-    installAndroidBack((handler) => import("@tauri-apps/api/app").then((m) => m.onBackButtonPress(handler)));
-  }
+  const cleanups = [
+    installPlatformClasses(root, env, typeof window.matchMedia === "function" ? (q) => window.matchMedia(q) : noMedia),
+    installKeyboardInset(window, root),
+    ...(os === "android" && env.isTauri ? [installAndroidBack(tauriBackButton)] : []),
+  ];
+  // MainActivity calls this hook for the app's lifetime, so it stays installed.
+  if (os === "android") installAndroidInsets();
+  return () => cleanups.forEach((c) => c());
 }
