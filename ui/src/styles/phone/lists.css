@@ -1,0 +1,242 @@
+/*
+ * B-48 WP4 phone lists and pickers (mobile-facelift-spec sec. 3.4 Rows and lists, Pickers; options O2, O3, O14). Phones only.
+ * Grouped inset lists on the surface tone, the whole row is the target (48 pt iOS, 52 dp Android), compact one-line rows
+ * for scanning lists, the current row gets an accent tint plus a 3 px leading bar, the chosen row a check icon.
+ */
+
+/* ---------- Group headers (every expander: pickers, Play, Magic, Compendium groups) ---------- */
+html.phone .aur-expander { margin: 0 0 8px; }
+html.phone .aur-expander-head { min-height: var(--ph-hit); gap: 0; padding: 0; background: none; border: 0; }
+html.phone .aur-expander-toggle {
+  height: auto; min-height: var(--ph-hit); padding: 0 4px; color: var(--ph-text-2); border-radius: var(--ph-r-md);
+  transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .aur-expander-toggle:active, html.phone .aur-expander-chev:active { background: var(--ph-fill); }
+html.phone .aur-expander-title { font: 600 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; letter-spacing: 0; }
+html.phone .aur-expander-extra { gap: 4px; padding: 0; color: var(--ph-text-2); }
+html.phone .aur-expander-chev { width: var(--ph-hit); height: var(--ph-hit); padding: 0; justify-items: center; border-radius: var(--ph-r-pill); color: var(--ph-text-2); }
+html.phone .aur-expander-chev .icon { width: 20px; height: 20px; }
+html.phone .aur-expander-body, html.phone .aur-expander-footer { animation: ph-fade var(--ph-d-small) var(--ph-ease-out); }
+/* Expanders that title a sheet section (New character, Level up) read as section titles. */
+html.phone .aur-expander.flyout-variant .aur-expander-head { min-height: var(--ph-hit); }
+html.phone .aur-expander.flyout-variant .aur-expander-toggle, html.phone .aur-expander.flyout-variant .aur-expander-chev { color: var(--ph-text); }
+html.phone .aur-expander.flyout-variant .aur-expander-title { font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); }
+
+/* ---------- Selection pickers (Build steps): one grouped list per picker ---------- */
+html.phone .pick-stack { gap: 12px; }
+html.phone .pick-group-label { margin: 12px 4px 4px; font: 600 var(--ph-t-sub)/1.3 var(--ph-font-ui); color: var(--ph-gold); text-transform: none; }
+html.phone .pick .focus-bar, html.phone .pick.is-open .focus-bar, html.phone .pick.is-next .focus-bar { margin: 0; padding: 0; border-left: 0; }
+html.phone .pick .aur-expander { margin: 0; }
+html.phone .pick .aur-expander-head { border: 0; }
+html.phone .pick .aur-expander-chev { width: var(--ph-hit); padding: 0; justify-items: center; }
+html.phone .pick .aur-expander-chev .icon { width: 20px; height: 20px; }
+html.phone .pick.is-next .aur-expander-title { color: var(--ph-gold); }
+html.phone .pick-count { color: var(--ph-text-3); font-weight: 400; }
+html.phone .pick-tag {
+  width: var(--ph-hit); height: var(--ph-hit); margin: 0; border-radius: var(--ph-r-pill); color: var(--ph-text-2);
+  transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .pick-tag:active { background: var(--ph-fill); }
+html.phone .pick-tag .icon { width: 20px; height: 20px; }
+html.phone .pick-hint, html.phone .pick-empty { margin: 0 4px 8px; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); font-style: normal; color: var(--ph-text-2); }
+
+/* The list: one scroller per screen (no nested box), inset on the surface tone, rows separated by hairlines. */
+html.phone .pick-list { max-height: none; overflow: hidden; border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .pick-row { position: relative; min-height: var(--ph-row); }
+html.phone .pick-row + .pick-row { box-shadow: inset 0 1px 0 var(--ph-line); }
+html.phone .pick-main, html.phone .pick-list.with-desc .pick-main {
+  position: relative; flex: 1; width: 100%; height: auto; min-height: var(--ph-row); padding: 6px var(--ph-gutter);
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name mark" "src mark"; align-content: center; column-gap: 12px; row-gap: 1px;
+  background: none; color: var(--ph-text); font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); text-align: left; cursor: pointer;
+  transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .pick-main:active { background: var(--ph-raised); }
+html.phone .pick-name { grid-area: name; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.phone .pick-name.disabled { color: var(--ph-text-3); }
+html.phone .pick-src { grid-area: src; justify-content: flex-start; max-width: none; min-width: 0; font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .pick-src:empty { display: none; }
+html.phone .pick-list.with-desc .pick-desc { display: none; }
+/* Chosen state as an icon, not colour alone: an empty ring on every row, a filled check in a ring on the chosen one. */
+html.phone .pick-main::after {
+  content: ""; grid-area: mark; align-self: center; width: 24px; height: 24px; box-sizing: border-box;
+  border: 2px solid var(--ph-field-line); border-radius: 50%;
+}
+html.phone .pick-main[aria-pressed="true"]::after {
+  border: 0; background: var(--ph-accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1a11 11 0 1 0 0 22a11 11 0 1 0 0-22zm-1.6 15.6l-4.7-4.7 1.6-1.6 3.1 3.1 6.7-6.7 1.6 1.6z'/%3E%3C/svg%3E") center / 24px 24px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 1a11 11 0 1 0 0 22a11 11 0 1 0 0-22zm-1.6 15.6l-4.7-4.7 1.6-1.6 3.1 3.1 6.7-6.7 1.6 1.6z'/%3E%3C/svg%3E") center / 24px 24px no-repeat;
+}
+html.phone .pick-main[aria-disabled="true"]::after { opacity: 0.4; }
+html.phone .pick-row.selected .pick-main { background: none; }
+html.phone .pick-row.selected .pick-name { font-weight: 600; }
+/* The row being read (described): accent tint and a 3 px leading bar. */
+html.phone .pick-row.hl .pick-main { background: var(--ph-accent-soft); }
+html.phone .pick-row.hl .pick-main::before {
+  content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--ph-accent);
+}
+html.phone .pick-row > .ed-tag { min-width: var(--ph-hit); background: none; }
+html.phone .pick-row.hl > .ed-tag { background: var(--ph-accent-soft); }
+html.phone .pick-notes { padding: 0 var(--ph-gutter) 8px; font-size: var(--ph-t-foot); }
+/* Loading: three static rows in the list's shape (they pulse unless reduced motion is on). */
+html.phone .pick-skel { height: var(--ph-row); background: linear-gradient(var(--ph-fill), var(--ph-fill)) var(--ph-gutter) 50% / 45% 12px no-repeat; animation: ph-skel 1.2s ease-in-out infinite alternate; }
+html.phone .pick-skel + .pick-skel { box-shadow: inset 0 1px 0 var(--ph-line); }
+@keyframes ph-skel { from { opacity: 1; } to { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) { html.phone .pick-skel { animation: none; } }
+
+/* The chosen line under a collapsed picker: one grouped row with the check, the name, the source and a 44/48 pt clear button. */
+html.phone .pick-footer { margin-top: 0; }
+html.phone .pick-chosen {
+  min-height: var(--ph-row); height: auto; gap: 12px; padding: 4px 0 4px var(--ph-gutter);
+  border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); color: var(--ph-text);
+  font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui);
+}
+html.phone .pick.is-open .pick-chosen { margin-top: 8px; }
+html.phone .pick-chosen > .icon { width: 22px; height: 22px; color: var(--ph-accent); }
+html.phone .pick-chosen-name { font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .pick-chosen-src { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 45%; font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .pick-x { width: var(--ph-hit); min-height: var(--ph-hit); border-radius: var(--ph-r-pill); color: var(--ph-text-2); transition: background var(--ph-d-press) var(--ph-ease-out); }
+html.phone .pick-x:active { background: var(--ph-fill); }
+html.phone .pick-x .icon { width: 16px; height: 16px; }
+
+/* O2: "Choose <name>" under the list and its description, kept in reach at the bottom while the Build page scrolls. */
+html.phone .bp-choose {
+  position: sticky; bottom: 0; z-index: 3; padding: 12px var(--ph-gutter) 12px;
+  background: linear-gradient(to bottom, transparent, var(--ph-bg) 14px);
+}
+html.phone .bp-choose .bp-choose-btn { width: 100%; min-height: 52px; border-radius: var(--ph-r-lg); font-size: var(--ph-t-body); }
+
+/* The description pane under the list (as today) reads as a card in sentence case. */
+html.phone .bp-left { padding: 12px var(--ph-gutter) 16px; }
+html.phone .bp-right { margin: 0 var(--ph-gutter) 16px; border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); overflow: hidden; }
+html.phone .desc-scroll { margin: 0; padding: 16px var(--ph-gutter) 20px; font: 400 var(--ph-t-sub)/1.45 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .desc-title { margin: 0 96px 8px 0; font: 700 var(--ph-t-title2)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .desc-intro { color: var(--ph-text-2); }
+html.phone .desc-pane h3, html.phone .desc-h, html.phone .desc-pane h3.desc-src-h {
+  margin: 20px 0 6px; padding: 0; border: 0; font: 600 var(--ph-t-sub)/1.3 var(--ph-font-ui); color: var(--ph-text); text-transform: none;
+}
+html.phone .desc-cmds { top: 4px; right: 4px; }
+html.phone .desc-cmd { width: var(--ph-hit); height: var(--ph-hit); border-radius: var(--ph-r-pill); color: var(--ph-text-3); }
+html.phone .desc-cmd:active:not(:disabled) { background: var(--ph-fill); }
+html.phone .desc-source { min-height: var(--ph-hit); color: var(--ph-accent); text-decoration-color: var(--ph-accent); font-style: normal; }
+html.phone .build-empty { margin: 32px auto; font: 400 var(--ph-t-sub)/1.45 var(--ph-font-ui); color: var(--ph-text-2); }
+
+/* ---------- ListBox and the generic picker rows ---------- */
+html.phone .aur-listbox { overflow: hidden; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .aur-listbox.wrap { overflow: visible; background: none; gap: 8px; }
+html.phone .aur-listbox-item {
+  position: relative; display: flex; align-items: center; min-height: var(--ph-row); margin: 0; padding: 0 var(--ph-gutter);
+  border: 0; background: none; color: var(--ph-text); font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); cursor: pointer;
+  transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .aur-listbox-item + .aur-listbox-item { box-shadow: inset 0 1px 0 var(--ph-line); }
+html.phone .aur-listbox-item:active { background: var(--ph-raised); }
+html.phone .aur-listbox-item > * { flex: 1; min-width: 0; }
+html.phone .aur-listbox-item[aria-selected="true"] { background: var(--ph-accent-soft); }
+html.phone .aur-listbox-item[aria-selected="true"]::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--ph-accent); }
+html.phone .aur-listbox-item[aria-selected="true"]::after {
+  content: ""; flex: none; width: 22px; height: 22px; margin-left: 12px; background: var(--ph-accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 16.2l-4.2-4.2-1.4 1.4L9 19 21 7l-1.4-1.4z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 16.2l-4.2-4.2-1.4 1.4L9 19 21 7l-1.4-1.4z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+html.phone .aur-listbox.wrap .aur-listbox-item { margin: 0; border-radius: var(--ph-r-md); background: var(--ph-surface); box-shadow: none; }
+html.phone .focus-bar { border-left-width: 0; padding-left: 0; }
+html.phone .selection-picker { overflow: hidden; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .picker-item { position: relative; border: 0; }
+html.phone .picker-item + .picker-item { box-shadow: inset 0 1px 0 var(--ph-line); }
+html.phone .picker-item.selected { background: var(--ph-accent-soft); border: 0; }
+html.phone .picker-item-main {
+  min-height: var(--ph-row); gap: 12px; padding: 0 var(--ph-gutter); color: var(--ph-text); font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui);
+  transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .picker-item-main:active { background: var(--ph-raised); }
+html.phone .picker-item-check { width: 22px; color: var(--ph-accent); }
+html.phone .picker-item-check .icon { width: 22px; height: 22px; }
+html.phone .picker-item-name { font-weight: 400; }
+html.phone .picker-item.selected .picker-item-name { font-weight: 600; }
+html.phone .picker-item-source { font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .picker-item-clear { width: var(--ph-hit); color: var(--ph-text-2); }
+html.phone .choices-footer { min-height: 36px; padding: 8px 4px; font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-gold); text-transform: none; }
+html.phone .choices-footer.done { color: var(--ph-text-2); }
+html.phone .list-row { min-height: var(--ph-row); padding: 0 var(--ph-gutter); font-size: var(--ph-t-body); }
+
+/* ---------- Compendium list: compact one-line rows (name, trailing source), the snippet as a second line ---------- */
+html.phone .v4-comp-left { padding: 8px var(--ph-gutter) 20px; }
+html.phone .v4-comp-left > .tabs.sub { margin: 0 0 8px -4px; gap: 2px; }
+html.phone .v4-comp-left > .tabs.sub .tab {
+  position: relative; height: var(--ph-hit); min-width: var(--ph-hit); padding: 0 12px; justify-content: center; border-radius: var(--ph-r-md);
+  font: 500 var(--ph-t-sub)/1 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; letter-spacing: 0;
+}
+html.phone .v4-comp-left > .tabs.sub .tab:active { background: var(--ph-fill); }
+html.phone .v4-comp-left > .tabs.sub .tab[aria-selected="true"], html.phone .v4-comp-left > .tabs.sub .tab[aria-current="page"] { color: var(--ph-text); font-weight: 600; }
+html.phone .v4-comp-left > .tabs.sub .tab[aria-selected="true"]::after, html.phone .v4-comp-left > .tabs.sub .tab[aria-current="page"]::after {
+  content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--ph-accent);
+}
+html.phone .v4-comp-filters { gap: 8px; margin: 0 0 16px; }
+html.phone .v4-comp-filters .search { flex: 1 1 100%; }
+html.phone .v4-comp-filters .aur-combo { flex: 1 1 140px; min-width: 0; }
+html.phone .v4-comp-count { font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; }
+html.phone .v4-el { overflow: hidden; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .v4-el li + li button { box-shadow: inset 0 1px 0 var(--ph-line); }
+html.phone .v4-el button {
+  position: relative; min-height: var(--ph-row); padding: 6px var(--ph-gutter); column-gap: 12px; align-content: center;
+  border: 0; color: var(--ph-text); font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui);
+  transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .v4-el button:active { background: var(--ph-raised); }
+html.phone .v4-el button[aria-selected="true"] { background: var(--ph-accent-soft); }
+html.phone .v4-el button[aria-selected="true"]::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--ph-accent); }
+html.phone .v4-el .s { font: 400 var(--ph-t-foot)/1.3 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v4-el .snip { padding: 0; font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v4-el .snip mark { color: var(--ph-text); }
+html.phone .v4-comp-hint { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v4-comp-hint-link { min-height: var(--ph-hit); color: var(--ph-accent); }
+html.phone .v4-comp-foot { bottom: -20px; border-top-color: var(--ph-raised); background: var(--ph-raised); font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-3); text-transform: none; }
+html.phone .v4-desc { padding: 8px var(--ph-gutter) 24px; background: none; }
+html.phone .v4-desc h2 { margin: 8px 0 4px; font: 700 var(--ph-t-title2)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .v4-desc h4 { font: 600 var(--ph-t-sub)/1.3 var(--ph-font-ui); text-transform: none; }
+html.phone .v4-desc .flavour, html.phone .v4-desc .body, html.phone .v4-desc .kv { font-size: var(--ph-t-sub); }
+html.phone .v4-desc .v4-desc-attr { font-size: var(--ph-t-foot); }
+html.phone .v4-desc .empty { font: 400 var(--ph-t-sub)/1.45 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v4-desc a { color: var(--ph-accent); font-style: normal; }
+/* The entry's source link stands on its own line under "Source": a full 44/48 pt target. */
+html.phone .v4-desc h4 + a { display: inline-flex; align-items: center; min-height: var(--ph-hit); }
+
+/* ---------- Character collection: tiles, Edit and Delete at 44/48 pt, Open next to them (O3) ---------- */
+html.phone .v4-section { font: 700 var(--ph-t-title2)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .v4-lead { font: 400 var(--ph-t-sub)/1.45 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v4-rule h2 { font: 600 var(--ph-t-title3)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .v4-rule::after { background: var(--ph-line); }
+html.phone .v4-group > h3 { margin: 20px 4px 8px; font: 600 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; }
+html.phone .v4-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+html.phone .v4-tile {
+  display: flex; flex-direction: column; gap: 8px; width: auto; height: auto; aspect-ratio: auto; padding: 0;
+  border: 0; background: none; overflow: visible;
+}
+html.phone .v4-tile-open {
+  width: 100%; height: auto; aspect-ratio: 1; border-radius: var(--ph-r-lg); background: var(--ph-surface);
+  transition: transform var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .v4-tile-open:active { transform: scale(0.98); }
+html.phone .v4-tile.selected .v4-tile-open { box-shadow: 0 0 0 2px var(--ph-bg), 0 0 0 4px var(--ph-accent); }
+html.phone .v4-tile-open:focus-visible { outline: 2px solid var(--ph-accent); outline-offset: 2px; }
+html.phone .v4-tile-img { opacity: 0.6; font: 400 44px/1 var(--ph-font-name); color: rgb(238 242 243 / 0.5); }
+html.phone .v4-tile-text { padding: 32px 12px 12px; background: linear-gradient(180deg, transparent, rgb(8 12 14 / 0.88) 55%); }
+html.phone .v4-tile-name { font: 600 var(--ph-t-body)/1.25 var(--ph-font-name); color: #ffffff; text-transform: none; }
+html.phone .v4-tile.loaded .v4-tile-name { color: #e6b54f; }
+html.phone .v4-tile-build { margin-top: 2px; font: 400 var(--ph-t-foot)/1.3 var(--ph-font-ui); color: rgb(255 255 255 / 0.78); text-transform: none; }
+/* The actions sit over the portrait (Edit, Delete) and under the tile (Open); the group keeps their order. */
+html.phone .v4-tile-actions { display: contents; }
+html.phone .v4-tile-btn {
+  position: absolute; top: 6px; width: var(--ph-hit); height: var(--ph-hit); border-radius: var(--ph-r-pill);
+  background: rgb(8 12 14 / 0.62); color: #ffffff; transition: transform var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .v4-tile-btn:nth-child(1) { right: calc(12px + var(--ph-hit)); }
+html.phone .v4-tile-btn:nth-child(2) { right: 6px; }
+html.phone .v4-tile-btn:active { transform: scale(0.94); }
+html.phone .v4-tile-btn .icon { width: 20px; height: 20px; }
+html.phone .v4-tile-openbtn {
+  display: flex; align-items: center; justify-content: center; width: 100%; min-height: var(--ph-hit); padding: 0 12px;
+  border: 0; border-radius: var(--ph-r-md); background: var(--ph-accent); color: var(--ph-on-accent);
+  font: 600 var(--ph-t-sub)/1 var(--ph-font-ui); cursor: pointer; transition: transform var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .v4-tile-openbtn:active { transform: scale(0.97); }

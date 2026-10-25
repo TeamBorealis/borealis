@@ -1,0 +1,141 @@
+/*
+ * B-48 WP5 phone controls (mobile-facelift-spec sec. 3.4): buttons with press states, fields, the native select (O10),
+ * checkboxes (O6), switches, steppers, chips, empty and loading states. Phones only. Every control is at least 44 pt (iOS)
+ * or 48 dp (Android), answers a press within 100 ms (90 ms :active), reads in sentence case and never under 11 px.
+ */
+
+/* ---------- Buttons: radius 10, secondary = fill, one primary = accent, destructive = danger ---------- */
+html.phone .btn {
+  height: auto; min-height: var(--ph-hit); min-width: var(--ph-hit); padding: 0 16px; gap: 8px;
+  border: 0; border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text);
+  font: 600 var(--ph-t-sub)/1.2 var(--ph-font-ui); text-transform: none; letter-spacing: 0;
+  transition: transform var(--ph-d-press) var(--ph-ease-out), background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .btn:active:not(:disabled), html.phone .btn-highlight:active:not(:disabled) { transform: scale(0.97); background: var(--ph-raised); color: var(--ph-text); border-color: transparent; }
+html.phone .btn .icon { width: 18px; height: 18px; }
+html.phone .btn-primary, html.phone .btn-primary:active:not(:disabled) { background: var(--ph-accent); color: var(--ph-on-accent); }
+html.phone .btn-success, html.phone .btn-success:active:not(:disabled) { background: var(--ph-accent); color: var(--ph-on-accent); }
+html.phone .btn-danger, html.phone .btn-danger:active:not(:disabled) { background: var(--ph-danger-soft); color: var(--ph-danger); }
+html.phone .btn-warning { background: var(--ph-gold-soft); color: var(--ph-gold); }
+html.phone .btn-ghost, html.phone .btn-clear, html.phone .btn-flat { background: none; color: var(--ph-accent); }
+html.phone .btn-ghost:active:not(:disabled), html.phone .btn-clear:active:not(:disabled), html.phone .btn-flat:active:not(:disabled) { background: var(--ph-fill); color: var(--ph-accent); }
+html.phone .btn-flat { min-height: var(--ph-hit); background: var(--ph-fill); color: var(--ph-text); }
+html.phone .btn-sm { height: auto; min-height: var(--ph-hit); padding: 0 12px; font-size: var(--ph-t-foot); }
+html.phone .btn:disabled, html.phone .btn[aria-disabled="true"] { opacity: 0.45; }
+/* Icon buttons: 20 px glyph in a 44/48 pt box; a short caption (coin amounts) may sit beside the glyph. */
+html.phone .btn-icon { width: var(--ph-hit); min-width: var(--ph-hit); padding: 0; }
+html.phone .btn-icon .icon { width: 20px; height: 20px; }
+html.phone .btn-icon.has-caption { width: auto; padding: 0 10px; gap: 2px; font-variant-numeric: tabular-nums; }
+html.phone .btn-caption { font: 600 var(--ph-t-sub)/1 var(--ph-font-ui); }
+html.phone .bp-linkbtn { min-height: var(--ph-hit); color: var(--ph-accent); font-weight: 600; text-decoration: none; }
+
+/* ---------- Text fields and the native select: label above, 44/48 tall, fill with a 3:1 boundary ---------- */
+html.phone .field { gap: 6px; }
+html.phone .field > label, html.phone .field-label {
+  margin-top: 16px; font: 500 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; letter-spacing: 0;
+}
+html.phone .input, html.phone .select, html.phone .textarea, html.phone .aur-textbox input, html.phone .aur-combo select, html.phone .aur-numeric input,
+html.phone .aur-textbox.light input, html.phone .aur-combo.light select {
+  height: auto; min-height: var(--ph-hit); padding: 0 12px; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-md);
+  background: var(--ph-fill); color: var(--ph-text); font: 400 var(--ph-t-body)/1.25 var(--ph-font-ui);
+}
+html.phone .textarea { min-height: 96px; padding: 10px 12px; }
+html.phone .input:focus, html.phone .select:focus, html.phone .textarea:focus, html.phone .aur-textbox input:focus, html.phone .aur-combo select:focus, html.phone .aur-numeric input:focus {
+  border-color: var(--ph-accent); outline: 2px solid var(--ph-accent); outline-offset: -1px;
+}
+html.phone .input::placeholder, html.phone .aur-textbox input::placeholder, html.phone .textarea::placeholder { color: var(--ph-text-3); }
+html.phone .input[aria-invalid="true"], html.phone .aur-textbox input[aria-invalid="true"] { border-color: var(--ph-danger); }
+html.phone .hint { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .error-text { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-danger); }
+html.phone .aur-textbox-clear { right: 0; width: var(--ph-hit); height: var(--ph-hit); border-radius: var(--ph-r-pill); color: var(--ph-text-2); }
+html.phone .aur-textbox-clear .icon { width: 16px; height: 16px; }
+html.phone .aur-textbox:has(.aur-textbox-clear) input { padding-right: var(--ph-hit); }
+/* The native select (O10): the system wheel or dialog opens; the field shows a chevron. */
+html.phone .aur-combo select, html.phone .aur-combo.light select { padding-right: 36px; }
+html.phone .aur-combo > .aur-combo-arrow, html.phone .aur-combo.light > .aur-combo-arrow { right: 14px; width: 12px; height: 7px; fill: var(--ph-text-2); }
+html.phone select.select { appearance: none; -webkit-appearance: none; padding-right: 36px;
+  background: var(--ph-fill) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 7'%3E%3Cpath d='M0 0h12L6 7z' fill='%23aab6bb'/%3E%3C/svg%3E") right 14px center / 12px 7px no-repeat; }
+/* Search fields: the glyph inside, a 44/48 pt field. */
+html.phone .search .icon { left: 12px; width: 18px; height: 18px; color: var(--ph-text-3); }
+html.phone .search .input { padding-left: 38px; }
+
+/* ---------- Checkboxes stay checkboxes (O6): a 24 px rounded box, accent when on, a lock glyph when locked ---------- */
+html.phone .v4-cb, html.phone .check input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none; position: relative; flex: none; width: 24px; height: 24px; margin: 0;
+  border: 2px solid var(--ph-field-line); border-radius: 6px; background: transparent; cursor: pointer;
+  transition: background var(--ph-d-press) var(--ph-ease-out), border-color var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .v4-cb:checked, html.phone .check input[type="checkbox"]:checked, html.phone .v4-cb:indeterminate { border-color: var(--ph-accent); background: var(--ph-accent); }
+html.phone .v4-cb:checked::after, html.phone .check input[type="checkbox"]:checked::after {
+  content: ""; position: absolute; left: 6px; top: 1px; width: 6px; height: 12px; border: solid var(--ph-on-accent); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg);
+}
+html.phone .v4-cb:indeterminate::after { content: ""; position: absolute; left: 3px; top: 8px; width: 14px; height: 3px; border: 0; border-radius: 2px; background: var(--ph-on-accent); transform: none; }
+html.phone .v4-cb:disabled, html.phone .check input[type="checkbox"]:disabled { opacity: 0.45; }
+/* The 24 px box reaches the 44/48 pt hit area through an invisible extension (spec sec. 7: pseudo-element hit extensions). */
+html.phone .v4-cb::before, html.phone .check input[type="checkbox"]::before { content: ""; position: absolute; inset: calc((24px - var(--ph-hit)) / 2); }
+html.phone .v4-cb:focus-visible { outline: 2px solid var(--ph-accent); outline-offset: 2px; }
+html.phone .check { align-items: center; gap: 12px; min-height: var(--ph-row); padding: 4px 0; font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .check .hint { display: block; }
+
+/* ---------- Switches (Play states and the Metro switch): 51 x 31, white thumb, accent when on ---------- */
+html.phone .switch { width: 51px; height: 31px; }
+html.phone .switch input {
+  width: 51px; height: 31px; border: 0; border-radius: 16px; background: var(--ph-fill);
+  transition: background var(--ph-d-small) var(--ph-ease-out);
+}
+html.phone .switch input::after { top: 2px; left: 2px; width: 27px; height: 27px; background: #ffffff; box-shadow: 0 2px 4px rgb(0 0 0 / 0.25); transition: transform var(--ph-d-small) var(--ph-ease-out); }
+html.phone .switch input:checked { background: var(--ph-accent); }
+html.phone .switch input:checked::after { transform: translateX(20px); }
+html.phone .switch input::before { content: ""; position: absolute; top: calc((31px - var(--ph-hit)) / 2 - 1px); bottom: calc((31px - var(--ph-hit)) / 2 - 1px); left: -2px; right: -2px; }
+html.phone .aur-switch { min-height: var(--ph-hit); gap: 12px; font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .aur-switch-track { width: 51px; height: 31px; padding: 0 2px; border: 0; border-radius: 16px; background: var(--ph-fill); box-sizing: border-box; }
+html.phone .aur-switch-thumb { width: 27px; height: 27px; background: #ffffff; box-shadow: 0 2px 4px rgb(0 0 0 / 0.25); transition: transform var(--ph-d-small) var(--ph-ease-out); }
+html.phone .aur-switch[aria-checked="true"] .aur-switch-track { background: var(--ph-accent); outline: 0; }
+html.phone .aur-switch[aria-checked="true"] .aur-switch-thumb { background: #ffffff; transform: translateX(20px); }
+
+/* ---------- Steppers: the same - / + control, each half a full hit area, the value in tabular figures; hold repeats ---------- */
+html.phone .score-input { gap: 0; height: var(--ph-hit); border-radius: var(--ph-r-md); background: var(--ph-fill); }
+html.phone .score-input .btn-icon { width: var(--ph-hit); height: var(--ph-hit); min-height: var(--ph-hit); background: none; color: var(--ph-text); }
+html.phone .score-input .btn-icon:active:not(:disabled) { background: var(--ph-raised); }
+html.phone .score-input output { min-width: 40px; font: 600 var(--ph-t-body)/1 var(--ph-font-ui); font-variant-numeric: tabular-nums; }
+html.phone .aur-numeric { gap: 0; }
+html.phone .aur-numeric input { width: 56px; text-align: center; color: var(--ph-gold); font-weight: 600; font-variant-numeric: tabular-nums; }
+html.phone .aur-numeric:not(.compact) input { width: 64px; }
+html.phone .aur-numeric-btns { flex-direction: row-reverse; gap: 4px; margin-left: 4px; }
+html.phone .aur-numeric-btns button { width: var(--ph-hit); height: var(--ph-hit); border: 0; border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text); }
+html.phone .aur-numeric-btns button + button { border-top: 0; }
+html.phone .aur-numeric-btns button:active:not(:disabled) { background: var(--ph-raised); }
+html.phone .aur-numeric-btns button:disabled { opacity: 0.45; }
+html.phone .aur-numeric-btns .icon { width: 18px; height: 18px; }
+html.phone .abil-chev { width: var(--ph-hit); height: var(--ph-hit); border-radius: var(--ph-r-pill); color: var(--ph-text-2); }
+html.phone .abil-chev:active:not(:disabled) { background: var(--ph-fill); }
+html.phone .abil-chev:disabled { opacity: 0.45; }
+html.phone .abil-name { font: 600 var(--ph-t-caption)/1.3 var(--ph-font-ui); text-transform: none; }
+
+/* ---------- Chips: pills in footnote size, sentence case ---------- */
+html.phone .chip { min-height: 24px; padding: 2px 10px; border: 0; border-radius: var(--ph-r-pill); background: var(--ph-fill); color: var(--ph-text-2); font: 500 var(--ph-t-foot)/1.3 var(--ph-font-ui); text-transform: none; }
+html.phone .chip.accent { background: var(--ph-accent-soft); color: var(--ph-accent); }
+html.phone .chip.gold, html.phone .chip.warning { background: var(--ph-gold-soft); color: var(--ph-gold); }
+html.phone .chip.danger { background: var(--ph-danger-soft); color: var(--ph-danger); }
+html.phone .chip.success, html.phone .chip.info { background: var(--ph-accent-soft); color: var(--ph-success); }
+html.phone .badge-count { border-radius: 9px; font-size: var(--ph-t-tab); }
+
+/* ---------- Empty and loading states ---------- */
+html.phone .empty {
+  padding: 32px var(--ph-gutter); border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface);
+  font: 400 var(--ph-t-sub)/1.45 var(--ph-font-ui); color: var(--ph-text-2);
+}
+html.phone .empty strong { display: block; margin-bottom: 4px; font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .aur-progress, html.phone .progress { height: 4px; border-radius: 2px; background: var(--ph-fill); }
+html.phone .aur-progress > span, html.phone .progress > span { border-radius: 2px; background: var(--ph-accent); }
+html.phone .alert { gap: 12px; padding: 12px var(--ph-gutter); border: 0; border-radius: var(--ph-r-lg); font: 400 var(--ph-t-sub)/1.45 var(--ph-font-ui); }
+html.phone .alert.info { background: var(--ph-accent-soft); }
+html.phone .alert.success { background: var(--ph-accent-soft); }
+html.phone .alert.warning { background: var(--ph-gold-soft); }
+html.phone .alert.danger { background: var(--ph-danger-soft); }
+
+/* ---------- Segmented buttons ---------- */
+html.phone .segmented { border: 0; border-radius: var(--ph-r-md); background: var(--ph-fill); padding: 0; gap: 2px; }
+html.phone .segmented button { min-height: var(--ph-hit); padding: 0 12px; border: 0; border-radius: 8px; font: 500 var(--ph-t-foot)/1 var(--ph-font-ui); text-transform: none; color: var(--ph-text-2); }
+html.phone .segmented button + button { border-left: 0; }
+html.phone .segmented button[aria-pressed="true"], html.phone .segmented button[aria-checked="true"] { background: var(--ph-raised); color: var(--ph-text); }

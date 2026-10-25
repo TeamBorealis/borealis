@@ -27,7 +27,7 @@ describe("phone CSS layer (B-48)", () => {
     const firstPhone = imports.findIndex((f) => f.startsWith("phone/"));
     expect(firstPhone).toBeGreaterThan(0);
     expect(imports.slice(firstPhone).every((f) => f.startsWith("phone/"))).toBe(true);
-    expect(imports.slice(firstPhone)).toEqual(["phone/tokens.css", "phone/base.css", "phone/shell.css", "phone/overlays.css"]);
+    expect(imports.slice(firstPhone)).toEqual(["phone/tokens.css", "phone/base.css", "phone/shell.css", "phone/overlays.css", "phone/lists.css", "phone/controls.css", "phone/sheet-content.css"]);
   });
 
   it("every phone rule is scoped to html.phone (a desktop window at any width never matches)", () => {

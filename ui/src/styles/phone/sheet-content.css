@@ -1,0 +1,174 @@
+/*
+ * B-48 WP5 sheet content (mobile-facelift-spec sec. 3.4, 3.5): what WP3's sheets still showed small or in capitals. Settings
+ * fields and tabs, New character fields and options, the coin purse, Level up rows and the Start buttons. Phones only; the
+ * same elements in the same order, only size, case and colour change.
+ */
+
+/* ---------- Settings: the section tabs as the sub-tab strip, each section as grouped rows ---------- */
+html.phone .aur-set-main { flex-direction: column; margin-top: 0; }
+html.phone .aur-set-tabs {
+  flex-direction: row; gap: 2px; margin: 0; padding: 0 8px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--ph-line);
+}
+html.phone .aur-set-tabs::-webkit-scrollbar { display: none; }
+html.phone .aur-set-tabs [role="tab"] {
+  position: relative; flex: none; min-height: var(--ph-hit); padding: 0 12px; border: 0; border-radius: var(--ph-r-md);
+  font: 500 var(--ph-t-sub)/1 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; letter-spacing: 0;
+  transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .aur-set-tabs [role="tab"]:active { background: var(--ph-fill); }
+html.phone .aur-set-tabs [role="tab"][aria-selected="true"] { color: var(--ph-text); font-weight: 600; border: 0; }
+html.phone .aur-set-tabs [role="tab"][aria-selected="true"]::after {
+  content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--ph-accent);
+}
+html.phone .aur-set-scroll, html.phone .aur-set-scroll.r10 { margin: 0; padding: 8px var(--ph-gutter) 24px; }
+html.phone .aur-set-title13 { margin: 28px 0 4px; font: 600 var(--ph-t-title3)/1.25 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .aur-set-title13.first, html.phone .aur-set-title13.flush { margin-top: 8px; }
+html.phone .aur-set-desc { margin: 0 0 12px; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .aur-set-field { margin: 16px 0 6px; font: 500 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; letter-spacing: 0; }
+html.phone .aur-set-help { margin: 6px 0 0; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .aur-set-text, html.phone .aur-set-index, html.phone .aur-set-device { font: 400 var(--ph-t-sub)/1.45 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .aur-set-version { font: 600 var(--ph-t-sub)/1.3 var(--ph-font-ui); color: var(--ph-gold); }
+html.phone .aur-set-licence { max-height: 280px; padding: 12px; border: 0; border-radius: var(--ph-r-md); background: var(--ph-surface); font: 400 var(--ph-t-caption)/1.5 var(--ph-font-ui); }
+/* A checkbox row: the box, the title at body size, its description under it; the whole row toggles (rows.tsx). */
+html.phone .aur-set-check {
+  grid-template-columns: 24px minmax(0, 1fr); column-gap: 12px; align-items: start; min-height: var(--ph-row); margin: 0; padding: 12px 0;
+  cursor: pointer;
+}
+html.phone .aur-set-check + .aur-set-check { box-shadow: inset 0 1px 0 var(--ph-line); }
+html.phone .aur-set-check.spaced { margin: 4px 0; }
+html.phone .aur-set-check.sub { margin-left: 36px; }
+html.phone .aur-set-check .v4-cb { margin: 0; }
+html.phone .aur-set-check-head { align-self: center; min-height: 24px; font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .aur-set-check-desc { margin-top: 2px; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .aur-set-path input {
+  height: auto; min-height: var(--ph-hit); padding: 0 var(--ph-hit) 0 12px; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-md);
+  background: var(--ph-fill); color: var(--ph-text); font: 400 var(--ph-t-sub)/1.25 var(--ph-font-ui);
+}
+html.phone .aur-set-path button { top: 0; right: 0; bottom: 0; width: var(--ph-hit); border-radius: var(--ph-r-md); color: var(--ph-text-2); }
+html.phone .aur-set-path button:active { background: var(--ph-raised); }
+html.phone .aur-set-path .icon { width: 20px; height: 20px; }
+html.phone .aur-set-buttons { flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+html.phone .aur-set-right { margin: 12px 0; }
+html.phone .aur-swatches { gap: 8px; }
+html.phone .aur-swatch { width: 52px; height: 52px; margin: 0; border-radius: var(--ph-r-md); border-color: var(--ph-line); overflow: hidden; }
+html.phone .aur-swatches.theme .aur-swatch[aria-checked="true"] { outline: 3px solid var(--ph-accent); outline-offset: 2px; }
+html.phone .aur-slider { height: var(--ph-hit); }
+html.phone .aur-slider::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--ph-fill); }
+html.phone .aur-slider::-webkit-slider-thumb { width: 28px; height: 28px; margin-top: -12px; border-radius: 50%; background: #ffffff; box-shadow: 0 2px 6px rgb(0 0 0 / 0.3); }
+
+/* ---------- New character: system fields (never the white "light" field), options as grouped rows ---------- */
+html.phone .v4-portraits { gap: 16px; margin: 4px 0 12px; }
+html.phone .v4-portrait { border: 0; background: var(--ph-fill); color: var(--ph-text-2); }
+html.phone .v4-portrait.side { width: 48px; height: 48px; font: 500 var(--ph-t-sub)/1 var(--ph-font-ui); }
+html.phone .v4-portrait.main { width: 104px; height: 104px; font: 400 44px/1 var(--ph-font-name); box-shadow: inset 0 0 0 2px var(--ph-line); background: radial-gradient(100% 100% at 30% 15%, rgb(108 201 182 / 0.18), transparent 60%), var(--ph-fill); }
+html.phone .v4-new .aur-expander, html.phone .v4-new .aur-expander.v4-plain { margin: 8px 0 0; }
+html.phone .v4-new .aur-expander-head { min-height: var(--ph-hit); }
+html.phone .v4-new .aur-expander-toggle, html.phone .v4-new .v4-plain h2.aur-expander-toggle { padding: 0 4px 0 0; }
+html.phone .v4-new .aur-expander-title { font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .v4-new .aur-expander-chev .icon { width: 20px; height: 20px; }
+html.phone .v4-new .sub, html.phone .v4-new .sub.hint { margin: 0 0 8px; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v4-new .sub.hint { margin: 8px 0; }
+html.phone .v4-fl { margin: 14px 0 6px; font: 500 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; }
+html.phone .v4-namefield { display: flex; gap: 8px; }
+html.phone .v4-namefield .aur-textbox { flex: 1; min-width: 0; }
+html.phone .v4-namefield .aur-textbox input, html.phone .v4-new .v4-namefield .aur-textbox.light input { height: auto; min-height: var(--ph-hit); padding-right: 12px; }
+html.phone .v4-namefield .btn-icon {
+  position: static; transform: none; flex: none; width: var(--ph-hit); height: var(--ph-hit); min-height: var(--ph-hit);
+  border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text);
+}
+html.phone .v4-namefield .btn-icon:active:not(:disabled) { transform: scale(0.97); background: var(--ph-raised); }
+html.phone .v4-row { gap: 12px; }
+html.phone .v4-abil { gap: 6px; margin: 4px 0 8px; }
+html.phone .v4-tile-abil {
+  height: auto; min-height: 56px; padding: 6px 0; border: 0; border-radius: var(--ph-r-md); background: var(--ph-surface);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+html.phone .v4-tile-abil[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--ph-gold); }
+html.phone .v4-tile-abil b { margin: 0; font: 600 var(--ph-t-caption)/1.3 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v4-tile-abil span { margin-top: 2px; font: 700 var(--ph-t-title3)/1.2 var(--ph-font-ui); color: var(--ph-gold); font-variant-numeric: tabular-nums; }
+html.phone .v4-new .aur-expander:last-of-type, html.phone .v4-new .aur-expander:last-of-type .aur-expander-body { flex: none; min-height: 0; }
+html.phone .v4-opts { flex: none; min-height: 0; overflow: visible; gap: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .v4-opt { position: relative; min-height: var(--ph-row); padding: 12px var(--ph-gutter); border: 0; background: none; }
+html.phone .v4-opt + .v4-opt { box-shadow: inset 0 1px 0 var(--ph-line); }
+html.phone .v4-opt label { gap: 12px; font: 500 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .v4-opt label:not(.plain)::after { content: ""; position: absolute; inset: 0; } /* the whole option row toggles its checkbox */
+html.phone .v4-opt label.plain { margin-bottom: 8px; }
+html.phone .v4-opt p { margin: 4px 0 0 36px; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v4-opt input[type="checkbox"] { width: 24px; height: 24px; border: 2px solid var(--ph-field-line); border-radius: 6px; background: transparent; }
+html.phone .v4-opt input[type="checkbox"]:checked { border-color: var(--ph-accent); background: var(--ph-accent); }
+html.phone .v4-opt input[type="checkbox"]:checked::after { left: 6px; top: 1px; width: 6px; height: 12px; border-color: var(--ph-on-accent); border-width: 0 2.5px 2.5px 0; }
+html.phone .flyout-foot:has(.v4-foot) { padding: 12px var(--ph-gutter); border-top: 1px solid var(--ph-line); }
+html.phone .v4-foot { gap: 12px; }
+html.phone .v4-foot button { height: auto; min-height: var(--ph-hit); font: 600 var(--ph-t-sub)/1.2 var(--ph-font-ui); text-transform: none; }
+html.phone .v4-foot button[data-testid="create-character"], html.phone .v4-foot button[data-testid="create-character"]:active:not(:disabled) { background: var(--ph-accent); color: var(--ph-on-accent); }
+html.phone .v4-fav { gap: 12px; min-height: var(--ph-row); margin-top: 12px; font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); }
+
+/* ---------- Start: New character (primary) and Import characters as action rows ---------- */
+html.phone .v4-newbtn {
+  display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 2px; width: 100%; height: auto; min-height: 68px;
+  margin: 12px 0 0; padding: 12px var(--ph-gutter); border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); color: var(--ph-text); text-align: left;
+  transition: transform var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .v4-start-left > .v4-newbtn:first-of-type { margin-top: 20px; background: var(--ph-accent); color: var(--ph-on-accent); }
+html.phone .v4-newbtn::before { content: none; }
+html.phone .v4-newbtn:active:not(:disabled) { padding: 12px var(--ph-gutter); transform: scale(0.98); }
+html.phone .v4-newbtn > * { opacity: 1; text-transform: none; }
+html.phone .v4-newbtn .t, html.phone .v4-newbtn.small .t { margin: 0; font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); }
+html.phone .v4-newbtn .d { margin: 0; font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); opacity: 0.8; }
+html.phone .v4-newbtn.small { min-height: 60px; }
+
+/* ---------- Coin purse: five grouped rows; each - / + shows its amount (CoinsDialog) ---------- */
+html.phone .eq-coins-flyout { gap: 0; }
+html.phone .eq-coins-flyout > p { margin: 0 0 12px; font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); }
+html.phone .eq-coins-flyout .coin-row { min-height: var(--ph-row); gap: 0; padding: 4px 0; font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); }
+html.phone .eq-coins-flyout .coin-row + .coin-row { box-shadow: inset 0 1px 0 var(--ph-line); }
+html.phone .eq-coins-flyout .coin-row > span:first-child { flex: 1 1 auto; width: auto !important; min-width: 0; }
+html.phone .eq-coins-flyout .coin-row output { min-width: 44px !important; font: 700 var(--ph-t-body)/1 var(--ph-font-ui); font-variant-numeric: tabular-nums; }
+/* The two minus and the two plus buttons sit together as pairs, so the coin name keeps its room at 360 px. */
+html.phone .eq-coins-flyout .coin-row .btn-icon.has-caption { min-width: var(--ph-hit); padding: 0 4px; gap: 1px; border-radius: 0; }
+html.phone .eq-coins-flyout .coin-row .btn-icon.has-caption .icon { width: 16px; height: 16px; }
+html.phone .eq-coins-flyout .coin-row .btn-icon.has-caption .btn-caption { font-size: var(--ph-t-sub); }
+html.phone .eq-coins-flyout .coin-row > span:first-child + .btn-icon, html.phone .eq-coins-flyout .coin-row output + .btn-icon { border-radius: var(--ph-r-md) 0 0 var(--ph-r-md); box-shadow: inset -1px 0 0 var(--ph-line); }
+html.phone .eq-coins-flyout .coin-row .btn-icon:has(+ output), html.phone .eq-coins-flyout .coin-row .btn-icon:last-child { border-radius: 0 var(--ph-r-md) var(--ph-r-md) 0; }
+html.phone .eq-coins-flyout .coin-row > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 8px; }
+html.phone .eq-coins-flyout hr { margin: 12px 0; border: 0; border-top: 1px solid var(--ph-line); }
+html.phone .eq-coins-flyout .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+html.phone .eq-coins-flyout .row .field-label { flex: 1 0 100%; margin: 0 0 4px; }
+
+/* ---------- Level up and multiclassing: class cards and multiclass rows ---------- */
+html.phone .flyout .lvl { gap: 12px; }
+html.phone .lvl-xpbar, html.phone .flyout .lvl-xpbar, html.phone .flyout .lvl-xpbar > span { gap: 12px; font: 400 var(--ph-t-foot)/1.3 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; }
+html.phone .lvl-status, html.phone .flyout .lvl-status { margin: 0; gap: 8px; justify-content: flex-start; text-transform: none; }
+html.phone .flyout .lvl-status > span { font: 400 var(--ph-t-sub)/1.3 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .lvl-dot { display: none; }
+html.phone .lvl-link, html.phone .flyout .lvl-link.remove {
+  min-height: var(--ph-hit); padding: 0 12px; gap: 6px; border-radius: var(--ph-r-md); background: var(--ph-fill);
+  font: 600 var(--ph-t-foot)/1 var(--ph-font-ui); color: var(--ph-text); text-transform: none;
+  transition: transform var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .lvl-link:active:not(:disabled) { transform: scale(0.97); }
+html.phone .flyout .lvl-link.remove:disabled, html.phone .lvl-link:disabled { opacity: 0.45; color: var(--ph-text-2); }
+html.phone .lvl-link .icon, html.phone .lvl-link.remove .icon { width: 14px; height: 14px; }
+html.phone .lvl-note { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-success); text-align: left; }
+html.phone .lvl-xp { font: 400 var(--ph-t-foot)/1.3 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; }
+html.phone .lvl-class, html.phone .flyout .lvl-class { margin: 0; padding: 12px var(--ph-gutter); border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .flyout .lvl-class header { height: auto; min-height: var(--ph-hit); }
+html.phone .lvl-class h3, html.phone .flyout .lvl-class h3 { font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .flyout .lvl-class .lvl-link.up, html.phone .lvl-link.up {
+  height: auto; min-height: var(--ph-hit); padding: 0 14px; background: var(--ph-accent); color: var(--ph-on-accent); font: 600 var(--ph-t-sub)/1 var(--ph-font-ui);
+}
+html.phone .flyout .lvl-link.up:disabled { color: var(--ph-on-accent); }
+html.phone .flyout .lvl-link.up .icon { margin: 0; top: 0; }
+html.phone .lvl-sub, html.phone .flyout .lvl-sub { margin-top: 4px; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); font-style: normal; color: var(--ph-text-2); }
+html.phone .hp-rolls { gap: 12px; }
+html.phone .lvl-roll { gap: 8px; font-size: var(--ph-t-foot); }
+html.phone .flyout .lvl-multi { margin: 8px 0 0; padding: 4px var(--ph-gutter) 12px; border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .lvl-multi .aur-expander-head, html.phone .lvl-multi .aur-expander-toggle, html.phone .lvl-multi .aur-expander-chev { height: auto; min-height: var(--ph-hit); }
+html.phone .lvl-multi .aur-expander-chev .icon { width: 20px; height: 20px; }
+html.phone .lvl-multi .aur-expander-title { font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .lvl-multi-text { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .lvl-mc-row { align-items: center; min-height: var(--ph-row); margin: 0; padding: 8px 0; }
+html.phone .lvl-mc-row + .lvl-mc-row { box-shadow: inset 0 1px 0 var(--ph-line); }
+html.phone .lvl-mc-row h4 { font: 500 var(--ph-t-body)/1.3 var(--ph-font-ui); text-transform: none; }
+html.phone .lvl-prereq, html.phone .lvl-mc-row .lvl-prereq { margin-top: 2px; font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); font-style: normal; color: var(--ph-text-2); }
+html.phone .lvl-mc-row button { height: auto; min-height: var(--ph-hit); background: var(--ph-fill); font: 600 var(--ph-t-foot)/1.2 var(--ph-font-ui); text-transform: none; }

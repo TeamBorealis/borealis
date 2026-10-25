@@ -24,6 +24,9 @@ import "./styles/phone/tokens.css";
 import "./styles/phone/base.css";
 import "./styles/phone/shell.css";
 import "./styles/phone/overlays.css";
+import "./styles/phone/lists.css";
+import "./styles/phone/controls.css";
+import "./styles/phone/sheet-content.css";
 import { startPhone } from "./lib/phoneStartup";
 
 if (/Android/i.test(navigator.userAgent)) document.documentElement.classList.add("android");
