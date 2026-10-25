@@ -1,0 +1,92 @@
+/*
+ * B-48 WP7 Equipment (mobile-facelift-spec sec. 3.5; O14). Phones only, same elements in the same order: the category band
+ * with the five coin figures, the category select, the catalogue as rows (price, weight and source as the detail line), Add
+ * and Buy with their quantities, the filter, the source select, Manage coins, then the inventory rows with the equip button
+ * at 44/48 pt and the inventory toolbar (Details, Up, Down, Delete, Delete all) as a 52 pt icon-and-label bar.
+ */
+
+html.phone .eq-layout { display: flex; flex-direction: column; gap: 16px; margin: 0; }
+html.phone .eq-cats { display: none; }
+html.phone .eq-items { display: block; min-height: 0; border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .eq-items .ap-band h2, html.phone .eq-inv-box .ap-band h2, html.phone .eq-cats .ap-band h2 { margin-left: 0; font: 600 var(--ph-t-title3)/1.25 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .eq-items .ap-stats { gap: 4px 14px; }
+html.phone .eq-items .ap-stats b { margin-left: 4px; }
+html.phone .eq-cats-narrow, html.phone .eq-items > .eq-cats-narrow { display: block; padding: 4px var(--ph-gutter) 12px !important; }
+html.phone .eq-scroll, html.phone .eq-inv-scroll { flex: none; min-height: 0; overflow: visible; }
+html.phone .eq-items > .alert { margin: 0 var(--ph-gutter) 12px; }
+html.phone .eq-bases { border-top: 1px solid var(--ph-line); }
+html.phone .eq-grid td { height: auto; border: 0; padding: 0; font-size: var(--ph-t-body); color: var(--ph-text); }
+html.phone .eq-grid tbody tr.sel td { background: none; }
+html.phone .eq-grid:not(.eq-invgrid):not(.sp-grid) td:not(.eq-name) { display: none; }
+html.phone .eq-grid:not(.eq-invgrid) td.eq-name { min-width: 0; padding: 0; }
+html.phone .eq-grid.eq-armor { width: 100%; min-width: 0; }
+
+/* Add / Buy with quantities, the filter, the source select and Manage coins. */
+html.phone .eq-tools { flex-wrap: wrap; gap: 8px; height: auto; margin: 0; }
+html.phone .eq-tools::after { display: none; }
+html.phone .eq-cmds { display: flex; flex: 1 1 100%; width: auto; gap: 8px; }
+html.phone .eq-cmd { flex: 1 1 0; height: var(--ph-hit); border-radius: var(--ph-r-md); background: none; overflow: hidden; }
+html.phone .eq-cmd-btn {
+  flex: 1 1 auto; height: var(--ph-hit); min-height: var(--ph-hit); border-radius: 0; background: var(--ph-accent); color: var(--ph-on-accent);
+  font: 600 var(--ph-t-sub)/1 var(--ph-font-ui); text-transform: none; transition: transform var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .eq-cmd-btn:active:not(:disabled) { transform: scale(0.97); }
+html.phone .eq-cmd-btn:disabled { background: var(--ph-fill); color: var(--ph-text-3); }
+html.phone .eq-qtybox {
+  width: var(--ph-hit); height: var(--ph-hit); min-height: var(--ph-hit); border: 1px solid var(--ph-field-line); border-radius: 0 var(--ph-r-md) var(--ph-r-md) 0;
+  background: var(--ph-fill); color: var(--ph-text); font: 600 var(--ph-t-body)/1 var(--ph-font-ui); font-variant-numeric: tabular-nums;
+}
+html.phone .eq-filter-tile { margin: 0; }
+html.phone .eq-tools .eq-filter { flex: 1 1 0; margin: 0; }
+html.phone .eq-source { flex: 1 1 100%; width: auto; margin: 0; }
+html.phone .eq-tools .eq-source select, html.phone .eq-tools .eq-source .aur-combo select { height: auto; min-height: var(--ph-hit); color: var(--ph-text); }
+html.phone .eq-coins, html.phone .eq-tools .eq-coins {
+  flex: 1 1 100%; width: auto; height: auto; min-height: var(--ph-hit); margin: 0; border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text);
+  font: 600 var(--ph-t-sub)/1.2 var(--ph-font-ui); text-transform: none;
+}
+
+/* Inventory: [equip] [attune] name ... location; the alerts; the toolbar. */
+html.phone .eq-inv { min-height: 0; gap: 12px; }
+html.phone .eq-inv-box { flex: none; min-height: 0; border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .eq-stat-rest { color: var(--ph-text-2); }
+html.phone .eq-invgrid tbody tr { grid-template-columns: var(--ph-hit) auto minmax(0, 1fr) auto; column-gap: 4px; padding-left: 4px; }
+html.phone .eq-invgrid td { height: auto; line-height: 1.3; }
+html.phone .eq-invgrid tbody tr:first-child td { height: auto; }
+html.phone .eq-invgrid td.eq-ic, html.phone .eq-invgrid td.eq-ic + td.eq-ic { width: auto; padding: 0; }
+html.phone .eq-invgrid td.eq-invname { width: auto; padding: 4px 0 4px 4px; color: var(--ph-text-2); font-size: var(--ph-t-foot); }
+html.phone .eq-invgrid td.eq-invname .ap-name { display: inline-flex; width: auto; margin: 0; font-style: normal; font-weight: 400; color: var(--ph-text); vertical-align: middle; line-height: 1.3; }
+html.phone .eq-invgrid tr.on td.eq-invname .ap-name { font-weight: 600; color: var(--ph-text); }
+html.phone .eq-invgrid td.eq-invname .muted { color: var(--ph-text-2); font-size: var(--ph-t-body); }
+html.phone .eq-stored { display: block; margin: 0 0 4px; font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .eq-stored.eq-barred { color: var(--ph-gold); }
+html.phone .eq-invgrid td.eq-slot, html.phone .eq-invgrid tbody tr.sel td.eq-slot { padding: 0 0 0 8px; font: 600 var(--ph-t-foot)/1.3 var(--ph-font-ui); font-style: normal; color: var(--ph-text-2); text-align: right; }
+html.phone .eq-eqbtn, html.phone .eq-invgrid .eq-eqbtn {
+  position: relative; width: var(--ph-hit); height: var(--ph-hit); min-height: var(--ph-hit); border-radius: var(--ph-r-pill); color: transparent; vertical-align: middle;
+}
+html.phone .eq-eqbtn::before { content: ""; position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; margin: -12px 0 0 -12px; box-sizing: border-box; border: 2px solid var(--ph-field-line); border-radius: 50%; }
+html.phone .eq-eqbtn.on::before { border-color: var(--ph-accent); background: var(--ph-accent); }
+html.phone .eq-eqbtn.on, html.phone .eq-eqbtn.eq-link.on { color: var(--ph-on-accent); }
+html.phone .eq-eqbtn .eq-glyph, html.phone .eq-invgrid .eq-eqbtn .eq-glyph { position: relative; width: 16px; height: 16px; }
+html.phone .eq-eqbtn:active:not(:disabled) { background: var(--ph-fill); }
+html.phone .eq-inv-actions {
+  flex-wrap: nowrap; justify-content: space-between; gap: 0; height: auto; min-height: 52px; padding: 4px; border-radius: var(--ph-r-lg); background: var(--ph-surface);
+}
+html.phone .eq-inv-actions button {
+  flex: 1 1 0; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; height: auto; min-height: var(--ph-hit); padding: 4px 2px;
+  border-radius: var(--ph-r-md); color: var(--ph-accent); font: 500 var(--ph-t-caption)/1.2 var(--ph-font-ui); text-transform: none; text-align: center;
+  transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .eq-inv-actions button + button { border-left: 0; }
+html.phone .eq-inv-actions button:active:not(:disabled) { background: var(--ph-fill); }
+html.phone .eq-inv-actions button:disabled { color: var(--ph-text-3); opacity: 0.6; }
+html.phone .eq-inv-actions button .eq-glyph { width: 20px; height: 20px; }
+
+/* Additional treasure: two labelled text boxes; the loadout lists under them. */
+html.phone .eq-page { padding: 12px var(--ph-gutter) 24px; }
+html.phone .eq-treasure { gap: 16px; }
+html.phone .eq-tlabel { margin: 0 0 6px; font: 500 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; }
+html.phone .eq-ttext {
+  min-height: 140px; padding: 10px 12px; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text);
+  font: 400 var(--ph-t-body)/1.4 var(--ph-font-ui);
+}
+html.phone .eq-load .resource-row { min-height: var(--ph-row); padding: 8px 0; font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); }

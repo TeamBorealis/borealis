@@ -6,7 +6,7 @@ import { SRC, cssFiles, declaredVars, parseRules, readCss } from "./cssRules";
 // B-48 WP6/WP7 CSS contract (mobile-facelift-spec sec. 3.5, 7; O9, O14): the screen layer lives in phone files under
 // html.phone (checked for every phone file in b48-phone-css.test.tsx), reads its colours from the theme tokens so the light
 // theme is complete, and turns the data tables into one-line rows.
-const SCREENS = ["styles/phone/bridge.css", "styles/phone/tables.css", "styles/phone/build.css", "styles/phone/screens-a.css", "styles/phone/play-magic.css"];
+const SCREENS = ["styles/phone/bridge.css", "styles/phone/tables.css", "styles/phone/build.css", "styles/phone/screens-a.css", "styles/phone/play-magic.css", "styles/phone/gear.css"];
 const rules = (files = SCREENS) => files.flatMap((f) => parseRules(readCss(f)).map((r) => ({ ...r, file: f })));
 const bodyOf = (sel: string) => rules().filter((r) => r.selectors.includes(sel)).map((r) => r.body).join(";");
 
@@ -62,5 +62,11 @@ describe("phone screens CSS (B-48 WP6, WP7)", () => {
     const hides = (re: RegExp) => all.filter((r) => r.selectors.some((s) => re.test(s)) && /display: none/.test(r.body));
     expect(hides(/\.v5-desc\b/)).toEqual([]);
     expect(hides(/\.sp-tog|\.sp-levels|\.sp-filter/)).toEqual([]);
+  });
+
+  it("the inventory toolbar is a 52 pt bar of icon-and-label buttons", () => {
+    expect(bodyOf("html.phone .eq-inv-actions")).toMatch(/min-height: 52px/);
+    expect(bodyOf("html.phone .eq-inv-actions button")).toMatch(/flex-direction: column/);
+    expect(bodyOf("html.phone .eq-inv-actions button")).toMatch(/min-height: var\(--ph-hit\)/);
   });
 });
