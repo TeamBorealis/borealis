@@ -512,7 +512,7 @@ impl VectorService {
             0,
             0,
             Some(format!(
-                "Semantic search is too slow on this computer: one search takes {ms} ms to embed (the budget is \
+                "Semantic search is too slow on this device: one search takes {ms} ms to embed (the budget is \
                  {budget} ms), so search uses keywords. You can delete the model in Settings."
             )),
         );

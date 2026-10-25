@@ -367,6 +367,13 @@ fn a_tier_with_a_query_budget_stays_keyword_only_when_queries_embed_too_slowly()
             .is_some_and(|m| m.contains("too slow")),
         "{st:?}"
     );
+    // HW1 (emulator, PH1): the same line shows on phones, so it names "this device", not a computer.
+    assert!(
+        st.message
+            .as_deref()
+            .is_some_and(|m| m.contains("too slow on this device") && !m.contains("computer")),
+        "{st:?}"
+    );
     assert!(!service.queryable() && service.query("fireball").is_none());
     // The verdict is kept: a refresh does not load the model again.
     service.refresh(request(40));
