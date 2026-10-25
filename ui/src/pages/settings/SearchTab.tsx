@@ -40,7 +40,10 @@ function switchText(st: SemanticStatus): string {
   return `Downloads the EmbeddingGemma 2 model (${st.file?.sizeText ?? ""}) once. Everything runs on this device.`;
 }
 
-/** The semantic index line (S3.3): building, waiting for the device, or turned off by the NaN guard. */
+/** Settings > Search once the vectors answer searches (the search footer then says "Keyword + semantic"). */
+export const READY_LINE = "Keyword + semantic: the semantic index is complete.";
+
+/** The semantic index line (S3.3): building, waiting for the device, too slow or turned off by the NaN guard, ready. */
 function indexingText(st: SemanticStatus): string {
   const i = st.indexing;
   switch (i.state) {
@@ -51,6 +54,7 @@ function indexingText(st: SemanticStatus): string {
     case "paused": return i.message ?? "Semantic indexing is paused.";
     case "disabled":
     case "failed": return i.message ?? "Semantic search is unavailable. Keyword search still works.";
+    case "ready": return st.active ? READY_LINE : "";
     default: return "";
   }
 }

@@ -19,6 +19,11 @@ export function createApi(): Api {
   const bundle = new URLSearchParams(window.location.search).get("mockBundle");
   // `?mockSemanticStep=<ms>` slows the simulated semantic model download (progress, pause and resume in web e2e).
   const step = Number(new URLSearchParams(window.location.search).get("mockSemanticStep"));
-  const semantic = Number.isFinite(step) && step > 0 ? { stepMs: step } : undefined;
+  // `?mockSemanticQueryMs=<ms>`: the simulated device embeds a query this slowly (above 40 ms it stays keyword-only).
+  const queryMs = Number(new URLSearchParams(window.location.search).get("mockSemanticQueryMs"));
+  const semantic = {
+    ...(Number.isFinite(step) && step > 0 ? { stepMs: step } : {}),
+    ...(Number.isFinite(queryMs) && queryMs > 0 ? { queryMs } : {}),
+  };
   return new MockApi({ aiChunkDelayMs: 30, mobile, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null, bundleFile: bundle, semantic });
 }

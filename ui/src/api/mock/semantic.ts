@@ -48,6 +48,18 @@ export interface MockSemanticOptions {
   stepMs: number;
   /** The next download fails with this message. */
   failWith: string | null;
+  /** The device's query embedding time in ms (the app's speed check after loading the model, `vector_service.rs`):
+   * above `QUERY_BUDGET_MS` the index is not built and search stays keyword-only with the too-slow line
+   * (default null: fast enough). */
+  queryMs: number | null;
+}
+
+/** The hybrid latency budget every semantic tier carries (`borealis_embed::tier::QUERY_BUDGET_MS`). */
+export const QUERY_BUDGET_MS = 40;
+
+/** `vector_service.rs` too-slow line (decision PH1: the same sentence on desktops and phones). */
+export function tooSlowMessage(ms: number): string {
+  return `Semantic search is too slow on this device: one search takes ${ms} ms to embed (the budget is ${QUERY_BUDGET_MS} ms), so search uses keywords. You can delete the model in Settings.`;
 }
 
 /** Mirrors `semantic_service.rs` and `vector_service.rs`: tier, consent text, a stepped download with pause / resume /
@@ -64,7 +76,7 @@ export class MockSemantic {
 
   constructor(private readonly emit: (d: SemanticDownload) => void, private readonly mobile: boolean, opts: Partial<MockSemanticOptions> = {},
     private readonly emitIndex: (i: SemanticIndexing) => void = () => {}) {
-    this.opts = { probedTier: mobile ? "t2" : "t3", backendAvailable: true, mirrorPublished: true, modelPresent: false, indexed: false, stepMs: 30, failWith: null, ...opts };
+    this.opts = { probedTier: mobile ? "t2" : "t3", backendAvailable: true, mirrorPublished: true, modelPresent: false, indexed: false, stepMs: 30, failWith: null, queryMs: null, ...opts };
     this.present = this.opts.modelPresent;
   }
 
@@ -78,6 +90,16 @@ export class MockSemantic {
       return;
     }
     if (this.indexing.state !== "off") return;
+    const slow = this.opts.queryMs;
+    if (slow !== null && slow > QUERY_BUDGET_MS) {
+      // Loads the model, times a query, unloads it: nothing is indexed and search stays keyword-only.
+      this.setIndex({ state: "loading", done: 0, total: 0, message: null, queryable: false });
+      this.indexTimer = setTimeout(() => {
+        this.indexTimer = null;
+        this.setIndex({ state: "failed", done: 0, total: 0, message: tooSlowMessage(slow), queryable: false });
+      }, this.opts.stepMs);
+      return;
+    }
     if (this.opts.indexed) {
       this.setIndex({ state: "ready", done: 0, total: 0, message: null, queryable: true });
       return;

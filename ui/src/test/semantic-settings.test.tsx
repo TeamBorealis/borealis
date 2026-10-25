@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { MockApi } from "../api/mock/MockApi";
 import { consentBody } from "../api/mock/semantic";
+import { READY_LINE } from "../pages/settings/SearchTab";
 import { footerText, showSemanticHint } from "../pages/compendium/searchModel";
 import { getStatus } from "../state/status";
 import { openBorealisSettings, renderApp } from "./utils";
@@ -276,6 +277,38 @@ describe("semantic index (S3.3)", () => {
     expect(await within(dialog).findByText(/^Building the semantic index: \d+ of 1200 passages\./)).toBeTruthy();
     expect(within(dialog).getByText("On: search uses keywords until the semantic index is built.")).toBeTruthy();
     expect(await within(dialog).findByText(/^On: search also finds/, {}, { timeout: 3000 })).toBeTruthy();
+    expect(within(dialog).getByRole("status", { name: "Semantic index" }).textContent).toBe(READY_LINE);
+  });
+
+  it("a device too slow for the 40 ms budget stays keyword-only with the too-slow line (PH1)", async () => {
+    // Arrange: the model is on the device, but one query takes 95 ms to embed.
+    const api = desktop({ semantic: { modelPresent: true, stepMs: 20, queryMs: 95 } });
+    api.presetSettings({ search: { semantic: true, tierOverride: "auto", indexOnBattery: false, defaultEdition: "character" } });
+
+    // Act
+    const { dialog } = await openSearchTab(api);
+
+    // Assert
+    const line = "Semantic search is too slow on this device: one search takes 95 ms to embed (the budget is 40 ms), so search uses keywords. You can delete the model in Settings.";
+    expect(await within(dialog).findByText(line)).toBeTruthy();
+    expect(within(dialog).getByText("On: search uses keywords until the semantic index is built.")).toBeTruthy();
+    const st = await api.semanticStatus();
+    expect(st.active).toBe(false);
+    expect(st.indexing).toMatchObject({ state: "failed", queryable: false, done: 0 });
+    expect(within(dialog).queryByText(READY_LINE)).toBeNull();
+  });
+
+  it("a device within the budget builds the index as before", async () => {
+    // Arrange
+    const api = desktop({ semantic: { modelPresent: true, stepMs: 5, queryMs: 25 } });
+    api.presetSettings({ search: { semantic: true, tierOverride: "auto", indexOnBattery: false, defaultEdition: "character" } });
+
+    // Act
+    const { dialog } = await openSearchTab(api);
+
+    // Assert
+    expect(await within(dialog).findByText(READY_LINE, {}, { timeout: 3000 })).toBeTruthy();
+    expect((await api.semanticStatus()).active).toBe(true);
   });
 
   it("footer lines for every index state", () => {
