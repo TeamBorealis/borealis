@@ -175,6 +175,7 @@ const COMMANDS: &[&str] = &[
     "get_recent_logs",
     "share_logs",
     "restart_app",
+    "haptics_enabled",
     "acceptance_digest",
 ];
 

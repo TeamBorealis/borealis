@@ -29,6 +29,7 @@ export function detectPhoneOs(env: PlatformEnv): PhoneOs | null {
 }
 
 let phone = false;
+let os: PhoneOs | null = null;
 const listeners = new Set<() => void>();
 function setPhone(next: boolean): void {
   if (next === phone) return;
@@ -49,6 +50,14 @@ export function usePhone(): boolean {
   return useSyncExternalStore(subscribePhone, isPhone, isPhone);
 }
 
+/** The phone OS once the platform classes are installed (iOS and Android builds, the web mock), else null. */
+export const phoneOs = (): PhoneOs | null => os;
+
+/** Tests pick a phone OS without a real platform. */
+export function setPhoneOsForTests(next: PhoneOs | null): void {
+  os = next;
+}
+
 /** Tests switch the phone behaviour on without a real platform. */
 export function setPhoneForTests(next: boolean): void {
   setPhone(next);
@@ -66,9 +75,10 @@ export type MatchMedia = (query: string) => NarrowQuery;
  * Adds `ios` / `android` once, and `phone` while the narrow shell shows. Returns a cleanup. On desktop it does nothing.
  */
 export function installPlatformClasses(root: HTMLElement, env: PlatformEnv, matchMedia: MatchMedia): () => void {
-  const os = detectPhoneOs(env);
-  if (!os) return () => undefined;
-  root.classList.add(os);
+  const found = detectPhoneOs(env);
+  if (!found) return () => undefined;
+  os = found;
+  root.classList.add(found);
   const mq = matchMedia(NARROW_QUERY);
   const sync = () => {
     root.classList.toggle("phone", mq.matches);

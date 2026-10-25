@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "mobile",
-  "description": "Phones only: the QR scanner behind Send to device / Receive from device. The main window may check and request the camera permission, scan one QR code and cancel the scan; nothing else from the plugin (no app-settings jump, no vibration). Desktop builds have no scanner.",
+  "description": "Phones only. The QR scanner behind Send to device / Receive from device: the main window may check and request the camera permission, scan one QR code and cancel the scan; nothing else from that plugin (no app-settings jump, no vibration). Haptics (B-48 O13): one selection tick and one light impact; no free-form vibration and no notification patterns. Desktop builds have neither plugin.",
   "platforms": [
     "iOS",
     "android"
@@ -13,6 +13,8 @@
     "barcode-scanner:allow-check-permissions",
     "barcode-scanner:allow-request-permissions",
     "barcode-scanner:allow-scan",
-    "barcode-scanner:allow-cancel"
+    "barcode-scanner:allow-cancel",
+    "haptics:allow-selection-feedback",
+    "haptics:allow-impact-feedback"
   ]
 }

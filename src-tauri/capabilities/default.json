@@ -179,6 +179,7 @@
     "allow-get-recent-logs",
     "allow-share-logs",
     "allow-restart-app",
+    "allow-haptics-enabled",
     "allow-acceptance-digest"
   ]
 }

@@ -350,6 +350,8 @@ export interface ApiMethods {
   shareLogs(): Promise<void>;
   /** Restart the application so new content loads. */
   restartApp(): Promise<void>;
+  /** B-48 O13: whether the system setting lets the app play light haptics (Android's touch feedback; always on iOS, never on desktop). */
+  hapticsEnabled(): Promise<boolean>;
   /** Debug builds only (S5 acceptance): per-type counts and digests of the loaded content and of 12 fixed characters built from it. Release builds have no such command. */
   acceptanceDigest(): Promise<Record<string, unknown>>;
 
@@ -564,6 +566,7 @@ export const COMMANDS = {
   getRecentLogs: "get_recent_logs",
   shareLogs: "share_logs",
   restartApp: "restart_app",
+  hapticsEnabled: "haptics_enabled",
   acceptanceDigest: "acceptance_digest",
   aiStatus: "ai_status",
   aiStartTask: "ai_start_task",

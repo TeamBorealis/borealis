@@ -89,6 +89,15 @@ pub fn share_logs(app: AppHandle, state: S<'_>) -> ApiResult<()> {
     )
 }
 
+/// B-48 O13: whether the platform's system setting lets the app play light haptics (false on desktop). The web view asks
+/// before each haptic it fires through the haptics plugin.
+#[tauri::command]
+pub fn haptics_enabled(app: AppHandle) -> bool {
+    use tauri::Manager;
+    app.try_state::<crate::semantic_device::SemanticDevice>()
+        .is_some_and(|device| device.haptics_enabled())
+}
+
 /// Restart the application (new content is loaded once per process).
 #[tauri::command]
 pub fn restart_app(app: AppHandle) -> ApiResult<()> {

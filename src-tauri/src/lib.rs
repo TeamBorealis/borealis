@@ -290,6 +290,10 @@ pub fn run() {
     // Phones: QR scanner for Send to device / Receive from device (windowed mode under our own scan screen).
     #[cfg(any(target_os = "android", target_os = "ios"))]
     let builder = builder.plugin(tauri_plugin_barcode_scanner::init());
+    // Phones (B-48 O13): light haptics on choose, level up, rest and delete. The web view may call only the selection and
+    // impact feedback commands (capabilities/mobile.json) and asks `haptics_enabled` first.
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    let builder = builder.plugin(tauri_plugin_haptics::init());
     // Android: the in-app Kotlin plugin behind "Share logs" and opened files (see `native_share`).
     #[cfg(target_os = "android")]
     let builder = builder.plugin(native_share::init());
@@ -525,6 +529,7 @@ pub fn run() {
             commands_system::get_recent_logs,
             commands_system::share_logs,
             commands_system::restart_app,
+            commands_system::haptics_enabled,
             #[cfg(debug_assertions)]
             commands_acceptance::acceptance_digest,
         ])

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import type { SelectionSlot } from "../../api/contract";
+import { haptic } from "../../lib/haptics";
 import { useCharacter } from "../../state/CharacterContext";
 import { DescriptionPane } from "./DescriptionPane";
 import { type DescribeFn, groupSlots, isListSlot, PickerGroup, type SlotGroup } from "./PickerGroup";
@@ -49,6 +50,7 @@ export function SlotList({ slots, emptyText = EMPTY_TEXT, describedId, onDescrib
   const clearWanted = () => { if (wanted) { const p = new URLSearchParams(params); p.delete("slot"); setParams(p, { replace: true }); } };
   const choose = async (slotId: string, elementId: string) => {
     clearWanted();
+    haptic("choose");
     const g = groups.find((x) => x.slots.some((s) => s.id === slotId));
     describe(elementId, !g?.slots.some((s) => s.id === slotId && isListSlot(s)));
     if (g) setOpenKeys((m) => Object.fromEntries(Object.entries(m).filter(([k]) => k !== g.key)));

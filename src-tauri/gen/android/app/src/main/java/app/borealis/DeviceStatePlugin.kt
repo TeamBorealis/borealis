@@ -8,6 +8,7 @@ import android.content.IntentFilter
 import android.os.BatteryManager
 import android.os.Build
 import android.os.PowerManager
+import android.provider.Settings
 import app.tauri.annotation.Command
 import app.tauri.annotation.TauriPlugin
 import app.tauri.plugin.Invoke
@@ -20,6 +21,9 @@ import app.tauri.plugin.Plugin
  * (charging and battery level from the sticky `ACTION_BATTERY_CHANGED`, Battery Saver, thermal status on
  * API 29+). Answers `{ totalMem, charging, batteryPercent, powerSave, thermalStatus }`; -1 means unknown.
  * Read-only, no permissions needed, nothing leaves the device.
+ *
+ * B-48 O13: `hapticFeedbackEnabled` answers `{ enabled }` from Settings > Sound & vibration > Touch feedback
+ * (`Settings.System.HAPTIC_FEEDBACK_ENABLED`), because the haptics plugin's `Vibrator` calls do not apply it themselves.
  */
 @TauriPlugin
 class DeviceStatePlugin(private val activity: Activity) : Plugin(activity) {
@@ -51,5 +55,17 @@ class DeviceStatePlugin(private val activity: Activity) : Plugin(activity) {
     } catch (e: Exception) {
       invoke.reject(e.message ?: "Device state is not available.")
     }
+  }
+
+  @Command
+  fun hapticFeedbackEnabled(invoke: Invoke) {
+    val out = JSObject()
+    val enabled = try {
+      Settings.System.getInt(activity.contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 1) != 0
+    } catch (e: Exception) {
+      true
+    }
+    out.put("enabled", enabled)
+    invoke.resolve(out)
   }
 }

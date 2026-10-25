@@ -573,6 +573,13 @@
     "name": "CharacterSnapshot"
    }
   },
+  "haptics_enabled": {
+   "args": {},
+   "method": "hapticsEnabled",
+   "response": {
+    "k": "prim"
+   }
+  },
   "import_5etools": {
    "args": {
     "request": false

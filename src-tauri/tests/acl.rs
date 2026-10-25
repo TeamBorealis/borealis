@@ -131,13 +131,72 @@ fn the_barcode_scanner_is_phone_only_with_the_least_permissions() {
     let v: serde_json::Value = serde_json::from_str(&text).expect("capability json");
     assert_eq!(v["platforms"], serde_json::json!(["iOS", "android"]));
     assert_eq!(v["windows"], serde_json::json!(["main"]));
+    let scanner: Vec<&str> = v["permissions"]
+        .as_array()
+        .expect("permissions array")
+        .iter()
+        .filter_map(|p| p.as_str())
+        .filter(|p| p.starts_with("barcode-scanner:"))
+        .collect();
     assert_eq!(
-        v["permissions"],
-        serde_json::json!([
+        scanner,
+        [
             "barcode-scanner:allow-check-permissions",
             "barcode-scanner:allow-request-permissions",
             "barcode-scanner:allow-scan",
             "barcode-scanner:allow-cancel"
-        ])
+        ]
     );
+}
+
+/// B-48 O13: the haptics plugin is phone-only; only the phone capability grants it, and only the selection tick and the
+/// impact the UI plays (no free-form vibration, no notification patterns). The phone capability holds nothing else.
+#[test]
+fn the_haptics_plugin_is_phone_only_with_the_least_permissions() {
+    let cargo = std::fs::read_to_string(manifest_dir().join("Cargo.toml")).expect("Cargo.toml");
+    let dep_at = cargo
+        .find("tauri-plugin-haptics")
+        .expect("haptics dependency");
+    let table = cargo[..dep_at].rfind('[').expect("dependency table");
+    assert!(
+        cargo[table..dep_at].starts_with(
+            r#"[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]"#
+        ),
+        "tauri-plugin-haptics must be a phone-only dependency"
+    );
+    assert!(capability_permissions()
+        .iter()
+        .all(|p| !p.contains("haptics:")));
+    let text = std::fs::read_to_string(manifest_dir().join("capabilities/mobile.json"))
+        .expect("capabilities/mobile.json");
+    let v: serde_json::Value = serde_json::from_str(&text).expect("capability json");
+    let perms: Vec<&str> = v["permissions"]
+        .as_array()
+        .expect("permissions array")
+        .iter()
+        .filter_map(|p| p.as_str())
+        .collect();
+    let haptics: Vec<&str> = perms
+        .iter()
+        .copied()
+        .filter(|p| p.starts_with("haptics:"))
+        .collect();
+    assert_eq!(
+        haptics,
+        [
+            "haptics:allow-selection-feedback",
+            "haptics:allow-impact-feedback"
+        ]
+    );
+    assert!(perms
+        .iter()
+        .all(|p| p.starts_with("barcode-scanner:") || p.starts_with("haptics:")));
+    let lib = std::fs::read_to_string(manifest_dir().join("src/lib.rs")).expect("lib.rs");
+    let init = lib
+        .find("tauri_plugin_haptics::init()")
+        .expect("haptics plugin registered");
+    assert!(lib[..init].trim_end().ends_with(
+        r#"#[cfg(any(target_os = "android", target_os = "ios"))]
+    let builder = builder.plugin("#
+    ));
 }

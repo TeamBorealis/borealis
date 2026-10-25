@@ -1,6 +1,7 @@
 import { type ReactNode, useState } from "react";
 import type { EquipSlot, InventoryItem } from "../../api/contract";
 import { Alert } from "../../components";
+import { haptic } from "../../lib/haptics";
 import { useCharacter } from "../../state/CharacterContext";
 import { Band } from "../spells/TwoPane";
 import { Glyph, type GlyphName } from "./Glyph";
@@ -82,8 +83,8 @@ export function InventoryPanel({ onSelectElement }: { onSelectElement: (itemId: 
         <Act icon="details" label="Details" disabled={!sel} onClick={() => setDetails(true)} />
         <Act icon="up" label="Up" disabled={!sel || selIdx <= 0} onClick={() => sel && void mutate((api, id) => api.moveItem({ characterId: id, inventoryId: sel.id, direction: "up" }))} />
         <Act icon="down" label="Down" disabled={!sel || selIdx >= inv.items.length - 1} onClick={() => sel && void mutate((api, id) => api.moveItem({ characterId: id, inventoryId: sel.id, direction: "down" }))} />
-        <Act icon="del" label="Delete" disabled={!sel} onClick={() => sel && void mutate((api, id) => api.removeItem({ characterId: id, inventoryId: sel.id, all: false }))} />
-        {showDeleteAll && <Act icon="del" label="Delete all" disabled={!sel} onClick={() => { if (sel) { void mutate((api, id) => api.removeItem({ characterId: id, inventoryId: sel.id, all: true })); setSelId(null); } }} />}
+        <Act icon="del" label="Delete" disabled={!sel} onClick={() => { if (sel) { haptic("delete"); void mutate((api, id) => api.removeItem({ characterId: id, inventoryId: sel.id, all: false })); } }} />
+        {showDeleteAll && <Act icon="del" label="Delete all" disabled={!sel} onClick={() => { if (sel) { haptic("delete"); void mutate((api, id) => api.removeItem({ characterId: id, inventoryId: sel.id, all: true })); setSelId(null); } }} />}
       </div>
       {details && sel && <ItemActionsDialog item={sel} index={selIdx} count={inv.items.length} onClose={() => setDetails(false)} />}
     </section>

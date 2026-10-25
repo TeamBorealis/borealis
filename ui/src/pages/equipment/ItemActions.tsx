@@ -2,6 +2,7 @@ import { CheckBox } from "../../components/controls";
 import { useState } from "react";
 import type { InventoryItem } from "../../api/contract";
 import { Button, Chip, Modal, TextArea, TextField, useConfirm } from "../../components";
+import { haptic } from "../../lib/haptics";
 import { useCharacter } from "../../state/CharacterContext";
 import { useSettings } from "../../state/SettingsContext";
 import { attuneBlocked, restrictionText, weaponsFiring } from "./attunement";
@@ -87,8 +88,8 @@ export function ItemActionsDialog({ item, index, count, onClose }: { item: Inven
         </div>
         <hr />
         <div className="row">
-          <Button variant="danger" onClick={() => run((api, id) => api.removeItem({ characterId: id, inventoryId: item.id, all: false }))}>Remove one</Button>
-          {item.quantity > 1 && <Button variant="danger" onClick={() => run((api, id) => api.removeItem({ characterId: id, inventoryId: item.id, all: true }))}>Remove all</Button>}
+          <Button variant="danger" onClick={() => { haptic("delete"); run((api, id) => api.removeItem({ characterId: id, inventoryId: item.id, all: false })); }}>Remove one</Button>
+          {item.quantity > 1 && <Button variant="danger" onClick={() => { haptic("delete"); run((api, id) => api.removeItem({ characterId: id, inventoryId: item.id, all: true })); }}>Remove all</Button>}
         </div>
       </div>
     </Modal>

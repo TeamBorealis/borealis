@@ -4,6 +4,7 @@ import { useLocation, useNavigate, useSearchParams } from "react-router";
 import type { CharacterSummary, RecheckReport } from "../../api/contract";
 import { Alert, Button, Modal, SearchInput, TextField, useConfirm, useToast } from "../../components";
 import { fileToBase64 } from "../../lib/files";
+import { haptic } from "../../lib/haptics";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { usePlatform } from "../../state/platform";
@@ -108,6 +109,7 @@ export function CharactersPage() {
   const remove = async (c: CharacterSummary) => {
     const r = await confirm({ title: "Delete character", body: `Delete ${c.name}? This cannot be undone.`, confirmLabel: "Delete", danger: true });
     if (r !== "confirm") return;
+    haptic("delete");
     if (ch.snapshot?.id === c.id) await ch.close(true);
     await api.deleteCharacter({ characterId: c.id });
     list.reload();

@@ -3,6 +3,8 @@ import { useNavigate } from "react-router";
 import { useShell } from "../../components/shell/ShellContext";
 import type { ElementSummary } from "../../api/contract";
 import { MetroProgressBar, ScoreInput, TextBox, useConfirm } from "../../components";
+import { haptic } from "../../lib/haptics";
+import { usePhone } from "../../lib/phone";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { useSettings } from "../../state/SettingsContext";
@@ -64,6 +66,7 @@ export function LevelPanel({ embedded = false }: { embedded?: boolean }) {
   const nav = useNavigate();
   const { setLevelUpOpen } = useShell();
   const blurbs = useClassBlurbs(snapshot?.ruleset ?? "dnd2024");
+  const phone = usePhone();
   if (!snapshot) return null;
   const lv = snapshot.level;
   const removeLevel = async () => {
@@ -93,9 +96,9 @@ export function LevelPanel({ embedded = false }: { embedded?: boolean }) {
       {lv.classes.map((c) => (
         <section key={c.slotId} className="lvl-class" aria-label={c.name ? `${c.name} ${c.level}` : `Empty ${c.level}`}>
           <header>
-            <h3>{c.name ? `${c.name} (${c.level})` : `EMPTY (${c.level})`}</h3>
+            <h3>{c.name ? `${c.name} (${c.level})` : `${phone ? "Empty" : "EMPTY"} (${c.level})`}</h3>
             <button type="button" className="lvl-link up" aria-label={`Level up ${c.name ?? "class"}`} disabled={!lv.canLevelUp || (!c.name && !c.isMain)}
-              onClick={() => void mutate((api, id) => api.levelUp({ characterId: id, classSlotId: c.slotId }))}>Level up <BarArrow dir="up" /></button>
+              onClick={() => { haptic("levelUp"); void mutate((api, id) => api.levelUp({ characterId: id, classSlotId: c.slotId })); }}>Level up <BarArrow dir="up" /></button>
           </header>
           <p className="lvl-sub">{c.name ? ((c.classId && blurbs[c.classId]) || `d${c.hitDie} hit die${c.subclass ? ` - ${c.subclass.name}` : ""}`) : "Select a multiclass from the Multiclass (Level N) selection picker."}</p>
           {c.name && !snapshot.options.averageHp && (

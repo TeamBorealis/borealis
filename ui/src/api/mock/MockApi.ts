@@ -666,6 +666,8 @@ export class MockApi implements Api {
     this.shares += 1;
   }
   async restartApp() { await this.tick(); }
+  /** The browser has no haptics plugin. */
+  async hapticsEnabled(): Promise<boolean> { await this.tick(); return false; }
   /** Debug-build Rust command only: the mock has no content digest. */
   async acceptanceDigest(): Promise<Record<string, unknown>> { await this.tick(); throw apiError("not_found", "The acceptance digest exists only in debug builds of the app."); }
 

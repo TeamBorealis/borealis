@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { AbilityKey, CharacterSnapshot, ElementSummary } from "../../api/contract";
 import { Button, Expander } from "../../components";
+import { haptic } from "../../lib/haptics";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { useAsync } from "../../state/useAsync";
@@ -59,6 +60,7 @@ export function MulticlassExpander({ snapshot, onAdded }: { snapshot: CharacterS
   const lv = snapshot.level;
   /** Classic builder: NEW MULTICLASS only adds the empty class slot; the class is picked from the Multiclass picker on Build > Class. */
   const add = async () => {
+    haptic("levelUp");
     const next = await mutate((api, id) => api.addMulticlass({ characterId: id }));
     if (next) onAdded?.();
   };
