@@ -115,7 +115,7 @@ export class MockApi implements Api {
       mobile: this.mobile, peerAfterMs: opts.linkPeerAfterMs ?? null, devices: opts.linkDevices,
       onReceived: (names) => this.addReceived(names),
     });
-    this.semantic = new MockSemantic((d) => this.emit("semantic:download", d), this.mobile, opts.semantic);
+    this.semantic = new MockSemantic((d) => this.emit("semantic:download", d), this.mobile, opts.semantic, (i) => this.emit("semantic:index", i));
     if (opts.bundleFile) this.picks.next = `/home/me/Downloads/${opts.bundleFile.replace(/[^A-Za-z0-9 ._-]/g, "_")}`;
     this.bundles = new MockBundles((token) => this.picks.take(token, "bundle-file"), (path) => this.picks.grantBundle(path), (names) => this.addReceived(names));
     if (opts.seed !== false) for (const c of seedLibrary()) { this.chars.set(c.id, c); this.saved.set(c.id, c); }

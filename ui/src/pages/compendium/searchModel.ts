@@ -1,4 +1,4 @@
-import type { ElementSummary, Ruleset, SearchHit, SearchIndexStatus, SemanticStatus, SearchScope, SearchSettings } from "../../api/contract";
+import type { ElementSummary, Ruleset, SearchHit, SearchIndexStatus, SemanticIndexing, SemanticStatus, SearchScope, SearchSettings } from "../../api/contract";
 
 /** The scopes the flyout offers (Sessions stays hidden until campaigns exist, spec section 11). */
 export const SCOPES: { id: Exclude<SearchScope, "sessions">; label: string }[] = [
@@ -77,12 +77,20 @@ export function badgeOf(row: ResultRow, preferred: Ruleset): "2014" | "2024" | n
   return row.ruleset === "dnd2024" ? "2024" : "2014";
 }
 
-/** Footer line: the mode ("Keyword + semantic" only while embeddings really answer), plus keyword index progress. */
-export function footerText(status: SearchIndexStatus | null, semanticActive = false): string {
+/** Footer line: the mode ("Keyword + semantic" only while embeddings really answer), plus keyword index progress, then
+ * semantic index progress (spec section 11). */
+export function footerText(status: SearchIndexStatus | null, semanticActive = false, indexing: SemanticIndexing | null = null): string {
   const mode = semanticActive ? "Keyword + semantic" : "Keyword search";
   if (status?.state === "building") return `${mode} - indexing ${status.done}/${status.total}`;
   if (status?.state === "failed") return `${mode} - index unavailable`;
-  return mode;
+  switch (indexing?.state) {
+    case "loading": return `${mode} - loading the semantic model`;
+    case "indexing": return `${mode} - semantic indexing ${indexing.total > 0 ? Math.floor((100 * indexing.done) / indexing.total) : 0}%`;
+    case "paused": return `${mode} - semantic indexing paused`;
+    case "disabled":
+    case "failed": return `${mode} - semantic search unavailable`;
+    default: return mode;
+  }
 }
 
 /** The one-line hint under results (spec section 8): only where semantic search is off but can really be turned on

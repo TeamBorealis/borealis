@@ -175,7 +175,7 @@ export function CompendiumBrowser({ initialQuery = "", initialSource = "", initi
         {q && results.data && showSemanticHint(semantic) && (
           <p className="v4-comp-hint">Better results for descriptive questions: <button type="button" className="v4-comp-hint-link" onClick={() => openBorealisSettings("search")}>turn on semantic search</button></p>
         )}
-        <p className="v4-comp-foot" role="note" aria-label="Search mode">{footerText(status, semantic?.active ?? false)}</p>
+        <p className="v4-comp-foot" role="note" aria-label="Search mode">{footerText(status, semantic?.active ?? false, semantic?.indexing ?? null)}</p>
       </div>
       <aside className="v4-desc" aria-label="Element description">
         <Button className="back" variant="ghost" icon="back" onClick={() => setSelected(null)}>Back to results</Button>

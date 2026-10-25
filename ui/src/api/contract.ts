@@ -53,6 +53,7 @@ import type {
   SearchHit,
   SearchIndexStatus,
   SemanticDownload,
+  SemanticIndexing,
   SemanticLicense,
   SemanticStatus,
   SearchPassage,
@@ -629,6 +630,8 @@ export interface ApiEvents {
   "search:index-status": SearchIndexStatus;
   /** Semantic model download progress (start, pause, cancel, verify, done, failure). */
   "semantic:download": SemanticDownload;
+  /** Semantic index progress (loading the model, indexing, paused, ready, disabled by the NaN guard). */
+  "semantic:index": SemanticIndexing;
   /** A device transfer session changed (phase, preview, progress, result). */
   "link:status": LinkStatus;
 }
@@ -647,6 +650,7 @@ export const EVENTS = {
   "files:dropped": "borealis://file-drop",
   "search:index-status": "search://index-status",
   "semantic:download": "borealis://semantic-download",
+  "semantic:index": "borealis://semantic-index",
   "link:status": "borealis://link-status",
 } as const satisfies Record<EventName, string>;
 

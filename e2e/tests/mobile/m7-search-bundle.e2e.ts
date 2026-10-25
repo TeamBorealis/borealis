@@ -12,7 +12,8 @@ import { ANDROID_BUNDLE_ID } from '../../support/mobile-env.js';
 
 // m7 (B-12 search, B-14 bundles) on the real phone builds: the keyword index builds on the device and
 // `firball` puts Fireball first; the Rules scope opens a section with its source and attribution;
-// Settings > Search shows the semantic line greyed (no backend linked yet) and the device tier.
+// Settings > Search offers semantic search (the llama.cpp backend is linked since B-12; nothing downloads without
+// the consent dialog) and shows the device tier.
 // Android also opens a `.borealis` file from outside the app (warm and cold): preview, Accept, listed.
 // Opt-in: E2E_M7=1 npm run e2e:android -- --tag m7   (or e2e:ios; iOS runs the search checks only:
 // a bundle reaches the app there through Files > Share, which is not in the accessibility tree).
@@ -85,8 +86,9 @@ async function searchChecks(ctx: Context, platform: MobilePlatform): Promise<voi
   // iOS reports the settings switch as a switch and the tier combo's choice as its value.
   const semantic = screen.getByRole(platform === 'ios' ? 'switch' : 'checkbox', 'Semantic search (optional)');
   await moreRow(screen, platform, screen.getByRole('button', 'Search settings'), semantic);
-  await expect(semantic).toBeDisabled();
-  await expect(screen.getByText(/arrives in a later update\. Search uses keywords until then\./)).toBeVisible();
+  await expect(semantic).toBeEnabled();
+  await expect(semantic).not.toBeChecked();
+  await expect(screen.getByText(/^Downloads the EmbeddingGemma 2 model \((about 310|210) MB\) once\./)).toBeVisible();
   await expect(screen.getByText('DEVICE TIER').first()).toBeVisible();
   const tier = /^Automatic \(Tier [123]: /;
   await expect(platform === 'ios' ? screen.getByDisplayValue(tier) : screen.getByLabel(tier)).toBeVisible();

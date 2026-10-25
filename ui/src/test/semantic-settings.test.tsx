@@ -68,11 +68,15 @@ describe("Settings > Search: consent", () => {
   });
 });
 
-describe("Settings > Search before the embedding backend exists (B-46)", () => {
+describe("Settings > Search in a build without the embedding backend", () => {
+  it("the mock defaults to the real app: backend linked, mirror published", () => {
+    expect(desktop().semantic.opts.backendAvailable).toBe(true);
+    expect(desktop().semantic.opts.mirrorPublished).toBe(true);
+  });
+
   it("the switch is disabled with one plain line, and no download can start", async () => {
     // Arrange
-    const api = desktop();
-    expect(api.semantic.opts.backendAvailable).toBe(false);
+    const api = desktop({ semantic: { backendAvailable: false } });
     const { user, dialog } = await openSearchTab(api);
 
     // Act
@@ -147,9 +151,26 @@ describe("Settings > Search: download controls", () => {
 });
 
 describe("Settings > Search on phones", () => {
-  it("a T1 phone reports the model as not available yet and never opens the consent", async () => {
+  it("a T1 phone gets the mirrored file: the consent names its size", async () => {
     // Arrange
-    const api = new MockApi({ mobile: true, semantic: { probedTier: "t1", backendAvailable: true } });
+    const api = new MockApi({ mobile: true, semantic: { probedTier: "t1" } });
+    const user = userEvent.setup();
+    renderApp("/more", { api });
+
+    // Act
+    await user.click(await screen.findByRole("button", { name: "Search settings" }));
+    const dialog = await screen.findByRole("dialog", { name: "Borealis Settings" });
+    await user.click(await within(dialog).findByRole("checkbox", { name: SWITCH }));
+
+    // Assert
+    const consent = await screen.findByRole("dialog", { name: "Turn on semantic search?" });
+    expect(within(consent).getByText(CONSENT_T1_PHONE)).toBeTruthy();
+    expect(api.semantic.starts).toBe(0);
+  });
+
+  it("a T1 phone whose file no URL serves reports it as not available yet and never opens the consent", async () => {
+    // Arrange
+    const api = new MockApi({ mobile: true, semantic: { probedTier: "t1", mirrorPublished: false } });
     const user = userEvent.setup();
     renderApp("/more", { api });
 
@@ -202,8 +223,8 @@ describe("search flyout hint and footer", () => {
     expect(api.semantic.starts).toBe(0);
   });
 
-  it("no hint before the backend exists (B-46), and the footer stays keyword-only", async () => {
-    const { dlg } = await search(desktop(), "fireball");
+  it("no hint without an embedding backend, and the footer stays keyword-only", async () => {
+    const { dlg } = await search(desktop({ semantic: { backendAvailable: false } }), "fireball");
     expect(within(dlg).queryByRole("button", { name: "turn on semantic search" })).toBeNull();
     expect(within(dlg).getByRole("note", { name: "Search mode" }).textContent).toBe("Keyword search");
   });
@@ -212,7 +233,8 @@ describe("search flyout hint and footer", () => {
     expect(footerText(null, true)).toBe("Keyword + semantic");
     expect(footerText({ state: "building", done: 1, total: 3, message: null }, false)).toBe("Keyword search - indexing 1/3");
     const base = { tier: "t3", probedTier: "t3", mobile: false, file: null, available: true, unavailableReason: null, modelPresent: false,
-      backendAvailable: true, semantic: false, active: false, consent: null, download: { state: "idle", done: 0, total: 0, message: null } } as const;
+      backendAvailable: true, semantic: false, active: false, consent: null, download: { state: "idle", done: 0, total: 0, message: null },
+      indexing: { state: "off", done: 0, total: 0, message: null, queryable: false } } as const;
     expect(showSemanticHint(null)).toBe(false);
     expect(showSemanticHint({ ...base, file: null })).toBe(false);
     const file = { quant: "Q8_0", fileName: "f", bytes: 1, sizeText: "about 310 MB" };
@@ -220,6 +242,51 @@ describe("search flyout hint and footer", () => {
     expect(showSemanticHint({ ...base, file, semantic: true })).toBe(false);
     expect(showSemanticHint({ ...base, file, backendAvailable: false })).toBe(false);
     expect(showSemanticHint({ ...base, file, available: false })).toBe(false);
+  });
+});
+
+describe("semantic index (S3.3)", () => {
+  it("the footer claims semantic only once the index is built, showing progress before", async () => {
+    // Arrange: semantic on with the model present; the mock index builds in four steps.
+    const api = desktop({ semantic: { modelPresent: true, stepMs: 150 } });
+    api.presetSettings({ search: { semantic: true, tierOverride: "auto", indexOnBattery: false, defaultEdition: "character" } });
+    const user = userEvent.setup();
+    renderApp("/characters", { api });
+
+    // Act
+    await user.type(await screen.findByLabelText("Compendium search"), "fireball{Enter}");
+    const dlg = await screen.findByRole("dialog", { name: "Compendium" });
+    const foot = within(dlg).getByRole("note", { name: "Search mode" });
+
+    // Assert
+    await waitFor(() => expect(foot.textContent).toMatch(/^Keyword search - semantic indexing \d+%$/));
+    await waitFor(() => expect(foot.textContent).toBe("Keyword + semantic"), { timeout: 3000 });
+    expect((await api.semanticStatus()).active).toBe(true);
+  });
+
+  it("Settings shows the index being built, then the On line", async () => {
+    // Arrange
+    const api = desktop({ semantic: { modelPresent: true, stepMs: 150 } });
+    api.presetSettings({ search: { semantic: true, tierOverride: "auto", indexOnBattery: false, defaultEdition: "character" } });
+
+    // Act
+    const { dialog } = await openSearchTab(api);
+
+    // Assert
+    expect(await within(dialog).findByText(/^Building the semantic index: \d+ of 1200 passages\./)).toBeTruthy();
+    expect(within(dialog).getByText("On: search uses keywords until the semantic index is built.")).toBeTruthy();
+    expect(await within(dialog).findByText(/^On: search also finds/, {}, { timeout: 3000 })).toBeTruthy();
+  });
+
+  it("footer lines for every index state", () => {
+    const i = (state: "loading" | "indexing" | "paused" | "disabled" | "ready", done = 0, total = 0) => ({ state, done, total, message: null, queryable: state === "ready" });
+    expect(footerText(null, false, i("loading"))).toBe("Keyword search - loading the semantic model");
+    expect(footerText(null, false, i("indexing", 300, 1200))).toBe("Keyword search - semantic indexing 25%");
+    expect(footerText(null, true, i("indexing", 1, 3))).toBe("Keyword + semantic - semantic indexing 33%");
+    expect(footerText(null, false, i("paused"))).toBe("Keyword search - semantic indexing paused");
+    expect(footerText(null, false, i("disabled"))).toBe("Keyword search - semantic search unavailable");
+    expect(footerText(null, true, i("ready"))).toBe("Keyword + semantic");
+    expect(footerText({ state: "building", done: 1, total: 3, message: null }, false, i("indexing", 1, 2))).toBe("Keyword search - indexing 1/3");
   });
 });
 

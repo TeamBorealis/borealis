@@ -34,8 +34,24 @@ function switchText(st: SemanticStatus): string {
   if (!st.available && !st.modelPresent) return st.unavailableReason ?? "";
   if (st.modelPresent && !st.backendAvailable) return st.download.message ?? "Model downloaded. Semantic search arrives in a later update of Borealis.";
   if (st.active) return "On: search also finds rules, lore and session notes by meaning.";
+  if (st.semantic && st.modelPresent) return "On: search uses keywords until the semantic index is built.";
   if (st.modelPresent) return "The model is on this device. Turn this on to use it.";
   return `Downloads the EmbeddingGemma 2 model (${st.file?.sizeText ?? ""}) once. Everything runs on this device.`;
+}
+
+/** The semantic index line (S3.3): building, waiting for the device, or turned off by the NaN guard. */
+function indexingText(st: SemanticStatus): string {
+  const i = st.indexing;
+  switch (i.state) {
+    case "loading": return "Loading the semantic search model...";
+    case "indexing": return st.active
+      ? `Adding new passages to the semantic index: ${i.done} of ${i.total}.`
+      : `Building the semantic index: ${i.done} of ${i.total} passages. Search uses keywords until it is done.`;
+    case "paused": return i.message ?? "Semantic indexing is paused.";
+    case "disabled":
+    case "failed": return i.message ?? "Semantic search is unavailable. Keyword search still works.";
+    default: return "";
+  }
 }
 
 function progressText(st: SemanticStatus): string {
@@ -112,6 +128,13 @@ export function SearchTab() {
         <>
           <DescCheck title="Semantic search (optional)" description={switchText(st)} checked={search.semantic && st.backendAvailable}
             disabled={!st.backendAvailable} onChange={(v) => toggle(v)} />
+          {search.semantic && indexingText(st) && (
+            <>
+              <FieldLabel>SEMANTIC INDEX</FieldLabel>
+              {st.indexing.state === "indexing" && <MetroProgressBar label="Semantic index" value={st.indexing.done} max={Math.max(st.indexing.total, 1)} />}
+              <p className="aur-set-help" role="status" aria-label="Semantic index">{indexingText(st)}</p>
+            </>
+          )}
           {(busy || resumable) && (
             <>
               <FieldLabel>MODEL DOWNLOAD</FieldLabel>

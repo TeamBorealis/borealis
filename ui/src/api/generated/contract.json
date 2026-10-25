@@ -8823,6 +8823,41 @@
     }
    }
   },
+  "SemanticIndexing": {
+   "k": "object",
+   "props": {
+    "done": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "message": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "queryable": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "state": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "SemanticLicense": {
    "k": "object",
    "props": {
@@ -8886,6 +8921,13 @@
      "t": {
       "k": "ref",
       "name": "SemanticFile"
+     }
+    },
+    "indexing": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "SemanticIndexing"
      }
     },
     "mobile": {
@@ -10258,6 +10300,10 @@
   "semantic:download": {
    "k": "ref",
    "name": "SemanticDownload"
+  },
+  "semantic:index": {
+   "k": "ref",
+   "name": "SemanticIndexing"
   }
  }
 }

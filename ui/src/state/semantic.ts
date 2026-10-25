@@ -4,7 +4,7 @@ import { useApi } from "./ApiContext";
 import { useSettings } from "./SettingsContext";
 
 /** Semantic model status for Settings > Search and the search flyout: refetched when the search settings change, kept
- * current by `semantic:download`. Reading it never makes a network request. */
+ * current by `semantic:download` and `semantic:index`. Reading it never makes a network request. */
 export function useSemanticStatus(): { status: SemanticStatus | null; setStatus: (s: SemanticStatus) => void; refresh: () => Promise<void> } {
   const api = useApi();
   const { settings } = useSettings();
@@ -18,6 +18,9 @@ export function useSemanticStatus(): { status: SemanticStatus | null; setStatus:
     setStatus((s) => (s ? { ...s, download, modelPresent: s.modelPresent || download.state === "done" } : s));
     if (download.state === "done" || download.state === "idle") void refresh();
   }), [api, refresh]);
+  useEffect(() => api.subscribe("semantic:index", (indexing) => {
+    setStatus((s) => (s ? { ...s, indexing, active: indexing.queryable && s.modelPresent && s.backendAvailable } : s));
+  }), [api]);
   return { status, setStatus, refresh };
 }
 

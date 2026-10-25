@@ -32,6 +32,21 @@ export interface SemanticConsent {
   decline: string;
 }
 
+export type SemanticIndexingState = "off" | "loading" | "indexing" | "paused" | "ready" | "disabled" | "failed";
+
+/** `semantic:index` payload (also `SemanticStatus.indexing`): building the semantic index on this device (S3.3). */
+export interface SemanticIndexing {
+  state: SemanticIndexingState;
+  /** Passages embedded in this run. */
+  done: number;
+  /** Passages this run has to embed. */
+  total: number;
+  /** Plain sentence: why indexing waits, the NaN-guard report, or a failure. */
+  message: string | null;
+  /** Search uses vectors right now (every corpus indexed for the loaded model). */
+  queryable: boolean;
+}
+
 /** `semanticStatus` result (Settings > Search). Never causes a request. */
 export interface SemanticStatus {
   /** Tier in effect (probe lowered by `settings.search.tierOverride`). */
@@ -44,14 +59,15 @@ export interface SemanticStatus {
   available: boolean;
   unavailableReason: string | null;
   modelPresent: boolean;
-  /** An embedding backend is linked into this build (false until B-46). */
+  /** An embedding backend is linked into this build. */
   backendAvailable: boolean;
   /** `settings.search.semantic`. */
   semantic: boolean;
-  /** Search really uses embeddings: semantic on, model present, backend linked. */
+  /** Search really uses embeddings: semantic on, model present, backend linked and every corpus indexed. */
   active: boolean;
   consent: SemanticConsent | null;
   download: SemanticDownload;
+  indexing: SemanticIndexing;
 }
 
 /** `semanticModelLicense` result: shown in Settings > About. */

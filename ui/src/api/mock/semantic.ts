@@ -1,4 +1,4 @@
-import type { SearchSettings, SemanticConsent, SemanticDownload, SemanticFile, SemanticLicense, SemanticStatus, SemanticTier } from "../types";
+import type { SearchSettings, SemanticConsent, SemanticDownload, SemanticFile, SemanticIndexing, SemanticLicense, SemanticStatus, SemanticTier } from "../types";
 import { apiError } from "./errors";
 
 /* Consent wording, kept equal to `borealis_embed::models::consent_body` by `src-tauri/tests/semantic_model.rs`. */
@@ -13,6 +13,9 @@ const NOT_AVAILABLE = "The model for this device is not available yet.";
 const NO_BACKEND = "Model downloaded. Semantic search arrives in a later update of Borealis; until then search uses keywords.";
 const NO_BACKEND_YET = "Semantic search (search by meaning) arrives in a later update. Search uses keywords until then.";
 const T0_REASON = "Semantic search needs at least 3 GB of memory. Keyword search works fully.";
+const INDEX_OFF: SemanticIndexing = { state: "off", done: 0, total: 0, message: null, queryable: false };
+/** Passages the simulated index embeds (in four steps). */
+const INDEX_TOTAL = 1200;
 
 /** Spec section 8 consent body for `file` (the "; N on this device" clause only for the smaller file, charging only on mobile). */
 export function consentBody(file: SemanticFile, mobile: boolean): string {
@@ -30,19 +33,23 @@ const ORDER: SemanticTier[] = ["t0", "t1", "t2", "t3"];
 export interface MockSemanticOptions {
   /** Highest tier the mock device allows (default t3 desktop, t2 phone). */
   probedTier: SemanticTier;
-  /** An embedding backend is linked (default false, like the app before B-46). */
+  /** An embedding backend is linked (default true, like the app since B-12; false = a build without it). */
   backendAvailable: boolean;
-  /** The T1 file has a URL (default false: mirror not published, B-46). */
+  /** The T1 file has a URL (default true: the mirror is published, B-46). */
   mirrorPublished: boolean;
   /** The model file is already on the device. */
   modelPresent: boolean;
+  /** The semantic index is already built when semantic search is on with the model present (default false: it
+   * builds in four `stepMs` steps first, like `vector_service.rs`). */
+  indexed: boolean;
   /** Delay between simulated progress steps in ms (default 30). */
   stepMs: number;
   /** The next download fails with this message. */
   failWith: string | null;
 }
 
-/** Mirrors `semantic_service.rs`: tier, consent text, a stepped download with pause / resume / cancel, delete. */
+/** Mirrors `semantic_service.rs` and `vector_service.rs`: tier, consent text, a stepped download with pause / resume /
+ * cancel, delete, and a stepped semantic index (`active` only once it is built). */
 export class MockSemantic {
   readonly opts: MockSemanticOptions;
   /** Every download start (consent accepted or Resume): the mock's stand-in for network requests. */
@@ -50,10 +57,48 @@ export class MockSemantic {
   private present: boolean;
   private download: SemanticDownload = { state: "idle", done: 0, total: 0, message: null };
   private timer: ReturnType<typeof setTimeout> | null = null;
+  private indexing: SemanticIndexing = { ...INDEX_OFF };
+  private indexTimer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(private readonly emit: (d: SemanticDownload) => void, private readonly mobile: boolean, opts: Partial<MockSemanticOptions> = {}) {
-    this.opts = { probedTier: mobile ? "t2" : "t3", backendAvailable: false, mirrorPublished: false, modelPresent: false, stepMs: 30, failWith: null, ...opts };
+  constructor(private readonly emit: (d: SemanticDownload) => void, private readonly mobile: boolean, opts: Partial<MockSemanticOptions> = {},
+    private readonly emitIndex: (i: SemanticIndexing) => void = () => {}) {
+    this.opts = { probedTier: mobile ? "t2" : "t3", backendAvailable: true, mirrorPublished: true, modelPresent: false, indexed: false, stepMs: 30, failWith: null, ...opts };
     this.present = this.opts.modelPresent;
+  }
+
+  /** Start, keep or drop the simulated index for the current settings (what the app's indexer thread does). */
+  private syncIndex(search: SearchSettings, present: boolean) {
+    const wanted = search.semantic && present && this.opts.backendAvailable && this.tier(search) !== "t0";
+    if (!wanted) {
+      if (this.indexTimer) clearTimeout(this.indexTimer);
+      this.indexTimer = null;
+      if (this.indexing.state !== "off") this.setIndex({ ...INDEX_OFF });
+      return;
+    }
+    if (this.indexing.state !== "off") return;
+    if (this.opts.indexed) {
+      this.setIndex({ state: "ready", done: 0, total: 0, message: null, queryable: true });
+      return;
+    }
+    this.setIndex({ state: "indexing", done: 0, total: INDEX_TOTAL, message: null, queryable: false });
+    const step = () => {
+      this.indexTimer = setTimeout(() => {
+        const done = Math.min(INDEX_TOTAL, this.indexing.done + INDEX_TOTAL / 4);
+        if (done < INDEX_TOTAL) {
+          this.setIndex({ ...this.indexing, done });
+          step();
+          return;
+        }
+        this.indexTimer = null;
+        this.setIndex({ state: "ready", done, total: INDEX_TOTAL, message: null, queryable: true });
+      }, this.opts.stepMs);
+    };
+    step();
+  }
+
+  private setIndex(i: SemanticIndexing) {
+    this.indexing = i;
+    this.emitIndex({ ...i });
   }
 
   private tier(search: SearchSettings): SemanticTier {
@@ -75,10 +120,12 @@ export class MockSemantic {
     const download = present && this.download.state !== "downloading"
       ? { state: "done" as const, done: file!.bytes, total: file!.bytes, message: this.opts.backendAvailable ? null : NO_BACKEND }
       : { ...this.download };
+    this.syncIndex(search, present);
+    const active = search.semantic && present && this.opts.backendAvailable && this.indexing.queryable;
     return {
       tier, probedTier: this.opts.probedTier, mobile: this.mobile, file, available, unavailableReason: reason, modelPresent: present,
-      backendAvailable: this.opts.backendAvailable, semantic: search.semantic, active: search.semantic && present && this.opts.backendAvailable,
-      consent: file ? consent(file, this.mobile) : null, download,
+      backendAvailable: this.opts.backendAvailable, semantic: search.semantic, active,
+      consent: file ? consent(file, this.mobile) : null, download, indexing: { ...this.indexing, queryable: active },
     };
   }
 
