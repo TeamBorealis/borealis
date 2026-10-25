@@ -83,6 +83,8 @@ html.phone .aur-set-foot .aur-set-restore { flex: 1.4 1 0; background: none; col
 
 /* Hamburger menu as a sheet (O8): the same menus as grouped lists, sentence case, 44/48 pt rows. */
 html.phone .menu-tree { padding: 0 0 8px; }
+/* Light theme: sheet and rows are both white, so the menu sheet takes the grouped background to keep its groups visible. */
+html.phone[data-theme="light"] .flyout:has(.menu-tree) { background: var(--ph-bg); }
 html.phone .menu-tree-group { margin: 0 0 16px; }
 html.phone .menu-tree-head {
   padding: 8px 4px 6px; border: 0; font: 600 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none;
