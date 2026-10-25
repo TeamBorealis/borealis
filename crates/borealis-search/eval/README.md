@@ -66,13 +66,23 @@ recorder is not built yet. It is added with the recorder.
   grade 0 = 21. Every query has at least one grade 3 or 2 document.
 - Pooled judge B (`qrels-pool.jsonl`): 5,701 judgements, none overlapping A's; grade 3 = 26, grade 2 = 569,
   grade 1 = 1,898, grade 0 = 3,208.
-- Total 7,016. Unjudged pairs count as grade 0; with both files `judged@10` is 1.00 for every variant.
+- V4 pooling (S3.3): the unjudged top 20 of the eight V4 configurations (Q8_0 at 768 / 512 / 256 / 128 dims,
+  Q6_K-te-Q4_K and Q5_K_M at 256 / 128) added 2,734 pairs, judged blind the same way (query text, title,
+  700-character excerpt, no variant): grade 3 = 4, grade 2 = 52, grade 1 = 621, grade 0 = 2,057. Appended to
+  `qrels-pool.jsonl`; `baseline.json` was rewritten for the larger judgement set (same ranker, nDCG@10 0.7404 ->
+  0.7285: the new relevant documents raise the ideal DCG).
+- Total 9,750. Unjudged pairs count as grade 0; with both files `judged@10` is 1.00 for every variant.
 
 ## Harness (phase B)
 
 - `cargo run --release -p borealis-search --example eval -- --variant V2` prints the category x metric table
   (also `--variant all`, `--compare A B`, `--pool`, `--write-baseline V`). Variants: V0 (borealis-ai BM25), V1, V2,
-  V2b (combined-field BM25F emulation), V2-t1..V2-t7 (V2 minus one tweak); V3/V4 are hooks for S1.4/S3.3.
+  V2b (combined-field BM25F emulation), V2-t1..V2-t7 (V2 minus one tweak); V3 is the S1.4 hook (not adopted).
+- V4 (S3.3) needs the model files: `--v4-cache <model.gguf>:<max_tokens>` embeds every chunk once into
+  `BOREALIS_V4_CACHE`, `--v4 <model.gguf>:<max_tokens>:<dims>...` evaluates hybrid configurations against
+  `T3,4,6,7` under the hybrid adoption rule (`BOREALIS_LATENCY_BUDGET=phone` for the mid-phone budget) and prints
+  per-stage timings, `--v4-pool <out> <spec>...` writes their unjudged pairs. `BOREALIS_CONTENT_DIR` and
+  `BOREALIS_EVAL_DIR` point the harness at copies pushed to a phone or emulator.
 - `--pool` writes `pool.jsonl` (git-ignored): the union of every variant's top 20 per query minus judged pairs,
   shuffled with a fixed seed, no variant information.
 - Variants can also be given as tweak sets: `T3,4,6,7` (exactly those tweaks, Tantivy fields), `B3,4,6,7` (same on
