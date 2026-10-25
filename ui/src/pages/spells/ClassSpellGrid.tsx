@@ -5,7 +5,8 @@ import { useCharacter } from "../../state/CharacterContext";
 import { setStatus } from "../../state/status";
 import { Glyph } from "../equipment/Glyph";
 import { arrowNav } from "./rowNav";
-import { ComponentCells, Mark, levelText, useSourceText } from "./SpellGrid";
+import { ComponentCells, Mark, componentText, levelText, useSourceText } from "./SpellGrid";
+import { RowDetail } from "../../components/RowDetail";
 import "../equipment/equipment.css";
 
 const isLocked = (s: SpellEntry) => s.level === 0 || s.alwaysPrepared;
@@ -77,7 +78,7 @@ export function ClassSpellGrid({ cls, picked, onPick }: { cls: ClassSpellcasting
               <tr key={`${s.id}:${s.slotId ?? ""}`} data-spell-id={s.id} className={picked === s.id ? "sel" : ""} onMouseDown={() => onPick(s.id)}
                 onDoubleClick={() => void toggle(s)} onKeyDown={(e) => onKey(e, s)}>
                 <td className="sp-ck"><Mark on={isKnown(s)} label={s.prepared ? "Prepared" : "Always prepared"} /></td>
-                <td className="sp-name"><button type="button" className="ap-name" onClick={() => onPick(s.id)}>{s.name}</button></td>
+                <td className="sp-name"><button type="button" className="ap-name" onClick={() => onPick(s.id)}>{s.name}</button><RowDetail parts={[levelText(s), componentText(s.casting), sourceText(s)]} /></td>
                 <td className="sp-lvl">{levelText(s)}</td>
                 <ComponentCells casting={s.casting} />
                 <td className="sp-src">{sourceText(s)}</td>

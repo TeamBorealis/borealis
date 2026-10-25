@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent } from "react";
 import type { ContentSource } from "../../api/contract";
-import { SearchInput } from "../../components";
+import { RowDetail, SearchInput } from "../../components";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { useAsync } from "../../state/useAsync";
@@ -135,7 +135,7 @@ export function SourcesPage() {
                   return (
                     <div key={s.id} role="row" aria-selected={selected.has(s.id)} onContextMenu={(e) => onRowContext(e, s)} className={`v4-grid-row${selected.has(s.id) ? " sel" : ""}`} onClick={(e) => pick(s.id, e)} onDoubleClick={() => openCompendium({ source: s.id })}>
                       <span role="gridcell" className="chk"><CheckBox aria-label={`Allow ${s.name}`} checked={allowed.has(s.id)} onChange={() => toggle(s)} /></span>
-                      <span role="gridcell" className="nm">{s.name}<span className="v4-flags">{s.playtest && <Badge d={mdiFlask} tip="Playtest material" />}{s.incomplete && <Badge d={mdiAlertCircleOutline} tip="Incomplete source" />}{s.info && <Badge d={mdiInformationOutline} tip={s.info} />}</span></span>
+                      <span role="gridcell" className="nm">{s.name}<span className="v4-flags">{s.playtest && <Badge d={mdiFlask} tip="Playtest material" />}{s.incomplete && <Badge d={mdiAlertCircleOutline} tip="Incomplete source" />}{s.info && <Badge d={mdiInformationOutline} tip={s.info} />}</span><RowDetail parts={[s.group, p?.attribution, p?.version && `v${p.version}`]} /></span>
                       <span role="gridcell">{s.group}</span>
                       <span role="gridcell">{p?.attribution ?? ""}</span>
                       <span role="gridcell">{p?.version ?? ""}</span>

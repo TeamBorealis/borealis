@@ -3,6 +3,7 @@ import { Button } from "../../components";
 import { setStatus } from "../../state/status";
 import { useCharacter } from "../../state/CharacterContext";
 import { Glyph } from "../equipment/Glyph";
+import { RowDetail } from "../../components/RowDetail";
 
 /**
  * Spellcasting class that learned the slot's spell (for the source column and the status line).
@@ -74,7 +75,7 @@ export function SlotsTable({ slots, classes, onPick, picked, current, onCurrent 
               <tr key={s.id} aria-selected={s.id === current} onClick={() => onCurrent(s.id)}
                 className={s.id === current || (s.chosen && picked === s.chosen.id) ? "sel" : ""}>
                 <td className="sp-ck">{s.chosen && <span className="sp-mark"><Glyph name="tick" label="Chosen" /></span>}</td>
-                <td>{s.title}{s.of > 1 ? ` (${s.ordinal} of ${s.of})` : ""}</td>
+                <td className="sp-slot-title">{s.title}{s.of > 1 ? ` (${s.ordinal} of ${s.of})` : ""}<RowDetail parts={[`Gained on level ${s.gainedOnLevel}`, s.replaced.at(-1) && `Replaced ${s.replaced.at(-1)!.name}`, sourceOf(s, classes)]} /></td>
                 <td>{s.chosen ? <button type="button" className="ap-name" onClick={() => onPick(s.chosen!.id)}>{s.chosen.name}</button> : <span className="sp-open">not selected{s.required ? "" : " (optional)"}</span>}</td>
                 <td className="al-c">{s.gainedOnLevel}</td>
                 <ReplacedCell slot={s} />

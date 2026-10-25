@@ -18,3 +18,4 @@ export * from "./controls";
 export * from "./shell/ShellContext";
 export * from "./ImportNotice";
 export * from "./EditionMarks";
+export * from "./RowDetail";

@@ -6,7 +6,8 @@ import { useAsync } from "../../state/useAsync";
 import { Glyph } from "../equipment/Glyph";
 import { mergeRows } from "../builder/PickerGroup";
 import { arrowNav } from "./rowNav";
-import { ComponentCells } from "./SpellGrid";
+import { ComponentCells, componentText } from "./SpellGrid";
+import { RowDetail } from "../../components/RowDetail";
 import "../equipment/equipment.css";
 
 const levelText = (o: Partial<SlotOption>) => (o.level === undefined ? "" : `${o.level === 0 ? "Cantrip" : `Level ${o.level}`}${o.school ? ` · ${o.school}` : ""}`);
@@ -70,6 +71,7 @@ export function SlotOptionsGrid({ characterId, cls, slot, picked, onPick, onChoo
                 <td className="sp-name">
                   <button type="button" className="ap-name" aria-disabled={!!o.disabledReason || undefined} title={o.disabledReason}
                     onClick={() => onPick(o.id)} onKeyDown={(e) => onKey(e, o)}>{o.name}</button>
+                  <RowDetail parts={[levelText(o), componentText(o.spell ?? null)]} />
                 </td>
                 <td className="sp-lvl">{levelText(o)}</td>
                 <ComponentCells casting={o.spell ?? null} />

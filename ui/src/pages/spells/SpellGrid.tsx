@@ -1,4 +1,5 @@
 import type { ClassSpellcasting, SpellEntry, SpellFacts } from "../../api/contract";
+import { RowDetail } from "../../components/RowDetail";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { useAsync } from "../../state/useAsync";
@@ -23,6 +24,9 @@ const isKnown = (s: SpellEntry) => s.level === 0 || s.alwaysPrepared || s.prepar
 export function Mark({ on, label, title }: { on: boolean; label: string; title?: string }) {
   return on ? <span className="sp-mark" title={title} aria-label={title ?? label} role="img"><Glyph name="tick" /></span> : null;
 }
+
+/** The spell's components as the rules abbreviate them ("V, S, M"); the phone row detail (O14) shows them. */
+export const componentText = (c: SpellFacts | null): string => [c?.verbal && "V", c?.somatic && "S", c?.material && "M"].filter(Boolean).join(", ");
 
 /** Component cells (verbal, somatic, material) of a spell; blank when the spell has no content element. */
 export function ComponentCells({ casting }: { casting: SpellFacts | null }) {
@@ -65,7 +69,7 @@ export function SpellGrid({ cls, picked, onPick }: { cls: ClassSpellcasting; pic
                     title={locked ? (s.level === 0 ? "Cantrips are always prepared" : "Always prepared") : undefined}
                     onChange={(e) => void mutate((api, id) => api.setSpellPrepared({ characterId: id, classSlotId: cls.classSlotId, spellId: s.id, prepared: e.target.checked }))} />
                 </td>
-                <td className="sp-name"><button type="button" className="ap-name" onClick={() => onPick(s.id)}>{s.name}</button></td>
+                <td className="sp-name"><button type="button" className="ap-name" onClick={() => onPick(s.id)}>{s.name}</button><RowDetail parts={[levelText(s), componentText(s.casting), sourceText(s)]} /></td>
                 <td className="sp-lvl">{levelText(s)}</td>
                 <ComponentCells casting={s.casting} />
                 <td className="sp-src">{sourceText(s)}</td>

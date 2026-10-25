@@ -5,6 +5,7 @@ import { TabPanel, Tabs, signed } from "../../components";
 import { RequireCharacter } from "../../components/RequireCharacter";
 import { ABILITY_LABEL } from "../../lib/format";
 import { useCharacter } from "../../state/CharacterContext";
+import { usePhone } from "../../lib/phone";
 import { KnownSpells, SpellGrid } from "./SpellGrid";
 import { ClassSpellGrid } from "./ClassSpellGrid";
 import { Band, TwoPane } from "./TwoPane";
@@ -105,6 +106,7 @@ function MagicBody() {
   const [params] = useSearchParams();
   const wanted = params.get("slot");
   const [current, setCurrent] = useState<string | null>(wanted);
+  const phone = usePhone();
   const seen = useRef(wanted);
   // NEXT SELECTION re-enters this page with a new ?slot=: highlight that row and show its options.
   useEffect(() => {
@@ -112,7 +114,7 @@ function MagicBody() {
   }, [wanted]);
   if (!snapshot) return null;
   const sc = snapshot.spellcasting;
-  const tabs = [{ id: OVERVIEW, label: "Spellcasting" }, ...sc.classes.map((c) => ({ id: c.classSlotId, label: c.className.toUpperCase() }))];
+  const tabs = [{ id: OVERVIEW, label: "Spellcasting" }, ...sc.classes.map((c) => ({ id: c.classSlotId, label: phone ? c.className : c.className.toUpperCase() }))];
   const cur = sc.classes.find((c) => c.classSlotId === active);
   const body = sc.classes.length === 0
     ? <p className="sp-empty">Your character doesn't have any spellcasting available here...</p>
