@@ -1,0 +1,26 @@
+/*
+ * B-48 WP7 Build steps and Ability scores (mobile-facelift-spec sec. 3.5). Phones only; the pickers themselves are WP4
+ * (lists.css). Ability scores read as six cards: the score, the modifier chip, the base stepper, then the background notes;
+ * every colour comes from the theme tokens so the light theme reads as well as the dark one.
+ */
+html.phone .abil-page { gap: 16px; padding: 4px 0 0; }
+html.phone .abil-top { gap: 8px 12px; font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; }
+html.phone .abil-points strong, html.phone .abil-flag { color: var(--ph-gold); }
+html.phone .abil-points.over strong { color: var(--ph-danger); }
+html.phone .abil-row { gap: 16px 8px; }
+html.phone .abil-frame {
+  border: 0; border-radius: var(--ph-r-lg) var(--ph-r-lg) 44px 44px / var(--ph-r-lg) var(--ph-r-lg) 30px 30px; background: var(--ph-surface);
+  box-shadow: inset 0 0 0 1px var(--ph-line);
+}
+html.phone .abil-frame.over { box-shadow: inset 0 0 0 2px var(--ph-danger); }
+html.phone .abil-name { color: var(--ph-text-2); }
+html.phone .abil-score { font: 700 calc(36 * var(--ph-rem))/1 var(--ph-font-ui); color: var(--ph-text); font-variant-numeric: tabular-nums; }
+html.phone .abil-mod {
+  border: 2px solid var(--ph-field-line); background: var(--ph-bg); color: var(--ph-text); font: 700 var(--ph-t-body)/1 var(--ph-font-ui); font-variant-numeric: tabular-nums;
+}
+html.phone .abil-base { font: 600 var(--ph-t-sub)/1.2 var(--ph-font-ui); color: var(--ph-text-2); font-variant-numeric: tabular-nums; }
+html.phone .abil-src, html.phone .abil-extra { font: 400 var(--ph-t-caption)/1.35 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .abil-src .danger-text { color: var(--ph-danger); }
+html.phone .abil-restore { width: var(--ph-hit); height: var(--ph-hit); border-radius: var(--ph-r-pill); color: var(--ph-text-2); }
+html.phone .abil-restore:active { background: var(--ph-fill); }
+html.phone .abil-page .build-empty { font: 400 var(--ph-t-sub)/1.45 var(--ph-font-ui); color: var(--ph-text-2); }

@@ -1,0 +1,77 @@
+/*
+ * B-48 WP6/WP7 token bridge (mobile-facelift-spec sec. 3.3; O9). Page stylesheets read the desktop colour and type tokens
+ * (--text, --light-1, --description-bg, --fs-md ...). On a phone each one takes its phone role, so every page follows the
+ * phone theme in light and dark and the type scale follows the OS text size. Phones only; the desktop tokens are untouched.
+ *
+ * The :is() argument lifts the rule above :root[data-theme="light"][data-contrast="high"] (0,3,0), so the desktop light and
+ * high-contrast token blocks never win on a phone. The --ph- values themselves change per theme (phone/tokens.css).
+ */
+html.phone:is([data-theme][data-contrast], :root) {
+  /* Text */
+  --text: var(--ph-text);
+  --text-body: var(--ph-text);
+  --text-primary-header: var(--ph-text);
+  --text-secondary: var(--ph-text-2);
+  --text-muted: var(--ph-text-2);
+  --dark-1: var(--ph-text);
+  --dark-2: var(--ph-text);
+  --dark-3: var(--ph-text);
+  --dark-4: var(--ph-text-2);
+  --dark-4b: var(--ph-text-2);
+  --dark-5: var(--ph-text-3);
+  --gray-1: var(--ph-text);
+  --gray-2: var(--ph-text-2);
+  --gray-3: var(--ph-text-2);
+  --gray-5: var(--ph-text-2);
+  --gray-6: var(--ph-text-2);
+  --highlight-text: var(--ph-text);
+
+  /* Surfaces and lines */
+  --light-1: var(--ph-surface);
+  --light-2: var(--ph-fill);
+  --light-3: var(--ph-fill);
+  --light-4: var(--ph-line);
+  --light-5: var(--ph-field-line);
+  --description-bg: var(--ph-surface);
+  --content-bg: var(--ph-surface);
+  --flyout-bg: var(--ph-raised);
+  --menu-bg: var(--ph-raised);
+  --menu-select: var(--ph-fill);
+  --subnav-bg: var(--ph-bg);
+  --subnav-border: var(--ph-line);
+  --border: var(--ph-line);
+  --border-strong: var(--ph-field-line);
+  --aur-line: var(--ph-line);
+  --input-border: var(--ph-field-line);
+  --input-border-hover: var(--ph-field-line);
+  --input-border-focus: var(--ph-accent);
+  --focus: var(--ph-accent);
+  --accent-strong: var(--ph-text);
+  --accent-soft: var(--ph-accent-soft);
+  --accent-contrast: var(--ph-on-accent);
+
+  /* Signal colours */
+  --gold: var(--ph-gold);
+  --gold-soft: var(--ph-gold-soft);
+  --link: var(--ph-accent);
+  --success: var(--ph-success);
+  --success-soft: var(--ph-accent-soft);
+  --danger: var(--ph-danger);
+  --danger-soft: var(--ph-danger-soft);
+  --warning: var(--ph-gold);
+  --warning-soft: var(--ph-gold-soft);
+  --info: var(--ph-accent);
+  --info-soft: var(--ph-accent-soft);
+  --aur-success-bright: var(--ph-success);
+  --aur-danger-bright: var(--ph-danger);
+  --aur-warning-bright: var(--ph-gold);
+
+  /* Type: the desktop sizes (10-13 px) map to the phone scale, never under 11 px, in rem so the OS text size scales them. */
+  --fs-2xs: var(--ph-t-caption);
+  --fs-xs: var(--ph-t-caption);
+  --fs-sm: var(--ph-t-foot);
+  --fs-md: var(--ph-t-sub);
+  --fs-lg: var(--ph-t-body);
+  --fs-xl: var(--ph-t-title3);
+  --target: var(--ph-hit);
+}

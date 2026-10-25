@@ -3,6 +3,10 @@ import { installAndroidInsets } from "./androidInsets";
 import { installKeyboardInset } from "./keyboardInset";
 import { detectPhoneOs, installPlatformClasses, type PlatformEnv } from "./phone";
 import { isTauri } from "./tauri";
+// B-48 WP6/WP7 phone screen layer (html.phone only). main.tsx imports this module after every stylesheet, so these load last.
+import "../styles/phone/bridge.css";
+import "../styles/phone/tables.css";
+import "../styles/phone/build.css";
 
 /** A matchMedia that never matches, for WebViews without one. */
 const noMedia = () => ({ matches: false, addEventListener: () => undefined, removeEventListener: () => undefined });
