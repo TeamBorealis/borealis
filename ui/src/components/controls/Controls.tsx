@@ -1,5 +1,6 @@
 import { type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, useEffect, useId, useRef } from "react";
 import { Icon } from "../Icon";
+import { useHoldRepeat } from "../useHoldRepeat";
 
 /** MahApps Win10-style switch. `onLabel`/`offLabel` render beside the track. */
 export function ToggleSwitch({ checked, onChange, label, onLabel = "On", offLabel = "Off", disabled }: {
@@ -44,6 +45,16 @@ export function NumericUpDown({ value, onChange, min = 0, max = 999, step = 1, l
 }) {
   const id = useId();
   const clamp = (n: number) => Math.min(max, Math.max(min, n));
+  const latest = useRef({ value, onChange });
+  latest.current = { value, onChange };
+  const hold = useHoldRepeat();
+  /** One step from the latest value (a held press repeats before React re-renders, so it counts on from what it sent). */
+  const stepBy = (d: number) => () => {
+    const next = clamp(latest.current.value + d);
+    if (next === latest.current.value) return;
+    latest.current = { ...latest.current, value: next };
+    latest.current.onChange(next);
+  };
   return (
     <span className={`aur-numeric ${compact ? "compact" : ""}`}>
       <input
@@ -56,8 +67,8 @@ export function NumericUpDown({ value, onChange, min = 0, max = 999, step = 1, l
         }}
       />
       <span className="aur-numeric-btns">
-        <button type="button" tabIndex={-1} aria-label={`Increase ${label}`} disabled={value >= max} onClick={() => onChange(clamp(value + step))}><Icon name="up" /></button>
-        <button type="button" tabIndex={-1} aria-label={`Decrease ${label}`} disabled={value <= min} onClick={() => onChange(clamp(value - step))}><Icon name="down" /></button>
+        <button type="button" tabIndex={-1} aria-label={`Increase ${label}`} disabled={value >= max} {...hold(stepBy(step))}><Icon name="up" /></button>
+        <button type="button" tabIndex={-1} aria-label={`Decrease ${label}`} disabled={value <= min} {...hold(stepBy(-step))}><Icon name="down" /></button>
       </span>
     </span>
   );

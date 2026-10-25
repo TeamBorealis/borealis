@@ -1,5 +1,7 @@
+import { useRef } from "react";
 import { ABILITY_KEYS, type AbilityKey, type AbilityState } from "../../api/contract";
 import { ComboBox, Icon, IconButton } from "../../components";
+import { useHoldRepeat } from "../../components/useHoldRepeat";
 import { ABILITY_LABEL } from "../../lib/format";
 
 /** "Mountain Dwarf +2" -> "Mountain Dwarf (2)": classic builder lists each bonus source with its value in parentheses. */
@@ -24,6 +26,14 @@ function AbilitySpinner({ ability, state, onSet, onRoll, onAssign }: AbilityTile
   const chevrons = method === "point_buy" || method === "manual";
   const last = [...rolls].reverse().find((r) => r.ability === ability);
   const rollable = method === "roll_3d6" || method === "roll_4d6";
+  const latest = useRef({ cur, canUp, canDown, onSet });
+  latest.current = { cur, canUp, canDown, onSet };
+  const hold = useHoldRepeat();
+  const stepBy = (d: number) => () => {
+    const l = latest.current;
+    if (d > 0 ? !l.canUp : !l.canDown) return;
+    l.onSet(l.cur + d);
+  };
   return (
     <div className="abil" role="group" aria-label={label}>
       <div className="abil-main">
@@ -33,9 +43,9 @@ function AbilitySpinner({ ability, state, onSet, onRoll, onAssign }: AbilityTile
           <span className="abil-mod" aria-label={`modifier ${signed(modifier[ability])}`}>{signed(modifier[ability])}</span>
         </div>
         <div className="abil-spin">
-          {chevrons && <button type="button" className="abil-chev" aria-label={`Increase ${label}`} disabled={!canUp} onClick={() => onSet(cur + 1)}><Icon name="up" /></button>}
+          {chevrons && <button type="button" className="abil-chev" aria-label={`Increase ${label}`} disabled={!canUp} {...hold(stepBy(1))}><Icon name="up" /></button>}
           <span className="abil-base" title="Base score">{cur}</span>
-          {chevrons && <button type="button" className="abil-chev" aria-label={`Decrease ${label}`} disabled={!canDown} onClick={() => onSet(cur - 1)}><Icon name="down" /></button>}
+          {chevrons && <button type="button" className="abil-chev" aria-label={`Decrease ${label}`} disabled={!canDown} {...hold(stepBy(-1))}><Icon name="down" /></button>}
         </div>
       </div>
       <div className="abil-src">
