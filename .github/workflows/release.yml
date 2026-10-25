@@ -117,6 +117,14 @@ jobs:
         with:
           workspaces: ". -> target"
           shared-key: bundle
+      # A llama.cpp build cached from before the x86_64 baseline (S3.3) keeps its CMake cache (cmake does not
+      # reconfigure an existing build): rebuild it once.
+      - name: Drop a stale llama.cpp build
+        shell: bash
+        run: |
+          if grep -qs '^GGML_AVX2:BOOL=ON' target/release/build/llama-cpp-sys-2-*/out/build/CMakeCache.txt; then
+            cargo clean -p llama-cpp-sys-2
+          fi
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
