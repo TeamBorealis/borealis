@@ -380,6 +380,11 @@ async fn devices_lists_paired_peers_and_remove_forgets_them() {
     assert_eq!(d.name, "Phone");
     assert_eq!(d.platform, borealis_link::Platform::current());
     assert_eq!(d.expires_at, d.last_synced_at + 180 * 86_400);
+    // HW1 S11: the list shows the fingerprint the other device shows for itself, so the user can tell
+    // two devices with the same name apart before removing one.
+    let own = phone.sync.start_receive().await.unwrap();
+    assert_eq!(Some(d.fingerprint.clone()), own.fingerprint);
+    phone.sync.cancel(&own.session_id).unwrap();
     let value = serde_json::to_value(&listed).unwrap();
     let errs = contract_support::Contract::load().def("LinkDevice", &value[0]);
     assert!(errs.is_empty(), "{errs:?}\n{value:#}");

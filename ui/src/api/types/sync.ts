@@ -91,6 +91,8 @@ export interface LinkDevice {
   lastSyncedAt: number;
   /** The pairing lapses 180 days after the last transfer; re-pair by QR or code. */
   expiresAt: number;
+  /** Short certificate fingerprint (`9b12 89ce 4fd2 8eff`), the one that device shows for itself. */
+  fingerprint: string;
 }
 
 /* ---------- Bundles as files (Export to bundle / Open bundle / Share as a file, A2) ---------- */

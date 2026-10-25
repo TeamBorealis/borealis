@@ -6485,6 +6485,12 @@
       "k": "prim"
      }
     },
+    "fingerprint": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "id": {
      "opt": false,
      "t": {

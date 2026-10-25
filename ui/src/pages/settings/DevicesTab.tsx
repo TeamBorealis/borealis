@@ -38,6 +38,7 @@ export function DevicesTab() {
           <span>
             <strong>{d.name}</strong>
             <Help>{PLATFORM_LABEL[d.platform]} · Last synced {formatDay(d.lastSyncedAt)} · Expires {formatDay(d.expiresAt)}</Help>
+            <Help>Fingerprint {d.fingerprint}</Help>
           </span>
           <Button onClick={() => setRemoving(d)}>Remove</Button>
         </div>

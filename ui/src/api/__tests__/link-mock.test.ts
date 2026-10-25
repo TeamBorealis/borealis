@@ -50,7 +50,7 @@ describe("mock device transfer", () => {
 
   it("devices: expired pairings drop out, Remove forgets one, malformed ids are refused", async () => {
     const now = 1_800_000_000;
-    const dev = (id: string, lastSyncedAt: number) => ({ id, name: id, platform: "android" as const, pairedAt: 1, lastSyncedAt, expiresAt: lastSyncedAt + 180 * 86_400 });
+    const dev = (id: string, lastSyncedAt: number) => ({ id, name: id, platform: "android" as const, pairedAt: 1, lastSyncedAt, expiresAt: lastSyncedAt + 180 * 86_400, fingerprint: "0000 0000 0000 0000" });
     const api = new MockApi({ seed: false, linkDevices: [dev("00000000000000aa", now - 200 * 86_400), dev("00000000000000bb", now - 10), dev("00000000000000cc", now)] });
     (api.link as unknown as { now: () => number }).now = () => now;
     expect((await api.linkDevices()).map((d) => d.id)).toEqual(["00000000000000cc", "00000000000000bb"]);

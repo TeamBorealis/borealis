@@ -174,6 +174,8 @@ pub struct LinkDevice {
     pub last_synced_at: u64,
     /// The pairing lapses at this time (180 days after the last transfer); re-pair by QR.
     pub expires_at: u64,
+    /// Short certificate fingerprint (`9b12 89ce 4fd2 8eff`), the one that device shows for itself.
+    pub fingerprint: String,
 }
 
 impl LinkDevice {
@@ -187,6 +189,7 @@ impl LinkDevice {
             paired_at: d.paired_at,
             last_synced_at: d.last_seen,
             expires_at: d.expires_at,
+            fingerprint: d.fingerprint.short_hex(),
         }
     }
 }

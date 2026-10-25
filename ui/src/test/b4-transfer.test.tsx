@@ -237,8 +237,8 @@ describe("C1 Borealis Settings > Devices", () => {
     const user = userEvent.setup();
     const day = Date.UTC(2026, 9, 24) / 1000;
     const api = new MockApi({ aiChunkDelayMs: 2, rng: () => 0.5, linkDevices: [
-      { id: "a1b2c3d4e5f60718", name: "Borealis on iPhone or iPad", platform: "ios", pairedAt: day - 86_400, lastSyncedAt: day, expiresAt: day + 180 * 86_400 },
-      { id: "0f1e2d3c4b5a6978", name: "Borealis on Windows PC", platform: "windows", pairedAt: day - 30 * 86_400, lastSyncedAt: day - 3 * 86_400, expiresAt: day + 177 * 86_400 },
+      { id: "a1b2c3d4e5f60718", name: "Borealis on iPhone or iPad", platform: "ios", pairedAt: day - 86_400, lastSyncedAt: day, expiresAt: day + 180 * 86_400, fingerprint: "9b12 89ce 4fd2 8eff" },
+      { id: "0f1e2d3c4b5a6978", name: "Borealis on Windows PC", platform: "windows", pairedAt: day - 30 * 86_400, lastSyncedAt: day - 3 * 86_400, expiresAt: day + 177 * 86_400, fingerprint: "0095 b498 f557 a94a" },
     ] });
     const forget = vi.spyOn(api, "linkForgetDevice");
     renderApp("/characters", { api });
@@ -247,6 +247,8 @@ describe("C1 Borealis Settings > Devices", () => {
     await user.click(await screen.findByRole("tab", { name: "Devices" }));
     const phoneRow = await screen.findByRole("group", { name: "Borealis on iPhone or iPad" });
     expect(phoneRow.textContent).toContain("iPhone or iPad · Last synced 24 Oct 2026 · Expires 22 Apr 2027");
+    // HW1 S11: the fingerprint tells two devices with one name apart (it matches what that device shows).
+    expect(phoneRow.textContent).toContain("Fingerprint 9b12 89ce 4fd2 8eff");
     expect(screen.getByRole("group", { name: "Borealis on Windows PC" }).textContent).toContain("Windows PC · Last synced 21 Oct 2026");
     await user.click(within(phoneRow).getByRole("button", { name: "Remove" }));
     const confirm = await screen.findByRole("dialog", { name: "Remove device" });

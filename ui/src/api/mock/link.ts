@@ -5,6 +5,8 @@ const CODE = /^\s*\d{1,2}[\s-]+[a-z]+[\s-]+[a-z]+\s*$/i;
 const QR_PREFIX = "borealis-link:v1?";
 const DAY_SECS = 86_400;
 const PAIRING_TTL_DAYS = 180;
+/** The simulated peer's own certificate fingerprint (what it would show under its QR). */
+const MOCK_PEER_FINGERPRINT = "9b12 89ce 4fd2 8eff";
 const FINAL: readonly LinkPhase[] = ["done", "failed", "cancelled", "declined", "expired"];
 
 const blank = (sessionId: string, role: "send" | "receive", phase: LinkPhase): LinkStatus => ({
@@ -149,7 +151,7 @@ export class MockDeviceLink {
     const now = this.now();
     const id = this.peer.platform === "ios" ? "a1b2c3d4e5f60718" : "0f1e2d3c4b5a6978";
     const known = this.devices.find((d) => d.id === id);
-    const entry: LinkDevice = { id, name: this.peer.name, platform: this.peer.platform, pairedAt: known?.pairedAt ?? now, lastSyncedAt: now, expiresAt: now + PAIRING_TTL_DAYS * DAY_SECS };
+    const entry: LinkDevice = { id, name: this.peer.name, platform: this.peer.platform, pairedAt: known?.pairedAt ?? now, lastSyncedAt: now, expiresAt: now + PAIRING_TTL_DAYS * DAY_SECS, fingerprint: MOCK_PEER_FINGERPRINT };
     this.devices = [entry, ...this.devices.filter((d) => d.id !== id)];
   }
 
