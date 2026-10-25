@@ -12,6 +12,7 @@
 		2841F205A9FF755EE3C1D270 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 92D75755E07BB7D6E057A3C7 /* CoreGraphics.framework */; };
 		615DE10BD3A4F74E6C3766A6 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 99BCF78DFF7233A908CB8725 /* Metal.framework */; };
 		6935D154D9A00EDF657F57C9 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AB568CBBF97AF6EA62534AA6 /* WebKit.framework */; };
+		6D8A71772A208F84A8E4C440 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 27FF6BA6C85CED6C1F35E818 /* Accelerate.framework */; };
 		924921672CB8179872AB26EB /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A81170AD1BE228F4BF749771 /* UIKit.framework */; };
 		9BB5CAE0C5262847F30F7B07 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = ACDD4E6B3770198F57B42282 /* Assets.xcassets */; };
 		A23E5EA70364923FF83F16B7 /* libapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26BB05CA6540ADB8E10C7ED2 /* libapp.a */; };
@@ -36,6 +37,7 @@
 		1E2314AEB05937AB2CA7C930 /* ai_profile.rs */ = {isa = PBXFileReference; path = ai_profile.rs; sourceTree = "<group>"; };
 		1F24D0267C3768E4841973DF /* commands_ai.rs */ = {isa = PBXFileReference; path = commands_ai.rs; sourceTree = "<group>"; };
 		26BB05CA6540ADB8E10C7ED2 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
+		27FF6BA6C85CED6C1F35E818 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		2E1AF00E2A0E9BBABE5ADF43 /* commands_ai_setup.rs */ = {isa = PBXFileReference; path = commands_ai_setup.rs; sourceTree = "<group>"; };
 		309B1C0E418BE690C0FBD401 /* commands_import.rs */ = {isa = PBXFileReference; path = commands_import.rs; sourceTree = "<group>"; };
 		32E7107850C5DEA5198CC38A /* ai_host.rs */ = {isa = PBXFileReference; path = ai_host.rs; sourceTree = "<group>"; };
@@ -111,6 +113,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A23E5EA70364923FF83F16B7 /* libapp.a in Frameworks */,
+				6D8A71772A208F84A8E4C440 /* Accelerate.framework in Frameworks */,
 				2841F205A9FF755EE3C1D270 /* CoreGraphics.framework in Frameworks */,
 				615DE10BD3A4F74E6C3766A6 /* Metal.framework in Frameworks */,
 				AD26F56EDB414018FABCF2DE /* MetalKit.framework in Frameworks */,
@@ -222,6 +225,7 @@
 		9BE7E93AE14733FDD4218D49 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				27FF6BA6C85CED6C1F35E818 /* Accelerate.framework */,
 				92D75755E07BB7D6E057A3C7 /* CoreGraphics.framework */,
 				26BB05CA6540ADB8E10C7ED2 /* libapp.a */,
 				99BCF78DFF7233A908CB8725 /* Metal.framework */,

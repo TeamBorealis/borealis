@@ -102,6 +102,9 @@ targets:
     dependencies:
       - framework: libapp.a
         embed: false
+      # llama.cpp (ggml, semantic search) calls Accelerate (vDSP, BLAS). libapp.a is a static library, so
+      # the framework link its build script asks cargo for never reaches this Xcode link.
+      - sdk: Accelerate.framework
       - sdk: CoreGraphics.framework
       - sdk: Metal.framework
       - sdk: MetalKit.framework
