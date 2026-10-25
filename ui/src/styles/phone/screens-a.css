@@ -1,0 +1,97 @@
+/*
+ * B-48 WP6 screens A (mobile-facelift-spec sec. 3.5): Sources, Additional content and More (Start, New character and Search
+ * build on the WP4/WP5 rows, tiles and sheets). Phones only, the same elements in the same order. Sources is a grouped list of
+ * rows (O14: group, author and version as the detail line) with its commands as 44/48 pt buttons and the description card
+ * under it. The Sources/compendium width fixes live in the desktop files; this file only restyles.
+ */
+
+/* ---------- Sources ---------- */
+html.phone .v4-sources-wrap { display: flex; flex-direction: column; height: auto; }
+html.phone .v4-sources { height: auto; padding: 12px var(--ph-gutter) 16px; }
+html.phone .v4-grid-tools { flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+html.phone .v4-grid-tools .search { flex: 1 1 100%; width: auto; }
+html.phone .v4-grid-tools .search .input, html.phone .v4-grid-tools .search .input:focus { border-color: var(--ph-field-line); }
+html.phone .v4-grid-cmds { display: flex; flex: 1 1 100%; flex-wrap: wrap; gap: 8px; }
+html.phone .v4-grid-cmd {
+  width: var(--ph-hit); height: var(--ph-hit); border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text);
+  transition: transform var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .v4-grid-cmd:active:not(:disabled) { transform: scale(0.94); background: var(--ph-raised); }
+html.phone .v4-grid-cmd:disabled { color: var(--ph-text-3); opacity: 0.6; }
+html.phone .v4-grid-cmd .icon { width: 20px; height: 20px; }
+html.phone .v4-apply {
+  flex: 1 1 auto; height: var(--ph-hit); min-height: var(--ph-hit); margin: 0; padding: 0 16px; border-radius: var(--ph-r-md);
+  background: var(--ph-accent); color: var(--ph-on-accent); font: 600 var(--ph-t-sub)/1 var(--ph-font-ui); text-transform: none;
+}
+html.phone .v4-apply:disabled { background: var(--ph-fill); color: var(--ph-text-3); }
+html.phone .v4-grid { display: block; font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); }
+html.phone .v4-grid-head { display: none; }
+html.phone .v4-grid-body { overflow: visible; }
+html.phone .v4-grid-body > [role="rowgroup"] { margin: 0 0 16px; overflow: hidden; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .v4-grid-row, html.phone .v4-grid-row:nth-child(odd) {
+  position: relative; display: grid; grid-template-columns: var(--ph-hit) minmax(0, 1fr); column-gap: 4px; min-height: var(--ph-row); padding: 2px var(--ph-gutter) 2px 4px;
+  border: 0; background: none; color: var(--ph-text); transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .v4-grid-row + .v4-grid-row { box-shadow: inset 0 1px 0 var(--ph-line); }
+html.phone .v4-grid-row:active { background: var(--ph-raised); }
+html.phone .v4-grid-row > span, html.phone .v4-grid-row > :nth-child(n + 4) { padding: 0; overflow: visible; white-space: normal; }
+html.phone .v4-grid-row > :nth-child(n + 3) { display: none; }
+html.phone .v4-grid-row .chk { display: grid; place-items: center; }
+html.phone .v4-grid-row .nm { display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; padding: 8px 0; font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); }
+html.phone .v4-grid-row .nm .ph-row-detail { flex: 1 1 100%; margin: 2px 0 0; padding: 0; }
+html.phone .v4-grid-row.sel { background: var(--ph-accent-soft); }
+html.phone .v4-grid-row.sel::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--ph-accent); }
+html.phone .v4-grid-group, html.phone .v4-grid-row.v4-grid-group { background: none; font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .v4-grid-group .gn { padding: 8px 0; }
+html.phone .v4-flags { margin: 0; gap: 6px; }
+html.phone .v4-flag { color: var(--ph-text-2); }
+html.phone .v4-flag .icon { width: 16px; height: 16px; }
+html.phone .v4-grid-empty { padding: 16px; font: 400 var(--ph-t-sub)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v4-src-desc { margin: 0 var(--ph-gutter) 24px; border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); overflow: hidden; }
+html.phone .v4-src-desc .desc-scroll { overflow: visible; }
+html.phone .v4-src-desc > .desc-pane:empty { display: none; }
+html.phone .v4-src-facts { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v4-src-info { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+
+/* ---------- Additional content: sections as cards, sentence case ---------- */
+html.phone .v4-content { padding: 12px var(--ph-gutter) 32px; }
+html.phone .v4-content > h1 { font: 700 var(--ph-t-title2)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .v4-content .lead { font: 400 var(--ph-t-sub)/1.45 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v4-csec { margin: 0 0 24px; }
+html.phone .v4-csec > header { gap: 8px 12px; margin: 0 0 8px; }
+html.phone .v4-csec h2 { font: 600 var(--ph-t-title3)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .v4-csec .body { font: 400 var(--ph-t-sub)/1.45 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v4-csec .body .field > label, html.phone .v4-csec .body .field-label { text-transform: none; }
+html.phone .v4-csec .list { overflow: hidden; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .v4-csec .list > li + li { border-top: 1px solid var(--ph-line); }
+html.phone .v4-fieldhead { margin: 16px 0 6px; font: 500 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; }
+html.phone .v4-urlbox { flex-wrap: wrap; }
+html.phone .v4-urlinput {
+  flex: 1 1 100%; min-width: 0; height: auto; min-height: var(--ph-hit); padding: 0 12px; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-md);
+  background: var(--ph-fill); color: var(--ph-text); font: 400 var(--ph-t-body)/1.25 var(--ph-font-ui);
+}
+html.phone .v4-urlinput:focus { outline: 2px solid var(--ph-accent); outline-offset: -1px; }
+html.phone .btn.v4-dl, html.phone .btn.v4-dl:active:not(:disabled) { background: var(--ph-accent); color: var(--ph-on-accent); text-transform: none; }
+html.phone .v4-urlerr { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-danger); }
+html.phone .v4-unverified { padding: 2px 8px; border-radius: var(--ph-r-sm); background: var(--ph-gold-soft); color: var(--ph-gold); font: 600 var(--ph-t-caption)/1.3 var(--ph-font-ui); text-transform: none; }
+html.phone .v4-index-problem { color: var(--ph-gold); }
+html.phone .v4-inline-link { display: inline-flex; align-items: center; min-height: var(--ph-hit); color: var(--ph-accent); font: 600 var(--ph-t-foot)/1.2 var(--ph-font-ui); text-transform: none; }
+html.phone .v4-pack-row { min-height: var(--ph-row); padding: 8px var(--ph-gutter); border-bottom: 1px solid var(--ph-line); font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .v4-pack-row label { min-height: var(--ph-hit); gap: 12px; }
+html.phone .v4-badge { min-width: 20px; padding: 0 6px; border-radius: var(--ph-r-pill); background: var(--ph-gold); color: var(--ph-on-gold); font: 700 var(--ph-t-caption)/20px var(--ph-font-ui); }
+html.phone .v4-status { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v4-content-cmds { gap: 8px; }
+html.phone .v4-5et-all { min-height: var(--ph-hit); gap: 12px; font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); }
+html.phone .v4-5et-count { color: var(--ph-gold); }
+html.phone .v4-5et-notes li, html.phone .v4-impcounts li, html.phone .v4-impdiag li { min-height: 32px; padding: 4px 0; border-bottom: 1px solid var(--ph-line); font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); }
+html.phone .v4-impcounts, html.phone .v4-impdiag, html.phone .v4-5et-notes { font-size: var(--ph-t-foot); }
+
+/* ---------- More: three grouped lists of full-width rows ---------- */
+html.phone .v5-list-pane > .v5-list + .v5-list { margin-top: 8px !important; }
+html.phone .v5-list a.v5-row { color: var(--ph-text); }
+html.phone .v5-list .v5-row .icon { width: 22px; height: 22px; color: var(--ph-text-2); }
+html.phone .v5-list .v5-row .icon:last-child { width: 18px; height: 18px; color: var(--ph-text-3); }
+html.phone .v5-list > li > .v5-row { padding-right: var(--ph-gutter); }
+
+/* Start: the primary action's second line keeps full strength on the accent fill (4.5:1 in both themes). */
+html.phone .v4-start-left > .v4-newbtn:first-of-type .d { opacity: 1; }

@@ -6,7 +6,7 @@ import { SRC, cssFiles, declaredVars, parseRules, readCss } from "./cssRules";
 // B-48 WP6/WP7 CSS contract (mobile-facelift-spec sec. 3.5, 7; O9, O14): the screen layer lives in phone files under
 // html.phone (checked for every phone file in b48-phone-css.test.tsx), reads its colours from the theme tokens so the light
 // theme is complete, and turns the data tables into one-line rows.
-const SCREENS = ["styles/phone/bridge.css", "styles/phone/tables.css", "styles/phone/build.css"];
+const SCREENS = ["styles/phone/bridge.css", "styles/phone/tables.css", "styles/phone/build.css", "styles/phone/screens-a.css"];
 const rules = (files = SCREENS) => files.flatMap((f) => parseRules(readCss(f)).map((r) => ({ ...r, file: f })));
 const bodyOf = (sel: string) => rules().filter((r) => r.selectors.includes(sel)).map((r) => r.body).join(";");
 
@@ -50,6 +50,7 @@ describe("phone screens CSS (B-48 WP6, WP7)", () => {
 
   it("O14: spells, selection slots, the catalogue and Sources lose their header row and read as rows with a detail line", () => {
     expect(bodyOf("html.phone .ap-grid thead")).toMatch(/display: none/);
+    expect(bodyOf("html.phone .v4-grid-head")).toMatch(/display: none/);
     expect(bodyOf("html.phone .ap-grid tbody tr")).toMatch(/display: grid/);
     expect(bodyOf("html.phone .ap-grid tbody tr")).toMatch(/min-height: var\(--ph-row\)/);
     expect(bodyOf("html.phone .ph-row-detail")).toMatch(/font: [^;]*var\(--ph-t-foot\)/);
