@@ -13,6 +13,7 @@ const KEYWORD_ONLY = 'Downloads the EmbeddingGemma 2 model (about 310 MB) once. 
 const ON_BUILDING = 'On: search uses keywords until the semantic index is built.';
 const ON_READY = 'On: search also finds rules, lore and session notes by meaning.';
 const READY = 'Keyword + semantic: the semantic index is complete.';
+const ON_KEYWORDS = 'On: search uses keywords on this device for now.';
 const BUILDING = /^Building the semantic index: \d+ of 1200 passages\. Search uses keywords until it is done\.$/;
 const DOWNLOADING = /^Downloading the model: [\d.]+ of [\d.]+ MB\.$/;
 const PHONE_INDEXING = 'Indexing can take several hours and runs while your device is charging. On slower phones, search may stay keyword-only after the download. Borealis checks the speed once the model has loaded.';
@@ -107,7 +108,7 @@ describe('s34', { tags: ['s34'] }, () => {
     await consentAndDownload(ctx, PHONE_INDEXING);
     await waitLine(ctx, 'downloading', DOWNLOADING);
     await waitLine(ctx, 'kept keyword-only for speed', TOO_SLOW);
-    await waitLine(ctx, 'switch stays on keywords', ON_BUILDING);
+    await waitLine(ctx, 'switch stays on keywords', ON_KEYWORDS);
     expectEqual('semantic index line', TOO_SLOW, await semanticIndexLine(ctx));
     const all = await lines(ctx);
     if (all.includes(READY)) throw new Error('a device over the budget must not claim keyword + semantic');

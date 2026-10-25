@@ -35,10 +35,15 @@ function switchText(st: SemanticStatus): string {
   if (!st.available && !st.modelPresent) return st.unavailableReason ?? "";
   if (st.modelPresent && !st.backendAvailable) return st.download.message ?? "Model downloaded. Semantic search arrives in a later update of Borealis.";
   if (st.active) return "On: search also finds rules, lore and session notes by meaning.";
+  if (st.semantic && st.modelPresent && (st.indexing.state === "failed" || st.indexing.state === "disabled")) return ON_KEYWORDS;
   if (st.semantic && st.modelPresent) return "On: search uses keywords until the semantic index is built.";
   if (st.modelPresent) return "The model is on this device. Turn this on to use it.";
   return `Downloads the EmbeddingGemma 2 model (${st.file?.sizeText ?? ""}) once. Everything runs on this device.`;
 }
+
+/** The switch line when this device keeps search keyword-only (too slow, NaN guard, load failure): the index is not
+ * being built, so the line must not say it is; the reason is the semantic index line below. */
+export const ON_KEYWORDS = "On: search uses keywords on this device for now.";
 
 /** Settings > Search once the vectors answer searches (the search footer then says "Keyword + semantic"). */
 export const READY_LINE = "Keyword + semantic: the semantic index is complete.";

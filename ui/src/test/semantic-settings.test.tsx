@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { MockApi } from "../api/mock/MockApi";
 import { consentBody } from "../api/mock/semantic";
-import { READY_LINE } from "../pages/settings/SearchTab";
+import { ON_KEYWORDS, READY_LINE } from "../pages/settings/SearchTab";
 import { footerText, showSemanticHint } from "../pages/compendium/searchModel";
 import { getStatus } from "../state/status";
 import { openBorealisSettings, renderApp } from "./utils";
@@ -291,7 +291,8 @@ describe("semantic index (S3.3)", () => {
     // Assert
     const line = "Semantic search is too slow on this device: one search takes 95 ms to embed (the budget is 40 ms), so search uses keywords. You can delete the model in Settings.";
     expect(await within(dialog).findByText(line)).toBeTruthy();
-    expect(within(dialog).getByText("On: search uses keywords until the semantic index is built.")).toBeTruthy();
+    expect(within(dialog).getByText(ON_KEYWORDS)).toBeTruthy();
+    expect(within(dialog).queryByText("On: search uses keywords until the semantic index is built.")).toBeNull();
     const st = await api.semanticStatus();
     expect(st.active).toBe(false);
     expect(st.indexing).toMatchObject({ state: "failed", queryable: false, done: 0 });
