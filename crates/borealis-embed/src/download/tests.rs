@@ -362,6 +362,21 @@ fn an_installed_file_is_verified_without_a_request() {
 }
 
 #[test]
+fn a_failed_connection_reads_as_plain_words_without_the_address() {
+    let data = blob();
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = ModelDir::new(tmp.path().join("models"));
+    // Port 1 on this machine: refused at once.
+    let spec = spec_for(&data, vec!["http://127.0.0.1:1/m".into()]);
+    let real = HttpTransport::loopback_for_tests();
+    let err = download(&dir, &spec, &real, &Control::new(), &mut |_| {}).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        "The model could not be downloaded: could not connect; check your connection."
+    );
+}
+
+#[test]
 fn the_real_transport_refuses_plain_http_without_connecting() {
     let data = blob();
     let srv = server(&[("/m", good(&data))]);

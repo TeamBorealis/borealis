@@ -9,6 +9,7 @@ use crate::content_fetch_retry::{
     check_complete, parse_retry_after, FetchError, RetryPolicy, Retrying, Sleep, CODE_OTHER,
     CODE_REFUSED,
 };
+use crate::content_fetch_text::{damaged, download_failed, INDEX_FILE, INDEX_SIGNATURE};
 use crate::content_import::{slug, stem, write_pack_meta, Scratch};
 use crate::content_index_aurora::{
     looks_like_xml, summarize, AuroraOutcome, MAX_FILE_BYTES, MAX_INDEX_BYTES,
@@ -31,6 +32,9 @@ const SHA256_ATTRIBUTE: &str = "sha256";
 const MAX_SIGNATURE_BYTES: usize = 4 * 1024;
 const SIGNATURE_SUFFIX: &str = ".sig";
 const RAW_GITHUB: &str = "https://raw.githubusercontent.com/";
+/// A downloaded file whose SHA-256 is not the one the index lists.
+const FILE_MISMATCH: &str =
+    "the downloaded file is damaged or has changed since the index was made";
 pub(crate) const USER_AGENT: &str = concat!("Borealis/", env!("CARGO_PKG_VERSION"));
 
 /// Detached signature document served at `<index url>.sig`: base64 key and signature over the
@@ -229,11 +233,28 @@ pub(crate) fn https_client() -> Result<reqwest::blocking::Client, String> {
             Some(why) => a.error(why),
         }
     });
-    crate::content_fetch_tls::client_builder()?
-        .timeout(std::time::Duration::from_secs(FETCH_TIMEOUT_SECS))
-        .redirect(policy)
-        .build()
-        .map_err(|e| error_chain(&e))
+    let built = crate::content_fetch_tls::client_builder().and_then(|b| {
+        b.timeout(std::time::Duration::from_secs(FETCH_TIMEOUT_SECS))
+            .redirect(policy)
+            .build()
+            .map_err(|e| error_chain(&e))
+    });
+    built.map_err(|detail| {
+        tracing::warn!("the download client could not be built: {detail}");
+        NO_SECURE_CONNECTION.to_string()
+    })
+}
+
+/// Shown when the download client cannot be set up (the reason is logged).
+const NO_SECURE_CONNECTION: &str = "could not set up a secure connection";
+
+/// [`error_chain`] without the request's address (logs keep the cause, not what was fetched).
+fn chain_without_url(e: &reqwest::Error) -> String {
+    let text = error_chain(e);
+    match e.url() {
+        Some(url) => text.replace(url.as_str(), "<address>"),
+        None => text,
+    }
 }
 
 /// The download client shared by every content fetch of the process (one connection pool, so a
@@ -250,11 +271,26 @@ pub(crate) fn shared_client() -> Result<reqwest::blocking::Client, String> {
     Ok(CLIENT.get_or_init(|| built).clone())
 }
 
-/// A transport failure, classified (redirect refusals stay permanent and keep their wording).
+/// A transport failure, classified. The message is short ("could not connect", ...); the error
+/// chain goes to the log without the address. A redirect refusal stays permanent and keeps the
+/// policy's own words ([`redirect_refusal`]), which name a scheme, never an address.
 pub(crate) fn send_error(e: &reqwest::Error) -> FetchError {
-    let text = error_chain(e);
+    let text = chain_without_url(e);
     if e.is_redirect() || text.contains("redirect") {
-        FetchError::new(CODE_REFUSED, text)
+        tracing::info!(code = CODE_REFUSED, "download failure detail: {text}");
+        let mut cause = std::error::Error::source(e);
+        let mut refusal = None;
+        while let Some(c) = cause {
+            let words = c.to_string();
+            if words.starts_with("refused a redirect") || words == "too many redirects" {
+                refusal = Some(words);
+            }
+            cause = c.source();
+        }
+        FetchError::new(
+            CODE_REFUSED,
+            refusal.unwrap_or_else(|| "refused a redirect".to_string()),
+        )
     } else if e.is_timeout() {
         FetchError::timeout(&text)
     } else {
@@ -547,7 +583,9 @@ impl AppState {
     ) -> Result<IndexRecord, String> {
         let url = previous.url.as_str();
         require_https(url).map_err(|e| e.message)?;
-        let bytes = fetcher.get(url, MAX_INDEX_BYTES)?;
+        let bytes = fetcher
+            .get_classified(url, MAX_INDEX_BYTES)
+            .map_err(|e| download_failed(INDEX_FILE, &e))?;
         if looks_like_html(&bytes) {
             return Err(WEB_PAGE_NOT_INDEX.into());
         }
@@ -596,18 +634,17 @@ impl AppState {
         {
             Ok(sig) => Some(sig),
             // A signature that could not be read now must not look like "no longer signed".
-            Err(e) if e.is_transient() => {
-                return Err(format!(
-                    "the signature could not be downloaded: {}",
-                    e.reason()
-                ))
-            }
+            Err(e) if e.is_transient() => return Err(download_failed(INDEX_SIGNATURE, &e)),
             Err(_) => None,
         };
         let public_key = check_trust(previous.public_key.as_deref(), bytes, sig)?;
-        let text = std::str::from_utf8(bytes).map_err(|_| "the index is not UTF-8 text")?;
-        let index = IndexFile::from_json_str(text)
-            .map_err(|e| format!("the index could not be read: {e}"))?;
+        let index = std::str::from_utf8(bytes)
+            .map_err(|_| "not UTF-8 text".to_string())
+            .and_then(|text| IndexFile::from_json_str(text).map_err(|e| e.to_string()))
+            .map_err(|detail| {
+                tracing::warn!("an index could not be read: {detail}");
+                damaged(INDEX_FILE)
+            })?;
         let name = index.info.name.clone().unwrap_or_else(|| url.to_string());
         let mut record = IndexRecord {
             url: url.to_string(),
@@ -693,7 +730,7 @@ impl AppState {
         let actual = sha256_hex(&bytes);
         if expected != actual {
             tracing::warn!("rejected {file_url}: SHA-256 mismatch");
-            return Err("the SHA-256 does not match the index".into());
+            return Err(FILE_MISMATCH.into());
         }
         if installed == Some(actual.as_str()) {
             return Ok(None);

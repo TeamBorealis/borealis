@@ -66,8 +66,21 @@ impl HttpTransport {
     }
 }
 
-/// Plain words for a reqwest failure (its Display can carry the URL).
+/// Plain words for a reqwest failure (its Display can carry the URL). The error chain, without the
+/// address, goes to the log only.
 fn plain(e: &reqwest::Error) -> String {
+    let mut chain = Vec::new();
+    let mut cause = std::error::Error::source(e);
+    while let Some(c) = cause {
+        chain.push(c.to_string());
+        cause = c.source();
+    }
+    tracing::info!(
+        timeout = e.is_timeout(),
+        connect = e.is_connect(),
+        "model download request failed: {}",
+        chain.join(": ")
+    );
     if e.is_timeout() {
         "the server did not answer in time".into()
     } else if e.is_redirect() {

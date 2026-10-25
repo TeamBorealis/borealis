@@ -70,22 +70,29 @@ impl FetchError {
         }
     }
 
-    /// The download timed out (`detail` is the transport's text).
+    /// A transport failure: the short `message` is what users see; `detail` (the transport's
+    /// error chain, without the address) goes to the log only.
+    fn transport(code: &str, message: &str, detail: &str) -> Self {
+        tracing::info!(code, "download failure detail: {detail}");
+        Self::new(code, message)
+    }
+
+    /// The download timed out (`detail`, the transport's text, is logged, not shown).
     #[must_use]
     pub fn timeout(detail: &str) -> Self {
-        Self::new(CODE_TIMEOUT, format!("{TIMED_OUT}: {detail}"))
+        Self::transport(CODE_TIMEOUT, TIMED_OUT, detail)
     }
 
-    /// No connection, or it failed before an answer.
+    /// No connection, or it failed before an answer (`detail` is logged, not shown).
     #[must_use]
     pub fn network(detail: &str) -> Self {
-        Self::new(CODE_NETWORK, format!("{NO_CONNECTION}: {detail}"))
+        Self::transport(CODE_NETWORK, NO_CONNECTION, detail)
     }
 
-    /// The body ended early.
+    /// The body ended early (`detail` is logged, not shown).
     #[must_use]
     pub fn truncated(detail: &str) -> Self {
-        Self::new(CODE_TRUNCATED, format!("{ENDED_EARLY}: {detail}"))
+        Self::transport(CODE_TRUNCATED, ENDED_EARLY, detail)
     }
 
     /// A 403 that says no requests are left.

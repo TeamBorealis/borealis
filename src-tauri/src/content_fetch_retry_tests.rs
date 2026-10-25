@@ -228,6 +228,25 @@ fn plain_messages_keep_their_code_and_retry_after() {
 }
 
 #[test]
+fn transport_detail_stays_out_of_the_message() {
+    let chain = "error sending request for url (https://x.invalid/a.index): client error (Connect)";
+    let cases = [
+        (FetchError::network(chain), "could not connect [network]"),
+        (
+            FetchError::timeout(chain),
+            "the download timed out [timeout]",
+        ),
+        (
+            FetchError::truncated("received 10 of 99 bytes"),
+            "the download ended early [truncated]",
+        ),
+    ];
+    for (e, reason) in cases {
+        assert_eq!(e.reason(), reason);
+    }
+}
+
+#[test]
 fn a_body_shorter_than_announced_is_truncated() {
     assert_eq!(
         check_complete(10, Some(99)).unwrap_err().code,

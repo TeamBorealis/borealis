@@ -59,6 +59,7 @@ pub mod console_attach;
 pub mod content_auto;
 pub mod content_dto;
 pub mod content_fetch_retry;
+pub mod content_fetch_text;
 pub mod content_fetch_tls;
 pub mod content_fivetools_fetch;
 pub mod content_fivetools_remote;
