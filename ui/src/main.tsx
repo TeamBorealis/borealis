@@ -23,6 +23,7 @@ import "./styles/splash.css";
 import "./styles/phone/tokens.css";
 import "./styles/phone/base.css";
 import "./styles/phone/shell.css";
+import "./styles/phone/overlays.css";
 import { startPhone } from "./lib/phoneStartup";
 
 if (/Android/i.test(navigator.userAgent)) document.documentElement.classList.add("android");

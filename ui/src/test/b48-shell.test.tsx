@@ -120,6 +120,7 @@ describe("hamburger menu (O8, O15)", () => {
     expect(within(menu).queryByRole("button", { name: "Exit Application" })).toBeNull();
     const labels = within(menu).getAllByRole("button").map((b) => b.textContent);
     expect(labels.indexOf("Open bundle...")).toBeGreaterThan(labels.indexOf("New Character"));
+    expect(menu.closest(".flyout-overlay")?.getAttribute("data-sheet")).toBe("auto");
   });
 
   it("a narrow desktop window keeps Exit Application", async () => {

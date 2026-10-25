@@ -1,6 +1,8 @@
 import { type FormEvent, type KeyboardEvent, type ReactNode, useId, useRef } from "react";
 import { IconButton } from "../../components";
 import { useModalBehavior } from "../../components/controls/useModalBehavior";
+import { useSheetDrag } from "../../components/controls/useSheetDrag";
+import { usePhone } from "../../lib/phone";
 import "./settings.css";
 
 export interface WindowTab { id: string; label: string }
@@ -36,10 +38,13 @@ export function SettingsWindow({ title, tabs, active, onTab, tabsLabel, idPrefix
 }) {
   const { ref, onKeyDown } = useModalBehavior(onClose);
   const titleId = useId();
+  const phone = usePhone();
+  const drag = useSheetDrag(ref, onClose, phone);
   const submit = (e: FormEvent) => { e.preventDefault(); onSubmit?.(); };
   return (
     <div className="overlay aur-set-overlay" onKeyDown={onKeyDown}>
-      <div className="aur-set-win" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={ref}>
+      <div className="aur-set-win" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={ref} {...drag}>
+        {phone && <div className="sheet-grabber" aria-hidden="true" />}
         <div className="aur-set-head">
           <h2 id={titleId}>{title}</h2>
           <IconButton icon="x" label="Close" onClick={onClose} />

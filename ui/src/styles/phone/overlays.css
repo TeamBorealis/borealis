@@ -1,0 +1,123 @@
+/*
+ * B-48 WP3 phone overlays (mobile-facelift-spec sec. 3.4 Sheets and Toasts, options O4 and O5). Every Dialog, Flyout, Confirm,
+ * Settings window and the hamburger menu becomes a sheet from the bottom: 20 px top corners, a grabber, a dark scrim, swipe
+ * down to cancel. Buttons stay at the bottom in today's order. Nothing sits inside the top or bottom safe-area insets.
+ */
+
+/* Scrim: dim, never lighten (finding 4c). */
+html.phone .overlay { background: var(--ph-scrim); padding: 0; align-items: flex-end; justify-content: stretch; animation: ph-fade var(--ph-d-sheet-in) var(--ph-ease-out); }
+html.phone .flyout-overlay, html.phone .flyout-overlay.left, html.phone .flyout-overlay.bottom { inset: 0; padding: calc(var(--safe-t) + 8px) 0 0; align-items: stretch; justify-content: stretch; }
+html.phone .overlay.aur-set-overlay { background: var(--ph-scrim); padding: calc(var(--safe-t) + 8px) 0 0; align-items: stretch; animation: ph-fade var(--ph-d-sheet-in) var(--ph-ease-out); }
+
+/* The sheet surface. Short dialogs take their content height; flyouts, Settings and full dialogs reach just under the status bar. */
+html.phone .dialog, html.phone .flyout, html.phone .aur-set-win {
+  position: relative; width: 100%; max-width: none; margin: 0;
+  border: 0; border-radius: var(--ph-r-xl) var(--ph-r-xl) 0 0; overflow: hidden;
+  background: var(--ph-raised); color: var(--ph-text); box-shadow: var(--ph-shadow-sheet);
+  animation: ph-sheet-up var(--ph-d-sheet-in) var(--ph-ease-out);
+}
+html.phone .dialog { max-height: calc(100dvh - var(--safe-t) - 8px); padding-top: 0; padding-bottom: calc(var(--safe-b) + var(--kb)); }
+html.phone .dialog.full, html.phone .dialog.wide { height: calc(100dvh - var(--safe-t) - 8px); max-height: none; padding-top: 0; }
+html.phone .flyout { height: 100%; padding-top: 0; padding-right: var(--safe-r); padding-left: var(--safe-l); padding-bottom: calc(var(--safe-b) + var(--kb)); }
+html.phone .flyout-overlay.left .flyout { padding-right: var(--safe-r); padding-left: var(--safe-l); animation-name: ph-sheet-up; }
+html.phone .flyout-overlay[data-sheet="auto"] { align-items: flex-end; }
+html.phone .flyout-overlay[data-sheet="auto"] .flyout { height: auto; max-height: 100%; }
+html.phone .aur-set-win { height: 100%; max-height: none; padding-top: 0; padding-right: var(--safe-r); padding-left: var(--safe-l); padding-bottom: calc(var(--safe-b) + var(--kb)); }
+
+/* The Compendium flyout: compendium.css sets the flyout's padding to 0 (cancelling the safe-area padding, finding 4a) and leaves a
+   27 px band under it; on phones it is a full-height sheet like the others. */
+html.phone .flyout-overlay.bottom { padding: calc(var(--safe-t) + 8px) 0 0; }
+html.phone .flyout-overlay.bottom .flyout { height: 100%; border-top: 0; padding-top: 0; padding-bottom: calc(var(--safe-b) + var(--kb)); animation-name: ph-sheet-up; }
+
+/* Grabber (decorative; the head and grabber are the drag handle). */
+html.phone .sheet-grabber { flex: none; width: 36px; height: 5px; margin: 6px auto 2px; border-radius: 3px; background: var(--ph-field-line); opacity: 0.6; }
+html.phone .sheet-dragging { transition: none !important; animation: none !important; }
+html.phone .sheet-settling { transition: transform var(--ph-d-small) var(--ph-ease-out); }
+
+/* Heads: title 20 pt bold, sentence case, left aligned; the close button is a 44 pt circle. */
+html.phone .dialog-head, html.phone .aur-set-head {
+  height: auto; min-height: 52px; padding: 0 8px 0 var(--ph-gutter); gap: 8px; background: none; touch-action: none;
+}
+html.phone .dialog-head h2, html.phone .aur-set-head h2 {
+  font: 700 var(--ph-t-title3)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; letter-spacing: 0;
+}
+html.phone .dialog-head .btn-icon, html.phone .aur-set-head .btn-icon {
+  width: var(--ph-hit); height: var(--ph-hit); min-height: var(--ph-hit); border: 0; border-radius: var(--ph-r-pill); background: var(--ph-fill); color: var(--ph-text-2);
+  transition: transform var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .dialog-head .btn-icon:active, html.phone .aur-set-head .btn-icon:active { transform: scale(0.94); }
+html.phone .dialog-head .btn-icon .icon, html.phone .aur-set-head .btn-icon .icon { width: 20px; height: 20px; }
+html.phone .flyout-head, html.phone .flyout-overlay.bottom .flyout-head {
+  margin: 0; min-height: 52px; padding: 0 var(--ph-gutter); justify-content: flex-start; border: 0; background: none; touch-action: none;
+}
+html.phone .flyout-title, html.phone .flyout-overlay.bottom .flyout-title, html.phone .flyout:has(.lvl) .flyout-title {
+  font: 700 var(--ph-t-title3)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; letter-spacing: 0; text-align: left;
+}
+
+/* Bodies scroll inside the sheet; text reads at 15 px. */
+html.phone .dialog-body { padding: 4px var(--ph-gutter) var(--ph-gutter); font-size: var(--ph-t-sub); line-height: 1.45; color: var(--ph-text-2); }
+html.phone .flyout-body { margin: 0; padding: 4px var(--ph-gutter) var(--ph-gutter); }
+html.phone .flyout-body:has(> .lvl), html.phone .flyout-body:has(> .qv) { margin-top: 0; }
+
+/* Footers: buttons at the bottom in today's order (O5), full width, 44/48 pt, one primary (accent fill), destructive in danger. */
+html.phone .dialog-foot, html.phone .flyout-foot {
+  display: flex; flex-wrap: nowrap; gap: 12px; align-items: stretch; min-height: 0;
+  padding: 12px var(--ph-gutter) 12px; background: none; border-top: 1px solid var(--ph-line);
+}
+html.phone .aur-set-foot { gap: 8px; padding: 12px var(--ph-gutter); background: none; border-top: 1px solid var(--ph-line); }
+html.phone .dialog-foot .btn, html.phone .flyout-foot .btn, html.phone .aur-set-foot .btn {
+  flex: 1 1 0; min-width: 0; height: auto; min-height: var(--ph-hit); max-height: none; margin: 0; padding: 0 12px;
+  border: 0; border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text);
+  font: 600 var(--ph-t-sub)/1.2 var(--ph-font-ui); text-transform: none; letter-spacing: 0; white-space: normal; text-align: center;
+  transition: transform var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .dialog-foot .btn:active:not(:disabled), html.phone .flyout-foot .btn:active:not(:disabled), html.phone .aur-set-foot .btn:active:not(:disabled) { transform: scale(0.97); background: var(--ph-fill); color: var(--ph-text); }
+html.phone .dialog-foot .btn-primary, html.phone .flyout-foot .btn-primary, html.phone .aur-set-foot .btn-primary, html.phone .aur-set-foot .aur-set-save,
+html.phone .dialog-foot .btn-primary:active:not(:disabled), html.phone .flyout-foot .btn-primary:active:not(:disabled), html.phone .aur-set-foot .btn-primary:active:not(:disabled), html.phone .aur-set-foot .aur-set-save:active:not(:disabled) { background: var(--ph-accent); color: var(--ph-on-accent); }
+html.phone .dialog-foot .btn-danger, html.phone .flyout-foot .btn-danger,
+html.phone .dialog-foot .btn-danger:active:not(:disabled), html.phone .flyout-foot .btn-danger:active:not(:disabled) { background: var(--ph-danger); color: var(--ph-on-danger); }
+html.phone .dialog-foot .btn:disabled, html.phone .flyout-foot .btn:disabled, html.phone .aur-set-foot .btn:disabled { opacity: 0.5; }
+html.phone .aur-set-foot .spacer { display: none; }
+html.phone .aur-set-foot .aur-set-restore { flex: 1.4 1 0; background: none; color: var(--ph-accent); justify-content: flex-start; padding-left: 4px; }
+
+/* Hamburger menu as a sheet (O8): the same menus as grouped lists, sentence case, 44/48 pt rows. */
+html.phone .menu-tree { padding: 0 0 8px; }
+html.phone .menu-tree-group { margin: 0 0 16px; }
+html.phone .menu-tree-head {
+  padding: 8px 4px 6px; border: 0; font: 600 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none;
+}
+html.phone .menu-tree-head.gold { color: var(--ph-gold); }
+html.phone .menu-tree-item {
+  min-height: var(--ph-row); padding: 0 var(--ph-gutter) 0 4px; background: var(--ph-surface); color: var(--ph-text);
+  font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .menu-tree-item + .menu-tree-item { box-shadow: inset 0 1px 0 var(--ph-line); }
+html.phone .menu-tree-head + .menu-tree-item { border-radius: var(--ph-r-lg) var(--ph-r-lg) 0 0; }
+html.phone .menu-tree-item:last-child { border-radius: 0 0 var(--ph-r-lg) var(--ph-r-lg); }
+html.phone .menu-tree-head + .menu-tree-item:last-child { border-radius: var(--ph-r-lg); }
+html.phone .menu-tree-item:active:not(:disabled) { background: var(--ph-fill); }
+html.phone .menu-tree-item:disabled { color: var(--ph-text-3); }
+html.phone .menu-tree .aur-menu-icon { width: 32px; color: var(--ph-accent); }
+
+/* Toasts: an inverted pill above the status line and tab bar, inside the safe area, never over the status bar (finding 4b). The
+   offset uses tokens set on the root, because the toast host renders outside the shell window. */
+html.phone .toasts {
+  left: max(var(--ph-gutter), var(--safe-l)); right: max(var(--ph-gutter), var(--safe-r)); top: auto; max-width: none;
+  bottom: calc(var(--ph-tabbar) + var(--safe-b) + var(--ph-status) + var(--kb) + 12px);
+}
+html.phone .toast {
+  align-items: center; min-height: 48px; padding: 4px 4px 4px var(--ph-gutter); border: 0; border-radius: var(--ph-r-lg);
+  background: var(--ph-text); color: var(--ph-bg); box-shadow: var(--ph-shadow-toast);
+  font: 500 var(--ph-t-sub)/1.35 var(--ph-font-ui); animation: ph-toast-in var(--ph-d-small) var(--ph-ease-out);
+}
+html.phone .toast.error { background: var(--ph-danger); color: var(--ph-on-danger); }
+html.phone .toast.warning { background: var(--ph-gold); color: var(--ph-on-gold); }
+html.phone .toast button { flex: none; min-width: var(--ph-hit); min-height: var(--ph-hit); border-radius: var(--ph-r-pill); font: 600 var(--ph-t-body)/1 var(--ph-font-ui); }
+html.phone .toast button:active { background: rgb(127 127 127 / 0.25); }
+
+@keyframes ph-fade { from { opacity: 0; } }
+@keyframes ph-sheet-up { from { transform: translateY(100%); } }
+@keyframes ph-toast-in { from { transform: translateY(16px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  html.phone .dialog, html.phone .flyout, html.phone .aur-set-win, html.phone .toast { animation-name: ph-fade; }
+}

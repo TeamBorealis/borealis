@@ -3,6 +3,8 @@ import { type ButtonVariant, IconButton } from "../Button";
 import { Button } from "../Button";
 import { OverlayPortal } from "./OverlayHost";
 import { useModalBehavior } from "./useModalBehavior";
+import { useSheetDrag } from "./useSheetDrag";
+import { usePhone } from "../../lib/phone";
 
 /** Classic builder dialog window: accent title bar (13px SemiBold, left aligned), flat body, footer button row. Bottom sheet on phones. */
 export function Dialog({ title, onClose, children, footer, wide, full, className }: {
@@ -10,10 +12,13 @@ export function Dialog({ title, onClose, children, footer, wide, full, className
 }) {
   const { ref, onKeyDown } = useModalBehavior(onClose);
   const titleId = useId();
+  const phone = usePhone();
+  const drag = useSheetDrag(ref, onClose, phone);
   return (
     <OverlayPortal>
       <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()} onKeyDown={onKeyDown}>
-        <div className={`dialog ${wide ? "wide" : ""} ${full ? "full" : ""} ${className ?? ""}`.trim()} role="dialog" aria-modal="true" aria-labelledby={titleId} ref={ref}>
+        <div className={`dialog ${wide ? "wide" : ""} ${full ? "full" : ""} ${className ?? ""}`.trim()} role="dialog" aria-modal="true" aria-labelledby={titleId} ref={ref} {...drag}>
+          {phone && <div className="sheet-grabber" aria-hidden="true" />}
           <div className="dialog-head">
             <h2 id={titleId}>{title}</h2>
             <IconButton icon="x" label="Close" onClick={onClose} />

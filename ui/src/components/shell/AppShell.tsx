@@ -104,7 +104,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <TransferHost />
           <BundleHost />
           {narrow && menuOpen && (
-            <Flyout title="Menu" position="left" width="settings" onClose={() => setMenuOpen(false)}>
+            <Flyout title="Menu" position="left" width="settings" sheet="auto" onClose={() => setMenuOpen(false)}>
               <MenuTree onDone={() => setMenuOpen(false)} />
             </Flyout>
           )}

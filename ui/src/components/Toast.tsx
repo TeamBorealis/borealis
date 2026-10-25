@@ -1,4 +1,5 @@
 import { type ReactNode, createContext, useCallback, useContext, useMemo, useState } from "react";
+import { isPhone } from "../lib/phone";
 
 type Tone = "info" | "error" | "warning";
 interface ToastItem { id: number; text: string; tone: Tone }
@@ -13,7 +14,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const push = useCallback((text: string, tone: Tone = "info") => {
     const id = ++seq;
     setItems((cur) => [...cur.slice(-3), { id, text, tone }]);
-    setTimeout(() => dismiss(id), tone === "error" ? 8000 : 4500);
+    // Phones show plain toasts for 4 s (B-48 spec sec. 3.4); errors stay 8 s so they can be read.
+    setTimeout(() => dismiss(id), tone === "error" ? 8000 : isPhone() ? 4000 : 4500);
   }, [dismiss]);
   const api = useMemo(() => ({ push }), [push]);
   return (
