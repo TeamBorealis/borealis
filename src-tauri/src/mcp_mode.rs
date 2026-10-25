@@ -60,41 +60,89 @@ impl Platform {
             Self::Linux
         }
     }
+
+    /// The path separator of this platform's paths.
+    const fn separator(self) -> char {
+        match self {
+            Self::Windows => '\\',
+            Self::MacOs | Self::Linux => '/',
+        }
+    }
+
+    /// Whether `path` is absolute by this platform's rules, not the host's: a drive (`C:\`,
+    /// `C:/`) or UNC prefix on Windows, a leading `/` elsewhere.
+    fn is_absolute(self, path: &str) -> bool {
+        match self {
+            Self::Windows => {
+                let bytes = path.as_bytes();
+                path.starts_with(r"\\")
+                    || path.starts_with("//")
+                    || (bytes.len() > 2
+                        && bytes[0].is_ascii_alphabetic()
+                        && bytes[1] == b':'
+                        && matches!(bytes[2], b'\\' | b'/'))
+            }
+            Self::MacOs | Self::Linux => path.starts_with('/'),
+        }
+    }
+
+    /// `base` followed by `parts`, joined with this platform's separator, not the host's.
+    fn join(self, base: &str, parts: &[&str]) -> String {
+        let sep = self.separator();
+        let mut out = base.trim_end_matches(['/', sep]).to_string();
+        for part in parts {
+            out.push(sep);
+            out.push_str(part);
+        }
+        out
+    }
 }
 
 /// The per-user data folder of the app, exactly where the desktop app keeps it (Tauri's
 /// `app_data_dir`): `~/Library/Application Support/<id>` on macOS, `%APPDATA%\<id>` on Windows,
 /// `$XDG_DATA_HOME/<id>` (default `~/.local/share/<id>`) on Linux. Pure: `env` answers variable
-/// lookups, so each platform is testable on any host.
+/// lookups and the result is that platform's path text, built with that platform's separator and
+/// absolute-path rules rather than the host's, so each platform is testable on any host.
 pub(crate) fn user_data_dir(
     platform: Platform,
     env: &dyn Fn(&str) -> Option<String>,
-) -> Option<PathBuf> {
+) -> Option<String> {
     let var = |name: &str| env(name).filter(|v| !v.trim().is_empty());
-    let base = match platform {
-        Platform::MacOs => PathBuf::from(var("HOME")?).join("Library/Application Support"),
-        Platform::Windows => var("APPDATA").map(PathBuf::from).or_else(|| {
-            var("USERPROFILE").map(|u| PathBuf::from(u).join("AppData").join("Roaming"))
-        })?,
-        Platform::Linux => match var("XDG_DATA_HOME").map(PathBuf::from) {
-            Some(x) if x.is_absolute() => x,
-            _ => PathBuf::from(var("HOME")?).join(".local/share"),
+    let dir = match platform {
+        Platform::MacOs => platform.join(
+            &var("HOME")?,
+            &["Library", "Application Support", APP_IDENTIFIER],
+        ),
+        Platform::Windows => match var("APPDATA") {
+            Some(appdata) => platform.join(&appdata, &[APP_IDENTIFIER]),
+            None => platform.join(
+                &var("USERPROFILE")?,
+                &["AppData", "Roaming", APP_IDENTIFIER],
+            ),
+        },
+        Platform::Linux => match var("XDG_DATA_HOME") {
+            Some(xdg) if platform.is_absolute(&xdg) => platform.join(&xdg, &[APP_IDENTIFIER]),
+            _ => platform.join(&var("HOME")?, &[".local", "share", APP_IDENTIFIER]),
         },
     };
-    Some(base.join(APP_IDENTIFIER))
+    Some(dir)
+}
+
+/// This machine's per-user data folder of the app.
+fn this_user_data_dir() -> Option<PathBuf> {
+    let env = |name: &str| std::env::var(name).ok();
+    user_data_dir(Platform::current(), &env).map(PathBuf::from)
 }
 
 /// The user content library (imported packs) of this machine, when it exists.
 fn user_library_dir() -> Option<PathBuf> {
-    let env = |name: &str| std::env::var(name).ok();
-    let dir = user_data_dir(Platform::current(), &env)?.join("library");
+    let dir = this_user_data_dir()?.join("library");
     dir.is_dir().then_some(dir)
 }
 
 /// The app's search index folder of this machine (`<app-data>/search/v1`), when the app built one.
 fn user_search_dir() -> Option<PathBuf> {
-    let env = |name: &str| std::env::var(name).ok();
-    let dir = user_data_dir(Platform::current(), &env)?
+    let dir = this_user_data_dir()?
         .join(crate::search_service::SEARCH_DIR)
         .join(crate::search_service::LAYOUT_DIR);
     dir.is_dir().then_some(dir)
@@ -283,65 +331,68 @@ mod data_dir_tests {
         move |k| map.get(k).cloned()
     }
 
-    fn tail(path: &Path, n: usize) -> Vec<String> {
-        let parts: Vec<String> = path
-            .components()
-            .map(|c| c.as_os_str().to_string_lossy().into_owned())
-            .collect();
-        parts[parts.len() - n..].to_vec()
+    fn dir(platform: Platform, pairs: &[(&str, &str)]) -> Option<String> {
+        user_data_dir(platform, &lookup(pairs))
     }
 
     #[test]
     fn macos_uses_application_support_under_home() {
-        let dir = user_data_dir(Platform::MacOs, &lookup(&[("HOME", "/Users/mira")])).unwrap();
-        assert_eq!(
-            tail(&dir, 3),
-            ["Library", "Application Support", "app.borealis"]
-        );
-        assert!(dir.starts_with("/Users/mira"));
+        for home in ["/Users/mira", "/Users/mira/"] {
+            assert_eq!(
+                dir(Platform::MacOs, &[("HOME", home)]).as_deref(),
+                Some("/Users/mira/Library/Application Support/app.borealis")
+            );
+        }
+        assert!(dir(Platform::MacOs, &[]).is_none());
     }
 
     #[test]
     fn windows_uses_roaming_appdata_then_the_profile() {
-        let appdata = user_data_dir(
-            Platform::Windows,
-            &lookup(&[("APPDATA", "C:/Users/mira/AppData/Roaming")]),
-        )
-        .unwrap();
-        assert!(appdata.starts_with("C:/Users/mira/AppData/Roaming"));
-        assert_eq!(tail(&appdata, 1), ["app.borealis"]);
-        let profile = user_data_dir(
-            Platform::Windows,
-            &lookup(&[("USERPROFILE", "C:/Users/mira")]),
-        )
-        .unwrap();
-        assert_eq!(tail(&profile, 3), ["AppData", "Roaming", "app.borealis"]);
-        assert!(user_data_dir(Platform::Windows, &lookup(&[])).is_none());
+        let appdata = ("APPDATA", r"C:\Users\mira\AppData\Roaming");
+        assert_eq!(
+            dir(Platform::Windows, &[appdata, ("USERPROFILE", r"C:\Users\x")]).as_deref(),
+            Some(r"C:\Users\mira\AppData\Roaming\app.borealis")
+        );
+        assert_eq!(
+            dir(Platform::Windows, &[("USERPROFILE", r"C:\Users\mira\")]).as_deref(),
+            Some(r"C:\Users\mira\AppData\Roaming\app.borealis")
+        );
+        assert!(dir(Platform::Windows, &[]).is_none());
     }
 
     #[test]
     fn linux_honours_an_absolute_xdg_data_home_else_local_share() {
-        let xdg = user_data_dir(
-            Platform::Linux,
-            &lookup(&[("XDG_DATA_HOME", "/data/xdg"), ("HOME", "/home/mira")]),
-        )
-        .unwrap();
-        assert_eq!(xdg, PathBuf::from("/data/xdg/app.borealis"));
-        let relative = user_data_dir(
-            Platform::Linux,
-            &lookup(&[("XDG_DATA_HOME", "rel"), ("HOME", "/home/mira")]),
-        )
-        .unwrap();
+        let home = ("HOME", "/home/mira");
         assert_eq!(
-            relative,
-            PathBuf::from("/home/mira/.local/share/app.borealis")
+            dir(Platform::Linux, &[("XDG_DATA_HOME", "/data/xdg"), home]).as_deref(),
+            Some("/data/xdg/app.borealis")
         );
-        let blank = user_data_dir(
-            Platform::Linux,
-            &lookup(&[("XDG_DATA_HOME", " "), ("HOME", "/home/mira")]),
-        )
-        .unwrap();
-        assert_eq!(blank, PathBuf::from("/home/mira/.local/share/app.borealis"));
-        assert!(user_data_dir(Platform::Linux, &lookup(&[])).is_none());
+        for ignored in ["rel", " ", r"C:\data"] {
+            assert_eq!(
+                dir(Platform::Linux, &[("XDG_DATA_HOME", ignored), home]).as_deref(),
+                Some("/home/mira/.local/share/app.borealis"),
+                "XDG_DATA_HOME={ignored:?} is not an absolute Linux path"
+            );
+        }
+        assert!(dir(Platform::Linux, &[]).is_none());
+    }
+
+    #[test]
+    fn absolute_paths_follow_the_target_platform_not_the_host() {
+        assert!(Platform::Linux.is_absolute("/data"));
+        assert!(!Platform::Linux.is_absolute(r"C:\data"));
+        assert!(Platform::Windows.is_absolute(r"C:\data"));
+        assert!(Platform::Windows.is_absolute("C:/data"));
+        assert!(Platform::Windows.is_absolute(r"\\server\share"));
+        assert!(!Platform::Windows.is_absolute("/data"));
+        assert!(!Platform::Windows.is_absolute("C:data"));
+    }
+
+    #[test]
+    fn this_machine_resolves_the_folder_of_its_own_platform() {
+        let env = |name: &str| std::env::var(name).ok();
+        let text = user_data_dir(Platform::current(), &env).expect("HOME or APPDATA is set");
+        assert!(Path::new(&text).is_absolute(), "{text}");
+        assert!(text.ends_with(APP_IDENTIFIER), "{text}");
     }
 }
