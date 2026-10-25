@@ -10,6 +10,7 @@ import "../styles/phone/build.css";
 import "../styles/phone/screens-a.css";
 import "../styles/phone/play-magic.css";
 import "../styles/phone/gear.css";
+import "../styles/phone/manage-sheet.css";
 
 /** A matchMedia that never matches, for WebViews without one. */
 const noMedia = () => ({ matches: false, addEventListener: () => undefined, removeEventListener: () => undefined });

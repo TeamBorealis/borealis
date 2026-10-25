@@ -1,0 +1,108 @@
+/*
+ * B-48 WP7 Manage and Sheet (mobile-facelift-spec sec. 3.5). Phones only, same fields in the same order: section titles in
+ * sentence case at title size, labels above 44/48 pt fields, the experience stepper, the attack cards and their toolbar, the
+ * Character sheet controls over the preview. Colours come from the theme tokens, so both themes read.
+ */
+
+/* ---------- Manage: sections, labels, fields ---------- */
+html.phone .mg-page { gap: 28px; padding: 12px var(--ph-gutter) 32px; }
+html.phone .aur-content:has(.mg-page) { overflow-y: auto; }
+html.phone .mg-sec > h2, html.phone .mg-attacks .mg-sec > h2, html.phone .mg-char-appearance > h2 {
+  margin: 0; font: 600 var(--ph-t-title3)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; letter-spacing: 0;
+}
+html.phone .mg-sec > .mg-sub, html.phone .mg-attacks .mg-sec > .mg-sub, html.phone .mg-char-appearance > .mg-sub {
+  margin: 4px 0 12px; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2);
+}
+html.phone .mg-sec > .mg-sub.mg-sub-after, html.phone .mg-attacks .mg-sec > .mg-sub.mg-sub-after { margin-top: 8px; }
+html.phone .mg-grid, html.phone .mg-grid.two, html.phone .mg-char-appearance .mg-grid { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+html.phone .mg-f, html.phone .mg-char-first .mg-grid > .mg-f:nth-child(-n+3) { gap: 6px; margin: 0 0 12px; }
+html.phone .mg-f > label, html.phone .mg-f > .mg-label {
+  font: 500 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; letter-spacing: 0;
+}
+html.phone .mg-char-appearance .mg-f .aur-textbox, html.phone .mg-char-appearance .mg-f .aur-combo { height: auto; min-height: var(--ph-hit); }
+html.phone .mg-char-appearance .mg-f .aur-textbox input, html.phone .mg-char-appearance .mg-f .aur-combo select { height: auto; min-height: var(--ph-hit); }
+html.phone .mg-page .mg-f .aur-textbox input, html.phone .mg-page .mg-f .aur-combo select { padding-left: 12px; }
+html.phone .mg-f .textarea { min-height: 120px; }
+html.phone .mg-f .textarea.tall { min-height: 220px; }
+html.phone .mg-hint { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .mg-name .aur-textbox input { padding-right: var(--ph-hit); }
+html.phone .mg-name-dice { right: 0; width: var(--ph-hit); height: var(--ph-hit); border-radius: var(--ph-r-md); color: var(--ph-text-2); }
+html.phone .mg-name-dice .icon { width: 20px; height: 20px; }
+/* Current experience: the value with its + and - buttons, each a full hit area. */
+html.phone .mg-f .mg-xp, html.phone .v4-ed-field .mg-xp {
+  height: auto; min-height: calc(var(--ph-hit) + 2px); border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-md); background: var(--ph-fill); overflow: hidden;
+}
+html.phone .mg-f .mg-xp input, html.phone .v4-ed-field .mg-xp input, html.phone .mg-xp input {
+  min-height: var(--ph-hit); padding: 0 12px; color: var(--ph-text); font: 400 var(--ph-t-body)/1.25 var(--ph-font-ui); font-variant-numeric: tabular-nums;
+}
+html.phone .mg-xp-btn, html.phone .mg-xp-btn:last-child {
+  width: var(--ph-hit); min-width: var(--ph-hit); height: var(--ph-hit); margin: 0; color: var(--ph-text); box-shadow: inset 1px 0 0 var(--ph-line);
+}
+html.phone .mg-xp-btn:active { background: var(--ph-raised); }
+html.phone .mg-ok { color: var(--ph-success); }
+html.phone .mg-portrait .mg-actions { gap: 8px; }
+html.phone .mg-two { gap: 24px; }
+/* Attacks: the toolbar and the attack cards. */
+html.phone .mg-attacks { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+html.phone .mg-toolbar, html.phone .mg-attacks .mg-toolbar { gap: 8px; margin: 0 0 12px; }
+html.phone .mg-tool, html.phone .mg-attacks .mg-tool.wide, html.phone .mg-attacks .mg-tool:not(.wide), html.phone .mg-tool-gallery {
+  width: auto; min-width: var(--ph-hit); height: var(--ph-hit); min-height: var(--ph-hit); padding: 0 12px; gap: 8px; border-radius: var(--ph-r-md);
+  background: var(--ph-fill); color: var(--ph-text); font: 600 var(--ph-t-sub)/1 var(--ph-font-ui); justify-content: center;
+}
+html.phone .mg-attacks .mg-tool.wide .icon, html.phone .mg-attacks .mg-tool:not(.wide) .icon, html.phone .mg-tool .icon { width: 20px; height: 20px; margin: 0; transform: none; }
+html.phone .mg-tool:active:not(:disabled) { background: var(--ph-raised); }
+html.phone .atk-list { gap: 8px; }
+html.phone .atk {
+  margin: 0; gap: 8px; padding: 10px 8px 10px var(--ph-gutter); border: 0; border-left: 4px solid var(--ph-success); border-radius: var(--ph-r-lg);
+  background: var(--ph-surface);
+}
+html.phone .atk[aria-current="true"] { background: var(--ph-accent-soft); }
+html.phone .atk h3 { padding: 0; font: 600 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .atk p { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); font-style: normal; color: var(--ph-text-2); }
+html.phone .atk .btns button { width: var(--ph-hit); min-width: var(--ph-hit); height: var(--ph-hit); border-radius: var(--ph-r-pill); color: var(--ph-text-2); }
+html.phone .atk .btns button .icon { width: 20px; height: 20px; transform: none; }
+html.phone .atk .btns button:active { background: var(--ph-fill); }
+html.phone .ap-tag, html.phone .ap-tag.warn { padding: 2px 8px; border: 0; border-radius: var(--ph-r-sm); background: var(--ph-fill); color: var(--ph-text-2); font: 500 var(--ph-t-caption)/1.3 var(--ph-font-ui); text-transform: none; }
+html.phone .ap-tag.warn { background: var(--ph-gold-soft); color: var(--ph-gold); }
+/* Options, rules, edition tiles. */
+html.phone .mg-checks { grid-template-columns: minmax(0, 1fr); }
+html.phone .mg-rules-list li { min-height: var(--ph-row); padding: 8px 0; border-bottom: 1px solid var(--ph-line); font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); }
+html.phone .mg-tile { padding: 8px 12px; border: 0; border-radius: var(--ph-r-md); background: var(--ph-surface); }
+html.phone .mg-tile span { font: 600 var(--ph-t-caption)/1.3 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; }
+html.phone .mg-tile b { font: 700 var(--ph-t-title3)/1.2 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .mg-tag { font: 600 var(--ph-t-caption)/1.3 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; }
+html.phone .pg-tile { border: 2px solid var(--ph-line); border-radius: var(--ph-r-md); background: var(--ph-surface); color: var(--ph-text-2); font: 500 var(--ph-t-caption)/1.3 var(--ph-font-ui); text-transform: none; }
+html.phone .pg-tile[aria-pressed="true"] { border-color: var(--ph-gold); }
+html.phone .pg-note { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+/* Edition and compatibility sheet. */
+html.phone .v4-ed-sec > h2 { font: 600 var(--ph-t-title3)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .v4-ed-sub, html.phone .v4-ed-check .desc, html.phone .v4-ed-list .desc { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v4-ed-value { font: 400 var(--ph-t-sub)/1.4 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .v4-ed-field label { font: 500 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; }
+html.phone .v4-ed-check { min-height: var(--ph-row); }
+html.phone .v4-ed-check .head, html.phone .v4-ed-check.caps .head, html.phone .v4-ed-list .head { font: 500 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .v4-ed-actions .btn { min-height: var(--ph-hit); padding: 0 16px; border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text); font: 600 var(--ph-t-sub)/1 var(--ph-font-ui); text-transform: none; }
+html.phone .v4-ed-list li { padding: 12px var(--ph-gutter); border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+
+/* ---------- Sheet: controls, then the preview ---------- */
+html.phone .v4-sheet { display: flex; flex-direction: column; }
+html.phone .v4-sheet-left { padding: 12px var(--ph-gutter) 16px; }
+html.phone .v4-sheet-left h2, html.phone .v4-sheet-sec h2 { margin: 0 0 4px; font: 600 var(--ph-t-title3)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; top: 0; }
+html.phone .v4-sheet-left p.lead { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v4-sheet-link { margin: 8px 0 16px; }
+html.phone .v4-sheet-link a { min-height: var(--ph-hit); padding: 0 8px; gap: 8px; border-radius: var(--ph-r-md); color: var(--ph-accent); font: 600 var(--ph-t-foot)/1.2 var(--ph-font-ui); text-transform: none; }
+html.phone .v4-sheet-link .icon { width: 18px; height: 18px; }
+html.phone .v4-sheet-btns { gap: 8px; margin: 0 0 20px; }
+html.phone .sh-btn {
+  height: auto; min-height: var(--ph-hit); padding: 0 14px; gap: 8px; border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text);
+  font: 600 var(--ph-t-sub)/1.2 var(--ph-font-ui); white-space: normal; transition: transform var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .sh-btn:active:not(:disabled) { transform: scale(0.97); }
+html.phone .sh-btn:disabled { color: var(--ph-text-3); }
+html.phone .sh-btn .icon { width: 18px; height: 18px; }
+html.phone .v4-sheet-sec .mg-f { margin-top: 12px; }
+html.phone .v4-sheet-sec .mg-f .textarea { height: auto; min-height: var(--ph-hit); }
+html.phone .v4-sheet-pane { margin: 0 var(--ph-gutter) 16px; padding: 8px; border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .v4-sheet-pane iframe { margin: 0; border-radius: var(--ph-r-md); background: var(--ph-surface); }
+html.phone .v4-sheet-empty { font: 400 var(--ph-t-sub)/1.45 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v4-sheet-empty.err { color: var(--ph-danger); }
