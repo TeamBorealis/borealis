@@ -14,13 +14,13 @@
 .v5-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); background: var(--description-bg); }
 .v5-list > li + li { border-top: 0; }
 .v5-row { display: flex; align-items: center; gap: 8px; width: 100%; min-height: var(--target); padding: 2px 6px; background: transparent; border: 0; color: var(--text); font: inherit; font-size: var(--fs-md); text-align: left; cursor: pointer; }
-.v5-row:hover { background: var(--light-2); }
+@media (hover: hover) and (pointer: fine) { .v5-row:hover { background: var(--light-2); } }
 .v5-row[aria-pressed="true"], .v5-row[aria-current="true"], .v5-row[aria-expanded="true"], li.is-selected > .v5-row { background: var(--light-3); }
 .v5-row .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .v5-row .meta { color: var(--text-secondary); font-size: var(--fs-sm); white-space: nowrap; }
 .v5-row .icon { width: 14px; height: 14px; flex: none; color: var(--text-secondary); }
 .v5-row.static { cursor: default; }
-.v5-row.static:hover { background: transparent; }
+@media (hover: hover) and (pointer: fine) { .v5-row.static:hover { background: transparent; } }
 .v5-sub { display: block; padding: 0 6px 4px 20px; color: var(--text-secondary); font-size: var(--fs-sm); }
 .v5-sub.warn { color: var(--aur-warning-bright); }
 .v5-sub.bad { color: var(--aur-danger-bright); }
@@ -39,7 +39,7 @@
 /* Rules Q&A citations: inline markers are the classic description hyperlink (blue, underlined, italic);
    the source chips are flat list-row buttons (Light1, hover Light2, pressed Light3), square corners. */
 .v5-desc .v5-cite { display: inline; margin: 0 0 0 3px; padding: 0; border: 0; background: none; font: inherit; font-style: italic; color: var(--link); text-decoration: underline; cursor: pointer; }
-.v5-desc .v5-cite:hover { color: var(--text); }
+@media (hover: hover) and (pointer: fine) { .v5-desc .v5-cite:hover { color: var(--text); } }
 .v5-desc .msg .v5-md { white-space: normal; }
 .v5-md p { margin: 0 0 8px; }
 .v5-md ul, .v5-md ol { margin: 0 0 8px; padding-left: 20px; }
@@ -56,7 +56,7 @@
 .v5-cited .v5-note.warn { color: var(--aur-warning-bright); }
 .v5-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .v5-chip { display: inline-flex; align-items: baseline; gap: 6px; min-height: 22px; padding: 2px 8px; border: 1px solid var(--light-4); border-radius: 0; background: var(--light-1); color: var(--text); font: inherit; font-size: var(--fs-sm); cursor: pointer; }
-.v5-chip:hover { background: var(--light-2); }
+@media (hover: hover) and (pointer: fine) { .v5-chip:hover { background: var(--light-2); } }
 .v5-chip:active { background: var(--light-3); }
 .v5-chip .n { font-weight: 600; text-transform: uppercase; }
 .v5-chip .t { font-size: var(--fs-xs); color: var(--text-secondary); text-transform: capitalize; }
@@ -66,11 +66,12 @@
 .v5-foot { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .v5-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
 .v5-drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 8rem; padding: 14px; text-align: center; border: 1px dashed #242b2f; background: var(--light-1); cursor: pointer; margin-bottom: 10px; }
-.v5-drop:hover, .v5-drop.over { background: var(--light-2); border-color: #3b3f42; }
+.v5-drop.over { background: var(--light-2); border-color: #3b3f42; }
+@media (hover: hover) and (pointer: fine) { .v5-drop:hover { background: var(--light-2); border-color: #3b3f42; } }
 .v5-drop .icon { width: 28px; height: 28px; color: var(--gray-5); }
 .v5-picker { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 8px; }
 .v5-picker button { min-height: var(--target); padding: 0 10px; background: var(--light-1); border: 2px solid var(--border); color: var(--text); font: inherit; font-size: var(--fs-sm); cursor: pointer; }
-.v5-picker button:hover { background: var(--light-2); }
+@media (hover: hover) and (pointer: fine) { .v5-picker button:hover { background: var(--light-2); } }
 .v5-picker button[aria-pressed="true"] { background: var(--light-3); border-color: var(--light-5); }
 .v5-stage { display: flex; gap: 8px; align-items: flex-start; padding: 4px 6px; opacity: 0.5; }
 .v5-stage[data-state="active"], .v5-stage[data-state="done"] { opacity: 1; }
@@ -103,7 +104,7 @@
 .v5-bar a { color: var(--gray-5); }
 li.v5-row.static { padding-right: 4px; }
 .v5-line { display: flex; align-items: center; gap: 8px; padding-right: 6px; }
-.v5-line:hover { background: var(--light-2); }
+@media (hover: hover) and (pointer: fine) { .v5-line:hover { background: var(--light-2); } }
 .v5-line.is-selected { background: var(--light-3); }
 .v5-line .v5-row { width: auto; flex: 1 1 8rem; background: transparent; }
 .v5-list > li.is-selected { background: var(--light-3); }
@@ -125,7 +126,7 @@ li.v5-row.static { padding-right: 4px; }
 .v5-bar { background: transparent; border-bottom: 0; padding: 10px 50px 6px; }
 .steps.v5-steps li { font-size: 11px; padding-right: 12px; }
 .v5-bar a.v5-note { display: inline-flex; align-items: center; height: 26px; padding: 0 8px; background: #242425; color: var(--text); font-size: 11px; font-weight: 600; text-transform: uppercase; text-decoration: none; }
-.v5-bar a.v5-note:hover { background: #333334; }
+@media (hover: hover) and (pointer: fine) { .v5-bar a.v5-note:hover { background: #333334; } }
 
 /* The classic builder has no resize grips; two-pane pages keep the 51px margin. */
 .v5-page textarea, .v5-page .textarea { resize: none; }

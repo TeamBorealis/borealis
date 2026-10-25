@@ -16,7 +16,7 @@
 .ap-grid td { padding: 1px 5px; height: 21px; white-space: nowrap; color: var(--text-body); }
 .ap-grid .num { text-align: right; }
 .ap-grid .ctr { text-align: center; }
-.ap-grid tbody tr:hover td { background: var(--accent-20); }
+@media (hover: hover) and (pointer: fine) { .ap-grid tbody tr:hover td { background: var(--accent-20); } }
 .ap-grid tbody tr.sel td { background: var(--accent-80); color: var(--text); }
 .ap-grid .ap-name { background: none; border: 0; padding: 0; margin: 0; font: inherit; font-style: italic; font-weight: 600; color: var(--text); text-align: left; cursor: pointer; min-height: 0; height: auto; }
 .ap-grid .ap-name:focus-visible { outline: 1px solid var(--focus); outline-offset: 2px; }

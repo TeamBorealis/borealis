@@ -20,7 +20,7 @@
 .xfer-pick { max-height: 220px; overflow-y: auto; border: 1px solid var(--border); background: var(--description-bg); }
 .xfer-pick-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 0 4px; min-height: 26px; padding: 0 6px; font-size: 11px; cursor: pointer; }
 .xfer-pick-row + .xfer-pick-row { border-top: 1px solid var(--light-1); }
-.xfer-pick-row:hover { background: var(--light-2); }
+@media (hover: hover) and (pointer: fine) { .xfer-pick-row:hover { background: var(--light-2); } }
 .xfer-pick-row.all { font-weight: 600; }
 .xfer-pick-row .v4-cb { margin: 0; }
 .xfer-pick-name { font-weight: 600; color: var(--text-primary-header); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

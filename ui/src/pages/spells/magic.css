@@ -5,7 +5,7 @@
 .mg-slot .pips i { width: 10px; height: 10px; border: 1px solid var(--gold); background: transparent; }
 .mg-slot .n { font-size: var(--fs-lg); font-weight: 600; color: var(--gold); line-height: 1; }
 .mg-band-btn { background: transparent; border: 0; padding: 0; min-height: 0; height: auto; color: #fff; font: inherit; text-transform: inherit; font-weight: 600; cursor: pointer; text-align: left; }
-.mg-band-btn:hover { color: var(--highlight-text, #d5d5d5); text-decoration: underline; }
+@media (hover: hover) and (pointer: fine) { .mg-band-btn:hover { color: var(--highlight-text, #d5d5d5); text-decoration: underline; } }
 .mg-note { margin: 0; font-size: var(--fs-md); color: var(--text-muted); }
 /* Classic builder SpellcastingExpanderContent: 4px focus bar (margin-right 10), header band, spell grid, known-spells list (max 190). */
 .sp-page { display: flex; flex-direction: column; gap: 10px; flex: 1 1 auto; min-height: 0; }
@@ -36,7 +36,7 @@
 .sp-known li button { display: flex; gap: 12px; align-items: baseline; width: 100%; text-align: left; background: transparent; border: 0; border-radius: 0; height: 21px; min-height: 21px; padding: 0 8px; color: var(--text-body); font-size: var(--fs-md); cursor: pointer; }
 .sp-known li button b { font-style: italic; font-weight: 600; color: var(--text); }
 .sp-known li button span { color: var(--text-muted); font-size: var(--fs-sm); }
-.sp-known li button:hover { background: #20282c; }
+@media (hover: hover) and (pointer: fine) { .sp-known li button:hover { background: #20282c; } }
 .sp-known li.sel button { background: #272f33; }
 .sp-known-empty { padding: 3px 8px; color: var(--text-muted); font-size: var(--fs-md); }
 .sp-empty { margin: auto; width: 500px; max-width: 100%; text-align: center; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--text-muted); }

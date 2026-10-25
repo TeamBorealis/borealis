@@ -25,15 +25,15 @@
 .mg-name { position: relative; display: flex; }
 .mg-name .aur-textbox input { padding-right: 30px; }
 .mg-name-dice { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; min-height: 0; padding: 0; display: grid; place-items: center; background: transparent; border: 0; color: var(--gray-3); cursor: pointer; border-radius: 0; }
-.mg-name-dice:hover { color: var(--text); }
+@media (hover: hover) and (pointer: fine) { .mg-name-dice:hover { color: var(--text); } }
 .mg-name-dice .icon { width: 16px; height: 16px; }
 .mg-f .mg-xp { display: flex; align-items: center; width: 100%; height: var(--target); border: 1px solid var(--input-border); background: var(--bg); }
-.mg-f .mg-xp:hover { border-color: var(--input-border-hover); }
+@media (hover: hover) and (pointer: fine) { .mg-f .mg-xp:hover { border-color: var(--input-border-hover); } }
 .mg-f .mg-xp:focus-within { border-color: var(--input-border-focus); outline: 1px solid var(--input-border-focus); }
 .mg-f .mg-xp input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; color: var(--text); text-align: right; padding: 0 4px; font: inherit; font-size: var(--fs-sm); }
 .mg-xp-btn { width: 20px; min-width: 20px; height: 22px; min-height: 0; padding: 0; margin: 0; border: 0; border-radius: 0; background: transparent; color: var(--gray-3); display: grid; place-items: center; cursor: pointer; }
 .mg-xp-btn:last-child { margin-right: 3px; }
-.mg-xp-btn:hover { color: #fff; }
+@media (hover: hover) and (pointer: fine) { .mg-xp-btn:hover { color: #fff; } }
 .mg-xp-btn .icon { width: 20px; height: 20px; }
 .mg-hint { font-size: var(--fs-sm); color: var(--text-muted); }
 .mg-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 30px; align-items: start; }
@@ -55,7 +55,7 @@
 .mg-toolbar { display: flex; gap: 10px; margin: 10px 0 10px; flex-wrap: wrap; }
 .mg-tool { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 26px; min-height: 26px; min-width: 26px; padding: 0 5px; background: #242425; border: 0; border-radius: 0; color: var(--text); font-size: var(--fs-sm); font-weight: 600; cursor: pointer; }
 .mg-tool.wide { padding: 0 8px 0 5px; }
-.mg-tool:hover:not(:disabled) { background: #333334; }
+@media (hover: hover) and (pointer: fine) { .mg-tool:hover:not(:disabled) { background: #333334; } }
 .mg-tool:disabled { opacity: 0.5; cursor: default; }
 .mg-tool .icon { width: 20px; height: 20px; }
 .atk-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
@@ -67,7 +67,7 @@
 .atk .ap-tags:empty { display: none; }
 .atk .btns { display: flex; gap: 0; flex: none; }
 .atk .btns button { background: transparent; border: 0; width: 30px; min-width: 30px; height: 24px; min-height: 24px; padding: 0; color: var(--gray-5); cursor: pointer; border-radius: 0; }
-.atk .btns button:hover { background: rgb(255 255 255 / 0.1); color: #fff; }
+@media (hover: hover) and (pointer: fine) { .atk .btns button:hover { background: rgb(255 255 255 / 0.1); color: #fff; } }
 .atk .btns .icon { width: 18px; height: 18px; }
 .atk .btns button[aria-pressed="false"] { opacity: 0.45; }
 .atk .ap-tags { margin-top: 3px; flex-wrap: wrap; }
@@ -77,7 +77,7 @@
 .mg-checks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 30px; }
 .mg-rules-list { list-style: none; margin: 0; padding: 0; }
 .mg-rules-list li { display: flex; gap: 10px; align-items: flex-start; padding: 5px 6px; border-bottom: 1px solid var(--accent-20); }
-.mg-rules-list li:hover { background: var(--accent-20); }
+@media (hover: hover) and (pointer: fine) { .mg-rules-list li:hover { background: var(--accent-20); } }
 .mg-rules-list .grow { flex: 1; min-width: 0; }
 .mg-edition { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
 .mg-tiles { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -111,7 +111,7 @@
 .v4-new .v4-fl { color: #7f7f7f; }
 /* CHARACTER OPTIONS has no chevron in the classic builder: a plain header, same type as the expander title. */
 .v4-new .v4-plain h2.aur-expander-toggle { margin: 0; cursor: default; display: flex; align-items: center; font-size: 13px; line-height: 24px; text-transform: uppercase; }
-.v4-new .v4-plain h2.aur-expander-toggle:hover { background: transparent; }
+@media (hover: hover) and (pointer: fine) { .v4-new .v4-plain h2.aur-expander-toggle:hover { background: transparent; } }
 /* Bold classic builder chevron on CHARACTER DETAILS (same treatment as the picker group headers). */
 .v4-new .aur-expander-chev .icon { width: 22px; height: 22px; }
 .v4-new .aur-expander-chev .icon path { stroke: currentColor; stroke-width: 1.4px; }

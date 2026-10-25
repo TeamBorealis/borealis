@@ -39,7 +39,7 @@ html.splash-doc, html.splash-doc body { overflow: hidden; background: var(--wind
 .splash-error-details pre { margin: 4px 0 0; white-space: pre-wrap; word-break: break-word; font-family: var(--font-mono); }
 .splash-error-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
 .splash-quit { min-width: 80px; height: var(--target); border: 1px solid var(--highlight); background: transparent; color: var(--text); border-radius: var(--radius); cursor: pointer; }
-.splash-quit:hover { background: rgba(255, 255, 255, 0.08); }
+@media (hover: hover) and (pointer: fine) { .splash-quit:hover { background: rgba(255, 255, 255, 0.08); } }
 .splash-quit:focus-visible { outline: var(--focus-w) solid var(--link); outline-offset: 1px; }
 
 @media (prefers-reduced-motion: reduce) {

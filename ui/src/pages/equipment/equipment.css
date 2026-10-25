@@ -6,7 +6,7 @@
 .eq-cats-sub { background: #283237; color: var(--text); font-size: 9px; font-weight: 600; text-transform: uppercase; padding: 3px 5px 4px; line-height: 1; }
 .eq-cats ul { list-style: none; margin: 0; padding: 0; overflow-y: scroll; flex: 1 1 0; min-height: 0; }
 .eq-cats li button { display: block; width: 100%; text-align: left; background: transparent; border: 0; border-radius: 0; padding: 0 5px; height: 21px; min-height: 21px; font-size: var(--fs-md); color: var(--text-body); cursor: pointer; white-space: nowrap; }
-.eq-cats li button:hover { background: #20282c; }
+@media (hover: hover) and (pointer: fine) { .eq-cats li button:hover { background: #20282c; } }
 .eq-cats li button[aria-current="true"] { background: #272f33; color: var(--text); }
 .eq-cats-narrow { display: none; }
 .eq-items { min-width: 0; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--aur-line, #252d31); }
@@ -39,7 +39,7 @@
 .eq-cmds { display: flex; width: 170px; gap: 5px; flex: none; }
 .eq-cmd { display: flex; flex: 1 1 0; height: 24px; background: #161616; }
 .eq-cmd-btn { flex: 1 1 auto; background: #242425; border: 0; border-radius: 2px 0 0 2px; color: var(--gray-6); font-size: 10px; font-weight: 600; text-transform: uppercase; height: 24px; min-height: 24px; padding: 0; cursor: pointer; }
-.eq-cmd-btn:hover:not(:disabled) { color: #fff; background: #2d2d2e; }
+@media (hover: hover) and (pointer: fine) { .eq-cmd-btn:hover:not(:disabled) { color: #fff; background: #2d2d2e; } }
 .eq-cmd-btn:disabled { color: var(--gray-3); cursor: default; }
 .eq-qtybox { width: 19px; flex: none; background: #161616; border: 1px solid #242425; border-left-width: 0; border-radius: 0; color: #fff; text-align: center; font-size: 12px; padding: 0; height: 26px; min-height: 26px; box-sizing: border-box; height: 24px; min-height: 24px; }
 .eq-filter-tile { flex: none; margin-left: 10px; width: 26px; height: 24px; min-height: 24px; padding: 0; border: 0; border-radius: 0; background: #a5a5a5; color: #262626; display: inline-grid; place-content: center; cursor: pointer; }
@@ -48,7 +48,7 @@
 .eq-filter input { flex: 1; min-width: 0; height: 22px; min-height: 0; border: 0; background: transparent; padding: 0 6px; color: var(--text); font-size: var(--fs-md); }
 .eq-filter input:focus { outline: none; }
 .eq-filter button { background: transparent; border: 0; width: 22px; height: 22px; min-height: 0; padding: 0; color: #8a8a8a; cursor: pointer; display: grid; place-content: center; }
-.eq-filter button:hover { color: #fff; }
+@media (hover: hover) and (pointer: fine) { .eq-filter button:hover { color: #fff; } }
 .eq-source { flex: none; width: 149px; margin-left: 11px; }
 .eq-tools .eq-source select, .eq-tools .eq-source .aur-combo select { color: #f9f9f9; height: 24px; min-height: 24px; }
 .eq-tools .eq-coins { height: 24px; min-height: 24px; }
@@ -72,16 +72,16 @@
 .eq-invgrid td.eq-invname .ap-name { font-style: normal; font-weight: 400; color: #f7f7f7; margin-left: 2px; }
 .eq-invgrid tr.on td.eq-invname .ap-name { font-weight: 700; color: var(--text); }
 .eq-invgrid tbody tr.sel td { background: #22282b; }
-.eq-invgrid tbody tr:hover td { background: #1c2124; }
+@media (hover: hover) and (pointer: fine) { .eq-invgrid tbody tr:hover td { background: #1c2124; } }
 .eq-eqbtn { background: transparent; border: 0; padding: 0; min-height: 0; height: 20px; width: 16px; color: transparent; cursor: pointer; display: inline-grid; place-content: center; border-radius: 0; }
 .eq-eqbtn.on { color: #6d6d6d; }
 .eq-eqbtn.eq-link.on { color: var(--gold); }
-.eq-invgrid tr:hover .eq-eqbtn:not(.on) { color: #3a3a3a; }
+@media (hover: hover) and (pointer: fine) { .eq-invgrid tr:hover .eq-eqbtn:not(.on) { color: #3a3a3a; } }
 .eq-invgrid .eq-eqbtn .eq-glyph { width: 13px; height: 13px; }
 .eq-inv-actions { display: flex; align-items: center; height: 30px; padding-left: 4px; flex: none; }
 .eq-inv-actions button { background: transparent; border: 0; border-radius: 0; color: #6d6d6d; font-size: 10px; font-weight: 600; text-transform: uppercase; display: inline-flex; align-items: center; gap: 5px; padding: 0 10px; height: 16px; min-height: 16px; cursor: pointer; }
 .eq-inv-actions button + button { border-left: 1px solid #3a3a3a; }
-.eq-inv-actions button:hover:not(:disabled) { color: #fff; }
+@media (hover: hover) and (pointer: fine) { .eq-inv-actions button:hover:not(:disabled) { color: #fff; } }
 .eq-inv-actions button:disabled { color: #4a4a4a; cursor: default; }
 .eq-stored { font-weight: 400; color: var(--text-muted); font-size: var(--fs-sm); margin-left: 6px; }
 .eq-stored.eq-barred { color: var(--warning); }

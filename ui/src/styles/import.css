@@ -1,6 +1,7 @@
 /* Import anything */
 .dropzone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-2); min-height: 11rem; padding: var(--sp-6) var(--sp-4); text-align: center; border: 2px dashed var(--border-strong); border-radius: var(--radius-lg); background: var(--surface); cursor: pointer; }
-.dropzone:hover, .dropzone.over { background: var(--surface-2); border-color: var(--accent); }
+.dropzone.over { background: var(--surface-2); border-color: var(--accent); }
+@media (hover: hover) and (pointer: fine) { .dropzone:hover { background: var(--surface-2); border-color: var(--accent); } }
 .dropzone .icon { width: 2.5rem; height: 2.5rem; }
 .camera-btn { cursor: pointer; display: none; }
 @media (pointer: coarse), (max-width: 639px) { .camera-btn { display: inline-flex; } }

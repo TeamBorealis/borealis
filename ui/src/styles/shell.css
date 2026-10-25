@@ -13,12 +13,14 @@
 .aur-menubar { display: flex; align-items: center; height: 100%; margin-left: 5px; }
 .aur-menu { position: relative; height: 100%; }
 .aur-menu-top { height: 100%; padding: 2px 6.75px 0; background: transparent; border: 0; color: var(--gray-5); font-size: var(--fs-sm); font-weight: 600; text-transform: uppercase; cursor: pointer; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.aur-menu-top:hover, .aur-menu-top[aria-expanded="true"] { background: var(--chrome-hover); }
+.aur-menu-top[aria-expanded="true"] { background: var(--chrome-hover); }
+@media (hover: hover) and (pointer: fine) { .aur-menu-top:hover { background: var(--chrome-hover); } }
 .aur-menu-top.gold { color: var(--gold); }
 :root[data-theme="light"] .aur-menu-top.gold { color: #f0c15a; }
 .aur-menu-panel { position: absolute; top: 100%; left: 0; z-index: 70; min-width: 230px; padding: 2px; background: var(--menu-bg); border: 1px solid var(--accent-80); box-shadow: 2px 2px 4px rgb(0 0 0 / 0.5); }
 .aur-menu-item { display: flex; align-items: center; width: 100%; min-height: 22px; padding: 3px 10px 3px 0; background: transparent; border: 0; color: var(--text); font-size: 12px; text-align: left; cursor: pointer; }
-.aur-menu-item:hover:not(:disabled), .aur-menu-item:focus-visible { background: var(--accent-60); outline: 0; color: #fff; }
+.aur-menu-item:focus-visible { background: var(--accent-60); outline: 0; color: #fff; }
+@media (hover: hover) and (pointer: fine) { .aur-menu-item:hover:not(:disabled) { background: var(--accent-60); outline: 0; color: #fff; } }
 .aur-menu-item:disabled { color: #7e7e7e; cursor: default; }
 .aur-menu-icon { width: 25px; flex: none; display: grid; place-items: center; color: var(--gold); }
 .aur-menu-icon .icon { width: 14px; height: 14px; }
@@ -28,7 +30,8 @@
 
 /* Quick search + window commands */
 .aur-search { display: flex; align-items: center; gap: 4px; width: 225px; height: 22px; margin: 0 22px 0 20px; padding: 0 6px; background: #111113aa; color: var(--gray-3); opacity: 0.55; transition: opacity 120ms; }
-.aur-search:hover, .aur-search:focus-within { opacity: 1; }
+.aur-search:focus-within { opacity: 1; }
+@media (hover: hover) and (pointer: fine) { .aur-search:hover { opacity: 1; } }
 .aur-search .icon { width: 14px; height: 14px; }
 .aur-search input { flex: 1; min-width: 0; height: 100%; background: transparent; border: 0; padding: 0; color: #e6e6e6; font-size: var(--fs-xs); }
 .aur-search input:focus { outline: 0; }
@@ -36,8 +39,7 @@
 .aur-wincmds { display: flex; align-self: flex-start; margin-right: 0; }
 .aur-wincmds button { width: 34px; height: 30px; margin: 0 3px; display: grid; place-items: center; background: #283136; border: 0; color: #a6aaac; cursor: pointer; }
 .aur-iconbtn { width: 40px; height: 30px; margin: 0 2px; display: grid; place-items: center; background: transparent; border: 0; color: #a6aaac; cursor: pointer; }
-.aur-wincmds button:hover:not(:disabled) { background: #343f44; color: #fff; }
-.aur-iconbtn:hover { background: rgb(255 255 255 / 0.1); color: #fff; }
+@media (hover: hover) and (pointer: fine) { .aur-wincmds button:hover:not(:disabled) { background: #343f44; color: #fff; } .aur-iconbtn:hover { background: rgb(255 255 255 / 0.1); color: #fff; } }
 .aur-wincmds button:disabled { opacity: 0.4; cursor: default; }
 .aur-wincmds .icon, .aur-iconbtn .icon { width: 16px; height: 16px; }
 .aur-wincmds .aur-tip-text { right: 0; }
@@ -45,8 +47,7 @@
 /* Window buttons (custom title bar; 34x30, flat, close hover red) */
 .aur-winbtns { display: flex; align-self: flex-start; margin-left: 48px; }
 .aur-winbtns button { width: 34px; height: 30px; display: grid; place-items: center; background: transparent; border: 0; color: #e6e6e6; cursor: pointer; }
-.aur-winbtns button:hover { background: rgb(255 255 255 / 0.1); color: #fff; }
-.aur-winbtns button.close:hover { background: #c42b1c; }
+@media (hover: hover) and (pointer: fine) { .aur-winbtns button:hover { background: rgb(255 255 255 / 0.1); color: #fff; } .aur-winbtns button.close:hover { background: #c42b1c; } }
 .aur-title.native-controls { padding-left: 76px; }
 .aur-winstrip { height: 30px; display: flex; justify-content: flex-end; background: var(--chrome); }
 .aur-winstrip .aur-winbtns { margin-left: 0; }
@@ -56,7 +57,7 @@
 .aur-chrome { display: flex; align-items: flex-end; height: calc(var(--profile-h) + var(--maintab-h) + 2px); background: var(--chrome); border-bottom: 2px solid var(--highlight); position: relative; }
 .tabs.main { padding-left: 29px; overflow: visible; align-self: flex-end; }
 .tabs.main .tab { height: var(--maintab-h); padding: 2px 20.5px; font-size: var(--fs-tab-main); color: #fff; opacity: 0.75; margin-bottom: -2px; }
-.tabs.main .tab:hover:not(.disabled) { background: var(--accent-60); color: #c1c1c1; opacity: 1; }
+@media (hover: hover) and (pointer: fine) { .tabs.main .tab:hover:not(.disabled) { background: var(--accent-60); color: #c1c1c1; opacity: 1; } }
 .tabs.main .tab[aria-current="page"] { opacity: 1; color: #fff; letter-spacing: -0.1px; }
 .tabs.main .tab[aria-current="page"]::after { content: ""; position: absolute; left: 50%; bottom: 0; margin-left: -10px; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 10px solid var(--subnav-bg); }
 .tabs.main .tab.disabled { color: var(--gray-2); opacity: 1; cursor: default; }
@@ -68,11 +69,11 @@
 .aur-profile .name { display: block; max-width: 100%; margin-left: auto; padding: 0; background: transparent; border: 0; color: var(--gray-6); font-size: 14px; font-weight: 600; text-transform: uppercase; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .aur-profile .build { font-size: 11px; color: var(--gray-6); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .aur-portrait-btn { padding: 0; width: 44px; height: 44px; border: 2px solid #0f0f10; box-shadow: 0 0 0 1px #293338; background: transparent; border-radius: 50%; overflow: hidden; cursor: pointer; transition: opacity 250ms; }
-.aur-portrait-btn:hover { opacity: 0.6; }
+@media (hover: hover) and (pointer: fine) { .aur-portrait-btn:hover { opacity: 0.6; } }
 .aur-portrait { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; background: var(--accent-base); color: #c1c1c1; font-size: 15px; font-weight: 600; aspect-ratio: 1; }
 .aur-newchar { margin: 8px 8px 0 auto; align-self: flex-start; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: #151516; border: 2px solid #0f0f10; box-shadow: 0 0 0 1px #293338; color: var(--aur-success); cursor: pointer; }
 .aur-newchar .icon { width: 30px; height: 30px; }
-.aur-newchar:hover { background: #1c1c1e; color: #4a9a52; }
+@media (hover: hover) and (pointer: fine) { .aur-newchar:hover { background: #1c1c1e; color: #4a9a52; } }
 
 /* Sub-tab band (always #111 so its text colours are fixed) */
 .aur-subband { display: flex; align-items: stretch; justify-content: space-between; min-height: var(--subtab-h); height: var(--subtab-h); background: var(--subnav-bg); border-bottom: 2px solid var(--subnav-border); box-sizing: border-box; }
@@ -80,7 +81,7 @@
 .aur-subtabs-host { display: flex; min-width: 0; }
 .aur-subband .tabs.sub { min-width: 0; }
 .aur-subband .tabs.sub .tab { height: 100%; color: #b3b3b3; }
-.aur-subband .tabs.sub .tab:hover:not(:disabled) { color: #d5d5d5; background: var(--accent-60); }
+@media (hover: hover) and (pointer: fine) { .aur-subband .tabs.sub .tab:hover:not(:disabled) { color: #d5d5d5; background: var(--accent-60); } }
 .aur-subband .tabs.sub .tab[aria-selected="true"], .aur-subband .tabs.sub .tab[aria-current="page"] { color: #e6e6e6; background: transparent; }
 .aur-subband .tabs.sub .tab:disabled { color: var(--gray-5); }
 .aur-subband .tabs.sub .tab { padding: 2px 9.5px 0; }
@@ -93,7 +94,7 @@
 .aur-quickbar button:has(> .icon:only-child) { min-width: 20px; padding: 0 3px; }
 .aur-quickbar > :last-child button { padding-right: 0; }
 .aur-quickbar button:disabled { color: var(--gray-3); cursor: default; }
-.aur-quickbar button:hover:not(:disabled) { background: rgb(255 255 255 / 0.25); color: var(--highlight); }
+@media (hover: hover) and (pointer: fine) { .aur-quickbar button:hover:not(:disabled) { background: rgb(255 255 255 / 0.25); color: var(--highlight); } }
 .aur-quickbar button:active:not(:disabled) { background: var(--accent-20); }
 .aur-quickbar button.gold { color: var(--gold); }
 .aur-quickbar .icon { width: 14px; height: 14px; }
@@ -121,7 +122,7 @@
 .aur-status .aur-progress { margin: 0 7px 0 5px; flex: none; }
 .aur-status button, .aur-status .btn-like { height: 100%; display: inline-flex; align-items: center; gap: 4px; padding: 1px 5px; background: transparent; border: 0; color: var(--gray-5); font-size: var(--fs-xs); font-weight: 400; text-transform: uppercase; }
 .aur-status button { cursor: pointer; }
-.aur-status button:hover { background: rgb(255 255 255 / 0.05); }
+@media (hover: hover) and (pointer: fine) { .aur-status button:hover { background: rgb(255 255 255 / 0.05); } }
 .aur-status .icon { width: 13px; height: 13px; }
 .aur-status .file { max-width: 40vw; overflow: hidden; text-overflow: ellipsis; }
 .aur-status .next, .aur-status .version { color: var(--gold); }
@@ -157,14 +158,14 @@
 .menu-tree-head.gold { color: var(--gold); }
 .menu-tree-item { display: flex; align-items: center; width: 100%; min-height: 44px; background: transparent; border: 0; color: var(--text); font-size: var(--fs-md); text-align: left; cursor: pointer; }
 .menu-tree-item:disabled { color: #7e7e7e; }
-.menu-tree-item:hover:not(:disabled) { background: var(--accent-60); }
+@media (hover: hover) and (pointer: fine) { .menu-tree-item:hover:not(:disabled) { background: var(--accent-60); } }
 .menu-tree .aur-menu-icon { width: 25px; }
 
 /* New-character button: no longer clipped, sits above the bottom chrome, phones only (desktop has the header button) */
 
 /* Pending-import shortcut: square accent button bottom-left */
 .fab-import { position: fixed; left: max(16px, var(--safe-l)); bottom: calc(var(--bottom-chrome, var(--status-h)) + 14px); z-index: 30; width: 44px; height: 44px; display: grid; place-items: center; background: var(--accent-base); color: #fff; border: 1px solid var(--light-4); box-shadow: var(--shadow-2); text-decoration: none; }
-.fab-import:hover { background: #36454c; }
+@media (hover: hover) and (pointer: fine) { .fab-import:hover { background: #36454c; } }
 .fab-import .icon { width: 20px; height: 20px; }
 /* The classic builder has no floating button: Import lives in the menu (File menu / hamburger). The drop target in GlobalImport still works. */
 .fab-import { display: none; }
@@ -190,7 +191,7 @@
 
 /* Update available: an accent-filled title-bar command (left of the website button) whose double chevron drops on a loop; it opens the UPDATE AVAILABLE flyout. */
 .aur-wincmds button.aur-update-cmd, .aur-iconbtn.aur-update-cmd { background: var(--accent-base); color: #fff; overflow: hidden; }
-.aur-wincmds button.aur-update-cmd:hover { background: #343f44; }
+@media (hover: hover) and (pointer: fine) { .aur-wincmds button.aur-update-cmd:hover { background: #343f44; } }
 .aur-update-glyph { display: grid; place-items: center; animation: aur-update-drop 1.6s ease-in infinite; }
 @keyframes aur-update-drop {
   0% { transform: translateY(-9px); opacity: 0; }

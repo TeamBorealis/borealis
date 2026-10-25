@@ -34,7 +34,7 @@
 .atk .btns button:nth-child(3) .icon { width: 24px; height: 24px; }
 /* Edition: ATTUNEMENT LIMIT as an XpField-style box, value #C4C4C4 (also on CURRENT EXPERIENCE). */
 .v4-ed-field .mg-xp { display: flex; align-items: center; width: 100%; height: 26px; box-sizing: border-box; border: 1px solid var(--input-border); background: var(--bg); }
-.v4-ed-field .mg-xp:hover { border-color: var(--input-border-hover); }
+@media (hover: hover) and (pointer: fine) { .v4-ed-field .mg-xp:hover { border-color: var(--input-border-hover); } }
 .v4-ed-field .mg-xp:focus-within { border-color: var(--input-border-focus); outline: 1px solid var(--input-border-focus); }
 .v4-ed-field .mg-xp input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: transparent; text-align: right; padding: 0 4px; font: inherit; font-size: var(--fs-sm); }
 .mg-xp input { color: var(--text-body); }

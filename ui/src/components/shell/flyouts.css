@@ -10,7 +10,7 @@
 .flyout .lvl-status { margin: 2px 0 11px; gap: 10px; }
 .flyout .lvl-status > span { font-size: 11px; font-weight: 600; letter-spacing: 0; color: var(--gray-5); }
 .lvl-link.remove { color: var(--gray-3); font-size: 10px; font-weight: 600; min-height: 0; padding: 0; }
-.lvl-link.remove:hover:not(:disabled) { color: var(--text); }
+@media (hover: hover) and (pointer: fine) { .lvl-link.remove:hover:not(:disabled) { color: var(--text); } }
 .flyout .lvl-link:disabled { opacity: 1; }
 .flyout .lvl-link.remove:disabled { color: #6c6c6d; }
 .flyout .lvl-link.up:disabled { color: #2f5e35; }

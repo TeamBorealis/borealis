@@ -13,7 +13,7 @@
 .v4-comp-count { font-size: var(--fs-sm); color: var(--text-secondary); text-transform: uppercase; }
 .v4-el { list-style: none; margin: 0; padding: 0; background: var(--light-1); }
 .v4-el button { display: flex; width: 100%; align-items: center; gap: 10px; min-height: 21px; padding: 0 6px; background: transparent; border: 0; border-bottom: 1px solid var(--light-2); color: var(--text); text-align: left; cursor: pointer; font: inherit; font-size: var(--fs-md); }
-.v4-el button:hover { background: var(--light-2); }
+@media (hover: hover) and (pointer: fine) { .v4-el button:hover { background: var(--light-2); } }
 .v4-el button[aria-selected="true"] { background: var(--light-3); }
 .v4-el .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .v4-el .s { font-weight: 600; font-size: var(--fs-sm); color: #e6e6e6; white-space: nowrap; max-width: 45%; overflow: hidden; text-overflow: ellipsis; }
@@ -29,7 +29,7 @@
 .v4-el .snip mark { background: transparent; color: #e6e6e6; font-weight: 600; }
 .v4-comp-hint { margin: 8px 0 0; font-size: 11px; color: var(--text-secondary); }
 .v4-comp-hint-link { padding: 0; border: 0; background: none; font: inherit; color: var(--highlight); cursor: pointer; text-decoration: underline; }
-.v4-comp-hint-link:hover { color: var(--gold); }
+@media (hover: hover) and (pointer: fine) { .v4-comp-hint-link:hover { color: var(--gold); } }
 .v4-comp-foot { position: sticky; bottom: -20px; margin: auto 0 0; border-top: 14px solid var(--flyout-bg); padding: 6px 0 4px; background: var(--flyout-bg); font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); }
 .v4-desc .v4-desc-src { margin: 0; font-size: var(--fs-md); }
 .v4-desc .v4-desc-attr { margin: 10px 0 0; font-size: var(--fs-xs); line-height: 1.45; color: var(--text-secondary); }
