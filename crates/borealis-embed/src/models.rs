@@ -129,8 +129,12 @@ pub const CONSENT_TITLE: &str = "Turn on semantic search?";
 pub const CONSENT_ACCEPT: &str = "Download and turn on";
 pub const CONSENT_DECLINE: &str = "Not now";
 
+/// Indexing sentences of the consent. Phones: hours, and slower phones may stay keyword-only (decision PH1).
+pub const CONSENT_INDEXING_DESKTOP: &str = "Indexing takes a few minutes.";
+pub const CONSENT_INDEXING_PHONE: &str = "Indexing can take several hours and runs while your device is charging. On slower phones, search may stay keyword-only after the download. Borealis checks the speed once the model has loaded.";
+
 /// Consent dialog body for the file this device downloads (spec sec. 8 wording). The "; N MB on this device"
-/// clause appears only when the device's file is not the full Q8_0; the charging clause only on mobile.
+/// clause appears only when the device's file is not the full Q8_0; the phone indexing sentences only on mobile.
 #[must_use]
 pub fn consent_body(file: &ModelFile, mobile: bool) -> String {
     let size = if file.quant == Q8_0.quant {
@@ -141,16 +145,16 @@ pub fn consent_body(file: &ModelFile, mobile: bool) -> String {
             file.size_text
         )
     };
-    let charging = if mobile {
-        " and runs while your device is charging"
+    let indexing = if mobile {
+        CONSENT_INDEXING_PHONE
     } else {
-        ""
+        CONSENT_INDEXING_DESKTOP
     };
     format!(
         "Borealis will download the EmbeddingGemma 2 model ({size}) once, from Hugging Face or the Borealis \
          mirror. Search then also finds rules, lore and session notes by meaning, not only by the words you type. \
-         Everything runs on this device; your searches and notes never leave it. Indexing takes a few \
-         minutes{charging}. You can delete the model at any time in Settings."
+         Everything runs on this device; your searches and notes never leave it. {indexing} You can delete the \
+         model at any time in Settings."
     )
 }
 
@@ -246,7 +250,11 @@ mod tests {
             t1.contains("(Apache 2.0, about 310 MB; 210 MB on this device)"),
             "{t1}"
         );
-        assert!(t1.contains("Indexing takes a few minutes and runs while your device is charging."));
+        assert!(
+            t1.contains("Indexing can take several hours and runs while your device is charging.")
+        );
+        assert!(t1.contains("On slower phones, search may stay keyword-only after the download."));
+        assert!(!t1.contains("few minutes"));
         assert!(!t1.contains("180 MB"));
         let desktop = consent_body(&Q8_0, false);
         assert!(
@@ -254,5 +262,6 @@ mod tests {
             "{desktop}"
         );
         assert!(desktop.contains("Indexing takes a few minutes. You can delete"));
+        assert!(!desktop.contains("keyword-only") && !desktop.contains("hours"));
     }
 }

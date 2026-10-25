@@ -9,7 +9,7 @@ import { openBorealisSettings, renderApp } from "./utils";
 
 /* The exact spec section 8 wording; src-tauri/tests/semantic_model.rs pins the Rust text to the same strings. */
 const CONSENT_DESKTOP = "Borealis will download the EmbeddingGemma 2 model (Apache 2.0, about 310 MB) once, from Hugging Face or the Borealis mirror. Search then also finds rules, lore and session notes by meaning, not only by the words you type. Everything runs on this device; your searches and notes never leave it. Indexing takes a few minutes. You can delete the model at any time in Settings.";
-const CONSENT_T1_PHONE = "Borealis will download the EmbeddingGemma 2 model (Apache 2.0, about 310 MB; 210 MB on this device) once, from Hugging Face or the Borealis mirror. Search then also finds rules, lore and session notes by meaning, not only by the words you type. Everything runs on this device; your searches and notes never leave it. Indexing takes a few minutes and runs while your device is charging. You can delete the model at any time in Settings.";
+const CONSENT_T1_PHONE = "Borealis will download the EmbeddingGemma 2 model (Apache 2.0, about 310 MB; 210 MB on this device) once, from Hugging Face or the Borealis mirror. Search then also finds rules, lore and session notes by meaning, not only by the words you type. Everything runs on this device; your searches and notes never leave it. Indexing can take several hours and runs while your device is charging. On slower phones, search may stay keyword-only after the download. Borealis checks the speed once the model has loaded. You can delete the model at any time in Settings.";
 const SWITCH = "Semantic search (optional)";
 
 async function openSearchTab(api: MockApi) {

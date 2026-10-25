@@ -6,6 +6,8 @@ const CONSENT_TITLE = "Turn on semantic search?";
 const CONSENT_ACCEPT = "Download and turn on";
 const CONSENT_DECLINE = "Not now";
 const SIZE_Q8_0 = "about 310 MB";
+const INDEXING_DESKTOP = "Indexing takes a few minutes.";
+const INDEXING_PHONE = "Indexing can take several hours and runs while your device is charging. On slower phones, search may stay keyword-only after the download. Borealis checks the speed once the model has loaded.";
 
 const Q8_0: SemanticFile = { quant: "Q8_0", fileName: "embeddinggemma-2-Q8_0.gguf", bytes: 309_855_456, sizeText: SIZE_Q8_0 };
 const T1_FILE: SemanticFile = { quant: "Q6_K-te-Q4_K", fileName: "embeddinggemma-2-Q6_K-te-Q4_K.gguf", bytes: 211_161_312, sizeText: "210 MB" };
@@ -17,14 +19,14 @@ const INDEX_OFF: SemanticIndexing = { state: "off", done: 0, total: 0, message: 
 /** Passages the simulated index embeds (in four steps). */
 const INDEX_TOTAL = 1200;
 
-/** Spec section 8 consent body for `file` (the "; N on this device" clause only for the smaller file, charging only on mobile). */
+/** Spec section 8 consent body for `file` (the "; N on this device" clause only for the smaller file, phone indexing sentences only on mobile). */
 export function consentBody(file: SemanticFile, mobile: boolean): string {
   const size = file.quant === Q8_0.quant ? `Apache 2.0, ${SIZE_Q8_0}` : `Apache 2.0, ${SIZE_Q8_0}; ${file.sizeText} on this device`;
-  const charging = mobile ? " and runs while your device is charging" : "";
+  const indexing = mobile ? INDEXING_PHONE : INDEXING_DESKTOP;
   return `Borealis will download the EmbeddingGemma 2 model (${size}) once, from Hugging Face or the Borealis mirror. `
     + "Search then also finds rules, lore and session notes by meaning, not only by the words you type. "
     + "Everything runs on this device; your searches and notes never leave it. "
-    + `Indexing takes a few minutes${charging}. You can delete the model at any time in Settings.`;
+    + `${indexing} You can delete the model at any time in Settings.`;
 }
 
 const consent = (file: SemanticFile, mobile: boolean): SemanticConsent => ({ title: CONSENT_TITLE, body: consentBody(file, mobile), accept: CONSENT_ACCEPT, decline: CONSENT_DECLINE });
