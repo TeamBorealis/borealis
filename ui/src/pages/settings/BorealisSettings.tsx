@@ -13,6 +13,7 @@ import { SearchTab } from "./SearchTab";
 import { checkAppUpdateNow, openDownload, useAppUpdateView } from "../../state/appUpdate";
 import { DescCheck, FieldLabel, Help, NumberField, SectionDesc } from "./rows";
 import { SettingsWindow } from "./SettingsWindow";
+import { PhoneCase } from "../../lib/phoneCase";
 
 export const BOREALIS_TABS = [
   { id: "ai", label: "AI assistant" }, { id: "phones", label: "Phones" }, { id: "devices", label: "Devices" }, { id: "content", label: "Content" }, { id: "search", label: "Search" }, { id: "general", label: "General" },
@@ -64,7 +65,7 @@ export function BorealisSettings({ onClose, initialTab }: { onClose: () => void;
       footer={<><span className="spacer" /><Button className="aur-set-save" onClick={onClose}>Close</Button></>}>
       {tab === "ai" && (
         <>
-          <h3 className="aur-set-title13 first flush">AI ASSISTANT</h3>
+          <h3 className="aur-set-title13 first flush"><PhoneCase>AI ASSISTANT</PhoneCase></h3>
           <SectionDesc>The command line program that answers rules questions and drafts content.</SectionDesc>
           <DescCheck title="Enable AI assistant (optional)" description="Uses your own Claude or Codex command-line tool."
             checked={aiEnabled} onChange={(v) => setAi({ enabled: v })} />
@@ -87,7 +88,7 @@ export function BorealisSettings({ onClose, initialTab }: { onClose: () => void;
       )}
       {tab === "phones" && aiEnabled && (
         <>
-          <h3 className="aur-set-title13 first flush">PHONES AND TABLETS</h3>
+          <h3 className="aur-set-title13 first flush"><PhoneCase>PHONES AND TABLETS</PhoneCase></h3>
           <SectionDesc>Phones and tablets cannot run the AI programs; they connect to a desktop instance.</SectionDesc>
           <AiHostPanel />
         </>
@@ -96,7 +97,7 @@ export function BorealisSettings({ onClose, initialTab }: { onClose: () => void;
       {tab === "search" && <SearchTab />}
       {tab === "content" && (
         <>
-          <h3 className="aur-set-title13 first flush">CONTENT</h3>
+          <h3 className="aur-set-title13 first flush"><PhoneCase>CONTENT</PhoneCase></h3>
           <SectionDesc>Registered content indexes and the ruleset new characters start with.</SectionDesc>
           <FieldLabel htmlFor={ruleset}>DEFAULT RULESET FOR NEW CHARACTERS</FieldLabel>
           <ComboBox id={ruleset} value={s.defaultRuleset} onChange={(e) => set({ defaultRuleset: e.target.value as AppSettings["defaultRuleset"] })}
@@ -111,7 +112,7 @@ export function BorealisSettings({ onClose, initialTab }: { onClose: () => void;
       )}
       {tab === "general" && (
         <>
-          <h3 className="aur-set-title13 first flush">GENERAL</h3>
+          <h3 className="aur-set-title13 first flush"><PhoneCase>GENERAL</PhoneCase></h3>
           <SectionDesc>Saving, display and rules limits that only Borealis has.</SectionDesc>
           <DescCheck title="Autosave" description="Save changes automatically after a short pause." checked={s.autosave} onChange={(v) => set({ autosave: v })} />
           <DescCheck title="Generate the sheet preview automatically" checked={s.sheet.autoGenerate} onChange={(v) => set({ sheet: { ...s.sheet, autoGenerate: v } })} />

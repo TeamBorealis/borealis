@@ -3,6 +3,7 @@ import type { SheetSettings } from "../../api/contract";
 import type { SheetEditionOption, SheetTheme } from "../../api/types/settings";
 import { ComboBox } from "../../components";
 import { DescCheck, FieldLabel, Help, SectionDesc, SectionTitle } from "./rows";
+import { PhoneCase } from "../../lib/phoneCase";
 
 const THEMES: { value: SheetTheme; label: string }[] = [{ value: "colour", label: "Colour" }, { value: "ink", label: "Ink" }];
 const EDITIONS: { value: SheetEditionOption; label: string }[] = [
@@ -35,7 +36,7 @@ export function SheetTab({ sheet, onChange }: { sheet: SheetSettings; onChange: 
   const editionId = useId();
   return (
     <>
-      <h3 className="aur-set-title13 first flush">CHARACTER SHEET</h3>
+      <h3 className="aur-set-title13 first flush"><PhoneCase>CHARACTER SHEET</PhoneCase></h3>
       <SectionDesc>Manage some aspects of the output of your character sheet.</SectionDesc>
       <DescCheck title="Form Fillable" description="Fields on the sheet can be edited in a PDF viewer. Off by default: the PDF is flattened so values are printed and not editable." tooltip={FILLABLE_TOOLTIP} checked={sheet.formFillable} onChange={(v) => set({ formFillable: v })} />
       <FieldLabel htmlFor={themeId}>THEME</FieldLabel>

@@ -21,11 +21,12 @@ export function Button({ variant = "default", small, icon, children, className =
   );
 }
 
-/** Icon-only button; `label` is required for accessibility. */
-export function IconButton({ icon, label, variant = "ghost", ...rest }: Omit<ButtonProps, "children" | "icon"> & { icon: IconName; label: string }) {
+/** Icon-only button; `label` is required for accessibility. `caption` adds a short visible text beside the icon (phones). */
+export function IconButton({ icon, label, variant = "ghost", caption, ...rest }: Omit<ButtonProps, "children" | "icon"> & { icon: IconName; label: string; caption?: string }) {
   return (
-    <Button variant={variant} className="btn-icon" aria-label={label} title={label} {...rest}>
+    <Button variant={variant} className={caption ? "btn-icon has-caption" : "btn-icon"} aria-label={label} title={label} {...rest}>
       <Icon name={icon} />
+      {caption && <span className="btn-caption" aria-hidden="true">{caption}</span>}
     </Button>
   );
 }

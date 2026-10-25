@@ -7,6 +7,7 @@ import { setStatus } from "../../state/status";
 import { errorMessage, useAsync } from "../../state/useAsync";
 import { formatDay, PLATFORM_LABEL } from "../transfer/messages";
 import { Help, SectionDesc } from "./rows";
+import { PhoneCase } from "../../lib/phoneCase";
 
 /** Borealis Settings > Devices (C1): paired devices with last sync and expiry; Remove revokes one. */
 export function DevicesTab() {
@@ -28,7 +29,7 @@ export function DevicesTab() {
   const list = devices.data ?? [];
   return (
     <>
-      <h3 className="aur-set-title13 first flush">DEVICES</h3>
+      <h3 className="aur-set-title13 first flush"><PhoneCase>DEVICES</PhoneCase></h3>
       <SectionDesc>Devices this one sent characters to or received them from, on the same Wi-Fi. A device is forgotten 180 days after its last transfer.</SectionDesc>
       {devices.error && <Alert tone="danger" role="alert">{devices.error}</Alert>}
       {error && <Alert tone="danger" role="alert">{error}</Alert>}

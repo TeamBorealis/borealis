@@ -3,6 +3,7 @@ import type { AccentColor, AppSettings, ThemeMode } from "../../api/contract";
 import { Icon } from "../../components/Icon";
 import { ACCENTS } from "../../lib/accent";
 import { FieldLabel, SectionDesc } from "./rows";
+import { PhoneCase } from "../../lib/phoneCase";
 
 const THEMES: { id: Exclude<ThemeMode, "system">; label: string; color: string; glyph: string }[] = [
   { id: "light", label: "Light", color: "#f7f7f7", glyph: "#161616" },
@@ -27,7 +28,7 @@ export function AppearanceTab({ form, set }: { form: AppSettings; set: (patch: P
   const size = PORTRAIT_SIZES.includes(form.portraitSize) ? form.portraitSize : 150;
   return (
     <>
-      <h3 className="aur-set-title13 first flush">APPEARANCE</h3>
+      <h3 className="aur-set-title13 first flush"><PhoneCase>APPEARANCE</PhoneCase></h3>
       <SectionDesc>Customize the appearance of the application.</SectionDesc>
       <FieldLabel>SELECT YOUR ACCENT COLOR</FieldLabel>
       <div className="aur-swatches" role="radiogroup" aria-label="Accent color">

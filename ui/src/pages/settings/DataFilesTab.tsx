@@ -2,6 +2,7 @@ import { Alert, Button } from "../../components";
 import type { AppSettings, DataDirs } from "../../api/contract";
 import { LogsRow } from "./LogsRow";
 import { DescCheck, FieldLabel, Help, PathBox, SectionDesc, SectionTitle } from "./rows";
+import { PhoneCase } from "../../lib/phoneCase";
 
 /** Folders chosen in this session but not saved yet. A pick holds the backend's single-use token. */
 export interface HeldPicks {
@@ -18,7 +19,7 @@ export function DataFilesTab({ form, set, dirs, held, browse, unlink, clearCache
   const secondary = held.secondary === "unlink" ? "" : held.secondary ? held.secondary.path : dirs?.secondaryContentDir ?? "";
   return (
     <>
-      <h3 className="aur-set-title13 first flush">DATA FILES</h3>
+      <h3 className="aur-set-title13 first flush"><PhoneCase>DATA FILES</PhoneCase></h3>
       <SectionDesc>Your data directories and additional content settings.</SectionDesc>
       <FieldLabel>DOCUMENTS DIRECTORY</FieldLabel>
       <PathBox label="Documents directory" value={documents} placeholder={dirs?.defaultDocumentsDir} onBrowse={() => browse("documents")} />

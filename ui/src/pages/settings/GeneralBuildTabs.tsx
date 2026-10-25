@@ -2,6 +2,7 @@ import { useId } from "react";
 import type { AbilityMethod, AppSettings, RowHeight } from "../../api/contract";
 import { ComboBox, TextBox } from "../../components";
 import { DescCheck, FieldLabel, Help, SectionDesc, SectionTitle } from "./rows";
+import { PhoneCase } from "../../lib/phoneCase";
 
 type Props = { form: AppSettings; set: (patch: Partial<AppSettings>) => void };
 
@@ -30,7 +31,7 @@ export function GeneralTab({ form, set }: Props) {
   const rows = useId();
   return (
     <>
-      <h3 className="aur-set-title13 first flush">APPLICATION SETTINGS</h3>
+      <h3 className="aur-set-title13 first flush"><PhoneCase>APPLICATION SETTINGS</PhoneCase></h3>
       <SectionDesc>The behaviour of the application and its UI elements.</SectionDesc>
       <FieldLabel htmlFor={name}>PLAYER NAME</FieldLabel>
       <TextBox id={name} value={form.playerName} onChange={(e) => set({ playerName: e.target.value })} />
@@ -53,7 +54,7 @@ export function GeneralTab({ form, set }: Props) {
 export function BuildTab({ form, set }: Props) {
   return (
     <>
-      <h3 className="aur-set-title13 first flush">BUILD</h3>
+      <h3 className="aur-set-title13 first flush"><PhoneCase>BUILD</PhoneCase></h3>
       <SectionDesc>The behaviour of character creation.</SectionDesc>
       <div className="aur-set-gap"><AbilityMethodField form={form} set={set} /></div>
       <DescCheck title="Ability Score Maximum (default)" description="You ability score can't exceed the maximum of 20. This can still be increased by certain features or items." checked={form.abilityCapEnabled} onChange={(v) => set({ abilityCapEnabled: v })} />
@@ -64,7 +65,7 @@ export function BuildTab({ form, set }: Props) {
 export function EquipmentTab({ form, set }: Props) {
   return (
     <>
-      <h3 className="aur-set-title13 first flush">EQUIPMENT</h3>
+      <h3 className="aur-set-title13 first flush"><PhoneCase>EQUIPMENT</PhoneCase></h3>
       <SectionDesc>General behaviour of the equipment section and your inventory.</SectionDesc>
       <DescCheck title="'Add Weapon to Attacks' Confirmation" description="Display a confirmation box when equipping a weapon that is not included in your 'Attacks' section to add it." checked={form.confirmEquipWeaponNotInAttacks} onChange={(v) => set({ confirmEquipWeaponNotInAttacks: v })} />
     </>

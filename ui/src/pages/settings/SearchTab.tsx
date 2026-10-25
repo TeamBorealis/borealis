@@ -8,6 +8,7 @@ import { useSettings } from "../../state/SettingsContext";
 import { setStatus as setStatusBar } from "../../state/status";
 import { errorMessage } from "../../state/useAsync";
 import { DescCheck, FieldLabel, Help, SectionDesc, SectionTitle } from "./rows";
+import { PhoneCase } from "../../lib/phoneCase";
 
 const TIER_LABEL: Record<SemanticTier, string> = {
   t0: "Keyword search only",
@@ -121,7 +122,7 @@ export function SearchTab() {
 
   return (
     <>
-      <h3 className="aur-set-title13 first flush">SEARCH</h3>
+      <h3 className="aur-set-title13 first flush"><PhoneCase>SEARCH</PhoneCase></h3>
       <SectionDesc>Keyword search works offline on every device. Semantic search is optional: it downloads a model once and also finds text by meaning.</SectionDesc>
       {!st.file && <Help>{st.unavailableReason}</Help>}
       {st.file && (

@@ -12,6 +12,7 @@ import { ModelLicence } from "./ModelLicence";
 import { SectionDesc } from "./rows";
 import { SettingsWindow } from "./SettingsWindow";
 import { SheetTab } from "./SheetTab";
+import { PhoneCase } from "../../lib/phoneCase";
 
 /** The classic builder's tab order (DEVELOPER omitted). */
 export const SETTINGS_TABS = [
@@ -124,14 +125,14 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
       case "sheet": return <SheetTab sheet={form.sheet} onChange={setSheet} />;
       case "license": return (
         <>
-          <h3 className="aur-set-title13 first flush">LICENSE</h3>
+          <h3 className="aur-set-title13 first flush"><PhoneCase>LICENSE</PhoneCase></h3>
           <SectionDesc>Attribution and terms</SectionDesc>
           <p className="aur-set-text">Bundled sample content is released under CC-BY-4.0 and attributed in each content pack. Content you import stays on your device and is not redistributed.</p>
         </>
       );
       default: return (
         <div className="aur-set-about">
-          <h3 className="aur-set-title13 first flush">BOREALIS</h3>
+          <h3 className="aur-set-title13 first flush"><PhoneCase>BOREALIS</PhoneCase></h3>
           <div className="aur-set-version">{version.data ? `v${version.data}` : ""}</div>
           <p className="aur-set-text">A character builder for fifth edition. Borealis collects no telemetry. Import bug reports are only sent when you choose to send one.</p>
           <ModelLicence />
