@@ -28,8 +28,7 @@ pub use build::{
 pub use error::{BundleError, Result};
 pub use exclude::{
     is_excluded, is_portable_only, is_safe_rel_path, is_safe_segment, is_windows_reserved,
-    portable_settings,
-    PORTABLE_SETTINGS_KEYS,
+    portable_settings, PORTABLE_SETTINGS_KEYS,
 };
 pub use inventory::{
     list_characters, list_packs, mtime_ms, read_pack_dir, scan_characters, scan_packs,

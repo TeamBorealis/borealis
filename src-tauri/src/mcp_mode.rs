@@ -350,7 +350,11 @@ mod data_dir_tests {
     fn windows_uses_roaming_appdata_then_the_profile() {
         let appdata = ("APPDATA", r"C:\Users\mira\AppData\Roaming");
         assert_eq!(
-            dir(Platform::Windows, &[appdata, ("USERPROFILE", r"C:\Users\x")]).as_deref(),
+            dir(
+                Platform::Windows,
+                &[appdata, ("USERPROFILE", r"C:\Users\x")]
+            )
+            .as_deref(),
             Some(r"C:\Users\mira\AppData\Roaming\app.borealis")
         );
         assert_eq!(

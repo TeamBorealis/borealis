@@ -347,7 +347,12 @@ mod tests {
         ] {
             assert!(!safe_name(evil), "{evil}");
         }
-        for fine in ["class/class-x.json", "./races.json", "console.json", "nullable.json"] {
+        for fine in [
+            "class/class-x.json",
+            "./races.json",
+            "console.json",
+            "nullable.json",
+        ] {
             assert!(safe_name(fine), "{fine}");
         }
     }

@@ -57,7 +57,9 @@ mod tests {
     fn failing(kinds: &[ErrorKind]) -> impl FnMut(&Path) -> io::Result<()> + '_ {
         let mut calls = 0;
         move |_| {
-            let result = kinds.get(calls).map_or(Ok(()), |k| Err(io::Error::from(*k)));
+            let result = kinds
+                .get(calls)
+                .map_or(Ok(()), |k| Err(io::Error::from(*k)));
             calls += 1;
             result
         }
@@ -83,11 +85,9 @@ mod tests {
     #[test]
     fn other_errors_fail_at_once_and_a_missing_folder_is_already_removed() {
         let mut pauses = 0;
-        let err = remove_with_retry(
-            Path::new("x"),
-            failing(&[ErrorKind::InvalidInput]),
-            |_| pauses += 1,
-        )
+        let err = remove_with_retry(Path::new("x"), failing(&[ErrorKind::InvalidInput]), |_| {
+            pauses += 1
+        })
         .unwrap_err();
         assert_eq!(err.kind(), ErrorKind::InvalidInput);
         assert_eq!(pauses, 0);
