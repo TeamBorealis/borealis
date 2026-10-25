@@ -119,7 +119,7 @@ fn rewrite(src: &Path, dst: &Path, f: impl Fn(&str, &mut Vec<u8>)) {
     let mut zout = zip::ZipWriter::new(std::fs::File::create(dst).unwrap());
     for i in 0..zin.len() {
         let mut entry = zin.by_index(i).unwrap();
-        let name = entry.name().to_string();
+        let name = entry.name().unwrap().into_owned();
         let mut bytes = Vec::new();
         entry.read_to_end(&mut bytes).unwrap();
         f(&name, &mut bytes);
@@ -473,7 +473,7 @@ fn an_everything_export_carries_no_search_index_link_state_or_keys() {
     let mut all = Vec::new();
     for i in 0..zip.len() {
         let mut entry = zip.by_index(i).unwrap();
-        names.push(entry.name().to_string());
+        names.push(entry.name().unwrap().into_owned());
         entry.read_to_end(&mut all).unwrap();
     }
     assert!(

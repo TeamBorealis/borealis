@@ -178,7 +178,11 @@ fn scan_directory<R: Read + Seek>(
     let mut total: u64 = 0;
     for i in 0..archive.len() {
         let file = archive.by_index_raw(i)?;
-        let name = file.name().to_owned();
+        // zip 9 decodes the name per entry (UTF-8 flag or CP437) and fails on undecodable bytes.
+        let name = file
+            .name()
+            .map_err(|_| BundleError::UnsafePath(format!("entry {i} (undecodable name)")))?
+            .into_owned();
         check_entry_name(&name)?;
         if file.is_dir() {
             continue;

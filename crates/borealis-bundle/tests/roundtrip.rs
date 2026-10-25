@@ -171,7 +171,7 @@ fn exclusions_are_enforced_and_settings_are_portable_only() {
     let bytes = build(&f, PackSelection::All);
     let mut z = zip::ZipArchive::new(Cursor::new(bytes.clone())).unwrap();
     let names: Vec<String> = (0..z.len())
-        .map(|i| z.by_index(i).unwrap().name().to_owned())
+        .map(|i| z.by_index(i).unwrap().name().unwrap().into_owned())
         .collect();
     for n in &names {
         assert!(

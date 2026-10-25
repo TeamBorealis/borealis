@@ -66,7 +66,7 @@ fn a_registry_inside_a_pack_is_left_out_of_the_bundle() {
     let (cur, _, _) = build_bundle(Cursor::new(Vec::new()), &req).unwrap();
     let mut z = zip::ZipArchive::new(Cursor::new(cur.into_inner())).unwrap();
     let names: Vec<String> = (0..z.len())
-        .map(|i| z.by_index(i).unwrap().name().to_owned())
+        .map(|i| z.by_index(i).unwrap().name().unwrap().into_owned())
         .collect();
     assert!(
         names.iter().any(|n| n.ends_with("pack-a/content.json")),
