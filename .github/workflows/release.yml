@@ -129,6 +129,10 @@ jobs:
           projectPath: .
           # Through node: Windows cannot run the extension-less .bin/tauri shim by path.
           tauriScript: node ui/node_modules/@tauri-apps/cli/tauri.js
+      # The shipped llama.cpp must use only the SSE2 baseline (no AVX code that crashes older CPUs, S3.3).
+      - name: llama.cpp x86_64 baseline (Linux)
+        if: runner.os == 'Linux'
+        run: bash build/check-x86-baseline.sh target/release
       - name: Collect installers
         shell: bash
         run: |

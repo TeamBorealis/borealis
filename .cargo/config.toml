@@ -11,3 +11,16 @@ IPHONEOS_DEPLOYMENT_TARGET = "15.0"
 MACOSX_DEPLOYMENT_TARGET = "10.15"
 # Android: minSdk (gen/android/app/build.gradle.kts). llama-cpp-sys-2 would otherwise compile for API 28.
 ANDROID_API_LEVEL = "24"
+# x86_64 (S3.3): ggml turns SSE4.2, AVX, AVX2, BMI2, FMA and F16C ON by default whenever GGML_NATIVE is OFF on a
+# native (not cross) build, and llama-cpp-sys-2 sets GGML_NATIVE=OFF. A Windows / Linux x86_64 build would then
+# carry /arch:AVX2 (-mavx2 -mfma -mf16c -mbmi2) code and crash with an illegal instruction on CPUs without AVX2.
+# Off here, so x86_64 builds use the SSE2 baseline every x86_64 CPU has; llama-cpp-sys-2 still turns an option back
+# on when Rust's target features include it (an explicit `-C target-feature=+avx2` build). Ignored on ARM.
+# `build/check-x86-baseline.sh` verifies the built libraries. CMake caches from before this need
+# `cargo clean -p llama-cpp-sys-2` once (cmake does not reconfigure an existing build).
+GGML_SSE42 = "OFF"
+GGML_AVX = "OFF"
+GGML_AVX2 = "OFF"
+GGML_BMI2 = "OFF"
+GGML_FMA = "OFF"
+GGML_F16C = "OFF"
