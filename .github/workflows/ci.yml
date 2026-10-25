@@ -270,5 +270,6 @@ jobs:
           # under ANDROID_HOME, which need not be the one the Rust linker uses.
           ANDROID_NDK: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
         run: |
-          node "$GITHUB_WORKSPACE/ui/node_modules/@tauri-apps/cli/tauri.js" android init --ci
+          # gen/android is committed; `android init` would rewrite buildSrc/BuildTask.kt to call the CLI by a relative
+          # path that Gradle cannot resolve, so build straight from the committed project (as release.yml does).
           node "$GITHUB_WORKSPACE/ui/node_modules/@tauri-apps/cli/tauri.js" android build --debug --apk --target aarch64 --ci
