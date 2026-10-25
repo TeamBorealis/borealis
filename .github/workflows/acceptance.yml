@@ -59,7 +59,10 @@ jobs:
     steps:
       - name: Keep LF line endings (Windows)
         if: runner.os == 'Windows'
-        run: git config --global core.autocrlf false
+        run: |
+          git config --global core.autocrlf false
+          # llama.cpp (the borealis-embed git dependency) has paths longer than MAX_PATH.
+          git config --global core.longpaths true
       - uses: actions/checkout@v4
       - name: Free runner disk (Linux)
         if: runner.os == 'Linux'
@@ -282,7 +285,10 @@ jobs:
     steps:
       - name: Keep LF line endings (Windows)
         if: runner.os == 'Windows'
-        run: git config --global core.autocrlf false
+        run: |
+          git config --global core.autocrlf false
+          # llama.cpp (the borealis-embed git dependency) has paths longer than MAX_PATH.
+          git config --global core.longpaths true
       - uses: actions/checkout@v4
       - name: Free runner disk (Linux)
         if: runner.os == 'Linux'
