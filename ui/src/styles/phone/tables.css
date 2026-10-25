@@ -73,7 +73,8 @@ html.phone .ap-check:disabled { opacity: 0.45; }
 /* ---------- Spell rows: [prepare] name over "level · school · components · source" ---------- */
 html.phone .sp-grid tbody tr { grid-template-columns: 24px minmax(0, 1fr); }
 html.phone .sp-grid td.sp-ck { display: grid; place-items: center; width: 24px; padding: 0; text-align: center; }
-html.phone .sp-grid td.sp-lvl, html.phone .sp-grid td.sp-vsm, html.phone .sp-grid td.sp-src { display: none; }
+/* The level, component (verbal, somatic, material: the al-c cells) and source columns are in the detail line. */
+html.phone .sp-grid td.sp-lvl, html.phone .sp-grid td.sp-vsm, html.phone .sp-grid td.al-c, html.phone .sp-grid td.sp-src { display: none; }
 html.phone .sp-grid .sp-name { min-width: 0; }
 /* While a selection slot is highlighted the catalogue shows its options: the source cell keeps its edition badge and tag. */
 html.phone .sp-grid[data-slot-id] td.sp-src { display: block; grid-column: 2; margin: -6px 0 0; padding: 0 0 10px; font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); }

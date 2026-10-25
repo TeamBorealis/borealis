@@ -95,3 +95,6 @@ html.phone .v5-list > li > .v5-row { padding-right: var(--ph-gutter); }
 
 /* Start: the primary action's second line keeps full strength on the accent fill (4.5:1 in both themes). */
 html.phone .v4-start-left > .v4-newbtn:first-of-type .d { opacity: 1; }
+
+/* Search: a result's name wraps rather than cutting off beside its edition badge and source. */
+html.phone .v4-el .n { white-space: normal; overflow-wrap: anywhere; }

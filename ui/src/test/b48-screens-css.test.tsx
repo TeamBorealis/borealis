@@ -52,6 +52,8 @@ describe("phone screens CSS (B-48 WP6, WP7)", () => {
     expect(bodyOf("html.phone .ap-grid thead")).toMatch(/display: none/);
     expect(bodyOf("html.phone .v4-grid-head")).toMatch(/display: none/);
     expect(bodyOf("html.phone .ap-grid tbody tr")).toMatch(/display: grid/);
+    // The columns a spell row no longer shows (level and school, the verbal/somatic/material cells, source) are in its detail.
+    for (const cell of ["td.sp-lvl", "td.al-c", "td.sp-src"]) expect(bodyOf(`html.phone .sp-grid ${cell}`), cell).toMatch(/display: none/);
     expect(bodyOf("html.phone .ap-grid tbody tr")).toMatch(/min-height: var\(--ph-row\)/);
     expect(bodyOf("html.phone .ph-row-detail")).toMatch(/font: [^;]*var\(--ph-t-foot\)/);
     expect(bodyOf("html.phone .ph-row-detail")).toMatch(/color: var\(--ph-text-2\)/);
