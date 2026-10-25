@@ -57,6 +57,16 @@ describe("phone screens CSS (B-48 WP6, WP7)", () => {
     expect(bodyOf("html.phone .ph-row-detail")).toMatch(/color: var\(--ph-text-2\)/);
   });
 
+  it("at 200 % text the bars cap their labels (as system bars do) and sheets never scroll sideways", () => {
+    const shell = parseRules(readCss("styles/phone/shell.css"));
+    const cap = (sel: string) => shell.filter((r) => r.selectors.includes(sel)).map((r) => r.body).join(";");
+    expect(cap("html.phone .bb-item")).toMatch(/font-size: min\(var\(--ph-t-tab\), \d+px\)/);
+    expect(cap("html.phone .aur-title.mobile .aur-title-text.gold")).toMatch(/font-size: min\(/);
+    expect(cap("html.phone .aur-window.narrow .aur-status .status-msg")).toMatch(/white-space: normal/);
+    const base = parseRules(readCss("styles/phone/base.css")).find((r) => r.selectors.includes("html.phone .flyout-body") && /overflow-x/.test(r.body));
+    expect(base?.body).toMatch(/overflow-x: hidden/);
+  });
+
   it("Play keeps its details pane and Magic its concentration filter (U9: same elements)", () => {
     const all = rules();
     const hides = (re: RegExp) => all.filter((r) => r.selectors.some((s) => re.test(s)) && /display: none/.test(r.body));

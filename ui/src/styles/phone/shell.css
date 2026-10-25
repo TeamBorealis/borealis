@@ -110,3 +110,13 @@ html.phone .empty .btn-primary {
   background: var(--ph-accent); color: var(--ph-on-accent); font: 600 var(--ph-t-sub)/1 var(--ph-font-ui); text-transform: none; letter-spacing: 0;
 }
 html.phone .empty .btn-primary:active { transform: scale(0.97); }
+
+/* Large text (spec sec. 5.11, 200 %): the bars keep their size, as system bars do (HIG: tab and navigation bar labels have a
+   maximum size); their text is capped, and the status line wraps instead of running past the edge. Content text keeps scaling. */
+html.phone .bb-item, html.phone .bb-item[data-selected="true"] { font-size: min(var(--ph-t-tab), 14px); }
+html.phone .aur-title.mobile .aur-title-text { font-size: min(var(--ph-t-body), 22px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.phone .aur-title.mobile .aur-title-text.gold { font-size: min(var(--ph-t-name), 26px); }
+html.phone .aur-window.narrow .aur-subband .tabs.sub .tab { font-size: min(var(--ph-t-sub), 22px); }
+html.phone .aur-window.narrow .aur-status { font-size: min(var(--ph-t-foot), 22px); }
+html.phone .aur-window.narrow .aur-status .status-msg { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+html.phone .aur-window.narrow .aur-status .next { font-size: min(var(--ph-t-foot), 20px); }

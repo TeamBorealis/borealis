@@ -22,5 +22,7 @@ html.phone button, html.phone a[href], html.phone [role="button"], html.phone [r
 
 /* Inner scrollers never chain into the page. */
 html.phone .aur-content, html.phone .dialog-body, html.phone .flyout-body, html.phone .aur-set-scroll { overscroll-behavior: contain; }
+/* Sheets scroll one way only: the hit extensions of edge controls must not open a sideways scroll at large text sizes. */
+html.phone .dialog-body, html.phone .flyout-body, html.phone .aur-set-scroll { overflow-x: hidden; }
 
 html.phone :focus-visible { outline: 2px solid var(--ph-accent); outline-offset: 2px; }
