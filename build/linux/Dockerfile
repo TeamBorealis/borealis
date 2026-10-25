@@ -7,9 +7,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
     CARGO_HOME=/opt/cargo \
     PATH=/opt/cargo/bin:/usr/local/bin:$PATH
 
-# Tauri 2 build deps + bundler tools (deb/rpm/AppImage) + headless smoke tools.
+# Tauri 2 build deps + bundler tools (deb/rpm/AppImage) + headless smoke tools. cmake + libclang build llama.cpp
+# and its bindgen bindings (semantic search backend, B-12).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      build-essential pkg-config curl wget file ca-certificates git xz-utils \
+      build-essential pkg-config curl wget file ca-certificates git xz-utils cmake libclang-dev \
       libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev \
       libssl-dev libxdo-dev patchelf rpm \
       xvfb xauth dbus-x11 x11-apps xdotool imagemagick \

@@ -5,9 +5,10 @@
 //! `semantic_download_start` command reaches, after the user pressed "Download and turn on" in the consent dialog.
 //! A partial left by an earlier run shows as paused; it resumes only when the user presses Resume.
 //!
-//! No embedding backend is linked yet (B-46): until [`borealis_embed::backend_available`] is true, `start` refuses
-//! (no 310 MB download that does nothing), Settings says semantic search arrives in a later update, and search stays
-//! keyword-only. A model that is somehow present can still be deleted.
+//! The llama.cpp backend comes with the default `llama` feature. In a build without it
+//! [`borealis_embed::backend_available`] is false: `start` refuses (no 310 MB download that does nothing), Settings
+//! says semantic search arrives in a later update, and search stays keyword-only. A model that is somehow present
+//! can still be deleted.
 
 use borealis_embed::download::{
     self, Control, DownloadError, DownloadSpec, ModelDir, Outcome, Phase, Transport,
@@ -28,8 +29,8 @@ pub const VECTOR_CORPORA: [&str; 3] = ["rules", "lore", "sessions"];
 const PROGRESS_EVERY: Duration = Duration::from_millis(250);
 const DOWNLOADED_NO_BACKEND: &str =
     "Model downloaded. Semantic search arrives in a later update of Borealis; until then search uses keywords.";
-/// Settings line, and the refusal of `start`, while no embedding backend is linked (B-46): no one downloads a model
-/// that cannot be used yet.
+/// Settings line, and the refusal of `start`, when no embedding backend is linked (a build without the `llama`
+/// feature): no one downloads a model that cannot be used.
 pub const NO_BACKEND_YET: &str =
     "Semantic search (search by meaning) arrives in a later update. Search uses keywords until then.";
 const PAUSED_IN_BACKGROUND: &str = "Paused while Borealis was in the background.";
@@ -97,7 +98,7 @@ pub struct SemanticStatus {
     pub file: Option<SemanticFile>,
     /// The file can be downloaded (a URL serves it).
     pub available: bool,
-    /// Why semantic search is not offered or not downloadable (T0, mirror not published yet).
+    /// Why semantic search is not offered or not downloadable (T0, or no URL serves the file).
     pub unavailable_reason: Option<String>,
     /// The file for `tier` is on the device.
     pub model_present: bool,

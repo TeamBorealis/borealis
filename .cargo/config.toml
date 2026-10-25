@@ -1,0 +1,13 @@
+# Build environment for the C/C++ code compiled by build scripts (llama.cpp through llama-cpp-sys-2, B-12).
+# `[env]` does not override a variable that is already set, so Xcode (IPHONEOS_DEPLOYMENT_TARGET from the project)
+# and the Tauri CLI (MACOSX_DEPLOYMENT_TARGET from bundle.macOS.minimumSystemVersion) still win; these values are
+# the same, for plain `cargo` builds and checks.
+[env]
+# iOS: the app's deploymentTarget. Without it cmake compiles llama.cpp for the SDK version while rustc links for
+# an older one, and the device link fails (`___chkstk_darwin`, spike S0.2 sec. 6).
+IPHONEOS_DEPLOYMENT_TARGET = "15.0"
+# macOS: tauri.macos.conf.json minimumSystemVersion. Unset, llama.cpp is compiled for the build machine's macOS;
+# below 10.15 it does not compile (std::filesystem).
+MACOSX_DEPLOYMENT_TARGET = "10.15"
+# Android: minSdk (gen/android/app/build.gradle.kts). llama-cpp-sys-2 would otherwise compile for API 28.
+ANDROID_API_LEVEL = "24"

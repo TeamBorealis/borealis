@@ -191,6 +191,8 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.2.12479018
           ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.2.12479018
+          # llama.cpp (llama-cpp-sys-2) reads ANDROID_NDK, not NDK_HOME (else: newest NDK under ANDROID_HOME).
+          ANDROID_NDK: ${{ env.ANDROID_HOME }}/ndk/27.2.12479018
         run: node ui/node_modules/@tauri-apps/cli/tauri.js android build --apk --target aarch64 --ci
       - name: Verify signature and rename
         run: |

@@ -20,11 +20,14 @@ unsafe_code = "deny"
 all = { level = "warn", priority = -1 }
 
 [features]
-default = ["device-link"]
+default = ["device-link", "llama"]
 # Device transfer (B2/B3): tokio + rustls TCP, SPAKE2/QR authentication and the OS secure store
 # (Keychain, Android Keystore, Credential Manager, Secret Service). On by default since B3 on every
 # target (X0.1: GO on iOS and Android); mDNS discovery is desktop-only (see below).
 device-link = ["borealis-link/tcp", "borealis-link/platform-store", "dep:borealis-transfer"]
+# Semantic search backend (B-12, spec sec. 7): llama.cpp (CPU) compiled in on every target, so the shipped app can
+# embed once the user downloaded the model. Builds need cmake and a C++17 compiler; no test needs a model file.
+llama = ["borealis-embed/llama"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -55,7 +58,7 @@ borealis-assist.workspace = true
 borealis-mcp = { path = "../crates/borealis-mcp" }
 # Local keyword search (Tantivy, pure Rust on every target; S0.1).
 borealis-search.workspace = true
-# Semantic search runtime: tiers, scheduler, device-state shims (S3.1; no llama.cpp until B-46).
+# Semantic search runtime: tiers, scheduler, device-state shims (S3.1); the llama.cpp backend via feature `llama`.
 borealis-embed.workspace = true
 tokio = { workspace = true, features = ["time", "rt", "sync", "macros"] }
 ed25519-dalek = { version = "2", default-features = false, features = ["std"] }

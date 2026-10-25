@@ -244,6 +244,9 @@ jobs:
       - name: Build
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
+          # llama.cpp (llama-cpp-sys-2) reads ANDROID_NDK, not NDK_HOME; without it it picks the newest NDK
+          # under ANDROID_HOME, which need not be the one the Rust linker uses.
+          ANDROID_NDK: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
         run: |
           node ui/node_modules/@tauri-apps/cli/tauri.js android init --ci
           node ui/node_modules/@tauri-apps/cli/tauri.js android build --debug --apk --target aarch64 --ci
