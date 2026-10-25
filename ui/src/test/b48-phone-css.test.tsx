@@ -96,13 +96,13 @@ describe("phone CSS layer (B-48)", () => {
     const overlay = phoneRules().find((r) => r.selectors.includes("html.phone .flyout-overlay.bottom"));
     expect(overlay?.body).toMatch(/padding: calc\(var\(--safe-t\) \+ 8px\) 0 0/);
     const sheet = phoneRules().find((r) => r.selectors.includes("html.phone .flyout-overlay.bottom .flyout"));
-    expect(sheet?.body).toMatch(/padding-bottom: calc\(var\(--safe-b\) \+ var\(--kb\)\)/);
+    expect(sheet?.body).toMatch(/padding-bottom: max\(var\(--safe-b\), var\(--kb\)\)/);
   });
 
   it("sheets keep their footer above the home indicator and the on-screen keyboard", () => {
     for (const sel of ["html.phone .dialog", "html.phone .flyout", "html.phone .aur-set-win"]) {
       const rule = phoneRules().find((r) => r.selectors.includes(sel) && /padding-bottom/.test(r.body));
-      expect(rule?.body, sel).toMatch(/padding-bottom: calc\(var\(--safe-b\) \+ var\(--kb\)\)/);
+      expect(rule?.body, sel).toMatch(/padding-bottom: max\(var\(--safe-b\), var\(--kb\)\)/);
     }
   });
 });

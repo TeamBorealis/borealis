@@ -4,7 +4,8 @@
  */
 
 /* The window: no 1 px frame on a phone; the keyboard inset lifts the bottom chrome above an open keyboard (sec. 5.4). */
-html.phone .aur-window { border: 0; background: var(--ph-bg); padding-bottom: var(--kb); }
+/* The tab bar keeps its own home-indicator padding, so the shell lifts by what the keyboard covers beyond that inset. */
+html.phone .aur-window { border: 0; background: var(--ph-bg); padding-bottom: max(0px, var(--kb) - var(--safe-b)); }
 
 /* Title bar: hamburger, mark, title, settings. With a character, its name in a system serif, gold, over a 2 px aurora line. */
 html.phone .aur-title.mobile {
@@ -63,6 +64,7 @@ html.phone .aur-window.narrow .aur-status {
 }
 html.phone .aur-window.narrow .aur-status .status-msg { margin: 0; }
 html.phone .aur-window.narrow .aur-status[data-pending="true"] .status-msg { color: var(--ph-gold); }
+html.phone .aur-window.narrow .aur-status:not([data-collapsed="true"]) { overflow: visible; } /* room for the Next selection pill's 44/48 pt hit area */
 html.phone .aur-window.narrow .aur-status[data-collapsed="true"] { min-height: 0; height: 0; padding-top: 0; padding-bottom: 0; border-top-width: 0; }
 html.phone .aur-window.narrow .aur-status .next {
   position: relative; height: 32px; padding: 0 12px; gap: 6px; border-radius: var(--ph-r-pill);

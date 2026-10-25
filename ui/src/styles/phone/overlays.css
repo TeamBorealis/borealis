@@ -16,21 +16,22 @@ html.phone .dialog, html.phone .flyout, html.phone .aur-set-win {
   background: var(--ph-raised); color: var(--ph-text); box-shadow: var(--ph-shadow-sheet);
   animation: ph-sheet-up var(--ph-d-sheet-in) var(--ph-ease-out);
 }
-html.phone .dialog { max-height: calc(100dvh - var(--safe-t) - 8px); padding-top: 0; padding-bottom: calc(var(--safe-b) + var(--kb)); }
+html.phone .dialog { max-height: calc(100dvh - var(--safe-t) - 8px); padding-top: 0; padding-bottom: max(var(--safe-b), var(--kb)); }
 html.phone .dialog.full, html.phone .dialog.wide { height: calc(100dvh - var(--safe-t) - 8px); max-height: none; padding-top: 0; }
-html.phone .flyout { height: 100%; padding-top: 0; padding-right: var(--safe-r); padding-left: var(--safe-l); padding-bottom: calc(var(--safe-b) + var(--kb)); }
+html.phone .flyout { height: 100%; padding-top: 0; padding-right: var(--safe-r); padding-left: var(--safe-l); padding-bottom: max(var(--safe-b), var(--kb)); }
 html.phone .flyout-overlay.left .flyout { padding-right: var(--safe-r); padding-left: var(--safe-l); animation-name: ph-sheet-up; }
 html.phone .flyout-overlay[data-sheet="auto"] { align-items: flex-end; }
 html.phone .flyout-overlay[data-sheet="auto"] .flyout { height: auto; max-height: 100%; }
-html.phone .aur-set-win { height: 100%; max-height: none; padding-top: 0; padding-right: var(--safe-r); padding-left: var(--safe-l); padding-bottom: calc(var(--safe-b) + var(--kb)); }
+html.phone .aur-set-win { height: 100%; max-height: none; padding-top: 0; padding-right: var(--safe-r); padding-left: var(--safe-l); padding-bottom: max(var(--safe-b), var(--kb)); }
 
 /* The Compendium flyout: compendium.css sets the flyout's padding to 0 (cancelling the safe-area padding, finding 4a) and leaves a
    27 px band under it; on phones it is a full-height sheet like the others. */
 html.phone .flyout-overlay.bottom { padding: calc(var(--safe-t) + 8px) 0 0; }
-html.phone .flyout-overlay.bottom .flyout { height: 100%; border-top: 0; padding-top: 0; padding-bottom: calc(var(--safe-b) + var(--kb)); animation-name: ph-sheet-up; }
+html.phone .flyout-overlay.bottom .flyout { height: 100%; border-top: 0; padding-top: 0; padding-bottom: max(var(--safe-b), var(--kb)); animation-name: ph-sheet-up; }
 
 /* Grabber (decorative; the head and grabber are the drag handle). */
-html.phone .sheet-grabber { flex: none; width: 36px; height: 5px; margin: 6px auto 2px; border-radius: 3px; background: var(--ph-field-line); opacity: 0.6; }
+html.phone .sheet-grabber { position: relative; flex: none; width: 36px; height: 5px; margin: 6px auto 2px; border-radius: 3px; background: var(--ph-field-line); opacity: 0.6; touch-action: none; }
+html.phone .sheet-grabber::before { content: ""; position: absolute; top: -6px; bottom: -8px; left: -60px; right: -60px; }
 html.phone .sheet-dragging { transition: none !important; animation: none !important; }
 html.phone .sheet-settling { transition: transform var(--ph-d-small) var(--ph-ease-out); }
 
@@ -103,7 +104,7 @@ html.phone .menu-tree .aur-menu-icon { width: 32px; color: var(--ph-accent); }
    offset uses tokens set on the root, because the toast host renders outside the shell window. */
 html.phone .toasts {
   left: max(var(--ph-gutter), var(--safe-l)); right: max(var(--ph-gutter), var(--safe-r)); top: auto; max-width: none;
-  bottom: calc(var(--ph-tabbar) + var(--safe-b) + var(--ph-status) + var(--kb) + 12px);
+  bottom: calc(var(--ph-tabbar) + max(var(--safe-b), var(--kb)) + var(--ph-status) + 12px);
 }
 html.phone .toast {
   align-items: center; min-height: 48px; padding: 4px 4px 4px var(--ph-gutter); border: 0; border-radius: var(--ph-r-lg);
