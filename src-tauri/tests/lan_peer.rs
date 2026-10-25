@@ -8,6 +8,7 @@
 //! BOREALIS_PEER=dial-send|dial-receive BOREALIS_PEER_CODE=42-ember-lantern \
 //!   BOREALIS_PEER_HOST=127.0.0.1:41234 cargo test -p borealis --test lan_peer -- --ignored --nocapture
 //! BOREALIS_PEER=export BOREALIS_PEER_OUT=/path/Hero.borealis cargo test -p borealis --test lan_peer -- --ignored --nocapture
+//! BOREALIS_PEER=import BOREALIS_PEER_IN=/path/pack.xml cargo test -p borealis --test lan_peer -- --ignored --nocapture
 //! ```
 //!
 //! The peer binds this computer's LAN address (as the app does), prints the typed code and the
@@ -28,8 +29,10 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use base64::Engine as _;
 use borealis_character::Character;
 use borealis_lib::content_packs::{EventSink, NullSink};
+use borealis_lib::content_preview::{ImportFileInput, PreviewImportRequest};
 use borealis_lib::device_sync::{DeviceSync, StateRef, SyncConfig, SyncEvents};
 use borealis_lib::state::{AppPaths, AppState};
 use borealis_lib::sync_dto::{LinkPackChoice, LinkPhase, LinkSelection, LinkStatus};
@@ -210,6 +213,45 @@ fn export(state: &AppState, sync: &DeviceSync) {
     );
 }
 
+/// Import a content file into the peer's library the way the app does (preview, then install) and
+/// print the preview counts, for comparing a phone's import report with this computer's.
+fn import(state: &AppState) {
+    let path = PathBuf::from(env("BOREALIS_PEER_IN").expect("BOREALIS_PEER_IN"));
+    let bytes = std::fs::read(&path).unwrap();
+    let request = PreviewImportRequest {
+        files: vec![ImportFileInput {
+            file_name: path.file_name().unwrap().to_string_lossy().into_owned(),
+            content_base64: base64::engine::general_purpose::STANDARD.encode(bytes),
+        }],
+        folder: None,
+    };
+    let preview = state.preview_import_pack(&request).unwrap();
+    let counts: Vec<String> = preview
+        .counts
+        .iter()
+        .map(|c| format!("{} {}", c.ty, c.count))
+        .collect();
+    println!(
+        "PEER-IMPORT pack={:?} converted={} skipped={} counts={counts:?} unresolved={} summary={:?}",
+        preview.pack_name,
+        preview.converted,
+        preview.skipped,
+        preview.unresolved_total,
+        preview.summary
+    );
+    for d in preview.diagnostics.iter().take(10) {
+        println!("PEER-IMPORT-DIAG {d:?}");
+    }
+    if preview.converted == 0 {
+        return;
+    }
+    let installed = state
+        .install_import_preview(&preview.preview_id, &NullSink)
+        .unwrap();
+    println!("PEER-IMPORT pack={:?}", installed.pack.map(|p| p.id));
+    report(state);
+}
+
 /// Type a code shown on the other device (`BOREALIS_PEER_CODE` at `BOREALIS_PEER_HOST`).
 async fn dial(state: &AppState, sync: &Arc<DeviceSync>, sending: bool, accept: bool) {
     let code = env("BOREALIS_PEER_CODE").expect("BOREALIS_PEER_CODE");
@@ -238,9 +280,10 @@ async fn desktop_peer() {
         "dial-send" => dial(&state, &sync, true, accept).await,
         "dial-receive" => dial(&state, &sync, false, accept).await,
         "export" => export(&state, &sync),
+        "import" => import(&state),
         other => {
             panic!(
-                "BOREALIS_PEER must be receive, send, dial-send, dial-receive or export: {other:?}"
+                "BOREALIS_PEER must be receive, send, dial-send, dial-receive, export or import: {other:?}"
             )
         }
     }
