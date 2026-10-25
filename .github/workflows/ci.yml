@@ -270,5 +270,5 @@ jobs:
           # under ANDROID_HOME, which need not be the one the Rust linker uses.
           ANDROID_NDK: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
         run: |
-          node ui/node_modules/@tauri-apps/cli/tauri.js android init --ci
-          node ui/node_modules/@tauri-apps/cli/tauri.js android build --debug --apk --target aarch64 --ci
+          node "$GITHUB_WORKSPACE/ui/node_modules/@tauri-apps/cli/tauri.js" android init --ci
+          node "$GITHUB_WORKSPACE/ui/node_modules/@tauri-apps/cli/tauri.js" android build --debug --apk --target aarch64 --ci
