@@ -1,4 +1,4 @@
-//! A deterministic stand-in for the llama.cpp backend (tests, CI, and the app before the binding lands).
+//! A deterministic stand-in for the llama.cpp backend (tests and CI: no model file needed).
 //!
 //! Feature hashing of lower-cased words: texts sharing words get a high dot product, so fusion and indexing tests
 //! behave like a (very weak) semantic model. Each word adds weight to one component inside the first 128 (so the

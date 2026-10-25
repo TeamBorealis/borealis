@@ -2,7 +2,8 @@
 //!
 //! * [`embedder`]: the [`Embedder`] trait (prompts, Matryoshka truncation, L2 normalisation) and the
 //!   [`GuardedEmbedder`] whose NaN / zero-norm guard turns semantic mode off and reports it locally.
-//! * [`fake`]: a deterministic [`FakeEmbedder`] for tests (the llama.cpp backend is not linked yet, B-46).
+//! * `llama` (feature `llama`): the llama.cpp backend, `llama::LlamaEmbedder` (EmbeddingGemma 2 GGUF, CPU).
+//! * [`fake`]: a deterministic [`FakeEmbedder`] for tests (no model file, no C++ build).
 //! * [`models`]: the model files per tier (SHA-256, sizes, pinned URLs) and the consent-dialog size text.
 //! * [`tier`]: the device tier table T0-T3 and the startup probe; [`device`]: battery / thermal / low power /
 //!   background state providers behind [`DeviceStateProvider`].
@@ -48,8 +49,8 @@ pub use store::{OpenStatus, StoreId, VectorStore};
 pub use tier::{DeviceProfile, FormFactor, Tier, TierConfig, TierOverride};
 pub use vector::{truncate_normalise, Degeneracy, MATRYOSHKA_DIMS};
 
-/// A real embedding backend is linked into this build. False until the llama.cpp binding lands (B-46): the app
-/// can download the model, but semantic search stays off and Settings says it arrives in a later update.
+/// A real embedding backend is linked into this build: true with the `llama` feature (the app's default). Without
+/// it the app refuses the model download and Settings says semantic search arrives in a later update.
 #[must_use]
 pub const fn backend_available() -> bool {
     #[cfg(feature = "llama")]

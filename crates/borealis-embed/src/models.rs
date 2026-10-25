@@ -2,9 +2,12 @@
 //!
 //! T2/T3 download the unmodified ggml-org `Q8_0` (310 MB). T1 downloads our re-quantised `Q6_K` body with a
 //! `Q4_K` token embedding (211 MB): our plain `Q4_K_M` failed the cosine gate (0.966 < 0.99), the mix passes
-//! (0.9926 at 768, 0.9931 at 256). The T1 file exists only on the Borealis mirror (GitHub Releases of
-//! `alon-mini/borealis`). The mirror URLs below are the planned ones; nothing requests them until the release is
-//! published and [`MIRROR_PUBLISHED`] flips (TODO(B-46)). Until then T1 devices report "not available yet".
+//! (0.9926 at 768, 0.9931 at 256). The T1 file exists only on the Borealis mirror: the pre-release
+//! [`MIRROR_RELEASE_TAG`] on GitHub Releases of `alon-mini/borealis`, which holds both GGUF files with
+//! `embeddinggemma-2-LICENSE.txt` and `embeddinggemma-2-NOTICE.txt` (EM6). Q8_0 downloads from Hugging Face first
+//! and falls back to the mirror; T1 downloads from the mirror only.
+
+use crate::embedder::ModelInfo;
 
 /// Model family id (vector headers, logs).
 pub const MODEL_ID: &str = "embeddinggemma-2";
@@ -18,9 +21,10 @@ pub const MIRROR_RELEASE_TAG: &str = "models-embeddinggemma-2-v1";
 /// Prefix of every mirror URL: `https://github.com/alon-mini/borealis/releases/download/<tag>/`.
 pub const MIRROR_RELEASE_BASE: &str =
     "https://github.com/alon-mini/borealis/releases/download/models-embeddinggemma-2-v1/";
-/// The mirror release exists. TODO(B-46): set to `true` once the user approved and published the release with
-/// both files plus `embeddinggemma-2-LICENSE.txt` and `embeddinggemma-2-NOTICE.txt` next to them (EM6).
-pub const MIRROR_PUBLISHED: bool = false;
+/// The mirror release is published (B-46, checked 2026-10-25: anonymous download of every asset returns 200 with
+/// the compiled sizes, and its LICENSE / NOTICE equal the bundled ones). Kept as a switch so a withdrawn mirror
+/// can be turned off in one place.
+pub const MIRROR_PUBLISHED: bool = true;
 
 /// Mirror URL of a file name (string literal), kept equal to [`MIRROR_RELEASE_BASE`] + name by a test.
 macro_rules! mirror_url {
@@ -54,7 +58,7 @@ pub struct ModelFile {
     pub sha256: &'static str,
     /// Pinned Hugging Face `resolve/<commit>/<file>` URL, when the file is published there.
     pub huggingface_url: Option<&'static str>,
-    /// Planned Borealis mirror URL (GitHub Releases). Used only once [`MIRROR_PUBLISHED`] is true.
+    /// Borealis mirror URL (GitHub Releases). Used while [`MIRROR_PUBLISHED`] is true.
     pub mirror_url: &'static str,
     /// Size text for the consent dialog.
     pub size_text: &'static str,
@@ -88,8 +92,19 @@ pub const Q6_K_TE_Q4_K: ModelFile = ModelFile {
 pub const ALL_FILES: [ModelFile; 2] = [Q8_0, Q6_K_TE_Q4_K];
 
 impl ModelFile {
-    /// The URLs a download may use, in order: the pinned Hugging Face URL, then the mirror once published.
-    /// Empty = the file cannot be downloaded yet (the T1 file before B-46).
+    /// The identity an embedder loaded from this file reports (vector store key, spec sec. 7, 9).
+    #[must_use]
+    pub fn info(&self) -> ModelInfo {
+        ModelInfo {
+            id: MODEL_ID.into(),
+            sha256: self.sha256.into(),
+            quant: self.quant.into(),
+            native_dims: NATIVE_DIMS,
+        }
+    }
+
+    /// The URLs a download may use, in order: the pinned Hugging Face URL, then the mirror while published.
+    /// Empty = the file cannot be downloaded (the T1 file if the mirror were switched off).
     #[must_use]
     pub fn download_sources(&self) -> Vec<&'static str> {
         self.download_sources_with(MIRROR_PUBLISHED)
@@ -164,7 +179,7 @@ mod tests {
     }
 
     #[test]
-    fn mirror_urls_are_planned_https_release_assets() {
+    fn mirror_urls_are_https_release_assets() {
         for f in ALL_FILES {
             assert_eq!(
                 f.mirror_url,
@@ -182,20 +197,31 @@ mod tests {
     }
 
     #[test]
-    fn sources_skip_the_mirror_until_it_is_published() {
-        assert_eq!(Q8_0.download_sources(), vec![Q8_0.huggingface_url.unwrap()]);
-        assert!(
-            Q6_K_TE_Q4_K.download_sources().is_empty(),
-            "T1 has no source yet"
-        );
+    fn sources_are_hugging_face_then_the_published_mirror() {
         assert_eq!(
-            Q8_0.download_sources_with(true),
+            Q8_0.download_sources(),
             vec![Q8_0.huggingface_url.unwrap(), Q8_0.mirror_url]
         );
         assert_eq!(
-            Q6_K_TE_Q4_K.download_sources_with(true),
-            vec![Q6_K_TE_Q4_K.mirror_url]
+            Q6_K_TE_Q4_K.download_sources(),
+            vec![Q6_K_TE_Q4_K.mirror_url],
+            "T1 exists only on the mirror"
         );
+        // Switched off, the mirror is skipped and T1 has no source.
+        assert_eq!(
+            Q8_0.download_sources_with(false),
+            vec![Q8_0.huggingface_url.unwrap()]
+        );
+        assert!(Q6_K_TE_Q4_K.download_sources_with(false).is_empty());
+    }
+
+    #[test]
+    fn info_identifies_the_file() {
+        let info = Q6_K_TE_Q4_K.info();
+        assert_eq!(info.id, MODEL_ID);
+        assert_eq!(info.sha256, Q6_K_TE_Q4_K.sha256);
+        assert_eq!(info.quant, "Q6_K-te-Q4_K");
+        assert_eq!(info.native_dims, NATIVE_DIMS);
     }
 
     #[test]

@@ -264,7 +264,7 @@ pub enum Outcome {
 /// A download that did not finish. Messages are plain sentences for Settings (no URLs, no paths).
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum DownloadError {
-    /// No URL serves this device's file yet (the T1 file before the mirror exists, B-46).
+    /// No URL serves this device's file (a compiled entry without sources; guarded, never in a release).
     #[error("The model for this device is not available yet.")]
     NotAvailable,
     /// The compiled file table is malformed (never in a release; guarded anyway).
@@ -525,10 +525,18 @@ fn finalize(
 }
 
 fn hash_matches(path: &Path, spec: &DownloadSpec) -> io::Result<bool> {
+    Ok(file_sha256(path)? == spec.sha256)
+}
+
+/// Lower-case hex SHA-256 of a whole file (the installed-file check here, and the llama loader before use).
+///
+/// # Errors
+/// The file cannot be opened or read.
+pub fn file_sha256(path: &Path) -> io::Result<String> {
     let mut file = File::open(path)?;
     let mut hasher = Sha256::new();
     io::copy(&mut file, &mut hasher)?;
-    Ok(hex(&hasher.finalize()) == spec.sha256)
+    Ok(hex(&hasher.finalize()))
 }
 
 fn hex(bytes: &[u8]) -> String {

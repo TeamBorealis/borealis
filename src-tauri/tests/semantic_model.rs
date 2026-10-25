@@ -1,7 +1,8 @@
 //! S3.2 semantic model download in the app, network-mocked: an in-memory transport stands in for HTTPS (the
 //! crate's own tests cover real HTTP against a loopback server). Proves: no request before consent; resume after
 //! pause; cancel deletes the partial; delete removes the model and vectors but not keyword indexes; Clear caches
-//! keeps the model; T1 reports "not available yet"; statuses match the UI contract.
+//! keeps the model; T1 downloads the mirrored file, a file without URLs reports "not available yet"; statuses
+//! match the UI contract.
 
 mod contract_support;
 
@@ -233,8 +234,36 @@ fn no_request_before_consent_then_the_consented_download_installs_the_model() {
 }
 
 #[test]
-fn t1_and_t0_devices_cannot_download_and_make_no_request() {
+fn t1_downloads_the_mirrored_file() {
     let a = app_with(Duration::ZERO, |_| Catalog::compiled());
+    a.state
+        .save_settings(&serde_json::json!({"search": {"tierOverride": "t1"}}))
+        .unwrap();
+    let ctx = a.ctx();
+    assert_eq!(ctx.tier, Tier::T1);
+    let st = a.state.semantic_status(&ctx);
+    assert!(st.available && st.unavailable_reason.is_none());
+    assert_eq!(
+        st.file.as_ref().map(|f| f.file_name.as_str()),
+        Some("embeddinggemma-2-Q6_K-te-Q4_K.gguf")
+    );
+    assert!(st
+        .consent
+        .as_ref()
+        .unwrap()
+        .body
+        .contains("210 MB on this device"));
+}
+
+#[test]
+fn a_file_without_urls_and_t0_devices_cannot_download_and_make_no_request() {
+    let a = app_with(Duration::ZERO, |_| {
+        let no_urls = DownloadSpec {
+            sources: Vec::new(),
+            ..DownloadSpec::for_file(&borealis_embed::models::Q6_K_TE_Q4_K)
+        };
+        Catalog::for_tests(Some(no_urls), None)
+    });
     a.state
         .save_settings(&serde_json::json!({"search": {"tierOverride": "t1"}}))
         .unwrap();
@@ -246,12 +275,6 @@ fn t1_and_t0_devices_cannot_download_and_make_no_request() {
         st.unavailable_reason.as_deref(),
         Some("The model for this device is not available yet.")
     );
-    assert!(st
-        .consent
-        .as_ref()
-        .unwrap()
-        .body
-        .contains("210 MB on this device"));
     let err = a.state.semantic_start(&ctx, None).unwrap_err();
     assert_eq!(
         err.message,

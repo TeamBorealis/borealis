@@ -99,11 +99,14 @@ fn downloads_verifies_and_renames_with_no_identifying_headers() {
 }
 
 #[test]
-fn nothing_is_requested_without_a_source_and_t1_is_not_available_yet() {
+fn nothing_is_requested_without_a_source() {
     let tmp = tempfile::tempdir().unwrap();
     let dir = ModelDir::new(tmp.path().join("models"));
-    let t1 = DownloadSpec::for_file(&Q6_K_TE_Q4_K);
-    assert_eq!(run(&dir, &t1), Err(DownloadError::NotAvailable));
+    let no_source = DownloadSpec {
+        sources: Vec::new(),
+        ..DownloadSpec::for_file(&Q6_K_TE_Q4_K)
+    };
+    assert_eq!(run(&dir, &no_source), Err(DownloadError::NotAvailable));
     assert_eq!(
         DownloadError::NotAvailable.to_string(),
         "The model for this device is not available yet."
@@ -112,9 +115,16 @@ fn nothing_is_requested_without_a_source_and_t1_is_not_available_yet() {
         !dir.root().exists(),
         "no folder is created for an unavailable file"
     );
+}
+
+#[test]
+fn compiled_files_use_hugging_face_then_the_published_mirror() {
     let q8 = DownloadSpec::for_file(&Q8_0);
-    assert_eq!(q8.sources.len(), 1, "Hugging Face only until B-46");
+    assert_eq!(q8.sources.len(), 2, "Hugging Face, then the mirror");
     assert!(q8.sources[0].starts_with("https://huggingface.co/"));
+    assert!(q8.sources[1].starts_with(crate::models::MIRROR_RELEASE_BASE));
+    let t1 = DownloadSpec::for_file(&Q6_K_TE_Q4_K);
+    assert_eq!(t1.sources, vec![Q6_K_TE_Q4_K.mirror_url.to_owned()]);
 }
 
 #[test]
