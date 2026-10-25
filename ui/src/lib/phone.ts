@@ -89,6 +89,11 @@ export function installPlatformClasses(root: HTMLElement, env: PlatformEnv, matc
   return () => mq.removeEventListener("change", sync);
 }
 
+/** The phone's light or dark setting (`prefers-color-scheme`); false where the WebView cannot tell. */
+export function systemPrefersLight(): boolean {
+  return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-color-scheme: light)").matches;
+}
+
 /** The `data-theme` value for a theme setting; null leaves the default (dark). O9: "System" follows the phone's setting. */
 export function resolveThemeAttr(mode: ThemeMode, o: { phone: boolean; prefersLight: boolean }): "light" | "dark" | null {
   if (mode !== "system") return mode;

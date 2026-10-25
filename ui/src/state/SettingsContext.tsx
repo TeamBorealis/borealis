@@ -2,7 +2,7 @@ import { type ReactNode, createContext, useCallback, useContext, useEffect, useM
 import type { AppSettings } from "../api/contract";
 import { DEFAULT_SETTINGS } from "../api/mock/default-settings";
 import { applyAccent } from "../lib/accent";
-import { isPhone, resolveThemeAttr, usePhone } from "../lib/phone";
+import { isPhone, resolveThemeAttr, systemPrefersLight, usePhone } from "../lib/phone";
 import { useApi } from "./ApiContext";
 
 interface SettingsCtx {
@@ -17,7 +17,6 @@ interface SettingsCtx {
 const Ctx = createContext<SettingsCtx | null>(null);
 
 const LIGHT_QUERY = "(prefers-color-scheme: light)";
-const prefersLight = (): boolean => typeof window.matchMedia === "function" && window.matchMedia(LIGHT_QUERY).matches;
 
 /** Phone status and navigation bars take the app background (spec sec. 5.9). */
 function applyThemeColor(root: HTMLElement): void {
@@ -33,7 +32,7 @@ function applyThemeColor(root: HTMLElement): void {
 export function applyTheme(s: AppSettings): void {
   const root = document.documentElement;
   // B-48 O9: on a phone, "System" follows the phone's light or dark setting; desktop keeps the dark default.
-  const theme = resolveThemeAttr(s.theme, { phone: isPhone(), prefersLight: prefersLight() });
+  const theme = resolveThemeAttr(s.theme, { phone: isPhone(), prefersLight: systemPrefersLight() });
   if (theme) root.setAttribute("data-theme", theme);
   else root.removeAttribute("data-theme");
   if (s.highContrast) root.setAttribute("data-contrast", "high");

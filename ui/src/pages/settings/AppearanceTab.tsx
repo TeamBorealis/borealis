@@ -4,6 +4,7 @@ import { Icon } from "../../components/Icon";
 import { ACCENTS } from "../../lib/accent";
 import { FieldLabel, SectionDesc } from "./rows";
 import { PhoneCase } from "../../lib/phoneCase";
+import { resolveThemeAttr, systemPrefersLight, usePhone } from "../../lib/phone";
 
 const THEMES: { id: Exclude<ThemeMode, "system">; label: string; color: string; glyph: string }[] = [
   { id: "light", label: "Light", color: "#f7f7f7", glyph: "#161616" },
@@ -23,8 +24,10 @@ function Swatch({ label, color, glyph, selected, size, mark, onPick }: { label: 
 
 /** APPEARANCE: accent swatches and theme swatches preview live; the slider sets the collection portrait size. */
 export function AppearanceTab({ form, set }: { form: AppSettings; set: (patch: Partial<AppSettings>) => void }) {
-  // "system" has no stylesheet of its own: the app shows its default (dark) theme, so the Dark swatch is the marked one.
-  const theme = form.theme === "light" ? "light" : "dark";
+  // "system" has no stylesheet of its own: the desktop shows its default (dark) theme, so the Dark swatch is the marked one;
+  // a phone follows its own light or dark setting (B-48 O9), so the swatch of the theme it shows is marked.
+  const phone = usePhone();
+  const theme = resolveThemeAttr(form.theme, { phone, prefersLight: phone && systemPrefersLight() }) === "light" ? "light" : "dark";
   const size = PORTRAIT_SIZES.includes(form.portraitSize) ? form.portraitSize : 150;
   return (
     <>
@@ -42,7 +45,7 @@ export function AppearanceTab({ form, set }: { form: AppSettings; set: (patch: P
           <Swatch key={t.id} label={t.label} color={t.color} glyph={t.glyph} size={28} mark="dragon" selected={theme === t.id} onPick={() => set({ theme: t.id })} />
         ))}
       </div>
-      <label className="aur-set-field slider" htmlFor="set-portrait">CHARACTER COLLECTION PORTRAIT SIZE ({size}px)</label>
+      <label className="aur-set-field slider" htmlFor="set-portrait"><PhoneCase>CHARACTER COLLECTION PORTRAIT SIZE</PhoneCase> ({size}px)</label>
       <input id="set-portrait" className="aur-slider" type="range" min={125} max={175} step={25} value={size}
         onChange={(e) => set({ portraitSize: Number(e.target.value) })} />
       <div className="aur-slider-ticks" aria-hidden="true">{PORTRAIT_SIZES.map((n) => <i key={n} />)}</div>
