@@ -16,6 +16,7 @@ mod limits;
 mod manifest;
 mod plan;
 mod reader;
+mod restore_mtime;
 mod writer;
 
 pub use apply::{
@@ -41,4 +42,8 @@ pub use manifest::{
 };
 pub use plan::{decide, plan_receive, Action, Plan, PlanEntry};
 pub use reader::{Bundle, ItemData};
+pub use restore_mtime::{
+    repair_restored_mtimes, restored_mtime_fix, RestoreRepair, RESTORE_CANDIDATE_BEFORE_MS,
+    RESTORE_FUTURE_SLACK_MS, RESTORE_REPAIRED_FROM_MS,
+};
 pub use writer::{BundleMeta, BundleWriter};

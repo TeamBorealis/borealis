@@ -123,6 +123,9 @@ fn load(handle: &AppHandle, startup: &Startup) -> Result<(), String> {
     let state = crate::build_state(paths, extract_error, &mut |step| {
         startup.report(&Stage::from(step));
     })?;
+    // SY7a: put back the edit times an Android full-backup restore broke, before anything syncs.
+    #[cfg(target_os = "android")]
+    repair_restored_edit_times(&state);
     // Mobile has no AI integration: no service, no profile, no stale-temp sweep.
     #[cfg(desktop)]
     let ai = {
@@ -170,6 +173,22 @@ fn load(handle: &AppHandle, startup: &Startup) -> Result<(), String> {
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     crate::commands_app_update::spawn_startup_update_check(handle);
     Ok(())
+}
+
+/// SY7a: Android's full-backup restore sets each file's mtime to its original seconds read as
+/// milliseconds (January 1970), and sync takes the mtime as the edit time (SY7). Logs counts only,
+/// never file or character names.
+#[cfg_attr(not(target_os = "android"), allow(dead_code))]
+fn repair_restored_edit_times(state: &AppState) {
+    let dirs = [state.characters_dir(), state.paths.library()];
+    let report = borealis_bundle::repair_restored_mtimes(&dirs, std::time::SystemTime::now());
+    if report.repaired > 0 || report.failed > 0 {
+        tracing::info!(
+            "restore: repaired {} file edit times, {} could not be set",
+            report.repaired,
+            report.failed
+        );
+    }
 }
 
 /// Desktop: show the main window and close the splash. Mobile has nothing to swap.
