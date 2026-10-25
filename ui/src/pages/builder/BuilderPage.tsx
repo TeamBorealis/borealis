@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Navigate, useNavigate, useParams } from "react-router";
 import type { BuilderTab, RulesetProfile } from "../../api/contract";
-import { Alert, TabPanel, Tabs, type TabDef } from "../../components";
+import { Alert, Button, TabPanel, Tabs, type TabDef } from "../../components";
 import { RequireCharacter } from "../../components/RequireCharacter";
 import { useShell } from "../../components/shell/ShellContext";
 import { useApi } from "../../state/ApiContext";
@@ -11,7 +11,8 @@ import { useAsync } from "../../state/useAsync";
 import "./builder.css";
 import { AbilitiesPane, AbilitiesTab } from "./AbilitiesTab";
 import { DescriptionPane, PaneShell } from "./DescriptionPane";
-import type { DescribeFn } from "./PickerGroup";
+import type { DescribeFn, PickChoice } from "./PickerGroup";
+import { usePhone } from "../../lib/phone";
 import { SlotList } from "./SlotList";
 
 type TabId = BuilderTab;
@@ -32,6 +33,9 @@ const INTRO: Record<string, { title: string; text: string }> = {
   companion: { title: "Companion", text: "A companion creature that travels with your character." },
 };
 
+/** Phones (B-48 O2): the same intro, describing taps and the Choose button instead of a double click. */
+const PHONE_RACE_INTRO = { title: "Heritage", text: "Choose where your character comes from. Tap an entry in the list to read about it; choose it with the Choose button or a double tap." };
+
 /** The old Levels & HP route: leveling and multiclassing live in the Level Up flyout, so open it and show Class. */
 function LevelsRedirect() {
   const { setLevelUpOpen } = useShell();
@@ -45,7 +49,8 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
   const { setLevelUpOpen } = useShell();
   const { tab = "race" } = useParams();
   const nav = useNavigate();
-  const [described, setDescribed] = useState<{ tab: string; id: string; isElement: boolean } | null>(null);
+  const [described, setDescribed] = useState<{ tab: string; id: string; isElement: boolean; choice?: PickChoice } | null>(null);
+  const phone = usePhone();
   const next = snapshot?.progress.nextSlotId ?? null;
   const flowTab = snapshot?.slots.find((s) => s.id === next)?.tab;
   // Selection flow (setting): jump to the first pending pick after every change.
@@ -76,9 +81,12 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
   const own = described?.tab === active ? described : null;
   const shownId = own ? own.id : defaultId;
   const paneId = own?.isElement ? own.id : defaultId;
-  const onDescribe: DescribeFn = (id, isElement = true) => setDescribed({ tab: active, id, isElement });
-  const intro = INTRO[active] ?? INTRO.race!;
-  const species = (profile?.terminology.species ?? "Race").toUpperCase();
+  const onDescribe: DescribeFn = (id, isElement = true, choice) => setDescribed({ tab: active, id, isElement, choice });
+  // O2 (phones): the described row's "Choose <name>" button, while its slot does not already hold it.
+  const choice = phone && own?.choice && snapshot.slots.some((s) => s.id === own.choice!.slotId && s.chosen?.id !== own.id) ? own.choice : null;
+  const intro = phone && active === "race" ? PHONE_RACE_INTRO : INTRO[active] ?? INTRO.race!;
+  const speciesWord = profile?.terminology.species ?? "Race";
+  const species = phone ? speciesWord : speciesWord.toUpperCase();
   const fallback: ReactNode = <PaneShell title={active === "race" ? species : intro.title} imageIcon={false} intro={intro.text} readText={intro.text} />;
   const pane = active === "abilities" ? <AbilitiesPane /> : <DescriptionPane elementId={paneId} fallback={fallback} />;
   return (
@@ -97,6 +105,8 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
         <div className="sr-only" aria-live="polite">{snapshot.progress.remaining} choices remaining</div>
       </div>
       <div className="bp-right">{pane}</div>
+      {/* O2 (phones): under the list and its description; it stays in reach at the bottom while the page scrolls. */}
+      {choice && <div className="bp-choose"><Button variant="primary" className="bp-choose-btn" onClick={choice.choose}>Choose {choice.name}</Button></div>}
     </div>
   );
 }

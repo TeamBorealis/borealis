@@ -2,6 +2,7 @@ import type { KeyboardEvent } from "react";
 import type { CharacterSummary } from "../../api/contract";
 import { Icon } from "../../components/Icon";
 import { Portrait } from "../../components";
+import { usePhone } from "../../lib/phone";
 
 /** Classic builder build line: "LEVEL 1 MOUNTAIN DWARF FIGHTER". The summary build is "Mountain Dwarf Fighter 1". */
 export function buildLine(c: Pick<CharacterSummary, "build" | "level">): string {
@@ -12,11 +13,13 @@ export function buildLine(c: Pick<CharacterSummary, "build" | "level">): string 
 
 /**
  * Classic builder collection tile (160 px, 2 px border, 3 px padding): portrait with the name and build line overlaid on a dark band.
- * One click selects (edit and delete corner buttons appear), a double click or Enter loads.
+ * One click selects (edit and delete corner buttons appear), a double click or Enter loads. Phones (B-48 O3) also show
+ * Open next to Edit and Delete, so loading never depends on a double tap.
  */
 export function CharacterTile({ c, selected, loaded, onSelect, onLoad, onEdit, onDelete }: {
   c: CharacterSummary; selected: boolean; loaded: boolean; onSelect: () => void; onLoad: () => void; onEdit: () => void; onDelete: () => void;
 }) {
+  const phone = usePhone();
   const key = (e: KeyboardEvent) => {
     if (e.key === "Enter") { e.preventDefault(); onLoad(); }
   };
@@ -35,6 +38,7 @@ export function CharacterTile({ c, selected, loaded, onSelect, onLoad, onEdit, o
         <div className="v4-tile-actions">
           <button type="button" className="v4-tile-btn" aria-label={`Edit ${c.name}`} title="Edit" onClick={onEdit}><Icon name="pen" /></button>
           <button type="button" className="v4-tile-btn" aria-label={`Delete ${c.name}`} title="Delete" onClick={onDelete}><Icon name="trash" /></button>
+          {phone && <button type="button" className="v4-tile-openbtn" aria-label={`Open ${c.name}`} onClick={onLoad}>Open</button>}
         </div>
       )}
     </div>

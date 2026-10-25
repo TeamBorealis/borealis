@@ -5,9 +5,12 @@ import { ConvertedTag, EditionBadge, editionMarks, EditionNotes, Expander, Focus
 import { useApi } from "../../state/ApiContext";
 import { useAsync } from "../../state/useAsync";
 import { useSettings } from "../../state/SettingsContext";
+import { usePhone } from "../../lib/phone";
 import type { RowHeight } from "../../api/contract";
 
 const SOURCES_ROUTE = "/content/sources";
+
+const SKELETON_ROWS = ["skel-1", "skel-2", "skel-3"];
 
 /** Classic builder picker row heights (px) for the ROW HEIGHT setting: small / medium (default) / large. */
 export const PICKER_ROW_PX: Record<RowHeight, number> = { small: 17, medium: 21, large: 25 };
@@ -26,8 +29,14 @@ export function groupSlots(slots: SelectionSlot[]): SlotGroup[] {
  */
 export const isListSlot = (slot: Pick<SelectionSlot, "elementType">): boolean => slot.elementType === "list";
 
-/** Describe callback: `isElement` is false for list entries, which highlight but have no element description. */
-export type DescribeFn = (id: string, isElement?: boolean) => void;
+/** A row that can still be chosen: phones show "Choose <name>" for it under the list (B-48 O2). */
+export interface PickChoice { slotId: string; name: string; choose: () => void }
+
+/**
+ * Describe callback: `isElement` is false for list entries, which highlight but have no element description. `choice` is
+ * set when the described row can be chosen (not already chosen, not disabled).
+ */
+export type DescribeFn = (id: string, isElement?: boolean, choice?: PickChoice) => void;
 
 /** Plain-text source of an element (footer lines and rows for choices the option list no longer carries). */
 function ElementSource({ id }: { id: string }) {
@@ -84,7 +93,9 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
   const items = useMemo<SlotOption[]>(() => [...(options.data?.items ?? [])].sort((a, b) => a.name.localeCompare(b.name)), [options.data]);
   const rows = useMemo(() => mergeRows(items, slot.chosen ? [slot.chosen] : []), [items, slot.chosen]);
   const showDescription = slot.elementType === "class";
-  const title = group.title.toUpperCase();
+  // Phones read in sentence case (B-48, spec sec. 3.3: same words, only the casing changes); desktop keeps Aurora's capitals.
+  const phone = usePhone();
+  const title = phone ? group.title : group.title.toUpperCase();
   const [notesFor, setNotesFor] = useState<string | null>(null);
 
   const onRowKey = (e: KeyboardEvent<HTMLButtonElement>, o: Row, disabled: boolean) => {
@@ -105,7 +116,7 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
     <div className={`pick ${isNext ? "is-next" : ""} ${allLocked ? "is-locked" : ""} ${open && !allLocked ? "is-open" : ""}`} data-slot-id={slot.id}
       style={{ "--pick-row": `${rowPx}px` } as CSSProperties}>
       <FocusBar>
-        <Expander title={<>{title}{slot.requiredLevel ? <span className="pick-count">{` - LEVEL ${slot.requiredLevel}`}</span> : null}</>}
+        <Expander title={<>{title}{slot.requiredLevel ? <span className="pick-count">{phone ? ` - Level ${slot.requiredLevel}` : ` - LEVEL ${slot.requiredLevel}`}</span> : null}</>}
           open={open} onToggle={onToggle}
           headerExtra={!allLocked && open ? <button type="button" className="pick-tag" aria-label="Manage Sources" title="Manage Sources" onClick={() => navigate(SOURCES_ROUTE)}><Icon name="tags" /></button> : undefined}>
           {slot.hint && <p className="pick-hint">{slot.hint}</p>}
@@ -113,6 +124,8 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
           {allLocked && <p className="pick-empty">Granted by your build; nothing to choose.</p>}
           {options.data && rows.length === 0 && <p className="pick-empty">Nothing matches. Check your source restrictions.</p>}
           <ul className={`pick-list ${showDescription ? "with-desc" : ""}`} aria-label={`${group.title} options`}>
+            {/* Phones: skeleton rows in the list's own shape while the options load (spec sec. 3.4 Loading). */}
+            {phone && !allLocked && options.loading && !options.data && SKELETON_ROWS.map((k) => <li key={k} className="pick-skel" aria-hidden="true" />)}
             {rows.map((o) => {
               const sel = slot.chosen?.id === o.id;
               const hl = describedId === o.id;
@@ -124,7 +137,7 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
                 <li key={o.id} className={`pick-row ${sel ? "selected" : ""} ${hl ? "hl" : ""} ${marks.converted ? "is-converted" : ""}`}>
                   <button type="button" className="pick-main" aria-pressed={sel} aria-disabled={disabled || undefined} title={o.disabledReason}
                     aria-label={[o.name, o.level !== undefined ? (o.level === 0 ? "Cantrip" : `Level ${o.level}`) : "", o.sourceName ? `${o.sourceName}${editionTag(o.edition)}` : ""].filter(Boolean).join(", ")}
-                    onClick={() => onDescribe(o.id, !isListSlot(slot))} onKeyDown={(e) => onRowKey(e, o, disabled)}
+                    onClick={() => onDescribe(o.id, !isListSlot(slot), sel || disabled ? undefined : { slotId: slot.id, name: o.name, choose: () => onChoose(slot.id, o.id) })} onKeyDown={(e) => onRowKey(e, o, disabled)}
                     onDoubleClick={() => { if (!sel && !disabled) onChoose(slot.id, o.id); }}>
                     <span className={`pick-name ${disabled ? "disabled" : ""}`} aria-hidden="true">
                       {o.name}{o.level !== undefined && <span className="pick-sub"> {o.level === 0 ? "Cantrip" : `Level ${o.level}`}</span>}
