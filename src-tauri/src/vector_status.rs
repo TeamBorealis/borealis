@@ -85,9 +85,9 @@ pub fn pause_message(reason: PauseReason) -> &'static str {
     }
 }
 
-/// Median query-embedding time in ms over [`PROBE_QUERIES`] after one warm-up; `None` when a probe fails (the
-/// guard then reports the reason).
-pub(crate) fn probe_query_ms(embedder: &GuardedEmbedder) -> Option<u32> {
+/// Median query-embedding time in ms over [`PROBE_QUERIES`] after one warm-up (the app's speed check; also timed by
+/// the real-model test `tests/semantic_real_model.rs`); `None` when a probe fails (the guard then reports the reason).
+pub fn probe_query_ms(embedder: &GuardedEmbedder) -> Option<u32> {
     embedder.embed_query(PROBE_QUERIES[0]).ok()?;
     let mut ms = Vec::with_capacity(PROBE_QUERIES.len());
     for q in PROBE_QUERIES {

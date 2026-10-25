@@ -1,12 +1,17 @@
 name: CI
 
-# Cost-aware: push/PR run Linux + Windows only. macOS (10x minutes), iOS and Android run only when
-# started by hand (Actions > CI > Run workflow).
+# Cost-aware: push/PR run Linux + Windows only. macOS (10x minutes), iOS, Android and the x86_64 embedding matrix
+# (embed-platforms) run only when started by hand (Actions > CI > Run workflow).
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      only_embed:
+        description: "Run only the x86_64 embedding matrix (embed-platforms, S3.4), not the build/test/bundle jobs"
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -22,6 +27,7 @@ env:
 jobs:
   test:
     name: build+test (${{ matrix.os }})
+    if: ${{ !inputs.only_embed }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -94,6 +100,7 @@ jobs:
 
   audit:
     name: dependency audit
+    if: ${{ !inputs.only_embed }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -157,6 +164,15 @@ jobs:
           projectPath: .
           # Through node: Windows cannot run the extension-less .bin/tauri shim by path.
           tauriScript: node ui/node_modules/@tauri-apps/cli/tauri.js
+      # The release build's llama.cpp must use only the SSE2 baseline too (s3.3-1 sec. 7 items 2 and 3; release.yml
+      # checks Linux before collecting the installers).
+      - name: llama.cpp x86_64 baseline (Linux, release build)
+        if: runner.os == 'Linux'
+        run: bash build/check-x86-baseline.sh target/release
+      - name: llama.cpp x86_64 baseline (Windows dumpbin, release build)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./build/check-x86-baseline.ps1 target/release
       - name: Linux launch smoke (Xvfb)
         # Launches the bundled binary headless: GUI stays up, main window maps, --mcp answers on stdio.
         if: runner.os == 'Linux'
@@ -164,6 +180,37 @@ jobs:
           sudo apt-get install -y xvfb xauth dbus-x11 xdotool imagemagick
           BIN=$(ls target/*/bundle/deb/*/data/usr/bin/borealis | head -n 1)
           build/linux/smoke.sh "$BIN" linux-smoke ci
+      - uses: petarpetrovt/setup-sde@6d2773bc0ef3005fd52e0ae0bb91782321793aec # v6.0
+        if: runner.os == 'Windows' && github.event_name == 'workflow_dispatch'
+      # s3.3-1 sec. 7 item 3: the release app starts on a pre-AVX CPU (Intel SDE, Merom = Core 2). An AVX
+      # instruction anywhere on the start path (C++ static initialisers of ggml-cpu included) stops it with an
+      # SDE error. Checks the MCP mode (answers on stdio) and that the GUI process stays up.
+      - name: Release app on a pre-AVX CPU (Windows, Intel SDE -mrm)
+        if: runner.os == 'Windows' && github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        run: |
+          $sde = Get-ChildItem -Path $env:SDE_PATH -Recurse -Filter sde.exe | Select-Object -First 1 -ExpandProperty FullName
+          $app = (Resolve-Path target\release\borealis.exe).Path
+          $m = '"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}'
+          $req = "{`"jsonrpc`":`"2.0`",`"id`":1,`"method`":`"server/discover`",`"params`":{$m}}`n{`"jsonrpc`":`"2.0`",`"id`":2,`"method`":`"tools/list`",`"params`":{$m}}`n"
+          $reply = $req | & $sde -mrm -- $app --mcp 2>sde-mcp.err
+          $text = ($reply | Out-String)
+          Write-Output ("mcp under SDE: exit {0}; reply chars {1}; tool names {2}" -f $LASTEXITCODE, $text.Length, ([regex]::Matches($text, '"name":"[a-z_]+"')).Count)
+          Get-Content sde-mcp.err -ErrorAction SilentlyContinue | Select-String -Pattern 'SDE-ERROR|not valid for specified chip' | Select-Object -First 3
+          if ($text -notmatch '"id":2') { Write-Output '::error::the release app gave no tools/list reply under SDE -mrm'; exit 1 }
+          $p = Start-Process -FilePath $sde -ArgumentList @('-mrm', '--', "`"$app`"") -PassThru -RedirectStandardOutput sde-gui.out -RedirectStandardError sde-gui.err
+          $title = ''
+          for ($i = 1; $i -le 180; $i++) {
+            Start-Sleep -Seconds 1
+            $b = Get-Process borealis -ErrorAction SilentlyContinue | Where-Object MainWindowTitle | Select-Object -First 1
+            if ($b) { $title = $b.MainWindowTitle; break }
+            if ($p.HasExited) { break }
+          }
+          $alive = -not $p.HasExited
+          Write-Output "gui under SDE: alive $alive after $i s; window title '$title'"
+          Get-Content sde-gui.out, sde-gui.err -ErrorAction SilentlyContinue | Select-String -Pattern 'SDE-ERROR|not valid for specified chip' | Select-Object -First 3
+          Get-Process borealis, msedgewebview2, sde* -ErrorAction SilentlyContinue | Stop-Process -Force
+          if (-not $alive) { Write-Output '::error::the release app exited under SDE -mrm'; exit 1 }
       - uses: actions/upload-artifact@v4
         if: runner.os == 'Linux' && always()
         with:
@@ -181,7 +228,7 @@ jobs:
 
   macos:
     name: macOS build+test+bundle (manual)
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && !inputs.only_embed
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -215,7 +262,7 @@ jobs:
 
   ios:
     name: iOS build (manual, experimental)
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && !inputs.only_embed
     runs-on: macos-latest
     continue-on-error: true
     steps:
@@ -236,7 +283,7 @@ jobs:
 
   android:
     name: Android build (manual, experimental)
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && !inputs.only_embed
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -273,3 +320,152 @@ jobs:
           # gen/android is committed; `android init` would rewrite buildSrc/BuildTask.kt to call the CLI by a relative
           # path that Gradle cannot resolve, so build straight from the committed project (as release.yml does).
           node "$GITHUB_WORKSPACE/ui/node_modules/@tauri-apps/cli/tauri.js" android build --debug --apk --target aarch64 --ci
+
+  embed-platforms:
+    # S3.4 (s3.3-1 sec. 7 items 3-6): the real embedding model on x86_64 with the SSE2-baseline llama.cpp. Cosine vs
+    # the sentence-transformers fp32 reference (>= 0.99 at 768 and 256 dims), the speed record (query_ms_median,
+    # chunks/s), the app's own speed check against the 40 ms budget, the dumpbin check (Windows), and old-CPU runs:
+    # qemu-user `-cpu Conroe` (Core 2, no AVX) on Linux, Intel SDE `-mrm` (Merom) on Windows. The model comes from
+    # the app's pinned sources (build/fetch-embed-model.sh), is cached, and is never committed or uploaded; the
+    # uploaded record holds labels and numbers only.
+    name: embedding model x86_64 (${{ matrix.os }}, manual)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Keep LF line endings (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          git config --global core.autocrlf false
+          # llama.cpp (the borealis-embed git dependency) has paths longer than MAX_PATH.
+          git config --global core.longpaths true
+      - uses: actions/checkout@v4
+      - name: Free runner disk (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+      - name: Linux webkit2gtk deps and qemu-user
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev libxdo-dev qemu-user
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target"
+          shared-key: embed-release
+      - name: Drop a stale llama.cpp build
+        run: |
+          if grep -qs '^GGML_AVX2:BOOL=ON' target/release/build/llama-cpp-sys-2-*/out/build/CMakeCache.txt; then
+            cargo clean --release -p llama-cpp-sys-2
+          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      # ui/dist: the Tauri crate (the app's speed-check test) needs it to compile.
+      - run: npm ci && npm run build
+        working-directory: ui
+      - uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/borealis-models
+          key: embed-model-${{ hashFiles('crates/borealis-embed/src/models.rs') }}
+      - name: Model (app sources, SHA-256 verified)
+        run: |
+          dir=$(cd "$RUNNER_TEMP" && pwd)/borealis-models
+          model=$(bash build/fetch-embed-model.sh "$dir" | tail -n 1)
+          if [ "$RUNNER_OS" = Windows ]; then model=$(cygpath -w "$model"); fi
+          echo "BOREALIS_EMBED_MODEL=$model" >> "$GITHUB_ENV"
+          mkdir -p embed-record
+      - name: Build the release test binaries
+        run: |
+          cargo test -p borealis-embed --features llama --release --test llama_reference --no-run \
+            --message-format=json-render-diagnostics > embed-build.json
+          exe=$(jq -r 'select(.reason == "compiler-artifact" and .target.name == "llama_reference" and .executable != null) | .executable' embed-build.json | tail -n 1)
+          test -n "$exe"
+          echo "REFERENCE_TEST=$exe" >> "$GITHUB_ENV"
+          cargo test -p borealis --release --test semantic_real_model --no-run
+      - name: llama.cpp x86_64 baseline (Linux objdump)
+        if: runner.os == 'Linux'
+        run: bash build/check-x86-baseline.sh target/release | tee embed-record/baseline.txt
+      - name: llama.cpp x86_64 baseline (Windows dumpbin)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./build/check-x86-baseline.ps1 target/release | Tee-Object -FilePath embed-record/baseline.txt
+      - name: Cosine and speed record (S0.2 setup, 4 threads, context 2048)
+        run: |
+          "$REFERENCE_TEST" --ignored --nocapture | tee embed-record/native-s02.log
+          grep -h '^{"' embed-record/native-s02.log > embed-record/native-s02.json
+      - name: Cosine and speed record (the app's T2 x86 row on this runner, threads = cores / 2, cap 512)
+        run: |
+          cores=$(nproc 2>/dev/null || echo "$NUMBER_OF_PROCESSORS")
+          threads=$(( cores / 2 )); [ "$threads" -ge 1 ] || threads=1; [ "$threads" -le 4 ] || threads=4
+          BOREALIS_EMBED_THREADS=$threads BOREALIS_EMBED_MAX_TOKENS=512 "$REFERENCE_TEST" --ignored --nocapture \
+            | tee embed-record/native-app.log
+          grep -h '^{"' embed-record/native-app.log > embed-record/native-app.json
+      - name: The app's speed check (hybrid or keyword-only on this runner)
+        run: |
+          cargo test -p borealis --release --test semantic_real_model -- --ignored --nocapture | tee embed-record/app-check.log
+          grep -h '^{"' embed-record/app-check.log > embed-record/app-check.json
+      # Negative control for both emulators: an AVX2 build of a tiny program must be stopped by them.
+      - name: AVX probe program
+        run: |
+          probe=$(cd "$RUNNER_TEMP" && pwd)/avxprobe
+          mkdir -p "$probe"
+          printf '%s\n' 'fn main() {' \
+            '    let n = std::env::args().count() as u32 * 100_000;' \
+            '    let v: Vec<u32> = (0..n).collect();' \
+            '    let s = std::hint::black_box(&v).iter().fold(0u32, |a, x| a.wrapping_add(x.wrapping_mul(3)));' \
+            '    println!("{s}");' '}' > "$probe/main.rs"
+          ext=""; if [ "$RUNNER_OS" = Windows ]; then ext=.exe; fi
+          rustc -O -C target-cpu=haswell -o "$probe/avxprobe$ext" "$probe/main.rs"
+          "$probe/avxprobe$ext"
+          echo "AVX_PROBE=$probe/avxprobe$ext" >> "$GITHUB_ENV"
+      - name: Old CPU (Linux, qemu-user -cpu Conroe)
+        if: runner.os == 'Linux'
+        timeout-minutes: 180
+        run: |
+          echo "probe ymm instructions: $(objdump -d "$AVX_PROBE" | grep -c ymm)"
+          if qemu-x86_64 -cpu Conroe "$AVX_PROBE"; then echo "::error::qemu -cpu Conroe ran AVX2 code"; exit 1; fi
+          echo "negative control: qemu -cpu Conroe stops the AVX2 probe"
+          qemu-x86_64 -cpu Haswell "$AVX_PROBE"
+          BOREALIS_EMBED_THREADS=4 qemu-x86_64 -cpu Conroe "$REFERENCE_TEST" --ignored --nocapture | tee embed-record/conroe.log
+          grep -h '^{"' embed-record/conroe.log > embed-record/conroe.json
+      - uses: petarpetrovt/setup-sde@6d2773bc0ef3005fd52e0ae0bb91782321793aec # v6.0
+        if: runner.os == 'Windows'
+      - name: Old CPU (Windows, Intel SDE -mrm)
+        if: runner.os == 'Windows'
+        timeout-minutes: 180
+        run: |
+          sde=$(find "$(cygpath -u "$SDE_PATH")" -name sde.exe | head -n 1)
+          probe=$(cygpath -w "$AVX_PROBE")
+          if "$sde" -mrm -- "$probe" > embed-record/sde-probe.log 2>&1; then
+            cat embed-record/sde-probe.log; echo "::error::SDE -mrm ran AVX2 code"; exit 1
+          fi
+          grep -m 1 -E 'SDE-ERROR|not valid' embed-record/sde-probe.log || true
+          echo "negative control: SDE -mrm stops the AVX2 probe"
+          BOREALIS_EMBED_THREADS=4 "$sde" -mrm -- "$(cygpath -w "$REFERENCE_TEST")" --ignored --nocapture | tee embed-record/sde-mrm.log
+          grep -h '^{"' embed-record/sde-mrm.log > embed-record/sde-mrm.json
+      - name: Record
+        if: always()
+        run: |
+          {
+            echo "### Embedding model on ${{ matrix.os }}"
+            for f in embed-record/*.json; do
+              if [ -f "$f" ]; then echo "- $(basename "$f"): \`$(cat "$f")\`"; fi
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: embed-record-${{ matrix.os }}
+          path: embed-record/
