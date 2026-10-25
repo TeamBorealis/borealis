@@ -9,6 +9,7 @@ import android.provider.OpenableColumns
 import android.util.Base64
 import android.util.Log
 import android.webkit.WebView
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -28,6 +29,16 @@ class MainActivity : TauriActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     enableEdgeToEdge()
     super.onCreate(savedInstanceState)
+    // Back at the root sends Borealis to the background, as Home does (and as Android 12+ does for launcher roots),
+    // instead of finishing the activity. Finishing tore the native side down mid-frame: tao ends the process with
+    // exit() while the render threads still draw (FORTIFY "destroyed mutex", RenderThread SIGSEGV), and wry's
+    // onWebviewDestroy can block the UI thread on its full message pipe (ANR). Registered first, so it runs only
+    // after the WebView (history) and an open sheet (Tauri's back listener) have passed on the press.
+    onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+      override fun handleOnBackPressed() {
+        moveTaskToBack(true)
+      }
+    })
     lastNight = SystemTheme.isNight(resources.configuration.uiMode)
     handleIntent(intent)
   }
