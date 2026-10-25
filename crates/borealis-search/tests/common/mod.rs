@@ -16,8 +16,12 @@ pub const SRD_ELEMENT_PACKS: &[&str] = &[
 ];
 pub const RULES_TEXT_PACKS: &[&str] = &["srd-5.1-rules-text", "srd-5.2.1-rules-text"];
 
+/// The bundled content folder; `BOREALIS_CONTENT_DIR` overrides it (a copy pushed to a phone or emulator).
 pub fn content_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content")
+    std::env::var_os("BOREALIS_CONTENT_DIR").map_or_else(
+        || Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content"),
+        PathBuf::from,
+    )
 }
 
 pub fn chunk(key: &str, name: &str, headings: &str, body: &str, edition: EditionTag) -> Chunk {

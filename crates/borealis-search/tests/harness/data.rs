@@ -22,8 +22,12 @@ struct QrelRow {
 /// `query_id -> canonical doc_key -> grade`.
 pub type Qrels = HashMap<String, HashMap<String, u8>>;
 
+/// The query and judgement folder; `BOREALIS_EVAL_DIR` overrides it (a copy pushed to a phone or emulator).
 pub fn eval_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("eval")
+    std::env::var_os("BOREALIS_EVAL_DIR").map_or_else(
+        || Path::new(env!("CARGO_MANIFEST_DIR")).join("eval"),
+        PathBuf::from,
+    )
 }
 
 /// Canonical key: the document key without its `#n` chunk suffix.

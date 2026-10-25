@@ -29,5 +29,10 @@ embed = ["dep:borealis-embed"]
 
 [dev-dependencies]
 tempfile = "3"
+# The tests and the evaluation harness use the hybrid module: this crate as its own dev-dependency turns `embed` on
+# for test builds only (tests/hybrid.rs, V4).
+borealis-search = { path = ".", features = ["embed"] }
+# V4 of the evaluation harness (S3.3) runs the real EmbeddingGemma 2 model through llama.cpp.
+borealis-embed = { workspace = true, features = ["llama"] }
 # Variant V0 of the evaluation harness is the current in-memory BM25 of borealis-ai.
 borealis-ai.workspace = true

@@ -91,3 +91,52 @@ fn exact_name_uses_name_normalisation_and_limit_applies() {
     .expect("fuse");
     assert_eq!(out.len(), 1);
 }
+
+#[test]
+fn chunks_fuse_per_document_and_vector_only_documents_use_their_best_chunk() {
+    // Keyword found chunk #2 of Fire Bolt; the vector side found its chunk #1 and two chunks of Flame Strike.
+    let keyword = vec![hit("ID_FIRE_BOLT#2", "Fire Bolt")];
+    let vector = [
+        ("ID_FLAME_STRIKE#2", 0.9),
+        ("ID_FIRE_BOLT#1", 0.85),
+        ("ID_FLAME_STRIKE#1", 0.8),
+    ];
+    let mut read = Vec::new();
+    let out = fuse_hits(
+        "column of fire",
+        keyword,
+        &vector,
+        10,
+        |k| {
+            read.push(k.to_string());
+            Ok(passage(k.trim_end_matches("#2")).map(|p| Passage {
+                doc_key: k.into(),
+                ..p
+            }))
+        },
+        |_| true,
+    )
+    .expect("fuse");
+    let keys: Vec<&str> = out.iter().map(|h| h.doc_key.as_str()).collect();
+    // One row per document: Fire Bolt (both sides) first, then Flame Strike by its best chunk.
+    assert_eq!(keys, ["ID_FIRE_BOLT#2", "ID_FLAME_STRIKE#2"]);
+    assert_eq!(read, ["ID_FLAME_STRIKE#2"]);
+    assert!(out[1].snippet.contains("column of divine fire"));
+}
+
+#[test]
+fn keyword_hits_below_the_fusion_depth_follow_in_keyword_order() {
+    let keyword: Vec<Hit> = (0..150)
+        .map(|i| hit(&format!("ID_K{i:03}"), &format!("K{i}")))
+        .collect();
+    let vector = [("ID_K140", 0.9)];
+    let out = fuse_hits("q", keyword, &vector, 200, |_| Ok(None), |_| true).expect("fuse");
+    assert_eq!(out.len(), 150, "nothing is lost");
+    assert_eq!(out[0].doc_key, "ID_K000");
+    // K140 is only in the vector top: fused (score > 0) and placed inside the fused block.
+    let k140 = out.iter().position(|h| h.doc_key == "ID_K140").unwrap();
+    assert!(k140 < 101 && out[k140].score > 0.0);
+    assert_eq!(out[101].doc_key, "ID_K100");
+    assert_eq!(out[101].score, 0.0);
+    assert_eq!(out[149].doc_key, "ID_K149");
+}

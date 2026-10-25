@@ -8,6 +8,7 @@ pub mod data;
 pub mod metrics;
 pub mod pool;
 pub mod report;
+pub mod semantic;
 pub mod stats;
 pub mod variants;
 

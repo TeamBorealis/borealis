@@ -35,7 +35,7 @@ pub enum VariantId {
     Bm25f(u8),
     /// BMX re-scorer (S1.4): evaluated, not adopted, code removed (specs/search-eval-1.md). Hook only.
     V3,
-    /// Hybrid with embeddings (S3.3). Hook only.
+    /// Hybrid with embeddings (S3.3): needs a model file, so it runs through `--v4` (harness::semantic).
     V4,
 }
 
@@ -153,6 +153,8 @@ pub struct Fixture {
     bm25f: Rc<SearchEngine>,
     /// Canonical key -> (title, plain text) of every indexed document.
     pub docs: HashMap<String, (String, String)>,
+    /// Every indexed chunk (V4 embeds them).
+    pub chunks: Vec<Chunk>,
     pub store: ContentStore,
     _dir: tempfile::TempDir,
 }
@@ -202,9 +204,15 @@ impl Fixture {
             engine: Rc::new(engine),
             bm25f: Rc::new(bm25f),
             docs,
+            chunks: packs.into_iter().flat_map(|p| p.chunks).collect(),
             store,
             _dir: dir,
         }
+    }
+
+    /// The combined keyword index (plain fields).
+    pub fn engine(&self) -> Rc<SearchEngine> {
+        Rc::clone(&self.engine)
     }
 
     /// Every canonical key in the corpus.
@@ -230,7 +238,10 @@ impl Fixture {
                     "V3 (BMX) was evaluated in S1.4 and not adopted; its code was removed".into(),
                 )
             }
-            VariantId::V4 => return Err("V4 (embeddings) is work package S3.3".into()),
+            VariantId::V4 => return Err(
+                "V4 needs a model file: --v4 <model.gguf> <dims> <max_tokens> (harness::semantic)"
+                    .into(),
+            ),
             other => other.tweaks().expect("tantivy variant"),
         };
         let (engine, weights) = if matches!(id, VariantId::V2b | VariantId::Bm25f(_)) {

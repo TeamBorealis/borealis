@@ -7,6 +7,10 @@ pub const MIN_GAIN: f64 = 0.01;
 pub const MAX_P: f64 = 0.05;
 pub const MAX_CATEGORY_LOSS: f64 = 0.02;
 pub const DESKTOP_P95_MS: f64 = 30.0;
+/// Keyword p95 budget on a mid phone (spec section 6).
+pub const PHONE_P95_MS: f64 = 80.0;
+/// Hybrid may add at most this much to the keyword p95 (spec section 6).
+pub const HYBRID_EXTRA_MS: f64 = 40.0;
 
 /// SplitMix64: tiny deterministic generator, no dependency.
 pub struct SplitMix64(pub u64);
@@ -64,6 +68,24 @@ pub struct Adoption {
 /// Adoption rule: overall nDCG@10 gain >= 0.01 with p < 0.05, no category loses more than 0.02, and desktop p95
 /// under 30 ms. Ties go to the simpler variant, which the caller expresses by passing it as `base`.
 pub fn decide(base: &VariantRun, candidate: &VariantRun) -> Adoption {
+    decide_within(base, candidate, DESKTOP_P95_MS)
+}
+
+/// The adoption rule for a hybrid candidate over a keyword `base`: the quality clauses of [`decide`], and the
+/// latency clause read as "keyword budget plus [`HYBRID_EXTRA_MS`]", with the hybrid adding less than
+/// [`HYBRID_EXTRA_MS`] to the base's p95. `keyword_budget_ms` is [`DESKTOP_P95_MS`] or [`PHONE_P95_MS`].
+pub fn decide_hybrid(
+    base: &VariantRun,
+    candidate: &VariantRun,
+    keyword_budget_ms: f64,
+) -> Adoption {
+    let mut a = decide_within(base, candidate, keyword_budget_ms + HYBRID_EXTRA_MS);
+    let added = candidate.latency(None, 0.95) - base.latency(None, 0.95);
+    a.adopted &= added < HYBRID_EXTRA_MS;
+    a
+}
+
+fn decide_within(base: &VariantRun, candidate: &VariantRun, p95_budget_ms: f64) -> Adoption {
     let delta = candidate.ndcg10(None) - base.ndcg10(None);
     let p_value = paired_randomisation(
         &base.ndcg_vector(),
@@ -84,7 +106,7 @@ pub fn decide(base: &VariantRun, candidate: &VariantRun) -> Adoption {
     let adopted = delta >= MIN_GAIN
         && p_value < MAX_P
         && worst_category_delta >= -MAX_CATEGORY_LOSS
-        && candidate_p95_ms < DESKTOP_P95_MS;
+        && candidate_p95_ms < p95_budget_ms;
     Adoption {
         base: base.name.clone(),
         candidate: candidate.name.clone(),
