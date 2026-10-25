@@ -58,6 +58,12 @@ unsafe_code = "forbid"
 [workspace.lints.clippy]
 all = { level = "warn", priority = -1 }
 
+# llama.cpp (B-12) is C++ built by cmake from the profile's opt-level: at 0 it is a -O0 Debug build, several times
+# slower, so a debug app (mobile e2e, `tauri dev`) would fail the on-device 40 ms semantic speed check for the wrong
+# reason (S3.4). Its build script gets the optimised level; Rust code keeps the debug profile.
+[profile.dev.package.llama-cpp-sys-2]
+opt-level = 3
+
 [profile.release]
 lto = "thin"
 codegen-units = 1
