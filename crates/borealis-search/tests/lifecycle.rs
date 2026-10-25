@@ -369,3 +369,49 @@ fn a_chunk_is_read_back_whole_by_its_exact_key() {
     assert!(reader.passage(Corpus::Lore, "a-9").unwrap().is_none());
     assert!(reader.passage(Corpus::Rules, "a-1").unwrap().is_none());
 }
+
+/// Names of this process's threads (Linux lists them under `/proc/self/task`).
+#[cfg(target_os = "linux")]
+fn thread_names() -> Vec<String> {
+    std::fs::read_dir("/proc/self/task")
+        .unwrap()
+        .filter_map(|t| std::fs::read_to_string(t.ok()?.path().join("comm")).ok())
+        .map(|n| n.trim().to_string())
+        .collect()
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn an_open_engine_runs_no_background_thread_that_could_hold_index_files() {
+    // A background reload (Tantivy's meta-file watcher) keeps segment files open after the engine is dropped,
+    // and Windows then refuses to wipe a damaged index folder. The engine reloads by hand instead.
+    let dir = tempfile::tempdir().unwrap();
+    let (mut engine, _) = open(dir.path());
+    engine
+        .sync(Corpus::Lore, &[pack_of("a", "alpha", 3)])
+        .unwrap();
+    let names = thread_names();
+    assert!(
+        !names
+            .iter()
+            .any(|n| n.starts_with("thread-tantivy") || n.starts_with("watch-callback")),
+        "{names:?}"
+    );
+    assert_eq!(count(&engine, "alpha"), 3);
+}
+
+#[test]
+fn an_index_folder_can_be_removed_as_soon_as_its_engine_is_dropped() {
+    let dir = tempfile::tempdir().unwrap();
+    {
+        let (mut engine, _) = open(dir.path());
+        for n in [20, 21, 22] {
+            engine
+                .sync(Corpus::Lore, &[pack_of("a", "alpha", n)])
+                .unwrap();
+        }
+        assert_eq!(count(&engine, "alpha"), 22);
+    }
+    borealis_search::remove_index_dir(&dir.path().join("lore")).unwrap();
+    assert!(!dir.path().join("lore").exists());
+}

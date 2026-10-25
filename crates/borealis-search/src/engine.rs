@@ -165,9 +165,7 @@ fn write_manifest(root: &Path, manifest: &Manifest) -> Result<()> {
 }
 
 fn wipe(dir: &Path) -> Result<()> {
-    if dir.exists() {
-        std::fs::remove_dir_all(dir)?;
-    }
+    crate::remove::remove_index_dir(dir)?;
     Ok(())
 }
 

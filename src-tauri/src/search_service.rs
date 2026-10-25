@@ -377,7 +377,8 @@ impl SearchService {
             .map_or(self.0.root.clone(), Path::to_path_buf);
         let existed = dir.exists();
         if existed {
-            std::fs::remove_dir_all(&dir)?;
+            // Retries briefly: on Windows the files of the engine just dropped can take a moment to close.
+            borealis_search::remove_index_dir(&dir)?;
         }
         drop(guard);
         self.set_status(IndexStatus::idle());

@@ -124,16 +124,10 @@ impl CorpusIndex {
         std::fs::create_dir_all(dir)?;
         let (schema, fields) = schema::build();
         let index = Index::open_or_create(open_dir(dir)?, schema)?;
-        Self::finish(
-            index,
-            fields,
-            Mode::ReadWrite,
-            dir,
-            ReloadPolicy::OnCommitWithDelay,
-        )
+        Self::finish(index, fields, Mode::ReadWrite, dir)
     }
 
-    /// Open an existing index without ever creating a writer (`ReloadPolicy::Manual`; `search` reloads first).
+    /// Open an existing index without ever creating a writer (`search` reloads first).
     ///
     /// # Errors
     /// [`SearchError::NotBuilt`] when `dir` holds no index.
@@ -143,18 +137,22 @@ impl CorpusIndex {
         }
         let (_, fields) = schema::build();
         let index = Index::open_in_dir(dir)?;
-        Self::finish(index, fields, Mode::ReadOnly, dir, ReloadPolicy::Manual)
+        Self::finish(index, fields, Mode::ReadOnly, dir)
     }
 
-    fn finish(
-        index: Index,
-        fields: Fields,
-        mode: Mode,
-        dir: &Path,
-        policy: ReloadPolicy,
-    ) -> Result<Self> {
+    /// Both modes reload by hand (`ReloadPolicy::Manual`): [`apply`](Self::apply), the only writer, reloads
+    /// right after its commit, and a read-only handle reloads before each query. Tantivy's
+    /// `OnCommitWithDelay` would start a meta-file watcher thread whose first poll reloads the reader on a
+    /// background thread holding its own reference to the index, so the segment files stayed open (mapped)
+    /// for a moment after this handle was dropped. Windows refuses to remove a folder whose files are still
+    /// open, which broke wiping a damaged index right after its checksum failed (`DirectoryNotEmpty`). With
+    /// the manual policy no thread outlives the handle: dropping it closes every file.
+    fn finish(index: Index, fields: Fields, mode: Mode, dir: &Path) -> Result<Self> {
         analyzer::register(index.tokenizers());
-        let reader = index.reader_builder().reload_policy(policy).try_into()?;
+        let reader = index
+            .reader_builder()
+            .reload_policy(ReloadPolicy::Manual)
+            .try_into()?;
         Ok(Self {
             index,
             reader,
@@ -280,7 +278,9 @@ impl CorpusIndex {
             }
         }
         writer.commit()?;
-        drop(writer);
+        // Join the merge threads the commit may have started, so no background merge still holds segment
+        // files once this returns (the folder can then be removed at once, even on Windows).
+        writer.wait_merging_threads()?;
         self.reader.reload()?;
         Ok(())
     }
