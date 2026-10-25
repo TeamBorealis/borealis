@@ -251,11 +251,18 @@ fn idle() -> SemanticDownload {
 }
 
 /// The real HTTPS client: the platform TLS of `content_fetch_tls`, locked down by `HttpTransport`.
+///
+/// Built on a plain thread: the Tauri commands that start a download run on the async runtime, where
+/// reqwest's blocking client panics while it is being set up.
 fn https_transport() -> Result<Arc<dyn Transport>, String> {
-    let builder = crate::content_fetch_tls::client_builder()?;
-    download::http::HttpTransport::new(builder)
-        .map(|t| Arc::new(t) as Arc<dyn Transport>)
-        .map_err(|e| e.0)
+    std::thread::spawn(|| {
+        let builder = crate::content_fetch_tls::client_builder()?;
+        download::http::HttpTransport::new(builder)
+            .map(|t| Arc::new(t) as Arc<dyn Transport>)
+            .map_err(|e| e.0)
+    })
+    .join()
+    .map_err(|_| "could not set up a secure connection".to_owned())?
 }
 
 impl SemanticService {
@@ -632,5 +639,20 @@ fn consent_for(file: &SemanticFile, mobile: bool) -> SemanticConsent {
         body: models::consent_body(&compiled, mobile),
         accept: models::CONSENT_ACCEPT.into(),
         decline: models::CONSENT_DECLINE.into(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::https_transport;
+
+    /// HW1 Q4 (emulator): "Download and turn on" panicked ("Cannot drop a runtime in a context where
+    /// blocking is not allowed") because the command runs on the async runtime and built the blocking
+    /// HTTPS client there. Building (and dropping) it from an async context must work.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn the_https_client_can_be_made_from_an_async_command() {
+        let transport = https_transport();
+        assert!(transport.is_ok(), "{:?}", transport.err());
+        drop(transport);
     }
 }
