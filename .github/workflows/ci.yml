@@ -246,6 +246,10 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: android-actions/setup-android@v3
+        with:
+          # The action's default list also asks for the legacy `tools` package, which current command-line
+          # tools no longer offer (sdkmanager exits 1: "Failed to find package 'tools'").
+          packages: platform-tools
       - name: Install NDK
         run: sdkmanager "ndk;27.0.12077973" "platforms;android-34" "build-tools;34.0.0"
       - uses: dtolnay/rust-toolchain@stable
