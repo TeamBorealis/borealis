@@ -1,0 +1,143 @@
+/*
+ * B-48 phone facelift tokens (mobile-facelift-spec sec. 3.3). Phones only: html.phone is set at startup on iOS and Android
+ * builds (and the web mock's ?mock=mobile) while the narrow shell shows. A desktop window at any width never matches, so the
+ * Aurora-exact desktop look (U7) is untouched. Every rule in styles/phone/ starts with html.phone.
+ */
+
+/* Colour roles, dark (Borealis default). Contrast is against --ph-surface (spec 3.3). */
+html.phone {
+  --ph-bg: #11171a;
+  --ph-surface: #192126;
+  --ph-raised: #212b31;
+  --ph-fill: #2a363d;
+  --ph-line: #2b373d;
+  --ph-field-line: #64767e;
+  --ph-text: #eef2f3;
+  --ph-text-2: #aab6bb;
+  --ph-text-3: #87949a;
+  --ph-accent: #6cc9b6;
+  --ph-on-accent: #0d2421;
+  --ph-accent-soft: rgb(108 201 182 / 0.14);
+  --ph-gold: #e6b54f;
+  --ph-on-gold: #1a1200;
+  --ph-gold-soft: rgb(230 181 79 / 0.14);
+  --ph-danger: #f07a74;
+  --ph-on-danger: #2a0d0b;
+  --ph-danger-soft: rgb(240 122 116 / 0.14);
+  --ph-success: #72c98f;
+  --ph-scrim: rgb(4 8 10 / 0.56);
+  --ph-edge: rgb(238 242 243 / 0.16);
+  --ph-shadow-sheet: 0 -10px 30px rgb(0 0 0 / 0.45);
+  --ph-shadow-toast: 0 8px 24px rgb(0 0 0 / 0.35);
+  --ph-aurora: linear-gradient(90deg, #305754 0%, #6cc9b6 45%, #e6b54f 100%);
+
+  /* Type: the system UI face everywhere, a system serif for the character's name only (O11). Sizes scale with the OS text size. */
+  --ph-font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Roboto", "Segoe UI", sans-serif;
+  --ph-font-name: ui-serif, "New York", "Iowan Old Style", "Noto Serif", Georgia, serif;
+  --ph-rem: calc(1rem / 16);
+  --ph-t-caption: calc(12 * var(--ph-rem));
+  --ph-t-tab: calc(11 * var(--ph-rem));
+  --ph-t-foot: calc(13 * var(--ph-rem));
+  --ph-t-sub: calc(15 * var(--ph-rem));
+  --ph-t-body: calc(17 * var(--ph-rem));
+  --ph-t-title3: calc(20 * var(--ph-rem));
+  --ph-t-title2: calc(22 * var(--ph-rem));
+  --ph-t-name: calc(20 * var(--ph-rem));
+
+  /* Size: 4 pt grid, 44 pt hit areas (iOS), title bar 44, tab bar 50 (plus the home-indicator inset), status line 36. */
+  --ph-gutter: 16px;
+  --ph-hit: 44px;
+  --ph-row: 48px;
+  --ph-bar: 44px;
+  --ph-tabbar: 50px;
+  --ph-status: 36px;
+  --ph-r-sm: 6px;
+  --ph-r-md: 10px;
+  --ph-r-lg: 14px;
+  --ph-r-xl: 20px;
+  --ph-r-pill: 999px;
+
+  /* Motion: press 90 ms, small state 180 ms, sheet in 300 / out 220 ms. */
+  --ph-d-press: 90ms;
+  --ph-d-small: 180ms;
+  --ph-d-sheet-in: 300ms;
+  --ph-d-sheet-out: 220ms;
+  --ph-ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ph-ease-in: cubic-bezier(0.3, 0, 1, 1);
+
+  /* On-screen keyboard height (lib/keyboardInset.ts keeps it current). */
+  --kb: 0px;
+
+  /* Shared desktop tokens that every page reads: the night-ink background, the system face and a dimming scrim. */
+  --bg: var(--ph-bg);
+  --window-bg: var(--ph-bg);
+  --font-body: var(--ph-font-ui);
+  --scrim: var(--ph-scrim);
+}
+
+html.phone[data-theme="light"] {
+  --ph-bg: #f1f4f4;
+  --ph-surface: #ffffff;
+  --ph-raised: #ffffff;
+  --ph-fill: #e7ecee;
+  --ph-line: #e1e6e8;
+  --ph-field-line: #7f8e95;
+  --ph-text: #121a1d;
+  --ph-text-2: #4a5a61;
+  --ph-text-3: #5f6e74;
+  --ph-accent: #17766a;
+  --ph-on-accent: #ffffff;
+  --ph-accent-soft: rgb(23 118 106 / 0.1);
+  --ph-gold: #8a5c00;
+  --ph-on-gold: #ffffff;
+  --ph-gold-soft: rgb(138 92 0 / 0.1);
+  --ph-danger: #b3261e;
+  --ph-on-danger: #ffffff;
+  --ph-danger-soft: rgb(179 38 30 / 0.08);
+  --ph-success: #1f7a43;
+  --ph-scrim: rgb(10 20 24 / 0.38);
+  --ph-edge: rgb(18 26 29 / 0.14);
+  --ph-shadow-sheet: 0 -8px 28px rgb(10 20 24 / 0.18);
+  --ph-shadow-toast: 0 8px 24px rgb(10 20 24 / 0.22);
+  --ph-aurora: linear-gradient(90deg, #305754 0%, #17766a 45%, #b07a10 100%);
+  --bg: var(--ph-bg);
+  --window-bg: var(--ph-bg);
+}
+
+/* High contrast keeps today's pure black and white mapping (spec 3.3). */
+html.phone[data-contrast="high"] {
+  --ph-bg: #000000; --ph-surface: #000000; --ph-raised: #000000; --ph-fill: #000000; --ph-line: #ffffff; --ph-field-line: #ffffff;
+  --ph-text: #ffffff; --ph-text-2: #ffffff; --ph-text-3: #ffffff; --ph-accent: #ffff00; --ph-on-accent: #000000; --ph-gold: #ffd24a; --ph-on-gold: #000000;
+  --ph-scrim: rgb(0 0 0 / 0.7); --ph-edge: rgb(255 255 255 / 0.4);
+  --bg: #000000;
+}
+html.phone[data-theme="light"][data-contrast="high"] {
+  --ph-bg: #ffffff; --ph-surface: #ffffff; --ph-raised: #ffffff; --ph-fill: #ffffff; --ph-line: #000000; --ph-field-line: #000000;
+  --ph-text: #000000; --ph-text-2: #000000; --ph-text-3: #000000; --ph-accent: #0031b8; --ph-on-accent: #ffffff; --ph-gold: #5c4200; --ph-on-gold: #ffffff;
+  --ph-scrim: rgb(0 0 0 / 0.5); --ph-edge: rgb(0 0 0 / 0.4);
+  --bg: #ffffff;
+}
+
+/* iOS: Dynamic Type sets the root size (17 pt at the default setting); the type scale is measured against it. */
+html.phone.ios {
+  font-size: 17px;
+  font: -apple-system-body;
+  --ph-rem: calc(1rem / 17);
+}
+
+/* Android (spec sec. 4): Roboto and Noto Serif, 16 sp body, 48 dp targets, 56 dp title bar, 64 dp tab bar, 16 px gesture-bar floor. */
+html.phone.android {
+  --ph-font-ui: "Roboto", "Noto Sans", system-ui, sans-serif;
+  --ph-font-name: "Noto Serif", "Roboto Serif", ui-serif, Georgia, serif;
+  --ph-t-body: calc(16 * var(--ph-rem));
+  --ph-t-tab: calc(12 * var(--ph-rem));
+  --ph-hit: 48px;
+  --ph-row: 52px;
+  --ph-bar: 56px;
+  --ph-tabbar: 64px;
+  --safe-b: max(env(safe-area-inset-bottom, 0px), 16px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.phone { --ph-d-press: 0ms; --ph-d-small: 120ms; --ph-d-sheet-in: 120ms; --ph-d-sheet-out: 120ms; }
+}

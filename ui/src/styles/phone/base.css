@@ -1,0 +1,26 @@
+/* B-48 phone WebView base (mobile-facelift-spec sec. 5.5-5.8). Phones only. */
+
+/* No Android 4 blue tap flash (press states give the feedback), no rubber band that shows the blank page behind the shell. */
+html.phone {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+  background: var(--ph-bg);
+}
+html.phone body {
+  overscroll-behavior: none;
+  font-family: var(--ph-font-ui);
+  background: var(--ph-bg);
+}
+
+/* Controls: no long-press callout or text selection, no double-tap zoom (double-tap stays available to the app). Content text stays selectable. */
+html.phone button, html.phone a[href], html.phone [role="button"], html.phone [role="tab"], html.phone [role="menuitem"], html.phone [role="option"], html.phone label, html.phone summary, html.phone select {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+/* Inner scrollers never chain into the page. */
+html.phone .aur-content, html.phone .dialog-body, html.phone .flyout-body, html.phone .aur-set-scroll { overscroll-behavior: contain; }
+
+html.phone :focus-visible { outline: 2px solid var(--ph-accent); outline-offset: 2px; }

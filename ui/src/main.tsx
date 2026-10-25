@@ -19,8 +19,13 @@ import "./styles/pages.css";
 import "./styles/import.css";
 import "./styles/play.css";
 import "./styles/splash.css";
+// B-48: the phone facelift layer (html.phone only), after every desktop stylesheet.
+import "./styles/phone/tokens.css";
+import "./styles/phone/base.css";
+import { startPhone } from "./lib/phoneStartup";
 
 if (/Android/i.test(navigator.userAgent)) document.documentElement.classList.add("android");
+startPhone();
 if (isTauri()) installButtonNames();
 const root = document.getElementById("root");
 if (!root) throw new Error("root element missing");

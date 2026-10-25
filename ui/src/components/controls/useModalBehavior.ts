@@ -1,10 +1,12 @@
 import { type KeyboardEvent, useEffect, useRef } from "react";
+import { useOverlayEntry } from "./overlayStack";
 
 const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
-/** Focus trap + Escape + focus restore shared by Dialog and Flyout. */
+/** Focus trap + Escape + focus restore shared by Dialog and Flyout; the overlay also joins the back stack (Android back). */
 export function useModalBehavior(onClose: () => void) {
   const ref = useRef<HTMLDivElement>(null);
+  useOverlayEntry(onClose);
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
     const node = ref.current;
