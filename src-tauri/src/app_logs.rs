@@ -330,8 +330,21 @@ pub fn log_startup() {
     );
 }
 
-/// The last `max_lines` log lines of `dir` (oldest first), cut to [`MAX_EXCERPT_BYTES`] and
-/// redacted again. Empty when there are no logs.
+/// True for a log line that names local search data or the semantic model (BR2, local-search-spec sec. 11, S3.4):
+/// the search folder (keyword indexes, `search/v1/vectors/`, extracted text), a vector store file or its
+/// `keys.json` sidecar, or the models folder. Such lines never leave the device in an excerpt (bug report, Share
+/// logs, Copy logs); the search code logs labels and counts only, this catches paths inside error messages.
+#[must_use]
+pub fn names_local_search_data(line: &str) -> bool {
+    let l = line.replace('\\', "/").to_ascii_lowercase();
+    l.contains("/search/")
+        || l.contains("/models/")
+        || l.contains("keys.json")
+        || (l.contains("vectors-") && l.contains(".bin"))
+}
+
+/// The last `max_lines` log lines of `dir` (oldest first) without lines that [name local search
+/// data](names_local_search_data), cut to [`MAX_EXCERPT_BYTES`] and redacted again. Empty when there are no logs.
 #[must_use]
 pub fn recent_logs(dir: &Path, max_lines: usize) -> String {
     let redactor = Redactor::for_current_user();
@@ -348,7 +361,11 @@ fn recent_logs_with(dir: &Path, max_lines: usize, redactor: &Redactor) -> String
             continue;
         };
         let text = String::from_utf8_lossy(&bytes);
-        let mut mine: Vec<String> = text.lines().map(str::to_string).collect();
+        let mut mine: Vec<String> = text
+            .lines()
+            .filter(|l| !names_local_search_data(l))
+            .map(str::to_string)
+            .collect();
         mine.append(&mut lines);
         lines = mine;
     }

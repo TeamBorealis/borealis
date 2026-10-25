@@ -155,11 +155,12 @@ impl AppState {
         req: ReportRequest,
     ) -> ApiResult<ImportReportPreview> {
         let app = AppInfo::current(env!("CARGO_PKG_VERSION"));
+        // BR2 (local-search-spec.md section 11): the excerpt already leaves out every line that names search
+        // indexes, vectors, extracted text or the model (`app_logs::names_local_search_data`).
         let recent = crate::app_logs::recent_logs(
             &self.paths.logs(),
             borealis_assist::import::bug_report::MAX_LOG_LINES,
         );
-        let recent = without_search_data(&recent);
         let logs_available = !recent.trim().is_empty();
         let mut options = ReportOptions {
             note: req.note,
@@ -245,19 +246,6 @@ impl AppState {
         bug_report_from_pack(app, edition, &report, &content, Vec::new(), options)
             .map_err(|e| assist_err(&e))
     }
-}
-
-/// BR2 (local-search-spec.md section 11): search indexes, vectors and extracted text never enter a report. Log
-/// lines that name the search folder (`<app-data>/search/...`) are dropped from the log excerpt.
-fn without_search_data(logs: &str) -> String {
-    let marker = |l: &str| {
-        let l = l.replace('\\', "/");
-        l.contains(&format!("/{}/", crate::search_service::SEARCH_DIR))
-    };
-    logs.lines()
-        .filter(|l| !marker(l))
-        .collect::<Vec<_>>()
-        .join("\n")
 }
 
 /// HTTPS POST without redirects (desktop).

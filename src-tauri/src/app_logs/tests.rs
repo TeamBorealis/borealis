@@ -123,6 +123,41 @@ fn recent_logs_returns_the_newest_lines_across_files_redacted() {
     assert_eq!(recent_logs_with(&dir.path().join("none"), 5, &r), "");
 }
 
+/// BR2 / S3.4 privacy gate: every log excerpt (bug report, Share logs, Copy logs) leaves out lines that name local
+/// search data or the semantic model, on every OS spelling, and still returns `max_lines` other lines.
+#[test]
+fn excerpts_never_carry_lines_naming_search_data_or_the_model() {
+    let dir = tempfile::tempdir().unwrap();
+    let leaks = [
+        "WARN search index damaged, rebuilding error=open ~/Library/Application Support/app.borealis/search/v1/lore/0b1c.idx",
+        "WARN semantic: indexing stopped: C:\\Users\\Alon\\AppData\\Roaming\\app.borealis\\search\\v1\\vectors\\rules\\keys.json",
+        "WARN vector store unusable, rebuilding reason=bad header in vectors-2188ac1d-256.bin",
+        "WARN keys.json does not match the store",
+        "INFO semantic model at /data/user/0/app.borealis/models/embeddinggemma-2-Q8_0.gguf",
+        "INFO extracted text cached at ~/.local/share/app.borealis/SEARCH/extracted/ab12.txt",
+    ];
+    let mut text = String::from("k1\n");
+    for l in leaks {
+        text.push_str(l);
+        text.push('\n');
+    }
+    text.push_str("k2 Borealis started\nk3 semantic: model loaded quant=Q8_0 dims=256\n");
+    std::fs::write(dir.path().join("borealis-2026-10-25.log"), text).unwrap();
+
+    let out = recent_logs_with(dir.path(), 3, &Redactor::default());
+
+    assert_eq!(
+        out,
+        "k1\nk2 Borealis started\nk3 semantic: model loaded quant=Q8_0 dims=256"
+    );
+    for l in leaks {
+        assert!(names_local_search_data(l), "{l}");
+    }
+    assert!(!names_local_search_data(
+        "INFO search: rebuilding corpus=lore"
+    ));
+}
+
 #[test]
 fn recent_logs_is_cut_to_the_byte_cap() {
     let dir = tempfile::tempdir().unwrap();

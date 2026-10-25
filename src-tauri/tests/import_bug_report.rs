@@ -361,3 +361,98 @@ fn device_link_state_and_keys_never_reach_a_report() {
         assert!(!text.contains(secret), "{secret} leaked into the report");
     }
 }
+
+/// S3.4 privacy gate (BR2, local-search-spec section 11): with the app's semantic vectors written
+/// (`search/v1/vectors/<corpus>/vectors-*.bin` + `keys.json`, fake embedder) and the model file on the device,
+/// a report with every opt-in ticked carries no vector or model path or file name, no `keys.json` and none of
+/// its content hashes, even when log lines name them.
+#[test]
+fn no_vector_store_keys_or_model_enter_a_report() {
+    use borealis_embed::models::{ModelFile, Q8_0};
+    use borealis_embed::{
+        DeviceProfile, DeviceState, Embedder, FakeEmbedder, FormFactor, SimulatedDevice, TierConfig,
+    };
+    use borealis_lib::vector_service::{EmbedLoader, IndexingState, VectorService};
+    let mut h = imported_draft();
+    let data = h.state.paths.data.clone();
+    let loader: EmbedLoader = Arc::new(|_: &std::path::Path, f: &ModelFile, t: &TierConfig| {
+        let fake = FakeEmbedder::new(t.dims.expect("dims")).with_sha256(f.sha256);
+        Ok(Arc::new(fake) as Arc<dyn Embedder>)
+    });
+    h.state.vectors = VectorService::with_loader(&data, true, loader);
+    h.state.vectors.set_device(
+        DeviceProfile {
+            form: FormFactor::Desktop,
+            total_ram_bytes: Some(16 << 30),
+            cores: 8,
+            pointer_bits: 64,
+        },
+        Arc::new(SimulatedDevice::new(DeviceState::DESKTOP)),
+    );
+    h.state.build_search_index_now().unwrap();
+    std::fs::create_dir_all(data.join("models")).unwrap();
+    std::fs::File::create(data.join("models").join(Q8_0.file_name))
+        .unwrap()
+        .set_len(Q8_0.bytes)
+        .unwrap();
+    h.state
+        .save_settings(&json!({"search": {"semantic": true, "tierOverride": "t3"}}))
+        .unwrap();
+    assert!(h
+        .state
+        .vectors
+        .wait_idle(std::time::Duration::from_secs(120)));
+    assert_eq!(h.state.vectors.status().state, IndexingState::Ready);
+    let rules = h.state.vectors.root().join("rules");
+    let keys: Value =
+        serde_json::from_slice(&std::fs::read(rules.join("keys.json")).unwrap()).unwrap();
+    let hashes: Vec<String> = keys["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .take(20)
+        .map(|r| r["hash"].as_str().unwrap().to_string())
+        .collect();
+    assert!(!hashes.is_empty());
+    let vector_file = format!("vectors-{}-256.bin", &Q8_0.sha256[..8]);
+    assert!(rules.join(&vector_file).is_file());
+    let logs = h.state.paths.logs();
+    std::fs::create_dir_all(&logs).unwrap();
+    std::fs::write(
+        logs.join("borealis-2026-10-25.log"),
+        format!(
+            "INFO borealis_lib: Borealis started\nWARN semantic: indexing stopped: {}\n\
+             WARN vector store unusable, rebuilding reason=bad {vector_file}\nINFO semantic model {}\n",
+            rules.join("keys.json").display(),
+            data.join("models").join(Q8_0.file_name).display(),
+        ),
+    )
+    .unwrap();
+    let outbox = ReportOutbox::new(REPORT_ENDPOINT, Arc::new(FakePost::default()));
+    let req = ReportRequest {
+        include_logs: true,
+        include_source: true,
+        ..draft_req(&h)
+    };
+
+    let p = h.state.import_report_preview(&outbox, req).unwrap();
+
+    let body = p.payload.to_string().replace("\\\\", "/");
+    assert!(body.contains("Borealis started"), "other log lines stay");
+    for leak in [
+        "keys.json",
+        "vectors-",
+        "search/",
+        "/models/",
+        ".gguf",
+        Q8_0.file_name,
+    ] {
+        assert!(!body.contains(leak), "{leak} reached the report: {body}");
+    }
+    for hash in &hashes {
+        assert!(
+            !body.contains(hash.as_str()),
+            "a keys.json hash reached the report"
+        );
+    }
+}
