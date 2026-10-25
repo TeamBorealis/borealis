@@ -1,0 +1,145 @@
+/*
+ * B-48 WP7 Play, Traits and Magic (mobile-facelift-spec sec. 3.5; U9: same elements, same order). Phones only.
+ * Play: stat tiles three per row with "tap to explain", Resources / States / Conditions as grouped lists (the rest buttons stay
+ * in the Resources header), then the details pane as a card ("Select a resource or state to read its details" stays).
+ * Magic: the filter row (pin, search, school), the level chips 0-9 with Ritual and Concentration in one scrolling chip row,
+ * source and count; the caster card with its figures and slots; spells, known spells and selection slots as rows (O14).
+ */
+
+/* ---------- Play and Traits: list pane, then the details card ---------- */
+html.phone .v5-page { height: auto; }
+html.phone .v5-list-pane { display: flex; flex-direction: column; gap: 12px; padding: 12px var(--ph-gutter) 8px; }
+html.phone .v5-list-pane .stat-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 4px; }
+html.phone .explain-trigger { display: block; width: 100%; min-height: var(--ph-hit); border-radius: var(--ph-r-lg); transition: transform var(--ph-d-press) var(--ph-ease-out); }
+html.phone .explain-trigger:active { transform: scale(0.97); }
+html.phone:is([data-theme], :root) .stat {
+  justify-content: center; gap: 2px; min-width: 0; min-height: 84px; padding: 10px 4px; border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface);
+}
+html.phone .stat .stat-label { font: 600 var(--ph-t-caption)/1.3 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; letter-spacing: 0; }
+html.phone .stat .stat-value { font: 700 calc(28 * var(--ph-rem))/1.1 var(--ph-font-ui); color: var(--ph-text); font-variant-numeric: tabular-nums; }
+html.phone .stat .stat-sub { font: 400 var(--ph-t-caption)/1.3 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v5-list-pane .aur-expander { margin: 0; }
+/* A header with commands (Resources: Short Rest, Long Rest) wraps them under the title when large text needs the room. */
+html.phone .aur-expander-head { flex-wrap: wrap; }
+html.phone .aur-expander-toggle { flex: 1 0 auto; }
+html.phone .aur-expander-chev { flex: none; }
+html.phone .aur-expander-extra { flex-wrap: wrap; }
+html.phone .v5-list-pane .aur-expander-extra .btn { min-height: var(--ph-hit); padding: 0 12px; }
+html.phone .v5-list {
+  overflow: hidden; margin: 0; padding: 0; border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface);
+}
+html.phone .v5-line { flex-wrap: wrap; gap: 4px 12px; min-height: var(--ph-row); padding: 4px var(--ph-gutter) 4px 0; }
+html.phone .v5-list > li + li { box-shadow: inset 0 1px 0 var(--ph-line); }
+html.phone .v5-line.is-selected, html.phone .v5-list > li.is-selected { position: relative; background: var(--ph-accent-soft); }
+html.phone .v5-line.is-selected::before, html.phone .v5-list > li.is-selected::before {
+  content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--ph-accent);
+}
+html.phone .v5-row, html.phone .v5-line .v5-row {
+  gap: 4px 12px; min-height: var(--ph-row); padding: 6px 0 6px var(--ph-gutter); background: none; color: var(--ph-text);
+  font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); flex-wrap: wrap;
+}
+html.phone .v5-row[aria-current="true"], html.phone li.is-selected > .v5-row { background: none; font-weight: 600; }
+html.phone .v5-row:active:not(.static) { background: var(--ph-raised); }
+html.phone .v5-row .grow { flex: 1 1 8rem; white-space: normal; }
+html.phone .v5-row .meta { font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); white-space: normal; }
+html.phone .v5-row.static { padding-right: var(--ph-gutter); }
+html.phone li.v5-row.static strong { font-weight: 600; color: var(--ph-text); }
+html.phone .v5-pips { gap: 4px; }
+html.phone .v5-pip { width: 14px; height: 14px; border: 2px solid var(--ph-field-line); border-radius: 50%; }
+html.phone .v5-pip.full { border-color: var(--ph-gold); background: var(--ph-gold); }
+html.phone .v5-count { min-width: 2.5rem; font: 600 var(--ph-t-body)/1 var(--ph-font-ui); color: var(--ph-gold); font-variant-numeric: tabular-nums; }
+html.phone .v5-ctrls { gap: 8px; margin-left: auto; }
+html.phone .v5-line > .v5-ctrls:last-child { padding-bottom: 4px; }
+html.phone .v5-inline { gap: 12px; padding: 12px var(--ph-gutter); border-top: 0; background: var(--ph-surface); }
+html.phone .v5-foot { gap: 8px 12px; min-height: var(--ph-hit); font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .v5-foot .field-label { margin: 0; color: var(--ph-text); font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); }
+html.phone .v5-exh { min-width: 2.5rem; font: 700 var(--ph-t-title3)/1 var(--ph-font-ui); color: var(--ph-gold); font-variant-numeric: tabular-nums; }
+html.phone .v5-note { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .v5-group { margin: 4px 0; padding: 0; font: 600 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; }
+html.phone .v5-chips { gap: 8px; margin: 0; }
+html.phone .v5-tag, html.phone .v5-tag.ok, html.phone .v5-tag.warn, html.phone .v5-tag.bad, html.phone .v5-tag.info {
+  display: inline-flex; align-items: center; min-height: 28px; padding: 2px 10px; border: 0; border-radius: var(--ph-r-pill);
+  background: var(--ph-fill); color: var(--ph-text-2); font: 500 var(--ph-t-foot)/1.3 var(--ph-font-ui); text-transform: none;
+}
+html.phone .v5-tag.ok { background: var(--ph-accent-soft); color: var(--ph-success); }
+html.phone .v5-tag.warn { background: var(--ph-gold-soft); color: var(--ph-gold); }
+html.phone .v5-tag.bad { background: var(--ph-danger-soft); color: var(--ph-danger); }
+/* The details pane under the lists, as a card (Play, Traits). */
+html.phone .v5-desc {
+  margin: 4px var(--ph-gutter) 16px; padding: 16px var(--ph-gutter) 20px; border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface);
+  font: 400 var(--ph-t-sub)/1.45 var(--ph-font-ui); color: var(--ph-text-2);
+}
+html.phone .v5-desc h1, html.phone .v5-desc-title { margin: 0 0 4px; font: 700 var(--ph-t-title2)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .v5-lead { margin: 0 0 12px; font-style: normal; color: var(--ph-text-2); }
+html.phone .v5-desc h2, html.phone .v5-sec { margin: 16px 0 4px; padding: 0; border: 0; font: 600 var(--ph-t-sub)/1.3 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .v5-desc p, html.phone .v5-desc li { color: var(--ph-text-2); }
+html.phone .trace-step { font: 400 var(--ph-t-sub)/1.4 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .trace-total { font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); }
+
+/* ---------- Magic: filter row and chips ---------- */
+html.phone .sp-page { gap: 16px; }
+html.phone .sp-filter { gap: 8px; min-height: 0; }
+html.phone .sp-pin, html.phone .eq-filter-tile {
+  width: var(--ph-hit); height: var(--ph-hit); min-height: var(--ph-hit); border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text-2);
+  transition: transform var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .sp-pin[aria-pressed="true"], html.phone .eq-filter-tile[aria-pressed="true"] { background: var(--ph-accent); color: var(--ph-on-accent); }
+html.phone .eq-filter-tile[aria-pressed="false"] { background: var(--ph-fill); color: var(--ph-text-2); }
+html.phone .sp-pin:active, html.phone .eq-filter-tile:active { transform: scale(0.94); }
+html.phone .sp-pin .eq-glyph, html.phone .eq-filter-tile .eq-glyph { width: 20px; height: 20px; }
+html.phone .eq-filter, html.phone .sp-filter .sp-text {
+  flex: 1 1 0; max-width: none; height: auto; min-height: calc(var(--ph-hit) + 2px); margin: 0; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-md); background: var(--ph-fill);
+}
+html.phone .eq-filter input { height: auto; min-height: var(--ph-hit); padding: 0 4px 0 12px; color: var(--ph-text); font: 400 var(--ph-t-body)/1.25 var(--ph-font-ui); }
+html.phone .eq-filter input::placeholder { color: var(--ph-text-3); }
+html.phone .eq-filter button { width: var(--ph-hit); height: var(--ph-hit); color: var(--ph-text-2); }
+html.phone .eq-filter button .eq-glyph { width: 18px; height: 18px; }
+html.phone .sp-filter .sp-combo { flex: 1 1 100%; min-width: 0; }
+/* Level chips, Ritual and Concentration: one horizontally scrolling row of 36 pt pills, each reaching the hit area. */
+/* The level group lets its chips flow with Ritual and Concentration, so every chip stays in view (two lines at 360 px). */
+html.phone .sp-levels { display: contents; }
+html.phone .sp-filter { flex-wrap: wrap; gap: 8px 6px; }
+html.phone .sp-tog, html.phone .sp-tog.sp-wide {
+  position: relative; flex: none; min-width: var(--ph-hit); height: 36px; min-height: 36px; padding: 0 12px; border: 0; border-radius: var(--ph-r-pill);
+  background: var(--ph-fill); color: var(--ph-text); font: 500 var(--ph-t-sub)/1 var(--ph-font-ui); text-transform: none;
+  transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .sp-tog::before { content: ""; position: absolute; top: calc((36px - var(--ph-hit)) / 2); bottom: calc((36px - var(--ph-hit)) / 2); left: 0; right: 0; }
+html.phone .sp-tog[aria-pressed="true"] { background: var(--ph-accent); color: var(--ph-on-accent); }
+html.phone .sp-badge { margin-left: auto; font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); }
+
+/* ---------- Magic: the caster card (band, figures, slots), the spell rows, known spells ---------- */
+html.phone .sp-block { gap: 0; }
+html.phone .sp-bar, html.phone .sp-bar.on { display: none; }
+html.phone .sp-col { gap: 16px; }
+html.phone .sp-main-wrap { border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .sp-main { flex: none; max-height: none; overflow: visible; }
+html.phone .ap-band .mg-slots { flex: 1 1 100%; order: 3; gap: 6px; margin: 4px 0 0; padding: 0; }
+html.phone .ap-band .mg-slot, html.phone .mg-slot {
+  min-width: 0; gap: 6px; padding: 4px 10px; border: 0; border-radius: var(--ph-r-pill); background: var(--ph-gold-soft); flex-direction: row; align-items: center;
+}
+html.phone .ap-band .mg-slot span.k, html.phone .mg-slot span.k { font: 500 var(--ph-t-foot)/1.3 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .ap-band .mg-slot .n, html.phone .mg-slot .n { font: 700 var(--ph-t-foot)/1.3 var(--ph-font-ui); color: var(--ph-gold); }
+html.phone .mg-band-btn { min-height: var(--ph-hit); color: var(--ph-text); font: 600 var(--ph-t-title3)/1.25 var(--ph-font-ui); text-transform: none; }
+html.phone .mg-note { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .sp-known { max-height: none; overflow: hidden; border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .sp-known-h, html.phone .sp-slots-sec .ap-band h2 { margin: 0; padding: 12px var(--ph-gutter) 8px; background: none; font: 600 var(--ph-t-title3)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; }
+html.phone .sp-slots-sec .ap-band h2 { padding: 0; }
+html.phone .sp-known ul { overflow: visible; }
+html.phone .sp-known li + li button { box-shadow: inset 0 1px 0 var(--ph-line); }
+html.phone .sp-known li button {
+  position: relative; align-items: center; justify-content: space-between; gap: 12px; height: auto; min-height: var(--ph-row); padding: 6px var(--ph-gutter);
+  color: var(--ph-text); font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); transition: background var(--ph-d-press) var(--ph-ease-out);
+}
+html.phone .sp-known li button:active { background: var(--ph-raised); }
+html.phone .sp-known li button b { font-style: normal; font-weight: 400; color: var(--ph-text); }
+html.phone .sp-known li button span { flex: none; font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-align: right; }
+html.phone .sp-known li.sel button { background: var(--ph-accent-soft); }
+html.phone .sp-known li.sel button::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--ph-accent); }
+html.phone .sp-known-empty { padding: 12px var(--ph-gutter); font: 400 var(--ph-t-sub)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .sp-slots-sec { border-radius: var(--ph-r-lg); background: var(--ph-surface); }
+html.phone .sp-empty { width: auto; margin: 32px var(--ph-gutter); font: 400 var(--ph-t-sub)/1.45 var(--ph-font-ui); color: var(--ph-text-2); }
+/* Class tab: the hint with Prepare and Refresh, the info box. */
+html.phone .sp-prep-bar { flex-wrap: wrap; gap: 8px; padding: 0; border: 0; }
+html.phone .sp-hint { flex: 1 1 100%; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .sp-info { margin: 0; padding: 12px var(--ph-gutter); border: 0; border-radius: var(--ph-r-lg); background: var(--ph-accent-soft); font: 400 var(--ph-t-sub)/1.4 var(--ph-font-ui); color: var(--ph-text); }

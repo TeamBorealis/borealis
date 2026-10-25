@@ -6,7 +6,7 @@ import { SRC, cssFiles, declaredVars, parseRules, readCss } from "./cssRules";
 // B-48 WP6/WP7 CSS contract (mobile-facelift-spec sec. 3.5, 7; O9, O14): the screen layer lives in phone files under
 // html.phone (checked for every phone file in b48-phone-css.test.tsx), reads its colours from the theme tokens so the light
 // theme is complete, and turns the data tables into one-line rows.
-const SCREENS = ["styles/phone/bridge.css", "styles/phone/tables.css", "styles/phone/build.css", "styles/phone/screens-a.css"];
+const SCREENS = ["styles/phone/bridge.css", "styles/phone/tables.css", "styles/phone/build.css", "styles/phone/screens-a.css", "styles/phone/play-magic.css"];
 const rules = (files = SCREENS) => files.flatMap((f) => parseRules(readCss(f)).map((r) => ({ ...r, file: f })));
 const bodyOf = (sel: string) => rules().filter((r) => r.selectors.includes(sel)).map((r) => r.body).join(";");
 
