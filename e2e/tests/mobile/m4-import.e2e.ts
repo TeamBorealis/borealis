@@ -44,7 +44,7 @@ async function m4({ app, device, screen }: Context, platform: MobilePlatform): P
   await freshInstall(device);
   deliverInputs(platform, [aUser, fFull]);
   await app.open();
-  await expect(screen.getByText('WELCOME TO BOREALIS')).toBeVisible(SLOW);
+  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
   await openAdditionalContentMobile(screen);
 
   // 1) A-core: Fetch the index URL (consent), which downloads it right away.

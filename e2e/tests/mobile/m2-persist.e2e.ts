@@ -5,10 +5,10 @@ import { CHARACTER_NAME, characterEntry, createCharacter, expectBuildPage, fresh
 mobileSuite('m2', 'character survives a terminate and relaunch', async ({ app, device, screen }) => {
   await freshInstall(device);
   await app.open();
-  await expect(screen.getByText('WELCOME TO BOREALIS')).toBeVisible(SLOW);
+  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
   await createCharacter(screen, device, CHARACTER_NAME);
   await expectBuildPage(screen);
   await app.restart();
-  await expect(screen.getByText('WELCOME TO BOREALIS')).toBeVisible(SLOW);
+  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
   await expect(characterEntry(screen, CHARACTER_NAME)).toBeVisible(SLOW);
 });

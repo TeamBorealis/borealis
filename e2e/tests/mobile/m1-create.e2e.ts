@@ -6,12 +6,12 @@ import { CHARACTER_NAME, createCharacter, expectBuildPage, freshInstall, mobileS
 mobileSuite('m1', 'creates a character and lands in Build', async ({ app, device, screen }) => {
   await freshInstall(device);
   await app.open();
-  await expect(screen.getByText('WELCOME TO BOREALIS')).toBeVisible(SLOW);
+  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
   // Phone builds have no AI at all: nothing about an assistant, setup or pairing on the first screen.
   await expect(screen.getByText(/\bAI\b|assistant|codex|claude|pair/i)).toBeHidden();
   await createCharacter(screen, device, CHARACTER_NAME);
   await expect(screen.getByText('NEW CHARACTER, web dialogue', { exact: false })).toBeHidden(SLOW);
   // Build page: species step first, pending-choices prompt in the status bar.
   await expectBuildPage(screen);
-  await expect(screen.getByText(/CHOOSE ONE FROM THE 'RACE' SELECTION/)).toBeVisible(SLOW);
+  await expect(screen.getByText(/choose one from the 'race' selection/i).first()).toBeVisible(SLOW);
 });

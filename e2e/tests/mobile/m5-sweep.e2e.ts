@@ -4,7 +4,7 @@ import type { Device } from '@e2e-dev/mobile';
 import type { TestFixtures } from 'e2e';
 import { freshInstall, SLOW } from '../../support/mobile.js';
 import type { MobilePlatform } from '../../support/mobile.js';
-import { openAdditionalContentMobile, statusText } from '../../support/mobile-content.js';
+import { openAdditionalContentMobile, scrollTo, statusText } from '../../support/mobile-content.js';
 import { writeUpdateFeed } from '../../support/mobile-acceptance.js';
 import { startSelfSignedServer } from '../../support/local-https.js';
 
@@ -65,11 +65,13 @@ async function tapUntilVisible(target: Locator, expected: Locator): Promise<void
 async function tapShareLogs({ app, device, screen }: Context, platform: MobilePlatform): Promise<void> {
   await freshInstall(device);
   await app.open();
-  await expect(screen.getByText('WELCOME TO BOREALIS')).toBeVisible(SLOW);
+  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
   const tab = platform === 'ios' ? screen.getByRole('button', 'Data files') : screen.getByText('Data files').first();
   await tapUntilVisible(screen.getByRole('button', 'Settings'), tab);
+  // The phone settings sheet keeps Share logs below the fold: open the tab, then scroll to it.
+  await tapUntilVisible(tab, screen.getByText('Your data directories and additional content settings.').first());
   const share = screen.getByRole('button', 'Share logs');
-  await tapUntilVisible(tab, share);
+  await scrollTo(screen, share);
   await share.tap();
 }
 
@@ -95,7 +97,7 @@ async function updateNotice({ app, device, screen }: Context, platform: MobilePl
   // title and buttons; the version text is checked on iOS (Android: checked on screen, B-41).
   const flyout = platform === 'ios'
     ? screen.getByText(new RegExp(`^Version ${FIXTURE_VERSION.replace(/\./g, '\\.')} of Borealis is available\\.`))
-    : screen.getByText('UPDATE AVAILABLE').last();
+    : screen.getByRole('dialog', UPDATE);
   await tapUntilVisible(button, flyout);
   // Download hands the website to the system browser. iOS: agent-device reports the session app, not
   // Safari, so the browser hand-off is only checked on Android (B-08 checked iOS on screen).
@@ -131,14 +133,16 @@ async function badCertIndex(ctx: Context, platform: MobilePlatform): Promise<voi
 async function badCertIndexAt({ app, device, screen }: Context, platform: MobilePlatform, url: string): Promise<void> {
   await freshInstall(device);
   await app.open();
-  await expect(screen.getByText('WELCOME TO BOREALIS')).toBeVisible(SLOW);
+  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
   await openAdditionalContentMobile(screen);
   await screen.getByRole('textbox').first().fill(url);
   await device.dismissKeyboard();
   await screen.getByRole('button', /^Fetch$/).tap();
   await screen.getByRole('button', /^Add source$/).tap();
-  // A clean, named failure (no "up to date", no content), and the app keeps running.
-  await expect(statusText(screen, platform, /^Nothing was downloaded: 1 could not be updated\..*invalid peer certificate/)).toBeVisible(FAIL_TIMEOUT);
+  // A clean, named failure (no "up to date", no content), and the app keeps running. The status line names the
+  // index and says it could not be downloaded; the transport text (the refused certificate) goes to the log only
+  // (c236acc). The refused handshake on this host is checked by the caller.
+  await expect(statusText(screen, platform, /^Nothing was downloaded: 1 could not be updated\. .*core\.index: Could not download the index file\./)).toBeVisible(FAIL_TIMEOUT);
   await expect(statusText(screen, platform, /content pack\(s\) downloaded and loaded/)).toBeHidden();
   expect((await device.foregroundApp()).bundleId).toBe(BUNDLE_ID);
 }

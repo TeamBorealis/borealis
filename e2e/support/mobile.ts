@@ -44,7 +44,7 @@ export function characterEntry(screen: Screen, name: string) {
 
 /** Build page after Create: the status bar prompts for the pending species ('race') choice. */
 export async function expectBuildPage(screen: Screen): Promise<void> {
-  await expect(screen.getByText(/CHOOSE ONE FROM THE 'RACE' SELECTION/)).toBeVisible(SLOW);
+  await expect(screen.getByText(/choose one from the 'race' selection/i).first()).toBeVisible(SLOW);
 }
 
 export type MobilePlatform = 'ios' | 'android';

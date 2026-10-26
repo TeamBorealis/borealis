@@ -78,7 +78,7 @@ async function start(ctx: Context, warm: boolean, uri: string): Promise<void> {
   expectOffered(uri);
   if (warm) {
     await ctx.app.open();
-    await expect(ctx.screen.getByText('WELCOME TO BOREALIS')).toBeVisible(SLOW);
+    await expect(ctx.screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
   } else {
     adb('shell', 'am', 'force-stop', ANDROID_BUNDLE_ID);
   }

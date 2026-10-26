@@ -59,7 +59,7 @@ async function searchChecks(ctx: Context, platform: MobilePlatform): Promise<voi
   const { screen } = ctx;
   await freshInstall(ctx.device);
   await ctx.app.open();
-  await expect(screen.getByText('WELCOME TO BOREALIS')).toBeVisible(SLOW);
+  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
 
   // Roles differ per platform (iOS reports the dialog and the result lists as "other"), so these
   // checks go by accessible name.
@@ -78,18 +78,18 @@ async function searchChecks(ctx: Context, platform: MobilePlatform): Promise<voi
   await box.fill('grappled');
   await screen.getByLabel('Compendium results: Rules').getByRole('button').first().tap();
   await expect(screen.getByRole('button', 'Back to results')).toBeVisible(SLOW);
-  await expect(screen.getByText('SOURCE', { exact: true })).toBeVisible();
+  await expect(screen.getByText(/^source$/i).first()).toBeVisible();
   await expect(screen.getByText(/System Reference Document 5\.[12]/).first()).toBeVisible();
   await ctx.app.open();
 
-  await expect(screen.getByText('WELCOME TO BOREALIS')).toBeVisible(SLOW);
+  await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
   // iOS reports the settings switch as a switch and the tier combo's choice as its value.
   const semantic = screen.getByRole(platform === 'ios' ? 'switch' : 'checkbox', 'Semantic search (optional)');
   await moreRow(screen, platform, screen.getByRole('button', 'Search settings'), semantic);
   await expect(semantic).toBeEnabled();
   await expect(semantic).not.toBeChecked();
   await expect(screen.getByText(/^Downloads the EmbeddingGemma 2 model \((about 310|210) MB\) once\./)).toBeVisible();
-  await expect(screen.getByText('DEVICE TIER').first()).toBeVisible();
+  await expect(screen.getByText(/^device tier$/i).first()).toBeVisible();
   const tier = /^Automatic \(Tier [123]: /;
   await expect(platform === 'ios' ? screen.getByDisplayValue(tier) : screen.getByLabel(tier)).toBeVisible();
 }
@@ -119,7 +119,7 @@ async function bundleOpened(ctx: Context, warm: boolean): Promise<void> {
   expect(offered).toContain(`name=${ANDROID_BUNDLE_ID}.MainActivity`);
   if (warm) {
     await ctx.app.open();
-    await expect(screen.getByText('WELCOME TO BOREALIS')).toBeVisible(SLOW);
+    await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
   } else {
     adb('shell', 'am', 'force-stop', ANDROID_BUNDLE_ID);
   }
@@ -131,7 +131,7 @@ async function bundleOpened(ctx: Context, warm: boolean): Promise<void> {
   await expect(screen.getByLabel(name)).toBeVisible(SLOW);
   await expect(screen.getByRole('list', 'What Accept changes')).toBeVisible();
   await screen.getByRole('button', 'Accept').tap();
-  await expect(screen.getByLabel(`OPENED ${name.toUpperCase()}: 1 NEW.`)).toBeVisible(SLOW);
+  await expect(screen.getByLabel(`Opened ${name}: 1 new.`)).toBeVisible(SLOW);
   await expect(characterEntry(screen, HERO)).toBeVisible(SLOW);
 }
 
