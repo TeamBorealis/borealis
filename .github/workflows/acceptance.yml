@@ -89,6 +89,23 @@ jobs:
       # Produces ui/dist, which the Tauri crate needs to compile.
       - run: npm run build
         working-directory: ui
+      - name: Build the test binaries
+        shell: bash
+        run: |
+          set -e
+          cargo test --no-run -p borealis-migrate -p borealis-import-5etools -p borealis-content
+          cargo test --no-run -p borealis-sheet
+          cargo test --no-run -p borealis \
+            --test aurora_index --test fivetools_app --test fivetools_url \
+            --test fivetools_fixture_invariants --test fivetools_renamed_ids \
+            --test import_preview --test import_review_cmds --test import_bug_report \
+            --test file_drop --test content_security --test character_recheck --test picked_paths
+      # B-49: Windows test binaries import llama.cpp's DLLs, which llama-cpp-sys-2 leaves in its out/bin folder
+      # (it does not copy them next to the binaries on MSVC). Same step as ci.yml.
+      - name: llama.cpp DLLs on PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: for d in target/debug/build/llama-cpp-sys-2-*/out/bin; do if [ -d "$d" ]; then cygpath -w "$(cd "$d" && pwd)" >> "$GITHUB_PATH"; fi; done
       - name: Importer and content crates (incl. the AI-free import guard)
         run: cargo test -p borealis-migrate -p borealis-import-5etools -p borealis-content
       # The sheet's OS font lookup (CJK) differs per OS; give Linux a real CJK font to load.
@@ -207,6 +224,11 @@ jobs:
             cargo test --release --no-run -p borealis-character --test corpus --test aurora_corpus_reqs --test aurora_corpus_sweep
             cargo test --release --no-run -p borealis-migrate --test corpus
           fi
+
+      # B-49: the release test binaries import llama.cpp's DLLs from llama-cpp-sys-2's out/bin folder (see ci.yml).
+      - name: llama.cpp DLLs on PATH (Windows)
+        if: runner.os == 'Windows'
+        run: for d in target/release/build/llama-cpp-sys-2-*/out/bin; do if [ -d "$d" ]; then cygpath -w "$(cd "$d" && pwd)" >> "$GITHUB_PATH"; fi; done
 
       - name: Acceptance (a-user, a-core, a-comm, f-url)
         # Same command and variables as tools/regression-gate/gate.py `--only acceptance`.
