@@ -4,12 +4,14 @@ import { Icon } from "../../components/Icon";
 import { ACCENTS } from "../../lib/accent";
 import { FieldLabel, SectionDesc } from "./rows";
 import { PhoneCase } from "../../lib/phoneCase";
-import { resolveThemeAttr, systemPrefersLight, usePhone } from "../../lib/phone";
+import { resolveThemeAttr, usePhone } from "../../lib/phone";
 
-const THEMES: { id: Exclude<ThemeMode, "system">; label: string; color: string; glyph: string }[] = [
+const THEMES: { id: ThemeMode; label: string; color: string; glyph: string }[] = [
   { id: "light", label: "Light", color: "#f7f7f7", glyph: "#161616" },
   { id: "dark", label: "Dark", color: "#161616", glyph: "#f7f7f7" },
 ];
+/** Phones only (design call 3, 2026-10-26): go back to following the phone's light or dark setting. */
+const SYSTEM_THEME = { id: "system" as const, label: "System", color: "linear-gradient(135deg, #f7f7f7 50%, #161616 50%)", glyph: "#7a7a7a" };
 const PORTRAIT_SIZES = [125, 150, 175];
 
 function Swatch({ label, color, glyph, selected, size, mark, onPick }: { label: string; color: string; glyph: string; selected: boolean; size: number; mark?: "dragon"; onPick: () => void }) {
@@ -24,10 +26,11 @@ function Swatch({ label, color, glyph, selected, size, mark, onPick }: { label: 
 
 /** APPEARANCE: accent swatches and theme swatches preview live; the slider sets the collection portrait size. */
 export function AppearanceTab({ form, set }: { form: AppSettings; set: (patch: Partial<AppSettings>) => void }) {
-  // "system" has no stylesheet of its own: the desktop shows its default (dark) theme, so the Dark swatch is the marked one;
-  // a phone follows its own light or dark setting (B-48 O9), so the swatch of the theme it shows is marked.
+  // "system" has no stylesheet of its own: the desktop shows its default (dark) theme, so the Dark swatch is the marked one.
+  // A phone follows its own light or dark setting (B-48 O9) and offers a System swatch to go back to that, marked while on.
   const phone = usePhone();
-  const theme = resolveThemeAttr(form.theme, { phone, prefersLight: phone && systemPrefersLight() }) === "light" ? "light" : "dark";
+  const themes = phone ? [...THEMES, SYSTEM_THEME] : THEMES;
+  const theme = phone ? form.theme : resolveThemeAttr(form.theme, { phone, prefersLight: false }) === "light" ? "light" : "dark";
   const size = PORTRAIT_SIZES.includes(form.portraitSize) ? form.portraitSize : 150;
   return (
     <>
@@ -41,7 +44,7 @@ export function AppearanceTab({ form, set }: { form: AppSettings; set: (patch: P
       </div>
       <FieldLabel>SELECT YOUR THEME COLOR</FieldLabel>
       <div className="aur-swatches theme" role="radiogroup" aria-label="Theme color">
-        {THEMES.map((t) => (
+        {themes.map((t) => (
           <Swatch key={t.id} label={t.label} color={t.color} glyph={t.glyph} size={28} mark="dragon" selected={theme === t.id} onPick={() => set({ theme: t.id })} />
         ))}
       </div>

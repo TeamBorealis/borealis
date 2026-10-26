@@ -75,14 +75,41 @@ describe("theme follows the system (O9)", () => {
     expect(themeAttr()).toBeNull();
   });
 
-  it("Appearance marks the theme the phone is showing: Light while System follows a light phone", async () => {
+  async function openAppearance() {
     const user = userEvent.setup();
-    start("system", true);
     await user.click((await screen.findAllByRole("button", { name: "Settings" }))[0]!);
     await user.click(await screen.findByRole("tab", { name: /Appearance/i }));
-    const light = await screen.findByRole("radio", { name: "Light" });
-    expect(light.getAttribute("aria-checked")).toBe("true");
-    expect(screen.getByRole("radio", { name: "Dark" }).getAttribute("aria-checked")).toBe("false");
+    await screen.findByRole("radio", { name: "Light" });
+    return user;
+  }
+  const checked = (name: string) => screen.getByRole("radio", { name }).getAttribute("aria-checked");
+
+  it("a phone offers System beside Light and Dark; System is the marked swatch while it follows the phone", async () => {
+    start("system", true);
+    await openAppearance();
+    expect(checked("System")).toBe("true");
+    expect(checked("Light")).toBe("false");
+    expect(checked("Dark")).toBe("false");
+  });
+
+  it("picking System after Light goes back to following the phone (design call 3, 2026-10-26)", async () => {
+    start("light", false);
+    const user = await openAppearance();
+    expect(checked("Light")).toBe("true");
+    await user.click(screen.getByRole("radio", { name: "System" }));
+    expect(checked("System")).toBe("true");
+    await waitFor(() => expect(themeAttr()).toBeNull());
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(screen.queryByRole("radio", { name: "System" })).toBeNull());
+    scheme!.set(true);
+    await waitFor(() => expect(themeAttr()).toBe("light"));
+  });
+
+  it("the desktop keeps Light and Dark only, with Dark marked under System (U7)", async () => {
+    start("system", true, false);
+    await openAppearance();
+    expect(screen.queryByRole("radio", { name: "System" })).toBeNull();
+    expect(checked("Dark")).toBe("true");
   });
 });
 
