@@ -414,17 +414,31 @@ fn statuses_and_events_match_the_ui_contract() {
 
 /// The exact consent wording (spec sec. 8); `ui/src/test/semantic-settings.test.tsx` pins the mock to the same text.
 pub const CONSENT_DESKTOP: &str = "Borealis will download the EmbeddingGemma 2 model (Apache 2.0, about 310 MB) once, from Hugging Face or the Borealis mirror. Search then also finds rules, lore and session notes by meaning, not only by the words you type. Everything runs on this device; your searches and notes never leave it. Indexing takes a few minutes. You can delete the model at any time in Settings.";
+pub const CONSENT_X86_DESKTOP: &str = "Borealis will download the EmbeddingGemma 2 model (Apache 2.0, about 310 MB) once, from Hugging Face or the Borealis mirror. Search then also finds rules, lore and session notes by meaning, not only by the words you type. Everything runs on this device; your searches and notes never leave it. Indexing takes a few minutes. On slower computers, search may stay keyword-only after the download. Borealis checks the speed once the model has loaded. You can delete the model at any time in Settings.";
 pub const CONSENT_T1_PHONE: &str = "Borealis will download the EmbeddingGemma 2 model (Apache 2.0, about 310 MB; 210 MB on this device) once, from Hugging Face or the Borealis mirror. Search then also finds rules, lore and session notes by meaning, not only by the words you type. Everything runs on this device; your searches and notes never leave it. Indexing can take several hours and runs while your device is charging. On slower phones, search may stay keyword-only after the download. Borealis checks the speed once the model has loaded. You can delete the model at any time in Settings.";
 
 #[test]
 fn consent_text_is_the_spec_wording() {
-    use borealis_embed::models::{consent_body, Q6_K_TE_Q4_K, Q8_0};
-    assert_eq!(consent_body(&Q8_0, false), CONSENT_DESKTOP);
-    assert_eq!(consent_body(&Q6_K_TE_Q4_K, true), CONSENT_T1_PHONE);
+    use borealis_embed::models::{consent_body, ConsentDevice, Q6_K_TE_Q4_K, Q8_0};
+    assert_eq!(consent_body(&Q8_0, ConsentDevice::Desktop), CONSENT_DESKTOP);
+    assert_eq!(
+        consent_body(&Q8_0, ConsentDevice::X86Desktop),
+        CONSENT_X86_DESKTOP
+    );
+    assert_eq!(
+        consent_body(&Q6_K_TE_Q4_K, ConsentDevice::Phone),
+        CONSENT_T1_PHONE
+    );
     let a = app_with(Duration::ZERO, |_| Catalog::compiled());
     let c = a.state.semantic_status(&a.ctx()).consent.unwrap();
     assert_eq!(c.title, "Turn on semantic search?");
-    assert_eq!(c.body, CONSENT_DESKTOP);
+    // B-49: an x86_64 desktop (Windows / Linux CI) is told slower computers may stay keyword-only.
+    let this_desktop = if cfg!(target_arch = "x86_64") {
+        CONSENT_X86_DESKTOP
+    } else {
+        CONSENT_DESKTOP
+    };
+    assert_eq!(c.body, this_desktop);
     assert_eq!(
         (c.accept.as_str(), c.decline.as_str()),
         ("Download and turn on", "Not now")

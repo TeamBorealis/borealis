@@ -636,7 +636,7 @@ fn consent_for(file: &SemanticFile, mobile: bool) -> SemanticConsent {
         .unwrap_or(models::Q8_0);
     SemanticConsent {
         title: models::CONSENT_TITLE.into(),
-        body: models::consent_body(&compiled, mobile),
+        body: models::consent_body(&compiled, models::ConsentDevice::for_build(mobile)),
         accept: models::CONSENT_ACCEPT.into(),
         decline: models::CONSENT_DECLINE.into(),
     }

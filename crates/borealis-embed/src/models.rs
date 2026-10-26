@@ -129,14 +129,50 @@ pub const CONSENT_TITLE: &str = "Turn on semantic search?";
 pub const CONSENT_ACCEPT: &str = "Download and turn on";
 pub const CONSENT_DECLINE: &str = "Not now";
 
-/// Indexing sentences of the consent. Phones: hours, and slower phones may stay keyword-only (decision PH1).
+/// Indexing sentences of the consent. Phones: hours, and slower phones may stay keyword-only (decision PH1). x86_64
+/// desktops: minutes, but slower computers may stay keyword-only (B-49, CI: 33-65 ms with AVX2 / AVX-512, 400-500 ms
+/// on SSE2, against the 40 ms budget).
 pub const CONSENT_INDEXING_DESKTOP: &str = "Indexing takes a few minutes.";
+pub const CONSENT_INDEXING_X86: &str = "Indexing takes a few minutes. On slower computers, search may stay keyword-only after the download. Borealis checks the speed once the model has loaded.";
 pub const CONSENT_INDEXING_PHONE: &str = "Indexing can take several hours and runs while your device is charging. On slower phones, search may stay keyword-only after the download. Borealis checks the speed once the model has loaded.";
 
+/// Which indexing sentences a device's consent carries (spec sec. 8).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConsentDevice {
+    /// arm64 desktops: the speed check passes on every one measured.
+    Desktop,
+    /// x86_64 desktops: the query-speed check can keep slower computers keyword-only.
+    X86Desktop,
+    /// Phones and tablets (decision PH1).
+    Phone,
+}
+
+impl ConsentDevice {
+    /// The wording for this build: phones when `mobile`, else by the processor architecture.
+    #[must_use]
+    pub const fn for_build(mobile: bool) -> Self {
+        if mobile {
+            Self::Phone
+        } else if cfg!(target_arch = "x86_64") {
+            Self::X86Desktop
+        } else {
+            Self::Desktop
+        }
+    }
+
+    const fn indexing(self) -> &'static str {
+        match self {
+            Self::Desktop => CONSENT_INDEXING_DESKTOP,
+            Self::X86Desktop => CONSENT_INDEXING_X86,
+            Self::Phone => CONSENT_INDEXING_PHONE,
+        }
+    }
+}
+
 /// Consent dialog body for the file this device downloads (spec sec. 8 wording). The "; N MB on this device"
-/// clause appears only when the device's file is not the full Q8_0; the phone indexing sentences only on mobile.
+/// clause appears only when the device's file is not the full Q8_0; the indexing sentences follow `device`.
 #[must_use]
-pub fn consent_body(file: &ModelFile, mobile: bool) -> String {
+pub fn consent_body(file: &ModelFile, device: ConsentDevice) -> String {
     let size = if file.quant == Q8_0.quant {
         format!("Apache 2.0, {CONSENT_SIZE_Q8_0}")
     } else {
@@ -145,11 +181,7 @@ pub fn consent_body(file: &ModelFile, mobile: bool) -> String {
             file.size_text
         )
     };
-    let indexing = if mobile {
-        CONSENT_INDEXING_PHONE
-    } else {
-        CONSENT_INDEXING_DESKTOP
-    };
+    let indexing = device.indexing();
     format!(
         "Borealis will download the EmbeddingGemma 2 model ({size}) once, from Hugging Face or the Borealis \
          mirror. Search then also finds rules, lore and session notes by meaning, not only by the words you type. \
@@ -245,7 +277,7 @@ mod tests {
         // Size text rounds the real byte counts (310 MB, 211 MB).
         assert_eq!(Q8_0.bytes / 1_000_000, 309);
         assert_eq!(Q6_K_TE_Q4_K.bytes / 1_000_000, 211);
-        let t1 = consent_body(&Q6_K_TE_Q4_K, true);
+        let t1 = consent_body(&Q6_K_TE_Q4_K, ConsentDevice::Phone);
         assert!(
             t1.contains("(Apache 2.0, about 310 MB; 210 MB on this device)"),
             "{t1}"
@@ -256,12 +288,30 @@ mod tests {
         assert!(t1.contains("On slower phones, search may stay keyword-only after the download."));
         assert!(!t1.contains("few minutes"));
         assert!(!t1.contains("180 MB"));
-        let desktop = consent_body(&Q8_0, false);
+        let desktop = consent_body(&Q8_0, ConsentDevice::Desktop);
         assert!(
             desktop.contains("(Apache 2.0, about 310 MB) once"),
             "{desktop}"
         );
         assert!(desktop.contains("Indexing takes a few minutes. You can delete"));
         assert!(!desktop.contains("keyword-only") && !desktop.contains("hours"));
+    }
+
+    #[test]
+    fn x86_desktops_are_told_older_processors_may_stay_keyword_only() {
+        let x86 = consent_body(&Q8_0, ConsentDevice::X86Desktop);
+        assert!(x86.contains("(Apache 2.0, about 310 MB) once"), "{x86}");
+        assert!(x86.contains(
+            "Indexing takes a few minutes. On slower computers, search may stay keyword-only after the download. \
+             Borealis checks the speed once the model has loaded. You can delete"
+        ));
+        assert!(!x86.contains("hours") && !x86.contains("phones"));
+        let expected = if cfg!(target_arch = "x86_64") {
+            ConsentDevice::X86Desktop
+        } else {
+            ConsentDevice::Desktop
+        };
+        assert_eq!(ConsentDevice::for_build(false), expected);
+        assert_eq!(ConsentDevice::for_build(true), ConsentDevice::Phone);
     }
 }

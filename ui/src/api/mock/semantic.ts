@@ -7,6 +7,7 @@ const CONSENT_ACCEPT = "Download and turn on";
 const CONSENT_DECLINE = "Not now";
 const SIZE_Q8_0 = "about 310 MB";
 const INDEXING_DESKTOP = "Indexing takes a few minutes.";
+const INDEXING_X86 = "Indexing takes a few minutes. On slower computers, search may stay keyword-only after the download. Borealis checks the speed once the model has loaded.";
 const INDEXING_PHONE = "Indexing can take several hours and runs while your device is charging. On slower phones, search may stay keyword-only after the download. Borealis checks the speed once the model has loaded.";
 
 const Q8_0: SemanticFile = { quant: "Q8_0", fileName: "embeddinggemma-2-Q8_0.gguf", bytes: 309_855_456, sizeText: SIZE_Q8_0 };
@@ -19,22 +20,30 @@ const INDEX_OFF: SemanticIndexing = { state: "off", done: 0, total: 0, message: 
 /** Passages the simulated index embeds (in four steps). */
 const INDEX_TOTAL = 1200;
 
-/** Spec section 8 consent body for `file` (the "; N on this device" clause only for the smaller file, phone indexing sentences only on mobile). */
-export function consentBody(file: SemanticFile, mobile: boolean): string {
+/** Which indexing sentences the consent carries (`borealis_embed::models::ConsentDevice`): x86_64 desktops (B-49) and
+ * phones (PH1) are told search may stay keyword-only after the download. */
+export type ConsentDevice = "desktop" | "x86Desktop" | "phone";
+const INDEXING: Record<ConsentDevice, string> = { desktop: INDEXING_DESKTOP, x86Desktop: INDEXING_X86, phone: INDEXING_PHONE };
+
+/** Spec section 8 consent body for `file` (the "; N on this device" clause only for the smaller file; the indexing sentences per device kind). */
+export function consentBody(file: SemanticFile, device: ConsentDevice): string {
   const size = file.quant === Q8_0.quant ? `Apache 2.0, ${SIZE_Q8_0}` : `Apache 2.0, ${SIZE_Q8_0}; ${file.sizeText} on this device`;
-  const indexing = mobile ? INDEXING_PHONE : INDEXING_DESKTOP;
+  const indexing = INDEXING[device];
   return `Borealis will download the EmbeddingGemma 2 model (${size}) once, from Hugging Face or the Borealis mirror. `
     + "Search then also finds rules, lore and session notes by meaning, not only by the words you type. "
     + "Everything runs on this device; your searches and notes never leave it. "
     + `${indexing} You can delete the model at any time in Settings.`;
 }
 
-const consent = (file: SemanticFile, mobile: boolean): SemanticConsent => ({ title: CONSENT_TITLE, body: consentBody(file, mobile), accept: CONSENT_ACCEPT, decline: CONSENT_DECLINE });
+const consent = (file: SemanticFile, device: ConsentDevice): SemanticConsent => ({ title: CONSENT_TITLE, body: consentBody(file, device), accept: CONSENT_ACCEPT, decline: CONSENT_DECLINE });
 const ORDER: SemanticTier[] = ["t0", "t1", "t2", "t3"];
 
 export interface MockSemanticOptions {
   /** Highest tier the mock device allows (default t3 desktop, t2 phone). */
   probedTier: SemanticTier;
+  /** A desktop with an x86_64 processor (Windows, Linux; default false): the consent says slower computers may stay
+   * keyword-only (B-49). Ignored on phones. */
+  x86: boolean;
   /** An embedding backend is linked (default true, like the app since B-12; false = a build without it). */
   backendAvailable: boolean;
   /** The T1 file has a URL (default true: the mirror is published, B-46). */
@@ -76,7 +85,7 @@ export class MockSemantic {
 
   constructor(private readonly emit: (d: SemanticDownload) => void, private readonly mobile: boolean, opts: Partial<MockSemanticOptions> = {},
     private readonly emitIndex: (i: SemanticIndexing) => void = () => {}) {
-    this.opts = { probedTier: mobile ? "t2" : "t3", backendAvailable: true, mirrorPublished: true, modelPresent: false, indexed: false, stepMs: 30, failWith: null, queryMs: null, ...opts };
+    this.opts = { probedTier: mobile ? "t2" : "t3", x86: false, backendAvailable: true, mirrorPublished: true, modelPresent: false, indexed: false, stepMs: 30, failWith: null, queryMs: null, ...opts };
     this.present = this.opts.modelPresent;
   }
 
@@ -149,7 +158,7 @@ export class MockSemantic {
     return {
       tier, probedTier: this.opts.probedTier, mobile: this.mobile, file, available, unavailableReason: reason, modelPresent: present,
       backendAvailable: this.opts.backendAvailable, semantic: search.semantic, active,
-      consent: file ? consent(file, this.mobile) : null, download, indexing: { ...this.indexing, queryable: active },
+      consent: file ? consent(file, this.mobile ? "phone" : this.opts.x86 ? "x86Desktop" : "desktop") : null, download, indexing: { ...this.indexing, queryable: active },
     };
   }
 

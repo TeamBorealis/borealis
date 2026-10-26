@@ -10,6 +10,7 @@ import { openBorealisSettings, renderApp } from "./utils";
 
 /* The exact spec section 8 wording; src-tauri/tests/semantic_model.rs pins the Rust text to the same strings. */
 const CONSENT_DESKTOP = "Borealis will download the EmbeddingGemma 2 model (Apache 2.0, about 310 MB) once, from Hugging Face or the Borealis mirror. Search then also finds rules, lore and session notes by meaning, not only by the words you type. Everything runs on this device; your searches and notes never leave it. Indexing takes a few minutes. You can delete the model at any time in Settings.";
+const CONSENT_X86_DESKTOP = "Borealis will download the EmbeddingGemma 2 model (Apache 2.0, about 310 MB) once, from Hugging Face or the Borealis mirror. Search then also finds rules, lore and session notes by meaning, not only by the words you type. Everything runs on this device; your searches and notes never leave it. Indexing takes a few minutes. On slower computers, search may stay keyword-only after the download. Borealis checks the speed once the model has loaded. You can delete the model at any time in Settings.";
 const CONSENT_T1_PHONE = "Borealis will download the EmbeddingGemma 2 model (Apache 2.0, about 310 MB; 210 MB on this device) once, from Hugging Face or the Borealis mirror. Search then also finds rules, lore and session notes by meaning, not only by the words you type. Everything runs on this device; your searches and notes never leave it. Indexing can take several hours and runs while your device is charging. On slower phones, search may stay keyword-only after the download. Borealis checks the speed once the model has loaded. You can delete the model at any time in Settings.";
 const SWITCH = "Semantic search (optional)";
 
@@ -64,8 +65,26 @@ describe("Settings > Search: consent", () => {
   it("the mock consent wording is the spec wording on every device kind", () => {
     const q8 = { quant: "Q8_0", fileName: "embeddinggemma-2-Q8_0.gguf", bytes: 309_855_456, sizeText: "about 310 MB" };
     const t1 = { quant: "Q6_K-te-Q4_K", fileName: "embeddinggemma-2-Q6_K-te-Q4_K.gguf", bytes: 211_161_312, sizeText: "210 MB" };
-    expect(consentBody(q8, false)).toBe(CONSENT_DESKTOP);
-    expect(consentBody(t1, true)).toBe(CONSENT_T1_PHONE);
+    expect(consentBody(q8, "desktop")).toBe(CONSENT_DESKTOP);
+    expect(consentBody(q8, "x86Desktop")).toBe(CONSENT_X86_DESKTOP);
+    expect(consentBody(t1, "phone")).toBe(CONSENT_T1_PHONE);
+  });
+
+  it("an x86_64 desktop is told before the download that slower computers may stay keyword-only (B-49)", async () => {
+    // Arrange
+    const api = desktop({ semantic: { x86: true } });
+    const { user, dialog } = await openSearchTab(api);
+
+    // Act
+    await user.click(within(dialog).getByRole("checkbox", { name: SWITCH }));
+    const consent = await screen.findByRole("dialog", { name: "Turn on semantic search?" });
+
+    // Assert
+    expect(within(consent).getByText(CONSENT_X86_DESKTOP)).toBeTruthy();
+    expect(CONSENT_X86_DESKTOP).toContain("Indexing takes a few minutes.");
+    expect(CONSENT_X86_DESKTOP).not.toMatch(/hours|charging|phones/);
+    await user.click(within(consent).getByRole("button", { name: "Not now" }));
+    expect(api.semantic.starts).toBe(0);
   });
 });
 
