@@ -44,10 +44,20 @@ pub const QUERY_BUDGET_MS: u32 = 40;
 /// would otherwise turn on for every native build with `GGML_NATIVE=OFF`; llama-cpp-sys-2 turns one back on only
 /// when Rust's target features include it (`build/check-x86-baseline.sh` checks the libraries). The quantised dot
 /// products then run without AVX, several times slower than NEON on arm64: such builds get the T2 row at most, and
-/// the measured query-speed check ([`TierConfig::query_budget_ms`]) decides per machine. Runtime CPU dispatch
-/// (`GGML_CPU_ALL_VARIANTS`) would need ggml's backend DLLs / shared objects shipped with the installers, which is
-/// not done yet (S3.3 handoff).
-pub const PORTABLE_X86: bool = cfg!(all(target_arch = "x86_64", not(target_feature = "avx2")));
+/// the measured query-speed check ([`TierConfig::query_budget_ms`]) decides per machine. x86_64 Windows and Linux
+/// builds are not portable-only any more (B-49): they ship one CPU backend module per x86 level and load the best
+/// one for the running CPU ([`X86_CPU_DISPATCH`]), so this is left for the x86_64 phone and simulator builds.
+pub const PORTABLE_X86: bool =
+    cfg!(all(target_arch = "x86_64", not(target_feature = "avx2"))) && !X86_CPU_DISPATCH;
+
+/// x86_64 Windows / Linux builds choose llama.cpp's CPU backend at run time (B-49, `cpu_backend` with the `llama`
+/// feature): the SSE2 module on the oldest CPUs, AVX2 or AVX-512 ones where the CPU has them. The query-speed check
+/// still decides hybrid or keyword-only per machine; older CPUs can stay keyword-only, so the consent says so
+/// ([`crate::models::ConsentDevice::X86Desktop`]).
+pub const X86_CPU_DISPATCH: bool = cfg!(all(
+    target_arch = "x86_64",
+    any(target_os = "windows", target_os = "linux")
+));
 
 /// Battery level T2 may index on, when the user allows it.
 pub const T2_MIN_BATTERY_PERCENT: u8 = 50;

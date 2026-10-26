@@ -18,6 +18,11 @@ ANDROID_API_LEVEL = "24"
 # on when Rust's target features include it (an explicit `-C target-feature=+avx2` build). Ignored on ARM.
 # `build/check-x86-baseline.sh` verifies the built libraries. CMake caches from before this need
 # `cargo clean -p llama-cpp-sys-2` once (cmake does not reconfigure an existing build).
+# x86_64 Linux (B-49) builds llama.cpp as shared libraries. Unversioned names (libllama.so, SONAME libllama.so, no
+# libllama.so.0 symlink chain): llama-cpp-sys-2 hard-links each library into the target folder and, given a symlink,
+# links the symlink itself, which dangles there and makes the next build of the crate fail ("File exists").
+# Static builds (every other target) have no SONAME, so this changes nothing there.
+CMAKE_PLATFORM_NO_VERSIONED_SONAME = "ON"
 GGML_SSE42 = "OFF"
 GGML_AVX = "OFF"
 GGML_AVX2 = "OFF"

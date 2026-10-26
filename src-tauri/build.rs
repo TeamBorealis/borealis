@@ -179,7 +179,17 @@ const COMMANDS: &[&str] = &[
     "acceptance_digest",
 ];
 
+/// x86_64 Linux bundles (B-49) keep llama.cpp's shared libraries in `<resource folder>/ggml`
+/// (`/usr/lib/Borealis/ggml` in the deb and rpm, `usr/lib/Borealis/ggml` in the AppImage; `src/semantic_backend.rs`),
+/// so the binary's run path names that folder. Last: `ggml` next to a release binary in the cargo target folder.
+const LINUX_RPATH: &str = "$ORIGIN/../lib/Borealis/ggml:$ORIGIN/../lib/borealis/ggml:$ORIGIN/ggml";
+
 fn main() {
+    let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+    let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
+    if target_os == "linux" && target_arch == "x86_64" {
+        println!("cargo:rustc-link-arg-bins=-Wl,-rpath,{LINUX_RPATH}");
+    }
     let manifest = tauri_build::AppManifest::new().commands(COMMANDS);
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(manifest))
         .expect("failed to run the Tauri build script");

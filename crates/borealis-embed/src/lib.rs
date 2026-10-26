@@ -2,7 +2,8 @@
 //!
 //! * [`embedder`]: the [`Embedder`] trait (prompts, Matryoshka truncation, L2 normalisation) and the
 //!   [`GuardedEmbedder`] whose NaN / zero-norm guard turns semantic mode off and reports it locally.
-//! * `llama` (feature `llama`): the llama.cpp backend, `llama::LlamaEmbedder` (EmbeddingGemma 2 GGUF, CPU).
+//! * `llama` (feature `llama`): the llama.cpp backend, `llama::LlamaEmbedder` (EmbeddingGemma 2 GGUF, CPU), and
+//!   `cpu_backend`: the run-time choice of llama.cpp's CPU backend module on x86_64 Windows / Linux (B-49).
 //! * [`fake`]: a deterministic [`FakeEmbedder`] for tests (no model file, no C++ build).
 //! * [`models`]: the model files per tier (SHA-256, sizes, pinned URLs) and the consent-dialog size text.
 //! * [`tier`]: the device tier table T0-T3 and the startup probe; [`device`]: battery / thermal / low power /
@@ -18,6 +19,8 @@
 //! The only network code is [`download`], which the app runs after the user accepted the consent dialog (spec
 //! sec. 8). Embedding inputs and queries never leave the device (C4).
 
+#[cfg(feature = "llama")]
+pub mod cpu_backend;
 pub mod device;
 pub mod download;
 pub mod embedder;

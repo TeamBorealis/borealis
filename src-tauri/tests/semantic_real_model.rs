@@ -1,6 +1,6 @@
 //! S3.4 (s3.3-1 sec. 7 item 5): the app's semantic speed check with the real model on this machine. The indexer
-//! loads the tier's file exactly as the app does (probed tier, `config_for`: an SSE2-only x86_64 build gets the T2
-//! row), times the query embedding against the 40 ms budget, and either indexes (hybrid) or stays keyword-only with
+//! loads the tier's file exactly as the app does (probed tier, `config_for`; x86_64 Windows / Linux load the CPU
+//! backend module for the runner's CPU, B-49), times the query embedding against the 40 ms budget, and either indexes (hybrid) or stays keyword-only with
 //! the "too slow" line. The rule is not changed here; the test records which way it goes and checks that a miss is
 //! honest (no vectors answer a search). Prints one JSON line (labels and numbers only).
 //!
@@ -86,6 +86,7 @@ fn the_speed_check_decides_hybrid_or_keyword_only_on_this_machine() {
             "cores": profile.cores,
             "ram_gib": profile.total_ram_bytes.map(|b| b / (1 << 30)),
             "portable_x86": borealis_embed::tier::PORTABLE_X86,
+            "x86_cpu_dispatch": borealis_embed::tier::X86_CPU_DISPATCH,
             "budget_ms": tier.query_budget_ms,
             "app_state": format!("{:?}", status.state),
             "app_verdict": if keyword_only { "keyword-only" } else { "hybrid" },

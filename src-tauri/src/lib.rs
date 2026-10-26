@@ -121,6 +121,8 @@ pub mod search_api;
 pub mod search_service;
 pub mod secondary_content;
 pub mod semantic_api;
+#[cfg(all(desktop, feature = "llama"))]
+pub mod semantic_backend;
 pub mod semantic_device;
 pub mod semantic_service;
 pub mod session;
@@ -266,6 +268,9 @@ fn setup_ai_profile(app: &AppHandle, state: &AppState, ai: &ai_service::AiServic
 /// Build and run the Tauri application.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // x86_64 Windows / Linux (B-49): llama.cpp's CPU backend modules are in the install folder.
+    #[cfg(all(desktop, feature = "llama"))]
+    semantic_backend::install();
     // Windows and Linux "Open with" / double-click pass the file as an argument (Linux desktop entry
     // `Exec=borealis %F`); macOS and iOS use RunEvent::Opened; Android's activity parks the file in
     // Kotlin (`native_share::take_opened_files`). The UI drains the queue on mount and when nudged;

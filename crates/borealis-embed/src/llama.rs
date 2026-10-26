@@ -19,7 +19,8 @@
 //!   micro-batch. The compute buffers grow with this size, so the tier's chunk cap (spec sec. 3: 512 tokens, 256
 //!   on T1) is also the context size ([`LlamaOptions::for_max_tokens`]); [`LlamaOptions::default`] keeps the
 //!   2048 / 16 of spike S0.2 for the reference test.
-//! * llama.cpp's own log output is switched off: it would go to stderr, and nothing in it is needed by the user.
+//! * llama.cpp's own log output is switched off once it has started: it would go to stderr, and nothing in it is
+//!   needed by the user. (Loading the CPU backend module on x86_64 Windows / Linux comes first and logs one line.)
 
 use std::num::NonZeroU32;
 use std::ops::Range;
@@ -42,6 +43,15 @@ use crate::error::{EmbedError, Result};
 
 /// The binding is linked (see [`crate::backend_available`]).
 pub const LINKED: bool = true;
+
+/// Start llama.cpp now (on x86_64 Windows / Linux: load the CPU backend module for this CPU) and list its
+/// devices ([`crate::cpu_backend::devices`]). `borealis --semantic-backend-check` uses it; models load it lazily.
+///
+/// # Errors
+/// [`EmbedError::Backend`] when llama.cpp cannot start (no CPU backend module for this CPU).
+pub fn start_backend() -> Result<Vec<String>> {
+    backend().map(|_| crate::cpu_backend::devices())
+}
 
 /// Default context, batch and micro-batch size in tokens (spike S0.2); longer prompts are cut.
 pub const MAX_TOKENS: u32 = 2048;
@@ -223,11 +233,14 @@ fn verify_sha256(path: &Path, expected: &str) -> Result<()> {
 }
 
 /// The process-wide llama.cpp backend. llama.cpp allows one initialisation per process, and embedders may be
-/// replaced (tier or model change) while another is still alive, so it is created once and never freed.
+/// replaced (tier or model change) while another is still alive, so it is created once and never freed. On x86_64
+/// Windows / Linux the CPU backend module for this CPU is loaded first ([`crate::cpu_backend`]); without one,
+/// llama.cpp is not initialised.
 fn backend() -> Result<&'static LlamaBackend> {
     static BACKEND: OnceLock<std::result::Result<LlamaBackend, String>> = OnceLock::new();
     BACKEND
         .get_or_init(|| {
+            crate::cpu_backend::load()?;
             LlamaBackend::init()
                 .map(|mut backend| {
                     backend.void_logs();
