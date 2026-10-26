@@ -132,15 +132,29 @@ jobs:
           cache-dependency-path: ui/package-lock.json
       - run: npm ci
         working-directory: ui
+      # B-49: the installers carry llama.cpp's shared libraries and one CPU backend module per x86 level. Build once
+      # (the Tauri build reuses it), stage them, and bundle them through the overlay the staging script writes.
+      - name: Build and stage llama.cpp's libraries
+        shell: bash
+        run: |
+          npm --prefix ui run build
+          cargo build --release -p borealis
+          bash build/stage-ggml-libs.sh target/release target/ggml-bundle
       - uses: tauri-apps/tauri-action@564aea5a8075c7a54c167bb0cf5b3255314a7f9d # action-v0.5.22
         with:
           projectPath: .
           # Through node: Windows cannot run the extension-less .bin/tauri shim by path.
           tauriScript: node ui/node_modules/@tauri-apps/cli/tauri.js
-      # The shipped llama.cpp must use only the SSE2 baseline (no AVX code that crashes older CPUs, S3.3).
-      - name: llama.cpp x86_64 baseline (Linux)
+          args: --config target/ggml-bundle/tauri.conf.json
+      # The shipped llama.cpp: core libraries at the SSE2 baseline (no AVX code that crashes older CPUs, S3.3), every
+      # CPU backend module within its x86 level (B-49); the release build and the libraries the installers carry.
+      - name: llama.cpp x86 levels (Linux)
         if: runner.os == 'Linux'
-        run: bash build/check-x86-baseline.sh target/release
+        run: bash build/check-x86-baseline.sh --require-modules target/release target/release/bundle/deb
+      - name: llama.cpp x86 levels (Windows dumpbin)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./build/check-x86-baseline.ps1 target/release -Also target/ggml-bundle -RequireModules
       - name: Collect installers
         shell: bash
         run: |

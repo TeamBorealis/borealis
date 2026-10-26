@@ -140,6 +140,20 @@ App data: `%APPDATA%\app.borealis\`. `borealis.exe --mcp` finds `content\` next 
   hash-verified and CRLF conversion makes it "repaired" on every start.
 - A second double-click on a `.dnd5e` while Borealis runs opens a second instance (no single-instance plugin).
 
+### llama.cpp CPU backend modules (x86_64 Windows / Linux, B-49)
+x86_64 Windows and Linux builds link llama.cpp as shared libraries (llama, ggml, ggml-base, SSE2 baseline) and
+load one CPU backend module per x86 level (`ggml-cpu-x64` = SSE2 up to the AVX-512 / AMX ones) at run time; ggml
+picks the best one the CPU can run. The installers carry them: after `cargo build --release -p borealis`,
+`bash build/stage-ggml-libs.sh target/release target/ggml-bundle` collects them and writes a Tauri overlay, then
+`tauri build --config target/ggml-bundle/tauri.conf.json` bundles them (Windows: the DLLs next to `borealis.exe`,
+modules in `ggml\`; Linux: `/usr/lib/Borealis/ggml/`, found through the binary's run path). A bundle built without
+the overlay does not start on those platforms (the binary imports the llama.cpp libraries); one with the libraries
+but without a module for the CPU starts and searches by keywords. ci.yml, release.yml and acceptance.yml stage.
+`borealis --semantic-backend-check [--model <gguf>]` prints which module loads (CI runs it on the installed
+bundles and on emulated old CPUs). `build/check-x86-baseline.{sh,ps1}` check every library against its level.
+Windows `cargo test`: llama-cpp-sys-2 leaves the DLLs in `target/<profile>/build/llama-cpp-sys-2-*/out/bin`; put that
+folder on `PATH` (CI does) until the fork copies them next to the binaries.
+
 ### CI (.github/workflows/ci.yml)
 Push/PR run Linux + Windows only: `test` (clippy `-D warnings`, `cargo test --workspace`; fmt and UI tests
 on Linux only) then `desktop-bundle` (release; uploads the NSIS `.exe` and the Linux `.deb`/`.AppImage`).

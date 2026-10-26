@@ -323,11 +323,18 @@ jobs:
         # CI example build the app under test: a release build has the WebView2 DevTools off, so its webview
         # opens no remote-debugging port and msedgedriver fails with "DevToolsActivePort file doesn't exist"
         # (run 39317258271). The debug exe is console-subsystem; harmless here.
+        # B-49: llama.cpp's libraries and CPU backend modules are staged from a first build and bundled through
+        # the overlay the staging script writes, as in ci.yml and release.yml.
         run: |
+          npm --prefix ui run build
           if [ "$RUNNER_OS" = Linux ]; then
-            node ui/node_modules/@tauri-apps/cli/tauri.js build --bundles deb
+            cargo build --release -p borealis
+            bash build/stage-ggml-libs.sh target/release target/ggml-bundle
+            node ui/node_modules/@tauri-apps/cli/tauri.js build --bundles deb --config target/ggml-bundle/tauri.conf.json
           else
-            node ui/node_modules/@tauri-apps/cli/tauri.js build --debug --bundles nsis
+            cargo build -p borealis
+            bash build/stage-ggml-libs.sh target/debug target/ggml-bundle
+            node ui/node_modules/@tauri-apps/cli/tauri.js build --debug --bundles nsis --config target/ggml-bundle/tauri.conf.json
           fi
 
       - name: Install the bundle (Linux)

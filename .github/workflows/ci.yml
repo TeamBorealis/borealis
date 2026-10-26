@@ -12,6 +12,10 @@ on:
         description: "Run only the x86_64 embedding matrix (embed-platforms, S3.4), not the build/test/bundle jobs"
         type: boolean
         default: false
+      only_bundle:
+        description: "Run only the Linux / Windows desktop bundle jobs (installed-bundle and old-CPU smokes, B-49)"
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -27,7 +31,7 @@ env:
 jobs:
   test:
     name: build+test (${{ matrix.os }})
-    if: ${{ !inputs.only_embed }}
+    if: ${{ !inputs.only_embed && !inputs.only_bundle }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -92,15 +96,23 @@ jobs:
         if: runner.os == 'Linux'
         run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace --no-fail-fast --no-run
+      # B-49: Windows test binaries import llama.cpp's DLLs, which llama-cpp-sys-2 leaves in its out/bin folder
+      # (it does not copy them next to the binaries on MSVC).
+      - name: llama.cpp DLLs on PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: for d in target/debug/build/llama-cpp-sys-2-*/out/bin; do if [ -d "$d" ]; then cygpath -w "$(cd "$d" && pwd)" >> "$GITHUB_PATH"; fi; done
       - run: cargo test --workspace --no-fail-fast
-      # llama.cpp must use only the SSE2 baseline on x86_64 (no AVX code that crashes older CPUs, S3.3).
-      - name: llama.cpp x86_64 baseline (Linux only)
+      # llama.cpp's core libraries use only the SSE2 baseline on x86_64 (no AVX code that crashes older CPUs, S3.3),
+      # and each CPU backend module stays within its x86 level (B-49).
+      - name: llama.cpp x86 levels (Linux only)
         if: runner.os == 'Linux'
-        run: bash build/check-x86-baseline.sh target/debug
+        run: bash build/check-x86-baseline.sh --require-modules target/debug
 
   audit:
     name: dependency audit
-    if: ${{ !inputs.only_embed }}
+    if: ${{ !inputs.only_embed && !inputs.only_bundle }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -121,6 +133,7 @@ jobs:
   desktop-bundle:
     name: desktop bundle (${{ matrix.os }})
     needs: test
+    if: ${{ !cancelled() && !inputs.only_embed && (inputs.only_bundle || needs.test.result == 'success') }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -159,45 +172,146 @@ jobs:
           cache-dependency-path: ui/package-lock.json
       - run: npm ci
         working-directory: ui
+      # B-49: x86_64 Windows / Linux ship llama.cpp as shared libraries plus one CPU backend module per x86 level.
+      # Build the app once (the Tauri build reuses it), stage the libraries, and bundle them through the Tauri
+      # config overlay the staging script writes (release.yml does the same).
+      - name: Build and stage llama.cpp's libraries (B-49)
+        shell: bash
+        run: |
+          npm --prefix ui run build
+          cargo build --release -p borealis
+          bash build/stage-ggml-libs.sh target/release target/ggml-bundle
       - uses: tauri-apps/tauri-action@v0
         with:
           projectPath: .
           # Through node: Windows cannot run the extension-less .bin/tauri shim by path.
           tauriScript: node ui/node_modules/@tauri-apps/cli/tauri.js
-      # The release build's llama.cpp must use only the SSE2 baseline too (s3.3-1 sec. 7 items 2 and 3; release.yml
-      # checks Linux before collecting the installers).
-      - name: llama.cpp x86_64 baseline (Linux, release build)
+          args: --config target/ggml-bundle/tauri.conf.json
+      - name: Bundle sizes
+        shell: bash
+        run: |
+          mkdir -p bundle-record
+          {
+            find target/release/bundle -maxdepth 2 -type f \( -name '*.exe' -o -name '*.deb' -o -name '*.rpm' -o -name '*.AppImage' \) \
+              -exec ls -l {} +
+            find target/release -maxdepth 1 -type f \( -name borealis -o -name borealis.exe \) -exec ls -l {} +
+            echo "staged llama.cpp library bytes: $(find target/ggml-bundle -type f \( -name '*.dll' -o -name '*.so' \) -exec cat {} + | wc -c)"
+          } | tee bundle-record/sizes.txt
+      # The core libraries stay at SSE2 (X86-1) and every CPU backend module within its level (B-49): the release
+      # build, plus the libraries the installers really carry (deb data / staged folder).
+      - name: llama.cpp x86 levels (Linux, release build and the deb's libraries)
         if: runner.os == 'Linux'
-        run: bash build/check-x86-baseline.sh target/release
-      - name: llama.cpp x86_64 baseline (Windows dumpbin, release build)
+        run: bash build/check-x86-baseline.sh --require-modules target/release target/release/bundle/deb | tee bundle-record/x86-levels.txt
+      - name: llama.cpp x86 levels (Windows dumpbin, release build and the staged libraries)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: ./build/check-x86-baseline.ps1 target/release
-      - name: Linux launch smoke (Xvfb)
-        # Launches the bundled binary headless: GUI stays up, main window maps, --mcp answers on stdio.
+        run: ./build/check-x86-baseline.ps1 target/release -Also target/ggml-bundle -RequireModules | Tee-Object -FilePath bundle-record/x86-levels.txt
+      # B-49: install the bundles and start llama.cpp from the installed app: the CPU backend module must load from
+      # the install folder (AVX2 or better on these runners).
+      - name: Installed bundles load their CPU backend (Linux deb, rpm, AppImage)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y rpm2cpio cpio "./$(ls target/release/bundle/deb/*.deb | head -n 1)"
+          find /usr/lib/Borealis/ggml -maxdepth 1 -type f | sort
+          ldd /usr/bin/borealis | grep -E 'llama|ggml'
+          fast='haswell|alderlake|skylakex|cannonlake|cascadelake|icelake|cooperlake|zen4|sapphirerapids'
+          bash build/ci/semantic-backend-smoke.sh bundle-record deb 'from /usr/bin/\.\./lib/Borealis/ggml/libggml-cpu-' "$fast" /usr/bin/borealis
+          mkdir -p rpm-root && (cd rpm-root && rpm2cpio "$(ls ../target/release/bundle/rpm/*.rpm | head -n 1)" | cpio -idm --quiet)
+          bash build/ci/semantic-backend-smoke.sh bundle-record rpm 'rpm-root/usr/bin/\.\./lib/Borealis/ggml/libggml-cpu-' "$fast" rpm-root/usr/bin/borealis
+          appimage=$(ls target/release/bundle/appimage/*.AppImage | head -n 1)
+          chmod +x "$appimage"
+          APPIMAGE_EXTRACT_AND_RUN=1 bash build/ci/semantic-backend-smoke.sh bundle-record appimage 'usr/bin/\.\./lib/Borealis/ggml/libggml-cpu-' "$fast" "$appimage"
+      - name: Linux launch smoke of the installed app (Xvfb)
+        # Launches the installed binary headless: GUI stays up, main window maps, --mcp answers on stdio.
         if: runner.os == 'Linux'
         run: |
           sudo apt-get install -y xvfb xauth dbus-x11 xdotool imagemagick
-          BIN=$(ls target/*/bundle/deb/*/data/usr/bin/borealis | head -n 1)
-          build/linux/smoke.sh "$BIN" linux-smoke ci
+          build/linux/smoke.sh /usr/bin/borealis linux-smoke ci
+      # From PowerShell: Git Bash would turn the installer's `/S` into a path (MSYS argument conversion).
+      - name: Install the NSIS bundle (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 15
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          Start-Process -FilePath $setup.FullName -ArgumentList '/S' -Wait
+          $app = Join-Path $env:LOCALAPPDATA 'Borealis\borealis.exe'
+          Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Borealis'), (Join-Path $env:LOCALAPPDATA 'Borealis\ggml') | Format-Table Name, Length
+          if (-not (Test-Path $app)) { Write-Output "::error::the installer put no $app"; exit 1 }
+          "INSTALLED_APP=$app" >> $env:GITHUB_ENV
+      - name: Installed app loads its CPU backend (Windows NSIS)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          app=$(cygpath -u "$INSTALLED_APP")
+          fast='haswell|alderlake|skylakex|cannonlake|cascadelake|icelake|cooperlake|zen4|sapphirerapids'
+          bash build/ci/semantic-backend-smoke.sh bundle-record nsis 'Borealis\\ggml\\ggml-cpu-' "$fast" "$app"
+      # The installed app's own speed check with the real model (manual runs; the model comes from the app's pinned
+      # sources and is cached, never uploaded).
+      - uses: actions/cache@v4
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        with:
+          path: ${{ runner.temp }}/borealis-models
+          key: embed-model-${{ hashFiles('crates/borealis-embed/src/models.rs') }}
+      - name: Installed app's speed check with the model (manual)
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' }}
+        shell: bash
+        run: |
+          dir=$(cd "$RUNNER_TEMP" && pwd)/borealis-models
+          model=$(bash build/fetch-embed-model.sh "$dir" | tail -n 1)
+          if [ "$RUNNER_OS" = Windows ]; then
+            app=$(cygpath -u "$INSTALLED_APP"); model=$(cygpath -w "$model"); where='Borealis\\ggml\\ggml-cpu-'
+          else
+            app=/usr/bin/borealis; where='/lib/Borealis/ggml/libggml-cpu-'
+          fi
+          bash build/ci/semantic-backend-smoke.sh bundle-record installed-speed "$where" '[a-z0-9_]+' "$app" ++ --model "$model"
+      # Old CPUs (manual runs): the installed app on an emulated Core 2 (no SSE4.2, no AVX) loads the SSE2 module
+      # (ggml-cpu-x64), keyword search answers, and the GUI starts, with no illegal instruction. Linux: qemu-user
+      # `-cpu Conroe`; Windows: Intel SDE `-mrm` (Merom).
+      - name: Installed app on a pre-AVX CPU (Linux, qemu-user -cpu Conroe)
+        if: ${{ !cancelled() && runner.os == 'Linux' && github.event_name == 'workflow_dispatch' }}
+        timeout-minutes: 60
+        run: |
+          sudo apt-get install -y qemu-user
+          bash build/ci/semantic-backend-smoke.sh bundle-record conroe '/lib/Borealis/ggml/libggml-cpu-' x64 qemu-x86_64 -cpu Conroe /usr/bin/borealis
+          bash build/ci/mcp-search-smoke.sh bundle-record conroe qemu-x86_64 -cpu Conroe /usr/bin/borealis
+          export DISPLAY=:98 WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 LIBGL_ALWAYS_SOFTWARE=1 NO_AT_BRIDGE=1
+          Xvfb :98 -screen 0 1400x900x24 -nolisten tcp > /tmp/xvfb98.log 2>&1 &
+          sleep 1
+          dbus-run-session -- qemu-x86_64 -cpu Conroe /usr/bin/borealis > bundle-record/conroe-gui.log 2>&1 &
+          pid=$!
+          for i in $(seq 1 120); do
+            sleep 1
+            if xdotool search --name '^Borealis$' > /dev/null 2>&1; then break; fi
+            kill -0 "$pid" 2> /dev/null || break
+          done
+          sleep 10
+          alive=no; kill -0 "$pid" 2> /dev/null && alive=yes
+          window=$(xdotool search --name '^Borealis$' 2> /dev/null | head -n 1)
+          echo "gui under qemu -cpu Conroe: alive $alive after $((i + 10)) s; main window ${window:-none}"
+          grep -iE 'uncaught target signal|illegal instruction' bundle-record/conroe-gui.log | head -n 3 || true
+          printf '{"label":"conroe-gui","alive":"%s","window":"%s"}\n' "$alive" "${window:-}" > bundle-record/conroe-gui.json
+          kill "$pid" 2> /dev/null || true
+          if [ "$alive" != yes ] || [ -z "$window" ]; then echo "::error::the GUI did not stay up under qemu -cpu Conroe"; tail -n 20 bundle-record/conroe-gui.log; exit 1; fi
       - uses: petarpetrovt/setup-sde@6d2773bc0ef3005fd52e0ae0bb91782321793aec # v6.0
         if: ${{ !cancelled() && runner.os == 'Windows' && github.event_name == 'workflow_dispatch' }}
-      # s3.3-1 sec. 7 item 3: the release app starts on a pre-AVX CPU (Intel SDE, Merom = Core 2). An AVX
-      # instruction anywhere on the start path (C++ static initialisers of ggml-cpu included) stops it with an
-      # SDE error. Checks the MCP mode (answers on stdio) and that the GUI process stays up.
-      - name: Release app on a pre-AVX CPU (Windows, Intel SDE -mrm)
+      # s3.3-1 sec. 7 item 3: the installed release app starts on a pre-AVX CPU (Intel SDE, Merom = Core 2). An AVX
+      # instruction anywhere on the start path (C++ static initialisers of the ggml libraries included) stops it with an
+      # SDE error. Checks the CPU backend (the SSE2 module), keyword search over MCP, and that the GUI stays up.
+      - name: Installed app on a pre-AVX CPU (Windows, Intel SDE -mrm)
+        if: ${{ !cancelled() && runner.os == 'Windows' && github.event_name == 'workflow_dispatch' }}
+        shell: bash
+        run: |
+          sde=$(find "$(cygpath -u "$SDE_PATH")" -name sde.exe | head -n 1)
+          app=$(cygpath -w "$INSTALLED_APP")
+          bash build/ci/semantic-backend-smoke.sh bundle-record sde 'Borealis\\ggml\\ggml-cpu-' x64 "$sde" -mrm -- "$app"
+          bash build/ci/mcp-search-smoke.sh bundle-record sde "$sde" -mrm -- "$app"
+      - name: Installed app's GUI on a pre-AVX CPU (Windows, Intel SDE -mrm)
         if: ${{ !cancelled() && runner.os == 'Windows' && github.event_name == 'workflow_dispatch' }}
         shell: pwsh
         run: |
           $sde = Get-ChildItem -Path $env:SDE_PATH -Recurse -Filter sde.exe | Select-Object -First 1 -ExpandProperty FullName
-          $app = (Resolve-Path target\release\borealis.exe).Path
-          $m = '"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}'
-          $req = "{`"jsonrpc`":`"2.0`",`"id`":1,`"method`":`"server/discover`",`"params`":{$m}}`n{`"jsonrpc`":`"2.0`",`"id`":2,`"method`":`"tools/list`",`"params`":{$m}}`n"
-          $reply = $req | & $sde -mrm -- $app --mcp 2>sde-mcp.err
-          $text = ($reply | Out-String)
-          Write-Output ("mcp under SDE: exit {0}; reply chars {1}; tool names {2}" -f $LASTEXITCODE, $text.Length, ([regex]::Matches($text, '"name":"[a-z_]+"')).Count)
-          Get-Content sde-mcp.err -ErrorAction SilentlyContinue | Select-String -Pattern 'SDE-ERROR|not valid for specified chip' | Select-Object -First 3
-          if ($text -notmatch '"id":2') { Write-Output '::error::the release app gave no tools/list reply under SDE -mrm'; exit 1 }
+          $app = (Resolve-Path $env:INSTALLED_APP).Path
           $p = Start-Process -FilePath $sde -ArgumentList @('-mrm', '--', "`"$app`"") -PassThru -RedirectStandardOutput sde-gui.out -RedirectStandardError sde-gui.err
           $title = ''
           for ($i = 1; $i -le 180; $i++) {
@@ -209,8 +323,24 @@ jobs:
           $alive = -not $p.HasExited
           Write-Output "gui under SDE: alive $alive after $i s; window title '$title'"
           Get-Content sde-gui.out, sde-gui.err -ErrorAction SilentlyContinue | Select-String -Pattern 'SDE-ERROR|not valid for specified chip' | Select-Object -First 3
+          "{`"label`":`"sde-gui`",`"alive`":`"$alive`",`"window`":`"$title`"}" | Out-File -Encoding ascii bundle-record/sde-gui.json
           Get-Process borealis, msedgewebview2, sde* -ErrorAction SilentlyContinue | Stop-Process -Force
-          if (-not $alive) { Write-Output '::error::the release app exited under SDE -mrm'; exit 1 }
+          if (-not $alive) { Write-Output '::error::the installed app exited under SDE -mrm'; exit 1 }
+      - name: Record
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Desktop bundle on ${{ matrix.os }}"
+            for f in bundle-record/*.json; do
+              if [ -f "$f" ]; then echo "- $(basename "$f"): \`$(head -c 1500 "$f")\`"; fi
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bundle-record-${{ matrix.os }}
+          path: bundle-record/
       - uses: actions/upload-artifact@v4
         if: runner.os == 'Linux' && always()
         with:
@@ -228,7 +358,7 @@ jobs:
 
   macos:
     name: macOS build+test+bundle (manual)
-    if: github.event_name == 'workflow_dispatch' && !inputs.only_embed
+    if: github.event_name == 'workflow_dispatch' && !inputs.only_embed && !inputs.only_bundle
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -262,7 +392,7 @@ jobs:
 
   ios:
     name: iOS build (manual, experimental)
-    if: github.event_name == 'workflow_dispatch' && !inputs.only_embed
+    if: github.event_name == 'workflow_dispatch' && !inputs.only_embed && !inputs.only_bundle
     runs-on: macos-latest
     continue-on-error: true
     steps:
@@ -283,7 +413,7 @@ jobs:
 
   android:
     name: Android build (manual, experimental)
-    if: github.event_name == 'workflow_dispatch' && !inputs.only_embed
+    if: github.event_name == 'workflow_dispatch' && !inputs.only_embed && !inputs.only_bundle
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -322,14 +452,15 @@ jobs:
           node "$GITHUB_WORKSPACE/ui/node_modules/@tauri-apps/cli/tauri.js" android build --debug --apk --target aarch64 --ci
 
   embed-platforms:
-    # S3.4 (s3.3-1 sec. 7 items 3-6): the real embedding model on x86_64 with the SSE2-baseline llama.cpp. Cosine vs
-    # the sentence-transformers fp32 reference (>= 0.99 at 768 and 256 dims), the speed record (query_ms_median,
-    # chunks/s), the app's own speed check against the 40 ms budget, the dumpbin check (Windows), and old-CPU runs:
-    # qemu-user `-cpu Conroe` (Core 2, no AVX) on Linux, Intel SDE `-mrm` (Merom) on Windows. The model comes from
+    # S3.4 (s3.3-1 sec. 7 items 3-6) and B-49: the real embedding model on x86_64 with llama.cpp's run-time CPU
+    # backend (the best ggml-cpu-<level> module for the runner's CPU; each record names the level that loaded).
+    # Cosine vs the sentence-transformers fp32 reference (>= 0.99 at 768 and 256 dims), the speed record
+    # (query_ms_median, chunks/s), the app's own speed check against the 40 ms budget, the level checks, and old-CPU
+    # runs on the SSE2 module: qemu-user `-cpu Conroe` (Core 2, no AVX) on Linux, Intel SDE `-mrm` (Merom) on Windows. The model comes from
     # the app's pinned sources (build/fetch-embed-model.sh), is cached, and is never committed or uploaded; the
     # uploaded record holds labels and numbers only.
     name: embedding model x86_64 (${{ matrix.os }}, manual)
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && !inputs.only_bundle
     runs-on: ${{ matrix.os }}
     timeout-minutes: 300
     strategy:
@@ -395,31 +526,40 @@ jobs:
           test -n "$exe"
           echo "REFERENCE_TEST=$exe" >> "$GITHUB_ENV"
           cargo test -p borealis --release --test semantic_real_model --no-run
-      - name: llama.cpp x86_64 baseline (Linux objdump)
+          # B-49: the test binaries find llama.cpp's shared libraries here.
+          out=$(dirname "$(ls -td target/release/build/llama-cpp-sys-2-*/out/backends | head -n 1)")
+          if [ "$RUNNER_OS" = Linux ]; then echo "LD_LIBRARY_PATH=$out/lib" >> "$GITHUB_ENV"; fi
+          # Windows: llama-cpp-sys-2 leaves the DLLs in out/bin (it does not copy them next to the binaries on MSVC).
+          if [ "$RUNNER_OS" = Windows ]; then cygpath -w "$(cd "$out/bin" && pwd)" >> "$GITHUB_PATH"; fi
+          echo "FAST_LEVELS=haswell|alderlake|skylakex|cannonlake|cascadelake|icelake|cooperlake|zen4|sapphirerapids" >> "$GITHUB_ENV"
+      - name: llama.cpp x86 levels (Linux objdump)
         if: runner.os == 'Linux'
-        run: bash build/check-x86-baseline.sh target/release | tee embed-record/baseline.txt
-      - name: llama.cpp x86_64 baseline (Windows dumpbin)
+        run: bash build/check-x86-baseline.sh --require-modules target/release | tee embed-record/baseline.txt
+      - name: llama.cpp x86 levels (Windows dumpbin)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: ./build/check-x86-baseline.ps1 target/release | Tee-Object -FilePath embed-record/baseline.txt
+        run: ./build/check-x86-baseline.ps1 target/release -RequireModules | Tee-Object -FilePath embed-record/baseline.txt
       - name: Cosine and speed record (S0.2 setup, 4 threads, context 2048)
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
-          "$REFERENCE_TEST" --ignored --nocapture | tee embed-record/native-s02.log
+          "$REFERENCE_TEST" --ignored --nocapture 2>&1 | tee embed-record/native-s02.log
           grep -h '^{"' embed-record/native-s02.log > embed-record/native-s02.json
-      - name: Cosine and speed record (the app's T2 x86 row on this runner, threads = cores / 2, cap 512)
+          bash build/ci/backend-level.sh embed-record/native-s02.log embed-record native-s02 "$FAST_LEVELS"
+      - name: Cosine and speed record (the app's desktop row on this runner, threads = cores / 2, cap 512)
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
           cores=$(nproc 2>/dev/null || echo "$NUMBER_OF_PROCESSORS")
           threads=$(( cores / 2 )); [ "$threads" -ge 1 ] || threads=1; [ "$threads" -le 4 ] || threads=4
-          BOREALIS_EMBED_THREADS=$threads BOREALIS_EMBED_MAX_TOKENS=512 "$REFERENCE_TEST" --ignored --nocapture \
+          BOREALIS_EMBED_THREADS=$threads BOREALIS_EMBED_MAX_TOKENS=512 "$REFERENCE_TEST" --ignored --nocapture 2>&1 \
             | tee embed-record/native-app.log
           grep -h '^{"' embed-record/native-app.log > embed-record/native-app.json
+          bash build/ci/backend-level.sh embed-record/native-app.log embed-record native-app "$FAST_LEVELS"
       - name: The app's speed check (hybrid or keyword-only on this runner)
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
-          cargo test -p borealis --release --test semantic_real_model -- --ignored --nocapture | tee embed-record/app-check.log
+          cargo test -p borealis --release --test semantic_real_model -- --ignored --nocapture 2>&1 | tee embed-record/app-check.log
           grep -h '^{"' embed-record/app-check.log > embed-record/app-check.json
+          bash build/ci/backend-level.sh embed-record/app-check.log embed-record app-check "$FAST_LEVELS"
       # Negative control for both emulators: an AVX2 build of a tiny program must be stopped by them.
       - name: AVX probe program
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
@@ -443,8 +583,9 @@ jobs:
           if qemu-x86_64 -cpu Conroe "$AVX_PROBE"; then echo "::error::qemu -cpu Conroe ran AVX2 code"; exit 1; fi
           echo "negative control: qemu -cpu Conroe stops the AVX2 probe"
           qemu-x86_64 -cpu Haswell "$AVX_PROBE"
-          BOREALIS_EMBED_THREADS=4 qemu-x86_64 -cpu Conroe "$REFERENCE_TEST" --ignored --nocapture | tee embed-record/conroe.log
+          BOREALIS_EMBED_THREADS=4 qemu-x86_64 -cpu Conroe "$REFERENCE_TEST" --ignored --nocapture 2>&1 | tee embed-record/conroe.log
           grep -h '^{"' embed-record/conroe.log > embed-record/conroe.json
+          bash build/ci/backend-level.sh embed-record/conroe.log embed-record conroe x64
       - uses: petarpetrovt/setup-sde@6d2773bc0ef3005fd52e0ae0bb91782321793aec # v6.0
         if: ${{ runner.os == 'Windows' && !cancelled() }}
       - name: Old CPU (Windows, Intel SDE -mrm)
@@ -458,8 +599,9 @@ jobs:
           fi
           grep -m 1 -E 'SDE-ERROR|not valid' embed-record/sde-probe.log || true
           echo "negative control: SDE -mrm stops the AVX2 probe"
-          BOREALIS_EMBED_THREADS=4 "$sde" -mrm -- "$(cygpath -w "$REFERENCE_TEST")" --ignored --nocapture | tee embed-record/sde-mrm.log
+          BOREALIS_EMBED_THREADS=4 "$sde" -mrm -- "$(cygpath -w "$REFERENCE_TEST")" --ignored --nocapture 2>&1 | tee embed-record/sde-mrm.log
           grep -h '^{"' embed-record/sde-mrm.log > embed-record/sde-mrm.json
+          bash build/ci/backend-level.sh embed-record/sde-mrm.log embed-record sde-mrm x64
       - name: Record
         if: always()
         run: |

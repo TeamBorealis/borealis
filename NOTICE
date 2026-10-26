@@ -60,4 +60,12 @@ authors of Aurora Builder.
    (https://creativecommons.org/publicdomain/zero/1.0/legalcode). Unmodified. Embedded in sheet PDFs as the
    output intent. See crates/borealis-sheet/icc/README.txt.
 
+8. llama.cpp and ggml (semantic search runtime)
+
+   llama.cpp and ggml, Copyright (c) 2023-2026 The ggml authors, MIT License
+   (https://github.com/ggml-org/llama.cpp), built through the llama-cpp-sys-2 crate. Compiled into the app on
+   macOS, iOS and Android; the Windows and Linux installers carry them as separate libraries (llama, ggml,
+   ggml-base and one ggml-cpu module per x86 processor level, in the ggml folder next to the app) with the
+   licence text as ggml/LICENSE-llama.cpp.txt. Unmodified.
+
 Dependencies installed through Cargo and npm are covered by their own licences; see their package metadata.
