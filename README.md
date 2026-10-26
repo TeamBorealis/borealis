@@ -27,7 +27,7 @@
 
 <p><a href="https://borealisbuilder.com"><b>Website and downloads</b></a> &nbsp;·&nbsp; <a href="https://github.com/alon-mini/borealis/releases">GitHub Releases</a> &nbsp;·&nbsp; <a href="#for-developers">Build from source</a></p>
 
-<sub>Version 1.0.0 &nbsp;·&nbsp; 2014 and 2024 rules &nbsp;·&nbsp; SRD 5.1 and SRD 5.2.1 included</sub>
+<sub>Version 1.1.0 &nbsp;·&nbsp; 2014 and 2024 rules &nbsp;·&nbsp; SRD 5.1 and SRD 5.2.1 included</sub>
 
 </div>
 
