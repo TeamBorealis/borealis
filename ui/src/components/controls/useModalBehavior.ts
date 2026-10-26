@@ -11,7 +11,8 @@ export function useModalBehavior(onClose: () => void) {
     const prev = document.activeElement as HTMLElement | null;
     const node = ref.current;
     node?.querySelector<HTMLElement>("[data-autofocus]")?.focus();
-    if (!node?.contains(document.activeElement)) node?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+    // A screen-reader-only Close (`data-no-autofocus`) is reachable but never takes the opening focus.
+    if (node && !node.contains(document.activeElement)) [...node.querySelectorAll<HTMLElement>(FOCUSABLE)].find((el) => !el.hasAttribute("data-no-autofocus"))?.focus();
     return () => prev?.focus?.();
   }, []);
   const onKeyDown = (e: KeyboardEvent) => {

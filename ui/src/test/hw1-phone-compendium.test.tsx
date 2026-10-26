@@ -1,11 +1,13 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { installAndroidBack, type BackRegister } from "../lib/androidBack";
-import { setPhoneForTests } from "../lib/phone";
+import { setPhoneForTests, setPhoneOsForTests } from "../lib/phone";
 import { renderApp } from "./utils";
 
 // HW1 A2/A3: on a phone the Compendium is a full-height sheet with no close button. Android closes it with Back;
-// iOS has no Back button, so it must close by swiping the sheet down (B-48 O4).
+// iOS has no Back button, so it must close by swiping the sheet down (B-48 O4). VoiceOver cannot swipe the grabber
+// (it is aria-hidden) and has no Escape key, so iOS and Android builds also give every flyout a Close button that only
+// screen readers see.
 
 /** jsdom has no matchMedia: answer the narrow-shell query as a phone screen would. */
 function narrowScreen() {
@@ -71,5 +73,37 @@ describe("closing the phone compendium (HW1 A2)", () => {
     } finally {
       off();
     }
+  });
+});
+
+describe("screen-reader Close on phone and tablet flyouts", () => {
+  let restore: () => void = () => undefined;
+  beforeEach(() => { restore = narrowScreen(); });
+  afterEach(() => { restore(); setPhoneForTests(false); setPhoneOsForTests(null); });
+
+  it("phone: the Compendium has a visually hidden Close button that closes it", async () => {
+    setPhoneForTests(true);
+    const sheet = await openCompendium();
+    const close = within(sheet).getByRole("button", { name: "Close" });
+    expect(close.className).toContain("sr-only");
+    fireEvent.click(close);
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Compendium" })).toBeNull());
+  });
+
+  it("phone: opening the sheet does not put focus on the hidden Close", async () => {
+    setPhoneForTests(true);
+    const sheet = await openCompendium();
+    expect(within(sheet).getByRole("button", { name: "Close" })).not.toBe(document.activeElement);
+  });
+
+  it("iOS tablet outside the narrow shell still gets the Close button", async () => {
+    setPhoneOsForTests("ios");
+    const sheet = await openCompendium();
+    expect(within(sheet).getByRole("button", { name: "Close" })).toBeTruthy();
+  });
+
+  it("desktop flyouts stay as they are: no Close button (U7)", async () => {
+    const sheet = await openCompendium();
+    expect(within(sheet).queryByRole("button", { name: "Close" })).toBeNull();
   });
 });
