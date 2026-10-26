@@ -2,6 +2,7 @@ import { type ReactNode, useId } from "react";
 import { OverlayPortal } from "./OverlayHost";
 import { useModalBehavior } from "./useModalBehavior";
 import { useSheetDrag } from "./useSheetDrag";
+import { useScrimClose } from "./useScrimClose";
 import { phoneOs, usePhone } from "../../lib/phone";
 
 /** Spec widths (px): default 400, wide 460, coinage 500, app-settings 300, portraits 435. */
@@ -19,10 +20,11 @@ export function Flyout({ title, onClose, children, footer, width = "default", po
   const titleId = useId();
   const phone = usePhone();
   const drag = useSheetDrag(ref, onClose, phone);
+  const scrim = useScrimClose(onClose);
   const srClose = phone || phoneOs() !== null;
   return (
     <OverlayPortal>
-      <div className={`overlay flyout-overlay ${position}`} data-sheet={sheet} onMouseDown={(e) => e.target === e.currentTarget && onClose()} onKeyDown={onKeyDown}>
+      <div className={`overlay flyout-overlay ${position}`} data-sheet={sheet} {...scrim} onKeyDown={onKeyDown}>
         <div className="flyout" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={ref} style={{ ["--flyout-w" as string]: `${FLYOUT_WIDTHS[width]}px` }} {...drag}>
           {phone && <div className="sheet-grabber" aria-hidden="true" />}
           <div className="flyout-head">

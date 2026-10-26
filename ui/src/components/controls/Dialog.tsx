@@ -4,6 +4,7 @@ import { Button } from "../Button";
 import { OverlayPortal } from "./OverlayHost";
 import { useModalBehavior } from "./useModalBehavior";
 import { useSheetDrag } from "./useSheetDrag";
+import { useScrimClose } from "./useScrimClose";
 import { usePhone } from "../../lib/phone";
 
 /** Classic builder dialog window: accent title bar (13px SemiBold, left aligned), flat body, footer button row. Bottom sheet on phones. */
@@ -14,9 +15,10 @@ export function Dialog({ title, onClose, children, footer, wide, full, className
   const titleId = useId();
   const phone = usePhone();
   const drag = useSheetDrag(ref, onClose, phone);
+  const scrim = useScrimClose(onClose);
   return (
     <OverlayPortal>
-      <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()} onKeyDown={onKeyDown}>
+      <div className="overlay" {...scrim} onKeyDown={onKeyDown}>
         <div className={`dialog ${wide ? "wide" : ""} ${full ? "full" : ""} ${className ?? ""}`.trim()} role="dialog" aria-modal="true" aria-labelledby={titleId} ref={ref} {...drag}>
           {phone && <div className="sheet-grabber" aria-hidden="true" />}
           <div className="dialog-head">
