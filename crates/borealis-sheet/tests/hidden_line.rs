@@ -31,6 +31,7 @@ fn hidden_lines_are_left_out_of_the_gear_list() {
             attunement_restriction: None,
             attunement_barred: false,
             proficient_by_item: false,
+            equippable: false,
             weight: 0.0,
             cost_gp: 0.0,
             storage: None,

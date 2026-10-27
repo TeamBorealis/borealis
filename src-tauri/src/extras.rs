@@ -447,6 +447,7 @@ pub fn inventory(input: &MapInput<'_>, snap: &Engine) -> InventoryState {
                 is_pack: !contents.is_empty(),
                 pack_contents: contents,
                 is_weapon,
+                equippable: i.equippable,
                 weapon: is_weapon.then(|| weapon_info(el, snap)),
                 armor: el.and_then(crate::gear_facts::armor_facts),
                 rolled_charges: rolled_charges(snap, &i.uid),

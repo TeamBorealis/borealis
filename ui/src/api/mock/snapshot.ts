@@ -6,6 +6,7 @@ import { deriveSpellcasting } from "./derive-spells";
 import { deriveLevel, deriveStats, profBonus } from "./derive-stats";
 import { buildPlay } from "./play";
 import { type SlotDef, classIdOf, reprocess } from "./slots";
+import { isEquippable } from "./ops-equipment";
 import { toWireSlotId } from "./slot-ids";
 import { type MockCharacter, type RuleSettings, signed, totalLevel } from "./state";
 
@@ -79,7 +80,7 @@ export function buildSnapshot(input: MockCharacter, rules: RuleSettings): { char
   const slots = defs.map((d) => toSlot(d, c));
   const stats = deriveStats(c, abilities);
   const mods = abilities.modifier;
-  const items = c.items.map((i) => ({ ...i, isWeapon: !!getItem(i.itemId)?.weapon }));
+  const items = c.items.map((i) => ({ ...i, isWeapon: !!getItem(i.itemId)?.weapon, equippable: i.equippable ?? isEquippable(getItem(i.itemId)) }));
   const inv = deriveInventory({ ...c, items }, abilities);
   const snapshot: CharacterSnapshot = {
     id: c.id, name: c.name, ruleset: c.ruleset, portrait: c.portrait, group: c.group, favorite: c.favorite, dirty: c.dirty, displayPath: c.path ?? "",

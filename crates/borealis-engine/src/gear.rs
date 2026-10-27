@@ -91,6 +91,7 @@ pub fn inventory_snapshot(
             attunement_restriction: restriction.map(|r| r.text).filter(|t| !t.is_empty()),
             attunement_barred: barred,
             proficient_by_item: crate::item_prof::self_proficient(graph, &it.uid, e, adorner),
+            equippable: crate::item_base::effective_facts(uni, e).equippable,
             weight: item_weight(uni, it),
             cost_gp: inventory::item_cost_gp(e),
             storage: it.storage.clone(),

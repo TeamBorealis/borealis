@@ -6048,6 +6048,12 @@
       "k": "prim"
      }
     },
+    "equippable": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "equipped": {
      "opt": false,
      "t": {

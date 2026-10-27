@@ -498,6 +498,8 @@ pub struct InventoryItem {
     pub is_pack: bool,
     pub pack_contents: Vec<String>,
     pub is_weapon: bool,
+    /// The engine can equip it; an item that cannot is used, and attuned, while carried.
+    pub equippable: bool,
     pub weapon: Option<WeaponInfo>,
     /// Armor columns.
     pub armor: Option<crate::gear_facts::ArmorFacts>,
@@ -795,6 +797,7 @@ mod gear_dto_tests {
             is_pack: false,
             pack_contents: Vec::new(),
             is_weapon: false,
+            equippable: false,
             weapon: None,
             armor: None,
             rolled_charges: Vec::new(),

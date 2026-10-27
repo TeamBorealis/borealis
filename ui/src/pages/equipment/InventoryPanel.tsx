@@ -10,7 +10,6 @@ import { attuneBlocked, attunementWarnings, restrictionText } from "./attunement
 import { chargesLabel } from "./RolledCharges";
 
 const SLOT_LABEL: Record<EquipSlot, string> = { worn: "Worn", primary: "Primary Hand", secondary: "Secondary Hand", "two-handed": "Two-Handed" };
-const WEARABLE = /armor|wondrous|ring|rod|staff|wand|focus|magic/i;
 const slotLabel = (i: InventoryItem): string => (i.equipped === "worn" && /^armor$/i.test(i.category) ? "Armor" : i.equipped ? SLOT_LABEL[i.equipped] : "");
 
 function Act({ icon, label, disabled, onClick }: { icon: GlyphName; label: string; disabled?: boolean; onClick: () => void }) {
@@ -27,10 +26,11 @@ export function InventoryPanel({ onSelectElement }: { onSelectElement: (itemId: 
   const [details, setDetails] = useState(false);
   if (!snapshot) return null;
   const inv = snapshot.inventory;
-  const items = inv.items.filter((i) => i.listInInventory);
+  // Every line, as in the classic builder: "include in inventory" only drops a line from the sheet, and a hidden
+  // proxy ("Additional Feat, Alert") must be here to be equipped.
+  const items = inv.items;
   const sel: InventoryItem | undefined = inv.items.find((i) => i.id === selId);
   const selIdx = sel ? inv.items.indexOf(sel) : -1;
-  const canWear = (i: InventoryItem) => i.isWeapon || WEARABLE.test(i.category);
   const toggleEquip = (i: InventoryItem) => (i.equipped ? void mutate((api, id) => api.unequipItem({ characterId: id, inventoryId: i.id })) : void equip(i, "auto"));
   const pick = (i: InventoryItem) => { setSelId(i.id); onSelectElement(i.itemId); };
   const showDeleteAll = !sel || sel.quantity > 1;
@@ -52,7 +52,7 @@ export function InventoryPanel({ onSelectElement }: { onSelectElement: (itemId: 
               {items.map((i) => (
                 <tr key={i.id} className={`${i.id === selId ? "sel" : ""} ${i.equipped ? "on" : ""}`} onMouseDown={() => pick(i)} onDoubleClick={() => { pick(i); setDetails(true); }}>
                   <td className="eq-ic">
-                    {(canWear(i) || i.equipped) && (
+                    {(i.equippable || i.equipped) && (
                       <button type="button" className={`eq-eqbtn ${i.equipped ? "on" : ""}`} aria-pressed={!!i.equipped} aria-label={`${i.equipped ? "Unequip" : "Equip"} ${i.displayName}`} onClick={() => toggleEquip(i)}><Glyph name="check" /></button>
                     )}
                   </td>

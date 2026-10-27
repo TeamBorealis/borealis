@@ -21,7 +21,7 @@ async function withItem(prefix: string, itemId: string) {
 const item = (over: Partial<InventoryItem>): InventoryItem => ({
   id: "inv-1", itemId: "x", name: "Moonblade", displayName: "Moonblade", category: "Magic Items", quantity: 1, weight: 3, valueCp: 0,
   equipped: null, attuned: false, requiresAttunement: true, storage: 0, notes: "", listInInventory: true, isPack: false, packContents: [],
-  isWeapon: false, weapon: null, armor: null, ...over,
+  isWeapon: false, equippable: true, weapon: null, armor: null, ...over,
 });
 const attack = (over: Partial<Attack>): Attack => ({
   id: "a", name: "Longbow", range: "150/600", attackBonus: "+6", damage: "1d8+4 piercing", description: "", ability: "dex", auto: true, showInCombat: true, card: false, ...over,

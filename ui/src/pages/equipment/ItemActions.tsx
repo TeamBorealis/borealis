@@ -54,7 +54,6 @@ export function ItemActionsDialog({ item, index, count, onClose }: { item: Inven
       </Modal>
     );
   }
-  const canWear = item.isWeapon || item.category === "Armor" || item.category === "Magic Items";
   const restriction = restrictionText(item);
   const firedBy = weaponsFiring(item, snapshot.attacks);
   return (
@@ -70,7 +69,7 @@ export function ItemActionsDialog({ item, index, count, onClose }: { item: Inven
         {firedBy.length > 0 && <p className="muted">Fired from {firedBy.join(", ")}: its bonus is added to the attack and damage.</p>}
         {item.rolledCharges?.map((r) => <RolledChargesEditor key={r.resourceId} item={item} charge={r} />)}
         <div className="row">
-          {canWear && !item.equipped && <Button variant="primary" onClick={() => void equip("auto")}>Equip</Button>}
+          {item.equippable && !item.equipped && <Button variant="primary" onClick={() => void equip("auto")}>Equip</Button>}
           {item.isWeapon && !item.equipped && <><Button onClick={() => void equip("primary")}>Primary hand</Button><Button onClick={() => void equip("secondary")}>Off hand</Button><Button onClick={() => void equip("versatile")}>Two-handed</Button></>}
           {item.equipped && <Button onClick={() => run((api, id) => api.unequipItem({ characterId: id, inventoryId: item.id }))}>Unequip</Button>}
           {item.requiresAttunement && <Button disabled={attuneBlocked(item)} onClick={() => run((api, id) => api.setAttuned({ characterId: id, inventoryId: item.id, attuned: !item.attuned }))}>{item.attuned ? "End attunement" : "Attune"}</Button>}

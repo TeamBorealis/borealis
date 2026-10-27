@@ -425,6 +425,10 @@ pub struct ItemSnapshot {
     /// [`crate::item_prof`]).
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub proficient_by_item: bool,
+    /// The item can be equipped ([`crate::inventory::ItemFacts::equippable`]); one that cannot is
+    /// used, and attuned, while carried.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub equippable: bool,
     /// Weight of the line in pounds.
     pub weight: f64,
     /// Price of one piece in gold pieces.

@@ -14,6 +14,10 @@ const weaponInfo = (itemId: string): InventoryItem["weapon"] => {
   return { damage: dice, damageType: rest.join(" "), properties: w.properties, ability: finesse ? "dex" : "str", mastery: w.mastery ?? null, range: w.range ?? null };
 };
 
+/** The host equips items with an equip slot and magic items; the mock reads that off the category. */
+export const isEquippable = (def: ReturnType<typeof getItem>): boolean =>
+  !!def && (!!def.weapon || /\b(armor|shields?|wondrous|rings?|rods?|staffs?|wands?|focus|magic)\b/i.test(def.category));
+
 let counter = 0;
 const nextId = (): string => `inv-${Date.now().toString(36)}-${++counter}`;
 
@@ -24,7 +28,7 @@ export function makeItem(itemId: string, quantity: number): InventoryItem {
   return {
     id: nextId(), itemId, name: el.name, displayName: el.name, category: def.category, quantity, weight: def.weight, valueCp: def.costCp,
     equipped: null, attuned: false, requiresAttunement: !!def.attune, storage: 0, notes: "", listInInventory: true, showCard: true,
-    isPack: !!def.pack, packContents: def.pack ?? [], isWeapon: !!def.weapon, weapon: weaponInfo(itemId), armor: armorFacts(def) ?? null,
+    isPack: !!def.pack, packContents: def.pack ?? [], isWeapon: !!def.weapon, equippable: isEquippable(def), weapon: weaponInfo(itemId), armor: armorFacts(def) ?? null,
   };
 }
 
@@ -39,7 +43,7 @@ function makeProxyItem(p: ProxyLine, quantity: number): InventoryItem {
   return {
     id: nextId(), itemId: p.id, name: p.name, displayName: p.name, category: p.category, quantity, weight: 0, valueCp: 0,
     equipped: null, attuned: false, requiresAttunement: false, storage: 0, notes: "", listInInventory: false, showCard: false,
-    isPack: false, packContents: [], isWeapon: false, weapon: null, armor: null,
+    isPack: false, packContents: [], isWeapon: false, equippable: true, weapon: null, armor: null,
   };
 }
 

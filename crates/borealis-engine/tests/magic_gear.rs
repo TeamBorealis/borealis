@@ -101,3 +101,32 @@ fn a_magic_shield_adds_its_enhancement_without_body_armor() {
     );
     assert_eq!(e.derive(&magic).armor_class, plain + 1);
 }
+
+/// User report (1.0.0): Attune said "equip the item first" on an Animated Shield whose details offered no Equip.
+/// The snapshot now tells the UI which lines can be equipped.
+#[test]
+fn the_snapshot_says_which_lines_can_be_equipped() {
+    let e = engine();
+    let mut s = fighter(&e);
+    for item in [
+        "ID_WOTC_DMG_MAGIC_ITEM_ANIMATED_SHIELD",
+        "ID_WOTC_PHB_ITEM_ROPE_HEMPEN_50FEET",
+    ] {
+        s = commands::add_item(&e, &s, item, 1).unwrap().state;
+    }
+    let snap = e.derive(&s);
+    let line = |id: &str| {
+        snap.inventory
+            .items
+            .iter()
+            .find(|l| l.item.id == id)
+            .unwrap()
+    };
+    assert!(line("ID_WOTC_DMG_MAGIC_ITEM_ANIMATED_SHIELD").equippable);
+    assert!(!line("ID_WOTC_PHB_ITEM_ROPE_HEMPEN_50FEET").equippable);
+    let uid = line("ID_WOTC_DMG_MAGIC_ITEM_ANIMATED_SHIELD").uid.clone();
+    let worn = commands::equip(&e, &s, &uid, None).expect("equips").state;
+    let snap = e.derive(&worn);
+    assert_eq!(snap.inventory.attuned, 1, "equipping attunes it");
+    assert_eq!(snap.armor_class, 12, "10 + Dex 0 + shield 2");
+}

@@ -306,6 +306,8 @@ export interface InventoryItem {
   isPack: boolean;
   packContents: string[];
   isWeapon: boolean;
+  /** The engine can equip it (Equip is offered); an item that cannot is used, and attuned, while carried. */
+  equippable: boolean;
   /** Weapon facts for the 'add to attacks' flow; null for non-weapons. */
   weapon: {
     damage: string;

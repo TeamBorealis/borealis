@@ -80,6 +80,7 @@ fn grow(
             attunement_restriction: None,
             attunement_barred: false,
             proficient_by_item: false,
+            equippable: false,
             weight: 1.0,
             cost_gp: 1.0,
             storage: None,
