@@ -155,6 +155,20 @@ export function buildRows(options: readonly SlotOption[], chosen: VersionLike | 
   return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/**
+ * One row per group key over a flat list (B-55 W3: the add-item list, whose host answers one entry per element), in the
+ * order each key first appears.
+ */
+export function groupVersions<V extends VersionLike & Pick<SlotOptionBase, "type">>(list: readonly V[]): VersionRow<V>[] {
+  const map = new Map<string, VersionRow<V>>();
+  for (const v of list) {
+    const key = groupKey(v);
+    const prev = map.get(key);
+    map.set(key, prev ? { ...prev, all: [...prev.all, v] } : { key, name: v.name, all: [v] });
+  }
+  return [...map.values()];
+}
+
 export interface ShownRow<V extends VersionLike = VersionLike> extends VersionRow<V> {
   /** The versions that pass the filters (the chosen one always), the menu's entries. */
   versions: V[];
@@ -166,8 +180,8 @@ export interface ShownRow<V extends VersionLike = VersionLike> extends VersionRo
  * Applies the filters to the rows (sec. 1.5: a row stays if one version passes; the chosen row always stays, with its
  * chosen version) and picks each row's shown version among what is left (sec. 1.2).
  */
-export function visibleRows(rows: readonly VersionRow[], f: PickerFilter, charEd: Ruleset, chosenId: string | null, menuPicks: Readonly<Record<string, string>>): ShownRow[] {
-  const out: ShownRow[] = [];
+export function visibleRows<V extends VersionLike>(rows: readonly VersionRow<V>[], f: PickerFilter, charEd: Ruleset, chosenId: string | null, menuPicks: Readonly<Record<string, string>>): ShownRow<V>[] {
+  const out: ShownRow<V>[] = [];
   for (const r of rows) {
     const chosen = r.all.find((v) => v.id === chosenId) ?? null;
     const passing = nameMatches(r.name, f.text) ? r.all.filter((v) => versionPasses(v, f)) : [];
@@ -181,7 +195,7 @@ export function visibleRows(rows: readonly VersionRow[], f: PickerFilter, charEd
 export interface SourceEntry { id: string; name: string; edition: EditionKey }
 
 /** The sources that occur in the rows, each with its edition ("any" when its versions span both), by name. */
-export function sourcesOf(rows: readonly VersionRow[]): SourceEntry[] {
+export function sourcesOf(rows: readonly VersionRow<VersionLike>[]): SourceEntry[] {
   const map = new Map<string, SourceEntry>();
   for (const v of rows.flatMap((r) => r.all)) {
     if (!v.source) continue;

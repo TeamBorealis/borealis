@@ -15,8 +15,11 @@ export function useApplySourceRestrictions() {
     if (!snapshot) return false;
     const p = await api.previewSourceRestrictions({ characterId: snapshot.id, enabledSources: next });
     if (p.affected.length) {
-      const body = createElement("ul", null, p.affected.map((a) => createElement("li", { key: a.slotId }, a.element)));
-      const r = await confirm({ title: "Selections will be removed", body, confirmLabel: "Apply anyway", danger: true });
+      // The engine never removes a stored pick: these stay chosen, only new choices are limited (manage.rs).
+      const body = createElement("div", null,
+        createElement("p", null, "These choices come from sources you are switching off. They stay on the character; only new choices are limited to the sources you keep."),
+        createElement("ul", null, p.affected.map((a) => createElement("li", { key: a.slotId }, a.element))));
+      const r = await confirm({ title: "Picks from these sources stay", body, confirmLabel: "Apply" });
       if (r !== "confirm") return false;
     }
     await mutate((a, id) => a.setSourceRestrictions({ characterId: id, enabledSources: next }));

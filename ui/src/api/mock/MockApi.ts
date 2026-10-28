@@ -20,7 +20,7 @@ import { MockBundles } from "./bundles";
 import { MockDeviceLink } from "./link";
 import { MockSemantic, type MockSemanticOptions } from "./semantic";
 import { validateHomebrew } from "./ai";
-import { ContentService } from "./content-service";
+import { ContentService, OPEN_SCOPE, type ItemScope } from "./content-service";
 import { getClass, getElement } from "./content";
 import { DEFAULT_SETTINGS } from "./default-settings";
 import { apiError } from "./errors";
@@ -373,10 +373,11 @@ export class MockApi implements Api {
   async previewSourceRestrictions(a: { characterId: string; enabledSources: string[] | null }): Promise<RestrictionPreview> {
     await this.tick();
     const c = this.get(a.characterId);
-    const { character } = buildSnapshot({ ...c, sourceRestrictions: a.enabledSources }, this.rules);
-    const lost = Object.entries(c.choices).filter(([k, v]) => character.choices[k] !== v);
+    // As the host: the current picks from a source the restriction switches off (they stay chosen).
+    const enabled = a.enabledSources;
+    const off = (id: string) => { const e = getElement(id); return !!enabled && !!e && !enabled.includes(e.source); };
     const titles = new Map(buildSlotDefs(c).map((d) => [d.id, d.title]));
-    return { affected: lost.map(([key, id]) => ({ slotId: toWireSlotId(key), slotTitle: titles.get(key) ?? key, element: getElement(id)?.name ?? id })) };
+    return { affected: Object.entries(c.choices).filter(([, id]) => off(id)).map(([key, id]) => ({ slotId: toWireSlotId(key), slotTitle: titles.get(key) ?? key, element: getElement(id)?.name ?? id })) };
   }
 
   async setSourceRestrictions(a: { characterId: string; enabledSources: string[] | null }) {
@@ -440,11 +441,19 @@ export class MockApi implements Api {
 
   /* ---------- equipment ---------- */
 
-  async searchItems(q: Parameters<Api["searchItems"]>[0]) { await this.tick(); return this.content.items(q); }
+  async searchItems(q: Parameters<Api["searchItems"]>[0]) {
+    await this.tick();
+    return this.content.items(q, q.characterId ? this.itemScope(q.characterId) : OPEN_SCOPE);
+  }
   async listItemCategories({ characterId }: { characterId: string }) {
     await this.tick();
     const s = this.snap(this.get(characterId));
-    return this.content.itemCategories(s.spellcasting.classes.map((c) => c.className), s.sourceRestrictions);
+    return this.content.itemCategories(s.spellcasting.classes.map((c) => c.className), this.itemScope(characterId));
+  }
+  /** The item scope of a character, as the host's (B-55 W3): edition, strict mode, enabled sources. */
+  private itemScope(characterId: string): ItemScope {
+    const c = this.get(characterId);
+    return { ruleset: c.ruleset, crossEdition: c.allowCrossEdition ?? c.ruleset === "dnd2024", enabled: c.sourceRestrictions };
   }
   /** The sample items have no generic magic weapon or armor: nothing needs a base. */
   async listBaseItems(_: { characterId: string; itemId: string }): Promise<ItemSummary[]> { await this.tick(); return []; }

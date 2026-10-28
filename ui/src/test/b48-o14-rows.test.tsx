@@ -80,7 +80,8 @@ describe("equipment catalogue rows (O14)", () => {
     const rows = await waitFor(() => { const r = [...table.querySelectorAll<HTMLElement>("tbody tr")].filter((r) => !r.classList.contains("ap-empty-row")); expect(r.length).toBeGreaterThan(0); return r; });
     for (const row of rows) {
       const detail = detailOf(row) ?? "";
-      for (const td of [...row.querySelectorAll("td")].slice(1)) if (cellText(td)) expect(detail).toContain(cellText(td));
+      // The B-55 version cell (count + arrow) is a control at the row end, not a data column.
+      for (const td of [...row.querySelectorAll("td")].slice(1).filter((c) => !c.classList.contains("eq-ver"))) if (cellText(td)) expect(detail).toContain(cellText(td));
     }
   });
 

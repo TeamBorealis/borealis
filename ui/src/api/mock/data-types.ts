@@ -42,6 +42,12 @@ export interface ChargeDice { dice: string; count: number; sides: number; bonus:
 
 export interface ItemDef {
   id: string;
+  /** Display name when it is not the title-cased id (B-55 W3: same-name items of several sources). */
+  name?: string;
+  /** Source id (default: the 2014 sample reference). */
+  source?: string;
+  /** Editions the item was written for (default: both). */
+  rulesets?: Ruleset[];
   category: string;
   costCp: number;
   weight: number;

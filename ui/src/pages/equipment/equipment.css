@@ -50,6 +50,11 @@
 .eq-filter button { background: transparent; border: 0; width: 22px; height: 22px; min-height: 0; padding: 0; color: #8a8a8a; cursor: pointer; display: grid; place-content: center; }
 @media (hover: hover) and (pointer: fine) { .eq-filter button:hover { color: #fff; } }
 .eq-source { flex: none; width: 149px; margin-left: 11px; }
+/* B-55 W3: Edition All/2024/2014 and the Source checklist replace the single-source combo box; same height as the bar. */
+.eq-edition { flex: none; margin-left: 11px; display: inline-flex; }
+.eq-edition .pick-seg-btn { height: 24px; line-height: 22px; }
+.eq-source .pick-fsrc { width: 100%; height: 24px; justify-content: space-between; color: #f9f9f9; }
+.eq-grid .eq-ver { width: 30px; min-width: 30px; padding: 0 4px 0 0; text-align: right; }
 .eq-tools .eq-source select, .eq-tools .eq-source .aur-combo select { color: #f9f9f9; height: 24px; min-height: 24px; }
 .eq-tools .eq-coins { height: 24px; min-height: 24px; }
 .eq-coins { flex: none; margin-left: 11px; width: 155px; height: 24px; white-space: nowrap; min-height: 24px; padding: 0 6px; background: #242425; border: 0; border-radius: 2px; font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--gray-6); }
@@ -93,7 +98,7 @@
   .eq-items { min-height: 260px; }
   .eq-inv { min-height: 230px; }
   .eq-tools { flex-wrap: wrap; height: auto; gap: 6px; }
-  .eq-cmds, .eq-source { width: auto; margin-left: 0; }
+  .eq-cmds, .eq-source, .eq-edition { width: auto; margin-left: 0; }
   .eq-filter-tile, .eq-coins { margin-left: 0; }
 }
 .eq-treasure { display: flex; flex-direction: column; gap: 14px; max-width: 70rem; }

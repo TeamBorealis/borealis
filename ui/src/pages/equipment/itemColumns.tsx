@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import type { ArmorFacts, WeaponFacts } from "../../api/contract";
+import type { ArmorFacts, Ruleset, WeaponFacts } from "../../api/contract";
+import { editionMarks, EditionSuffix } from "../../components";
 
 export interface ItemRow {
   id: string;
@@ -10,6 +11,8 @@ export interface ItemRow {
   sourceName?: string;
   armor?: ArmorFacts | null;
   weapon?: WeaponFacts | null;
+  /** B-55 W3: set only on a version written for the other edition than the character's. */
+  edition?: Ruleset;
 }
 
 export type Align = "l" | "c" | "r";
@@ -37,7 +40,10 @@ export const armorClassText = (a: ArmorFacts): string => a.acText.replace(/\bDex
 
 const price = (align: Align): Column => ({ key: "price", label: "Price", align, cell: (r) => priceText(r.costCp) });
 const weight = (align: Align): Column => ({ key: "weight", label: "Weight", align, cell: (r) => weightText(r.weight) });
-const source = (align: Align): Column => ({ key: "source", label: "Source", align, cell: (r) => r.sourceName ?? "" });
+/** The source name, with " (2014)" / " (2024)" after it on other-edition rows (B-55 sec. 1.3). */
+const sourceCell = (r: ItemRow): ReactNode =>
+  r.sourceName ? <span className="eq-src">{r.sourceName}<EditionSuffix marks={editionMarks(r)} sourceName={r.sourceName} /></span> : "";
+const source = (align: Align): Column => ({ key: "source", label: "Source", align, cell: sourceCell });
 
 export const ARMOR_COLUMNS: Column[] = [
   price("c"), weight("c"),

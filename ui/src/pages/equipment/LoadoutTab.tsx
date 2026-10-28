@@ -1,10 +1,11 @@
 import { useState } from "react";
-import type { ItemSummary, PlayState, PlayWildShape, SelectionSlot } from "../../api/contract";
+import type { ItemSummary, PlayState, PlayWildShape, Ruleset, SelectionSlot } from "../../api/contract";
 import { Alert, Button, Chip, EmptyState, Expander } from "../../components";
 import "./equipment.css";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { useAsync } from "../../state/useAsync";
+import { searchAllItems } from "./EquipmentTab";
 
 /** Weapon Mastery slots are `weapon` selects titled after the feature (backend `is_mastery_slot`); their count is the capacity. */
 export const masterySlots = (slots: SelectionSlot[]): SelectionSlot[] => slots.filter((s) => s.elementType === "weapon" && s.title.toLowerCase().includes("mastery"));
@@ -28,7 +29,7 @@ export function MasteryChooser({ capacity, play, weapons }: { capacity: number; 
           const m = textFor(w);
           return (
             <li key={w.id} className="resource-row">
-              <span className="grow"><strong>{w.name}</strong><span className="muted small" style={{ display: "block" }}>{m ? `${m.property}: ${m.text}` : w.shortDescription}</span></span>
+              <span className="grow"><strong>{w.name}</strong> <span className="mastery-src muted small">{w.sourceName}</span><span className="muted small" style={{ display: "block" }}>{m ? `${m.property}: ${m.text}` : w.shortDescription}</span></span>
               <Button small variant={on ? "primary" : "default"} aria-pressed={on} disabled={!on && full} aria-label={`${on ? "Unmaster" : "Master"} ${w.name}`} onClick={() => toggle(w)}>{on ? "Mastered" : "Master"}</Button>
             </li>
           );
@@ -91,17 +92,26 @@ export function PackageChooser({ packages }: { packages: PlayState["equipmentPac
   );
 }
 
+/** B-55 W3: the weapons a character may master: its own edition (Weapon Mastery is a 2024 rule; edition-neutral counts), its sources. */
+export const masteryWeapons = (items: readonly ItemSummary[], ruleset: Ruleset): ItemSummary[] => items.filter((w) => w.rulesets.includes(ruleset));
+
 export function LoadoutTab() {
   const { snapshot } = useCharacter();
   const api = useApi();
   const capacity = snapshot ? masterySlots(snapshot.slots).length : 0;
-  const weapons = useAsync(() => (capacity > 0 ? api.searchItems({ category: "Weapons", limit: 200 }) : Promise.resolve({ total: 0, items: [] as ItemSummary[] })), [api, capacity]);
+  const id = snapshot?.id ?? "";
+  // The host applies the character's edition and source restrictions; refetch when they change.
+  const scopeKey = snapshot ? JSON.stringify([snapshot.ruleset, snapshot.sourceRestrictions]) : "";
+  const weapons = useAsync(
+    () => (capacity > 0 && id ? searchAllItems(api, { category: "Weapons", characterId: id }) : Promise.resolve({ total: 0, items: [] as ItemSummary[] })),
+    [api, capacity, id, scopeKey],
+  );
   if (!snapshot) return null;
   const { play } = snapshot;
   return (
     <div className="eq-load page-pad">
       <PackageChooser packages={play.equipmentPackages} />
-      {capacity > 0 && <MasteryChooser capacity={capacity} play={play} weapons={weapons.data?.items ?? []} />}
+      {capacity > 0 && <MasteryChooser capacity={capacity} play={play} weapons={masteryWeapons(weapons.data?.items ?? [], snapshot.ruleset)} />}
       {play.wildShape && <WildShapeChooser ws={play.wildShape} />}
       {capacity === 0 && !play.wildShape && <p className="muted small">Weapon Mastery and Wild Shape appear here when the character's classes grant them.</p>}
     </div>

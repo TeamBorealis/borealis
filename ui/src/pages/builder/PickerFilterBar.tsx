@@ -23,48 +23,45 @@ export const sourcesText = (f: PickerFilter, all: readonly SourceEntry[]): strin
 
 const editionLabel = (s: SourceEntry) => (s.edition === "any" ? "Any edition" : yearOf(s.edition));
 
-interface Props {
-  /** The slot title, lower-cased into the placeholder ("Search species"). */
-  title: string;
+interface EditionProps {
+  value: EditionFilter;
+  onChange: (e: EditionFilter) => void;
+}
+
+/** The Edition filter: All / 2024 / 2014 (sec. 1.5). */
+export function EditionSegments({ value, onChange }: EditionProps) {
+  return (
+    <span className="pick-seg" role="group" aria-label="Edition">
+      {EDITIONS.map((e) => (
+        <button key={e.value} type="button" className="pick-seg-btn" aria-pressed={value === e.value} onClick={() => onChange(e.value)}>{e.label}</button>
+      ))}
+    </span>
+  );
+}
+
+interface SourceProps {
   filter: PickerFilter;
   onChange: (f: PickerFilter) => void;
   sources: SourceEntry[];
-  shown: number;
-  total: number;
 }
 
-/** B-55 sec. 1.5: search, Edition All/2024/2014, a Source checklist, the entry count and Clear, above a picker list. */
-export function PickerFilterBar({ title, filter, onChange, sources, shown, total }: Props) {
+/** The Source filter: "All sources" / "3 of 4 sources", opening a checklist of the list's sources and "Manage Sources..." (sec. 1.5). */
+export function SourceFilterButton({ filter, onChange, sources }: SourceProps) {
   const navigate = useNavigate();
-  const [srcAnchor, setSrcAnchor] = useState<HTMLElement | null>(null);
-  const placeholder = `Search ${title.toLowerCase()}`;
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const toggleSource = (id: string, on: boolean) => {
     const kept = filter.sources ?? sources.map((s) => s.id);
     const next = on ? [...kept.filter((k) => k !== id), id] : kept.filter((k) => k !== id);
     onChange({ ...filter, sources: sources.every((s) => next.includes(s.id)) ? null : next });
   };
   return (
-    <div className="pick-fbar" role="search" aria-label={`Filter ${title}`}>
-      <input type="search" className="pick-fsearch" placeholder={placeholder} aria-label={placeholder} value={filter.text}
-        onChange={(e) => onChange({ ...filter, text: e.target.value })} />
-      <span className="pick-frow">
-        <span className="pick-flabel" aria-hidden="true">Edition</span>
-        <span className="pick-seg" role="group" aria-label="Edition">
-          {EDITIONS.map((e) => (
-            <button key={e.value} type="button" className="pick-seg-btn" aria-pressed={filter.edition === e.value}
-              onClick={() => onChange({ ...filter, edition: e.value })}>{e.label}</button>
-          ))}
-        </span>
-        <span className="pick-flabel" aria-hidden="true">Source</span>
-        <button type="button" className="pick-fsrc" aria-haspopup="dialog" aria-expanded={!!srcAnchor} aria-label={`Source: ${sourcesText(filter, sources)}`}
-          onClick={(e) => setSrcAnchor(srcAnchor ? null : e.currentTarget)}>
-          <span>{sourcesText(filter, sources)}</span><Icon name="caret" />
-        </button>
-        <span className="pick-fcount" role="status">{countText(shown, total)}</span>
-        <button type="button" className="pick-fclear" onClick={() => onChange(NO_FILTER)}>Clear</button>
-      </span>
-      {srcAnchor && (
-        <Popover anchor={srcAnchor} align="start" onClose={() => setSrcAnchor(null)} className="pick-fmenu">
+    <>
+      <button type="button" className="pick-fsrc" aria-haspopup="dialog" aria-expanded={!!anchor} aria-label={`Source: ${sourcesText(filter, sources)}`}
+        onClick={(e) => setAnchor(anchor ? null : e.currentTarget)}>
+        <span>{sourcesText(filter, sources)}</span><Icon name="caret" />
+      </button>
+      {anchor && (
+        <Popover anchor={anchor} align="start" onClose={() => setAnchor(null)} className="pick-fmenu">
           <div role="dialog" aria-label="Sources">
             {sources.map((s) => (
               <label key={s.id} className="pick-fopt">
@@ -77,6 +74,35 @@ export function PickerFilterBar({ title, filter, onChange, sources, shown, total
           </div>
         </Popover>
       )}
+    </>
+  );
+}
+
+interface Props {
+  /** The slot title, lower-cased into the placeholder ("Search species"). */
+  title: string;
+  filter: PickerFilter;
+  onChange: (f: PickerFilter) => void;
+  sources: SourceEntry[];
+  shown: number;
+  total: number;
+}
+
+/** B-55 sec. 1.5: search, Edition All/2024/2014, a Source checklist, the entry count and Clear, above a picker list. */
+export function PickerFilterBar({ title, filter, onChange, sources, shown, total }: Props) {
+  const placeholder = `Search ${title.toLowerCase()}`;
+  return (
+    <div className="pick-fbar" role="search" aria-label={`Filter ${title}`}>
+      <input type="search" className="pick-fsearch" placeholder={placeholder} aria-label={placeholder} value={filter.text}
+        onChange={(e) => onChange({ ...filter, text: e.target.value })} />
+      <span className="pick-frow">
+        <span className="pick-flabel" aria-hidden="true">Edition</span>
+        <EditionSegments value={filter.edition} onChange={(edition) => onChange({ ...filter, edition })} />
+        <span className="pick-flabel" aria-hidden="true">Source</span>
+        <SourceFilterButton filter={filter} onChange={onChange} sources={sources} />
+        <span className="pick-fcount" role="status">{countText(shown, total)}</span>
+        <button type="button" className="pick-fclear" onClick={() => onChange(NO_FILTER)}>Clear</button>
+      </span>
     </div>
   );
 }

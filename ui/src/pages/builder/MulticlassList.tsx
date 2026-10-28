@@ -46,7 +46,9 @@ function useMulticlassRows(snapshot: CharacterSnapshot): Row[] {
     const q = { query: "", ruleset: snapshot.ruleset, limit: 100, offset: 0 } as const;
     const classes = (await api.searchCompendium({ query: { ...q, types: ["class"] } })).items;
     return Promise.all(classes.map(async (c: ElementSummary): Promise<Row> => {
-      const multi = (await api.searchCompendium({ query: { ...q, query: c.name, types: ["multiclass"] } })).items.find((m) => m.name === c.name);
+      // A class's multiclass entry is generated from it, so it shares its source: a same-name class of another source
+      // (an imported twin) must not take that one's prerequisite.
+      const multi = (await api.searchCompendium({ query: { ...q, query: c.name, types: ["multiclass"] } })).items.find((m) => m.name === c.name && m.source === c.source);
       return { id: c.id, name: c.name, multiId: multi?.id ?? null, prerequisites: multi?.prerequisites ?? null };
     }));
   }, [api, snapshot.ruleset]);

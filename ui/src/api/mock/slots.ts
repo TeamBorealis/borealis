@@ -174,11 +174,14 @@ export function reprocess(c: MockCharacter): { character: MockCharacter; defs: S
   let cur = c;
   for (let pass = 0; pass < 5; pass++) {
     const defs = buildSlotDefs(cur);
+    // As the engine: a source restriction narrows option lists but never removes a stored pick.
+    const unrestricted = new Map(buildSlotDefs({ ...cur, sourceRestrictions: null }).map((d) => [d.id, d]));
     const next: Record<string, string> = {};
     for (const d of defs) {
       const ch = cur.choices[d.id];
+      const offered = (id: string) => d.candidates.some((e) => e.id === id) || !!unrestricted.get(d.id)?.candidates.some((e) => e.id === id);
       if (d.lockedTo && d.candidates.some((e) => e.id === d.lockedTo)) next[d.id] = d.lockedTo;
-      else if (ch && d.candidates.some((e) => e.id === ch)) next[d.id] = ch;
+      else if (ch && offered(ch)) next[d.id] = ch;
     }
     const same = Object.keys(next).length === Object.keys(cur.choices).length && Object.entries(next).every(([k, v]) => cur.choices[k] === v);
     cur = same ? cur : { ...cur, choices: next };

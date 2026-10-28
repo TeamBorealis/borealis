@@ -238,6 +238,13 @@ export const ITEMS: ItemDef[] = [
   { id: "magic-arrows", category: "Ammunition", costCp: 0, weight: 1, ammoBonus: 1, description: "Twenty +1 arrows: +1 to attack and damage rolls made with them." },
   { id: "necklace-of-beads", category: "Wondrous Items", costCp: 0, weight: 0, charges: { dice: "1d6 + 3", count: 1, sides: 6, bonus: 3 }, description: "Its beads (1d6 + 3) are counted when it is found; detach one and throw it." },
   { id: "potion-of-healing", category: "Magic Items", costCp: 5000, weight: 0.5, description: "Restore 2d4+2 hit points." },
+  // B-55 W3: one name in three sources and both editions (one add-item row, three versions), a 2014-only weapon and an
+  // imported 2024 weapon (Weapon Mastery lists the character's edition and honours source restrictions).
+  { id: "hooded-lantern", name: "Hooded Lantern", rulesets: ["dnd2014"], category: "Adventuring Gear", costCp: 500, weight: 2, description: "Sheds bright light in a 30-foot radius." },
+  { id: "hooded-lantern-2024", name: "Hooded Lantern", source: SOURCE_2024, rulesets: ["dnd2024"], category: "Adventuring Gear", costCp: 500, weight: 2, description: "Burns oil for 6 hours of light." },
+  { id: "hooded-lantern-expansion", name: "Hooded Lantern", source: SOURCE_EXPANSION, rulesets: ["dnd2024"], category: "Adventuring Gear", costCp: 700, weight: 2, description: "A shuttered lantern with a brass hood." },
+  { id: "trident", name: "Trident", rulesets: ["dnd2014"], category: "Weapons", costCp: 500, weight: 4, weapon: { damage: "1d6 piercing", properties: "Thrown, versatile", range: "20/60" }, description: "A three-pronged spear." },
+  { id: "whip-expansion", name: "Whip", source: SOURCE_EXPANSION, rulesets: ["dnd2024"], category: "Weapons", costCp: 200, weight: 3, weapon: { damage: "1d4 slashing", mastery: "Slow", properties: "Finesse, reach", martial: true }, description: "A braided leather lash." },
 ];
 
 /** R6: subclasses written for one edition only, so the other edition's pickers show the edition marks. */
@@ -285,7 +292,8 @@ function mk(): MockElement[] {
   }
   for (const i of ITEMS) {
     const type: ElementType = i.weapon ? "weapon" : i.armor ? "armor" : i.category === "Magic Items" ? "magic-item" : "item";
-    out.push(el(i.id, type, title(i.id).replace("Healers", "Healer's").replace("Explorers", "Explorer's").replace("Dungeoneers", "Dungeoneer's").replace("Thieves", "Thieves'"), i.description, {
+    out.push(el(i.id, type, i.name ?? title(i.id).replace("Healers", "Healer's").replace("Explorers", "Explorer's").replace("Dungeoneers", "Dungeoneer's").replace("Thieves", "Thieves'"), i.description, {
+      ...(i.source ? { source: i.source } : {}), ...(i.rulesets ? { rulesets: i.rulesets } : {}),
       tags: [i.category], armor: armorFacts(i), weapon: weaponFacts(i),
       facts: [{ label: "Cost", value: `${i.costCp / 100} gp` }, { label: "Weight", value: `${i.weight} lb` }, ...(i.weapon ? [{ label: "Damage", value: i.weapon.damage }] : [])],
     }));

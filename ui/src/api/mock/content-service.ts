@@ -1,13 +1,14 @@
 import type {
   CompendiumFacets, FiveToolsImportReport, FiveToolsImportRequest, FiveToolsScan, CompendiumQuery, ContentIndex, ContentPack, ContentProgress, ContentSource, ElementDetail, ElementSummary,
-  ImportPackRequest, ImportPackResult, ItemCategory, ItemQuery, ItemSummary, MigrationIssue, MigrationReport, Page, UpdateIndexesResult,
+  ImportPackRequest, ImportPackResult, ItemCategory, ItemQuery, ItemSummary, MigrationIssue, MigrationReport, Page, Ruleset, UpdateIndexesResult,
 } from "../types";
 import { issue, scanElements, xmlIssues } from "./import-issues";
 import { CLASSES, ELEMENTS, ITEMS, getElement } from "./content";
 import { isProxyId, itemCategoryList, matchesItemSearch, proxyRows, type ProxyRow } from "./item-categories";
 import type { MockElement } from "./data-types";
 import { apiError } from "./errors";
-import { SOURCE_2014, SOURCE_2024, SOURCE_EXPANSION } from "./content";
+import { BUNDLED_SOURCES, SOURCE_2014, SOURCE_2024, SOURCE_EXPANSION } from "./content";
+import { groupKey } from "../../lib/versions";
 import type { MockSearchDoc } from "./search";
 
 const PROXY_PREFIX = "proxy:";
@@ -97,21 +98,22 @@ export class ContentService {
    * `search_items`: inside a category the classic builder's filter (words in the name or a keyword, `+`
    * alternatives) over its items and generated proxies; without one a name search over the items only.
    */
-  items(q: ItemQuery): Page<ItemSummary> {
+  items(q: ItemQuery, scope: ItemScope = OPEN_SCOPE): Page<ItemSummary> {
     const text = (q.query ?? "").toLowerCase();
     const named = (name: string, keywords: string[]) => (q.category ? matchesItemSearch(name, keywords, q.query ?? "") : !text || name.toLowerCase().includes(text));
-    const hits = ITEMS.filter((i) => (!q.category || i.category === q.category) && named(getElement(i.id)!.name, []))
-      .map((i) => ({ ...this.summary(getElement(i.id)!), category: i.category, costCp: i.costCp, weight: i.weight, requiresAttunement: !!i.attune }));
-    const proxies = q.category ? this.proxies().filter((p) => p.category === q.category && named(p.name, p.keywords)).map((p) => this.proxySummary(p)) : [];
+    const sourceOk = (source: string) => (!q.source || q.source === source) && sourceAllowed(scope, source);
+    const hits = ITEMS.map((i) => ({ i, e: getElement(i.id)! }))
+      .filter(({ i, e }) => (!q.category || i.category === q.category) && itemAdmitted(scope, e) && sourceOk(e.source) && named(e.name, []))
+      .map(({ i, e }) => ({ ...this.summary(e), category: i.category, costCp: i.costCp, weight: i.weight, requiresAttunement: !!i.attune, ...(BUNDLED_SOURCES.includes(e.source) ? { bundled: true } : {}) }));
+    const proxies = q.category ? this.proxies().filter((p) => p.category === q.category && sourceOk(p.source) && named(p.name, p.keywords)).map((p) => this.proxySummary(p)) : [];
     const sorted = [...hits, ...proxies].sort((a, b) => a.name.localeCompare(b.name));
     return { total: sorted.length, items: sorted.slice(q.offset ?? 0, (q.offset ?? 0) + (q.limit ?? 100)) };
   }
 
   /** `list_item_categories` over the sample items and proxies (`enabled` = enabled source ids, null = all). */
-  itemCategories(casters: string[], enabled: string[] | null): ItemCategory[] {
-    const visible = (source: string) => !enabled || enabled.includes(source);
-    const content = ITEMS.map((i) => ({ category: i.category, visible: visible(getElement(i.id)!.source) }));
-    const generated = this.proxies().map((p) => ({ category: p.category, visible: visible(p.source) }));
+  itemCategories(casters: string[], scope: ItemScope): ItemCategory[] {
+    const content = ITEMS.map((i) => getElement(i.id)!).map((e) => ({ category: ITEMS.find((i) => i.id === e.id)!.category, visible: itemAdmitted(scope, e) && sourceAllowed(scope, e.source), key: groupKey(e) }));
+    const generated = this.proxies().map((p) => ({ category: p.category, visible: sourceAllowed(scope, p.source), key: groupKey({ type: "item", name: p.name }) }));
     return itemCategoryList([...content, ...generated], casters);
   }
 
@@ -293,3 +295,19 @@ export class ContentService {
   }
 }
 
+
+/**
+ * What a character may see in the item catalogue (as the Rust host's `ItemScope`): its edition, the other edition's items
+ * while strict mode is off (the mock has no superseded items), and only enabled sources (null = all).
+ */
+export interface ItemScope {
+  ruleset: Ruleset | null;
+  crossEdition: boolean;
+  enabled: readonly string[] | null;
+}
+
+/** No character: every item of every source. */
+export const OPEN_SCOPE: ItemScope = { ruleset: null, crossEdition: true, enabled: null };
+
+const itemAdmitted = (scope: ItemScope, e: MockElement): boolean => !scope.ruleset || scope.crossEdition || e.rulesets.includes(scope.ruleset);
+const sourceAllowed = (scope: ItemScope, source: string): boolean => !scope.enabled || scope.enabled.includes(source);

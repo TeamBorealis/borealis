@@ -19,6 +19,9 @@ html.phone .eq-grid td { height: auto; border: 0; padding: 0; font-size: var(--p
 html.phone .eq-grid tbody tr.sel td { background: none; }
 html.phone .eq-grid:not(.eq-invgrid):not(.sp-grid) td:not(.eq-name) { display: none; }
 html.phone .eq-grid:not(.eq-invgrid) td.eq-name { min-width: 0; padding: 0; }
+/* B-55 W3 (sec. 2): the version count and arrow are one 44 pt target at the end of a catalogue row. */
+html.phone .eq-grid:not(.eq-invgrid) tbody tr:has(> td.eq-ver) { grid-template-columns: minmax(0, 1fr) var(--ph-hit); }
+html.phone .eq-grid:not(.eq-invgrid):not(.sp-grid) td.eq-ver { display: grid; place-items: center; width: var(--ph-hit); padding: 0; }
 html.phone .eq-grid.eq-armor { width: 100%; min-width: 0; }
 
 /* Add / Buy with quantities, the filter, the source select and Manage coins. */

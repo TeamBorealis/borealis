@@ -18,8 +18,9 @@ describe("Sources apply-to-character", () => {
     expect(apply.disabled).toBe(false);
     expect((await api.loadCharacter({ characterId: id })).sourceRestrictions).toBeNull();
     await user.click(apply);
-    const ok = await screen.findByRole("button", { name: /Apply anyway/ }, { timeout: 400 }).catch(() => null);
-    if (ok) await user.click(ok);
+    // A pick from a switched-off source stays; the confirm says so (B-55 W3 audit fix).
+    const dlg = await screen.findByRole("dialog", { name: "Picks from these sources stay" }, { timeout: 400 }).catch(() => null);
+    if (dlg) await user.click(within(dlg).getByRole("button", { name: "Apply" }));
     await waitFor(async () => expect((await api.loadCharacter({ characterId: id })).sourceRestrictions).not.toBeNull());
   });
 
