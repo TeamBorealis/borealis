@@ -23,6 +23,14 @@ ANDROID_API_LEVEL = "24"
 # links the symlink itself, which dangles there and makes the next build of the crate fail ("File exists").
 # Static builds (every other target) have no SONAME, so this changes nothing there.
 CMAKE_PLATFORM_NO_VERSIONED_SONAME = "ON"
+# Windows MSVC (B-56): llama.cpp's DLLs and CPU backend modules link the C++ library and vcruntime statically and the
+# Universal CRT dynamically, like borealis.exe, so none of them imports msvcp140.dll / vcruntime140*.dll and the app
+# starts without the Visual C++ redistributable. LLAMA_STATIC_CRT makes llama-cpp-sys-2 compile with /MT; the CMake
+# include (run after llama.cpp's project()) sets the matching runtime and the dynamic UCRT, and says why not fully
+# static. Both are ignored by every other compiler. `build/check-no-vc-runtime.ps1` checks the built and installed
+# files. A CMake cache from before this needs `cargo clean -p llama-cpp-sys-2` once (build/ci/drop-stale-llama-build.sh).
+LLAMA_STATIC_CRT = "1"
+CMAKE_PROJECT_INCLUDE = { value = "build/msvc-hybrid-crt.cmake", relative = true }
 GGML_SSE42 = "OFF"
 GGML_AVX = "OFF"
 GGML_AVX2 = "OFF"
