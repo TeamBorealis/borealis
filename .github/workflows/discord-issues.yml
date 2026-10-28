@@ -1,0 +1,49 @@
+name: Discord issues
+
+# Discord #bug-reports / #feature-requests posts -> GitHub issues, and closed issues / releases -> replies in the
+# posts (tools/discord-issues/sync.py). Every run does the full idempotent sync; the issue and release triggers only
+# make the report-back immediate, and the schedule catches anything a dropped run missed.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  issues:
+    types: [closed]
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only print what would be done (no issues, labels, media or Discord replies)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write # the orphan discord-media branch that holds rehosted screenshots
+  issues: write
+
+concurrency:
+  group: discord-issues
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: >-
+      github.repository == 'TeamBorealis/borealis' &&
+      (github.event_name != 'issues' || startsWith(github.event.issue.body, '<!-- discord-thread:'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: tools/discord-issues
+          persist-credentials: false
+      - name: Self-test
+        run: python3 -I tools/discord-issues/test_sync.py
+      - name: Sync
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$DRY_RUN" = true ]; then set -- --dry-run; fi
+          python3 -I tools/discord-issues/sync.py "$@"
