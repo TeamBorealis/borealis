@@ -116,7 +116,8 @@ export interface SlotOptionsArgs extends Cid {
   limit?: number;
   offset?: number;
 }
-export interface SlotOption extends ElementSummary {
+/** One offered option of a slot; also one version of a grouped row (B-55). */
+export interface SlotOptionBase extends ElementSummary {
   /** Present when the option is shown but not choosable (e.g. unmet prerequisite). */
   disabledReason?: string;
   /** Present when the option comes from the other edition (a 2014 subclass on a 2024 class): the edition it was written for. */
@@ -125,6 +126,19 @@ export interface SlotOption extends ElementSummary {
   converted?: boolean;
   /** R6: the adapter's notes on an other-edition option (what it changed, or "used as written"). */
   editionNotes?: string[];
+  /** B-55: present (true) when the element comes from bundled content (the SRD packs); orders the default version. */
+  bundled?: boolean;
+}
+/** A picker row: one name (B-55, specs/version-rows-and-filters.md). Its own fields are its default version. */
+export interface SlotOption extends SlotOptionBase {
+  /** B-55: every offered version of this row in this slot, present only when there are two or more; versions[0] is the row's own. */
+  versions?: SlotOptionBase[];
+}
+/** B-55: the result of switching a chosen row to another of its versions. */
+export interface SwitchVersionResult {
+  snapshot: CharacterSnapshot;
+  /** Titles of sub-choices that did not fit the new version and need choosing again, in slot order. */
+  dropped: string[];
 }
 
 /** All request/response commands. Keep in sync with `COMMANDS`. */
@@ -158,6 +172,8 @@ export interface ApiMethods {
   getSlotOptions(args: SlotOptionsArgs): Promise<Page<SlotOption>>;
   applySelection(args: Cid & { slotId: string; elementId: string }): Promise<CharacterSnapshot>;
   clearSelection(args: Cid & { slotId: string }): Promise<CharacterSnapshot>;
+  /** B-55: switch the slot's current pick to another version of the same row, keeping sub-choices that still fit. */
+  switchVersion(args: Cid & { slotId: string; elementId: string }): Promise<SwitchVersionResult>;
   replaceSpell(args: Cid & { slotId: string }): Promise<CharacterSnapshot>;
 
   /* Builder: levels */
@@ -459,6 +475,7 @@ export const COMMANDS = {
   getSlotOptions: "get_slot_options",
   applySelection: "apply_selection",
   clearSelection: "clear_selection",
+  switchVersion: "switch_version",
   replaceSpell: "replace_spell",
   setXp: "set_xp",
   levelUp: "level_up",

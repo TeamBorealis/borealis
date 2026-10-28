@@ -1656,6 +1656,18 @@
     "name": "CharacterSnapshot"
    }
   },
+  "switch_version": {
+   "args": {
+    "characterId": false,
+    "elementId": false,
+    "slotId": false
+   },
+   "method": "switchVersion",
+   "response": {
+    "k": "ref",
+    "name": "SwitchVersionResult"
+   }
+  },
   "take_opened_bundles": {
    "args": {},
    "method": "takeOpenedBundles",
@@ -9189,6 +9201,153 @@
       "name": "ArmorFacts"
      }
     },
+    "bundled": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "converted": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "disabledReason": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "edition": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "editionNotes": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "level": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "prerequisites": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "rulesets": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "school": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "shortDescription": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "sourceName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "spell": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "SpellFacts"
+     }
+    },
+    "tags": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "type": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "versions": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "SlotOptionBase"
+      }
+     }
+    },
+    "weapon": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "WeaponFacts"
+     }
+    }
+   }
+  },
+  "SlotOptionBase": {
+   "k": "object",
+   "props": {
+    "armor": {
+     "opt": true,
+     "t": {
+      "k": "ref",
+      "name": "ArmorFacts"
+     }
+    },
+    "bundled": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "converted": {
      "opt": true,
      "t": {
@@ -9646,6 +9805,27 @@
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    }
+   }
+  },
+  "SwitchVersionResult": {
+   "k": "object",
+   "props": {
+    "dropped": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "snapshot": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "CharacterSnapshot"
      }
     }
    }
