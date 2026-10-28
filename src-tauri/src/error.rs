@@ -117,7 +117,8 @@ impl From<CommandError> for ApiError {
             | CommandError::Level(_)
             | CommandError::Inventory(_)
             | CommandError::Money(_)
-            | CommandError::Spell(_) => ErrorCode::RequirementFailed,
+            | CommandError::Spell(_)
+            | CommandError::Version(_) => ErrorCode::RequirementFailed,
         };
         Self::new(code, capitalise(&message))
     }

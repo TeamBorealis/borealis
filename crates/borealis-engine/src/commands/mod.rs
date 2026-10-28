@@ -8,6 +8,7 @@ mod play;
 mod progression;
 mod retrain;
 mod selection;
+mod version;
 
 pub use abilities::*;
 pub use forms::*;
@@ -17,6 +18,7 @@ pub use play::*;
 pub use progression::*;
 pub use retrain::*;
 pub use selection::*;
+pub use version::*;
 
 use crate::snapshot::CharacterSnapshot;
 use crate::state::CharacterState;
@@ -50,6 +52,9 @@ pub enum CommandError {
     /// Spell preparation problems.
     #[error("{0}")]
     Spell(String),
+    /// A version switch was refused (no pick, or not a version of it; B-55).
+    #[error("{0}")]
+    Version(String),
 }
 
 /// A successful command: the new state and any non-fatal warnings for the UI.

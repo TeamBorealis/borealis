@@ -462,16 +462,7 @@ impl<'u> Evaluation<'u> {
                     missing: slot.missing.clone(),
                     spellcasting: rule.spellcasting.clone(),
                     prepared: rule.prepared.unwrap_or(false),
-                    options: options
-                        .iter()
-                        .map(|o| OptionRef {
-                            id: o.el.id.clone(),
-                            name: o.el.name.clone(),
-                            source: o.el.source.clone(),
-                            level: (o.el.ty == "Spell").then(|| o.spell_level().unwrap_or(0)),
-                            edition: edition_badge(o),
-                        })
-                        .collect(),
+                    options: options.iter().map(|o| option_ref(o)).collect(),
                     replaceable: retrain.replaceable,
                     gained_level: retrain.gained_level,
                     replaced: retrain.replaced,
@@ -833,6 +824,17 @@ impl<'u> Evaluation<'u> {
 }
 
 /// The picker badge of a foreign-edition option.
+/// The option row of a candidate element.
+pub(crate) fn option_ref(o: &UElem) -> OptionRef {
+    OptionRef {
+        id: o.el.id.clone(),
+        name: o.el.name.clone(),
+        source: o.el.source.clone(),
+        level: (o.el.ty == "Spell").then(|| o.spell_level().unwrap_or(0)),
+        edition: edition_badge(o),
+    }
+}
+
 fn edition_badge(o: &UElem) -> Option<EditionBadge> {
     match &o.edition {
         EditionStatus::Native => None,

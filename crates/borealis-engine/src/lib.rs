@@ -54,6 +54,7 @@ pub mod stats;
 pub mod tables;
 pub mod universe;
 pub mod usage;
+pub mod versions;
 pub mod wild_shape;
 
 mod derive;
