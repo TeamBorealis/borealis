@@ -16,11 +16,12 @@ const navLabels = () => within(screen.getByRole("navigation", { name: "Item cate
 const comboLabels = () => within(screen.getByRole("combobox", { name: "Category" })).getAllByRole("option").map((o) => o.textContent);
 
 describe("equipment categories come from list_item_categories", () => {
-  it("lists the non-empty categories in the classic builder's order, content categories after the fixed ones", async () => {
+  it("lists the non-empty categories in the classic builder's order, content categories after the fixed ones", { timeout: 15000 }, async () => {
     const api = new MockApi();
     const spy = vi.spyOn(api, "listItemCategories");
     const { id } = await openEquipment(api);
-    await screen.findByRole("button", { name: /^Magic Items \(/ });
+    // The mock host scopes every item for the character before it counts; give it the time a loaded machine needs.
+    await screen.findByRole("button", { name: /^Magic Items \(/ }, { timeout: 5000 });
     expect(navLabels()).toEqual([
       // B-55 W3: one row per name (the sample Hooded Lantern in three sources counts once); the 2024 sample character
       // also sees the 2014-only Trident while the other edition is allowed, and the sample magic weapon Flame Tongue.

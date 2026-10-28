@@ -6,8 +6,10 @@
 use super::app::{Driver, TEST_SCORES};
 use crate::{outcome, SUITE};
 use borealis_content::{Rule, Ruleset};
+use borealis_engine::versions::group_key;
 use borealis_lib::dto_ext::{EquipRequest, ItemFilter, ItemPatch, SheetOptionsDto};
 use borealis_lib::state::AppState;
+use std::collections::HashSet;
 
 /// The generated categories every edition lists (their targets include the core catalogue).
 const KINDS: [(&str, &str); 5] = [
@@ -20,9 +22,13 @@ const KINDS: [(&str, &str); 5] = [
 
 /// Rows of a category a proxy is picked from.
 const PICK_PAGE: usize = 200;
+/// More than any category lists, so one search returns all of it.
+const ALL: usize = 100_000;
 
 /// Why a row fails: a label, never content text.
 type Row = Result<(), &'static str>;
+/// One listed item: `(id, type, name)`.
+type Listed = (String, String, String);
 
 fn generated(ty: &str) -> String {
     format!("Additional {ty}")
@@ -67,7 +73,8 @@ fn record_row(src: &str, name: &str, row: Row) {
     );
 }
 
-/// Every generated category is listed with the count its item search returns.
+/// Every generated category is listed with the number of rows its item search gives: one per type
+/// family and normalized name, as the add-item list groups same-name items (B-55).
 fn categories_row(src: &str, app: &AppState, id: &str, edition: &str) {
     let list = app.list_item_categories(id).unwrap_or_default();
     let mut bad: Vec<String> = Vec::new();
@@ -77,9 +84,18 @@ fn categories_row(src: &str, app: &AppState, id: &str, edition: &str) {
             bad.push(format!("{ty}: absent"));
             continue;
         };
-        let total = search(app, id, &name, 1).map_or(0, |p| p.0);
-        if total != c.count {
-            bad.push(format!("{ty}: count {} != rows {total}", c.count));
+        let (total, items) = search(app, id, &name, ALL).unwrap_or_default();
+        if items.len() != total {
+            bad.push(format!("{ty}: listed {} of {total}", items.len()));
+            continue;
+        }
+        let rows = items
+            .iter()
+            .map(|(_, ty, name)| group_key(ty, name))
+            .collect::<HashSet<_>>()
+            .len();
+        if rows != c.count {
+            bad.push(format!("{ty}: count {} != rows {rows}", c.count));
         }
     }
     outcome::record(
@@ -90,13 +106,8 @@ fn categories_row(src: &str, app: &AppState, id: &str, edition: &str) {
     );
 }
 
-/// `(total, [(row id, row name)])` of a category search, at most `limit` rows.
-fn search(
-    app: &AppState,
-    id: &str,
-    category: &str,
-    limit: usize,
-) -> Option<(usize, Vec<(String, String)>)> {
+/// `(total, [(row id, row type, row name)])` of a category search, at most `limit` rows.
+fn search(app: &AppState, id: &str, category: &str, limit: usize) -> Option<(usize, Vec<Listed>)> {
     let page = app
         .search_items(&ItemFilter {
             category: Some(category.to_string()),
@@ -110,7 +121,13 @@ fn search(
     let rows = page
         .items
         .iter()
-        .map(|i| (i.summary.id.clone(), i.summary.name.clone()))
+        .map(|i| {
+            (
+                i.summary.id.clone(),
+                i.summary.ty.clone(),
+                i.summary.name.clone(),
+            )
+        })
         .collect();
     Some((page.total, rows))
 }
@@ -129,7 +146,7 @@ fn pick(
         return Err("category lists no proxy");
     }
     rows.into_iter()
-        .find_map(|(proxy, name)| match granted(app, id, &proxy) {
+        .find_map(|(proxy, _, name)| match granted(app, id, &proxy) {
             Some((target, true)) => Some((proxy, name, target)),
             _ => None,
         })
