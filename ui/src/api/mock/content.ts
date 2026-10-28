@@ -244,6 +244,8 @@ export const ITEMS: ItemDef[] = [
   { id: "hooded-lantern-2024", name: "Hooded Lantern", source: SOURCE_2024, rulesets: ["dnd2024"], category: "Adventuring Gear", costCp: 500, weight: 2, description: "Burns oil for 6 hours of light." },
   { id: "hooded-lantern-expansion", name: "Hooded Lantern", source: SOURCE_EXPANSION, rulesets: ["dnd2024"], category: "Adventuring Gear", costCp: 700, weight: 2, description: "A shuttered lantern with a brass hood." },
   { id: "trident", name: "Trident", rulesets: ["dnd2014"], category: "Weapons", costCp: 500, weight: 4, weapon: { damage: "1d6 piercing", properties: "Thrown, versatile", range: "20/60" }, description: "A three-pronged spear." },
+  // A magic weapon (no mastery property): never a Weapon Mastery choice.
+  { id: "flame-tongue", name: "Flame Tongue", category: "Weapons", costCp: 0, weight: 3, attune: true, weapon: { damage: "1d8 slashing", properties: "Versatile (1d10)", martial: true }, description: "A sword that bursts into flame." },
   { id: "whip-expansion", name: "Whip", source: SOURCE_EXPANSION, rulesets: ["dnd2024"], category: "Weapons", costCp: 200, weight: 3, weapon: { damage: "1d4 slashing", mastery: "Slow", properties: "Finesse, reach", martial: true }, description: "A braided leather lash." },
 ];
 

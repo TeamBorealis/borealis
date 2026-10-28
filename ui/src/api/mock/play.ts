@@ -56,7 +56,8 @@ export function buildPlay(c: MockCharacter): PlayState {
     resources, resourceCosts: [], toggles,
     exhaustion: { linear: c.ruleset === "dnd2024", level: p.exhaustion, maxLevels: MAX_EXHAUSTION, d20Penalty: -2 * p.exhaustion, speedPenalty: -5 * p.exhaustion, dead: p.exhaustion >= MAX_EXHAUSTION },
     inspiration: p.inspiration, inspirationSources: [], martialArts: null,
-    masteries: p.masteries.map((w) => ({ weapon: w, name: w, property: "Graze", text: "Deal ability-modifier damage on a miss." })),
+    // As the host: `weapon` is the element id, `name` the weapon's name.
+    masteries: p.masteries.map((w) => ({ weapon: w, name: getElement(w)?.name ?? w, property: "Graze", text: "Deal ability-modifier damage on a miss." })),
     defenses: {
       resistances: ["bludgeoning", "piercing", "slashing"].map((name) => ({ name, source: "Rage", active: raging, whileToggle: "rage" })),
       immunities: [], vulnerabilities: [], conditionImmunities: [],

@@ -23,8 +23,8 @@ describe("equipment categories come from list_item_categories", () => {
     await screen.findByRole("button", { name: /^Magic Items \(/ });
     expect(navLabels()).toEqual([
       // B-55 W3: one row per name (the sample Hooded Lantern in three sources counts once); the 2024 sample character
-      // also sees the 2014-only Trident while the other edition is allowed.
-      "Adventuring Gear (7)", "Equipment Packs (2)", "Tools (2)", "Armor (5)", "Weapons (10)", "Ammunition (1)",
+      // also sees the 2014-only Trident while the other edition is allowed, and the sample magic weapon Flame Tongue.
+      "Adventuring Gear (7)", "Equipment Packs (2)", "Tools (2)", "Armor (5)", "Weapons (11)", "Ammunition (1)",
       "Wondrous Items (2)", "Staffs (1)", "Magic Items (5)",
       // the generated proxy categories follow the content ones (the sample wizard sees its own spell one)
       ...["Feat (7)", "Language (10)", "Proficiency (18)", "Ability Score Improvement (12)", "Spell (28)", "Wizard Spell (28)"].map((s) => `Additional ${s}`),

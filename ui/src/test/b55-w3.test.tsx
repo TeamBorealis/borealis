@@ -135,6 +135,32 @@ async function openMastery(prepare?: (api: MockApi, id: string) => Promise<unkno
   return screen.findByRole("list", { name: "Weapons" });
 }
 
+describe("Weapon Mastery offers kinds of weapons (the engine's mastery slot options)", () => {
+  it("never offers a magic weapon or a weapon without a mastery property", async () => {
+    const list = await openMastery();
+    await within(list).findByRole("button", { name: "Master Dagger" });
+    expect(within(list).queryByRole("button", { name: "Master Flame Tongue" })).toBeNull();
+  });
+
+  it("keeps showing a saved mastery that no longer qualifies, without offering it as a new choice", async () => {
+    const list = await openMastery((api, id) => api.chooseWeaponMasteries({ characterId: id, weaponIds: ["trident"] }));
+    const stale = (await within(list).findByRole("button", { name: "Unmaster Trident" })).closest("li")!;
+    expect(stale.textContent).toContain("No longer available for Weapon Mastery");
+    expect(within(list).queryByRole("button", { name: "Master Trident" })).toBeNull();
+  });
+
+  it("a rogue is offered Simple weapons and Martial weapons with Finesse or Light only (proficiency)", async () => {
+    const api = new MockApi({ rng: () => 0.5 });
+    const snap = await api.createCharacter({ request: { name: "Sly", ruleset: "dnd2024", startingLevel: 1, gender: "", abilityMethod: "point_buy", options: {} } });
+    const classSlot = snap.slots.find((s) => s.elementType === "class")!;
+    const rogue = await api.applySelection({ characterId: snap.id, slotId: classSlot.id, elementId: "rogue" });
+    const slot = rogue.slots.find((s) => s.elementType === "weapon" && s.title.includes("Mastery"))!;
+    const names = (await api.getSlotOptions({ characterId: snap.id, slotId: slot.id, query: "" })).items.map((o) => o.name);
+    expect(names).toEqual(expect.arrayContaining(["Dagger", "Rapier", "Shortbow"]));
+    for (const n of ["Longsword", "Greatsword", "Flame Tongue", "Trident"]) expect(names).not.toContain(n);
+  });
+});
+
 describe("B-55 W3 Weapon Mastery list", () => {
   it("lists the character's edition only and shows each weapon's source", async () => {
     const list = await openMastery();

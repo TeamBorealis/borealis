@@ -43,6 +43,18 @@ const CROSS_EDITION_TYPES: ElementType[] = ["archetype", "race"];
 const byRuleset = (c: MockCharacter, list: MockElement[]) =>
   list.filter((e) => e.rulesets.includes(c.ruleset) || (CROSS_EDITION_TYPES.includes(e.type) && crossEditionOpen(c)));
 
+/**
+ * A kind of weapon a class's Weapon Mastery can choose (as the engine's `weapon_mastery` filter, SRD 5.2.1): a base weapon of
+ * the character's edition with a mastery property (never a magic weapon); a Rogue only one it is proficient with (Simple, or
+ * Martial with Finesse or Light).
+ */
+function masteryKind(c: MockCharacter, classId: string, e: MockElement): boolean {
+  const w = e.weapon;
+  if (e.type !== "weapon" || !w?.mastery || !e.rulesets.includes(c.ruleset)) return false;
+  if (classId !== "rogue" || w.proficiency !== "Martial") return true;
+  return w.properties.some((p) => /^(finesse|light)$/i.test(p));
+}
+
 function classSlots(c: MockCharacter, index: number): SlotDef[] {
   const cs = c.classes[index]!;
   const out: SlotDef[] = [];
@@ -69,7 +81,7 @@ function classSlots(c: MockCharacter, index: number): SlotDef[] {
     if (c.ruleset === "dnd2024" && cls.masteries > 0) {
       out.push(...many({ ...base, id: `${cs.slotId}:mastery`, tab: "class", title: "Weapon Mastery", elementType: "weapon", dup: `mastery:${cs.slotId}`,
         hint: "Choose weapons whose mastery property you can use.",
-        candidates: ELEMENTS.filter((e) => e.type === "weapon") }, cls.masteries));
+        candidates: ELEMENTS.filter((e) => masteryKind(c, cls.id, e)) }, cls.masteries));
     }
   }
   const subLevel = cls.subclassLevel[c.ruleset];

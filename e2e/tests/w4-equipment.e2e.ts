@@ -31,8 +31,8 @@ describe('w4 equipment', { tags: ['w4'] }, () => {
     const text = (await textOf(ctx, '.aur-content')).replace(/\s+/g, ' ');
     // Category list in order, with counts. Only categories that hold a visible item are listed (the backend rule).
     // B-55 W3: one row per name (the sample Hooded Lantern in three sources counts once); the 2024 sample also sees the
-    // 2014-only Trident while the other edition is allowed.
-    const cats = ['Adventuring Gear (7)', 'Equipment Packs (2)', 'Tools (2)', 'Armor (5)', 'Weapons (10)'];
+    // 2014-only Trident while the other edition is allowed, and the sample magic weapon Flame Tongue.
+    const cats = ['Adventuring Gear (7)', 'Equipment Packs (2)', 'Tools (2)', 'Armor (5)', 'Weapons (11)'];
     expect(text).not.toMatch(/\(0\)/);
     let at = -1;
     for (const c of cats) {

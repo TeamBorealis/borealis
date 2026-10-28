@@ -151,9 +151,29 @@ impl AppState {
             for key in &keys {
                 state = commands::clear(engine, &state, key)?.state;
             }
-            for (key, weapon) in keys.iter().zip(weapon_ids) {
-                let out = commands::select(engine, &state, key, Choice::Element(weapon.clone()))?;
-                state = out.state;
+            // Each weapon goes to the first free slot that accepts it: the slots of different
+            // classes allow different weapons (a Barbarian's melee only, a Fighter's any).
+            let mut free: Vec<&SlotKey> = keys.iter().collect();
+            for weapon in weapon_ids {
+                let mut last = None;
+                let mut placed = None;
+                for (i, key) in free.iter().enumerate() {
+                    match commands::select(engine, &state, key, Choice::Element(weapon.clone())) {
+                        Ok(out) => {
+                            placed = Some((i, out.state));
+                            break;
+                        }
+                        Err(e) => last = Some(e),
+                    }
+                }
+                let Some((i, next)) = placed else {
+                    return Err(last.map_or_else(
+                        || ApiError::requirement("No Weapon Mastery choice is left."),
+                        ApiError::from,
+                    ));
+                };
+                free.remove(i);
+                state = next;
             }
             d.character.build = state;
             Ok(())
