@@ -14,11 +14,11 @@ use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, SystemTime};
 
 /// Latest published (non-draft, non-prerelease) release of the project.
-pub const RELEASES_API: &str = "https://api.github.com/repos/alon-mini/borealis/releases/latest";
+pub const RELEASES_API: &str = "https://api.github.com/repos/TeamBorealis/borealis/releases/latest";
 /// The official download page (the website lists every platform).
 pub const DOWNLOAD_PAGE: &str = "https://borealisbuilder.com/#download";
 /// Release pages must live under this prefix to be offered as a link.
-const RELEASE_PAGE_PREFIX: &str = "https://github.com/alon-mini/borealis/";
+const RELEASE_PAGE_PREFIX: &str = "https://github.com/TeamBorealis/borealis/";
 /// The release JSON is a few kilobytes to a few dozen; anything bigger is not what we asked for.
 const MAX_RESPONSE_BYTES: usize = 512 * 1024;
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
@@ -313,7 +313,7 @@ mod tests {
 
     fn release(tag: &str, draft: bool, pre: bool) -> Vec<u8> {
         format!(
-            r#"{{"tag_name":"{tag}","draft":{draft},"prerelease":{pre},"html_url":"https://github.com/alon-mini/borealis/releases/tag/{tag}","assets":[]}}"#
+            r#"{{"tag_name":"{tag}","draft":{draft},"prerelease":{pre},"html_url":"https://github.com/TeamBorealis/borealis/releases/tag/{tag}","assets":[]}}"#
         )
         .into_bytes()
     }

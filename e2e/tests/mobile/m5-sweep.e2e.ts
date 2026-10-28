@@ -20,7 +20,7 @@ import { startSelfSignedServer } from '../../support/local-https.js';
 const FIXTURE_VERSION = '99.0.0';
 const UPDATE_FEED = JSON.stringify({
   tag_name: `v${FIXTURE_VERSION}`,
-  html_url: `https://github.com/alon-mini/borealis/releases/tag/v${FIXTURE_VERSION}`,
+  html_url: `https://github.com/TeamBorealis/borealis/releases/tag/v${FIXTURE_VERSION}`,
   body: 'Fixture release notes (B-41).',
   draft: false,
   prerelease: false,

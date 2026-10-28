@@ -8,8 +8,8 @@
 
 <p>
 <a href="https://borealisbuilder.com"><img alt="Website" src="https://img.shields.io/badge/website-borealisbuilder.com-6fd0b5?style=for-the-badge&labelColor=070a0d"></a>
-<a href="https://github.com/alon-mini/borealis/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/alon-mini/borealis?style=for-the-badge&label=release&color=2f875b&labelColor=070a0d"></a>
-<a href="https://github.com/alon-mini/borealis/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/alon-mini/borealis/ci.yml?branch=main&style=for-the-badge&label=CI&labelColor=070a0d"></a>
+<a href="https://github.com/TeamBorealis/borealis/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/TeamBorealis/borealis?style=for-the-badge&label=release&color=2f875b&labelColor=070a0d"></a>
+<a href="https://github.com/TeamBorealis/borealis/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/TeamBorealis/borealis/ci.yml?branch=main&style=for-the-badge&label=CI&labelColor=070a0d"></a>
 <a href="#licence"><img alt="Licence MIT OR Apache-2.0" src="https://img.shields.io/badge/licence-MIT%20OR%20Apache--2.0-e3b64a?style=for-the-badge&labelColor=070a0d"></a>
 </p>
 <p>
@@ -25,7 +25,7 @@
 
 <h2><a href="https://borealisbuilder.com">Download Borealis at borealisbuilder.com</a></h2>
 
-<p><a href="https://borealisbuilder.com"><b>Website and downloads</b></a> &nbsp;·&nbsp; <a href="https://github.com/alon-mini/borealis/releases">GitHub Releases</a> &nbsp;·&nbsp; <a href="https://discord.gg/r4K4D3AJpZ">Discord</a> &nbsp;·&nbsp; <a href="#for-developers">Build from source</a></p>
+<p><a href="https://borealisbuilder.com"><b>Website and downloads</b></a> &nbsp;·&nbsp; <a href="https://github.com/TeamBorealis/borealis/releases">GitHub Releases</a> &nbsp;·&nbsp; <a href="https://discord.gg/r4K4D3AJpZ">Discord</a> &nbsp;·&nbsp; <a href="#for-developers">Build from source</a></p>
 
 <sub>Version 1.1.1 &nbsp;·&nbsp; 2014 and 2024 rules &nbsp;·&nbsp; SRD 5.1 and SRD 5.2.1 included</sub>
 

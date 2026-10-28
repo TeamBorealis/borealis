@@ -57,7 +57,7 @@ mod tests {
     use super::*;
     use crate::app_update::AppUpdateState;
 
-    const FIXTURE: &str = r#"{"tag_name":"v99.0.0","html_url":"https://github.com/alon-mini/borealis/releases/tag/v99.0.0","body":"Fixture notes","draft":false,"prerelease":false}"#;
+    const FIXTURE: &str = r#"{"tag_name":"v99.0.0","html_url":"https://github.com/TeamBorealis/borealis/releases/tag/v99.0.0","body":"Fixture notes","draft":false,"prerelease":false}"#;
 
     fn dir_with_fixture() -> tempfile::TempDir {
         let dir = tempfile::tempdir().expect("tempdir");

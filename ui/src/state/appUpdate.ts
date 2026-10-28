@@ -3,10 +3,10 @@ import type { Api, AppUpdateStatus } from "../api/contract";
 import { useApi } from "./ApiContext";
 
 /** Latest release of the project; the same address the desktop backend asks. */
-export const RELEASES_API = "https://api.github.com/repos/alon-mini/borealis/releases/latest";
+export const RELEASES_API = "https://api.github.com/repos/TeamBorealis/borealis/releases/latest";
 /** The official download page (the website lists every platform). */
 export const DOWNLOAD_PAGE = "https://borealisbuilder.com/#download";
-const RELEASE_PAGE_PREFIX = "https://github.com/alon-mini/borealis/";
+const RELEASE_PAGE_PREFIX = "https://github.com/TeamBorealis/borealis/";
 const DISMISSED_KEY = "borealis.updateDismissed";
 const FETCH_TIMEOUT_MS = 10_000;
 /** Phones wait this long after launch before asking, like the desktop backend. */

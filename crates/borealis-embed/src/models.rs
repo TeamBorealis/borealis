@@ -3,7 +3,7 @@
 //! T2/T3 download the unmodified ggml-org `Q8_0` (310 MB). T1 downloads our re-quantised `Q6_K` body with a
 //! `Q4_K` token embedding (211 MB): our plain `Q4_K_M` failed the cosine gate (0.966 < 0.99), the mix passes
 //! (0.9926 at 768, 0.9931 at 256). The T1 file exists only on the Borealis mirror: the pre-release
-//! [`MIRROR_RELEASE_TAG`] on GitHub Releases of `alon-mini/borealis`, which holds both GGUF files with
+//! [`MIRROR_RELEASE_TAG`] on GitHub Releases of `TeamBorealis/borealis`, which holds both GGUF files with
 //! `embeddinggemma-2-LICENSE.txt` and `embeddinggemma-2-NOTICE.txt` (EM6). Q8_0 downloads from Hugging Face first
 //! and falls back to the mirror; T1 downloads from the mirror only.
 
@@ -16,11 +16,11 @@ pub const NATIVE_DIMS: usize = 768;
 /// ggml-org/embeddinggemma-2-GGUF commit the Hugging Face URLs pin.
 pub const HF_GGUF_COMMIT: &str = "58faf90940886df2d62be555c8765d00dac362c5";
 
-/// Release tag of the Borealis model mirror on GitHub Releases (`alon-mini/borealis`).
+/// Release tag of the Borealis model mirror on GitHub Releases (`TeamBorealis/borealis`).
 pub const MIRROR_RELEASE_TAG: &str = "models-embeddinggemma-2-v1";
-/// Prefix of every mirror URL: `https://github.com/alon-mini/borealis/releases/download/<tag>/`.
+/// Prefix of every mirror URL: `https://github.com/TeamBorealis/borealis/releases/download/<tag>/`.
 pub const MIRROR_RELEASE_BASE: &str =
-    "https://github.com/alon-mini/borealis/releases/download/models-embeddinggemma-2-v1/";
+    "https://github.com/TeamBorealis/borealis/releases/download/models-embeddinggemma-2-v1/";
 /// The mirror release is published (B-46, checked 2026-10-25: anonymous download of every asset returns 200 with
 /// the compiled sizes, and its LICENSE / NOTICE equal the bundled ones). Kept as a switch so a withdrawn mirror
 /// can be turned off in one place.
@@ -30,7 +30,7 @@ pub const MIRROR_PUBLISHED: bool = true;
 macro_rules! mirror_url {
     ($file:literal) => {
         concat!(
-            "https://github.com/alon-mini/borealis/releases/download/models-embeddinggemma-2-v1/",
+            "https://github.com/TeamBorealis/borealis/releases/download/models-embeddinggemma-2-v1/",
             $file
         )
     };

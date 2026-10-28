@@ -24,7 +24,7 @@ describe("version rules", () => {
 describe("phone check with fetch()", () => {
   const answer = (body: unknown, ok = true) => vi.fn(async () => ({ ok, json: async () => body }) as Response) as unknown as typeof fetch;
   it("reports a newer release and the download page", async () => {
-    const s = await checkWithFetch("1.0.0", answer({ tag_name: "v1.0.1", html_url: "https://github.com/alon-mini/borealis/releases/tag/v1.0.1" }));
+    const s = await checkWithFetch("1.0.0", answer({ tag_name: "v1.0.1", html_url: "https://github.com/TeamBorealis/borealis/releases/tag/v1.0.1" }));
     expect(s).toMatchObject({ state: "done", latest: "1.0.1", newer: true, url: "https://borealisbuilder.com/#download" });
   });
   it("carries the release notes, trimmed and capped, and none when blank", async () => {
