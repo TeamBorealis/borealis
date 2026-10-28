@@ -227,8 +227,13 @@ export interface ApiMethods {
   chooseEquipmentPackage(args: Cid & { packageId: string; option: string }): Promise<CharacterSnapshot>;
 
   /* Equipment */
+  /**
+   * Item catalogue. With `characterId`: the items that character may use (its edition, plus another edition's items the
+   * engine offers while strict mode is off, never one superseded by an equivalent; unrestricted sources). B-55 W3: one
+   * entry per element; the add-item list groups same-name entries into one row.
+   */
   searchItems(args: ItemQuery & { characterId?: string }): Promise<Page<ItemSummary>>;
-  /** The equipment screen's categories for the character, in the classic builder's order, with item counts. */
+  /** The equipment screen's categories for the character, in the classic builder's order, with row counts (one per name, B-55). */
   listItemCategories(args: Cid): Promise<ItemCategory[]>;
   /** The base items a generic magic weapon or armor can be added on, by name (the classic builder's second list); empty when it needs none. */
   listBaseItems(args: Cid & { itemId: string }): Promise<ItemSummary[]>;

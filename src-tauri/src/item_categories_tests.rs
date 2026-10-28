@@ -17,6 +17,15 @@ fn item(id: &str, ty: &str, category: Option<&str>, source: &str) -> Element {
     el
 }
 
+/// The add-item rows of a listing: one per type family and normalized name (B-55).
+pub(super) fn row_count(items: &[crate::dto_ext::ItemSummary]) -> usize {
+    items
+        .iter()
+        .map(|i| group_key(&i.summary.ty, &i.summary.name))
+        .collect::<HashSet<_>>()
+        .len()
+}
+
 fn names(list: &[ItemCategory]) -> Vec<&str> {
     list.iter().map(|c| c.name.as_str()).collect()
 }
@@ -78,6 +87,7 @@ fn empty_and_fully_restricted_categories_are_hidden_and_counts_skip_restricted_i
     let scope = ItemScope {
         ruleset: None,
         restricted: vec!["Locked".into()],
+        ..ItemScope::default()
     };
     let list = category_list(&refs, &scope, &[]);
     // Firearms holds no item (the gun sits in Weapons), Vehicles only restricted ones.
@@ -98,8 +108,33 @@ fn ruleset_scope_hides_other_edition_items() {
     let scope = ItemScope {
         ruleset: Some(Ruleset::Dnd2014),
         restricted: Vec::new(),
+        ..ItemScope::default()
     };
     assert!(category_list(&refs, &scope, &[]).is_empty());
+}
+
+#[test]
+fn an_offered_other_edition_item_is_admitted_unless_its_source_is_restricted() {
+    let mut new = item("n", "Item", Some("Modern Gear"), "S");
+    new.ruleset = Some(Ruleset::Dnd2024);
+    let offered = ItemScope::new(Ruleset::Dnd2014, Vec::new(), ["n".to_string()].into());
+    assert!(offered.admits(&new));
+    let restricted = ItemScope::new(Ruleset::Dnd2014, vec!["S".into()], ["n".to_string()].into());
+    assert!(!restricted.admits(&new));
+}
+
+#[test]
+fn same_name_items_count_as_one_row() {
+    let mut a = item("a", "Item", Some("Lights"), "S");
+    a.name = "Hooded Lantern".into();
+    let mut b = item("b", "Item", Some("Lights"), "T");
+    b.name = "hooded  lantern".into();
+    let refs = [&a, &b];
+    let list = category_list(&refs, &ItemScope::default(), &[]);
+    assert_eq!(
+        list.iter().find(|c| c.name == "Lights").map(|c| c.count),
+        Some(1)
+    );
 }
 
 #[test]
@@ -200,17 +235,18 @@ fn the_command_lists_imported_categories_and_gates_class_spell_ones() {
     let at = |n: &str| shown.iter().position(|s| *s == n);
     assert!(at("Additional Spell") < at("Additional Feat"), "{shown:?}");
     assert!(!shown.contains(&"Additional Wizard Spell"), "{shown:?}");
-    // Every count is what the item search returns for that category.
+    // Every count is the number of rows the item search gives for that category: one per name (B-55).
     for c in &list {
         let page = app
             .search_items(&ItemFilter {
                 category: Some(c.name.clone()),
-                limit: Some(1),
+                limit: Some(1000),
                 character_id: Some(id.clone()),
                 ..ItemFilter::default()
             })
             .unwrap();
-        assert_eq!(page.total, c.count, "{}", c.name);
+        assert_eq!(page.items.len(), page.total, "{}", c.name);
+        assert_eq!(row_count(&page.items), c.count, "{}", c.name);
     }
 
     let snap = app.get_snapshot(&id).unwrap();

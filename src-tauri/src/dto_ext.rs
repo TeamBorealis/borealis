@@ -83,6 +83,10 @@ pub struct ItemSummary {
     pub weight: f64,
     /// Needs attunement.
     pub requires_attunement: bool,
+    /// B-55: from bundled content (the SRD packs, `PackOrigin::Core`); the add-item list's
+    /// default version order puts imported content first.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub bundled: bool,
 }
 
 /// Sheet export request options.

@@ -6320,6 +6320,12 @@
       "name": "ArmorFacts"
      }
     },
+    "bundled": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "category": {
      "opt": false,
      "t": {

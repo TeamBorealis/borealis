@@ -5,6 +5,8 @@ export interface ItemSummary extends ElementSummary {
   costCp: number;
   weight: number;
   requiresAttunement: boolean;
+  /** B-55 W3: present (true) when the item comes from bundled content (the SRD packs); orders the add-item list's default version. */
+  bundled?: boolean;
 }
 
 /** One equipment-screen category and how many items the character can see in it (`list_item_categories`). */
@@ -206,7 +208,7 @@ export interface ContentProgress {
 }
 
 export interface RestrictionPreview {
-  /** Picks that would be dropped if the restriction were applied. */
+  /** Current picks from a source the restriction would switch off. They stay chosen (the engine never removes a stored pick); only option lists narrow. */
   affected: { slotId: string; slotTitle: string; element: string }[];
 }
 

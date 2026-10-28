@@ -75,9 +75,10 @@ fn a_wizard_sees_the_generated_categories_after_the_content_ones() {
         "{shown:?}"
     );
     assert!(!shown.contains(&"Additional Cleric Spell"), "{shown:?}");
+    // A category counts the rows of its listing: one per name (B-55).
     for c in &list {
         let page = search(&app, &id, Some(&c.name), None);
-        assert_eq!(page.total, c.count, "{}", c.name);
+        assert_eq!(row_count(&page.items), c.count, "{}", c.name);
     }
     // the rows of a generated category are its proxies, by name
     let feats = search(&app, &id, Some("Additional Feat"), None);

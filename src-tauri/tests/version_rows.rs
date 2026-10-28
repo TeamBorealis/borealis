@@ -433,3 +433,33 @@ fn an_equivalent_twin_is_listed_and_accepted_while_its_counterpart_is_chosen() {
         Some(RED24)
     );
 }
+
+#[test]
+fn two_same_name_subraces_of_one_race_are_one_row_with_two_versions() {
+    // U10a: subraces group like other rows (synthetic race, two "Sub Race" entries of one name).
+    let kin = json!({"id": "ID_T_RACE_KIN", "name": "Test Kin", "type": "Race", "source": "Test Imports",
+        "rules": [{"kind": "select", "type": "Sub Race", "name": "Kin Subrace", "supports": "Test Kin"}]});
+    let sub = |id: &str, source: &str| json!({"id": id, "name": "Hill Folk", "type": "Sub Race", "source": source, "supports": ["Test Kin"]});
+    let pack = Pack(
+        Vec::new(),
+        vec![
+            kin,
+            sub("ID_T_SUB_RACE_HILL_FOLK", "Test Imports"),
+            sub("ID_T_SUB_RACE_HILL_FOLK_TWO", "Test Imports Two"),
+        ],
+    );
+    let (_d, app) = app(Some(&pack));
+    let snap = character(&app, Ruleset::Dnd2014);
+    let s = app
+        .apply_selection(&snap.id, &species_slot(&snap), "ID_T_RACE_KIN")
+        .expect("kin");
+    let p = page(&app, &s.id, &slot_of(&s, "Kin Subrace"), None);
+    let row = one_row(&p, "Hill Folk");
+    assert_eq!(
+        version_ids(row),
+        vec!["ID_T_SUB_RACE_HILL_FOLK", "ID_T_SUB_RACE_HILL_FOLK_TWO"]
+    );
+    assert_eq!(p["total"], 1);
+    let errs = Contract::load().response("get_slot_options", &p);
+    assert!(errs.is_empty(), "{errs:?}");
+}

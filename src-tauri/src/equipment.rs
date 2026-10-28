@@ -580,6 +580,7 @@ fn proxy_row(p: &ProxyEntry<'_>) -> ItemSummary {
         cost_cp: 0,
         weight: 0.0,
         requires_attunement: false,
+        bundled: false,
     }
 }
 
@@ -594,6 +595,9 @@ pub(crate) fn item_row(
         cost_cp: cost_cp(e),
         weight: weight_lb(e),
         requires_attunement: requires_attunement(e),
+        bundled: store
+            .get(&e.id)
+            .is_some_and(|s| s.origin == borealis_content::PackOrigin::Core),
     }
 }
 

@@ -17,8 +17,10 @@ use crate::error::ApiResult;
 use crate::gear_info::is_item;
 use crate::state::AppState;
 use borealis_content::{Element, Ruleset};
+use borealis_engine::profile::profile_for;
 use borealis_engine::proxy::ProxyEntry;
 use borealis_engine::universe::Universe;
+use borealis_engine::versions::{group_key, name_key};
 use std::collections::{HashMap, HashSet};
 
 /// Aurora's fixed category names, in its order.
@@ -55,18 +57,34 @@ const ARMOR: &str = "Armor";
 const GEAR: &str = "Adventuring Gear";
 const WONDROUS: &str = "Wondrous Items";
 
-/// The items a character may see: a compatible ruleset and an unrestricted source.
+/// The items a character may see: a compatible ruleset (or another edition's item the engine
+/// offers while the other edition is allowed, B-55 W3) and an unrestricted source.
 #[derive(Debug, Clone, Default)]
 pub struct ItemScope {
     ruleset: Option<Ruleset>,
     restricted: Vec<String>,
+    /// Ids of other-edition items the engine offers this character: accepted by its profile,
+    /// not superseded by an equivalent of its own edition, and only with strict mode off.
+    foreign: HashSet<String>,
 }
 
 impl ItemScope {
+    /// A scope of a character of `ruleset` with these restricted sources and offered
+    /// other-edition item ids.
+    #[must_use]
+    pub fn new(ruleset: Ruleset, restricted: Vec<String>, foreign: HashSet<String>) -> Self {
+        Self {
+            ruleset: Some(ruleset),
+            restricted,
+            foreign,
+        }
+    }
+
     /// Is `el` visible in this scope?
     #[must_use]
     pub fn admits(&self, el: &Element) -> bool {
         self.admits_parts(el.ruleset, &el.source)
+            || (self.foreign.contains(&el.id) && !self.restricted.contains(&el.source))
     }
 
     /// Is an element of this ruleset and source visible in this scope?
@@ -206,10 +224,14 @@ pub fn category_list_with(
     casting: &[String],
     generated: &[(String, usize)],
 ) -> Vec<ItemCategory> {
-    let mut counts: HashMap<&str, usize> = HashMap::new();
+    // One row per name (B-55): same-name items of a category are one row of the list.
+    let mut rows: HashMap<&str, HashSet<String>> = HashMap::new();
     for el in items.iter().filter(|e| scope.admits(e)) {
-        *counts.entry(list_category(el)).or_default() += 1;
+        rows.entry(list_category(el))
+            .or_default()
+            .insert(group_key(&el.ty, &el.name));
     }
+    let mut counts: HashMap<&str, usize> = rows.iter().map(|(c, r)| (*c, r.len())).collect();
     for (name, n) in generated {
         *counts.entry(name.as_str()).or_default() += n;
     }
@@ -238,11 +260,34 @@ impl AppState {
         let Some(id) = character_id else {
             return Ok(ItemScope::default());
         };
-        self.read(id, |_, s| {
-            Ok(ItemScope {
-                ruleset: Some(s.character.ruleset()),
-                restricted: s.character.build.restricted_sources.clone(),
-            })
+        self.read(id, |ctx, s| {
+            let build = &s.character.build;
+            let ruleset = s.character.ruleset();
+            let open = build
+                .allow_cross_edition
+                .unwrap_or_else(|| profile_for(build.ruleset).default_allow_cross_edition());
+            let foreign = if open {
+                ctx.hub
+                    .engine
+                    .universe(ruleset)
+                    .iter()
+                    .filter(|u| {
+                        u.edition.is_foreign()
+                            && u.edition.is_accepted()
+                            && !u.superseded
+                            && !u.derived
+                            && is_item(&u.el)
+                    })
+                    .map(|u| u.el.id.clone())
+                    .collect()
+            } else {
+                HashSet::new()
+            };
+            Ok(ItemScope::new(
+                ruleset,
+                build.restricted_sources.clone(),
+                foreign,
+            ))
         })
     }
 
@@ -270,7 +315,11 @@ impl AppState {
             .into_iter()
             .filter(|name| spell_category_allowed(name, &casting))
             .map(|name| {
-                let n = proxy_rows(uni, &scope, &name).len();
+                let n = proxy_rows(uni, &scope, &name)
+                    .iter()
+                    .map(|p| name_key(&p.name))
+                    .collect::<HashSet<_>>()
+                    .len();
                 (name, n)
             })
             .collect();
