@@ -103,7 +103,8 @@ const escapeRe = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '
  * the list, which fills the middle of the window) and try again.
  */
 export async function pickInBuild(ctx: Ctx, name: string, source: string): Promise<void> {
-  const option = ctx.screen.getByRole('checkbox', new RegExp(`^${escapeRe(name)}, ${escapeRe(source)}$`)).first();
+  // A row with several versions (same name in other sources or editions) ends its name with ", <n> versions".
+  const option = ctx.screen.getByRole('checkbox', new RegExp(`^${escapeRe(name)}, ${escapeRe(source)}(, \\d+ versions)?$`)).first();
   const chosen = ctx.screen.getByRole('button', new RegExp(`^Clear ${escapeRe(name)}$`)).first();
   for (let attempt = 0; attempt < MAX_PICKS; attempt += 1) {
     await tapInView(ctx, option, { double: true });
