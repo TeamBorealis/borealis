@@ -31,6 +31,7 @@
     "allow-get-slot-options",
     "allow-apply-selection",
     "allow-clear-selection",
+    "allow-switch-version",
     "allow-set-xp",
     "allow-level-up",
     "allow-level-down",

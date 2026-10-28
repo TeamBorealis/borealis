@@ -99,8 +99,9 @@ fn multiclass_options(
         .expect("options");
     let rows = page
         .items
-        .into_iter()
-        .map(|o| (o.summary.id, o.summary.prerequisites))
+        .iter()
+        .flat_map(|o| o.all_versions().iter())
+        .map(|v| (v.summary.id.clone(), v.summary.prerequisites.clone()))
         .collect();
     (slot, rows)
 }

@@ -74,8 +74,8 @@ fn offered(app: &AppState, snap: &CharacterSnapshot, element_type: &str) -> Vec<
     app.get_slot_options(&snap.id, slot(snap, element_type), None, Some(500), None)
         .expect("options")
         .items
-        .into_iter()
-        .map(|o| o.summary.id)
+        .iter()
+        .flat_map(|o| o.all_versions().iter().map(|v| v.summary.id.clone()))
         .collect()
 }
 

@@ -65,6 +65,12 @@ Clean-room note: sample data in the mock is original and SRD-generic.
 - `get_slot_options` returns the *currently valid* candidates (source restrictions, requirements, duplicates already
   applied; failing multiclass prerequisites are hidden). `disabledReason` may mark visible-but-unselectable rows.
   `apply_selection` must re-validate and fail with `requirement_failed` if the element is no longer valid.
+- B-55 (`specs/version-rows-and-filters.md`): `get_slot_options` returns one row per name (type family + normalized
+  name). A row with two or more offered options lists them in `versions` (`versions[0]` is the row itself: the chosen
+  version, else the default order: character's edition, imported before bundled, source A-Z, id). Paging is by row and
+  `total` counts rows; omit `limit` (or pass 0) to get every row. `query` matches the normalized row name.
+  `switch_version` replaces a chosen row's pick with another of its versions in place, keeps the sub-choices that the
+  new version offers again (same rule name and ordinal, same element or same name) and returns the dropped slot titles.
 - 2024: background ability increases are ordinary slots (a +2 slot and a +1 slot with ability options), the origin feat is
   a `locked` feats slot, weapon mastery is a `weapon-mastery` slot group on the class tab. The ruleset badge and
   terminology (`Species` vs `Race`) come from `get_ruleset_profile`.
@@ -115,6 +121,7 @@ Clean-room note: sample data in the mock is original and SRD-generic.
 | `get_slot_options` | `SlotOptionsArgs` | `Page<SlotOption>` |
 | `apply_selection` | `characterId, { slotId: string; elementId: string }` | `CharacterSnapshot` |
 | `clear_selection` | `characterId, { slotId: string }` | `CharacterSnapshot` |
+| `switch_version` | `characterId, { slotId: string; elementId: string }` | `SwitchVersionResult` (`{ snapshot, dropped }`) |
 | `replace_spell` | `characterId, { slotId: string }` | `CharacterSnapshot` |
 
 ### Builder: levels
@@ -287,7 +294,8 @@ Fields added by the 5etools import gaps work:
 | `ai_host_enable` / `ai_host_disable` / `ai_host_status` / `ai_host_begin_pairing` | none | `AiHostStatus` |
 | `ai_host_revoke` | `{ deviceId: string }` | `AiHostStatus` |
 
-`SlotOption` (the item type of `get_slot_options`) is an `ElementSummary` plus optional `disabledReason`; `Cid` in the
+`SlotOption` (the item type of `get_slot_options`) is a `SlotOptionBase` (an `ElementSummary` plus optional
+`disabledReason`, edition marks and `bundled`) plus optional `versions: SlotOptionBase[]` (B-55); `Cid` in the
 table means a single `characterId` string argument.
 
 ## 4. Events (push, backend -> UI)

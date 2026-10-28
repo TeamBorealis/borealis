@@ -212,25 +212,19 @@ impl<'a> Driver<'a> {
         out
     }
 
+    /// Every offered element of a slot: each version of every row (B-55), fetched whole.
     fn fetch_options(&self, host: &Host, slot_id: &str) -> Vec<(String, String)> {
-        let mut out = Vec::new();
-        loop {
-            let Ok(page) =
-                self.app
-                    .get_slot_options(&host.id, slot_id, None, Some(PAGE), Some(out.len()))
-            else {
-                return out;
-            };
-            let n = page.items.len();
-            out.extend(
-                page.items
-                    .into_iter()
-                    .map(|o| (o.summary.id, o.summary.name)),
-            );
-            if n == 0 || out.len() >= page.total {
-                return out;
-            }
-        }
+        let Ok(page) = self
+            .app
+            .get_slot_options(&host.id, slot_id, None, None, None)
+        else {
+            return Vec::new();
+        };
+        page.items
+            .iter()
+            .flat_map(|o| o.all_versions().iter())
+            .map(|v| (v.summary.id.clone(), v.summary.name.clone()))
+            .collect()
     }
 
     /// Record everything the host offers now: open slots' options, chosen ids, spell lists.

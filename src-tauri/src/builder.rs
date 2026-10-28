@@ -2,7 +2,8 @@
 
 use crate::dto::{
     AbilityMethodDto, CharacterSnapshot, ElementSummary, NewCharacterRequest, OptionsPatch, Page,
-    RollRecord, Ruleset, RulesetProfileDto, SlotOption, Terminology,
+    RollRecord, Ruleset, RulesetProfileDto, SlotOption, SlotOptionBase, SwitchVersionResult,
+    Terminology,
 };
 use crate::elements::summary;
 use crate::error::{ApiError, ApiResult};
@@ -10,15 +11,18 @@ use crate::extras::{array_assignment, set_ui_extras, ui_extras};
 use crate::ids::{ability_index, decode_class_slot, decode_slot, ui_type, ABILITY_KEYS};
 use crate::session::{fill_defaults, new_id, slot_keys, Ctx, Draft};
 use crate::state::AppState;
+use crate::version_rows::{group_rows, Candidate};
 use borealis_character::Character;
+use borealis_content::ContentStore;
 use borealis_engine::commands::{self, CommandOutcome};
 use borealis_engine::ids as engine_ids;
 use borealis_engine::profile::{profile_for, AbilityScoreSource};
+use borealis_engine::snapshot::{OptionRef, SlotSnapshot};
 use borealis_engine::state::AbilityMethod;
+use borealis_engine::versions::name_key;
 use borealis_engine::{CharacterState, Choice, ClassSlot, EditionBadge};
 
 const MAX_LEVEL: u32 = 20;
-const DEFAULT_PAGE: usize = 200;
 const MAX_PAGE: usize = 1000;
 const MAX_XP: i64 = 10_000_000;
 const DEFAULT_GROUP: &str = "Characters";
@@ -138,7 +142,9 @@ impl AppState {
         self.insert_session(&id, draft.character, path, false)
     }
 
-    /// Valid candidates of a slot, filtered by name and paged.
+    /// The rows of a slot (B-55: one per name, its versions the offered options of that name),
+    /// filtered by name and paged by row. `limit` absent or 0 returns every row; `total`
+    /// counts rows.
     ///
     /// # Errors
     /// `not_found` if the character or slot does not exist.
@@ -152,54 +158,80 @@ impl AppState {
     ) -> ApiResult<Page<SlotOption>> {
         let key = decode_slot(slot_id)?;
         self.read(id, |ctx, session| {
-            let snap = ctx.hub.derive(&session.character.build);
+            let state = &session.character.build;
+            let snap = ctx.hub.derive(state);
             let slot = snap
                 .slots
                 .iter()
                 .find(|s| s.key == key && s.rejected.is_none())
                 .ok_or_else(|| ApiError::not_found("That selection slot does not exist."))?;
-            let needle = query
-                .map(str::trim)
-                .filter(|q| !q.is_empty())
-                .map(str::to_lowercase);
-            let matches = |name: &str| {
-                needle
-                    .as_ref()
-                    .is_none_or(|n| name.to_lowercase().contains(n))
-            };
             let skip = offset.unwrap_or(0);
-            let take = limit.unwrap_or(DEFAULT_PAGE).min(MAX_PAGE);
-            // rows of the page only are mapped (a summary renders the description)
-            let (total, items) = if slot.ty == "List" {
-                let rows: Vec<_> = slot
-                    .list_items
-                    .iter()
-                    .filter(|(_, text)| matches(text))
-                    .collect();
-                let items = rows
-                    .iter()
-                    .skip(skip)
-                    .take(take)
-                    .map(|(item, text)| list_option(*item, text, &slot.owner.source))
-                    .collect();
-                (rows.len(), items)
-            } else {
-                let rows: Vec<_> = slot
-                    .options
-                    .iter()
-                    .filter(|o| matches(&o.name))
-                    .filter_map(|o| ctx.hub.element(&o.id).map(|el| (o, el)))
-                    .collect();
-                let items = rows
-                    .iter()
-                    .skip(skip)
-                    .take(take)
-                    .map(|(o, el)| element_option(summary(&ctx.hub.store, el), o.edition.as_ref()))
-                    .collect();
-                (rows.len(), items)
+            let take = match limit {
+                None | Some(0) => usize::MAX,
+                Some(n) => n.min(MAX_PAGE),
             };
-            Ok(Page { total, items })
+            if slot.ty == "List" {
+                return Ok(list_page(slot, query, skip, take));
+            }
+            let versions = chosen_versions(ctx, state, slot);
+            let offered = slot.options.iter().chain(
+                versions
+                    .iter()
+                    .filter(|v| !slot.options.iter().any(|o| o.id == v.id)),
+            );
+            let candidates = offered
+                .filter_map(|o| ctx.hub.element(&o.id).map(|el| (o, el)))
+                .map(|(o, el)| Candidate::new(o, el, &ctx.hub.store, state.ruleset))
+                .collect();
+            let chosen = slot.chosen.as_ref().map(|c| c.id.as_str());
+            let rows = group_rows(candidates, chosen, query);
+            // rows of the page only are mapped (a summary renders the description)
+            let items = rows
+                .iter()
+                .skip(skip)
+                .take(take)
+                .filter_map(|row| row_option(&ctx.hub.store, row))
+                .collect();
+            Ok(Page {
+                total: rows.len(),
+                items,
+            })
         })
+    }
+
+    /// Switch the slot's pick to another version of the same row (B-55,
+    /// `specs/version-rows-and-filters.md` 3): replaced in place, the sub-choices that still fit
+    /// chosen again, the rest reported in `dropped`. Nothing changes on an error.
+    ///
+    /// # Errors
+    /// `not_found` for an unknown character, slot or element; `invalid_argument` for a locked
+    /// slot; `requirement_failed` for an empty slot or an element that is not a version of the
+    /// slot's pick.
+    pub fn switch_version(
+        &self,
+        id: &str,
+        slot_id: &str,
+        element_id: &str,
+    ) -> ApiResult<SwitchVersionResult> {
+        let key = decode_slot(slot_id)?;
+        let mut dropped = Vec::new();
+        let snapshot = self.mutate(id, |ctx, d| {
+            let snap = ctx.hub.derive(&d.character.build);
+            let slot = snap
+                .slots
+                .iter()
+                .find(|s| s.key == key)
+                .ok_or_else(|| ApiError::not_found("That selection slot does not exist."))?;
+            if slot.locked && !slot.chosen.as_ref().is_some_and(|c| c.id == element_id) {
+                return Err(ApiError::invalid(LOCKED_SLOT));
+            }
+            let out =
+                commands::switch_version(&ctx.hub.engine, &d.character.build, &key, element_id)?;
+            dropped = out.dropped;
+            apply_filled(ctx, d, out.outcome);
+            Ok(())
+        })?;
+        Ok(SwitchVersionResult { snapshot, dropped })
     }
 
     /// Put an element into a slot (re-validated by the engine).
@@ -538,8 +570,8 @@ fn assign_array(d: &mut Draft, index: usize, value: Option<i32>) -> ApiResult<()
     Ok(())
 }
 
-fn list_option(item: i64, text: &str, source: &str) -> SlotOption {
-    SlotOption {
+fn list_option(item: i64, text: &str, source: &str) -> SlotOptionBase {
+    SlotOptionBase {
         summary: ElementSummary {
             id: item.to_string(),
             name: text.to_string(),
@@ -559,18 +591,79 @@ fn list_option(item: i64, text: &str, source: &str) -> SlotOption {
         edition: None,
         converted: false,
         edition_notes: Vec::new(),
+        bundled: false,
     }
+}
+
+/// A page of a `List` slot's entries whose normalized text contains the normalized query.
+fn list_page(
+    slot: &SlotSnapshot,
+    query: Option<&str>,
+    skip: usize,
+    take: usize,
+) -> Page<SlotOption> {
+    let needle = query.map(name_key).filter(|q| !q.is_empty());
+    let rows: Vec<_> = slot
+        .list_items
+        .iter()
+        .filter(|(_, text)| {
+            needle
+                .as_ref()
+                .is_none_or(|n| name_key(text).contains(n.as_str()))
+        })
+        .collect();
+    let items = rows
+        .iter()
+        .skip(skip)
+        .take(take)
+        .map(|(item, text)| SlotOption::single(list_option(*item, text, &slot.owner.source)))
+        .collect();
+    Page {
+        total: rows.len(),
+        items,
+    }
+}
+
+/// The versions of a chosen slot's pick (with an equivalent twin the plain option list hides
+/// while the pick is held); empty for an empty slot.
+fn chosen_versions(ctx: &Ctx<'_>, state: &CharacterState, slot: &SlotSnapshot) -> Vec<OptionRef> {
+    if slot.chosen.is_none() {
+        return Vec::new();
+    }
+    commands::pick_versions(&ctx.hub.engine, state, &slot.key).unwrap_or_else(|e| {
+        tracing::warn!("listing the versions of a chosen pick failed: {e}");
+        Vec::new()
+    })
+}
+
+/// A picker row: its first version's fields, and every version when there are two or more
+/// (`None` for an empty row, which grouping never makes).
+fn row_option(store: &ContentStore, row: &[Candidate<'_, OptionRef>]) -> Option<SlotOption> {
+    let versions: Vec<SlotOptionBase> = row
+        .iter()
+        .map(|c| SlotOptionBase {
+            bundled: c.bundled,
+            ..element_option(summary(store, c.element), c.option.edition.as_ref())
+        })
+        .collect();
+    let base = versions.first()?.clone();
+    Some(if versions.len() > 1 {
+        SlotOption { base, versions }
+    } else {
+        SlotOption::single(base)
+    })
 }
 
 /// An element option row with its R6 edition marks: the edition it was written for, whether the
 /// adapter converted it and the adapter's notes (all empty for same-edition options).
-fn element_option(summary: ElementSummary, badge: Option<&EditionBadge>) -> SlotOption {
-    SlotOption {
+fn element_option(summary: ElementSummary, badge: Option<&EditionBadge>) -> SlotOptionBase {
+    SlotOptionBase {
         summary,
         disabled_reason: None,
         edition: badge.map(|b| b.from),
         converted: badge.is_some_and(|b| b.converted),
         edition_notes: badge.map(|b| b.notes.clone()).unwrap_or_default(),
+        bundled: false,
     }
 }
 

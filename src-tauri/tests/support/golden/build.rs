@@ -249,26 +249,23 @@ impl Ctx<'_> {
             || norm::name(&slot.title).contains(&norm::name(filter))
     }
 
+    /// Every offered element of a slot: each version of every row (B-55), fetched whole.
     fn options(&self, slot_id: &str) -> Vec<(String, String, String)> {
-        let mut out = Vec::new();
-        loop {
-            let Ok(page) =
-                self.app
-                    .get_slot_options(&self.id, slot_id, None, Some(PAGE), Some(out.len()))
-            else {
-                return out;
-            };
-            let n = page.items.len();
-            out.extend(
-                page.items
-                    .into_iter()
-                    .filter(|o| o.disabled_reason.is_none())
-                    .map(|o| (o.summary.id, o.summary.name, o.summary.source)),
-            );
-            if n == 0 || out.len() >= page.total {
-                return out;
-            }
-        }
+        let Ok(page) = self
+            .app
+            .get_slot_options(&self.id, slot_id, None, None, None)
+        else {
+            return Vec::new();
+        };
+        page.items
+            .iter()
+            .flat_map(|o| o.all_versions().iter())
+            .filter(|v| v.disabled_reason.is_none())
+            .map(|v| {
+                let s = &v.summary;
+                (s.id.clone(), s.name.clone(), s.source.clone())
+            })
+            .collect()
     }
 
     fn pick(&mut self, name: &str, step: &Value, level: usize) -> Option<String> {

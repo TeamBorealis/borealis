@@ -27,6 +27,7 @@ const COMMANDS: &[&str] = &[
     "get_slot_options",
     "apply_selection",
     "clear_selection",
+    "switch_version",
     "set_xp",
     "level_up",
     "level_down",

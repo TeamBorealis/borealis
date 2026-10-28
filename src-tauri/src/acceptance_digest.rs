@@ -38,7 +38,6 @@ const SCORES: [(&str, i32); 6] = [
 ];
 /// Upper bound of first-option fills per level.
 const FILL_PASSES: usize = 80;
-const PAGE: usize = 500;
 /// Slot types never filled automatically: a pinned id that is not offered stays visible.
 const NOT_FILLED: [&str; 4] = ["Race", "Species", "Class", "Multiclass"];
 /// Length of the hex run in generated ids (`c_<uuid simple>`).
@@ -332,18 +331,16 @@ fn level_and_fill(
     Ok(snap)
 }
 
+/// Every offered element id of a slot: each version of every row (B-55 rows, fetched whole).
 fn options(app: &AppState, id: &str, slot: &str) -> Vec<String> {
-    let mut out = Vec::new();
-    loop {
-        let Ok(page) = app.get_slot_options(id, slot, None, Some(PAGE), Some(out.len())) else {
-            return out;
-        };
-        let n = page.items.len();
-        out.extend(page.items.into_iter().map(|o| o.summary.id));
-        if n == 0 || out.len() >= page.total {
-            return out;
-        }
-    }
+    app.get_slot_options(id, slot, None, None, None)
+        .map(|page| {
+            page.items
+                .iter()
+                .flat_map(|o| o.all_versions().iter().map(|v| v.summary.id.clone()))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// Choose `target` in the first open slot that offers it (no change when none does).

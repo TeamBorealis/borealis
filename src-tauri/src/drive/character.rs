@@ -243,11 +243,24 @@ pub fn options(d: &Drive, a: &OptionsArgs) -> DriveResult<Value> {
         .items
         .iter()
         .map(|o| {
-            json!({
-                "id": o.summary.id, "name": o.summary.name, "type": o.summary.ty,
-                "source": o.summary.source_name, "prerequisites": o.summary.prerequisites,
-                "disabledReason": o.disabled_reason,
-            })
+            let b = &o.base;
+            let mut row = json!({
+                "id": b.summary.id, "name": b.summary.name, "type": b.summary.ty,
+                "source": b.summary.source_name, "prerequisites": b.summary.prerequisites,
+                "disabledReason": b.disabled_reason,
+            });
+            // B-55: a row of one name lists its other offered versions (each pickable by id)
+            if !o.versions.is_empty() {
+                row["versions"] = o
+                    .versions
+                    .iter()
+                    .map(|v| {
+                        json!({"id": v.summary.id, "source": v.summary.source_name,
+                        "rulesets": v.summary.rulesets, "disabledReason": v.disabled_reason})
+                    })
+                    .collect();
+            }
+            row
         })
         .collect();
     Ok(json!({"total": page.total, "options": items}))

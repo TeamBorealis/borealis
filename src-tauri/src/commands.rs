@@ -5,6 +5,7 @@ use crate::builder::ruleset_profile;
 use crate::dto::{
     AbilityMethodDto, CharacterSnapshot, CharacterSummary, ExportResult, ImportReport,
     NewCharacterRequest, OptionsPatch, Page, RecheckReport, Ruleset, RulesetProfileDto, SlotOption,
+    SwitchVersionResult,
 };
 use crate::error::{ApiError, ApiResult};
 use crate::settings::AppSettings;
@@ -202,6 +203,17 @@ pub fn clear_selection(
     slot_id: String,
 ) -> ApiResult<CharacterSnapshot> {
     state.clear_selection(&character_id, &slot_id)
+}
+
+/// B-55: switch a chosen row to another of its versions, keeping the sub-choices that fit.
+#[tauri::command(async)]
+pub fn switch_version(
+    state: S<'_>,
+    character_id: String,
+    slot_id: String,
+    element_id: String,
+) -> ApiResult<SwitchVersionResult> {
+    state.switch_version(&character_id, &slot_id, &element_id)
 }
 
 #[tauri::command(async)]

@@ -125,7 +125,7 @@ fn builder_tools() -> Vec<Value> {
     let slot = ("slot_id", s("Selection slot id (from list_slots)."));
     vec![
         tool("list_slots", "The character's selection slots (race/species, class, background, feats, spells, ...), with what is chosen. `open_only` lists only empty slots.", &props(&[id(), ("open_only", flag("Only slots with nothing chosen.")), ("tab", s("Only slots of this builder tab."))]), &["id"], Kind::Read),
-        tool("list_options", "The options the engine offers for one slot, with the reason an option is not available.", &props(&[id(), slot.clone(), ("query", s("Filter by name.")), ("limit", int("Page size (default 50).")), ("offset", int("Page start."))]), &["id", "slot_id"], Kind::Read),
+        tool("list_options", "The options the engine offers for one slot, one row per name, with the reason an option is not available. A row with `versions` has several offered editions/sources of that name; pick any of them by id.", &props(&[id(), slot.clone(), ("query", s("Filter by name.")), ("limit", int("Page size (default 50).")), ("offset", int("Page start."))]), &["id", "slot_id"], Kind::Read),
         tool("pick", "Choose an element for a slot. The engine validates it exactly as the app does.", &props(&[id(), slot.clone(), ("element_id", s("Element id from list_options."))]), &["id", "slot_id", "element_id"], Kind::Write),
         tool("unpick", "Clear a slot's choice.", &props(&[id(), slot]), &["id", "slot_id"], Kind::Write),
         tool("level_up", "Gain a level in a class (`class_slot_id`, default the main class `main`).", &props(&[id(), ("class_slot_id", s("Class slot id (`main` or a multiclass slot)."))]), &["id"], Kind::Write),

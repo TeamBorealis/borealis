@@ -124,8 +124,8 @@ fn offered(app: &AppState, snap: &CharacterSnapshot, title: &str) -> Vec<String>
     app.get_slot_options(&snap.id, &slot_id(snap, title), None, Some(500), None)
         .expect("options")
         .items
-        .into_iter()
-        .map(|o| o.summary.id)
+        .iter()
+        .flat_map(|o| o.all_versions().iter().map(|v| v.summary.id.clone()))
         .collect()
 }
 

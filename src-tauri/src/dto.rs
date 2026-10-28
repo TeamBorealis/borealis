@@ -114,10 +114,11 @@ pub struct ElementSummary {
     pub weapon: Option<crate::gear_facts::WeaponFacts>,
 }
 
-/// A slot option (an element row, optionally disabled).
+/// One offered option of a slot (an element, optionally disabled); also one version of a
+/// grouped picker row (B-55, `specs/version-rows-and-filters.md`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SlotOption {
+pub struct SlotOptionBase {
     #[serde(flatten)]
     pub summary: ElementSummary,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -133,6 +134,58 @@ pub struct SlotOption {
     /// shown on hover/tap of its edition badge or "converted" tag.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub edition_notes: Vec<String>,
+    /// B-55: the element comes from bundled content (the SRD packs, `PackOrigin::Core`); the
+    /// default version order puts imported content first.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub bundled: bool,
+}
+
+/// A picker row (B-55): one name of a slot. Its own fields are its shown version: the slot's
+/// current pick when that is one of the row's versions, else the default version (character's
+/// edition first, edition-neutral counting as the character's; imported before bundled;
+/// source name A-Z; element id).
+///
+/// `get_slot_options` pages rows and `total` counts rows. A call without `limit` (or with
+/// `limit: 0`) returns every row: that is how a picker fetches the whole list.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SlotOption {
+    #[serde(flatten)]
+    pub base: SlotOptionBase,
+    /// Every offered version of the row in the slot, present only when there are two or more;
+    /// `versions[0]` is the row's own version.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub versions: Vec<SlotOptionBase>,
+}
+
+impl SlotOption {
+    /// A row of one version.
+    #[must_use]
+    pub fn single(base: SlotOptionBase) -> Self {
+        Self {
+            base,
+            versions: Vec::new(),
+        }
+    }
+
+    /// Every version of the row, the row's own first (the row alone when it has no others).
+    #[must_use]
+    pub fn all_versions(&self) -> &[SlotOptionBase] {
+        if self.versions.is_empty() {
+            std::slice::from_ref(&self.base)
+        } else {
+            &self.versions
+        }
+    }
+}
+
+/// B-55: the result of switching a chosen row to another of its versions.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SwitchVersionResult {
+    pub snapshot: CharacterSnapshot,
+    /// Titles of the sub-choices that did not fit the new version, in slot order, each once.
+    pub dropped: Vec<String>,
 }
 
 /// A page of results.

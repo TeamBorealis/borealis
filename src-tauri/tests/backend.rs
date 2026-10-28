@@ -137,7 +137,7 @@ fn slot_options_filter_and_page() {
         .get_slot_options(&snap.id, &slot, Some("wizard"), Some(5), Some(0))
         .expect("q");
     assert_eq!(one.total, 1);
-    assert_eq!(one.items[0].summary.name, "Wizard");
+    assert_eq!(one.items[0].base.summary.name, "Wizard");
     let page = app
         .get_slot_options(&snap.id, &slot, None, Some(3), Some(2))
         .expect("page");
@@ -630,7 +630,7 @@ fn a_default_is_chosen_when_its_slot_appears_and_locks_while_it_is_the_sole_opti
             .expect("options")
             .items
             .into_iter()
-            .filter(|o| o.disabled_reason.is_none())
+            .filter(|o| o.base.disabled_reason.is_none())
             .count()
     };
     assert_eq!(offered(&app), 1, "only ASI qualifies with 8s");

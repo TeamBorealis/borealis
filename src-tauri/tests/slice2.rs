@@ -95,7 +95,7 @@ fn fill_spell_slots(app: &AppState, id: &str) -> CharacterSnapshot {
             break;
         };
         snap = app
-            .apply_selection(id, &slot.id, &first.summary.id)
+            .apply_selection(id, &slot.id, &first.base.summary.id)
             .expect("pick spell");
     }
     snap

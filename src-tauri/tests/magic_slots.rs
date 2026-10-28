@@ -107,7 +107,12 @@ fn a_cantrip_picked_through_a_real_slot_id_joins_the_wizard_spell_list() {
     let options = app
         .get_slot_options(&snap.id, &slot.id, None, Some(1), None)
         .expect("options");
-    let pick = &options.items.first().expect("a cantrip option").summary;
+    let pick = &options
+        .items
+        .first()
+        .expect("a cantrip option")
+        .base
+        .summary;
     let after = app
         .apply_selection(&snap.id, &slot.id, &pick.id)
         .expect("pick cantrip");
@@ -138,7 +143,7 @@ fn sage_ability_scores_is_a_list_slot_whose_options_are_not_elements() {
     let options = app
         .get_slot_options(&snap.id, &slot.id, None, None, None)
         .expect("options");
-    let first = &options.items.first().expect("an entry").summary;
+    let first = &options.items.first().expect("an entry").base.summary;
     assert_eq!(first.ty, "list");
     assert!(
         app.get_element(&first.id).is_err(),

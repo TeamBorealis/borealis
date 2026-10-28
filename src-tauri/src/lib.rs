@@ -136,6 +136,7 @@ pub mod state;
 pub mod sync_dto;
 pub mod vector_service;
 pub mod vector_status;
+pub mod version_rows;
 pub mod webview_args;
 pub mod zip_read;
 
@@ -337,6 +338,7 @@ pub fn run() {
             commands::get_slot_options,
             commands::apply_selection,
             commands::clear_selection,
+            commands::switch_version,
             commands::set_xp,
             commands::level_up,
             commands::level_down,
