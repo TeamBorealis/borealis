@@ -63,14 +63,11 @@ jobs:
         with:
           workspaces: ". -> target"
           shared-key: test
-      # A llama.cpp build cached from before the x86_64 baseline (S3.3) keeps its CMake cache (cmake does not
-      # reconfigure an existing build): rebuild it once.
+      # A llama.cpp build cached from before the x86_64 baseline (S3.3) or the MSVC hybrid runtime (B-56) keeps its
+      # CMake cache (cmake does not reconfigure an existing build): rebuild it once.
       - name: Drop a stale llama.cpp build
         shell: bash
-        run: |
-          if grep -qs '^GGML_AVX2:BOOL=ON' target/debug/build/llama-cpp-sys-2-*/out/build/CMakeCache.txt; then
-            cargo clean -p llama-cpp-sys-2
-          fi
+        run: bash build/ci/drop-stale-llama-build.sh target/debug
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -165,6 +162,9 @@ jobs:
         with:
           workspaces: ". -> target"
           shared-key: bundle
+      - name: Drop a stale llama.cpp build
+        shell: bash
+        run: bash build/ci/drop-stale-llama-build.sh target/release
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -206,6 +206,15 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: ./build/check-x86-baseline.ps1 target/release -Also target/ggml-bundle -RequireModules | Tee-Object -FilePath bundle-record/x86-levels.txt
+      # B-56: neither the exe nor any llama.cpp DLL or CPU backend module imports the VC++ runtime (msvcp140,
+      # vcruntime140*): the app must start on a PC without the Visual C++ redistributable.
+      - name: No VC++ runtime imports (Windows dumpbin, release build, staged libraries, installer)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          ./build/check-no-vc-runtime.ps1 target/release/borealis.exe target/ggml-bundle $setup.FullName -Require borealis.exe, llama.dll, ggml.dll, ggml-base.dll, ggml-cpu-x64.dll | Tee-Object -FilePath bundle-record/vc-runtime-build.txt
+          exit $LASTEXITCODE
       # B-49: install the bundles and start llama.cpp from the installed app: the CPU backend module must load from
       # the install folder (AVX2 or better on these runners).
       - name: Installed bundles load their CPU backend (Linux deb, rpm, AppImage)
@@ -239,6 +248,34 @@ jobs:
           Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Borealis'), (Join-Path $env:LOCALAPPDATA 'Borealis\ggml') | Format-Table Name, Length
           if (-not (Test-Path $app)) { Write-Output "::error::the installer put no $app"; exit 1 }
           "INSTALLED_APP=$app" >> $env:GITHUB_ENV
+      - name: No VC++ runtime imports (Windows, the NSIS-installed files)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          ./build/check-no-vc-runtime.ps1 (Split-Path $env:INSTALLED_APP) -Require borealis.exe, llama.dll, ggml.dll, ggml-base.dll, ggml-cpu-x64.dll | Tee-Object -FilePath bundle-record/vc-runtime-installed.txt
+          exit $LASTEXITCODE
+      # The installed app starts and stays up with its main window (the runner has the VC++ runtime, so the import
+      # checks above, not this, prove it is not needed). Lists any VC++ runtime DLL the process has loaded anyway.
+      - name: Installed app launch smoke (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath $env:INSTALLED_APP -PassThru
+          $title = ''
+          for ($i = 1; $i -le 20; $i++) {
+            Start-Sleep -Seconds 1
+            $p.Refresh()
+            if ($p.HasExited) { break }
+            if (-not $title -and $p.MainWindowTitle) { $title = $p.MainWindowTitle }
+          }
+          $alive = -not $p.HasExited
+          $vc = if ($alive) { @($p.Modules | Where-Object ModuleName -match '^(msvcp|vcruntime)\d' | ForEach-Object FileName) } else { @() }
+          Write-Output "launch: alive $alive after $i s; window title '$title'; VC++ runtime modules loaded: $(if ($vc) { $vc -join ', ' } else { 'none' })"
+          "{`"label`":`"launch`",`"alive`":`"$alive`",`"window`":`"$title`",`"vc_runtime_loaded`":`"$($vc -join ';')`"}" | Out-File -Encoding ascii bundle-record/launch.json
+          if ($alive) { Stop-Process -Id $p.Id -Force }
+          Get-Process msedgewebview2 -ErrorAction SilentlyContinue | Stop-Process -Force
+          if (-not $alive) { Write-Output "::error::the installed app exited within 20 s (exit code $($p.ExitCode))"; exit 1 }
+          if (-not $title) { Write-Output '::error::the installed app showed no main window within 20 s'; exit 1 }
       - name: Installed app loads its CPU backend (Windows NSIS)
         if: runner.os == 'Windows'
         shell: bash
@@ -494,10 +531,7 @@ jobs:
           workspaces: ". -> target"
           shared-key: embed-release
       - name: Drop a stale llama.cpp build
-        run: |
-          if grep -qs '^GGML_AVX2:BOOL=ON' target/release/build/llama-cpp-sys-2-*/out/build/CMakeCache.txt; then
-            cargo clean --release -p llama-cpp-sys-2
-          fi
+        run: bash build/ci/drop-stale-llama-build.sh target/release
       - uses: actions/setup-node@v4
         with:
           node-version: 22
