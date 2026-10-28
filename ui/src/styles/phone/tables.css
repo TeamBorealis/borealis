@@ -93,10 +93,9 @@ html.phone .sp-replaced { font-style: normal; color: var(--ph-text-2); }
 html.phone .sp-slots-scroll { max-height: none; }
 
 /* ---------- Edition marks, switches and radios: readable, and 3:1 boundaries in both themes ---------- */
-html.phone .ed-badge, html.phone .ed-chip {
+html.phone .ed-chip {
   padding: 1px 6px; border-radius: var(--ph-r-sm); font: 600 var(--ph-t-caption)/1.3 var(--ph-font-ui); letter-spacing: 0; text-transform: none;
 }
-html.phone .ed-badge { border-color: var(--ph-field-line); color: var(--ph-text-2); }
 html.phone .ed-chip { border-color: var(--ph-gold); color: var(--ph-gold); }
 html.phone .ed-tag { min-width: var(--ph-hit); min-height: var(--ph-hit); justify-content: center; }
 html.phone .ed-notes { font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); font-style: normal; color: var(--ph-text-2); }

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { MockApi } from "../api/mock";
 import type { SlotOption } from "../api/contract";
-import { mergeRows } from "../pages/builder/PickerGroup";
+import { buildRows } from "../lib/versions";
 import { sourceLine } from "../pages/builder/AbilityTile";
 import { renderApp } from "./utils";
 
@@ -67,7 +67,7 @@ describe("Picker helpers", () => {
 
   it("keeps a chosen element at its alphabetical place instead of pinning it on top", () => {
     const opt = (id: string, name: string) => ({ id, name } as unknown as SlotOption);
-    const rows = mergeRows([opt("a", "Acrobatics"), opt("c", "Insight"), opt("d", "Survival")], [{ id: "b", name: "Athletics" } as never]);
+    const rows = buildRows([opt("a", "Acrobatics"), opt("c", "Insight"), opt("d", "Survival")], { id: "b", name: "Athletics" });
     expect(rows.map((r) => r.name)).toEqual(["Acrobatics", "Athletics", "Insight", "Survival"]);
   });
 });

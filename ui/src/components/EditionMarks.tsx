@@ -1,13 +1,14 @@
 import type { MouseEvent } from "react";
 import type { SlotOption } from "../api/contract";
+import { editionSuffix } from "../lib/versions";
 
 /**
- * R6 / R6a: picker edition marks, a deliberate exception to "match Aurora exactly".
+ * R6 / R6a / B-55: picker edition marks, a deliberate exception to "match Aurora exactly".
  *
- * Rule: a row gets the edition badge ("2014" / "2024") only when the option was written for the other edition than
- * the character's (the backend sets `edition` only then), so same-edition and edition-neutral rows stay as Aurora
- * draws them and a mixed list marks exactly its other-edition rows. The "converted" tag appears only on those rows
- * the edition adapter changed; its notes show on hover (title) and on tap/click (an inline notes line).
+ * Rule: a row gets the edition mark " (2014)" / " (2024)" after its source name only when the option was written for
+ * the other edition than the character's (the backend sets `edition` only then), and not when the source name already
+ * holds that year; same-edition and edition-neutral rows stay as Aurora draws them. The "converted" tag appears only on
+ * those rows the edition adapter changed; its notes show on hover (title) and on tap/click (an inline notes line).
  */
 export interface EditionMarks {
   /** The year label of the edition the option was written for, or null for a same-edition row. */
@@ -28,7 +29,7 @@ export function editionMarks(o: Partial<MarkSource>): EditionMarks {
   return { badge: o.edition === "dnd2024" ? "2024" : "2014", converted: o.converted === true, notes: o.editionNotes ?? [] };
 }
 
-/** Hover text of the edition badge. */
+/** Hover text of the edition mark. */
 export function badgeTitle(m: EditionMarks): string {
   if (!m.badge) return "";
   const head = `Written for the ${m.badge} rules`;
@@ -42,10 +43,14 @@ export function convertedTitle(m: EditionMarks): string {
   return m.notes.length > 0 ? `${head}: ${m.notes.join("; ")}` : head;
 }
 
-/** The small edition badge after an option's source; renders nothing on same-edition rows. */
-export function EditionBadge({ marks }: { marks: EditionMarks }) {
-  if (!marks.badge) return null;
-  return <span className="ed-badge" title={badgeTitle(marks)}>{marks.badge}</span>;
+/**
+ * B-55 sec. 1.3: the edition mark after a source name, in the source's own colour and font: " (2014)" or " (2024)" on
+ * other-edition rows, nothing on the others or when the source name already says the year.
+ */
+export function EditionSuffix({ marks, sourceName }: { marks: EditionMarks; sourceName: string | undefined }) {
+  const text = editionSuffix(marks.badge === "2014" ? "dnd2014" : marks.badge === "2024" ? "dnd2024" : null, sourceName);
+  if (!text) return null;
+  return <span className="ed-mark" title={badgeTitle(marks)}>{text}</span>;
 }
 
 interface TagProps {

@@ -1,4 +1,4 @@
-import type { Api, ApiEvents, EventName, SlotOption, SlotOptionsArgs } from "../contract";
+import type { Api, ApiEvents, EventName, SlotOption, SlotOptionsArgs, SwitchVersionResult } from "../contract";
 import type {
   AiHostStatus,
   LinkDevice,
@@ -23,7 +23,6 @@ import { validateHomebrew } from "./ai";
 import { ContentService } from "./content-service";
 import { getClass, getElement } from "./content";
 import { DEFAULT_SETTINGS } from "./default-settings";
-import { mockEditionMarks } from "./edition-marks";
 import { apiError } from "./errors";
 import { createCharacter, seedLibrary } from "./library";
 import * as abil from "./ops-abilities";
@@ -32,6 +31,7 @@ import * as lv from "./ops-levels";
 import * as play from "./play";
 import { renderSheetHtml } from "./sheet";
 import { buildSlotDefs } from "./slots";
+import { DEFAULT_PAGE, groupRows, queryRows, switchVersionChoices, toVersion } from "./slot-options";
 import { buildName, buildSnapshot } from "./snapshot";
 import { type MockCharacter, type RuleSettings, levelOf } from "./state";
 import { findByWireId, toWireSlotId } from "./slot-ids";
@@ -282,17 +282,28 @@ export class MockApi implements Api {
     const def = findByWireId(buildSlotDefs(c), a.slotId);
     if (!def) throw apiError("not_found", `Unknown slot ${a.slotId}`);
     const { snapshot } = buildSnapshot(c, this.rules);
-    const q = (a.query ?? "").toLowerCase();
-    const items: SlotOption[] = def.candidates
+    const offered = def.candidates
       .filter((e) => {
         if (e.type !== "multiclass") return true;
         const cls = getClass(e.id.slice(6));
         return !!cls && cls.multiclassAbility.some((k) => snapshot.abilities.final[k] >= 13);
       })
-      .filter((e) => !q || e.name.toLowerCase().includes(q) || e.shortDescription.toLowerCase().includes(q))
-      .map(({ description: _d, facts: _f, grants: _g, ...rest }) => ({ ...rest, ...mockEditionMarks(rest, c.ruleset) }));
-    const total = items.length;
-    return { total, items: items.slice(a.offset ?? 0, (a.offset ?? 0) + (a.limit ?? 200)) };
+      .map((e) => toVersion(e, c.ruleset));
+    // B-55: one row per name; `total` counts rows and paging applies to rows.
+    const rows = queryRows(groupRows(offered, c.ruleset, c.choices[def.id] ?? null), a.query);
+    const offset = a.offset ?? 0;
+    return { total: rows.length, items: rows.slice(offset, offset + (a.limit ?? DEFAULT_PAGE)) };
+  }
+
+  /** B-55 sec. 3: switch the slot's pick to another version of its row, keeping the sub-choices that still fit. */
+  async switchVersion({ characterId, slotId, elementId }: { characterId: string; slotId: string; elementId: string }): Promise<SwitchVersionResult> {
+    let dropped: string[] = [];
+    const snapshot = await this.mutate(characterId, (c) => {
+      const r = switchVersionChoices(c, slotId, elementId);
+      dropped = r.dropped;
+      return { ...c, choices: r.choices };
+    });
+    return { snapshot, dropped };
   }
 
   private snapshotChar(id: string): MockCharacter { return this.get(id); }

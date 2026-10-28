@@ -7,7 +7,7 @@ import { CLASSES, ELEMENTS, ITEMS, getElement } from "./content";
 import { isProxyId, itemCategoryList, matchesItemSearch, proxyRows, type ProxyRow } from "./item-categories";
 import type { MockElement } from "./data-types";
 import { apiError } from "./errors";
-import { SOURCE_2014, SOURCE_2024 } from "./content";
+import { SOURCE_2014, SOURCE_2024, SOURCE_EXPANSION } from "./content";
 import type { MockSearchDoc } from "./search";
 
 const PROXY_PREFIX = "proxy:";
@@ -46,6 +46,7 @@ export class ContentService {
   }
 
   private packOf(source: string): string {
+    if (source === SOURCE_EXPANSION) return "pack-sample-expansion";
     return source === SOURCE_2014 ? "pack-srd-51" : source === SOURCE_2024 ? "pack-srd-52" : this.imported.find((p) => p.sourceIds.includes(source))?.id ?? "pack-homebrew";
   }
 
@@ -139,6 +140,8 @@ export class ContentService {
     const base: ContentPack[] = [
       { id: "pack-srd-51", name: "Sample Reference 5.1", version: "1.0.0", kind: "bundled", rulesets: ["dnd2014"], elementCount: n(SOURCE_2014), enabled: !this.disabled.has("pack-srd-51"), license: "CC-BY-4.0", attribution: "Sample content written for Borealis.", sourceIds: [SOURCE_2014] },
       { id: "pack-srd-52", name: "Sample Reference 5.2", version: "1.0.0", kind: "bundled", rulesets: ["dnd2024"], elementCount: n(SOURCE_2024), enabled: !this.disabled.has("pack-srd-52"), license: "CC-BY-4.0", attribution: "Sample content written for Borealis.", sourceIds: [SOURCE_2024] },
+      // B-55: an imported pack whose species shares a name with the bundled ones (one picker row, three versions).
+      { id: "pack-sample-expansion", name: "Sample Expansion", version: "1.0.0", kind: "imported", rulesets: ["dnd2024"], elementCount: n(SOURCE_EXPANSION), enabled: !this.disabled.has("pack-sample-expansion"), license: "CC-BY-4.0", attribution: "Sample content written for Borealis.", sourceIds: [SOURCE_EXPANSION] },
     ];
     const home = this.extra.length
       ? [{ id: "pack-homebrew", name: "My Homebrew", version: "0.1.0", kind: "homebrew" as const, rulesets: ["dnd2014", "dnd2024"] as ContentPack["rulesets"], elementCount: this.extra.length, enabled: !this.disabled.has("pack-homebrew"), license: "User", attribution: "", sourceIds: ["sample-homebrew"] }]

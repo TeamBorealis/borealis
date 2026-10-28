@@ -39,8 +39,9 @@ function many(d: Omit<Draft, "id"> & { id: string }, count: number): SlotDef[] {
 /** Cross-edition picks are open (null = ruleset default: strict for 2014, open for 2024). */
 const crossEditionOpen = (c: MockCharacter) => c.allowCrossEdition ?? c.ruleset === "dnd2024";
 /** Same-edition options; other-edition subclasses too while cross-edition picks are open (B-44, marked per R6). */
+const CROSS_EDITION_TYPES: ElementType[] = ["archetype", "race"];
 const byRuleset = (c: MockCharacter, list: MockElement[]) =>
-  list.filter((e) => e.rulesets.includes(c.ruleset) || (e.type === "archetype" && crossEditionOpen(c)));
+  list.filter((e) => e.rulesets.includes(c.ruleset) || (CROSS_EDITION_TYPES.includes(e.type) && crossEditionOpen(c)));
 
 function classSlots(c: MockCharacter, index: number): SlotDef[] {
   const cs = c.classes[index]!;
@@ -104,9 +105,10 @@ function raceSlots(c: MockCharacter): SlotDef[] {
   out.push(make({ id: "race:0", tab: "race", title: species, elementType: "race", candidates: byRuleset(c, ELEMENTS.filter((e) => e.type === "race")) }));
   const race = getRace(c.choices["race:0"] ?? "");
   if (race) {
-    const subs = race.subraces.filter(() => c.ruleset === "dnd2014" || race.id === "elf");
+    const subs = race.subraces.filter(() => c.ruleset === "dnd2014" || race.id === "elf" || race.subTitle);
     if (subs.length) {
-      out.push(make({ id: "subrace:0", tab: "race", title: c.ruleset === "dnd2024" ? "Lineage" : "Subrace", elementType: "subrace", candidates: subs.map((s) => getElement(s)!) }));
+      const subTitle = race.subTitle ?? (c.ruleset === "dnd2024" ? "Lineage" : "Subrace");
+      out.push(make({ id: "subrace:0", tab: "race", title: subTitle, elementType: "subrace", candidates: subs.map((s) => getElement(s)!) }));
     }
     if (c.ruleset === "dnd2014" && race.id === "human") {
       out.push(make({ id: "race:lang:0", tab: "languages", title: "Extra language", elementType: "language", dup: "lang",

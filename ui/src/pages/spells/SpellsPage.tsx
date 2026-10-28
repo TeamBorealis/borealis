@@ -12,6 +12,7 @@ import { Band, TwoPane } from "./TwoPane";
 import { EMPTY_FILTER, filterClass, SpellFilterBar, type SpellFilterState } from "./SpellFilter";
 import { catalogueClassOf, SlotsTable } from "./SlotsTable";
 import { SlotOptionsGrid } from "./SlotOptionsGrid";
+import { PickerStateProvider } from "../builder/pickerState";
 import "./magic.css";
 
 const OVERVIEW = "overview";
@@ -131,5 +132,5 @@ function MagicBody() {
 }
 
 export function SpellsPage() {
-  return <RequireCharacter><MagicBody /></RequireCharacter>;
+  return <RequireCharacter><PickerStateProvider><MagicBody /></PickerStateProvider></RequireCharacter>;
 }

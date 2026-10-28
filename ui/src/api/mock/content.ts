@@ -6,9 +6,14 @@ import { monsterElements } from "./monsters";
 /** Original, SRD-generic sample content for the mock backend. */
 export const SOURCE_2014 = "sample-srd-51";
 export const SOURCE_2024 = "sample-srd-52";
+/** B-55: an imported (not bundled) 2024 source, so a picker row can carry an imported version. */
+export const SOURCE_EXPANSION = "sample-expansion";
+/** Sources of the bundled packs (the SRD stand-ins); everything else counts as imported. */
+export const BUNDLED_SOURCES: readonly string[] = [SOURCE_2014, SOURCE_2024];
 const SRC_NAME: Record<string, string> = {
   [SOURCE_2014]: "Sample Reference 5.1",
   [SOURCE_2024]: "Sample Reference 5.2",
+  [SOURCE_EXPANSION]: "Sample Expansion",
   "sample-homebrew": "Sample Homebrew",
 };
 const BOTH: Ruleset[] = ["dnd2014", "dnd2024"];
@@ -69,7 +74,21 @@ export const RACES: RaceDef[] = [
   { id: "elf", speed: 30, bonus2014: { dex: 2 }, subraces: ["high-elf", "wood-elf"] },
   { id: "dwarf", speed: 25, bonus2014: { con: 2 }, subraces: ["hill-dwarf", "mountain-dwarf"] },
   { id: "halfling", speed: 25, bonus2014: { dex: 2 }, subraces: ["lightfoot"] },
+  // B-55: one name in three versions (2014 bundled, 2024 bundled, 2024 imported). Its ancestry pick exists in both
+  // editions, and the two Red Ancestry elements share a name, so a version switch can keep or drop it.
+  { id: "dragonborn", speed: 30, bonus2014: { str: 2, cha: 1 }, subraces: ["ancestry-red", "ancestry-blue"], subTitle: "Draconic Ancestry" },
+  { id: "dragonborn-2024", speed: 30, bonus2014: {}, subraces: ["ancestry-red-2024", "ancestry-gold"], subTitle: "Draconic Ancestry" },
+  { id: "dragonborn-expansion", speed: 30, bonus2014: {}, subraces: ["ancestry-red", "ancestry-blue", "ancestry-gold"], subTitle: "Draconic Ancestry" },
 ];
+
+/** B-55: races written for one edition or carried by another source (same name, separate elements). */
+const RACE_EXTRA: Record<string, Partial<MockElement>> = {
+  dragonborn: { rulesets: ["dnd2014"] },
+  "dragonborn-2024": { name: "Dragonborn", rulesets: ["dnd2024"], source: SOURCE_2024 },
+  "dragonborn-expansion": { name: "Dragonborn", rulesets: ["dnd2024"], source: SOURCE_EXPANSION },
+  "ancestry-red-2024": { name: "Red Ancestry", rulesets: ["dnd2024"], source: SOURCE_2024 },
+  "ancestry-gold": { source: SOURCE_2024 },
+};
 
 export const SUBRACE_BONUS: Record<string, Partial<Record<AbilityKey, number>>> = {
   "high-elf": { int: 1 }, "wood-elf": { wis: 1 }, "hill-dwarf": { wis: 1 }, "mountain-dwarf": { str: 2 }, lightfoot: { cha: 1 },
@@ -104,6 +123,13 @@ const raceText: Record<string, [string, string]> = {
   "hill-dwarf": ["A dwarf of rolling highlands, wise and tough.", "Extra hit point each level."],
   "mountain-dwarf": ["A dwarf of the high peaks, strong and martial.", "Armor training."],
   lightfoot: ["A halfling who moves unseen among larger folk.", "Naturally stealthy."],
+  dragonborn: ["Proud folk with the blood of dragons, written for the older rules.", "Breath weapon once per rest; damage resistance."],
+  "dragonborn-2024": ["Proud folk with the blood of dragons, written for the newer rules.", "Breath weapon in place of an attack; darkvision."],
+  "dragonborn-expansion": ["Proud folk with the blood of dragons, as an expansion retells them.", "Breath weapon, resistance and a gliding descent."],
+  "ancestry-red": ["Your ancestor breathed fire.", "Fire breath and fire resistance."],
+  "ancestry-blue": ["Your ancestor breathed lightning.", "Lightning breath and lightning resistance."],
+  "ancestry-red-2024": ["Your ancestor breathed fire.", "Fire breath, fire resistance, and flight later on."],
+  "ancestry-gold": ["Your ancestor breathed fire and gleamed like coin.", "Fire breath and fire resistance."],
 };
 const title = (s: string) => s.split("-").map((w) => w[0]!.toUpperCase() + w.slice(1)).join(" ");
 
@@ -224,10 +250,12 @@ function mk(): MockElement[] {
   const out: MockElement[] = [];
   for (const r of RACES) {
     const [s, f] = raceText[r.id]!;
-    out.push(el(r.id, "race", title(r.id), s, { description: `<p>${s}</p><p>${f}</p>`, facts: [{ label: "Speed", value: `${r.speed} ft` }] }));
+    out.push(el(r.id, "race", title(r.id), s, { description: `<p>${s}</p><p>${f}</p>`, facts: [{ label: "Speed", value: `${r.speed} ft` }], ...RACE_EXTRA[r.id] }));
     for (const sub of r.subraces) {
+      if (out.some((e) => e.id === sub)) continue;
       const [ss, sf] = raceText[sub]!;
-      out.push(el(sub, "subrace", title(sub), ss, { description: `<p>${ss}</p><p>${sf}</p>` }));
+      const name = sub.startsWith("ancestry-") ? `${title(sub.split("-")[1]!)} Ancestry` : title(sub);
+      out.push(el(sub, "subrace", name, ss, { description: `<p>${ss}</p><p>${sf}</p>`, ...RACE_EXTRA[sub] }));
     }
   }
   for (const c of CLASSES) {

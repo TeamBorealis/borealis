@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import type { ElementSummary, Ruleset, SearchIndexStatus } from "../../api/contract";
-import { Alert, Button, ComboBox, EditionBadge, Expander, SafeHtml, SearchInput } from "../../components";
+import { Alert, Button, ComboBox, EditionSuffix, Expander, SafeHtml, SearchInput } from "../../components";
 import { Flyout } from "../../components/controls/Flyout";
 import { TabControl } from "../../components/controls/TabControl";
 import { useShell } from "../../components/shell/ShellContext";
@@ -160,8 +160,7 @@ export function CompendiumBrowser({ initialQuery = "", initialSource = "", initi
                     <button type="button" aria-selected={selected === r.open} title={r.title} onClick={() => setSelected(r.open)}>
                       {r.path && <span className="p">{r.path.split(" > ").slice(0, -1).join(" > ")}</span>}
                       <span className="n">{r.name}</span>
-                      <EditionBadge marks={{ badge, converted: false, notes: [] }} />
-                      <span className="s">{r.source}</span>
+                      <span className="s">{r.source}<EditionSuffix marks={{ badge, converted: false, notes: [] }} sourceName={r.source} /></span>
                       <Snippet row={r} />
                     </button>
                   </li>

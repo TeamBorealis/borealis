@@ -14,6 +14,7 @@ import { DescriptionPane, PaneShell } from "./DescriptionPane";
 import type { DescribeFn, PickChoice } from "./PickerGroup";
 import { usePhone } from "../../lib/phone";
 import { SlotList } from "./SlotList";
+import { PickerStateProvider } from "./pickerState";
 
 type TabId = BuilderTab;
 const SLOT_TABS: BuilderTab[] = ["race", "class", "background", "abilities", "feats", "languages", "proficiencies", "companion"];
@@ -116,5 +117,5 @@ export function BuilderPage() {
   const { snapshot } = useCharacter();
   const ruleset = snapshot?.ruleset;
   const profile = useAsync(() => (ruleset ? api.getRulesetProfile({ ruleset }) : Promise.resolve(null)), [api, ruleset]);
-  return <RequireCharacter><BuilderBody profile={profile.data} /></RequireCharacter>;
+  return <RequireCharacter><PickerStateProvider><BuilderBody profile={profile.data} /></PickerStateProvider></RequireCharacter>;
 }

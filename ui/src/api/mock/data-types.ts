@@ -11,6 +11,8 @@ export interface RaceDef {
   speed: number;
   bonus2014: Partial<Record<AbilityKey, number>>;
   subraces: string[];
+  /** Title of the sub-choice when it is not a subrace (offered in both editions), e.g. "Draconic Ancestry". */
+  subTitle?: string;
 }
 
 export interface ClassDef {

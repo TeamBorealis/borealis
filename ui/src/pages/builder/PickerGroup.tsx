@@ -1,12 +1,14 @@
-import { useMemo, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useState, type CSSProperties, type KeyboardEvent } from "react";
 import { useNavigate } from "react-router";
-import type { ElementRef, SelectionSlot, SlotOption } from "../../api/contract";
-import { ConvertedTag, EditionBadge, editionMarks, EditionNotes, Expander, FocusBar, Icon } from "../../components";
-import { useApi } from "../../state/ApiContext";
-import { useAsync } from "../../state/useAsync";
+import type { RowHeight, SelectionSlot } from "../../api/contract";
+import { Expander, FocusBar, Icon } from "../../components";
 import { useSettings } from "../../state/SettingsContext";
 import { usePhone } from "../../lib/phone";
-import type { RowHeight } from "../../api/contract";
+import { NO_FILTER, type ShownRow, type VersionLike } from "../../lib/versions";
+import { PickerFilterBar } from "./PickerFilterBar";
+import { ElementSource, PickerRow } from "./PickerRow";
+import { usePickerRows, useSwitchVersion } from "./usePickerRows";
+import { VersionMenu } from "./VersionMenu";
 
 const SOURCES_ROUTE = "/content/sources";
 
@@ -38,32 +40,6 @@ export interface PickChoice { slotId: string; name: string; choose: () => void }
  */
 export type DescribeFn = (id: string, isElement?: boolean, choice?: PickChoice) => void;
 
-/** Plain-text source of an element (footer lines and rows for choices the option list no longer carries). */
-function ElementSource({ id }: { id: string }) {
-  const api = useApi();
-  const el = useAsync(() => api.getElement({ elementId: id }), [api, id]);
-  return <>{el.data?.sourceName ?? ""}</>;
-}
-
-type Row = Pick<SlotOption, "id" | "name"> & Partial<SlotOption>;
-
-/** Edition tag after an other-edition option's source, as the description pane writes it: "Source (2014)". */
-export function editionTag(edition: SlotOption["edition"]): string {
-  if (!edition) return "";
-  return edition === "dnd2024" ? " (2024)" : " (2014)";
-}
-
-/** Merges chosen elements the option list omits back into it, at their alphabetical place, so rows never jump. */
-export function mergeRows(items: SlotOption[], chosen: ElementRef[]): Row[] {
-  const out: Row[] = [...items];
-  for (const m of chosen) {
-    if (out.some((i) => i.id === m.id)) continue;
-    const at = out.findIndex((i) => i.name.localeCompare(m.name) > 0);
-    out.splice(at < 0 ? out.length : at, 0, { id: m.id, name: m.name });
-  }
-  return out;
-}
-
 interface Props {
   characterId: string;
   group: SlotGroup;
@@ -76,40 +52,48 @@ interface Props {
   onClear: (slotId: string) => void;
 }
 
-/** One classic builder selection picker: focus bar + expander (plain list of options) + chosen/remaining footer. */
+/** Up/Down on a row moves to the next or previous row and describes it. */
+function onKeyNav(e: KeyboardEvent<HTMLButtonElement>) {
+  if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+  e.preventDefault();
+  const li = e.currentTarget.closest("li") as HTMLElement | null;
+  const sib = (e.key === "ArrowDown" ? li?.nextElementSibling : li?.previousElementSibling) as HTMLElement | null;
+  const btn = sib?.querySelector<HTMLButtonElement>("button.pick-main");
+  if (btn) { btn.focus(); btn.click(); }
+}
+
+/**
+ * One classic builder selection picker: focus bar + expander (filter bar, one row per name) + chosen/remaining footer.
+ * B-55: rows group same-name versions; the version column's menu picks the shown version (and switches a chosen row).
+ */
 export function PickerGroup({ characterId, group, isNext, open, onToggle, describedId, onDescribe, onChoose, onClear }: Props) {
-  const api = useApi();
   const navigate = useNavigate();
   const { settings } = useSettings();
   const rowPx = PICKER_ROW_PX[settings.rowHeight] ?? PICKER_ROW_PX.medium;
-  const { slots } = group;
-  const slot = slots[0]!;
+  const slot = group.slots[0]!;
   const allLocked = slot.locked;
-  const chosenSig = slot.chosen?.id ?? "";
-  const options = useAsync(
-    () => (open && !allLocked ? api.getSlotOptions({ characterId, slotId: slot.id, query: "" }) : Promise.resolve(null)),
-    [api, characterId, slot.id, open, allLocked, chosenSig],
-  );
-  const items = useMemo<SlotOption[]>(() => [...(options.data?.items ?? [])].sort((a, b) => a.name.localeCompare(b.name)), [options.data]);
-  const rows = useMemo(() => mergeRows(items, slot.chosen ? [slot.chosen] : []), [items, slot.chosen]);
+  const list = isListSlot(slot);
+  const picker = usePickerRows(characterId, slot, open && !allLocked);
+  const switchVersion = useSwitchVersion();
+  const { options, rows, visible } = picker;
   const showDescription = slot.elementType === "class";
   // Phones read in sentence case (B-48, spec sec. 3.3: same words, only the casing changes); desktop keeps Aurora's capitals.
   const phone = usePhone();
   const title = phone ? group.title : group.title.toUpperCase();
   const [notesFor, setNotesFor] = useState<string | null>(null);
+  const [menu, setMenu] = useState<{ key: string; anchor: HTMLElement } | null>(null);
+  const menuRow = menu ? visible.find((r) => r.key === menu.key) ?? null : null;
 
-  const onRowKey = (e: KeyboardEvent<HTMLButtonElement>, o: Row, disabled: boolean) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (!disabled && slot.chosen?.id !== o.id) onChoose(slot.id, o.id);
-      return;
-    }
-    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-    e.preventDefault();
-    const li = (e.currentTarget.closest("li") as HTMLElement | null);
-    const sib = (e.key === "ArrowDown" ? li?.nextElementSibling : li?.previousElementSibling) as HTMLElement | null;
-    const btn = sib?.querySelector<HTMLButtonElement>("button.pick-main");
-    if (btn) { btn.focus(); btn.click(); }
+  const choiceOf = (row: ShownRow, v: VersionLike): PickChoice | undefined =>
+    row.chosen || v.disabledReason ? undefined : { slotId: slot.id, name: row.name, choose: () => onChoose(slot.id, v.id) };
+  const describe = (row: ShownRow, v: VersionLike = row.shown) => onDescribe(v.id, !list, choiceOf(row, v));
+  /** Sec. 1.4: the picked version becomes the row's shown version; on the chosen row it also switches the choice. */
+  const pickVersion = (row: ShownRow, v: VersionLike) => {
+    menu?.anchor.focus();
+    setMenu(null);
+    picker.remember(row.key, v.id);
+    describe(row, v);
+    if (row.chosen && row.chosen.id !== v.id) void switchVersion(slot.id, row.name, v);
   };
 
   return (
@@ -123,45 +107,36 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
           {options.error && <p className="pick-empty danger-text" role="alert">{options.error}</p>}
           {allLocked && <p className="pick-empty">Granted by your build; nothing to choose.</p>}
           {options.data && rows.length === 0 && <p className="pick-empty">Nothing matches. Check your source restrictions.</p>}
+          {picker.showBar && (
+            <PickerFilterBar title={group.title} filter={picker.filter} onChange={picker.setFilter} sources={picker.sources} shown={visible.length} total={rows.length} />
+          )}
+          {rows.length > 0 && visible.length === 0 && (
+            <p className="pick-empty pick-fempty">Nothing matches these filters. <button type="button" className="pick-fclear" onClick={() => picker.setFilter(NO_FILTER)}>Clear</button></p>
+          )}
           <ul className={`pick-list ${showDescription ? "with-desc" : ""}`} aria-label={`${group.title} options`}>
             {/* Phones: skeleton rows in the list's own shape while the options load (spec sec. 3.4 Loading). */}
             {phone && !allLocked && options.loading && !options.data && SKELETON_ROWS.map((k) => <li key={k} className="pick-skel" aria-hidden="true" />)}
-            {rows.map((o) => {
-              const sel = slot.chosen?.id === o.id;
-              const hl = describedId === o.id;
-              const disabled = !!o.disabledReason;
-              const marks = editionMarks(o);
-              const notesId = `pick-notes-${slot.id}-${o.id}`;
-              const notesOpen = notesFor === o.id;
-              return (
-                <li key={o.id} className={`pick-row ${sel ? "selected" : ""} ${hl ? "hl" : ""} ${marks.converted ? "is-converted" : ""}`}>
-                  <button type="button" className="pick-main" aria-pressed={sel} aria-disabled={disabled || undefined} title={o.disabledReason}
-                    aria-label={[o.name, o.level !== undefined ? (o.level === 0 ? "Cantrip" : `Level ${o.level}`) : "", o.sourceName ? `${o.sourceName}${editionTag(o.edition)}` : ""].filter(Boolean).join(", ")}
-                    onClick={() => onDescribe(o.id, !isListSlot(slot), sel || disabled ? undefined : { slotId: slot.id, name: o.name, choose: () => onChoose(slot.id, o.id) })} onKeyDown={(e) => onRowKey(e, o, disabled)}
-                    onDoubleClick={() => { if (!sel && !disabled) onChoose(slot.id, o.id); }}>
-                    <span className={`pick-name ${disabled ? "disabled" : ""}`} aria-hidden="true">
-                      {o.name}{o.level !== undefined && <span className="pick-sub"> {o.level === 0 ? "Cantrip" : `Level ${o.level}`}</span>}
-                      {o.prerequisites && <span className="pick-sub"> - Requires {o.prerequisites}</span>}
-                    </span>
-                    {showDescription && <span className="pick-desc" aria-hidden="true">{o.shortDescription}</span>}
-                    <span className="pick-src" aria-hidden="true">
-                      <span className="pick-src-name">{o.sourceName ?? (isListSlot(slot) ? null : <ElementSource id={o.id} />)}</span>
-                      <EditionBadge marks={marks} />
-                    </span>
-                  </button>
-                  <ConvertedTag marks={marks} open={notesOpen} notesId={notesId} onToggle={() => setNotesFor(notesOpen ? null : o.id)} />
-                  <EditionNotes marks={marks} id={notesId} open={notesOpen} className="pick-notes" />
-                </li>
-              );
-            })}
+            {visible.map((row) => (
+              <PickerRow key={row.key} row={row} listSlot={list} showDescription={showDescription} versionColumn={picker.versionColumn}
+                highlighted={row.versions.some((v) => v.id === describedId)} menuOpen={menu?.key === row.key}
+                notesOpen={notesFor === row.key} notesId={`pick-notes-${slot.id}-${row.shown.id}`}
+                onToggleNotes={() => setNotesFor(notesFor === row.key ? null : row.key)}
+                onDescribe={() => describe(row)} onChoose={() => onChoose(slot.id, row.shown.id)}
+                onOpenMenu={(anchor) => setMenu(menu?.key === row.key ? null : { key: row.key, anchor })} onKeyNav={onKeyNav} />
+            ))}
           </ul>
         </Expander>
+        {menu && menuRow && (
+          <VersionMenu anchor={menu.anchor} rowName={menuRow.name} versions={menuRow.versions} charEd={picker.charEd} shownId={menuRow.shown.id}
+            chosenId={menuRow.chosen?.id ?? null} onPick={(v) => pickVersion(menuRow, v)}
+            onClose={(restore) => { setMenu(null); if (restore) menu.anchor.focus(); }} />
+        )}
         {slot.chosen && (
           <div className="pick-footer">
             <div className="pick-chosen" data-slot-id={slot.id}>
               <Icon name={slot.locked ? "lock" : "check-box"} />
               <span className="pick-chosen-name">{slot.chosen.name}</span>
-              <span className="pick-chosen-src">{isListSlot(slot) ? null : <ElementSource id={slot.chosen.id} />}</span>
+              <span className="pick-chosen-src">{list ? null : <ElementSource id={slot.chosen.id} />}</span>
               {!slot.locked && <button type="button" className="pick-x" aria-label={`Clear ${slot.chosen.name}`} onClick={() => onClear(slot.id)}><Icon name="x" /></button>}
             </div>
           </div>

@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 import { AppProviders } from "../AppProviders";
 import type { Page, SelectionSlot, SlotOption } from "../api/contract";
 import { MockApi } from "../api/mock";
-import { editionTag, PickerGroup } from "../pages/builder/PickerGroup";
+import { editionSuffix } from "../lib/versions";
+import { PickerGroup } from "../pages/builder/PickerGroup";
 
 /** B-44: a 2014 subclass offered to a 2024 class carries an edition tag after its source. */
 function option(id: string, name: string, edition?: SlotOption["edition"]): SlotOption {
@@ -15,10 +16,11 @@ function option(id: string, name: string, edition?: SlotOption["edition"]): Slot
 }
 
 describe("Legacy subclass edition tag (B-44)", () => {
-  it("editionTag writes the edition the way the description pane does", () => {
-    expect(editionTag(undefined)).toBe("");
-    expect(editionTag("dnd2014")).toBe(" (2014)");
-    expect(editionTag("dnd2024")).toBe(" (2024)");
+  it("editionSuffix writes the edition the way the description pane does, unless the source names the year", () => {
+    expect(editionSuffix(undefined, "Test Book")).toBe("");
+    expect(editionSuffix("dnd2014", "Test Book")).toBe(" (2014)");
+    expect(editionSuffix("dnd2024", "Test Book")).toBe(" (2024)");
+    expect(editionSuffix("dnd2014", "Old Guide (2014)")).toBe("");
   });
 
   it("the subclass picker tags only the other-edition option", async () => {
@@ -36,10 +38,10 @@ describe("Legacy subclass edition tag (B-44)", () => {
       </AppProviders>,
     );
     const list = await screen.findByRole("list", { name: "Subclass options" });
-    const legacy = await within(list).findByRole("button", { name: "Old Lantern Way, Test Book (2014)" });
-    // R6 (B-18): the edition is now a badge after the source name.
-    expect(legacy.querySelector(".pick-src-name")?.textContent).toBe("Test Book");
-    expect(legacy.querySelector(".pick-src .ed-badge")?.textContent).toBe("2014");
+    const legacy = await within(list).findByRole("button", { name: "Old Lantern Way, Test Book, 2014 rules" });
+    // B-55 sec. 1.3: the edition is " (2014)" after the source name, in the source's own font (no boxed badge).
+    expect(legacy.querySelector(".pick-src-name")?.textContent).toBe("Test Book (2014)");
+    expect(legacy.querySelector(".ed-badge")).toBeNull();
     const native = within(list).getByRole("button", { name: "Tidewarden, Test Book" });
     expect(native.querySelector(".pick-src")?.textContent).toBe("Test Book");
     expect(native.querySelector(".ed-badge")).toBeNull();

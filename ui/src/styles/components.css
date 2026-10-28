@@ -305,9 +305,10 @@ table.data th { color: var(--dark-4b); font-weight: 600; font-size: var(--fs-2xs
 .v4-cb:disabled { opacity: 0.5; cursor: default; }
 .v4-cb:focus-visible { outline: 1px solid var(--gold); outline-offset: 1px; }
 
-/* R6 / R6a (deliberate exception to Aurora parity): picker edition badge, "converted" tag and adapter notes. Square,
-   1 px outlined, 9 px SemiBold uppercase like the source column's chrome; the badge is neutral grey, the tag warning orange. */
-.ed-badge, .ed-chip {
+/* R6 / R6a / B-55 (deliberate exception to Aurora parity): the edition mark " (2014)" after a source is plain text in the
+   source's own colour and font; the "converted" tag is square, 1 px outlined, 9 px SemiBold uppercase, warning orange. */
+.ed-mark { color: inherit; font: inherit; white-space: nowrap; }
+.ed-chip {
   flex: none; display: inline-block; padding: 0 3px; border: 1px solid var(--border-strong); border-radius: 0;
   font-size: 9px; line-height: 11px; font-weight: 600; font-style: normal; letter-spacing: 0.02em; text-transform: uppercase;
   color: var(--text-secondary); white-space: nowrap;
@@ -324,3 +325,47 @@ table.data th { color: var(--dark-4b); font-weight: 600; font-size: var(--fs-2xs
 .ed-notes[hidden] { display: none; }
 .ed-notes-head { font-style: normal; font-weight: 600; color: var(--warning); }
 @media (pointer: coarse), (max-width: 899px) { .ed-tag { padding: 0 8px; min-width: 44px; justify-content: center; } }
+
+/* B-55 (specs/version-rows-and-filters.md): version column, version menu and picker filter bar, shared by the builder
+   pickers and the spell slot catalogue. Mockup "B+F 1 - Version column". */
+:root { --pv-bubble: #2f3a3f; --pv-bubble-text: #cfd8db; --pv-bubble-hot: #4a5a61; --pv-pop: #1b2022; --pv-pop-line: #3a4549; --pv-head: var(--gold); --pv-sub: #8d989c; --pv-field: #0d0f10; --pv-bar: #161a1b; --pv-seg-line: #4a565b; --pv-seg-on: #d6dde0; --pv-seg-on-text: #111111; --pv-link: #9fc3d1; }
+:root[data-theme="light"] { --pv-bubble: var(--light-3); --pv-bubble-text: var(--text); --pv-bubble-hot: var(--chrome-hover); --pv-pop: var(--bg); --pv-pop-line: var(--border-strong); --pv-sub: var(--text-secondary); --pv-field: var(--bg); --pv-bar: var(--light-1); --pv-seg-line: var(--border-strong); --pv-seg-on: var(--highlight); --pv-seg-on-text: #ffffff; --pv-link: var(--link); }
+:root[data-contrast="high"] { --pv-bubble: var(--bg); --pv-bubble-text: var(--text); --pv-pop: var(--bg); --pv-pop-line: var(--border-strong); --pv-sub: var(--text-secondary); --pv-field: var(--bg); --pv-bar: var(--bg); --pv-seg-line: var(--border-strong); --pv-link: var(--text); }
+.pick-ver-btn { display: inline-flex; align-items: center; gap: 1px; height: 15px; padding: 0; background: transparent; border: 0; color: var(--pv-bubble-text); font: inherit; cursor: pointer; }
+.pick-ver-btn .icon { width: 12px; height: 12px; opacity: 0.8; flex: none; }
+.pick-ver-count { display: inline-block; min-width: 14px; box-sizing: border-box; padding: 0 3px; border-radius: 7px; background: var(--pv-bubble); color: var(--pv-bubble-text); font-size: 9px; font-weight: 400; line-height: 13px; text-align: center; }
+@media (hover: hover) and (pointer: fine) { .pick-ver-btn:hover .pick-ver-count { background: var(--pv-bubble-hot); color: #fff; } }
+.pick-ver-btn[aria-expanded="true"] .pick-ver-count { background: var(--pv-bubble-hot); color: #fff; }
+.pick-ver-btn:focus-visible { outline: 1px solid var(--gold); outline-offset: 1px; }
+.pick-pop { position: fixed; z-index: 1200; min-width: 260px; max-width: calc(100vw - 16px); max-height: 60vh; overflow-y: auto; box-sizing: border-box; padding: 4px 0;
+  background: var(--pv-pop); border: 1px solid var(--pv-pop-line); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); font-size: var(--fs-sm, 12px); color: var(--text); }
+.vm-list { outline: 0; }
+.vm-head { margin: 4px 10px 2px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--pv-head); }
+.vm-opt { display: flex; align-items: center; gap: 8px; padding: 4px 10px; cursor: pointer; }
+.vm-opt.active { background: var(--highlight); }
+.vm-list:focus-visible .vm-opt.active { outline: 1px solid var(--gold); outline-offset: -1px; }
+.vm-opt.disabled { cursor: default; color: var(--pv-sub); }
+.vm-tick { width: 12px; flex: none; display: grid; place-items: center; color: var(--aur-success-bright); }
+.vm-tick .icon { width: 12px; height: 12px; }
+.vm-src { flex: 1; min-width: 0; }
+.vm-sub, .vm-reason { color: var(--pv-sub); font-size: 11px; }
+.vm-reason { font-style: italic; }
+.pick-fbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px; border: 1px solid var(--bp-box, var(--light-2)); border-top: 0; background: var(--pv-bar); font-size: var(--fs-sm, 12px); }
+.pick-frow { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pick-fsearch { width: 200px; height: 20px; box-sizing: border-box; padding: 0 6px; background: var(--pv-field); border: 1px solid var(--pv-pop-line); border-radius: 0; color: var(--text); font: inherit; }
+.pick-fsearch:focus-visible { outline: 1px solid var(--gold); outline-offset: -1px; }
+.pick-flabel { margin-left: 4px; color: var(--pv-sub); }
+.pick-seg { display: inline-flex; }
+.pick-seg-btn { height: 18px; min-width: 36px; padding: 0 4px; margin-left: -1px; background: transparent; border: 1px solid var(--pv-seg-line); border-radius: 0; color: var(--pv-bubble-text); font-family: inherit; font-size: 10px; font-weight: 600; line-height: 16px; letter-spacing: 0.02em; cursor: pointer; }
+.pick-seg-btn:first-child { margin-left: 0; }
+.pick-seg-btn[aria-pressed="true"] { position: relative; z-index: 1; background: var(--pv-seg-on); border-color: var(--pv-seg-on); color: var(--pv-seg-on-text); }
+@media (hover: hover) and (pointer: fine) { .pick-seg-btn:hover:not([aria-pressed="true"]) { background: var(--chrome-hover); color: #fff; } }
+.pick-seg-btn:focus-visible, .pick-fsrc:focus-visible, .pick-fclear:focus-visible, .pick-fmanage:focus-visible { outline: 1px solid var(--gold); outline-offset: 1px; }
+.pick-fsrc { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 6px; background: var(--pv-field); border: 1px solid var(--pv-pop-line); border-radius: 0; color: var(--text); font: inherit; cursor: pointer; }
+.pick-fsrc .icon { width: 12px; height: 12px; opacity: 0.8; }
+.pick-fcount { margin-left: auto; color: var(--pv-sub); }
+.pick-fclear { padding: 0; background: transparent; border: 0; color: var(--pv-link); font: inherit; text-decoration: underline; cursor: pointer; }
+.pick-fmenu label.pick-fopt { display: flex; align-items: center; gap: 8px; padding: 4px 10px; cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .pick-fmenu label.pick-fopt:hover { background: var(--highlight); } }
+.pick-fmanage { display: block; width: 100%; margin: 4px 0 0; padding: 5px 10px 3px; background: transparent; border: 0; border-top: 1px solid var(--pv-pop-line); color: var(--pv-link); font: inherit; text-align: left; cursor: pointer; }
+.sp-grid .sp-ver { width: 30px; min-width: 30px; padding: 0 4px 0 0; text-align: right; }

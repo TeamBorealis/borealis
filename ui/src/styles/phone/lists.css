@@ -77,6 +77,41 @@ html.phone .pick-row.hl .pick-main::before {
 html.phone .pick-row > .ed-tag { min-width: var(--ph-hit); background: none; }
 html.phone .pick-row.hl > .ed-tag { background: var(--ph-accent-soft); }
 html.phone .pick-notes { padding: 0 var(--ph-gutter) 8px; font-size: var(--ph-t-foot); }
+/* B-55 sec. 2: the version count and arrow are one 44 pt target at the end of the row. */
+html.phone .pick-ver { width: var(--ph-hit); min-height: var(--ph-row); padding: 0; justify-content: center; background: none; }
+html.phone .pick-row.hl > .pick-ver { background: var(--ph-accent-soft); }
+html.phone .pick-ver-btn { width: var(--ph-hit); height: var(--ph-hit); justify-content: center; gap: 2px; border-radius: var(--ph-r-pill); color: var(--ph-text-2); }
+html.phone .pick-ver-btn:active { background: var(--ph-fill); }
+html.phone .pick-ver-count { min-width: 20px; padding: 0 5px; border-radius: 10px; background: var(--ph-fill); color: var(--ph-text); font: 600 var(--ph-t-caption)/18px var(--ph-font-ui); }
+html.phone .pick-ver-btn .icon { width: 16px; height: 16px; }
+html.phone .pick-src-name.has-versions { text-decoration: none; }
+/* The filter bar wraps to two lines: the search on the first; Edition, Source, the count and Clear on the second. */
+html.phone .pick-fbar { gap: 8px; margin: 0 0 8px; padding: 0; border: 0; background: none; font: 400 var(--ph-t-foot)/1.3 var(--ph-font-ui); }
+html.phone .pick-fsearch { flex: 1 0 100%; width: 100%; height: var(--ph-hit); padding: 0 12px; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-md); background: var(--ph-surface); color: var(--ph-text); font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); }
+html.phone .pick-frow { flex: 1 0 100%; flex-wrap: nowrap; gap: 8px; }
+/* The words "Edition" and "Source" stay as the controls' accessible names; the second line has no room for them. */
+html.phone .pick-flabel { display: none; }
+html.phone .pick-seg { flex: none; }
+html.phone .pick-seg-btn { height: 36px; min-width: 42px; font: 600 var(--ph-t-foot)/34px var(--ph-font-ui); color: var(--ph-text); border-color: var(--ph-field-line); }
+html.phone .pick-seg-btn:first-child { border-radius: var(--ph-r-sm) 0 0 var(--ph-r-sm); }
+html.phone .pick-seg-btn:last-child { border-radius: 0 var(--ph-r-sm) var(--ph-r-sm) 0; }
+html.phone .pick-seg-btn[aria-pressed="true"] { background: var(--ph-accent); border-color: var(--ph-accent); color: var(--ph-on-accent, #fff); }
+html.phone .pick-fsrc { height: 36px; padding: 0 10px; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-sm); background: var(--ph-surface); color: var(--ph-text); font: inherit; }
+html.phone .pick-fsrc { flex: none; }
+html.phone .pick-fcount { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; color: var(--ph-text-2); }
+html.phone .pick-fclear { flex: none; }
+html.phone .pick-fclear { min-height: var(--ph-hit); padding: 0 4px; color: var(--ph-accent); font: 600 var(--ph-t-foot)/1.3 var(--ph-font-ui); text-decoration: none; }
+/* The version menu sheet: rows are 44 pt targets, section heads in the gold caption style. */
+html.phone .vm-list { margin: 0 calc(-1 * var(--ph-gutter)); }
+html.phone .vm-head { margin: 12px var(--ph-gutter) 4px; font: 600 var(--ph-t-caption)/1.3 var(--ph-font-ui); color: var(--ph-gold); }
+html.phone .vm-opt { min-height: var(--ph-hit); padding: 0 var(--ph-gutter); gap: 12px; font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui); color: var(--ph-text); }
+html.phone .vm-opt + .vm-opt { box-shadow: inset 0 1px 0 var(--ph-line); }
+html.phone .vm-opt.active { background: var(--ph-accent-soft); }
+html.phone .vm-tick { width: 22px; color: var(--ph-accent); }
+html.phone .vm-tick .icon { width: 20px; height: 20px; }
+html.phone .vm-sub, html.phone .vm-reason { color: var(--ph-text-2); font-size: var(--ph-t-foot); }
+html.phone .pick-pop { border-radius: var(--ph-r-md); background: var(--ph-raised); border-color: var(--ph-line); }
+html.phone .pick-fopt { min-height: var(--ph-hit); }
 /* Loading: three static rows in the list's shape (they pulse unless reduced motion is on). */
 html.phone .pick-skel { height: var(--ph-row); background: linear-gradient(var(--ph-fill), var(--ph-fill)) var(--ph-gutter) 50% / 45% 12px no-repeat; animation: ph-skel 1.2s ease-in-out infinite alternate; }
 html.phone .pick-skel + .pick-skel { box-shadow: inset 0 1px 0 var(--ph-line); }

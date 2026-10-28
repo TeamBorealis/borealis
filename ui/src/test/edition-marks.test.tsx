@@ -9,7 +9,7 @@ import { badgeTitle, convertedTitle, editionMarks } from "../components/EditionM
 import { PickerGroup } from "../pages/builder/PickerGroup";
 import { SlotOptionsGrid } from "../pages/spells/SlotOptionsGrid";
 
-/** R6 / R6a (B-18): picker edition badge, "converted" tag and adapter notes. */
+/** R6 / R6a (B-18) and B-55 sec. 1.3: picker edition mark " (2014)" after the source, "converted" tag and adapter notes. */
 const NOTE = "Subclass features listed below level 3 arrive at level 3";
 
 function option(id: string, name: string, extra: Partial<SlotOption> = {}): SlotOption {
@@ -80,17 +80,18 @@ describe("mock adapter stand-in", () => {
 });
 
 describe("builder picker edition marks", () => {
-  it("shows the badge only on other-edition rows and the converted tag only on converted rows", async () => {
+  it("marks only other-edition rows (' (2014)' after the source) and tags only converted rows", async () => {
     renderPicker(ROWS);
     const list = await screen.findByRole("list", { name: "Subclass options" });
     const items = within(list).getAllByRole("listitem");
     const byName = (n: string) => items.find((li) => li.textContent?.includes(n))!;
-    expect(byName("Tidewarden").querySelector(".ed-badge")).toBeNull();
+    expect(byName("Tidewarden").querySelector(".ed-mark")).toBeNull();
     expect(byName("Tidewarden").querySelector(".ed-tag")).toBeNull();
-    expect(byName("Glass Choir").querySelector(".ed-badge")?.textContent).toBe("2014");
-    expect(byName("Glass Choir").querySelector(".ed-badge")?.getAttribute("title")).toBe("Written for the 2014 rules; used as written");
+    expect(byName("Glass Choir").querySelector(".pick-src-name")?.textContent).toBe("Test Book (2014)");
+    expect(byName("Glass Choir").querySelector(".ed-mark")?.getAttribute("title")).toBe("Written for the 2014 rules; used as written");
     expect(byName("Glass Choir").querySelector(".ed-tag")).toBeNull();
-    expect(byName("Old Lantern Way").querySelector(".ed-badge")?.textContent).toBe("2014");
+    expect(byName("Old Lantern Way").querySelector(".ed-mark")?.textContent).toBe(" (2014)");
+    expect(document.querySelector(".ed-badge")).toBeNull();
     expect(byName("Old Lantern Way").querySelector(".ed-tag")).not.toBeNull();
   });
 
@@ -129,7 +130,7 @@ describe("builder picker edition marks", () => {
 });
 
 describe("spell slot picker edition marks", () => {
-  it("shows the badge and converted tag in the source column", async () => {
+  it("shows the edition mark and converted tag in the source column", async () => {
     const spells = [
       option("ID_SP_NATIVE", "Ember Mote", { type: "spell", level: 0 }),
       option("ID_SP_OLD", "Lantern Hymn", { type: "spell", level: 0, edition: "dnd2014", converted: true, editionNotes: ["Range changed"] }),
@@ -144,10 +145,11 @@ describe("spell slot picker edition marks", () => {
     );
     const table = await screen.findByRole("table", { name: "Wizard spells" });
     const old = (await within(table).findByText("Lantern Hymn")).closest("tr")!;
-    expect(old.querySelector(".sp-src .ed-badge")?.textContent).toBe("2014");
+    expect(old.querySelector(".sp-src .sp-src-name")?.textContent).toBe("Test Book (2014)");
+    expect(old.querySelector(".ed-badge")).toBeNull();
     expect(within(old).getByRole("button", { name: "Converted from the 2014 rules: Range changed" })).toBeTruthy();
     const native = within(table).getByText("Ember Mote").closest("tr")!;
-    expect(native.querySelector(".ed-badge")).toBeNull();
+    expect(native.querySelector(".ed-mark")).toBeNull();
     expect(native.querySelector(".sp-src")?.textContent).toBe("Test Book");
   });
 });
