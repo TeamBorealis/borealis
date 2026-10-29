@@ -275,3 +275,6 @@ html.phone .v4-tile-openbtn {
   font: 600 var(--ph-t-sub)/1 var(--ph-font-ui); cursor: pointer; transition: transform var(--ph-d-press) var(--ph-ease-out);
 }
 html.phone .v4-tile-openbtn:active { transform: scale(0.97); }
+
+/* U11 / review L7: the phone filter bar is about 104px tall; a focused row stops below it. */
+html.phone .pick-fbar ~ .pick-list * { scroll-margin-top: 112px; }

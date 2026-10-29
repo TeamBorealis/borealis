@@ -30,4 +30,9 @@ describe("U11 full-height pick lists", () => {
     expect(css("styles/components.css")).not.toMatch(/\.bp-left(, [.\w-]+)* \{ overflow-y: scroll; \}/);
     expect(css("pages/builder/builder.css")).toMatch(/@media \(min-width: 900px\) \{[^@]*\.bp-left \{ position: relative; overflow-y: scroll;/);
   });
+
+  it("a row focused at the top edge stops below the stuck bar (review L7)", () => {
+    expect(css("styles/components.css")).toMatch(/\.pick-fbar ~ \.pick-list \* \{ scroll-margin-top: 40px; \}/);
+    expect(css("styles/phone/lists.css")).toMatch(/html\.phone \.pick-fbar ~ \.pick-list \* \{ scroll-margin-top: 112px; \}/);
+  });
 });

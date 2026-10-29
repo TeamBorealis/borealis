@@ -353,6 +353,8 @@ table.data th { color: var(--dark-4b); font-weight: 600; font-size: var(--fs-2xs
 .vm-sub, .vm-reason { color: var(--pv-sub); font-size: 11px; }
 .vm-reason { font-style: italic; }
 /* U11: the bar sticks to the top of the scrolling tab page while its (full-height) list scrolls past. */
+/* An element of the list scrolled into view at the top edge (Tab / Shift+Tab focus) stops below the stuck bar (33px; review L7). */
+.pick-fbar ~ .pick-list * { scroll-margin-top: 40px; }
 .pick-fbar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px; border: 1px solid var(--bp-box, var(--light-2)); border-top: 0; background: var(--pv-bar); font-size: var(--fs-sm, 12px); }
 .pick-frow { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .pick-fsearch { width: 200px; height: 20px; box-sizing: border-box; padding: 0 6px; background: var(--pv-field); border: 1px solid var(--pv-pop-line); border-radius: 0; color: var(--text); font: inherit; }
