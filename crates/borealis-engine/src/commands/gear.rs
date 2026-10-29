@@ -307,7 +307,9 @@ pub fn equip(
             ));
         }
     }
-    let mut out = CommandOutcome::new(prune(engine, &next));
+    let next = prune(engine, &next);
+    warnings.extend(super::withheld::withheld_grant_warnings(engine, &next, uid));
+    let mut out = CommandOutcome::new(next);
     out.warnings = warnings;
     Ok(out)
 }

@@ -503,9 +503,16 @@ fn make(target: &UElem, kind: Kind, id: &str, cast: &str) -> UElem {
     let mut el = Element::new(id, format!("{category}, {shown}"), "Item", t.source.clone());
     el.ruleset = t.ruleset;
     // Borealis's own hint, then the target's description (the reference Aurora embeds).
+    // a target with a prerequisite is granted only once it is met, as in Aurora (issue 3)
+    let prerequisite = t.prerequisite.trim();
+    let needs = if prerequisite.is_empty() {
+        String::new()
+    } else {
+        format!(" It applies once the character meets its prerequisite ({prerequisite}).")
+    };
     el.description = format!(
-        "<p>Equip this item to gain {shown}. It is left out of the inventory on the character \
-         sheet.</p>{}",
+        "<p>Equip this item to gain {shown}.{needs} It is left out of the inventory on the \
+         character sheet.</p>{}",
         t.description
     );
     el.setters = vec![
