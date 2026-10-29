@@ -354,7 +354,7 @@ const REFS: &str = r#"<elements>
   </element>
   <element name="Seeker" type="Feat" source="Test Book" id="ID_TBK_FEAT_SEEKER">
     <description><p>s</p></description>
-    <requirements>!ID_ZZQ_GRANTS_MARKER</requirements>
+    <requirements>!ID_ZZQ_GRANTS_MARKER,!ID_TBK_FEAT_TYPO_NOT,!ID_SRD_FEAT_TYPO_INSTALLED</requirements>
     <rules>
       <grant type="Feat" id="ID_TBK_FEAT_MISPELLED" />
       <grant type="Feat" id="ID_ZZQ_FEAT_ELSEWHERE" />
@@ -380,14 +380,22 @@ fn unresolved_references_name_their_files_and_known_books_and_conditions_are_apa
         })
         .collect();
     let file = vec!["refs.xml".to_string()];
+    // review M2: an absence test of an id naming a loaded book (the set's own TBK, or the
+    // installed SRD) is a misspelling, listed with the unresolved references
     assert_eq!(
         targets,
         vec![
+            (
+                "ID_SRD_FEAT_TYPO_INSTALLED",
+                file.as_slice(),
+                Some("SRD 5.1")
+            ),
             ("ID_TBK_FEAT_MISPELLED", file.as_slice(), Some("Test Book")),
+            ("ID_TBK_FEAT_TYPO_NOT", file.as_slice(), Some("Test Book")),
             ("ID_ZZQ_FEAT_ELSEWHERE", file.as_slice(), None),
         ]
     );
-    assert_eq!(preview.unresolved_total, 2);
+    assert_eq!(preview.unresolved_total, 4);
     let conditions: Vec<&str> = preview
         .conditions
         .iter()

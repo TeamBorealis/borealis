@@ -178,16 +178,11 @@ const LEGACY_IGNORED: &[&str] = &[
     "sheet/description@class",
     "stat@base",
     "stat@type",
-    "stat@max",
     "grant@allowReplace",
-    "grant@spellcaster",
     "select@known",
-    "select@know",
     "select@id",
-    "select@option",
     "select@ability",
     "elements/spellcasting",
-    "element/grant",
     "element/setter",
     "element/append",
     "element/p",
@@ -196,8 +191,34 @@ const LEGACY_IGNORED: &[&str] = &[
     "info/update/author",
 ];
 
+/// Unknown names that look like a misspelling of one Aurora reads (review L1): kept as warnings
+/// with the likely intended name. Aurora ignores the misspelling too, so the intent is lost there
+/// as well, but the author can fix it.
+const LIKELY_TYPOS: &[(&str, &str)] = &[
+    (
+        "grant@spellcaster",
+        "did you mean `spellcasting`? ignored, as in Aurora",
+    ),
+    (
+        "select@option",
+        "did you mean `optional`? ignored, as in Aurora",
+    ),
+    ("select@know", "did you mean `known`? ignored, as in Aurora"),
+    (
+        "select@allowreplace",
+        "did you mean `allowReplace`? ignored, as in Aurora",
+    ),
+    ("stat@max", "did you mean `maximum`? ignored, as in Aurora"),
+    (
+        "element/grant",
+        "a grant belongs inside <rules>; ignored, as in Aurora",
+    ),
+];
+
 fn classify(key: &str, name: &str) -> (Severity, &'static str) {
-    if LEGACY_IGNORED.contains(&key) {
+    if let Some((_, why)) = LIKELY_TYPOS.iter().find(|(k, _)| *k == key) {
+        (Severity::Warning, why)
+    } else if LEGACY_IGNORED.contains(&key) {
         (Severity::Info, "has no effect in the legacy format")
     } else if name.contains(':') {
         (Severity::Info, "vendor-namespaced annotation")

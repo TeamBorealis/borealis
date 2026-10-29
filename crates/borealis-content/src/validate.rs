@@ -155,9 +155,32 @@ pub fn required_setters(ty: &str) -> &'static [&'static str] {
 const CUSTOM_SPELL_REFS: [(&str, &str); 2] =
     [("grant_spell", "spell"), ("spell_cast_alt_cost", "spell")];
 
+/// Id segments (after `ID_`) searched for a book abbreviation: `ID_PHB_...`, `ID_WOTC_XGE_...`.
+const ABBREVIATION_SEGMENTS: usize = 2;
+
+/// The first id segments of `id` that may carry a book abbreviation (`ID_WOTC_PSA_X`: WOTC, PSA).
+pub fn abbreviation_segments(id: &str) -> impl Iterator<Item = &str> {
+    id.strip_prefix("ID_")
+        .unwrap_or_default()
+        .split('_')
+        .take(ABBREVIATION_SEGMENTS)
+}
+
+/// Upper-cased `abbreviation` setters of the store's `Source` elements.
+fn book_abbreviations(store: &ContentStore) -> HashSet<String> {
+    store
+        .by_type("Source")
+        .filter_map(|s| s.element.setter_value("abbreviation"))
+        .map(|a| a.trim().to_ascii_uppercase())
+        .filter(|a| !a.is_empty())
+        .collect()
+}
+
 struct Ctx<'a> {
     store: &'a ContentStore,
     stored: &'a StoredElement,
+    /// [`book_abbreviations`] of the store.
+    books: &'a HashSet<String>,
     issues: Vec<Issue>,
 }
 
@@ -191,13 +214,17 @@ impl Ctx<'_> {
                 let optional = optional_alternatives(expr.root(), &known);
                 let absent = only_negated(expr.root());
                 for id in expr.referenced_ids() {
-                    if absent.contains(id) && !known(id) {
+                    // an unknown id naming a loaded book is a misspelling (review M2): the test
+                    // always passes, so what it meant to exclude is offered; a warning
+                    let names_loaded_book = abbreviation_segments(id)
+                        .any(|seg| self.books.contains(&seg.to_ascii_uppercase()));
+                    if absent.contains(id) && !known(id) && !names_loaded_book {
                         self.push(
                             Issue::new(
                                 Severity::Info,
                                 IssueCode::DanglingReference,
                                 format!(
-                                    "requirements only test the absence of an element no loaded content defines (always met), references unknown element {id}"
+                                    "requirements test the absence of an element no loaded content defines (this absence test always passes), references unknown element {id}"
                                 ),
                             )
                             .at_path(path),
@@ -465,6 +492,7 @@ impl Ctx<'_> {
 pub fn validate_store(store: &ContentStore) -> Vec<Issue> {
     let mut issues: Vec<Issue> = store.diagnostics().to_vec();
     let mut seen_ids: HashSet<&str> = HashSet::new();
+    let books = book_abbreviations(store);
     for stored in store.iter() {
         if !seen_ids.insert(stored.element.id.as_str()) {
             continue;
@@ -472,6 +500,7 @@ pub fn validate_store(store: &ContentStore) -> Vec<Issue> {
         let mut ctx = Ctx {
             store,
             stored,
+            books: &books,
             issues: Vec::new(),
         };
         ctx.check_element(&stored.element);
@@ -768,11 +797,34 @@ mod tests {
             .find(|i| i.message.ends_with(" ID_GONE_NOT"))
             .expect("issue");
         assert!(
-            note.message
-                .starts_with("requirements only test the absence of"),
+            note.message.contains("this absence test always passes"),
             "{}",
             note.message
         );
+    }
+
+    #[test]
+    fn an_absence_test_of_an_id_naming_a_loaded_book_stays_a_warning() {
+        // review M2: `!ID_WOCT_PSA_...` (WOCT for WOTC) names the loaded Plane Shift: Amonkhet
+        // (abbreviation PSA) but no element: a misspelling that makes the test always pass,
+        // so the element it meant to exclude is offered; not a harmless condition
+        let mut book = Element::new("ID_SRC_PSA", "Plane Shift: Amonkhet", "Source", "Core");
+        book.setters
+            .push(crate::setter::Setter::new("abbreviation", "PSA"));
+        let mut e = Element::new(
+            "ID_WOTC_PSA_BACKGROUND_X",
+            "X",
+            "Background",
+            "Plane Shift: Amonkhet",
+        );
+        e.requirements = "!ID_WOCT_PSA_BACKGROUND_FEATURE_TYPO".into();
+        let issues = store(vec![book, e]).validate();
+        let dangling: Vec<_> = issues
+            .iter()
+            .filter(|i| i.code == IssueCode::DanglingReference)
+            .map(|i| i.severity)
+            .collect();
+        assert_eq!(dangling, vec![Severity::Warning], "{issues:#?}");
     }
 
     #[test]

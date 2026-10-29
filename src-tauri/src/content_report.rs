@@ -23,8 +23,6 @@ const MAX_UNRESOLVED: usize = 200;
 const REFERENCED_BY_SAMPLE: usize = 3;
 /// Referencing files named per unresolved target.
 const FILES_SAMPLE: usize = 3;
-/// Id segments (after `ID_`) searched for a book abbreviation: `ID_PHB_...`, `ID_WOTC_XGE_...`.
-const ABBREVIATION_SEGMENTS: usize = 2;
 
 pub(crate) const fn severity(s: Severity) -> &'static str {
     match s {
@@ -94,6 +92,19 @@ impl AppState {
         {
             r.known_source = known_book(&books, &r.target);
         }
+        // review M2: an absence test of an id naming a loaded book (installed beside the set,
+        // so the set's own validation could not tell) is a misspelling: unresolved
+        let (misspelled, harmless): (Vec<_>, Vec<_>) = std::mem::take(&mut found.conditions)
+            .into_iter()
+            .partition(|r| r.known_source.is_some());
+        found.conditions_total -= misspelled.len();
+        found.unresolved_total += misspelled.len();
+        found.conditions = harmless;
+        found.unresolved.extend(misspelled);
+        found
+            .unresolved
+            .sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.target.cmp(&b.target)));
+        found.unresolved.truncate(MAX_UNRESOLVED);
         if conv.converted > 0 {
             let replaced = bundled_override_issues(&hub.store, out_dir, &conv.sources);
             found.summary.warnings += replaced.len();
@@ -241,10 +252,7 @@ fn pack_content_files(out_dir: &Path) -> Vec<ContentFile> {
 
 /// The loaded book whose abbreviation is one of the first id segments of `target`.
 fn known_book(books: &HashMap<String, String>, target: &str) -> Option<String> {
-    target
-        .strip_prefix("ID_")?
-        .split('_')
-        .take(ABBREVIATION_SEGMENTS)
+    borealis_content::validate::abbreviation_segments(target)
         .find_map(|seg| books.get(&seg.to_ascii_uppercase()).cloned())
 }
 

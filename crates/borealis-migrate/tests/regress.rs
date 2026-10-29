@@ -93,7 +93,7 @@ fn aurora_ignored_attributes_are_info_and_unknown_ones_warn() {
 /// name/type/source/id; sheet descriptions read level/usage/action; `StatisticRuleParser`,
 /// `GrantRuleParser` and `SelectRuleParser` read fixed attribute lists; only the named children
 /// of an element and of `<elements>` are parsed). Borealis ignores them exactly as Aurora does,
-/// so they are notes; a misspelling of an attribute Aurora does read stays a warning.
+/// so they are notes; a misspelling of a name Aurora does read stays a warning (review L1).
 #[test]
 fn constructs_auroras_parser_never_reads_are_notes() {
     let conv = convert(
@@ -116,11 +116,30 @@ fn constructs_auroras_parser_never_reads_are_notes() {
         .filter(|i| i.severity == Severity::Warning && i.code == IssueCode::UnsupportedConstruct)
         .map(|i| i.message.as_str())
         .collect();
-    assert_eq!(warned.len(), 1, "{warned:#?}");
-    assert!(warned[0].contains("`allowreplace`"), "{warned:#?}");
+    // review L1: misspellings of names Aurora reads stay warnings, with the likely name
+    assert_eq!(warned.len(), 6, "{warned:#?}");
+    for typo in [
+        "`allowreplace`",
+        "`spellcaster`",
+        "`option`",
+        "`know`",
+        "`max`",
+        "<grant> of <element>",
+    ] {
+        assert!(
+            warned.iter().any(|w| w.contains(typo)),
+            "{typo}: {warned:#?}"
+        );
+    }
+    assert!(
+        warned
+            .iter()
+            .any(|w| w.contains("did you mean `spellcasting`?")),
+        "{warned:#?}"
+    );
     assert_eq!(
         count(&conv, Severity::Info, IssueCode::UnsupportedConstruct),
-        20,
+        15,
         "{:#?}",
         conv.issues
     );
