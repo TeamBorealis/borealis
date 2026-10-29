@@ -245,6 +245,8 @@ pub struct OptionDef {
     pub name: String,
     pub description: String,
     pub locked: bool,
+    /// The option's `default` setter: checked when a new character is made (Aurora `IsDefault`).
+    pub default_on: bool,
 }
 
 /// `create_character` request.

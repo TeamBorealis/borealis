@@ -351,6 +351,7 @@ pub fn run() {
             commands::reset_abilities,
             commands::set_character_options,
             commands::get_ruleset_profile,
+            commands::list_character_options,
             commands_gear::replace_spell,
             commands_gear::set_spell_prepared,
             commands_gear::explain_stat,

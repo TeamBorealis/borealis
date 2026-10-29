@@ -10,9 +10,11 @@ use crate::elements::plain_text;
 use crate::gear_info;
 use crate::ids::{ability_index, ability_key, encode_class_slot, encode_slot};
 use crate::snapshot_map::MapInput;
+use crate::state::ContentHub;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
 use borealis_character::{Character, Portrait};
+use borealis_content::Ruleset;
 use borealis_engine::ids as engine_ids;
 use borealis_engine::snapshot::{CharacterSnapshot as Engine, SlotSnapshot, SpellcastingSnapshot};
 use borealis_engine::state::EquipSlot;
@@ -598,24 +600,62 @@ pub fn attacks(c: &Character, snap: &Engine) -> Vec<Attack> {
 /// Content option definitions the user may toggle (the three built-ins have dedicated switches).
 #[must_use]
 pub fn available_options(input: &MapInput<'_>) -> Vec<OptionDef> {
-    let ruleset = input.character.ruleset();
-    let mut defs: Vec<OptionDef> = input
-        .hub
+    let state = &input.character.build;
+    let allow_other_edition = state.allow_cross_edition.unwrap_or_else(|| {
+        borealis_engine::profile::profile_for(state.ruleset).default_allow_cross_edition()
+    });
+    content_options(input.hub, state.ruleset, allow_other_edition)
+}
+
+/// The character options of the content for `ruleset`, by name (Aurora's New Character and
+/// Manage Character Options lists, `NewCharacterSliderViewModel.LoadCharacterOptions`): every
+/// `Option` element except the three built-ins, with Aurora's card text and `default` setter.
+///
+/// An `Option` with supports is a feature choice a select picks (the SRD 5.2.1 invocations and
+/// metamagic, the 5etools importer's background tool sets), not a character option: Aurora's
+/// character options are registered directly and none of the 44 in the Aurora corpus has supports.
+/// Aurora has no editions; here an option of the other edition is listed when the character
+/// allows the other edition (`allow_other_edition`), like any other pick.
+#[must_use]
+pub fn content_options(
+    hub: &ContentHub,
+    ruleset: Ruleset,
+    allow_other_edition: bool,
+) -> Vec<OptionDef> {
+    let mut defs: Vec<OptionDef> = hub
         .store
         .by_type("Option")
         .map(|s| &s.element)
+        .filter(|e| e.supports.is_empty())
         .filter(|e| !BUILT_IN_OPTIONS.contains(&e.id.as_str()))
-        .filter(|e| e.ruleset.is_none_or(|r| r.compatible_with(ruleset)))
-        .filter(|e| input.hub.engine.has_element(ruleset, &e.id))
+        .filter(|e| allow_other_edition || e.ruleset.is_none_or(|r| r.compatible_with(ruleset)))
+        .filter(|e| hub.engine.has_element(ruleset, &e.id))
         .map(|e| OptionDef {
             id: e.id.clone(),
             name: e.name.clone(),
-            description: plain_text(&e.description),
+            description: option_text(e),
             locked: false,
+            default_on: e
+                .setter_value("default")
+                .is_some_and(|v| v.trim().eq_ignore_ascii_case("true")),
         })
         .collect();
     defs.sort_by(|a, b| a.name.cmp(&b.name));
     defs
+}
+
+/// The text of an option card, as Aurora's `CharacterOption`: the `short` setter, else the first
+/// sheet description, else the plain description.
+fn option_text(e: &borealis_content::Element) -> String {
+    if let Some(short) = e.setter_value("short").filter(|s| !s.trim().is_empty()) {
+        return plain_text(short.trim());
+    }
+    e.sheet
+        .as_ref()
+        .and_then(|s| s.descriptions.first())
+        .map(|d| d.text.trim())
+        .filter(|t| !t.is_empty())
+        .map_or_else(|| plain_text(&e.description), plain_text)
 }
 
 /// The character options as the UI edits them.

@@ -40,6 +40,7 @@ const COMMANDS: &[&str] = &[
     "reset_abilities",
     "set_character_options",
     "get_ruleset_profile",
+    "list_character_options",
     "replace_spell",
     "set_spell_prepared",
     "explain_stat",

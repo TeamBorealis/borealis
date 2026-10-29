@@ -50,6 +50,8 @@ export interface OptionDef {
   description: string;
   /** Forced by the ruleset (cannot be toggled). */
   locked: boolean;
+  /** The option's `default` setter: checked when a new character is made. */
+  defaultOn: boolean;
 }
 
 export interface NewCharacterRequest {

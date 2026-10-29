@@ -4,8 +4,8 @@
 use crate::builder::ruleset_profile;
 use crate::dto::{
     AbilityMethodDto, CharacterSnapshot, CharacterSummary, ExportResult, ImportReport,
-    NewCharacterRequest, OptionsPatch, Page, RecheckReport, Ruleset, RulesetProfileDto, SlotOption,
-    SwitchVersionResult,
+    NewCharacterRequest, OptionDef, OptionsPatch, Page, RecheckReport, Ruleset, RulesetProfileDto,
+    SlotOption, SwitchVersionResult,
 };
 use crate::error::{ApiError, ApiResult};
 use crate::settings::AppSettings;
@@ -306,4 +306,9 @@ pub fn set_character_options(
 #[tauri::command]
 pub fn get_ruleset_profile(ruleset: Ruleset) -> ApiResult<RulesetProfileDto> {
     Ok(ruleset_profile(ruleset))
+}
+
+#[tauri::command]
+pub fn list_character_options(state: S<'_>, ruleset: Ruleset) -> ApiResult<Vec<OptionDef>> {
+    state.list_character_options(ruleset)
 }

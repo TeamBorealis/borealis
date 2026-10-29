@@ -1,9 +1,9 @@
 //! Builder services: creation, selections, levels, abilities, options and the ruleset profile.
 
 use crate::dto::{
-    AbilityMethodDto, CharacterSnapshot, ElementSummary, NewCharacterRequest, OptionsPatch, Page,
-    RollRecord, Ruleset, RulesetProfileDto, SlotOption, SlotOptionBase, SwitchVersionResult,
-    Terminology,
+    AbilityMethodDto, CharacterSnapshot, ElementSummary, NewCharacterRequest, OptionDef,
+    OptionsPatch, Page, RollRecord, Ruleset, RulesetProfileDto, SlotOption, SlotOptionBase,
+    SwitchVersionResult, Terminology,
 };
 use crate::elements::summary;
 use crate::error::{ApiError, ApiResult};
@@ -78,6 +78,24 @@ fn apply_options(ctx: &Ctx<'_>, d: &mut Draft, patch: &OptionsPatch) -> ApiResul
 }
 
 impl AppState {
+    /// The content options a new character of `ruleset` can start with (the New Character
+    /// dialog lists them after the three built-ins; issue 4).
+    ///
+    /// # Errors
+    /// `invalid_argument` for `any`; `internal` if the content lock is poisoned.
+    pub fn list_character_options(&self, ruleset: Ruleset) -> ApiResult<Vec<OptionDef>> {
+        if ruleset == Ruleset::Any {
+            return Err(ApiError::invalid("Choose the 2014 or the 2024 rules."));
+        }
+        let hub = self.hub()?;
+        let allow_other_edition = profile_for(ruleset).default_allow_cross_edition();
+        Ok(crate::extras::content_options(
+            &hub,
+            ruleset,
+            allow_other_edition,
+        ))
+    }
+
     /// Create a character of `ruleset`, save it into the library and open it.
     ///
     /// # Errors

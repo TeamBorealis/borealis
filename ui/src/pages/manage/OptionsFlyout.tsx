@@ -3,7 +3,7 @@ import { Button } from "../../components";
 import { Flyout } from "../../components/controls/Flyout";
 import { useShell } from "../../components/shell/ShellContext";
 import { useCharacter } from "../../state/CharacterContext";
-import { OptionCards, optionValue, optionsPatch } from "./OptionsTab";
+import { OptionCards, optionValue, optionsPatch, withBuiltIns } from "./OptionsTab";
 
 function OptionsBody({ onClose }: { onClose: () => void }) {
   const { snapshot, mutate } = useCharacter();
@@ -20,7 +20,7 @@ function OptionsBody({ onClose }: { onClose: () => void }) {
     <Flyout title="Character options" onClose={onClose}
       footer={<div className="v4-foot"><Button onClick={() => void ok()}>OK</Button><Button onClick={onClose}>Cancel</Button></div>}>
       <div className="mg-flyout" tabIndex={-1} data-autofocus>
-        <OptionCards defs={snapshot.availableOptions} value={value} onToggle={(id, on) => setDraft((d) => ({ ...d, [id]: on }))} />
+        <OptionCards defs={withBuiltIns(snapshot.availableOptions)} value={value} onToggle={(id, on) => setDraft((d) => ({ ...d, [id]: on }))} />
       </div>
     </Flyout>
   );

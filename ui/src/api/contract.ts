@@ -31,6 +31,7 @@ import type {
   AiStatus,
   AiTaskHandle,
   AiTaskRequest,
+  OptionDef,
   AppSettings,
   AppUpdateStatus,
   AppFolder,
@@ -201,6 +202,8 @@ export interface ApiMethods {
   setAllowCrossEdition(args: Cid & { allow: boolean | null }): Promise<CharacterSnapshot>;
   getCompatibilityReport(args: Cid): Promise<CompatibilityReport>;
   getRulesetProfile(args: { ruleset: Ruleset }): Promise<RulesetProfile>;
+  /** Content options (the content's `Option` elements) a new character of `ruleset` can start with; the three built-ins are not listed. */
+  listCharacterOptions(args: { ruleset: Ruleset }): Promise<OptionDef[]>;
 
   /* Magic */
   setSpellPrepared(
@@ -498,6 +501,7 @@ export const COMMANDS = {
   setAllowCrossEdition: "set_allow_cross_edition",
   getCompatibilityReport: "get_compatibility_report",
   getRulesetProfile: "get_ruleset_profile",
+  listCharacterOptions: "list_character_options",
   setSpellPrepared: "set_spell_prepared",
   previewConvertTo2024: "preview_convert_to_2024",
   applyConvertTo2024: "apply_convert_to_2024",

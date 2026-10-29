@@ -5,7 +5,7 @@ import { STANDARD_ARRAY, applyStandardArray, type NewCharacterForm } from "../pa
 
 const form: NewCharacterForm = {
   name: "Tess", ruleset: "dnd2024", startingLevel: 1, gender: "", abilityMethod: "standard_array",
-  multiclassing: true, feats: true, averageHp: true, standardArray: STANDARD_ARRAY,
+  multiclassing: true, feats: true, averageHp: true, custom: {}, standardArray: STANDARD_ARRAY,
 };
 
 describe("standard array on create", () => {

@@ -1,4 +1,4 @@
-import type { Api, ApiEvents, EventName, SlotOption, SlotOptionsArgs, SwitchVersionResult } from "../contract";
+import type { Api, ApiEvents, EventName, Ruleset, SlotOption, SlotOptionsArgs, SwitchVersionResult } from "../contract";
 import type {
   AiHostStatus,
   LinkDevice,
@@ -32,7 +32,7 @@ import * as play from "./play";
 import { renderSheetHtml } from "./sheet";
 import { buildSlotDefs } from "./slots";
 import { DEFAULT_PAGE, groupRows, queryRows, switchVersionChoices, toVersion } from "./slot-options";
-import { buildName, buildSnapshot } from "./snapshot";
+import { OPTION_DEFS, buildName, buildSnapshot } from "./snapshot";
 import { type MockCharacter, type RuleSettings, levelOf } from "./state";
 import { findByWireId, toWireSlotId } from "./slot-ids";
 import { MOCK_INDEX_STATUS, mockPassage, mockSearch } from "./search";
@@ -395,6 +395,7 @@ export class MockApi implements Api {
   }
 
   async getRulesetProfile({ ruleset }: { ruleset: keyof typeof PROFILES }) { await this.tick(); return PROFILES[ruleset]; }
+  async listCharacterOptions(_: { ruleset: Ruleset }) { await this.tick(); return OPTION_DEFS.map((d) => ({ ...d })); }
 
   /* ---------- magic ---------- */
 

@@ -337,6 +337,139 @@ fn source_restrictions_never_hide_internal_options() {
     assert_eq!(snap.source_restrictions.as_deref(), Some(own.as_slice()));
 }
 
+/// Two content options in the shape of AuroraLegacy's (Tasha's "Customized Language", the DMG
+/// "Firearms" option with a `default` setter) and a race that reads the first one.
+const OPTIONS_XML: &str = r#"<?xml version="1.0" encoding="utf-8"?>
+<elements>
+  <info><name>Test Options</name>
+    <update version="1.0.0"><file name="test-options.xml" url="https://example.invalid/test-options.xml"/></update>
+  </info>
+  <element name="Test Options" type="Source" source="Core" id="ID_TEST_SOURCE_OPTIONS">
+    <setters><set name="abbreviation">TOP</set><set name="url">https://example.invalid</set></setters>
+  </element>
+  <element name="Customized Language" type="Option" source="Test Options" id="ID_TEST_OPTION_CUSTOM_LANGUAGE">
+    <description><p>A long description of the option that the card does not show.</p></description>
+    <setters><set name="short">You may replace each language in your Languages trait.</set></setters>
+  </element>
+  <element name="Firearms" type="Option" source="Test Options" id="ID_TEST_OPTION_FIREARMS">
+    <description><p>Gunpowder weapons in the campaign.</p></description>
+    <setters><set name="default">true</set></setters>
+  </element>
+  <element name="Optfolk" type="Race" source="Test Options" id="ID_TEST_RACE_OPTFOLK">
+    <description><p>A test folk.</p></description>
+    <sheet display="false" />
+    <rules>
+      <grant type="Size" id="ID_SIZE_MEDIUM" />
+      <grant type="Language" id="ID_LANGUAGE_COMMON" requirements="!ID_TEST_OPTION_CUSTOM_LANGUAGE" />
+      <select type="Language" name="Customized Language (Optfolk)" supports="Standard" requirements="ID_TEST_OPTION_CUSTOM_LANGUAGE" />
+    </rules>
+  </element>
+</elements>"#;
+
+/// Discord #4 (GitHub issue 4): the New Character dialog offered only the three built-in options.
+/// Aurora lists every `Option` element of the content (`NewCharacterSliderViewModel`), custom ones
+/// unchecked unless their `default` setter is true, with the `short` setter as the card text, and
+/// registers the checked ones on the new character.
+#[test]
+fn imported_options_are_offered_at_creation_and_take_effect() {
+    let (_dir, app) = app();
+    let request = ImportPackRequest {
+        file_name: "test-options.xml".into(),
+        content_base64: STANDARD.encode(OPTIONS_XML),
+        format: None,
+    };
+    let r = app.import_pack(&request, &NullSink).expect("import");
+    assert_eq!(r.report.converted, 4, "{:?}", r.report);
+    for ruleset in [Ruleset::Dnd2014, Ruleset::Dnd2024] {
+        let defs = app.list_character_options(ruleset).expect("options");
+        let shown: Vec<(&str, &str, bool)> = defs
+            .iter()
+            .map(|d| (d.name.as_str(), d.description.as_str(), d.default_on))
+            .collect();
+        assert_eq!(
+            shown,
+            vec![
+                (
+                    "Customized Language",
+                    "You may replace each language in your Languages trait.",
+                    false
+                ),
+                ("Firearms", "Gunpowder weapons in the campaign.", true),
+            ],
+            "{ruleset:?}"
+        );
+    }
+    let mut new = NewCharacterRequest {
+        name: "Opal".into(),
+        ruleset: Ruleset::Dnd2014,
+        starting_level: 1,
+        gender: String::new(),
+        ability_method: AbilityMethodDto::PointBuy,
+        options: OptionsPatch::default(),
+        portrait: None,
+        group: None,
+    };
+    new.options.custom = Some(
+        [("ID_TEST_OPTION_CUSTOM_LANGUAGE".to_string(), true)]
+            .into_iter()
+            .collect(),
+    );
+    let snap = app
+        .create_character(Ruleset::Dnd2014, &new)
+        .expect("create");
+    assert_eq!(
+        snap.options.custom.get("ID_TEST_OPTION_CUSTOM_LANGUAGE"),
+        Some(&true)
+    );
+    // a `default` option is on unless the dialog unchecks it (Aurora `IsDefault`)
+    assert_eq!(
+        snap.options.custom.get("ID_TEST_OPTION_FIREARMS"),
+        Some(&true)
+    );
+    let defs: Vec<&str> = snap
+        .available_options
+        .iter()
+        .map(|d| d.description.as_str())
+        .collect();
+    assert!(
+        defs.contains(&"You may replace each language in your Languages trait."),
+        "{defs:?}"
+    );
+    let race_slot = snap
+        .slots
+        .iter()
+        .find(|s| s.title == "Race")
+        .unwrap()
+        .id
+        .clone();
+    let snap = app
+        .apply_selection(&snap.id, &race_slot, "ID_TEST_RACE_OPTFOLK")
+        .expect("race");
+    assert!(
+        snap.slots
+            .iter()
+            .any(|s| s.title == "Customized Language (Optfolk)"),
+        "the option's select applies"
+    );
+    new.name = "Onyx".into();
+    new.options.custom = Some(
+        [("ID_TEST_OPTION_FIREARMS".to_string(), false)]
+            .into_iter()
+            .collect(),
+    );
+    let off = app
+        .create_character(Ruleset::Dnd2014, &new)
+        .expect("create");
+    assert_eq!(
+        off.options.custom.get("ID_TEST_OPTION_FIREARMS"),
+        Some(&false)
+    );
+    assert_eq!(
+        off.options.custom.get("ID_TEST_OPTION_CUSTOM_LANGUAGE"),
+        Some(&false)
+    );
+}
+
 #[test]
 fn cross_edition_toggle_and_compatibility_report() {
     let (_dir, app) = app();

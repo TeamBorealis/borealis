@@ -57,6 +57,18 @@ export function optionsPatch(o: CharacterOptions, draft: Record<string, boolean>
   return patch;
 }
 
+/** The three built-in options: the backend lists only content options (`availableOptions`, `listCharacterOptions`). */
+export const BUILT_IN_OPTION_DEFS: OptionDef[] = [
+  { id: "averageHp", name: "Average hit points", description: "Hit points per level use the average roll of the hit die.", locked: false, defaultOn: true },
+  { id: "feats", name: "Feats", description: "Lets a character pick a feat in place of an Ability Score Improvement.", locked: false, defaultOn: true },
+  { id: "multiclassing", name: "Multiclassing", description: "Permit taking levels in more than one class.", locked: false, defaultOn: true },
+];
+export const isBuiltInOption = (id: string): boolean => BUILT_IN_OPTION_DEFS.some((d) => d.id === id);
+
+/** The built-ins, then the content options by name (Aurora lists both on its New Character and Manage Character Options sliders). */
+export const withBuiltIns = (content: OptionDef[]): OptionDef[] =>
+  [...BUILT_IN_OPTION_DEFS, ...content.filter((d) => !isBuiltInOption(d.id))];
+
 /** One card order for both option surfaces (new character and F8): AVERAGE HIT POINTS, FEATS, MULTICLASSING, then content options. */
 const OPTION_ORDER = ["averageHp", "feats", "multiclassing"];
 export function orderOptions(defs: OptionDef[]): OptionDef[] {
@@ -69,7 +81,7 @@ export function OptionCards({ defs, value, onToggle }: { defs: OptionDef[]; valu
   return (
     <div className="v4-opts mg-opt-cards">
       {orderOptions(defs).map((d) => {
-        const builtin = d.id === "multiclassing" || d.id === "feats" || d.id === "averageHp";
+        const builtin = isBuiltInOption(d.id);
         return (
           <div className={`v4-opt${d.locked ? " locked" : ""}`} key={d.id}>
             <label>

@@ -920,6 +920,19 @@
     }
    }
   },
+  "list_character_options": {
+   "args": {
+    "ruleset": false
+   },
+   "method": "listCharacterOptions",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "OptionDef"
+    }
+   }
+  },
   "list_characters": {
    "args": {},
    "method": "listCharacters",
@@ -6886,6 +6899,12 @@
   "OptionDef": {
    "k": "object",
    "props": {
+    "defaultOn": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "description": {
      "opt": false,
      "t": {

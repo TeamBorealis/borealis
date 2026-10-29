@@ -1,17 +1,26 @@
 import { CheckBox } from "../../components/controls";
 import { useState } from "react";
-import { ABILITY_KEYS, type Api, type AbilityMethod, type CharacterSnapshot, type Ruleset } from "../../api/contract";
+import { ABILITY_KEYS, type Api, type AbilityMethod, type CharacterSnapshot, type OptionDef, type Ruleset } from "../../api/contract";
 import { Button, ComboBox, Expander, Flyout, IconButton, TextBox } from "../../components";
 import { methodLabel, randomName } from "../../lib/format";
+import { useApi } from "../../state/ApiContext";
 import { useSettings } from "../../state/SettingsContext";
+import { useAsync } from "../../state/useAsync";
+import { BUILT_IN_OPTION_DEFS } from "../manage/OptionsTab";
 import "./characters.css";
 
 export interface NewCharacterForm {
   name: string; ruleset: Ruleset; startingLevel: number; gender: string; abilityMethod: AbilityMethod;
   multiclassing: boolean; feats: boolean; averageHp: boolean;
+  /** Content options the user switched (id -> on); an option left alone keeps its `defaultOn`. */
+  custom: Record<string, boolean>;
   /** Standard-array values in STR..CHA order (the arrangement made in the flyout). */
   standardArray: number[];
 }
+
+/** Every listed content option's state for `create_character` (the user's switch, else the option's default). */
+export const customOptions = (defs: OptionDef[], f: Pick<NewCharacterForm, "custom">): Record<string, boolean> =>
+  Object.fromEntries(defs.map((d) => [d.id, f.custom[d.id] ?? d.defaultOn]));
 
 const METHODS: AbilityMethod[] = ["point_buy", "standard_array", "roll_4d6", "roll_3d6", "manual"];
 const ABILITIES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
@@ -44,22 +53,22 @@ export async function applyStandardArray(api: Api, snap: CharacterSnapshot, f: N
   return cur;
 }
 
-const OPTIONS: { key: "averageHp" | "feats" | "multiclassing"; title: string; hint: string }[] = [
-  { key: "averageHp", title: "Average hit points", hint: "Hit points per level use the average roll of the hit die." },
-  { key: "feats", title: "Feats", hint: "Lets a character pick a feat in place of an Ability Score Improvement." },
-  { key: "multiclassing", title: "Multiclassing", hint: "Permit taking levels in more than one class." },
-];
+const OPTIONS = BUILT_IN_OPTION_DEFS.map((d) => ({ key: d.id as "averageHp" | "feats" | "multiclassing", title: d.name, hint: d.description }));
 
 const methodOptions = METHODS.map((m) => ({ value: m, label: m === "standard_array" ? "Standard Array (15, 14, 13, 12, 10, 8)" : methodLabel(m) }));
 const editionOptions = EDITIONS.map((e) => ({ value: e.id, label: `${e.year} - ${e.note}` }));
 
 /** Classic builder new-character flyout: portraits, collapsible CHARACTER DETAILS (name with dice inside the field, level, gender, abilities option and a rearrangeable standard array) and CHARACTER OPTIONS. */
-export function NewCharacterDialog({ onCreate, onClose }: { onCreate: (f: NewCharacterForm) => void; onClose: () => void }) {
+export function NewCharacterDialog({ onCreate, onClose }: { onCreate: (f: NewCharacterForm, contentOptions: OptionDef[]) => void; onClose: () => void }) {
   const { settings } = useSettings();
+  const api = useApi();
   const [f, setF] = useState<NewCharacterForm>({
     name: "", ruleset: settings.defaultRuleset, startingLevel: 1, gender: "", abilityMethod: settings.abilityMethod,
-    multiclassing: true, feats: true, averageHp: true, standardArray: STANDARD_ARRAY,
+    multiclassing: true, feats: true, averageHp: true, custom: {}, standardArray: STANDARD_ARRAY,
   });
+  // Issue 4: the content's own options (Aurora lists them after the built-ins, tagged "custom")
+  const contentOptions = useAsync(() => api.listCharacterOptions({ ruleset: f.ruleset }), [api, f.ruleset]).data ?? [];
+  const create = () => onCreate(f, contentOptions);
   const [grab, setGrab] = useState<number | null>(null);
   const set = <K extends keyof NewCharacterForm>(k: K, v: NewCharacterForm[K]) => setF((cur) => ({ ...cur, [k]: v }));
   const swap = (a: number, b: number) => { if (a !== b) set("standardArray", swapTiles(f.standardArray, a, b)); };
@@ -72,8 +81,8 @@ export function NewCharacterDialog({ onCreate, onClose }: { onCreate: (f: NewCha
   const preview = abilityPreview(f.abilityMethod, f.standardArray);
   return (
     <Flyout title="New character" onClose={onClose}
-      footer={<div className="v4-foot"><Button data-testid="create-character" onClick={() => onCreate(f)}>Create character</Button><Button onClick={onClose}>Cancel</Button></div>}>
-      <form className="v4-new" onSubmit={(e) => { e.preventDefault(); onCreate(f); }}>
+      footer={<div className="v4-foot"><Button data-testid="create-character" onClick={create}>Create character</Button><Button onClick={onClose}>Cancel</Button></div>}>
+      <form className="v4-new" onSubmit={(e) => { e.preventDefault(); create(); }}>
         <div className="v4-portraits" aria-hidden="true">
           <div className="v4-portrait side">B</div><div className="v4-portrait main">{initials}</div><div className="v4-portrait side">R</div>
         </div>
@@ -116,6 +125,15 @@ export function NewCharacterDialog({ onCreate, onClose }: { onCreate: (f: NewCha
               <div className="v4-opt" key={o.key}>
                 <label><CheckBox checked={f[o.key]} onChange={(e) => set(o.key, e.target.checked)} />{o.title}</label>
                 <p>{o.hint}</p>
+              </div>
+            ))}
+            {contentOptions.map((d) => (
+              <div className="v4-opt" key={d.id}>
+                <label>
+                  <CheckBox checked={f.custom[d.id] ?? d.defaultOn} onChange={(e) => set("custom", { ...f.custom, [d.id]: e.target.checked })} />
+                  {d.name}<span className="mg-tag">custom</span>
+                </label>
+                <p>{d.description}</p>
               </div>
             ))}
             <div className="v4-opt">

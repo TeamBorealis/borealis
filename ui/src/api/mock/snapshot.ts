@@ -10,10 +10,10 @@ import { isEquippable } from "./ops-equipment";
 import { toWireSlotId } from "./slot-ids";
 import { type MockCharacter, type RuleSettings, signed, totalLevel } from "./state";
 
-const OPTION_DEFS: OptionDef[] = [
-  { id: "multiclassing", name: "Multiclassing", description: "Allow taking levels in more than one class.", locked: false },
-  { id: "feats", name: "Feats", description: "Offer feats at ability score improvement levels.", locked: false },
-  { id: "averageHp", name: "Average hit points", description: "Use the fixed average for new levels instead of rolling.", locked: false },
+/** Content options as the backend lists them (`list_character_options`; the three built-ins are not among them). */
+export const OPTION_DEFS: OptionDef[] = [
+  { id: "ID_MOCK_OPTION_CUSTOMIZED_LANGUAGE", name: "Customized Language", description: "You may replace each language in your Languages trait with another standard language.", locked: false, defaultOn: false },
+  { id: "ID_MOCK_OPTION_FIREARMS", name: "Firearms", description: "You can introduce gunpowder, futuristic, or modern firearms to your campaign.", locked: false, defaultOn: true },
 ];
 
 const TABS: BuilderTab[] = ["race", "class", "background", "abilities", "feats", "languages", "proficiencies", "companion", "spells"];

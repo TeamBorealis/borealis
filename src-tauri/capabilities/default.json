@@ -44,6 +44,7 @@
     "allow-reset-abilities",
     "allow-set-character-options",
     "allow-get-ruleset-profile",
+    "allow-list-character-options",
     "allow-replace-spell",
     "allow-set-spell-prepared",
     "allow-explain-stat",

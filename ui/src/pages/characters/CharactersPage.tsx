@@ -1,7 +1,7 @@
 import { CheckBox } from "../../components/controls";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
-import type { CharacterSummary, RecheckReport } from "../../api/contract";
+import type { CharacterSummary, OptionDef, RecheckReport } from "../../api/contract";
 import { Alert, Button, Modal, SearchInput, TextField, useConfirm, useToast } from "../../components";
 import { fileToBase64 } from "../../lib/files";
 import { haptic } from "../../lib/haptics";
@@ -14,7 +14,7 @@ import { type CharacterImportEntry, CharacterImportReportDialog } from "./Charac
 import { onBundleApplied } from "../transfer/openBundle";
 import { CharacterTile } from "./CharacterTile";
 import "./characters.css";
-import { type NewCharacterForm, NewCharacterDialog, applyStandardArray } from "./NewCharacterDialog";
+import { type NewCharacterForm, NewCharacterDialog, applyStandardArray, customOptions } from "./NewCharacterDialog";
 
 function groupBy(list: CharacterSummary[]): [string, CharacterSummary[]][] {
   const map = new Map<string, CharacterSummary[]>();
@@ -92,12 +92,12 @@ export function CharactersPage() {
     if (await ch.open(c.id)) nav("/builder/race");
   };
 
-  const create = async (f: NewCharacterForm) => {
+  const create = async (f: NewCharacterForm, contentOptions: OptionDef[]) => {
     if (!(await leaveCurrent())) return;
     try {
       const snap = await api.createCharacter({ request: {
         name: f.name, ruleset: f.ruleset, startingLevel: f.startingLevel, gender: f.gender, abilityMethod: f.abilityMethod,
-        options: { multiclassing: f.multiclassing, feats: f.feats, averageHp: f.averageHp },
+        options: { multiclassing: f.multiclassing, feats: f.feats, averageHp: f.averageHp, custom: customOptions(contentOptions, f) },
       } });
       ch.adopt(await applyStandardArray(api, snap, f));
       void update({ abilityMethod: f.abilityMethod });
@@ -192,7 +192,7 @@ export function CharactersPage() {
           </section>
         ))}
       </div>
-      {creating && <NewCharacterDialog onCreate={(f) => void create(f)} onClose={() => setCreating(false)} />}
+      {creating && <NewCharacterDialog onCreate={(f, opts) => void create(f, opts)} onClose={() => setCreating(false)} />}
       {entries && <CharacterImportReportDialog entries={entries} rechecking={rechecking} onClose={() => setEntries(null)}
         onOpenContent={() => { setEntries(null); nav("/content"); }} onRecheck={() => void recheck()} />}
       {editing && <EditDialog c={editing} groups={groupBy(list.data ?? []).map(([g]) => g)} onClose={() => setEditing(null)}
