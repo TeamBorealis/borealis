@@ -291,8 +291,10 @@ table.data th { color: var(--dark-4b); font-weight: 600; font-size: var(--fs-2xs
   ::-webkit-scrollbar-button:horizontal:start:decrement { background-size: 5px 9px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='5' height='9'%3E%3Cpath d='M5 0L0 4.5L5 9Z' fill='%23686868'/%3E%3C/svg%3E"); }
   ::-webkit-scrollbar-button:horizontal:end:increment { background-size: 5px 9px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='5' height='9'%3E%3Cpath d='M0 0L5 4.5L0 9Z' fill='%23686868'/%3E%3C/svg%3E"); }
   @media (hover: hover) and (pointer: fine) { ::-webkit-scrollbar-button:hover { background-color: rgb(255 255 255 / 0.08); } }
-  /* The classic builder keeps the gutter and line buttons visible even when nothing overflows */
-  .bp-left, .desc-scroll { overflow-y: scroll; }
+  /* The classic builder keeps the gutter and line buttons visible even when nothing overflows. The BUILD picker column
+     does the same from 900 px (builder.css); below that the page scrolls, and a never-scrolling .bp-left scroll box
+     would hold the U11 sticky filter bar in place instead of the page. */
+  .desc-scroll { overflow-y: scroll; }
 }
 @supports not selector(::-webkit-scrollbar) { * { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; } }
 .tabs::-webkit-scrollbar { display: none; }
@@ -350,7 +352,8 @@ table.data th { color: var(--dark-4b); font-weight: 600; font-size: var(--fs-2xs
 .vm-src { flex: 1; min-width: 0; }
 .vm-sub, .vm-reason { color: var(--pv-sub); font-size: 11px; }
 .vm-reason { font-style: italic; }
-.pick-fbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px; border: 1px solid var(--bp-box, var(--light-2)); border-top: 0; background: var(--pv-bar); font-size: var(--fs-sm, 12px); }
+/* U11: the bar sticks to the top of the scrolling tab page while its (full-height) list scrolls past. */
+.pick-fbar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px; border: 1px solid var(--bp-box, var(--light-2)); border-top: 0; background: var(--pv-bar); font-size: var(--fs-sm, 12px); }
 .pick-frow { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .pick-fsearch { width: 200px; height: 20px; box-sizing: border-box; padding: 0 6px; background: var(--pv-field); border: 1px solid var(--pv-pop-line); border-radius: 0; color: var(--text); font: inherit; }
 .pick-fsearch:focus-visible { outline: 1px solid var(--gold); outline-offset: -1px; }

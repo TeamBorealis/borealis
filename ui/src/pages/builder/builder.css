@@ -14,6 +14,8 @@
   /* Classic builder: scrollbar sits 8px before the 2px splitter; the picker column's right edge is 24px before the scrollbar. */
   /* Scrollbar arrows sit 10px inside the pane (classic builder: 137-141 / 799-803): inset the viewer, not the content. */
   .bp-left { position: relative; overflow-y: scroll; overflow-x: hidden; margin: 10px 8px 10px 0; padding: 10px 15px 20px 50px; }
+  /* U11: the sticky filter bar meets the column's top edge (past its 10px padding), so no row shows above it. */
+  .bp-left .pick-fbar { top: -10px; }
   .bp-right { border-left: 2px solid var(--bp-split); }
   .bp-right { display: flex; flex-direction: column; min-height: 0; }
 }
@@ -70,7 +72,8 @@
 .pick-tag[aria-pressed="true"] { background: var(--chrome-hover); }
 @media (hover: hover) and (pointer: fine) { .pick-tag:hover { background: var(--chrome-hover); } }
 .pick-hint, .pick-empty { margin: 6px 10px; font-size: var(--fs-xs); font-style: italic; color: var(--text-secondary); }
-.pick-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--bp-box); border-top: 0; max-height: 60vh; overflow-y: auto; background: var(--bg); }
+/* U11 (GitHub #6): every row at full height; the tab page is the only scroller (an exception to U7). */
+.pick-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--bp-box); border-top: 0; background: var(--bg); }
 .pick-row { display: flex; align-items: stretch; min-height: var(--pick-row, 21px); }
 .pick-main { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; padding: 0 4px 0 5px; background: transparent; border: 0; color: #fff; font-size: var(--fs-sm); text-align: left; cursor: default; height: var(--pick-row, 21px); min-height: var(--pick-row, 21px); }
 .pick-list.with-desc .pick-main { grid-template-columns: 200px minmax(0, 1fr) 184px; column-gap: 0; }
@@ -122,7 +125,6 @@
   .pick-ver-btn { width: 44px; height: 44px; justify-content: center; }
   .pick-chosen { min-height: 44px; }
   .pick-tag { width: 40px; height: 36px; }
-  .pick-list { max-height: 50vh; }
   .pick-sub { display: none; }
 }
 
