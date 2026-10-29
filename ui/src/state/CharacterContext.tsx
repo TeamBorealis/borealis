@@ -12,6 +12,11 @@ const AUTOSAVE_MS = 1500;
 
 interface CharacterCtx {
   snapshot: CharacterSnapshot | null;
+  /**
+   * Goes up whenever the open character's build may have changed (opened, adopted, mutated, re-read); a save does not move
+   * it. Lists that read the backend on their own (pick options) reload on it (GitHub #7).
+   */
+  revision: number;
   busy: boolean;
   open: (id: string, silent?: boolean) => Promise<boolean>;
   adopt: (s: CharacterSnapshot) => void;
@@ -42,6 +47,7 @@ export function CharacterProvider({ children, restore = true }: { children: Reac
   const toast = useToast();
   const { settings } = useSettings();
   const [snapshot, setSnapshot] = useState<CharacterSnapshot | null>(null);
+  const [revision, setRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [savedByUser, setSavedByUser] = useState(false);
@@ -53,6 +59,7 @@ export function CharacterProvider({ children, restore = true }: { children: Reac
     idRef.current = s.id;
     remember(s.id);
     setSnapshot(s);
+    setRevision((r) => r + 1);
     setSavedByUser(false);
     setStatus(describeAdopt(s));
   }, []);
@@ -89,6 +96,7 @@ export function CharacterProvider({ children, restore = true }: { children: Reac
       const note = snapshotRef.current ? describeChange(snapshotRef.current, next) : null;
       if (note) setStatus(note);
       setSnapshot(next);
+      setRevision((r) => r + 1);
       next.inventory.warnings.forEach((w) => toast.push(w, "warning"));
       return next;
     } catch (e) {
@@ -142,7 +150,11 @@ export function CharacterProvider({ children, restore = true }: { children: Reac
     const reread = () => {
       const id = idRef.current;
       if (!id) return;
-      api.getSnapshot({ characterId: id }).then((s) => idRef.current === id && setSnapshot(s)).catch(() => undefined);
+      api.getSnapshot({ characterId: id }).then((s) => {
+        if (idRef.current !== id) return;
+        setSnapshot(s);
+        setRevision((r) => r + 1);
+      }).catch(() => undefined);
     };
     const offLink = api.subscribe("link:status", (s) => { if (s.role === "receive" && s.phase === "done") reread(); });
     const offBundle = onBundleApplied(reread);
@@ -159,7 +171,7 @@ export function CharacterProvider({ children, restore = true }: { children: Reac
     return () => clearTimeout(t);
   }, [api, settings.autosave, snapshot]);
 
-  const value = useMemo(() => ({ snapshot, busy, open, adopt, mutate, save, saveOpen, closeSave, commitSave, savedByUser, close }), [snapshot, busy, open, adopt, mutate, save, saveOpen, closeSave, commitSave, savedByUser, close]);
+  const value = useMemo(() => ({ snapshot, revision, busy, open, adopt, mutate, save, saveOpen, closeSave, commitSave, savedByUser, close }), [snapshot, revision, busy, open, adopt, mutate, save, saveOpen, closeSave, commitSave, savedByUser, close]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import type { Api, Page, SelectionSlot, SlotOption, SlotOptionsArgs } from "../../api/contract";
 import { useToast } from "../../components/Toast";
 import {
@@ -48,15 +48,43 @@ export interface PickerRows {
   versionColumn: boolean;
 }
 
-/** Loads a slot's options (all pages) and applies the B-55 row model: grouping, filters, shown versions. */
+/** Two option pages list the same rows with the same fields. */
+export function samePage(a: Page<SlotOption> | null, b: Page<SlotOption> | null): boolean {
+  if (a === b) return true;
+  if (!a || !b || a.total !== b.total || a.items.length !== b.items.length) return false;
+  return JSON.stringify(a.items) === JSON.stringify(b.items);
+}
+
+/**
+ * The latest page, or the page held before when the new one lists the same rows: a reload that changes nothing re-renders
+ * nothing.
+ */
+function useStablePage(page: Page<SlotOption> | null): Page<SlotOption> | null {
+  const held = useRef({ input: page, output: page });
+  // each new page is compared once; later renders with the same page reuse the answer
+  if (held.current.input !== page) {
+    held.current = { input: page, output: samePage(held.current.output, page) ? held.current.output : page };
+  }
+  return held.current.output;
+}
+
+/**
+ * Loads a slot's options (all pages) and applies the B-55 row model: grouping, filters, shown versions.
+ *
+ * GitHub #7: the list reloads after every change to the character (`revision`), not only when its own pick changes, since a
+ * pick elsewhere can add, remove or disable its options (a skill-tree node unlocking its child, a skill taken by a sibling
+ * list). While it reloads it keeps showing the rows it has, so it stays open, keeps its rows' DOM (focus, scroll) and its
+ * filters (held by the page's picker state).
+ */
 export function usePickerRows(characterId: string, slot: SelectionSlot, enabled: boolean): PickerRows {
   const api = useApi();
-  const { snapshot } = useCharacter();
-  const chosenSig = slot.chosen?.id ?? "";
-  const options = useAsync(
+  const { snapshot, revision } = useCharacter();
+  const loaded = useAsync(
     () => (enabled ? fetchAllSlotOptions(api, { characterId, slotId: slot.id, query: "" }) : Promise.resolve(null)),
-    [api, characterId, slot.id, enabled, chosenSig],
+    [api, characterId, slot.id, enabled, revision],
   );
+  const data = useStablePage(loaded.data);
+  const options: AsyncState<Page<SlotOption> | null> = { ...loaded, data };
   const [ui, update] = usePickerUiState(slot.id);
   const rows = useMemo(() => buildRows(options.data?.items ?? [], slot.chosen), [options.data, slot.chosen]);
   const charEd = snapshot?.ruleset ?? inferCharEdition(rows.flatMap((r) => r.all));
