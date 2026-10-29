@@ -1138,7 +1138,10 @@ impl<'u> Graph<'u> {
             if !offered {
                 return false;
             }
-            if self.restricted.is_restricted(&cand.el.source) {
+            if self
+                .restricted
+                .is_restricted_element(&cand.el.source, &cand.el.ty)
+            {
                 return false;
             }
         }

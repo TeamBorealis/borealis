@@ -219,7 +219,9 @@ pub fn slot_caster_id(snap: &Engine, slot: &SlotSnapshot) -> Option<String> {
 fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> ClassSpellcasting {
     let store = &input.hub.store;
     let slot = caster_slot(snap, &c.name);
-    let restricted = &input.character.build.restricted_sources;
+    let restricted = borealis_content::SourceRestriction::excluding(
+        input.character.build.restricted_sources.iter().cloned(),
+    );
     let own_slots = || {
         snap.slots
             .iter()
@@ -239,10 +241,7 @@ fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> Clas
             let slot_id = own.map(|k| encode_slot(&k.key));
             let restricted_by_source = s.prepared
                 && !s.always_prepared
-                && el.is_some_and(|e| {
-                    restricted.contains(&e.source)
-                        && !borealis_content::is_unrestrictable_source(&e.source)
-                });
+                && el.is_some_and(|e| restricted.is_restricted_element(&e.source, &e.ty));
             SpellEntry {
                 id: s.id.clone(),
                 name: s.name.clone(),

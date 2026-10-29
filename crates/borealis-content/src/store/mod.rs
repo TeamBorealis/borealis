@@ -8,7 +8,9 @@ mod restriction;
 
 pub use builder::{ContentStoreBuilder, PackInfo};
 pub use merge::apply_append;
-pub use restriction::{is_unrestrictable_source, SourceRestriction, UNRESTRICTABLE_SOURCES};
+pub use restriction::{
+    is_unrestrictable_source, SourceRestriction, UNRESTRICTABLE_SOURCES, UNRESTRICTABLE_TYPES,
+};
 
 use crate::element::Element;
 use crate::file::{IndexFile, PackOrigin};
@@ -189,7 +191,7 @@ impl ContentStore {
         restriction: &'a SourceRestriction,
     ) -> impl Iterator<Item = &'a StoredElement> {
         self.by_type(ty)
-            .filter(move |s| !restriction.is_restricted(&s.element.source))
+            .filter(move |s| !restriction.is_restricted_element(&s.element.source, &s.element.ty))
     }
 
     /// Ids of every element whose source is unchecked.
@@ -197,7 +199,7 @@ impl ContentStore {
     pub fn restricted_ids(&self, restriction: &SourceRestriction) -> HashSet<&str> {
         self.elements
             .iter()
-            .filter(|s| restriction.is_restricted(&s.element.source))
+            .filter(|s| restriction.is_restricted_element(&s.element.source, &s.element.ty))
             .map(|s| s.element.id.as_str())
             .collect()
     }

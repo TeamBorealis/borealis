@@ -16,7 +16,22 @@ pub fn is_unrestrictable_source(source: &str) -> bool {
         .any(|s| s.eq_ignore_ascii_case(source))
 }
 
-/// The set of unchecked source names.
+/// Element types a restriction never excludes, whatever their source: `SourcesManager`'s element
+/// query (`GetUndefinedSourceNames`) leaves them out of every source item, so Aurora offers a
+/// PHB ability score option to a feat of another book while the PHB is unchecked (review M1).
+pub const UNRESTRICTABLE_TYPES: [&str; 8] = [
+    "Source",
+    "Internal",
+    "Core",
+    "Ability Score Improvement",
+    "Level",
+    "Multiclass",
+    "Skill",
+    "Support",
+];
+
+/// The set of unchecked source names (lower-cased: Aurora matches element sources to its source
+/// items ignoring case, `StringComparison.OrdinalIgnoreCase`).
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct SourceRestriction {
     unchecked: BTreeSet<String>,
@@ -41,6 +56,7 @@ impl SourceRestriction {
                 .into_iter()
                 .map(Into::into)
                 .filter(|n: &String| !is_unrestrictable_source(n))
+                .map(|n| n.to_lowercase())
                 .collect(),
         }
     }
@@ -51,15 +67,22 @@ impl SourceRestriction {
         let name = name.into();
         let mut next = self.clone();
         if !is_unrestrictable_source(&name) {
-            next.unchecked.insert(name);
+            next.unchecked.insert(name.to_lowercase());
         }
         next
     }
 
-    /// True if elements of `source` are filtered out of candidate lists.
+    /// True if elements of `source` are filtered out of candidate lists (ignoring case).
     #[must_use]
     pub fn is_restricted(&self, source: &str) -> bool {
-        self.unchecked.contains(source)
+        !self.unchecked.is_empty() && self.unchecked.contains(&source.to_lowercase())
+    }
+
+    /// True if an element of `source` and type `ty` is filtered out: never for the
+    /// [`UNRESTRICTABLE_TYPES`].
+    #[must_use]
+    pub fn is_restricted_element(&self, source: &str, ty: &str) -> bool {
+        !UNRESTRICTABLE_TYPES.contains(&ty) && self.is_restricted(source)
     }
 
     /// True when nothing is excluded.
@@ -72,6 +95,25 @@ impl SourceRestriction {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn auroras_never_restricted_types_and_case_insensitive_sources() {
+        // review M1/L5: SourcesManager.GetUndefinedSourceNames leaves these types out of every
+        // source item, and matches element sources to source items ignoring case
+        let r = SourceRestriction::excluding(["Player’s Handbook"]);
+        for ty in [
+            "Ability Score Improvement",
+            "Level",
+            "Multiclass",
+            "Skill",
+            "Support",
+            "Source",
+        ] {
+            assert!(!r.is_restricted_element("Player’s Handbook", ty), "{ty}");
+        }
+        assert!(r.is_restricted_element("Player’s Handbook", "Feat"));
+        assert!(r.is_restricted("player’s handbook") && r.is_restricted("PLAYER’S HANDBOOK"));
+    }
 
     #[test]
     fn internal_and_core_are_never_restricted() {

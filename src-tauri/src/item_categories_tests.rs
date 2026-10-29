@@ -86,7 +86,7 @@ fn empty_and_fully_restricted_categories_are_hidden_and_counts_skip_restricted_i
     let refs: Vec<&Element> = els.iter().collect();
     let scope = ItemScope {
         ruleset: None,
-        restricted: vec!["Locked".into()],
+        restricted: borealis_content::SourceRestriction::excluding(["Locked"]),
         ..ItemScope::default()
     };
     let list = category_list(&refs, &scope, &[]);
@@ -107,7 +107,7 @@ fn ruleset_scope_hides_other_edition_items() {
     let refs = [&new];
     let scope = ItemScope {
         ruleset: Some(Ruleset::Dnd2014),
-        restricted: Vec::new(),
+        restricted: borealis_content::SourceRestriction::none(),
         ..ItemScope::default()
     };
     assert!(category_list(&refs, &scope, &[]).is_empty());

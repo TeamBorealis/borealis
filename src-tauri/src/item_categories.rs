@@ -62,7 +62,7 @@ const WONDROUS: &str = "Wondrous Items";
 #[derive(Debug, Clone, Default)]
 pub struct ItemScope {
     ruleset: Option<Ruleset>,
-    restricted: Vec<String>,
+    restricted: borealis_content::SourceRestriction,
     /// Ids of other-edition items the engine offers this character: accepted by its profile,
     /// not superseded by an equivalent of its own edition, and only with strict mode off.
     foreign: HashSet<String>,
@@ -73,11 +73,8 @@ impl ItemScope {
     /// other-edition item ids.
     #[must_use]
     pub fn new(ruleset: Ruleset, restricted: Vec<String>, foreign: HashSet<String>) -> Self {
-        // a 1.1.x file can list `Internal`, which Aurora never restricts
-        let restricted = restricted
-            .into_iter()
-            .filter(|s| !borealis_content::is_unrestrictable_source(s))
-            .collect();
+        // ignores `Internal` / `Core` (a 1.1.x file can list them) and case, as Aurora does
+        let restricted = borealis_content::SourceRestriction::excluding(restricted);
         Self {
             ruleset: Some(ruleset),
             restricted,
@@ -89,7 +86,7 @@ impl ItemScope {
     #[must_use]
     pub fn admits(&self, el: &Element) -> bool {
         self.admits_parts(el.ruleset, &el.source)
-            || (self.foreign.contains(&el.id) && !self.restricted.contains(&el.source))
+            || (self.foreign.contains(&el.id) && !self.restricted.is_restricted(&el.source))
     }
 
     /// Is an element of this ruleset and source visible in this scope?
@@ -98,7 +95,7 @@ impl ItemScope {
         let ruleset_ok = self
             .ruleset
             .is_none_or(|r| ruleset.is_none_or(|x| x.compatible_with(r)));
-        ruleset_ok && !self.restricted.iter().any(|r| r == source)
+        ruleset_ok && !self.restricted.is_restricted(source)
     }
 
     /// The ruleset whose engine universe lists the proxy items of this scope.

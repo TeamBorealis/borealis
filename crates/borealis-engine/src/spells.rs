@@ -356,7 +356,10 @@ pub fn spellcasting_snapshots(
             |known_ids: &[SpellEntry], lists: &[&borealis_content::SpellcastingList]| {
                 let mut out = Vec::new();
                 for cand in uni.by_type("Spell").filter(|c| {
-                    graph.offers_edition(c) && !graph.restricted.is_restricted(&c.el.source)
+                    graph.offers_edition(c)
+                        && !graph
+                            .restricted
+                            .is_restricted_element(&c.el.source, &c.el.ty)
                 }) {
                     let lvl = spell_level(cand);
                     if lvl == 0 || lvl > top || known_ids.iter().any(|s| s.id == cand.el.id) {

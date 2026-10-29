@@ -235,18 +235,21 @@ impl AppState {
         enabled: Option<&[String]>,
     ) -> ApiResult<RestrictionPreview> {
         self.read(id, |ctx, session| {
-            let restricted = restricted_from(ctx.hub, enabled);
+            let restricted =
+                borealis_content::SourceRestriction::excluding(restricted_from(ctx.hub, enabled));
             let snap = ctx.hub.engine.derive_with(&session.character.build, false);
             let affected = snap
                 .slots
                 .iter()
                 .filter_map(|slot| {
                     let chosen = slot.chosen.as_ref()?;
-                    restricted.contains(&chosen.source).then(|| AffectedPick {
-                        slot_id: encode_slot(&slot.key),
-                        slot_title: slot.name.clone(),
-                        element: chosen.name.clone(),
-                    })
+                    restricted
+                        .is_restricted_element(&chosen.source, &chosen.ty)
+                        .then(|| AffectedPick {
+                            slot_id: encode_slot(&slot.key),
+                            slot_title: slot.name.clone(),
+                            element: chosen.name.clone(),
+                        })
                 })
                 .collect();
             Ok(RestrictionPreview { affected })
