@@ -237,7 +237,10 @@ fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> Clas
             let slot_id = own.map(|k| encode_slot(&k.key));
             let restricted_by_source = s.prepared
                 && !s.always_prepared
-                && el.is_some_and(|e| restricted.contains(&e.source));
+                && el.is_some_and(|e| {
+                    restricted.contains(&e.source)
+                        && !borealis_content::is_unrestrictable_source(&e.source)
+                });
             SpellEntry {
                 id: s.id.clone(),
                 name: s.name.clone(),
@@ -648,7 +651,9 @@ pub fn source_restrictions(input: &MapInput<'_>) -> Option<Vec<String>> {
             .store
             .source_names()
             .into_iter()
-            .filter(|s| !restricted.iter().any(|r| r == s))
+            .filter(|s| {
+                !restricted.iter().any(|r| r == s) && !borealis_content::is_unrestrictable_source(s)
+            })
             .map(str::to_string)
             .collect(),
     )

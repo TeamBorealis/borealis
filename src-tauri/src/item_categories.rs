@@ -73,6 +73,11 @@ impl ItemScope {
     /// other-edition item ids.
     #[must_use]
     pub fn new(ruleset: Ruleset, restricted: Vec<String>, foreign: HashSet<String>) -> Self {
+        // a 1.1.x file can list `Internal`, which Aurora never restricts
+        let restricted = restricted
+            .into_iter()
+            .filter(|s| !borealis_content::is_unrestrictable_source(s))
+            .collect();
         Self {
             ruleset: Some(ruleset),
             restricted,

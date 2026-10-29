@@ -55,7 +55,10 @@ pub use ruleset::Ruleset;
 pub use setter::Setter;
 pub use sheet::{Compendium, Sheet, SheetEntry};
 pub use spellcasting::{Spellcasting, SpellcastingList};
-pub use store::{ContentStore, ContentStoreBuilder, SourceRestriction, StoredElement};
+pub use store::{
+    is_unrestrictable_source, ContentStore, ContentStoreBuilder, SourceRestriction, StoredElement,
+    UNRESTRICTABLE_SOURCES,
+};
 pub use types::{KnownType, TypeCategory};
 pub use version::Version;
 

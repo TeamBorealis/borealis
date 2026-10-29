@@ -246,12 +246,95 @@ fn source_restrictions_preview_and_apply() {
     let applied = app
         .set_source_restrictions(&id, Some(&only_core))
         .expect("apply");
-    assert!(applied
-        .source_restrictions
-        .as_ref()
-        .is_some_and(|s| s == &only_core));
+    // Core can never be restricted (Aurora parity, issue 5), so it is not among the listed
+    // enabled sources: checking only Core leaves no restrictable source checked
+    assert_eq!(applied.source_restrictions.as_deref(), Some(&[][..]));
     let lifted = app.set_source_restrictions(&id, None).expect("lift");
     assert!(lifted.source_restrictions.is_none());
+}
+
+/// A Monsters of the Multiverse style race (the shape of AuroraLegacy's MotM races): its ability
+/// score choice picks one of the `Internal` "+2, +1" / "+1, +1, +1" options.
+const MULTIVERSE_RACE_XML: &str = r#"<?xml version="1.0" encoding="utf-8"?>
+<elements>
+  <info><name>Test Multiverse</name>
+    <update version="1.0.0"><file name="test-multiverse.xml" url="https://example.invalid/test-multiverse.xml"/></update>
+  </info>
+  <element name="Test Multiverse" type="Source" source="Core" id="ID_TEST_SOURCE_MULTIVERSE">
+    <setters><set name="abbreviation">TMV</set><set name="url">https://example.invalid</set><set name="official">true</set></setters>
+  </element>
+  <element name="Testling" type="Race" source="Test Multiverse" id="ID_TEST_RACE_TESTLING">
+    <description><p>A small test folk.</p></description>
+    <sheet display="false" />
+    <rules>
+      <select type="Ability Score Improvement" name="Ability Score Improvement Option (Testling)" supports="Custom Ability Score Improvement Option" requirements="!ID_INTERNAL_GRANTS_BACKGROUND_ASI" />
+      <grant type="Size" id="ID_SIZE_SMALL" />
+      <stat name="innate speed" value="30" bonus="base" />
+    </rules>
+  </element>
+</elements>"#;
+
+/// Discord #5 (GitHub issue 5): with any source restriction applied, a MotM race's "Ability Score
+/// Improvement Option" listed nothing. The Sources page sends the sources it lists, which never
+/// include `Internal`, so every `Internal` element (the ability score options among them) was
+/// restricted. Aurora never restricts the `Internal` and `Core` sources (SourcesManager: they are
+/// not source items).
+#[test]
+fn source_restrictions_never_hide_internal_options() {
+    let (_dir, app) = app();
+    let request = ImportPackRequest {
+        file_name: "test-multiverse.xml".into(),
+        content_base64: STANDARD.encode(MULTIVERSE_RACE_XML),
+        format: None,
+    };
+    let r = app.import_pack(&request, &NullSink).expect("import");
+    assert_eq!(r.report.converted, 2, "{:?}", r.report);
+    let snap = new_hero(&app, Ruleset::Dnd2014);
+    let id = snap.id.clone();
+    let race_slot = snap
+        .slots
+        .iter()
+        .find(|s| s.title == "Race")
+        .unwrap()
+        .id
+        .clone();
+    let snap = app
+        .apply_selection(&id, &race_slot, "ID_TEST_RACE_TESTLING")
+        .expect("race");
+    let asi = |snap: &CharacterSnapshot| {
+        snap.slots
+            .iter()
+            .find(|s| s.title == "Ability Score Improvement Option (Testling)")
+            .expect("the race's ability score slot")
+            .id
+            .clone()
+    };
+    let offered = |slot: &str| {
+        app.get_slot_options(&id, slot, None, None, None)
+            .expect("options")
+            .total
+    };
+    assert_eq!(offered(&asi(&snap)), 2, "unrestricted: +2/+1 and +1/+1/+1");
+    // what the Sources page sends when every listed source stays checked
+    let listed: Vec<String> = app
+        .list_sources()
+        .expect("sources")
+        .into_iter()
+        .map(|s| s.id)
+        .collect();
+    assert!(
+        !listed.iter().any(|s| s == "Internal" || s == "Core"),
+        "{listed:?}"
+    );
+    let snap = app
+        .set_source_restrictions(&id, Some(&listed))
+        .expect("apply");
+    assert_eq!(offered(&asi(&snap)), 2, "every listed source checked");
+    // only the race's own book checked: the Internal options stay
+    let own = vec!["Test Multiverse".to_string()];
+    let snap = app.set_source_restrictions(&id, Some(&own)).expect("apply");
+    assert_eq!(offered(&asi(&snap)), 2, "Internal is never restricted");
+    assert_eq!(snap.source_restrictions.as_deref(), Some(own.as_slice()));
 }
 
 #[test]

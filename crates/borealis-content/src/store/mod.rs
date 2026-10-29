@@ -8,7 +8,7 @@ mod restriction;
 
 pub use builder::{ContentStoreBuilder, PackInfo};
 pub use merge::apply_append;
-pub use restriction::SourceRestriction;
+pub use restriction::{is_unrestrictable_source, SourceRestriction, UNRESTRICTABLE_SOURCES};
 
 use crate::element::Element;
 use crate::file::{IndexFile, PackOrigin};

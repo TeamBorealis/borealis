@@ -13,7 +13,9 @@ use std::path::{Path, PathBuf};
 /// Name of the per-pack marker file written by Borealis installers.
 pub const PACK_META_FILE: &str = "pack-meta.json";
 const IMPORT_META_FILE: &str = "import.json";
-const HIDDEN_SOURCES: [&str; 1] = ["Internal"];
+/// Never listed: a restriction cannot exclude them (Aurora lists neither, see
+/// [`borealis_content::UNRESTRICTABLE_SOURCES`]).
+const HIDDEN_SOURCES: [&str; 2] = borealis_content::UNRESTRICTABLE_SOURCES;
 
 /// Receives the push events of long content operations (the Tauri layer emits them to the UI).
 pub trait EventSink: Send + Sync {

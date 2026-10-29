@@ -3,6 +3,19 @@
 
 use std::collections::BTreeSet;
 
+/// Sources a restriction never excludes. Aurora's source list is built from `Source` elements and
+/// skips `internal` and `core` (`SourcesManager.GetUndefinedSourceNames`), so their elements (levels,
+/// the ability score options, proficiencies, sizes) stay offered whatever the user unchecks.
+pub const UNRESTRICTABLE_SOURCES: [&str; 2] = ["Internal", "Core"];
+
+/// Is `source` one of [`UNRESTRICTABLE_SOURCES`] (ignoring case, as Aurora compares them)?
+#[must_use]
+pub fn is_unrestrictable_source(source: &str) -> bool {
+    UNRESTRICTABLE_SOURCES
+        .iter()
+        .any(|s| s.eq_ignore_ascii_case(source))
+}
+
 /// The set of unchecked source names.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct SourceRestriction {
@@ -16,22 +29,30 @@ impl SourceRestriction {
         Self::default()
     }
 
-    /// Restrict (exclude) the given source names.
+    /// Restrict (exclude) the given source names; [`UNRESTRICTABLE_SOURCES`] are ignored (a
+    /// character saved by 1.1.x can list `Internal`).
     pub fn excluding<I, S>(names: I) -> Self
     where
         I: IntoIterator<Item = S>,
         S: Into<String>,
     {
         Self {
-            unchecked: names.into_iter().map(Into::into).collect(),
+            unchecked: names
+                .into_iter()
+                .map(Into::into)
+                .filter(|n: &String| !is_unrestrictable_source(n))
+                .collect(),
         }
     }
 
-    /// A copy that also excludes `name`.
+    /// A copy that also excludes `name` (unless it is one of [`UNRESTRICTABLE_SOURCES`]).
     #[must_use]
     pub fn with_excluded(&self, name: impl Into<String>) -> Self {
+        let name = name.into();
         let mut next = self.clone();
-        next.unchecked.insert(name.into());
+        if !is_unrestrictable_source(&name) {
+            next.unchecked.insert(name);
+        }
         next
     }
 
@@ -51,6 +72,15 @@ impl SourceRestriction {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn internal_and_core_are_never_restricted() {
+        let r = SourceRestriction::excluding(["Internal", "core", "Player’s Handbook"]);
+        assert!(!r.is_restricted("Internal") && !r.is_restricted("Core"));
+        assert!(r.is_restricted("Player’s Handbook"));
+        let r = SourceRestriction::none().with_excluded("Internal");
+        assert!(r.is_empty());
+    }
 
     #[test]
     fn restriction_basics() {

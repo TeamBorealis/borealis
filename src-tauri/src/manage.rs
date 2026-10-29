@@ -11,6 +11,7 @@ use crate::ids::{ability_index, encode_slot, ui_type};
 use crate::session::Draft;
 use crate::state::AppState;
 use borealis_character::ManualAttack;
+use borealis_content::is_unrestrictable_source;
 use serde_json::{Map, Value};
 
 const MAX_TEXT_CHARS: usize = 20_000;
@@ -321,7 +322,7 @@ fn restricted_from(hub: &crate::state::ContentHub, enabled: Option<&[String]>) -
         hub.store
             .source_names()
             .into_iter()
-            .filter(|s| !on.iter().any(|e| e == s))
+            .filter(|s| !on.iter().any(|e| e == s) && !is_unrestrictable_source(s))
             .map(str::to_string)
             .collect()
     })
