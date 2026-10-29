@@ -377,3 +377,79 @@ fn cli_end_to_end_with_report_and_strict_mode() {
     assert_eq!(code, 2);
     assert!(stderr.contains("error:"));
 }
+
+/// Issue 8: a git checkout (or a GitHub zip) of an Aurora repository keeps each entry where its
+/// URL points (`core/items/a.xml`), not in Aurora's download layout (`core/a.xml`); the entries
+/// are there and must not be reported missing, and a lone index follows them.
+const REPO_INDEX: &str = r#"<index>
+  <info><name>Repo</name><update version="1.0"><file name="core.index" url="https://example.invalid/repo/master/core.index"/></update></info>
+  <files>
+    <file name="a.xml" url="https://example.invalid/repo/master/core/items/a.xml"/>
+    <file name="sub.index" url="https://example.invalid/repo/master/core/sub.index"/>
+    <file name="gone.xml" url="https://example.invalid/repo/master/core/gone.xml"/>
+    <file name="away.xml" url="https://example.invalid/repo/master/../away.xml"/>
+  </files>
+</index>"#;
+
+const REPO_SUB_INDEX: &str = r#"<index>
+  <info><update version="1.0"><file name="sub.index" url="https://example.invalid/repo/master/core/sub.index"/></update></info>
+  <files><file name="b.xml" url="https://example.invalid/repo/master/core/sub/deep/b.xml"/></files>
+</index>"#;
+
+fn repo_checkout(root: &Path) {
+    write(root, "core.index", REPO_INDEX);
+    write(root, "core/items/a.xml", &element_xml("ID_A", "a"));
+    write(root, "core/sub.index", REPO_SUB_INDEX);
+    write(root, "core/sub/deep/b.xml", &element_xml("ID_B", "b"));
+    write(
+        root,
+        "away.xml",
+        &element_xml("ID_AWAY", "outside the index's base"),
+    );
+}
+
+fn missing_entries(out: &borealis_migrate::MigrateOutput) -> Vec<String> {
+    out.report
+        .issues
+        .iter()
+        .filter(|i| i.code == IssueCode::IndexEntryMissing)
+        .map(|i| i.message.clone())
+        .collect()
+}
+
+#[test]
+fn a_repository_checkout_finds_index_entries_where_their_urls_point() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().join("repo");
+    repo_checkout(&root);
+    let folder = migrate_path(&root, &MigrateOptions::default()).unwrap();
+    let missing = missing_entries(&folder);
+    assert_eq!(missing.len(), 2, "{missing:#?}");
+    assert!(
+        missing[0].contains("gone.xml") && missing[1].contains("away.xml"),
+        "{missing:#?}"
+    );
+    // a lone index follows the entries it finds that way, nested indexes included
+    let lone = migrate_path(&root.join("core.index"), &MigrateOptions::default()).unwrap();
+    assert_eq!(lone.report.totals.elements, 2, "{:#?}", lone.report.issues);
+}
+
+#[test]
+fn an_aurora_id_off_the_upper_case_convention_is_a_note() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().join("set");
+    write(
+        &root,
+        "a.xml",
+        &element_xml("ID_WOTC_MOTM_RACE_Changeling", "kept as written"),
+    );
+    let out = migrate_path(&root, &MigrateOptions::default()).unwrap();
+    let ids: Vec<_> = out
+        .report
+        .issues
+        .iter()
+        .filter(|i| i.code == IssueCode::NonStandardId)
+        .map(|i| i.severity)
+        .collect();
+    assert_eq!(ids, vec![borealis_content::Severity::Info]);
+}

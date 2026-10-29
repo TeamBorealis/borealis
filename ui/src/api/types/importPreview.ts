@@ -36,6 +36,10 @@ export interface UnresolvedRef {
   target: string;
   count: number;
   referencedBy: string[];
+  /** Files of the set that reference it (a sample). */
+  files: string[];
+  /** The loaded book whose abbreviation the id carries: it defines no such id (misspelled, or a file of it is missing). */
+  knownSource?: string;
 }
 
 export interface ImportPreview {
@@ -51,6 +55,9 @@ export interface ImportPreview {
   diagnosticsTruncated: boolean;
   unresolved: UnresolvedRef[];
   unresolvedTotal: number;
+  /** Unknown ids only requirements name and do without (an absence test, an alternative beside one that holds). */
+  conditions: UnresolvedRef[];
+  conditionsTotal: number;
   /** An installed pack with the same id will be replaced. */
   replacesExisting: boolean;
   /** A lone `.index` with nothing importable beside it: the address it updates from, offered as a content source. */

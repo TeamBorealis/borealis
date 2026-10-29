@@ -345,3 +345,54 @@ fn an_index_with_files_beside_it_or_no_https_source_offers_no_source() {
         .unwrap();
     assert!(preview.index_url.is_none());
 }
+
+/// Issue 8: references a book of the set names (`TBK` = Test Book) but does not define, one to a
+/// book nothing loaded names, and a marker that requirements only test the absence of.
+const REFS: &str = r#"<elements>
+  <element name="Test Book" type="Source" source="Core" id="ID_TBK_SOURCE">
+    <setters><set name="abbreviation">TBK</set><set name="url">https://example.invalid</set></setters>
+  </element>
+  <element name="Seeker" type="Feat" source="Test Book" id="ID_TBK_FEAT_SEEKER">
+    <description><p>s</p></description>
+    <requirements>!ID_ZZQ_GRANTS_MARKER</requirements>
+    <rules>
+      <grant type="Feat" id="ID_TBK_FEAT_MISPELLED" />
+      <grant type="Feat" id="ID_ZZQ_FEAT_ELSEWHERE" />
+    </rules>
+  </element>
+</elements>"#;
+
+#[test]
+fn unresolved_references_name_their_files_and_known_books_and_conditions_are_apart() {
+    let (_dir, app) = app();
+    let preview = app
+        .preview_import_pack(&upload("refs.xml", REFS.as_bytes()))
+        .unwrap();
+    let targets: Vec<(&str, &[String], Option<&str>)> = preview
+        .unresolved
+        .iter()
+        .map(|u| {
+            (
+                u.target.as_str(),
+                u.files.as_slice(),
+                u.known_source.as_deref(),
+            )
+        })
+        .collect();
+    let file = vec!["refs.xml".to_string()];
+    assert_eq!(
+        targets,
+        vec![
+            ("ID_TBK_FEAT_MISPELLED", file.as_slice(), Some("Test Book")),
+            ("ID_ZZQ_FEAT_ELSEWHERE", file.as_slice(), None),
+        ]
+    );
+    assert_eq!(preview.unresolved_total, 2);
+    let conditions: Vec<&str> = preview
+        .conditions
+        .iter()
+        .map(|u| u.target.as_str())
+        .collect();
+    assert_eq!(conditions, vec!["ID_ZZQ_GRANTS_MARKER"]);
+    assert_eq!(preview.conditions_total, 1);
+}

@@ -29,7 +29,8 @@ export class MockImportPreview {
     const diagnostics: PreviewDiagnostic[] = [];
     const defined = new Set<string>();
     const counts = new Map<string, number>();
-    const grants: { from: string; target: string }[] = [];
+    const grants: { from: string; target: string; file: string }[] = [];
+    const absent: { from: string; target: string; file: string }[] = [];
     const listed: { index: string; name: string }[] = [];
     let skipped = 0;
     const indexFiles = files.filter((f) => /\.index$/i.test(f.fileName));
@@ -49,19 +50,25 @@ export class MockImportPreview {
       texts.push(text);
       for (const e of els) {
         defined.add(e.id); counts.set(e.type, (counts.get(e.type) ?? 0) + 1);
-        for (const g of e.body.matchAll(/<grant\s[^>]*>/g)) { const target = attr(g[0], "id"); if (target) grants.push({ from: e.id, target }); }
+        for (const g of e.body.matchAll(/<grant\s[^>]*>/g)) { const target = attr(g[0], "id"); if (target) grants.push({ from: e.id, target, file }); }
+        for (const r of e.body.matchAll(/<requirements>([^<]*)<\/requirements>/g)) for (const n of r[1]!.matchAll(/!(ID_[A-Z0-9_]+)/g)) absent.push({ from: e.id, target: n[1]!, file });
       }
     }
     const present = new Set(files.map((f) => (f.fileName.split("/").pop() ?? f.fileName).toLowerCase()));
     for (const l of listed) if (!present.has(l.name.toLowerCase())) diagnostics.push(issue("info", "index_entry_missing", `index entry ${l.name} is not present locally`, { file: l.index }));
-    const byTarget = new Map<string, UnresolvedRef>();
-    for (const g of grants) {
-      if (defined.has(g.target) || INSTALLED.test(g.target)) continue;
-      const cur = byTarget.get(g.target) ?? { target: g.target, count: 0, referencedBy: [] };
-      cur.count++; if (cur.referencedBy.length < 3 && !cur.referencedBy.includes(g.from)) cur.referencedBy.push(g.from);
-      byTarget.set(g.target, cur);
-    }
-    const unresolved = [...byTarget.values()].sort((a, b) => b.count - a.count || a.target.localeCompare(b.target));
+    const group = (refs: { from: string; target: string; file: string }[]): UnresolvedRef[] => {
+      const byTarget = new Map<string, UnresolvedRef>();
+      for (const g of refs) {
+        if (defined.has(g.target) || INSTALLED.test(g.target)) continue;
+        const cur = byTarget.get(g.target) ?? { target: g.target, count: 0, referencedBy: [], files: [] };
+        cur.count++; if (cur.referencedBy.length < 3 && !cur.referencedBy.includes(g.from)) cur.referencedBy.push(g.from);
+        if (cur.files.length < 3 && !cur.files.includes(g.file)) cur.files.push(g.file);
+        byTarget.set(g.target, cur);
+      }
+      return [...byTarget.values()].sort((a, b) => b.count - a.count || a.target.localeCompare(b.target));
+    };
+    const unresolved = group(grants);
+    const conditions = group(absent).filter((c) => !unresolved.some((u) => u.target === c.target));
     const first = files[0]!.fileName;
     const packName = folder ? folder.name : files.length === 1 ? stem(first) : `${stem(first)} and ${files.length - 1} more`;
     const sev = (s: string) => diagnostics.filter((d) => d.severity === s).length;
@@ -69,7 +76,7 @@ export class MockImportPreview {
       previewId: `prev_mock_${++this.seq}`, packName, packId: packName.toLowerCase().replace(/[^a-z0-9]+/g, "-"), fileCount: files.length,
       converted: [...counts.values()].reduce((a, b) => a + b, 0), skipped,
       counts: [...counts].map(([type, count]) => ({ type, count })), summary: { errors: sev("error"), warnings: sev("warning"), infos: sev("info") },
-      diagnostics, diagnosticsTruncated: false, unresolved, unresolvedTotal: unresolved.length, replacesExisting: false,
+      diagnostics, diagnosticsTruncated: false, unresolved, unresolvedTotal: unresolved.length, conditions, conditionsTotal: conditions.length, replacesExisting: false,
       ...(sourceUrl && !texts.length && !folder ? { indexUrl: sourceUrl } : {}),
     };
     this.staged.set(preview.previewId, { preview, texts });

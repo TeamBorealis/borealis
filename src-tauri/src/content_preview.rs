@@ -69,6 +69,12 @@ pub struct UnresolvedRef {
     pub target: String,
     pub count: usize,
     pub referenced_by: Vec<String>,
+    /// Files of the set that reference it (a sample).
+    pub files: Vec<String>,
+    /// The loaded book whose abbreviation the id carries (`ID_PHB_...`: Player's Handbook): the
+    /// book is there but defines no such id, so the id is misspelled or a file of it is missing.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub known_source: Option<String>,
 }
 
 /// Severity totals.
@@ -95,6 +101,10 @@ pub struct ImportPreview {
     pub diagnostics_truncated: bool,
     pub unresolved: Vec<UnresolvedRef>,
     pub unresolved_total: usize,
+    /// Unknown ids that only requirements name, as an absence test or an alternative beside one
+    /// that holds: the requirement works without them (content of a book the set lacks).
+    pub conditions: Vec<UnresolvedRef>,
+    pub conditions_total: usize,
     /// An installed pack with the same id will be replaced.
     pub replaces_existing: bool,
     /// A lone `.index` with nothing importable beside it: the address it updates from. The UI offers to
@@ -295,6 +305,8 @@ impl AppState {
             diagnostics_truncated: truncated,
             unresolved: found.unresolved,
             unresolved_total: found.unresolved_total,
+            conditions: found.conditions,
+            conditions_total: found.conditions_total,
             replaces_existing: self.paths.library().join(&id).exists(),
             index_url: None,
         };

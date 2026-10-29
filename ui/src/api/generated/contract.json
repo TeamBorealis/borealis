@@ -5699,6 +5699,22 @@
   "ImportPreview": {
    "k": "object",
    "props": {
+    "conditions": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "UnresolvedRef"
+      }
+     }
+    },
+    "conditionsTotal": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "converted": {
      "opt": false,
      "t": {
@@ -10028,6 +10044,21 @@
    "props": {
     "count": {
      "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "files": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "knownSource": {
+     "opt": true,
      "t": {
       "k": "prim"
      }

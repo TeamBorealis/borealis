@@ -33,6 +33,37 @@ pub fn is_synthesized_id(id: &str) -> bool {
         || (id.contains("_INTERNAL_ITEM_") && id.contains("_PROXY"))
 }
 
+/// Ids a requirement uses only under an odd number of `!`: an unknown one is never held, so the
+/// test is always met and nothing the element needs is missing (AuroraLegacy's races read
+/// `!(ID_WOTC_WGTE_GRANTS_DARKMARKED||...)`, a marker of content the user may not have).
+fn only_negated(expr: &BoolExpr<RequirementLeaf>) -> HashSet<&str> {
+    fn walk<'e>(
+        e: &'e BoolExpr<RequirementLeaf>,
+        negated: bool,
+        neg: &mut HashSet<&'e str>,
+        pos: &mut HashSet<&'e str>,
+    ) {
+        match e {
+            BoolExpr::Leaf(RequirementLeaf::Id(id)) => {
+                if negated {
+                    neg.insert(id.as_str());
+                } else {
+                    pos.insert(id.as_str());
+                }
+            }
+            BoolExpr::Leaf(RequirementLeaf::Test(_)) => {}
+            BoolExpr::Not(inner) => walk(inner, !negated, neg, pos),
+            BoolExpr::And(items) | BoolExpr::Or(items) => {
+                items.iter().for_each(|i| walk(i, negated, neg, pos));
+            }
+        }
+    }
+    let (mut neg, mut pos) = (HashSet::new(), HashSet::new());
+    walk(expr, false, &mut neg, &mut pos);
+    neg.retain(|id| !pos.contains(id));
+    neg
+}
+
 /// Unknown ids that sit directly in an `||` beside an operand whose ids are all known: the
 /// requirement still holds through that operand, so the unknown alternative is merely never met
 /// (e.g. a class that cannot multiclass, named with its would-be multiclass id).
@@ -158,8 +189,20 @@ impl Ctx<'_> {
                 let store = self.store;
                 let known = |id: &str| store.contains_id(id) || is_synthesized_id(id);
                 let optional = optional_alternatives(expr.root(), &known);
+                let absent = only_negated(expr.root());
                 for id in expr.referenced_ids() {
-                    if optional.contains(id) {
+                    if absent.contains(id) && !known(id) {
+                        self.push(
+                            Issue::new(
+                                Severity::Info,
+                                IssueCode::DanglingReference,
+                                format!(
+                                    "requirements only test the absence of an element no loaded content defines (always met), references unknown element {id}"
+                                ),
+                            )
+                            .at_path(path),
+                        );
+                    } else if optional.contains(id) {
                         self.push(
                             Issue::new(
                                 Severity::Info,
@@ -683,6 +726,52 @@ mod tests {
         assert_eq!(
             dangling("ID_C_LONE"),
             vec![Severity::Warning, Severity::Warning]
+        );
+    }
+
+    #[test]
+    fn an_unknown_id_a_requirement_only_tests_the_absence_of_is_info() {
+        // issue 8: AuroraLegacy's races read `!(ID_WOTC_WGTE_GRANTS_DARKMARKED||...)`; without the
+        // Wildemount content the test is always true, so nothing is missing
+        let mut e = Element::new("ID_R", "R", "Race", "Core");
+        e.requirements = "!ID_GONE_NOT".into();
+        e.rules = vec![Rule::Stat(crate::rules::StatRule {
+            name: "strength".into(),
+            value: "2".into(),
+            requirements: Some("!(ID_GONE_GROUP||ID_GONE_TWICE),!!ID_GONE_POSITIVE".into()),
+            ..Default::default()
+        })];
+        let mut mixed = Element::new("ID_M", "M", "Feat", "Core");
+        mixed.requirements = "!ID_GONE_BOTH||ID_GONE_BOTH".into();
+        let issues = store(vec![e, mixed]).validate();
+        let severity_of = |id: &str| -> Vec<Severity> {
+            issues
+                .iter()
+                .filter(|i| {
+                    i.code == IssueCode::DanglingReference && i.message.ends_with(&format!(" {id}"))
+                })
+                .map(|i| i.severity)
+                .collect()
+        };
+        for id in ["ID_GONE_NOT", "ID_GONE_GROUP", "ID_GONE_TWICE"] {
+            assert_eq!(severity_of(id), vec![Severity::Info], "{id}: {issues:#?}");
+        }
+        // two negations make a positive test, and so does a positive use beside a negated one
+        assert_eq!(severity_of("ID_GONE_POSITIVE"), vec![Severity::Warning]);
+        let both = severity_of("ID_GONE_BOTH");
+        assert!(
+            !both.is_empty() && both.iter().all(|s| *s == Severity::Warning),
+            "{both:?}"
+        );
+        let note = issues
+            .iter()
+            .find(|i| i.message.ends_with(" ID_GONE_NOT"))
+            .expect("issue");
+        assert!(
+            note.message
+                .starts_with("requirements only test the absence of"),
+            "{}",
+            note.message
         );
     }
 

@@ -89,6 +89,43 @@ fn aurora_ignored_attributes_are_info_and_unknown_ones_warn() {
     assert_eq!((infos, warns), (3, 1), "{:?}", conv.issues);
 }
 
+/// Issue 8: constructs Aurora's own parser never reads (`ElementParser`: element attributes are
+/// name/type/source/id; sheet descriptions read level/usage/action; `StatisticRuleParser`,
+/// `GrantRuleParser` and `SelectRuleParser` read fixed attribute lists; only the named children
+/// of an element and of `<elements>` are parsed). Borealis ignores them exactly as Aurora does,
+/// so they are notes; a misspelling of an attribute Aurora does read stays a warning.
+#[test]
+fn constructs_auroras_parser_never_reads_are_notes() {
+    let conv = convert(
+        r#"<spellcasting name="W"/>
+           <element name="A" type="T" source="S" id="ID_A" level="3">
+             <sheet description="x"><description display="false" requirements="ID_X" alt="y" dc="1" class="c">t</description></sheet>
+             <grant type="Feat" id="ID_OUTSIDE_RULES"/>
+             <setter name="x">1</setter>
+             <rules>
+               <stat name="strength" value="1" base="1" type="x" max="2"/>
+               <grant type="Feat" id="ID_G" allowReplace="true" spellcaster="W"/>
+               <select type="Feat" name="F" supports="X" known="true" know="1" id="ID_S" option="1" ability="x"/>
+               <select type="Feat" name="G" supports="X" allowreplace="true"/>
+             </rules>
+           </element>"#,
+    );
+    let warned: Vec<&str> = conv
+        .issues
+        .iter()
+        .filter(|i| i.severity == Severity::Warning && i.code == IssueCode::UnsupportedConstruct)
+        .map(|i| i.message.as_str())
+        .collect();
+    assert_eq!(warned.len(), 1, "{warned:#?}");
+    assert!(warned[0].contains("`allowreplace`"), "{warned:#?}");
+    assert_eq!(
+        count(&conv, Severity::Info, IssueCode::UnsupportedConstruct),
+        20,
+        "{:#?}",
+        conv.issues
+    );
+}
+
 #[test]
 fn vendor_namespaced_and_stray_markup_children_are_info() {
     let conv = convert(

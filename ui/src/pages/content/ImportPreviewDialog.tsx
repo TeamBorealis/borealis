@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import type { ContentProgress, ImportPreview } from "../../api/contract";
+import type { ContentProgress, ImportPreview, UnresolvedRef } from "../../api/contract";
 import { Alert, Button, Modal, ProgressBar, useConfirm, useToast } from "../../components";
 import { Expander } from "../../components/controls";
 import { useApi } from "../../state/ApiContext";
@@ -12,6 +12,17 @@ import { ImportIssues } from "./ImportIssues";
 import { ImportReportDialog } from "./ImportReportDialog";
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+/** One unresolved id: who uses it, in which files, and (issue 8) the loaded book its id names but that lacks it. */
+function RefItem({ u }: { u: UnresolvedRef }) {
+  const more = u.count > u.referencedBy.length ? ` and ${u.count - u.referencedBy.length} more` : "";
+  return (
+    <li>{u.target}
+      <span className="muted small"> used by {u.referencedBy.join(", ")}{more}{u.files.length > 0 && ` (${u.files.join(", ")})`}</span>
+      {u.knownSource && <span className="muted small"> {u.knownSource} is loaded but has no element with this id: it may be misspelled, or a file of that book is missing.</span>}
+    </li>
+  );
+}
 
 /** What an import would add, shown before anything is installed: counts by type, grouped problems, unresolved references. */
 export function ImportPreviewDialog({ preview }: { preview: ImportPreview }) {
@@ -73,11 +84,17 @@ export function ImportPreviewDialog({ preview }: { preview: ImportPreview }) {
         {preview.diagnosticsTruncated && <p className="muted small">Only the first problems are listed.</p>}
         {preview.unresolvedTotal > 0 && (
           <Expander title={`Unresolved references (${preview.unresolvedTotal})`} defaultOpen>
-            <p>Import the content these depend on (for example the rest of your content folder), or install anyway and add it later.</p>
+            <p>Neither this import nor your installed content has these ids, so what uses them will be missing. Import the content they come from, or install anyway and add it later.</p>
             <ul className="v4-impdiag" aria-label="Unresolved references">
-              {preview.unresolved.map((u) => (
-                <li key={u.target}>{u.target}<span className="muted small"> used by {u.referencedBy.join(", ")}{u.count > u.referencedBy.length ? ` and ${u.count - u.referencedBy.length} more` : ""}</span></li>
-              ))}
+              {preview.unresolved.map((u) => <RefItem key={u.target} u={u} />)}
+            </ul>
+          </Expander>
+        )}
+        {preview.conditionsTotal > 0 && (
+          <Expander title={`Conditions on content you don't have (${preview.conditionsTotal})`} defaultOpen={false}>
+            <p>Requirements that test for these ids work as written without them (for example &quot;not a Darkmarked character&quot;), so nothing is missing. They matter only once you add the content that defines them.</p>
+            <ul className="v4-impdiag" aria-label="Conditions on content you don't have">
+              {preview.conditions.map((u) => <RefItem key={u.target} u={u} />)}
             </ul>
           </Expander>
         )}

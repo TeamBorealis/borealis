@@ -306,6 +306,29 @@ impl Run<'_> {
         followed
     }
 
+    /// Where a repository checkout keeps an index entry: the entry's URL relative to the index's
+    /// own update URL, under the index's folder (`core.index` at `.../master/core.index` lists
+    /// `.../master/core/items/a.xml`: `core/items/a.xml`). Aurora's download layout puts it in
+    /// `core/a.xml` instead; a cloned or zipped GitHub repository keeps the URL layout.
+    fn at_url_path(
+        &self,
+        index_rel: &str,
+        index: &borealis_content::IndexFile,
+        url: &str,
+    ) -> Option<String> {
+        let own = index.info.remote_url()?;
+        let base = &own[..=own.rfind('/')?];
+        let rest = url.strip_prefix(base)?;
+        if !safe_relative(rest) {
+            return None;
+        }
+        let rel = match index_rel.rsplit_once('/') {
+            Some((dir, _)) => format!("{dir}/{rest}"),
+            None => rest.to_string(),
+        };
+        self.root.join(&rel).is_file().then_some(rel)
+    }
+
     /// Check an index's entries against the local tree; return the existing ones.
     fn index_entries(&mut self, rel: &str, index: &borealis_content::IndexFile) -> Vec<String> {
         let dir = index_content_dir(rel);
@@ -327,6 +350,8 @@ impl Run<'_> {
             let entry_rel = format!("{dir}/{}", entry.name);
             if self.root.join(&entry_rel).is_file() {
                 present.push(entry_rel);
+            } else if let Some(at_url) = self.at_url_path(rel, index, &entry.url) {
+                present.push(at_url);
             } else {
                 self.issues.push(
                     Issue::info(
@@ -498,13 +523,27 @@ fn pack_rulesets(run: Ruleset, files: &[(String, borealis_content::ContentFile)]
     out
 }
 
+/// A validation finding of converted Aurora content. The ID_UPPER_CASE id convention is
+/// Borealis's (`docs/core-pack-ids.md`); Aurora keeps any id as written and so does the converter,
+/// so an id off the convention changes nothing and is a note here (issue 8).
+fn as_converted(issue: Issue) -> Issue {
+    if issue.code == IssueCode::NonStandardId {
+        Issue {
+            severity: Severity::Info,
+            ..issue
+        }
+    } else {
+        issue
+    }
+}
+
 fn validate_output(run: &mut Run<'_>) -> Result<(), MigrateError> {
     let mut builder = ContentStoreBuilder::new();
     for (rel, file) in &run.converted {
         builder = builder.add_file(rel.clone(), run.opts.origin, file.clone());
     }
     let issues = builder.build().validate();
-    run.issues.extend(issues);
+    run.issues.extend(issues.into_iter().map(as_converted));
 
     for out in &run.outputs {
         // An `<index>` root saved as `.xml` is an index too: the manifest knows the real kind.

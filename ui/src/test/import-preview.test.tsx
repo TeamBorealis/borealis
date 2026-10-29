@@ -39,13 +39,24 @@ describe("Additional Content: import with preview (no AI)", () => {
     const unresolved = within(dialog).getByLabelText("Unresolved references");
     expect(unresolved.textContent).toContain("ID_GONE");
     expect(unresolved.textContent).not.toContain("ID_A used");
-    expect(within(dialog).getByText(/Import the content these depend on/)).toBeTruthy();
+    // issue 8: the referencing file is named, and the copy says what a missing id means
+    expect(unresolved.textContent).toContain("used by ID_B (b.xml)");
+    expect(within(dialog).getByText(/so what uses them will be missing\. Import the content they come from/)).toBeTruthy();
     expect((await api.listPacks()).some((p) => p.name === "a and 1 more")).toBe(false);
 
     await userEvent.setup().click(within(dialog).getByRole("button", { name: "Install" }));
     await waitFor(() => expect(install).toHaveBeenCalledTimes(1));
     expect((await api.listPacks()).some((p) => p.name === "a and 1 more")).toBe(true);
     await waitFor(() => expect(screen.queryByRole("dialog", { name: /Import preview/ })).toBeNull());
+  });
+
+  it("lists ids that requirements only test the absence of apart, as conditions (issue 8)", async () => {
+    await openContent(mock());
+    choose([file("r.xml", xml(feat("ID_R", "Rider", ["ID_GONE"], "<requirements>!ID_MARKER</requirements>")))]);
+    const dialog = await screen.findByRole("dialog", { name: /Import preview/ });
+    expect(within(dialog).getByLabelText("Unresolved references").textContent).not.toContain("ID_MARKER");
+    await userEvent.setup().click(within(dialog).getByRole("button", { name: /Conditions on content you don't have \(1\)/ }));
+    expect(within(dialog).getByLabelText("Conditions on content you don't have").textContent).toContain("ID_MARKER used by ID_R (r.xml)");
   });
 
   it("cancel discards the staged conversion and installs nothing", async () => {

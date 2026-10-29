@@ -153,6 +153,12 @@ impl Ctx {
 
 /// Constructs that have no effect in the legacy format. They are harmless to drop, so they are reported at
 /// Info level; every other unknown name is a Warning (possible typo or newer extension).
+///
+/// The second group (issue 8) are names Aurora's parser never reads, seen in community content:
+/// `ElementParser` reads only name/type/source/id on `<element>`, alt/display/usage/action on
+/// `<sheet>` and level/usage/action on its descriptions, and only the named children of an
+/// element and of `<elements>`; `StatisticRuleParser`, `GrantRuleParser` and `SelectRuleParser`
+/// read fixed attribute lists without these. Aurora ignores them exactly as Borealis does.
 const LEGACY_IGNORED: &[&str] = &[
     "grant@known",
     "grant@supports",
@@ -162,6 +168,32 @@ const LEGACY_IGNORED: &[&str] = &[
     "elements/b",
     "append/description",
     "append/requirements",
+    // issue 8
+    "element@level",
+    "sheet@description",
+    "sheet/description@display",
+    "sheet/description@requirements",
+    "sheet/description@alt",
+    "sheet/description@dc",
+    "sheet/description@class",
+    "stat@base",
+    "stat@type",
+    "stat@max",
+    "grant@allowReplace",
+    "grant@spellcaster",
+    "select@known",
+    "select@know",
+    "select@id",
+    "select@option",
+    "select@ability",
+    "elements/spellcasting",
+    "element/grant",
+    "element/setter",
+    "element/append",
+    "element/p",
+    "element/div",
+    "info/set",
+    "info/update/author",
 ];
 
 fn classify(key: &str, name: &str) -> (Severity, &'static str) {
