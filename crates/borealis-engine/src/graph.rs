@@ -155,6 +155,8 @@ pub struct Graph<'u> {
     pub(crate) allow_cross_edition: bool,
     /// Play-time state (toggles, exhaustion).
     pub(crate) runtime: crate::runtime::Runtime,
+    /// Inventory uids whose grants bypass the granted elements' own requirements (U12).
+    pub(crate) overridden_items: std::collections::HashSet<String>,
     /// Rolled resource maximums per inventory uid (`InventoryItem.rolled_max`).
     pub(crate) rolled_max: HashMap<String, std::collections::BTreeMap<String, u32>>,
     /// Carried items without an equip slot: not nodes, only their resource rules are read
@@ -227,6 +229,13 @@ impl<'u> Graph<'u> {
                 crate::profile::profile_for(state.ruleset).default_allow_cross_edition()
             }),
             runtime: crate::runtime::Runtime::from_state(state),
+            overridden_items: state
+                .inventory
+                .items
+                .iter()
+                .filter(|i| i.override_requirements)
+                .map(|i| i.uid.clone())
+                .collect(),
             rolled_max: state
                 .inventory
                 .items
@@ -811,8 +820,55 @@ impl<'u> Graph<'u> {
         requirement_holds(req, &env)
     }
 
+    /// Does node `id` grant without checking its targets' own requirements? Only the root of an
+    /// item line with "Override requirements" on (U12): what those targets grant in turn is
+    /// checked as usual, and the grant rule's own `requirements` and level still apply.
+    fn bypasses_target_requirements(&self, id: NodeId) -> bool {
+        self.nodes[id]
+            .item_uid
+            .as_deref()
+            .is_some_and(|uid| self.overridden_items.contains(uid))
+    }
+
+    /// The targets the root of item line `uid` grants by rules that hold, that exist and that
+    /// are not applied because their own requirements fail (U12, issue 3): what "Override
+    /// requirements" would apply. Empty when the line is not equipped or nothing is withheld.
+    #[must_use]
+    pub fn withheld_item_grants(&self, uid: &str) -> Vec<&'u UElem> {
+        let mut out: Vec<&'u UElem> = Vec::new();
+        for (id, n) in self.nodes.iter().enumerate() {
+            if !n.alive || n.item_uid.as_deref() != Some(uid) {
+                continue;
+            }
+            let e = n.e;
+            let level = self.mgr_level(n.mgr);
+            for (ri, rule) in e.el.rules.iter().enumerate() {
+                let Rule::Grant(g) = rule else { continue };
+                if g.level.unwrap_or(1) > level || !self.grant_rule_holds(id, e, ri) {
+                    continue;
+                }
+                let Some(target) = self.uni.get(&g.id) else {
+                    continue;
+                };
+                if matches!(target.req, Cond::None) || out.iter().any(|t| t.el.id == target.el.id) {
+                    continue;
+                }
+                let applied = n.children.iter().any(|c| {
+                    self.nodes[*c].alive
+                        && matches!(self.nodes[*c].origin, Origin::Granted(_))
+                        && self.nodes[*c].e.el.id == target.el.id
+                });
+                if !applied {
+                    out.push(target);
+                }
+            }
+        }
+        out
+    }
+
     fn process_grants(&mut self, id: NodeId, e: &'u UElem, level: u32) -> bool {
         let mut changed = false;
+        let bypass = self.bypasses_target_requirements(id);
         // Pass A: revalidate existing grants
         for c in self.nodes[id].children.clone() {
             let Origin::Granted(ri) = self.nodes[c].origin else {
@@ -826,7 +882,7 @@ impl<'u> Graph<'u> {
             };
             let ok = g.level.unwrap_or(1) <= level
                 && self.grant_rule_holds(id, e, ri)
-                && requirement_holds(&self.nodes[c].e.req, &self.env());
+                && (bypass || requirement_holds(&self.nodes[c].e.req, &self.env()));
             if !ok {
                 self.remove_subtree(c);
                 changed = true;
@@ -849,7 +905,7 @@ impl<'u> Graph<'u> {
                 );
                 continue;
             };
-            if !requirement_holds(&target.req, &self.env()) {
+            if !bypass && !requirement_holds(&target.req, &self.env()) {
                 continue;
             }
             let already = self.nodes[id].children.iter().any(|c| {

@@ -438,6 +438,13 @@ pub struct ItemSnapshot {
     /// Effective "show card" flag (the line's flag, forced off when the line is hidden).
     #[serde(default = "default_true")]
     pub show_card: bool,
+    /// U12: "Override requirements" is on for this line.
+    #[serde(default)]
+    pub override_requirements: bool,
+    /// Elements the equipped line grants that are withheld because their own requirements fail
+    /// (what "Override requirements" would apply).
+    #[serde(default)]
+    pub withheld_grants: Vec<ElementRef>,
 }
 
 fn default_true() -> bool {

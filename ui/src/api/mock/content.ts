@@ -161,6 +161,8 @@ export const FEATS: MockElement[] = [
   el("tough", "feat", "Tough", "Hit point maximum increases by twice your level.", { tags: ["general"] }),
   el("lucky", "feat", "Lucky", "Spend luck points to reroll d20s.", { tags: ["general"] }),
   el("sentinel", "feat", "Sentinel", "Lock down enemies with opportunity attacks.", { prerequisites: "Strength or Dexterity 13", tags: ["general"] }),
+  // An epic boon: offered by no level-4 select, and added through Equipment > Additional Feat it is withheld below 19 (U12).
+  el("boon-of-fate", "feat", "Boon of Fate", "Roll 2d4 to change a nearby D20 Test once per rest.", { rulesets: ["dnd2024"], source: SOURCE_2024, prerequisites: "Level 19+", tags: ["epic boon"] }),
 ];
 
 export const FIGHTING_STYLES = ["archery", "defense", "dueling", "great-weapon-fighting"].map((id) =>

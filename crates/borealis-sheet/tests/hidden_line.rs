@@ -36,6 +36,8 @@ fn hidden_lines_are_left_out_of_the_gear_list() {
             cost_gp: 0.0,
             storage: None,
             show_card: false,
+            override_requirements: false,
+            withheld_grants: Vec::new(),
         });
         let mut item = InventoryItem::new(uid, "ID_TEST_ITEM");
         item.hidden = hidden;

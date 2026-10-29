@@ -323,6 +323,10 @@ export interface InventoryItem {
   } | null;
   /** Armor columns; null for non-armor. */
   armor: ArmorFacts | null;
+  /** U12: "Override requirements" is on for this line (its grants apply although their own requirements fail). */
+  overrideRequirements: boolean;
+  /** Names of what the equipped line grants that is withheld because its requirements fail (the line then offers the override). */
+  withheldGrants: string[];
 }
 
 export interface InventoryState {

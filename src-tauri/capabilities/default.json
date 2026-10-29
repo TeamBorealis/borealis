@@ -55,6 +55,7 @@
     "allow-remove-item",
     "allow-equip-item",
     "allow-unequip-item",
+    "allow-set-item-requirements-override",
     "allow-set-attuned",
     "allow-set-rolled-max",
     "allow-reroll-max",

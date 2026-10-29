@@ -29,6 +29,7 @@ export function makeItem(itemId: string, quantity: number): InventoryItem {
     id: nextId(), itemId, name: el.name, displayName: el.name, category: def.category, quantity, weight: def.weight, valueCp: def.costCp,
     equipped: null, attuned: false, requiresAttunement: !!def.attune, storage: 0, notes: "", listInInventory: true, showCard: true,
     isPack: !!def.pack, packContents: def.pack ?? [], isWeapon: !!def.weapon, equippable: isEquippable(def), weapon: weaponInfo(itemId), armor: armorFacts(def) ?? null,
+    overrideRequirements: false, withheldGrants: [],
   };
 }
 
@@ -44,6 +45,7 @@ function makeProxyItem(p: ProxyLine, quantity: number): InventoryItem {
     id: nextId(), itemId: p.id, name: p.name, displayName: p.name, category: p.category, quantity, weight: 0, valueCp: 0,
     equipped: null, attuned: false, requiresAttunement: false, storage: 0, notes: "", listInInventory: false, showCard: false,
     isPack: false, packContents: [], isWeapon: false, equippable: true, weapon: null, armor: null,
+    overrideRequirements: false, withheldGrants: [],
   };
 }
 
@@ -110,6 +112,12 @@ export function equipItem(c: MockCharacter, id: string, req: EquipRequest): Mock
 
 export function unequipItem(c: MockCharacter, id: string): MockCharacter {
   return { ...c, items: patch(c.items, id, { equipped: null }) };
+}
+
+/** U12: "Override requirements" on a line. */
+export function setRequirementsOverride(c: MockCharacter, id: string, on: boolean): MockCharacter {
+  if (!c.items.some((i) => i.id === id)) throw apiError("not_found", "No such inventory item.");
+  return { ...c, items: patch(c.items, id, { overrideRequirements: on }) };
 }
 
 export function setAttuned(c: MockCharacter, id: string, attuned: boolean): MockCharacter {

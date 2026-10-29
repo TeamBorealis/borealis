@@ -456,6 +456,8 @@ pub fn inventory(input: &MapInput<'_>, snap: &Engine) -> InventoryState {
                 weapon: is_weapon.then(|| weapon_info(el, snap)),
                 armor: el.and_then(crate::gear_facts::armor_facts),
                 rolled_charges: rolled_charges(snap, &i.uid),
+                override_requirements: i.override_requirements,
+                withheld_grants: i.withheld_grants.iter().map(|g| g.name.clone()).collect(),
             }
         })
         .collect();

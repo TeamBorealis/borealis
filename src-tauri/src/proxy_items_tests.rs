@@ -267,3 +267,54 @@ fn the_detail_of_a_proxy_shows_its_targets_description() {
         detail.description_html
     );
 }
+
+/// U12 (issue 3): "Override requirements" on an equipped feat proxy whose feat has a prerequisite
+/// the character does not meet. Off by default (Aurora withholds the feat), on applies it, the
+/// flag is saved in the character file and survives close and reload, off withholds it again.
+#[test]
+fn override_requirements_on_a_feat_proxy_survives_save_close_and_load() {
+    const EPIC: &str = "ID_UICAT_FEAT_EPIC";
+    let (_dir, app, id) = app_with(vec![serde_json::json!({
+        "id": EPIC, "name": "Epic Test", "type": "Feat", "source": PACK_SOURCE,
+        "ruleset": "dnd2024", "prerequisite": "Level 19+", "requirements": "[character:19]",
+        "description": "<p>Epic test feat.</p>"})]);
+    let snap = app.get_snapshot(&id).unwrap();
+    app.apply_selection(&id, &slot_id(&snap, "Class"), WIZARD)
+        .expect("class");
+    let proxy = row(&app, &id, "Additional Feat", "Additional Feat, Epic Test");
+    app.add_item(&id, &proxy, 1, false, None).expect("add");
+    let uid = lines(&app, &id).last().unwrap().uid.clone();
+    let equipped = app
+        .equip_item(&id, &uid, crate::dto_ext::EquipRequest::Auto)
+        .expect("equip");
+    let dto = |s: &crate::dto::CharacterSnapshot| {
+        s.inventory
+            .items
+            .iter()
+            .find(|i| i.id == uid)
+            .map(|i| (i.override_requirements, i.withheld_grants.clone()))
+            .expect("line")
+    };
+    assert_eq!(dto(&equipped), (false, vec!["Epic Test".to_string()]));
+    assert!(equipped
+        .inventory
+        .warnings
+        .iter()
+        .any(|w| w.contains("Turn on Override requirements for this item")));
+    assert!(!has(&derived(&app, &id), EPIC));
+    let on = app
+        .set_item_requirements_override(&id, &uid, true)
+        .expect("override");
+    assert_eq!(dto(&on), (true, Vec::new()));
+    assert!(has(&derived(&app, &id), EPIC));
+    app.save_character(&id).expect("save");
+    app.close_character(&id, false).expect("close");
+    let loaded = app.load_character(&id).expect("load");
+    assert_eq!(dto(&loaded), (true, Vec::new()), "saved with the line");
+    assert!(has(&derived(&app, &id), EPIC));
+    let off = app
+        .set_item_requirements_override(&id, &uid, false)
+        .expect("off");
+    assert_eq!(dto(&off), (false, vec!["Epic Test".to_string()]));
+    assert!(!has(&derived(&app, &id), EPIC));
+}

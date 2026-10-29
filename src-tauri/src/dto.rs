@@ -562,6 +562,11 @@ pub struct InventoryItem {
     /// `reroll_max`).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub rolled_charges: Vec<RolledCharges>,
+    /// U12: "Override requirements" is on for this line (`set_item_requirements_override`).
+    pub override_requirements: bool,
+    /// Names of what the equipped line grants that is withheld because its own requirements
+    /// fail; non-empty is when the line offers "Override requirements".
+    pub withheld_grants: Vec<String>,
 }
 
 /// A resource of an item whose maximum is rolled on dice (Nine Lives Stealer: `1d8+1` charges).
@@ -856,6 +861,8 @@ mod gear_dto_tests {
             weapon: None,
             armor: None,
             rolled_charges: Vec::new(),
+            override_requirements: false,
+            withheld_grants: Vec::new(),
         }
     }
 

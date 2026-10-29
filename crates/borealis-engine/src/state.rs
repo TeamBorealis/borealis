@@ -204,6 +204,10 @@ pub struct InventoryItem {
     /// ("1d6 + 1 charges"): rolled once when the item is gained, see [`crate::rolled`].
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub rolled_max: BTreeMap<String, u32>,
+    /// U12: the item's grants apply although the granted elements' own requirements fail (an
+    /// epic boon added through Additional Feat before level 19). Off, as in Aurora, by default.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub override_requirements: bool,
 }
 
 fn yes() -> bool {
@@ -234,6 +238,7 @@ impl InventoryItem {
             alt_name: None,
             notes: None,
             rolled_max: BTreeMap::new(),
+            override_requirements: false,
         }
     }
 }

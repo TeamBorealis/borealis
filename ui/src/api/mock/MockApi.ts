@@ -462,6 +462,7 @@ export class MockApi implements Api {
   async removeItem(a: { characterId: string; inventoryId: string; all: boolean }) { return this.mutate(a.characterId, (c) => eq.removeItem(c, a.inventoryId, a.all)); }
   async equipItem(a: { characterId: string; inventoryId: string; slot: Parameters<typeof eq.equipItem>[2] }) { return this.mutate(a.characterId, (c) => eq.equipItem(c, a.inventoryId, a.slot)); }
   async unequipItem(a: { characterId: string; inventoryId: string }) { return this.mutate(a.characterId, (c) => eq.unequipItem(c, a.inventoryId)); }
+  async setItemRequirementsOverride(a: { characterId: string; inventoryId: string; on: boolean }) { return this.mutate(a.characterId, (c) => eq.setRequirementsOverride(c, a.inventoryId, a.on)); }
   async setRolledMax(a: { characterId: string; inventoryId: string; resourceId: string; value: number }) { return this.mutate(a.characterId, (c) => rolled.setRolledMax(c, a.inventoryId, a.resourceId, a.value)); }
   async rerollMax(a: { characterId: string; inventoryId: string; resourceId: string }) { return this.mutate(a.characterId, (c) => rolled.rerollMax(c, a.inventoryId, a.resourceId, this.rng)); }
   async setAttuned(a: { characterId: string; inventoryId: string; attuned: boolean }) { return this.mutate(a.characterId, (c) => eq.setAttuned(c, a.inventoryId, a.attuned)); }

@@ -126,6 +126,16 @@ pub fn unequip_item(
 }
 
 #[tauri::command(async)]
+pub fn set_item_requirements_override(
+    state: S<'_>,
+    character_id: String,
+    inventory_id: String,
+    on: bool,
+) -> ApiResult<CharacterSnapshot> {
+    state.set_item_requirements_override(&character_id, &inventory_id, on)
+}
+
+#[tauri::command(async)]
 pub fn set_attuned(
     state: S<'_>,
     character_id: String,

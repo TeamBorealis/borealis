@@ -6,6 +6,7 @@ import { useCharacter } from "../../state/CharacterContext";
 import { Band } from "../spells/TwoPane";
 import { Glyph, type GlyphName } from "./Glyph";
 import { ItemActionsDialog, useEquipItem } from "./ItemActions";
+import { RequirementsOverride } from "./RequirementsOverride";
 import { attuneBlocked, attunementWarnings, restrictionText } from "./attunement";
 import { chargesLabel } from "./RolledCharges";
 
@@ -69,6 +70,7 @@ export function InventoryPanel({ onSelectElement }: { onSelectElement: (itemId: 
                     {i.storage > 0 && <span className="eq-stored">Stored: {inv.storageNames[i.storage - 1]}</span>}
                     {i.attunementBarred && <span className="eq-stored eq-barred">{restrictionText(i)}</span>}
                     {i.rolledCharges?.map((r) => <span key={r.resourceId} className="eq-stored" title={r.name}>Charges: {chargesLabel(r)}</span>)}
+                    <RequirementsOverride item={i} />
                   </td>
                   <td className="eq-slot">{slotLabel(i)}</td>
                 </tr>

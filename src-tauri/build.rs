@@ -51,6 +51,7 @@ const COMMANDS: &[&str] = &[
     "remove_item",
     "equip_item",
     "unequip_item",
+    "set_item_requirements_override",
     "set_attuned",
     "set_rolled_max",
     "reroll_max",

@@ -244,6 +244,8 @@ export interface ApiMethods {
   removeItem(args: Cid & { inventoryId: string; all: boolean }): Promise<CharacterSnapshot>;
   equipItem(args: Cid & { inventoryId: string; slot: EquipRequest }): Promise<CharacterSnapshot>;
   unequipItem(args: Cid & { inventoryId: string }): Promise<CharacterSnapshot>;
+  /** U12: switch "Override requirements" on a line (per item, saved with the character). */
+  setItemRequirementsOverride(args: Cid & { inventoryId: string; on: boolean }): Promise<CharacterSnapshot>;
   setAttuned(args: Cid & { inventoryId: string; attuned: boolean }): Promise<CharacterSnapshot>;
   /** Enter the maximum of a dice-valued charge resource (`InventoryItem.rolledCharges`); refused outside min..max. */
   setRolledMax(args: Cid & { inventoryId: string; resourceId: string; value: number }): Promise<CharacterSnapshot>;
@@ -522,6 +524,7 @@ export const COMMANDS = {
   removeItem: "remove_item",
   equipItem: "equip_item",
   unequipItem: "unequip_item",
+  setItemRequirementsOverride: "set_item_requirements_override",
   setAttuned: "set_attuned",
   setRolledMax: "set_rolled_max",
   rerollMax: "reroll_max",

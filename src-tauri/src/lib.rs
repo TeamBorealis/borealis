@@ -362,6 +362,7 @@ pub fn run() {
             commands_gear::remove_item,
             commands_gear::equip_item,
             commands_gear::unequip_item,
+            commands_gear::set_item_requirements_override,
             commands_gear::set_attuned,
             commands_gear::set_rolled_max,
             commands_gear::reroll_max,

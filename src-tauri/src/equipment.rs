@@ -276,6 +276,25 @@ impl AppState {
         })
     }
 
+    /// Switch "Override requirements" (U12, issue 3) on a line: its grants apply although the
+    /// granted elements' own requirements fail. Saved with the character; off by default.
+    ///
+    /// # Errors
+    /// `not_found` for an unknown line.
+    pub fn set_item_requirements_override(
+        &self,
+        id: &str,
+        uid: &str,
+        on: bool,
+    ) -> ApiResult<CharacterSnapshot> {
+        self.mutate(id, |ctx, d| {
+            let out =
+                commands::set_requirements_override(&ctx.hub.engine, &d.character.build, uid, on)?;
+            apply(d, out);
+            Ok(())
+        })
+    }
+
     /// Attune to or end attunement with an item (limit enforced).
     ///
     /// # Errors

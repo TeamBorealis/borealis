@@ -85,6 +85,8 @@ fn grow(
             cost_gp: 1.0,
             storage: None,
             show_card: false,
+            override_requirements: false,
+            withheld_grants: Vec::new(),
         });
         names.push(name);
     }

@@ -1491,6 +1491,18 @@
     "name": "CharacterSnapshot"
    }
   },
+  "set_item_requirements_override": {
+   "args": {
+    "characterId": false,
+    "inventoryId": false,
+    "on": false
+   },
+   "method": "setItemRequirementsOverride",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
   "set_pack_enabled": {
    "args": {
     "enabled": false,
@@ -6143,6 +6155,12 @@
       "k": "prim"
      }
     },
+    "overrideRequirements": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "packContents": {
      "opt": false,
      "t": {
@@ -6240,6 +6258,15 @@
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    },
+    "withheldGrants": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
      }
     }
    }

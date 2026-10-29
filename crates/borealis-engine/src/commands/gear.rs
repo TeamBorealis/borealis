@@ -314,6 +314,23 @@ pub fn equip(
     Ok(out)
 }
 
+/// Switch "Override requirements" (U12) on line `uid`: while on, the elements the item grants
+/// apply even if their own requirements fail. Stored on the line; off is Aurora's behaviour.
+///
+/// # Errors
+/// [`CommandError::Inventory`] for unknown uids.
+pub fn set_requirements_override(
+    engine: &Engine,
+    state: &CharacterState,
+    uid: &str,
+    on: bool,
+) -> CmdResult {
+    let i = index_of(state, uid)?;
+    let mut next = state.clone();
+    next.inventory.items[i].override_requirements = on;
+    Ok(CommandOutcome::new(prune(engine, &next)))
+}
+
 /// "Moonblade requires attunement by an elf or half-elf of neutral good alignment".
 fn barred_message(line: &crate::snapshot::ItemSnapshot) -> String {
     format!(

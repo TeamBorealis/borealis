@@ -96,6 +96,12 @@ pub fn inventory_snapshot(
             cost_gp: inventory::item_cost_gp(e),
             storage: it.storage.clone(),
             show_card: it.card && !it.hidden,
+            override_requirements: it.override_requirements,
+            withheld_grants: graph
+                .withheld_item_grants(&it.uid)
+                .into_iter()
+                .map(element_ref)
+                .collect(),
         });
     }
     let size = graph

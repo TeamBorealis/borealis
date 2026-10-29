@@ -21,6 +21,9 @@ const BOON_PROXY: &str = "ID_TB_INTERNAL_ITEM_FEAT_PROXY_BOON_OF_TESTING";
 const UNLOCKER_ITEM: &str = "ID_TB_ITEM_FEAT_UNLOCKER";
 const UNLOCKER: &str = "ID_TB_GRANTS_FEAT_UNLOCKER";
 const PLAIN: &str = "ID_TB_FEAT_PLAIN";
+/// What the boon grants in turn: one element without requirements, one with its own.
+const BOON_PART: &str = "ID_TB_FEAT_BOON_PART";
+const BOON_LATE: &str = "ID_TB_FEAT_BOON_LATE";
 const PLAIN_PROXY: &str = "ID_TB_INTERNAL_ITEM_FEAT_PROXY_PLAIN";
 const SRD_BOON: &str = "ID_2024_FEAT_BOON_OF_FATE";
 const SRD_BOON_PROXY: &str = "ID_SRD_INTERNAL_ITEM_FEAT_PROXY_BOON_OF_FATE";
@@ -34,7 +37,12 @@ fn engine() -> &'static Engine {
                    "setters": [{"name": "abbreviation", "value": "TB"}]}),
             json!({"id": BOON, "name": "Boon of Testing", "type": "Feat", "source": BOOK,
                    "supports": ["Epic Boon"], "prerequisite": "Level 19+",
-                   "requirements": format!("[character:19]||{UNLOCKER}")}),
+                   "requirements": format!("[character:19]||{UNLOCKER}"),
+                   "rules": [{"kind": "grant", "type": "Feat", "id": BOON_PART},
+                             {"kind": "grant", "type": "Feat", "id": BOON_LATE}]}),
+            json!({"id": BOON_PART, "name": "Testing Gift", "type": "Feat", "source": BOOK}),
+            json!({"id": BOON_LATE, "name": "Late Gift", "type": "Feat", "source": BOOK,
+                   "requirements": "[character:20]"}),
             json!({"id": PLAIN, "name": "Plain Feat", "type": "Feat", "source": BOOK}),
             json!({"id": UNLOCKER_ITEM, "name": "Feat Unlocker", "type": "Item", "source": BOOK,
                    "setters": [{"name": "category", "value": "Additional Feature"},
@@ -87,7 +95,7 @@ fn an_equipped_boon_below_its_level_is_withheld_with_a_warning_naming_the_unlock
             warnings,
             vec![
                 "Boon of Testing is not applied yet: its prerequisite (Level 19+) is not met. \
-                  Equipping Feat Unlocker lifts it."
+                  Equip Feat Unlocker, or turn on Override requirements for this item."
                     .to_string()
             ],
             "{ruleset:?}"
@@ -136,7 +144,137 @@ fn the_srd_boon_names_its_prerequisite_without_an_unlocker() {
     assert_eq!(
         warnings,
         vec![
-            "Boon of Fate is not applied yet: its prerequisite (Level 19+) is not met.".to_string()
+            "Boon of Fate is not applied yet: its prerequisite (Level 19+) is not met. \
+             Turn on Override requirements for this item to apply it anyway."
+                .to_string()
         ]
     );
+}
+
+// U12 (GitHub #3): "Override requirements" on an equipped item whose grant is withheld. Per item
+// line, saved with the character, reversible. Only the requirements of what the item itself
+// grants are bypassed; what those elements grant in turn follows the normal rules.
+
+fn line<'s>(state: &'s CharacterState, item: &str) -> &'s borealis_engine::state::InventoryItem {
+    state
+        .inventory
+        .items
+        .iter()
+        .find(|i| i.item == item)
+        .expect("line")
+}
+
+fn snapshot_line(state: &CharacterState, uid: &str) -> borealis_engine::snapshot::ItemSnapshot {
+    engine()
+        .derive(state)
+        .inventory
+        .items
+        .into_iter()
+        .find(|i| i.uid == uid)
+        .expect("snapshot line")
+}
+
+fn set_override(state: &CharacterState, uid: &str, on: bool) -> CharacterState {
+    commands::set_requirements_override(engine(), state, uid, on)
+        .expect("override")
+        .state
+}
+
+/// JSON round trip of the build, as the character file stores it.
+fn reload(state: &CharacterState) -> CharacterState {
+    serde_json::from_str(&serde_json::to_string(state).expect("save")).expect("load")
+}
+
+#[test]
+fn override_requirements_applies_a_withheld_boon_and_turning_it_off_withholds_it_again() {
+    for ruleset in [Ruleset::Dnd2014, Ruleset::Dnd2024] {
+        for (proxy, boon) in [(BOON_PROXY, BOON), (SRD_BOON_PROXY, SRD_BOON)] {
+            let hero = commands::new_character(engine(), ruleset);
+            let (state, _) = equip(&hero, proxy);
+            let uid = line(&state, proxy).uid.clone();
+            let off = snapshot_line(&state, &uid);
+            assert!(!off.override_requirements, "{ruleset:?} {boon}");
+            assert_eq!(
+                off.withheld_grants
+                    .iter()
+                    .map(|g| g.id.as_str())
+                    .collect::<Vec<_>>(),
+                vec![boon],
+                "{ruleset:?}: the line offers the override"
+            );
+            let on = set_override(&state, &uid, true);
+            assert!(
+                has(&on, boon),
+                "{ruleset:?} {boon}: applied with the override"
+            );
+            let shown = snapshot_line(&on, &uid);
+            assert!(shown.override_requirements && shown.withheld_grants.is_empty());
+            let back = reload(&on);
+            assert!(
+                line(&back, proxy).override_requirements,
+                "saved with the line"
+            );
+            assert!(
+                has(&back, boon),
+                "{ruleset:?} {boon}: survives save and load"
+            );
+            let again = set_override(&back, &uid, false);
+            assert!(
+                !has(&again, boon),
+                "{ruleset:?} {boon}: withheld again when off"
+            );
+            assert_eq!(snapshot_line(&again, &uid).withheld_grants.len(), 1);
+        }
+    }
+}
+
+#[test]
+fn only_what_the_item_grants_is_overridden_not_what_that_grants_in_turn() {
+    let hero = commands::new_character(engine(), Ruleset::Dnd2024);
+    let (state, _) = equip(&hero, BOON_PROXY);
+    let uid = line(&state, BOON_PROXY).uid.clone();
+    let on = set_override(&state, &uid, true);
+    assert!(has(&on, BOON));
+    assert!(
+        has(&on, BOON_PART),
+        "the boon's own grant without requirements applies"
+    );
+    assert!(
+        !has(&on, BOON_LATE),
+        "the boon's grant with requirements of its own keeps them"
+    );
+}
+
+#[test]
+fn an_overridden_item_equips_without_the_warning_and_an_old_file_has_no_override() {
+    let hero = commands::new_character(engine(), Ruleset::Dnd2024);
+    let (state, _) = equip(&hero, SRD_BOON_PROXY);
+    let uid = line(&state, SRD_BOON_PROXY).uid.clone();
+    let on = set_override(&state, &uid, true);
+    let unequipped = commands::unequip(engine(), &on, &uid)
+        .expect("unequip")
+        .state;
+    let again = commands::equip(engine(), &unequipped, &uid, None).expect("equip");
+    assert!(again.warnings.is_empty(), "{:?}", again.warnings);
+    assert!(has(&again.state, SRD_BOON));
+    // a file written before the flag existed: no key, so off
+    let mut json: serde_json::Value = serde_json::to_value(&state).expect("json");
+    for item in json["inventory"]["items"].as_array_mut().expect("items") {
+        assert!(
+            item.get("override_requirements").is_none(),
+            "off is not written"
+        );
+        item.as_object_mut()
+            .unwrap()
+            .remove("override_requirements");
+    }
+    let old: CharacterState = serde_json::from_value(json).expect("old file loads");
+    assert!(!line(&old, SRD_BOON_PROXY).override_requirements);
+    assert!(!has(&old, SRD_BOON));
+}
+
+#[test]
+fn the_override_is_refused_for_an_unknown_line() {
+    let hero = commands::new_character(engine(), Ruleset::Dnd2024);
+    assert!(commands::set_requirements_override(engine(), &hero, "item-404", true).is_err());
 }

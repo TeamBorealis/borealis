@@ -1,4 +1,5 @@
-import type { AbilityState, Coins, InventoryState } from "../types";
+import type { AbilityState, Coins, InventoryItem, InventoryState } from "../types";
+import { FEATS } from "./content";
 import type { MockCharacter } from "./state";
 import { withAttunementFacts } from "./attunement";
 import { withRolledCharges } from "./rolled-charges";
@@ -41,10 +42,22 @@ export function pay(coins: Coins, cost: number): Coins | null {
   return next;
 }
 
+/**
+ * U12: an equipped "Additional Feat, X" line whose feat X has a "Level N+" prerequisite above the character's level is
+ * withheld (as the engine does for any grant whose target fails its requirements) unless the line overrides it.
+ */
+function withWithheldGrants(c: MockCharacter, i: InventoryItem): InventoryItem {
+  const override = i.overrideRequirements ?? false;
+  const feat = /^Additional Feat, (.+)$/.exec(i.name)?.[1];
+  const needs = feat ? /^Level (\d+)\+$/.exec(FEATS.find((f) => f.name === feat)?.prerequisites ?? "")?.[1] : undefined;
+  const withheld = !!i.equipped && !override && !!needs && c.levelOrder.length < Number(needs);
+  return { ...i, overrideRequirements: override, withheldGrants: withheld ? [feat!] : [] };
+}
+
 export function deriveInventory(c: MockCharacter, ab: AbilityState): InventoryState {
   const carried = c.items.filter((i) => i.storage === 0).reduce((s, i) => s + i.weight * i.quantity, 0);
   return {
-    items: c.items.map((i) => withRolledCharges(c, withAttunementFacts(c, i))),
+    items: c.items.map((i) => withWithheldGrants(c, withRolledCharges(c, withAttunementFacts(c, i)))),
     coins: c.coins,
     totalGp: totalCp(c.coins) / 100,
     carriedWeight: Math.round(carried * 10) / 10,
