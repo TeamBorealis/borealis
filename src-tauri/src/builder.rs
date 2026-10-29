@@ -93,6 +93,7 @@ impl AppState {
             &hub,
             ruleset,
             allow_other_edition,
+            &[],
         ))
     }
 

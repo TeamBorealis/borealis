@@ -826,3 +826,33 @@ fn index_update_refuses_entries_without_a_hash_and_unreachable_indexes_fail() {
     );
     assert_eq!(search_count(&app, "Zephyr Gift"), 0);
 }
+
+/// Review L4 of issue 4: an `Option` with supports (a select target such as an SRD 5.2.1
+/// invocation) is no character option, but a character that switched one on through the old F8
+/// list keeps it registered: it stays listed so it can be switched off.
+#[test]
+fn a_held_select_target_option_stays_listed_until_switched_off() {
+    const INVOCATION: &str = "ID_2024_OPTION_ELDRITCH_INVOCATION_AGONIZING_BLAST";
+    let (_dir, app) = app();
+    let snap = new_hero(&app, Ruleset::Dnd2024);
+    let id = snap.id.clone();
+    assert!(!snap.available_options.iter().any(|d| d.id == INVOCATION));
+    let mut patch = OptionsPatch {
+        custom: Some([(INVOCATION.to_string(), true)].into_iter().collect()),
+        ..OptionsPatch::default()
+    };
+    let held = app
+        .set_character_options(&id, &patch)
+        .expect("old F8 switched it on");
+    assert!(
+        held.available_options.iter().any(|d| d.id == INVOCATION),
+        "listed while held"
+    );
+    assert_eq!(held.options.custom.get(INVOCATION), Some(&true));
+    patch.custom = Some([(INVOCATION.to_string(), false)].into_iter().collect());
+    let off = app.set_character_options(&id, &patch).expect("switch off");
+    assert!(
+        !off.available_options.iter().any(|d| d.id == INVOCATION),
+        "gone once off"
+    );
+}

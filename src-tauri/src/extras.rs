@@ -605,7 +605,12 @@ pub fn available_options(input: &MapInput<'_>) -> Vec<OptionDef> {
     let allow_other_edition = state.allow_cross_edition.unwrap_or_else(|| {
         borealis_engine::profile::profile_for(state.ruleset).default_allow_cross_edition()
     });
-    content_options(input.hub, state.ruleset, allow_other_edition)
+    content_options(
+        input.hub,
+        state.ruleset,
+        allow_other_edition,
+        &state.options,
+    )
 }
 
 /// The character options of the content for `ruleset`, by name (Aurora's New Character and
@@ -616,20 +621,27 @@ pub fn available_options(input: &MapInput<'_>) -> Vec<OptionDef> {
 /// metamagic, the 5etools importer's background tool sets), not a character option: Aurora's
 /// character options are registered directly and none of the 44 in the Aurora corpus has supports.
 /// Aurora has no editions; here an option of the other edition is listed when the character
-/// allows the other edition (`allow_other_edition`), like any other pick.
+/// allows the other edition (`allow_other_edition`), like any other pick. An option the character
+/// holds (`held`) is always listed, so one switched on through an older list can be switched off.
 #[must_use]
 pub fn content_options(
     hub: &ContentHub,
     ruleset: Ruleset,
     allow_other_edition: bool,
+    held: &[String],
 ) -> Vec<OptionDef> {
+    let is_held = |e: &borealis_content::Element| held.contains(&e.id);
     let mut defs: Vec<OptionDef> = hub
         .store
         .by_type("Option")
         .map(|s| &s.element)
-        .filter(|e| e.supports.is_empty())
+        .filter(|e| e.supports.is_empty() || is_held(e))
         .filter(|e| !BUILT_IN_OPTIONS.contains(&e.id.as_str()))
-        .filter(|e| allow_other_edition || e.ruleset.is_none_or(|r| r.compatible_with(ruleset)))
+        .filter(|e| {
+            allow_other_edition
+                || is_held(e)
+                || e.ruleset.is_none_or(|r| r.compatible_with(ruleset))
+        })
         .filter(|e| hub.engine.has_element(ruleset, &e.id))
         .map(|e| OptionDef {
             id: e.id.clone(),

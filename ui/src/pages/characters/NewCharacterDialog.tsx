@@ -67,7 +67,9 @@ export function NewCharacterDialog({ onCreate, onClose }: { onCreate: (f: NewCha
     multiclassing: true, feats: true, averageHp: true, custom: {}, standardArray: STANDARD_ARRAY,
   });
   // Issue 4: the content's own options (Aurora lists them after the built-ins, tagged "custom")
-  const contentOptions = useAsync(() => api.listCharacterOptions({ ruleset: f.ruleset }), [api, f.ruleset]).data ?? [];
+  // While the list of a newly picked edition loads, the previous edition's list is neither shown nor sent (review L4).
+  const listed = useAsync(() => api.listCharacterOptions({ ruleset: f.ruleset }), [api, f.ruleset]);
+  const contentOptions = listed.loading ? [] : listed.data ?? [];
   const create = () => onCreate(f, contentOptions);
   const [grab, setGrab] = useState<number | null>(null);
   const set = <K extends keyof NewCharacterForm>(k: K, v: NewCharacterForm[K]) => setF((cur) => ({ ...cur, [k]: v }));

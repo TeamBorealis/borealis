@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MockApi } from "../api/mock";
 import { renderApp, seededId } from "./utils";
 
@@ -43,5 +43,27 @@ describe("content options (issue 4)", () => {
     await user.keyboard("{F8}");
     const dialog = await screen.findByRole("dialog", { name: "Character options" });
     expect(cardTitles(dialog)).toEqual(["AVERAGE HIT POINTS", "FEATS", "MULTICLASSING", "CUSTOMIZED LANGUAGECUSTOM", "FIREARMSCUSTOM"]);
+  });
+
+  it("Create during an edition switch sends no option of the previous edition (review L4)", async () => {
+    const user = userEvent.setup();
+    const api = fast();
+    const only2024 = { id: "ID_MOCK_OPTION_2024_ONLY", name: "Only 2024", description: "A 2024 option.", locked: false, defaultOn: false };
+    vi.spyOn(api, "listCharacterOptions").mockImplementation(({ ruleset }) =>
+      ruleset === "dnd2024" ? Promise.resolve([only2024]) : new Promise(() => undefined));
+    const create = vi.spyOn(api, "createCharacter");
+    renderApp("/characters", { api });
+    await user.click((await screen.findAllByRole("button", { name: /new character/i }))[0]!);
+    const dialog = await screen.findByRole("dialog", { name: "New character" });
+    await user.selectOptions(within(dialog).getByLabelText("Rules edition"), "dnd2024");
+    await user.click(await within(dialog).findByRole("checkbox", { name: /only 2024/i }));
+    await user.selectOptions(within(dialog).getByLabelText("Rules edition"), "dnd2014");
+    expect(within(dialog).queryByRole("checkbox", { name: /only 2024/i })).toBeNull();
+    await user.type(within(dialog).getByLabelText("Name"), "Switcher");
+    await user.click(within(dialog).getByRole("button", { name: "Create character" }));
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
+    const request = create.mock.calls[0]![0].request;
+    expect(request.ruleset).toBe("dnd2014");
+    expect(Object.keys(request.options.custom ?? {})).not.toContain("ID_MOCK_OPTION_2024_ONLY");
   });
 });
