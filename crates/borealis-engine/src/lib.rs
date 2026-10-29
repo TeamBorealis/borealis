@@ -34,6 +34,7 @@ pub mod notes_d;
 pub mod options;
 pub mod packages;
 pub mod pact_weapon;
+pub mod play_load;
 pub mod play_rules;
 pub mod profile;
 pub mod provenance;

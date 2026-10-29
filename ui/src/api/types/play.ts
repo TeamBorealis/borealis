@@ -147,9 +147,12 @@ export interface PlayTracker {
   name: string;
   /** 1..999. */
   max: number;
-  /** Marked pips, 0..max. */
+  /** Marked pips, 0..max (gained, when it counts up). */
   used: number;
+  /** A file from a newer version may hold another value; it then never resets here. */
   reset: PlayTrackerReset;
+  /** Shown counting up: used/max with the used pips filled (Drakkenheim contamination). */
+  countsUp: boolean;
 }
 
 export interface PlayState {

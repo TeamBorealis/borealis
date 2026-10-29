@@ -1,0 +1,110 @@
+{
+  "format": "borealis-character",
+  "format_version": 2,
+  "ruleset": "dnd2024",
+  "meta": {
+    "id": "c_played",
+    "name": "Played",
+    "player": "",
+    "gender": "",
+    "group": "",
+    "favorite": false
+  },
+  "details": {
+    "appearance": {
+      "age": "",
+      "height": "",
+      "weight": "",
+      "eyes": "",
+      "skin": "",
+      "hair": ""
+    },
+    "personality": {
+      "trinket": "",
+      "traits": "",
+      "ideals": "",
+      "bonds": "",
+      "flaws": ""
+    },
+    "backstory": "",
+    "organization": {
+      "name": "",
+      "symbol": "",
+      "allies": ""
+    },
+    "additional_features": "",
+    "equipment_notes": "",
+    "treasure": "",
+    "quest": "",
+    "notes": {
+      "left": "",
+      "right": ""
+    },
+    "attacks_text": "",
+    "attacks": [],
+    "conditional_ac": "",
+    "companion_name": ""
+  },
+  "build": {
+    "ruleset": "dnd2024",
+    "options": [],
+    "levels": [
+      {
+        "kind": "main"
+      },
+      {
+        "kind": "main"
+      }
+    ],
+    "experience": 300,
+    "abilities": {
+      "method": "roll4d6",
+      "base": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ]
+    },
+    "selections": [],
+    "hp_rolls": [],
+    "prepared": [],
+    "inventory": {
+      "items": [],
+      "storages": [],
+      "coins": {
+        "cp": 0,
+        "sp": 0,
+        "ep": 0,
+        "gp": 0,
+        "pp": 0
+      }
+    },
+    "restricted_sources": [],
+    "house_rules": {},
+    "spellbooks": {
+      "Wizard": [
+        "ID_A"
+      ]
+    },
+    "play": {
+      "resources_used": {
+        "ID_X": 2,
+        "rage": 1
+      },
+      "toggles": [
+        "rage"
+      ],
+      "exhaustion": 2,
+      "heroic_inspiration": true,
+      "wild_shape_forms": [
+        "wolf"
+      ],
+      "equipment_choices": {
+        "pkg": "A"
+      }
+    }
+  }
+}

@@ -224,18 +224,22 @@ export interface ApiMethods {
   setToggle(args: Cid & { toggleId: string; on: boolean }): Promise<CharacterSnapshot>;
   setExhaustion(args: Cid & { level: number }): Promise<CharacterSnapshot>;
   setHeroicInspiration(args: Cid & { has: boolean }): Promise<CharacterSnapshot>;
-  /* Spell tracker (GitHub #2). Rests are shortRest/longRest. */
-  /** Marks `used` slots of spell level `level` used; with `pact`, the Pact Magic slots (`level` is then ignored). */
-  setSpellSlotsUsed(args: Cid & { level: number; used: number; pact?: boolean }): Promise<CharacterSnapshot>;
+  /* Spell tracker (GitHub #2). Rests are shortRest/longRest. Spends and restores are relative, like spendResource. */
+  /** Marks `uses` (default 1) more slots of spell level `level` used; with `pact`, Pact Magic slots (`level` ignored). */
+  spendSpellSlot(args: Cid & { level: number; pact?: boolean; uses?: number }): Promise<CharacterSnapshot>;
+  /** Gives back `uses` (default 1) used slots, never below none used. */
+  restoreSpellSlot(args: Cid & { level: number; pact?: boolean; uses?: number }): Promise<CharacterSnapshot>;
   /** Concentrate on a known or prepared concentration spell (replaces any other); null ends concentration. */
   setConcentration(args: Cid & { spellId: string | null }): Promise<CharacterSnapshot>;
-  /** Adds a custom tracker: name 1-60 characters, max 1-999. */
-  addTracker(args: Cid & { name: string; max: number; reset: PlayTrackerReset }): Promise<CharacterSnapshot>;
-  /** Renames a tracker or changes its maximum (the used count is clamped) or reset. */
-  updateTracker(args: Cid & { trackerId: string; name: string; max: number; reset: PlayTrackerReset }): Promise<CharacterSnapshot>;
+  /** Adds a custom tracker: name 1-60 characters (bidi and zero-width characters are stripped), max 1-999. */
+  addTracker(args: Cid & { name: string; max: number; reset: PlayTrackerReset; countsUp?: boolean }): Promise<CharacterSnapshot>;
+  /** Renames a tracker or changes its maximum (the used count is clamped), reset or direction. */
+  updateTracker(args: Cid & { trackerId: string; name: string; max: number; reset: PlayTrackerReset; countsUp?: boolean }): Promise<CharacterSnapshot>;
   removeTracker(args: Cid & { trackerId: string }): Promise<CharacterSnapshot>;
-  /** Sets how many pips of a tracker are used (0..max). */
-  setTrackerUsed(args: Cid & { trackerId: string; used: number }): Promise<CharacterSnapshot>;
+  /** Marks `uses` (default 1) more pips used (gained, for a tracker that counts up). */
+  spendTracker(args: Cid & { trackerId: string; uses?: number }): Promise<CharacterSnapshot>;
+  /** Gives back `uses` (default 1) pips, never below none used. */
+  restoreTracker(args: Cid & { trackerId: string; uses?: number }): Promise<CharacterSnapshot>;
   /** Replaces all Weapon Mastery picks (in slot order; fewer ids leave slots open). */
   chooseWeaponMasteries(args: Cid & { weaponIds: string[] }): Promise<CharacterSnapshot>;
   setWildShapeForms(args: Cid & { formIds: string[] }): Promise<CharacterSnapshot>;
@@ -527,12 +531,14 @@ export const COMMANDS = {
   setToggle: "set_toggle",
   setExhaustion: "set_exhaustion",
   setHeroicInspiration: "set_heroic_inspiration",
-  setSpellSlotsUsed: "set_spell_slots_used",
+  spendSpellSlot: "spend_spell_slot",
+  restoreSpellSlot: "restore_spell_slot",
   setConcentration: "set_concentration",
   addTracker: "add_tracker",
   updateTracker: "update_tracker",
   removeTracker: "remove_tracker",
-  setTrackerUsed: "set_tracker_used",
+  spendTracker: "spend_tracker",
+  restoreTracker: "restore_tracker",
   chooseWeaponMasteries: "choose_weapon_masteries",
   setWildShapeForms: "set_wild_shape_forms",
   chooseEquipmentPackage: "choose_equipment_package",

@@ -3,7 +3,8 @@
  * Play, the tracker dialog. Same list language as the other Play cards (panes.css, phone/play-magic.css).
  */
 .st-pips { align-items: center; gap: 0; }
-.st-pip { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 22px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+/* 24x24 px targets (WCAG 2.5.8) around the Resources card's 12 px pip, side by side (no overlap). */
+.st-pip { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 0; background: transparent; cursor: pointer; }
 .st-pip:disabled { cursor: default; }
 @media (hover: hover) and (pointer: fine) { .st-pip:not(:disabled):hover .v5-pip { border-color: var(--gold); } }
 .st-line .v5-row.static { min-width: 0; }
@@ -13,6 +14,8 @@
 .st-conc-text strong { font-weight: 600; color: var(--gold); }
 .st-conc-pick select { max-width: 16rem; }
 .st-form { display: flex; flex-direction: column; gap: 10px; }
+/* The page's rests, above everything they affect. */
+.st-rests { display: flex; justify-content: flex-end; gap: 6px; margin: 0 0 10px; }
 
 /* Phones: one grid per row (name and reset, count, edit on top; the pips or -/+ below, from the row's left edge), 44 px tall
    pip targets, the bar as a surface card like the other Play groups. */
@@ -24,6 +27,8 @@ html.phone .st-line > .st-pips, html.phone .st-line > .st-steps { grid-area: 2 /
 html.phone .st-line > .st-steps { margin-left: var(--ph-gutter); padding-bottom: 4px; }
 html.phone .st-pips { gap: 0; flex-wrap: wrap; }
 html.phone .st-pip { width: 32px; height: var(--ph-hit); }
+html.phone .st-rests { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; }
+html.phone .st-rests .btn { min-height: var(--ph-hit); justify-content: center; }
 html.phone .st-conc {
   margin: 0; padding: 6px var(--ph-gutter); min-height: var(--ph-row); border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface);
   box-shadow: inset 3px 0 0 var(--ph-gold); color: var(--ph-text); font: 400 var(--ph-t-body)/1.3 var(--ph-font-ui);

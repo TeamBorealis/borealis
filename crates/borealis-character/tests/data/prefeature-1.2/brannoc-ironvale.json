@@ -1,0 +1,329 @@
+{
+  "format": "borealis-character",
+  "format_version": 2,
+  "ruleset": "dnd2014",
+  "meta": {
+    "name": "Brannoc Ironvale",
+    "player": "",
+    "gender": "Male",
+    "group": "Ashfall",
+    "favorite": false
+  },
+  "details": {
+    "appearance": {
+      "age": "112",
+      "height": "4'4\"",
+      "weight": "170 lb",
+      "eyes": "Grey",
+      "skin": "Ruddy",
+      "hair": "Iron grey"
+    },
+    "personality": {
+      "trinket": "",
+      "traits": "I idolize a particular hero of my faith, and constantly refer to that person’s deeds and example. I quote (or misquote) sacred texts and proverbs in almost every situation.",
+      "ideals": "Tradition. The ancient traditions of worship and sacrifice must be preserved and upheld. (Lawful)",
+      "bonds": "I will do anything to protect the temple where I served.",
+      "flaws": "I am inflexible in my thinking."
+    },
+    "backstory": "Keeper of the shield-wall at Ashfall, sworn to hold the line until the last lantern burns out.",
+    "organization": {
+      "name": "",
+      "symbol": "",
+      "allies": ""
+    },
+    "additional_features": "",
+    "equipment_notes": "",
+    "treasure": "",
+    "quest": "",
+    "notes": {
+      "left": "",
+      "right": ""
+    },
+    "attacks_text": "",
+    "attacks": [],
+    "conditional_ac": "",
+    "companion_name": ""
+  },
+  "build": {
+    "ruleset": "dnd2014",
+    "options": [],
+    "levels": [
+      {
+        "kind": "main"
+      },
+      {
+        "kind": "main"
+      },
+      {
+        "kind": "main"
+      }
+    ],
+    "experience": 900,
+    "abilities": {
+      "method": "point_buy",
+      "base": [
+        15,
+        10,
+        14,
+        8,
+        12,
+        8
+      ]
+    },
+    "selections": [
+      {
+        "slot": {
+          "owner": "ID_LEVEL_1",
+          "rule": 6,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_SRD_RACE_DWARF"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_RACIAL_TRAIT_DWARVEN_SUBRACE",
+          "rule": 0,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_SUB_RACE_HILL_DWARF"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_RACIAL_TRAIT_DWARVEN_TOOL_PROFICIENCY",
+          "rule": 0,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_PROFICIENCY_TOOL_PROFICIENCY_SMITHS_TOOLS"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_LEVEL_1",
+          "rule": 7,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_WOTC_PHB_CLASS_FIGHTER"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_WOTC_PHB_CLASS_FIGHTER",
+          "rule": 8,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_PROFICIENCY_SKILL_ATHLETICS"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_WOTC_PHB_CLASS_FIGHTER",
+          "rule": 8,
+          "ordinal": 2
+        },
+        "choice": {
+          "element": "ID_PROFICIENCY_SKILL_PERCEPTION"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_WOTC_PHB_CLASS_FEATURE_FIGHTINGSTYLE",
+          "rule": 0,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_WOTC_PHB_CLASS_FEATURE_FIGHTINGSTYLE_DUELING"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_LEVEL_1",
+          "rule": 8,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_BACKGROUND_ACOLYTE"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_BACKGROUND_ACOLYTE",
+          "rule": 2,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_LANGUAGE_ELVISH"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_BACKGROUND_ACOLYTE",
+          "rule": 2,
+          "ordinal": 2
+        },
+        "choice": {
+          "element": "ID_LANGUAGE_GIANT"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_BACKGROUND_ACOLYTE",
+          "rule": 4,
+          "ordinal": 1
+        },
+        "choice": {
+          "list_item": 1
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_BACKGROUND_ACOLYTE",
+          "rule": 4,
+          "ordinal": 2
+        },
+        "choice": {
+          "list_item": 5
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_BACKGROUND_ACOLYTE",
+          "rule": 5,
+          "ordinal": 1
+        },
+        "choice": {
+          "list_item": 1
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_BACKGROUND_ACOLYTE",
+          "rule": 6,
+          "ordinal": 1
+        },
+        "choice": {
+          "list_item": 5
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_BACKGROUND_ACOLYTE",
+          "rule": 7,
+          "ordinal": 1
+        },
+        "choice": {
+          "list_item": 4
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_LEVEL_1",
+          "rule": 9,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_ALIGNMENT_LAWFUL_GOOD"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_WOTC_PHB_CLASS_FEATURE_MARTIALARCHETYPE",
+          "rule": 0,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_WOTC_PHB_ARCHETYPE_CHAMPION"
+        }
+      }
+    ],
+    "hp_rolls": [
+      {
+        "class": {
+          "kind": "main"
+        },
+        "rolls": [
+          10,
+          6,
+          5,
+          7,
+          4,
+          6,
+          5,
+          7,
+          4,
+          6,
+          5,
+          7,
+          4,
+          6,
+          5,
+          7,
+          4,
+          6,
+          5,
+          7
+        ]
+      }
+    ],
+    "prepared": [],
+    "inventory": {
+      "items": [
+        {
+          "uid": "b2a1c3d4-0000-4000-8000-0000000000a1",
+          "item": "ID_WOTC_ARMOR_HEAVY_CHAIN_MAIL",
+          "amount": 1,
+          "equipped": "armor",
+          "versatile": false,
+          "attuned": false,
+          "hidden": false,
+          "sidebar": false,
+          "card": false
+        },
+        {
+          "uid": "b2a1c3d4-0000-4000-8000-0000000000a2",
+          "item": "ID_WOTC_GEAR_SHIELD",
+          "amount": 1,
+          "equipped": "secondary_hand",
+          "versatile": false,
+          "attuned": false,
+          "hidden": false,
+          "sidebar": false,
+          "card": false
+        },
+        {
+          "uid": "b2a1c3d4-0000-4000-8000-0000000000a3",
+          "item": "ID_WOTC_PHB_WEAPON_LONGSWORD",
+          "amount": 1,
+          "equipped": "primary_hand",
+          "versatile": false,
+          "attuned": false,
+          "hidden": false,
+          "sidebar": false,
+          "card": false
+        }
+      ],
+      "storages": [],
+      "coins": {
+        "cp": 0,
+        "sp": 0,
+        "ep": 0,
+        "gp": 25,
+        "pp": 0
+      }
+    },
+    "restricted_sources": [],
+    "house_rules": {}
+  },
+  "import": {
+    "source": "aurora-dnd5e",
+    "source_version": "1.19.309",
+    "missing_content": 0,
+    "legacy_divergences": 0
+  }
+}

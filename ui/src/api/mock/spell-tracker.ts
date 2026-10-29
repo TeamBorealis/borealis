@@ -1,4 +1,5 @@
 import type { PlayConcentrationSpell, PlaySlotUse, PlayState, PlayTracker, PlayTrackerReset, SpellcastingState } from "../types";
+import { cleanTrackerName } from "../../lib/trackerName";
 import { apiError } from "./errors";
 
 /** The mock's spell tracker state (GitHub #2), kept on `MockPlay.tracking`. */
@@ -46,13 +47,29 @@ export function trackerPlay(t: MockTracking | undefined, sc: SpellcastingState):
   };
 }
 
-export function setSlotsUsed(t: MockTracking | undefined, sc: SpellcastingState, level: number, used: number, pact: boolean): MockTracking {
-  const tr = t ?? emptyTracking();
+function slotPool(tr: MockTracking, sc: SpellcastingState, level: number, pact: boolean): { max: number; used: number; label: string } {
   const max = pact ? (pactOf(sc)?.total ?? 0) : slotMax(sc, level);
   const label = pact ? "Pact Magic slots" : `level ${level} spell slots`;
   if (max === 0) throw apiError("requirement_failed", `The character has no ${label}`);
-  if (used < 0 || used > max) throw apiError("requirement_failed", `The character has ${max} ${label}`);
-  return pact ? { ...tr, pactUsed: used } : { ...tr, slotsUsed: { ...tr.slotsUsed, [String(level)]: used } };
+  return { max, label, used: Math.min(max, pact ? tr.pactUsed : (tr.slotsUsed[String(level)] ?? 0)) };
+}
+
+const withSlots = (tr: MockTracking, level: number, pact: boolean, used: number): MockTracking =>
+  (pact ? { ...tr, pactUsed: used } : { ...tr, slotsUsed: { ...tr.slotsUsed, [String(level)]: used } });
+
+/** As the host: `n` more slots used, refused when fewer are left. */
+export function spendSlots(t: MockTracking | undefined, sc: SpellcastingState, level: number, pact: boolean, n: number): MockTracking {
+  const tr = t ?? emptyTracking();
+  const { max, label, used } = slotPool(tr, sc, level, pact);
+  if (n > max - used) throw apiError("requirement_failed", `${max - used} of ${max} ${label} left`);
+  return withSlots(tr, level, pact, used + n);
+}
+
+/** As the host: `n` slots back, never below none used. */
+export function restoreSlots(t: MockTracking | undefined, sc: SpellcastingState, level: number, pact: boolean, n: number): MockTracking {
+  const tr = t ?? emptyTracking();
+  const { used } = slotPool(tr, sc, level, pact);
+  return withSlots(tr, level, pact, Math.max(0, used - n));
 }
 
 export function setConcentration(t: MockTracking | undefined, sc: SpellcastingState, spellId: string | null): MockTracking {
@@ -62,8 +79,9 @@ export function setConcentration(t: MockTracking | undefined, sc: SpellcastingSt
   return { ...(t ?? emptyTracking()), concentration: spellId };
 }
 
+
 function checked(name: string, max: number): string {
-  const n = name.trim();
+  const n = cleanTrackerName(name);
   if (!n) throw apiError("invalid_argument", "Give the tracker a name");
   if ([...n].length > MAX_TRACKER_NAME) throw apiError("invalid_argument", `A tracker name has at most ${MAX_TRACKER_NAME} characters`);
   // eslint-disable-next-line no-control-regex
@@ -72,7 +90,15 @@ function checked(name: string, max: number): string {
   return n;
 }
 
-const nextId = (ts: PlayTracker[]): string => `tracker-${1 + Math.max(0, ...ts.map((x) => Number(/^tracker-(\d+)$/.exec(x.id)?.[1] ?? 0)))}`;
+/** As the host: one above the highest number in use, or the lowest free number when that would overflow. */
+function nextId(ts: PlayTracker[]): string {
+  const used = new Set(ts.map((x) => Number(/^tracker-(\d+)$/.exec(x.id)?.[1] ?? 0)));
+  const top = Math.max(0, ...used);
+  if (top < 2 ** 32 - 1) return `tracker-${top + 1}`;
+  let n = 1;
+  while (used.has(n)) n += 1;
+  return `tracker-${n}`;
+}
 
 function find(tr: MockTracking, id: string): PlayTracker {
   const x = tr.trackers.find((y) => y.id === id);
@@ -80,18 +106,18 @@ function find(tr: MockTracking, id: string): PlayTracker {
   return x;
 }
 
-export function addTracker(t: MockTracking | undefined, name: string, max: number, reset: PlayTrackerReset): MockTracking {
+export function addTracker(t: MockTracking | undefined, name: string, max: number, reset: PlayTrackerReset, countsUp = false): MockTracking {
   const tr = t ?? emptyTracking();
   const n = checked(name, max);
   if (tr.trackers.length >= MAX_TRACKERS) throw apiError("invalid_argument", `A character has at most ${MAX_TRACKERS} trackers`);
-  return { ...tr, trackers: [...tr.trackers, { id: nextId(tr.trackers), name: n, max, used: 0, reset }] };
+  return { ...tr, trackers: [...tr.trackers, { id: nextId(tr.trackers), name: n, max, used: 0, reset, countsUp }] };
 }
 
-export function updateTracker(t: MockTracking | undefined, id: string, name: string, max: number, reset: PlayTrackerReset): MockTracking {
+export function updateTracker(t: MockTracking | undefined, id: string, name: string, max: number, reset: PlayTrackerReset, countsUp = false): MockTracking {
   const tr = t ?? emptyTracking();
   const old = find(tr, id);
   const n = checked(name, max);
-  return { ...tr, trackers: tr.trackers.map((x) => (x.id === id ? { ...old, name: n, max, reset, used: Math.min(old.used, max) } : x)) };
+  return { ...tr, trackers: tr.trackers.map((x) => (x.id === id ? { ...old, name: n, max, reset, countsUp, used: Math.min(old.used, max) } : x)) };
 }
 
 export function removeTracker(t: MockTracking | undefined, id: string): MockTracking {
@@ -100,11 +126,18 @@ export function removeTracker(t: MockTracking | undefined, id: string): MockTrac
   return { ...tr, trackers: tr.trackers.filter((x) => x.id !== id) };
 }
 
-export function setTrackerUsed(t: MockTracking | undefined, id: string, used: number): MockTracking {
+export function spendTracker(t: MockTracking | undefined, id: string, n: number): MockTracking {
   const tr = t ?? emptyTracking();
   const x = find(tr, id);
-  if (!Number.isInteger(used) || used < 0 || used > x.max) throw apiError("invalid_argument", `${x.name} has ${x.max} pips`);
-  return { ...tr, trackers: tr.trackers.map((y) => (y.id === id ? { ...y, used } : y)) };
+  const used = Math.min(x.used, x.max);
+  if (n > x.max - used) throw apiError("requirement_failed", `${x.name} has ${x.max - used} of ${x.max} pips left`);
+  return { ...tr, trackers: tr.trackers.map((y) => (y.id === id ? { ...y, used: used + n } : y)) };
+}
+
+export function restoreTracker(t: MockTracking | undefined, id: string, n: number): MockTracking {
+  const tr = t ?? emptyTracking();
+  const x = find(tr, id);
+  return { ...tr, trackers: tr.trackers.map((y) => (y.id === id ? { ...y, used: Math.max(0, Math.min(x.used, x.max) - n) } : y)) };
 }
 
 /** As the host's rests: a short rest gives back Pact Magic slots and short-rest trackers; a long rest every slot and short- or long-rest tracker, and ends concentration. */

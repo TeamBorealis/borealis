@@ -1,33 +1,55 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import type { PlayTracker, PlayTrackerReset } from "../../api/contract";
-import { Button, EmptyState, IconButton, SelectField, TextField } from "../../components";
+import { Button, Check, EmptyState, IconButton, SelectField, TextField } from "../../components";
 import { Dialog, Expander } from "../../components/controls";
+import { cleanTrackerName } from "../../lib/trackerName";
 import { useCharacter } from "../../state/CharacterContext";
 import { PIP_LIMIT, PipButtons, UsesLeft } from "./PipButtons";
+import { usePlayMutate } from "./playQueue";
 import "./spell-tracker.css";
 
 /** Limits the host enforces too (borealis-engine commands/trackers.rs). */
 export const MAX_TRACKER_NAME = 60;
 export const MAX_TRACKER_MAX = 999;
+/** How long Delete waits for its confirming second press. */
+const CONFIRM_MS = 4000;
 
 const RESET_LABEL: Record<PlayTrackerReset, string> = { short_rest: "Short Rest", long_rest: "Long Rest", never: "No reset" };
 const RESET_OPTIONS: { value: PlayTrackerReset; label: string }[] = [
   { value: "short_rest", label: "Short Rest" }, { value: "long_rest", label: "Long Rest" }, { value: "never", label: "Never" },
 ];
 
+/** Accessible names of a tracker's controls: counting down they spend and restore, counting up they add and remove. */
+function trackerNames(t: PlayTracker): { spend: string; restore: string } {
+  if (t.countsUp) {
+    const state = `${t.used} of ${t.max}`;
+    return { spend: `Add one to ${t.name}, ${state}`, restore: `Remove one from ${t.name}, ${state}` };
+  }
+  const state = `${t.max - t.used} of ${t.max} left`;
+  return { spend: `Use one ${t.name}, ${state}`, restore: `Restore one ${t.name}, ${state}` };
+}
+
 function TrackerRow({ t, onEdit }: { t: PlayTracker; onEdit: () => void }) {
-  const { mutate } = useCharacter();
-  const set = (used: number) => void mutate((api, id) => api.setTrackerUsed({ characterId: id, trackerId: t.id, used }));
+  const run = usePlayMutate();
+  const spend = () => void run((api, id) => api.spendTracker({ characterId: id, trackerId: t.id }));
+  const restore = () => void run((api, id) => api.restoreTracker({ characterId: id, trackerId: t.id }));
+  const names = trackerNames(t);
+  const meta = RESET_LABEL[t.reset] ?? t.reset;
   return (
     <li className="v5-line st-line">
-      <span className="v5-row static grow"><span className="grow">{t.name}</span><span className="meta">{RESET_LABEL[t.reset]}</span></span>
+      <span className="v5-row static grow"><span className="grow">{t.name}</span><span className="meta">{t.countsUp ? `${meta} · counts up` : meta}</span></span>
       {t.max <= PIP_LIMIT
-        ? <PipButtons max={t.max} used={t.used} onSet={set} pipName={(n, max, used) => `${t.name} ${n} of ${max}, ${used ? "used" : "available"}`} />
-        : <span className="v5-ctrls st-steps">
-          <IconButton icon="minus" variant="default" label={`Spend ${t.name}`} disabled={t.used >= t.max} onClick={() => set(t.used + 1)} />
-          <IconButton icon="plus" variant="default" label={`Restore ${t.name}`} disabled={t.used <= 0} onClick={() => set(t.used - 1)} />
-        </span>}
-      <UsesLeft name={t.name} max={t.max} used={t.used} />
+        ? <PipButtons label={t.name} max={t.max} used={t.used} countsUp={t.countsUp} spendName={names.spend} restoreName={names.restore} onSpend={spend} onRestore={restore} />
+        : t.countsUp
+          ? <span className="v5-ctrls st-steps">
+            <IconButton icon="minus" variant="default" label={`Remove one from ${t.name}`} disabled={t.used <= 0} onClick={restore} />
+            <IconButton icon="plus" variant="default" label={`Add one to ${t.name}`} disabled={t.used >= t.max} onClick={spend} />
+          </span>
+          : <span className="v5-ctrls st-steps">
+            <IconButton icon="minus" variant="default" label={`Spend ${t.name}`} disabled={t.used >= t.max} onClick={spend} />
+            <IconButton icon="plus" variant="default" label={`Restore ${t.name}`} disabled={t.used <= 0} onClick={restore} />
+          </span>}
+      <UsesLeft name={t.name} max={t.max} used={t.used} countsUp={t.countsUp} />
       <span className="v5-ctrls"><IconButton icon="pen" label={`Edit ${t.name}`} onClick={onEdit} /></span>
     </li>
   );
@@ -35,9 +57,10 @@ function TrackerRow({ t, onEdit }: { t: PlayTracker; onEdit: () => void }) {
 
 export interface TrackerProblem { field: "name" | "max"; message: string }
 
+
 /** Client-side check before the host's (same limits); null when the entry is fine. */
 export function trackerError(name: string, max: string): TrackerProblem | null {
-  const n = name.trim();
+  const n = cleanTrackerName(name);
   if (!n) return { field: "name", message: "Give the tracker a name." };
   if ([...n].length > MAX_TRACKER_NAME) return { field: "name", message: `A tracker name has at most ${MAX_TRACKER_NAME} characters.` };
   const m = Number(max);
@@ -45,19 +68,35 @@ export function trackerError(name: string, max: string): TrackerProblem | null {
   return null;
 }
 
-/** Add or edit a tracker: name, maximum and when it resets; editing also offers Delete. */
+/** Delete in two presses: the first turns it into "Confirm delete" for a few seconds (no dialog over the dialog). */
+function DeleteButton({ disabled, onDelete }: { disabled: boolean; onDelete: () => void }) {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return undefined;
+    const t = window.setTimeout(() => setArmed(false), CONFIRM_MS);
+    return () => window.clearTimeout(t);
+  }, [armed]);
+  return (
+    <Button variant="danger" disabled={disabled} onClick={() => (armed ? onDelete() : setArmed(true))}>
+      {armed ? "Confirm delete" : "Delete"}
+    </Button>
+  );
+}
+
+/** Add or edit a tracker: name, maximum, when it resets and whether it counts up; editing also offers Delete. */
 function TrackerDialog({ tracker, onClose }: { tracker: PlayTracker | null; onClose: () => void }) {
   const { mutate, busy } = useCharacter();
   const [name, setName] = useState(tracker?.name ?? "");
   const [max, setMax] = useState(String(tracker?.max ?? 1));
   const [reset, setReset] = useState<PlayTrackerReset>(tracker?.reset ?? "long_rest");
+  const [countsUp, setCountsUp] = useState(tracker?.countsUp ?? false);
   const [error, setError] = useState<TrackerProblem | null>(null);
   const save = async (e?: FormEvent) => {
     e?.preventDefault();
     const problem = trackerError(name, max);
     setError(problem);
     if (problem) return;
-    const fields = { name: name.trim(), max: Number(max), reset };
+    const fields = { name: cleanTrackerName(name), max: Number(max), reset, countsUp };
     const done = await mutate((api, id) => (tracker
       ? api.updateTracker({ characterId: id, trackerId: tracker.id, ...fields })
       : api.addTracker({ characterId: id, ...fields })));
@@ -70,7 +109,7 @@ function TrackerDialog({ tracker, onClose }: { tracker: PlayTracker | null; onCl
   const errorOf = (field: TrackerProblem["field"]) => (error?.field === field ? error.message : null);
   return (
     <Dialog title={tracker ? "Edit tracker" : "Add tracker"} onClose={onClose} footer={<>
-      {tracker && <Button variant="danger" disabled={busy} onClick={() => void remove()}>Delete</Button>}
+      {tracker && <DeleteButton disabled={busy} onDelete={() => void remove()} />}
       <Button onClick={onClose}>Cancel</Button>
       <Button variant="primary" disabled={busy} onClick={() => void save()}>Save</Button>
     </>}>
@@ -80,6 +119,8 @@ function TrackerDialog({ tracker, onClose }: { tracker: PlayTracker | null; onCl
         <SelectField label="Resets on" value={reset} onChange={(e) => setReset(e.target.value as PlayTrackerReset)}>
           {RESET_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </SelectField>
+        <Check label="Counts up" description="Show how many are marked (such as contamination gained) instead of how many are left."
+          checked={countsUp} onChange={(e) => setCountsUp(e.target.checked)} />
         <button type="submit" hidden aria-hidden="true" tabIndex={-1} />
       </form>
     </Dialog>

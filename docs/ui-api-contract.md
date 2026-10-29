@@ -179,15 +179,17 @@ Every command returns the full `CharacterSnapshot`; the new blocks live in `snap
 | `choose_weapon_masteries` | `characterId, weaponIds: string[]` | replaces all picks in slot order (slots = `Weapon` selects named "...Mastery"); `invalid_argument` for duplicates, `requirement_failed` for too many / not allowed |
 | `set_wild_shape_forms` | `characterId, formIds: string[]` | `CharacterSnapshot` (limits in `play.wildShape`) |
 | `choose_equipment_package` | `characterId, packageId, option` | `CharacterSnapshot` (once per package; items + coins added) |
-| `set_spell_slots_used` | `characterId, level, used, pact?` | `CharacterSnapshot` (`used` slots of spell `level`, or with `pact` of the Pact Magic pool; `requirement_failed` without such slots or above the maximum) |
+| `spend_spell_slot` / `restore_spell_slot` | `characterId, level, pact?, uses?` (default 1) | `CharacterSnapshot`: relative, like `spend_resource` (one more used / one given back, never below none; so quick presses add up and a press after a rest never undoes it). With `pact` the Pact Magic pool. `requirement_failed` without such slots or when too few are left |
 | `set_concentration` | `characterId, spellId: string \| null` | `CharacterSnapshot` (a known or prepared concentration spell, replacing any other; `null` ends it; else `requirement_failed`) |
-| `add_tracker` / `update_tracker` | `characterId, (trackerId,) name, max, reset: short_rest \| long_rest \| never` | `CharacterSnapshot` (name 1-60 characters, max 1-999, at most 50 trackers, else `invalid_argument`; an edit clamps the used count; unknown id `not_found`) |
+| `add_tracker` / `update_tracker` | `characterId, (trackerId,) name, max, reset: short_rest \| long_rest \| never, countsUp?` | `CharacterSnapshot` (bidi and zero-width characters are stripped from the name; name 1-60 characters, max 1-999, at most 50 trackers, else `invalid_argument`; an edit clamps the used count; unknown id `not_found`) |
 | `remove_tracker` | `characterId, trackerId` | `CharacterSnapshot` |
-| `set_tracker_used` | `characterId, trackerId, used` | `CharacterSnapshot` (0..max, else `invalid_argument`) |
+| `spend_tracker` / `restore_tracker` | `characterId, trackerId, uses?` (default 1) | `CharacterSnapshot`: relative; `requirement_failed` when too few pips are left |
 
-`PlayState` fields: `speeds, resources, resourceCosts, toggles, exhaustion, inspiration, inspirationSources, martialArts, masteries, defenses{resistances,immunities,vulnerabilities,conditionImmunities}, senses, advantages, initiativeAdvantage, notes, carry, wildShape, equipmentPackages, compatibility{strict,entries}, features[{id,name,ty,source,level,grantedBy,description,sheetSummary,displayed}], freeCasts, saveDcs, spellSlots[{level,max,used}], pactSlots{level,max,used}|null, concentration{id,name,level}|null, concentrationSpells, trackers[{id,name,max,used,reset}]`.
+`PlayState` fields: `speeds, resources, resourceCosts, toggles, exhaustion, inspiration, inspirationSources, martialArts, masteries, defenses{resistances,immunities,vulnerabilities,conditionImmunities}, senses, advantages, initiativeAdvantage, notes, carry, wildShape, equipmentPackages, compatibility{strict,entries}, features[{id,name,ty,source,level,grantedBy,description,sheetSummary,displayed}], freeCasts, saveDcs, spellSlots[{level,max,used}], pactSlots{level,max,used}|null, concentration{id,name,level}|null, concentrationSpells, trackers[{id,name,max,used,reset,countsUp}]`.
 The spell tracker blocks (GitHub #2) are clamped to the current maximums; every mutation also writes that clamp back to the
 saved character (`build.play.spell_slots_used`, `pact_slots_used`, `concentration`, `trackers`, all omitted when empty).
+`build.play` loads leniently: a bad entry is dropped or repaired with a warning instead of failing the character, and keys
+this version does not know (in `build`, `build.play` and each tracker) are kept and written back.
 They are the engine blocks with keys camelCased (types in `ui/src/api/types/play.ts`).
 
 ### Equipment

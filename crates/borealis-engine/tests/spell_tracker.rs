@@ -5,7 +5,7 @@
 
 mod common;
 
-use borealis_engine::commands::{self, CommandError, SlotPool, TrackerInput};
+use borealis_engine::commands::{self, CmdResult, CommandError, SlotPool, TrackerInput};
 use borealis_engine::spell_tracker::{normalized, slot_pools, tracker_view, TrackerView};
 use borealis_engine::state::{CharacterState, TrackerReset};
 use borealis_engine::Engine;
@@ -40,10 +40,22 @@ fn rows(v: &TrackerView) -> Vec<(u32, u32, u32)> {
         .collect()
 }
 
-fn use_slots(e: &Engine, s: &CharacterState, pool: SlotPool, used: u32) -> CharacterState {
-    commands::set_spell_slots_used(e, s, pool, used)
-        .expect("set slots used")
+fn spend(e: &Engine, s: &CharacterState, pool: SlotPool, n: u32) -> CmdResult {
+    commands::spend_spell_slots(&e.derive_with(s, false), s, pool, n)
+}
+
+fn restore(e: &Engine, s: &CharacterState, pool: SlotPool, n: u32) -> CharacterState {
+    commands::restore_spell_slots(&e.derive_with(s, false), s, pool, n)
+        .expect("restore")
         .state
+}
+
+fn use_slots(e: &Engine, s: &CharacterState, pool: SlotPool, n: u32) -> CharacterState {
+    spend(e, s, pool, n).expect("spend slots").state
+}
+
+fn conc(e: &Engine, s: &CharacterState, spell: Option<&str>) -> CmdResult {
+    commands::set_concentration(e, s, &e.derive_with(s, false), spell)
 }
 
 fn short_rest(e: &Engine, s: &CharacterState) -> CharacterState {
@@ -66,16 +78,16 @@ fn wizard_slots_follow_the_class_table_and_come_back_on_a_long_rest() {
     let s = use_slots(e, &s, SlotPool::Level(2), 1);
     assert_eq!(rows(&view(e, &s)), vec![(1, 4, 3), (2, 2, 1)]);
     assert!(
-        commands::set_spell_slots_used(e, &s, SlotPool::Level(1), 5).is_err(),
+        spend(e, &s, SlotPool::Level(1), 5).is_err(),
         "more than the maximum"
     );
     assert!(
-        commands::set_spell_slots_used(e, &s, SlotPool::Level(3), 1).is_err(),
+        spend(e, &s, SlotPool::Level(3), 1).is_err(),
         "no 3rd level slots"
     );
-    assert!(commands::set_spell_slots_used(e, &s, SlotPool::Level(0), 0).is_err());
-    assert!(commands::set_spell_slots_used(e, &s, SlotPool::Level(10), 0).is_err());
-    assert!(commands::set_spell_slots_used(e, &s, SlotPool::Pact, 0).is_err());
+    assert!(spend(e, &s, SlotPool::Level(0), 0).is_err());
+    assert!(spend(e, &s, SlotPool::Level(10), 0).is_err());
+    assert!(spend(e, &s, SlotPool::Pact, 0).is_err());
 
     let rested = short_rest(e, &s);
     assert_eq!(
@@ -104,8 +116,8 @@ fn pact_slots_are_their_own_pool_and_come_back_on_a_short_rest() {
 
     let s = use_slots(e, &s, SlotPool::Pact, 2);
     assert_eq!(view(e, &s).pact_slots.map(|p| p.used), Some(2));
-    assert!(commands::set_spell_slots_used(e, &s, SlotPool::Pact, 3).is_err());
-    assert!(commands::set_spell_slots_used(e, &s, SlotPool::Level(1), 1).is_err());
+    assert!(spend(e, &s, SlotPool::Pact, 3).is_err());
+    assert!(spend(e, &s, SlotPool::Level(1), 1).is_err());
     let rested = short_rest(e, &s);
     assert_eq!(view(e, &rested).pact_slots.map(|p| p.used), Some(0));
     let s = use_slots(e, &rested, SlotPool::Pact, 1);
@@ -203,24 +215,20 @@ fn concentration_takes_a_ready_concentration_spell_and_ends_on_a_long_rest() {
     assert!(!ids.contains(&CURE_WOUNDS), "not a concentration spell");
     assert!(v.concentration.is_none());
 
-    let s = commands::set_concentration(e, &s, Some(BLESS))
-        .expect("concentrate")
-        .state;
+    let s = conc(e, &s, Some(BLESS)).expect("concentrate").state;
     let c = view(e, &s).concentration.expect("concentrating");
     assert_eq!(
         (c.id.as_str(), c.name.as_str(), c.level),
         (BLESS, "Bless", 1)
     );
     assert!(matches!(
-        commands::set_concentration(e, &s, Some(CURE_WOUNDS)),
+        conc(e, &s, Some(CURE_WOUNDS)),
         Err(CommandError::Spell(_))
     ));
-    assert!(commands::set_concentration(e, &s, Some("ID_NO_SUCH_SPELL")).is_err());
+    assert!(conc(e, &s, Some("ID_NO_SUCH_SPELL")).is_err());
 
     // a new spell replaces the old one; a short rest keeps it
-    let s = commands::set_concentration(e, &s, Some(SHIELD_OF_FAITH))
-        .expect("replace")
-        .state;
+    let s = conc(e, &s, Some(SHIELD_OF_FAITH)).expect("replace").state;
     let s = short_rest(e, &s);
     assert_eq!(
         view(e, &s).concentration.map(|c| c.id),
@@ -231,7 +239,7 @@ fn concentration_takes_a_ready_concentration_spell_and_ends_on_a_long_rest() {
     assert_eq!(rested.play.concentration, None);
 
     // one tap ends it
-    let s = commands::set_concentration(e, &s, None).expect("end").state;
+    let s = conc(e, &s, None).expect("end").state;
     assert_eq!(s.play.concentration, None);
 }
 
@@ -239,9 +247,7 @@ fn concentration_takes_a_ready_concentration_spell_and_ends_on_a_long_rest() {
 fn concentration_on_a_spell_no_longer_ready_is_dropped() {
     let Some(e) = engine() else { return };
     let s = cleric_with(e, &[BLESS]);
-    let s = commands::set_concentration(e, &s, Some(BLESS))
-        .expect("concentrate")
-        .state;
+    let s = conc(e, &s, Some(BLESS)).expect("concentrate").state;
     let s = commands::set_prepared(e, &s, "Cleric", BLESS, false)
         .expect("unprepare")
         .state;
@@ -255,6 +261,7 @@ fn input(name: &str, max: u32, reset: TrackerReset) -> TrackerInput {
         name: name.into(),
         max,
         reset,
+        counts_up: false,
     }
 }
 
@@ -286,16 +293,14 @@ fn custom_trackers_are_added_edited_tracked_and_reset_by_their_own_rule() {
 
     let mut s = s;
     for (id, used) in ids.iter().zip([4, 3, 2]) {
-        s = commands::set_tracker_used(&s, id, used)
-            .expect("track")
-            .state;
+        s = commands::spend_tracker(&s, id, used).expect("track").state;
     }
     assert!(
-        commands::set_tracker_used(&s, &ids[2], 3).is_err(),
+        commands::spend_tracker(&s, &ids[2], 1).is_err(),
         "above the maximum"
     );
     assert!(matches!(
-        commands::set_tracker_used(&s, "nope", 0),
+        commands::spend_tracker(&s, "nope", 1),
         Err(CommandError::UnknownElement(_))
     ));
 
@@ -400,9 +405,116 @@ fn a_character_without_spellcasting_has_no_slot_card() {
     let v = view(e, &s);
     assert!(v.spell_slots.is_empty() && v.pact_slots.is_none());
     assert!(v.concentration_spells.is_empty());
-    assert!(commands::set_spell_slots_used(e, &s, SlotPool::Level(1), 0).is_err());
-    assert!(commands::set_concentration(e, &s, Some(BLESS)).is_err());
+    assert!(spend(e, &s, SlotPool::Level(1), 0).is_err());
+    assert!(conc(e, &s, Some(BLESS)).is_err());
     // rests leave an untracked character as it was
     assert_eq!(long_rest(e, &s).play, s.play);
     assert!(s.play.is_empty());
+}
+
+#[test]
+fn presses_are_relative_so_quick_presses_add_up_and_a_press_after_a_rest_spends_one() {
+    let Some(e) = engine() else { return };
+    let s = hero(e, "Wizard", 3);
+    // two presses read from the same (stale) screen both count
+    let s = use_slots(e, &s, SlotPool::Level(1), 1);
+    let s = use_slots(e, &s, SlotPool::Level(1), 1);
+    assert_eq!(rows(&view(e, &s))[0], (1, 4, 2));
+    let s = use_slots(e, &s, SlotPool::Level(1), 2);
+    // a press that reaches the host after a long rest spends one slot, not "4 of 4"
+    let rested = long_rest(e, &s);
+    let after = use_slots(e, &rested, SlotPool::Level(1), 1);
+    assert_eq!(rows(&view(e, &after))[0], (1, 4, 1));
+    // a restore press after the rest stays at none used, without an error
+    let restored = restore(e, &rested, SlotPool::Level(1), 1);
+    assert_eq!(rows(&view(e, &restored))[0], (1, 4, 0));
+    assert!(
+        commands::restore_spell_slots(&e.derive_with(&s, false), &s, SlotPool::Level(5), 1)
+            .is_err()
+    );
+
+    let t = commands::add_tracker(&s, &input("Coin", 2, TrackerReset::LongRest))
+        .expect("add")
+        .state;
+    let id = t.play.trackers[0].id.clone();
+    let t = commands::spend_tracker(&t, &id, 1).expect("spend").state;
+    let t = commands::spend_tracker(&t, &id, 1).expect("spend").state;
+    assert!(commands::spend_tracker(&t, &id, 1).is_err(), "none left");
+    let t = commands::restore_tracker(&long_rest(e, &t), &id, 1)
+        .expect("restore")
+        .state;
+    assert_eq!(t.play.trackers[0].used, 0, "never below none used");
+}
+
+#[test]
+fn tracker_ids_stay_unique_and_names_lose_hidden_characters() {
+    let Some(e) = engine() else { return };
+    let mut s = hero(e, "Fighter", 1);
+    s = commands::add_tracker(&s, &input("A", 1, TrackerReset::Never))
+        .expect("add")
+        .state;
+    // a hand-edited file holding the largest id: the next id must not repeat it
+    s.play.trackers[0].id = format!("tracker-{}", u32::MAX);
+    let s = commands::add_tracker(&s, &input("B", 1, TrackerReset::Never))
+        .expect("add")
+        .state;
+    assert_ne!(s.play.trackers[0].id, s.play.trackers[1].id);
+
+    let named = commands::add_tracker(
+        &s,
+        &input("\u{202E}In\u{200B}fection\u{2066} ", 6, TrackerReset::Never),
+    )
+    .expect("add")
+    .state;
+    assert_eq!(named.play.trackers[2].name, "Infection");
+    assert!(matches!(
+        commands::add_tracker(&s, &input("\u{202E}\u{200B}", 1, TrackerReset::Never)),
+        Err(CommandError::Tracker(_))
+    ));
+}
+
+#[test]
+fn errors_echo_at_most_a_short_id() {
+    let Some(e) = engine() else { return };
+    let s = hero(e, "Cleric", 1);
+    let long = "x".repeat(10_000);
+    let err = commands::remove_tracker(&s, &long).unwrap_err().to_string();
+    assert!(err.chars().count() < 120, "{}", err.len());
+    let err = conc(e, &s, Some(&long)).unwrap_err().to_string();
+    assert!(err.chars().count() < 160, "{}", err.len());
+}
+
+#[test]
+fn counting_up_is_saved_and_editable() {
+    let Some(e) = engine() else { return };
+    let s = hero(e, "Fighter", 1);
+    let mut up = input("Infection", 6, TrackerReset::Never);
+    up.counts_up = true;
+    let s = commands::add_tracker(&s, &up).expect("add").state;
+    assert!(s.play.trackers[0].counts_up);
+    let id = s.play.trackers[0].id.clone();
+    let s = commands::update_tracker(&s, &id, &input("Infection", 6, TrackerReset::Never))
+        .expect("edit")
+        .state;
+    assert!(!s.play.trackers[0].counts_up);
+}
+
+#[test]
+fn a_tiefling_can_concentrate_on_its_racial_darkness() {
+    let Some(e) = engine() else { return };
+    let mut h = Hero::new(e, true);
+    h.base([15, 14, 14, 10, 10, 15]);
+    let tiefling = "ID_RACE_TIEFLING";
+    if !e.has_element(borealis_content::Ruleset::Dnd2014, tiefling) {
+        return;
+    }
+    h.race_class(tiefling, &class("Fighter"))
+        .background(ACOLYTE)
+        .level_to(5);
+    let names: Vec<String> = view(e, &h.s)
+        .concentration_spells
+        .into_iter()
+        .map(|c| c.name)
+        .collect();
+    assert!(names.contains(&"Darkness".to_string()), "{names:?}");
 }

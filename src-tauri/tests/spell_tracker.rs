@@ -11,6 +11,7 @@ use borealis_lib::dto::{
 };
 use borealis_lib::error::ErrorCode;
 use borealis_lib::state::{AppPaths, AppState};
+use borealis_lib::tracker_api::TrackerFields;
 use contract_support::Contract;
 use serde_json::{json, Value};
 use std::path::PathBuf;
@@ -86,6 +87,15 @@ impl App {
     }
 }
 
+fn fields(name: &str, max: u32, reset: TrackerReset) -> TrackerFields<'_> {
+    TrackerFields {
+        name,
+        max,
+        reset,
+        counts_up: false,
+    }
+}
+
 fn slot_id(snap: &CharacterSnapshot, title: &str) -> String {
     snap.slots
         .iter()
@@ -119,28 +129,19 @@ fn slots_are_marked_used_and_come_back_on_the_existing_rests() {
     assert_eq!(slot_rows(&play), vec![(1, 4, 0), (2, 2, 0)]);
     assert!(play["pactSlots"].is_null());
 
-    let s = app
-        .state
-        .set_spell_slots_used(&id, 1, 3, false)
-        .expect("use");
+    let s = app.state.spend_spell_slot(&id, 1, false, 3).expect("use");
     assert_eq!(
-        slot_rows(&app.play("set_spell_slots_used", &s)),
+        slot_rows(&app.play("spend_spell_slot", &s)),
         vec![(1, 4, 3), (2, 2, 0)]
     );
-    let s = app
-        .state
-        .set_spell_slots_used(&id, 2, 2, false)
-        .expect("use");
+    let s = app.state.spend_spell_slot(&id, 2, false, 2).expect("use");
     assert_eq!(
-        slot_rows(&app.play("set_spell_slots_used", &s)),
+        slot_rows(&app.play("spend_spell_slot", &s)),
         vec![(1, 4, 3), (2, 2, 2)]
     );
-    let err = app
-        .state
-        .set_spell_slots_used(&id, 1, 5, false)
-        .unwrap_err();
+    let err = app.state.spend_spell_slot(&id, 1, false, 5).unwrap_err();
     assert_eq!(err.code, ErrorCode::RequirementFailed);
-    let err = app.state.set_spell_slots_used(&id, 1, 0, true).unwrap_err();
+    let err = app.state.spend_spell_slot(&id, 1, true, 0).unwrap_err();
     assert_eq!(
         err.code,
         ErrorCode::RequirementFailed,
@@ -164,12 +165,8 @@ fn a_level_down_clamps_the_saved_used_count() {
     let app = App::new();
     let s = app.wizard(3);
     let id = s.id.clone();
-    app.state
-        .set_spell_slots_used(&id, 1, 4, false)
-        .expect("use");
-    app.state
-        .set_spell_slots_used(&id, 2, 2, false)
-        .expect("use");
+    app.state.spend_spell_slot(&id, 1, false, 4).expect("use");
+    app.state.spend_spell_slot(&id, 2, false, 2).expect("use");
     let s = app.state.level_down(&id).expect("level down");
     assert_eq!(slot_rows(&app.play("level_down", &s)), vec![(1, 3, 3)]);
     app.state.save_character(&id).expect("save");
@@ -193,9 +190,9 @@ fn a_warlock_has_a_pact_row_recovered_on_a_short_rest() {
     assert_eq!(play["pactSlots"], json!({"level": 1, "max": 1, "used": 0}));
     let s = app
         .state
-        .set_spell_slots_used(&id, 1, 1, true)
+        .spend_spell_slot(&id, 1, true, 1)
         .expect("use pact");
-    assert_eq!(app.play("set_spell_slots_used", &s)["pactSlots"]["used"], 1);
+    assert_eq!(app.play("spend_spell_slot", &s)["pactSlots"]["used"], 1);
     let s = app.state.short_rest(&id).expect("short rest");
     assert_eq!(app.play("short_rest", &s)["pactSlots"]["used"], 0);
 }
@@ -266,11 +263,11 @@ fn custom_trackers_are_added_edited_tracked_deleted_and_saved() {
     assert_eq!(app.play("get_snapshot", &s)["trackers"], json!([]));
     let s = app
         .state
-        .add_tracker(&id, "Infection", 6, TrackerReset::Never)
+        .add_tracker(&id, &fields("Infection", 6, TrackerReset::Never))
         .expect("add");
     let s2 = app
         .state
-        .add_tracker(&id, "Splicer Points", 5, TrackerReset::LongRest)
+        .add_tracker(&id, &fields("Splicer Points", 5, TrackerReset::LongRest))
         .expect("add");
     let trackers = app.play("add_tracker", &s2)["trackers"].clone();
     assert_eq!(trackers.as_array().unwrap().len(), 2);
@@ -281,31 +278,37 @@ fn custom_trackers_are_added_edited_tracked_deleted_and_saved() {
     let splicer = trackers[1]["id"].as_str().unwrap().to_string();
     assert_eq!(
         trackers[1],
-        json!({"id": splicer, "name": "Splicer Points", "max": 5, "used": 0, "reset": "long_rest"})
+        json!({"id": splicer, "name": "Splicer Points", "max": 5, "used": 0, "reset": "long_rest", "countsUp": false})
     );
 
-    app.state
-        .set_tracker_used(&id, &infection, 2)
-        .expect("track");
-    let s = app.state.set_tracker_used(&id, &splicer, 5).expect("track");
-    app.play("set_tracker_used", &s);
+    app.state.spend_tracker(&id, &infection, 2).expect("track");
+    let s = app.state.spend_tracker(&id, &splicer, 5).expect("track");
+    app.play("spend_tracker", &s);
     assert_eq!(
-        app.state
-            .set_tracker_used(&id, &splicer, 6)
-            .unwrap_err()
-            .code,
-        ErrorCode::InvalidArgument
+        app.state.spend_tracker(&id, &splicer, 1).unwrap_err().code,
+        ErrorCode::RequirementFailed,
+        "none left"
     );
+    let s = app
+        .state
+        .restore_tracker(&id, &splicer, 9)
+        .expect("restore");
+    assert_eq!(
+        app.play("restore_tracker", &s)["trackers"][1]["used"],
+        0,
+        "never below none used"
+    );
+    app.state.spend_tracker(&id, &splicer, 5).expect("track");
     assert_eq!(
         app.state
-            .set_tracker_used(&id, "tracker-99", 0)
+            .spend_tracker(&id, "tracker-99", 1)
             .unwrap_err()
             .code,
         ErrorCode::NotFound
     );
     assert_eq!(
         app.state
-            .add_tracker(&id, " ", 3, TrackerReset::Never)
+            .add_tracker(&id, &fields(" ", 3, TrackerReset::Never))
             .unwrap_err()
             .code,
         ErrorCode::InvalidArgument
@@ -321,11 +324,15 @@ fn custom_trackers_are_added_edited_tracked_deleted_and_saved() {
 
     let s = app
         .state
-        .update_tracker(&id, &infection, "Contamination", 1, TrackerReset::ShortRest)
+        .update_tracker(
+            &id,
+            &infection,
+            &fields("Contamination", 1, TrackerReset::ShortRest),
+        )
         .expect("edit");
     assert_eq!(
         app.play("update_tracker", &s)["trackers"][0],
-        json!({"id": infection, "name": "Contamination", "max": 1, "used": 1, "reset": "short_rest"})
+        json!({"id": infection, "name": "Contamination", "max": 1, "used": 1, "reset": "short_rest", "countsUp": false})
     );
     let s = app.state.remove_tracker(&id, &splicer).expect("delete");
     assert_eq!(
@@ -342,7 +349,7 @@ fn custom_trackers_are_added_edited_tracked_deleted_and_saved() {
     let s = app.state.load_character(&id).expect("load");
     assert_eq!(
         app.play("load_character", &s)["trackers"],
-        json!([{"id": infection, "name": "Contamination", "max": 1, "used": 1, "reset": "short_rest"}])
+        json!([{"id": infection, "name": "Contamination", "max": 1, "used": 1, "reset": "short_rest", "countsUp": false}])
     );
 }
 
@@ -371,4 +378,122 @@ fn a_saved_character_that_tracks_nothing_loads_with_nothing_tracked() {
     assert_eq!(slot_rows(&play), vec![(1, 2, 0)]);
     assert_eq!(play["trackers"], json!([]));
     assert_eq!(play["concentration"], Value::Null);
+}
+
+#[test]
+fn a_2024_warlock_has_pact_slots_from_the_class_table() {
+    let app = App::new();
+    let s = app.create(
+        Ruleset::Dnd2024,
+        "ID_2024_SPECIES_HUMAN",
+        "ID_2024_CLASS_WARLOCK",
+    );
+    let id = s.id.clone();
+    let play = app.play("get_snapshot", &s);
+    assert!(
+        slot_rows(&play).is_empty(),
+        "pact slots never join the normal rows"
+    );
+    assert_eq!(play["pactSlots"], json!({"level": 1, "max": 1, "used": 0}));
+    app.state.level_up(&id, "main").expect("level 2");
+    let s = app.state.level_up(&id, "main").expect("level 3");
+    assert_eq!(
+        app.play("level_up", &s)["pactSlots"],
+        json!({"level": 2, "max": 2, "used": 0})
+    );
+    app.state.spend_spell_slot(&id, 2, true, 1).expect("pact");
+    let s = app.state.spend_spell_slot(&id, 2, true, 1).expect("pact");
+    assert_eq!(app.play("spend_spell_slot", &s)["pactSlots"]["used"], 2);
+    let s = app.state.short_rest(&id).expect("short rest");
+    assert_eq!(app.play("short_rest", &s)["pactSlots"]["used"], 0);
+}
+
+#[test]
+fn a_2024_cleric_concentrates_on_a_prepared_spell_only() {
+    let app = App::new();
+    let s = app.create(
+        Ruleset::Dnd2024,
+        "ID_2024_SPECIES_HUMAN",
+        "ID_2024_CLASS_CLERIC",
+    );
+    let id = s.id.clone();
+    app.state.set_base_score(&id, "wis", 16).expect("wisdom");
+    app.state
+        .set_spell_prepared(&id, "main", "ID_2024_SPELL_CURE_WOUNDS", true)
+        .expect("prepare Cure Wounds");
+    let before = app.state.get_snapshot(&id).expect("snapshot");
+    let names = |play: &Value| -> Vec<String> {
+        play["concentrationSpells"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|c| c["name"].as_str().unwrap().to_string())
+            .collect()
+    };
+    assert!(
+        !names(&app.play("get_snapshot", &before)).contains(&"Bless".to_string()),
+        "not prepared yet"
+    );
+    let s = app
+        .state
+        .set_spell_prepared(&id, "main", "ID_2024_SPELL_BLESS", true)
+        .expect("prepare Bless");
+    let play = app.play("set_spell_prepared", &s);
+    assert!(
+        names(&play).contains(&"Bless".to_string()),
+        "{:?}",
+        names(&play)
+    );
+    assert!(!names(&play).contains(&"Cure Wounds".to_string()));
+    let s = app
+        .state
+        .set_concentration(&id, Some("ID_2024_SPELL_BLESS"))
+        .expect("concentrate");
+    assert_eq!(
+        app.play("set_concentration", &s)["concentration"]["name"],
+        "Bless"
+    );
+}
+
+#[test]
+fn rests_after_a_level_down_and_tracker_rules_through_the_commands() {
+    let app = App::new();
+    let s = app.wizard(3);
+    let id = s.id.clone();
+    app.state.spend_spell_slot(&id, 1, false, 2).expect("use");
+    app.state.spend_spell_slot(&id, 2, false, 2).expect("use");
+    app.state.level_down(&id).expect("level down");
+    let s = app.state.short_rest(&id).expect("short rest");
+    assert_eq!(slot_rows(&app.play("short_rest", &s)), vec![(1, 3, 2)]);
+    let s = app.state.long_rest(&id).expect("long rest");
+    assert_eq!(slot_rows(&app.play("long_rest", &s)), vec![(1, 3, 0)]);
+
+    app.state
+        .add_tracker(&id, &fields("Lucky", 2, TrackerReset::ShortRest))
+        .expect("add");
+    let s = app
+        .state
+        .add_tracker(&id, &fields("Splicer", 3, TrackerReset::LongRest))
+        .expect("add");
+    let ids: Vec<String> = app.play("add_tracker", &s)["trackers"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|t| t["id"].as_str().unwrap().to_string())
+        .collect();
+    for t in &ids {
+        app.state.spend_tracker(&id, t, 1).expect("spend");
+    }
+    let s = app.state.short_rest(&id).expect("short rest");
+    let used: Vec<u64> = app.play("short_rest", &s)["trackers"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|t| t["used"].as_u64().unwrap())
+        .collect();
+    assert_eq!(
+        used,
+        vec![0, 1],
+        "a short rest resets the short-rest tracker only"
+    );
 }

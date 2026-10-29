@@ -4,6 +4,7 @@ import { RequireCharacter } from "../../components/RequireCharacter";
 import { useCharacter } from "../../state/CharacterContext";
 import { PaneSplit } from "../ai/Panes";
 import { ExhaustionCard, PlayDetail, type PlaySelection, ResourcesCard, TogglesCard } from "./PlayCards";
+import { RestBar } from "./RestBar";
 import { ConcentrationBanner, SpellSlotsCard } from "./SpellSlotsCard";
 import { TrackersCard } from "./TrackersCard";
 import { DefensesCard, FeatureDetail, FeaturesCard, SensesCard, SituationalCard } from "./TraitsPanel";
@@ -31,8 +32,8 @@ function Body() {
       ))}
     </StatRow>
   );
-  // GitHub #2: concentration pinned first, spell slots before the resources (their rests live in the Resources header).
-  const playList = (<><ConcentrationBanner concentration={play.concentration} />{statRow}<SpellSlotsCard play={play} />
+  // GitHub #2: the rests for the whole page first, then concentration pinned, then the stats and the cards the rests affect.
+  const playList = (<><RestBar /><ConcentrationBanner concentration={play.concentration} />{statRow}<SpellSlotsCard play={play} />
     <ResourcesCard resources={play.resources} selected={sel} onSelect={setSel} /><TrackersCard trackers={play.trackers} />
     <TogglesCard toggles={play.toggles} selected={sel} onSelect={setSel} /><ExhaustionCard exhaustion={play.exhaustion} inspiration={play.inspiration} /></>);
   const traitList = (<>{statRow}<FeaturesCard features={play.features} selectedId={featId} onSelect={setFeatId} />

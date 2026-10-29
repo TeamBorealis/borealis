@@ -437,16 +437,18 @@ export class MockApi implements Api {
   async setToggle(a: { characterId: string; toggleId: string; on: boolean }) { return this.mutate(a.characterId, (c) => play.setToggle(c, a.toggleId, a.on)); }
   async setExhaustion(a: { characterId: string; level: number }) { return this.mutate(a.characterId, (c) => play.setExhaustion(c, a.level)); }
   async setHeroicInspiration(a: { characterId: string; has: boolean }) { return this.mutate(a.characterId, (c) => play.setInspiration(c, a.has)); }
-  /* Spell tracker (GitHub #2): `sc` is the character's spellcasting as the snapshot shows it. */
+  /** Spell tracker (GitHub #2); `sc` = the spellcasting the snapshot shows. */
   private tracked(id: string, fn: (t: track.MockTracking | undefined, sc: CharacterSnapshot["spellcasting"]) => track.MockTracking) {
     return this.mutate(id, (c) => play.withTracking(c, (t) => fn(t, buildSnapshot(c, this.rules).snapshot.spellcasting)));
   }
-  async setSpellSlotsUsed(a: Parameters<Api["setSpellSlotsUsed"]>[0]) { return this.tracked(a.characterId, (t, sc) => track.setSlotsUsed(t, sc, a.level, a.used, a.pact ?? false)); }
+  async spendSpellSlot(a: Parameters<Api["spendSpellSlot"]>[0]) { return this.tracked(a.characterId, (t, sc) => track.spendSlots(t, sc, a.level, a.pact ?? false, a.uses ?? 1)); }
+  async restoreSpellSlot(a: Parameters<Api["restoreSpellSlot"]>[0]) { return this.tracked(a.characterId, (t, sc) => track.restoreSlots(t, sc, a.level, a.pact ?? false, a.uses ?? 1)); }
   async setConcentration(a: Parameters<Api["setConcentration"]>[0]) { return this.tracked(a.characterId, (t, sc) => track.setConcentration(t, sc, a.spellId)); }
-  async addTracker(a: Parameters<Api["addTracker"]>[0]) { return this.tracked(a.characterId, (t) => track.addTracker(t, a.name, a.max, a.reset)); }
-  async updateTracker(a: Parameters<Api["updateTracker"]>[0]) { return this.tracked(a.characterId, (t) => track.updateTracker(t, a.trackerId, a.name, a.max, a.reset)); }
+  async addTracker(a: Parameters<Api["addTracker"]>[0]) { return this.tracked(a.characterId, (t) => track.addTracker(t, a.name, a.max, a.reset, a.countsUp ?? false)); }
+  async updateTracker(a: Parameters<Api["updateTracker"]>[0]) { return this.tracked(a.characterId, (t) => track.updateTracker(t, a.trackerId, a.name, a.max, a.reset, a.countsUp ?? false)); }
   async removeTracker(a: Parameters<Api["removeTracker"]>[0]) { return this.tracked(a.characterId, (t) => track.removeTracker(t, a.trackerId)); }
-  async setTrackerUsed(a: Parameters<Api["setTrackerUsed"]>[0]) { return this.tracked(a.characterId, (t) => track.setTrackerUsed(t, a.trackerId, a.used)); }
+  async spendTracker(a: Parameters<Api["spendTracker"]>[0]) { return this.tracked(a.characterId, (t) => track.spendTracker(t, a.trackerId, a.uses ?? 1)); }
+  async restoreTracker(a: Parameters<Api["restoreTracker"]>[0]) { return this.tracked(a.characterId, (t) => track.restoreTracker(t, a.trackerId, a.uses ?? 1)); }
   async chooseWeaponMasteries(a: { characterId: string; weaponIds: string[] }) { return this.mutate(a.characterId, (c) => play.chooseMasteries(c, a.weaponIds)); }
   async setWildShapeForms(a: { characterId: string; formIds: string[] }) { return this.mutate(a.characterId, (c) => play.setForms(c, a.formIds)); }
   async chooseEquipmentPackage(a: { characterId: string; packageId: string; option: string }) { return this.mutate(a.characterId, (c) => play.choosePackage(c, a.packageId, a.option)); }

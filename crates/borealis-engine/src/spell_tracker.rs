@@ -77,7 +77,7 @@ pub fn slot_pools(snap: &CharacterSnapshot) -> SlotPools {
         })
         .reduce(|a, b| PactPool {
             level: a.level.max(b.level),
-            count: a.count + b.count,
+            count: a.count.saturating_add(b.count),
         })
         .filter(|p| p.count > 0);
     SlotPools { levels, pact }
@@ -117,7 +117,25 @@ pub struct TrackerView {
     /// Spells the character knows or has prepared that need concentration, by level and name.
     pub concentration_spells: Vec<ConcentrationSpell>,
     /// The user's trackers.
-    pub trackers: Vec<CustomTracker>,
+    pub trackers: Vec<TrackerSnapshot>,
+}
+
+/// A custom tracker as the Play tab shows it (every field present; a newer version's extra keys
+/// stay in the file).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct TrackerSnapshot {
+    /// Id.
+    pub id: String,
+    /// Name.
+    pub name: String,
+    /// Maximum.
+    pub max: u32,
+    /// Used (gained, when it counts up) pips, at most `max`.
+    pub used: u32,
+    /// `short_rest`, `long_rest`, `never`, or a newer version's value.
+    pub reset: String,
+    /// Shown counting up.
+    pub counts_up: bool,
 }
 
 /// Concentration spells the character has ready: known (a known caster's spells, a spellbook,
@@ -186,7 +204,18 @@ pub fn tracker_view(
         pact_slots,
         concentration,
         concentration_spells: spells,
-        trackers: play.trackers,
+        trackers: play
+            .trackers
+            .into_iter()
+            .map(|t| TrackerSnapshot {
+                reset: t.reset.as_str().to_string(),
+                id: t.id,
+                name: t.name,
+                max: t.max,
+                used: t.used,
+                counts_up: t.counts_up,
+            })
+            .collect(),
     }
 }
 
@@ -263,10 +292,10 @@ pub enum Rest {
 #[must_use]
 pub fn after_rest(play: &PlayState, rest: Rest) -> PlayState {
     let long = rest == Rest::Long;
-    let resets = |r: TrackerReset| match r {
+    let resets = |r: &TrackerReset| match r {
         TrackerReset::ShortRest => true,
         TrackerReset::LongRest => long,
-        TrackerReset::Never => false,
+        TrackerReset::Never | TrackerReset::Other(_) => false,
     };
     PlayState {
         spell_slots_used: if long {
@@ -284,7 +313,7 @@ pub fn after_rest(play: &PlayState, rest: Rest) -> PlayState {
             .trackers
             .iter()
             .map(|t| CustomTracker {
-                used: if resets(t.reset) { 0 } else { t.used },
+                used: if resets(&t.reset) { 0 } else { t.used },
                 ..t.clone()
             })
             .collect(),

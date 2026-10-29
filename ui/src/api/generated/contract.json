@@ -50,6 +50,7 @@
   "add_tracker": {
    "args": {
     "characterId": false,
+    "countsUp": true,
     "max": false,
     "name": false,
     "reset": false
@@ -1260,6 +1261,31 @@
     "name": "CharacterSnapshot"
    }
   },
+  "restore_spell_slot": {
+   "args": {
+    "characterId": false,
+    "level": false,
+    "pact": true,
+    "uses": true
+   },
+   "method": "restoreSpellSlot",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "restore_tracker": {
+   "args": {
+    "characterId": false,
+    "trackerId": false,
+    "uses": true
+   },
+   "method": "restoreTracker",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
   "roll_abilities": {
    "args": {
     "ability": true,
@@ -1610,19 +1636,6 @@
     "name": "CharacterSnapshot"
    }
   },
-  "set_spell_slots_used": {
-   "args": {
-    "characterId": false,
-    "level": false,
-    "pact": true,
-    "used": false
-   },
-   "method": "setSpellSlotsUsed",
-   "response": {
-    "k": "ref",
-    "name": "CharacterSnapshot"
-   }
-  },
   "set_storage_names": {
    "args": {
     "characterId": false,
@@ -1641,18 +1654,6 @@
     "toggleId": false
    },
    "method": "setToggle",
-   "response": {
-    "k": "ref",
-    "name": "CharacterSnapshot"
-   }
-  },
-  "set_tracker_used": {
-   "args": {
-    "characterId": false,
-    "trackerId": false,
-    "used": false
-   },
-   "method": "setTrackerUsed",
    "response": {
     "k": "ref",
     "name": "CharacterSnapshot"
@@ -1704,6 +1705,31 @@
     "uses": true
    },
    "method": "spendResource",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "spend_spell_slot": {
+   "args": {
+    "characterId": false,
+    "level": false,
+    "pact": true,
+    "uses": true
+   },
+   "method": "spendSpellSlot",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "spend_tracker": {
+   "args": {
+    "characterId": false,
+    "trackerId": false,
+    "uses": true
+   },
+   "method": "spendTracker",
    "response": {
     "k": "ref",
     "name": "CharacterSnapshot"
@@ -1876,6 +1902,7 @@
   "update_tracker": {
    "args": {
     "characterId": false,
+    "countsUp": true,
     "max": false,
     "name": false,
     "reset": false,
@@ -8102,6 +8129,12 @@
   "PlayTracker": {
    "k": "object",
    "props": {
+    "countsUp": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "id": {
      "opt": false,
      "t": {

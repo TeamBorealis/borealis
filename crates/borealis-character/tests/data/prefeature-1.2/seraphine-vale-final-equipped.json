@@ -1,0 +1,627 @@
+{
+  "format": "borealis-character",
+  "format_version": 2,
+  "ruleset": "dnd2024",
+  "meta": {
+    "name": "Seraphine Vale",
+    "player": "Player One",
+    "gender": "",
+    "group": "Ashfall",
+    "favorite": false
+  },
+  "details": {
+    "appearance": {
+      "age": "",
+      "height": "",
+      "weight": "",
+      "eyes": "",
+      "skin": "",
+      "hair": ""
+    },
+    "personality": {
+      "trinket": "",
+      "traits": "",
+      "ideals": "",
+      "bonds": "",
+      "flaws": ""
+    },
+    "backstory": "",
+    "organization": {
+      "name": "",
+      "symbol": "",
+      "allies": ""
+    },
+    "additional_features": "",
+    "equipment_notes": "",
+    "treasure": "",
+    "quest": "",
+    "notes": {
+      "left": "",
+      "right": ""
+    },
+    "attacks_text": "",
+    "attacks": [],
+    "conditional_ac": "",
+    "companion_name": ""
+  },
+  "build": {
+    "ruleset": "dnd2024",
+    "options": [
+      "ID_INTERNAL_OPTION_ALLOW_MULTICLASSING",
+      "ID_INTERNAL_OPTION_ALLOW_FEATS",
+      "ID_INTERNAL_OPTION_ALLOW_AVERAGE_HP"
+    ],
+    "levels": [
+      {
+        "kind": "main"
+      },
+      {
+        "kind": "main"
+      },
+      {
+        "kind": "main"
+      },
+      {
+        "kind": "main"
+      },
+      {
+        "kind": "main"
+      },
+      {
+        "kind": "multi",
+        "starting_level": 6
+      }
+    ],
+    "experience": 14000,
+    "abilities": {
+      "method": "point_buy",
+      "base": [
+        13,
+        12,
+        14,
+        15,
+        10,
+        8
+      ]
+    },
+    "selections": [
+      {
+        "slot": {
+          "owner": "ID_LEVEL_1",
+          "rule": 6,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_SPECIES_ELF"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_TRAIT_ELF_ELVEN_LINEAGE",
+          "rule": 0,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_OPTION_ELVEN_LINEAGE_HIGH_ELF"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_TRAIT_ELF_ELVEN_LINEAGE",
+          "rule": 1,
+          "ordinal": 1
+        },
+        "choice": {
+          "list_item": 1
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_LEVEL_1",
+          "rule": 7,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_CLASS_WIZARD"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_LEVEL_1",
+          "rule": 8,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_BACKGROUND_SAGE"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_BACKGROUND_SAGE",
+          "rule": 0,
+          "ordinal": 1
+        },
+        "choice": {
+          "list_item": 4
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_INTERNAL_CREATION_LANGUAGES",
+          "rule": 1,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_LANGUAGE_DRACONIC"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_INTERNAL_CREATION_LANGUAGES",
+          "rule": 1,
+          "ordinal": 2
+        },
+        "choice": {
+          "element": "ID_2024_LANGUAGE_DWARVISH"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_TRAIT_ELF_KEEN_SENSES",
+          "rule": 0,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_PROFICIENCY_SKILL_PERCEPTION"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_WIZARD",
+          "rule": 2,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_PROFICIENCY_SKILL_INVESTIGATION"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_WIZARD",
+          "rule": 2,
+          "ordinal": 2
+        },
+        "choice": {
+          "element": "ID_PROFICIENCY_SKILL_MEDICINE"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_WIZARD_SUBCLASS",
+          "rule": 0,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_SUBCLASS_WIZARD_EVOKER"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 38,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_FIRE_BOLT"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 38,
+          "ordinal": 2
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_MAGE_HAND"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 38,
+          "ordinal": 3
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_MINOR_ILLUSION"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 39,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_LIGHT"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 41,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_BURNING_HANDS"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 41,
+          "ordinal": 2
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_MAGE_ARMOR"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 41,
+          "ordinal": 3
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_SLEEP"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 41,
+          "ordinal": 4
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_FIND_FAMILIAR"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 42,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_CHARM_PERSON"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 42,
+          "ordinal": 2
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_FEATHER_FALL"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 43,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_MISTY_STEP"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 43,
+          "ordinal": 2
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_INVISIBILITY"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 44,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_HOLD_PERSON"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 44,
+          "ordinal": 2
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_WEB"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_SUBCLASS_FEATURE_WIZARD_EVOKER_EVOCATION_SAVANT",
+          "rule": 0,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_THUNDERWAVE"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_SUBCLASS_FEATURE_WIZARD_EVOKER_EVOCATION_SAVANT",
+          "rule": 0,
+          "ordinal": 2
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_SCORCHING_RAY"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_FEAT_MAGIC_INITIATE",
+          "rule": 2,
+          "ordinal": 1,
+          "instance": "ID_2024_BACKGROUND_SAGE:g1"
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_MENDING"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_FEAT_MAGIC_INITIATE",
+          "rule": 2,
+          "ordinal": 2,
+          "instance": "ID_2024_BACKGROUND_SAGE:g1"
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_MESSAGE"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_FEAT_MAGIC_INITIATE",
+          "rule": 3,
+          "ordinal": 1,
+          "instance": "ID_2024_BACKGROUND_SAGE:g1"
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_LONGSTRIDER"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SCHOLAR",
+          "rule": 1,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_EXPERTISE_SKILL_ARCANA"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_FEAT_MAGIC_INITIATE",
+          "rule": 1,
+          "ordinal": 1,
+          "instance": "ID_2024_BACKGROUND_SAGE:g1"
+        },
+        "choice": {
+          "list_item": 1
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_ABILITY_SCORE_IMPROVEMENT",
+          "rule": 0,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 41,
+          "ordinal": 5
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_MAGIC_MISSILE"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 41,
+          "ordinal": 6
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_SHIELD"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT",
+          "rule": 0,
+          "ordinal": 1,
+          "instance": "ID_2024_CLASS_FEATURE_WIZARD_ABILITY_SCORE_IMPROVEMENT:0:1"
+        },
+        "choice": {
+          "list_item": 4
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 45,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_FIREBALL"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SPELLCASTING",
+          "rule": 45,
+          "ordinal": 2
+        },
+        "choice": {
+          "element": "ID_2024_SPELL_COUNTERSPELL"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_LEVEL_6",
+          "rule": 0,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_MULTICLASS_FIGHTER"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_FIGHTER_WEAPON_MASTERY",
+          "rule": 0,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_WEAPON_LONGSWORD"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_FIGHTER_WEAPON_MASTERY",
+          "rule": 0,
+          "ordinal": 2
+        },
+        "choice": {
+          "element": "ID_2024_WEAPON_DAGGER"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_FIGHTER_WEAPON_MASTERY",
+          "rule": 0,
+          "ordinal": 3
+        },
+        "choice": {
+          "element": "ID_2024_WEAPON_GREATSWORD"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_WIZARD_SCHOLAR",
+          "rule": 0,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_PROFICIENCY_SKILL_NATURE"
+        }
+      },
+      {
+        "slot": {
+          "owner": "ID_2024_CLASS_FEATURE_FIGHTER_FIGHTING_STYLE",
+          "rule": 0,
+          "ordinal": 1
+        },
+        "choice": {
+          "element": "ID_2024_FEAT_DEFENSE"
+        }
+      }
+    ],
+    "hp_rolls": [],
+    "prepared": [
+      {
+        "class": "Wizard",
+        "spells": [
+          "ID_2024_SPELL_SHIELD",
+          "ID_2024_SPELL_MAGIC_MISSILE",
+          "ID_2024_SPELL_MAGE_ARMOR",
+          "ID_2024_SPELL_MISTY_STEP",
+          "ID_2024_SPELL_HOLD_PERSON",
+          "ID_2024_SPELL_WEB",
+          "ID_2024_SPELL_THUNDERWAVE",
+          "ID_2024_SPELL_FIREBALL"
+        ]
+      }
+    ],
+    "inventory": {
+      "items": [
+        {
+          "uid": "item-1",
+          "item": "ID_2024_WEAPON_DAGGER",
+          "amount": 1,
+          "equipped": "primary_hand",
+          "versatile": false,
+          "attuned": false,
+          "hidden": false,
+          "sidebar": false,
+          "card": true
+        },
+        {
+          "uid": "item-2",
+          "item": "ID_2024_WEAPON_LONGSWORD",
+          "amount": 1,
+          "equipped": "secondary_hand",
+          "versatile": false,
+          "attuned": false,
+          "hidden": false,
+          "sidebar": false,
+          "card": true
+        },
+        {
+          "uid": "item-3",
+          "item": "ID_2024_WEAPON_QUARTERSTAFF",
+          "amount": 1,
+          "versatile": false,
+          "attuned": false,
+          "hidden": false,
+          "sidebar": false,
+          "card": true
+        },
+        {
+          "uid": "item-4",
+          "item": "ID_2024_ITEM_COMPONENT_POUCH",
+          "amount": 1,
+          "versatile": false,
+          "attuned": false,
+          "hidden": false,
+          "sidebar": false,
+          "card": true
+        },
+        {
+          "uid": "item-5",
+          "item": "ID_WOTC_PHB_ITEM_SPELLBOOK",
+          "amount": 1,
+          "versatile": false,
+          "attuned": false,
+          "hidden": false,
+          "sidebar": false,
+          "card": true
+        }
+      ],
+      "storages": [],
+      "coins": {
+        "cp": 0,
+        "sp": 0,
+        "ep": 0,
+        "gp": 0,
+        "pp": 0
+      }
+    },
+    "restricted_sources": [],
+    "house_rules": {}
+  }
+}

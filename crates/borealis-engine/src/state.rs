@@ -3,6 +3,7 @@
 use crate::settings::HouseRules;
 use borealis_content::{ElementId, Ruleset};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Which class progression owns a level (stable choice keys use the starting level of a multiclass).
@@ -279,7 +280,11 @@ pub struct Inventory {
 
 /// Mutable play-time state: resource uses, toggles, exhaustion, Heroic Inspiration, spell slot
 /// uses, concentration and custom trackers.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+///
+/// Loading is lenient ([`crate::play_load`]): a bad value drops or repairs that entry with a
+/// warning instead of failing the whole character, and keys this version does not know are kept
+/// in `extra` and written back.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 pub struct PlayState {
     /// Expended uses per resource id (zero entries are not stored).
     #[serde(default)]
@@ -312,6 +317,15 @@ pub struct PlayState {
     /// The user's own trackers (Play tab), in the order they were added.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub trackers: Vec<CustomTracker>,
+    /// Keys written by a newer version, kept as they were.
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, Value>,
+}
+
+impl<'de> Deserialize<'de> for PlayState {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        Ok(crate::play_load::play_from_value(Value::deserialize(d)?))
+    }
 }
 
 #[allow(clippy::trivially_copy_pass_by_ref)] // serde's `skip_serializing_if` passes a reference
@@ -319,9 +333,9 @@ fn is_zero(n: &u32) -> bool {
     *n == 0
 }
 
-/// When a custom tracker gets its uses back.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+/// When a custom tracker gets its uses back. Saved as `short_rest`, `long_rest` or `never`; a
+/// value written by a newer version is kept as `Other` (and never resets here).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub enum TrackerReset {
     /// On a short or a long rest.
     ShortRest,
@@ -330,14 +344,18 @@ pub enum TrackerReset {
     /// Never: the user counts it down and up by hand.
     #[default]
     Never,
+    /// A reset this version does not know.
+    Other(String),
 }
 
 /// A counter the user adds on the Play tab (Drakkenheim contamination, Splicer points).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CustomTracker {
-    /// Stable id within the character (`tracker-<n>`).
+    /// Stable id within the character (`tracker-<n>`; a missing one is given on load).
+    #[serde(default)]
     pub id: String,
-    /// Name the user gave it.
+    /// Name the user gave it (a missing one loads as "Tracker").
+    #[serde(default)]
     pub name: String,
     /// Maximum (at least 1).
     pub max: u32,
@@ -347,6 +365,12 @@ pub struct CustomTracker {
     /// When it resets.
     #[serde(default)]
     pub reset: TrackerReset,
+    /// Shown counting up (`used/max`, e.g. contamination gained) instead of uses left.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub counts_up: bool,
+    /// Keys written by a newer version, kept as they were.
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, Value>,
 }
 
 impl PlayState {
@@ -404,6 +428,9 @@ pub struct CharacterState {
     /// Per-slot replacement history (absent in files written before it existed).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub slot_history: Vec<SlotHistory>,
+    /// Keys written by a newer version, kept as they were.
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, Value>,
 }
 
 impl Default for CharacterState {
@@ -424,6 +451,7 @@ impl Default for CharacterState {
             spellbooks: BTreeMap::new(),
             play: PlayState::default(),
             slot_history: Vec::new(),
+            extra: BTreeMap::new(),
         }
     }
 }

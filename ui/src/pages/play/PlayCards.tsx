@@ -2,7 +2,6 @@ import type { PlayExhaustion, PlayResource, PlayToggle } from "../../api/contrac
 import { Button, EmptyState, IconButton, Switch } from "../../components";
 import { Expander } from "../../components/controls";
 import { Tag } from "../ai/Panes";
-import { haptic } from "../../lib/haptics";
 import { useCharacter } from "../../state/CharacterContext";
 import { RolledChargesEditor, chargesLabel, rolledChargeOf } from "../equipment/RolledCharges";
 
@@ -54,13 +53,10 @@ function ResourceRow({ r, selected, onSelect }: { r: PlayResource } & Pickable) 
   );
 }
 
+/** Limited-use pools. The rests are in the Play page's rest bar (RestBar), above every card they affect. */
 export function ResourcesCard({ resources, selected, onSelect }: { resources: PlayResource[] } & Pickable) {
-  const { mutate } = useCharacter();
   return (
-    <Expander title="Resources" headerExtra={<>
-      <Button small icon="sparkles" onClick={() => { haptic("rest"); void mutate((api, id) => api.shortRest({ characterId: id })); }}>Short Rest</Button>
-      <Button small variant="primary" icon="star" onClick={() => { haptic("rest"); void mutate((api, id) => api.longRest({ characterId: id })); }}>Long Rest</Button>
-    </>}>
+    <Expander title="Resources">
       {resources.length === 0 ? <EmptyState title="No limited-use resources" /> : <ul className="v5-list" aria-label="Resources">{resources.map((r) => <ResourceRow key={r.id} r={r} selected={selected} onSelect={onSelect} />)}</ul>}
     </Expander>
   );
