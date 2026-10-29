@@ -48,6 +48,7 @@ pub mod speed_toggles;
 pub mod spell_attacks;
 pub mod spell_damage_bonus;
 pub mod spell_rules;
+pub mod spell_tracker;
 pub mod spells;
 pub mod state;
 pub mod stats;

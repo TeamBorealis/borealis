@@ -8,6 +8,7 @@ mod play;
 mod progression;
 mod retrain;
 mod selection;
+mod trackers;
 mod version;
 mod withheld;
 
@@ -19,6 +20,7 @@ pub use play::*;
 pub use progression::*;
 pub use retrain::*;
 pub use selection::*;
+pub use trackers::*;
 pub use version::*;
 
 use crate::snapshot::CharacterSnapshot;
@@ -56,6 +58,9 @@ pub enum CommandError {
     /// A version switch was refused (no pick, or not a version of it; B-55).
     #[error("{0}")]
     Version(String),
+    /// A custom tracker was refused (bad name or maximum, too many trackers; GitHub #2).
+    #[error("{0}")]
+    Tracker(String),
 }
 
 /// A successful command: the new state and any non-fatal warnings for the UI.

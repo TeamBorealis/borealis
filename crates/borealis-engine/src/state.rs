@@ -277,7 +277,8 @@ pub struct Inventory {
     pub listed_attacks: Vec<String>,
 }
 
-/// Mutable play-time state: resource uses, toggles, exhaustion, Heroic Inspiration.
+/// Mutable play-time state: resource uses, toggles, exhaustion, Heroic Inspiration, spell slot
+/// uses, concentration and custom trackers.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PlayState {
     /// Expended uses per resource id (zero entries are not stored).
@@ -298,6 +299,54 @@ pub struct PlayState {
     /// Starting-equipment choices: package element id to the chosen option label.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub equipment_choices: BTreeMap<String, String>,
+    /// Expended spell slots per spell level 1..=9 (zero entries are not stored; Pact Magic slots
+    /// are counted in `pact_slots_used`). Files written before the tracker have none.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub spell_slots_used: BTreeMap<u32, u32>,
+    /// Expended Pact Magic slots.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub pact_slots_used: u32,
+    /// Id of the spell the character is concentrating on.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub concentration: Option<String>,
+    /// The user's own trackers (Play tab), in the order they were added.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub trackers: Vec<CustomTracker>,
+}
+
+#[allow(clippy::trivially_copy_pass_by_ref)] // serde's `skip_serializing_if` passes a reference
+fn is_zero(n: &u32) -> bool {
+    *n == 0
+}
+
+/// When a custom tracker gets its uses back.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TrackerReset {
+    /// On a short or a long rest.
+    ShortRest,
+    /// On a long rest.
+    LongRest,
+    /// Never: the user counts it down and up by hand.
+    #[default]
+    Never,
+}
+
+/// A counter the user adds on the Play tab (Drakkenheim contamination, Splicer points).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CustomTracker {
+    /// Stable id within the character (`tracker-<n>`).
+    pub id: String,
+    /// Name the user gave it.
+    pub name: String,
+    /// Maximum (at least 1).
+    pub max: u32,
+    /// Marked (used) pips, at most `max`.
+    #[serde(default)]
+    pub used: u32,
+    /// When it resets.
+    #[serde(default)]
+    pub reset: TrackerReset,
 }
 
 impl PlayState {

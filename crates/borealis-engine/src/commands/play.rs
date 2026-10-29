@@ -5,6 +5,7 @@ use super::{CmdResult, CommandError, CommandOutcome};
 use crate::engine::Engine;
 use crate::runtime::Runtime;
 use crate::snapshot::{CharacterSnapshot, ResourceSnapshot};
+use crate::spell_tracker::{after_rest, Rest};
 use crate::state::CharacterState;
 
 fn resource<'a>(
@@ -19,6 +20,14 @@ fn resource<'a>(
 
 fn done(rt: &Runtime, state: &CharacterState) -> CmdResult {
     Ok(CommandOutcome::new(rt.apply(state)))
+}
+
+/// `rt` applied to `state`, then the spell tracker's part of the rest (slots, concentration,
+/// custom trackers).
+fn rested(rt: &Runtime, state: &CharacterState, rest: Rest) -> CmdResult {
+    let mut next = rt.apply(state);
+    next.play = after_rest(&next.play, rest);
+    Ok(CommandOutcome::new(next))
 }
 
 /// Expend `n` uses of a resource.
@@ -72,7 +81,8 @@ pub fn set_toggle(engine: &Engine, state: &CharacterState, id: &str, on: bool) -
     done(&rt, state)
 }
 
-/// Finish a Short Rest: resources regain what their rule says; toggles end.
+/// Finish a Short Rest: resources regain what their rule says; toggles end; Pact Magic slots
+/// and short-rest custom trackers come back.
 ///
 /// # Errors
 /// None today; the result type matches the other commands.
@@ -88,11 +98,12 @@ pub fn short_rest(engine: &Engine, state: &CharacterState) -> CmdResult {
         }
     }
     rt.toggles.clear();
-    done(&rt, state)
+    rested(&rt, state, Rest::Short)
 }
 
 /// Finish a Long Rest: resources refill, toggles end, exhaustion drops by one level (linear
-/// model) and Resourceful-style features grant Inspiration.
+/// model), Resourceful-style features grant Inspiration, every spell slot and every short- or
+/// long-rest custom tracker comes back and concentration ends.
 ///
 /// # Errors
 /// None today; the result type matches the other commands.
@@ -113,7 +124,7 @@ pub fn long_rest(engine: &Engine, state: &CharacterState) -> CmdResult {
     {
         rt.inspiration = true;
     }
-    done(&rt, state)
+    rested(&rt, state, Rest::Long)
 }
 
 /// Set the exhaustion level.
