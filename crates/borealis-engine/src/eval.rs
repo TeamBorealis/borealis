@@ -218,6 +218,31 @@ pub fn requirement_holds(cond: &Cond<RequirementsExpr>, env: &ReqEnv) -> bool {
     }
 }
 
+/// The ids a requirement condition names under an even number of `!` (holding one can help the
+/// condition hold): an id named only negated can only break it.
+#[must_use]
+pub fn positive_requirement_ids(cond: &Cond<RequirementsExpr>) -> HashSet<&str> {
+    fn walk<'a>(e: &'a BoolExpr<RequirementLeaf>, negated: bool, out: &mut HashSet<&'a str>) {
+        match e {
+            BoolExpr::Leaf(RequirementLeaf::Id(id)) if !negated => {
+                out.insert(id.as_str());
+            }
+            BoolExpr::Leaf(_) => {}
+            BoolExpr::Not(e) => walk(e, !negated, out),
+            BoolExpr::And(items) | BoolExpr::Or(items) => {
+                for e in items {
+                    walk(e, negated, out);
+                }
+            }
+        }
+    }
+    let mut out = HashSet::new();
+    if let Cond::Expr(e) = cond {
+        walk(e.root(), false, &mut out);
+    }
+    out
+}
+
 /// The element ids a requirement condition names (its id leaves, each once): the only ids
 /// [`requirement_holds`] looks up.
 #[must_use]

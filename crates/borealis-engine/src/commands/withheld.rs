@@ -8,7 +8,7 @@
 //! points at Borealis's own "Override requirements" on the item (U12).
 
 use crate::engine::Engine;
-use crate::eval::requirement_ids;
+use crate::eval::positive_requirement_ids;
 use crate::state::{CharacterState, EquipSlot, InventoryItem};
 use crate::universe::UElem;
 use borealis_content::Rule;
@@ -52,11 +52,17 @@ fn message(engine: &Engine, state: &CharacterState, target: &UElem) -> String {
     format!("{} is not applied yet: {why}. {way}", target.el.name)
 }
 
-/// The name of an item (not yet carried) whose grants include an id the target's requirements
-/// name and which, equipped, lets the target apply.
+/// Items tried as unlockers at most (each try is a full derive; review L2).
+const MAX_UNLOCKER_TRIALS: usize = 8;
+
+/// The name of an item (not yet carried, not a generated proxy) whose grants include an id the
+/// target's requirements name positively and which, equipped, lets the target apply.
 fn unlocking_item(engine: &Engine, state: &CharacterState, target: &UElem) -> Option<String> {
     let uni = engine.universe(state.ruleset);
-    let ids = requirement_ids(&target.req);
+    let ids = positive_requirement_ids(&target.req);
+    if ids.is_empty() {
+        return None;
+    }
     let carried: HashSet<&str> = state
         .inventory
         .items
@@ -64,13 +70,14 @@ fn unlocking_item(engine: &Engine, state: &CharacterState, target: &UElem) -> Op
         .map(|i| i.item.as_str())
         .collect();
     uni.by_type("Item")
-        .filter(|it| !carried.contains(it.el.id.as_str()))
+        .filter(|it| !carried.contains(it.el.id.as_str()) && !crate::proxy::is_proxy_id(&it.el.id))
         .filter(|it| {
             it.el
                 .rules
                 .iter()
                 .any(|r| matches!(r, Rule::Grant(g) if ids.contains(g.id.as_str())))
         })
+        .take(MAX_UNLOCKER_TRIALS)
         .find(|it| {
             let mut trial = state.clone();
             let mut line = InventoryItem::new("withheld-trial".to_string(), it.el.id.clone());

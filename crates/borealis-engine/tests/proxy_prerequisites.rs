@@ -21,6 +21,11 @@ const BOON_PROXY: &str = "ID_TB_INTERNAL_ITEM_FEAT_PROXY_BOON_OF_TESTING";
 const UNLOCKER_ITEM: &str = "ID_TB_ITEM_FEAT_UNLOCKER";
 const UNLOCKER: &str = "ID_TB_GRANTS_FEAT_UNLOCKER";
 const PLAIN: &str = "ID_TB_FEAT_PLAIN";
+const BLOCKER_ITEM: &str = "ID_TB_ITEM_BLOCKING_CHARM";
+const BLOCKER: &str = "ID_TB_GRANTS_BLOCKER";
+const GUARDED: &str = "ID_TB_FEAT_GUARDED_BOON";
+const GUARDED_PROXY: &str = "ID_TB_INTERNAL_ITEM_FEAT_PROXY_GUARDED_BOON";
+const RING: &str = "ID_TB_MAGIC_ITEM_RING_OF_TESTING";
 /// What the boon grants in turn: one element without requirements, one with its own.
 const BOON_PART: &str = "ID_TB_FEAT_BOON_PART";
 const BOON_LATE: &str = "ID_TB_FEAT_BOON_LATE";
@@ -50,6 +55,18 @@ fn engine() -> &'static Engine {
                                {"name": "inventory-hidden", "value": "true"}],
                    "rules": [{"kind": "grant", "type": "Grants", "id": UNLOCKER}]}),
             json!({"id": UNLOCKER, "name": "Feat Unlocker", "type": "Grants", "source": BOOK}),
+            // review L2: an item granting an id the boon tests the *absence* of cannot unlock it
+            json!({"id": BLOCKER_ITEM, "name": "Blocking Charm", "type": "Item", "source": BOOK,
+                   "setters": [{"name": "slot", "value": "misc"}],
+                   "rules": [{"kind": "grant", "type": "Grants", "id": BLOCKER}]}),
+            json!({"id": BLOCKER, "name": "Blocker", "type": "Grants", "source": BOOK}),
+            json!({"id": GUARDED, "name": "Guarded Boon", "type": "Feat", "source": BOOK,
+                   "prerequisite": "Level 19+",
+                   "requirements": format!("[character:19],!{BLOCKER}")}),
+            // review L3: an attunement item that grants the boon
+            json!({"id": RING, "name": "Ring of Testing", "type": "Magic Item", "source": BOOK,
+                   "setters": [{"name": "slot", "value": "ring"}, {"name": "attunement", "value": "true"}],
+                   "rules": [{"kind": "grant", "type": "Feat", "id": BOON}]}),
         ];
         let file: ContentFile =
             serde_json::from_value(json!({"format": "borealis-content/1", "elements": elements}))
@@ -277,4 +294,36 @@ fn an_overridden_item_equips_without_the_warning_and_an_old_file_has_no_override
 fn the_override_is_refused_for_an_unknown_line() {
     let hero = commands::new_character(engine(), Ruleset::Dnd2024);
     assert!(commands::set_requirements_override(engine(), &hero, "item-404", true).is_err());
+}
+
+#[test]
+fn an_item_granting_an_id_the_requirement_negates_is_no_unlocker() {
+    let hero = commands::new_character(engine(), Ruleset::Dnd2024);
+    let (_, warnings) = equip(&hero, GUARDED_PROXY);
+    assert_eq!(
+        warnings,
+        vec![
+            "Guarded Boon is not applied yet: its prerequisite (Level 19+) is not met. \
+              Turn on Override requirements for this item to apply it anyway."
+                .to_string()
+        ]
+    );
+}
+
+#[test]
+fn an_unattuned_attunement_item_gives_no_prerequisite_warning() {
+    // no attunement slot left: equipped but not attuned, so its rules do not apply yet and only
+    // the attunement warning is given (the boon's prerequisite is not the reason)
+    let mut hero = commands::new_character(engine(), Ruleset::Dnd2024);
+    hero.house_rules.attunement_limit = Some(0);
+    let (state, warnings) = equip(&hero, RING);
+    assert!(!line(&state, RING).attuned);
+    assert!(
+        warnings.iter().all(|w| !w.contains("prerequisite")),
+        "{warnings:?}"
+    );
+    assert!(warnings.iter().any(|w| w.contains("attun")), "{warnings:?}");
+    assert!(snapshot_line(&state, &line(&state, RING).uid)
+        .withheld_grants
+        .is_empty());
 }
