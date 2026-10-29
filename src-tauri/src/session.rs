@@ -91,6 +91,7 @@ impl AppState {
             app: self,
         };
         f(&ctx, &mut draft)?;
+        clamp_tracker(&hub, &mut draft.character.build);
         session.character = draft.character;
         session.rolls = draft.rolls;
         session.dirty = true;
@@ -153,6 +154,20 @@ impl AppState {
         let snap = snapshot_for(id, &session, &hub, &settings, &[]);
         self.sessions()?.insert(id.to_string(), session);
         Ok(snap)
+    }
+}
+
+/// Write the spell tracker's clamp back (GitHub #2): a change that lowered a maximum (level down,
+/// respec) lowers the saved used count too, and a concentration spell no longer ready ends. The
+/// derive is the hub's cached one that the snapshot reads next.
+fn clamp_tracker(hub: &ContentHub, build: &mut borealis_engine::CharacterState) {
+    use borealis_engine::spell_tracker::{has_tracking, normalized};
+    if !has_tracking(&build.play) {
+        return;
+    }
+    let snap = hub.derive(build);
+    if let Some(next) = normalized(&hub.engine, build, &snap) {
+        *build = next;
     }
 }
 

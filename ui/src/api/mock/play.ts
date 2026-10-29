@@ -1,8 +1,9 @@
-import type { ConversionPreview, PlayResource, PlayState, PlayToggle, PlayWildShape } from "../types";
+import type { ConversionPreview, PlayResource, PlayState, PlayToggle, PlayWildShape, SpellcastingState } from "../types";
 import { getClass, getElement, getItem } from "./content";
 import { apiError } from "./errors";
 import { chargeResources } from "./rolled-charges";
 import { classIdOf } from "./slots";
+import { type MockTracking, afterRest, trackerPlay } from "./spell-tracker";
 import { type MockCharacter, totalLevel } from "./state";
 
 /** Mutable play data of a mock character (kept optional on `MockCharacter`). */
@@ -14,6 +15,8 @@ export interface MockPlay {
   masteries: string[];
   forms: string[];
   packages: Record<string, string>;
+  /** Spell slots, concentration and custom trackers (GitHub #2); absent = nothing tracked. */
+  tracking?: MockTracking;
 }
 
 export const emptyPlay = (): MockPlay => ({ used: {}, toggles: [], exhaustion: 0, inspiration: false, masteries: [], forms: [], packages: {} });
@@ -44,8 +47,8 @@ function itemToggles(c: MockCharacter): (Omit<PlayToggle, "on" | "active"> & { f
 }
 const togglesOf = (c: MockCharacter) => [...TOGGLES.map((t) => ({ ...t, factor: 1 })), ...itemToggles(c)];
 
-/** The mock's `CharacterSnapshot.play`. */
-export function buildPlay(c: MockCharacter): PlayState {
+/** The mock's `CharacterSnapshot.play` (`sc` = the snapshot's spellcasting, for the spell tracker). */
+export function buildPlay(c: MockCharacter, sc: SpellcastingState): PlayState {
   const p = playOf(c);
   const resources = resourcesFor(c).map((r) => ({ ...r, current: Math.max(0, r.max - (p.used[r.id] ?? 0)) }));
   const toggles = togglesOf(c).map(({ factor: _factor, ...t }) => ({ ...t, on: p.toggles.includes(t.id), active: p.toggles.includes(t.id) }));
@@ -75,6 +78,7 @@ export function buildPlay(c: MockCharacter): PlayState {
     compatibility: { strict: c.ruleset === "dnd2014", entries: [] },
     features: [{ id: "mock-feature", name: "Mock Feature", ty: "class_feature", source: "Mock class", level: 1, description: "<p>A <strong>mock</strong> feature description.</p>", displayed: true }],
     freeCasts: [], saveDcs: [],
+    ...trackerPlay(p.tracking, sc),
   };
 }
 
@@ -95,10 +99,14 @@ export const restore = (c: MockCharacter, id: string, uses: number): MockCharact
   withPlay(c, (p) => ({ ...p, used: { ...p.used, [id]: Math.max(0, (p.used[id] ?? 0) - uses) } }));
 
 export const shortRest = (c: MockCharacter): MockCharacter =>
-  withPlay(c, (p) => ({ ...p, toggles: [], used: Object.fromEntries(Object.entries(p.used).map(([k, v]) => [k, Math.max(0, v - 1)])) }));
+  withPlay(c, (p) => ({ ...p, toggles: [], used: Object.fromEntries(Object.entries(p.used).map(([k, v]) => [k, Math.max(0, v - 1)])), tracking: afterRest(p.tracking, "short") }));
 
 export const longRest = (c: MockCharacter): MockCharacter =>
-  withPlay(c, (p) => ({ ...p, toggles: [], used: {}, exhaustion: c.ruleset === "dnd2024" ? Math.max(0, p.exhaustion - 1) : p.exhaustion }));
+  withPlay(c, (p) => ({ ...p, toggles: [], used: {}, exhaustion: c.ruleset === "dnd2024" ? Math.max(0, p.exhaustion - 1) : p.exhaustion, tracking: afterRest(p.tracking, "long") }));
+
+/** Applies a spell tracker update to the mock's play state. */
+export const withTracking = (c: MockCharacter, fn: (t: MockTracking | undefined) => MockTracking): MockCharacter =>
+  withPlay(c, (p) => ({ ...p, tracking: fn(p.tracking) }));
 
 export function setToggle(c: MockCharacter, id: string, on: boolean): MockCharacter {
   if (!togglesOf(c).some((t) => t.id === id)) throw apiError("not_found", "Unknown toggle.");

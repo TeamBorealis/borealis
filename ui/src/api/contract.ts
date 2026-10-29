@@ -11,6 +11,7 @@
  */
 import type {
   AbilityKey,
+  PlayTrackerReset,
   BundleExport,
   BundlePreview,
   BundleShare,
@@ -223,6 +224,18 @@ export interface ApiMethods {
   setToggle(args: Cid & { toggleId: string; on: boolean }): Promise<CharacterSnapshot>;
   setExhaustion(args: Cid & { level: number }): Promise<CharacterSnapshot>;
   setHeroicInspiration(args: Cid & { has: boolean }): Promise<CharacterSnapshot>;
+  /* Spell tracker (GitHub #2). Rests are shortRest/longRest. */
+  /** Marks `used` slots of spell level `level` used; with `pact`, the Pact Magic slots (`level` is then ignored). */
+  setSpellSlotsUsed(args: Cid & { level: number; used: number; pact?: boolean }): Promise<CharacterSnapshot>;
+  /** Concentrate on a known or prepared concentration spell (replaces any other); null ends concentration. */
+  setConcentration(args: Cid & { spellId: string | null }): Promise<CharacterSnapshot>;
+  /** Adds a custom tracker: name 1-60 characters, max 1-999. */
+  addTracker(args: Cid & { name: string; max: number; reset: PlayTrackerReset }): Promise<CharacterSnapshot>;
+  /** Renames a tracker or changes its maximum (the used count is clamped) or reset. */
+  updateTracker(args: Cid & { trackerId: string; name: string; max: number; reset: PlayTrackerReset }): Promise<CharacterSnapshot>;
+  removeTracker(args: Cid & { trackerId: string }): Promise<CharacterSnapshot>;
+  /** Sets how many pips of a tracker are used (0..max). */
+  setTrackerUsed(args: Cid & { trackerId: string; used: number }): Promise<CharacterSnapshot>;
   /** Replaces all Weapon Mastery picks (in slot order; fewer ids leave slots open). */
   chooseWeaponMasteries(args: Cid & { weaponIds: string[] }): Promise<CharacterSnapshot>;
   setWildShapeForms(args: Cid & { formIds: string[] }): Promise<CharacterSnapshot>;
@@ -514,6 +527,12 @@ export const COMMANDS = {
   setToggle: "set_toggle",
   setExhaustion: "set_exhaustion",
   setHeroicInspiration: "set_heroic_inspiration",
+  setSpellSlotsUsed: "set_spell_slots_used",
+  setConcentration: "set_concentration",
+  addTracker: "add_tracker",
+  updateTracker: "update_tracker",
+  removeTracker: "remove_tracker",
+  setTrackerUsed: "set_tracker_used",
   chooseWeaponMasteries: "choose_weapon_masteries",
   setWildShapeForms: "set_wild_shape_forms",
   chooseEquipmentPackage: "choose_equipment_package",

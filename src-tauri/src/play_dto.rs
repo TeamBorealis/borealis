@@ -3,6 +3,7 @@
 
 use borealis_character::{Category, ConversionItem, ConversionPreview, KeyStats, Outcome};
 use borealis_engine::snapshot::CharacterSnapshot as Engine;
+use borealis_engine::spell_tracker::TrackerView;
 use serde::Serialize;
 use serde_json::{Map, Value};
 
@@ -75,11 +76,21 @@ pub struct PlayStateDto {
     pub features: Value,
     pub free_casts: Value,
     pub save_dcs: Value,
+    /// Spell slot uses per level with slots (GitHub #2).
+    pub spell_slots: Value,
+    /// Pact Magic slot uses, or null.
+    pub pact_slots: Value,
+    /// The spell being concentrated on, or null.
+    pub concentration: Value,
+    /// Concentration spells the character knows or has prepared.
+    pub concentration_spells: Value,
+    /// The user's own trackers.
+    pub trackers: Value,
 }
 
-/// Map the engine's play blocks.
+/// Map the engine's play blocks and the spell tracker view.
 #[must_use]
-pub fn play_state(s: &Engine) -> PlayStateDto {
+pub fn play_state(s: &Engine, tracker: &TrackerView) -> PlayStateDto {
     PlayStateDto {
         speeds: SpeedsDto {
             walk: s.speed.walk,
@@ -108,6 +119,11 @@ pub fn play_state(s: &Engine) -> PlayStateDto {
         features: dto(&s.features),
         free_casts: dto(&s.free_casts),
         save_dcs: dto(&s.save_dcs),
+        spell_slots: dto(&tracker.spell_slots),
+        pact_slots: dto(&tracker.pact_slots),
+        concentration: dto(&tracker.concentration),
+        concentration_spells: dto(&tracker.concentration_spells),
+        trackers: dto(&tracker.trackers),
     }
 }
 

@@ -112,7 +112,7 @@ impl From<CommandError> for ApiError {
         let code = match &e {
             CommandError::UnknownSlot | CommandError::UnknownElement(_) => ErrorCode::NotFound,
             CommandError::Ability(m) if m.contains("budget") => ErrorCode::BudgetExceeded,
-            CommandError::Ability(_) => ErrorCode::InvalidArgument,
+            CommandError::Ability(_) | CommandError::Tracker(_) => ErrorCode::InvalidArgument,
             CommandError::NotAllowed(_)
             | CommandError::Level(_)
             | CommandError::Inventory(_)

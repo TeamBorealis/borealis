@@ -47,6 +47,19 @@
     "name": "CharacterSnapshot"
    }
   },
+  "add_tracker": {
+   "args": {
+    "characterId": false,
+    "max": false,
+    "name": false,
+    "reset": false
+   },
+   "method": "addTracker",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
   "adjust_coins": {
    "args": {
     "characterId": false,
@@ -1165,6 +1178,17 @@
     }
    }
   },
+  "remove_tracker": {
+   "args": {
+    "characterId": false,
+    "trackerId": false
+   },
+   "method": "removeTracker",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
   "render_sheet": {
    "args": {
     "characterId": false,
@@ -1446,6 +1470,17 @@
     "name": "CharacterSnapshot"
    }
   },
+  "set_concentration": {
+   "args": {
+    "characterId": false,
+    "spellId": false
+   },
+   "method": "setConcentration",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
   "set_documents_dir": {
    "args": {
     "token": true
@@ -1575,6 +1610,19 @@
     "name": "CharacterSnapshot"
    }
   },
+  "set_spell_slots_used": {
+   "args": {
+    "characterId": false,
+    "level": false,
+    "pact": true,
+    "used": false
+   },
+   "method": "setSpellSlotsUsed",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
   "set_storage_names": {
    "args": {
     "characterId": false,
@@ -1593,6 +1641,18 @@
     "toggleId": false
    },
    "method": "setToggle",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "set_tracker_used": {
+   "args": {
+    "characterId": false,
+    "trackerId": false,
+    "used": false
+   },
+   "method": "setTrackerUsed",
    "response": {
     "k": "ref",
     "name": "CharacterSnapshot"
@@ -1808,6 +1868,20 @@
     "patch": false
    },
    "method": "updateItemDetails",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
+  "update_tracker": {
+   "args": {
+    "characterId": false,
+    "max": false,
+    "name": false,
+    "reset": false,
+    "trackerId": false
+   },
+   "method": "updateTracker",
    "response": {
     "k": "ref",
     "name": "CharacterSnapshot"
@@ -7248,6 +7322,29 @@
     }
    }
   },
+  "PlayConcentrationSpell": {
+   "k": "object",
+   "props": {
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "level": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "PlayDefenseEntry": {
    "k": "object",
    "props": {
@@ -7672,6 +7769,29 @@
     }
    }
   },
+  "PlaySlotUse": {
+   "k": "object",
+   "props": {
+    "level": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "max": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "used": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "PlayState": {
    "k": "object",
    "props": {
@@ -7699,6 +7819,23 @@
      "t": {
       "k": "ref",
       "name": "PlayCompatibility"
+     }
+    },
+    "concentration": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "PlayConcentrationSpell"
+     }
+    },
+    "concentrationSpells": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayConcentrationSpell"
+      }
      }
     },
     "defenses": {
@@ -7796,6 +7933,13 @@
       }
      }
     },
+    "pactSlots": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "PlaySlotUse"
+     }
+    },
     "resourceCosts": {
      "opt": false,
      "t": {
@@ -7845,6 +7989,16 @@
       "name": "Speeds"
      }
     },
+    "spellSlots": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlaySlotUse"
+      }
+     }
+    },
     "toggles": {
      "opt": false,
      "t": {
@@ -7852,6 +8006,16 @@
       "t": {
        "k": "ref",
        "name": "PlayToggle"
+      }
+     }
+    },
+    "trackers": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayTracker"
       }
      }
     },
@@ -7928,6 +8092,41 @@
      }
     },
     "source": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PlayTracker": {
+   "k": "object",
+   "props": {
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "max": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "reset": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "used": {
      "opt": false,
      "t": {
       "k": "prim"

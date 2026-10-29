@@ -172,15 +172,22 @@ Every command returns the full `CharacterSnapshot`; the new blocks live in `snap
 | `preview_convert_to_2024` | `characterId` | `ConversionPreview` `{characterId,name,items:[{category,label,outcome:kept\|mapped\|dropped\|needs_choice,fromId,toId,reason,what,crossEdition,kind}],counts,before,after}` (saves nothing; 2014 only, else `requirement_failed`) |
 | `apply_convert_to_2024` | `characterId` | `{newCharacterId, snapshot}`: saves a new library character ("<name> (2024)", `meta.converted_from` = old id) and opens it; the original file is untouched |
 | `spend_resource` / `restore_resource` | `characterId, resourceId, uses?` (default 1) | `CharacterSnapshot` (`requirement_failed` when too few uses, `not_found` for an unknown id) |
-| `short_rest` / `long_rest` | `characterId` | `CharacterSnapshot` (rests end toggles; Long Rest refills and lowers exhaustion by 1 in 2024) |
+| `short_rest` / `long_rest` | `characterId` | `CharacterSnapshot` (rests end toggles; Long Rest refills and lowers exhaustion by 1 in 2024). Spell tracker: a Short Rest gives back the Pact Magic slots and short-rest trackers; a Long Rest every slot and every short- or long-rest tracker, and ends concentration |
 | `set_toggle` | `characterId, toggleId, on` | `CharacterSnapshot` (Rage etc.; `play.toggles[].active`, `play.defenses`) |
 | `set_exhaustion` | `characterId, level` | `CharacterSnapshot` |
 | `set_heroic_inspiration` | `characterId, has` | `CharacterSnapshot` |
 | `choose_weapon_masteries` | `characterId, weaponIds: string[]` | replaces all picks in slot order (slots = `Weapon` selects named "...Mastery"); `invalid_argument` for duplicates, `requirement_failed` for too many / not allowed |
 | `set_wild_shape_forms` | `characterId, formIds: string[]` | `CharacterSnapshot` (limits in `play.wildShape`) |
 | `choose_equipment_package` | `characterId, packageId, option` | `CharacterSnapshot` (once per package; items + coins added) |
+| `set_spell_slots_used` | `characterId, level, used, pact?` | `CharacterSnapshot` (`used` slots of spell `level`, or with `pact` of the Pact Magic pool; `requirement_failed` without such slots or above the maximum) |
+| `set_concentration` | `characterId, spellId: string \| null` | `CharacterSnapshot` (a known or prepared concentration spell, replacing any other; `null` ends it; else `requirement_failed`) |
+| `add_tracker` / `update_tracker` | `characterId, (trackerId,) name, max, reset: short_rest \| long_rest \| never` | `CharacterSnapshot` (name 1-60 characters, max 1-999, at most 50 trackers, else `invalid_argument`; an edit clamps the used count; unknown id `not_found`) |
+| `remove_tracker` | `characterId, trackerId` | `CharacterSnapshot` |
+| `set_tracker_used` | `characterId, trackerId, used` | `CharacterSnapshot` (0..max, else `invalid_argument`) |
 
-`PlayState` fields: `speeds, resources, resourceCosts, toggles, exhaustion, inspiration, inspirationSources, martialArts, masteries, defenses{resistances,immunities,vulnerabilities,conditionImmunities}, senses, advantages, initiativeAdvantage, notes, carry, wildShape, equipmentPackages, compatibility{strict,entries}, features[{id,name,ty,source,level,grantedBy,description,sheetSummary,displayed}], freeCasts, saveDcs`.
+`PlayState` fields: `speeds, resources, resourceCosts, toggles, exhaustion, inspiration, inspirationSources, martialArts, masteries, defenses{resistances,immunities,vulnerabilities,conditionImmunities}, senses, advantages, initiativeAdvantage, notes, carry, wildShape, equipmentPackages, compatibility{strict,entries}, features[{id,name,ty,source,level,grantedBy,description,sheetSummary,displayed}], freeCasts, saveDcs, spellSlots[{level,max,used}], pactSlots{level,max,used}|null, concentration{id,name,level}|null, concentrationSpells, trackers[{id,name,max,used,reset}]`.
+The spell tracker blocks (GitHub #2) are clamped to the current maximums; every mutation also writes that clamp back to the
+saved character (`build.play.spell_slots_used`, `pact_slots_used`, `concentration`, `trackers`, all omitted when empty).
 They are the engine blocks with keys camelCased (types in `ui/src/api/types/play.ts`).
 
 ### Equipment

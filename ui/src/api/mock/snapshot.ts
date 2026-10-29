@@ -82,14 +82,15 @@ export function buildSnapshot(input: MockCharacter, rules: RuleSettings): { char
   const mods = abilities.modifier;
   const items = c.items.map((i) => ({ ...i, isWeapon: !!getItem(i.itemId)?.weapon, equippable: i.equippable ?? isEquippable(getItem(i.itemId)) }));
   const inv = deriveInventory({ ...c, items }, abilities);
+  const spellcasting = deriveSpellcasting(c, abilities);
   const snapshot: CharacterSnapshot = {
     id: c.id, name: c.name, ruleset: c.ruleset, portrait: c.portrait, group: c.group, favorite: c.favorite, dirty: c.dirty, displayPath: c.path ?? "",
     level: deriveLevel(c), abilities, stats, slots, progress: progress(slots),
-    spellcasting: deriveSpellcasting(c, abilities), inventory: inv, details: c.details,
+    spellcasting, inventory: inv, details: c.details,
     attacks: resolveAttacks(c, mods, profBonus(totalLevel(c))),
     companion: null, options: c.options,
     availableOptions: OPTION_DEFS, sourceRestrictions: c.sourceRestrictions, notices: c.notices,
-    play: buildPlay(c),
+    play: buildPlay(c, spellcasting),
   };
   return { character: c, snapshot };
 }

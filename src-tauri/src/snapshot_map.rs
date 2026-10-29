@@ -80,7 +80,14 @@ pub fn build_snapshot(input: &MapInput<'_>) -> CharacterSnapshot {
         available_options: extras::available_options(input),
         source_restrictions: extras::source_restrictions(input),
         notices: extras::notices(input, &engine_snap),
-        play: crate::play_dto::play_state(&engine_snap),
+        play: crate::play_dto::play_state(
+            &engine_snap,
+            &borealis_engine::spell_tracker::tracker_view(
+                &input.hub.engine,
+                &input.character.build,
+                &engine_snap,
+            ),
+        ),
     }
 }
 

@@ -123,6 +123,35 @@ export interface PlayFeature {
 export interface PlayCompatEntry { [k: string]: unknown }
 export interface PlayCompatibility { strict: boolean; entries: PlayCompatEntry[] }
 
+/** Used and maximum slots of one spell level, or of the Pact Magic pool (GitHub #2). */
+export interface PlaySlotUse {
+  level: number;
+  max: number;
+  used: number;
+}
+
+/** A spell the character can concentrate on (known or prepared, with concentration). */
+export interface PlayConcentrationSpell {
+  id: string;
+  name: string;
+  /** 0 = cantrip. */
+  level: number;
+}
+
+/** When a custom tracker gets its uses back. */
+export type PlayTrackerReset = "short_rest" | "long_rest" | "never";
+
+/** A counter the user adds on Play (Drakkenheim contamination, Splicer points). */
+export interface PlayTracker {
+  id: string;
+  name: string;
+  /** 1..999. */
+  max: number;
+  /** Marked pips, 0..max. */
+  used: number;
+  reset: PlayTrackerReset;
+}
+
 export interface PlayState {
   speeds: Speeds;
   resources: PlayResource[];
@@ -147,6 +176,15 @@ export interface PlayState {
   features: PlayFeature[];
   freeCasts: Record<string, unknown>[];
   saveDcs: Record<string, unknown>[];
+  /** Spell slots per level that has slots (the multiclass table when multiclassed); back on a long rest. */
+  spellSlots: PlaySlotUse[];
+  /** Pact Magic slots, back on a short or long rest; null without Pact Magic. */
+  pactSlots: PlaySlotUse | null;
+  /** The spell being concentrated on; ends on a long rest. */
+  concentration: PlayConcentrationSpell | null;
+  /** Concentration spells the character knows or has prepared, by level and name. */
+  concentrationSpells: PlayConcentrationSpell[];
+  trackers: PlayTracker[];
 }
 
 export interface AttackMastery { name: string; text: string; mastered: boolean }

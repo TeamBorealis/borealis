@@ -48,6 +48,7 @@ pub mod commands_settings;
 #[cfg(feature = "device-link")]
 pub mod commands_sync;
 pub mod commands_system;
+pub mod commands_tracker;
 pub mod companion;
 pub mod companion_block;
 pub mod compendium;
@@ -134,6 +135,7 @@ pub mod startup;
 pub mod startup_boot;
 pub mod state;
 pub mod sync_dto;
+pub mod tracker_api;
 pub mod vector_service;
 pub mod vector_status;
 pub mod version_rows;
@@ -515,6 +517,12 @@ pub fn run() {
             commands_play::choose_weapon_masteries,
             commands_play::set_wild_shape_forms,
             commands_play::choose_equipment_package,
+            commands_tracker::set_spell_slots_used,
+            commands_tracker::set_concentration,
+            commands_tracker::add_tracker,
+            commands_tracker::update_tracker,
+            commands_tracker::remove_tracker,
+            commands_tracker::set_tracker_used,
             commands_pick::pick_path,
             commands_pick::take_picked_files,
             #[cfg(desktop)]
