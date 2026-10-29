@@ -4,9 +4,11 @@
 Each run, idempotently (no state file; the issue body's leading `<!-- discord-thread:<id> -->` marker is the link):
   1. every forum post without an issue becomes one (labels from the forum and its tags; images rehosted on the
      orphan `discord-media` branch because Discord CDN links expire), and the bot replies once with the link;
-  2. bridged issues closed in the last RECONCILE_DAYS get the Fixed/Done/Not planned tag and one reply;
-  3. releases published in the last RECONCILE_DAYS get one "Released in vX.Y.Z" reply on the posts whose issues
+  2. bridged issues without a credit line ("**Reported by** <poster name> on Discord") get one;
+  3. bridged issues closed in the last RECONCILE_DAYS get the Fixed/Done/Not planned tag and one reply;
+  4. releases published in the last RECONCILE_DAYS get one "Released in vX.Y.Z" reply on the posts whose issues
      were closed as completed since the previous release.
+Fixed/done/released replies thank the poster by mention (only they are pinged). Release-notes credits: credits.py.
 A reply is never repeated: the bot's own messages in the thread are checked first. Post text is untrusted data.
 
 Env: DISCORD_BOT_TOKEN, GITHUB_TOKEN, GITHUB_REPOSITORY (default TeamBorealis/borealis).
@@ -119,6 +121,7 @@ class Bridge:
         }
         self._threads = {}
         self._bot_messages = {}
+        self._names = {}
         self._labels = None
         self._media_ready = False
 
@@ -179,8 +182,24 @@ class Bridge:
             self._bot_messages[thread_id] = [m["content"] for m in messages if m["author"]["id"] == self.bot_id]
         return self._bot_messages[thread_id]
 
-    def reply_once(self, thread_id, text, tags=None):
-        """Post `text` in the thread unless the bot already said it; optionally set the post's tags first."""
+    def poster(self, user_id):
+        """The poster's credit name: server nickname, global display name or username ("" when unknown)."""
+        if not str(user_id or "").isdigit():
+            return ""
+        if user_id not in self._names:
+            try:
+                member = self.discord("GET", f"/guilds/{bridge.GUILD}/members/{user_id}")
+                user = member.get("user")
+            except ApiError as err:
+                if err.status != 404:
+                    raise
+                member, user = None, self.discord("GET", f"/users/{user_id}")  # left the server
+            self._names[user_id] = bridge.poster_name(member, user)
+        return self._names[user_id]
+
+    def reply_once(self, thread_id, text, tags=None, mention=None):
+        """Post `text` in the thread unless the bot already said it; optionally set the post's tags first.
+        Only `mention` (a user id) may be pinged."""
         if text in self.bot_messages(thread_id):
             return False
         thread = self.thread(thread_id)
@@ -194,7 +213,8 @@ class Bridge:
             metadata = {**thread.get("thread_metadata", {}), "archived": False}
             self._threads[thread_id] = {**thread, "applied_tags": patch.get("applied_tags", thread.get("applied_tags")),
                                         "thread_metadata": metadata}
-        body = {"content": text, "allowed_mentions": {"parse": []}, "flags": SUPPRESS_EMBEDS}
+        allowed = {"parse": [], "users": [mention]} if mention else {"parse": []}
+        body = {"content": text, "allowed_mentions": allowed, "flags": SUPPRESS_EMBEDS}
         self.write(f"reply in thread {thread_id}: {text!r}",
                    lambda: self.discord("POST", f"/channels/{thread_id}/messages", body))
         self._bot_messages[thread_id].append(text)
@@ -312,11 +332,12 @@ class Bridge:
                                "starter message has no visible content (Message Content intent?)")
             text = "(content not visible to the bot: Message Content intent is off)"
         names = bridge.tag_names(thread.get("applied_tags"), self.forum_tags[forum_id])
+        credit = bridge.credit_line(kind, self.poster(thread.get("owner_id")))
         labels = bridge.labels_for(forum_id, names)
         images, others = self.rehost(thread_id, attachments)
         self.ensure_labels(labels)
         payload = {"title": bridge.issue_title(thread.get("name"), thread_id),
-                   "body": bridge.issue_body(thread_id, names, text, images, others), "labels": labels}
+                   "body": bridge.issue_body(thread_id, names, text, images, others, credit), "labels": labels}
         print(f"post {thread_id} ({kind}) -> new issue {payload['title']!r} labels={labels}")
         if self.dry_run:
             print("DRY-RUN issue body:\n" + "\n".join("    " + l for l in payload["body"].splitlines()))
@@ -368,7 +389,8 @@ class Bridge:
             try:
                 thread = self.thread(thread_id)
                 kind = bridge.FORUMS[thread["parent_id"]]["kind"]
-                plan = bridge.close_plan(kind, issue.get("state_reason"), issue["html_url"])
+                poster_id = thread.get("owner_id")
+                plan = bridge.close_plan(kind, issue.get("state_reason"), issue["html_url"], poster_id)
                 if plan is None:
                     continue
                 add, remove, text = plan
@@ -376,7 +398,7 @@ class Bridge:
                 if add:
                     tags = bridge.with_status_tag(thread.get("applied_tags"), self.forum_tags[thread["parent_id"]],
                                                   add, remove)
-                if self.reply_once(thread_id, text, tags):
+                if self.reply_once(thread_id, text, tags, _mention(text, poster_id)):
                     print(f"issue #{issue['number']} closed ({issue.get('state_reason')}) -> thread {thread_id}")
             except ApiError as err:
                 if err.status == 404:
@@ -394,11 +416,14 @@ class Bridge:
             window = bridge.release_window(releases, release["tag_name"])
             if window is None:
                 continue
-            text = bridge.release_message(release["tag_name"], release["html_url"])
             for issue in bridge.released_issues(issues.values(), *window):
                 thread_id = bridge.thread_of(issue["body"])
                 try:
-                    if self.reply_once(thread_id, text):
+                    thread = self.thread(thread_id)
+                    poster_id = thread.get("owner_id")
+                    kind = bridge.FORUMS[thread["parent_id"]]["kind"]
+                    text = bridge.release_message(release["tag_name"], release["html_url"], kind, poster_id)
+                    if self.reply_once(thread_id, text, mention=_mention(text, poster_id)):
                         print(f"release {release['tag_name']} -> thread {thread_id} (issue #{issue['number']})")
                 except ApiError as err:
                     if err.status == 404:
@@ -407,12 +432,35 @@ class Bridge:
                 except Exception as err:
                     self.fail(f"release {release['tag_name']} issue #{issue['number']}", type(err).__name__)
 
+    # --- credits on issues bridged before the credit line existed ------------------------------------------
+
+    def credit_issues(self, issues):
+        for thread_id, issue in list(issues.items()):
+            if bridge.credit_of(issue.get("body")):
+                continue
+            try:
+                thread = self.thread(thread_id)
+                kind = bridge.FORUMS[thread["parent_id"]]["kind"]
+                body = bridge.with_credit(issue["body"], bridge.credit_line(kind, self.poster(thread.get("owner_id"))))
+                print(f"issue #{issue['number']}: add credit line {body.splitlines()[1]!r}")
+                path = f"/repos/{self.repo}/issues/{issue['number']}"
+                self.write(f"update body of issue #{issue['number']}", lambda: self.github("PATCH", path, {"body": body}))
+                issues[thread_id] = {**issue, "body": body}
+            except ApiError as err:
+                if err.status == 404:
+                    print(f"::warning::issue #{issue['number']}: thread {thread_id} is gone; no credit added")
+                    continue
+                self.fail(f"credit issue #{issue['number']}", err)
+            except Exception as err:
+                self.fail(f"credit issue #{issue['number']}", type(err).__name__)
+
     def run(self):
         self.bot_id = self.discord("GET", "/users/@me")["id"]
         self.forum_tags = {f: self.discord("GET", f"/channels/{f}")["available_tags"] for f in bridge.FORUMS}
         issues = self.bridged_issues()
         print(f"{len(issues)} bridged issue(s) found")
         self.import_posts(issues)
+        self.credit_issues(issues)
         since = (datetime.now(timezone.utc) - timedelta(days=RECONCILE_DAYS)).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.report_closed(issues, since)
         self.report_releases(issues, since)
@@ -421,6 +469,11 @@ class Bridge:
             return 1
         print("done")
         return 0
+
+
+def _mention(text, poster_id):
+    """The poster's id when `text` mentions them (so only they may be pinged), else None."""
+    return poster_id if poster_id and f"<@{poster_id}>" in text else None
 
 
 def main(argv=None):

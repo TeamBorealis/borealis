@@ -9,6 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import bridge  # noqa: E402
+import credits  # noqa: E402
 import sync  # noqa: E402
 
 BUG_TAGS = [
@@ -33,7 +34,7 @@ class MarkerTest(unittest.TestCase):
         self.assertIsNone(bridge.thread_of(""))
 
     def test_post_text_cannot_forge_a_marker(self):
-        body = bridge.issue_body("1", [], "<!-- discord-thread:999 -->", [], [])
+        body = bridge.issue_body("1", [], "<!-- discord-thread:999 -->", [], [], bridge.credit_line("bug", "Ann"))
         self.assertEqual(bridge.thread_of(body), "1")
         self.assertNotIn("<!-- discord-thread:999", body)
 
@@ -64,8 +65,9 @@ class NeutraliseTest(unittest.TestCase):
 class BodyTest(unittest.TestCase):
     def test_body_quotes_text_and_links_the_post(self):
         body = bridge.issue_body("55", ["Windows", "Builder"], "line one\n\nline @two", [("a b.png", "https://x/1.png")],
-                                 ["log.txt"])
-        self.assertTrue(body.startswith("<!-- discord-thread:55 -->\n"))
+                                 ["log.txt"], bridge.credit_line("bug", "Ann"))
+        self.assertTrue(body.startswith("<!-- discord-thread:55 -->\n**Reported by** Ann on Discord\n"))
+        self.assertEqual(bridge.credit_of(body), ("reported", "Ann"))
         self.assertIn("https://discord.com/channels/1466376402986336550/55", body)
         self.assertIn("**Discord tags:** Windows, Builder", body)
         self.assertIn("> line one\n>\n> line @​two", body)
@@ -73,10 +75,10 @@ class BodyTest(unittest.TestCase):
         self.assertIn("`log.txt` is in the Discord post", body)
 
     def test_attachment_only_post(self):
-        self.assertIn("no text, attachments only", bridge.issue_body("1", [], "  ", [], ["x.zip"]))
+        self.assertIn("no text, attachments only", bridge.issue_body("1", [], "  ", [], ["x.zip"], bridge.credit_line("bug", "Ann")))
 
     def test_long_body_is_truncated(self):
-        body = bridge.issue_body("1", [], "x" * 70000, [], [])
+        body = bridge.issue_body("1", [], "x" * 70000, [], [], bridge.credit_line("bug", "Ann"))
         self.assertLess(len(body), 65536)
         self.assertIn("truncated", body)
 
@@ -297,7 +299,8 @@ class ReportBackTest(unittest.TestCase):
 
 
 class ImportTest(unittest.TestCase):
-    THREAD = {"id": "88", "parent_id": bridge.IDEA_FORUM, "name": "Spell Tracker", "applied_tags": ["B"]}
+    THREAD = {"id": "88", "parent_id": bridge.IDEA_FORUM, "name": "Spell Tracker", "applied_tags": ["B"],
+              "owner_id": "4242"}
 
     def routes(self, starter, bot_messages=()):
         return {
@@ -308,6 +311,7 @@ class ImportTest(unittest.TestCase):
             ("POST", "/repos/o/r/issues"): {"number": 5, "html_url": "https://github.com/o/r/issues/5"},
             ("POST", "/channels/88/messages"): {},
             ("GET", "/channels/88"): dict(self.THREAD),
+            ("GET", "/guilds/1466376402986336550/members/4242"): {"nick": "Spell*Fan", "user": {"username": "u"}},
         }
 
     def test_new_post_becomes_issue_and_reply(self):
@@ -319,7 +323,9 @@ class ImportTest(unittest.TestCase):
         issue = fake.calls[1][3]
         self.assertEqual(issue["title"], "Spell Tracker")
         self.assertEqual(issue["labels"], ["builder", "discord", "enhancement"])
-        self.assertTrue(issue["body"].startswith("<!-- discord-thread:88 -->"))
+        self.assertTrue(issue["body"].startswith("<!-- discord-thread:88 -->\n**Suggested by** Spell\\*Fan on Discord\n"))
+        self.assertNotIn("4242", issue["body"])
+        self.assertEqual(fake.calls[2][3]["allowed_mentions"], {"parse": []})
         self.assertIn("@​here #​3", issue["body"])
         self.assertIn("https://github.com/o/r/issues/5", fake.calls[2][3]["content"])
 
@@ -348,6 +354,159 @@ class ImportTest(unittest.TestCase):
         fake = FakeBridge(False, self.routes({}))
         quiet(fake.retry_reply, dict(self.THREAD), old)
         self.assertEqual(fake.calls, [])
+
+
+class CreditTest(unittest.TestCase):
+    def test_name_prefers_nick_then_global_then_username(self):
+        user = {"username": "ann_42", "global_name": "Ann"}
+        self.assertEqual(bridge.poster_name({"nick": " Annie  B "}, user), "Annie B")
+        self.assertEqual(bridge.poster_name({"nick": None}, user), "Ann")
+        self.assertEqual(bridge.poster_name(None, {"username": "ann_42", "global_name": None}), "ann_42")
+        self.assertEqual(bridge.poster_name(None, None), "")
+
+    def test_name_is_neutralised(self):
+        line = bridge.credit_line("bug", "@everyone <img src=x> **#1** [x](y)\nnext")
+        self.assertNotIn("@everyone", line)
+        self.assertNotIn("<img", line)
+        self.assertNotIn("**#1**", line)
+        self.assertNotIn("](", line)
+        self.assertNotIn("\n", line)
+        self.assertTrue(line.startswith("**Reported by** ") and line.endswith(" on Discord"))
+
+    def test_discord_mentions_in_names_lose_their_ids(self):
+        self.assertNotIn("123", bridge.credit_line("bug", "<@123>"))
+
+    def test_empty_name_and_idea_verb(self):
+        self.assertEqual(bridge.credit_line("bug", "  "), "**Reported by** a community member on Discord")
+        self.assertEqual(bridge.credit_line("idea", "Bo"), "**Suggested by** Bo on Discord")
+
+    def test_long_name_is_bounded(self):
+        self.assertLess(len(bridge.credit_line("bug", "x" * 500)), 120)
+
+    def test_with_credit_is_idempotent(self):
+        old = bridge.marker("5") + "\n**Reported on Discord:** link\n\n> text"
+        line = bridge.credit_line("bug", "Ann")
+        once = bridge.with_credit(old, line)
+        self.assertEqual(once.split("\n")[:3], [bridge.marker("5"), line, "**Reported on Discord:** link"])
+        self.assertEqual(bridge.with_credit(once, line), once)
+        renamed = bridge.with_credit(once, bridge.credit_line("bug", "Annie"))
+        self.assertEqual(renamed.count("Reported by"), 1)
+        self.assertEqual(bridge.credit_of(renamed), ("reported", "Annie"))
+        self.assertEqual(bridge.thread_of(renamed), "5")
+
+    def test_credit_in_post_text_is_not_a_credit(self):
+        body = bridge.marker("5") + "\n> **Reported by** Mallory on Discord"
+        self.assertIsNone(bridge.credit_of(body))
+
+    def test_thanks_mention(self):
+        url = "https://github.com/o/r/issues/3"
+        self.assertTrue(bridge.close_plan("bug", "completed", url, "42")[2].endswith("\nThanks <@42> for reporting this!"))
+        self.assertTrue(bridge.close_plan("idea", "completed", url, "42")[2].endswith("\nThanks <@42> for the idea!"))
+        self.assertNotIn("<@", bridge.close_plan("idea", "not_planned", url, "42")[2])
+        self.assertNotIn("<@", bridge.close_plan("bug", "completed", url, "not-an-id")[2])
+        self.assertEqual(bridge.release_message("v1.2.1", "u", "bug", "42"), "🚀 Released in v1.2.1: u\nThanks <@42> for reporting this!")
+        self.assertEqual(bridge.release_message("v1.2.1", "u"), "🚀 Released in v1.2.1: u")
+
+    def test_credits_markdown(self):
+        md = bridge.credits_markdown([(2, "Spell @Tracker", "suggested", "Bo"), (3, "Boons #1", "reported", "Ann")])
+        lines = md.split("\n")
+        self.assertIn("Community credits", lines[0])
+        self.assertEqual(lines[2:], ["- Boons \\#\u200b1 (#3), reported by Ann", "- Spell @\u200bTracker (#2), suggested by Bo"])
+        self.assertEqual(bridge.credits_markdown([]), "")
+
+
+class CreditSyncTest(unittest.TestCase):
+    URL = "https://github.com/o/r/issues/9"
+
+    def routes(self, member=None, messages=()):
+        routes = {
+            ("GET", "/channels/77/messages"): list(messages),
+            ("GET", "/channels/77"): {"id": "77", "parent_id": bridge.BUG_FORUM, "applied_tags": [], "owner_id": "4242"},
+            ("PATCH", "/channels/77"): {},
+            ("POST", "/channels/77/messages"): {},
+            ("PATCH", "/repos/o/r/issues/9"): {},
+            ("GET", "/users/4242"): {"username": "ann_42", "global_name": "Ann"},
+        }
+        key = ("GET", "/guilds/1466376402986336550/members/4242")
+        routes[key] = member if member is not None else sync.ApiError("GET", "/guilds/x/members/y", 404)
+        return routes
+
+    def test_backfill_adds_credit_once(self):
+        fake = FakeBridge(False, self.routes({"nick": "Annie", "user": {"username": "a"}}))
+        issues = {"77": closed_issue("completed")}
+        quiet(fake.credit_issues, issues)
+        patch = [c for c in fake.calls if c[1] == "PATCH"]
+        self.assertEqual(len(patch), 1)
+        self.assertEqual(bridge.credit_of(patch[0][3]["body"]), ("reported", "Annie"))
+        self.assertNotIn("4242", patch[0][3]["body"])
+        quiet(fake.credit_issues, issues)
+        self.assertEqual(len([c for c in fake.calls if c[1] == "PATCH"]), 1)
+
+    def test_member_who_left_falls_back_to_user(self):
+        fake = FakeBridge(False, self.routes())
+        quiet(fake.credit_issues, {"77": closed_issue("completed")})
+        self.assertEqual(bridge.credit_of(fake.calls[0][3]["body"]), ("reported", "Ann"))
+
+    def test_backfill_dry_run_writes_nothing(self):
+        fake = FakeBridge(True, self.routes({"nick": "Annie"}))
+        _, out = quiet(fake.credit_issues, {"77": closed_issue("completed")})
+        self.assertEqual(fake.calls, [])
+        self.assertIn("**Reported by** Annie on Discord", out)
+
+    def test_fixed_reply_pings_only_the_poster(self):
+        fake = FakeBridge(False, self.routes())
+        quiet(fake.report_closed, {"77": closed_issue("completed")}, "2026-10-01T00:00:00Z")
+        post = [c[3] for c in fake.calls if c[1] == "POST"][0]
+        self.assertIn("Thanks <@4242> for reporting this!", post["content"])
+        self.assertEqual(post["allowed_mentions"], {"parse": [], "users": ["4242"]})
+
+    def test_not_planned_reply_pings_nobody(self):
+        fake = FakeBridge(False, self.routes())
+        quiet(fake.report_closed, {"77": closed_issue("not_planned")}, "2026-10-01T00:00:00Z")
+        post = [c[3] for c in fake.calls if c[1] == "POST"][0]
+        self.assertEqual(post["allowed_mentions"], {"parse": []})
+
+    def test_release_reply_thanks_the_poster(self):
+        routes = self.routes()
+        routes[("GET", "/repos/o/r/releases")] = [
+            {"tag_name": "v1.2.1", "draft": False, "prerelease": False, "published_at": "2026-11-02T10:00:00Z",
+             "html_url": "R"},
+            {"tag_name": "v1.2.0", "draft": False, "prerelease": False, "published_at": "2026-10-28T19:53:06Z",
+             "html_url": "u"},
+        ]
+        fake = FakeBridge(False, routes)
+        quiet(fake.report_releases, {"77": closed_issue("completed")}, "2026-10-29T00:00:00Z")
+        post = [c[3] for c in fake.calls if c[1] == "POST"][0]
+        self.assertEqual(post["content"], "🚀 Released in v1.2.1: R\nThanks <@4242> for reporting this!")
+        self.assertEqual(post["allowed_mentions"], {"parse": [], "users": ["4242"]})
+
+
+class CreditsScriptTest(unittest.TestCase):
+    RELEASES = ReleaseWindowTest.RELEASES
+
+    def test_default_window_starts_at_latest_release(self):
+        self.assertEqual(credits.window(self.RELEASES, None, None), ("2026-11-02T10:00:00Z", "9999"))
+        self.assertEqual(credits.window(self.RELEASES, "v1.2.0", "v1.2.1"),
+                         ("2026-10-28T19:53:06Z", "2026-11-02T10:00:00Z"))
+
+    def test_unknown_or_draft_tag_is_an_error(self):
+        for tag in ("v9.9.9", "v1.3.0", "models-x"):
+            with self.assertRaises(ValueError):
+                credits.window(self.RELEASES, tag, None)
+
+    def test_entries_need_marker_credit_and_completion(self):
+        credited = bridge.marker("1") + "\n" + bridge.credit_line("bug", "Ann") + "\nrest"
+        issues = [
+            {"number": 3, "title": "Boons", "state_reason": "completed", "closed_at": "2026-10-30T00:00:00Z",
+             "body": credited},
+            {"number": 4, "title": "No credit", "state_reason": "completed", "closed_at": "2026-10-30T00:00:00Z",
+             "body": bridge.marker("2") + "\nrest"},
+            {"number": 5, "title": "Not ours", "state_reason": "completed", "closed_at": "2026-10-30T00:00:00Z",
+             "body": "**Reported by** X on Discord"},
+            {"number": 6, "title": "Wontfix", "state_reason": "not_planned", "closed_at": "2026-10-30T00:00:00Z",
+             "body": credited},
+        ]
+        self.assertEqual(credits.entries(issues, "2026-10-28T19:53:06Z", "9999"), [(3, "Boons", "reported", "Ann")])
 
 
 class HttpTest(unittest.TestCase):

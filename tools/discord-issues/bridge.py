@@ -22,6 +22,10 @@ TITLE_LIMIT = 200
 ZWSP = "​"
 
 MARKER_RE = re.compile(r"\A\s*<!-- discord-thread:(\d+) -->")
+# The credit line sits right after the marker: "**Reported by** <name> on Discord" (ideas: "Suggested by").
+CREDIT_RE = re.compile(r"\*\*(Reported|Suggested) by\*\* (.*) on Discord")
+MARKDOWN_SPECIALS = re.compile(r"([\\`*_~\[\]()|!>#])")
+NAME_LIMIT = 80
 
 # Discord tag name (lower case) -> GitHub label. Status tags (Confirmed, Fixed, ...) are not mapped.
 TAG_LABELS = {
@@ -94,6 +98,52 @@ def neutralise(text):
     return text.replace("<", "<" + ZWSP)
 
 
+def inline_text(text, limit=NAME_LIMIT):
+    """Untrusted text for one Markdown line: one line, bounded, Markdown escaped, then neutralised."""
+    text = " ".join(scrub_discord(text or "").split())[:limit]
+    return neutralise(MARKDOWN_SPECIALS.sub(r"\\\1", text))
+
+
+def poster_name(member, user):
+    """Server nickname, else global display name, else username ("" when none). `member` is None after a leave."""
+    for candidate in ((member or {}).get("nick"), (user or {}).get("global_name"), (user or {}).get("username")):
+        name = " ".join(str(candidate or "").split())
+        if name:
+            return name
+    return ""
+
+
+def credit_line(kind, name):
+    verb = "Reported" if kind == "bug" else "Suggested"
+    return f"**{verb} by** {inline_text(name) or 'a community member'} on Discord"
+
+
+def credit_of(body):
+    """(verb, name as Markdown) from the credit line right after the marker, or None."""
+    lines = (body or "").split("\n")
+    match = CREDIT_RE.fullmatch(lines[1]) if len(lines) > 1 else None
+    return (match.group(1).lower(), match.group(2)) if match else None
+
+
+def with_credit(body, line):
+    """The body with `line` as its credit line (replacing an older one); the same body when already there."""
+    lines = body.split("\n")
+    rest = lines[2:] if credit_of(body) else lines[1:]
+    return "\n".join(lines[:1] + [line] + rest)
+
+
+def thanks(kind, poster_id):
+    """A thank-you that mentions the poster, or "" without a valid user id."""
+    if not str(poster_id or "").isdigit():
+        return ""
+    return f"Thanks <@{poster_id}> for reporting this!" if kind == "bug" else f"Thanks <@{poster_id}> for the idea!"
+
+
+def _with_thanks(text, kind, poster_id):
+    line = thanks(kind, poster_id)
+    return f"{text}\n{line}" if line else text
+
+
 def quote(text):
     return "\n".join(("> " + line) if line else ">" for line in text.splitlines()) or ">"
 
@@ -139,10 +189,11 @@ def issue_title(thread_name, thread_id):
     return title[:TITLE_LIMIT] or f"Discord post {thread_id}"
 
 
-def issue_body(thread_id, names, text, images, other_files):
-    """The bridged issue body: marker, link, tags, the quoted starter message, rehosted images, file notes."""
+def issue_body(thread_id, names, text, images, other_files, credit):
+    """The bridged issue body: marker, credit, link, tags, the quoted starter message, rehosted images, file notes."""
     parts = [
         marker(thread_id),
+        credit,
         f"**Reported on Discord:** {thread_url(thread_id)}",
         "**Discord tags:** " + (", ".join(names) if names else "none"),
         "",
@@ -195,12 +246,15 @@ def created_message(kind, number, url):
     return f"Thanks for the idea! It's tracked as GitHub issue #{number}: {url}\nI'll post here when it's done."
 
 
-def close_plan(kind, state_reason, url):
-    """(tag to add, tags to remove, reply) for a closed issue, or None when nothing should be said."""
+def close_plan(kind, state_reason, url, poster_id=None):
+    """(tag to add, tags to remove, reply) for a closed issue, or None when nothing should be said.
+    Fixed/done replies thank the poster by mention."""
     if state_reason == "completed":
         if kind == "bug":
-            return "fixed", (), f"✅ Fixed on main: {url}\nThe fix ships in the next release; I'll post here when it's out."
-        return "done", ("not planned",), f"✅ Done: {url}\nIt ships in the next release; I'll post here when it's out."
+            text = f"✅ Fixed on main: {url}\nThe fix ships in the next release; I'll post here when it's out."
+            return "fixed", (), _with_thanks(text, kind, poster_id)
+        text = f"✅ Done: {url}\nIt ships in the next release; I'll post here when it's out."
+        return "done", ("not planned",), _with_thanks(text, kind, poster_id)
     if state_reason == "not_planned":
         if kind == "bug":
             return None, (), f"This was closed on GitHub as not planned: {url}"
@@ -210,8 +264,8 @@ def close_plan(kind, state_reason, url):
     return None
 
 
-def release_message(tag, url):
-    return f"🚀 Released in {tag}: {url}"
+def release_message(tag, url, kind=None, poster_id=None):
+    return _with_thanks(f"🚀 Released in {tag}: {url}", kind, poster_id)
 
 
 def release_window(releases, tag):
@@ -231,3 +285,13 @@ def released_issues(issues, start, end):
         i for i in issues
         if i.get("state_reason") == "completed" and i.get("closed_at") and start < i["closed_at"] <= end
     ]
+
+
+def credits_markdown(entries):
+    """Release-notes Markdown for [(number, title, verb, name)]: one line per issue, thanking the poster."""
+    if not entries:
+        return ""
+    lines = ["**Community credits**: thanks to everyone who reported bugs and suggested features on the Borealis Discord!", ""]
+    for number, title, verb, name in sorted(entries, key=lambda e: (e[2] != "reported", e[0])):
+        lines.append(f"- {inline_text(title, TITLE_LIMIT)} (#{number}), {verb} by {name}")
+    return "\n".join(lines)

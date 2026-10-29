@@ -18,6 +18,10 @@ Run every step for each public release, in order. A release is not cut while any
 - [ ] Bump the version in all three places, to the same value:
       `Cargo.toml` (`[workspace.package] version`), `src-tauri/tauri.conf.json` (`version`), `ui/package.json` (`version`).
 - [ ] Release notes written; the in-app update flyout shows them (they come from the GitHub release body).
+- [ ] Discord credits in the release notes: run `python3 -I tools/discord-issues/credits.py` (needs `GH_TOKEN`;
+      `--since <previous tag>` when the previous release is not the latest published one) and paste its Markdown,
+      which thanks the Discord users whose bug reports and ideas were closed since the previous release.
+      The website changelog is built from the release notes, so the credits reach it too.
 - [ ] The bundles carry the new version (Info.plist, installer and APK file names).
 
 ## 3. External services
