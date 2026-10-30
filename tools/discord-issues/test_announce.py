@@ -96,9 +96,13 @@ class AnnouncementTest(unittest.TestCase):
         self.assertEqual(len(message["embeds"]), 1)
         self.assertEqual(message["embeds"][0]["url"], URL)
 
-    def test_already_announced_matches_the_release_page(self):
-        self.assertTrue(announce.already_announced([{"embeds": [{"url": URL}]}], URL))
-        self.assertFalse(announce.already_announced([{"embeds": [{"title": "New release published: v1.2.1"}]}], URL))
+    def test_already_announced_needs_the_bots_own_post(self):
+        mine = {"author": {"id": "bot"}, "embeds": [{"url": URL}]}
+        webhook = {"author": {"id": "hook"}, "webhook_id": "hook", "embeds": [{"url": URL}]}
+        self.assertTrue(announce.already_announced([mine], URL, "bot"))
+        self.assertFalse(announce.already_announced([webhook], URL, "bot"))
+        other = {"author": {"id": "bot"}, "embeds": [{"url": "other"}]}
+        self.assertFalse(announce.already_announced([other], URL, "bot"))
 
     def test_pick_release_skips_drafts_and_prereleases(self):
         releases = [release(), release(tag_name="v1.3.0", prerelease=True, published_at="2026-11-01T00:00:00Z"),
@@ -115,6 +119,8 @@ class MainTest(unittest.TestCase):
             calls.append((method, url))
             if "/releases" in url:
                 return [release()]
+            if url.endswith("/users/@me"):
+                return {"id": "bot"}
             if method == "GET":
                 return recent
             return {}
@@ -126,12 +132,12 @@ class MainTest(unittest.TestCase):
         return code, [c for c in calls if c[0] == "POST"], out.getvalue()
 
     def test_posts_once(self):
-        code, posts, _ = self.run_main([], [])
+        code, posts, _ = self.run_main([], [{"author": {"id": "hook"}, "webhook_id": "hook", "embeds": [{"url": URL}]}])
         self.assertEqual((code, len(posts)), (0, 1))
         self.assertIn(f"/channels/{announce.ANNOUNCEMENTS}/messages", posts[0][1])
 
     def test_skips_a_release_already_announced(self):
-        code, posts, out = self.run_main([], [{"embeds": [{"url": URL}]}])
+        code, posts, out = self.run_main([], [{"author": {"id": "bot"}, "embeds": [{"url": URL}]}])
         self.assertEqual((code, posts), (0, []))
         self.assertIn("already announced", out)
 

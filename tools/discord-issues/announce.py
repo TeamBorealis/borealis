@@ -4,7 +4,8 @@
 The notes become one message of embeds: the intro, then one embed per heading. Tables, code blocks, images and HTML
 comments are dropped, and so is everything after the first `---` divider line (checksums, licence). #N
 becomes a link to the issue. Notes that are too long lose text from their longest sections, so the credits stay.
-Nobody is pinged. A release already announced (an embed linking its page) is skipped, so a re-run is safe.
+Nobody is pinged. A release the bot already announced (an embed linking its page) is skipped, so a re-run is
+safe.
 
 Env: DISCORD_BOT_TOKEN, GITHUB_TOKEN, GITHUB_REPOSITORY (default TeamBorealis/borealis).
 Usage: announce.py [--tag TAG] [--dry-run]. Default tag: the latest published release. Exit 0 when posted or
@@ -107,8 +108,10 @@ def announcement(release, repo):
     return {"content": content, "embeds": embeds, "allowed_mentions": {"parse": []}}
 
 
-def already_announced(messages, url):
-    return any(embed.get("url") == url for message in messages for embed in message.get("embeds", []))
+def already_announced(messages, url, bot_id):
+    """True when the bot itself has posted this release (GitHub's own webhook post doesn't count)."""
+    return any(message.get("author", {}).get("id") == bot_id and embed.get("url") == url
+               for message in messages for embed in message.get("embeds", []))
 
 
 def pick_release(releases, tag):
@@ -136,7 +139,8 @@ def main(argv=None):
             print(f"::error::no published stable release {args.tag or ''}".rstrip())
             return 2
         recent = bridge.discord("GET", f"/channels/{ANNOUNCEMENTS}/messages?limit={RECENT_MESSAGES}")
-        if already_announced(recent, release["html_url"]):
+        bot_id = bridge.discord("GET", "/users/@me")["id"]
+        if already_announced(recent, release["html_url"], bot_id):
             print(f"{release['tag_name']} is already announced")
             return 0
         message = announcement(release, repo)
