@@ -671,7 +671,8 @@ mod tests {
                 ..SelectRule::default()
             })
         };
-        e.rules = vec![sel("Smith’s Tools"), sel("Ok"), sel("Ok")];
+        // IM13: "Smith’s Tools" is a tag now; an unbalanced parenthesis is still invalid
+        e.rules = vec![sel("Smith’s (Tools"), sel("Ok"), sel("Ok")];
         let issues = store(vec![e]).validate();
         let c = codes(&issues);
         assert_eq!(

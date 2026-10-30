@@ -53,8 +53,10 @@ impl fmt::Display for SupportsLeaf {
     }
 }
 
+/// A tag character (spec 8.1 as amended by IM13, GitHub #11): a letter or digit of any script,
+/// or one of `_ . / $ -`, space, `:` `'` `’`. Never an operator (`, & | ! ( )`).
 fn is_token_char(c: char) -> bool {
-    c.is_ascii_alphanumeric() || matches!(c, '_' | ' ' | '.' | '/' | '$' | '-')
+    c.is_alphanumeric() || matches!(c, '_' | ' ' | '.' | '/' | '$' | '-' | ':' | '\'' | '’')
 }
 
 fn parse_leaf(cursor: &mut Cursor) -> Result<SupportsLeaf, ExprError> {
@@ -252,19 +254,62 @@ mod tests {
 
     #[test]
     fn invalid_expressions_are_rejected() {
+        // IM13 (spec 8.1 as amended 2026-10-31): `:` `'` `’` and letters are tag characters now,
+        // so "Smith’s Tools" and "A:B" moved to `tags_accept_any_letter_colon_and_apostrophes`;
+        // operator characters still end a tag
         for bad in [
             "A&&",
             "(A",
             "A)",
             "()",
-            "Smith’s Tools",
-            "A:B",
             "!",
             "A B C (",
+            "Smith’s (Tools",
+            "A:B)",
+            "Senryōka (",
+            "A;B",
+            "A\"B",
         ] {
             assert!(SupportsExpr::parse(bad).is_err(), "{bad} should not parse");
         }
         let err = SupportsExpr::parse("$(oops").unwrap_err();
         assert!(matches!(err.kind, ExprErrorKind::InvalidPlaceholder(_)));
+    }
+
+    /// IM13 (GitHub #11): Aurora homebrew copies its tags verbatim into selects, and Aurora's own
+    /// parser throws on these; Borealis reads them as the single tags they plainly are.
+    #[test]
+    fn tags_accept_any_letter_colon_and_apostrophes() {
+        for text in [
+            "Companion 4: Ability Boost",
+            "Spirit Bonded Senryōka",
+            "Spider's Cunning",
+            "Smith’s Tools",
+            "A:B",
+            "Ünïcödé Tag",
+            "Ōkami: Ninjutsu",
+        ] {
+            let e = SupportsExpr::parse(text).unwrap().unwrap();
+            assert_eq!(e.root(), &tag(text), "{text}");
+            assert_eq!(e.to_string(), text);
+            assert_eq!(SupportsExpr::parse(&e.to_string()).unwrap().unwrap(), e);
+        }
+        let e = SupportsExpr::parse("!A:B").unwrap().unwrap();
+        assert_eq!(e.root(), &BoolExpr::Not(Box::new(tag("A:B"))));
+        let e = SupportsExpr::parse("A,B:C").unwrap().unwrap();
+        assert_eq!(e.root(), &BoolExpr::And(vec![tag("A"), tag("B:C")]));
+        let e = SupportsExpr::parse("Spider's Cunning||Senryōka: Path")
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            e.root(),
+            &BoolExpr::Or(vec![tag("Spider's Cunning"), tag("Senryōka: Path")])
+        );
+        // the spell placeholders keep their meaning
+        let e = SupportsExpr::parse("$(spellcasting:list), Druid: Circle")
+            .unwrap()
+            .unwrap();
+        assert_eq!(e.dynamics(), vec![&Dynamic::SpellcastingList]);
+        assert_eq!(e.tags(), vec!["Druid: Circle"]);
     }
 }
