@@ -11,6 +11,7 @@ import { PaneShell } from "../builder/DescriptionPane";
 import "../builder/builder.css";
 import { loadDefaultSources, saveDefaultSources, useApplySourceRestrictions } from "./applySources";
 import { SourceMenu, type MenuItem } from "./SourceMenu";
+import { BookEdition } from "./BookEdition";
 import "./content.css";
 
 const Badge = ({ d, tip }: { d: string; tip: string }) => <span className="v4-flag" role="img" aria-label={tip} title={tip}><Svg d={d} /></span>;
@@ -156,6 +157,7 @@ export function SourcesPage() {
           <p>{sel.description}</p>
           <p className="v4-src-facts">{sel.elementCount} elements{meta.get(sel.packId)?.attribution ? ` · ${meta.get(sel.packId)?.attribution}` : ""}{meta.get(sel.packId)?.version ? ` · v${meta.get(sel.packId)?.version}` : ""}{sel.playtest ? " · playtest" : ""}{sel.incomplete ? " · incomplete" : ""}</p>
           {sel.info && <p className="v4-src-info">{sel.info}</p>}
+          <BookEdition source={sel} onChanged={(list) => sources.setData(list)} />
         </PaneShell>
       ) : <aside className="desc-pane" aria-label="Description" />}
     </div>

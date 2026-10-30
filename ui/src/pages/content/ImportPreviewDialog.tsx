@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import type { ContentProgress, ImportPreview, UnresolvedRef } from "../../api/contract";
+import type { ContentProgress, ImportPreview, PreviewBook, Ruleset, UnresolvedRef } from "../../api/contract";
 import { Alert, Button, Modal, ProgressBar, useConfirm, useToast } from "../../components";
-import { Expander } from "../../components/controls";
+import { ComboBox, Expander } from "../../components/controls";
+import { EDITION_OPTIONS } from "./BookEdition";
 import { useApi } from "../../state/ApiContext";
 import { closeInstallReport, dismissImportPreview, setImportBusy, showInstallReport, useImportPreviewState } from "../../state/importPreview";
 import { errorMessage } from "../../state/useAsync";
@@ -21,6 +22,23 @@ function RefItem({ u }: { u: UnresolvedRef }) {
       <span className="muted small"> used by {u.referencedBy.join(", ")}{more}{u.files.length > 0 && ` (${u.files.join(", ")})`}</span>
       {u.knownSource && <span className="muted small"> {u.knownSource} is loaded but has no element with this id: it may be misspelled, or a file of that book is missing.</span>}
     </li>
+  );
+}
+
+/** IM14: each book of the import with its rules edition, which the user may change before Install. */
+function BookEditions({ books, chosen, onChange }: { books: PreviewBook[]; chosen: Record<string, Ruleset>; onChange: (name: string, r: Ruleset) => void }) {
+  return (
+    <fieldset className="v4-imp-books" aria-label="Books and their rules edition">
+      <legend>Rules edition</legend>
+      <p className="muted small">Each book is 2014 or 2024 rules: its &quot;D&amp;D 5.5e&quot; mark says 2024, otherwise it is guessed from the name and date. Change a wrong guess here or later on the Sources page.</p>
+      {books.map((b, i) => (
+        <div key={b.name} className="v4-imp-book">
+          <label htmlFor={`v4-imp-book-${i}`}>{b.name}</label>
+          <ComboBox id={`v4-imp-book-${i}`} options={EDITION_OPTIONS} value={chosen[b.name] ?? b.edition} onChange={(e) => onChange(b.name, e.target.value as Ruleset)} />
+          {b.setByUser && <span className="muted small">your earlier choice</span>}
+        </div>
+      ))}
+    </fieldset>
   );
 }
 
@@ -48,10 +66,12 @@ export function ImportPreviewDialog({ preview }: { preview: ImportPreview }) {
     dismissImportPreview(api);
     navigate("/content");
   };
+  const [editions, setEditions] = useState<Record<string, Ruleset>>({});
   const install = async () => {
     setImportBusy(true);
     try {
-      const r = await api.installImportPreview({ previewId: preview.previewId });
+      const changed = Object.fromEntries(preview.books.filter((b) => editions[b.name] && editions[b.name] !== b.edition).map((b) => [b.name, editions[b.name]!]));
+      const r = await api.installImportPreview({ previewId: preview.previewId, ...(Object.keys(changed).length ? { editions: changed } : {}) });
       toast.push(r.pack ? `Imported "${r.pack.name}" (${plural(r.report.converted, "element")}).` : "Nothing was imported.", r.pack ? "info" : "error");
       showInstallReport(r.report);
       navigate("/content");
@@ -70,6 +90,7 @@ export function ImportPreviewDialog({ preview }: { preview: ImportPreview }) {
         </Alert>
         {source && busy && progress && progress.phase !== "done" && <div><ProgressBar label="Update progress" value={progress.done} max={Math.max(1, progress.total)} /><span className="small muted" role="status">{progress.message}</span></div>}
         {preview.replacesExisting && !none && <Alert tone="warning">An installed pack named "{preview.packName}" will be replaced.</Alert>}
+        {!none && preview.books.length > 0 && <BookEditions books={preview.books} chosen={editions} onChange={(name, r) => setEditions({ ...editions, [name]: r })} />}
         {preview.counts.length > 0 && (
           <Expander title="Converted">
             <ul className="v4-impcounts" aria-label="Converted elements">

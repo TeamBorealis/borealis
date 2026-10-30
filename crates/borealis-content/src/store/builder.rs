@@ -4,7 +4,7 @@ use crate::error::ContentError;
 use crate::file::{ContentFile, IndexFile, PackFileKind, PackManifest, PackOrigin};
 use crate::issue::{Issue, IssueCode};
 use crate::ruleset::Ruleset;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
@@ -39,6 +39,8 @@ pub struct ContentStoreBuilder {
     packs: Vec<PackInfo>,
     indexes: Vec<LoadedIndex>,
     diagnostics: Vec<Issue>,
+    /// IM14: the user's edition per imported book, by [`super::source_key`].
+    source_editions: BTreeMap<String, Ruleset>,
 }
 
 fn read_text(path: &Path) -> Result<String, ContentError> {
@@ -160,6 +162,18 @@ impl ContentStoreBuilder {
         Ok(self)
     }
 
+    /// IM14 (GitHub #11): the user's edition per imported book, keyed by
+    /// [`super::source_key`] of the book's name. [`build`](Self::build) re-tags the book's
+    /// elements in custom (imported) files: its `Source` element, elements naming it (or one of
+    /// its `alternative` names) as their source, and `Internal`/`Core` helpers in a file whose
+    /// other elements all belong to such books. Edition-neutral (`any`) elements and bundled
+    /// files are never re-tagged. The files on disk are not changed.
+    #[must_use]
+    pub fn with_source_editions(mut self, editions: BTreeMap<String, Ruleset>) -> Self {
+        self.source_editions = editions;
+        self
+    }
+
     /// Apply the load pipeline: ordered files, duplicate/override rules, then appends.
     ///
     /// * `ignore: true` files are skipped.
@@ -169,17 +183,19 @@ impl ContentStoreBuilder {
     #[must_use]
     pub fn build(self) -> ContentStore {
         let Self {
-            files,
+            mut files,
             packs,
             indexes,
             mut diagnostics,
+            source_editions,
         } = self;
+        let retagged = apply_source_editions(&mut files, &source_editions);
         let mut slots: Vec<Option<StoredElement>> = Vec::new();
         let mut position: HashMap<String, usize> = HashMap::new();
         let mut appends: Vec<(Arc<str>, Append)> = Vec::new();
         let mut loaded_files = Vec::new();
 
-        for pending in files {
+        for (file_index, pending) in files.into_iter().enumerate() {
             let name: Arc<str> = Arc::from(pending.name.as_str());
             if pending.file.is_ignored() {
                 diagnostics.push(
@@ -193,7 +209,8 @@ impl ContentStoreBuilder {
             }
             loaded_files.push(pending.name.clone());
             let file_ruleset = pending.file.ruleset;
-            for mut element in pending.file.elements {
+            for (element_index, mut element) in pending.file.elements.into_iter().enumerate() {
+                let edition_set_by_user = retagged.contains(&(file_index, element_index));
                 if element.ruleset.is_none() {
                     element.ruleset = file_ruleset;
                 }
@@ -237,6 +254,7 @@ impl ContentStoreBuilder {
                     origin: pending.origin,
                     extended: false,
                     appended_supports: Vec::new(),
+                    edition_set_by_user,
                 }));
             }
             appends.extend(
@@ -291,6 +309,71 @@ impl ContentStoreBuilder {
         );
         ContentStore::assemble(elements, loaded_files, packs, indexes, diagnostics)
     }
+}
+
+/// IM14: re-tag the elements of books the user set an edition for (see
+/// [`ContentStoreBuilder::with_source_editions`]). Returns the (file, element) positions changed.
+fn apply_source_editions(
+    files: &mut [PendingFile],
+    editions: &BTreeMap<String, Ruleset>,
+) -> std::collections::HashSet<(usize, usize)> {
+    let mut changed = std::collections::HashSet::new();
+    if editions.is_empty() {
+        return changed;
+    }
+    let custom = |p: &PendingFile| p.origin == PackOrigin::Custom;
+    // a book's `alternative` names share its edition
+    let mut by_key = editions.clone();
+    for el in files
+        .iter()
+        .filter(|p| custom(p))
+        .flat_map(|p| &p.file.elements)
+    {
+        if el.ty != "Source" {
+            continue;
+        }
+        if let Some(&r) = editions.get(&super::source_key(&el.name)) {
+            for alt in el.setters.iter().filter(|s| s.name == "alternative") {
+                by_key.entry(super::source_key(&alt.value)).or_insert(r);
+            }
+        }
+    }
+    let book_of = |el: &crate::Element| {
+        let name = if el.ty == "Source" {
+            &el.name
+        } else {
+            &el.source
+        };
+        by_key.get(&super::source_key(name)).copied()
+    };
+    for (fi, pending) in files.iter_mut().enumerate().filter(|(_, p)| custom(p)) {
+        let file_ruleset = pending.file.ruleset;
+        let books: Vec<Option<Ruleset>> = pending
+            .file
+            .elements
+            .iter()
+            .filter(|e| e.ty == "Source" || !super::is_unrestrictable_source(&e.source))
+            .map(book_of)
+            .collect();
+        // helpers follow their file when every other element is of books set to one edition
+        let follow = books
+            .first()
+            .copied()
+            .flatten()
+            .filter(|r| books.iter().all(|b| *b == Some(*r)));
+        for (ei, el) in pending.file.elements.iter_mut().enumerate() {
+            if el.ruleset.or(file_ruleset) == Some(Ruleset::Any) {
+                continue;
+            }
+            let helper = el.ty != "Source" && super::is_unrestrictable_source(&el.source);
+            let set = if helper { follow } else { book_of(el) };
+            if let Some(r) = set {
+                el.ruleset = Some(r);
+                changed.insert((fi, ei));
+            }
+        }
+    }
+    changed
 }
 
 fn collect_json(root: &Path, dir: &Path, out: &mut Vec<String>) -> Result<(), ContentError> {

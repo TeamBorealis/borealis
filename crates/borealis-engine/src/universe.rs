@@ -217,6 +217,9 @@ pub struct UElem {
     /// that was a race, in a 2014 character). The foreign options of its own selects are
     /// accepted with it (`Graph::inherits_owner_acceptance`).
     pub legacy_accepted: bool,
+    /// IM14: its book's edition is the user's choice (Sources page). A character that already
+    /// holds it keeps it whatever the edition; new picks follow the edition (R4).
+    pub edition_set_by_user: bool,
 }
 
 impl UElem {
@@ -259,6 +262,7 @@ impl UElem {
             superseded: false,
             toggle_effects,
             legacy_accepted: false,
+            edition_set_by_user: false,
         }
     }
 
@@ -718,13 +722,15 @@ impl Universe {
                     let derived = Self::multiclass_element(&el, &mc);
                     patch_class(&mut el, &mc);
                     let supports = eff(&derived);
-                    uni.push(UElem::build(
+                    let mut multi = UElem::build(
                         derived,
                         el.rules.len().saturating_sub(1),
                         true,
                         edition.clone(),
                         supports,
-                    ));
+                    );
+                    multi.edition_set_by_user = stored.edition_set_by_user;
+                    uni.push(multi);
                     // the copied-rule count is the class rules *before* the patch appended one rule
                 }
             }
@@ -732,6 +738,7 @@ impl Universe {
             let legacy = legacy_alias_accepted(&stored.element, profile).is_some();
             let mut u = UElem::build(el, 0, false, edition, supports);
             u.legacy_accepted = legacy && u.edition.is_accepted();
+            u.edition_set_by_user = stored.edition_set_by_user;
             uni.push(u);
         }
         // fix copied_rules of multiclass elements: class rules before patching
@@ -1027,6 +1034,7 @@ impl Universe {
             let mut rebuilt =
                 UElem::build(el, u.copied_rules, u.derived, edition, u.supports.clone());
             rebuilt.legacy_accepted = u.legacy_accepted;
+            rebuilt.edition_set_by_user = u.edition_set_by_user;
             self.elems[i] = rebuilt;
         }
     }

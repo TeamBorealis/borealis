@@ -90,6 +90,7 @@ const COMMANDS: &[&str] = &[
     "set_pack_enabled",
     "remove_pack",
     "list_sources",
+    "set_source_edition",
     "list_indexes",
     "add_index",
     "remove_index",

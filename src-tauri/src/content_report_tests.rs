@@ -46,7 +46,7 @@ fn upload(name: &str, bytes: &[u8]) -> PreviewImportRequest {
 
 fn install(app: &AppState, request: &PreviewImportRequest) -> crate::content_dto::ImportPackResult {
     let preview = app.preview_import_pack(request).unwrap();
-    app.install_import_preview(&preview.preview_id, &NullSink)
+    app.install_import_preview(&preview.preview_id, None, &NullSink)
         .unwrap()
 }
 

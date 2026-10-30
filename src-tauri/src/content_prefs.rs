@@ -47,6 +47,14 @@ pub struct ContentPrefs {
     pub indexes: Vec<IndexRecord>,
     /// 5etools data folders imported from an address the user pasted.
     pub fivetools_urls: Vec<FiveToolsUrlRecord>,
+    /// IM14 (GitHub #11): the edition the user set for an imported book, by
+    /// [`borealis_content::source_key`] of its name: `dnd2014` or `dnd2024`. Applied when content
+    /// loads; the imported files are never rewritten. Kept as text so a value a newer app writes
+    /// never makes this file unreadable (an unknown value is ignored, see [`Self::source_editions`]).
+    pub source_editions: BTreeMap<String, String>,
+    /// Keys a newer Borealis wrote that this one does not know: kept and written back.
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, serde_json::Value>,
 }
 
 /// A 5etools data folder imported from an address (GitHub repository or folder URL).
@@ -72,6 +80,27 @@ pub struct FiveToolsUrlRecord {
 }
 
 impl ContentPrefs {
+    /// The book editions the user set, as rulesets (unknown values are skipped).
+    #[must_use]
+    pub fn source_editions(&self) -> BTreeMap<String, borealis_content::Ruleset> {
+        self.source_editions
+            .iter()
+            .filter_map(|(k, v)| match v.as_str() {
+                "dnd2014" => Some((k.clone(), borealis_content::Ruleset::Dnd2014)),
+                "dnd2024" => Some((k.clone(), borealis_content::Ruleset::Dnd2024)),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// Set a book's edition (`Dnd2014` or `Dnd2024`) by its name.
+    pub fn set_source_edition(&mut self, book: &str, edition: borealis_content::Ruleset) {
+        self.source_editions.insert(
+            borealis_content::source_key(book),
+            edition.as_str().to_string(),
+        );
+    }
+
     /// Read the file; a missing or damaged file means defaults.
     #[must_use]
     pub fn load(path: &Path) -> Self {

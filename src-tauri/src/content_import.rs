@@ -111,6 +111,9 @@ impl AppState {
             )));
         }
         tracing::info!(packs = staged.len(), reason, "installing imported packs");
+        let mut prefs = self.content_prefs();
+        // IM14: a re-import never flips an installed book's edition silently
+        crate::book_editions::keep_installed_editions(&*self.hub()?, &mut prefs, staged);
         let library = self.paths.library();
         let backup = Scratch::new(&self.paths.data)?;
         let mut moved = Vec::new();
@@ -123,7 +126,6 @@ impl AppState {
             std::fs::rename(dir, &target).map_err(|e| ApiError::io("install a pack", e))?;
             moved.push((target, slug(id)));
         }
-        let mut prefs = self.content_prefs();
         for (_, id) in staged {
             prefs.disabled_packs.remove(id);
         }

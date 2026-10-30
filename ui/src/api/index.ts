@@ -28,5 +28,7 @@ export function createApi(): Api {
   // `?mockClassless=dnd2024`: that edition has no classes (GitHub #10, U14 web e2e).
   const classless = new URLSearchParams(window.location.search).get("mockClassless");
   const classlessEdition = classless === "dnd2014" || classless === "dnd2024" ? classless : null;
-  return new MockApi({ aiChunkDelayMs: 30, mobile, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null, bundleFile: bundle, semantic, classlessEdition });
+  // `?mockNotices=1`: the seeded characters carry content notices (GitHub #11 C1 screenshots).
+  const contentNotices = new URLSearchParams(window.location.search).get("mockNotices") === "1";
+  return new MockApi({ aiChunkDelayMs: 30, mobile, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null, bundleFile: bundle, semantic, classlessEdition, contentNotices });
 }

@@ -1087,6 +1087,12 @@ impl<'u> Graph<'u> {
         let mut at = Some(owner);
         while let Some(n) = at {
             let e = self.nodes[n].e;
+            // IM14: under content the character kept although its book's edition changed, the
+            // same book's options stay usable (a kept class's features)
+            if e.edition_set_by_user && !e.edition.is_accepted() {
+                return cand.edition_set_by_user
+                    && matches!(&e.edition, EditionStatus::Foreign { from: f, .. } if f == from);
+            }
             if e.legacy_accepted || (e.edition.is_foreign() && e.edition.is_accepted()) {
                 return matches!(&e.edition, EditionStatus::Foreign { from: f, .. } if f == from);
             }
@@ -1172,7 +1178,10 @@ impl<'u> Graph<'u> {
             || cand.el.legacy_alias.as_deref() == Some(s.ty.as_str())
             || (cand.edition.is_foreign()
                 && crate::universe::cross_edition_types(&s.ty).contains(&cand.el.ty.as_str()));
-        if !type_ok || !(cand.edition.is_accepted() || inherited || relax.edition) {
+        // IM14: a stored choice of a book whose edition the user set is replayed whatever the
+        // edition (the character took it before the change); new picks follow R4
+        let kept = existing && cand.edition_set_by_user;
+        if !type_ok || !(cand.edition.is_accepted() || inherited || kept || relax.edition) {
             return false;
         }
         if !existing {

@@ -34,7 +34,14 @@ export function withChoices(c: MockCharacter, choices: Record<string, string>): 
   return reprocess({ ...c, choices: { ...c.choices, ...choices } }).character;
 }
 
-export function seedLibrary(): MockCharacter[] {
+/** C1 sample: notices a character keeps about content it holds (`?mockNotices=1`). */
+export const SAMPLE_CONTENT_NOTICES: readonly string[] = [
+  "ID_HB_GTPG25_CF_ULTIMATE_STYLE has unparsable expressions in: requirements",
+  "ID_HB_RGTTYR_FEAT_SPIRIT_BONDED has unparsable expressions in: rule 2",
+  "A user content pack could not be loaded: homebrew/broken-feats.json",
+];
+
+export function seedLibrary(notices: readonly string[] = []): MockCharacter[] {
   let fighter = createCharacter({ name: "Brannoc Ironvale", ruleset: "dnd2014", startingLevel: 3, gender: "Male", abilityMethod: "manual", options: {} }, { playerName: "Sample Player" });
   fighter = { ...fighter, base: { str: 16, dex: 12, con: 15, int: 10, wis: 13, cha: 8 }, xp: 900, group: "Campaign: Ashfall", favorite: true, dirty: false, path: "/sample/brannoc.json" };
   fighter = withChoices(fighter, { "race:0": "dwarf", "subrace:0": "hill-dwarf", "c0:class": "fighter", "bg:background": "soldier",
@@ -49,5 +56,5 @@ export function seedLibrary(): MockCharacter[] {
     "c0:spell:0": "magic-missile", "c0:spell:1": "shield", "c0:spell:2": "sleep", "c0:spell:3": "mage-armor",
     "c0:spell:4": "detect-magic", "c0:spell:5": "identify", "c0:spell:6": "thunderwave", "c0:spell:7": "feather-fall" });
   wizard = { ...wizard, prepared: { c0: ["magic-missile", "shield", "mage-armor", "thunderwave"] }, items: [{ ...makeItem("spellbook", 1) }, { ...makeItem("dagger", 1) }, { ...makeItem("explorers-pack", 1) }] };
-  return [fighter, wizard];
+  return [fighter, wizard].map((c) => ({ ...c, notices: [...notices] }));
 }

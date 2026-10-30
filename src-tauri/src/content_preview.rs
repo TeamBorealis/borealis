@@ -10,6 +10,7 @@ use crate::content_import::{
 };
 use crate::content_packs::{progress, EventSink};
 use crate::content_report::{name_scratch_file, MAX_DIAGNOSTICS};
+use crate::dto::Ruleset;
 use crate::error::{ApiError, ApiResult};
 use crate::picked_paths::PickPurpose;
 use crate::session::new_id;
@@ -111,6 +112,8 @@ pub struct ImportPreview {
     /// add it as a content source (the same outcome as Additional Content > Indexes).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub index_url: Option<String>,
+    /// IM14: the books of the set with their editions; the user may change them before Install.
+    pub books: Vec<crate::content_dto::PreviewBook>,
 }
 
 /// A file handed to the app by the OS ("open with" / share), waiting for the UI. Android's activity
@@ -198,18 +201,37 @@ impl AppState {
     ///
     /// # Errors
     /// `invalid_argument` when the preview expired or nothing converted; `content_error` if it cannot load.
+    ///
+    /// `editions` (IM14): the edition the user chose for books of the set, by book name; each is
+    /// stored as that book's choice before the install. Nothing is installed when one names a
+    /// book outside the set or is not 2014 or 2024.
     pub fn install_import_preview(
         &self,
         preview_id: &str,
+        editions: Option<&BTreeMap<String, Ruleset>>,
         sink: &dyn EventSink,
     ) -> ApiResult<ImportPackResult> {
         let _guard = self.content_lock()?;
         let staged = {
             let mut all = STAGED.lock()?;
-            let at = all.iter().position(|(id, _)| id == preview_id);
-            at.map(|i| all.remove(i).1)
+            let at = all
+                .iter()
+                .position(|(id, _)| id == preview_id)
+                .ok_or_else(|| {
+                    ApiError::invalid("This preview has expired. Choose the files again.")
+                })?;
+            if let Some(chosen) = editions {
+                crate::book_editions::check_preview_editions(&all[at].1.preview.books, chosen)?;
+            }
+            all.remove(at).1
+        };
+        if let Some(chosen) = editions.filter(|c| !c.is_empty()) {
+            let mut prefs = self.content_prefs();
+            for (book, edition) in chosen {
+                prefs.set_source_edition(book, *edition);
+            }
+            prefs.save(&self.paths.prefs_file())?;
         }
-        .ok_or_else(|| ApiError::invalid("This preview has expired. Choose the files again."))?;
         self.install_staged(staged, sink)
     }
 
@@ -309,6 +331,7 @@ impl AppState {
             conditions_total: found.conditions_total,
             replaces_existing: self.paths.library().join(&id).exists(),
             index_url: None,
+            books: crate::book_editions::preview_books(&out_dir, &self.content_prefs()),
         };
         Ok(Staged {
             _scratch: scratch,

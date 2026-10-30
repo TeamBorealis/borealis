@@ -175,13 +175,15 @@ pub async fn preview_import_pack(
     blocking(app, move |state, _| state.preview_import_pack(&request)).await
 }
 
+/// `editions` (IM14): the edition the user chose for books of the set, by book name.
 #[tauri::command]
 pub async fn install_import_preview(
     app: AppHandle,
     preview_id: String,
+    editions: Option<std::collections::BTreeMap<String, crate::dto::Ruleset>>,
 ) -> ApiResult<ImportPackResult> {
     blocking(app, move |state, sink| {
-        state.install_import_preview(&preview_id, sink)
+        state.install_import_preview(&preview_id, editions.as_ref(), sink)
     })
     .await
 }
@@ -233,6 +235,17 @@ pub fn remove_pack(app: AppHandle, state: S<'_>, pack_id: String) -> ApiResult<V
 #[tauri::command(async)]
 pub fn list_sources(state: S<'_>) -> ApiResult<Vec<ContentSource>> {
     state.list_sources()
+}
+
+/// IM14: set an imported book's edition (Sources page) and hot-reload.
+#[tauri::command(async)]
+pub fn set_source_edition(
+    app: AppHandle,
+    state: S<'_>,
+    source_id: String,
+    edition: crate::dto::Ruleset,
+) -> ApiResult<Vec<ContentSource>> {
+    state.set_source_edition(&source_id, edition, &TauriSink(app))
 }
 
 #[tauri::command(async)]

@@ -283,7 +283,7 @@ fn drop_folder(
         .collect();
     println!("  converted by type: {}", counts.join(", "));
     state
-        .install_import_preview(&p.preview_id, &NullSink)
+        .install_import_preview(&p.preview_id, None, &NullSink)
         .expect("install");
     (tmp, state)
 }

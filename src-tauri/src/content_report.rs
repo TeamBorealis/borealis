@@ -7,9 +7,7 @@ use crate::content_overrides::bundled_override_issues;
 use crate::content_preview::{Converted, SeverityCounts, UnresolvedRef};
 use crate::error::ApiResult;
 use crate::state::AppState;
-use borealis_content::{
-    ContentFile, ContentStore, Element, Issue, IssueCode, PackFileKind, PackManifest, Severity,
-};
+use borealis_content::{ContentStore, Element, Issue, IssueCode, Severity};
 use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
@@ -227,27 +225,10 @@ fn book_abbreviations(store: &ContentStore, out_dir: &Path) -> HashMap<String, S
         }
     };
     store.by_type("Source").for_each(|s| add(&s.element));
-    for file in pack_content_files(out_dir) {
+    for file in crate::book_editions::pack_content_files(out_dir) {
         file.elements.iter().for_each(&mut add);
     }
     books
-}
-
-/// The content files of the pack written to `out_dir` (none if it cannot be read).
-fn pack_content_files(out_dir: &Path) -> Vec<ContentFile> {
-    let Some(manifest) = std::fs::read_to_string(out_dir.join("pack.json"))
-        .ok()
-        .and_then(|t| PackManifest::from_json_str(&t).ok())
-    else {
-        return Vec::new();
-    };
-    manifest
-        .files
-        .iter()
-        .filter(|f| f.kind == PackFileKind::Content)
-        .filter_map(|f| std::fs::read_to_string(out_dir.join(&f.path)).ok())
-        .filter_map(|t| ContentFile::from_json_str(&t).ok())
-        .collect()
 }
 
 /// The loaded book whose abbreviation is one of the first id segments of `target`.

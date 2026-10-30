@@ -94,6 +94,7 @@
     "allow-set-pack-enabled",
     "allow-remove-pack",
     "allow-list-sources",
+    "allow-set-source-edition",
     "allow-list-indexes",
     "allow-add-index",
     "allow-remove-index",

@@ -246,7 +246,7 @@ fn import(state: &AppState) {
         return;
     }
     let installed = state
-        .install_import_preview(&preview.preview_id, &NullSink)
+        .install_import_preview(&preview.preview_id, None, &NullSink)
         .unwrap();
     println!("PEER-IMPORT pack={:?}", installed.pack.map(|p| p.id));
     report(state);

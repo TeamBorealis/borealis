@@ -7,16 +7,22 @@
 //! elements of the same run. A source is 2024 when:
 //! - its `information` setter starts with `D&D 5.5e`, the marker the AuroraLegacy core and
 //!   partnered repositories put on every 2024 source (Aurora shows it as the source's information
-//!   message, `SourceParser.InformationMessage`), or
+//!   message, `SourceParser.InformationMessage`); otherwise, unless its name says `2014`,
+//! - its name carries a year from 2024 on (`(2025)`) or `5.5` (IM14's guess); or
 //! - it is official (`official` = true) and its `release` setter (`YYYYMMDD`) is on or after the
-//!   2024 Player's Handbook, the IM8 rule for 5etools books without an edition flag.
+//!   2024 Player's Handbook, the IM8 rule for books without an edition flag (official 2014-rules
+//!   adventures of early 2024 stay 2014); or
+//! - it is not official and its `release` year is 2024 or later (IM14's guess, GitHub #11: third-
+//!   party and homebrew books rarely carry the marker).
 //!
-//! Third-party sources dated after 2024 without the marker (`The Crooked Moon 2014`) stay 2014.
+//! A name that says `2014` (`The Crooked Moon 2014`) keeps the book 2014 whatever its date. The
+//! user can set any imported book's edition on the Sources page (stored in the content
+//! preferences, applied when content loads; the converted files are never rewritten).
 //! A file whose elements all belong to 2024 sources (helpers of source `Internal`, which is not a
 //! `Source` element, follow their file) becomes a `dnd2024` file; in a mixed file only the 2024
 //! elements are tagged. Only a 2014 run is re-tagged: `--ruleset dnd2024` already stamps 2024.
 
-use borealis_content::{ContentFile, Element, Ruleset};
+use borealis_content::{source_key, ContentFile, Element, Ruleset};
 use std::collections::BTreeMap;
 
 /// Release date (`YYYYMMDD`) of the 2024 Player's Handbook, the IM8 cutoff.
@@ -24,14 +30,23 @@ const PHB_2024_RELEASE: &str = "20240917";
 /// Start of the `information` setter of a 2024 source.
 const MARKER_2024: &str = "D&D 5.5e";
 
-/// Lower-cased source name with typographic apostrophes folded, as element `source` attributes
-/// spell the same source both ways (`Player’s Handbook`, `Player's Handbook`).
-fn source_key(name: &str) -> String {
-    name.trim().replace('’', "'").to_lowercase()
-}
-
 fn is_release_date(d: &str) -> bool {
     d.len() == 8 && d.bytes().all(|b| b.is_ascii_digit())
+}
+
+/// First year of 2024 content (IM14's name and date guess).
+const FIRST_2024_YEAR: u32 = 2024;
+
+/// The four-digit years written in a source name (`Grim Hollow: Player's Guide (2025)`).
+fn years_in(name: &str) -> impl Iterator<Item = u32> + '_ {
+    name.split(|c: char| !c.is_ascii_digit())
+        .filter(|w| w.len() == 4)
+        .filter_map(|w| w.parse().ok())
+}
+
+/// IM14: the name says the book is 2024 rules (a year from 2024 on, or `5.5`).
+fn name_says_2024(name: &str) -> bool {
+    name.contains("5.5") || years_in(name).any(|y| (FIRST_2024_YEAR..2100).contains(&y))
 }
 
 /// True when a `Source` element marks 2024 content (see the module docs).
@@ -40,9 +55,23 @@ pub fn is_2024_source(source: &Element) -> bool {
     let setter = |name: &str| source.setter_value(name).map(str::trim);
     let marked =
         setter("information").is_some_and(|v| v.replace("&amp;", "&").starts_with(MARKER_2024));
+    if marked {
+        return true;
+    }
+    if years_in(&source.name).any(|y| y == 2014) {
+        return false;
+    }
+    if name_says_2024(&source.name) {
+        return true;
+    }
     let official = setter("official").is_some_and(|v| v.eq_ignore_ascii_case("true"));
-    let late = setter("release").is_some_and(|d| is_release_date(d) && d >= PHB_2024_RELEASE);
-    marked || (official && late)
+    let release = setter("release").filter(|d| is_release_date(d));
+    if official {
+        return release.is_some_and(|d| d >= PHB_2024_RELEASE);
+    }
+    release
+        .and_then(|d| d[..4].parse::<u32>().ok())
+        .is_some_and(|y| y >= FIRST_2024_YEAR)
 }
 
 /// Every `Source` element of the run by name (and `alternative` name): is it 2024?
@@ -141,7 +170,8 @@ mod tests {
             "D",
             &[("official", "true"), ("release", "20240916")]
         )));
-        assert!(!is_2024_source(&source(
+        // IM14 (2026-10-31): an unmarked third-party book of 2025 is guessed 2024
+        assert!(is_2024_source(&source(
             "E",
             &[("third-party", "true"), ("release", "20250613")]
         )));
@@ -215,9 +245,52 @@ mod tests {
         let new = source("New", &[("information", "D&D 5.5e")]);
         let mut files = vec![("a.xml".into(), file(vec![new, el("X", "New")]))];
         assert!(tag_2024(&mut files, Ruleset::Dnd2024).is_empty());
-        let old = source("Old", &[("release", "20260101")]);
-        let mut files = vec![("b.xml".into(), file(vec![old, el("Y", "Old")]))];
+        // IM14: a late date alone would guess 2024, but the name says 2014
+        let old = source("Old Book 2014", &[("release", "20260101")]);
+        let mut files = vec![("b.xml".into(), file(vec![old, el("Y", "Old Book 2014")]))];
         assert!(tag_2024(&mut files, Ruleset::Dnd2014).is_empty());
         assert_eq!(files[0].1.ruleset, Some(Ruleset::Dnd2014));
+    }
+
+    /// IM14 (GitHub #11): an unmarked book's edition is guessed from its name and date.
+    #[test]
+    fn unmarked_books_are_guessed_from_name_and_date() {
+        let third = |name: &str, release: &str| {
+            source(name, &[("third-party", "true"), ("release", release)])
+        };
+        // the reporter's book, and the name alone
+        assert!(is_2024_source(&third(
+            "Grim Hollow: Player's Guide (2025)",
+            "20250115"
+        )));
+        assert!(is_2024_source(&source("Grim Test (2025)", &[])));
+        assert!(is_2024_source(&source("Heroes of 2024", &[])));
+        assert!(is_2024_source(&source("Some Book for 5.5e", &[])));
+        // a homebrew dated 2024 or later
+        assert!(is_2024_source(&source(
+            "Homebrew",
+            &[("release", "20240101")]
+        )));
+        assert!(!is_2024_source(&third("Older Homebrew", "20231231")));
+        assert!(!is_2024_source(&source("Undated Homebrew", &[])));
+        // the name says 2014: stays 2014 whatever the date
+        assert!(!is_2024_source(&third("The Crooked Moon 2014", "20250301")));
+        assert!(!is_2024_source(&third("Player Options (2014)", "20250301")));
+        // official books follow IM8: 2014-rules adventures of early 2024 stay 2014
+        let official =
+            |name: &str, release: &str| source(name, &[("official", "true"), ("release", release)]);
+        assert!(!is_2024_source(&official("Vecna: Eve of Ruin", "20240521")));
+        assert!(is_2024_source(&official(
+            "Player’s Handbook (2024)",
+            "20240917"
+        )));
+        // years that are not editions
+        assert!(!is_2024_source(&source("Tome of 1024 Spells", &[])));
+        assert!(!is_2024_source(&source("Book 20245", &[])));
+        // the marker wins
+        assert!(is_2024_source(&source(
+            "Marked 2014 Reprint",
+            &[("information", "D&D 5.5e")]
+        )));
     }
 }

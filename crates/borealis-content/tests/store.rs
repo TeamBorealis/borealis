@@ -286,3 +286,62 @@ fn appended_supports_list_only_the_tags_appends_added() {
     assert_eq!(stored.appended_supports, ["Order", "Circle"]);
     assert!(store.get("ID_U").unwrap().appended_supports.is_empty());
 }
+
+/// IM14 (GitHub #11): the user's edition per imported book is applied when content loads. It
+/// re-tags the book's elements (its `Source` element, elements naming the book or one of its
+/// `alternative` names, and `Internal` helpers in files of only that book), never edition-neutral
+/// (`any`) elements, never bundled (core-origin) files, and marks what it changed.
+#[test]
+fn a_book_edition_set_by_the_user_retags_its_elements_when_content_loads() {
+    let mut book = el("ID_GT_SOURCE", "Source", "Core");
+    book.name = "Grim Test: Player’s Guide (2025)".into();
+    book.setters.push(Setter::new("alternative", "GTPG25"));
+    let mut neutral = el("ID_GT_LANGUAGE", "Language", "GTPG25");
+    neutral.ruleset = Some(Ruleset::Any);
+    let mut grim = file(vec![
+        book,
+        el("ID_GT_CLASS", "Class", "Grim Test: Player's Guide (2025)"),
+        el("ID_GT_ALT", "Feat", "GTPG25"),
+        el("ID_GT_HELPER", "Grants", "Internal"),
+        neutral,
+    ]);
+    grim.ruleset = Some(Ruleset::Dnd2014);
+    let mut other = file(vec![
+        el("ID_OTHER", "Feat", "Other Book"),
+        el("ID_OTHER_HELPER", "Grants", "Internal"),
+    ]);
+    other.ruleset = Some(Ruleset::Dnd2014);
+    let mut bundled = file(vec![el(
+        "ID_CORE_FEAT",
+        "Feat",
+        "Grim Test: Player’s Guide (2025)",
+    )]);
+    bundled.ruleset = Some(Ruleset::Dnd2014);
+    let editions = std::collections::BTreeMap::from([(
+        borealis_content::source_key("Grim Test: Player's Guide (2025)"),
+        Ruleset::Dnd2024,
+    )]);
+    let store = ContentStoreBuilder::new()
+        .add_file("core.json", PackOrigin::Core, bundled)
+        .add_file("grim.json", PackOrigin::Custom, grim)
+        .add_file("other.json", PackOrigin::Custom, other)
+        .with_source_editions(editions)
+        .build();
+    let ed = |id: &str| {
+        let s = store.get(id).unwrap();
+        (s.element.ruleset, s.edition_set_by_user)
+    };
+    let set = (Some(Ruleset::Dnd2024), true);
+    for id in ["ID_GT_SOURCE", "ID_GT_CLASS", "ID_GT_ALT", "ID_GT_HELPER"] {
+        assert_eq!(ed(id), set, "{id}");
+    }
+    assert_eq!(ed("ID_GT_LANGUAGE"), (Some(Ruleset::Any), false));
+    assert_eq!(ed("ID_OTHER"), (Some(Ruleset::Dnd2014), false));
+    assert_eq!(ed("ID_OTHER_HELPER"), (Some(Ruleset::Dnd2014), false));
+    assert_eq!(ed("ID_CORE_FEAT"), (Some(Ruleset::Dnd2014), false));
+    // without preferences nothing changes
+    assert_eq!(
+        borealis_content::source_key(" Player’s HANDBOOK "),
+        "player's handbook"
+    );
+}

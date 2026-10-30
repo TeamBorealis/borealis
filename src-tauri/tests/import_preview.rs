@@ -116,7 +116,7 @@ fn preview_then_install_equals_import_pack() {
         "a preview must not install anything"
     );
     let result = staged
-        .install_import_preview(&preview.preview_id, &NullSink)
+        .install_import_preview(&preview.preview_id, None, &NullSink)
         .expect("install");
     assert_eq!(result.pack.as_ref().map(|p| p.id.as_str()), Some("alpha"));
 
@@ -127,7 +127,7 @@ fn preview_then_install_equals_import_pack() {
     );
     // A preview can only be installed once.
     assert!(staged
-        .install_import_preview(&preview.preview_id, &NullSink)
+        .install_import_preview(&preview.preview_id, None, &NullSink)
         .is_err());
 }
 
@@ -139,7 +139,7 @@ fn cancelled_preview_cannot_be_installed() {
         .unwrap();
     app.cancel_import_preview(&p.preview_id).unwrap();
     assert!(app
-        .install_import_preview(&p.preview_id, &NullSink)
+        .install_import_preview(&p.preview_id, None, &NullSink)
         .is_err());
 }
 
@@ -168,7 +168,7 @@ fn several_files_are_converted_as_one_set_so_cross_references_resolve() {
     assert_eq!(p.file_count, 2);
     assert_eq!(unresolved_targets(&p), vec!["ID_TEST_FEAT_NOWHERE"]);
     let installed = app
-        .install_import_preview(&p.preview_id, &NullSink)
+        .install_import_preview(&p.preview_id, None, &NullSink)
         .unwrap();
     assert_eq!(installed.pack.unwrap().element_count, 2);
 }
@@ -260,7 +260,7 @@ fn an_index_alone_is_accepted_and_converts_nothing_without_failing() {
         .unwrap();
     assert_eq!(p.converted, 0);
     assert!(app
-        .install_import_preview(&p.preview_id, &NullSink)
+        .install_import_preview(&p.preview_id, None, &NullSink)
         .is_err());
 }
 

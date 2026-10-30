@@ -94,7 +94,7 @@ mod reference {
             folder: None,
         };
         let preview = app.preview_import_pack(&request).expect("preview a-user");
-        app.install_import_preview(&preview.preview_id, &NullSink)
+        app.install_import_preview(&preview.preview_id, None, &NullSink)
             .expect("install a-user");
         let a_user_ms = ms(t);
 

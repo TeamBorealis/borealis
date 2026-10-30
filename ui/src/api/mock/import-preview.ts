@@ -1,6 +1,7 @@
-import type { ImportFileInput, ImportPackResult, ImportPreview, PreviewDiagnostic, PreviewImportRequest, UnresolvedRef } from "../types";
+import type { ImportFileInput, ImportPackResult, ImportPreview, PreviewDiagnostic, PreviewImportRequest, Ruleset, UnresolvedRef } from "../types";
 import { apiError } from "./errors";
 import { issue, scanElements, xmlIssues } from "./import-issues";
+import { type MockBookEditions, bookKey } from "./book-editions";
 
 /** Ids the mock treats as already installed (the real backend checks the loaded content store). */
 const INSTALLED = /^ID_(PHB|WOTC|INTERNAL)_/;
@@ -22,7 +23,7 @@ export class MockImportPreview {
   private staged = new Map<string, Staged>();
   private seq = 0;
 
-  preview(req: PreviewImportRequest, folder: { name: string; files: ImportFileInput[] } | null): ImportPreview {
+  preview(req: PreviewImportRequest, folder: { name: string; files: ImportFileInput[] } | null, editions: MockBookEditions): ImportPreview {
     const files = folder ? folder.files : (req.files ?? []);
     if (!files.length) throw apiError("invalid_argument", "Choose files or a folder to import.");
     const texts: string[] = [];
@@ -78,14 +79,19 @@ export class MockImportPreview {
       counts: [...counts].map(([type, count]) => ({ type, count })), summary: { errors: sev("error"), warnings: sev("warning"), infos: sev("info") },
       diagnostics, diagnosticsTruncated: false, unresolved, unresolvedTotal: unresolved.length, conditions, conditionsTotal: conditions.length, replacesExisting: false,
       ...(sourceUrl && !texts.length && !folder ? { indexUrl: sourceUrl } : {}),
+      books: editions.previewBooks(texts),
     };
     this.staged.set(preview.previewId, { preview, texts });
     return preview;
   }
 
-  take(previewId: string): Staged {
+  take(previewId: string, editions?: Record<string, Ruleset> | null): Staged {
     const s = this.staged.get(previewId);
     if (!s) throw apiError("invalid_argument", "This preview has expired. Choose the files again.");
+    for (const [name, edition] of Object.entries(editions ?? {})) {
+      if (edition !== "dnd2014" && edition !== "dnd2024") throw apiError("invalid_argument", "A book is either 2014 or 2024 rules.");
+      if (!s.preview.books.some((b) => bookKey(b.name) === bookKey(name))) throw apiError("invalid_argument", `"${name}" is not a book of this import.`);
+    }
     this.staged.delete(previewId);
     return s;
   }

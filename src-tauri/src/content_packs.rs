@@ -178,6 +178,7 @@ impl AppState {
     /// `internal` if a lock is poisoned.
     pub fn list_sources(&self) -> ApiResult<Vec<ContentSource>> {
         let hub = self.hub()?;
+        let chosen = self.content_prefs().source_editions();
         let names: BTreeMap<String, String> = self
             .installed_packs()
             .into_iter()
@@ -200,6 +201,8 @@ impl AppState {
                 .map(|e| plain_text(&e.element.description))
                 .unwrap_or_default();
             let flags = source_flags(elements.iter().map(|e| &e.element));
+            let (edition, imported) =
+                crate::book_editions::loaded_edition(elements.iter().copied());
             out.push(ContentSource {
                 id: source.to_string(),
                 name: source.to_string(),
@@ -210,6 +213,9 @@ impl AppState {
                 playtest: flags.playtest,
                 incomplete: flags.incomplete,
                 info: flags.info,
+                edition,
+                edition_set_by_user: chosen.contains_key(&borealis_content::source_key(source)),
+                edition_editable: imported,
             });
         }
         Ok(out)
@@ -227,7 +233,7 @@ impl AppState {
         reason: &str,
     ) -> ApiResult<()> {
         let settings = self.settings()?;
-        let hub = ContentHub::load_with(&self.paths, &settings, &prefs.disabled_packs)?;
+        let hub = ContentHub::load_with(&self.paths, &settings, prefs)?;
         prefs.save(&self.paths.prefs_file())?;
         self.set_hub(hub)?;
         // Characters imported earlier pick up newly available content without a re-import.

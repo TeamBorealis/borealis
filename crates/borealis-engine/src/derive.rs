@@ -801,6 +801,7 @@ impl<'u> Evaluation<'u> {
                 else {
                     return None;
                 };
+                let kept = e.edition_set_by_user && !e.edition.is_accepted();
                 seen.insert(e.el.id.clone()).then(|| CompatEntry {
                     element: element_ref(e),
                     from: *from,
@@ -812,6 +813,7 @@ impl<'u> Evaluation<'u> {
                             self.increase_switched_off(n)
                                 .then(|| crate::adapter::INCREASE_NOT_APPLIED.to_string()),
                         )
+                        .chain(kept.then(|| KEPT_NOTE.to_string()))
                         .collect(),
                 })
             })
@@ -901,6 +903,10 @@ fn half_proficiency_skills(graph: &Graph<'_>) -> std::collections::HashSet<Strin
         })
         .collect()
 }
+
+/// IM14: the compatibility note of content a character keeps after its book's edition changed.
+pub const KEPT_NOTE: &str = "Kept: this character took it before its book's edition was set on \
+     the Sources page. New characters of this edition can't pick it.";
 
 /// C1 (GitHub #11): a content-wide "unparsable expression" diagnostic is kept only for an element
 /// the character holds, one a held element grants (an unreadable requirement withholds it, where

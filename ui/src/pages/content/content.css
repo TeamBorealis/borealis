@@ -104,3 +104,12 @@ html.phone .v4-grid { min-height: 180px; }
 /* FX-56: the notice link sits in the copy line without raising the line box */
 .v4-inline-link { display: inline; background: none; border: 0; padding: 0; margin: 0; font: inherit; line-height: inherit; color: var(--gold); text-transform: uppercase; font-size: 10px; font-weight: 600; cursor: pointer; }
 @media (hover: hover) and (pointer: fine) { .v4-inline-link:hover { text-decoration: underline; } }
+/* IM14 (GitHub #11): a book's rules edition (Sources pane, import preview). */
+.v4-src-edition { margin-top: 12px; }
+.v4-src-edition label { display: block; margin-bottom: 4px; font-weight: 600; }
+.v4-src-edition .sub { margin: 6px 0 0; font-size: var(--fs-xs); color: var(--text-secondary); }
+.v4-imp-books { margin: 0; padding: 8px 10px; border: 1px solid var(--border, #3a3a3a); }
+.v4-imp-books legend { padding: 0 4px; font-weight: 600; }
+.v4-imp-book { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; }
+.v4-imp-book label { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+.v4-imp-book .aur-combo { flex: 0 1 220px; min-width: 160px; }

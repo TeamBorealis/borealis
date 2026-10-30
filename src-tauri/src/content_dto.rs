@@ -58,6 +58,25 @@ pub struct ContentSource {
     pub incomplete: bool,
     /// The Source element's `information` setter (an extra note shown to the user); empty = none.
     pub info: String,
+    /// IM14: the book's edition as loaded (`null` when its content carries none).
+    pub edition: Option<Ruleset>,
+    /// The edition is the user's choice (Sources page or import preview), not the importer's.
+    pub edition_set_by_user: bool,
+    /// An imported book: its edition can be set (bundled books are fixed).
+    pub edition_editable: bool,
+}
+
+/// IM14: a book of an import preview and its edition.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PreviewBook {
+    pub name: String,
+    /// What the importer found: the `D&D 5.5e` marker, else a guess from the name and date.
+    pub detected: Ruleset,
+    /// What will apply: the user's stored choice for this book, else `detected`.
+    pub edition: Ruleset,
+    /// `edition` is a choice the user made earlier.
+    pub set_by_user: bool,
 }
 
 /// `import_pack` argument.

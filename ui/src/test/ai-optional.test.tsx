@@ -107,7 +107,7 @@ describe("Import without AI", () => {
     const api = mock();
     const previewImportPack = vi.fn(async (_a: { request: { files?: { fileName: string }[] } }) => ({
       previewId: "p1", packName: "Homebrew", packId: "homebrew", fileCount: 2, converted: 4, skipped: 1, counts: [{ type: "Feat", count: 4 }],
-      summary: { errors: 0, warnings: 0, infos: 0 }, diagnostics: [], diagnosticsTruncated: false, unresolved: [], unresolvedTotal: 0, conditions: [], conditionsTotal: 0, replacesExisting: false,
+      summary: { errors: 0, warnings: 0, infos: 0 }, diagnostics: [], diagnosticsTruncated: false, unresolved: [], unresolvedTotal: 0, conditions: [], conditionsTotal: 0, replacesExisting: false, books: [],
     }));
     const importPack = vi.fn();
     Object.assign(api, { previewImportPack, importPack });
@@ -126,7 +126,7 @@ describe("Import without AI", () => {
     const importCharacter = vi.fn(async () => ({ summary: { name: "Aldric" }, divergences: [], warnings: [] }));
     const previewImportPack = vi.fn(async () => ({
       previewId: "p2", packName: "p", packId: "p", fileCount: 1, converted: 1, skipped: 0, counts: [], summary: { errors: 0, warnings: 0, infos: 0 },
-      diagnostics: [], diagnosticsTruncated: false, unresolved: [], unresolvedTotal: 0, conditions: [], conditionsTotal: 0, replacesExisting: false,
+      diagnostics: [], diagnosticsTruncated: false, unresolved: [], unresolvedTotal: 0, conditions: [], conditionsTotal: 0, replacesExisting: false, books: [],
     }));
     Object.assign(api, { importCharacter, previewImportPack });
     renderApp("/characters", { api });

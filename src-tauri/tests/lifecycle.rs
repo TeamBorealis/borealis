@@ -295,7 +295,7 @@ fn folder_install(app: &AppState, dir: &Path) {
         folder: Some(token),
     };
     let preview = app.preview_import_pack(&request).expect("preview");
-    app.install_import_preview(&preview.preview_id, &NullSink)
+    app.install_import_preview(&preview.preview_id, None, &NullSink)
         .expect("install");
 }
 

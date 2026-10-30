@@ -135,19 +135,20 @@ impl ContentHub {
     /// `content_error` if a bundled pack is missing or invalid.
     pub fn load(paths: &AppPaths, settings: &AppSettings) -> ApiResult<Self> {
         let prefs = ContentPrefs::load(&paths.prefs_file());
-        Self::load_with(paths, settings, &prefs.disabled_packs)
+        Self::load_with(paths, settings, &prefs)
     }
 
-    /// Like [`ContentHub::load`] with an explicit set of disabled pack ids (`core` is never skipped).
+    /// Like [`ContentHub::load`] with explicit content preferences: the disabled pack ids (`core`
+    /// is never skipped) and the editions the user set for imported books (IM14).
     ///
     /// # Errors
     /// `content_error` if a bundled pack is missing or invalid.
     pub fn load_with(
         paths: &AppPaths,
         settings: &AppSettings,
-        disabled: &BTreeSet<String>,
+        prefs: &ContentPrefs,
     ) -> ApiResult<Self> {
-        Self::load_with_progress(paths, settings, disabled, &mut |_| {})
+        Self::load_with_progress(paths, settings, prefs, &mut |_| {})
     }
 
     /// Like [`ContentHub::load_with`], reporting each pack and the engine build to `on_step`.
@@ -157,9 +158,10 @@ impl ContentHub {
     pub fn load_with_progress(
         paths: &AppPaths,
         settings: &AppSettings,
-        disabled: &BTreeSet<String>,
+        prefs: &ContentPrefs,
         on_step: &mut dyn FnMut(LoadStep),
     ) -> ApiResult<Self> {
+        let disabled = &prefs.disabled_packs;
         let bundled: Vec<(String, PathBuf)> = BUNDLED_PACKS
             .iter()
             .filter(|name| **name == CORE_PACK || !disabled.contains(**name))
@@ -198,6 +200,8 @@ impl ContentHub {
             }
         }
         on_step(LoadStep::Engine);
+        // IM14: books whose edition the user set are re-tagged at load (also in AI draft builds)
+        let builder = builder.with_source_editions(prefs.source_editions());
         let store = builder.clone().build();
         let engine = Engine::with_settings(&store, settings.engine_settings());
         Ok(Self {
@@ -333,8 +337,7 @@ impl AppState {
         on_step(LoadStep::Settings);
         let settings = AppSettings::load(&paths.settings_file());
         let prefs = ContentPrefs::load(&paths.prefs_file());
-        let hub =
-            ContentHub::load_with_progress(&paths, &settings, &prefs.disabled_packs, on_step)?;
+        let hub = ContentHub::load_with_progress(&paths, &settings, &prefs, on_step)?;
         Ok(Self::from_hub(paths, settings, hub))
     }
 

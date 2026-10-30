@@ -7,6 +7,7 @@ import { CLASSES, ELEMENTS, ITEMS, getElement } from "./content";
 import { isProxyId, itemCategoryList, matchesItemSearch, proxyRows, type ProxyRow } from "./item-categories";
 import type { MockElement } from "./data-types";
 import { apiError } from "./errors";
+import { MockBookEditions, checkSettable } from "./book-editions";
 import { BUNDLED_SOURCES, SOURCE_2014, SOURCE_2024, SOURCE_EXPANSION } from "./content";
 import { groupKey } from "../../lib/versions";
 import type { MockSearchDoc } from "./search";
@@ -151,12 +152,26 @@ export class ContentService {
     return [...base, ...home, ...this.imported.map((p) => ({ ...p, enabled: !this.disabled.has(p.id) }))];
   }
 
+  /** IM14: the user's edition per book. */
+  readonly editions = new MockBookEditions();
+
   sources(): ContentSource[] {
-    return this.packs().flatMap((p) => p.sourceIds.map((id) => ({
-      id, name: this.all().find((e) => e.source === id)?.sourceName ?? id, group: p.name, packId: p.id,
-      elementCount: ELEMENTS.filter((e) => e.source === id).length + this.extra.filter((e) => e.source === id).length,
-      description: `Content from ${p.name}.`, playtest: false,
-    })));
+    return this.packs().flatMap((p) => p.sourceIds.map((id) => {
+      const name = this.all().find((e) => e.source === id)?.sourceName ?? id;
+      return {
+        id, name, group: p.name, packId: p.id,
+        elementCount: ELEMENTS.filter((e) => e.source === id).length + this.extra.filter((e) => e.source === id).length,
+        description: `Content from ${p.name}.`, playtest: false, ...this.editions.fields(name, p),
+      };
+    }));
+  }
+
+  /** IM14: set an imported book's edition. */
+  setSourceEdition(sourceId: string, edition: Ruleset): ContentSource[] {
+    const source = this.sources().find((s) => s.id === sourceId);
+    checkSettable(source?.editionEditable, edition);
+    this.editions.set(source!.name, edition);
+    return this.sources();
   }
 
   setEnabled(packId: string, enabled: boolean): ContentPack[] {

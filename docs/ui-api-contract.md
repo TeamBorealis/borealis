@@ -64,6 +64,11 @@ Clean-room note: sample data in the mock is original and SRD-generic.
   (race, class, archetype, multiclass, background, ASI, language, proficiency, feat, companion, spell).
 - `get_slot_options` returns the *currently valid* candidates (source restrictions, requirements, duplicates already
   applied; failing multiclass prerequisites are hidden). `disabledReason` may mark visible-but-unselectable rows.
+  An open slot that offers nothing carries `emptyReason` (U14): `otherEdition` (`{ edition, rejected, notAllowed }`:
+  options only a character of that edition can use, R4, and options the "other edition" switch would show) and
+  `restricted` (options only the source restriction hides). `problem` (C1, GitHub #11) says what content behind the
+  choice can't be read (its own filter, or options whose requirements can't be parsed); such a problem is not repeated
+  in `notices`, and an unreadable expression of content the character neither holds nor meets is not a notice at all.
   `apply_selection` must re-validate and fail with `requirement_failed` if the element is no longer valid.
 - B-55 (`specs/version-rows-and-filters.md`): `get_slot_options` returns one row per name (type family + normalized
   name). A row with two or more offered options lists them in `versions` (`versions[0]` is the row itself: the chosen
@@ -95,6 +100,7 @@ Clean-room note: sample data in the mock is original and SRD-generic.
 | Command | Args (camelCase keys) | Returns |
 |---|---|---|
 | `app_version` | none | `string` |
+| `open_link` | `{ url: string }` | `void`: opens one of the app's own web pages (`ui/src/lib/links.ts` = `src-tauri/src/links.rs`: website, changelog, GitHub Releases, Discord invite, download page) in the system browser on every platform (U15); any other address is `invalid_argument` |
 
 ### Characters (library)
 
@@ -154,6 +160,8 @@ Clean-room note: sample data in the mock is original and SRD-generic.
 | `set_allow_cross_edition` | `characterId, { allow: boolean \| null }` | `CharacterSnapshot` |
 | `get_compatibility_report` | `characterId` | `CompatibilityReport` = `{ strict, entries: [{ element, from, converted, notes }] }` |
 | `get_ruleset_profile` | `{ ruleset: Ruleset }` | `RulesetProfile` |
+| `class_counts_by_edition` | none | `ClassCounts` = `{ dnd2014, dnd2024 }`: classes a new character of each edition is offered (U14) |
+| `start_over_in_edition` | `characterId, { ruleset: Ruleset }` | `CharacterSnapshot`: a NEW character of the other edition with this one's name, details, options, level, scores and sources, saved and opened; the old file is not changed (U14) |
 | `preview_ruleset_switch` | `characterId, { target: Ruleset }` | `RulesetSwitchPlan` |
 | `switch_ruleset` | `characterId, { target: Ruleset }` | `CharacterSnapshot` |
 
@@ -257,7 +265,8 @@ seed step carrying the snapshot value.
 | `import_pack` | `{ request: ImportPackRequest }` | `ImportPackResult` |
 | `set_pack_enabled` | `{ packId: string; enabled: boolean }` | `ContentPack[]` |
 | `remove_pack` | `{ packId: string }` | `ContentPack[]` |
-| `list_sources` | none | `ContentSource[]` |
+| `list_sources` | none | `ContentSource[]` (`edition`, `editionSetByUser`, `editionEditable`: IM14) |
+| `set_source_edition` | `{ sourceId: string; edition: Ruleset }` | `ContentSource[]`: an imported book's edition, stored in `content-prefs.json` (`sourceEditions`), applied at load, never written into the pack (IM14) |
 | `list_indexes` | none | `ContentIndex[]` |
 | `add_index` | `{ url: string }` | `ContentIndex[]` |
 | `remove_index` | `{ url: string }` | `ContentIndex[]` |
@@ -421,8 +430,12 @@ without the host: the host commands answer `invalid_argument` / `supported: fals
 - `set_allow_cross_edition`: `true` allows foreign-edition content in new picks, `false` forces strict mode, `null`
   resets to the ruleset default (strict for 2014, open for 2024). Stored choices are never unregistered.
   `get_compatibility_report` lists registered foreign-edition elements with the adapter notes.
-- Packs: `core` is always on; other bundled packs may be switched off, user packs removed. Enabled state and indexes are
-  stored in `content-prefs.json` in the data folder. `set_pack_enabled`, `remove_pack`, `import_pack`, `import_5etools`,
+- Packs: `core` is always on; other bundled packs may be switched off, user packs removed. Enabled state, indexes and
+  the user's book editions (IM14, `sourceEditions`: book name key -> `dnd2014`/`dnd2024`; unknown keys a newer app
+  wrote are kept) are stored in `content-prefs.json` in the data folder. `preview_import_pack` lists the set's `books`
+  (`{ name, detected, edition, setByUser }`) and `install_import_preview` takes an optional
+  `editions: Record<bookName, Ruleset>` stored before the install. A re-import without the preview never changes an
+  installed book's edition: a changed guess is stored as the book's previous edition. `set_pack_enabled`, `remove_pack`, `import_pack`, `import_5etools`,
   `clear_downloaded_content` and `update_indexes` all hot-reload the ContentStore and Engine and emit
   `borealis://content-reloaded` (`reason`: `pack-enabled`, `pack-removed`, `pack-imported`, `5etools-imported`,
   `indexes-updated`, `downloads-cleared`); a pack that fails to load is rolled back with a `content_error`.

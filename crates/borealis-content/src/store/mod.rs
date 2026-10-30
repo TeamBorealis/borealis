@@ -32,6 +32,16 @@ pub struct StoredElement {
     /// The supports tags that `<append>`s added (not in the element's own definition), in the
     /// order they were added.
     pub appended_supports: Vec<String>,
+    /// IM14: the element's edition comes from the user's choice for its book
+    /// ([`ContentStoreBuilder::with_source_editions`]), not from the content.
+    pub edition_set_by_user: bool,
+}
+
+/// The key a book's edition preference is stored under: its name trimmed, lower-cased, with
+/// typographic apostrophes folded (element `source` attributes spell a book both ways).
+#[must_use]
+pub fn source_key(name: &str) -> String {
+    name.trim().replace('’', "'").to_lowercase()
 }
 
 /// An index file loaded alongside the packs (metadata only).

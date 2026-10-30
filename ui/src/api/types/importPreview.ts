@@ -1,6 +1,7 @@
 /** Rules-based content import with a preview (no AI). Mirrors `content_preview.rs`. */
 
 import type { MigrationIssueCode } from "./content";
+import type { Ruleset } from "./core";
 
 export interface ImportFileInput {
   fileName: string;
@@ -62,6 +63,19 @@ export interface ImportPreview {
   replacesExisting: boolean;
   /** A lone `.index` with nothing importable beside it: the address it updates from, offered as a content source. */
   indexUrl?: string;
+  /** IM14: the books of the set and their editions; the user may change them before Install. */
+  books: PreviewBook[];
+}
+
+/** IM14: a book of an import preview. */
+export interface PreviewBook {
+  name: string;
+  /** What the importer found: the "D&D 5.5e" marker, else a guess from the name and date. */
+  detected: Ruleset;
+  /** What will apply: the user's stored choice for this book, else `detected`. */
+  edition: Ruleset;
+  /** `edition` is a choice the user made earlier. */
+  setByUser: boolean;
 }
 
 /** A file the OS handed to the app ("open with" / share). */

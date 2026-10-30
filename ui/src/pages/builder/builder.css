@@ -203,3 +203,4 @@
 .pick-problem { font-style: normal; color: var(--warning); }
 /* phones: a 44 px tall touch target around the inline action, without moving the text */
 html.phone .pick-why-act { padding: 12px 4px; margin: -12px 0 -12px 2px; }
+html.phone .bp-notices-toggle { min-height: 44px; width: 100%; }

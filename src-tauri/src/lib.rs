@@ -25,6 +25,7 @@ pub mod app_api;
 pub mod app_logs;
 pub mod app_update;
 pub mod app_update_debug;
+pub mod book_editions;
 pub mod builder;
 pub mod bundled_content;
 pub mod commands;
@@ -408,6 +409,7 @@ pub fn run() {
             commands_content::set_pack_enabled,
             commands_content::remove_pack,
             commands_content::list_sources,
+            commands_content::set_source_edition,
             commands_content::list_indexes,
             commands_content::add_index,
             commands_content::remove_index,

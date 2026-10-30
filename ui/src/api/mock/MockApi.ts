@@ -25,7 +25,7 @@ import { ContentService, OPEN_SCOPE, type ItemScope } from "./content-service";
 import { getClass, getElement } from "./content";
 import { DEFAULT_SETTINGS } from "./default-settings";
 import { apiError } from "./errors";
-import { createCharacter, seedLibrary } from "./library";
+import { SAMPLE_CONTENT_NOTICES, createCharacter, seedLibrary } from "./library";
 import * as abil from "./ops-abilities";
 import * as eq from "./ops-equipment";
 import * as lv from "./ops-levels";
@@ -66,6 +66,8 @@ export interface MockApiOptions {
   semantic?: Partial<MockSemanticOptions>;
   /** U14 scenario: this edition has no classes (as with every book of it switched off). */
   classlessEdition?: Ruleset | null;
+  /** C1 scenario (GitHub #11): the seeded characters carry content notices, as with a large homebrew set installed. */
+  contentNotices?: boolean;
 }
 
 const PROFILES: Record<"dnd2014" | "dnd2024", RulesetProfile> = {
@@ -123,7 +125,7 @@ export class MockApi implements Api {
     this.semantic = new MockSemantic((d) => this.emit("semantic:download", d), this.mobile, opts.semantic, (i) => this.emit("semantic:index", i));
     if (opts.bundleFile) this.picks.next = `/home/me/Downloads/${opts.bundleFile.replace(/[^A-Za-z0-9 ._-]/g, "_")}`;
     this.bundles = new MockBundles((token) => this.picks.take(token, "bundle-file"), (path) => this.picks.grantBundle(path), (names) => this.addReceived(names));
-    if (opts.seed !== false) for (const c of seedLibrary()) { this.chars.set(c.id, c); this.saved.set(c.id, c); }
+    if (opts.seed !== false) for (const c of seedLibrary(opts.contentNotices ? SAMPLE_CONTENT_NOTICES : [])) { this.chars.set(c.id, c); this.saved.set(c.id, c); }
   }
 
   /* ---------- infrastructure ---------- */
@@ -587,11 +589,12 @@ export class MockApi implements Api {
   async previewImportPack({ request }: Parameters<Api["previewImportPack"]>[0]) {
     await this.tick();
     const folder = request.folder ? { name: this.picks.resolve(request.folder, "content-folder").split("/").pop() ?? "content", files: this.folderFiles } : null;
-    return this.previews.preview(request, folder);
+    return this.previews.preview(request, folder, this.content.editions);
   }
-  async installImportPreview({ previewId }: { previewId: string }) {
+  async installImportPreview({ previewId, editions }: { previewId: string; editions?: Record<string, Ruleset> | null }) {
     await this.tick();
-    const { preview, texts } = this.previews.take(previewId);
+    const { preview, texts } = this.previews.take(previewId, editions);
+    for (const [book, edition] of Object.entries(editions ?? {})) this.content.editions.set(book, edition);
     if (!preview.converted) throw apiError("invalid_argument", "Nothing could be imported.");
     const installed = await this.content.import({ fileName: `${preview.packName}.xml`, contentBase64: btoa(texts.join("\n")) });
     this.makeMissingContentAvailable(); // the real backend re-resolves missing content after every install
@@ -603,6 +606,7 @@ export class MockApi implements Api {
   async setPackEnabled(a: { packId: string; enabled: boolean }) { await this.tick(); return this.content.setEnabled(a.packId, a.enabled); }
   async removePack({ packId }: { packId: string }) { await this.tick(); return this.content.remove(packId); }
   async listSources() { await this.tick(); return this.content.sources(); }
+  async setSourceEdition(a: { sourceId: string; edition: Ruleset }) { await this.tick(); return this.content.setSourceEdition(a.sourceId, a.edition); }
   async listIndexes() { await this.tick(); return this.content.listIndexes(); }
   async addIndex({ url }: { url: string }) { await this.tick(); return this.content.addIndex(url); }
   async removeIndex({ url }: { url: string }) { await this.tick(); return this.content.removeIndex(url); }

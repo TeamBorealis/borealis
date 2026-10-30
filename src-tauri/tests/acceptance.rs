@@ -345,7 +345,7 @@ fn aurora_install(app: &AppState, input: &AuroraInput, t: &mut AuroraTally) -> O
             return None;
         }
     };
-    let result = match app.install_import_preview(&preview.preview_id, &NullSink) {
+    let result = match app.install_import_preview(&preview.preview_id, None, &NullSink) {
         Ok(r) => r,
         Err(e) => {
             t.folder_errors += 1;
