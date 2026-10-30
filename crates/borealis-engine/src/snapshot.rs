@@ -179,6 +179,33 @@ pub struct SlotSnapshot {
     /// Picks replaced in this slot, oldest first.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub replaced: Vec<ReplacedRef>,
+    /// An open slot that offers nothing: what hides its options (U14). `None` when the list has
+    /// options, or when nothing would match even without the edition and the source restriction.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub empty_reason: Option<EmptyReason>,
+}
+
+/// Why an open slot offers nothing (U14, GitHub #10).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EmptyReason {
+    /// Options of the other edition that pass every other filter.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub other_edition: Option<OtherEditionOptions>,
+    /// Options that only the character's source restriction hides.
+    #[serde(default)]
+    pub restricted: u32,
+}
+
+/// Options of the other edition behind an empty slot.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OtherEditionOptions {
+    /// Their edition.
+    pub edition: Ruleset,
+    /// Never usable by a character of this edition (R4: classes, and in a 2014 character 2024
+    /// subclasses and class features): a character of their edition is needed.
+    pub rejected: u32,
+    /// Usable, but this character does not allow the other edition for new picks.
+    pub not_allowed: u32,
 }
 
 /// A pick that was replaced in a slot.

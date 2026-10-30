@@ -7,6 +7,7 @@ import { deriveLevel, deriveStats, profBonus } from "./derive-stats";
 import { buildPlay } from "./play";
 import { type SlotDef, classIdOf, reprocess } from "./slots";
 import { isEquippable } from "./ops-equipment";
+import { emptyReasonOf } from "./edition-classes";
 import { toWireSlotId } from "./slot-ids";
 import { type MockCharacter, type RuleSettings, signed, totalLevel } from "./state";
 
@@ -28,7 +29,7 @@ export const toSlot = (d: SlotDef, c: MockCharacter): SelectionSlot => {
   const replaced = history.map((h) => ({ id: h.id, name: getElement(h.id)?.name ?? h.id, level: h.level }));
   const gainedOnLevel = history.at(-1)?.level ?? d.requiredLevel ?? 1;
   return {
-    ...rest, id: toWireSlotId(d.id), locked, gainedOnLevel, replaced, allowReplace: d.allowReplace && !!el,
+    ...rest, id: toWireSlotId(d.id), locked, gainedOnLevel, replaced, allowReplace: d.allowReplace && !!el, emptyReason: emptyReasonOf(d, c),
     chosen: el ? { id: el.id, name: el.name, type: el.type, source: el.source } : null,
   };
 };

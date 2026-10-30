@@ -1,6 +1,8 @@
 //! Option lists of select slots (`engine.md` 6.2).
 
-use crate::graph::{Graph, NodeId, SpellDynamics};
+use crate::graph::{Graph, NodeId, Relax, SpellDynamics};
+use crate::snapshot::{EmptyReason, OtherEditionOptions};
+use crate::universe::EditionStatus;
 use crate::universe::UElem;
 use borealis_content::Rule;
 
@@ -104,6 +106,67 @@ impl<'u> Graph<'u> {
                 .into_iter()
                 .filter_map(|a| uni.get(a))
                 .any(held)
+    }
+
+    /// Why a slot that offers nothing is empty (U14): the candidates that pass every filter but
+    /// the edition, and those that pass every filter but the source restriction. `None` when
+    /// neither hides anything (nothing matches at all). Call it for an empty, open slot.
+    #[must_use]
+    pub fn slot_empty_reason(&self, owner: NodeId, slot_index: usize) -> Option<EmptyReason> {
+        let n = &self.nodes[owner];
+        let slot = &n.slots[slot_index];
+        let Rule::Select(rule) = &n.e.el.rules[slot.rule] else {
+            return None;
+        };
+        if rule.is_list() {
+            return None;
+        }
+        let uni = self.uni;
+        let dyns = SpellDynamics::new(self, owner, slot.rule);
+        let check = |c: &UElem, relax: Relax| {
+            self.choice_allowed_relaxed(owner, slot.rule, c, false, &dyns, false, relax)
+        };
+        let alternatives = crate::custom_rules::alternatives_of(rule)
+            .into_iter()
+            .filter_map(|a| uni.get(a));
+        let mut seen = std::collections::HashSet::new();
+        let mut reason = EmptyReason::default();
+        let mut other: Option<OtherEditionOptions> = None;
+        for c in uni.select_candidates(&rule.ty, true).chain(alternatives) {
+            if !seen.insert(c.el.id.as_str()) || check(c, Relax::NONE) {
+                continue;
+            }
+            let foreign = match &c.edition {
+                EditionStatus::Foreign { from, .. } => Some(*from),
+                EditionStatus::Native => None,
+            };
+            let by_edition = Relax {
+                edition: true,
+                restriction: false,
+            };
+            if let Some(from) = foreign.filter(|_| check(c, by_edition)) {
+                let o = other.get_or_insert(OtherEditionOptions {
+                    edition: from,
+                    rejected: 0,
+                    not_allowed: 0,
+                });
+                if c.edition.is_accepted() {
+                    o.not_allowed += 1;
+                } else {
+                    o.rejected += 1;
+                }
+            } else if check(
+                c,
+                Relax {
+                    edition: false,
+                    restriction: true,
+                },
+            ) {
+                reason.restricted += 1;
+            }
+        }
+        reason.other_edition = other;
+        (reason != EmptyReason::default()).then_some(reason)
     }
 
     /// Dynamic spell token context for a node's rule (exposed for the snapshot builder).

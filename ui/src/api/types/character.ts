@@ -93,6 +93,31 @@ export interface SelectionSlot {
   gainedOnLevel: number;
   /** Picks replaced in this slot, oldest first (Magic > Spellcasting "Replaced" column). */
   replaced: ReplacedPick[];
+  /** An open slot that offers nothing: what hides its options (U14). Null when it has options or nothing would match. */
+  emptyReason: SlotEmptyReason | null;
+}
+
+/** Why an open slot offers nothing (U14, GitHub #10). */
+export interface SlotEmptyReason {
+  /** Options of the other edition that pass every other filter. */
+  otherEdition: OtherEditionOptions | null;
+  /** Options that only the character's source restriction hides. */
+  restricted: number;
+}
+
+/** Options of the other edition behind an empty slot. */
+export interface OtherEditionOptions {
+  edition: Ruleset;
+  /** Never usable by a character of this edition (R4: classes never cross): a character of `edition` is needed. */
+  rejected: number;
+  /** Usable, but this character does not allow the other edition for new picks. */
+  notAllowed: number;
+}
+
+/** Classes a new character of each edition is offered (New Character dialog, U14). */
+export interface ClassCounts {
+  dnd2014: number;
+  dnd2024: number;
 }
 
 /** A pick replaced in a selection slot (spell retraining). */

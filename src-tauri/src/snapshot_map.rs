@@ -446,6 +446,19 @@ fn slots(snap: &Engine) -> (Vec<SelectionSlot>, SelectionProgress) {
                     level: r.level,
                 })
                 .collect(),
+            empty_reason: s
+                .empty_reason
+                .as_ref()
+                .map(|r| crate::dto::SlotEmptyReason {
+                    other_edition: r.other_edition.as_ref().map(|o| {
+                        crate::dto::OtherEditionOptions {
+                            edition: o.edition,
+                            rejected: o.rejected,
+                            not_allowed: o.not_allowed,
+                        }
+                    }),
+                    restricted: r.restricted,
+                }),
         });
     }
     ranked.sort();
@@ -525,6 +538,7 @@ mod tests {
             replaceable: false,
             gained_level: 1,
             replaced: Vec::new(),
+            empty_reason: None,
         }
     }
 

@@ -100,3 +100,5 @@
 .v4-rep-type { font-size: 10px; text-transform: uppercase; color: var(--gold); }
 .v4-rep-id { font-size: 10px; color: #9a9a9a; overflow-wrap: anywhere; }
 .v4-rep-state { font-size: 10px; text-transform: uppercase; color: var(--text-secondary); }
+/* U14: the chosen edition has no classes (New Character dialog). */
+.v4-opt p.v4-warn { color: var(--warning); font-weight: 400; }

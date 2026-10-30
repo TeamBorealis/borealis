@@ -191,3 +191,7 @@
 .abil-restore { width: 22px; height: 22px; display: grid; place-items: center; padding: 0; background: transparent; border: 0; color: #c4c4c4; cursor: pointer; }
 @media (hover: hover) and (pointer: fine) { .abil-restore:hover { color: var(--text); } }
 :root[data-theme="light"] .abil-frame, :root[data-contrast="high"] .abil-frame { --abil-fill: var(--light-1); }
+/* U14: why a pick list is empty, with one action per cause. */
+.pick-why { font-style: normal; line-height: 1.5; }
+.pick-why-act { margin-left: 6px; padding: 0; border: 0; background: none; color: var(--accent, #4aa3df); font: inherit; font-style: normal; text-decoration: underline; cursor: pointer; }
+.pick-why-act:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }

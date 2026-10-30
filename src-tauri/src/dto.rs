@@ -296,6 +296,39 @@ pub struct SelectionSlot {
     pub gained_on_level: u32,
     /// Picks replaced in this slot, oldest first.
     pub replaced: Vec<ReplacedPick>,
+    /// An open slot that offers nothing: what hides its options (U14). `null` when it has
+    /// options or nothing would match anyway.
+    pub empty_reason: Option<SlotEmptyReason>,
+}
+
+/// Why an open slot offers nothing (U14, GitHub #10).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SlotEmptyReason {
+    /// Options of the other edition that pass every other filter.
+    pub other_edition: Option<OtherEditionOptions>,
+    /// Options that only the character's source restriction hides.
+    pub restricted: u32,
+}
+
+/// Options of the other edition behind an empty slot.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OtherEditionOptions {
+    pub edition: Ruleset,
+    /// Never usable by a character of this edition (R4: classes never cross): a character of
+    /// `edition` is needed.
+    pub rejected: u32,
+    /// Usable, but the character does not allow the other edition for new picks.
+    pub not_allowed: u32,
+}
+
+/// How many classes a new character of each edition is offered (the New Character dialog warns
+/// when the chosen edition has none, U14).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct ClassCounts {
+    pub dnd2014: u32,
+    pub dnd2024: u32,
 }
 
 /// A pick that was replaced in a selection slot.

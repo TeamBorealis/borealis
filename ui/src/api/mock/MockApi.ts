@@ -15,6 +15,7 @@ import { MockImportPreview } from "./import-preview";
 import { MockImportReports } from "./import-report";
 import * as rolled from "./rolled-charges";
 import { MockAppUpdate, recordOpenedLink } from "./app-update";
+import { classCounts, setClasslessEdition, startedOver } from "./edition-classes";
 import { MockDataFiles } from "./data-files";
 import { MockBundles } from "./bundles";
 import { MockDeviceLink } from "./link";
@@ -63,6 +64,8 @@ export interface MockApiOptions {
   bundleFile?: string | null;
   /** Semantic search model (Settings > Search): tier, backend, mirror, an installed model, step delay. */
   semantic?: Partial<MockSemanticOptions>;
+  /** U14 scenario: this edition has no classes (as with every book of it switched off). */
+  classlessEdition?: Ruleset | null;
 }
 
 const PROFILES: Record<"dnd2014" | "dnd2024", RulesetProfile> = {
@@ -108,6 +111,7 @@ export class MockApi implements Api {
     this.mobile = opts.mobile ?? false;
     this.settings = { ...this.settings, mobile: this.mobile, ai: { ...this.settings.ai, enabled: !this.mobile && (opts.aiEnabled ?? false) } };
     this.rng = opts.rng ?? Math.random;
+    setClasslessEdition(opts.classlessEdition ?? null);
     this.content = new ContentService((p) => this.emit("content:progress", p), () => this.emit("content:reloaded", { reason: "content changed" }), (p) => this.emit("import5etools:progress", p));
     this.ai = new MockAi((e) => this.emit("ai:event", e), { chunkDelayMs: opts.aiChunkDelayMs ?? 25, available: opts.aiAvailable ?? true });
     this.setup = new MockAiSetup((e) => this.emit("aisetup:event", e), opts.aiSetup);
@@ -397,6 +401,16 @@ export class MockApi implements Api {
 
   async getRulesetProfile({ ruleset }: { ruleset: keyof typeof PROFILES }) { await this.tick(); return PROFILES[ruleset]; }
   async listCharacterOptions(_: { ruleset: Ruleset }) { await this.tick(); return OPTION_DEFS.map((d) => ({ ...d })); }
+  async classCountsByEdition() { await this.tick(); return classCounts(); }
+  async startOverInEdition({ characterId, ruleset }: { characterId: string; ruleset: Ruleset }) {
+    await this.tick();
+    const old = this.get(characterId);
+    if (ruleset === old.ruleset) throw apiError("invalid_argument", "Choose the other edition to start over in.");
+    const c = startedOver(old, ruleset, this.settings.playerName);
+    this.chars.set(c.id, c);
+    this.saved.set(c.id, c);
+    return this.snap(c);
+  }
 
   /* ---------- magic ---------- */
 

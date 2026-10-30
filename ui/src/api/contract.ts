@@ -10,6 +10,7 @@
  *  - Streaming / push data uses `subscribe` (Tauri events, see `EVENTS`).
  */
 import type {
+  ClassCounts,
   AbilityKey,
   PlayTrackerReset,
   BundleExport,
@@ -205,6 +206,12 @@ export interface ApiMethods {
   getRulesetProfile(args: { ruleset: Ruleset }): Promise<RulesetProfile>;
   /** Content options (the content's `Option` elements) a new character of `ruleset` can start with; the three built-ins are not listed. */
   listCharacterOptions(args: { ruleset: Ruleset }): Promise<OptionDef[]>;
+  /** Classes a new character of each edition is offered with every source on (the New Character dialog warns at 0, U14). */
+  classCountsByEdition(): Promise<ClassCounts>;
+  /** "Start over as 2014" (U14): a NEW character of `ruleset` with this one's name, details, options, level, ability
+   * method and scores and source choices, saved and opened. The old character's file is not changed. Throws
+   * `invalid_argument` for `any` or the character's own edition. */
+  startOverInEdition(args: Cid & { ruleset: Ruleset }): Promise<CharacterSnapshot>;
 
   /* Magic */
   setSpellPrepared(
@@ -524,6 +531,8 @@ export const COMMANDS = {
   getCompatibilityReport: "get_compatibility_report",
   getRulesetProfile: "get_ruleset_profile",
   listCharacterOptions: "list_character_options",
+  classCountsByEdition: "class_counts_by_edition",
+  startOverInEdition: "start_over_in_edition",
   setSpellPrepared: "set_spell_prepared",
   previewConvertTo2024: "preview_convert_to_2024",
   applyConvertTo2024: "apply_convert_to_2024",

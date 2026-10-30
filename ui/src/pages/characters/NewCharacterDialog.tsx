@@ -1,6 +1,6 @@
 import { CheckBox } from "../../components/controls";
 import { useState } from "react";
-import { ABILITY_KEYS, type Api, type AbilityMethod, type CharacterSnapshot, type OptionDef, type Ruleset } from "../../api/contract";
+import { ABILITY_KEYS, type Api, type AbilityMethod, type CharacterSnapshot, type ClassCounts, type OptionDef, type Ruleset } from "../../api/contract";
 import { Button, ComboBox, Expander, Flyout, IconButton, TextBox } from "../../components";
 import { methodLabel, randomName } from "../../lib/format";
 import { useApi } from "../../state/ApiContext";
@@ -53,6 +53,18 @@ export async function applyStandardArray(api: Api, snap: CharacterSnapshot, f: N
   return cur;
 }
 
+/** U14: the warning for an edition that offers no class (null when it has classes). */
+export function noClassesWarning(counts: ClassCounts, ruleset: Ruleset): string | null {
+  if (counts[ruleset] > 0) return null;
+  const year = ruleset === "dnd2014" ? "2014" : "2024";
+  const other: Ruleset = ruleset === "dnd2014" ? "dnd2024" : "dnd2014";
+  const otherYear = other === "dnd2014" ? "2014" : "2024";
+  const head = `No ${year} classes are available: no ${year} book with classes is switched on.`;
+  return counts[other] > 0
+    ? `${head} Your ${otherYear} books have ${counts[other]} classes, so choose the ${otherYear} rules, or switch ${year} content on in Additional Content.`
+    : `${head} Switch content with classes on in Additional Content.`;
+}
+
 const OPTIONS = BUILT_IN_OPTION_DEFS.map((d) => ({ key: d.id as "averageHp" | "feats" | "multiclassing", title: d.name, hint: d.description }));
 
 const methodOptions = METHODS.map((m) => ({ value: m, label: m === "standard_array" ? "Standard Array (15, 14, 13, 12, 10, 8)" : methodLabel(m) }));
@@ -70,6 +82,8 @@ export function NewCharacterDialog({ onCreate, onClose }: { onCreate: (f: NewCha
   // While the list of a newly picked edition loads, the previous edition's list is neither shown nor sent (review L4).
   const listed = useAsync(() => api.listCharacterOptions({ ruleset: f.ruleset }), [api, f.ruleset]);
   const contentOptions = listed.loading ? [] : listed.data ?? [];
+  const classCounts = useAsync(() => api.classCountsByEdition(), [api]);
+  const classWarning = classCounts.data ? noClassesWarning(classCounts.data, f.ruleset) : null;
   const create = () => onCreate(f, contentOptions);
   const [grab, setGrab] = useState<number | null>(null);
   const set = <K extends keyof NewCharacterForm>(k: K, v: NewCharacterForm[K]) => setF((cur) => ({ ...cur, [k]: v }));
@@ -141,6 +155,7 @@ export function NewCharacterDialog({ onCreate, onClose }: { onCreate: (f: NewCha
             <div className="v4-opt">
               <label className="plain" htmlFor="v4-edition">Rules edition</label>
               <ComboBox light id="v4-edition" options={editionOptions} value={f.ruleset} onChange={(e) => set("ruleset", e.target.value as Ruleset)} />
+              {classWarning && <p className="v4-warn" role="alert">{classWarning}</p>}
             </div>
           </div>
           </div>

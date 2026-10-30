@@ -312,3 +312,17 @@ pub fn get_ruleset_profile(ruleset: Ruleset) -> ApiResult<RulesetProfileDto> {
 pub fn list_character_options(state: S<'_>, ruleset: Ruleset) -> ApiResult<Vec<OptionDef>> {
     state.list_character_options(ruleset)
 }
+
+#[tauri::command(async)]
+pub fn class_counts_by_edition(state: S<'_>) -> ApiResult<crate::dto::ClassCounts> {
+    state.class_counts_by_edition()
+}
+
+#[tauri::command(async)]
+pub fn start_over_in_edition(
+    state: S<'_>,
+    character_id: String,
+    ruleset: Ruleset,
+) -> ApiResult<CharacterSnapshot> {
+    state.start_over_in_edition(&character_id, ruleset)
+}

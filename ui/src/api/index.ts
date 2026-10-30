@@ -25,5 +25,8 @@ export function createApi(): Api {
     ...(Number.isFinite(step) && step > 0 ? { stepMs: step } : {}),
     ...(Number.isFinite(queryMs) && queryMs > 0 ? { queryMs } : {}),
   };
-  return new MockApi({ aiChunkDelayMs: 30, mobile, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null, bundleFile: bundle, semantic });
+  // `?mockClassless=dnd2024`: that edition has no classes (GitHub #10, U14 web e2e).
+  const classless = new URLSearchParams(window.location.search).get("mockClassless");
+  const classlessEdition = classless === "dnd2014" || classless === "dnd2024" ? classless : null;
+  return new MockApi({ aiChunkDelayMs: 30, mobile, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null, bundleFile: bundle, semantic, classlessEdition });
 }

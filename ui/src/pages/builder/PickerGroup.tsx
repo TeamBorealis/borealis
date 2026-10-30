@@ -9,6 +9,10 @@ import { PickerFilterBar } from "./PickerFilterBar";
 import { ElementSource, PickerRow } from "./PickerRow";
 import { usePickerRows, useSwitchVersion } from "./usePickerRows";
 import { VersionMenu } from "./VersionMenu";
+import { EmptyListNote } from "./EmptyListNote";
+import { useStartOver } from "./useStartOver";
+import { useCharacter } from "../../state/CharacterContext";
+import { openEditionFlyout } from "../manage/EditionFlyout";
 
 const SOURCES_ROUTE = "/content/sources";
 
@@ -75,6 +79,8 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
   const list = isListSlot(slot);
   const picker = usePickerRows(characterId, slot, open && !allLocked);
   const switchVersion = useSwitchVersion();
+  const ruleset = useCharacter().snapshot?.ruleset ?? "dnd2024";
+  const startOver = useStartOver();
   const { options, rows, visible } = picker;
   const showDescription = slot.elementType === "class";
   // Phones read in sentence case (B-48, spec sec. 3.3: same words, only the casing changes); desktop keeps Aurora's capitals.
@@ -106,7 +112,9 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
           {slot.hint && <p className="pick-hint">{slot.hint}</p>}
           {options.error && <p className="pick-empty danger-text" role="alert">{options.error}</p>}
           {allLocked && <p className="pick-empty">Granted by your build; nothing to choose.</p>}
-          {options.data && rows.length === 0 && <p className="pick-empty">Nothing matches. Check your source restrictions.</p>}
+          {options.data && rows.length === 0 && (
+            <EmptyListNote slot={slot} ruleset={ruleset} onManageSources={() => navigate(SOURCES_ROUTE)} onStartOver={(ed) => void startOver(ed)} onEditionOptions={openEditionFlyout} />
+          )}
           {picker.showBar && (
             <PickerFilterBar title={group.title} filter={picker.filter} onChange={picker.setFilter} sources={picker.sources} shown={visible.length} total={rows.length} />
           )}

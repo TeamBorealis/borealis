@@ -105,6 +105,23 @@ pub struct ItemRoot<'u> {
     pub attuned: bool,
 }
 
+/// Filters [`Graph::choice_allowed_relaxed`] may switch off (U14).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct Relax {
+    /// Ignore the edition: the profile's acceptance and the "other edition" option.
+    pub edition: bool,
+    /// Ignore the character's source restriction.
+    pub restriction: bool,
+}
+
+impl Relax {
+    /// Every filter applies.
+    pub(crate) const NONE: Self = Self {
+        edition: false,
+        restriction: false,
+    };
+}
+
 /// Static inputs of an expansion run.
 pub struct GraphInputs<'u> {
     /// Ability hint for requirements.
@@ -1113,6 +1130,31 @@ impl<'u> Graph<'u> {
         dyns: &SpellDynamics<'_, 'u>,
         held_ok: bool,
     ) -> bool {
+        self.choice_allowed_relaxed(
+            owner,
+            rule_index,
+            cand,
+            existing,
+            dyns,
+            held_ok,
+            Relax::NONE,
+        )
+    }
+
+    /// [`Self::choice_allowed_inner`] with some filters switched off: would `cand` be offered if
+    /// the edition (`relax.edition`) or the source restriction (`relax.restriction`) did not hide
+    /// it? Only the empty-slot explanation asks (U14).
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn choice_allowed_relaxed(
+        &self,
+        owner: NodeId,
+        rule_index: usize,
+        cand: &UElem,
+        existing: bool,
+        dyns: &SpellDynamics<'_, 'u>,
+        held_ok: bool,
+        relax: Relax,
+    ) -> bool {
         let n = &self.nodes[owner];
         let (Rule::Select(s), URule::Select { supports, .. }) =
             (&n.e.el.rules[rule_index], &n.e.rules[rule_index])
@@ -1126,11 +1168,15 @@ impl<'u> Graph<'u> {
             || cand.el.legacy_alias.as_deref() == Some(s.ty.as_str())
             || (cand.edition.is_foreign()
                 && crate::universe::cross_edition_types(&s.ty).contains(&cand.el.ty.as_str()));
-        if !type_ok || !(cand.edition.is_accepted() || inherited) {
+        if !type_ok || !(cand.edition.is_accepted() || inherited || relax.edition) {
             return false;
         }
         if !existing {
-            let offered = if inherited {
+            // a superseded foreign element (its native equivalent replaces it) is still one a
+            // character of its own edition uses: the relaxed check counts it
+            let offered = if relax.edition {
+                true
+            } else if inherited {
                 !cand.superseded
             } else {
                 self.offers_edition(cand)
@@ -1138,9 +1184,10 @@ impl<'u> Graph<'u> {
             if !offered {
                 return false;
             }
-            if self
-                .restricted
-                .is_restricted_element(&cand.el.source, &cand.el.ty)
+            if !relax.restriction
+                && self
+                    .restricted
+                    .is_restricted_element(&cand.el.source, &cand.el.ty)
             {
                 return false;
             }

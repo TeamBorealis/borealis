@@ -433,6 +433,13 @@ impl<'u> Evaluation<'u> {
                         !self.graph.slot_has_options(id, si)
                     })
                     && self.graph.slot_all_known(id, si);
+                let empty_reason = (include_options
+                    && options.is_empty()
+                    && !satisfied
+                    && !all_known
+                    && !rule.is_list())
+                .then(|| self.graph.slot_empty_reason(id, si))
+                .flatten();
                 let retrain =
                     self.retrain_info(state, casters, slot, rule, self.graph.mgr_level(n.mgr));
                 out.push(SlotSnapshot {
@@ -466,6 +473,7 @@ impl<'u> Evaluation<'u> {
                     replaceable: retrain.replaceable,
                     gained_level: retrain.gained_level,
                     replaced: retrain.replaced,
+                    empty_reason,
                 });
             }
         }

@@ -41,6 +41,8 @@ const COMMANDS: &[&str] = &[
     "set_character_options",
     "get_ruleset_profile",
     "list_character_options",
+    "class_counts_by_edition",
+    "start_over_in_edition",
     "replace_spell",
     "set_spell_prepared",
     "explain_stat",

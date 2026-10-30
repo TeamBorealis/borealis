@@ -45,6 +45,8 @@
     "allow-set-character-options",
     "allow-get-ruleset-profile",
     "allow-list-character-options",
+    "allow-class-counts-by-edition",
+    "allow-start-over-in-edition",
     "allow-replace-spell",
     "allow-set-spell-prepared",
     "allow-explain-stat",

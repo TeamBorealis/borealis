@@ -356,6 +356,8 @@ pub fn run() {
             commands::set_character_options,
             commands::get_ruleset_profile,
             commands::list_character_options,
+            commands::class_counts_by_edition,
+            commands::start_over_in_edition,
             commands_gear::replace_spell,
             commands_gear::set_spell_prepared,
             commands_gear::explain_stat,

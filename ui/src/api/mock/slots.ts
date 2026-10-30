@@ -6,8 +6,9 @@ import {
 import type { MockElement } from "./data-types";
 import { type MockCharacter, levelOf } from "./state";
 import { casterMaxSpellLevel, cantripsAt, spellbookSize } from "./spell-tables";
+import { isClassless } from "./edition-classes";
 
-export interface SlotDef extends Omit<SelectionSlot, "chosen" | "gainedOnLevel" | "replaced"> {
+export interface SlotDef extends Omit<SelectionSlot, "chosen" | "gainedOnLevel" | "replaced" | "emptyReason"> {
   candidates: MockElement[];
   dup: string | null;
   lockedTo: string | null;
@@ -61,7 +62,8 @@ function classSlots(c: MockCharacter, index: number): SlotDef[] {
   const isMain = index === 0;
   const group = isMain ? {} : { groupId: cs.slotId, groupLabel: `Multiclass ${index}` };
   if (isMain) {
-    out.push(make({ id: `${cs.slotId}:class`, tab: "class", title: "Class", elementType: "class", candidates: byRuleset(c, ELEMENTS.filter((e) => e.type === "class")) }));
+    const classes = isClassless(c.ruleset) ? [] : byRuleset(c, ELEMENTS.filter((e) => e.type === "class"));
+    out.push(make({ id: `${cs.slotId}:class`, tab: "class", title: "Class", elementType: "class", candidates: classes }));
   } else {
     const taken = new Set(c.classes.map((x, i) => (i === index ? "" : (c.choices[`${x.slotId}:${i === 0 ? "class" : "multiclass"}`] ?? "").replace("multi-", ""))));
     out.push(make({
