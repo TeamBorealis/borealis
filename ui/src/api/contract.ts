@@ -385,6 +385,9 @@ export interface ApiMethods {
   checkAppUpdate(): Promise<AppUpdateStatus>;
   /** Open the official download page in the default browser (desktop; phones fail and the UI opens it). */
   openDownloadPage(): Promise<void>;
+  /** Open one of the app's fixed web pages (Help menu, globe, download page; `lib/links.ts`) in the system browser on
+   * every platform (U15). Any other address is refused with `invalid_argument`. */
+  openLink(args: { url: string }): Promise<void>;
   /** Open an app-owned folder in the OS file manager. The backend resolves the path; the UI never sends one. */
   openAppFolder(args: { folder: AppFolder }): Promise<void>;
   /** The newest log lines (home folder shown as `~`), for sharing from a phone, which has no folder to open. */
@@ -616,6 +619,7 @@ export const COMMANDS = {
   appUpdateStatus: "app_update_status",
   checkAppUpdate: "check_app_update",
   openDownloadPage: "open_download_page",
+  openLink: "open_link",
   openAppFolder: "open_app_folder",
   getRecentLogs: "get_recent_logs",
   shareLogs: "share_logs",

@@ -107,6 +107,7 @@ pub mod import_service;
 pub mod import_sources;
 pub mod item_categories;
 pub mod library;
+pub mod links;
 pub mod magic;
 pub mod manage;
 pub mod mcp_mode;
@@ -288,8 +289,9 @@ pub fn run() {
     let builder = builder.manage(std::sync::Arc::new(
         import_bug_report::ReportOutbox::default(),
     ));
-    // Phones: `open_download_page` hands the page to the system browser through the opener plugin's
-    // Rust API. No capability grants the web view an opener permission, and link interception is off.
+    // Phones: `open_download_page` and `open_link` hand a fixed page to the system browser
+    // through the opener plugin's Rust API. No capability grants the web view an opener
+    // permission, and link interception is off.
     #[cfg(any(target_os = "android", target_os = "ios"))]
     let builder = builder.plugin(
         tauri_plugin_opener::Builder::new()
@@ -545,6 +547,7 @@ pub fn run() {
             commands_app_update::app_update_status,
             commands_app_update::check_app_update,
             commands_app_update::open_download_page,
+            commands_app_update::open_link,
             commands_system::open_app_folder,
             commands_system::get_recent_logs,
             commands_system::share_logs,

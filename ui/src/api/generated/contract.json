@@ -1064,6 +1064,15 @@
     "k": "nil"
    }
   },
+  "open_link": {
+   "args": {
+    "url": false
+   },
+   "method": "openLink",
+   "response": {
+    "k": "nil"
+   }
+  },
   "pick_path": {
    "args": {
     "purpose": false,

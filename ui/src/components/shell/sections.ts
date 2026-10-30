@@ -1,5 +1,5 @@
 import type { IconName } from "../Icon";
-import { setStatus } from "../../state/status";
+import { LINKS } from "../../lib/links";
 
 export interface MainTabDef {
   id: string;
@@ -33,15 +33,6 @@ export const START_SUBNAV: readonly { to: string; label: string }[] = [
   { to: "/content", label: "Additional Content" },
 ];
 
-/** Project website opened by the title-bar globe and the Help menu. Empty until the site exists. */
-export const PROJECT_SITE_URL = "";
-
-/** Opens the project website (optionally a sub-path); says so in the status bar while there is no site. */
-export function openProjectSite(path = ""): void {
-  if (PROJECT_SITE_URL) window.open(`${PROJECT_SITE_URL}${path}`, "_blank", "noopener,noreferrer");
-  else setStatus("The project website is not published yet.");
-}
-
 export function activeTab(pathname: string): MainTabDef {
   return MAIN_TABS.find((t) => t.match.some((m) => pathname === m || pathname.startsWith(`${m}/`))) ?? MAIN_TABS[0]!;
 }
@@ -53,8 +44,8 @@ export interface MenuEntry {
   label: string;
   shortcut?: string;
   to?: string;
-  /** Project-website sub-path (opened externally). */
-  site?: string;
+  /** One of the app's web pages (`lib/links.ts`), opened in the system browser through the backend (U15). */
+  link?: string;
   action?: ShellAction;
   separator?: boolean;
   needsCharacter?: boolean;
@@ -97,11 +88,11 @@ export const MENUS: readonly MenuDef[] = [
   ] },
   { id: "help", label: "Help", entries: [
     { id: "start", label: "Get Started", to: "/characters" },
-    { id: "news", label: "News", site: "/news" },
+    { id: "news", label: "News", link: LINKS.news },
     { id: "extra", label: "Additional Content", to: "/content" },
-    { id: "releases", label: "Releases", site: "/releases" },
-    { id: "support", label: "Support Page", site: "/support" },
-    { id: "donate", label: "Support Borealis", site: "/support/donate" },
+    { id: "releases", label: "Releases", link: LINKS.releases },
+    { id: "support", label: "Support Page", link: LINKS.support },
+    // U15: "Support Borealis" stays hidden until a donation page exists.
     { id: "s1", label: "", separator: true },
     { id: "setup", label: "AI Setup", to: "/setup/ai", ai: true },
     { id: "more", label: "All Screens", to: "/more" },

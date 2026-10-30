@@ -2,7 +2,8 @@ import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from 
 import { useNavigate } from "react-router";
 import { Icon } from "../Icon";
 import { usePlatform } from "../../state/platform";
-import { CHARACTER_MENU, type MenuEntry, openProjectSite, visibleMenus } from "./sections";
+import { CHARACTER_MENU, type MenuEntry, visibleMenus } from "./sections";
+import { openLink } from "../../lib/links";
 import { useShell } from "./ShellContext";
 import { openEditionFlyout } from "../../pages/manage/EditionFlyout";
 import { useShellActions } from "./useShellActions";
@@ -62,7 +63,7 @@ export function MenuBar() {
   );
 }
 
-/** Runs a menu entry: route, project-site link, flyout, or shell action. */
+/** Runs a menu entry: route, web page (system browser), flyout, or shell action. */
 function useActivate() {
   const nav = useNavigate();
   const api = useApi();
@@ -70,7 +71,7 @@ function useActivate() {
   const { setLevelUpOpen, setPortraitsOpen, openSettings, setBorealisSettingsOpen } = useShell();
   return (e: MenuEntry) => {
     if (e.to) nav(e.to);
-    else if (e.site !== undefined) openProjectSite(e.site);
+    else if (e.link) void openLink(api, e.link);
     else if (e.action === "levelup") setLevelUpOpen(true);
     else if (e.action === "portraits") setPortraitsOpen(true);
     else if (e.action === "settings") openSettings();

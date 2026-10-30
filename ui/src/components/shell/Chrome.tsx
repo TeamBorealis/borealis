@@ -5,7 +5,9 @@ import { Icon } from "../Icon";
 import { MetroProgressBar } from "../controls/Controls";
 import { ToolTip } from "../controls/Controls";
 import { useStatusMessage, setStatus } from "../../state/status";
-import { MAIN_TABS, START_SUBNAV, activeTab, openProjectSite } from "./sections";
+import { MAIN_TABS, START_SUBNAV, activeTab } from "./sections";
+import { LINKS, openLink } from "../../lib/links";
+import { useApi } from "../../state/ApiContext";
 import { isTauri } from "../../lib/tauri";
 import "./flyouts.css";
 import { useShell } from "./ShellContext";
@@ -41,7 +43,8 @@ export function TitleCommands() {
   const nav = useNavigate();
   const { openSettings } = useShell();
   const { snapshot } = useShellActions();
-  const openSite = () => openProjectSite();
+  const api = useApi();
+  const openSite = () => void openLink(api, LINKS.website);
   return (
     <div className="aur-wincmds">
       {snapshot && <ToolTip text="Character sheet"><button type="button" aria-label="Character sheet" onClick={() => nav("/sheet")}><Icon name="open-in-app" /></button></ToolTip>}

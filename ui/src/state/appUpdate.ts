@@ -1,11 +1,12 @@
 import { useEffect, useSyncExternalStore } from "react";
 import type { Api, AppUpdateStatus } from "../api/contract";
 import { useApi } from "./ApiContext";
+import { LINKS } from "../lib/links";
 
 /** Latest release of the project; the same address the desktop backend asks. */
 export const RELEASES_API = "https://api.github.com/repos/TeamBorealis/borealis/releases/latest";
 /** The official download page (the website lists every platform). */
-export const DOWNLOAD_PAGE = "https://borealisbuilder.com/#download";
+export const DOWNLOAD_PAGE = LINKS.download;
 const RELEASE_PAGE_PREFIX = "https://github.com/TeamBorealis/borealis/";
 const DISMISSED_KEY = "borealis.updateDismissed";
 const FETCH_TIMEOUT_MS = 10_000;

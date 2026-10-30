@@ -14,7 +14,7 @@ import { MockFiveToolsUrls } from "./fivetools-urls";
 import { MockImportPreview } from "./import-preview";
 import { MockImportReports } from "./import-report";
 import * as rolled from "./rolled-charges";
-import { MockAppUpdate } from "./app-update";
+import { MockAppUpdate, recordOpenedLink } from "./app-update";
 import { MockDataFiles } from "./data-files";
 import { MockBundles } from "./bundles";
 import { MockDeviceLink } from "./link";
@@ -687,6 +687,9 @@ export class MockApi implements Api {
   async appUpdateStatus() { await this.tick(); return { ...this.appUpdate.status }; }
   async checkAppUpdate() { await this.tick(); this.appUpdate.requests += 1; this.emit("appupdate:status", { ...this.appUpdate.status }); return { ...this.appUpdate.status }; }
   async openDownloadPage() { await this.tick(); this.appUpdate.opened += 1; }
+  /** Web pages "opened" in the system browser (U15); exposed on `window.__mockOpenedLinks` for the web e2e. */
+  readonly openedLinks: string[] = [];
+  async openLink(args: { url: string }) { await this.tick(); recordOpenedLink(this.openedLinks, args.url); }
   /** Folders asked to be opened, and the log text the mock "device" holds (tests set it). */
   readonly openedFolders: string[] = [];
   recentLogs = "2026-10-15T09:00:00Z  INFO borealis_lib::app_logs: Borealis started version=\"1.0.1\"";

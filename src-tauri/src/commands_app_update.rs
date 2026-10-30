@@ -62,10 +62,52 @@ pub fn check_app_update(state: State<'_, AppState>) -> ApiResult<AppUpdateStatus
 /// constant is ever opened.
 ///
 /// # Errors
-/// `io` when the OS opener cannot start.
+/// `io` when the OS opener cannot start (desktop) or the system cannot open the page (phones).
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[tauri::command(async)]
 pub fn open_download_page() -> ApiResult<()> {
+    open_external(app_update::DOWNLOAD_PAGE)
+}
+
+/// Phones: see [`open_external`].
+///
+/// # Errors
+/// `io` when the system cannot open the page.
+#[cfg(any(target_os = "android", target_os = "ios"))]
+#[tauri::command(async)]
+pub fn open_download_page(app: tauri::AppHandle) -> ApiResult<()> {
+    open_external(&app, app_update::DOWNLOAD_PAGE)
+}
+
+/// Open one of the app's fixed web pages ([`crate::links::ALLOWED`]: Help menu, globe, download
+/// page) in the system browser (U15). Any other address is refused.
+///
+/// # Errors
+/// `invalid_argument` for an address that is not on the list; `io` when it cannot be opened.
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+#[tauri::command(async)]
+pub fn open_link(url: String) -> ApiResult<()> {
+    open_external(allowed_link(&url)?)
+}
+
+/// Phones: see [`open_external`].
+///
+/// # Errors
+/// `invalid_argument` for an address that is not on the list; `io` when it cannot be opened.
+#[cfg(any(target_os = "android", target_os = "ios"))]
+#[tauri::command(async)]
+pub fn open_link(app: tauri::AppHandle, url: String) -> ApiResult<()> {
+    open_external(&app, allowed_link(&url)?)
+}
+
+fn allowed_link(url: &str) -> ApiResult<&'static str> {
+    crate::links::allowed(url)
+        .ok_or_else(|| crate::error::ApiError::invalid("Borealis only opens its own web pages."))
+}
+
+/// Desktop: hand a fixed address to the OS opener (`open`, `explorer`, `xdg-open`).
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+fn open_external(url: &'static str) -> ApiResult<()> {
     let opener = if cfg!(target_os = "macos") {
         "open"
     } else if cfg!(target_os = "windows") {
@@ -74,25 +116,21 @@ pub fn open_download_page() -> ApiResult<()> {
         "xdg-open"
     };
     std::process::Command::new(opener)
-        .arg(app_update::DOWNLOAD_PAGE)
+        .arg(url)
         .spawn()
         .map(|_| ())
-        .map_err(|e| crate::error::ApiError::io("open the download page", e))
+        .map_err(|e| crate::error::ApiError::io("open the web page", e))
 }
 
-/// Phones: hand the built-in download page to the system browser through the opener plugin's
-/// Rust API (an Android `ACTION_VIEW` intent, `UIApplication.open` on iOS). The web view gets no
-/// opener permission, so it cannot open any other address, and the page never loads inside the app.
-///
-/// # Errors
-/// `io` when the system cannot open the page.
+/// Phones: hand a fixed address to the system browser through the opener plugin's Rust API (an
+/// Android `ACTION_VIEW` intent, `UIApplication.open` on iOS). The web view gets no opener
+/// permission, so it cannot open any other address, and the page never loads inside the app.
 #[cfg(any(target_os = "android", target_os = "ios"))]
-#[tauri::command(async)]
-pub fn open_download_page(app: tauri::AppHandle) -> ApiResult<()> {
+fn open_external(app: &tauri::AppHandle, url: &'static str) -> ApiResult<()> {
     use tauri_plugin_opener::OpenerExt;
     app.opener()
-        .open_url(app_update::DOWNLOAD_PAGE, None::<&str>)
-        .map_err(|e| crate::error::ApiError::io("open the download page", e))
+        .open_url(url, None::<&str>)
+        .map_err(|e| crate::error::ApiError::io("open the web page", e))
 }
 
 /// Desktop startup: after [`app_update::STARTUP_CHECK_DELAY`], on a background thread, ask GitHub

@@ -182,6 +182,7 @@ const COMMANDS: &[&str] = &[
     "app_update_status",
     "check_app_update",
     "open_download_page",
+    "open_link",
     "open_app_folder",
     "get_recent_logs",
     "share_logs",
