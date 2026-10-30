@@ -19,6 +19,7 @@ import argparse
 import base64
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -215,7 +216,9 @@ class Bridge:
                                         "thread_metadata": metadata}
         allowed = {"parse": [], "users": [mention]} if mention else {"parse": []}
         body = {"content": text, "allowed_mentions": allowed, "flags": SUPPRESS_EMBEDS}
-        self.write(f"reply in thread {thread_id}: {text!r}",
+        # Public Actions logs must not show the poster's numeric user id.
+        logged = re.sub(r"<@!?\d+>", "@poster", text)
+        self.write(f"reply in thread {thread_id}: {logged!r}",
                    lambda: self.discord("POST", f"/channels/{thread_id}/messages", body))
         self._bot_messages[thread_id].append(text)
         return True

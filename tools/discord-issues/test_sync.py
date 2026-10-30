@@ -253,6 +253,13 @@ class ReportBackTest(unittest.TestCase):
         quiet(fake.report_closed, {"77": closed_issue("completed")}, "2026-10-01T00:00:00Z")
         self.assertEqual(len(fake.calls), 2)
 
+    def test_reply_log_hides_the_posters_id(self):
+        fake = FakeBridge(False, self.routes([]))
+        _, out = quiet(fake.reply_once, "77", "Thanks <@123456789012345678> for the idea!", None, "123456789012345678")
+        self.assertEqual(fake.calls[-1][3]["content"], "Thanks <@123456789012345678> for the idea!")
+        self.assertNotIn("123456789012345678", out)
+        self.assertIn("Thanks @poster for the idea!", out)
+
     def test_existing_reply_is_not_repeated(self):
         url = "https://github.com/o/r/issues/9"
         said = [{"author": {"id": "bot"}, "content": bridge.close_plan("bug", "completed", url)[2]}]
