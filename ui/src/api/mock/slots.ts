@@ -8,7 +8,7 @@ import { type MockCharacter, levelOf } from "./state";
 import { casterMaxSpellLevel, cantripsAt, spellbookSize } from "./spell-tables";
 import { isClassless } from "./edition-classes";
 
-export interface SlotDef extends Omit<SelectionSlot, "chosen" | "gainedOnLevel" | "replaced" | "emptyReason"> {
+export interface SlotDef extends Omit<SelectionSlot, "chosen" | "gainedOnLevel" | "replaced" | "emptyReason" | "problem"> {
   candidates: MockElement[];
   dup: string | null;
   lockedTo: string | null;

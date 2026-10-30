@@ -112,7 +112,8 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
           {slot.hint && <p className="pick-hint">{slot.hint}</p>}
           {options.error && <p className="pick-empty danger-text" role="alert">{options.error}</p>}
           {allLocked && <p className="pick-empty">Granted by your build; nothing to choose.</p>}
-          {options.data && rows.length === 0 && (
+          {slot.problem && <p className="pick-empty pick-problem" role="note" aria-label="Content problem">{slot.problem}</p>}
+          {options.data && rows.length === 0 && !slot.problem && (
             <EmptyListNote slot={slot} ruleset={ruleset} onManageSources={() => navigate(SOURCES_ROUTE)} onStartOver={(ed) => void startOver(ed)} onEditionOptions={openEditionFlyout} />
           )}
           {picker.showBar && (

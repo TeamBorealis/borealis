@@ -195,3 +195,9 @@
 .pick-why { font-style: normal; line-height: 1.5; }
 .pick-why-act { margin-left: 6px; padding: 0; border: 0; background: none; color: var(--accent, #4aa3df); font: inherit; font-style: normal; text-decoration: underline; cursor: pointer; }
 .pick-why-act:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
+/* GitHub #11 (C1): the character's content notices as one compact notice. */
+.alert.bp-notices { display: block; }
+.bp-notices-toggle { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; text-align: left; }
+.bp-notices-toggle:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
+.bp-notices-list { margin: 6px 0 0; padding-left: 18px; overflow-wrap: anywhere; }
+.pick-problem { font-style: normal; color: var(--warning); }

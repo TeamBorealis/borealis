@@ -108,7 +108,7 @@ describe("U14 the empty Class list", () => {
 const slot = (emptyReason: SlotEmptyReason | null, elementType: SelectionSlot["elementType"] = "class"): SelectionSlot => ({
   id: "s1", tab: "class", groupId: null, groupLabel: null, classSlotId: null, title: elementType === "class" ? "Class" : "Gift",
   elementType, ordinal: 1, of: 1, required: true, locked: false, chosen: null, requiredLevel: null, allowReplace: false, hint: null,
-  gainedOnLevel: 1, replaced: [], emptyReason,
+  gainedOnLevel: 1, replaced: [], emptyReason, problem: null,
 });
 
 function note(s: SelectionSlot, handlers: Partial<Parameters<typeof EmptyListNote>[0]> = {}) {

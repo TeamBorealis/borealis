@@ -459,6 +459,7 @@ fn slots(snap: &Engine) -> (Vec<SelectionSlot>, SelectionProgress) {
                     }),
                     restricted: r.restricted,
                 }),
+            problem: s.problem.as_ref().map(|p| p.message.clone()),
         });
     }
     ranked.sort();
@@ -539,6 +540,7 @@ mod tests {
             gained_level: 1,
             replaced: Vec::new(),
             empty_reason: None,
+            problem: None,
         }
     }
 

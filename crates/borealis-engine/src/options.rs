@@ -1,9 +1,10 @@
 //! Option lists of select slots (`engine.md` 6.2).
 
 use crate::graph::{Graph, NodeId, Relax, SpellDynamics};
-use crate::snapshot::{EmptyReason, OtherEditionOptions};
+use crate::snapshot::{EmptyReason, OtherEditionOptions, SlotProblem};
 use crate::universe::EditionStatus;
 use crate::universe::UElem;
+use crate::universe::{Cond, URule};
 use borealis_content::Rule;
 
 impl<'u> Graph<'u> {
@@ -142,7 +143,7 @@ impl<'u> Graph<'u> {
             };
             let by_edition = Relax {
                 edition: true,
-                restriction: false,
+                ..Relax::NONE
             };
             if let Some(from) = foreign.filter(|_| check(c, by_edition)) {
                 let o = other.get_or_insert(OtherEditionOptions {
@@ -158,8 +159,8 @@ impl<'u> Graph<'u> {
             } else if check(
                 c,
                 Relax {
-                    edition: false,
                     restriction: true,
+                    ..Relax::NONE
                 },
             ) {
                 reason.restricted += 1;
@@ -169,12 +170,78 @@ impl<'u> Graph<'u> {
         (reason != EmptyReason::default()).then_some(reason)
     }
 
+    /// Content behind a choice that can't be read (GitHub #11, C1): the select's own `supports`,
+    /// or candidates that pass every filter but their own unreadable requirements (never
+    /// offered). `None` when there is nothing to say.
+    #[must_use]
+    pub fn slot_problem(&self, owner: NodeId, slot_index: usize) -> Option<SlotProblem> {
+        let n = &self.nodes[owner];
+        let slot = &n.slots[slot_index];
+        let (Rule::Select(rule), URule::Select { supports, .. }) =
+            (&n.e.el.rules[slot.rule], &n.e.rules[slot.rule])
+        else {
+            return None;
+        };
+        if matches!(supports, Cond::Invalid) {
+            return Some(SlotProblem {
+                message: format!(
+                    "This choice's filter, \"{}\", can't be read, so it offers nothing.",
+                    rule.supports.as_deref().unwrap_or_default().trim()
+                ),
+                elements: vec![n.e.el.id.clone()],
+            });
+        }
+        if rule.is_list() {
+            return None;
+        }
+        let dyns = SpellDynamics::new(self, owner, slot.rule);
+        let relax = Relax {
+            requirements: true,
+            ..Relax::NONE
+        };
+        let mut seen = std::collections::HashSet::new();
+        let hidden: Vec<&UElem> = self
+            .uni
+            .select_candidates(&rule.ty, self.allow_cross_edition)
+            .filter(|c| matches!(c.req, Cond::Invalid) && seen.insert(c.el.id.as_str()))
+            .filter(|c| {
+                self.choice_allowed_relaxed(owner, slot.rule, c, false, &dyns, false, relax)
+            })
+            .collect();
+        if hidden.is_empty() {
+            return None;
+        }
+        let mut names: Vec<&str> = hidden
+            .iter()
+            .map(|c| c.el.name.as_str())
+            .take(MAX_PROBLEM_NAMES)
+            .collect();
+        if hidden.len() > MAX_PROBLEM_NAMES {
+            names.push("…");
+        }
+        let (count, its) = if hidden.len() == 1 {
+            ("1 option".to_string(), "its")
+        } else {
+            (format!("{} options", hidden.len()), "their")
+        };
+        Some(SlotProblem {
+            message: format!(
+                "{count} can't be offered: {its} requirements can't be read ({}).",
+                names.join(", ")
+            ),
+            elements: hidden.iter().map(|c| c.el.id.clone()).collect(),
+        })
+    }
+
     /// Dynamic spell token context for a node's rule (exposed for the snapshot builder).
     #[must_use]
     pub fn spell_dynamics(&self, owner: NodeId, rule_index: usize) -> SpellDynamics<'_, 'u> {
         SpellDynamics::new(self, owner, rule_index)
     }
 }
+
+/// Option names a slot problem lists before "…".
+const MAX_PROBLEM_NAMES: usize = 5;
 
 /// A `Companion` select offers content companions first: a typed `Monster` stat block is
 /// dropped when a `Companion` (or an earlier monster) of the same name is offered, unless it is

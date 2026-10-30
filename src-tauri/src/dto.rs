@@ -299,6 +299,8 @@ pub struct SelectionSlot {
     /// An open slot that offers nothing: what hides its options (U14). `null` when it has
     /// options or nothing would match anyway.
     pub empty_reason: Option<SlotEmptyReason>,
+    /// Content behind this choice that can't be read (GitHub #11, C1), shown on the choice.
+    pub problem: Option<String>,
 }
 
 /// Why an open slot offers nothing (U14, GitHub #10).

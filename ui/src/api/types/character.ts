@@ -95,6 +95,8 @@ export interface SelectionSlot {
   replaced: ReplacedPick[];
   /** An open slot that offers nothing: what hides its options (U14). Null when it has options or nothing would match. */
   emptyReason: SlotEmptyReason | null;
+  /** Content behind this choice that can't be read (GitHub #11, C1), shown on the choice instead of a notice. */
+  problem: string | null;
 }
 
 /** Why an open slot offers nothing (U14, GitHub #10). */

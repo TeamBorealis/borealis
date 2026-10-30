@@ -712,10 +712,25 @@ pub fn source_restrictions(input: &MapInput<'_>) -> Option<Vec<String>> {
     )
 }
 
-/// Informational notices: engine diagnostics, import remarks, content load problems.
+/// Informational notices: engine diagnostics, import remarks, content load problems. A content
+/// problem the character meets on a choice is shown on that choice (C1), not repeated here.
 #[must_use]
 pub fn notices(input: &MapInput<'_>, snap: &Engine) -> Vec<String> {
-    let mut out: Vec<String> = snap.diagnostics.iter().map(|d| d.message.clone()).collect();
+    let on_choices: std::collections::HashSet<&str> = snap
+        .slots
+        .iter()
+        .filter_map(|s| s.problem.as_ref())
+        .flat_map(|p| p.elements.iter().map(String::as_str))
+        .collect();
+    let mut out: Vec<String> = snap
+        .diagnostics
+        .iter()
+        .filter(|d| {
+            d.code != borealis_engine::diag::code::CONTENT_BAD_EXPRESSION
+                || !d.element.as_deref().is_some_and(|e| on_choices.contains(e))
+        })
+        .map(|d| d.message.clone())
+        .collect();
     if let Some(i) = &input.character.import {
         if i.missing_content > 0 {
             out.push(format!(

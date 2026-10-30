@@ -14,6 +14,7 @@ import { DescriptionPane, PaneShell } from "./DescriptionPane";
 import type { DescribeFn, PickChoice } from "./PickerGroup";
 import { usePhone } from "../../lib/phone";
 import { SlotList } from "./SlotList";
+import { NoticesBanner } from "./NoticesBanner";
 import { PickerStateProvider } from "./pickerState";
 
 type TabId = BuilderTab;
@@ -97,7 +98,7 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
         {snapshot.level.levelUpAvailable && (
           <Alert tone="success"><strong>Level up available.</strong> <button type="button" className="bp-linkbtn" onClick={() => setLevelUpOpen(true)}>Open Level Up</button> to advance.</Alert>
         )}
-        {snapshot.notices.map((n) => <Alert key={n} tone="info">{n}</Alert>)}
+        <NoticesBanner notices={snapshot.notices} />
         <Tabs inBand tabs={tabs} active={active} onChange={(id) => nav(`/builder/${id}`)} label="Build sections" idPrefix="build" />
         <TabPanel active={active} idPrefix="build">
           {active === "abilities" ? <AbilitiesTab describedId={shownId} onDescribe={onDescribe} />

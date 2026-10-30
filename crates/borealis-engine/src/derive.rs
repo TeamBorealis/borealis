@@ -440,6 +440,11 @@ impl<'u> Evaluation<'u> {
                     && !rule.is_list())
                 .then(|| self.graph.slot_empty_reason(id, si))
                 .flatten();
+                let problem = if include_options {
+                    self.graph.slot_problem(id, si)
+                } else {
+                    None
+                };
                 let retrain =
                     self.retrain_info(state, casters, slot, rule, self.graph.mgr_level(n.mgr));
                 out.push(SlotSnapshot {
@@ -474,6 +479,7 @@ impl<'u> Evaluation<'u> {
                     gained_level: retrain.gained_level,
                     replaced: retrain.replaced,
                     empty_reason,
+                    problem,
                 });
             }
         }
@@ -620,6 +626,7 @@ impl<'u> Evaluation<'u> {
             }
         }
         let slots = self.slots(state, &spellcasting, include_options);
+        let diagnostics = met_content_problems(diags.items().to_vec(), &self.graph, &slots);
         let mut invalid = Vec::new();
         for s in &slots {
             let missing = s.missing.clone().map(crate::state::Choice::Element);
@@ -730,7 +737,7 @@ impl<'u> Evaluation<'u> {
             wild_shape,
             equipment_packages,
             invalid_selections: invalid,
-            diagnostics: diags.into_vec(),
+            diagnostics,
             compatibility: self.compatibility(),
             features,
             sheet_summary,
@@ -891,6 +898,42 @@ fn half_proficiency_skills(graph: &Graph<'_>) -> std::collections::HashSet<Strin
                 .strip_suffix(":misc")
                 .or_else(|| st.name.strip_suffix(":proficiency"))
                 .map(str::to_string)
+        })
+        .collect()
+}
+
+/// C1 (GitHub #11): a content-wide "unparsable expression" diagnostic is kept only for an element
+/// the character holds, one a held element grants (an unreadable requirement withholds it, where
+/// Aurora fails), or one it meets on a choice (`SlotSnapshot::problem`); every other one stays in
+/// the content's import report, not in every character's notices.
+fn met_content_problems(
+    diags: Vec<Diagnostic>,
+    graph: &Graph<'_>,
+    slots: &[SlotSnapshot],
+) -> Vec<Diagnostic> {
+    let granted = graph
+        .preorder()
+        .into_iter()
+        .flat_map(|n| graph.nodes[n].e.el.rules.iter())
+        .filter_map(|r| match r {
+            Rule::Grant(g) => graph.uni.get(&g.id),
+            _ => None,
+        })
+        .filter(|t| matches!(t.req, crate::universe::Cond::Invalid))
+        .map(|t| t.el.id.as_str());
+    let met: std::collections::HashSet<&str> = slots
+        .iter()
+        .filter_map(|s| s.problem.as_ref())
+        .flat_map(|p| p.elements.iter().map(String::as_str))
+        .chain(granted)
+        .collect();
+    diags
+        .into_iter()
+        .filter(|d| {
+            d.code != crate::diag::code::CONTENT_BAD_EXPRESSION
+                || d.element
+                    .as_deref()
+                    .is_some_and(|e| graph.ids.count(e) > 0 || met.contains(e))
         })
         .collect()
 }

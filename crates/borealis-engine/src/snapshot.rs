@@ -183,6 +183,19 @@ pub struct SlotSnapshot {
     /// options, or when nothing would match even without the edition and the source restriction.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub empty_reason: Option<EmptyReason>,
+    /// Content behind this choice that can't be read (GitHub #11, C1): its own filter, or options
+    /// whose requirements can't be parsed. `None` without option lists.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub problem: Option<SlotProblem>,
+}
+
+/// A content problem met on a choice (C1): shown on the choice, not as a character notice.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SlotProblem {
+    /// What the user reads.
+    pub message: String,
+    /// The elements whose expressions can't be read (the owner for its own filter).
+    pub elements: Vec<String>,
 }
 
 /// Why an open slot offers nothing (U14, GitHub #10).

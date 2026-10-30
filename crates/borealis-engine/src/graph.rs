@@ -112,6 +112,9 @@ pub(crate) struct Relax {
     pub edition: bool,
     /// Ignore the character's source restriction.
     pub restriction: bool,
+    /// Ignore the candidate's own requirements and prerequisites (an unreadable requirement
+    /// never holds; C1 asks which options it hides).
+    pub requirements: bool,
 }
 
 impl Relax {
@@ -119,6 +122,7 @@ impl Relax {
     pub(crate) const NONE: Self = Self {
         edition: false,
         restriction: false,
+        requirements: false,
     };
 }
 
@@ -1216,6 +1220,9 @@ impl<'u> Graph<'u> {
             && !crate::play_rules::mastery_allows(self, s, cand)
         {
             return false;
+        }
+        if relax.requirements {
+            return true;
         }
         if !self.prereq_holds(cand) {
             return false;
