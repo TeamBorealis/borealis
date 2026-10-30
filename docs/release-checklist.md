@@ -22,6 +22,11 @@ Run every step for each public release, in order. A release is not cut while any
       `--since <previous tag>` when the previous release is not the latest published one) and paste its Markdown,
       which thanks the Discord users whose bug reports and ideas were closed since the previous release.
       The website changelog is built from the release notes, so the credits reach it too.
+- [ ] Discord announcement: when the release is published, the `announce` job of `discord-issues.yml` posts the
+      notes to #announcements (`tools/discord-issues/announce.py`). Put a `---` line, with a blank line above it,
+      between the notes and the checksums/licence text; everything after it stays out of the announcement.
+      Keep "### Fixed in", "### New in" and the community credits above it. Check the post; a missed one can be
+      sent with the workflow's `announce_tag` input (`dry_run` previews it).
 - [ ] The bundles carry the new version (Info.plist, installer and APK file names).
 
 ## 3. External services
