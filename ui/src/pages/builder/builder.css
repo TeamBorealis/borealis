@@ -193,7 +193,7 @@
 :root[data-theme="light"] .abil-frame, :root[data-contrast="high"] .abil-frame { --abil-fill: var(--light-1); }
 /* U14: why a pick list is empty, with one action per cause. */
 .pick-why { font-style: normal; line-height: 1.5; }
-.pick-why-act { margin-left: 6px; padding: 0; border: 0; background: none; color: var(--accent, #4aa3df); font: inherit; font-style: normal; text-decoration: underline; cursor: pointer; }
+.pick-why-act { margin-left: 6px; padding: 0; border: 0; background: none; color: var(--link); font: inherit; font-style: normal; text-decoration: underline; cursor: pointer; }
 .pick-why-act:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
 /* GitHub #11 (C1): the character's content notices as one compact notice. */
 .alert.bp-notices { display: block; }
@@ -201,3 +201,5 @@
 .bp-notices-toggle:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
 .bp-notices-list { margin: 6px 0 0; padding-left: 18px; overflow-wrap: anywhere; }
 .pick-problem { font-style: normal; color: var(--warning); }
+/* phones: a 44 px tall touch target around the inline action, without moving the text */
+html.phone .pick-why-act { padding: 12px 4px; margin: -12px 0 -12px 2px; }

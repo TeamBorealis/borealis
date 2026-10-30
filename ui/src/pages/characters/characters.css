@@ -102,3 +102,4 @@
 .v4-rep-state { font-size: 10px; text-transform: uppercase; color: var(--text-secondary); }
 /* U14: the chosen edition has no classes (New Character dialog). */
 .v4-opt p.v4-warn { color: var(--warning); font-weight: 400; }
+html.phone .v4-opt p.v4-warn, .v4-opts .v4-opt p.v4-warn { color: var(--warning); }
