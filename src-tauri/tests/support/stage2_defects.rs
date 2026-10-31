@@ -526,9 +526,32 @@ pub(super) fn unfillable_select(
         named
     };
     !candidates.is_empty()
-        && candidates
-            .iter()
-            .all(|s| supports_unfillable(store, ty, s.supports.as_deref()))
+        && candidates.iter().all(|s| {
+            supports_unfillable(store, ty, s.supports.as_deref())
+                || supports_unmatched(store, ty, s.supports.as_deref())
+        })
+}
+
+/// True when no installed element of `ty` that a character can be offered matches the select's
+/// whole `supports` expression (`supports_unfillable` asks for any one token): a 2024 class's
+/// `Skill,PHB24 Wizard` when another repo redefined every skill without the `PHB24 Wizard` tag,
+/// or a tag only 2014 elements carry that their 2024 versions replace (IM11 keeps the 2014
+/// element's own tags off its equivalent). Aurora reads the same content.
+fn supports_unmatched(store: &ContentStore, ty: &str, supports: Option<&str>) -> bool {
+    let raw = supports.unwrap_or("").trim();
+    if raw.is_empty() || raw.contains("$(") {
+        return false;
+    }
+    let replaced: HashSet<&str> = store
+        .iter()
+        .filter_map(|se| se.element.maps_to.as_ref())
+        .filter(|m| m.kind == Some(borealis_content::MapKind::Equivalent))
+        .filter_map(|m| m.dnd2014.as_deref())
+        .collect();
+    !store.iter().any(|se| {
+        let e = &se.element;
+        e.ty == ty && !replaced.contains(e.id.as_str()) && supports_match(raw, e)
+    })
 }
 
 /// True when a select of `ty` with `supports` can never offer anything: it names support
