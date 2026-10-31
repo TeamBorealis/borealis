@@ -167,6 +167,8 @@ fn other_single_edition_lists_share_the_reason() {
 /// An option its native equivalent replaces (IM11 `maps_to` kind `equivalent`) is not "hidden by
 /// the other-edition switch": switching it on would not bring it back. Found by the a-comm-combo
 /// gate run (a 2014 race whose language select names a tag only the replaced 2014 languages carry).
+/// Since IM16 the native equivalent answers that tag, so the list offers it; when the source
+/// restriction hides it, the note names the restriction, never the edition.
 #[test]
 fn replaced_options_are_not_blamed_on_the_edition_switch() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
@@ -191,11 +193,25 @@ fn replaced_options_are_not_blamed_on_the_edition_switch() {
     let e = Engine::new(&store);
     let s = commands::new_character(&e, Ruleset::Dnd2024);
     let key = commands::slot_key(&e.derive(&s), "ID_LEVEL_1", "Race", 1).expect("race slot");
-    let s = commands::select(&e, &s, &key, Choice::Element("ID_T_OLD_RACE".into()))
+    let mut s = commands::select(&e, &s, &key, Choice::Element("ID_T_OLD_RACE".into()))
         .expect("2014 race")
         .state;
     let snap = e.derive(&s);
+    let ids: Vec<&str> = slot(&snap, "Old Tongue")
+        .options
+        .iter()
+        .map(|o| o.id.as_str())
+        .collect();
+    assert_eq!(ids, ["ID_T_NEW_TONGUE"], "IM16");
+    s.restricted_sources = vec!["Test Book 2024".to_string()];
+    let snap = e.derive(&s);
     let tongue = slot(&snap, "Old Tongue");
     assert!(tongue.options.is_empty());
-    assert_eq!(tongue.empty_reason, None);
+    assert_eq!(
+        tongue.empty_reason,
+        Some(EmptyReason {
+            other_edition: None,
+            restricted: 1,
+        })
+    );
 }

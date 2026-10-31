@@ -1,8 +1,9 @@
 //! IM11: supports that content appends onto a 2014 element the 2024 universe supersedes
 //! (`maps_to` kind `equivalent`) also apply to its native 2024 equivalent, so a select that
 //! matches on them offers the 2024 version. The superseded element stays hidden from new picks,
-//! a stored pick of it still replays, and the 2014 universe is unchanged. Only the appended tags
-//! move across, never the 2014 element's own supports. Synthetic homebrew class over the bundled
+//! a stored pick of it still replays, and the 2014 universe is unchanged. The appended tags move
+//! across; the 2014 element's own tags are matched as a second set (IM16,
+//! `replaced_element_tags.rs`). Synthetic homebrew class over the bundled
 //! core + SRD 5.1 + SRD 5.2.1 packs.
 
 use borealis_content::{ContentFile, ContentStoreBuilder, PackOrigin, Ruleset};
@@ -112,14 +113,13 @@ fn the_2014_spell_stays_hidden_with_other_edition_content_allowed() {
     assert_eq!(offered(&e.derive(&s), ORDER), [MM_24, NEW_BOLT]);
 }
 
+/// Since IM16 the 2014 spell's own tags are matched for its 2024 equivalent too (as a second tag
+/// set, not added to its own supports); before, only the appended ones counted.
 #[test]
-fn only_appended_supports_move_to_the_2024_equivalent() {
+fn the_2014_spells_own_supports_also_match_its_2024_equivalent() {
     let e = engine();
     let s = orderling(&e, Ruleset::Dnd2024);
-    assert!(
-        offered(&e.derive(&s), CIRCLE).is_empty(),
-        "the 2014 spell's own supports stay with it"
-    );
+    assert_eq!(offered(&e.derive(&s), CIRCLE), [NEW_BOLT]);
 }
 
 #[test]

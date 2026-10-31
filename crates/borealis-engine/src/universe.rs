@@ -211,6 +211,10 @@ pub struct UElem {
     /// Foreign element that a native element replaces one to one (`maps_to` kind `equivalent`);
     /// never offered for new picks.
     pub superseded: bool,
+    /// IM16: the tags of the 2014 elements this native 2024 element replaces (`maps_to` kind
+    /// `equivalent`, 2024 universe only). A supports expression the element's own tags do not
+    /// match is matched against these too ([`crate::eval::supports_match`]).
+    pub replaced_supports: Vec<String>,
     /// Stat rules of each `toggle` rule, applied only while the toggle is on.
     pub toggle_effects: Vec<crate::play_rules::ToggleEffects>,
     /// Foreign element the profile accepts only as its `legacy_alias` type (a 2024 species
@@ -261,6 +265,7 @@ impl UElem {
             prereq,
             repeatable,
             superseded: false,
+            replaced_supports: Vec::new(),
             toggle_effects,
             legacy_accepted: false,
             user_edition_book: None,

@@ -395,6 +395,10 @@ impl DynamicSupports for NoDynamics {
 /// an `ID_` term names an element; otherwise an `ID_` term matches an element of that id or a
 /// support tag of that name, so one choice may mix single elements and categories
 /// (`Artisan tools||ID_..._NAVIGATORS_TOOLS`).
+///
+/// IM16: a native 2024 element that replaces 2014 elements also matches when the expression
+/// matches their tags ([`UElem::replaced_supports`]; the whole expression against those tags,
+/// never a mix of the two sets).
 #[must_use]
 pub fn supports_match(
     expr: &SupportsExpr,
@@ -402,7 +406,7 @@ pub fn supports_match(
     dynamics: &dyn DynamicSupports,
 ) -> bool {
     let range = expr.is_id_range_mode();
-    eval_bool(expr.root(), &|leaf| match leaf {
+    let own = eval_bool(expr.root(), &|leaf| match leaf {
         SupportsLeaf::Tag(t) => {
             let is_id = t.starts_with("ID_");
             if range && is_id {
@@ -412,7 +416,13 @@ pub fn supports_match(
             }
         }
         SupportsLeaf::Dynamic(d) => dynamics.matches(d, element),
-    })
+    });
+    own || (!range
+        && !element.replaced_supports.is_empty()
+        && eval_bool(expr.root(), &|leaf| match leaf {
+            SupportsLeaf::Tag(t) => element.replaced_supports.iter().any(|s| same_tag(s, t)),
+            SupportsLeaf::Dynamic(d) => dynamics.matches(d, element),
+        }))
 }
 
 /// Two support tags are the same, a typographic apostrophe (’) counting as a straight one (IM15:
@@ -783,6 +793,7 @@ mod tests {
             prereq: Default::default(),
             repeatable: false,
             superseded: false,
+            replaced_supports: Vec::new(),
             toggle_effects: Vec::new(),
             legacy_accepted: false,
             user_edition_book: None,

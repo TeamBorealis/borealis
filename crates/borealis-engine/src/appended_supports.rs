@@ -7,6 +7,11 @@
 //! them per element); the 2014 element's own supports are already modelled natively by its 2024
 //! version. The superseded element keeps its tags, so a stored pick of it still replays. Nothing
 //! changes in a 2014 universe, and stored character data is untouched (R4).
+//!
+//! IM16: the superseded elements' own tags are also recorded on the native element
+//! (`UElem::replaced_supports`), as a second tag set its supports matching falls back on, so a
+//! 2014 select naming a tag only the 2014 version carries (`Starting` languages) offers the 2024
+//! version. They are not added to its own tags, so nothing else reads them.
 
 use crate::ids;
 use crate::universe::UElem;
@@ -29,18 +34,50 @@ pub(crate) fn share(
         .enumerate()
         .map(|(i, u)| (u.el.id.as_str(), i))
         .collect();
-    let additions: Vec<(usize, Vec<String>)> = elems
+    let additions: Vec<(usize, Vec<String>, Vec<String>)> = elems
         .iter()
         .enumerate()
         .filter(|(_, u)| u.el.ruleset == Some(ruleset))
         .filter_map(|(i, u)| {
             let tags = appended_onto_superseded(u, elems, &pos, store, support_names);
-            (!tags.is_empty()).then_some((i, tags))
+            let replaced = superseded_tags(u, elems, &pos);
+            (!tags.is_empty() || !replaced.is_empty()).then_some((i, tags, replaced))
         })
         .collect();
-    for (i, tags) in additions {
+    for (i, tags, replaced) in additions {
         elems[i].supports.extend(tags);
+        elems[i].replaced_supports = replaced;
     }
+}
+
+/// The superseded counterparts of native `u` (`maps_to` kind `equivalent`, same type).
+fn superseded_counterparts<'a>(
+    u: &'a UElem,
+    elems: &'a [UElem],
+    pos: &'a HashMap<&str, usize>,
+) -> impl Iterator<Item = &'a UElem> + 'a {
+    u.el.maps_to
+        .as_ref()
+        .filter(|m| m.kind == Some(MapKind::Equivalent))
+        .into_iter()
+        .flat_map(|m| [&m.dnd2014, &m.dnd2024])
+        .flatten()
+        .filter(move |t| **t != u.el.id)
+        .filter_map(move |t| pos.get(t.as_str()).map(|&j| &elems[j]))
+        .filter(move |c| c.superseded && c.el.ty == u.el.ty)
+}
+
+/// IM16: every tag of the superseded counterparts of native `u` (empty when it replaces none).
+fn superseded_tags(u: &UElem, elems: &[UElem], pos: &HashMap<&str, usize>) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for c in superseded_counterparts(u, elems, pos) {
+        for t in &c.supports {
+            if !out.contains(t) {
+                out.push(t.clone());
+            }
+        }
+    }
+    out
 }
 
 /// The appended tags of the superseded counterparts of native `u` that `u` lacks.
@@ -51,24 +88,9 @@ fn appended_onto_superseded(
     store: &ContentStore,
     support_names: &HashMap<&str, &str>,
 ) -> Vec<String> {
-    let Some(m) =
-        u.el.maps_to
-            .as_ref()
-            .filter(|m| m.kind == Some(MapKind::Equivalent))
-    else {
-        return Vec::new();
-    };
     let mut out: Vec<String> = Vec::new();
-    let counterparts = [&m.dnd2014, &m.dnd2024]
-        .into_iter()
-        .flatten()
-        .filter(|t| **t != u.el.id)
-        .filter(|t| {
-            pos.get(t.as_str())
-                .is_some_and(|&j| elems[j].superseded && elems[j].el.ty == u.el.ty)
-        });
-    for target in counterparts {
-        let Some(stored) = store.get(target) else {
+    for target in superseded_counterparts(u, elems, pos) {
+        let Some(stored) = store.get(&target.el.id) else {
             continue;
         };
         for tag in &stored.appended_supports {
