@@ -43,9 +43,24 @@ fn years_in(name: &str) -> impl Iterator<Item = u32> + '_ {
         .filter_map(|w| w.parse().ok())
 }
 
-/// IM14: the name says the book is 2024 rules (a year from 2024 on, or `5.5`).
+/// Last year read as a publication year in a name (later ones are setting years, `2077`).
+const LAST_PLAUSIBLE_YEAR: u32 = 2035;
+
+/// `5.5` as a word of the name (`5.5e`, `(5.5)`), not inside a version number (`v1.5.5`).
+fn says_five_point_five(name: &str) -> bool {
+    let bytes = name.as_bytes();
+    name.match_indices("5.5").any(|(i, _)| {
+        let before = i.checked_sub(1).map(|j| bytes[j]);
+        let after = bytes.get(i + 3).copied();
+        let edge = |b: Option<u8>| !b.is_some_and(|b| b.is_ascii_digit() || b == b'.');
+        edge(before) && edge(after) && !after.is_some_and(|b| b.is_ascii_alphabetic() && b != b'e')
+    })
+}
+
+/// IM14: the name says the book is 2024 rules (a publication year from 2024 on, or `5.5`).
 fn name_says_2024(name: &str) -> bool {
-    name.contains("5.5") || years_in(name).any(|y| (FIRST_2024_YEAR..2100).contains(&y))
+    says_five_point_five(name)
+        || years_in(name).any(|y| (FIRST_2024_YEAR..=LAST_PLAUSIBLE_YEAR).contains(&y))
 }
 
 /// True when a `Source` element marks 2024 content (see the module docs).
@@ -292,5 +307,23 @@ mod tests {
             "Marked 2014 Reprint",
             &[("information", "D&D 5.5e")]
         )));
+    }
+
+    /// Review L2: "5.5" counts only as a word ("5.5e", "(5.5)"), not inside a version number, and
+    /// only plausible publication years count, not setting years like 2077.
+    #[test]
+    fn the_name_guess_reads_whole_words_and_plausible_years() {
+        for yes in ["Some Book for 5.5e", "5.5 Edition Classes", "Homebrew (5.5)", "Guide 2026"] {
+            assert!(is_2024_source(&source(yes, &[])), "{yes}");
+        }
+        for no in [
+            "Homebrew v1.5.5",
+            "Pack 15.5",
+            "Rules 5.55",
+            "Cyberpunk 2077 Conversion",
+            "Year 2099 Setting",
+        ] {
+            assert!(!is_2024_source(&source(no, &[])), "{no}");
+        }
     }
 }

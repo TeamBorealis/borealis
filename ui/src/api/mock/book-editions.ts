@@ -15,7 +15,8 @@ export function guessEdition(name: string, setters: Record<string, string>): Rul
   if ((setters.information ?? "").replace("&amp;", "&").startsWith("D&D 5.5e")) return "dnd2024";
   const years = (name.match(/\d+/g) ?? []).filter((w) => w.length === 4).map(Number);
   if (years.includes(2014)) return "dnd2014";
-  if (name.includes("5.5") || years.some((y) => y >= 2024 && y < 2100)) return "dnd2024";
+  const fivePointFive = /(^|[^\d.])5\.5(?![\d.])(?![a-df-z])/i.test(name);
+  if (fivePointFive || years.some((y) => y >= 2024 && y <= 2035)) return "dnd2024";
   const release = /^\d{8}$/.test(setters.release ?? "") ? setters.release! : null;
   return release !== null && release >= PHB_2024_RELEASE ? "dnd2024" : "dnd2014";
 }
