@@ -12,7 +12,7 @@ use crate::content_dto::{ContentSource, PreviewBook};
 use crate::content_packs::EventSink;
 use crate::content_prefs::ContentPrefs;
 use crate::error::{ApiError, ApiResult};
-use crate::state::{AppState, ContentHub};
+use crate::state::AppState;
 use borealis_content::{source_key, ContentFile, PackFileKind, PackManifest, PackOrigin, Ruleset};
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -56,18 +56,28 @@ pub(crate) fn pack_books(dir: &Path) -> Vec<(String, Ruleset)> {
     out
 }
 
-/// The import preview's book list: what the importer detected, and the edition that will apply
-/// (the user's stored choice, else the detected one).
-pub(crate) fn preview_books(dir: &Path, prefs: &ContentPrefs) -> Vec<PreviewBook> {
+/// The import preview's book list: what the importer detected, and the edition that will apply:
+/// the user's stored choice, else the edition the book has in the installed pack this import
+/// replaces (`installed`, review M2: a re-import keeps it), else the detected one.
+pub(crate) fn preview_books(
+    dir: &Path,
+    installed: &Path,
+    prefs: &ContentPrefs,
+) -> Vec<PreviewBook> {
     let chosen = prefs.source_editions();
+    let had: BTreeMap<String, Ruleset> = pack_books(installed)
+        .into_iter()
+        .map(|(n, r)| (source_key(&n), r))
+        .collect();
     pack_books(dir)
         .into_iter()
         .map(|(name, detected)| {
-            let set = chosen.get(&source_key(&name)).copied();
+            let key = source_key(&name);
+            let set = chosen.get(&key).copied();
             PreviewBook {
+                edition: set.or_else(|| had.get(&key).copied()).unwrap_or(detected),
                 name,
                 detected,
-                edition: set.unwrap_or(detected),
                 set_by_user: set.is_some(),
             }
         })
@@ -101,34 +111,26 @@ pub(crate) fn check_preview_editions(
     Ok(())
 }
 
-/// Re-import without the preview (index update, file drop): an installed book whose detected
-/// edition would change, and that the user never set, keeps the edition it had (stored as a
-/// choice the user can change on the Sources page), so a character using it never loses it
-/// because the importer guesses differently now.
+/// A re-import (index update, file drop, or the preview without a choice): an installed book
+/// whose detected edition would change, and that the user never set, keeps the edition it had
+/// (stored as a choice the user can change on the Sources page), so a character using it never
+/// loses it because the importer guesses differently now. `packs` pairs each new pack folder
+/// with the installed folder it replaces; both are read from disk, so a pack that is switched
+/// off counts too (review M3).
 pub(crate) fn keep_installed_editions(
-    hub: &ContentHub,
     prefs: &mut ContentPrefs,
-    staged: &[(std::path::PathBuf, String)],
+    packs: &[(std::path::PathBuf, std::path::PathBuf)],
 ) {
     let chosen = prefs.source_editions();
-    for (dir, id) in staged {
-        let prefix = format!("{id}/");
-        let installed: BTreeMap<String, Ruleset> = hub
-            .store
-            .by_type("Source")
-            .filter(|s| s.origin == PackOrigin::Custom && s.file.starts_with(&prefix))
-            .map(|s| {
-                let edition = match s.element.ruleset {
-                    Some(Ruleset::Dnd2024) => Ruleset::Dnd2024,
-                    _ => Ruleset::Dnd2014,
-                };
-                (source_key(&s.element.name), edition)
-            })
+    for (new_dir, installed_dir) in packs {
+        let installed: BTreeMap<String, Ruleset> = pack_books(installed_dir)
+            .into_iter()
+            .map(|(n, r)| (source_key(&n), r))
             .collect();
         if installed.is_empty() {
             continue;
         }
-        for (name, detected) in pack_books(dir) {
+        for (name, detected) in pack_books(new_dir) {
             let key = source_key(&name);
             if chosen.contains_key(&key) {
                 continue;

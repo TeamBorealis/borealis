@@ -17,6 +17,7 @@ use borealis_content::{
 };
 use borealis_import_5etools::{import_folder_with_progress, ImportOptions, Phase};
 use borealis_migrate::{migrate_path, write_output, MigrateOptions};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 /// Largest accepted import file.
@@ -105,16 +106,38 @@ impl AppState {
         sink: &dyn EventSink,
         reason: &str,
     ) -> ApiResult<()> {
+        self.install_packs_with(staged, sink, reason, &BTreeMap::new())
+    }
+
+    /// [`Self::install_packs`] that also stores the user's `editions` for books of the packs
+    /// (import preview, IM14). They are part of the content preferences only once the packs load:
+    /// a failed install stores none of them (review L3).
+    pub(crate) fn install_packs_with(
+        &self,
+        staged: &[(PathBuf, String)],
+        sink: &dyn EventSink,
+        reason: &str,
+        editions: &BTreeMap<String, borealis_content::Ruleset>,
+    ) -> ApiResult<()> {
         if let Some((_, id)) = staged.iter().find(|(_, id)| is_reserved_pack_id(id)) {
             return Err(ApiError::invalid(format!(
                 "\"{id}\" is a bundled pack id and cannot be replaced."
             )));
         }
         tracing::info!(packs = staged.len(), reason, "installing imported packs");
-        let mut prefs = self.content_prefs();
-        // IM14: a re-import never flips an installed book's edition silently
-        crate::book_editions::keep_installed_editions(&*self.hub()?, &mut prefs, staged);
         let library = self.paths.library();
+        let before = self.content_prefs();
+        let mut prefs = before.clone();
+        for (book, edition) in editions {
+            prefs.set_source_edition(book, *edition);
+        }
+        // IM14: a re-import never flips an installed book's edition silently (read from disk
+        // before the folders move, review M3)
+        let replaced: Vec<(PathBuf, PathBuf)> = staged
+            .iter()
+            .map(|(dir, id)| (dir.clone(), library.join(slug(id))))
+            .collect();
+        crate::book_editions::keep_installed_editions(&mut prefs, &replaced);
         let backup = Scratch::new(&self.paths.data)?;
         let mut moved = Vec::new();
         for (dir, id) in staged {
@@ -150,8 +173,8 @@ impl AppState {
                     let _ = std::fs::rename(&saved, target);
                 }
             }
-            let prefs = self.content_prefs();
-            self.reload_content(&prefs, sink, "import-rolled-back")?;
+            // the preferences as they were: no edition choice of a failed install stays (L3)
+            self.reload_content(&before, sink, "import-rolled-back")?;
         }
         loaded
     }

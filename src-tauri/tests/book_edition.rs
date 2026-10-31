@@ -371,3 +371,154 @@ fn content_preferences_from_a_newer_app_load_and_keep_their_unknown_keys() {
     assert_eq!(after["sourceEditions"]["someone else"], "dnd2024");
     assert_eq!(after["sourceEditions"]["old test homebrew"], "dnd2024");
 }
+
+fn preview_of(app: &App, file: &str, xml: &str) -> borealis_lib::content_preview::ImportPreview {
+    app.state
+        .preview_import_pack(&PreviewImportRequest {
+            files: vec![ImportFileInput {
+                file_name: file.into(),
+                content_base64: STANDARD.encode(xml),
+            }],
+            folder: None,
+        })
+        .expect("preview")
+}
+
+fn stored_editions(app: &App) -> Value {
+    let prefs: Value = serde_json::from_str(
+        &std::fs::read_to_string(app.data.join("content-prefs.json")).unwrap_or_default(),
+    )
+    .unwrap_or(Value::Null);
+    prefs["sourceEditions"].clone()
+}
+
+/// Review M2: re-importing an installed book whose guess changed, the preview shows the edition
+/// that will be installed (the installed one), and installing without a change keeps it.
+#[test]
+fn the_preview_shows_the_installed_edition_and_installs_what_it_shows() {
+    let app = App::new();
+    app.import(
+        "shifting.xml",
+        &book(OLD, "OTH", "Oldcaller", "20230101", false),
+    );
+    let p = preview_of(
+        &app,
+        "shifting.xml",
+        &book(OLD, "OTH", "Oldcaller", "20250101", false),
+    );
+    let v = serde_json::to_value(&p.books).unwrap();
+    assert_eq!(
+        v,
+        json!([{"name": OLD, "detected": "dnd2024", "edition": "dnd2014", "setByUser": false}])
+    );
+    app.state
+        .install_import_preview(&p.preview_id, None, &NullSink)
+        .expect("install");
+    assert_eq!(app.source(OLD)["edition"], "dnd2014");
+    // choosing the new guess in the preview installs that
+    let p = preview_of(
+        &app,
+        "shifting.xml",
+        &book(OLD, "OTH", "Oldcaller", "20250101", false),
+    );
+    let chosen = BTreeMap::from([(OLD.to_string(), Ruleset::Dnd2024)]);
+    app.state
+        .install_import_preview(&p.preview_id, Some(&chosen), &NullSink)
+        .expect("install");
+    assert_eq!(app.source(OLD)["edition"], "dnd2024");
+}
+
+/// Review M3: an index update or re-import of a pack that is switched off keeps its books'
+/// installed editions too (read from the pack on disk, not from the loaded content).
+#[test]
+fn reimporting_a_disabled_pack_keeps_its_books_edition() {
+    let app = App::new();
+    app.import(
+        "shifting.xml",
+        &book(OLD, "OTH", "Oldcaller", "20230101", false),
+    );
+    let pack = app
+        .state
+        .list_packs()
+        .unwrap()
+        .into_iter()
+        .find(|p| p.source_ids.iter().any(|s| s == OLD))
+        .expect("pack")
+        .id;
+    app.state
+        .set_pack_enabled(&pack, false, &NullSink)
+        .expect("switch off");
+    app.import(
+        "shifting.xml",
+        &book(OLD, "OTH", "Oldcaller", "20250101", false),
+    );
+    assert_eq!(app.source(OLD)["edition"], "dnd2014");
+    assert_eq!(stored_editions(&app)["old test homebrew"], "dnd2014");
+}
+
+/// Review L3: an install that fails stores none of the preview's edition choices.
+#[test]
+fn a_failed_install_keeps_no_preview_choice() {
+    let app = App::new();
+    let p = preview_of(
+        &app,
+        "grim.xml",
+        &book(GRIM, "GTPG25", "Gravecaller", "20250115", false),
+    );
+    // break the staged pack so the install cannot load it
+    let staged = std::fs::read_dir(&app.data)
+        .unwrap()
+        .flatten()
+        .map(|e| e.path().join("out"))
+        .find(|p| p.join("pack.json").is_file())
+        .expect("staged pack");
+    for f in walk(&staged).into_iter().filter(|f| {
+        f.extension().is_some_and(|e| e == "json")
+            && f.file_name().is_some_and(|n| n != "pack.json")
+    }) {
+        std::fs::write(&f, "{ not json").unwrap();
+    }
+    let chosen = BTreeMap::from([(GRIM.to_string(), Ruleset::Dnd2014)]);
+    assert!(app
+        .state
+        .install_import_preview(&p.preview_id, Some(&chosen), &NullSink)
+        .is_err());
+    assert_eq!(
+        stored_editions(&app),
+        Value::Null,
+        "no choice stored for a failed install"
+    );
+}
+
+/// Review M4: a content settings file this version cannot read is kept as `.bak` before anything
+/// overwrites it, and an edition value of another shape does not make the file unreadable.
+#[test]
+fn unreadable_content_settings_are_kept_and_odd_editions_tolerated() {
+    let app = App::new();
+    app.import("old.xml", &book(OLD, "OTH", "Oldcaller", "20230101", false));
+    let path = app.data.join("content-prefs.json");
+    let mut prefs: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    prefs["sourceEditions"] =
+        json!({"old test homebrew": {"edition": "dnd2024", "by": "user"}, "x": 5});
+    prefs["disabledPacks"] = json!(["srd-5.1-monsters"]);
+    std::fs::write(&path, serde_json::to_string(&prefs).unwrap()).unwrap();
+    let app = app.restart();
+    assert!(app
+        .state
+        .list_packs()
+        .unwrap()
+        .iter()
+        .any(|p| p.id == "srd-5.1-monsters" && !p.enabled));
+    assert_eq!(app.source(OLD)["edition"], "dnd2014");
+    set_edition(&app, OLD, Ruleset::Dnd2024);
+    let after: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    assert_eq!(after["sourceEditions"]["x"], 5, "an unknown value is kept");
+    assert_eq!(after["disabledPacks"], json!(["srd-5.1-monsters"]));
+
+    // a file that does not parse at all: kept as .bak before the next save
+    std::fs::write(&path, "{\"disabledPacks\": 7, \"broken\": ").unwrap();
+    let app = app.restart();
+    set_edition(&app, OLD, Ruleset::Dnd2014);
+    let bak = std::fs::read_to_string(path.with_extension("json.bak")).expect(".bak kept");
+    assert_eq!(bak, "{\"disabledPacks\": 7, \"broken\": ");
+}

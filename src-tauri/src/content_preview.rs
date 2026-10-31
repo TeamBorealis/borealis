@@ -203,8 +203,8 @@ impl AppState {
     /// `invalid_argument` when the preview expired or nothing converted; `content_error` if it cannot load.
     ///
     /// `editions` (IM14): the edition the user chose for books of the set, by book name; each is
-    /// stored as that book's choice before the install. Nothing is installed when one names a
-    /// book outside the set or is not 2014 or 2024.
+    /// stored as that book's choice once the install loads (none on a failed install). Nothing is
+    /// installed when one names a book outside the set or is not 2014 or 2024.
     pub fn install_import_preview(
         &self,
         preview_id: &str,
@@ -225,14 +225,17 @@ impl AppState {
             }
             all.remove(at).1
         };
-        if let Some(chosen) = editions.filter(|c| !c.is_empty()) {
-            let mut prefs = self.content_prefs();
-            for (book, edition) in chosen {
-                prefs.set_source_edition(book, *edition);
-            }
-            prefs.save(&self.paths.prefs_file())?;
-        }
-        self.install_staged(staged, sink)
+        // what the preview showed is what installs: the user's changes, and every book whose
+        // shown edition is not the detected one (review M2)
+        let mut chosen: BTreeMap<String, Ruleset> = staged
+            .preview
+            .books
+            .iter()
+            .filter(|b| b.edition != b.detected && !b.set_by_user)
+            .map(|b| (b.name.clone(), b.edition))
+            .collect();
+        chosen.extend(editions.into_iter().flatten().map(|(k, v)| (k.clone(), *v)));
+        self.install_staged(staged, &chosen, sink)
     }
 
     /// Discard a preview.
@@ -262,10 +265,15 @@ impl AppState {
                 report: staged.report,
             });
         }
-        self.install_staged(staged, sink)
+        self.install_staged(staged, &BTreeMap::new(), sink)
     }
 
-    fn install_staged(&self, staged: Staged, sink: &dyn EventSink) -> ApiResult<ImportPackResult> {
+    fn install_staged(
+        &self,
+        staged: Staged,
+        editions: &BTreeMap<String, Ruleset>,
+        sink: &dyn EventSink,
+    ) -> ApiResult<ImportPackResult> {
         if staged.preview.converted == 0 {
             return Err(ApiError::invalid("Nothing could be imported."));
         }
@@ -275,10 +283,11 @@ impl AppState {
             &serde_json::json!({ "fileName": staged.file_name }),
         );
         sink.content_progress(&progress("reloading", 1, 1, "Reloading content"));
-        self.install_packs(
+        self.install_packs_with(
             &[(staged.out_dir.clone(), staged.id.clone())],
             sink,
             "pack-imported",
+            editions,
         )?;
         sink.content_progress(&progress("done", 1, 1, "Imported"));
         let pack = self.list_packs()?.into_iter().find(|p| p.id == staged.id);
@@ -331,7 +340,11 @@ impl AppState {
             conditions_total: found.conditions_total,
             replaces_existing: self.paths.library().join(&id).exists(),
             index_url: None,
-            books: crate::book_editions::preview_books(&out_dir, &self.content_prefs()),
+            books: crate::book_editions::preview_books(
+                &out_dir,
+                &self.paths.library().join(&id),
+                &self.content_prefs(),
+            ),
         };
         Ok(Staged {
             _scratch: scratch,
