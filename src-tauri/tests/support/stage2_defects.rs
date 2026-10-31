@@ -532,26 +532,19 @@ pub(super) fn unfillable_select(
         })
 }
 
-/// True when no installed element of `ty` that a character can be offered matches the select's
-/// whole `supports` expression (`supports_unfillable` asks for any one token): a 2024 class's
-/// `Skill,PHB24 Wizard` when another repo redefined every skill without the `PHB24 Wizard` tag,
-/// or a tag only 2014 elements carry that their 2024 versions replace (IM11 keeps the 2014
-/// element's own tags off its equivalent). Aurora reads the same content.
+/// True when no installed element of `ty` matches the select's whole `supports` expression
+/// (`supports_unfillable` asks for any one token): a 2024 class's `Skill,PHB24 Wizard` when
+/// another repo redefined every skill without the `PHB24 Wizard` tag. Aurora reads the same
+/// content. Elements a 2024 version replaces (IM11) still count: a select only they match is a
+/// Borealis gap, not content (review H2; backlog B-79e).
 fn supports_unmatched(store: &ContentStore, ty: &str, supports: Option<&str>) -> bool {
     let raw = supports.unwrap_or("").trim();
     if raw.is_empty() || raw.contains("$(") {
         return false;
     }
-    let replaced: HashSet<&str> = store
+    !store
         .iter()
-        .filter_map(|se| se.element.maps_to.as_ref())
-        .filter(|m| m.kind == Some(borealis_content::MapKind::Equivalent))
-        .filter_map(|m| m.dnd2014.as_deref())
-        .collect();
-    !store.iter().any(|se| {
-        let e = &se.element;
-        e.ty == ty && !replaced.contains(e.id.as_str()) && supports_match(raw, e)
-    })
+        .any(|se| se.element.ty == ty && supports_match(raw, &se.element))
 }
 
 /// True when a select of `ty` with `supports` can never offer anything: it names support
@@ -739,5 +732,43 @@ mod tests {
         assert!(of("ID_T_CHILD").is_some_and(|w| w.contains("itself unreachable")));
         assert!(of("ID_T_GRANTED").is_some_and(|w| w.contains("only granted")));
         assert_eq!(of("ID_T_LIVE"), None);
+    }
+
+    fn empty_select(owner: &str, name: &str, ty: &str) -> borealis_engine::invariants::Violation {
+        borealis_engine::invariants::Violation {
+            kind: borealis_engine::invariants::kind::EMPTY_SELECT,
+            element: Some(owner.into()),
+            message: format!("required select {name} ({ty}) offers nothing"),
+        }
+    }
+
+    /// Review H2: a select whose whole supports expression no installed element matches is a
+    /// content verdict (the combo's 2024 Wizard: every skill was redefined without its tag).
+    #[test]
+    fn a_select_no_element_matches_as_a_whole_is_content() {
+        let store = store_of(serde_json::json!([
+            {"id": "ID_T_WIZARD", "type": "Class", "name": "W", "rules": [
+                {"kind": "select", "type": "Proficiency", "name": "Skill Proficiency (W)",
+                 "supports": "Skill,T Wizard"}]},
+            {"id": "ID_T_ARCANA", "type": "Proficiency", "name": "Arcana", "supports": ["Skill"]}
+        ]));
+        let v = empty_select("ID_T_WIZARD", "Skill Proficiency (W)", "Proficiency");
+        assert!(super::unfillable_select(&store, &v));
+    }
+
+    /// Review H2: options that only 2014 elements their 2024 versions replace (IM11) match are a
+    /// Borealis gap, not content: Aurora does not replace them, so the row stays a failure.
+    #[test]
+    fn a_select_only_replaced_2014_elements_match_is_not_content() {
+        let store = store_of(serde_json::json!([
+            {"id": "ID_T_HALF", "type": "Race", "name": "H", "ruleset": "dnd2014", "rules": [
+                {"kind": "select", "type": "Language", "name": "Language (H)", "supports": "Starting"}]},
+            {"id": "ID_T_ELVISH", "type": "Language", "name": "Elvish", "ruleset": "dnd2014",
+             "supports": ["Standard", "Starting"]},
+            {"id": "ID_T_ELVISH_24", "type": "Language", "name": "Elvish", "ruleset": "dnd2024",
+             "supports": ["Standard"], "maps_to": {"dnd2014": "ID_T_ELVISH", "kind": "equivalent"}}
+        ]));
+        let v = empty_select("ID_T_HALF", "Language (H)", "Language");
+        assert!(!super::unfillable_select(&store, &v));
     }
 }
