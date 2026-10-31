@@ -83,4 +83,14 @@ describe("U15 Help menu links", () => {
       expect(win).toHaveBeenCalledWith(LINKS.releases, "_blank", "noopener,noreferrer");
     } finally { win.mockRestore(); }
   });
+
+  it("does not fall back to window.open when the backend refuses the address (review L4)", async () => {
+    const api = new MockApi({ aiChunkDelayMs: 2 });
+    vi.spyOn(api, "openLink").mockRejectedValue({ code: "invalid_argument", message: "Borealis only opens its own web pages." });
+    const win = vi.spyOn(window, "open").mockReturnValue(null);
+    try {
+      await openLink(api, "https://example.com/");
+      expect(win).not.toHaveBeenCalled();
+    } finally { win.mockRestore(); }
+  });
 });
