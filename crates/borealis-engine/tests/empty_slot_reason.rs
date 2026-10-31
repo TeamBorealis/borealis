@@ -163,3 +163,39 @@ fn other_single_edition_lists_share_the_reason() {
     assert_eq!(slot(&snap, "Gift").options.len(), 1);
     assert_eq!(slot(&snap, "Gift").empty_reason, None);
 }
+
+/// An option its native equivalent replaces (IM11 `maps_to` kind `equivalent`) is not "hidden by
+/// the other-edition switch": switching it on would not bring it back. Found by the a-comm-combo
+/// gate run (a 2014 race whose language select names a tag only the replaced 2014 languages carry).
+#[test]
+fn replaced_options_are_not_blamed_on_the_edition_switch() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+    let file: ContentFile = serde_json::from_value(json!({
+        "format": "borealis-content/1",
+        "elements": [
+            {"id": "ID_T_OLD_RACE", "name": "Old Folk", "type": "Race", "source": "Test Book", "ruleset": "dnd2014",
+             "rules": [{"kind": "select", "type": "Language", "name": "Old Tongue", "supports": "T Starting", "level": 1}]},
+            {"id": "ID_T_OLD_TONGUE", "name": "Old Tongue", "type": "Language", "source": "Test Book",
+             "ruleset": "dnd2014", "supports": ["T Starting"]},
+            {"id": "ID_T_NEW_TONGUE", "name": "Old Tongue", "type": "Language", "source": "Test Book 2024",
+             "ruleset": "dnd2024", "supports": ["Standard"],
+             "maps_to": {"dnd2014": "ID_T_OLD_TONGUE", "kind": "equivalent"}}
+        ]}))
+    .expect("synthetic content");
+    let store = ContentStoreBuilder::new()
+        .add_pack_dir(&root.join("core"))
+        .and_then(|b| b.add_pack_dir(&root.join("srd-5.2.1")))
+        .expect("bundled packs")
+        .add_file("old.json", PackOrigin::Custom, file)
+        .build();
+    let e = Engine::new(&store);
+    let s = commands::new_character(&e, Ruleset::Dnd2024);
+    let key = commands::slot_key(&e.derive(&s), "ID_LEVEL_1", "Race", 1).expect("race slot");
+    let s = commands::select(&e, &s, &key, Choice::Element("ID_T_OLD_RACE".into()))
+        .expect("2014 race")
+        .state;
+    let snap = e.derive(&s);
+    let tongue = slot(&snap, "Old Tongue");
+    assert!(tongue.options.is_empty());
+    assert_eq!(tongue.empty_reason, None);
+}

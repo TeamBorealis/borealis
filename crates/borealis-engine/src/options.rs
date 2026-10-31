@@ -145,7 +145,10 @@ impl<'u> Graph<'u> {
                 edition: true,
                 ..Relax::NONE
             };
-            if let Some(from) = foreign.filter(|_| check(c, by_edition)) {
+            // an accepted option its native equivalent replaces is not hidden by the "other
+            // edition" switch: the switch would not bring it back
+            let replaced = c.superseded && c.edition.is_accepted();
+            if let Some(from) = foreign.filter(|_| !replaced && check(c, by_edition)) {
                 let o = other.get_or_insert(OtherEditionOptions {
                     edition: from,
                     rejected: 0,
