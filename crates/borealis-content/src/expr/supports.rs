@@ -53,7 +53,7 @@ impl fmt::Display for SupportsLeaf {
     }
 }
 
-/// A tag character (spec 8.1 as amended by IM13, GitHub #11): a letter or digit of any script,
+/// A tag character (spec 8.1 as amended by IM15, GitHub #11): a letter or digit of any script,
 /// or one of `_ . / $ -`, space, `:` `'` `’`. Never an operator (`, & | ! ( )`).
 fn is_token_char(c: char) -> bool {
     c.is_alphanumeric() || matches!(c, '_' | ' ' | '.' | '/' | '$' | '-' | ':' | '\'' | '’')
@@ -254,7 +254,7 @@ mod tests {
 
     #[test]
     fn invalid_expressions_are_rejected() {
-        // IM13 (spec 8.1 as amended 2026-10-31): `:` `'` `’` and letters are tag characters now,
+        // IM15 (spec 8.1 as amended 2026-10-31): `:` `'` `’` and letters are tag characters now,
         // so "Smith’s Tools" and "A:B" moved to `tags_accept_any_letter_colon_and_apostrophes`;
         // operator characters still end a tag
         for bad in [
@@ -276,7 +276,7 @@ mod tests {
         assert!(matches!(err.kind, ExprErrorKind::InvalidPlaceholder(_)));
     }
 
-    /// IM13 (GitHub #11): Aurora homebrew copies its tags verbatim into selects, and Aurora's own
+    /// IM15 (GitHub #11): Aurora homebrew copies its tags verbatim into selects, and Aurora's own
     /// parser throws on these; Borealis reads them as the single tags they plainly are.
     #[test]
     fn tags_accept_any_letter_colon_and_apostrophes() {

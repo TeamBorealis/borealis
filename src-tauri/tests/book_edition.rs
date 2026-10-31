@@ -1,8 +1,8 @@
-//! GitHub #11 (IM13, IM14, C1) through the real command layer, with invented books shaped like the
+//! GitHub #11 (IM15, IM14, C1) through the real command layer, with invented books shaped like the
 //! reporter's (Grim Hollow: Player's Guide 2025 style, third-party, no `D&D 5.5e` marker; supports
 //! tags with `:`, `ō` and `'`; a feature whose requirements name an element instead of an id).
 //!
-//! - IM13: the three selects offer their targets; only the requirements text stays a warning.
+//! - IM15: the three selects offer their targets; only the requirements text stays a warning.
 //! - IM14: an unmarked "(2025)" book is guessed 2024, so its homebrew class is offered to 2024
 //!   characters. The user sets any imported book's edition on the Sources page or in the import
 //!   preview; the choice is stored in the content preferences, survives re-import and restart, and
@@ -65,7 +65,7 @@ fn an_unmarked_2025_book_is_guessed_2024_and_its_class_is_offered_to_2024_charac
         "grim.xml",
         &book(GRIM, "GTPG25", "Gravecaller", "20250115", false),
     );
-    // IM13: the three supports parse; only the requirements naming an element stay a warning
+    // IM15: the three supports parse; only the requirements naming an element stay a warning
     let invalid: Vec<String> = report["issues"]
         .as_array()
         .unwrap()
@@ -99,7 +99,7 @@ fn an_unmarked_2025_book_is_guessed_2024_and_its_class_is_offered_to_2024_charac
         .offered(&s14, "Class")
         .contains(&"Gravecaller".to_string()));
 
-    // IM13: a 2024 Gravecaller is offered its features
+    // IM15: a 2024 Gravecaller is offered its features
     let s24 = app.pick_class(&s24, "ID_GTPG25_CLASS");
     assert_eq!(
         app.offered(&s24, "Companion Boost"),
