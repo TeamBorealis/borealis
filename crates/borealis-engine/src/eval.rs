@@ -408,11 +408,18 @@ pub fn supports_match(
             if range && is_id {
                 element.el.id == *t
             } else {
-                (is_id && element.el.id == *t) || element.supports.iter().any(|s| s == t)
+                (is_id && element.el.id == *t) || element.supports.iter().any(|s| same_tag(s, t))
             }
         }
         SupportsLeaf::Dynamic(d) => dynamics.matches(d, element),
     })
+}
+
+/// Two support tags are the same, a typographic apostrophe (’) counting as a straight one (IM15:
+/// homebrew writes `Spider's Cunning` in a select and `Spider’s Cunning` on its targets).
+fn same_tag(a: &str, b: &str) -> bool {
+    let fold = |c: char| if c == '’' { '\'' } else { c };
+    a == b || (a.contains(['\'', '’']) && a.chars().map(fold).eq(b.chars().map(fold)))
 }
 
 /// Supports evaluation for a condition (absent = everything).
