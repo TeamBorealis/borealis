@@ -48,10 +48,12 @@ pub struct ContentPrefs {
     /// 5etools data folders imported from an address the user pasted.
     pub fivetools_urls: Vec<FiveToolsUrlRecord>,
     /// IM14 (GitHub #11): the edition the user set for an imported book, by
-    /// [`borealis_content::source_key`] of its name: `dnd2014` or `dnd2024`. Applied when content
-    /// loads; the imported files are never rewritten. Kept as text so a value a newer app writes
-    /// never makes this file unreadable (an unknown value is ignored, see [`Self::source_editions`]).
-    pub source_editions: BTreeMap<String, String>,
+    /// [`borealis_content::source_key`] of its name: `"dnd2014"` or `"dnd2024"`. Applied when
+    /// content loads; the imported files are never rewritten. Any JSON value is accepted, so a
+    /// value of another shape a newer app writes never makes this file unreadable: it is ignored
+    /// ([`Self::source_editions`]) and kept.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub source_editions: BTreeMap<String, serde_json::Value>,
     /// Keys a newer Borealis wrote that this one does not know: kept and written back.
     #[serde(flatten)]
     pub extra: BTreeMap<String, serde_json::Value>,
@@ -86,8 +88,8 @@ impl ContentPrefs {
         self.source_editions
             .iter()
             .filter_map(|(k, v)| match v.as_str() {
-                "dnd2014" => Some((k.clone(), borealis_content::Ruleset::Dnd2014)),
-                "dnd2024" => Some((k.clone(), borealis_content::Ruleset::Dnd2024)),
+                Some("dnd2014") => Some((k.clone(), borealis_content::Ruleset::Dnd2014)),
+                Some("dnd2024") => Some((k.clone(), borealis_content::Ruleset::Dnd2024)),
                 _ => None,
             })
             .collect()
@@ -97,17 +99,27 @@ impl ContentPrefs {
     pub fn set_source_edition(&mut self, book: &str, edition: borealis_content::Ruleset) {
         self.source_editions.insert(
             borealis_content::source_key(book),
-            edition.as_str().to_string(),
+            serde_json::Value::String(edition.as_str().to_string()),
         );
     }
 
-    /// Read the file; a missing or damaged file means defaults.
+    /// Read the file; a missing file means defaults. A file this version cannot read also means
+    /// defaults, but it is copied to `<file>.bak` first (with a warning in the log), so the next
+    /// save cannot destroy what it held (review M4).
     #[must_use]
     pub fn load(path: &Path) -> Self {
-        std::fs::read_to_string(path)
-            .ok()
-            .and_then(|t| serde_json::from_str(&t).ok())
-            .unwrap_or_default()
+        let Ok(text) = std::fs::read_to_string(path) else {
+            return Self::default();
+        };
+        match serde_json::from_str(&text) {
+            Ok(prefs) => prefs,
+            Err(e) => {
+                let bak = path.with_extension("json.bak");
+                let kept = std::fs::write(&bak, &text).is_ok();
+                tracing::warn!(error = %e, kept, "content settings unreadable; using defaults");
+                Self::default()
+            }
+        }
     }
 
     /// Write the file atomically.
