@@ -57,3 +57,25 @@ fn a_fresh_character_has_no_notice_about_content_it_never_touches_and_a_broken_c
         .unwrap();
     assert_eq!(ok["problem"], Value::Null);
 }
+
+/// Review L1: the class's notice is left out only when every unreadable part of it is a select
+/// shown on a choice. Here the class also has a stat whose requirement can't be read, which no
+/// choice shows, so the notice stays.
+#[test]
+fn a_notice_stays_while_part_of_it_is_shown_nowhere() {
+    let app = App::new();
+    let xml = book(OLD, "OTH", "Oldcaller", "20230101", false).replace(
+        r#"<grant type="Class Feature" id="ID_OTH_CF_ULTIMATE" level="1" />"#,
+        r#"<grant type="Class Feature" id="ID_OTH_CF_ULTIMATE" level="1" />
+      <stat name="speed" value="5" requirements="Some Prose Name" />"#,
+    );
+    app.import("old.xml", &xml);
+    let held = app.pick_class(&app.hero(Ruleset::Dnd2014), "ID_OTH_CLASS");
+    assert!(
+        held.notices
+            .iter()
+            .any(|n| n.starts_with("ID_OTH_CLASS has unparsable")),
+        "{:?}",
+        held.notices
+    );
+}

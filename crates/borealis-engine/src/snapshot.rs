@@ -196,6 +196,10 @@ pub struct SlotProblem {
     pub message: String,
     /// The elements whose expressions can't be read (the owner for its own filter).
     pub elements: Vec<String>,
+    /// The owner's rule index when the problem is the select's own filter; `None` when it is
+    /// options whose requirements can't be read.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub own_rule: Option<usize>,
 }
 
 /// Why an open slot offers nothing (U14, GitHub #10).

@@ -192,6 +192,7 @@ impl<'u> Graph<'u> {
                     rule.supports.as_deref().unwrap_or_default().trim()
                 ),
                 elements: vec![n.e.el.id.clone()],
+                own_rule: Some(slot.rule),
             });
         }
         if rule.is_list() {
@@ -233,6 +234,7 @@ impl<'u> Graph<'u> {
                 names.join(", ")
             ),
             elements: hidden.iter().map(|c| c.el.id.clone()).collect(),
+            own_rule: None,
         })
     }
 

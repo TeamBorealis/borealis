@@ -713,21 +713,21 @@ pub fn source_restrictions(input: &MapInput<'_>) -> Option<Vec<String>> {
 }
 
 /// Informational notices: engine diagnostics, import remarks, content load problems. A content
-/// problem the character meets on a choice is shown on that choice (C1), not repeated here.
+/// problem the character meets on choices is shown there (C1); its notice is left out only when
+/// every unreadable part of the element is shown on a choice (review L1).
 #[must_use]
 pub fn notices(input: &MapInput<'_>, snap: &Engine) -> Vec<String> {
-    let on_choices: std::collections::HashSet<&str> = snap
-        .slots
-        .iter()
-        .filter_map(|s| s.problem.as_ref())
-        .flat_map(|p| p.elements.iter().map(String::as_str))
-        .collect();
+    let shown = parts_shown_on_choices(snap);
     let mut out: Vec<String> = snap
         .diagnostics
         .iter()
         .filter(|d| {
             d.code != borealis_engine::diag::code::CONTENT_BAD_EXPRESSION
-                || !d.element.as_deref().is_some_and(|e| on_choices.contains(e))
+                || !d.element.as_deref().is_some_and(|e| {
+                    bad_parts(&d.message)
+                        .iter()
+                        .all(|p| shown.contains(&(e, p.clone())))
+                })
         })
         .map(|d| d.message.clone())
         .collect();
@@ -742,6 +742,35 @@ pub fn notices(input: &MapInput<'_>, snap: &Engine) -> Vec<String> {
     out.extend(input.hub.load_warnings.iter().cloned());
     out.dedup();
     out
+}
+
+/// The unreadable parts a `content.bad_expression` message names ("X has unparsable expressions
+/// in: rule 0, requirements").
+fn bad_parts(message: &str) -> Vec<String> {
+    message
+        .split_once(" in: ")
+        .map(|(_, parts)| parts.split(", ").map(str::to_string).collect())
+        .unwrap_or_default()
+}
+
+/// (element, part) pairs shown on choices: a select's own filter (`rule N` of its owner), and
+/// options whose requirements can't be read (`requirements` of each option).
+fn parts_shown_on_choices(snap: &Engine) -> std::collections::HashSet<(&str, String)> {
+    let mut shown = std::collections::HashSet::new();
+    for s in &snap.slots {
+        let Some(p) = &s.problem else { continue };
+        match p.own_rule {
+            Some(rule) => {
+                shown.insert((s.owner.id.as_str(), format!("rule {rule}")));
+            }
+            None => {
+                for e in &p.elements {
+                    shown.insert((e.as_str(), "requirements".to_string()));
+                }
+            }
+        }
+    }
+    shown
 }
 
 #[cfg(test)]

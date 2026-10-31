@@ -313,7 +313,12 @@ mod tests {
     /// only plausible publication years count, not setting years like 2077.
     #[test]
     fn the_name_guess_reads_whole_words_and_plausible_years() {
-        for yes in ["Some Book for 5.5e", "5.5 Edition Classes", "Homebrew (5.5)", "Guide 2026"] {
+        for yes in [
+            "Some Book for 5.5e",
+            "5.5 Edition Classes",
+            "Homebrew (5.5)",
+            "Guide 2026",
+        ] {
             assert!(is_2024_source(&source(yes, &[])), "{yes}");
         }
         for no in [

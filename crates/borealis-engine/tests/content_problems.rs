@@ -91,6 +91,7 @@ fn a_held_element_keeps_its_diagnostic_and_the_choices_say_what_cannot_be_read()
             message: "This choice's filter, \"Broken (Gift\", can't be read, so it offers nothing."
                 .into(),
             elements: vec![CLASS.into()],
+            own_rule: Some(0),
         })
     );
     let odd = slot(&snap, "Odd Pick");
@@ -106,6 +107,7 @@ fn a_held_element_keeps_its_diagnostic_and_the_choices_say_what_cannot_be_read()
         Some(SlotProblem {
             message: "1 option can't be offered: its requirements can't be read (Odd B).".into(),
             elements: vec!["ID_T_ODD_B".into()],
+            own_rule: None,
         })
     );
     // the held class, the feature it grants (withheld: its requirements can't be read) and the
