@@ -210,7 +210,7 @@ impl ContentStoreBuilder {
             loaded_files.push(pending.name.clone());
             let file_ruleset = pending.file.ruleset;
             for (element_index, mut element) in pending.file.elements.into_iter().enumerate() {
-                let edition_set_by_user = retagged.contains(&(file_index, element_index));
+                let user_edition_book = retagged.get(&(file_index, element_index)).cloned();
                 if element.ruleset.is_none() {
                     element.ruleset = file_ruleset;
                 }
@@ -254,7 +254,7 @@ impl ContentStoreBuilder {
                     origin: pending.origin,
                     extended: false,
                     appended_supports: Vec::new(),
-                    edition_set_by_user,
+                    user_edition_book,
                 }));
             }
             appends.extend(
@@ -312,18 +312,22 @@ impl ContentStoreBuilder {
 }
 
 /// IM14: re-tag the elements of books the user set an edition for (see
-/// [`ContentStoreBuilder::with_source_editions`]). Returns the (file, element) positions changed.
+/// [`ContentStoreBuilder::with_source_editions`]). Returns the book key that applied to each
+/// (file, element) position it changed.
 fn apply_source_editions(
     files: &mut [PendingFile],
     editions: &BTreeMap<String, Ruleset>,
-) -> std::collections::HashSet<(usize, usize)> {
-    let mut changed = std::collections::HashSet::new();
+) -> HashMap<(usize, usize), String> {
+    let mut changed = HashMap::new();
     if editions.is_empty() {
         return changed;
     }
     let custom = |p: &PendingFile| p.origin == PackOrigin::Custom;
-    // a book's `alternative` names share its edition
-    let mut by_key = editions.clone();
+    // every name of a set book (its own and its `alternative` names) -> (edition, book key)
+    let mut by_key: BTreeMap<String, (Ruleset, String)> = editions
+        .iter()
+        .map(|(k, r)| (k.clone(), (*r, k.clone())))
+        .collect();
     for el in files
         .iter()
         .filter(|p| custom(p))
@@ -332,9 +336,12 @@ fn apply_source_editions(
         if el.ty != "Source" {
             continue;
         }
-        if let Some(&r) = editions.get(&super::source_key(&el.name)) {
+        let key = super::source_key(&el.name);
+        if let Some(&r) = editions.get(&key) {
             for alt in el.setters.iter().filter(|s| s.name == "alternative") {
-                by_key.entry(super::source_key(&alt.value)).or_insert(r);
+                by_key
+                    .entry(super::source_key(&alt.value))
+                    .or_insert_with(|| (r, key.clone()));
             }
         }
     }
@@ -344,32 +351,32 @@ fn apply_source_editions(
         } else {
             &el.source
         };
-        by_key.get(&super::source_key(name)).copied()
+        by_key.get(&super::source_key(name)).cloned()
     };
     for (fi, pending) in files.iter_mut().enumerate().filter(|(_, p)| custom(p)) {
         let file_ruleset = pending.file.ruleset;
-        let books: Vec<Option<Ruleset>> = pending
+        let books: Vec<Option<(Ruleset, String)>> = pending
             .file
             .elements
             .iter()
             .filter(|e| e.ty == "Source" || !super::is_unrestrictable_source(&e.source))
             .map(book_of)
             .collect();
-        // helpers follow their file when every other element is of books set to one edition
+        // helpers follow their file when every other element is of one set book
         let follow = books
             .first()
-            .copied()
+            .cloned()
             .flatten()
-            .filter(|r| books.iter().all(|b| *b == Some(*r)));
+            .filter(|b| books.iter().all(|x| x.as_ref() == Some(b)));
         for (ei, el) in pending.file.elements.iter_mut().enumerate() {
             if el.ruleset.or(file_ruleset) == Some(Ruleset::Any) {
                 continue;
             }
             let helper = el.ty != "Source" && super::is_unrestrictable_source(&el.source);
-            let set = if helper { follow } else { book_of(el) };
-            if let Some(r) = set {
+            let set = if helper { follow.clone() } else { book_of(el) };
+            if let Some((r, book)) = set {
                 el.ruleset = Some(r);
-                changed.insert((fi, ei));
+                changed.insert((fi, ei), book);
             }
         }
     }

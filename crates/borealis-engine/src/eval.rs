@@ -778,7 +778,7 @@ mod tests {
             superseded: false,
             toggle_effects: Vec::new(),
             legacy_accepted: false,
-            edition_set_by_user: false,
+            user_edition_book: None,
         };
         let m =
             |s: &str| supports_match(&SupportsExpr::parse(s).unwrap().unwrap(), &ue, &NoDynamics);

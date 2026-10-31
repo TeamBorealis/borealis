@@ -32,9 +32,10 @@ pub struct StoredElement {
     /// The supports tags that `<append>`s added (not in the element's own definition), in the
     /// order they were added.
     pub appended_supports: Vec<String>,
-    /// IM14: the element's edition comes from the user's choice for its book
-    /// ([`ContentStoreBuilder::with_source_editions`]), not from the content.
-    pub edition_set_by_user: bool,
+    /// IM14: the element's edition comes from the user's choice for a book
+    /// ([`ContentStoreBuilder::with_source_editions`]), not from the content: that book's
+    /// [`source_key`] (its own name's key when the element named it by an `alternative` name).
+    pub user_edition_book: Option<String>,
 }
 
 /// The key a book's edition preference is stored under: its name trimmed, lower-cased, with

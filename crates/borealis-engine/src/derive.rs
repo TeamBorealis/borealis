@@ -801,7 +801,7 @@ impl<'u> Evaluation<'u> {
                 else {
                     return None;
                 };
-                let kept = e.edition_set_by_user && !e.edition.is_accepted();
+                let kept = e.user_edition_book.is_some() && !e.edition.is_accepted();
                 seen.insert(e.el.id.clone()).then(|| CompatEntry {
                     element: element_ref(e),
                     from: *from,

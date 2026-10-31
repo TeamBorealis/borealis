@@ -32,11 +32,31 @@ fn content(ruleset: &str) -> ContentFile {
     .expect("synthetic content")
 }
 
+/// Another 2014 book whose feature also carries the `OB Gift` tag.
+fn other_book() -> ContentFile {
+    serde_json::from_value(json!({
+        "format": "borealis-content/1",
+        "ruleset": "dnd2014",
+        "elements": [
+            {"id": "ID_XB_SOURCE", "name": OTHER, "type": "Source", "source": "Core"},
+            {"id": "ID_XB_GIFT_C", "name": "Gift C", "type": "Class Feature", "source": OTHER, "supports": ["OB Gift"]}
+        ]}))
+    .expect("synthetic content")
+}
+
+const OTHER: &str = "Other Book";
+
 fn engine(written: &str, user: Option<Ruleset>) -> Engine {
+    let users: Vec<(&str, Ruleset)> = user.map(|r| (BOOK, r)).into_iter().collect();
+    engine_with(written, &users)
+}
+
+/// Like [`engine`], with the user's edition for any of the books.
+fn engine_with(written: &str, users: &[(&str, Ruleset)]) -> Engine {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
-    let editions: BTreeMap<String, Ruleset> = user
-        .map(|r| (borealis_content::source_key(BOOK), r))
-        .into_iter()
+    let editions: BTreeMap<String, Ruleset> = users
+        .iter()
+        .map(|(b, r)| (borealis_content::source_key(b), *r))
         .collect();
     let store = ContentStoreBuilder::new()
         .add_pack_dir(&root.join("core"))
@@ -44,6 +64,7 @@ fn engine(written: &str, user: Option<Ruleset>) -> Engine {
         .and_then(|b| b.add_pack_dir(&root.join("srd-5.2.1")))
         .expect("bundled packs")
         .add_file("old/book.json", PackOrigin::Custom, content(written))
+        .add_file("other/book.json", PackOrigin::Custom, other_book())
         .with_source_editions(editions)
         .build();
     Engine::new(&store)
@@ -92,12 +113,14 @@ fn a_2014_character_keeps_its_class_when_the_user_sets_the_book_to_2024() {
     assert!(slot(&snap, "Class").rejected.is_none());
     assert_eq!(chosen(&snap, "Gift").as_deref(), Some("ID_OB_GIFT_A"));
     // a choice under the kept class still offers the book's features (as 2024 content)
-    let second: Vec<_> = slot(&snap, "Second Gift")
+    // (the other book's Gift C is 2014 content and native to this 2014 character)
+    let mut second: Vec<_> = slot(&snap, "Second Gift")
         .options
         .iter()
         .map(|o| o.id.clone())
         .collect();
-    assert_eq!(second, ["ID_OB_GIFT_B"]);
+    second.sort();
+    assert_eq!(second, ["ID_OB_GIFT_B", "ID_XB_GIFT_C"]);
     // the report says why
     let entry = snap
         .compatibility
@@ -134,4 +157,38 @@ fn content_the_user_did_not_retag_still_follows_r4() {
     let snap = e.derive(&s);
     assert_eq!(chosen(&snap, "Class"), None);
     assert!(slot(&snap, "Class").rejected.is_some());
+}
+
+/// Review H1: under a kept class, only options of the kept class's own book come along. Another
+/// book the user also set to 2024 stays out of a 2014 character (R4), as it does when only that
+/// other book is set.
+#[test]
+fn a_kept_class_brings_only_its_own_books_options() {
+    let s = hero(Ruleset::Dnd2014, "dnd2014");
+    let gifts = |e: &Engine| -> Vec<String> {
+        let snap = e.derive(&s);
+        let mut ids: Vec<String> = slot(&snap, "Second Gift")
+            .options
+            .iter()
+            .map(|o| o.id.clone())
+            .collect();
+        ids.sort();
+        ids
+    };
+    // written 2014, nothing set: both books are native
+    assert_eq!(
+        gifts(&engine_with("dnd2014", &[])),
+        ["ID_OB_GIFT_B", "ID_XB_GIFT_C"]
+    );
+    // only the other book set to 2024: its feature is 2024 and never reaches a 2014 class
+    assert_eq!(
+        gifts(&engine_with("dnd2014", &[(OTHER, Ruleset::Dnd2024)])),
+        ["ID_OB_GIFT_B"]
+    );
+    // both set to 2024: the kept class keeps its own book's feature, not the other book's
+    let both = engine_with(
+        "dnd2014",
+        &[(BOOK, Ruleset::Dnd2024), (OTHER, Ruleset::Dnd2024)],
+    );
+    assert_eq!(gifts(&both), ["ID_OB_GIFT_B"]);
 }

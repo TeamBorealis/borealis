@@ -329,16 +329,18 @@ fn a_book_edition_set_by_the_user_retags_its_elements_when_content_loads() {
         .build();
     let ed = |id: &str| {
         let s = store.get(id).unwrap();
-        (s.element.ruleset, s.edition_set_by_user)
+        (s.element.ruleset, s.user_edition_book.clone())
     };
-    let set = (Some(Ruleset::Dnd2024), true);
+    // the alternative name (GTPG25) and the helper resolve to the book's own key
+    let book = borealis_content::source_key("Grim Test: Player's Guide (2025)");
+    let set = (Some(Ruleset::Dnd2024), Some(book));
     for id in ["ID_GT_SOURCE", "ID_GT_CLASS", "ID_GT_ALT", "ID_GT_HELPER"] {
         assert_eq!(ed(id), set, "{id}");
     }
-    assert_eq!(ed("ID_GT_LANGUAGE"), (Some(Ruleset::Any), false));
-    assert_eq!(ed("ID_OTHER"), (Some(Ruleset::Dnd2014), false));
-    assert_eq!(ed("ID_OTHER_HELPER"), (Some(Ruleset::Dnd2014), false));
-    assert_eq!(ed("ID_CORE_FEAT"), (Some(Ruleset::Dnd2014), false));
+    assert_eq!(ed("ID_GT_LANGUAGE"), (Some(Ruleset::Any), None));
+    assert_eq!(ed("ID_OTHER"), (Some(Ruleset::Dnd2014), None));
+    assert_eq!(ed("ID_OTHER_HELPER"), (Some(Ruleset::Dnd2014), None));
+    assert_eq!(ed("ID_CORE_FEAT"), (Some(Ruleset::Dnd2014), None));
     // without preferences nothing changes
     assert_eq!(
         borealis_content::source_key(" Player’s HANDBOOK "),
