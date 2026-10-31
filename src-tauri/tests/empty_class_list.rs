@@ -7,6 +7,7 @@
 //! `BOREALIS_LIVE_INDEX_URL` (`BOREALIS_LIVE_DATA_DIR` keeps its download).
 
 mod contract_support;
+use base64::Engine as _;
 use borealis_lib::content_index::HttpsFetcher;
 use borealis_lib::content_packs::NullSink;
 use borealis_lib::dto::{
@@ -303,4 +304,34 @@ fn live_auroralegacy_2024_character_without_2024_sources() {
     for id in [snap.id, fresh.id] {
         app.state.delete_character(&id).expect("clean up");
     }
+}
+
+/// Review M1: Start over copies the portrait as it is stored. An Aurora import keeps a JPEG under
+/// `portrait.png`, which a data-URL round trip refuses ("does not match its declared type"), so
+/// starting over failed for such a character.
+#[test]
+fn start_over_copies_an_imported_portrait_as_it_is() {
+    let app = App::at(None);
+    let old = app.create(Ruleset::Dnd2024, OptionsPatch::default());
+    app.state.save_character(&old.id).expect("save");
+    let path = app.state.character_path(&old.id).expect("path");
+    // as the Aurora importer stores it: JPEG bytes, file name portrait.png
+    let jpeg = base64::engine::general_purpose::STANDARD.encode([
+        0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, b'J', b'F', b'I', b'F', 0x00, 0x01,
+    ]);
+    let mut v: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    v["portrait"] = json!({"file_name": "portrait.png", "data_base64": jpeg});
+    std::fs::write(&path, serde_json::to_string(&v).unwrap()).unwrap();
+    app.state.close_character(&old.id, true).expect("close");
+    app.state.load_character(&old.id).expect("reload");
+
+    let fresh = app
+        .state
+        .start_over_in_edition(&old.id, Ruleset::Dnd2014)
+        .expect("start over with an imported portrait");
+    let saved: Value = serde_json::from_str(
+        &std::fs::read_to_string(app.state.character_path(&fresh.id).unwrap()).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(saved["portrait"], v["portrait"]);
 }

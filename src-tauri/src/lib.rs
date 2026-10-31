@@ -133,6 +133,7 @@ pub mod settings;
 pub mod settings_dto;
 pub mod sheet_api;
 pub mod snapshot_map;
+pub mod start_over;
 pub mod startup;
 pub mod startup_boot;
 pub mod state;
