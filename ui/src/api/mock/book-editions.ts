@@ -17,8 +17,7 @@ export function guessEdition(name: string, setters: Record<string, string>): Rul
   if (years.includes(2014)) return "dnd2014";
   if (name.includes("5.5") || years.some((y) => y >= 2024 && y < 2100)) return "dnd2024";
   const release = /^\d{8}$/.test(setters.release ?? "") ? setters.release! : null;
-  if ((setters.official ?? "").toLowerCase() === "true") return release !== null && release >= PHB_2024_RELEASE ? "dnd2024" : "dnd2014";
-  return release !== null && Number(release.slice(0, 4)) >= 2024 ? "dnd2024" : "dnd2014";
+  return release !== null && release >= PHB_2024_RELEASE ? "dnd2024" : "dnd2014";
 }
 
 /** The `Source` elements of some Aurora XML texts with the importer's edition for each, each name once. */

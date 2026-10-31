@@ -9,11 +9,10 @@
 //!   partnered repositories put on every 2024 source (Aurora shows it as the source's information
 //!   message, `SourceParser.InformationMessage`); otherwise, unless its name says `2014`,
 //! - its name carries a year from 2024 on (`(2025)`) or `5.5` (IM14's guess); or
-//! - it is official (`official` = true) and its `release` setter (`YYYYMMDD`) is on or after the
-//!   2024 Player's Handbook, the IM8 rule for books without an edition flag (official 2014-rules
-//!   adventures of early 2024 stay 2014); or
-//! - it is not official and its `release` year is 2024 or later (IM14's guess, GitHub #11: third-
-//!   party and homebrew books rarely carry the marker).
+//! - its `release` setter (`YYYYMMDD`) is on or after the 2024 Player's Handbook: the IM8 rule
+//!   for official books, and IM14's date guess for third-party and homebrew books, which rarely
+//!   carry the marker (GitHub #11). A book of early 2024, official or not, was written for the
+//!   2014 rules.
 //!
 //! A name that says `2014` (`The Crooked Moon 2014`) keeps the book 2014 whatever its date. The
 //! user can set any imported book's edition on the Sources page (stored in the content
@@ -34,7 +33,7 @@ fn is_release_date(d: &str) -> bool {
     d.len() == 8 && d.bytes().all(|b| b.is_ascii_digit())
 }
 
-/// First year of 2024 content (IM14's name and date guess).
+/// First year of 2024 content (IM14's name guess).
 const FIRST_2024_YEAR: u32 = 2024;
 
 /// The four-digit years written in a source name (`Grim Hollow: Player's Guide (2025)`).
@@ -64,14 +63,9 @@ pub fn is_2024_source(source: &Element) -> bool {
     if name_says_2024(&source.name) {
         return true;
     }
-    let official = setter("official").is_some_and(|v| v.eq_ignore_ascii_case("true"));
-    let release = setter("release").filter(|d| is_release_date(d));
-    if official {
-        return release.is_some_and(|d| d >= PHB_2024_RELEASE);
-    }
-    release
-        .and_then(|d| d[..4].parse::<u32>().ok())
-        .is_some_and(|y| y >= FIRST_2024_YEAR)
+    // a release on or after the 2024 Player's Handbook: IM8 for official books, and IM14's
+    // date guess for the rest (a book of early 2024 was written for the 2014 rules)
+    setter("release").is_some_and(|d| is_release_date(d) && d >= PHB_2024_RELEASE)
 }
 
 /// Every `Source` element of the run by name (and `alternative` name): is it 2024?
@@ -266,10 +260,16 @@ mod tests {
         assert!(is_2024_source(&source("Grim Test (2025)", &[])));
         assert!(is_2024_source(&source("Heroes of 2024", &[])));
         assert!(is_2024_source(&source("Some Book for 5.5e", &[])));
-        // a homebrew dated 2024 or later
+        // a homebrew released on or after the 2024 Player's Handbook; one of early 2024 is 2014
         assert!(is_2024_source(&source(
             "Homebrew",
-            &[("release", "20240101")]
+            &[("release", "20240917")]
+        )));
+        assert!(is_2024_source(&third("Later Homebrew", "20260101")));
+        assert!(!is_2024_source(&third("Gus: DnD", "20240223")));
+        assert!(!is_2024_source(&third(
+            "Grim Hollow: Player Pack",
+            "20240625"
         )));
         assert!(!is_2024_source(&third("Older Homebrew", "20231231")));
         assert!(!is_2024_source(&source("Undated Homebrew", &[])));
