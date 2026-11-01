@@ -1,3 +1,6 @@
+import { execFile } from 'node:child_process';
+import { join } from 'node:path';
+import { promisify } from 'node:util';
 import { describe, test } from '@e2e-dev/mobile';
 import { expect } from 'e2e';
 import type { TestFixtures } from 'e2e';
@@ -16,6 +19,8 @@ export async function freshInstall(device: Device): Promise<void> {
 export const SLOW = { timeout: 60_000 } as const;
 
 export const CHARACTER_NAME = 'Mira Test';
+
+const execFileAsync = promisify(execFile);
 
 type Screen = TestFixtures['screen'];
 
@@ -50,12 +55,65 @@ export async function expectBuildPage(screen: Screen): Promise<void> {
 export type MobilePlatform = 'ios' | 'android';
 
 /**
- * A bottom-bar tab (a `role="link"` with an exact accessible name). iOS reports the link role. On Android
- * the engine maps Chromium's `android.view.View` link to `group` and reads no "link" role description, so
- * the same node is matched by its exact, case-sensitive accessible name ("PLAY" text nodes do not match).
+ * Which shell the app draws (ui/src/components/shell, U9b): `phone` is the narrow shell (hamburger title
+ * bar, bottom tab bar), always on a phone; `wide` is the desktop-like shell (File/View/Help menu bar, upper-case
+ * main tab strip) a tablet such as the iPad shows at full width. Tests branch on this, never on device names.
  */
-export function navLink(screen: Screen, platform: MobilePlatform, name: RegExp) {
+export type Shell = 'phone' | 'wide';
+
+const SHELL_POLL_MS = 1_000;
+
+/**
+ * Waits for the first screen and reports its shell. The phone shell's bottom bar has a "Start" tab (the text the
+ * phone tests already wait on); the wide shell has no bottom bar and its title bar has a "Project website" button
+ * the phone title bar lacks (MobileChrome.tsx vs Chrome.tsx). Its main tab reads "START", which the case-sensitive
+ * phone marker does not match, so the first one seen decides.
+ */
+export async function waitForShell(screen: Screen): Promise<Shell> {
+  const wide = screen.getByRole('button', /^Project website$/);
+  const phone = screen.getByText(/^Start$/).last();
+  const end = Date.now() + SLOW.timeout;
+  for (;;) {
+    if (await phone.isVisible().catch(() => false)) return 'phone';
+    if (await wide.isVisible().catch(() => false)) return 'wide';
+    if (Date.now() > end) throw new Error('neither the phone bottom bar (Start) nor the wide title bar (Project website) showed');
+    await new Promise<void>((r) => setTimeout(r, SHELL_POLL_MS));
+  }
+}
+
+/**
+ * A main tab. Phone shell: a bottom-bar tab (a `role="link"` with an exact accessible name). iOS reports the link
+ * role. On Android the engine maps Chromium's `android.view.View` link to `group` and reads no "link" role
+ * description, so the same node is matched by its exact, case-sensitive accessible name ("PLAY" text nodes do not
+ * match). Wide shell: the main tab strip, whose links iOS names by their upper-cased text ("PLAY"), so the name
+ * is matched without case.
+ */
+export function navLink(screen: Screen, platform: MobilePlatform, name: RegExp, shell: Shell = 'phone') {
+  if (shell === 'wide') return screen.getByRole('link', new RegExp(name.source, `${name.flags.replace('i', '')}i`));
   return platform === 'ios' ? screen.getByRole('link', name) : screen.getByLabel(name);
+}
+
+/** The agent-device CLI next to the e2e package, and the session the mobile engine drives the device under. */
+const AGENT_DEVICE = join(import.meta.dirname, '../node_modules/.bin/agent-device');
+/** `e2e-<target>-<slot>` (@e2e-dev/mobile pool.js); the iOS target runs one device, slot 0. */
+const IOS_ENGINE_SESSION = 'e2e-ios-0';
+const NATIVE_GESTURE_TIMEOUT_MS = 60_000;
+
+/**
+ * A real iOS double-tap gesture on `target`, through the engine's own agent-device session. The engine's
+ * `doubleTap()` is two separate presses (@e2e-dev/mobile actions.js); WebKit on an iPhone turns those into a
+ * `dblclick`, but in the iPad's wide shell it does not (two presses only select the tile), while the system
+ * double-tap gesture opens the character as a finger does (checked by hand on the iPad simulator).
+ */
+export async function nativeDoubleTap(target: ReturnType<Screen['getByRole']>): Promise<void> {
+  const box = await target.boundingBox();
+  if (!box) throw new Error('double tap target has no bounds');
+  const x = Math.round(box.x + box.width / 2);
+  const y = Math.round(box.y + box.height / 2);
+  await execFileAsync(AGENT_DEVICE, ['press', String(x), String(y), '--double-tap', '--session', IOS_ENGINE_SESSION], {
+    env: { ...process.env, DEVELOPER_DIR: process.env.DEVELOPER_DIR ?? '/Applications/Xcode.app/Contents/Developer' },
+    timeout: NATIVE_GESTURE_TIMEOUT_MS,
+  });
 }
 
 type Context = TestFixtures & { device: Device };

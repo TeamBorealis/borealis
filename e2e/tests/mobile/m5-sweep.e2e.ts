@@ -2,8 +2,8 @@ import { expect } from 'e2e';
 import { describe, test } from '@e2e-dev/mobile';
 import type { Device } from '@e2e-dev/mobile';
 import type { TestFixtures } from 'e2e';
-import { freshInstall, SLOW } from '../../support/mobile.js';
-import type { MobilePlatform } from '../../support/mobile.js';
+import { freshInstall, SLOW, waitForShell } from '../../support/mobile.js';
+import type { MobilePlatform, Shell } from '../../support/mobile.js';
 import { openAdditionalContentMobile, scrollTo, statusText } from '../../support/mobile-content.js';
 import { writeUpdateFeed } from '../../support/mobile-acceptance.js';
 import { startSelfSignedServer } from '../../support/local-https.js';
@@ -42,6 +42,11 @@ const BAD_CERT_PATH = '/core.index';
 const BAD_CERT_BODY = '<index/>\n';
 const FAIL_TIMEOUT = { timeout: 120_000 } as const;
 const BUNDLE_ID = 'app.borealis';
+/** Wide-shell Settings: the Data files intro (top of the scrolling body) and the most swipes tried to reach a row. */
+const DATA_FILES_INTRO = 'Your data directories and additional content settings.';
+const MAX_DIALOG_SWIPES = 8;
+/** How far inside the Settings body a swipe starts and ends, so it never begins on the title or the footer. */
+const DIALOG_SWIPE_INSET = 40;
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 type Context = TestFixtures & { device: Device };
@@ -61,18 +66,43 @@ async function tapUntilVisible(target: Locator, expected: Locator): Promise<void
   }
 }
 
+/**
+ * Wide shell (iPad): Settings is a fixed-height window over the page whose body scrolls. The tree lists rows below
+ * the body's fold at their unscrolled place, where a tap lands outside the window, so swipe inside the body (from
+ * above its footer up to below the Data files intro) until `target` sits above the footer.
+ */
+async function scrollIntoSettings(screen: TestFixtures['screen'], target: Locator): Promise<void> {
+  const [top, footer] = await Promise.all([
+    screen.getByText(DATA_FILES_INTRO).first().boundingBox(),
+    screen.getByRole('button', /^Restore defaults$/i).boundingBox(),
+  ]);
+  if (!top || !footer) throw new Error('Settings window has no bounds to scroll within');
+  const x = top.x + top.width / 2;
+  const path = { from: { x, y: footer.y - DIALOG_SWIPE_INSET }, to: { x, y: top.y + top.height + DIALOG_SWIPE_INSET } };
+  for (let i = 0; i < MAX_DIALOG_SWIPES; i += 1) {
+    const box = await target.boundingBox().catch(() => null);
+    if (box && box.y + box.height <= footer.y) return;
+    await screen.swipe(path);
+  }
+  throw new Error('Share logs never scrolled into the Settings window');
+}
+
 /** Settings > Data files > Share logs (the tab is a button on iOS; on Android it is found by its text). */
-async function tapShareLogs({ app, device, screen }: Context, platform: MobilePlatform): Promise<void> {
+async function tapShareLogs({ app, device, screen }: Context, platform: MobilePlatform): Promise<Shell> {
   await freshInstall(device);
   await app.open();
   await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
+  const shell = await waitForShell(screen);
   const tab = platform === 'ios' ? screen.getByRole('button', 'Data files') : screen.getByText('Data files').first();
   await tapUntilVisible(screen.getByRole('button', 'Settings'), tab);
-  // The phone settings sheet keeps Share logs below the fold: open the tab, then scroll to it.
-  await tapUntilVisible(tab, screen.getByText('Your data directories and additional content settings.').first());
+  // The phone settings sheet keeps Share logs below the fold: open the tab, then scroll to it. The wide shell's
+  // Settings window scrolls on its own (scrollIntoSettings).
+  await tapUntilVisible(tab, screen.getByText(DATA_FILES_INTRO).first());
   const share = screen.getByRole('button', 'Share logs');
-  await scrollTo(screen, share);
+  if (shell === 'wide') await scrollIntoSettings(screen, share);
+  else await scrollTo(screen, share);
   await share.tap();
+  return shell;
 }
 
 async function waitForeignForeground(device: Device): Promise<string> {
@@ -123,10 +153,13 @@ async function updateNotice({ app, device, screen }: Context): Promise<void> {
 async function noUpdateNoticeIos({ app, device, screen }: Context): Promise<void> {
   await freshInstall(device);
   await app.open();
-  await expect(screen.getByText(/^Start$/).last()).toBeVisible(SLOW);
+  // The phone bottom bar's Start tab; the wide shell (iPad) has the main tab strip's upper-case START link instead.
+  const shell = await waitForShell(screen);
+  const start = shell === 'wide' ? screen.getByRole('link', /^START$/) : screen.getByText(/^Start$/).last();
+  await expect(start).toBeVisible(SLOW);
   writeUpdateFeed('ios', UPDATE_FEED);
   await app.restart();
-  await expect(screen.getByText(/^Start$/).last()).toBeVisible(SLOW);
+  await expect(start).toBeVisible(SLOW);
   await sleep(AFTER_CHECK_MS);
   await expect(screen.getByRole('button', UPDATE)).toBeHidden();
 }
@@ -146,8 +179,11 @@ async function badCertIndexAt({ app, device, screen }: Context, platform: Mobile
   await freshInstall(device);
   await app.open();
   await expect(screen.getByText(/^welcome to borealis$/i).first()).toBeVisible(SLOW);
+  const shell = await waitForShell(screen);
   await openAdditionalContentMobile(screen);
-  await screen.getByRole('textbox').first().fill(url);
+  // The wide shell's title bar holds the Compendium search box, the first textbox on screen: name the URL field.
+  const field = shell === 'wide' ? screen.getByRole('textbox', 'Index URL') : screen.getByRole('textbox').first();
+  await field.fill(url);
   await device.dismissKeyboard();
   await screen.getByRole('button', /^Fetch$/).tap();
   await screen.getByRole('button', /^Add source$/).tap();
@@ -159,10 +195,16 @@ async function badCertIndexAt({ app, device, screen }: Context, platform: Mobile
   expect((await device.foregroundApp()).bundleId).toBe(BUNDLE_ID);
 }
 
-/** iOS: Share logs hands the newest log lines to the system share sheet (Web Share). */
+/**
+ * iOS: Share logs hands the newest log lines to the system share sheet (Web Share). On a phone the sheet's actions
+ * are in the app's tree ("Save to Files"). On an iPad the sheet is a popover whose actions are drawn out of process:
+ * the tree holds only its container, `ActivityListView` (seen on the iPad simulator while the popover showed
+ * Copy and Save to Files on screen).
+ */
 async function shareLogsIos(ctx: Context): Promise<void> {
-  await tapShareLogs(ctx, 'ios');
-  await expect(ctx.screen.getByText('Save to Files')).toBeVisible(SLOW);
+  const shell = await tapShareLogs(ctx, 'ios');
+  const sheet = shell === 'wide' ? ctx.screen.getByTestId('ActivityListView') : ctx.screen.getByText('Save to Files');
+  await expect(sheet).toBeVisible(SLOW);
 }
 
 /** Android (B-40): Share logs opens the system share sheet (native ACTION_SEND), not the clipboard fallback. */
