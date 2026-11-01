@@ -196,15 +196,15 @@ async function badCertIndexAt({ app, device, screen }: Context, platform: Mobile
 }
 
 /**
- * iOS: Share logs hands the newest log lines to the system share sheet (Web Share). On a phone the sheet's actions
- * are in the app's tree ("Save to Files"). On an iPad the sheet is a popover whose actions are drawn out of process:
- * the tree holds only its container, `ActivityListView` (seen on the iPad simulator while the popover showed
- * Copy and Save to Files on screen).
+ * iOS: Share logs hands the newest log lines to the system share sheet (Web Share). The sheet's actions are drawn
+ * out of process, so the app's tree may hold only its container, `ActivityListView`: always on an iPad (a popover
+ * that showed Copy and Save to Files on screen), and now and then on an iPhone (1 of 3 runs on the iPhone 18 Pro Max
+ * simulator showed only the container while the sheet was open). The container is the system share sheet itself,
+ * so it is what the test waits for on both.
  */
 async function shareLogsIos(ctx: Context): Promise<void> {
-  const shell = await tapShareLogs(ctx, 'ios');
-  const sheet = shell === 'wide' ? ctx.screen.getByTestId('ActivityListView') : ctx.screen.getByText('Save to Files');
-  await expect(sheet).toBeVisible(SLOW);
+  await tapShareLogs(ctx, 'ios');
+  await expect(ctx.screen.getByTestId('ActivityListView')).toBeVisible(SLOW);
 }
 
 /** Android (B-40): Share logs opens the system share sheet (native ACTION_SEND), not the clipboard fallback. */
