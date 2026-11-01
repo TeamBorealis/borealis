@@ -12,7 +12,7 @@ import { pickAndOpenBundle } from "../../pages/transfer/openBundle";
 import { useApi } from "../../state/ApiContext";
 import { setStatus } from "../../state/status";
 import { errorMessage } from "../../state/useAsync";
-import { usePhone } from "../../lib/phone";
+import { phoneOs, usePhone } from "../../lib/phone";
 
 interface MenuModel { id: string; label: ReactNode; entries: readonly MenuEntry[]; gold?: boolean }
 
@@ -29,7 +29,8 @@ export function MenuBar() {
   const [open, setOpen] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const menus: MenuModel[] = [
-    ...visibleMenus(aiEnabled, storeBuild).map((m) => ({ id: m.id, label: m.label, entries: m.entries })),
+    // iPad / Android tablet: apps are left with the home gesture; no Exit Application (Tauri cannot close a mobile window).
+    ...visibleMenus(aiEnabled, storeBuild).map((m) => ({ id: m.id, label: m.label, entries: phoneOs() ? m.entries.filter((e) => e.action !== "exit") : m.entries })),
     ...(snapshot ? [{ id: "character", label: snapshot.name, entries: CHARACTER_MENU, gold: true }] : []),
   ];
   useEffect(() => {

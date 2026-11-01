@@ -200,3 +200,10 @@
   100% { transform: translateY(9px); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .aur-update-glyph { animation: none; } }
+
+/* Tablets in the wide shell (iPad 13-inch portrait, any iPad in landscape, Android tablets): the web view is drawn
+   edge to edge (viewport-fit=cover on iOS; on Android --safe-* include the system bars, tokens.css), so the title bar
+   clears the status bar and the status bar clears the home indicator / navigation bar. */
+:root.ios .aur-window.wide, :root.android .aur-window.wide { padding-left: var(--safe-l); padding-right: var(--safe-r); }
+:root.ios .aur-window.wide > .aur-title, :root.android .aur-window.wide > .aur-title { height: calc(var(--title-h) - 1px + var(--safe-t)); padding-top: var(--safe-t); }
+:root.ios .aur-window.wide > .aur-status, :root.android .aur-window.wide > .aur-status { height: calc(var(--status-h) + var(--safe-b)); padding-bottom: var(--safe-b); }

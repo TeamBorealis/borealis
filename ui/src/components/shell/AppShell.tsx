@@ -8,6 +8,7 @@ import { BottomBar, MobileTitleBar } from "./MobileChrome";
 import { ShellProvider, useShell } from "./ShellContext";
 import { LevelPanel } from "../../pages/builder/LevelPanel";
 import { useNarrow } from "./useNarrow";
+import { phoneOs } from "../../lib/phone";
 import { useContentUpdateNotice } from "./useContentUpdateNotice";
 import { useAppUpdateWatcher } from "../../state/appUpdate";
 import { UpdateFlyout } from "./UpdateFlyout";
@@ -81,7 +82,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <div className="aur-title-text">Borealis</div>
               <SearchBox />
               <TitleCommands />
-              {!native && <WindowButtons />}
+              {!native && !phoneOs() && <WindowButtons />}
             </header>
           )}
           {!narrow && (
