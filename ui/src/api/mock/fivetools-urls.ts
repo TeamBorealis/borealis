@@ -15,7 +15,7 @@ export class MockFiveToolsUrls {
   /** `stage_5etools_url` checks: https only, and a mock "download". */
   check(url: string): string {
     const k = key(url);
-    if (!/^https:\/\/[^/\s]+/.test(k)) throw apiError("invalid_argument", "5etools addresses must start with https://");
+    if (!/^https:\/\/[^/\s]+/.test(k)) throw apiError("invalid_argument", "Data addresses must start with https://");
     if (this.failWith) { const why = this.failWith; this.failWith = null; throw apiError("invalid_argument", why); }
     return k;
   }

@@ -6,7 +6,7 @@ import { ZIP_BUTTON } from "../pages/content/FiveToolsTab";
 import { renderApp } from "./utils";
 
 const mock = (extra: ConstructorParameters<typeof MockApi>[0] = {}) => new MockApi({ rng: () => 0.5, ...extra });
-const chooseZip = (file: File) => fireEvent.change(screen.getByLabelText("Choose a 5etools .zip"), { target: { files: [file] } });
+const chooseZip = (file: File) => fireEvent.change(screen.getByLabelText("Choose a .zip of 5etools-format data"), { target: { files: [file] } });
 
 describe("content tab on phones: 5etools .zip, no dead buttons", () => {
   it("on mobile offers only the zip chooser, then scans and imports the unpacked folder", async () => {
@@ -22,7 +22,7 @@ describe("content tab on phones: 5etools .zip, no dead buttons", () => {
     expect(screen.queryByRole("button", { name: /^Restart/ })).toBeNull();
     // Android has no MIME type for .index; untyped files must stay choosable there.
     expect((screen.getByLabelText("Choose content files") as HTMLInputElement).accept).toContain("application/octet-stream");
-    const input = screen.getByLabelText("Choose a 5etools .zip") as HTMLInputElement;
+    const input = screen.getByLabelText("Choose a .zip of 5etools-format data") as HTMLInputElement;
     expect(input.accept).toContain(".zip");
     expect(input.multiple).toBe(false);
 
@@ -41,7 +41,7 @@ describe("content tab on phones: 5etools .zip, no dead buttons", () => {
     renderApp("/content", { api: mock({ mobile: true }) });
     await screen.findByRole("button", { name: ZIP_BUTTON });
     chooseZip(new File(["{}"], "races.json"));
-    await waitFor(() => expect(screen.getByText("Choose a .zip of your 5etools data/ folder.")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Choose a .zip of a 5etools-format data/ folder.")).toBeTruthy());
     expect(screen.queryByRole("list", { name: "Books sources" })).toBeNull();
   });
 

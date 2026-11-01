@@ -162,15 +162,15 @@ describe("installed packs grouped by origin on phones", () => {
     // Assert: five collapsed groups in origin order, no pack rows rendered.
     const groups = await screen.findByRole("group", { name: "Content packs by origin" });
     const heads = within(groups).getAllByRole("button", { expanded: false }).map((b) => b.textContent);
-    expect(heads).toEqual(["Built-in (1)", "Aurora index (1)", "5etools (93)", "Custom (1)", "AI import (1)"]);
+    expect(heads).toEqual(["Built-in (1)", "Aurora index (1)", "5etools-format (93)", "Custom (1)", "AI import (1)"]);
     expect(screen.queryByRole("checkbox", { name: "Enable 5et-0" })).toBeNull();
-    expect(screen.getByRole("textbox", { name: "5etools data address" })).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: "Address of 5etools-format data" })).toBeTruthy();
 
     // Act
-    await user.click(within(groups).getByRole("button", { name: "5etools (93)" }));
+    await user.click(within(groups).getByRole("button", { name: "5etools-format (93)" }));
 
     // Assert
-    expect(within(await screen.findByRole("list", { name: "5etools packs" })).getAllByRole("listitem")).toHaveLength(93);
+    expect(within(await screen.findByRole("list", { name: "5etools-format packs" })).getAllByRole("listitem")).toHaveLength(93);
   });
 
   it("desktop keeps the flat pack list", async () => {

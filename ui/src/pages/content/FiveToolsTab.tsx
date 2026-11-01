@@ -11,7 +11,7 @@ import { FiveToolsUrlSection } from "./FiveToolsUrlSection";
 import { Section } from "./Section";
 
 /** The phone route (no folder picker there); desktop offers it next to the folder scan. */
-export const ZIP_BUTTON = "Choose a .zip of your 5etools data/ folder";
+export const ZIP_BUTTON = "Choose a .zip of a 5etools-format data/ folder";
 
 /** Convert the user's own 5etools `data/` folder, picked as a folder (desktop), handed over as a
  *  `.zip` of it, or downloaded from an address the user pastes (every platform). No default
@@ -74,17 +74,17 @@ export function FiveToolsTab() {
   };
   return (
     <>
-      <Section title="5etools import">
+      <Section title="5etools-format import">
         <div className="stack">
           <p className="muted">{mobile
-            ? <>Choose a .zip of your own 5etools <code>data/</code> folder.</>
-            : <>Choose your own local 5etools <code>data/</code> folder, or a .zip of it.</>} Files are converted on this device without downloading anything, and converted packs are for your personal use only.</p>
+            ? <>Choose a .zip of a 5etools-format <code>data/</code> folder.</>
+            : <>Choose a local folder of 5etools-format data, or a .zip of it.</>} Files are converted on this device without downloading anything, and converted packs are for your personal use only.</p>
           <TextField label={mobile ? "Data folder .zip" : "Data folder"} value={path} readOnly placeholder={mobile ? "No file chosen" : "No folder chosen"} error={error} />
           <div className="v4-content-cmds">
             {!mobile && <Button aria-label="Scan folder…" variant="primary" onClick={() => void scan()}>Scan folder...</Button>}
             <Button icon="upload" variant={mobile ? "primary" : undefined} onClick={() => void chooseZip()}>{ZIP_BUTTON}</Button>
           </div>
-          <input ref={zipRef} type="file" accept=".zip,application/zip" hidden aria-label="Choose a 5etools .zip" onChange={(e) => void onZip(e.target.files)} />
+          <input ref={zipRef} type="file" accept=".zip,application/zip" hidden aria-label="Choose a .zip of 5etools-format data" onChange={(e) => void onZip(e.target.files)} />
         </div>
       </Section>
       <FiveToolsUrlSection

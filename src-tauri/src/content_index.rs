@@ -193,7 +193,7 @@ pub fn looks_like_html(bytes: &[u8]) -> bool {
 
 /// Shown when an index address answers with a web page instead of the index file.
 pub const WEB_PAGE_NOT_INDEX: &str = "this address is a web page, not an index file; \
-     use the address of the file itself (on GitHub: open the file and use its Raw button)";
+     use the file's own direct (raw) address";
 
 /// Why a redirect must not be followed: anything but HTTPS, or too many hops.
 #[must_use]

@@ -416,5 +416,5 @@ pub const SRD_PACKS: [&str; 4] = [
 
 fn tools_error(e: &borealis_import_5etools::error::ImportError) -> ApiError {
     tracing::warn!("5etools import failed: {e}");
-    ApiError::invalid("This does not look like a readable 5etools data folder.")
+    ApiError::invalid("This does not look like a readable 5etools-format data folder.")
 }

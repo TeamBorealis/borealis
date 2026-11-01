@@ -72,18 +72,18 @@ export function FiveToolsUrlSection({ onStaged, onReport, refresh }: Props) {
 
   return (
     <Section title="Import from an address">
-      <p>Paste the address of a GitHub repository that holds a 5etools <code>data/</code> folder, or the address of the folder itself. Borealis does not come with an address; only use sources you trust and content you are entitled to use.</p>
+      <p>Paste a link to a folder that holds 5etools-format data (a <code>data/</code> folder): a repository page that holds it, or the folder&apos;s own https:// address. Borealis does not come with an address; only use content you are entitled to use.</p>
       <form className="v4-urlrow" onSubmit={(e) => { e.preventDefault(); void download(); }}>
-        <label className="v4-fieldhead" htmlFor="fivetools-url">5etools data address</label>
+        <label className="v4-fieldhead" htmlFor="fivetools-url">Address of 5etools-format data</label>
         <div className="v4-urlbox">
-          <input id="fivetools-url" className="v4-urlinput" type="url" placeholder="https://github.com/<owner>/<repo>" aria-label="5etools data address" value={url} onChange={(e) => setUrl(e.target.value)} aria-invalid={error ? true : undefined} />
+          <input id="fivetools-url" className="v4-urlinput" type="url" placeholder="https://example.com/my-data/" aria-label="Address of 5etools-format data" value={url} onChange={(e) => setUrl(e.target.value)} aria-invalid={error ? true : undefined} />
           <Button type="submit" variant="primary" icon="download" className="v4-dl" disabled={!url.trim() || busy !== null}>{URL_IMPORT_BUTTON}</Button>
         </div>
         {error && <span className="v4-urlerr" role="alert">{error}</span>}
       </form>
       {busy && progress && progress.phase === "downloading" && <div style={{ marginTop: "var(--sp-3)" }}><ProgressBar label="Download progress" value={progress.done} max={Math.max(1, progress.total)} /><span className="small muted" role="status">{progress.message}</span></div>}
       {urls.data && urls.data.length > 0 && (
-        <ul className="list" aria-label="5etools addresses">
+        <ul className="list" aria-label="Data addresses">
           {urls.data.map((u) => (
             <li key={u.url}><div className="inv-row" style={{ padding: "var(--sp-3)" }}>
               <span style={{ flex: 1, minWidth: 0, overflowWrap: "anywhere" }}><strong>{u.url}</strong><span className="muted small" style={{ display: "block" }}>{u.sources.length} book(s) · revision {u.revision}{u.lastChecked ? ` · Last checked at ${timeOf(u.lastChecked)}` : ""}</span>{u.problem && <span className="v4-index-problem small" role="note">{u.problem}</span>}</span>

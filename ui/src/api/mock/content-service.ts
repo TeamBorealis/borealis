@@ -263,7 +263,7 @@ export class ContentService {
   }
 
   scan5etools(path: string): FiveToolsScan {
-    if (!path.trim() || /missing|nonexistent/i.test(path)) throw apiError("not_found", "No 5etools data folder was found at that path.");
+    if (!path.trim() || /missing|nonexistent/i.test(path)) throw apiError("not_found", "No 5etools-format data folder was found at that path.");
     return { sources: [
       { abbr: "srd", name: "SRD 5.1 (2014)", ruleset: "dnd2014", category: "book", counts: { class: 4, spell: 24, item: 12 } },
       { abbr: "srd52", name: "SRD 5.2.1 (2024)", ruleset: "dnd2024", category: "book", counts: { class: 4, spell: 30, feat: 8 } },

@@ -211,7 +211,7 @@ fn rejects_folders_that_are_not_5etools_data() {
     let err = import_folder(empty.path(), &ImportOptions::default()).unwrap_err();
     assert!(err
         .to_string()
-        .contains("does not look like a 5etools data folder"));
+        .contains("does not look like a 5etools-format data folder"));
     let err = import_folder(&empty.path().join("missing"), &ImportOptions::default()).unwrap_err();
     assert!(err.to_string().contains("not a directory"));
 }

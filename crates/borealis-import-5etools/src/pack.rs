@@ -177,7 +177,7 @@ pub fn build_pack(
         file.info = Some(Info {
             name: Some(format!("{display_name} ({name})")),
             description: Some(
-                "Converted at runtime from the user's local 5etools data. Not redistributable."
+                "Converted at runtime from the user's local 5etools-format data. Not redistributable."
                     .into(),
             ),
             extra,
@@ -191,14 +191,14 @@ pub fn build_pack(
     let manifest = PackManifest {
         format: PackFormat,
         id: pack_id(source),
-        name: format!("5etools: {display_name}"),
+        name: format!("5etools-format: {display_name}"),
         version: version.to_string(),
         origin: PackOrigin::Custom,
         rulesets: if rulesets.is_empty() { vec![Ruleset::Dnd2014] } else { rulesets.clone() },
-        license: Some("Proprietary: user-supplied 5etools data, not redistributable".into()),
+        license: Some("Proprietary: user-supplied 5etools-format data, not redistributable".into()),
         attribution: None,
         description: Some(format!(
-            "origin={ORIGIN}; redistributable=false. Converted at runtime from the user's own 5etools data folder (source {source})."
+            "origin={ORIGIN}; redistributable=false. Converted at runtime from the user's own 5etools-format data folder (source {source})."
         )),
         files: files
             .iter()
@@ -283,6 +283,40 @@ mod tests {
             .contains("redistributable=false"));
         assert_eq!(pack.element_count(), 7);
         assert_eq!(pack.elements().count(), 7);
+    }
+
+    /// CS1 renamed the shown pack name and licence ("5etools-format: ..."). A pack imported by an older version
+    /// must still be the same pack: the id comes from the source abbreviation only and the origin marker the app
+    /// reads (`5etools-import`) is unchanged, so a re-import replaces it instead of adding a second copy.
+    #[test]
+    fn pack_identity_ignores_the_display_name_and_licence() {
+        let make = |display: &str| {
+            build_pack(
+                "PHB",
+                display,
+                "1.0.0",
+                vec![el("ID_A_CLASS", "Class", Ruleset::Dnd2014)],
+            )
+        };
+        let (a, b) = (make("Player's Handbook"), make("Something Else"));
+        assert_eq!(
+            a.manifest.id, "5etools-phb",
+            "the id 1.2.1 and older gave this pack"
+        );
+        assert_eq!(a.manifest.id, b.manifest.id);
+        assert_eq!(a.origin, ORIGIN);
+        assert_eq!(ORIGIN, "5etools-import");
+        assert_eq!(a.manifest.name, "5etools-format: Player's Handbook");
+        assert!(a
+            .manifest
+            .license
+            .as_deref()
+            .unwrap()
+            .contains("5etools-format data"));
+        let paths = |p: &ImportedPack| p.files.iter().map(|f| f.path.clone()).collect::<Vec<_>>();
+        assert_eq!(paths(&a), paths(&b));
+        let ids = |p: &ImportedPack| p.elements().map(|e| e.id.clone()).collect::<Vec<_>>();
+        assert_eq!(ids(&a), ids(&b));
     }
 
     #[test]

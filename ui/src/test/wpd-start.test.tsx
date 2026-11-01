@@ -61,7 +61,7 @@ describe("Additional content and Sources", () => {
     renderApp("/content");
     await screen.findByRole("region", { name: "Index files" });
     expect(screen.getByRole("region", { name: "Custom content" })).toBeTruthy();
-    expect(screen.getByRole("region", { name: "5etools import" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "5etools-format import" })).toBeTruthy();
     expect(screen.queryByRole("tablist", { name: "Content sections" })).toBeNull();
   });
 

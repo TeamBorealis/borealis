@@ -8,7 +8,7 @@ export type PackOrigin = "bundled" | "aurora-index" | "5etools" | "custom" | "ai
 export const ORIGIN_GROUPS: { origin: PackOrigin; label: string }[] = [
   { origin: "bundled", label: "Built-in" },
   { origin: "aurora-index", label: "Aurora index" },
-  { origin: "5etools", label: "5etools" },
+  { origin: "5etools", label: "5etools-format" },
   { origin: "custom", label: "Custom" },
   { origin: "ai", label: "AI import" },
 ];

@@ -62,7 +62,7 @@ export function rulesContentRefusal(kind: RulesContent, subject: string): string
     case "aurora":
       return `${subject} is Aurora content. It is added as it is, without AI: save it as an .xml file and add it under Additional Content > Custom content.`;
     case "5etools":
-      return `${subject} is 5etools data. It is converted as it is, without AI: use Additional Content > 5etools import with your 5etools data folder.`;
+      return `${subject} is 5etools-format JSON. It is converted as it is, without AI: use Additional Content > 5etools-format import with the folder it came from.`;
     case "borealis":
       return `${subject} is already a Borealis content pack. Add it as it is under Additional Content > Custom content.`;
   }

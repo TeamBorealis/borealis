@@ -47,7 +47,7 @@ const LIMITS: ZipLimits = ZipLimits {
 
 fn not_a_data_zip() -> ApiError {
     ApiError::invalid(
-        "This .zip does not contain a 5etools data folder. Zip your 5etools data/ folder and choose that file.",
+        "This .zip has no 5etools-format data/ folder. Zip a data/ folder and choose that file.",
     )
 }
 
@@ -160,7 +160,7 @@ pub fn unpack_5etools_zip(zip: &[u8], dest: &Path) -> ApiResult<usize> {
 fn decode_zip(input: &ImportFileInput) -> ApiResult<Vec<u8>> {
     if !input.file_name.to_lowercase().ends_with(".zip") {
         return Err(ApiError::invalid(
-            "Choose a .zip of your 5etools data/ folder.",
+            "Choose a .zip of a 5etools-format data/ folder.",
         ));
     }
     let text = input.content_base64.trim();
@@ -333,7 +333,7 @@ mod tests {
         );
         let err = unpack_5etools_zip(&z, dir.path()).unwrap_err();
         assert!(
-            err.message.contains("5etools data folder"),
+            err.message.contains("5etools-format data/ folder"),
             "{}",
             err.message
         );

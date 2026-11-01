@@ -10,7 +10,7 @@ pub enum ImportError {
     #[error("{0} is not a directory")]
     NotADirectory(PathBuf),
     /// The folder does not look like a 5etools `data/` folder (no known data file found).
-    #[error("{0} does not look like a 5etools data folder (no known data files found)")]
+    #[error("{0} does not look like a 5etools-format data folder (no known data files found)")]
     NotFiveTools(PathBuf),
     /// Reading a file failed.
     #[error("cannot read {path}: {source}")]

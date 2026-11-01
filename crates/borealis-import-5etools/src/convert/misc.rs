@@ -37,10 +37,11 @@ pub fn source_element(sh: &Shared, st: &mut State, abbr: &str, ruleset: Ruleset)
     }
     e.setters.push(Setter::new(
         "information",
-        "Imported from the user's local 5etools data",
+        "Imported from the user's local 5etools-format data",
     ));
-    e.description =
-        format!("<p>Imported from a local 5etools data folder ({abbr}). Not redistributable.</p>");
+    e.description = format!(
+        "<p>Imported from a local 5etools-format data folder ({abbr}). Not redistributable.</p>"
+    );
     e
 }
 

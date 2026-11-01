@@ -83,7 +83,7 @@ pub fn refusal(kind: RulesContent, subject: &str) -> String {
             "{subject} is Aurora content. It is added as it is, without AI: save it as an .xml file and add it under Additional Content > Custom content."
         ),
         RulesContent::FiveTools => format!(
-            "{subject} is 5etools data. It is converted as it is, without AI: use Additional Content > 5etools import with your 5etools data folder."
+            "{subject} is 5etools-format JSON. It is converted as it is, without AI: use Additional Content > 5etools-format import with the folder it came from."
         ),
         RulesContent::Borealis => format!(
             "{subject} is already a Borealis content pack. Add it as it is under Additional Content > Custom content."
@@ -259,7 +259,10 @@ mod tests {
         assert!(a.starts_with("\"a.txt\" is Aurora content."), "{a}");
         assert!(a.contains("Additional Content > Custom content"), "{a}");
         let f = refusal(RulesContent::FiveTools, "The pasted text");
-        assert!(f.contains("Additional Content > 5etools import"), "{f}");
+        assert!(
+            f.contains("Additional Content > 5etools-format import"),
+            "{f}"
+        );
         let b = refusal(RulesContent::Borealis, "\"p.json\"");
         assert!(b.contains("Additional Content > Custom content"), "{b}");
     }

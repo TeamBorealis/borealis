@@ -45,7 +45,7 @@ const WORKERS: usize = 6;
 const MARKER: &str = "books.json";
 /// Shown when the address has no `books.json`.
 pub const NO_DATA_FOLDER: &str =
-    "This address has no 5etools data folder (books.json was not found).";
+    "This address has no 5etools-format data folder (books.json was not found).";
 /// Data-folder files the importer reads by fixed path (`borealis_import_5etools::folder::data_files`),
 /// besides the `class/`, `spells/` and `bestiary/` files listed by the manifests: the importer's
 /// own [`folder::ROOT_FILES`] plus its spell source lookup, so the download follows that one list.
@@ -143,7 +143,7 @@ pub struct FileTag {
     pub sha256: String,
 }
 
-const BAD_ADDRESS: &str = "Use a GitHub repository address (https://github.com/<owner>/<repo>) or the https:// address of a 5etools data/ folder.";
+const BAD_ADDRESS: &str = "Use the https:// address of a 5etools-format data/ folder, or of a repository page that holds one.";
 
 fn segment_ok(s: &str) -> bool {
     !s.is_empty()
@@ -163,7 +163,7 @@ fn path_ok(path: &str) -> bool {
 /// A user-presentable reason (not `https://`, or not a usable address).
 pub fn parse_location(url: &str) -> Result<FiveToolsLocation, String> {
     let url = url.trim();
-    require_https(url).map_err(|_| "5etools addresses must start with https://".to_string())?;
+    require_https(url).map_err(|_| "Data addresses must start with https://".to_string())?;
     let clean = url
         .split(['?', '#'])
         .next()
@@ -463,7 +463,7 @@ impl DownloadFailure {
             .map(|(rel, e)| format!("{rel} [{}]", e.code))
             .collect();
         let mut text = format!(
-            "Could not download the 5etools data: {} of {} files could not be downloaded ({}). Nothing was installed or changed; try again later. Failed: {}",
+            "Could not download the data: {} of {} files could not be downloaded ({}). Nothing was installed or changed; try again later. Failed: {}",
             self.failed.len(),
             self.total.max(self.failed.len()),
             causes.join(", "),
@@ -526,7 +526,7 @@ pub fn download_folder(
         .and_then(|m| m.body.map(|b| (m.tag, b)))
         .ok_or(NO_DATA_FOLDER)?;
     if looks_like_html(&marker.1) {
-        return Err("This address is a web page, not a 5etools data folder.".into());
+        return Err("This address is a web page, not a 5etools-format data folder.".into());
     }
     let mut files: BTreeMap<String, FileTag> = BTreeMap::new();
     let mut wanted: Vec<String> = root_files()

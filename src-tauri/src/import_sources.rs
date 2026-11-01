@@ -392,14 +392,17 @@ mod tests {
     fn fivetools_json_is_refused_with_a_pointer_to_5etools_import() {
         let msg = refused(&[bytes("spells-syn.json", "application/json", FIVETOOLS)]);
         assert!(
-            msg.contains("\"spells-syn.json\" is 5etools data."),
+            msg.contains("\"spells-syn.json\" is 5etools-format JSON."),
             "{msg}"
         );
-        assert!(msg.contains("Additional Content > 5etools import"), "{msg}");
+        assert!(
+            msg.contains("Additional Content > 5etools-format import"),
+            "{msg}"
+        );
         let pasted = refused(&[ImportSourceDto::Text {
             text: FIVETOOLS.into(),
         }]);
-        assert!(pasted.contains("5etools import"), "{pasted}");
+        assert!(pasted.contains("5etools-format import"), "{pasted}");
     }
 
     #[test]

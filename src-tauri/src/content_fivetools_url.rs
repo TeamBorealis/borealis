@@ -89,7 +89,7 @@ fn key(url: &str) -> String {
 /// A full sentence for the UI from a download problem.
 fn sentence(why: &str) -> String {
     if why.starts_with(|c: char| c.is_ascii_lowercase()) {
-        format!("Could not download the 5etools data: {why}.")
+        format!("Could not download the data: {why}.")
     } else {
         why.to_string()
     }

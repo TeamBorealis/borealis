@@ -54,7 +54,7 @@ describe("rules content detection", () => {
 
   it("matches the backend's wording", () => {
     expect(rulesContentRefusal("aurora", "The pasted text")).toBe("The pasted text is Aurora content. It is added as it is, without AI: save it as an .xml file and add it under Additional Content > Custom content.");
-    expect(rulesContentRefusal("5etools", "\"a.json\"")).toBe("\"a.json\" is 5etools data. It is converted as it is, without AI: use Additional Content > 5etools import with your 5etools data folder.");
+    expect(rulesContentRefusal("5etools", "\"a.json\"")).toBe("\"a.json\" is 5etools-format JSON. It is converted as it is, without AI: use Additional Content > 5etools-format import with the folder it came from.");
     expect(rulesContentRefusal("borealis", "\"p.json\"")).toBe("\"p.json\" is already a Borealis content pack. Add it as it is under Additional Content > Custom content.");
   });
 });
@@ -65,7 +65,7 @@ describe("the AI importer refuses rules content", () => {
     const { api, seen } = watched();
     renderApp("/import", { api });
     await user.upload(await screen.findByLabelText("Choose files"), new File([FIVETOOLS], "spells-syn.json", { type: "application/json" }));
-    expect(await screen.findByText(/"spells-syn.json" is 5etools data\..*Additional Content > 5etools import/)).toBeTruthy();
+    expect(await screen.findByText(/"spells-syn.json" is 5etools-format JSON\..*Additional Content > 5etools-format import/)).toBeTruthy();
     expect(screen.queryByRole("list", { name: "Files to import" })).toBeNull();
     expect(seen).toHaveLength(0);
   });
@@ -107,7 +107,7 @@ describe("the AI importer refuses rules content", () => {
     await user.click(await screen.findByLabelText("Describe it"));
     await user.paste(FIVETOOLS_ENTITY);
     await user.click(screen.getByRole("button", { name: "Import" }));
-    expect(await screen.findByText(/The pasted text is 5etools data\./)).toBeTruthy();
+    expect(await screen.findByText(/The pasted text is 5etools-format JSON\./)).toBeTruthy();
     expect(seen).toHaveLength(0);
   });
 

@@ -52,7 +52,7 @@ desktopSuite('d8', '5etools import: scan, notice, import report, imported class 
 
   await app.open();
   await openAdditionalContent(ctx);
-  await expect(screen.getByText(/^5etools import$/i).first()).toBeVisible(SLOW);
+  await expect(screen.getByText(/^5etools-format import$/i).first()).toBeVisible(SLOW);
 
   // 1) first scan: the notice appears, nothing ticked.
   await scan();
