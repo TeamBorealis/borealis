@@ -7,6 +7,18 @@ plugins {
     id("rust")
 }
 
+// B-85: a bundle (.aab) is only ever uploaded to Google Play, and a Play build must be a store build (no GitHub
+// update check, no Releases link: src-tauri/src/distribution.rs reads BOREALIS_DISTRIBUTION at build time). So
+// any bundle task is refused unless BOREALIS_DISTRIBUTION=play is set; APK builds (the sideloaded download) are
+// unchanged. Checked by tools/ci/check_play_bundle_guard.sh.
+val buildsBundle = gradle.startParameter.taskNames.any { it.substringAfterLast(':').startsWith("bundle") }
+if (buildsBundle && System.getenv("BOREALIS_DISTRIBUTION")?.trim()?.lowercase() != "play") {
+    throw GradleException(
+        "A Google Play bundle (.aab) must be a store build: set BOREALIS_DISTRIBUTION=play for the whole build " +
+            "(docs/build.md, Google Play build)."
+    )
+}
+
 val tauriProperties = Properties().apply {
     val propFile = file("tauri.properties")
     if (propFile.exists()) {

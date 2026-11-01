@@ -487,6 +487,8 @@ jobs:
           # gen/android is committed; `android init` would rewrite buildSrc/BuildTask.kt to call the CLI by a relative
           # path that Gradle cannot resolve, so build straight from the committed project (as release.yml does).
           node "$GITHUB_WORKSPACE/ui/node_modules/@tauri-apps/cli/tauri.js" android build --debug --apk --target aarch64 --ci
+      - name: A Play bundle needs BOREALIS_DISTRIBUTION=play (B-85)
+        run: tools/ci/check_play_bundle_guard.sh
 
   embed-platforms:
     # S3.4 (s3.3-1 sec. 7 items 3-6) and B-49: the real embedding model on x86_64 with llama.cpp's run-time CPU

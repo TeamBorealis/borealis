@@ -68,7 +68,9 @@ is set at build time (read with `option_env!`, so changing it rebuilds the crate
 built without it. Play build, signed like the APK:
 `BOREALIS_DISTRIBUTION=play ANDROID_KEYSTORE_PATH=... ANDROID_KEYSTORE_PASSWORD=... npm run tauri -- android build --target aarch64 --aab`,
 output `src-tauri/gen/android/app/build/outputs/bundle/universalRelease/app-universal-release.aab` (not a GitHub
-release asset; it is uploaded to Google Play).
+release asset; it is uploaded to Google Play). Gradle refuses every bundle task unless `BOREALIS_DISTRIBUTION=play`
+is set (B-85, `gen/android/app/build.gradle.kts`), so a Play bundle cannot be built as a direct build;
+`tools/ci/check_play_bundle_guard.sh` proves it with Gradle dry runs (run in the CI Android job).
 
 ## iOS (simulator, debug, aarch64-sim) - verified 2026-10-08
 
