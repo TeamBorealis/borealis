@@ -348,7 +348,7 @@ pub enum TrackerReset {
     Other(String),
 }
 
-/// A counter the user adds on the Play tab (Drakkenheim contamination, Splicer points).
+/// A counter the user adds on the Play tab (luck tokens, rune charges).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CustomTracker {
     /// Stable id within the character (`tracker-<n>`; a missing one is given on load).
@@ -365,7 +365,7 @@ pub struct CustomTracker {
     /// When it resets.
     #[serde(default)]
     pub reset: TrackerReset,
-    /// Shown counting up (`used/max`, e.g. contamination gained) instead of uses left.
+    /// Shown counting up (`used/max`, e.g. doom marks gained) instead of uses left.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub counts_up: bool,
     /// Keys written by a newer version, kept as they were.

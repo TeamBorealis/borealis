@@ -123,7 +123,7 @@ describe.each(LAYOUTS)("spell slots card (%s)", (_layout, phone) => {
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(within(dialog).getByText("Give the tracker a name.")).toBeTruthy();
     await user.clear(within(dialog).getByLabelText("Name"));
-    await user.type(within(dialog).getByLabelText("Name"), "Splicer Points");
+    await user.type(within(dialog).getByLabelText("Name"), "Rune Charges");
     const max = within(dialog).getByLabelText("Maximum");
     await user.clear(max);
     await user.type(max, "5");
@@ -131,9 +131,9 @@ describe.each(LAYOUTS)("spell slots card (%s)", (_layout, phone) => {
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 
-    const status = () => screen.getByRole("status", { name: /^Splicer Points: \d+ of \d+ left$/ });
+    const status = () => screen.getByRole("status", { name: /^Rune Charges: \d+ of \d+ left$/ });
     expect(status().textContent).toBe("5/5");
-    await user.click(screen.getAllByRole("button", { name: "Use one Splicer Points, 5 of 5 left" })[0]!);
+    await user.click(screen.getAllByRole("button", { name: "Use one Rune Charges, 5 of 5 left" })[0]!);
     await waitFor(() => expect(status().textContent).toBe("4/5"));
     await user.click(screen.getByRole("button", { name: "Short Rest" }));
     await waitFor(() => expect(status().textContent).toBe("4/5"));
@@ -141,27 +141,27 @@ describe.each(LAYOUTS)("spell slots card (%s)", (_layout, phone) => {
     await waitFor(() => expect(status().textContent).toBe("5/5"));
 
     // a large maximum tracks with - and + instead of pips
-    await user.click(screen.getByRole("button", { name: "Edit Splicer Points" }));
+    await user.click(screen.getByRole("button", { name: "Edit Rune Charges" }));
     dialog = await screen.findByRole("dialog", { name: "Edit tracker" });
-    expect((within(dialog).getByLabelText("Name") as HTMLInputElement).value).toBe("Splicer Points");
+    expect((within(dialog).getByLabelText("Name") as HTMLInputElement).value).toBe("Rune Charges");
     const editMax = within(dialog).getByLabelText("Maximum");
     await user.clear(editMax);
     await user.type(editMax, "40");
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(() => expect(status().textContent).toBe("40/40"));
-    expect(screen.queryByRole("button", { name: /^Use one Splicer Points/ })).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Spend Splicer Points" }));
+    expect(screen.queryByRole("button", { name: /^Use one Rune Charges/ })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Spend Rune Charges" }));
     await waitFor(() => expect(status().textContent).toBe("39/40"));
-    await user.click(screen.getByRole("button", { name: "Restore Splicer Points" }));
+    await user.click(screen.getByRole("button", { name: "Restore Rune Charges" }));
     await waitFor(() => expect(status().textContent).toBe("40/40"));
 
     // Delete needs a second press
-    await user.click(screen.getByRole("button", { name: "Edit Splicer Points" }));
+    await user.click(screen.getByRole("button", { name: "Edit Rune Charges" }));
     dialog = await screen.findByRole("dialog", { name: "Edit tracker" });
     await user.click(within(dialog).getByRole("button", { name: "Delete" }));
-    expect(screen.getByRole("status", { name: /^Splicer Points:/ })).toBeTruthy();
+    expect(screen.getByRole("status", { name: /^Rune Charges:/ })).toBeTruthy();
     await user.click(within(dialog).getByRole("button", { name: "Confirm delete" }));
-    await waitFor(() => expect(screen.queryByRole("status", { name: /^Splicer Points:/ })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("status", { name: /^Rune Charges:/ })).toBeNull());
     expect(within(screen.getByRole("list", { name: "Trackers" })).getByText("No trackers")).toBeTruthy();
   });
 

@@ -56,7 +56,7 @@ fn tracked_slots_concentration_and_trackers_survive_save_and_load() {
         },
         CustomTracker {
             id: "tracker-2".into(),
-            name: "Splicer Points".into(),
+            name: "Rune Charges".into(),
             max: 5,
             used: 0,
             reset: TrackerReset::LongRest,

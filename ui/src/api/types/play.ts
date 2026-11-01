@@ -141,7 +141,7 @@ export interface PlayConcentrationSpell {
 /** When a custom tracker gets its uses back. */
 export type PlayTrackerReset = "short_rest" | "long_rest" | "never";
 
-/** A counter the user adds on Play (Drakkenheim contamination, Splicer points). */
+/** A counter the user adds on Play (luck tokens, rune charges). */
 export interface PlayTracker {
   id: string;
   name: string;
@@ -151,7 +151,7 @@ export interface PlayTracker {
   used: number;
   /** A file from a newer version may hold another value; it then never resets here. */
   reset: PlayTrackerReset;
-  /** Shown counting up: used/max with the used pips filled (Drakkenheim contamination). */
+  /** Shown counting up: used/max with the used pips filled (doom marks gained). */
   countsUp: boolean;
 }
 

@@ -280,7 +280,7 @@ fn custom_trackers_are_added_edited_tracked_and_reset_by_their_own_rule() {
     let s = commands::add_tracker(&s, &input("  Infection ", 6, TrackerReset::Never))
         .expect("add")
         .state;
-    let s = commands::add_tracker(&s, &input("Splicer Points", 5, TrackerReset::LongRest))
+    let s = commands::add_tracker(&s, &input("Rune Charges", 5, TrackerReset::LongRest))
         .expect("add")
         .state;
     let s = commands::add_tracker(&s, &input("Lucky Coin", 2, TrackerReset::ShortRest))
@@ -309,7 +309,7 @@ fn custom_trackers_are_added_edited_tracked_and_reset_by_their_own_rule() {
         tracker_used(&short),
         vec![
             ("Infection".into(), 4),
-            ("Splicer Points".into(), 3),
+            ("Rune Charges".into(), 3),
             ("Lucky Coin".into(), 0)
         ]
     );
@@ -318,20 +318,20 @@ fn custom_trackers_are_added_edited_tracked_and_reset_by_their_own_rule() {
         tracker_used(&long),
         vec![
             ("Infection".into(), 4),
-            ("Splicer Points".into(), 0),
+            ("Rune Charges".into(), 0),
             ("Lucky Coin".into(), 0)
         ]
     );
 
     // a lower maximum clamps the used count; the edit keeps the id
     let edited =
-        commands::update_tracker(&s, &ids[0], &input("Contamination", 3, TrackerReset::Never))
+        commands::update_tracker(&s, &ids[0], &input("Doom Marks", 3, TrackerReset::Never))
             .expect("edit")
             .state;
     let t = &edited.play.trackers[0];
     assert_eq!(
         (t.id.as_str(), t.name.as_str(), t.max, t.used),
-        (ids[0].as_str(), "Contamination", 3, 3)
+        (ids[0].as_str(), "Doom Marks", 3, 3)
     );
     assert_eq!(view(e, &edited).trackers[0].used, 3);
 
@@ -345,7 +345,7 @@ fn custom_trackers_are_added_edited_tracked_and_reset_by_their_own_rule() {
             .iter()
             .map(|t| t.name.as_str())
             .collect::<Vec<_>>(),
-        vec!["Contamination", "Lucky Coin"]
+        vec!["Doom Marks", "Lucky Coin"]
     );
     assert!(commands::remove_tracker(&removed, &ids[1]).is_err());
     // a new tracker never takes the id of one still present

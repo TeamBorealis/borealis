@@ -267,7 +267,7 @@ fn custom_trackers_are_added_edited_tracked_deleted_and_saved() {
         .expect("add");
     let s2 = app
         .state
-        .add_tracker(&id, &fields("Splicer Points", 5, TrackerReset::LongRest))
+        .add_tracker(&id, &fields("Rune Charges", 5, TrackerReset::LongRest))
         .expect("add");
     let trackers = app.play("add_tracker", &s2)["trackers"].clone();
     assert_eq!(trackers.as_array().unwrap().len(), 2);
@@ -275,30 +275,27 @@ fn custom_trackers_are_added_edited_tracked_deleted_and_saved() {
         .as_str()
         .unwrap()
         .to_string();
-    let splicer = trackers[1]["id"].as_str().unwrap().to_string();
+    let runes = trackers[1]["id"].as_str().unwrap().to_string();
     assert_eq!(
         trackers[1],
-        json!({"id": splicer, "name": "Splicer Points", "max": 5, "used": 0, "reset": "long_rest", "countsUp": false})
+        json!({"id": runes, "name": "Rune Charges", "max": 5, "used": 0, "reset": "long_rest", "countsUp": false})
     );
 
     app.state.spend_tracker(&id, &infection, 2).expect("track");
-    let s = app.state.spend_tracker(&id, &splicer, 5).expect("track");
+    let s = app.state.spend_tracker(&id, &runes, 5).expect("track");
     app.play("spend_tracker", &s);
     assert_eq!(
-        app.state.spend_tracker(&id, &splicer, 1).unwrap_err().code,
+        app.state.spend_tracker(&id, &runes, 1).unwrap_err().code,
         ErrorCode::RequirementFailed,
         "none left"
     );
-    let s = app
-        .state
-        .restore_tracker(&id, &splicer, 9)
-        .expect("restore");
+    let s = app.state.restore_tracker(&id, &runes, 9).expect("restore");
     assert_eq!(
         app.play("restore_tracker", &s)["trackers"][1]["used"],
         0,
         "never below none used"
     );
-    app.state.spend_tracker(&id, &splicer, 5).expect("track");
+    app.state.spend_tracker(&id, &runes, 5).expect("track");
     assert_eq!(
         app.state
             .spend_tracker(&id, "tracker-99", 1)
@@ -327,14 +324,14 @@ fn custom_trackers_are_added_edited_tracked_deleted_and_saved() {
         .update_tracker(
             &id,
             &infection,
-            &fields("Contamination", 1, TrackerReset::ShortRest),
+            &fields("Doom Marks", 1, TrackerReset::ShortRest),
         )
         .expect("edit");
     assert_eq!(
         app.play("update_tracker", &s)["trackers"][0],
-        json!({"id": infection, "name": "Contamination", "max": 1, "used": 1, "reset": "short_rest", "countsUp": false})
+        json!({"id": infection, "name": "Doom Marks", "max": 1, "used": 1, "reset": "short_rest", "countsUp": false})
     );
-    let s = app.state.remove_tracker(&id, &splicer).expect("delete");
+    let s = app.state.remove_tracker(&id, &runes).expect("delete");
     assert_eq!(
         app.play("remove_tracker", &s)["trackers"]
             .as_array()
@@ -349,7 +346,7 @@ fn custom_trackers_are_added_edited_tracked_deleted_and_saved() {
     let s = app.state.load_character(&id).expect("load");
     assert_eq!(
         app.play("load_character", &s)["trackers"],
-        json!([{"id": infection, "name": "Contamination", "max": 1, "used": 1, "reset": "short_rest", "countsUp": false}])
+        json!([{"id": infection, "name": "Doom Marks", "max": 1, "used": 1, "reset": "short_rest", "countsUp": false}])
     );
 }
 
@@ -473,7 +470,7 @@ fn rests_after_a_level_down_and_tracker_rules_through_the_commands() {
         .expect("add");
     let s = app
         .state
-        .add_tracker(&id, &fields("Splicer", 3, TrackerReset::LongRest))
+        .add_tracker(&id, &fields("Runes", 3, TrackerReset::LongRest))
         .expect("add");
     let ids: Vec<String> = app.play("add_tracker", &s)["trackers"]
         .as_array()

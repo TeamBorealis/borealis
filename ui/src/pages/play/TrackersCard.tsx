@@ -119,7 +119,7 @@ function TrackerDialog({ tracker, onClose }: { tracker: PlayTracker | null; onCl
         <SelectField label="Resets on" value={reset} onChange={(e) => setReset(e.target.value as PlayTrackerReset)}>
           {RESET_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </SelectField>
-        <Check label="Counts up" description="Show how many are marked (such as contamination gained) instead of how many are left."
+        <Check label="Counts up" description="Show how many are marked (such as doom marks gained) instead of how many are left."
           checked={countsUp} onChange={(e) => setCountsUp(e.target.checked)} />
         <button type="submit" hidden aria-hidden="true" tabIndex={-1} />
       </form>
@@ -127,14 +127,14 @@ function TrackerDialog({ tracker, onClose }: { tracker: PlayTracker | null; onCl
   );
 }
 
-/** The user's own trackers (Drakkenheim contamination, Splicer points): pips or -/+, reset on a short rest, a long rest or never. */
+/** The user's own trackers (luck tokens, rune charges): pips or -/+, reset on a short rest, a long rest or never. */
 export function TrackersCard({ trackers }: { trackers: PlayTracker[] }) {
   const [editing, setEditing] = useState<PlayTracker | "new" | null>(null);
   return (
     <Expander title="Trackers" headerExtra={<Button small icon="plus" aria-label="Add tracker" onClick={() => setEditing("new")}>Add</Button>}>
       <ul className="v5-list" aria-label="Trackers">
         {trackers.length === 0
-          ? <li><EmptyState title="No trackers">Add a tracker for anything else you count, such as contamination or Splicer points.</EmptyState></li>
+          ? <li><EmptyState title="No trackers">Add a tracker for anything else you count, such as luck tokens or rune charges.</EmptyState></li>
           : trackers.map((t) => <TrackerRow key={t.id} t={t} onEdit={() => setEditing(t)} />)}
       </ul>
       {editing && <TrackerDialog tracker={editing === "new" ? null : editing} onClose={() => setEditing(null)} />}
