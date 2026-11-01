@@ -94,6 +94,7 @@ export const MENUS: readonly MenuDef[] = [
     { id: "extra", label: "Additional Content", to: "/content" },
     { id: "releases", label: "Releases", link: LINKS.releases, directOnly: true },
     { id: "support", label: "Support Page", link: LINKS.support },
+    { id: "privacy", label: "Privacy Policy", link: LINKS.privacy },
     // U15: "Support Borealis" stays hidden until a donation page exists.
     { id: "s1", label: "", separator: true },
     { id: "setup", label: "AI Setup", to: "/setup/ai", ai: true },

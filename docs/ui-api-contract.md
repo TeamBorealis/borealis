@@ -100,7 +100,7 @@ Clean-room note: sample data in the mock is original and SRD-generic.
 | Command | Args (camelCase keys) | Returns |
 |---|---|---|
 | `app_version` | none | `string` |
-| `open_link` | `{ url: string }` | `void`: opens one of the app's own web pages (`ui/src/lib/links.ts` = `src-tauri/src/links.rs`: website, changelog, GitHub Releases, Discord invite, download page) in the system browser on every platform (U15); any other address is `invalid_argument` |
+| `open_link` | `{ url: string }` | `void`: opens one of the app's own web pages (`ui/src/lib/links.ts` = `src-tauri/src/links.rs`: website, changelog, GitHub Releases, Discord invite, privacy page, download page) in the system browser on every platform (U15, B-86); any other address is `invalid_argument` |
 
 ### Characters (library)
 

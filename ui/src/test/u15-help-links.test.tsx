@@ -13,6 +13,17 @@ async function openHelp(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("U15 Help menu links", () => {
+  it.each([["a direct build", false], ["a store build", true]])("Privacy Policy opens the website's privacy page through open_link in %s (B-86)", async (_, storeBuild) => {
+    const user = userEvent.setup();
+    const api = new MockApi({ aiChunkDelayMs: 2, storeBuild });
+    renderApp("/characters", { api });
+    const open = vi.spyOn(api, "openLink");
+    await openHelp(user);
+    await user.click(await screen.findByRole("menuitem", { name: "Privacy Policy" }));
+    await waitFor(() => expect(open).toHaveBeenLastCalledWith({ url: "https://borealisbuilder.com/privacy" }));
+    expect(api.openedLinks).toEqual(["https://borealisbuilder.com/privacy"]);
+  });
+
   it("News, Releases and Support Page open their pages through open_link", async () => {
     const user = userEvent.setup();
     const { api } = renderApp("/characters");
@@ -66,7 +77,7 @@ describe("U15 Help menu links", () => {
 
   it("every menu link is on the fixed list, and the mock refuses anything else like the backend", async () => {
     const links = MENUS.flatMap((m) => m.entries).flatMap((e) => (e.link ? [e.link] : []));
-    expect(links.length).toBe(3);
+    expect(links.length).toBe(4);
     for (const l of [...links, LINKS.website]) expect(EXTERNAL_LINKS).toContain(l);
     const api = new MockApi({ aiChunkDelayMs: 2 });
     await expect(api.openLink({ url: "https://example.com/" })).rejects.toMatchObject({ code: "invalid_argument" });

@@ -12,9 +12,11 @@ pub const NEWS: &str = "https://borealisbuilder.com/changelog";
 pub const RELEASES: &str = "https://github.com/TeamBorealis/borealis/releases";
 /// Help > Support Page: the Borealis Discord invite.
 pub const SUPPORT: &str = "https://discord.gg/r4K4D3AJpZ";
+/// Help > Privacy Policy (B-86): the website's privacy page, on every platform.
+pub const PRIVACY: &str = "https://borealisbuilder.com/privacy";
 
 /// Every address the app may open, exactly as written (`ui/src/lib/links.ts` lists the same).
-pub const ALLOWED: [&str; 5] = [WEBSITE, NEWS, RELEASES, SUPPORT, DOWNLOAD_PAGE];
+pub const ALLOWED: [&str; 6] = [WEBSITE, NEWS, RELEASES, SUPPORT, PRIVACY, DOWNLOAD_PAGE];
 
 /// The allowed address equal to `url`, or `None`. Callers open the returned constant, never the
 /// caller's text.
@@ -42,6 +44,14 @@ mod tests {
             );
             assert!(!url.chars().any(char::is_whitespace), "{url}");
         }
+    }
+
+    #[test]
+    fn the_privacy_policy_is_allowed() {
+        assert_eq!(
+            allowed("https://borealisbuilder.com/privacy"),
+            Some(PRIVACY)
+        );
     }
 
     #[test]

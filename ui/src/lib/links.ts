@@ -11,6 +11,8 @@ export const LINKS = {
   news: "https://borealisbuilder.com/changelog",
   releases: "https://github.com/TeamBorealis/borealis/releases",
   support: "https://discord.gg/r4K4D3AJpZ",
+  /** Help > Privacy Policy (B-86), on every platform including store builds. */
+  privacy: "https://borealisbuilder.com/privacy",
   download: "https://borealisbuilder.com/#download",
 } as const;
 
