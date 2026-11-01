@@ -18,6 +18,7 @@
 		A23E5EA70364923FF83F16B7 /* libapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 26BB05CA6540ADB8E10C7ED2 /* libapp.a */; };
 		AC1B117415B4C3D4BFDAFCE2 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A7A56E308BDD220E7332840 /* main.mm */; };
 		AD26F56EDB414018FABCF2DE /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EE57C479613AC3DB5363C291 /* MetalKit.framework */; };
+		B3220EC545B8D23309E43BBD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7FA6EFC55D9B3E07293C875B /* PrivacyInfo.xcprivacy */; };
 		CAFEDCC99ABEEC911EDB308E /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D4ACCCC7E28F4D0404E2B1B /* Security.framework */; };
 		F9091F5E4291B08FF6CEAAC3 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = D7D6890B098D96E23BCCBB3B /* assets */; };
 /* End PBXBuildFile section */
@@ -59,6 +60,7 @@
 		70522471390B79B57BAC748B /* extras.rs */ = {isa = PBXFileReference; path = extras.rs; sourceTree = "<group>"; };
 		79A3884C014ED972CB81C97B /* import_notes.rs */ = {isa = PBXFileReference; path = import_notes.rs; sourceTree = "<group>"; };
 		7D1235914B3E89EFCD27EE0E /* error.rs */ = {isa = PBXFileReference; path = error.rs; sourceTree = "<group>"; };
+		7FA6EFC55D9B3E07293C875B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		7FD1E14D9ED9C443E53753CA /* manage.rs */ = {isa = PBXFileReference; path = manage.rs; sourceTree = "<group>"; };
 		8718417CB001885194671BEA /* state.rs */ = {isa = PBXFileReference; path = state.rs; sourceTree = "<group>"; };
 		8A55329A979C750FE7EA6314 /* session.rs */ = {isa = PBXFileReference; path = session.rs; sourceTree = "<group>"; };
@@ -268,6 +270,7 @@
 			children = (
 				D106D43B064A2D7B3E7EA1B4 /* borealis_iOS.entitlements */,
 				53CA97BCD06ABA45306B35CC /* Info.plist */,
+				7FA6EFC55D9B3E07293C875B /* PrivacyInfo.xcprivacy */,
 			);
 			path = borealis_iOS;
 			sourceTree = "<group>";
@@ -354,6 +357,7 @@
 			files = (
 				9BB5CAE0C5262847F30F7B07 /* Assets.xcassets in Resources */,
 				14D7891A4B553BCD619F6D36 /* LaunchScreen.storyboard in Resources */,
+				B3220EC545B8D23309E43BBD /* PrivacyInfo.xcprivacy in Resources */,
 				F9091F5E4291B08FF6CEAAC3 /* assets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

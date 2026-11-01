@@ -36,6 +36,8 @@ targets:
       # via LIBRARY_SEARCH_PATHS, never bundled as resources.
       - path: Externals
         excludes: ["**/*.a"]
+      # Info.plist and the entitlements are wired below; PrivacyInfo.xcprivacy (the App Store
+      # privacy manifest) is picked up from this folder as a resource of the app bundle.
       - path: borealis_iOS
       - path: assets
         buildPhase: resources
