@@ -85,24 +85,21 @@ async function waitForeignForeground(device: Device): Promise<string> {
   }
 }
 
-async function updateNotice({ app, device, screen }: Context, platform: MobilePlatform): Promise<void> {
+/** Android (the sideloaded APK; iOS is a store build, see noUpdateNoticeIos). */
+async function updateNotice({ app, device, screen }: Context): Promise<void> {
   await freshInstall(device);
   await app.open();
   await expect(screen.getByText(/^Start$/).last()).toBeVisible(SLOW);
-  writeUpdateFeed(platform, UPDATE_FEED);
+  writeUpdateFeed('android', UPDATE_FEED);
   await app.restart();
   const button = screen.getByRole('button', UPDATE);
   await expect(button).toBeVisible(NOTICE_TIMEOUT);
   // Android's accessibility tree does not expose the flyout body (the "Release" region), only its
-  // title and buttons; the version text is checked on iOS (Android: checked on screen, B-41).
-  const flyout = platform === 'ios'
-    ? screen.getByText(new RegExp(`^Version ${FIXTURE_VERSION.replace(/\./g, '\\.')} of Borealis is available\\.`))
-    : screen.getByRole('dialog', UPDATE);
-  await tapUntilVisible(button, flyout);
-  // Download hands the website to the system browser. iOS: agent-device reports the session app, not
-  // Safari, so the browser hand-off is only checked on Android (B-08 checked iOS on screen).
+  // title and buttons (the version text was checked on screen, B-41).
+  await tapUntilVisible(button, screen.getByRole('dialog', UPDATE));
+  // Download hands the website to the system browser.
   await screen.getByRole('button', /^Download$/).tap();
-  if (platform === 'android') console.info(`[m5] Download opened ${await waitForeignForeground(device)}`);
+  console.info(`[m5] Download opened ${await waitForeignForeground(device)}`);
   await app.open();
   await expect(button).toBeVisible(NOTICE_TIMEOUT);
   const close = screen.getByRole('button', /^Close$/).last();
@@ -117,6 +114,21 @@ async function updateNotice({ app, device, screen }: Context, platform: MobilePl
   await sleep(AFTER_CHECK_MS);
   await expect(screen.getByText(/^Start$/).last()).toBeVisible(SLOW);
   await expect(button).toBeHidden();
+}
+
+/**
+ * iOS is a store build (App Store rules, settings.storeBuild): even with a newer release in the feed fixture it never
+ * shows the update notice.
+ */
+async function noUpdateNoticeIos({ app, device, screen }: Context): Promise<void> {
+  await freshInstall(device);
+  await app.open();
+  await expect(screen.getByText(/^Start$/).last()).toBeVisible(SLOW);
+  writeUpdateFeed('ios', UPDATE_FEED);
+  await app.restart();
+  await expect(screen.getByText(/^Start$/).last()).toBeVisible(SLOW);
+  await sleep(AFTER_CHECK_MS);
+  await expect(screen.getByRole('button', UPDATE)).toBeHidden();
 }
 
 async function badCertIndex(ctx: Context, platform: MobilePlatform): Promise<void> {
@@ -166,7 +178,8 @@ const skip = process.env.E2E_B08 ? false : 'B-08 sweep only (E2E_B08=1)';
 for (const platform of ['ios', 'android'] as const) {
   const id = platform === 'ios' ? 'm5' : 'm5-android';
   describe(id, { tags: [platform, 'm5'], platforms: [platform], requires: ['native-app'] }, () => {
-    test('update notice: button, flyout, Download opens the browser, Close is remembered', { timeout: 300_000, skip }, (ctx) => updateNotice(ctx, platform));
+    if (platform === 'ios') test('store build: no update notice even with a newer release in the feed', { timeout: 300_000, skip }, (ctx) => noUpdateNoticeIos(ctx));
+    else test('update notice: button, flyout, Download opens the browser, Close is remembered', { timeout: 300_000, skip }, (ctx) => updateNotice(ctx));
     test('Share logs opens the share sheet', { timeout: 300_000, skip }, (ctx) => (platform === 'ios' ? shareLogsIos(ctx) : shareLogsAndroid(ctx)));
     test('an index on a host with a bad certificate fails with a message', { timeout: 300_000, skip }, (ctx) => badCertIndex(ctx, platform));
   });

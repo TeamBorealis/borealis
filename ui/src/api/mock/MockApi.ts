@@ -56,6 +56,8 @@ export interface MockApiOptions {
   aiEnabled?: boolean;
   /** Simulates an iOS/Android build: `settings.mobile` is true and AI is forced off. */
   mobile?: boolean;
+  /** Simulates a store build (iOS, Google Play): `settings.storeBuild` is true. */
+  storeBuild?: boolean;
   /** Device transfer: a simulated other device connects to an open Send/Receive window after this many ms (default: never). */
   linkPeerAfterMs?: number | null;
   /** Device transfer: paired devices to start with (Settings > Devices). */
@@ -104,6 +106,7 @@ export class MockApi implements Api {
   private latency: number;
   private codexOnly: boolean;
   private mobile: boolean;
+  private storeBuild: boolean;
   /** Imports the user agreed to run on Codex (asked once per import). */
   private consented = new Set<string>();
 
@@ -111,7 +114,8 @@ export class MockApi implements Api {
     this.latency = opts.latencyMs ?? 0;
     this.codexOnly = opts.codexOnly ?? false;
     this.mobile = opts.mobile ?? false;
-    this.settings = { ...this.settings, mobile: this.mobile, ai: { ...this.settings.ai, enabled: !this.mobile && (opts.aiEnabled ?? false) } };
+    this.storeBuild = opts.storeBuild ?? false;
+    this.settings = { ...this.settings, mobile: this.mobile, storeBuild: this.storeBuild, ai: { ...this.settings.ai, enabled: !this.mobile && (opts.aiEnabled ?? false) } };
     this.rng = opts.rng ?? Math.random;
     setClasslessEdition(opts.classlessEdition ?? null);
     this.content = new ContentService((p) => this.emit("content:progress", p), () => this.emit("content:reloaded", { reason: "content changed" }), (p) => this.emit("import5etools:progress", p));
@@ -655,7 +659,7 @@ export class MockApi implements Api {
         throw apiError("invalid_argument", "Choose folders with the folder button; they cannot be set directly.");
       }
     }
-    this.settings = { ...this.settings, ...patch, sheet: { ...this.settings.sheet, ...(patch.sheet ?? {}), cardsNewPage: { ...this.settings.sheet.cardsNewPage, ...(patch.sheet?.cardsNewPage ?? {}) } }, ai: { ...this.settings.ai, ...(patch.ai ?? {}) }, mobile: this.mobile };
+    this.settings = { ...this.settings, ...patch, sheet: { ...this.settings.sheet, ...(patch.sheet ?? {}), cardsNewPage: { ...this.settings.sheet.cardsNewPage, ...(patch.sheet?.cardsNewPage ?? {}) } }, ai: { ...this.settings.ai, ...(patch.ai ?? {}) }, mobile: this.mobile, storeBuild: this.storeBuild };
     if (this.mobile) this.settings = { ...this.settings, ai: { ...this.settings.ai, enabled: false } };
     return this.settings;
   }

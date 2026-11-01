@@ -51,7 +51,7 @@ export class MockDataFiles {
   /** Classic builder Restore Defaults: Borealis-only fields (AI, default ruleset, autosave) are kept. */
   restore(s: AppSettings): AppSettings {
     this.secondaryPacks = [];
-    return { ...DEFAULT_SETTINGS, ai: s.ai, mobile: s.mobile, defaultRuleset: s.defaultRuleset, autosave: s.autosave };
+    return { ...DEFAULT_SETTINGS, ai: s.ai, mobile: s.mobile, storeBuild: s.storeBuild, defaultRuleset: s.defaultRuleset, autosave: s.autosave };
   }
 
   clearCaches(): ClearCachesResult {

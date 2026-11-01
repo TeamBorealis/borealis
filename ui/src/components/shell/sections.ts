@@ -54,6 +54,8 @@ export interface MenuEntry {
   ai?: boolean;
   /** Target while AI is off (the entry stays, but goes to the rules-based importer). */
   noAiTo?: string;
+  /** Hidden in store builds (iOS, Google Play): store rules forbid pointing at downloads outside the store. */
+  directOnly?: boolean;
 }
 export interface MenuDef { id: string; label: string; entries: MenuEntry[] }
 
@@ -90,7 +92,7 @@ export const MENUS: readonly MenuDef[] = [
     { id: "start", label: "Get Started", to: "/characters" },
     { id: "news", label: "News", link: LINKS.news },
     { id: "extra", label: "Additional Content", to: "/content" },
-    { id: "releases", label: "Releases", link: LINKS.releases },
+    { id: "releases", label: "Releases", link: LINKS.releases, directOnly: true },
     { id: "support", label: "Support Page", link: LINKS.support },
     // U15: "Support Borealis" stays hidden until a donation page exists.
     { id: "s1", label: "", separator: true },
@@ -99,12 +101,14 @@ export const MENUS: readonly MenuDef[] = [
   ] },
 ];
 
-/** The menus for the current AI state: AI entries appear only when AI is on, and the AI importer entry is hidden (Load Character covers it). */
-export function visibleMenus(aiEnabled: boolean): readonly MenuDef[] {
+/** The menus for the current AI state and build: AI entries appear only when AI is on, the AI importer entry is hidden (Load
+ * Character covers it), and a store build has no entry that points at downloads outside the store. */
+export function visibleMenus(aiEnabled: boolean, storeBuild = false): readonly MenuDef[] {
   return MENUS.map((m) => ({
     ...m,
     entries: m.entries
-      .filter((e) => aiEnabled || (!e.ai && !e.noAiTo)),
+      .filter((e) => aiEnabled || (!e.ai && !e.noAiTo))
+      .filter((e) => !(storeBuild && e.directOnly)),
   }));
 }
 

@@ -75,6 +75,9 @@ export interface AppSettings {
   ai: AiSettings;
   /** Read-only platform flag from the backend: true on iOS/Android builds (no AI there). Ignored in patches. */
   mobile: boolean;
+  /** Read-only platform flag from the backend: true on store builds (the iOS app, the Google Play build), which never look for new
+   * versions and hide the Releases link. Ignored in patches. */
+  storeBuild: boolean;
   /** DATA FILES documents directory (characters in `<dir>/characters`); null = app default. Set only via `setDocumentsDir` (resend unchanged in `saveSettings`). */
   documentsDir: string | null;
   /** DATA FILES secondary content directory; null = unlinked. Set only via `setSecondaryContentDir` / `unlinkSecondaryContentDir`. */

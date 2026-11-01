@@ -59,6 +59,17 @@ decoded to a temp file) and `ANDROID_KEYSTORE_PASSWORD`. Local signed build (arm
 output `src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk`
 (about 21 MiB; arm64 only despite the Gradle variant name, published as `Borealis_<version>_arm64.apk`); check with `apksigner verify --print-certs`.
 
+### Google Play build (.aab)
+
+Store rules forbid pointing users at updates outside the store, so a store build never runs the update check,
+never shows the "new version available" notice and hides Help > Releases (`src-tauri/src/distribution.rs`,
+`settings.storeBuild`). iOS is always a store build. An Android build is one when `BOREALIS_DISTRIBUTION=play`
+is set at build time (read with `option_env!`, so changing it rebuilds the crate); the sideloaded APK above is
+built without it. Play build, signed like the APK:
+`BOREALIS_DISTRIBUTION=play ANDROID_KEYSTORE_PATH=... ANDROID_KEYSTORE_PASSWORD=... npm run tauri -- android build --target aarch64 --aab`,
+output `src-tauri/gen/android/app/build/outputs/bundle/universalRelease/app-universal-release.aab` (not a GitHub
+release asset; it is uploaded to Google Play).
+
 ## iOS (simulator, debug, aarch64-sim) - verified 2026-10-08
 
 Prereqs (no sudo): Xcode 27 (license accepted), `brew install cocoapods xcodegen` (the gem route needs sudo),

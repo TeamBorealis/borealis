@@ -230,6 +230,20 @@ pub fn unsupported() -> AppUpdateStatus {
     AppUpdateStatus::bare(AppUpdateState::Unsupported)
 }
 
+/// Phones (no HTTPS client in the backend): a store build answers `Disabled` without reading the
+/// debug fixture, so neither the backend nor the UI ever asks for a version (store rules,
+/// [`crate::distribution`]); any other phone build answers the fixture's status when there is one,
+/// else `Unsupported` (the UI then asks GitHub itself).
+pub fn phone_status(
+    store_build: bool,
+    fixture: impl FnOnce() -> Option<AppUpdateStatus>,
+) -> AppUpdateStatus {
+    if store_build {
+        return AppUpdateStatus::bare(AppUpdateState::Disabled);
+    }
+    fixture().unwrap_or_else(unsupported)
+}
+
 /// Pure helper for the commands: the stored status, or `Unsupported` on mobile.
 ///
 /// # Errors
@@ -290,6 +304,27 @@ impl Fetcher for GithubFetcher {
 mod tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
+
+    #[test]
+    fn a_store_build_phone_never_checks_and_ignores_the_fixture() {
+        let status = phone_status(true, || panic!("a store build must not read the fixture"));
+        assert_eq!(status.state, AppUpdateState::Disabled);
+        assert!(!status.newer && status.latest.is_none() && status.url.is_none());
+    }
+
+    #[test]
+    fn a_sideloaded_phone_answers_the_fixture_else_unsupported() {
+        assert_eq!(
+            phone_status(false, || None).state,
+            AppUpdateState::Unsupported
+        );
+        let fixture = AppUpdateStatus {
+            newer: true,
+            latest: Some("9.9.9".into()),
+            ..AppUpdateStatus::bare(AppUpdateState::Done)
+        };
+        assert_eq!(phone_status(false, || Some(fixture.clone())), fixture);
+    }
 
     struct Fake {
         calls: AtomicUsize,

@@ -25,11 +25,11 @@ function visibleEntries(entries: readonly MenuEntry[], hasCharacter: boolean): M
 /** FILE / VIEW / HELP + the loaded character's name (gold). Desktop dropdown menus with roving keyboard support. */
 export function MenuBar() {
   const { snapshot } = useShellActions();
-  const { aiEnabled } = usePlatform();
+  const { aiEnabled, storeBuild } = usePlatform();
   const [open, setOpen] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const menus: MenuModel[] = [
-    ...visibleMenus(aiEnabled).map((m) => ({ id: m.id, label: m.label, entries: m.entries })),
+    ...visibleMenus(aiEnabled, storeBuild).map((m) => ({ id: m.id, label: m.label, entries: m.entries })),
     ...(snapshot ? [{ id: "character", label: snapshot.name, entries: CHARACTER_MENU, gold: true }] : []),
   ];
   useEffect(() => {
@@ -127,12 +127,12 @@ function MenuPanel({ entries, labelledBy, onDone }: { entries: readonly MenuEntr
 export function MenuTree({ onDone }: { onDone: () => void }) {
   const activate = useActivate();
   const { flow, snapshot } = useShellActions();
-  const { aiEnabled } = usePlatform();
+  const { aiEnabled, storeBuild } = usePlatform();
   // B-48 O15: phone apps are left with the home gesture, so the phone menu has no Exit Application.
   const phone = usePhone();
   const shown = (e: MenuEntry) => !e.separator && !(phone && e.action === "exit");
   const groups: MenuModel[] = [
-    ...visibleMenus(aiEnabled).map((m) => ({ id: m.id, label: m.label, entries: m.entries })),
+    ...visibleMenus(aiEnabled, storeBuild).map((m) => ({ id: m.id, label: m.label, entries: m.entries })),
     ...(snapshot ? [{ id: "character", label: snapshot.name, entries: CHARACTER_MENU, gold: true }] : []),
   ];
   return (

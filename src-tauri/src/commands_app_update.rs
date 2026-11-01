@@ -12,12 +12,14 @@ pub const EVENT_APP_UPDATE: &str = "borealis://app-update";
 
 /// The last outcome of the startup check (`idle` before it ran, `unsupported` on mobile, where the
 /// UI makes the request itself). A phone debug build with a release-feed fixture answers from it.
+/// A store build (iOS, Google Play) answers `disabled` and never checks ([`app_update::phone_status`]).
 #[tauri::command(async)]
 pub fn app_update_status(state: State<'_, AppState>) -> ApiResult<AppUpdateStatus> {
     if cfg!(any(target_os = "android", target_os = "ios")) {
-        if let Some(status) = fixture_check(&state.paths.data) {
-            return Ok(status);
-        }
+        return Ok(app_update::phone_status(
+            crate::distribution::is_store_build(),
+            || fixture_check(&state.paths.data),
+        ));
     }
     app_update::current_status()
 }
@@ -52,10 +54,14 @@ pub async fn check_app_update(app: tauri::AppHandle) -> ApiResult<AppUpdateStatu
     Ok(status)
 }
 
+/// Phones: the fixture's answer, else `unsupported` (the UI asks GitHub); `disabled` in a store build.
 #[cfg(any(target_os = "android", target_os = "ios"))]
 #[tauri::command(async)]
 pub fn check_app_update(state: State<'_, AppState>) -> ApiResult<AppUpdateStatus> {
-    Ok(fixture_check(&state.paths.data).unwrap_or_else(app_update::unsupported))
+    Ok(app_update::phone_status(
+        crate::distribution::is_store_build(),
+        || fixture_check(&state.paths.data),
+    ))
 }
 
 /// Open the official download page in the default browser. Takes no address: only the built-in

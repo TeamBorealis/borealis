@@ -79,6 +79,7 @@ pub mod data_dirs;
 pub mod derive_cache;
 #[cfg(feature = "device-link")]
 pub mod device_sync;
+pub mod distribution;
 #[cfg(desktop)]
 pub mod drive;
 pub mod dto;

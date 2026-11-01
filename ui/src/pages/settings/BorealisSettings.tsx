@@ -34,7 +34,7 @@ export function BorealisSettings({ onClose, initialTab }: { onClose: () => void;
   const api = useApi();
   const nav = useNavigate();
   const { settings: s, update, replace } = useSettings();
-  const { mobile, aiEnabled } = usePlatform();
+  const { mobile, aiEnabled, storeBuild } = usePlatform();
   const tabs = visibleTabs(mobile, aiEnabled);
   const [picked, setTab] = useState<Tab | undefined>(initialTab as Tab | undefined);
   const tab: Tab = tabs.some((t) => t.id === picked) ? picked! : tabs[0]!.id;
@@ -124,14 +124,19 @@ export function BorealisSettings({ onClose, initialTab }: { onClose: () => void;
           <NumberField label="POINT-BUY BUDGET" value={s.pointBuyBudget} min={1} max={60} onChange={(n) => set({ pointBuyBudget: n })} />
           <NumberField label="MINIMUM BASE SCORE" value={s.abilityMinBase} min={1} max={20} onChange={(n) => set({ abilityMinBase: n })} />
           <NumberField label="MAXIMUM BASE SCORE" value={s.abilityMaxBase} min={8} max={30} onChange={(n) => set({ abilityMaxBase: n })} />
-          <FieldLabel>UPDATES</FieldLabel>
-          <DescCheck title="Check for new versions of Borealis" description="Only asks GitHub for the latest version number; nothing about you or your characters is sent."
-            checked={s.checkAppUpdates} onChange={(v) => set({ checkAppUpdates: v })} />
-          <div className="aur-set-buttons">
-            <Button disabled={checking} onClick={() => void checkNow()}>Check now</Button>
-            {updateStatus?.state === "done" && updateStatus.newer && <Button onClick={() => void openDownload(api, updateStatus.url ?? undefined)}>Download</Button>}
-          </div>
-          <p className="aur-set-help" role="status">{updateText(updateStatus)}</p>
+          {/* Store builds (iOS, Google Play) get updates from the store only, so they have no update check. */}
+          {!storeBuild && (
+            <>
+              <FieldLabel>UPDATES</FieldLabel>
+              <DescCheck title="Check for new versions of Borealis" description="Only asks GitHub for the latest version number; nothing about you or your characters is sent."
+                checked={s.checkAppUpdates} onChange={(v) => set({ checkAppUpdates: v })} />
+              <div className="aur-set-buttons">
+                <Button disabled={checking} onClick={() => void checkNow()}>Check now</Button>
+                {updateStatus?.state === "done" && updateStatus.newer && <Button onClick={() => void openDownload(api, updateStatus.url ?? undefined)}>Download</Button>}
+              </div>
+              <p className="aur-set-help" role="status">{updateText(updateStatus)}</p>
+            </>
+          )}
         </>
       )}
     </SettingsWindow>

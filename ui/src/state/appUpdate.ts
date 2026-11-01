@@ -118,13 +118,20 @@ export async function openDownload(api: Api, url: string = DOWNLOAD_PAGE): Promi
   try { await api.openDownloadPage(); } catch { window.open(url, "_blank", "noopener,noreferrer"); }
 }
 
-/** App-wide watcher (mounted once in the shell): reads the startup result, follows the backend event, and on phones runs the delayed check itself. */
+/**
+ * App-wide watcher (mounted once in the shell): reads the startup result, follows the backend event, and on phones runs the delayed
+ * check itself. A store build (iOS, Google Play) does none of it: its updates come from the store only.
+ */
 export function useAppUpdateWatcher(): void {
   const api = useApi();
   useEffect(() => {
     let alive = true;
+    // Until the backend says which build this is, nothing is shown (a store build never shows a notice).
+    let store = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     void (async () => {
+      store = await api.getSettings().then((x) => x.storeBuild, () => false);
+      if (store) return;
       let s: AppUpdateStatus;
       try { s = await api.appUpdateStatus(); } catch { return; }
       if (!alive) return;
@@ -139,7 +146,7 @@ export function useAppUpdateWatcher(): void {
         })();
       }, WEB_CHECK_DELAY_MS);
     })();
-    const off = api.subscribe("appupdate:status", (p) => { if (p.state !== "idle") setAppUpdate(p); });
+    const off = api.subscribe("appupdate:status", (p) => { if (!store && p.state !== "idle") setAppUpdate(p); });
     return () => { alive = false; clearTimeout(timer); off(); };
   }, [api]);
 }

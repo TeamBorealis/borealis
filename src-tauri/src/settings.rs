@@ -117,6 +117,10 @@ pub struct AppSettings {
     /// Read-only platform flag for the UI: this is an iOS/Android build (no AI there). Always
     /// overwritten from the build target on load and patch, never taken from the file or a patch.
     pub mobile: bool,
+    /// Read-only platform flag for the UI: this build comes from an app store (the iOS app, the
+    /// Google Play build), so it never looks for new versions and hides the Releases link
+    /// ([`crate::distribution`]). Pinned like `mobile`.
+    pub store_build: bool,
     /// Reference app DATA FILES: where characters are stored (`<dir>/characters`); `None` = app default.
     /// Changed only through `set_documents_dir` (a backend-picked folder token).
     pub documents_dir: Option<String>,
@@ -245,6 +249,7 @@ impl Default for AppSettings {
             sheet: SheetSettings::default(),
             ai: AiSettings::default(),
             mobile: IS_MOBILE,
+            store_build: crate::distribution::is_store_build(),
             documents_dir: None,
             secondary_content_dir: None,
             auto_content_update: true,
@@ -275,11 +280,12 @@ pub const ACCENT_COLORS: [&str; 10] = [
 const PORTRAIT_SIZES: std::ops::RangeInclusive<u32> = 125..=175;
 
 impl AppSettings {
-    /// Pins the platform-owned fields: `mobile` comes from the build target, and the AI assistant
-    /// is always off on mobile.
+    /// Pins the platform-owned fields: `mobile` comes from the build target, `store_build` from the
+    /// build's distribution, and the AI assistant is always off on mobile.
     #[must_use]
     fn normalized(mut self) -> Self {
         self.mobile = IS_MOBILE;
+        self.store_build = crate::distribution::is_store_build();
         if IS_MOBILE {
             self.ai.enabled = false;
         }
@@ -472,5 +478,21 @@ mod default_tests {
             .unwrap();
         assert_eq!(on.ai.enabled, !IS_MOBILE);
         assert_eq!(on.mobile, IS_MOBILE);
+    }
+
+    #[test]
+    fn store_build_comes_from_the_build_and_cannot_be_patched_or_loaded() {
+        let store = crate::distribution::is_store_build();
+        assert_eq!(AppSettings::default().store_build, store);
+        let patched = AppSettings::default()
+            .patched(&serde_json::json!({"storeBuild": !store}))
+            .unwrap();
+        assert_eq!(patched.store_build, store);
+        let dir = std::env::temp_dir().join(format!("borealis-store-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("settings.json");
+        std::fs::write(&file, format!(r#"{{"storeBuild":{}}}"#, !store)).unwrap();
+        assert_eq!(AppSettings::load(&file).store_build, store);
+        std::fs::remove_dir_all(&dir).ok();
     }
 }
