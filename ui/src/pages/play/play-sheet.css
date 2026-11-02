@@ -1,0 +1,88 @@
+/*
+ * GitHub #1 / #14 (U16(b)): rolls, the roll menu, the result card and the Abilities / Attacks / Spells sub-tabs of Play.
+ * The same list language as the other Play cards (panes.css, spell-tracker.css): Expanders with v5-list rows, small
+ * command buttons, gold counts, Aurora's menu panel and the app's toast. Phones get 44 px targets (phone/play-magic.css).
+ */
+
+/* A roll button and its small menu arrow, side by side as one control. */
+.pr-btns { display: inline-flex; align-items: stretch; flex: none; }
+.pr-roll { gap: 4px; min-width: 3.4rem; justify-content: center; font-variant-numeric: tabular-nums; -webkit-touch-callout: none; user-select: none; touch-action: manipulation; }
+.pr-roll .icon { width: 13px; height: 13px; }
+/* Even columns: a labelled value ("Check +3") and a damage line keep one width down the list. */
+.pr-labelled { min-width: 6.4rem; }
+.pr-damage { min-width: 14rem; justify-content: flex-start; }
+.pr-more { width: 18px; min-width: 0; padding: 0; margin-left: -1px; justify-content: center; }
+.pr-more .icon { width: 14px; height: 14px; }
+.pr-rolls { gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.pr-static { color: var(--text-secondary); font-size: var(--fs-sm); white-space: nowrap; }
+.pr-line .v5-row.static { min-width: 0; }
+.pr-name { min-width: 0; }
+.pr-prof { display: inline-flex; align-items: center; justify-content: center; min-width: 14px; padding-left: 6px; }
+.pr-prof .v5-pips { gap: 2px; }
+.pr-rolls .pr-prof { padding-left: 0; }
+.pr-level-slots { font-weight: 400; text-transform: none; }
+
+/* Recent rolls and the exhaustion note above the roll tabs' cards. */
+.pr-bar { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0 0 10px; }
+.pr-bar-note { flex: 1; min-width: 0; }
+
+/* The roll menu: Aurora's menu panel, sized for three words. */
+.pr-menu { min-width: 170px; }
+/* Above the result card (z 45, under dialogs at 50) and the page. */
+.v4-ctx-scrim.pr-scrim { z-index: 89; }
+.aur-menu-panel.v4-ctx.pr-menu { z-index: 90; }
+
+/* The newest roll: centred at the bottom, above the status bar; the toast's colours and border. */
+.pr-results { position: fixed; left: 50%; bottom: calc(var(--status-h) + 12px); z-index: 45; width: min(32rem, calc(100vw - 32px)); transform: translateX(-50%); pointer-events: none; }
+.pr-result { align-items: center; flex-wrap: wrap; pointer-events: auto; }
+.pr-result-text { display: flex; flex-direction: column; gap: 2px; flex: 1 1 12rem; min-width: 0; }
+.pr-result-head { display: flex; align-items: baseline; gap: 8px; }
+.pr-result-label { font-weight: 600; overflow-wrap: anywhere; }
+.pr-result-total { font-size: var(--fs-xl); font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; }
+.pr-result-dice { font-size: var(--fs-sm); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; opacity: 0.9; }
+.pr-result-cmds { display: inline-flex; align-items: center; gap: 4px; flex: none; }
+.pr-result .btn-icon { color: inherit; }
+@media (max-width: 899px) { .pr-results { bottom: calc(var(--bottom-chrome) + 12px); } }
+
+/* History and description lists. */
+.pr-history { margin: 0 0 8px; max-height: 50vh; overflow-y: auto; }
+.pr-history-row { align-items: flex-start; }
+.pr-facts { margin: 0 0 8px; padding-left: 18px; }
+.pr-facts li { margin: 0 0 2px; }
+
+/* A description in a sheet (phones): the dialog title is the name, so the pane's own title is not repeated. */
+.pr-desc-modal .pr-desc-body { padding: 0; border: 0; background: transparent; overflow: visible; }
+.pr-desc-modal .pr-desc-body .v5-desc-title { display: none; }
+
+/* ---------- Phones ---------- */
+html.phone .pr-roll { min-height: var(--ph-hit); min-width: 4.2rem; padding: 0 10px; font: 600 var(--ph-t-body)/1 var(--ph-font-ui); }
+html.phone .pr-more { width: 36px; min-height: var(--ph-hit); }
+html.phone .pr-rolls { gap: 8px; padding: 0 0 4px; }
+html.phone .pr-line > .v5-ctrls.pr-rolls:last-child { padding-bottom: 4px; }
+html.phone .pr-prof { padding-left: var(--ph-gutter); }
+html.phone .pr-rolls .pr-prof { padding-left: 0; }
+html.phone .pr-prof + .v5-row { padding-left: 8px; }
+html.phone .pr-static { font: 400 var(--ph-t-foot)/1.3 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .pr-bar { margin: 0; flex-wrap: wrap; }
+html.phone .pr-bar .btn { min-height: var(--ph-hit); padding: 0 14px; }
+html.phone .pr-bar-note { font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .pr-menu .aur-menu-item { min-height: var(--ph-hit); padding: 0 16px; font: 400 var(--ph-t-body)/1.2 var(--ph-font-ui); }
+html.phone .pr-results { bottom: calc(var(--ph-tabbar) + max(var(--safe-b), var(--kb)) + var(--ph-status) + 12px); width: auto; left: max(var(--ph-gutter), var(--safe-l)); right: max(var(--ph-gutter), var(--safe-r)); transform: none; }
+html.phone .pr-result { flex-wrap: wrap; padding: 8px 8px 8px var(--ph-gutter); }
+html.phone .pr-result-total { color: inherit; font: 700 var(--ph-t-title3)/1 var(--ph-font-ui); }
+html.phone .pr-result-cmds { margin-left: auto; }
+html.phone .pr-result-cmds .btn { min-height: 36px; }
+html.phone .pr-desc-modal .pr-desc-body { margin: 0; padding: 0; border-radius: 0; background: none; }
+html.phone .pr-level { margin-top: 8px; }
+html.phone .pr-cols { display: flex; flex-direction: column; gap: 12px; }
+/* Phone landscape: the cards in two columns, the bar across both. */
+@media (orientation: landscape) and (min-width: 640px) {
+  html.phone .pr-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 12px; }
+  html.phone .pr-cols > .pr-bar, html.phone .pr-cols > .st-conc { grid-column: 1 / -1; }
+  /* one card (attacks, one caster's spells) takes the whole width */
+  html.phone .pr-cols.pr-one { display: flex; }
+  /* the short screen keeps the result in the corner beside the cards */
+  html.phone .pr-results { left: auto; width: max(17rem, 34vw); }
+  html.phone .pr-result-cmds .btn { padding: 0 10px; }
+}
+html.phone .pr-damage, html.phone .pr-labelled { min-width: 4.2rem; }
