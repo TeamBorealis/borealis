@@ -272,6 +272,8 @@ pub struct Character {
     pub import: Option<ImportInfo>,
     /// Selections that could not be mapped.
     pub unresolved: Vec<UnresolvedSelection>,
+    /// Edits on the granted companion and companions added by hand (GitHub #13).
+    pub companions: crate::companions::Companions,
     /// Unknown top-level keys, preserved for forward compatibility.
     pub extra: BTreeMap<String, Value>,
 }
@@ -323,6 +325,11 @@ struct Wire {
     import: Option<ImportInfo>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     unresolved: Vec<UnresolvedSelection>,
+    #[serde(
+        default,
+        skip_serializing_if = "crate::companions::Companions::is_empty"
+    )]
+    companions: crate::companions::Companions,
     #[serde(flatten)]
     extra: BTreeMap<String, Value>,
 }
@@ -339,6 +346,7 @@ impl Serialize for Character {
             portrait: self.portrait.clone(),
             import: self.import.clone(),
             unresolved: self.unresolved.clone(),
+            companions: self.companions.clone(),
             extra: self.extra.clone(),
         }
         .serialize(s)
@@ -360,6 +368,7 @@ impl<'de> Deserialize<'de> for Character {
             portrait: w.portrait,
             import: w.import,
             unresolved: w.unresolved,
+            companions: w.companions,
             extra: w.extra,
         })
     }

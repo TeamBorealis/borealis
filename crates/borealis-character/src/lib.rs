@@ -1,11 +1,13 @@
 //! Character model, native JSON files (`borealis-character`) and the `.dnd5e` importer.
 
+pub mod companions;
 pub mod convert;
 pub mod crc;
 pub mod format;
 pub mod import;
 pub mod model;
 
+pub use companions::{AddedCompanion, CompanionEdits, CompanionError, CompanionTrait, Companions};
 pub use convert::{
     apply_conversion, convert_to_2024, convert_to_2024_with, Category, ConversionItem,
     ConversionPreview, ConvertError, KeyStats, MappingIndex, Outcome,
