@@ -1,13 +1,25 @@
-import { ABILITY_KEYS, type AbilityKey, type AbilityMethod, type RollRecord } from "../types";
+import { ABILITY_KEYS, type AbilityKey, type AbilityMethod, type AbilityRecord, type RollRecord } from "../types";
 import { apiError } from "./errors";
 import { type MockCharacter, type RuleSettings, STANDARD_ARRAY, noAssign, pointBuySpent, uniformScores } from "./state";
 
 export type Rng = () => number;
 const d6 = (rng: Rng) => 1 + Math.floor(rng() * 6);
 
+const arrayInOrder = (): AbilityRecord<number> =>
+  Object.fromEntries(ABILITY_KEYS.map((k, i) => [k, STANDARD_ARRAY[i]!])) as AbilityRecord<number>;
+
+/** Like the host's `set_ability_method`: point buy starts at 8s, the standard array in STR..CHA order (all assigned);
+ * manual and the roll methods keep the scores. The roll history and any array assignment are cleared. */
 export function setMethod(c: MockCharacter, method: AbilityMethod): MockCharacter {
-  const base = method === "point_buy" ? uniformScores(8) : method === "manual" ? c.base : uniformScores(method === "standard_array" ? 8 : 10);
+  if (method === "standard_array") return { ...c, method, base: arrayInOrder(), arrayAssign: arrayInOrder(), rolls: [] };
+  const base = method === "point_buy" ? uniformScores(8) : c.base;
   return { ...c, method, base, arrayAssign: noAssign(), rolls: [] };
+}
+
+/** Like the host's `reset_abilities`: the method's starting point, and 10s for manual and the roll methods. */
+export function resetScores(c: MockCharacter): MockCharacter {
+  const next = setMethod(c, c.method);
+  return c.method === "point_buy" || c.method === "standard_array" ? next : { ...next, base: uniformScores(10) };
 }
 
 export function setBase(c: MockCharacter, ability: AbilityKey, value: number, rules: RuleSettings): MockCharacter {

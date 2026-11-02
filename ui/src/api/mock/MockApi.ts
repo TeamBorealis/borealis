@@ -373,7 +373,7 @@ export class MockApi implements Api {
   async setBaseScore(a: { characterId: string; ability: Parameters<typeof abil.setBase>[1]; value: number }) { return this.mutate(a.characterId, (c) => abil.setBase(c, a.ability, a.value, this.rules)); }
   async rollAbilities(a: { characterId: string; ability?: Parameters<typeof abil.setBase>[1] }) { return this.mutate(a.characterId, (c) => abil.rollAbilities(c, this.rng, a.ability)); }
   async assignStandardArray(a: { characterId: string; ability: Parameters<typeof abil.setBase>[1]; value: number | null }) { return this.mutate(a.characterId, (c) => abil.assignArray(c, a.ability, a.value)); }
-  async resetAbilities({ characterId }: { characterId: string }) { return this.mutate(characterId, (c) => abil.setMethod(c, c.method)); }
+  async resetAbilities({ characterId }: { characterId: string }) { return this.mutate(characterId, (c) => abil.resetScores(c)); }
 
   /* ---------- options, restrictions, ruleset ---------- */
 
