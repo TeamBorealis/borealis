@@ -1,12 +1,15 @@
 import type { ReactNode } from "react";
 import "./panes.css";
 
-/** Classic builder two-pane screen: list pane (11*) beside a description pane (5*). `chat` widens the description pane. */
-export function PaneSplit({ list, desc, chat, label }: { list: ReactNode; desc: ReactNode; chat?: boolean; label?: string }) {
+/**
+ * Classic builder two-pane screen: list pane (11*) beside a description pane (5*). `chat` widens the description pane.
+ * Without `desc` there is no pane (Play on phones, where a description opens in a sheet).
+ */
+export function PaneSplit({ list, desc, chat, label }: { list: ReactNode; desc?: ReactNode; chat?: boolean; label?: string }) {
   return (
-    <div className={`v5-split ${chat ? "wide-desc" : ""}`} aria-label={label}>
+    <div className={`v5-split ${chat ? "wide-desc" : ""} ${desc === undefined ? "no-desc" : ""}`} aria-label={label}>
       <div className="v5-list-pane">{list}</div>
-      <aside className="v5-desc" aria-label={label ? `${label} details` : "Details"}>{desc}</aside>
+      {desc !== undefined && <aside className="v5-desc" aria-label={label ? `${label} details` : "Details"}>{desc}</aside>}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { Expander } from "../../components/controls";
 import { Tag } from "../ai/Panes";
 import { useCharacter } from "../../state/CharacterContext";
 import { RolledChargesEditor, chargesLabel, rolledChargeOf } from "../equipment/RolledCharges";
+import { ResourceDieButton } from "./DiceCards";
 
 const RECHARGE_LABEL: Record<string, string> = { short_rest: "Short Rest", long_rest: "Long Rest", initiative: "Initiative", dawn: "Dawn" };
 export const rechargeText = (r: PlayResource): string => r.recharge.map((x) => RECHARGE_LABEL[x] ?? x.replace(/_/g, " ")).join(" / ");
@@ -46,6 +47,7 @@ function ResourceRow({ r, selected, onSelect }: { r: PlayResource } & Pickable) 
       <Pips r={r} />
       <span className="v5-count" role="status" aria-label={`${r.name}: ${r.current} of ${r.max} uses left`}>{r.current}/{r.max}</span>
       <span className="v5-ctrls">
+        <ResourceDieButton r={r} />
         <Button small disabled={r.current <= 0} aria-label={`Spend ${r.name}`} onClick={spend}>Spend</Button>
         <Button small disabled={r.current >= r.max} aria-label={`Restore ${r.name}`} onClick={restore}>Restore</Button>
       </span>
