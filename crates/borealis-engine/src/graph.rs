@@ -1219,21 +1219,25 @@ impl<'u> Graph<'u> {
         if !alternative && !supported {
             return false;
         }
-        if !existing {
-            let mastery = crate::custom_rules::kind_of(s) == Some("mastery");
-            if !mastery
-                && !held_ok
-                && !cand.allow_duplicate
-                && self.held_or_equivalent(&cand.el.id)
-                && !self.repicks_known_spell(s, cand)
-            {
-                return false;
-            }
-        }
-        if crate::custom_rules::kind_of(s) == Some("mastery")
-            && !crate::play_rules::mastery_allows(self, s, cand)
+        // a Weapon Mastery slot masters a kind of weapon: a carried weapon of that kind is no
+        // duplicate, a weapon another mastery slot holds is (A8)
+        let mastery = crate::custom_rules::kind_of(s) == Some("mastery");
+        if !existing
+            && !mastery
+            && !held_ok
+            && !cand.allow_duplicate
+            && self.held_or_equivalent(&cand.el.id)
+            && !self.repicks_known_spell(s, cand)
         {
             return false;
+        }
+        if mastery {
+            if !crate::play_rules::mastery_allows(self, s, cand) {
+                return false;
+            }
+            if !existing && !held_ok && self.mastered_or_equivalent(&cand.el.id) {
+                return false;
+            }
         }
         if relax.requirements {
             return true;
@@ -1256,6 +1260,24 @@ impl<'u> Graph<'u> {
                 .equivalent_ids(id)
                 .iter()
                 .any(|x| self.ids.count(x) > 0)
+    }
+
+    /// A Weapon Mastery slot holds `id` or a `maps_to` equivalent of it (A8: two slots never
+    /// master one kind of weapon). The asking slot's own choice stays offered and accepted: the
+    /// option list and the selection check let the current choice through before this check.
+    fn mastered_or_equivalent(&self, id: &str) -> bool {
+        let equivalents = self.uni.equivalent_ids(id);
+        self.nodes.iter().filter(|n| n.alive).any(|n| {
+            n.slots.iter().any(|sl| {
+                let Some(c) = sl.chosen else {
+                    return false;
+                };
+                let held = self.nodes[c].e.el.id.as_str();
+                (held == id || equivalents.contains(&held))
+                    && matches!(&n.e.el.rules[sl.rule], Rule::Select(r)
+                        if crate::custom_rules::kind_of(r) == Some("mastery"))
+            })
+        })
     }
 
     /// A `prepared` spell select of a spellcasting class may choose a spell that class already

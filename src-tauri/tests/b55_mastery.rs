@@ -181,3 +181,64 @@ fn a_weapon_goes_to_a_mastery_slot_that_accepts_it() {
         "{chosen:?}"
     );
 }
+
+/// Every element id one slot offers (all rows, all versions).
+fn offered_by(app: &AppState, snap: &CharacterSnapshot, slot: &str) -> BTreeSet<String> {
+    let page = app
+        .get_slot_options(&snap.id, slot, None, None, None)
+        .expect("options");
+    let page: Value = serde_json::to_value(page).expect("json");
+    let mut out = BTreeSet::new();
+    for row in page["items"].as_array().expect("items") {
+        out.insert(row["id"].as_str().expect("id").to_string());
+        for v in row["versions"].as_array().into_iter().flatten() {
+            out.insert(v["id"].as_str().expect("id").to_string());
+        }
+    }
+    out
+}
+
+#[test]
+fn a_weapon_mastered_in_one_slot_is_not_offered_in_another() {
+    // A8: two slots that master the same kind of weapon give one mastery, not two. A weapon the
+    // character carries is no duplicate: mastery is of a kind of weapon, not of an item.
+    let (_d, app) = app();
+    let snap = hero(&app, "ID_2024_CLASS_BARBARIAN");
+    let snap = app
+        .add_item(&snap.id, BATTLEAXE, 1, false, None)
+        .expect("a Battleaxe in the inventory");
+    let slots = mastery_slots(&snap);
+    assert_eq!(slots.len(), 2, "a level 1 Barbarian masters two weapons");
+    for slot in &slots {
+        assert!(
+            offered_by(&app, &snap, slot).contains(BATTLEAXE),
+            "a carried Battleaxe blocks no mastery slot"
+        );
+    }
+    let snap = app
+        .apply_selection(&snap.id, &slots[0], BATTLEAXE)
+        .expect("Battleaxe in the first slot");
+    let first = offered_by(&app, &snap, &slots[0]);
+    let second = offered_by(&app, &snap, &slots[1]);
+    assert!(
+        first.contains(BATTLEAXE),
+        "the slot's own choice stays listed"
+    );
+    assert!(
+        !second.contains(BATTLEAXE),
+        "the second slot offers the Battleaxe again"
+    );
+    assert!(second.contains(GREATAXE), "{second:?}");
+    assert!(
+        app.apply_selection(&snap.id, &slots[1], BATTLEAXE).is_err(),
+        "the second slot accepts the weapon the first one holds"
+    );
+    let snap = app
+        .apply_selection(&snap.id, &slots[1], GREATAXE)
+        .expect("Greataxe in the second slot");
+    let first = offered_by(&app, &snap, &slots[0]);
+    assert!(
+        first.contains(BATTLEAXE) && !first.contains(GREATAXE),
+        "the first slot keeps its own choice and drops the other's: {first:?}"
+    );
+}
