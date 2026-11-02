@@ -9,7 +9,7 @@ import { type SlotDef, classIdOf, reprocess } from "./slots";
 import { isEquippable } from "./ops-equipment";
 import { emptyReasonOf } from "./edition-classes";
 import { toWireSlotId } from "./slot-ids";
-import { type MockCharacter, type RuleSettings, signed, totalLevel } from "./state";
+import { type MockCharacter, type RuleSettings, d20Tests, signed, totalLevel } from "./state";
 
 /** Content options as the backend lists them (`list_character_options`; the three built-ins are not among them). */
 export const OPTION_DEFS: OptionDef[] = [
@@ -52,12 +52,25 @@ function ammunitionFor(c: MockCharacter, a: Attack): { name: string; bonus: numb
   return ammo ? { name: ammo.displayName, bonus: getItem(ammo.itemId)?.ammoBonus ?? 0 } : null;
 }
 
+/** The modifier goes after the leading dice (`1d8 slashing` -> `1d8+3 slashing`), else at the end, as before. */
+const LEADING_DICE = /^(\d+d\d+)([+-]\d+)?/;
+function withModifier(damage: string, m: number): string {
+  const mod = m ? signed(m) : "";
+  return LEADING_DICE.test(damage) ? damage.replace(LEADING_DICE, (_all, dice: string) => `${dice}${mod}`) : damage.replace(/([+-]\d+)?$/, "") + mod;
+}
+
+/** The host's `toHit`: a numeric bonus with the D20 Test penalty, null for a save DC or free text. */
+function toHitOf(c: MockCharacter, bonus: string): number | null {
+  return /^\s*[+-]?\d+\s*$/.test(bonus) ? Number(bonus.trim().replace(/^\+/, "")) + d20Tests(c) : null;
+}
+
 function resolveAttacks(c: MockCharacter, mods: Record<string, number>, prof: number): Attack[] {
   return c.attacks.map(({ ammunition: _stale, ...a }) => {
-    if (!a.auto || !a.ability) return a;
+    if (!a.auto || !a.ability) return { ...a, toHit: toHitOf(c, a.attackBonus) };
     const ammo = ammunitionFor(c, a);
     const m = (mods[a.ability] ?? 0) + (ammo?.bonus ?? 0);
-    const resolved = { ...a, attackBonus: signed(m + prof), damage: a.damage.replace(/([+-]\d+)?$/, "") + (m ? signed(m) : "") };
+    const attackBonus = signed(m + prof);
+    const resolved = { ...a, attackBonus, damage: withModifier(a.damage, m), toHit: toHitOf(c, attackBonus) };
     return ammo ? { ...resolved, ammunition: ammo.name } : resolved;
   });
 }
@@ -91,7 +104,7 @@ export function buildSnapshot(input: MockCharacter, rules: RuleSettings): { char
     attacks: resolveAttacks(c, mods, profBonus(totalLevel(c))),
     companion: null, options: c.options,
     availableOptions: OPTION_DEFS, sourceRestrictions: c.sourceRestrictions, notices: c.notices,
-    play: buildPlay(c, spellcasting),
+    play: buildPlay(c, spellcasting, mods.con),
   };
   return { character: c, snapshot };
 }

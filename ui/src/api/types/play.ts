@@ -16,6 +16,8 @@ export interface PlayResource {
   shortRestRegain: number | null;
   longRestRegainAll: boolean;
   otherRegain?: string[];
+  /** The die one use rolls (`1d8`) when the feature has one (Bardic Inspiration); null otherwise. */
+  die?: string | null;
 }
 
 export interface PlayResourceCost { resource: string; option: string; cost: number; [k: string]: unknown }
@@ -155,6 +157,17 @@ export interface PlayTracker {
   countsUp: boolean;
 }
 
+/** The hit dice of one class: what one die heals when spent (the die plus the Constitution modifier). */
+export interface PlayHitDice {
+  className: string;
+  /** Faces of the die (8 = d8). */
+  die: number;
+  /** Dice the class gives (its level). */
+  total: number;
+  /** What one die rolls, e.g. `1d8+2`. */
+  notation: string;
+}
+
 export interface PlayState {
   speeds: Speeds;
   resources: PlayResource[];
@@ -188,6 +201,8 @@ export interface PlayState {
   /** Concentration spells the character knows or has prepared, by level and name. */
   concentrationSpells: PlayConcentrationSpell[];
   trackers: PlayTracker[];
+  /** Hit dice per class (GitHub #1). */
+  hitDice: PlayHitDice[];
 }
 
 export interface AttackMastery { name: string; text: string; mastered: boolean }

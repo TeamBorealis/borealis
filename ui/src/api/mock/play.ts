@@ -1,10 +1,10 @@
-import type { ConversionPreview, PlayResource, PlayState, PlayToggle, PlayWildShape, SpellcastingState } from "../types";
-import { getClass, getElement, getItem } from "./content";
+import type { ConversionPreview, PlayHitDice, PlayResource, PlayState, PlayToggle, PlayWildShape, SpellcastingState } from "../types";
+import { getClass, getElement, getItem, titleCase } from "./content";
 import { apiError } from "./errors";
 import { chargeResources } from "./rolled-charges";
 import { classIdOf } from "./slots";
 import { type MockTracking, afterRest, trackerPlay } from "./spell-tracker";
-import { type MockCharacter, totalLevel } from "./state";
+import { type MockCharacter, levelOf, signed, totalLevel } from "./state";
 
 /** Mutable play data of a mock character (kept optional on `MockCharacter`). */
 export interface MockPlay {
@@ -28,8 +28,13 @@ const masteryCapacity = (c: MockCharacter): number =>
 
 const resourcesFor = (c: MockCharacter): PlayResource[] => {
   const level = Math.max(1, totalLevel(c));
-  const base = { source: "Mock class", recharge: ["short_rest", "long_rest"], shortRestRegain: 1, longRestRegainAll: true };
-  return [{ ...base, id: "rage", name: "Rage", max: 2 + Math.floor(level / 4), current: 0 }, ...chargeResources(c)];
+  const base = { source: "Mock class", recharge: ["short_rest", "long_rest"], shortRestRegain: 1, longRestRegainAll: true, die: null };
+  return [
+    { ...base, id: "rage", name: "Rage", max: 2 + Math.floor(level / 4), current: 0 },
+    // A pool whose uses roll a die (Bardic Inspiration in the SRD), for the Play tab's resource dice (GitHub #1).
+    { ...base, id: "inspiration-die", name: "Inspiration Die", max: 3, current: 0, recharge: ["long_rest"], shortRestRegain: null, die: "1d6" },
+    ...chargeResources(c),
+  ];
 };
 
 const TOGGLES: Omit<PlayToggle, "on" | "active">[] = [
@@ -48,7 +53,7 @@ function itemToggles(c: MockCharacter): (Omit<PlayToggle, "on" | "active"> & { f
 const togglesOf = (c: MockCharacter) => [...TOGGLES.map((t) => ({ ...t, factor: 1 })), ...itemToggles(c)];
 
 /** The mock's `CharacterSnapshot.play` (`sc` = the snapshot's spellcasting, for the spell tracker). */
-export function buildPlay(c: MockCharacter, sc: SpellcastingState): PlayState {
+export function buildPlay(c: MockCharacter, sc: SpellcastingState, conMod = 0): PlayState {
   const p = playOf(c);
   const resources = resourcesFor(c).map((r) => ({ ...r, current: Math.max(0, r.max - (p.used[r.id] ?? 0)) }));
   const toggles = togglesOf(c).map(({ factor: _factor, ...t }) => ({ ...t, on: p.toggles.includes(t.id), active: p.toggles.includes(t.id) }));
@@ -79,7 +84,18 @@ export function buildPlay(c: MockCharacter, sc: SpellcastingState): PlayState {
     features: [{ id: "mock-feature", name: "Mock Feature", ty: "class_feature", source: "Mock class", level: 1, description: "<p>A <strong>mock</strong> feature description.</p>", displayed: true }],
     freeCasts: [], saveDcs: [],
     ...trackerPlay(p.tracking, sc),
+    hitDice: hitDiceOf(c, conMod),
   };
+}
+
+/** Hit dice per class, as the host: the class die plus the Constitution modifier. */
+function hitDiceOf(c: MockCharacter, conMod: number): PlayHitDice[] {
+  return c.classes.flatMap((cs) => {
+    const cls = getClass(classIdOf(c, cs.slotId));
+    const total = levelOf(c, cs.slotId);
+    if (!cls || total === 0) return [];
+    return [{ className: titleCase(cls.id), die: cls.hitDie, total, notation: `1d${cls.hitDie}${conMod === 0 ? "" : signed(conMod)}` }];
+  });
 }
 
 const zeroCoins = { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 };

@@ -2129,6 +2129,50 @@
       "k": "prim"
      }
     },
+    "check": {
+     "opt": false,
+     "t": {
+      "k": "object",
+      "props": {
+       "cha": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "con": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "dex": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "int": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "str": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       },
+       "wis": {
+        "opt": false,
+        "t": {
+         "k": "prim"
+        }
+       }
+      }
+     }
+    },
     "final": {
      "opt": false,
      "t": {
@@ -3092,6 +3136,12 @@
      "t": {
       "k": "prim"
      }
+    },
+    "toHit": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
     }
    }
   },
@@ -3953,6 +4003,12 @@
      }
     },
     "attackBonus": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "attackRoll": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -7702,6 +7758,35 @@
     }
    }
   },
+  "PlayHitDice": {
+   "k": "object",
+   "props": {
+    "className": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "die": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "notation": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "PlayInspirationSource": {
    "k": "object",
    "props": {
@@ -7800,6 +7885,12 @@
    "props": {
     "current": {
      "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "die": {
+     "opt": true,
      "t": {
       "k": "prim"
      }
@@ -8025,6 +8116,16 @@
        "t": {
         "k": "any"
        }
+      }
+     }
+    },
+    "hitDice": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PlayHitDice"
       }
      }
     },
@@ -10028,6 +10129,12 @@
      }
     },
     "prepared": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "ready": {
      "opt": false,
      "t": {
       "k": "prim"

@@ -3,7 +3,7 @@ import { SPELLS, getClass, getElement, getSpell, titleCase } from "./content";
 import { spellFacts } from "./facts";
 import { classIdOf } from "./slots";
 import { SLOT_TABLE, cantripsAt, casterMaxSpellLevel } from "./spell-tables";
-import { type MockCharacter, levelOf, totalLevel } from "./state";
+import { type MockCharacter, d20Tests, levelOf, totalLevel } from "./state";
 import { profBonus } from "./derive-stats";
 import { toWireSlotId } from "./slot-ids";
 
@@ -13,7 +13,7 @@ function entry(id: string, over: Partial<SpellEntry>): SpellEntry {
   const s = getSpell(id)!;
   return {
     id, name: getElement(id)?.name ?? titleCase(id), level: s.level, school: s.school, prepared: false, alwaysPrepared: false,
-    origin: "class", slotId: null, canReplace: false, concentration: s.concentration, ritual: s.ritual, casting: spellFacts(s), sourceName: getElement(id)?.sourceName ?? "", ...over,
+    origin: "class", slotId: null, canReplace: false, concentration: s.concentration, ritual: s.ritual, casting: spellFacts(s), sourceName: getElement(id)?.sourceName ?? "", ready: false, ...over,
   };
 }
 
@@ -59,10 +59,11 @@ export function deriveSpellcasting(c: MockCharacter, ab: AbilityState): Spellcas
         if (s.prepared && !s.alwaysPrepared && src && !restricted.includes(src)) s.restrictedBySource = true;
       }
     }
+    for (const s of spells) s.ready = s.level === 0 || s.prepared || s.alwaysPrepared;
     spells.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
     const counted = spells.filter((s) => s.level > 0 && s.prepared && !s.alwaysPrepared).length;
     classes.push({
-      classSlotId: cs.slotId, className: titleCase(cls.id), ability: abil, saveDc: 8 + prof + m, attackBonus: prof + m,
+      classSlotId: cs.slotId, className: titleCase(cls.id), ability: abil, saveDc: 8 + prof + m, attackBonus: prof + m, attackRoll: prof + m + d20Tests(c),
       model: cls.caster.model === "spellbook" ? "spellbook" : "prepared", cantripsMax: cantripsAt(cls.id, lvl),
       cantripsKnown: spells.filter((s) => s.level === 0).length, preparedMax: preparedLimit(m, lvl), preparedCount: counted,
       maxSpellLevel: casterMaxSpellLevel(lvl), pact: null, spells,

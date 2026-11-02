@@ -119,6 +119,7 @@ pub mod picked_files;
 pub mod picked_paths;
 pub mod play_api;
 pub mod play_dto;
+pub mod play_rolls;
 pub mod renamed_ids;
 pub mod sanitize;
 pub mod search_api;

@@ -199,6 +199,8 @@ export interface AbilityState {
   bonusSources: AbilityRecord<string[]>;
   final: AbilityRecord<number>;
   modifier: AbilityRecord<number>;
+  /** Ability check bonus: the modifier plus bonuses to every ability check and to every D20 Test (2024 Exhaustion). */
+  check: AbilityRecord<number>;
   save: AbilityRecord<{ bonus: number; proficient: boolean }>;
   cap: number;
   overCap: AbilityKey[];
@@ -256,6 +258,8 @@ export interface SpellEntry {
   casting: SpellFacts | null;
   /** Source book the spell comes from (empty when unknown). */
   sourceName: string;
+  /** Ready to cast now: a known caster's known spell, otherwise a prepared or always-prepared one; cantrips always. */
+  ready: boolean;
 }
 
 export interface ClassSpellcasting {
@@ -264,6 +268,8 @@ export interface ClassSpellcasting {
   ability: AbilityKey;
   saveDc: number;
   attackBonus: number;
+  /** What a spell attack roll adds: the attack bonus with every D20 Test modifier (2024 Exhaustion). */
+  attackRoll: number;
   model: SpellModel;
   cantripsMax: number;
   cantripsKnown: number;
@@ -423,6 +429,8 @@ export interface Attack {
   offhandDamage?: string | null;
   /** Carried +N ammunition this weapon fires (its bonus is already in the attack and damage). */
   ammunition?: string | null;
+  /** What an attack roll adds, D20 Test modifiers (2024 Exhaustion) included; null for a save row or a bonus that is not a number. */
+  toHit?: number | null;
 }
 
 export interface CompanionState {

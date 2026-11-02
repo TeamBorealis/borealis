@@ -262,6 +262,10 @@ fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> Clas
                 source_name: el
                     .map(|e| crate::elements::element_ref(e).source)
                     .unwrap_or_default(),
+                ready: crate::play_rolls::spell_ready(
+                    if c.prepare { "prepared" } else { "known" },
+                    s,
+                ),
             }
         })
         .collect();
@@ -301,6 +305,7 @@ fn caster(input: &MapInput<'_>, snap: &Engine, c: &SpellcastingSnapshot) -> Clas
         ability: ability_key(&c.ability),
         save_dc: c.dc,
         attack_bonus: c.attack,
+        attack_roll: c.attack + crate::play_rolls::d20_tests(snap),
         model: model.into(),
         cantrips_max: cantrip_slots.max(cantrips_known),
         cantrips_known,
@@ -577,24 +582,33 @@ pub fn attacks(c: &Character, snap: &Engine) -> Vec<Attack> {
         die_floor: a.die_floor,
         offhand_damage: a.offhand_damage.clone(),
         ammunition: a.ammunition.clone(),
+        // the engine's attack already holds the D20 Test modifier; a save row has no roll
+        to_hit: a.save.is_none().then_some(a.attack),
     });
-    let manual = c.details.attacks.iter().enumerate().map(|(i, a)| Attack {
-        id: format!("manual-{i}"),
-        name: a.name.clone(),
-        range: a.range.clone(),
-        attack_bonus: a.attack.clone(),
-        damage: a.damage.clone(),
-        description: a.description.clone(),
-        ability: Some(ability_key(&a.ability)).filter(|k| !k.is_empty()),
-        auto: false,
-        show_in_combat: a.displayed,
-        card: a.as_card.unwrap_or(false),
-        mastery: None,
-        crit_range: 20,
-        die_floor: None,
-        offhand_damage: None,
-        ammunition: None,
-    });
+    let d20 = crate::play_rolls::d20_tests(snap);
+    let manual = c
+        .details
+        .attacks
+        .iter()
+        .enumerate()
+        .map(move |(i, a)| Attack {
+            id: format!("manual-{i}"),
+            name: a.name.clone(),
+            range: a.range.clone(),
+            attack_bonus: a.attack.clone(),
+            damage: a.damage.clone(),
+            description: a.description.clone(),
+            ability: Some(ability_key(&a.ability)).filter(|k| !k.is_empty()),
+            auto: false,
+            show_in_combat: a.displayed,
+            card: a.as_card.unwrap_or(false),
+            mastery: None,
+            crit_range: 20,
+            die_floor: None,
+            offhand_damage: None,
+            ammunition: None,
+            to_hit: crate::play_rolls::manual_to_hit(&a.attack, d20),
+        });
     auto.chain(manual).collect()
 }
 

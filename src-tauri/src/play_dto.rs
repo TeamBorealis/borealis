@@ -86,6 +86,8 @@ pub struct PlayStateDto {
     pub concentration_spells: Value,
     /// The user's own trackers.
     pub trackers: Value,
+    /// Hit dice per class (GitHub #1).
+    pub hit_dice: Vec<crate::play_rolls::HitDiceDto>,
 }
 
 /// Map the engine's play blocks and the spell tracker view.
@@ -99,7 +101,7 @@ pub fn play_state(s: &Engine, tracker: &TrackerView) -> PlayStateDto {
             swim: s.speed.swim,
             burrow: s.speed.burrow,
         },
-        resources: dto(&s.resources),
+        resources: crate::play_rolls::resources_with_dice(s, dto(&s.resources)),
         resource_costs: dto(&s.resource_costs),
         toggles: dto(&s.toggles),
         exhaustion: dto(&s.exhaustion),
@@ -124,6 +126,7 @@ pub fn play_state(s: &Engine, tracker: &TrackerView) -> PlayStateDto {
         concentration: dto(&tracker.concentration),
         concentration_spells: dto(&tracker.concentration_spells),
         trackers: dto(&tracker.trackers),
+        hit_dice: crate::play_rolls::hit_dice(s),
     }
 }
 

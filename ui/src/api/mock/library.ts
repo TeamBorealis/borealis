@@ -1,4 +1,4 @@
-import { type AbilityMethod, type CharacterOptions, type NewCharacterRequest } from "../types";
+import { type AbilityMethod, type Attack, type CharacterOptions, type NewCharacterRequest } from "../types";
 import { EMPTY_DETAILS, type MockCharacter, noAssign, uniformScores } from "./state";
 import { makeItem } from "./ops-equipment";
 import { reprocess } from "./slots";
@@ -41,12 +41,21 @@ export const SAMPLE_CONTENT_NOTICES: readonly string[] = [
   "A user content pack could not be loaded: homebrew/broken-feats.json",
 ];
 
+const SAMPLE_ATTACK: Attack = {
+  id: "", name: "", range: "", attackBonus: "", damage: "", description: "", ability: null, auto: false, showInCombat: true, card: false, critRange: 20,
+};
+
 export function seedLibrary(notices: readonly string[] = []): MockCharacter[] {
   let fighter = createCharacter({ name: "Brannoc Ironvale", ruleset: "dnd2014", startingLevel: 3, gender: "Male", abilityMethod: "manual", options: {} }, { playerName: "Sample Player" });
   fighter = { ...fighter, base: { str: 16, dex: 12, con: 15, int: 10, wis: 13, cha: 8 }, xp: 900, group: "Campaign: Ashfall", favorite: true, dirty: false, path: "/sample/brannoc.json" };
   fighter = withChoices(fighter, { "race:0": "dwarf", "subrace:0": "hill-dwarf", "c0:class": "fighter", "bg:background": "soldier",
     "c0:skill:0": "skill-perception", "c0:skill:1": "skill-survival", "c0:style:0": "defense", "c0:subclass": "champion" });
   fighter = { ...fighter, items: [{ ...makeItem("longsword", 1), equipped: "primary" }, { ...makeItem("chain-mail", 1), equipped: "worn" }, { ...makeItem("shield", 1), equipped: "secondary" }] };
+  // GitHub #14: the attacks a table session rolls (the real host makes the Longsword row from the equipped weapon).
+  fighter = { ...fighter, attacks: [
+    { ...SAMPLE_ATTACK, id: "atk-longsword", name: "Longsword", range: "5 ft.", damage: "1d8 slashing", ability: "str", auto: true, critRange: 19 },
+    { ...SAMPLE_ATTACK, id: "atk-handaxe", name: "Handaxe", range: "20/60 ft.", attackBonus: "+5", damage: "1d6+3 slashing", description: "Thrown (range 20/60). Light." },
+  ] };
 
   let wizard = createCharacter({ name: "Seraphine Vale", ruleset: "dnd2024", startingLevel: 2, gender: "Female", abilityMethod: "manual", options: {} }, { playerName: "Sample Player" });
   wizard = { ...wizard, base: { str: 8, dex: 14, con: 13, int: 15, wis: 12, cha: 10 }, xp: 300, dirty: false, path: "/sample/seraphine.json" };
@@ -56,5 +65,9 @@ export function seedLibrary(notices: readonly string[] = []): MockCharacter[] {
     "c0:spell:0": "magic-missile", "c0:spell:1": "shield", "c0:spell:2": "sleep", "c0:spell:3": "mage-armor",
     "c0:spell:4": "detect-magic", "c0:spell:5": "identify", "c0:spell:6": "thunderwave", "c0:spell:7": "feather-fall" });
   wizard = { ...wizard, prepared: { c0: ["magic-missile", "shield", "mage-armor", "thunderwave"] }, items: [{ ...makeItem("spellbook", 1) }, { ...makeItem("dagger", 1) }, { ...makeItem("explorers-pack", 1) }] };
+  wizard = { ...wizard, attacks: [
+    { ...SAMPLE_ATTACK, id: "atk-quarterstaff", name: "Quarterstaff", range: "5 ft.", attackBonus: "+1", damage: "1d6-1 bludgeoning", description: "Versatile (1d8)." },
+    { ...SAMPLE_ATTACK, id: "atk-fire-bolt", name: "Fire Bolt", range: "120 ft.", attackBonus: "+5", damage: "1d10 fire", description: "A mote of fire. A flammable object hit by it ignites if it isn't being worn or carried." },
+  ] };
   return [fighter, wizard].map((c) => ({ ...c, notices: [...notices] }));
 }

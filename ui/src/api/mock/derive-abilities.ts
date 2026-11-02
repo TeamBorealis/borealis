@@ -1,7 +1,7 @@
 import { ABILITY_KEYS, type AbilityKey, type AbilityRecord, type AbilityState } from "../types";
 import { ABILITY_NAMES, getClass, getRace, SUBRACE_BONUS } from "./content";
 import {
-  type MockCharacter, type RuleSettings, POINT_BUY_COSTS, STANDARD_ARRAY, mod, pointBuySpent,
+  type MockCharacter, type RuleSettings, POINT_BUY_COSTS, STANDARD_ARRAY, d20Tests, mod, pointBuySpent,
 } from "./state";
 import { classIdOf } from "./slots";
 
@@ -56,6 +56,7 @@ export function deriveAbilities(c: MockCharacter, rules: RuleSettings): AbilityS
   const used = new Set(Object.values(assigned).filter((v): v is number => v !== null));
   return {
     method: c.method, base: c.base, bonus, bonusSources: sources, final, modifier, save, cap, overCap,
+    check: Object.fromEntries(ABILITY_KEYS.map((k) => [k, modifier[k] + d20Tests(c)])) as AbilityRecord<number>,
     pointBuy: c.method === "point_buy"
       ? { budget: rules.pointBuyBudget, spent, remaining: rules.pointBuyBudget - spent, costs: POINT_BUY_COSTS,
           min: unrestricted ? rules.minBase : 8, max: unrestricted ? rules.maxBase : 15, unrestricted }

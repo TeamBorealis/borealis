@@ -107,6 +107,7 @@ fn with_save_dcs(rows: Vec<crate::dto::Attack>, snap: &Engine) -> Vec<crate::dto
                         s.dc,
                         s.ability.get(..3).unwrap_or("").to_uppercase()
                     ),
+                    to_hit: None,
                     ..a
                 },
                 None => a,
@@ -299,6 +300,7 @@ fn abilities(input: &MapInput<'_>, snap: &Engine) -> AbilityState {
                 proficient: a.save_proficient,
             })
         }),
+        check: crate::play_rolls::ability_checks(snap),
         cap,
         over_cap,
         point_buy,

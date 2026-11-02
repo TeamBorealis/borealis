@@ -431,6 +431,8 @@ pub struct AbilityState {
     pub final_score: AbilityRecord<i32>,
     pub modifier: AbilityRecord<i32>,
     pub save: AbilityRecord<SaveEntry>,
+    /// Ability check bonus: the modifier, every-ability-check bonuses and D20 Test modifiers.
+    pub check: AbilityRecord<i32>,
     pub cap: i32,
     pub over_cap: Vec<String>,
     pub point_buy: Option<PointBuyState>,
@@ -499,6 +501,9 @@ pub struct SpellEntry {
     pub casting: Option<crate::gear_facts::SpellFacts>,
     /// Name of the source book the spell comes from (empty when unknown).
     pub source_name: String,
+    /// Ready to cast now (Play tab): cantrips, a known caster's known spells, otherwise the
+    /// prepared and always-prepared ones.
+    pub ready: bool,
 }
 
 /// Spellcasting of one class.
@@ -510,6 +515,8 @@ pub struct ClassSpellcasting {
     pub ability: String,
     pub save_dc: i32,
     pub attack_bonus: i32,
+    /// What a spell attack roll adds: the attack bonus with D20 Test modifiers (2024 Exhaustion).
+    pub attack_roll: i32,
     pub model: String,
     pub cantrips_max: u32,
     pub cantrips_known: u32,
@@ -711,6 +718,9 @@ pub struct Attack {
     /// Carried +N ammunition this weapon fires (its bonus is already in attack and damage).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ammunition: Option<String>,
+    /// What an attack roll adds, D20 Test modifiers (2024 Exhaustion) included; `None` for a
+    /// save row or a typed bonus that is not a number.
+    pub to_hit: Option<i32>,
 }
 
 /// The complete character view, returned by every mutation.
@@ -867,6 +877,7 @@ mod gear_dto_tests {
             die_floor: None,
             offhand_damage: None,
             ammunition: ammunition.map(str::to_string),
+            to_hit: Some(6),
         }
     }
 

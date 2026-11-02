@@ -80,6 +80,6 @@ export function chargeResources(c: MockCharacter): PlayResource[] {
   return c.items.flatMap((i) => rolledChargesOf(c, i).flatMap((r) => {
     if (seen.has(r.resourceId)) return [];
     seen.add(r.resourceId);
-    return [{ id: r.resourceId, name: r.name, max: r.value, current: r.value, source: i.displayName, recharge: ["dawn"], shortRestRegain: null, longRestRegainAll: false }];
+    return [{ id: r.resourceId, name: r.name, max: r.value, current: r.value, source: i.displayName, recharge: ["dawn"], shortRestRegain: null, longRestRegainAll: false, die: null }];
   }));
 }

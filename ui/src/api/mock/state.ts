@@ -79,6 +79,9 @@ export const noAssign = (): AbilityRecord<number | null> => ({ str: null, dex: n
 export const mod = (score: number): number => Math.floor((score - 10) / 2);
 export const signed = (n: number): string => (n >= 0 ? `+${n}` : String(n));
 
+/** The 2024 Exhaustion penalty to every D20 Test (the engine's `d20 tests` group); 0 for 2014 characters. */
+export const d20Tests = (c: MockCharacter): number => (c.ruleset === "dnd2024" ? -2 * (c.play?.exhaustion ?? 0) : 0);
+
 export const levelOf = (c: MockCharacter, slotId: string): number => c.levelOrder.filter((s) => s === slotId).length;
 export const totalLevel = (c: MockCharacter): number => c.levelOrder.length;
 
