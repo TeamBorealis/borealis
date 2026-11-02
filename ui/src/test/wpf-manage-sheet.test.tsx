@@ -17,7 +17,8 @@ describe("Manage", () => {
     await open("/manage");
     const names = (await screen.findAllByRole("tab")).map((t) => t.textContent);
     const manage = names.slice(names.indexOf("Character"));
-    expect(manage).toEqual(["Character", "Backstory", "Notes", "Allies & Organizations", "Attacks & Spellcasting"]);
+    // U18: Companion always shows (Aurora shows it only with a companion), so any character can add one.
+    expect(manage).toEqual(["Character", "Backstory", "Notes", "Allies & Organizations", "Companion", "Attacks & Spellcasting"]);
   });
 
   it("has no inline portrait section and uses combos for gender, alignment, deity, eyes, skin and hair", async () => {

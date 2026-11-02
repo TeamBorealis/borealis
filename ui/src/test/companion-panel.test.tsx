@@ -37,12 +37,23 @@ describe("the Manage > Companion tab", () => {
     expect(within(section).queryByText("AC")).toBeNull();
   });
 
-  it("has no Companion tab for a character without a companion", async () => {
+  // U18 (approved addition, like U8): Aurora hides the tab without a companion; Borealis always shows it so any character can add one (#13).
+  it("shows the Companion tab without a companion, with an empty state and Add Companion", async () => {
     const api = new MockApi();
     const id = await seededId(api, "Seraphine");
+    const user = userEvent.setup();
     renderApp("/manage", { api, openCharacterId: id });
-    await screen.findByRole("tab", { name: "Character" });
-    expect(screen.queryByRole("tab", { name: "Companion" })).toBeNull();
+    await user.click(await screen.findByRole("tab", { name: "Companion" }));
+    const section = await screen.findByRole("region", { name: "COMPANION" });
+    expect(within(section).getByText(/No companion yet/)).toBeTruthy();
+    expect(within(section).queryByLabelText("Companion Name")).toBeNull();
+    await user.click(within(section).getByRole("button", { name: "Add Companion" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add Companion" });
+    await user.type(within(dialog).getByRole("searchbox", { name: "Search creatures" }), "wolf");
+    await user.click(await within(dialog).findByRole("button", { name: /^Wolf/ }));
+    expect(await within(section).findByLabelText("Companion Name")).toHaveProperty("value", "Wolf");
+    const snap = await api.getSnapshot({ characterId: id });
+    expect(snap.companions.map((c) => c.creature?.name ?? null)).toEqual(["Wolf"]);
   });
 });
 

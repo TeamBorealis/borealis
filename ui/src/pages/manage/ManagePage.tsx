@@ -15,7 +15,7 @@ function Body() {
   /* The classic builder's set. TREASURE moved to Equipment, OPTIONS and RULES to Settings: their components stay exported (OptionsTab, RulesTab, TreasureTab). */
   const tabs = [
     { id: "character", label: "Character" }, { id: "backstory", label: "Backstory" }, { id: "notes", label: "Notes" }, { id: "allies", label: "Allies & Organizations" },
-    ...(snapshot.companion ? [{ id: "companion", label: "Companion" }] : []), { id: "attacks", label: "Attacks & Spellcasting" },
+    { id: "companion", label: "Companion" }, { id: "attacks", label: "Attacks & Spellcasting" }, // U18: Companion always shows
   ];
   return (
     <>

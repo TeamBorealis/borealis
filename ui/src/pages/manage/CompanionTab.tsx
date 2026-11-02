@@ -66,15 +66,29 @@ export function CompanionTab() {
   const [picker, setPicker] = useState<"add" | "change" | null>(null);
   const list = snapshot?.companions ?? [];
   const c = list.find((x) => x.id === selectedId) ?? list[0];
-  if (!snapshot || !c) return null;
-  const update = (patch: CompanionPatch) => void mutate((api, cid) => api.updateCompanion({ characterId: cid, companionId: c.id, patch }));
-  const original = c.creature?.name ?? "";
-  const rename = (typed: string) => update({ name: typed.trim() === original ? "" : typed.trim() });
+  if (!snapshot) return null;
   const add = async (creatureId: string | null) => {
     setPicker(null);
     const s = await mutate((api, cid) => api.addCompanion({ characterId: cid, creatureId }));
     if (s) setSelectedId(s.companions.at(-1)?.id ?? null);
   };
+  const addButton = <button type="button" className="mg-tool wide cmp-tool" onClick={() => setPicker("add")}><MgIcon name="plus" />Add Companion</button>;
+  const addPicker = picker === "add" && (
+    <CreaturePicker title="Add Companion" ruleset={snapshot.ruleset} onClose={() => setPicker(null)} onPick={(id) => void add(id)} />
+  );
+  // U18: the tab shows for every character (Aurora hides it without a companion), so anyone can add a pet, mount or hireling.
+  if (!c) return (
+    <div className="mg-page">
+      <MgSection title="COMPANION" sub={SUB_HEADER}>
+        <div className="mg-toolbar" role="toolbar" aria-label="Companion actions">{addButton}</div>
+        <p className="cmp-empty">No companion yet. Add one to keep a familiar, beast companion, mount or pet with its own name, picture, traits and notes.</p>
+      </MgSection>
+      {addPicker}
+    </div>
+  );
+  const update = (patch: CompanionPatch) => void mutate((api, cid) => api.updateCompanion({ characterId: cid, companionId: c.id, patch }));
+  const original = c.creature?.name ?? "";
+  const rename = (typed: string) => update({ name: typed.trim() === original ? "" : typed.trim() });
   const remove = async (r: CompanionState) => {
     const answer = await confirm({ title: `Remove ${r.name || "this companion"}?`, body: "Its name, picture, traits, bonuses and notes are deleted with it.", confirmLabel: "Remove", danger: true });
     if (answer === "confirm") void mutate((api, cid) => api.removeCompanion({ characterId: cid, companionId: r.id }));
@@ -82,9 +96,7 @@ export function CompanionTab() {
   return (
     <div className="mg-page">
       <MgSection title="COMPANION" sub={SUB_HEADER}>
-        <div className="mg-toolbar" role="toolbar" aria-label="Companion actions">
-          <button type="button" className="mg-tool wide cmp-tool" onClick={() => setPicker("add")}><MgIcon name="plus" />Add Companion</button>
-        </div>
+        <div className="mg-toolbar" role="toolbar" aria-label="Companion actions">{addButton}</div>
         {list.length > 1 && <CompanionList list={list} selected={c.id} onSelect={setSelectedId} onRemove={(r) => void remove(r)} />}
         <div className="mg-grid cmp-fields">
           <MgField label="Companion Name">
@@ -117,9 +129,10 @@ export function CompanionTab() {
         <NotesField key={c.id} value={c.notes} onCommit={(notes) => update({ notes })} />
       </MgSection>
       {galleryOpen && <PortraitsFlyout current={c.portrait} onClose={() => setGalleryOpen(false)} onSelect={(portrait) => update({ portrait })} />}
-      {picker && (
-        <CreaturePicker title={picker === "add" ? "Add Companion" : "Choose Creature"} ruleset={snapshot.ruleset} onClose={() => setPicker(null)}
-          onPick={(id) => { if (picker === "add") void add(id); else { setPicker(null); update({ creatureId: id }); } }} />
+      {addPicker}
+      {picker === "change" && (
+        <CreaturePicker title="Choose Creature" ruleset={snapshot.ruleset} onClose={() => setPicker(null)}
+          onPick={(id) => { setPicker(null); update({ creatureId: id }); }} />
       )}
     </div>
   );

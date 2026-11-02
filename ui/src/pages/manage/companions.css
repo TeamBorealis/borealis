@@ -21,3 +21,4 @@
   .cmp-list .atk .btns button, .cmp-trait .btns button { min-width: 44px; min-height: 44px; }
   .cmp-bonuses .aur-numeric { max-width: none; }
 }
+.cmp-empty { margin: 10px 0 0; color: var(--text-muted); font-style: italic; max-width: 60ch; }

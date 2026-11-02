@@ -107,7 +107,8 @@ describe('u7 screens', { tags: ['u7'] }, () => {
     await loadSeraphine(ctx);
     await clickMainTab(ctx, 'Manage');
     await waitFor(ctx, (_: null) => location.hash.startsWith('#/manage'), null, 'manage route');
-    expectLayout('manage tabs', 'Character|Backstory|Notes|Allies & Organizations|Attacks & Spellcasting', (await textsOf(ctx, '[role=tab]')).join('|'));
+    // U18: Companion always shows (an approved addition beyond Aurora, like U8).
+    expectLayout('manage tabs', 'Character|Backstory|Notes|Allies & Organizations|Companion|Attacks & Spellcasting', (await textsOf(ctx, '[role=tab]')).join('|'));
     await clickMainTab(ctx, 'Character Sheet');
     await waitFor(ctx, (_: null) => document.querySelectorAll('.sh-btn').length >= 2, null, 'sheet buttons');
     const first = await edgesOf(ctx, '.sh-btn', 0);
