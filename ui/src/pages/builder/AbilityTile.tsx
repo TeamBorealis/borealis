@@ -3,22 +3,27 @@ import { ABILITY_KEYS, type AbilityKey, type AbilityState } from "../../api/cont
 import { ComboBox, Icon, IconButton } from "../../components";
 import { useHoldRepeat } from "../../components/useHoldRepeat";
 import { ABILITY_LABEL } from "../../lib/format";
+import { BaseScoreField } from "./BaseScoreField";
 
 /** "Mountain Dwarf +2" -> "Mountain Dwarf (2)": classic builder lists each bonus source with its value in parentheses. */
 export const sourceLine = (s: string): string => s.replace(/\s*\+?(-?\d+)$/, " ($1)");
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 
+/** The allowed base score range outside point buy (Settings: minimum and maximum base score). */
+export interface ScoreRange { min: number; max: number }
+const DEFAULT_RANGE: ScoreRange = { min: 3, max: 30 };
+
 export interface AbilityTileProps {
-  ability: AbilityKey; state: AbilityState; onSet: (v: number) => void; onRoll: () => void; onAssign: (v: number | null) => void;
+  ability: AbilityKey; state: AbilityState; range?: ScoreRange; onSet: (v: number) => void; onRoll: () => void; onAssign: (v: number | null) => void;
 }
 
 /** AbilitiesSpinner: framed score tile (name / score / modifier pill) + chevron pair around the base value + bonus sources. */
-function AbilitySpinner({ ability, state, onSet, onRoll, onAssign }: AbilityTileProps) {
+function AbilitySpinner({ ability, state, range = DEFAULT_RANGE, onSet, onRoll, onAssign }: AbilityTileProps) {
   const { method, base, final, modifier, pointBuy, standardArray, overCap, rolls, bonusSources } = state;
   const label = ABILITY_LABEL[ability];
-  const min = pointBuy?.min ?? 3;
-  const max = pointBuy?.max ?? 30;
+  const min = pointBuy?.min ?? range.min;
+  const max = pointBuy?.max ?? range.max;
   const cur = base[ability];
   const step = pointBuy?.costs[cur + 1];
   const canUp = cur < max && (!pointBuy || pointBuy.unrestricted || (step !== undefined && pointBuy.remaining >= step - (pointBuy.costs[cur] ?? 0)));
@@ -44,7 +49,9 @@ function AbilitySpinner({ ability, state, onSet, onRoll, onAssign }: AbilityTile
         </div>
         <div className="abil-spin">
           {chevrons && <button type="button" className="abil-chev" aria-label={`Increase ${label}`} disabled={!canUp} {...hold(stepBy(1))}><Icon name="up" /></button>}
-          <span className="abil-base" title="Base score">{cur}</span>
+          {method === "manual"
+            ? <BaseScoreField label={label} value={cur} min={min} max={max} onCommit={onSet} />
+            : <span className="abil-base" title="Base score">{cur}</span>}
           {chevrons && <button type="button" className="abil-chev" aria-label={`Decrease ${label}`} disabled={!canDown} {...hold(stepBy(-1))}><Icon name="down" /></button>}
         </div>
       </div>
@@ -75,7 +82,7 @@ export function AbilityGrid(props: Omit<AbilityTileProps, "ability" | "onSet" | 
   return (
     <div className="abil-row">
       {ABILITY_KEYS.map((a) => (
-        <AbilitySpinner key={a} ability={a} state={props.state} onSet={(v) => props.onSet(a, v)} onRoll={() => props.onRoll(a)} onAssign={(v) => props.onAssign(a, v)} />
+        <AbilitySpinner key={a} ability={a} state={props.state} range={props.range} onSet={(v) => props.onSet(a, v)} onRoll={() => props.onRoll(a)} onAssign={(v) => props.onAssign(a, v)} />
       ))}
     </div>
   );

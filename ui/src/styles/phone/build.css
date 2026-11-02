@@ -6,6 +6,11 @@
 html.phone .abil-page { gap: 16px; padding: 4px 0 0; }
 html.phone .abil-top { gap: 8px 12px; font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; }
 html.phone .abil-points strong, html.phone .abil-flag { color: var(--ph-gold); }
+html.phone .abil-method-label { font: 600 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); }
+html.phone .abil-base-input {
+  width: 44px; height: 36px; margin: 2px 0; font: 600 var(--ph-t-sub)/1.2 var(--ph-font-ui); font-variant-numeric: tabular-nums; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-sm); background: var(--ph-fill); color: var(--ph-text);
+}
+html.phone .abil-base-input:focus { border-color: var(--ph-accent); outline: 2px solid var(--ph-accent); outline-offset: -1px; }
 html.phone .abil-points.over strong { color: var(--ph-danger); }
 html.phone .abil-row { gap: 16px 8px; }
 html.phone .abil-frame {
