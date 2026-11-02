@@ -1,0 +1,23 @@
+/* GitHub #13: several companions on Manage > Companion, in the Attacks tab's card and toolbar style (U7: no new look). */
+.cmp-tool { height: 26px; min-height: 26px; box-sizing: border-box; padding: 0 8px 0 5px; gap: 6px; font-size: 11px; justify-content: flex-start; }
+.cmp-tool .icon { width: 16px; height: 16px; }
+.cmp-list { margin: 0 0 12px; }
+.cmp-list .atk h3 { overflow-wrap: anywhere; }
+.cmp-trait p { font-style: normal; white-space: pre-wrap; overflow-wrap: anywhere; }
+.cmp-creature { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 6px 0 0; font-size: 11px; color: var(--text-body); }
+.cmp-creature .cmp-label { font-size: var(--fs-2xs); font-weight: 600; text-transform: uppercase; color: var(--text-muted); }
+.cmp-creature b { font-size: var(--fs-md); font-weight: 600; }
+.cmp-creature .cmp-hint { color: var(--text-muted); font-style: italic; }
+.cmp-bonuses .aur-numeric { width: 100%; max-width: 160px; }
+
+/* Creature picker (dialog): one row per creature, name over its type line. */
+.cmp-picker-list { list-style: none; margin: 0; padding: 0; max-height: min(50vh, 420px); overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+.cmp-picker-list button { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 5px 10px; min-height: 36px; background: var(--light-2); border: 1px solid transparent; border-left: 4px solid var(--aur-success); color: var(--text); text-align: left; cursor: pointer; border-radius: 0; }
+.cmp-picker-list button strong { font-size: var(--fs-md); font-weight: 600; text-transform: uppercase; }
+.cmp-picker-list button span { font-size: 11px; font-style: italic; color: var(--text-muted); }
+@media (hover: hover) and (pointer: fine) { .cmp-picker-list button:hover { border-color: var(--gray-3); border-left-color: var(--aur-success); } }
+@media (max-width: 899px) {
+  .cmp-tool { min-height: 44px; height: 44px; }
+  .cmp-list .atk .btns button, .cmp-trait .btns button { min-width: 44px; min-height: 44px; }
+  .cmp-bonuses .aur-numeric { max-width: none; }
+}

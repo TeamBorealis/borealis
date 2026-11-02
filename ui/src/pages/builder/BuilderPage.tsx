@@ -62,7 +62,8 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
     return () => clearTimeout(t);
   }, [settings.selectionFlow, next, flowTab, nav]);
   if (!snapshot) return null;
-  const hasCompanion = snapshot.companion !== null || snapshot.slots.some((s) => s.tab === "companion");
+  // Companions added by hand (GitHub #13) live on Manage > Companion only; the builder tab is for the granted one.
+  const hasCompanion = snapshot.companions.some((c) => c.granted) || snapshot.slots.some((s) => s.tab === "companion");
   const tabs: TabDef[] = [
     { id: "race", label: profile?.terminology.species ?? "Race" },
     { id: "class", label: "Class" },
