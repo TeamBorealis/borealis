@@ -57,6 +57,7 @@ pub fn build_snapshot(input: &MapInput<'_>) -> CharacterSnapshot {
     let slots_and_progress = slots(&engine_snap);
     let (slots, progress) = slots_and_progress;
     let ruleset = input.character.ruleset();
+    let companions = crate::companion_list::companions(input, &engine_snap);
     CharacterSnapshot {
         id: input.id.to_string(),
         name: input.character.meta.name.clone(),
@@ -75,7 +76,8 @@ pub fn build_snapshot(input: &MapInput<'_>) -> CharacterSnapshot {
         inventory: extras::inventory(input, &engine_snap),
         details: extras::details(input.character),
         attacks: with_save_dcs(extras::attacks(input.character, &engine_snap), &engine_snap),
-        companion: crate::companion::companion(input, &engine_snap),
+        companion: companions.first().cloned(),
+        companions,
         options: extras::options(input, &engine_snap),
         available_options: extras::available_options(input),
         source_restrictions: extras::source_restrictions(input),

@@ -50,7 +50,7 @@ import type {
   CharacterSnapshot,
   CharacterSummary,
   CoinKey,
-  CompanionState,
+  CompanionPatch,
   CompendiumFacets,
   CompendiumQuery,
   SearchHit,
@@ -297,7 +297,12 @@ export interface ApiMethods {
   upsertAttack(args: Cid & { attack: Omit<Attack, "id"> & { id?: string; asCard?: boolean } }): Promise<CharacterSnapshot>;
   removeAttack(args: Cid & { attackId: string }): Promise<CharacterSnapshot>;
   moveAttack(args: Cid & { attackId: string; direction: "up" | "down" }): Promise<CharacterSnapshot>;
-  updateCompanion(args: Cid & { patch: Partial<Pick<CompanionState, "name" | "portrait">> }): Promise<CharacterSnapshot>;
+  /** Change a companion; without `companionId` the granted one (`creatureId` applies to added companions only). */
+  updateCompanion(args: Cid & { companionId?: string; patch: CompanionPatch }): Promise<CharacterSnapshot>;
+  /** Add a companion by hand: a `companion` or `monster` element (or none) and an optional name (GitHub #13). */
+  addCompanion(args: Cid & { creatureId?: string | null; name?: string }): Promise<CharacterSnapshot>;
+  /** Remove a companion added by hand (`requirement_failed` for the granted one). */
+  removeCompanion(args: Cid & { companionId: string }): Promise<CharacterSnapshot>;
 
   /* Sheet */
   renderSheet(args: Cid & { options?: SheetOptions }): Promise<SheetPreview>;
@@ -583,6 +588,8 @@ export const COMMANDS = {
   removeAttack: "remove_attack",
   moveAttack: "move_attack",
   updateCompanion: "update_companion",
+  addCompanion: "add_companion",
+  removeCompanion: "remove_companion",
   renderSheet: "render_sheet",
   exportSheet: "export_sheet",
   searchCompendium: "search_compendium",

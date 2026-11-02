@@ -77,6 +77,8 @@ const COMMANDS: &[&str] = &[
     "remove_attack",
     "move_attack",
     "update_companion",
+    "add_companion",
+    "remove_companion",
     "preview_source_restrictions",
     "set_source_restrictions",
     "set_allow_cross_edition",

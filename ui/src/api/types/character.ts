@@ -434,6 +434,10 @@ export interface Attack {
 }
 
 export interface CompanionState {
+  /** `granted` for the companion a feature grants (a Companion select), `companion-<n>` for one added by hand. */
+  id: string;
+  /** A feature grants it: it is renamed here but changed or removed on the builder's Companion tab. */
+  granted: boolean;
   creature: ElementRef | null;
   name: string;
   portrait: string | null;
@@ -459,9 +463,30 @@ export interface CompanionState {
   burrowSpeed: number;
   skills: CompanionSkill[];
   passivePerception: number;
+  /** The creature's traits, then the user's own (`customTraits`). */
   traits: CompanionFeature[];
   actions: CompanionFeature[];
   reactions: CompanionFeature[];
+  notes: string;
+  /** Traits the user wrote (also at the end of `traits`). */
+  customTraits: CompanionFeature[];
+  /** Bonuses the user set; already included in armorClass, hp and speed. */
+  armorClassBonus: number;
+  hitPointsBonus: number;
+  speedBonus: number;
+}
+
+/** `updateCompanion` patch. Limits: names 60 characters, at most 30 traits (text 2000), notes 4000, bonuses -99..99. */
+export interface CompanionPatch {
+  name?: string;
+  portrait?: string | null;
+  notes?: string;
+  traits?: CompanionFeature[];
+  armorClassBonus?: number;
+  hitPointsBonus?: number;
+  speedBonus?: number;
+  /** Added companions only: a `companion` or `monster` element id, or null for none. */
+  creatureId?: string | null;
 }
 
 export interface CompanionSkill {
@@ -498,7 +523,10 @@ export interface CharacterSnapshot {
   inventory: InventoryState;
   details: CharacterDetails;
   attacks: Attack[];
+  /** The granted companion, else the first one added (what one-companion views read). */
   companion: CompanionState | null;
+  /** Every companion: the granted one first, then the ones added by hand (GitHub #13). */
+  companions: CompanionState[];
   options: CharacterOptions;
   availableOptions: OptionDef[];
   /** Enabled source ids; null = no restriction. */

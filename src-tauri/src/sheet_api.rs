@@ -115,13 +115,17 @@ fn sheet_content(
     out
 }
 
-/// The companion's stat block, when a creature is chosen.
-fn companion_sheet(
+/// The companion the sheet prints (the granted one, else the first added): its stat block, when a
+/// creature is chosen, and its picture (a stored picture that no longer validates is left out).
+fn printed_companion(
     ctx: &crate::session::Ctx<'_>,
     id: &str,
     session: &crate::state::Session,
     snap: &CharacterSnapshot,
-) -> Option<borealis_sheet::CompanionSheet> {
+) -> (
+    Option<borealis_sheet::CompanionSheet>,
+    Option<borealis_character::Portrait>,
+) {
     let input = crate::snapshot_map::MapInput {
         id,
         character: &session.character,
@@ -132,13 +136,14 @@ fn companion_sheet(
         rolls: &session.rolls,
         warnings: &[],
     };
-    crate::companion::companion(&input, snap).and_then(|c| crate::companion::sheet_block(&c))
-}
-
-/// The companion's portrait picture; a stored picture that no longer validates is left out.
-fn companion_portrait(session: &crate::state::Session) -> Option<borealis_character::Portrait> {
-    let url = crate::extras::ui_extras(&session.character).companion_portrait?;
-    crate::extras::portrait_from_data_url(&url).ok()
+    let Some(c) = crate::companion::companion(&input, snap) else {
+        return (None, None);
+    };
+    let portrait = c
+        .portrait
+        .as_deref()
+        .and_then(|url| crate::extras::portrait_from_data_url(url).ok());
+    (crate::companion::sheet_block(&c), portrait)
 }
 
 const PAGE_MARKER: &str = "<section class=\"page ";
@@ -190,12 +195,8 @@ impl AppState {
         let settings = self.settings()?.sheet;
         self.read(id, |ctx, s| {
             let snap = ctx.hub.engine.derive(&s.character.build);
-            let content = sheet_content(
-                &ctx.hub.store,
-                &snap,
-                companion_sheet(ctx, id, s, &snap),
-                companion_portrait(s),
-            );
+            let (companion, portrait) = printed_companion(ctx, id, s, &snap);
+            let content = sheet_content(&ctx.hub.store, &snap, companion, portrait);
             let html = render_html_with(&s.character, &snap, &sheet_options(&settings), &content)
                 .map_err(|e| sheet_error(&e))?;
             Ok(SheetPreview {
@@ -215,12 +216,8 @@ impl AppState {
         let settings = self.settings()?.sheet;
         self.read(id, |ctx, s| {
             let snap = ctx.hub.engine.derive(&s.character.build);
-            let content = sheet_content(
-                &ctx.hub.store,
-                &snap,
-                companion_sheet(ctx, id, s, &snap),
-                companion_portrait(s),
-            );
+            let (companion, portrait) = printed_companion(ctx, id, s, &snap);
+            let content = sheet_content(&ctx.hub.store, &snap, companion, portrait);
             let render_options = sheet_options(&settings);
             let stem = file_stem(&s.character.meta.name);
             if html {

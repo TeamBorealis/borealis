@@ -184,6 +184,7 @@ fn manage_commands_round_trip_through_save_and_reopen() {
     );
     app.update_companion(
         &id,
+        None,
         &json!({ "name": "Biscuit", "portrait": "data:image/png;base64,iVBORw0KGgo=" }),
     )
     .expect("companion");

@@ -745,7 +745,10 @@ pub struct CharacterSnapshot {
     pub inventory: InventoryState,
     pub details: CharacterDetails,
     pub attacks: Vec<Attack>,
+    /// The granted companion, else the first one added (what one-companion views read).
     pub companion: Option<crate::content_dto::CompanionState>,
+    /// Every companion: the granted one first, then the ones added by hand (GitHub #13).
+    pub companions: Vec<crate::content_dto::CompanionState>,
     pub options: CharacterOptions,
     pub available_options: Vec<OptionDef>,
     pub source_restrictions: Option<Vec<String>>,

@@ -81,6 +81,8 @@
     "allow-remove-attack",
     "allow-move-attack",
     "allow-update-companion",
+    "allow-add-companion",
+    "allow-remove-companion",
     "allow-preview-source-restrictions",
     "allow-set-source-restrictions",
     "allow-set-allow-cross-edition",

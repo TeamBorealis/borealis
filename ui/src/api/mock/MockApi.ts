@@ -35,6 +35,7 @@ import { renderSheetHtml } from "./sheet";
 import { buildSlotDefs } from "./slots";
 import { DEFAULT_PAGE, groupRows, queryRows, switchVersionChoices, toVersion } from "./slot-options";
 import { OPTION_DEFS, buildName, buildSnapshot } from "./snapshot";
+import { NO_COMPANIONS, addCompanion, removeCompanion, updateCompanionOf } from "./companions";
 import { type MockCharacter, type RuleSettings, levelOf } from "./state";
 import { findByWireId, toWireSlotId } from "./slot-ids";
 import { MOCK_INDEX_STATUS, mockPassage, mockSearch } from "./search";
@@ -43,6 +44,8 @@ export interface MockApiOptions {
   /** Artificial latency per call in ms (default 0). */
   latencyMs?: number;
   seed?: boolean;
+  /** Brannoc has a granted companion and two added ones (`?mockCompanions=1`, GitHub #13 screenshots). */
+  sampleCompanions?: boolean;
   rng?: () => number;
   aiChunkDelayMs?: number;
   aiAvailable?: boolean;
@@ -129,7 +132,7 @@ export class MockApi implements Api {
     this.semantic = new MockSemantic((d) => this.emit("semantic:download", d), this.mobile, opts.semantic, (i) => this.emit("semantic:index", i));
     if (opts.bundleFile) this.picks.next = `/home/me/Downloads/${opts.bundleFile.replace(/[^A-Za-z0-9 ._-]/g, "_")}`;
     this.bundles = new MockBundles((token) => this.picks.take(token, "bundle-file"), (path) => this.picks.grantBundle(path), (names) => this.addReceived(names));
-    if (opts.seed !== false) for (const c of seedLibrary(opts.contentNotices ? SAMPLE_CONTENT_NOTICES : [])) { this.chars.set(c.id, c); this.saved.set(c.id, c); }
+    if (opts.seed !== false) for (const c of seedLibrary(opts.contentNotices ? SAMPLE_CONTENT_NOTICES : [], opts.sampleCompanions)) { this.chars.set(c.id, c); this.saved.set(c.id, c); }
   }
 
   /* ---------- infrastructure ---------- */
@@ -558,9 +561,9 @@ export class MockApi implements Api {
     });
   }
 
-  async updateCompanion(a: Parameters<Api["updateCompanion"]>[0]) {
-    return this.mutate(a.characterId, (c) => ({ ...c, companionName: a.patch.name ?? c.companionName, companionPortrait: a.patch.portrait === undefined ? c.companionPortrait : a.patch.portrait }));
-  }
+  async updateCompanion(a: Parameters<Api["updateCompanion"]>[0]) { return this.mutate(a.characterId, (c) => updateCompanionOf(c, a.companionId, a.patch)); }
+  async addCompanion(a: Parameters<Api["addCompanion"]>[0]) { return this.mutate(a.characterId, (c) => ({ ...c, companions: addCompanion(c.companions ?? NO_COMPANIONS, a.creatureId, a.name) })); }
+  async removeCompanion(a: Parameters<Api["removeCompanion"]>[0]) { return this.mutate(a.characterId, (c) => ({ ...c, companions: removeCompanion(c.companions ?? NO_COMPANIONS, a.companionId) })); }
 
   /* ---------- sheet ---------- */
 

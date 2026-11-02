@@ -1,10 +1,9 @@
-//! The companion tab state: the creature chosen in a `Companion` select (an Aurora `Companion`
-//! element or a bundled `Monster` stat block) with its statistics, plus the user's name/picture.
+//! A companion creature's statistics: the creature chosen in a `Companion` select or added by
+//! hand (an Aurora `Companion` element or a bundled `Monster` stat block), and its sheet block.
+//! The list of companions is built in `companion_list`.
 
 use crate::companion_block::{self, CompanionBlock};
 use crate::content_dto::CompanionState;
-use crate::dto::{AbilityRecord, ElementRef};
-use crate::extras::ui_extras;
 use crate::snapshot_map::MapInput;
 use borealis_content::{Element, MonsterData, NO_CHALLENGE_RATING};
 use borealis_engine::snapshot::CharacterSnapshot as Engine;
@@ -23,14 +22,14 @@ const COMPANION_ABILITIES: [&str; 6] = [
 /// armor class or hit points are a formula (decision IM12a) carries the text in the note and 0 in
 /// the number, which the companion tab does not show.
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct CreatureStats {
-    armor_class: i32,
-    hp: i32,
-    armor_class_note: Option<String>,
-    hp_note: Option<String>,
-    challenge: String,
-    speed: i32,
-    abilities: [i32; 6],
+pub(crate) struct CreatureStats {
+    pub(crate) armor_class: i32,
+    pub(crate) hp: i32,
+    pub(crate) armor_class_note: Option<String>,
+    pub(crate) hp_note: Option<String>,
+    pub(crate) challenge: String,
+    pub(crate) speed: i32,
+    pub(crate) abilities: [i32; 6],
 }
 
 impl Default for CreatureStats {
@@ -93,7 +92,7 @@ fn companion_stats(el: &Element) -> CreatureStats {
 }
 
 /// The slider's companion block of a chosen creature element.
-fn creature_block(el: &Element, input: &MapInput<'_>) -> CompanionBlock {
+pub(crate) fn creature_block(el: &Element, input: &MapInput<'_>) -> CompanionBlock {
     if el.ty == "Monster" {
         return MonsterData::from_element(el).map_or_else(
             |_| CompanionBlock::default(),
@@ -103,7 +102,7 @@ fn creature_block(el: &Element, input: &MapInput<'_>) -> CompanionBlock {
     companion_block::element_block(el, &|id| input.hub.element(id).cloned())
 }
 
-fn creature_stats(el: &Element) -> CreatureStats {
+pub(crate) fn creature_stats(el: &Element) -> CreatureStats {
     if el.ty == "Monster" {
         return MonsterData::from_element(el)
             .map_or_else(|_| CreatureStats::default(), |m| monster_stats(&m));
@@ -111,63 +110,13 @@ fn creature_stats(el: &Element) -> CreatureStats {
     companion_stats(el)
 }
 
-/// The companion, when a companion creature is chosen or the user named/pictured one.
+/// The companion everything that shows one companion reads (the sheet's companion page, the
+/// information slider): the granted one, else the first one added.
 #[must_use]
 pub fn companion(input: &MapInput<'_>, snap: &Engine) -> Option<CompanionState> {
-    let chosen = snap
-        .slots
-        .iter()
-        .filter(|s| s.ty == "Companion")
-        .find_map(|s| s.chosen.as_ref());
-    let creature = chosen.map(|e| ElementRef {
-        id: e.id.clone(),
-        name: e.name.clone(),
-        ty: "companion".to_string(),
-        source: e.source.clone(),
-    });
-    let element = chosen.and_then(|e| input.hub.element(&e.id));
-    let stats = element.map(creature_stats).unwrap_or_default();
-    let block = element
-        .map(|e| creature_block(e, input))
-        .unwrap_or_default();
-    let skills = companion_block::skills(&block, &stats.abilities);
-    let c = input.character;
-    let portrait = ui_extras(c).companion_portrait;
-    let name = c.details.companion_name.clone();
-    if creature.is_none() && portrait.is_none() && name.is_empty() {
-        return None;
-    }
-    Some(CompanionState {
-        name: if name.is_empty() {
-            creature
-                .as_ref()
-                .map(|e| e.name.clone())
-                .unwrap_or_default()
-        } else {
-            name
-        },
-        creature,
-        portrait,
-        armor_class: stats.armor_class,
-        hp: stats.hp,
-        armor_class_note: stats.armor_class_note,
-        hp_note: stats.hp_note,
-        challenge: stats.challenge,
-        speed: stats.speed,
-        abilities: AbilityRecord::from_fn(|i| stats.abilities[i]),
-        proficiency: block.proficiency,
-        initiative: block.initiative,
-        build: block.build,
-        fly_speed: block.speeds[0],
-        climb_speed: block.speeds[1],
-        swim_speed: block.speeds[2],
-        burrow_speed: block.speeds[3],
-        passive_perception: companion_block::passive_perception(&skills),
-        skills,
-        traits: block.traits,
-        actions: block.actions,
-        reactions: block.reactions,
-    })
+    crate::companion_list::companions(input, snap)
+        .into_iter()
+        .next()
 }
 
 /// The companion's stat block for the printed sheet; `None` when no creature is chosen (a name or
@@ -219,6 +168,7 @@ pub fn sheet_block(c: &CompanionState) -> Option<borealis_sheet::CompanionSheet>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dto::{AbilityRecord, ElementRef};
 
     #[test]
     fn leading_int_reads_printed_numbers() {
@@ -245,6 +195,13 @@ mod tests {
     #[test]
     fn sheet_block_needs_a_chosen_creature() {
         let state = |creature: Option<ElementRef>| CompanionState {
+            id: crate::companion_list::GRANTED_ID.into(),
+            granted: true,
+            notes: String::new(),
+            custom_traits: Vec::new(),
+            armor_class_bonus: 0,
+            hit_points_bonus: 0,
+            speed_bonus: 0,
             creature,
             name: "Rex".into(),
             portrait: None,

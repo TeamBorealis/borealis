@@ -6,6 +6,7 @@ import { MockApi } from "../api/mock";
 import { renderApp, seededId } from "./utils";
 
 const base: CompanionState = {
+  id: "granted", granted: true, notes: "", customTraits: [], armorClassBonus: 0, hitPointsBonus: 0, speedBonus: 0,
   creature: { id: "ID_WOLF", name: "Wolf", type: "companion", source: "Test" }, name: "Pip", portrait: null,
   armorClass: 12, hp: 9, armorClassNote: null, hpNote: null, challenge: "1/8", speed: 40,
   abilities: { str: 14, dex: 12, con: 10, int: 2, wis: 10, cha: 6 },
@@ -18,7 +19,7 @@ async function open(companion: CompanionState) {
   const api = new MockApi();
   const id = await seededId(api, "Seraphine");
   const load = api.loadCharacter.bind(api);
-  vi.spyOn(api, "loadCharacter").mockImplementation(async (a) => ({ ...(await load(a)), companion }));
+  vi.spyOn(api, "loadCharacter").mockImplementation(async (a) => ({ ...(await load(a)), companion, companions: [companion] }));
   const user = userEvent.setup();
   renderApp("/manage", { api, openCharacterId: id });
   return user;

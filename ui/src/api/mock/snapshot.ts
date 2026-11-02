@@ -1,5 +1,6 @@
 import type { Attack, CharacterSnapshot, OptionDef, SelectionProgress, SelectionSlot, BuilderTab } from "../types";
 import { getElement, getItem, titleCase } from "./content";
+import { buildCompanions } from "./companions";
 import { deriveAbilities } from "./derive-abilities";
 import { deriveInventory } from "./derive-inventory";
 import { deriveSpellcasting } from "./derive-spells";
@@ -97,12 +98,13 @@ export function buildSnapshot(input: MockCharacter, rules: RuleSettings): { char
   const items = c.items.map((i) => ({ ...i, isWeapon: !!getItem(i.itemId)?.weapon, equippable: i.equippable ?? isEquippable(getItem(i.itemId)) }));
   const inv = deriveInventory({ ...c, items }, abilities);
   const spellcasting = deriveSpellcasting(c, abilities);
+  const companions = buildCompanions(c.companionName, c.companionPortrait, c.companions);
   const snapshot: CharacterSnapshot = {
     id: c.id, name: c.name, ruleset: c.ruleset, portrait: c.portrait, group: c.group, favorite: c.favorite, dirty: c.dirty, displayPath: c.path ?? "",
     level: deriveLevel(c), abilities, stats, slots, progress: progress(slots),
     spellcasting, inventory: inv, details: c.details,
     attacks: resolveAttacks(c, mods, profBonus(totalLevel(c))),
-    companion: null, options: c.options,
+    companion: companions[0] ?? null, companions, options: c.options,
     availableOptions: OPTION_DEFS, sourceRestrictions: c.sourceRestrictions, notices: c.notices,
     play: buildPlay(c, spellcasting, mods.con),
   };

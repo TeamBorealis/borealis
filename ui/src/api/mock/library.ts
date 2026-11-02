@@ -1,4 +1,5 @@
 import { type AbilityMethod, type Attack, type CharacterOptions, type NewCharacterRequest } from "../types";
+import { SAMPLE_COMPANIONS } from "./companions";
 import { EMPTY_DETAILS, type MockCharacter, noAssign, uniformScores } from "./state";
 import { makeItem } from "./ops-equipment";
 import { reprocess } from "./slots";
@@ -45,7 +46,7 @@ const SAMPLE_ATTACK: Attack = {
   id: "", name: "", range: "", attackBonus: "", damage: "", description: "", ability: null, auto: false, showInCombat: true, card: false, critRange: 20,
 };
 
-export function seedLibrary(notices: readonly string[] = []): MockCharacter[] {
+export function seedLibrary(notices: readonly string[] = [], companions = false): MockCharacter[] {
   let fighter = createCharacter({ name: "Brannoc Ironvale", ruleset: "dnd2014", startingLevel: 3, gender: "Male", abilityMethod: "manual", options: {} }, { playerName: "Sample Player" });
   fighter = { ...fighter, base: { str: 16, dex: 12, con: 15, int: 10, wis: 13, cha: 8 }, xp: 900, group: "Campaign: Ashfall", favorite: true, dirty: false, path: "/sample/brannoc.json" };
   fighter = withChoices(fighter, { "race:0": "dwarf", "subrace:0": "hill-dwarf", "c0:class": "fighter", "bg:background": "soldier",
@@ -56,6 +57,7 @@ export function seedLibrary(notices: readonly string[] = []): MockCharacter[] {
     { ...SAMPLE_ATTACK, id: "atk-longsword", name: "Longsword", range: "5 ft.", damage: "1d8 slashing", ability: "str", auto: true, critRange: 19 },
     { ...SAMPLE_ATTACK, id: "atk-handaxe", name: "Handaxe", range: "20/60 ft.", attackBonus: "+5", damage: "1d6+3 slashing", description: "Thrown (range 20/60). Light." },
   ] };
+  if (companions) fighter = { ...fighter, companionName: "Grip", companions: SAMPLE_COMPANIONS };
 
   let wizard = createCharacter({ name: "Seraphine Vale", ruleset: "dnd2024", startingLevel: 2, gender: "Female", abilityMethod: "manual", options: {} }, { playerName: "Sample Player" });
   wizard = { ...wizard, base: { str: 8, dex: 14, con: 13, int: 15, wis: 12, cha: 10 }, xp: 300, dirty: false, path: "/sample/seraphine.json" };

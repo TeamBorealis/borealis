@@ -271,6 +271,10 @@ pub enum MoveDirection {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CompanionState {
+    /// `granted` for the companion content grants, `companion-<n>` for one added by hand.
+    pub id: String,
+    /// Content grants it (a `Companion` select): it is renamed here but removed in the builder.
+    pub granted: bool,
     pub creature: Option<ElementRef>,
     pub name: String,
     pub portrait: Option<String>,
@@ -299,9 +303,18 @@ pub struct CompanionState {
     pub burrow_speed: i32,
     pub skills: Vec<CompanionSkill>,
     pub passive_perception: i32,
+    /// The creature's traits, then the user's own (`custom_traits`).
     pub traits: Vec<CompanionFeature>,
     pub actions: Vec<CompanionFeature>,
     pub reactions: Vec<CompanionFeature>,
+    /// The user's notes.
+    pub notes: String,
+    /// The traits the user wrote (also at the end of `traits`).
+    pub custom_traits: Vec<CompanionFeature>,
+    /// Bonuses the user set; already included in `armor_class`, `hp` and `speed`.
+    pub armor_class_bonus: i32,
+    pub hit_points_bonus: i32,
+    pub speed_bonus: i32,
 }
 
 /// One companion skill line: name, key ability abbreviation and signed bonus.

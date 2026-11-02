@@ -10,6 +10,18 @@
     }
    }
   },
+  "add_companion": {
+   "args": {
+    "characterId": false,
+    "creatureId": true,
+    "name": true
+   },
+   "method": "addCompanion",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
   "add_index": {
    "args": {
     "url": false
@@ -1159,6 +1171,17 @@
     "name": "CharacterSnapshot"
    }
   },
+  "remove_companion": {
+   "args": {
+    "characterId": false,
+    "companionId": false
+   },
+   "method": "removeCompanion",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
   "remove_index": {
    "args": {
     "url": false
@@ -1903,6 +1926,7 @@
   "update_companion": {
    "args": {
     "characterId": false,
+    "companionId": true,
     "patch": false
    },
    "method": "updateCompanion",
@@ -3510,6 +3534,16 @@
       "name": "CompanionState"
      }
     },
+    "companions": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "CompanionState"
+      }
+     }
+    },
     "details": {
      "opt": false,
      "t": {
@@ -4248,6 +4282,12 @@
       "k": "prim"
      }
     },
+    "armorClassBonus": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "armorClassNote": {
      "opt": false,
      "t": {
@@ -4285,7 +4325,29 @@
       "name": "ElementRef"
      }
     },
+    "customTraits": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "CompanionFeature"
+      }
+     }
+    },
     "flySpeed": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "granted": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "hitPointsBonus": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -4303,6 +4365,12 @@
       "k": "prim"
      }
     },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "initiative": {
      "opt": false,
      "t": {
@@ -4310,6 +4378,12 @@
      }
     },
     "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "notes": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -4354,6 +4428,12 @@
      }
     },
     "speed": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "speedBonus": {
      "opt": false,
      "t": {
       "k": "prim"

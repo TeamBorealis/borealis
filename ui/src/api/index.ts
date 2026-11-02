@@ -30,5 +30,7 @@ export function createApi(): Api {
   const classlessEdition = classless === "dnd2014" || classless === "dnd2024" ? classless : null;
   // `?mockNotices=1`: the seeded characters carry content notices (GitHub #11 C1 screenshots).
   const contentNotices = new URLSearchParams(window.location.search).get("mockNotices") === "1";
-  return new MockApi({ aiChunkDelayMs: 30, mobile, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null, bundleFile: bundle, semantic, classlessEdition, contentNotices });
+  // `?mockCompanions=1`: Brannoc has a granted companion and two added ones (GitHub #13 screenshots).
+  const sampleCompanions = new URLSearchParams(window.location.search).get("mockCompanions") === "1";
+  return new MockApi({ aiChunkDelayMs: 30, mobile, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null, bundleFile: bundle, semantic, classlessEdition, contentNotices, sampleCompanions });
 }

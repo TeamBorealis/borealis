@@ -1,4 +1,4 @@
-//! Manage services: details, appearance and notes, manual attacks, companion, source restrictions,
+//! Manage services: details, appearance and notes, manual attacks, source restrictions,
 //! cross-edition mode and the compatibility report.
 
 use crate::content_dto::{
@@ -6,7 +6,7 @@ use crate::content_dto::{
 };
 use crate::dto::{CharacterSnapshot, ElementRef};
 use crate::error::{ApiError, ApiResult};
-use crate::extras::{portrait_from_data_url, set_ui_extras, ui_extras};
+use crate::extras::{set_ui_extras, ui_extras};
 use crate::ids::{ability_index, encode_slot, ui_type};
 use crate::session::Draft;
 use crate::state::AppState;
@@ -187,39 +187,6 @@ impl AppState {
             if let Some(to) = to {
                 list.swap(at, to);
             }
-            Ok(())
-        })
-    }
-
-    /// Set the companion's name and/or portrait (`null` clears the portrait).
-    ///
-    /// # Errors
-    /// `invalid_argument` for bad names or images.
-    pub fn update_companion(&self, id: &str, patch: &Value) -> ApiResult<CharacterSnapshot> {
-        let map = patch
-            .as_object()
-            .ok_or_else(|| ApiError::invalid("The companion patch must be an object."))?;
-        self.mutate(id, |_, d| {
-            let mut extras = ui_extras(&d.character);
-            for (key, value) in map {
-                match (key.as_str(), value) {
-                    ("name", v) => {
-                        let name = text_of("name", v)?;
-                        d.character.details.companion_name = name.trim().to_string();
-                    }
-                    ("portrait", Value::Null) => extras.companion_portrait = None,
-                    ("portrait", Value::String(url)) => {
-                        portrait_from_data_url(url).map_err(ApiError::invalid)?;
-                        extras.companion_portrait = Some(url.clone());
-                    }
-                    (other, _) => {
-                        return Err(ApiError::invalid(format!(
-                            "Unknown companion field \"{other}\"."
-                        )));
-                    }
-                }
-            }
-            set_ui_extras(&mut d.character, &extras);
             Ok(())
         })
     }

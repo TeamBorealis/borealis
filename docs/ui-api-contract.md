@@ -43,7 +43,8 @@ Clean-room note: sample data in the mock is original and SRD-generic.
 | `inventory` | items, coins, total gp, carried weight / capacity (STR x 15), attunement `used/max`, storage names, **transient `warnings`** |
 | `details` | the Manage text fields (name excluded: use `update_character_meta`) |
 | `attacks` | manual and automatic attacks; automatic ones carry the computed `attackBonus` and `damage` (spell attack counted once everywhere); every row carries `toHit` (what an attack roll adds, D20 Test modifiers included; null for a save row or a typed bonus that is not a number) |
-| `companion` | `null` unless the build has a companion |
+| `companion` | the granted companion, else the first one added; `null` without companions |
+| `companions` | every companion (GitHub #13): the granted one (`id` `granted`) first, then the ones added by hand (`companion-<n>`) |
 | `options, availableOptions` | character options (multiclassing, feats, average HP, house rules) and the option definitions to render |
 | `sourceRestrictions` | enabled source ids, `null` = unrestricted |
 | `notices` | informational diagnostics, e.g. import `LegacyDivergence` lines |
@@ -240,7 +241,9 @@ seed step carrying the snapshot value.
 | `upsert_attack` | `characterId, { attack: Omit<Attack, "id"> & { id?: string } }` | `CharacterSnapshot` |
 | `remove_attack` | `characterId, { attackId: string }` | `CharacterSnapshot` |
 | `move_attack` | `characterId, { attackId: string; direction: "up" \| "down" }` | `CharacterSnapshot` |
-| `update_companion` | `characterId, { patch: Partial<Pick<CompanionState, "name" \| "portrait">> }` | `CharacterSnapshot` |
+| `update_companion` | `characterId, { companionId?: string; patch: CompanionPatch }` | `CharacterSnapshot` |
+| `add_companion` | `characterId, { creatureId?: string \| null; name?: string }` | `CharacterSnapshot` |
+| `remove_companion` | `characterId, { companionId: string }` | `CharacterSnapshot` |
 
 ### Sheet
 
@@ -422,6 +425,15 @@ without the host: the host commands answer `invalid_argument` / `supported: fals
   characters are `invalid_argument`. Details map onto the character file (identity, appearance, personality, notes);
   `alignment`, `deity` and the companion portrait live in the file's `extra.ui` block. `companion` in the snapshot is
   non-null when a Companion slot is chosen or a name/portrait was set (stats are 0/10 until companion stat blocks exist).
+- Several companions (GitHub #13, U16(c)): `update_companion` without `companionId` (or with `granted`) changes the
+  granted companion as before; its name stays in `details.companion_name` and its picture in `extra.ui`. Notes, traits
+  and the armor class, hit point and speed bonuses of every companion, and the companions added by hand, are saved
+  under the top-level `companions` key, which is left out when empty (a file with zero or one companion and no edits
+  is written byte for byte as before). `add_companion` takes a `Companion` or `Monster` element (or none; a
+  non-creature is `invalid_argument`, an unknown id `not_found`) and answers `requirement_failed` past 12 added
+  companions; `remove_companion` refuses the granted one (`requirement_failed`). Bonuses are already included in
+  `armorClass`, `hp` and `speed`; the user's traits are listed in `customTraits` and again after the creature's own
+  in `traits`. Limits: names 60 characters, 30 traits (text 2000), notes 4000, bonuses -99..99.
 - Manual attacks have ids `manual-<index>`; `upsert_attack` without `id` appends, `move_attack` swaps within the manual
   attacks, automatic attacks (`auto: true`) answer `requirement_failed`. The attack's `card` flag is not stored yet.
 - `set_source_restrictions` narrows option lists only: the engine never unregisters stored picks, so
@@ -482,7 +494,8 @@ tested reference of the *behaviour* the UI expects (it implements every command,
 - `save_character_as` / `export_*` need `tauri-plugin-dialog` for the native save dialog (path omitted).
 - `import_character` takes bytes; the Rust importer decides `.dnd5e` vs native JSON by content.
 - Delete is permanent: the UI confirms first; a `restore_character` command is not in v1.
-- Companion editing is limited to name/portrait (`update_companion`); companion pickers arrive as `companion` tab slots.
+- The granted companion's creature is picked in the `companion` tab slots; an added companion's creature is any
+  `companion` or `monster` element (`update_companion` with `creatureId`).
 - Spell-slot expenditure (play tracking) is intentionally out of scope; only slot totals are exposed.
 
 ## 7. `--mcp` mode, AI profile and first-run AI setup

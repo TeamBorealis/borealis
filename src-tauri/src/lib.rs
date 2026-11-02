@@ -51,7 +51,9 @@ pub mod commands_sync;
 pub mod commands_system;
 pub mod commands_tracker;
 pub mod companion;
+pub mod companion_api;
 pub mod companion_block;
+pub mod companion_list;
 pub mod compendium;
 mod compendium_monster;
 // The only module allowed `unsafe` (Windows console FFI); see src-tauri/Cargo.toml [lints].
@@ -399,6 +401,8 @@ pub fn run() {
             commands_content::remove_attack,
             commands_content::move_attack,
             commands_content::update_companion,
+            commands_content::add_companion,
+            commands_content::remove_companion,
             commands_content::preview_source_restrictions,
             commands_content::set_source_restrictions,
             commands_content::set_allow_cross_edition,

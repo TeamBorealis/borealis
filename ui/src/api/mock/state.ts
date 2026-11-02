@@ -1,3 +1,4 @@
+import type { MockCompanions } from "./companions";
 import type { MockPlay } from "./play";
 import type {
   AbilityKey, AbilityMethod, AbilityRecord, Attack, CharacterDetails, CharacterOptions, Coins,
@@ -46,6 +47,8 @@ export interface MockCharacter {
   play?: MockPlay;
   companionName: string;
   companionPortrait: string | null;
+  /** Edits on the granted companion and companions added by hand (GitHub #13); absent = none. */
+  companions?: MockCompanions;
   sourceRestrictions: string[] | null;
   notices: string[];
   warnings: string[];

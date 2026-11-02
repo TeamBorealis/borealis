@@ -113,9 +113,29 @@ pub fn move_attack(
 pub fn update_companion(
     state: S<'_>,
     character_id: String,
+    companion_id: Option<String>,
     patch: Value,
 ) -> ApiResult<CharacterSnapshot> {
-    state.update_companion(&character_id, &patch)
+    state.update_companion(&character_id, companion_id.as_deref(), &patch)
+}
+
+#[tauri::command(async)]
+pub fn add_companion(
+    state: S<'_>,
+    character_id: String,
+    creature_id: Option<String>,
+    name: Option<String>,
+) -> ApiResult<CharacterSnapshot> {
+    state.add_companion(&character_id, creature_id.as_deref(), name.as_deref())
+}
+
+#[tauri::command(async)]
+pub fn remove_companion(
+    state: S<'_>,
+    character_id: String,
+    companion_id: String,
+) -> ApiResult<CharacterSnapshot> {
+    state.remove_companion(&character_id, &companion_id)
 }
 
 #[tauri::command(async)]
