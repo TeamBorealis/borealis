@@ -2,7 +2,8 @@ import { CheckBox } from "../../components/controls";
 import { useState } from "react";
 import { ABILITY_KEYS, type Api, type AbilityMethod, type CharacterSnapshot, type ClassCounts, type OptionDef, type Ruleset } from "../../api/contract";
 import { Button, ComboBox, Expander, Flyout, IconButton, TextBox } from "../../components";
-import { methodLabel, randomName } from "../../lib/format";
+import { abilityMethodOptions, STANDARD_ARRAY as SHARED_STANDARD_ARRAY } from "../../lib/abilityMethods";
+import { randomName } from "../../lib/format";
 import { useApi } from "../../state/ApiContext";
 import { useSettings } from "../../state/SettingsContext";
 import { useAsync } from "../../state/useAsync";
@@ -22,9 +23,8 @@ export interface NewCharacterForm {
 export const customOptions = (defs: OptionDef[], f: Pick<NewCharacterForm, "custom">): Record<string, boolean> =>
   Object.fromEntries(defs.map((d) => [d.id, f.custom[d.id] ?? d.defaultOn]));
 
-const METHODS: AbilityMethod[] = ["point_buy", "standard_array", "roll_4d6", "roll_3d6", "manual"];
 const ABILITIES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
-export const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8];
+export const STANDARD_ARRAY: number[] = [...SHARED_STANDARD_ARRAY];
 const EDITIONS: { id: Ruleset; year: string; note: string }[] = [
   { id: "dnd2024", year: "2024", note: "Revised rules (SRD 5.2)" },
   { id: "dnd2014", year: "2014", note: "Classic rules (SRD 5.1)" },
@@ -67,7 +67,7 @@ export function noClassesWarning(counts: ClassCounts, ruleset: Ruleset): string 
 
 const OPTIONS = BUILT_IN_OPTION_DEFS.map((d) => ({ key: d.id as "averageHp" | "feats" | "multiclassing", title: d.name, hint: d.description }));
 
-const methodOptions = METHODS.map((m) => ({ value: m, label: m === "standard_array" ? "Standard Array (15, 14, 13, 12, 10, 8)" : methodLabel(m) }));
+const methodOptions = [...abilityMethodOptions];
 const editionOptions = EDITIONS.map((e) => ({ value: e.id, label: `${e.year} - ${e.note}` }));
 
 /** Classic builder new-character flyout: portraits, collapsible CHARACTER DETAILS (name with dice inside the field, level, gender, abilities option and a rearrangeable standard array) and CHARACTER OPTIONS. */
