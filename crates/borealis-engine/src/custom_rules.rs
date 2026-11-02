@@ -276,6 +276,8 @@ fn size_select(c: &CustomRule) -> SelectRule {
 }
 
 /// A Weapon Mastery slot group: a `Weapon` select whose slot count follows the class table.
+/// Required, like Aurora-format content's plain `<select ... name="Weapon Mastery" number="2"/>`:
+/// each open slot counts as a remaining selection (A9).
 fn mastery_select(c: &CustomRule) -> SelectRule {
     let mut extra = marked("mastery");
     if let Some(v) = c.fields.get("count") {
@@ -288,7 +290,6 @@ fn mastery_select(c: &CustomRule) -> SelectRule {
         ty: "Weapon".into(),
         name: str_field(c, "name").unwrap_or_else(|| "Weapon Mastery".into()),
         level: level_field(c),
-        optional: Some(true),
         extra,
         ..SelectRule::default()
     }
@@ -782,7 +783,10 @@ mod tests {
             json!({"kind": "weapon_mastery", "level": 4, "count": 2}),
         ));
         assert_eq!(mastery.level, Some(4));
-        assert_eq!(mastery.optional, Some(true));
+        assert_eq!(
+            mastery.optional, None,
+            "Weapon Mastery is a required choice"
+        );
         assert_eq!(attr(&mastery.extra, X_COUNT), Some("2"));
         let expertise = expertise_select(&custom(
             json!({"kind": "expertise", "level": 6, "count": 2}),

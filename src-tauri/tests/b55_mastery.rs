@@ -242,3 +242,29 @@ fn a_weapon_mastered_in_one_slot_is_not_offered_in_another() {
         "the first slot keeps its own choice and drops the other's: {first:?}"
     );
 }
+
+#[test]
+fn barbarian_mastery_slots_are_required() {
+    // A9: Weapon Mastery is a plain required choice (`<select ... name="Weapon Mastery"
+    // number="2"/>` in Aurora-format content): each open slot counts as a remaining selection.
+    let (_d, app) = app();
+    let snap = hero(&app, "ID_2024_CLASS_BARBARIAN");
+    let slots = mastery_slots(&snap);
+    assert_eq!(slots.len(), 2, "a level 1 Barbarian masters two weapons");
+    for slot in snap.slots.iter().filter(|s| slots.contains(&s.id)) {
+        assert!(slot.required, "{} is optional", slot.title);
+    }
+    let before = snap.progress.remaining;
+    let snap = app
+        .apply_selection(&snap.id, &slots[0], BATTLEAXE)
+        .expect("Battleaxe");
+    assert_eq!(snap.progress.remaining + 1, before, "the first pick counts");
+    let snap = app
+        .apply_selection(&snap.id, &slots[1], GREATAXE)
+        .expect("Greataxe");
+    assert_eq!(
+        snap.progress.remaining + 2,
+        before,
+        "the second pick counts"
+    );
+}
