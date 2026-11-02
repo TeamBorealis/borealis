@@ -6,7 +6,8 @@ import { Glyph } from "../equipment/Glyph";
 import { RowDetail } from "../../components/RowDetail";
 
 /**
- * Spellcasting class that learned the slot's spell (for the source column and the status line).
+ * Spellcasting class that learned the slot's spell (for the source column and the status line); a feat's or species' slot
+ * names its own source in `groupLabel` ("Magic Initiate (Cleric)").
  * Slot ids are opaque (`owner:rule:ordinal`): the class link is the slot's `classSlotId`, never an id prefix.
  */
 export const sourceOf = (s: SelectionSlot, classes: ClassSpellcasting[]): string =>
@@ -16,12 +17,13 @@ export const sourceOf = (s: SelectionSlot, classes: ClassSpellcasting[]): string
 
 /**
  * Class block whose catalogue lists a highlighted slot's options: the slot's own class, else (feat or species spells,
- * e.g. Magic Initiate) the class that registered its pick, else the first spellcasting class.
+ * e.g. Magic Initiate) the class that registered its pick, else the block named after the slot's source. Undefined when
+ * no block fits: the page then shows the catalogue in a block of the slot's own (B1), never in an unrelated class's.
  */
 export const catalogueClassOf = (s: SelectionSlot, classes: ClassSpellcasting[]): string | undefined =>
   (classes.find((c) => c.classSlotId === s.classSlotId)
     ?? classes.find((c) => c.spells.some((x) => x.slotId === s.id))
-    ?? classes[0])?.classSlotId;
+    ?? (s.groupLabel === null ? undefined : classes.find((c) => c.className === s.groupLabel)))?.classSlotId;
 
 function ReplacedCell({ slot }: { slot: SelectionSlot }) {
   const last = slot.replaced.at(-1);

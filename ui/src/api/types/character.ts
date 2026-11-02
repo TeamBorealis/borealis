@@ -73,6 +73,7 @@ export interface SelectionSlot {
   tab: BuilderTab;
   /** Class-slot id this slot is grouped under (multiclass), else null. */
   groupId: string | null;
+  /** The multiclass label of a grouped slot; for a spell slot with no class (`classSlotId` null), its source ("Magic Initiate (Cleric)"). */
   groupLabel: string | null;
   /** Spell slots: `ClassSpellcasting.classSlotId` of the class the spell is learned for, else null (feat, species, other). */
   classSlotId: string | null;

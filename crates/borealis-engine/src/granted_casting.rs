@@ -146,6 +146,16 @@ fn element_ability(graph: &Graph<'_>, owner: NodeId) -> Option<String> {
     })
 }
 
+/// Name of the block a spell selected with `spellcasting` name `class` on `owner` joins:
+/// `<class> (<Spell List>)` when the owner chose a spell list (`Magic Initiate (Cleric)`), else
+/// `class`. Selection slots carry the same name (`SlotSnapshot::spellcasting_label`), so a slot
+/// names its block before any spell is picked.
+pub(crate) fn block_name(graph: &Graph<'_>, owner: NodeId, class: &str) -> String {
+    graph
+        .param_value(owner, &param_key("Spell List"))
+        .map_or_else(|| class.to_string(), |l| format!("{class} ({l})"))
+}
+
 struct Pending {
     name: String,
     ability: Option<String>,
@@ -181,10 +191,12 @@ pub fn add_granted_blocks(graph: &Graph<'_>, stats: &StatSet, out: &mut Vec<Spel
                 let Some(ability) = element_ability(graph, parent) else {
                     continue;
                 };
-                let name = graph
-                    .param_value(parent, &param_key("Spell List"))
-                    .map_or_else(|| class.clone(), |l| format!("{class} ({l})"));
-                add_to(&mut pending, name, Some(ability), id);
+                add_to(
+                    &mut pending,
+                    block_name(graph, parent, class),
+                    Some(ability),
+                    id,
+                );
             }
             Some(_) => {}
             None => {

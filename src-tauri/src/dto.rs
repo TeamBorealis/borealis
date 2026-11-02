@@ -279,6 +279,8 @@ pub struct SelectionSlot {
     pub id: String,
     pub tab: String,
     pub group_id: Option<String>,
+    /// The multiclass a slot is grouped under; for a spell slot that feeds no class, its source
+    /// (`Magic Initiate (Cleric)`).
     pub group_label: Option<String>,
     /// Spell slots: `ClassSpellcasting.classSlotId` of the class the spell is learned for.
     pub class_slot_id: Option<String>,

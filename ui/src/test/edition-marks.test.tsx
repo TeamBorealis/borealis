@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 import { AppProviders } from "../AppProviders";
-import type { ClassSpellcasting, Page, SelectionSlot, SlotOption } from "../api/contract";
+import type { Page, SelectionSlot, SlotOption } from "../api/contract";
 import { MockApi } from "../api/mock";
 import { mockEditionMarks, USED_AS_WRITTEN } from "../api/mock/edition-marks";
 import { badgeTitle, convertedTitle, editionMarks } from "../components/EditionMarks";
@@ -135,11 +135,10 @@ describe("spell slot picker edition marks", () => {
       option("ID_SP_NATIVE", "Ember Mote", { type: "spell", level: 0 }),
       option("ID_SP_OLD", "Lantern Hymn", { type: "spell", level: 0, edition: "dnd2014", converted: true, editionNotes: ["Range changed"] }),
     ];
-    const cls = { className: "Wizard" } as ClassSpellcasting;
     render(
       <AppProviders api={apiWith(spells)}>
         <MemoryRouter>
-          <SlotOptionsGrid characterId="c1" cls={cls} slot={{ ...SLOT, elementType: "spell" } as SelectionSlot} picked={null} onPick={() => {}} onChoose={() => {}} />
+          <SlotOptionsGrid characterId="c1" label="Wizard" slot={{ ...SLOT, elementType: "spell" } as SelectionSlot} picked={null} onPick={() => {}} onChoose={() => {}} />
         </MemoryRouter>
       </AppProviders>,
     );

@@ -1,6 +1,6 @@
 import { type KeyboardEvent, useState } from "react";
-import type { ClassSpellcasting, SelectionSlot } from "../../api/contract";
-import { ConvertedTag, editionMarks, EditionNotes, EditionSuffix } from "../../components";
+import type { SelectionSlot } from "../../api/contract";
+import { Button, ConvertedTag, editionMarks, EditionNotes, EditionSuffix } from "../../components";
 import { NO_FILTER, type ShownRow, type VersionLike } from "../../lib/versions";
 import { Glyph } from "../equipment/Glyph";
 import { PickerFilterBar } from "../builder/PickerFilterBar";
@@ -9,21 +9,30 @@ import { VersionButton, VersionMenu } from "../builder/VersionMenu";
 import { arrowNav } from "./rowNav";
 import { ComponentCells, componentText } from "./SpellGrid";
 import { RowDetail } from "../../components/RowDetail";
+import { usePhone } from "../../lib/phone";
 import "../equipment/equipment.css";
 
 const levelText = (o: VersionLike) => (o.level === undefined ? "" : `${o.level === 0 ? "Cantrip" : `Level ${o.level}`}${o.school ? ` · ${o.school}` : ""}`);
 
 const COLUMNS = 7;
 
+interface SlotOptionsGridProps {
+  characterId: string;
+  /** What the slot's spells are for (a class name, or a feat's source such as "Magic Initiate (Cleric)"): the table's name. */
+  label: string;
+  slot: SelectionSlot;
+  picked: string | null;
+  onPick: (id: string) => void;
+  onChoose: (slotId: string, elementId: string) => void;
+}
+
 /**
  * The SPELLCASTING catalogue while a selection slot is highlighted: the slot's own options (same source as the Build pickers),
  * one row per name (B-55) with the version column and the filter bar. Click describes; double-click or Enter registers the
- * row's shown version into the highlighted slot.
+ * row's shown version into the highlighted slot. Phones also get Build's "Choose <name>" button for the described row (O2).
  */
-export function SlotOptionsGrid({ characterId, cls, slot, picked, onPick, onChoose }: {
-  characterId: string; cls: ClassSpellcasting; slot: SelectionSlot; picked: string | null;
-  onPick: (id: string) => void; onChoose: (slotId: string, elementId: string) => void;
-}) {
+export function SlotOptionsGrid({ characterId, label, slot, picked, onPick, onChoose }: SlotOptionsGridProps) {
+  const phone = usePhone();
   const picker = usePickerRows(characterId, slot, !slot.locked);
   const switchVersion = useSwitchVersion();
   const { options, rows, visible } = picker;
@@ -31,6 +40,8 @@ export function SlotOptionsGrid({ characterId, cls, slot, picked, onPick, onChoo
   const [menu, setMenu] = useState<{ key: string; anchor: HTMLElement } | null>(null);
   const menuRow = menu ? visible.find((r) => r.key === menu.key) ?? null : null;
   const cols = COLUMNS + (picker.versionColumn ? 1 : 0);
+  const described = visible.find((r) => r.versions.some((v) => v.id === picked)) ?? null;
+  const choosable = phone && described && !described.chosen && !described.shown.disabledReason ? described : null;
 
   const choose = (row: ShownRow) => {
     if (row.shown.disabledReason || row.chosen) return;
@@ -55,7 +66,7 @@ export function SlotOptionsGrid({ characterId, cls, slot, picked, onPick, onChoo
         <PickerFilterBar title="spells" filter={picker.filter} onChange={picker.setFilter} sources={picker.sources} shown={visible.length} total={rows.length} />
       )}
       <div className="ap-scroll sp-main">
-        <table className="ap-grid eq-grid sp-grid" aria-label={`${cls.className} spells`} data-slot-id={slot.id}>
+        <table className="ap-grid eq-grid sp-grid" aria-label={`${label} spells`} data-slot-id={slot.id}>
           <thead>
             <tr>
               <th scope="col" className="sp-ck"><Glyph name="check" label="Registered" /></th>
@@ -110,6 +121,9 @@ export function SlotOptionsGrid({ characterId, cls, slot, picked, onPick, onChoo
           </tbody>
         </table>
       </div>
+      {choosable && (
+        <div className="bp-choose"><Button variant="primary" className="bp-choose-btn" onClick={() => choose(choosable)}>Choose {choosable.name}</Button></div>
+      )}
       {menu && menuRow && (
         <VersionMenu anchor={menu.anchor} rowName={menuRow.name} versions={menuRow.versions} charEd={picker.charEd} shownId={menuRow.shown.id}
           chosenId={menuRow.chosen?.id ?? null} onPick={(v) => pickVersion(menuRow, v)}

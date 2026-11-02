@@ -419,8 +419,12 @@ fn slots(snap: &Engine) -> (Vec<SelectionSlot>, SelectionProgress) {
                 ranked.push((flow_priority(&s.ty), out.len()));
             }
         }
+        let class_slot_id = extras::slot_caster_id(snap, s);
         let (group_id, group_label) = if s.owner.ty == "Multiclass" {
             (Some(s.owner.id.clone()), Some(s.owner.name.clone()))
+        } else if tab == "spells" && class_slot_id.is_none() {
+            // B1: a feat's or species' spell pick names its source (`Magic Initiate (Cleric)`)
+            (None, s.spellcasting_label.clone())
         } else {
             (None, None)
         };
@@ -429,7 +433,7 @@ fn slots(snap: &Engine) -> (Vec<SelectionSlot>, SelectionProgress) {
             tab: tab.to_string(),
             group_id,
             group_label,
-            class_slot_id: extras::slot_caster_id(snap, s),
+            class_slot_id,
             title: s.name.clone(),
             element_type: ui_type(&s.ty).to_string(),
             ordinal: s.key.ordinal,
@@ -530,6 +534,7 @@ mod tests {
             rejected: None,
             missing: None,
             spellcasting: None,
+            spellcasting_label: None,
             prepared: false,
             options: (0..options)
                 .map(|i| OptionRef {

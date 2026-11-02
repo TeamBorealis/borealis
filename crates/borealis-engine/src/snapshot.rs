@@ -166,6 +166,10 @@ pub struct SlotSnapshot {
     pub missing: Option<String>,
     /// Spellcasting class of a spell slot.
     pub spellcasting: Option<String>,
+    /// Display name of what a spell slot feeds: `spellcasting`, with the owner's chosen spell
+    /// list for a feat (`Magic Initiate (Cleric)`), the name its granted block takes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spellcasting_label: Option<String>,
     /// Always-prepared spell slot.
     pub prepared: bool,
     /// Options (empty when disabled in the settings).

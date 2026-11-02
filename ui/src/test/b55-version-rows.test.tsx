@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppProviders } from "../AppProviders";
-import type { ClassSpellcasting, Page, SelectionSlot, SlotOption, SlotOptionBase, SlotOptionsArgs } from "../api/contract";
+import type { Page, SelectionSlot, SlotOption, SlotOptionBase, SlotOptionsArgs } from "../api/contract";
 import { MockApi } from "../api/mock";
 import { setPhoneForTests } from "../lib/phone";
 import { PickerGroup } from "../pages/builder/PickerGroup";
@@ -280,7 +280,7 @@ describe("spell slot catalogue row model (sec. 1, 6)", () => {
     render(
       <AppProviders api={apiWith(spells)}>
         <MemoryRouter>
-          <SlotOptionsGrid characterId="c1" cls={{ className: "Wizard" } as ClassSpellcasting} slot={{ ...SLOT, elementType: "spell" } as SelectionSlot} picked={null}
+          <SlotOptionsGrid characterId="c1" label="Wizard" slot={{ ...SLOT, elementType: "spell" } as SelectionSlot} picked={null}
             onPick={(id) => picked.push(id)} onChoose={(_s, e) => chosen.push(e)} />
         </MemoryRouter>
       </AppProviders>,

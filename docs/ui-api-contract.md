@@ -56,7 +56,9 @@ Clean-room note: sample data in the mock is original and SRD-generic.
 - `id` is stable across snapshots (owner element + rule index + ordinal). The UI uses it as the React key and as
   the `slot` URL parameter for the Next-selection flow.
 - `tab` places the slot: `race`, `class`, `background`, `abilities` (ASI picks), `feats`, `languages`, `proficiencies`,
-  `companion`, `spells`. Multiclass slots carry `groupId`/`groupLabel` so the UI groups them under the class slot.
+  `companion`, `spells`. Multiclass slots carry `groupId`/`groupLabel` so the UI groups them under the class slot. A `spells` slot that
+  feeds no spellcasting class (`classSlotId` null: a feat's or species' picks) names its source in `groupLabel`
+  (`Magic Initiate (Cleric)`, the name its spellcasting block takes once it exists).
 - `locked` = the rule has a `default`, exactly one candidate, and the slot holds it: shown, not editable (Aurora,
   engine-optional-sole-option). Nothing else is chosen automatically: a slot's `default` is chosen once, when the slot
   appears; a sole candidate without a default stays open for the user. `apply_selection` / `clear_selection` on a

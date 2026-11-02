@@ -132,6 +132,24 @@ function raceSlots(c: MockCharacter): SlotDef[] {
   return out;
 }
 
+const MAGIC_INITIATE = "magic-initiate";
+/** The Acolyte's Magic Initiate always takes the Cleric list in the mock (the engine reads the feat's Spell List param). */
+const MI_LIST = "cleric";
+
+/**
+ * Magic Initiate's spell picks, as the engine emits them: Magic tab slots that feed no spellcasting class (`classSlotId`
+ * null), labelled with the feat and its spell list (`groupLabel`), offering that list's cantrips and level-1 spells.
+ */
+function magicInitiateSlots(): SlotDef[] {
+  const label = `Magic Initiate (${titleCase(MI_LIST)})`;
+  const onList = (level: number) => ELEMENTS.filter((e) => e.type === "spell" && (e.level ?? 0) === level
+    && SPELLS.some((s) => s.id === e.id && s.classes.includes(MI_LIST)));
+  return [
+    ...many({ id: "bg:mi:cantrip", tab: "spells", title: "Magic Initiate Cantrips", elementType: "spell", groupLabel: label, dup: "mi-cantrip", candidates: onList(0) }, 2),
+    make({ id: "bg:mi:spell", tab: "spells", title: "Magic Initiate Level 1 Spell", elementType: "spell", groupLabel: label, candidates: onList(1) }),
+  ];
+}
+
 function backgroundSlots(c: MockCharacter): SlotDef[] {
   const out: SlotDef[] = [];
   out.push(make({ id: "bg:background", tab: "background", title: "Background", elementType: "background", candidates: ELEMENTS.filter((e) => e.type === "background") }));
@@ -142,6 +160,7 @@ function backgroundSlots(c: MockCharacter): SlotDef[] {
     out.push(make({ id: "bg:asi:2", tab: "background", title: "Background increase +2", elementType: "asi", dup: "bg-asi", candidates: opts(2), hint: `One of ${bg.asi.map((a) => ABILITY_NAMES[a]).join(", ")}` }));
     out.push(make({ id: "bg:asi:1", tab: "background", title: "Background increase +1", elementType: "asi", dup: "bg-asi-1", candidates: opts(1).filter((e) => e.id.split(":")[1] !== (c.choices["bg:asi:2"] ?? "").split(":")[1]) }));
     out.push(make({ id: "bg:feat", tab: "feats", title: "Origin feat", elementType: "feat", lockedTo: bg.originFeat, locked: true, candidates: [getElement(bg.originFeat)!] }));
+    if (c.choices["bg:feat"] === MAGIC_INITIATE) out.push(...magicInitiateSlots());
   } else if (bg.languages > 0) {
     out.push(...many({ id: "bg:lang", tab: "languages", title: "Background language", elementType: "language", dup: "lang", candidates: ELEMENTS.filter((e) => e.type === "language" && e.name !== "Common") }, bg.languages));
   }

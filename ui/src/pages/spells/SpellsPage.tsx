@@ -10,7 +10,7 @@ import { KnownSpells, SpellGrid } from "./SpellGrid";
 import { ClassSpellGrid } from "./ClassSpellGrid";
 import { Band, TwoPane } from "./TwoPane";
 import { EMPTY_FILTER, filterClass, SpellFilterBar, type SpellFilterState } from "./SpellFilter";
-import { catalogueClassOf, SlotsTable } from "./SlotsTable";
+import { catalogueClassOf, SlotsTable, sourceOf } from "./SlotsTable";
 import { SlotOptionsGrid } from "./SlotOptionsGrid";
 import { PickerStateProvider } from "../builder/pickerState";
 import "./magic.css";
@@ -63,6 +63,24 @@ function ClassBlock({ cls, shownCls = cls, slotRows, focused, picked, onPick, fu
   );
 }
 
+/**
+ * B1: the catalogue of a highlighted slot that feeds no spellcasting block yet (a non-caster's Magic Initiate), in a block
+ * titled with the slot's source. Aurora lists every spell selection on this tab whether or not a class casts.
+ */
+function SourceBlock({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <section className="sp-block" aria-label={`${label} spellcasting`}>
+      <span className="sp-bar on" aria-hidden="true" />
+      <div className="sp-col">
+        <div className="sp-main-wrap">
+          <Band title={label} />
+          {children}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ClassMagic({ cls, picked, onPick }: { cls: ClassSpellcasting; picked: string | null; onPick: (id: string) => void }) {
   const { snapshot } = useCharacter();
   if (!snapshot) return null;
@@ -80,7 +98,6 @@ function Overview({ picked, onPick, filter, onFilter, current, onCurrent }: Over
   if (!snapshot) return null;
   const sc = snapshot.spellcasting;
   const rows = sc.multiclassSlots ?? sc.slots;
-  const focusedId = (sc.classes.find((c) => c.spells.some((x) => x.id === picked)) ?? sc.classes[0])?.classSlotId;
   const slots = snapshot.slots.filter((s) => s.tab === "spells");
   const hot: SelectionSlot | null = slots.find((s) => s.id === current) ?? null;
   const choose = (slotId: string, elementId: string) => {
@@ -88,12 +105,16 @@ function Overview({ picked, onPick, filter, onFilter, current, onCurrent }: Over
     void mutate((api, id) => api.applySelection({ characterId: id, slotId, elementId }));
   };
   const hotClass = hot ? catalogueClassOf(hot, sc.classes) : undefined;
-  const catalogue = (c: ClassSpellcasting) => hot && c.classSlotId === hotClass
-    ? <SlotOptionsGrid characterId={snapshot.id} cls={c} slot={hot} picked={picked} onPick={onPick} onChoose={choose} /> : undefined;
+  const grid = (slot: SelectionSlot, label: string) =>
+    <SlotOptionsGrid characterId={snapshot.id} label={label} slot={slot} picked={picked} onPick={onPick} onChoose={choose} />;
+  const catalogue = (c: ClassSpellcasting) => hot && c.classSlotId === hotClass ? grid(hot, c.className) : undefined;
+  const ownLabel = hot && !hotClass ? sourceOf(hot, sc.classes) || hot.title : null;
+  const focusedId = ownLabel ? undefined : (sc.classes.find((c) => c.spells.some((x) => x.id === picked)) ?? sc.classes[0])?.classSlotId;
   return (
     <>
-      <SpellFilterBar classes={sc.classes} filter={filter} onChange={onFilter} />
+      {sc.classes.length > 0 && <SpellFilterBar classes={sc.classes} filter={filter} onChange={onFilter} />}
       {sc.classes.map((c) => <ClassBlock key={c.classSlotId} cls={c} catalogue={catalogue(c)} shownCls={filterClass(c, filter)} slotRows={rows} full focused={c.classSlotId === focusedId} picked={picked} onPick={onPick} />)}
+      {hot && ownLabel && <SourceBlock label={ownLabel}>{grid(hot, ownLabel)}</SourceBlock>}
       <SlotsTable slots={slots} classes={sc.classes} picked={picked} onPick={onPick} current={current} onCurrent={onCurrent} />
     </>
   );
@@ -117,7 +138,9 @@ function MagicBody() {
   const sc = snapshot.spellcasting;
   const tabs = [{ id: OVERVIEW, label: "Spellcasting" }, ...sc.classes.map((c) => ({ id: c.classSlotId, label: phone ? c.className : c.className.toUpperCase() }))];
   const cur = sc.classes.find((c) => c.classSlotId === active);
-  const body = sc.classes.length === 0
+  // B1: a feat's spell picks (Magic Initiate) are made here even without a spellcasting class.
+  const hasSpellSlots = snapshot.slots.some((s) => s.tab === "spells");
+  const body = sc.classes.length === 0 && !hasSpellSlots
     ? <p className="sp-empty">Your character doesn't have any spellcasting available here...</p>
     : cur ? <ClassMagic key={cur.classSlotId} cls={cur} picked={picked} onPick={setPicked} /> : <Overview picked={picked} onPick={setPicked} filter={filter} onFilter={setFilter} current={current} onCurrent={setCurrent} />;
   return (

@@ -473,6 +473,10 @@ impl<'u> Evaluation<'u> {
                     rejected: slot.rejected.clone(),
                     missing: slot.missing.clone(),
                     spellcasting: rule.spellcasting.clone(),
+                    spellcasting_label: rule
+                        .spellcasting
+                        .as_deref()
+                        .map(|c| crate::granted_casting::block_name(&self.graph, id, c)),
                     prepared: rule.prepared.unwrap_or(false),
                     options: options.iter().map(|o| option_ref(o)).collect(),
                     replaceable: retrain.replaceable,
