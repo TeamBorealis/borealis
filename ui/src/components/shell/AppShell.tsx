@@ -16,6 +16,7 @@ import { useShellActions } from "./useShellActions";
 import { useCharacter } from "../../state/CharacterContext";
 import { OptionsFlyout } from "../../pages/manage/OptionsFlyout";
 import { SaveFlyout } from "./SaveFlyout";
+import { PortraitsHost } from "./PortraitsHost";
 import { BundleHost } from "../../pages/transfer/BundleHost";
 import { TransferHost } from "../../pages/transfer/TransferHost";
 import { EditionFlyout } from "../../pages/manage/EditionFlyout";
@@ -100,6 +101,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <OptionsFlyout />
           <EditionFlyout />
           <SaveFlyout />
+          <PortraitsHost />
           <UpdateFlyout />
           <SettingsHost />
           <TransferHost />

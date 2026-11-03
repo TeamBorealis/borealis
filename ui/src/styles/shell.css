@@ -137,6 +137,10 @@
 .aur-title.mobile .aur-iconbtn .icon { width: 22px; height: 22px; }
 .aur-title.mobile .aur-title-text { position: static; transform: none; flex: 1; min-width: 0; font-size: 13px; text-align: center; overflow: hidden; text-overflow: ellipsis; margin-right: 34px; }
 .aur-title-text.gold { color: var(--gold); }
+/* The open character's portrait (opens the portraits gallery); the title stays centred between the two sides. */
+.aur-title.mobile:has(.aur-title-portrait) .aur-title-text { margin-right: 0; }
+.aur-title.mobile .aur-title-portrait { display: grid; place-items: center; padding: 0; border: 0; background: none; cursor: pointer; }
+.aur-title.mobile .aur-title-portrait .aur-portrait { width: 30px; height: 30px; font-size: 12px; }
 .aur-window.narrow .aur-subband { overflow: hidden; }
 .aur-window.narrow .aur-subband:not(:has(.tab)) { display: none; }
 .aur-window.narrow .aur-subtabs { padding-left: 6px; overflow-x: auto; }

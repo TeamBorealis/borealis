@@ -19,6 +19,9 @@ html.phone .aur-title.mobile .aur-iconbtn {
 }
 html.phone .aur-title.mobile .aur-iconbtn:active { background: var(--ph-fill); }
 html.phone .aur-title.mobile .aur-iconbtn .icon { width: 24px; height: 24px; }
+html.phone .aur-title.mobile .aur-title-portrait .aur-portrait {
+  width: 32px; height: 32px; background: var(--ph-fill); color: var(--ph-text-2); font: 600 13px/1 var(--ph-font-ui); box-shadow: inset 0 0 0 1px var(--ph-line);
+}
 html.phone .aur-title.mobile .aur-iconbtn.aur-update-cmd { background: var(--ph-accent-soft); color: var(--ph-accent); }
 html.phone .aur-title.mobile .aur-title-text {
   font: 600 var(--ph-t-body)/1.25 var(--ph-font-ui); color: var(--ph-text); text-transform: none; letter-spacing: 0;

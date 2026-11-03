@@ -9,6 +9,7 @@ import { ABILITY_LABEL } from "../../lib/format";
 import { useSettings } from "../../state/SettingsContext";
 import { Button } from "../Button";
 import { CompanionQuickView, companionDisplayName } from "./CompanionQuickView";
+import { useShell } from "./ShellContext";
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
 const chosen = (s: CharacterSnapshot, tab: string) => s.slots.find((x) => x.tab === tab && x.chosen)?.chosen?.name ?? "";
@@ -20,9 +21,11 @@ export const buildLine = (s: CharacterSnapshot): string =>
 /**
  * The classic builder's character quick view: the name in gold, XP bar, portrait, build line, background / gender / alignment, the five headline stats,
  * the six scores, a two-column SKILLS checklist and collapsed SAVING THROWS / CONDITIONS / ADDITIONAL STATISTICS expanders. Opened from the profile name.
+ * The large portrait is a button that opens the portraits gallery, as in the classic builder.
  */
 export function QuickViewFlyout({ snapshot, onClose }: { snapshot: CharacterSnapshot; onClose: () => void }) {
   const { settings } = useSettings();
+  const { setPortraitsOpen } = useShell();
   const [context, setContext] = useState<"character" | "companion">("character");
   const { level, stats, abilities, details, play } = snapshot;
   const span = level.nextLevelXp !== null ? level.nextLevelXp - level.currentLevelXp : 1;
@@ -48,7 +51,9 @@ export function QuickViewFlyout({ snapshot, onClose }: { snapshot: CharacterSnap
           <MetroProgressBar label="Progress to next level" value={level.nextLevelXp !== null ? level.xp - level.currentLevelXp : 1} max={span} />
           <span>{level.nextLevelXp !== null ? `${level.nextLevelXp} XP` : "MAX"}</span>
         </div>
-        <Portrait src={snapshot.portrait} name={snapshot.name} className="qv-portrait" />
+        <button type="button" className="qv-portrait-btn" aria-label="Open portraits" onClick={() => { onClose(); setPortraitsOpen(true); }}>
+          <Portrait src={snapshot.portrait} name={snapshot.name} className="qv-portrait" />
+        </button>
         <h3 className="qv-build">{buildLine(snapshot)}</h3>
         {sub.length > 0 && <p className="qv-sub">{sub.join(" • ")}</p>}
         <p className="qv-stats">{headline.map(([k, v]) => <span key={k}>{k}: <b>{v}</b></span>)}</p>

@@ -13,7 +13,6 @@ import "./flyouts.css";
 import { useShell } from "./ShellContext";
 import { QuickViewFlyout } from "./QuickViewFlyout";
 import { UpdateCommand } from "./UpdateFlyout";
-import { PortraitsFlyout } from "../../pages/manage/PortraitsFlyout";
 import { useCharacter } from "../../state/CharacterContext";
 import { useShellActions } from "./useShellActions";
 import { displayPath } from "../../lib/displayPath";
@@ -79,8 +78,7 @@ export function MainTabs() {
 export function ProfileBlock() {
   const nav = useNavigate();
   const { snapshot } = useShellActions();
-  const { mutate } = useCharacter();
-  const { portraitsOpen, setPortraitsOpen } = useShell();
+  const { setPortraitsOpen } = useShell();
   const [quickOpen, setQuickOpen] = useState(false);
   if (!snapshot) {
     return <button type="button" className="aur-newchar" aria-label="New character" onClick={() => nav("/characters?new=1")}><Icon name="plus" /></button>;
@@ -95,8 +93,6 @@ export function ProfileBlock() {
   return (
     <div className="aur-profile">
       {quickOpen && <QuickViewFlyout snapshot={snapshot} onClose={() => setQuickOpen(false)} />}
-      {portraitsOpen && <PortraitsFlyout current={snapshot.portrait} onClose={() => setPortraitsOpen(false)}
-        onSelect={(dataUrl) => void mutate((api, id) => api.setPortrait({ characterId: id, dataUrl }))} />}
       <div className="aur-profile-text">
         <button type="button" className="name" onClick={openQuickView}>{snapshot.name}</button>
         <div className="build">Level {snapshot.level.total} {[race, classes].filter(Boolean).join(" ")}</div>

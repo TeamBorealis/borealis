@@ -6,16 +6,26 @@ import { useShell } from "./ShellContext";
 import { useShellActions } from "./useShellActions";
 import { UpdateCommand } from "./UpdateFlyout";
 import { usePhone } from "../../lib/phone";
+import { Portrait } from "../Portrait";
 
-/** Phone title bar: hamburger, character name (gold) or app name, the update button when a release is waiting, settings. Honours the top safe-area inset. */
+/**
+ * Phone title bar: hamburger, character name (gold) or app name, the open character's portrait (opens the portraits
+ * gallery, as the desktop profile portrait does), the update button when a release is waiting, settings. Honours the
+ * top safe-area inset.
+ */
 export function MobileTitleBar({ onMenu }: { onMenu: () => void }) {
   const { snapshot } = useShellActions();
-  const { openSettings } = useShell();
+  const { openSettings, setPortraitsOpen } = useShell();
   return (
     <header className="aur-title mobile">
       <button type="button" className="aur-iconbtn" aria-label="Menu" onClick={onMenu}><Icon name="menu" /></button>
       <BrandMark />
       <div className={`aur-title-text ${snapshot ? "gold" : ""}`}>{snapshot ? snapshot.name : "Borealis"}</div>
+      {snapshot && (
+        <button type="button" className="aur-iconbtn aur-title-portrait" aria-label="Open portraits" onClick={() => setPortraitsOpen(true)}>
+          <Portrait src={snapshot.portrait} name={snapshot.name} className="aur-portrait" />
+        </button>
+      )}
       <UpdateCommand compact />
       <button type="button" className="aur-iconbtn" aria-label="Settings" onClick={() => openSettings()}><Icon name="cog" /></button>
     </header>
