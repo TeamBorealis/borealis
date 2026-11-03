@@ -101,33 +101,8 @@ fn wizard_spell_slots_name_their_class_and_other_slots_do_not() {
 #[test]
 fn acolyte_barbarian_magic_initiate_slots_carry_a_source_label() {
     let (_dir, app) = app();
-    let request = NewCharacterRequest {
-        name: "Torrin".into(),
-        ruleset: Ruleset::Dnd2024,
-        starting_level: 1,
-        gender: "m".into(),
-        ability_method: AbilityMethodDto::PointBuy,
-        options: OptionsPatch::default(),
-        portrait: None,
-        group: None,
-    };
-    let s = app
-        .create_character(Ruleset::Dnd2024, &request)
-        .expect("create");
-    let id = s.id.clone();
-    let s = app
-        .apply_selection(&id, &slot_id(&s, "Race"), "ID_2024_SPECIES_DRAGONBORN")
-        .expect("species");
-    let s = app
-        .apply_selection(&id, &slot_id(&s, "Class"), "ID_2024_CLASS_BARBARIAN")
-        .expect("class");
-    let snap = app
-        .apply_selection(
-            &id,
-            &slot_id(&s, "Background"),
-            "ID_2024_BACKGROUND_ACOLYTE",
-        )
-        .expect("background");
+    let snap = acolyte_barbarian(&app);
+    let id = snap.id.clone();
     assert!(
         snap.spellcasting.classes.is_empty(),
         "a Barbarian casts nothing"
@@ -228,6 +203,126 @@ fn acolyte_barbarian_magic_initiate_slots_carry_a_source_label() {
         .iter()
         .filter(|s| s.tab == "spells")
         .all(|s| s.chosen.is_some()));
+}
+
+/// A 2024 Dragonborn Barbarian 1 with the Acolyte background: Magic Initiate (Cleric), no
+/// spellcasting class (tester video 2026-11-02).
+fn acolyte_barbarian(app: &AppState) -> CharacterSnapshot {
+    let request = NewCharacterRequest {
+        name: "Torrin".into(),
+        ruleset: Ruleset::Dnd2024,
+        starting_level: 1,
+        gender: "m".into(),
+        ability_method: AbilityMethodDto::PointBuy,
+        options: OptionsPatch::default(),
+        portrait: None,
+        group: None,
+    };
+    let s = app
+        .create_character(Ruleset::Dnd2024, &request)
+        .expect("create");
+    let id = s.id.clone();
+    let s = app
+        .apply_selection(&id, &slot_id(&s, "Race"), "ID_2024_SPECIES_DRAGONBORN")
+        .expect("species");
+    let s = app
+        .apply_selection(&id, &slot_id(&s, "Class"), "ID_2024_CLASS_BARBARIAN")
+        .expect("class");
+    app.apply_selection(
+        &id,
+        &slot_id(&s, "Background"),
+        "ID_2024_BACKGROUND_ACOLYTE",
+    )
+    .expect("background")
+}
+
+/// Picks the first option of the slot `progress.nextSlotId` names that no other slot holds.
+fn pick_next(app: &AppState, snap: &CharacterSnapshot) -> CharacterSnapshot {
+    let next = snap.progress.next_slot_id.clone().expect("a next slot");
+    let held: Vec<String> = snap
+        .slots
+        .iter()
+        .filter_map(|s| s.chosen.as_ref().map(|c| c.id.clone()))
+        .collect();
+    let options = app
+        .get_slot_options(&snap.id, &next, None, Some(500), None)
+        .expect("options");
+    let pick = options
+        .items
+        .iter()
+        .map(|o| o.base.summary.id.clone())
+        .find(|o| !held.contains(o))
+        .unwrap_or_else(|| panic!("an option for {next}"));
+    app.apply_selection(&snap.id, &next, &pick).expect("pick")
+}
+
+fn next_slot(snap: &CharacterSnapshot) -> Option<&borealis_lib::dto::SelectionSlot> {
+    let next = snap.progress.next_slot_id.as_deref()?;
+    snap.slots.iter().find(|s| s.id == next)
+}
+
+/// B2 (tester video 2026-11-02): Magic Initiate's "Spellcasting Ability" is the feat's own choice,
+/// so it sits on Build > Feats under the feat's name, and Next selection asks it before the spells
+/// (the Magic Initiate block can't exist until it is chosen).
+#[test]
+fn magic_initiate_ability_is_on_feats_and_asked_before_its_spells() {
+    let (_dir, app) = app();
+    let mut snap = acolyte_barbarian(&app);
+    let ability = snap
+        .slots
+        .iter()
+        .find(|s| s.title == "Spellcasting Ability")
+        .expect("ability slot")
+        .clone();
+    assert_eq!(ability.tab, "feats");
+    assert_eq!(ability.element_type, "list");
+    assert_eq!(
+        ability.group_label.as_deref(),
+        Some("Magic Initiate (Cleric)")
+    );
+    assert!(ability.required && !ability.locked && ability.chosen.is_none());
+
+    // Next selection works through the earlier tabs (languages, proficiencies, ...) and reaches
+    // the ability before any spell slot.
+    for _ in 0..40 {
+        match next_slot(&snap) {
+            Some(s) if s.tab != "feats" && s.tab != "spells" => snap = pick_next(&app, &snap),
+            _ => break,
+        }
+    }
+    assert_eq!(
+        snap.progress.next_slot_id.as_deref(),
+        Some(ability.id.as_str()),
+        "next is {:?}",
+        next_slot(&snap).map(|s| (&s.tab, &s.title))
+    );
+    let spells: Vec<_> = snap
+        .slots
+        .iter()
+        .filter(|s| s.title.starts_with("Magic Initiate"))
+        .collect();
+    assert_eq!(spells.len(), 3);
+    assert!(spells.iter().all(|s| s.chosen.is_none()));
+
+    // The ability, then the three spells, each through Next selection: the block then exists.
+    snap = pick_next(&app, &snap);
+    for _ in 0..3 {
+        let next = next_slot(&snap).expect("a spell slot next");
+        assert!(next.title.starts_with("Magic Initiate"), "{}", next.title);
+        snap = pick_next(&app, &snap);
+    }
+    assert!(
+        snap.spellcasting
+            .classes
+            .iter()
+            .any(|c| c.class_name == "Magic Initiate (Cleric)"),
+        "{:?}",
+        snap.spellcasting
+            .classes
+            .iter()
+            .map(|c| &c.class_name)
+            .collect::<Vec<_>>()
+    );
 }
 
 #[test]

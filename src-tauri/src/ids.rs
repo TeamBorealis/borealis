@@ -122,6 +122,9 @@ pub const TABS: [&str; 9] = [
     "spells",
 ];
 
+/// Selection Flow priority of a content type `flow_priority` does not list: after every listed one.
+pub const UNRANKED_FLOW_PRIORITY: u8 = 12;
+
 /// Selection Flow priority of a selected content type (lower = earlier).
 #[must_use]
 pub fn flow_priority(content_type: &str) -> u8 {
@@ -138,7 +141,7 @@ pub fn flow_priority(content_type: &str) -> u8 {
         "Feat" => 9,
         "Companion" => 10,
         "Spell" => 11,
-        _ => 12,
+        _ => UNRANKED_FLOW_PRIORITY,
     }
 }
 

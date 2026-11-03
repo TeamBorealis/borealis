@@ -177,6 +177,9 @@ export const LISTS: Record<string, MockElement[]> = {
   flaw: ["I judge others too quickly.", "I cannot resist a dare.", "I trust the wrong people."].map((t, i) => el(`flaw-${i}`, "list", t, t)),
 };
 
+/** Magic Initiate's "Spellcasting Ability" entries (the engine's `param_select` list rule). */
+export const MI_ABILITIES: MockElement[] = ["Intelligence", "Wisdom", "Charisma"].map((t, i) => el(`mi-ability-${i}`, "list", t, t));
+
 export const SPELLS: SpellDef[] = [
   { id: "fire-bolt", level: 0, components: "VS", school: "Evocation", classes: ["wizard"], concentration: false, ritual: false, time: "1 action", range: "120 ft", description: "Hurl a mote of fire at a creature or object." },
   { id: "mage-hand", level: 0, school: "Conjuration", classes: ["wizard"], concentration: false, ritual: false, time: "1 action", range: "30 ft", description: "A spectral hand manipulates small objects." },
@@ -288,6 +291,7 @@ function mk(): MockElement[] {
   }
   out.push(...FEATS, ...FIGHTING_STYLES);
   for (const group of Object.values(LISTS)) out.push(...group);
+  out.push(...MI_ABILITIES);
   for (const s of SPELLS) {
     out.push(el(s.id, "spell", title(s.id), s.description, {
       level: s.level, school: s.school, tags: s.classes, spell: spellFacts(s),

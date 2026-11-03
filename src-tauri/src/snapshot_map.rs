@@ -8,6 +8,7 @@ use crate::dto::{
 use crate::extras::{self, ui_extras};
 use crate::ids::{
     encode_class_slot, encode_slot, flow_priority, tab_for, title_case, ui_type, TABS,
+    UNRANKED_FLOW_PRIORITY,
 };
 use crate::settings::AppSettings;
 use crate::state::ContentHub;
@@ -371,6 +372,9 @@ fn stats(snap: &Engine) -> CharacterStats {
     }
 }
 
+/// Builder tab of a slot: the tab of the type it selects. A choice of a type with no tab of its
+/// own (a list, a class feature, ...) sits with its owner's other choices: a background's on
+/// Background, a species' on Race, a feat's on Feats (B2: Magic Initiate's Spellcasting Ability).
 fn slot_tab(s: &SlotSnapshot) -> &'static str {
     if s.owner.id.contains("ABILITYSCOREIMPROVEMENT") || s.owner.ty == "Ability Score Improvement" {
         return "abilities";
@@ -380,10 +384,31 @@ fn slot_tab(s: &SlotSnapshot) -> &'static str {
         "class" => match s.owner.ty.as_str() {
             "Background" | "Background Feature" => "background",
             "Race" | "Sub Race" | "Species" | "Racial Trait" => "race",
+            "Feat" => "feats",
             _ => "class",
         },
         other => other,
     }
+}
+
+/// Selection Flow priority of an open slot: that of the type it selects. A feat's own choice of an
+/// unranked type ranks as a feat, so it is asked before the spells that depend on it (B2: the
+/// Magic Initiate block needs its Spellcasting Ability).
+fn slot_priority(s: &SlotSnapshot) -> u8 {
+    match flow_priority(&s.ty) {
+        UNRANKED_FLOW_PRIORITY if s.owner.ty == "Feat" => flow_priority("Feat"),
+        p => p,
+    }
+}
+
+/// Heading a Feats slot is listed under: its feat, named as the feat's spellcasting block when the
+/// feat casts (`Magic Initiate (Cleric)`), so the choice reads as that feat's (B2).
+fn feat_label(snap: &Engine, s: &SlotSnapshot) -> String {
+    snap.slots
+        .iter()
+        .filter(|o| o.owner.id == s.owner.id && o.key.instance == s.key.instance)
+        .find_map(|o| o.spellcasting_label.clone())
+        .unwrap_or_else(|| s.owner.name.clone())
 }
 
 /// engine-optional-sole-option SO-5: an optional slot with no options and no choice is disabled
@@ -416,7 +441,7 @@ fn slots(snap: &Engine) -> (Vec<SelectionSlot>, SelectionProgress) {
                 *n += 1;
             }
             if !s.locked {
-                ranked.push((flow_priority(&s.ty), out.len()));
+                ranked.push((slot_priority(s), out.len()));
             }
         }
         let class_slot_id = extras::slot_caster_id(snap, s);
@@ -425,6 +450,8 @@ fn slots(snap: &Engine) -> (Vec<SelectionSlot>, SelectionProgress) {
         } else if tab == "spells" && class_slot_id.is_none() {
             // B1: a feat's or species' spell pick names its source (`Magic Initiate (Cleric)`)
             (None, s.spellcasting_label.clone())
+        } else if tab == "feats" && s.owner.ty == "Feat" {
+            (None, Some(feat_label(snap, s)))
         } else {
             (None, None)
         };

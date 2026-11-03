@@ -1,6 +1,6 @@
 import type { BuilderTab, ElementType, SelectionSlot } from "../types";
 import {
-  ABILITY_NAMES, ELEMENTS, FEATS, FIGHTING_STYLES, LISTS, SPELLS,
+  ABILITY_NAMES, ELEMENTS, FEATS, FIGHTING_STYLES, LISTS, MI_ABILITIES, SPELLS,
   getBackground, getClass, getElement, getRace, titleCase,
 } from "./content";
 import type { MockElement } from "./data-types";
@@ -137,14 +137,16 @@ const MAGIC_INITIATE = "magic-initiate";
 const MI_LIST = "cleric";
 
 /**
- * Magic Initiate's spell picks, as the engine emits them: Magic tab slots that feed no spellcasting class (`classSlotId`
- * null), labelled with the feat and its spell list (`groupLabel`), offering that list's cantrips and level-1 spells.
+ * Magic Initiate's picks, as the engine emits them: its Spellcasting Ability, a list slot on Feats (B2), and its spell picks,
+ * Magic tab slots that feed no spellcasting class (`classSlotId` null), offering that list's cantrips and level-1 spells.
+ * All carry the feat and its spell list as `groupLabel`.
  */
 function magicInitiateSlots(): SlotDef[] {
   const label = `Magic Initiate (${titleCase(MI_LIST)})`;
   const onList = (level: number) => ELEMENTS.filter((e) => e.type === "spell" && (e.level ?? 0) === level
     && SPELLS.some((s) => s.id === e.id && s.classes.includes(MI_LIST)));
   return [
+    make({ id: "bg:mi:ability", tab: "feats", title: "Spellcasting Ability", elementType: "list", groupLabel: label, candidates: MI_ABILITIES }),
     ...many({ id: "bg:mi:cantrip", tab: "spells", title: "Magic Initiate Cantrips", elementType: "spell", groupLabel: label, dup: "mi-cantrip", candidates: onList(0) }, 2),
     make({ id: "bg:mi:spell", tab: "spells", title: "Magic Initiate Level 1 Spell", elementType: "spell", groupLabel: label, candidates: onList(1) }),
   ];
