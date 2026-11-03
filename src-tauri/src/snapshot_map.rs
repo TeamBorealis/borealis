@@ -164,12 +164,16 @@ fn multiclass_reason(input: &MapInput<'_>, snap: &Engine) -> String {
 fn class_info(input: &MapInput<'_>, c: &ClassSnapshot) -> ClassLevelInfo {
     let die = c.hit_die.unwrap_or(0);
     let stored = borealis_engine::levels::rolls_for(&input.character.build.hp_rolls, &c.slot);
+    let is_max = |i: usize| i == 0 && c.slot == ClassSlot::Main;
     let hp_rolls = (0..c.level as usize)
-        .map(|i| match stored.get(i) {
-            Some(&v) if v > 0 => v,
-            _ if i == 0 && c.slot == ClassSlot::Main => die,
-            _ => average_die(die),
+        .map(|i| match borealis_engine::levels::stored_roll(stored, i) {
+            _ if is_max(i) => die,
+            Some(v) => v,
+            None => average_die(die),
         })
+        .collect();
+    let hp_average = (0..c.level as usize)
+        .map(|i| !is_max(i) && borealis_engine::levels::stored_roll(stored, i).is_none())
         .collect();
     let prerequisite = c.class.as_ref().and_then(|cls| {
         let store = &input.hub.store;
@@ -194,6 +198,7 @@ fn class_info(input: &MapInput<'_>, c: &ClassSnapshot) -> ClassLevelInfo {
         is_main: c.slot == ClassSlot::Main,
         subclass: c.archetypes.first().map(engine_ref),
         hp_rolls,
+        hp_average,
         multiclass_prerequisite: prerequisite,
     }
 }

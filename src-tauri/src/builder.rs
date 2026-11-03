@@ -382,7 +382,7 @@ impl AppState {
         })
     }
 
-    /// Record a hit point roll for a class level.
+    /// Record a hit point roll for a class level, or with `None` make the level use the average.
     ///
     /// # Errors
     /// `invalid_argument` if the value is outside the hit die.
@@ -391,7 +391,7 @@ impl AppState {
         id: &str,
         class_slot_id: &str,
         level: u32,
-        value: u32,
+        value: Option<u32>,
     ) -> ApiResult<CharacterSnapshot> {
         let slot = decode_class_slot(class_slot_id)?;
         self.mutate(id, |ctx, d| {
@@ -405,7 +405,7 @@ impl AppState {
                 return Err(ApiError::invalid("The character has no such class level."));
             }
             let die = class.hit_die.unwrap_or(0);
-            if value == 0 || value > die {
+            if value.is_some_and(|v| v == 0 || v > die) {
                 return Err(ApiError::invalid(format!(
                     "A hit point roll must be between 1 and {die}."
                 )));

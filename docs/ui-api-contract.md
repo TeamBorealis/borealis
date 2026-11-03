@@ -93,7 +93,7 @@ Clean-room note: sample data in the mock is original and SRD-generic.
 | Level down | `level_down` removes the most recent level, drops an emptied multiclass slot, and sets XP to the new level's threshold. |
 | Attunement | equipping a 4th attunable item succeeds **unattuned** and adds a warning string to `inventory.warnings`; `set_attuned` beyond the limit fails with `requirement_failed`. The warning list is transient: it is present only in the snapshot returned by the mutation that caused it. |
 | Buying | `add_item(buy: true)` pays from the purse with make-change; insufficient funds -> `requirement_failed` (the UI then offers "add anyway" via `buy: false`). Total copper is invariant under change-making. |
-| HP and prepared spells | HP rolls are persisted inputs (`set_hp_roll`); new levels use the average when the option is on; prepared-spell maximum is clamped to at least 1. |
+| HP and prepared spells | HP rolls are persisted inputs (`set_hp_roll`); new levels use the average when the option is on. With it off, each level uses its roll or, without one (`value: null` clears it, stored as 0), the average; `ClassLevelInfo.hpAverage` says which. Prepared-spell maximum is clamped to at least 1. |
 | Source restrictions | before `set_source_restrictions` the UI calls `preview_source_restrictions` and warns about picks that would be dropped. |
 
 ## 3. Commands
@@ -141,7 +141,7 @@ Clean-room note: sample data in the mock is original and SRD-generic.
 | `level_up` | `characterId, { classSlotId: string }` | `CharacterSnapshot` |
 | `level_down` | `Cid` | `CharacterSnapshot` |
 | `add_multiclass` | `Cid` | `CharacterSnapshot` |
-| `set_hp_roll` | `characterId, { classSlotId: string; level: number; value: number }` | `CharacterSnapshot` |
+| `set_hp_roll` | `characterId, { classSlotId: string; level: number; value: number \| null }` (null = use the average) | `CharacterSnapshot` |
 
 ### Builder: abilities (backend enforces budgets)
 

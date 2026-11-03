@@ -266,7 +266,9 @@ fn command_errors_are_specific() {
     assert!(commands::select(&e, &s, &race, Choice::ListItem(1)).is_err());
     assert!(commands::level_down(&e, &s).is_err());
     assert!(commands::set_option(&e, &s, "ID_NOT_AN_OPTION", true).is_err());
-    assert!(commands::set_hp_roll(&s, &borealis_engine::state::ClassSlot::Main, 0, 5).is_err());
+    assert!(
+        commands::set_hp_roll(&s, &borealis_engine::state::ClassSlot::Main, 0, Some(5)).is_err()
+    );
     assert!(commands::set_replace_level(&s, &race, 3).is_err());
     assert!(commands::remove_item(&e, &s, "nope").is_err());
 }
@@ -288,7 +290,7 @@ fn levels_experience_and_hp_rolls() {
     assert_eq!(snap.hit_points, 10 + 7 + 3 + 3 * 2);
     assert!(snap.level_up_available == (900 >= snap.next_level_xp.unwrap()));
     assert_eq!(snap.next_level_xp, Some(2700));
-    s = commands::set_hp_roll(&s, &borealis_engine::state::ClassSlot::Main, 2, 9)
+    s = commands::set_hp_roll(&s, &borealis_engine::state::ClassSlot::Main, 2, Some(9))
         .unwrap()
         .state;
     assert_eq!(e.derive(&s).hit_points, 10 + 9 + 3 + 6);
@@ -305,6 +307,61 @@ fn levels_experience_and_hp_rolls() {
     let mut max = hero(&e);
     max.levels = vec![borealis_engine::state::ClassSlot::Main; 20];
     assert!(commands::level_up_main(&e, &max, None).is_err());
+}
+
+#[test]
+fn hp_roll_can_be_cleared_back_to_the_average() {
+    use borealis_engine::state::ClassSlot;
+    let e = engine_with(vec![
+        json!({"id":"ID_T_CLASS","name":"Soldier","type":"Class","source":"Test","setters":[{"name":"hd","value":"d10"}]}),
+    ]);
+    let mut s = hero(&e);
+    s.abilities.base = [10, 10, 14, 10, 10, 10];
+    s = pick(&e, &s, "ID_LEVEL_1", "Class", 1, "ID_T_CLASS");
+    s.options
+        .retain(|o| o != "ID_INTERNAL_OPTION_ALLOW_AVERAGE_HP");
+    s = commands::level_up_main(&e, &s, Some(7)).unwrap().state;
+    s = commands::level_up_main(&e, &s, Some(3)).unwrap().state;
+    assert_eq!(e.derive(&s).hit_points, 10 + 7 + 3 + 3 * 2);
+    // Level 2 goes back to the d10 average (6); level 3 keeps its roll.
+    s = commands::set_hp_roll(&s, &ClassSlot::Main, 2, None)
+        .unwrap()
+        .state;
+    assert_eq!(s.hp_rolls[0].rolls, vec![0, 0, 3]);
+    assert_eq!(e.derive(&s).hit_points, 10 + 6 + 3 + 3 * 2);
+    // A roll can be entered again afterwards.
+    s = commands::set_hp_roll(&s, &ClassSlot::Main, 2, Some(9))
+        .unwrap()
+        .state;
+    assert_eq!(e.derive(&s).hit_points, 10 + 9 + 3 + 3 * 2);
+    // A zero roll is not a value; clearing a level that was never rolled stores nothing.
+    assert!(commands::set_hp_roll(&s, &ClassSlot::Main, 2, Some(0)).is_err());
+    assert!(commands::set_hp_roll(&s, &ClassSlot::Main, 21, None).is_err());
+    let fresh = commands::set_hp_roll(&hero(&e), &ClassSlot::Main, 2, None)
+        .unwrap()
+        .state;
+    assert!(fresh.hp_rolls.is_empty());
+}
+
+#[test]
+fn unrolled_levels_before_a_roll_use_the_average() {
+    use borealis_engine::state::ClassSlot;
+    let e = engine_with(vec![
+        json!({"id":"ID_T_CLASS","name":"Soldier","type":"Class","source":"Test","setters":[{"name":"hd","value":"d10"}]}),
+    ]);
+    let mut s = hero(&e);
+    s.abilities.base = [10, 10, 10, 10, 10, 10];
+    s = pick(&e, &s, "ID_LEVEL_1", "Class", 1, "ID_T_CLASS");
+    s.options
+        .retain(|o| o != "ID_INTERNAL_OPTION_ALLOW_AVERAGE_HP");
+    s = commands::level_up_main(&e, &s, None).unwrap().state;
+    s = commands::level_up_main(&e, &s, None).unwrap().state;
+    // Rolling only level 3 pads level 2 with 0, which means "the average", not 1 hit point.
+    s = commands::set_hp_roll(&s, &ClassSlot::Main, 3, Some(2))
+        .unwrap()
+        .state;
+    assert_eq!(s.hp_rolls[0].rolls, vec![0, 0, 2]);
+    assert_eq!(e.derive(&s).hit_points, 10 + 6 + 2);
 }
 
 #[test]

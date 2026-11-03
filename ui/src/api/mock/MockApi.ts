@@ -368,7 +368,7 @@ export class MockApi implements Api {
   async levelUp({ characterId, classSlotId }: { characterId: string; classSlotId: string }) { return this.mutate(characterId, (c) => lv.levelUp(c, classSlotId)); }
   async levelDown({ characterId }: { characterId: string }) { return this.mutate(characterId, lv.levelDown); }
   async addMulticlass({ characterId }: { characterId: string }) { return this.mutate(characterId, lv.addMulticlass); }
-  async setHpRoll(a: { characterId: string; classSlotId: string; level: number; value: number }) { return this.mutate(a.characterId, (c) => lv.setHpRoll(c, a.classSlotId, a.level, a.value)); }
+  async setHpRoll(a: { characterId: string; classSlotId: string; level: number; value: number | null }) { return this.mutate(a.characterId, (c) => lv.setHpRoll(c, a.classSlotId, a.level, a.value)); }
 
   /* ---------- abilities ---------- */
 

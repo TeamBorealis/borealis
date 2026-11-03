@@ -30,6 +30,29 @@ function XpField({ xp, onCommit }: { xp: number; onCommit: (v: number) => void }
   );
 }
 
+interface HpLevelRollProps {
+  classLabel: string;
+  level: number;
+  value: number;
+  isAverage: boolean;
+  hitDie: number;
+  /** A roll, or null to use the average. */
+  onSet: (value: number | null) => void;
+}
+
+/** One class level's hit die value: a stepper (stepping enters a roll) and an Avg toggle (pressed = the level uses the average). */
+function HpLevelRoll({ classLabel, level, value, isAverage, hitDie, onSet }: HpLevelRollProps) {
+  const label = `${classLabel} level ${level} HP roll`;
+  return (
+    <>
+      <ScoreInput label={label} value={value} min={1} max={hitDie} format={(n) => (isAverage ? `${n} (avg)` : String(n))} onChange={onSet} />
+      <button type="button" className="lvl-link lvl-avg" aria-pressed={isAverage} aria-label={`Avg hit points for ${classLabel} level ${level}`}
+        title={isAverage ? "Uses the average. Press to keep it as a roll." : "Use the average"}
+        onClick={() => onSet(isAverage ? value : null)}>Avg</button>
+    </>
+  );
+}
+
 export function LevelsPane() {
   return (
     <PaneShell title="Level up and HP" imageIcon={false} intro="Gain a level in your current class, or start a new one."
@@ -37,7 +60,7 @@ export function LevelsPane() {
       <h3 className="desc-h">Leveling up</h3>
       <p className="desc-line">Experience points only prompt you: a level is never added automatically. Press Level up on a class block when you are ready, then make the new choices that appear on the other Build tabs.</p>
       <h3 className="desc-h">Hit points</h3>
-      <p className="desc-line">Your first level uses the largest value of the hit die. Later levels use the average, or a roll you enter here when the average setting is off. Constitution adds to every level.</p>
+      <p className="desc-line">Your first level uses the largest value of the hit die. Later levels use the average. When the average setting is off, each level can use the average or a roll you enter here: step the value to enter a roll, or press Avg to go back to the average. Constitution adds to every level.</p>
       <h3 className="desc-h">Multiclassing</h3>
       <p className="desc-line">A new class needs the listed ability scores. Each class keeps its own level, hit die and features.</p>
     </PaneShell>
@@ -107,8 +130,8 @@ export function LevelPanel({ embedded = false }: { embedded?: boolean }) {
                 <div key={i} className="lvl-roll">
                   <span className="small muted">Lv {i + 1}</span>
                   {c.isMain && i === 0 ? <strong>{r} (max)</strong> : (
-                    <ScoreInput label={`${c.name} level ${i + 1} HP roll`} value={r} min={1} max={c.hitDie}
-                      onChange={(v) => void mutate((api, id) => api.setHpRoll({ characterId: id, classSlotId: c.slotId, level: i + 1, value: v }))} />
+                    <HpLevelRoll classLabel={c.name ?? "Class"} level={i + 1} value={r} isAverage={c.hpAverage[i] ?? false} hitDie={c.hitDie}
+                      onSet={(value) => void mutate((api, id) => api.setHpRoll({ characterId: id, classSlotId: c.slotId, level: i + 1, value }))} />
                   )}
                 </div>
               ))}

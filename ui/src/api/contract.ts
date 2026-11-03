@@ -185,7 +185,8 @@ export interface ApiMethods {
   levelUp(args: Cid & { classSlotId: string }): Promise<CharacterSnapshot>;
   levelDown(args: Cid): Promise<CharacterSnapshot>;
   addMulticlass(args: Cid): Promise<CharacterSnapshot>;
-  setHpRoll(args: Cid & { classSlotId: string; level: number; value: number }): Promise<CharacterSnapshot>;
+  /** `value` null: the level uses the average again. */
+  setHpRoll(args: Cid & { classSlotId: string; level: number; value: number | null }): Promise<CharacterSnapshot>;
 
   /* Builder: abilities (backend enforces budgets) */
   setAbilityMethod(args: Cid & { method: AbilityMethod }): Promise<CharacterSnapshot>;

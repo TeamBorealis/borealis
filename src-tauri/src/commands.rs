@@ -246,7 +246,7 @@ pub fn set_hp_roll(
     character_id: String,
     class_slot_id: String,
     level: u32,
-    value: u32,
+    value: Option<u32>,
 ) -> ApiResult<CharacterSnapshot> {
     state.set_hp_roll(&character_id, &class_slot_id, level, value)
 }

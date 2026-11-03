@@ -148,8 +148,10 @@ export interface ClassLevelInfo {
   hitDie: number;
   isMain: boolean;
   subclass: ElementRef | null;
-  /** Per-level hit point inputs; index 0 = level 1 (fixed max for main class). */
+  /** Per-level hit die values used; index 0 = level 1 (fixed max for main class): the roll, or the average. */
   hpRolls: number[];
+  /** Per level: true when the level has no roll and uses the average (false for the main class's level 1, always the max). */
+  hpAverage: boolean[];
   multiclassPrerequisite: string | null;
 }
 

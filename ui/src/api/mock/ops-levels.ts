@@ -1,3 +1,4 @@
+import { getClass } from "./content";
 import { apiError } from "./errors";
 import { classIdOf } from "./slots";
 import { type MockCharacter, XP_THRESHOLDS, levelOf, totalLevel } from "./state";
@@ -32,12 +33,14 @@ export function addMulticlass(c: MockCharacter): MockCharacter {
   return { ...c, classes: [...c.classes, { slotId, hpRolls: [0] }], levelOrder: [...c.levelOrder, slotId] };
 }
 
-export function setHpRoll(c: MockCharacter, classSlotId: string, level: number, value: number): MockCharacter {
-  if (level < 1 || level > levelOf(c, classSlotId)) throw apiError("invalid_argument", "No such level.");
+/** Store a roll, or with `value` null clear it (stored as 0) so the level uses the average. */
+export function setHpRoll(c: MockCharacter, classSlotId: string, level: number, value: number | null): MockCharacter {
+  if (level < 1 || level > levelOf(c, classSlotId)) throw apiError("invalid_argument", "The character has no such class level.");
+  const die = getClass(classIdOf(c, classSlotId))?.hitDie ?? 8;
+  if (value !== null && (value < 1 || value > die)) throw apiError("invalid_argument", `A hit point roll must be between 1 and ${die}.`);
   const classes = c.classes.map((x) => {
     if (x.slotId !== classSlotId) return x;
-    const rolls = Array.from({ length: Math.max(level, x.hpRolls.length) }, (_, i) => x.hpRolls[i] ?? 0);
-    rolls[level - 1] = value;
+    const rolls = Array.from({ length: Math.max(level, x.hpRolls.length) }, (_, i) => (i === level - 1 ? value ?? 0 : x.hpRolls[i] ?? 0));
     return { ...x, hpRolls: rolls };
   });
   return { ...c, classes };

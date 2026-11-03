@@ -162,6 +162,8 @@ html.phone .flyout .lvl-link.up .icon { margin: 0; top: 0; }
 html.phone .lvl-sub, html.phone .flyout .lvl-sub { margin-top: 4px; font: 400 var(--ph-t-foot)/1.4 var(--ph-font-ui); font-style: normal; color: var(--ph-text-2); }
 html.phone .hp-rolls { gap: 12px; }
 html.phone .lvl-roll { gap: 8px; font-size: var(--ph-t-foot); }
+html.phone .lvl-link.lvl-avg { padding: 0 10px; color: var(--ph-text-2); }
+html.phone .lvl-link.lvl-avg[aria-pressed="true"] { background: var(--ph-accent); color: var(--ph-on-accent); }
 html.phone .flyout .lvl-multi { margin: 8px 0 0; padding: 4px var(--ph-gutter) 12px; border: 0; border-radius: var(--ph-r-lg); background: var(--ph-surface); }
 html.phone .lvl-multi .aur-expander-head, html.phone .lvl-multi .aur-expander-toggle, html.phone .lvl-multi .aur-expander-chev { height: auto; min-height: var(--ph-hit); }
 html.phone .lvl-multi .aur-expander-chev .icon { width: 20px; height: 20px; }

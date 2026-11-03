@@ -10,10 +10,17 @@ pub fn average_die(die: u32) -> u32 {
     die / 2 + 1
 }
 
+/// The stored roll for a class level (`index` is 0-based), or `None` when the level has no roll
+/// and so uses the average: the entry is missing or 0 (0 is the stored "average" marker).
+#[must_use]
+pub fn stored_roll(rolls: &[u32], index: usize) -> Option<u32> {
+    rolls.get(index).copied().filter(|v| *v > 0)
+}
+
 /// Hit points a class progression provides (without the Constitution modifier).
 ///
 /// `average` selects the fixed average table, otherwise the persisted `rolls`. Entry 0 of the main
-/// class is always the die maximum; missing rolled entries fall back to the average.
+/// class is always the die maximum; levels without a roll (missing or 0) use the average.
 #[must_use]
 pub fn class_hit_points(die: u32, level: u32, is_main: bool, average: bool, rolls: &[u32]) -> i32 {
     class_hit_points_with(die, level, is_main, average, rolls, None)
@@ -38,7 +45,7 @@ pub fn class_hit_points_with(
         } else if average {
             avg
         } else {
-            rolls.get(i).copied().unwrap_or(avg).clamp(1, die.max(1))
+            stored_roll(rolls, i).map_or(avg, |v| v.min(die.max(1)))
         };
         total += v;
     }

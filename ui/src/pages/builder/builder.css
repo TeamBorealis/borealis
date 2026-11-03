@@ -195,6 +195,9 @@
 .lvl-sub { margin: 4px 0 0; font-size: var(--fs-xs); font-style: italic; color: var(--text-secondary); }
 .hp-rolls { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 8px; }
 .lvl-roll { display: flex; align-items: center; gap: 6px; }
+.lvl-avg { padding: 0 4px; color: var(--gray-3); }
+.lvl-avg[aria-pressed="true"] { color: var(--accent); }
+@media (hover: hover) and (pointer: fine) { .lvl-avg:hover { color: var(--accent-strong); } }
 .lvl-multi { margin-top: 12px; }
 .lvl-multi-foot { display: flex; justify-content: flex-end; margin-top: 8px; }
 .flyout .lvl { max-width: none; }

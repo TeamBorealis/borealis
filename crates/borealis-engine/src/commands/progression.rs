@@ -184,24 +184,41 @@ pub fn set_option(engine: &Engine, state: &CharacterState, id: &str, enabled: bo
     Ok(CommandOutcome::new(prune(engine, &next)))
 }
 
-/// Store one hit point roll (`class_level` is 1-based; the main class's level 1 is always the die).
+/// Store one hit point roll, or with `None` clear it so the level uses the average again
+/// (`class_level` is 1-based; the main class's level 1 is always the die). A cleared level is
+/// stored as 0, the same "no roll" marker padded levels and imported files use.
 ///
 /// # Errors
-/// [`CommandError::Level`] if the value is zero or the level exceeds 20.
+/// [`CommandError::Level`] if the value is zero or the level is outside 1..=20.
 pub fn set_hp_roll(
     state: &CharacterState,
     slot: &ClassSlot,
     class_level: u32,
-    value: u32,
+    value: Option<u32>,
 ) -> CmdResult {
-    if value == 0 || class_level == 0 || class_level > MAX_LEVEL {
+    if value == Some(0) || class_level == 0 || class_level > MAX_LEVEL {
         return Err(CommandError::Level(
             "hit point rolls start at 1 and levels at 1..=20".into(),
         ));
     }
     let mut next = state.clone();
-    record_roll(&mut next, slot, class_level, Some(value));
+    match value {
+        Some(v) => record_roll(&mut next, slot, class_level, Some(v)),
+        None => clear_roll(&mut next, slot, class_level),
+    }
     Ok(CommandOutcome::new(next))
+}
+
+fn clear_roll(state: &mut CharacterState, slot: &ClassSlot, class_level: u32) {
+    let idx = class_level.saturating_sub(1) as usize;
+    if let Some(r) = state
+        .hp_rolls
+        .iter_mut()
+        .find(|r| &r.class == slot)
+        .and_then(|r| r.rolls.get_mut(idx))
+    {
+        *r = 0;
+    }
 }
 
 /// Mark a spell prepared or not. Enforces the prepared limit (at least 1); always-prepared

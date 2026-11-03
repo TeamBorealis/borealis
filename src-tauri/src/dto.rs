@@ -365,7 +365,11 @@ pub struct ClassLevelInfo {
     pub hit_die: u32,
     pub is_main: bool,
     pub subclass: Option<ElementRef>,
+    /// Hit die value per class level (index 0 = level 1): the roll, or the average/maximum.
     pub hp_rolls: Vec<u32>,
+    /// Per class level: true when it has no roll and uses the average (the main class's level 1,
+    /// always the die maximum, is false).
+    pub hp_average: Vec<bool>,
     pub multiclass_prerequisite: Option<String>,
 }
 

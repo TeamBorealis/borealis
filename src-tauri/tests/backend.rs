@@ -313,6 +313,56 @@ fn rolling_records_history_and_stays_in_range() {
 }
 
 #[test]
+fn hp_per_level_average_or_roll() {
+    let (_dir, app) = app();
+    let id = build(&app).id;
+    let off = app
+        .set_character_options(
+            &id,
+            &OptionsPatch {
+                average_hp: Some(false),
+                ..OptionsPatch::default()
+            },
+        )
+        .expect("options");
+    assert!(!off.options.average_hp);
+    app.level_up(&id, "main").expect("up 2");
+    let three = app.level_up(&id, "main").expect("up 3");
+    let fighter = &three.level.classes[0];
+    // d10: level 1 is the maximum, unrolled levels use the average (6).
+    assert_eq!(fighter.hp_rolls, vec![10, 6, 6]);
+    assert_eq!(fighter.hp_average, vec![false, true, true]);
+    let base = three.stats.hp_max;
+    let rolled = app.set_hp_roll(&id, "main", 3, Some(2)).expect("roll 3");
+    assert_eq!(rolled.level.classes[0].hp_rolls, vec![10, 6, 2]);
+    assert_eq!(rolled.level.classes[0].hp_average, vec![false, true, false]);
+    assert_eq!(rolled.stats.hp_max, base - 4);
+    let rolled = app.set_hp_roll(&id, "main", 2, Some(9)).expect("roll 2");
+    assert_eq!(
+        rolled.level.classes[0].hp_average,
+        vec![false, false, false]
+    );
+    assert_eq!(rolled.stats.hp_max, base - 4 + 3);
+    let cleared = app.set_hp_roll(&id, "main", 2, None).expect("clear 2");
+    assert_eq!(cleared.level.classes[0].hp_rolls, vec![10, 6, 2]);
+    assert_eq!(
+        cleared.level.classes[0].hp_average,
+        vec![false, true, false]
+    );
+    assert_eq!(cleared.stats.hp_max, base - 4);
+    assert_eq!(
+        code(app.set_hp_roll(&id, "main", 4, None)),
+        ErrorCode::InvalidArgument
+    );
+    assert_eq!(
+        code(app.set_hp_roll(&id, "main", 2, Some(0))),
+        ErrorCode::InvalidArgument
+    );
+    let reopened = app.get_snapshot(&id).expect("snapshot");
+    assert_eq!(reopened.stats.hp_max, base - 4);
+}
+
+#[test]
 fn hp_rolls_multiclass_and_options() {
     let (_dir, app) = app();
     let id = build(&app).id;
@@ -320,14 +370,14 @@ fn hp_rolls_multiclass_and_options() {
     let die = up.level.classes[0].hit_die;
     assert_eq!(die, 10);
     assert_eq!(
-        code(app.set_hp_roll(&id, "main", 2, die + 1)),
+        code(app.set_hp_roll(&id, "main", 2, Some(die + 1))),
         ErrorCode::InvalidArgument
     );
     assert_eq!(
-        code(app.set_hp_roll(&id, "main", 9, 3)),
+        code(app.set_hp_roll(&id, "main", 9, Some(3))),
         ErrorCode::InvalidArgument
     );
-    let rolled = app.set_hp_roll(&id, "main", 2, 3).expect("roll");
+    let rolled = app.set_hp_roll(&id, "main", 2, Some(3)).expect("roll");
     assert_eq!(rolled.level.classes[0].hp_rolls[1], 3);
     let off = app
         .set_character_options(

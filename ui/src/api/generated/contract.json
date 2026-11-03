@@ -3979,6 +3979,15 @@
       "k": "prim"
      }
     },
+    "hpAverage": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
     "hpRolls": {
      "opt": false,
      "t": {

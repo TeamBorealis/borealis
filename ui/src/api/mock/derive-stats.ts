@@ -5,7 +5,9 @@ import { type MockCharacter, XP_THRESHOLDS, levelOf, totalLevel } from "./state"
 
 export const profBonus = (level: number): number => 2 + Math.floor((Math.max(1, level) - 1) / 4);
 
-/** Per-level hit die values actually used (level 1 of the main class is the fixed maximum). */
+const isRolled = (v: number | undefined, die: number): v is number => v !== undefined && v >= 1 && v <= die;
+
+/** Per-level hit die values actually used (level 1 of the main class is the fixed maximum; 0 = the average). */
 export function resolvedHpRolls(c: MockCharacter, index: number): number[] {
   const cs = c.classes[index]!;
   const cls = getClass(classIdOf(c, cs.slotId));
@@ -14,8 +16,15 @@ export function resolvedHpRolls(c: MockCharacter, index: number): number[] {
   return Array.from({ length: levelOf(c, cs.slotId) }, (_, n) => {
     if (index === 0 && n === 0) return die;
     const v = cs.hpRolls[n];
-    return v !== undefined && v >= 1 && v <= die ? v : avg;
+    return isRolled(v, die) ? v : avg;
   });
+}
+
+/** Per level: true when it has no roll and uses the average (never the main class's level 1). */
+export function hpAverageFlags(c: MockCharacter, index: number): boolean[] {
+  const cs = c.classes[index]!;
+  const die = getClass(classIdOf(c, cs.slotId))?.hitDie ?? 8;
+  return Array.from({ length: levelOf(c, cs.slotId) }, (_, n) => !(index === 0 && n === 0) && !isRolled(cs.hpRolls[n], die));
 }
 
 export function deriveClasses(c: MockCharacter): ClassLevelInfo[] {
@@ -27,7 +36,7 @@ export function deriveClasses(c: MockCharacter): ClassLevelInfo[] {
       slotId: cs.slotId, classId: cls?.id ?? null, name: cls ? titleCase(cls.id) : null,
       level: levelOf(c, cs.slotId), hitDie: cls?.hitDie ?? 8, isMain: i === 0,
       subclass: subEl ? { id: subEl.id, name: subEl.name, type: subEl.type, source: subEl.source } : null,
-      hpRolls: resolvedHpRolls(c, i), multiclassPrerequisite: i === 0 || !cls ? null : `${cls.multiclassAbility.join("/").toUpperCase()} 13`,
+      hpRolls: resolvedHpRolls(c, i), hpAverage: hpAverageFlags(c, i), multiclassPrerequisite: i === 0 || !cls ? null : `${cls.multiclassAbility.join("/").toUpperCase()} 13`,
     };
   });
 }
