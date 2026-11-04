@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import type { ClassSpellcasting, PactSlotRow, SelectionSlot, SpellSlotRow } from "../../api/contract";
 import { TabPanel, Tabs, signed } from "../../components";
@@ -9,7 +9,7 @@ import { usePhone } from "../../lib/phone";
 import { KnownSpells, SpellGrid } from "./SpellGrid";
 import { ClassSpellGrid } from "./ClassSpellGrid";
 import { Band, TwoPane } from "./TwoPane";
-import { EMPTY_FILTER, filterClass, SpellFilterBar, type SpellFilterState } from "./SpellFilter";
+import { classesScope, EMPTY_FILTER, filterClass, type FilterScope, SpellFilterBar, type SpellFilterState } from "./SpellFilter";
 import { catalogueClassOf, SlotsTable, sourceOf } from "./SlotsTable";
 import { SlotOptionsGrid } from "./SlotOptionsGrid";
 import { PickerStateProvider } from "../builder/pickerState";
@@ -93,8 +93,12 @@ interface OverviewProps {
   current: string | null; onCurrent: (slotId: string) => void;
 }
 
+const NO_SCOPE: FilterScope = { pool: [], shown: 0, total: 0 };
+
 function Overview({ picked, onPick, filter, onFilter, current, onCurrent }: OverviewProps) {
   const { snapshot, mutate } = useCharacter();
+  const [slotScope, setSlotScope] = useState<{ slotId: string; scope: FilterScope } | null>(null);
+  const onScope = useCallback((slotId: string, scope: FilterScope) => setSlotScope({ slotId, scope }), []);
   if (!snapshot) return null;
   const sc = snapshot.spellcasting;
   const rows = sc.multiclassSlots ?? sc.slots;
@@ -105,15 +109,20 @@ function Overview({ picked, onPick, filter, onFilter, current, onCurrent }: Over
     void mutate((api, id) => api.applySelection({ characterId: id, slotId, elementId }));
   };
   const hotClass = hot ? catalogueClassOf(hot, sc.classes) : undefined;
+  const clearFilter = () => onFilter({ ...EMPTY_FILTER, pinned: filter.pinned });
   const grid = (slot: SelectionSlot, label: string) =>
-    <SlotOptionsGrid characterId={snapshot.id} label={label} slot={slot} picked={picked} onPick={onPick} onChoose={choose} />;
+    <SlotOptionsGrid characterId={snapshot.id} label={label} slot={slot} picked={picked} onPick={onPick} onChoose={choose}
+      spellFilter={filter} onScope={onScope} onClearSpellFilter={clearFilter} />;
+  // GitHub #21: while a slot is highlighted the filter acts on its options, the spells being chosen (Aurora filters the
+  // selected expander), and the class grids list every spell; with no slot highlighted it narrows the class grids.
+  const scope = hot ? (slotScope?.slotId === hot.id ? slotScope.scope : NO_SCOPE) : classesScope(sc.classes, filter);
   const catalogue = (c: ClassSpellcasting) => hot && c.classSlotId === hotClass ? grid(hot, c.className) : undefined;
   const ownLabel = hot && !hotClass ? sourceOf(hot, sc.classes) || hot.title : null;
   const focusedId = ownLabel ? undefined : (sc.classes.find((c) => c.spells.some((x) => x.id === picked)) ?? sc.classes[0])?.classSlotId;
   return (
     <>
-      {sc.classes.length > 0 && <SpellFilterBar classes={sc.classes} filter={filter} onChange={onFilter} />}
-      {sc.classes.map((c) => <ClassBlock key={c.classSlotId} cls={c} catalogue={catalogue(c)} shownCls={filterClass(c, filter)} slotRows={rows} full focused={c.classSlotId === focusedId} picked={picked} onPick={onPick} />)}
+      {(sc.classes.length > 0 || hot) && <SpellFilterBar scope={scope} filter={filter} onChange={onFilter} />}
+      {sc.classes.map((c) => <ClassBlock key={c.classSlotId} cls={c} catalogue={catalogue(c)} shownCls={hot ? c : filterClass(c, filter)} slotRows={rows} full focused={c.classSlotId === focusedId} picked={picked} onPick={onPick} />)}
       {hot && ownLabel && <SourceBlock label={ownLabel}>{grid(hot, ownLabel)}</SourceBlock>}
       <SlotsTable slots={slots} classes={sc.classes} picked={picked} onPick={onPick} current={current} onCurrent={onCurrent} />
     </>

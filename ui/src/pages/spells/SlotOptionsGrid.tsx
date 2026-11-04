@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useState } from "react";
+import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import type { SelectionSlot } from "../../api/contract";
 import { Button, ConvertedTag, editionMarks, EditionNotes, EditionSuffix } from "../../components";
 import { NO_FILTER, type ShownRow, type VersionLike } from "../../lib/versions";
@@ -7,6 +7,7 @@ import { PickerFilterBar } from "../builder/PickerFilterBar";
 import { usePickerRows, useSwitchVersion } from "../builder/usePickerRows";
 import { VersionButton, VersionMenu } from "../builder/VersionMenu";
 import { arrowNav } from "./rowNav";
+import { EMPTY_FILTER, type FilterScope, narrowRows, spellFacts, type SpellFilterState } from "./SpellFilter";
 import { ComponentCells, componentText } from "./SpellGrid";
 import { RowDetail } from "../../components/RowDetail";
 import { usePhone } from "../../lib/phone";
@@ -24,6 +25,12 @@ interface SlotOptionsGridProps {
   picked: string | null;
   onPick: (id: string) => void;
   onChoose: (slotId: string, elementId: string) => void;
+  /** GitHub #21: the SPELLCASTING filter bar's filter, which narrows this list (the spells being chosen). */
+  spellFilter?: SpellFilterState;
+  /** Tells the filter bar what it acts on: this list's spells and how many it shows. */
+  onScope?: (slotId: string, scope: FilterScope) => void;
+  /** Clears the filter bar's filter ("Nothing matches these filters. Clear" clears both bars). */
+  onClearSpellFilter?: () => void;
 }
 
 /**
@@ -31,15 +38,23 @@ interface SlotOptionsGridProps {
  * one row per name (B-55) with the version column and the filter bar. Click describes; double-click or Enter registers the
  * row's shown version into the highlighted slot. Phones also get Build's "Choose <name>" button for the described row (O2).
  */
-export function SlotOptionsGrid({ characterId, label, slot, picked, onPick, onChoose }: SlotOptionsGridProps) {
+export function SlotOptionsGrid({ characterId, label, slot, picked, onPick, onChoose, spellFilter = EMPTY_FILTER, onScope, onClearSpellFilter }: SlotOptionsGridProps) {
   const phone = usePhone();
   const picker = usePickerRows(characterId, slot, !slot.locked);
   const switchVersion = useSwitchVersion();
-  const { options, rows, visible } = picker;
+  const { options, rows, charEd } = picker;
+  const visible = useMemo(() => narrowRows(picker.visible, spellFilter, charEd), [picker.visible, spellFilter, charEd]);
+  const versionColumn = visible.some((r) => r.versions.length > 1);
+  const pool = useMemo(() => rows.flatMap((r) => r.all.map(spellFacts)), [rows]);
+  useEffect(() => onScope?.(slot.id, { pool, shown: visible.length, total: rows.length }), [onScope, slot.id, pool, visible.length, rows.length]);
+  const clearFilters = () => {
+    picker.setFilter(NO_FILTER);
+    onClearSpellFilter?.();
+  };
   const [notesFor, setNotesFor] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ key: string; anchor: HTMLElement } | null>(null);
   const menuRow = menu ? visible.find((r) => r.key === menu.key) ?? null : null;
-  const cols = COLUMNS + (picker.versionColumn ? 1 : 0);
+  const cols = COLUMNS + (versionColumn ? 1 : 0);
   const described = visible.find((r) => r.versions.some((v) => v.id === picked)) ?? null;
   const choosable = phone && described && !described.chosen && !described.shown.disabledReason ? described : null;
 
@@ -76,14 +91,14 @@ export function SlotOptionsGrid({ characterId, label, slot, picked, onPick, onCh
               <th scope="col" className="sp-vsm al-c">Somatic</th>
               <th scope="col" className="sp-vsm al-c">Material</th>
               <th scope="col" className="sp-src">Source</th>
-              {picker.versionColumn && <th scope="col" className="sp-ver"><span className="sr-only">Versions</span></th>}
+              {versionColumn && <th scope="col" className="sp-ver"><span className="sr-only">Versions</span></th>}
             </tr>
           </thead>
           <tbody>
             {options.error && <tr className="ap-empty-row"><td colSpan={cols} role="alert">{options.error}</td></tr>}
             {!options.error && rows.length === 0 && <tr className="ap-empty-row"><td colSpan={cols}>{options.loading ? "Loading..." : "No spells to show."}</td></tr>}
             {rows.length > 0 && visible.length === 0 && (
-              <tr className="ap-empty-row"><td colSpan={cols}>Nothing matches these filters. <button type="button" className="pick-fclear" onClick={() => picker.setFilter(NO_FILTER)}>Clear</button></td></tr>
+              <tr className="ap-empty-row"><td colSpan={cols}>Nothing matches these filters. <button type="button" className="pick-fclear" onClick={clearFilters}>Clear</button></td></tr>
             )}
             {visible.map((row) => {
               const o = row.shown;
@@ -109,7 +124,7 @@ export function SlotOptionsGrid({ characterId, label, slot, picked, onPick, onCh
                     </span>
                     <EditionNotes marks={marks} id={notesId} open={notesOpen} />
                   </td>
-                  {picker.versionColumn && (
+                  {versionColumn && (
                     <td className="sp-ver" onMouseDown={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()}>
                       {multi && <VersionButton count={row.versions.length} rowName={row.name} open={menu?.key === row.key}
                         onOpen={(anchor) => setMenu(menu?.key === row.key ? null : { key: row.key, anchor })} />}
