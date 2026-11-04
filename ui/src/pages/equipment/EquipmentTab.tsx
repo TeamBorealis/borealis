@@ -5,6 +5,7 @@ import { Alert, Button, ComboBox, useConfirm } from "../../components";
 import { groupVersions, sourcesOf, visibleRows, type EditionFilter, type PickerFilter, type VersionLike } from "../../lib/versions";
 import { EditionSegments, SourceFilterButton } from "../builder/PickerFilterBar";
 import { VersionMenu } from "../builder/VersionMenu";
+import { usePhone } from "../../lib/phone";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
 import { useAsync, useDebounced } from "../../state/useAsync";
@@ -61,6 +62,7 @@ export function EquipmentTab() {
   const [addQty, setAddQty] = useState(1);
   const [buyQty, setBuyQty] = useState(1);
   const [coins, setCoins] = useState(false);
+  const phone = usePhone();
   const q = useDebounced(filterOn ? query : "", 150);
   const cats = useItemCategories(snapshot);
   const listed = cats.data ?? [];
@@ -113,6 +115,14 @@ export function EquipmentTab() {
   };
   const pickBase = (b: ItemSummary) => { setBase(b); setDescId(b.id); };
   const label = (c: ItemCategory) => `${c.name} (${c.count})`;
+  // PH2 (GitHub #20): on phones Add and Buy stand just before the tools row, outside it, so they can stay pinned above the
+  // bottom tabs while the item list is on screen (a sticky element sticks within its parent). Desktop keeps them in the row.
+  const cmds = (
+    <span className={phone ? "eq-cmds eq-pin" : "eq-cmds"}>
+      <QtyCommand label="Add" value={addQty} onChange={setAddQty} disabled={!canAdd} onRun={() => pickedItem && canAdd && void add(pickedItem, addQty, false)} />
+      <QtyCommand label="Buy" value={buyQty} onChange={setBuyQty} disabled={!canAdd} onRun={() => pickedItem && canAdd && void add(pickedItem, buyQty, true)} />
+    </span>
+  );
   const left = (
     <div className="eq-layout">
       <nav className="eq-cats" aria-label="Item categories">
@@ -144,11 +154,9 @@ export function EquipmentTab() {
           </div>
         )}
       </div>
+      {phone && cmds}
       <div className="eq-tools">
-        <span className="eq-cmds">
-          <QtyCommand label="Add" value={addQty} onChange={setAddQty} disabled={!canAdd} onRun={() => pickedItem && canAdd && void add(pickedItem, addQty, false)} />
-          <QtyCommand label="Buy" value={buyQty} onChange={setBuyQty} disabled={!canAdd} onRun={() => pickedItem && canAdd && void add(pickedItem, buyQty, true)} />
-        </span>
+        {!phone && cmds}
         <button type="button" className="eq-filter-tile" aria-label="Filter items" aria-pressed={filterOn} title="Turn the name filter on or off" onClick={() => setFilterOn((v) => !v)}><Glyph name="filter" /></button>
         <span className="eq-filter"><input type="text" aria-label="Filter text" placeholder="filter name and keywords..." value={query} onChange={(e) => setQuery(e.target.value)} /><button type="button" aria-label="Clear" onClick={() => setQuery("")}><Glyph name="x" /></button></span>
         <span className="eq-edition"><EditionSegments value={edition} onChange={setEdition} /></span>

@@ -3,6 +3,8 @@
  * with the five coin figures, the category select, the catalogue as rows (price, weight and source as the detail line), Add
  * and Buy with their quantities, the filter, the source select, Manage coins, then the inventory rows with the equip button
  * at 44/48 pt and the inventory toolbar (Details, Up, Down, Delete, Delete all) as a 52 pt icon-and-label bar.
+ * PH2 (GitHub #20): Add/Buy and the inventory toolbar (`.eq-pin`) stay pinned above the bottom tabs while their own list is on
+ * screen, so a long list needs no scrolling back to them.
  */
 
 html.phone .eq-layout { display: flex; flex-direction: column; gap: 16px; margin: 0; }
@@ -47,6 +49,19 @@ html.phone .eq-coins, html.phone .eq-tools .eq-coins {
   flex: 1 1 100%; width: auto; height: auto; min-height: var(--ph-hit); margin: 0; border-radius: var(--ph-r-md); background: var(--ph-fill); color: var(--ph-text);
   font: 600 var(--ph-t-sub)/1.2 var(--ph-font-ui); text-transform: none;
 }
+
+/*
+ * PH2 pinned bars. Each is sticky at the bottom of the page scroller (`main.aur-content`, which ends above the status line and
+ * the bottom tabs, so their height and the home-indicator inset are already outside it). A sticky bar sticks only within its
+ * parent: Add/Buy (moved out of the tools row on phones) within the whole layout, so it is pinned from the top of the list
+ * until it reaches its own place under the list; the inventory toolbar within the inventory section. When the list ends, the
+ * bar is back in its own place under it, so the last row is never left under it; rows scrolled into view keep the bar's room
+ * (scroll-margin). An 8 px ring in the page colour parts a pinned bar from the rows scrolling under it and is invisible at rest.
+ */
+html.phone .eq-layout { --eq-pin-gap: 8px; --eq-pin-room: 80px; }
+html.phone .eq-pin { position: sticky; bottom: var(--eq-pin-gap); z-index: 2; box-shadow: 0 0 0 var(--eq-pin-gap) var(--ph-bg); }
+html.phone .eq-cmds.eq-pin { flex: none; margin-bottom: -8px; background: var(--ph-bg); } /* the layout's 16 px gap back to the tools row's 8 px */
+html.phone .eq-layout .eq-grid tbody tr { scroll-margin-bottom: var(--eq-pin-room); }
 
 /* Inventory: [equip] [attune] name ... location; the alerts; the toolbar. */
 html.phone .eq-inv { min-height: 0; gap: 12px; }

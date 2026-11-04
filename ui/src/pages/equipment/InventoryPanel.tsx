@@ -2,6 +2,7 @@ import { type ReactNode, useState } from "react";
 import type { EquipSlot, InventoryItem } from "../../api/contract";
 import { Alert } from "../../components";
 import { haptic } from "../../lib/haptics";
+import { usePhone } from "../../lib/phone";
 import { useCharacter } from "../../state/CharacterContext";
 import { Band } from "../spells/TwoPane";
 import { Glyph, type GlyphName } from "./Glyph";
@@ -23,6 +24,7 @@ const Stat = ({ value, rest }: { value: ReactNode; rest?: string }) => <>{value}
 export function InventoryPanel({ onSelectElement }: { onSelectElement: (itemId: string) => void }) {
   const { snapshot, mutate } = useCharacter();
   const equip = useEquipItem();
+  const phone = usePhone();
   const [selId, setSelId] = useState<string | null>(null);
   const [details, setDetails] = useState(false);
   if (!snapshot) return null;
@@ -80,7 +82,8 @@ export function InventoryPanel({ onSelectElement }: { onSelectElement: (itemId: 
         </div>
       </div>
       {[...new Set([...inv.warnings, ...attunementWarnings(snapshot)])].map((w) => <Alert key={w} tone="warning">{w}</Alert>)}
-      <div className="eq-inv-actions" role="toolbar" aria-label="Inventory actions">
+      {/* PH2: on phones the toolbar stays pinned above the bottom tabs while the inventory is on screen. */}
+      <div className={phone ? "eq-inv-actions eq-pin" : "eq-inv-actions"} role="toolbar" aria-label="Inventory actions">
         {sel?.isPack && <Act icon="extract" label={`Extract ${sel.displayName}`} onClick={() => void mutate((api, id) => api.extractPack({ characterId: id, inventoryId: sel.id }))} />}
         <Act icon="details" label="Details" disabled={!sel} onClick={() => setDetails(true)} />
         <Act icon="up" label="Up" disabled={!sel || selIdx <= 0} onClick={() => sel && void mutate((api, id) => api.moveItem({ characterId: id, inventoryId: sel.id, direction: "up" }))} />
