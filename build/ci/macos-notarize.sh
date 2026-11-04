@@ -96,7 +96,7 @@ cmd_verify() {
   codesign --verify --deep --strict "$app"
   echo "app signature: OK"
   # Outputs are captured before grep: `cmd | grep -q` fails under pipefail when grep stops reading early.
-  out=$(codesign -dv "$app" 2>&1)
+  out=$(codesign -dvv "$app" 2>&1)
   grep -q "Authority=Developer ID Application" <<< "$out" \
     || { echo "::error::the app is not signed with a Developer ID Application certificate"; return 1; }
   grep -qE "flags=.*runtime" <<< "$out" \
