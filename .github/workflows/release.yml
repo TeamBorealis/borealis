@@ -569,7 +569,8 @@ jobs:
           [ "$short" = "$VERSION" ] || { echo "::error::IPA version $short, expected $VERSION"; exit 1; }
           [ "$build" = "$BUILD_NUMBER" ] || { echo "::error::IPA build $build, expected $BUILD_NUMBER"; exit 1; }
           [ "$bundle_id" = "app.borealis" ] || { echo "::error::IPA bundle id $bundle_id, expected app.borealis"; exit 1; }
-          codesign -dv "$app" 2>&1 | grep -q "Authority=Apple Distribution" \
+          signature=$(codesign -dv "$app" 2>&1)
+          grep -q "Authority=Apple Distribution" <<< "$signature" \
             || { echo "::error::the IPA is not signed with an Apple Distribution certificate"; exit 1; }
           [ -f "$app/embedded.mobileprovision" ] || { echo "::error::the IPA has no provisioning profile"; exit 1; }
           mkdir -p dist-ios

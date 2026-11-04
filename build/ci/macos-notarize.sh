@@ -92,22 +92,27 @@ cmd_dmg() {
 
 cmd_verify() {
   local app=${1:?usage: verify <app> <dmg>} dmg=${2:?usage: verify <app> <dmg>}
+  local out
   codesign --verify --deep --strict "$app"
   echo "app signature: OK"
-  codesign -dv "$app" 2>&1 | grep -q "Authority=Developer ID Application" \
+  # Outputs are captured before grep: `cmd | grep -q` fails under pipefail when grep stops reading early.
+  out=$(codesign -dv "$app" 2>&1)
+  grep -q "Authority=Developer ID Application" <<< "$out" \
     || { echo "::error::the app is not signed with a Developer ID Application certificate"; return 1; }
-  codesign -dv "$app" 2>&1 | grep -qE "flags=.*runtime" \
+  grep -qE "flags=.*runtime" <<< "$out" \
     || { echo "::error::the app is not signed with the hardened runtime"; return 1; }
   echo "app: Developer ID, hardened runtime"
   codesign --verify --strict "$dmg"
   echo "dmg signature: OK"
   xcrun stapler validate "$app"
   xcrun stapler validate "$dmg"
-  spctl -a -vvv -t exec "$app" 2>&1 | grep -q "source=Notarized Developer ID" \
-    || { echo "::error::Gatekeeper does not accept the app as Notarized Developer ID"; spctl -a -vvv -t exec "$app" || true; return 1; }
+  out=$(spctl -a -vvv -t exec "$app" 2>&1 || true)
+  grep -q "source=Notarized Developer ID" <<< "$out" \
+    || { echo "::error::Gatekeeper does not accept the app as Notarized Developer ID: $out"; return 1; }
   echo "Gatekeeper app: Notarized Developer ID"
-  spctl -a -vvv -t open --context context:primary-signature "$dmg" 2>&1 | grep -q "source=Notarized Developer ID" \
-    || { echo "::error::Gatekeeper does not accept the DMG as Notarized Developer ID"; return 1; }
+  out=$(spctl -a -vvv -t open --context context:primary-signature "$dmg" 2>&1 || true)
+  grep -q "source=Notarized Developer ID" <<< "$out" \
+    || { echo "::error::Gatekeeper does not accept the DMG as Notarized Developer ID: $out"; return 1; }
   echo "Gatekeeper dmg: Notarized Developer ID"
   shasum -a 256 "$dmg"
 }
