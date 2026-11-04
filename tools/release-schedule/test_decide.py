@@ -97,6 +97,27 @@ class Ci(unittest.TestCase):
         self.assertEqual(decide.ci_status(runs), "failure")
 
 
+class SignedRerun(unittest.TestCase):
+    def run_(self, conclusion, attempt=1, status="completed"):
+        return {"id": 7, "status": status, "conclusion": conclusion, "run_attempt": attempt, "created_at": "1"}
+
+    def test_failed_or_starved_runs_are_rerun_until_the_attempts_run_out(self):
+        for conclusion in ("failure", "cancelled", "timed_out", "startup_failure"):
+            self.assertEqual(decide.signed_rerun([self.run_(conclusion)]), "rerun", conclusion)
+        self.assertEqual(decide.signed_rerun([self.run_("cancelled", decide.RELEASE_ATTEMPTS - 1)]), "rerun")
+        self.assertEqual(decide.signed_rerun([self.run_("cancelled", decide.RELEASE_ATTEMPTS)]), "late")
+
+    def test_a_running_run_waits_and_no_run_or_a_pass_is_late(self):
+        self.assertEqual(decide.signed_rerun([self.run_(None, status="queued")]), "wait")
+        self.assertEqual(decide.signed_rerun([]), "late")
+        self.assertEqual(decide.signed_rerun([self.run_("success")]), "late")  # passed, yet the draft lacks files
+
+    def test_only_the_newest_run_counts(self):
+        runs = [{**self.run_("cancelled", 3), "created_at": "1"}, {**self.run_("failure", 1), "id": 8, "created_at": "2"}]
+        self.assertEqual(decide.signed_rerun(runs), "rerun")
+        self.assertEqual(decide.newest(runs)["id"], 8)
+
+
 class GoNoGo(unittest.TestCase):
     def test_everything_ready_is_go(self):
         self.assertEqual(decide.go_problems(go()), [])

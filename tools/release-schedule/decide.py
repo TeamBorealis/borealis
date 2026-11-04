@@ -71,6 +71,27 @@ def auto_supersede(old: str, scheduled: set[str], old_tag_date: Optional[datetim
     return (old not in scheduled and not handmade(old_tag_date) and old_state in IOS_IN_REVIEW)
 
 
+RELEASE_ATTEMPTS = 3  # a release workflow run is tried at most this often (the first run plus two re-runs)
+RERUN_CONCLUSIONS = frozenset({"failure", "cancelled", "timed_out", "startup_failure"})
+
+
+def newest(runs: Sequence[dict]) -> Optional[dict]:
+    return max(runs, key=lambda r: r.get("created_at", "")) if runs else None
+
+
+def signed_rerun(runs: Sequence[dict]) -> str:
+    """What Monday does about an incomplete draft, from the release workflow's runs on the tag: 'rerun' its failed
+    jobs (GitHub cancels jobs no runner picked up, B-168), 'wait' while it runs, else 'late' (tell a person)."""
+    run = newest(runs)
+    if run is None:
+        return "late"
+    if run.get("status") != "completed":
+        return "wait"
+    if run.get("conclusion") in RERUN_CONCLUSIONS and int(run.get("run_attempt") or 1) < RELEASE_ATTEMPTS:
+        return "rerun"
+    return "late"
+
+
 def ci_status(runs: Sequence[dict]) -> str:
     """'success' when any run of the workflow passed for the commit, 'pending' while one runs, 'none' without
     runs, else the newest run's conclusion (failure, cancelled, timed_out...)."""

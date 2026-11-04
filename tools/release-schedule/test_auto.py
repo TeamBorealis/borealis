@@ -72,6 +72,28 @@ class NormalWeek(unittest.TestCase):
         self.assertEqual((status, keys), (0, ["signed"]))
         self.assertIn("set the v1.3.0 draft's title and notes", out)
 
+    def test_monday_reruns_a_starved_release_workflow_instead_of_calling_it_late(self):
+        starved = {"id": 41, "status": "completed", "conclusion": "cancelled", "run_attempt": 1,
+                   "created_at": "2026-11-08T22:00:00Z", "html_url": "https://example.test/runs/41"}
+        status, keys, out = run("normal-1-signed", release={"draft": True, "assets": []},
+                                **{"ci:release.yml": "cancelled", "release_runs": [starved]})
+        self.assertEqual((status, keys), (0, ["signed-rerun/2"]))
+        self.assertIn("would: re-run the failed jobs of release.yml run 41", out)
+
+    def test_monday_waits_for_a_running_release_workflow(self):
+        running = {"id": 41, "status": "in_progress", "conclusion": None, "run_attempt": 2, "created_at": "1"}
+        status, keys, out = run("normal-1-signed", release={"draft": True, "assets": []},
+                                **{"ci:release.yml": "pending", "release_runs": [running]})
+        self.assertEqual((status, keys), (0, []))
+        self.assertIn("still running", out)
+
+    def test_monday_calls_the_builds_late_once_the_reruns_are_spent(self):
+        spent = {"id": 41, "status": "completed", "conclusion": "failure", "run_attempt": 3, "created_at": "1"}
+        status, keys, out = run("normal-1-signed", release={"draft": True, "assets": []},
+                                **{"ci:release.yml": "failure", "release_runs": [spent]})
+        self.assertEqual((status, keys), (0, ["signed-late"]))
+        self.assertNotIn("re-run the failed jobs of", out)
+
     def test_tuesday_submits_ios_and_posts_the_notes(self):
         status, keys, out = run("normal-2-submit")
         self.assertEqual((status, keys), (0, ["ios-submitted", "notes"]))

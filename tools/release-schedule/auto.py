@@ -204,11 +204,30 @@ class Tick:
         problem = ("not frozen yet" if not tag else "no draft release yet" if not rel
                    else f"the draft lacks {', '.join(missing)}")
         log(f"{version}: signed builds not ready: {problem}")
+        if tag and self.retry_release(version, tag.sha):
+            return
         run = self.ci("release.yml", tag.sha) if tag else "n/a"
         self.note(version, "signed-late", "signed builds not ready", [
             f"{problem} (release workflow on the tag: {run}).",
             "Re-run the failed jobs of the release workflow, or run it by hand with the tag. "
             "Go/no-go needs a complete draft."])
+
+    def retry_release(self, version: str, sha: str) -> bool:
+        """True when the release workflow is still running or was just re-run, so it is not late yet."""
+        runs = self.facts["release_runs"] if "release_runs" in self.facts else self.fact(  # a scenario gives them
+            f"release_runs@{sha}", lambda: self.gh.runs("release.yml", sha) if self.gh else [])
+        choice, run = decide.signed_rerun(runs), decide.newest(runs)
+        if choice == "wait":
+            log(f"{version}: release workflow run {run['id']} is still running; checking again next tick")
+            return True
+        if choice != "rerun" or not self.gh:
+            return False
+        attempt = int(run.get("run_attempt") or 1) + 1
+        self.gh.rerun_failed("release.yml", run["id"])
+        self.note(version, f"signed-rerun/{attempt}", "re-running the release workflow", [
+            f"Run {run['id']} ended `{run.get('conclusion')}`, so its failed jobs run again "
+            f"(attempt {attempt} of {decide.RELEASE_ATTEMPTS}). GitHub cancels jobs no runner picks up."])
+        return True
 
     def submit(self, version: str, publish: date) -> None:
         tag = self.tag(version)

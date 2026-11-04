@@ -70,6 +70,10 @@ class GitHub:
     def ci(self, workflow: str, sha: str) -> str:
         return decide.ci_status(self.runs(workflow, sha))
 
+    def rerun_failed(self, workflow: str, run_id: int) -> None:
+        self.write("POST", f"/actions/runs/{run_id}/rerun-failed-jobs", {},
+                   f"re-run the failed jobs of {workflow} run {run_id}")
+
     def release(self, tag: str) -> Optional[dict]:
         """The release (draft or published) for `tag`; drafts are listed only with push access."""
         return next((r for r in self.call("GET", "/releases?per_page=30") if r.get("tag_name") == tag), None)
