@@ -1,22 +1,50 @@
 name: Release
 
-# Pushing a tag like v1.0.0 builds the Linux and Windows installers and attaches them, plus
-# SHA256SUMS.txt, to a DRAFT GitHub release. The macOS .dmg is built locally and attached by hand
-# before the draft is published. The signed Android APK is built here too (needs the repository
-# secrets ANDROID_KEYSTORE_B64 and ANDROID_KEYSTORE_PASSWORD). Asset names are Tauri's defaults and must stay stable: the
+# Builds a release from a tag (vX.Y.Z) into a DRAFT GitHub release: the Linux and Windows installers, the signed
+# Android APK, the signed and notarized macOS DMG, plus SHA256SUMS.txt. It also builds the iOS App Store IPA and
+# uploads it to App Store Connect (no review submission). Asset names are Tauri's defaults and must stay stable: the
 # website links to them.
+#
+# Start it by pushing the tag, or with "Run workflow" (workflow_dispatch) and the `tag` input. A tag pushed by
+# another workflow with GITHUB_TOKEN does not trigger `push`, so automation dispatches this workflow with `tag`.
+# `dry_run` builds, signs and notarizes everything and keeps the results as workflow artifacts only: no release is
+# created or changed and the iOS build is validated, not uploaded.
+#
+# Signing keys live in the `release` environment, which only main, v* tags and listed branches may use. Only the
+# macOS and iOS jobs read them. The Android keystore is a repository secret (ANDROID_KEYSTORE_B64/_PASSWORD).
+#
+# macOS notarization: Apple usually answers in minutes, but a first submission can take many hours. The macOS job
+# waits up to APP_NOTARY_WAIT_MINUTES, then fails with the submission id; the signed app is kept as the
+# `macos-notarization` artifact. Once Apple accepts it, run this workflow with the same `tag` and
+# `macos_resume_run` = that run's id: it staples the app, builds and notarizes the DMG and adds it to the draft.
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
     inputs:
+      tag:
+        description: "Tag to build (vX.Y.Z). Empty: the commit the workflow runs on (main only, or a dry run)"
+        type: string
+        default: ""
+      dry_run:
+        description: "Build, sign and notarize, keep everything as workflow artifacts; no release, no App Store upload"
+        type: boolean
+        default: false
+      ios_build_number:
+        description: "iOS build number override (CFBundleVersion), e.g. 1003000.1 to upload again; empty: from the version"
+        type: string
+        default: ""
+      macos_resume_run:
+        description: "Finish the macOS DMG of an earlier run (its run id) whose notarization outlasted the job"
+        type: string
+        default: ""
       attach_to_existing:
-        description: "Only build the signed Android APK and add it to the EXISTING release for this tag (run with the tag as the ref)"
+        description: "Only build the signed Android APK and add it to the EXISTING release for this tag"
         type: boolean
         default: false
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.tag && format('refs/tags/{0}', inputs.tag) || github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -36,17 +64,65 @@ jobs:
     outputs:
       version: ${{ steps.v.outputs.version }}
       tag: ${{ steps.v.outputs.tag }}
+      sha: ${{ steps.v.outputs.sha }}
+      ios_build_number: ${{ steps.v.outputs.ios_build_number }}
     steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.tag || github.sha }}
+      - id: v
+        env:
+          EVENT: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          IOS_BUILD_OVERRIDE: ${{ inputs.ios_build_number }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          conf_version=$(jq -r .version src-tauri/tauri.conf.json)
+          tag_name="$INPUT_TAG"
+          if [ -z "$tag_name" ] && [ "$REF_TYPE" = "tag" ]; then tag_name="$REF_NAME"; fi
+          if [ -n "$tag_name" ] && [ "$tag_name" != "v$conf_version" ]; then
+            echo "::error::tag $tag_name does not match tauri.conf.json version $conf_version (expected v$conf_version)"
+            exit 1
+          fi
+          if [ -z "$tag_name" ] && [ "$EVENT" = "workflow_dispatch" ] && [ "$DRY_RUN" != "true" ] && [ "$REF_NAME" != "main" ]; then
+            echo "::error::a release from $REF_NAME needs a tag (input 'tag') or a dry run"
+            exit 1
+          fi
+          if ! [[ "$conf_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "::error::version $conf_version is not X.Y.Z"
+            exit 1
+          fi
+          # Store build numbers: major*1000000 + minor*1000 + patch (1.2.2 -> 1002002), as Android's versionCode.
+          build_number=$(( BASH_REMATCH[1] * 1000000 + BASH_REMATCH[2] * 1000 + BASH_REMATCH[3] ))
+          ios_build_number="${IOS_BUILD_OVERRIDE:-$build_number}"
+          # A dry run never uploads, but App Store validation rejects a build number that is already taken.
+          if [ "$DRY_RUN" = "true" ] && [ -z "$IOS_BUILD_OVERRIDE" ]; then ios_build_number="$build_number.$RUN_NUMBER"; fi
+          if ! [[ "$ios_build_number" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
+            echo "::error::iOS build number $ios_build_number is not 1 to 3 dot-separated integers"
+            exit 1
+          fi
+          {
+            echo "version=$conf_version"
+            echo "tag=v$conf_version"
+            echo "sha=$(git rev-parse HEAD)"
+            echo "ios_build_number=$ios_build_number"
+          } >> "$GITHUB_OUTPUT"
+          echo "Release $conf_version from $(git rev-parse HEAD) (tag ${tag_name:-none}, dry run: ${DRY_RUN:-false}); iOS build $ios_build_number"
       # Releases only ship commits that CI has already tested: the release itself builds but
       # does not run the test suite. Wait for CI to finish on main before pushing the tag.
       - name: require a successful CI run on this commit
+        if: ${{ !inputs.dry_run }}
         # Waits (up to 3 h) while CI for this commit is still queued or running, so a release
         # can be started right after the push. Fails if CI failed or never ran for the commit.
         timeout-minutes: 180
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          SHA: ${{ github.sha }}
+          SHA: ${{ steps.v.outputs.sha }}
         run: |
           set -euo pipefail
           while :; do
@@ -64,33 +140,17 @@ jobs:
             echo "CI still running for $SHA; checking again in 60 s"
             sleep 60
           done
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - id: v
-        env:
-          REF_TYPE: ${{ github.ref_type }}
-          REF_NAME: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          conf_version=$(jq -r .version src-tauri/tauri.conf.json)
-          if [ "$REF_TYPE" = "tag" ]; then
-            if [ "$REF_NAME" != "v$conf_version" ]; then
-              echo "::error::tag $REF_NAME does not match tauri.conf.json version $conf_version (expected v$conf_version)"
-              exit 1
-            fi
-          fi
-          echo "version=$conf_version" >> "$GITHUB_OUTPUT"
-          echo "tag=v$conf_version" >> "$GITHUB_OUTPUT"
 
   build:
     name: bundle (${{ matrix.os }})
     needs: verify-version
-    if: ${{ !inputs.attach_to_existing }}
+    if: ${{ !inputs.attach_to_existing && !inputs.macos_resume_run }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
       matrix:
         # Linux x86_64: deb + rpm + AppImage (targets "all"); Windows x64: NSIS only
-        # (tauri.windows.conf.json). No macOS, iOS or Android here.
+        # (tauri.windows.conf.json). macOS, iOS and Android have their own jobs below.
         os: [ubuntu-latest, windows-latest]
     steps:
       - name: Keep LF line endings (Windows)
@@ -100,6 +160,8 @@ jobs:
           # llama.cpp (the borealis-embed git dependency) has paths longer than MAX_PATH.
           git config --global core.longpaths true
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ needs.verify-version.outputs.sha }}
       - name: Free runner disk (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -182,11 +244,14 @@ jobs:
   android:
     name: signed Android APK
     needs: verify-version
+    if: ${{ !inputs.macos_resume_run }}
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.verify-version.outputs.version }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ needs.verify-version.outputs.sha }}
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
@@ -251,10 +316,331 @@ jobs:
           path: dist-release/*
           if-no-files-found: error
 
+  macos:
+    name: signed macOS DMG
+    needs: verify-version
+    if: ${{ !inputs.attach_to_existing && !inputs.macos_resume_run }}
+    runs-on: macos-26
+    environment: release
+    # Under the 6 h hosted-runner limit: build (~1 h) + APP_NOTARY_WAIT_MINUTES + the DMG round.
+    timeout-minutes: 330
+    env:
+      VERSION: ${{ needs.verify-version.outputs.version }}
+      TAG: ${{ needs.verify-version.outputs.tag }}
+      APP_NOTARY_WAIT_MINUTES: 180
+      DMG_NOTARY_WAIT_MINUTES: 60
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ needs.verify-version.outputs.sha }}
+      - name: Xcode
+        run: xcodebuild -version && sw_vers
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+        with:
+          workspaces: ". -> target"
+          shared-key: macos-release
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - run: npm ci
+        working-directory: ui
+      - name: Signing keychain and notary key
+        env:
+          P12_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_P12 }}
+          P12_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_P12_PASSWORD }}
+          ASC_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          identity=$(bash build/ci/apple-keychain.sh import "Developer ID Application")
+          echo "SIGNING_IDENTITY=$identity" >> "$GITHUB_ENV"
+          echo "ASC_KEY_PATH=$(bash build/ci/macos-notarize.sh install-key)" >> "$GITHUB_ENV"
+      # Tauri signs the app with the hardened runtime. Without notarization credentials in its environment it does
+      # not notarize; that happens below, so a slow notarization cannot hold the build hostage. The dmg bundle also
+      # writes the create-dmg script the DMG is rebuilt with once the app is stapled.
+      - name: Build and sign the app
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ env.SIGNING_IDENTITY }}
+        run: node ui/node_modules/@tauri-apps/cli/tauri.js build --bundles app,dmg
+      - name: Submit the app for notarization
+        id: submit
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          stage="$RUNNER_TEMP/macos-notarization"
+          mkdir -p "$stage/bundle"
+          ditto -c -k --keepParent target/release/bundle/macos/Borealis.app "$stage/Borealis.app.zip"
+          cp -R target/release/bundle/dmg target/release/bundle/share "$stage/bundle/"
+          id=$(bash build/ci/macos-notarize.sh submit "$stage/Borealis.app.zip")
+          printf '%s\n' "$id" > "$stage/submission-id"
+          printf '%s\n' "$VERSION" > "$stage/version"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          echo "App notarization submission: $id"
+          echo "macOS app notarization submission: \`$id\`" >> "$GITHUB_STEP_SUMMARY"
+      # Kept so a later run can finish if Apple outlasts this job (macos_resume_run).
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: macos-notarization
+          path: ${{ runner.temp }}/macos-notarization
+          if-no-files-found: error
+          retention-days: 30
+      - name: Wait for Apple to notarize the app
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+          SUBMISSION: ${{ steps.submit.outputs.id }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          rc=0
+          bash build/ci/macos-notarize.sh wait "$SUBMISSION" "$APP_NOTARY_WAIT_MINUTES" || rc=$?
+          if [ "$rc" -eq 2 ]; then
+            msg="Apple has not finished notarizing the app (submission $SUBMISSION) after $APP_NOTARY_WAIT_MINUTES min. The submission continues at Apple. When it is accepted, run this workflow with tag=$TAG and macos_resume_run=$RUN_ID to staple it, build the DMG and add it to the draft."
+            echo "::error::$msg"
+            echo "$msg" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$rc"
+      - name: Staple, build, notarize and verify the DMG
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist-release
+          bash build/ci/macos-notarize.sh finish target/release/bundle/macos/Borealis.app target/release/bundle \
+            "dist-release/Borealis_${VERSION}_aarch64.dmg" "$DMG_NOTARY_WAIT_MINUTES"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: macos-dmg
+          path: dist-release/*.dmg
+          if-no-files-found: error
+      - name: Remove the signing keychain and key
+        if: always()
+        run: |
+          bash build/ci/apple-keychain.sh delete
+          rm -rf "$RUNNER_TEMP/asc"
+
+  macos-resume:
+    name: finish the macOS DMG (resume)
+    needs: verify-version
+    if: ${{ inputs.macos_resume_run }}
+    runs-on: macos-26
+    environment: release
+    timeout-minutes: 330
+    permissions:
+      contents: read
+      actions: read
+    env:
+      VERSION: ${{ needs.verify-version.outputs.version }}
+      APP_NOTARY_WAIT_MINUTES: 240
+      DMG_NOTARY_WAIT_MINUTES: 60
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ needs.verify-version.outputs.sha }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: macos-notarization
+          path: ${{ runner.temp }}/macos-notarization
+          run-id: ${{ inputs.macos_resume_run }}
+          github-token: ${{ github.token }}
+      - name: Unpack the signed app
+        id: stage
+        env:
+          RESUME_RUN: ${{ inputs.macos_resume_run }}
+        run: |
+          set -euo pipefail
+          stage="$RUNNER_TEMP/macos-notarization"
+          staged_version=$(cat "$stage/version")
+          if [ "$staged_version" != "$VERSION" ]; then
+            echo "::error::run $RESUME_RUN built $staged_version, not $VERSION"
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/app"
+          ditto -x -k "$stage/Borealis.app.zip" "$RUNNER_TEMP/app"
+          echo "id=$(cat "$stage/submission-id")" >> "$GITHUB_OUTPUT"
+      - name: Signing keychain and notary key
+        env:
+          P12_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_P12 }}
+          P12_PASSWORD: ${{ secrets.APPLE_DEVELOPER_ID_P12_PASSWORD }}
+          ASC_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          identity=$(bash build/ci/apple-keychain.sh import "Developer ID Application")
+          echo "SIGNING_IDENTITY=$identity" >> "$GITHUB_ENV"
+          echo "ASC_KEY_PATH=$(bash build/ci/macos-notarize.sh install-key)" >> "$GITHUB_ENV"
+      - name: Wait for Apple to notarize the app
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+          SUBMISSION: ${{ steps.stage.outputs.id }}
+        run: bash build/ci/macos-notarize.sh wait "$SUBMISSION" "$APP_NOTARY_WAIT_MINUTES"
+      - name: Staple, build, notarize and verify the DMG
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist-release
+          bash build/ci/macos-notarize.sh finish "$RUNNER_TEMP/app/Borealis.app" "$RUNNER_TEMP/macos-notarization/bundle" \
+            "dist-release/Borealis_${VERSION}_aarch64.dmg" "$DMG_NOTARY_WAIT_MINUTES"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: macos-dmg
+          path: dist-release/*.dmg
+          if-no-files-found: error
+      - name: Remove the signing keychain and key
+        if: always()
+        run: |
+          bash build/ci/apple-keychain.sh delete
+          rm -rf "$RUNNER_TEMP/asc"
+
+  ios:
+    name: App Store build (iOS)
+    needs: verify-version
+    if: ${{ !inputs.attach_to_existing && !inputs.macos_resume_run }}
+    runs-on: macos-26
+    environment: release
+    timeout-minutes: 150
+    outputs:
+      build_number: ${{ steps.ipa.outputs.build_number }}
+      uploaded: ${{ steps.upload.outputs.uploaded }}
+    env:
+      VERSION: ${{ needs.verify-version.outputs.version }}
+      BUILD_NUMBER: ${{ needs.verify-version.outputs.ios_build_number }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ needs.verify-version.outputs.sha }}
+      - name: Xcode
+        run: xcodebuild -version && xcrun --sdk iphoneos --show-sdk-version
+      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
+        with:
+          toolchain: stable
+          targets: aarch64-apple-ios
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+        with:
+          workspaces: ". -> target"
+          shared-key: ios-release
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - run: npm ci
+        working-directory: ui
+      # Tauri reads the Apple Distribution certificate and the App Store profile from IOS_CERTIFICATE*,
+      # IOS_MOBILE_PROVISION, imports them into its own temporary keychain and signs manually.
+      - name: Build and export the App Store IPA
+        env:
+          IOS_CERTIFICATE: ${{ secrets.APPLE_DISTRIBUTION_P12 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_DISTRIBUTION_P12_PASSWORD }}
+          IOS_MOBILE_PROVISION: ${{ secrets.APPLE_APPSTORE_PROFILE }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          for v in IOS_CERTIFICATE IOS_CERTIFICATE_PASSWORD IOS_MOBILE_PROVISION TEAM_ID; do
+            [ -n "${!v}" ] || { echo "::error::$v is empty: is its secret set in the release environment?"; exit 1; }
+          done
+          config=$(jq -nc --arg v "$BUILD_NUMBER" --arg t "$TEAM_ID" '{bundle: {iOS: {bundleVersion: $v, developmentTeam: $t}}}')
+          node ui/node_modules/@tauri-apps/cli/tauri.js ios build --target aarch64 --export-method app-store-connect \
+            --ci --config "$config"
+      - name: Check the IPA
+        id: ipa
+        run: |
+          set -euo pipefail
+          ipa=$(find src-tauri/gen/apple/build -name '*.ipa' -type f | head -n 1)
+          [ -n "$ipa" ] || { echo "::error::no .ipa under src-tauri/gen/apple/build"; exit 1; }
+          check="$RUNNER_TEMP/ipa-check"
+          rm -rf "$check"
+          mkdir -p "$check"
+          unzip -q "$ipa" -d "$check"
+          app=$(find "$check/Payload" -maxdepth 1 -name '*.app' | head -n 1)
+          short=$(plutil -extract CFBundleShortVersionString raw "$app/Info.plist")
+          build=$(plutil -extract CFBundleVersion raw "$app/Info.plist")
+          bundle_id=$(plutil -extract CFBundleIdentifier raw "$app/Info.plist")
+          echo "IPA: $bundle_id $short ($build)"
+          [ "$short" = "$VERSION" ] || { echo "::error::IPA version $short, expected $VERSION"; exit 1; }
+          [ "$build" = "$BUILD_NUMBER" ] || { echo "::error::IPA build $build, expected $BUILD_NUMBER"; exit 1; }
+          [ "$bundle_id" = "app.borealis" ] || { echo "::error::IPA bundle id $bundle_id, expected app.borealis"; exit 1; }
+          codesign -dv "$app" 2>&1 | grep -q "Authority=Apple Distribution" \
+            || { echo "::error::the IPA is not signed with an Apple Distribution certificate"; exit 1; }
+          [ -f "$app/embedded.mobileprovision" ] || { echo "::error::the IPA has no provisioning profile"; exit 1; }
+          mkdir -p dist-ios
+          cp "$ipa" "dist-ios/Borealis_${VERSION}_${BUILD_NUMBER}.ipa"
+          shasum -a 256 dist-ios/*.ipa
+          echo "ipa=dist-ios/Borealis_${VERSION}_${BUILD_NUMBER}.ipa" >> "$GITHUB_OUTPUT"
+          echo "build_number=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ios-ipa
+          path: dist-ios/*.ipa
+          if-no-files-found: error
+          retention-days: 30
+      - name: App Store Connect key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+        run: |
+          set -euo pipefail
+          # altool looks for AuthKey_<key id>.p8 in API_PRIVATE_KEYS_DIR.
+          dir="$RUNNER_TEMP/private_keys"
+          mkdir -p "$dir"
+          chmod 700 "$dir"
+          printf '%s' "$ASC_KEY_P8" | base64 --decode > "$dir/AuthKey_$ASC_KEY_ID.p8"
+          chmod 600 "$dir/AuthKey_$ASC_KEY_ID.p8"
+          echo "API_PRIVATE_KEYS_DIR=$dir" >> "$GITHUB_ENV"
+      - name: Validate with App Store Connect (dry run)
+        if: ${{ inputs.dry_run }}
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+          IPA: ${{ steps.ipa.outputs.ipa }}
+        run: xcrun altool --validate-app "$IPA" --api-key "$ASC_KEY_ID" --api-issuer "$ASC_ISSUER_ID" --output-format normal
+      - name: Upload to App Store Connect
+        id: upload
+        if: ${{ !inputs.dry_run }}
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+          IPA: ${{ steps.ipa.outputs.ipa }}
+        run: |
+          set -euo pipefail
+          xcrun altool --upload-package "$IPA" --api-key "$ASC_KEY_ID" --api-issuer "$ASC_ISSUER_ID" \
+            --output-format normal 2>&1 | tee "$RUNNER_TEMP/altool.log"
+          grep -q -i "UPLOAD SUCCEEDED\|No errors uploading" "$RUNNER_TEMP/altool.log" \
+            || { echo "::error::altool did not report a successful upload"; exit 1; }
+          echo "uploaded=true" >> "$GITHUB_OUTPUT"
+      - name: Summary
+        if: ${{ success() }}
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          if [ "$DRY_RUN" = "true" ]; then what="validated (dry run, not uploaded)"; else what="uploaded to App Store Connect"; fi
+          echo "iOS $VERSION build **$BUILD_NUMBER** $what." >> "$GITHUB_STEP_SUMMARY"
+          jq -n --arg version "$VERSION" --arg build "$BUILD_NUMBER" --arg dry "${DRY_RUN:-false}" \
+            '{version: $version, build_number: $build, uploaded: ($dry != "true")}' > ios-build.json
+          cat ios-build.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ios-build
+          path: ios-build.json
+          if-no-files-found: error
+      - name: Remove the App Store Connect key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/private_keys"
+
   attach-android:
     name: add APK to existing release
     needs: [verify-version, android]
-    if: ${{ inputs.attach_to_existing }}
+    if: ${{ inputs.attach_to_existing && !inputs.dry_run }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -264,26 +650,20 @@ jobs:
       VERSION: ${{ needs.verify-version.outputs.version }}
       TAG: ${{ needs.verify-version.outputs.tag }}
     steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ needs.verify-version.outputs.sha }}
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: installers-android
           path: apk
       - name: Upload the APK and refresh SHA256SUMS.txt
-        run: |
-          set -euo pipefail
-          gh release view "$TAG" >/dev/null || { echo "::error::no release for $TAG; this mode only adds to an existing release"; exit 1; }
-          apk="Borealis_${VERSION}_arm64.apk"
-          mkdir sums
-          gh release download "$TAG" --pattern SHA256SUMS.txt --dir sums || : > sums/SHA256SUMS.txt
-          line=$(cd apk && sha256sum "$apk")
-          { grep -v -F "_arm64.apk" sums/SHA256SUMS.txt || true; echo "$line"; } | sort -k2 > SHA256SUMS.txt
-          cat SHA256SUMS.txt
-          gh release upload "$TAG" "apk/$apk" SHA256SUMS.txt --clobber
+        run: bash build/ci/release-attach.sh "$TAG" "apk/Borealis_${VERSION}_arm64.apk"
 
   publish-draft:
     name: draft release
     needs: [verify-version, build, android]
-    if: ${{ !inputs.attach_to_existing }}
+    if: ${{ !inputs.attach_to_existing && !inputs.macos_resume_run && !inputs.dry_run }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -292,6 +672,7 @@ jobs:
       GH_REPO: ${{ github.repository }}
       VERSION: ${{ needs.verify-version.outputs.version }}
       TAG: ${{ needs.verify-version.outputs.tag }}
+      SHA: ${{ needs.verify-version.outputs.sha }}
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -314,7 +695,8 @@ jobs:
         working-directory: assets
         run: |
           set -euo pipefail
-          sha256sum -- * > SHA256SUMS.txt
+          sums=$(sha256sum -- *)
+          printf '%s\n' "$sums" | LC_ALL=C sort -k2 > SHA256SUMS.txt
           cat SHA256SUMS.txt
       - name: Create or update the draft release
         run: |
@@ -322,6 +704,33 @@ jobs:
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --draft --title "Borealis $VERSION" \
               --notes "Borealis $VERSION. Verify downloads against SHA256SUMS.txt." \
-              --target "$GITHUB_SHA"
+              --target "$SHA"
           fi
           gh release upload "$TAG" assets/* --clobber
+
+  # The signed DMG joins the draft once both exist, so a slow notarization does not hold back the other assets.
+  attach-macos:
+    name: add DMG to the draft release
+    needs: [verify-version, publish-draft, macos, macos-resume]
+    if: >-
+      ${{ !cancelled() && !inputs.dry_run && needs.verify-version.result == 'success' &&
+      ((needs.macos.result == 'success' && needs.publish-draft.result == 'success') ||
+      needs.macos-resume.result == 'success') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ needs.verify-version.outputs.version }}
+      TAG: ${{ needs.verify-version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ needs.verify-version.outputs.sha }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: macos-dmg
+          path: dmg
+      - name: Upload the DMG and refresh SHA256SUMS.txt
+        run: bash build/ci/release-attach.sh "$TAG" "dmg/Borealis_${VERSION}_aarch64.dmg"
