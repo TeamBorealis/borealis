@@ -71,6 +71,7 @@ cmd_wait() {
 # (480,170), a 660x400 window. It runs the script from the app's folder with the app as the source.
 cmd_dmg() {
   local app=${1:?usage: dmg <app> <bundle dir> <out.dmg>} bundle=${2:?} out=${3:?}
+  bundle=$(cd "$bundle" && pwd)
   local script="$bundle/dmg/bundle_dmg.sh" icns name dir
   [ -f "$script" ] || { echo "::error::no create-dmg script at $script (run tauri build with the dmg bundle first)"; return 1; }
   icns=$(find "$bundle/dmg" -maxdepth 1 -name "*.icns" | head -n 1)

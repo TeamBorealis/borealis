@@ -174,6 +174,19 @@ macOS, iOS and Android jobs run only from "Run workflow" (workflow_dispatch). Wi
 `core.autocrlf false` before checkout; the Tauri CLI runs as `node ui/node_modules/@tauri-apps/cli/tauri.js`
 (also what `npm run tauri` now calls) because Windows cannot start the extension-less `.bin/tauri` shim.
 
+### Release (.github/workflows/release.yml)
+A `v*` tag push, or "Run workflow" with the `tag` input, builds the draft GitHub release: Linux, Windows, the
+signed Android APK, and the Developer ID signed, notarized and stapled macOS DMG (`Borealis_<ver>_aarch64.dmg`),
+with `SHA256SUMS.txt`. The same run builds the iOS App Store IPA and uploads it to App Store Connect; its build
+number (major*1000000 + minor*1000 + patch, as Android's versionCode) is the `ios` job's `build_number` output, in
+the run summary and in the `ios-build` artifact. `dry_run` keeps everything as workflow artifacts (`macos-dmg`,
+`ios-ipa`, the installers) and only validates the iOS build. The Apple signing secrets live in the `release`
+environment (main and `v*` tags only); `build/ci/apple-keychain.sh` imports a certificate on the runner and
+`build/ci/macos-notarize.sh` submits, waits, staples, rebuilds the DMG around the stapled app and checks it.
+Notarization is polled with a limit; if Apple outlasts the job, the run fails with the submission id and keeps the
+signed app as the `macos-notarization` artifact. Run the workflow again with the same `tag` and
+`macos_resume_run` = that run's id to finish the DMG and add it to the draft.
+
 ## Linux (deb / rpm / AppImage) - built in Docker on macOS, verified 2026-10-13
 
 `build/linux/` holds an Ubuntu 24.04 image (Tauri 2 deps: webkit2gtk-4.1, gtk3, ayatana-appindicator,
