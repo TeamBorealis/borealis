@@ -1,0 +1,81 @@
+{
+  "_about": "Thu 20:00: publish GitHub, iOS, website, IndexNow, Discord",
+  "now": "2026-11-12T20:00+02:00",
+  "tag": {
+    "sha": "5ca1ab1e00000000000000000000000000000000",
+    "date": "2026-11-08T23:59:40+02:00"
+  },
+  "release": {
+    "id": 1,
+    "draft": true,
+    "html_url": "https://github.com/TeamBorealis/borealis/releases/tag/untagged-scenario",
+    "name": "Borealis 1.3.0",
+    "body": "",
+    "assets": [
+      {
+        "name": "Borealis_1.3.0_aarch64.dmg"
+      },
+      {
+        "name": "Borealis_1.3.0_x64-setup.exe"
+      },
+      {
+        "name": "Borealis_1.3.0_amd64.AppImage"
+      },
+      {
+        "name": "Borealis_1.3.0_amd64.deb"
+      },
+      {
+        "name": "Borealis-1.3.0-1.x86_64.rpm"
+      },
+      {
+        "name": "Borealis_1.3.0_arm64.apk"
+      },
+      {
+        "name": "SHA256SUMS.txt"
+      }
+    ]
+  },
+  "ci:ci.yml": "success",
+  "ci:acceptance.yml": "success",
+  "ci:release.yml": "success",
+  "posted": [
+    "release-auto 1.3.0/frozen",
+    "release-auto 1.3.0/signed",
+    "release-auto 1.3.0/notes",
+    "release-auto 1.3.0/ios-submitted",
+    "release-auto 1.3.0/go/2026-11-12"
+  ],
+  "asc": {
+    "versions": [
+      {
+        "id": "ver-130",
+        "attributes": {
+          "platform": "IOS",
+          "versionString": "1.3.0",
+          "appStoreState": "PENDING_DEVELOPER_RELEASE",
+          "releaseType": "MANUAL"
+        }
+      }
+    ],
+    "builds": [
+      {
+        "id": "build-1003000",
+        "attributes": {
+          "version": "1003000",
+          "processingState": "VALID",
+          "expired": false,
+          "uploadedDate": "2026-11-09T19:00:00+02:00",
+          "usesNonExemptEncryption": null
+        }
+      }
+    ]
+  },
+  "website_repo": {
+    "branch_state": "ready",
+    "merged": false
+  },
+  "notes": {
+    "text": "<!-- scenario notes -->\n**Borealis** 1.3.0 adds dice rolls on the Play tab and several companions.\n\n### New in 1.3.0\n- **Dice rolls** on the Play tab (#1).\n- **Several companions** (#13).\n\n### Fixed in 1.3.0\n- **Spell filters** apply to the right class (#21).\n\n---\n\nLicensed under MIT OR Apache-2.0.\n",
+    "source": "scenario notes"
+  }
+}

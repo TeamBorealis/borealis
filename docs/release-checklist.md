@@ -2,6 +2,13 @@
 
 Run every step for each public release, in order. A release is not cut while any step is open.
 
+Most of the week is automatic: the **Release automation** workflow (`.github/workflows/release-auto.yml`,
+`tools/release-schedule/auto.py`) bumps and tags at the freeze, starts CI, import acceptance and the release
+builds, submits the iOS build, checks go/no-go and publishes the GitHub release, the iOS release, the website and
+the Discord announcement on schedule. Steps marked *(automatic)* below are done by it; the rest stay with people.
+The repository variable `RELEASE_HOLD` (a version, or `all`) stops a release; `RELEASE_AUTO` must be `on` for live
+runs. Any step runs by hand from Actions > Release automation > Run workflow (`step`, `version`, `dry_run`).
+
 ## 1. Gates
 
 - [ ] Full regression gate clean on the release commit: `python3 -I tools/regression-gate/gate.py` with all suites
@@ -15,15 +22,21 @@ Run every step for each public release, in order. A release is not cut while any
 
 ## 2. Version
 
-- [ ] Bump the version in all three places, to the same value:
-      `Cargo.toml` (`[workspace.package] version`), `src-tauri/tauri.conf.json` (`version`), `ui/package.json` (`version`).
-- [ ] Release notes written; the in-app update flyout shows them (they come from the GitHub release body).
-- [ ] Discord credits in the release notes: run `python3 -I tools/discord-issues/credits.py` (needs `GH_TOKEN`;
+- [ ] *(automatic)* Bump the version in the release files, to the same value: `Cargo.toml`
+      (`[workspace.package] version`), the workspace crates in `Cargo.lock`, `README.md`, `src-tauri/tauri.conf.json`,
+      the iOS `Info.plist` and `project.yml`, `ui/package.json` and `ui/package-lock.json`
+      (`python3 -I tools/release-schedule/bump.py X.Y.Z`; store build number 1.3.0 -> 1003000).
+- [ ] Release notes written in `release-notes/X.Y.Z.md` and committed before the freeze (draft:
+      `python3 -I tools/release-schedule/notes.py X.Y.Z`, then edit). The automation makes the file the release body
+      (HTML comments removed) and the App Store "What's New"; the in-app update flyout shows the release body.
+      `notes.py X.Y.Z --check` must report CS1 clean: "5etools" only as "5etools-format", no link or name of a
+      non-SRD source.
+- [ ] Discord credits in the release notes (`notes.py` adds them): run `python3 -I tools/discord-issues/credits.py` (needs `GH_TOKEN`;
       `--since <previous tag>` when the previous release is not the latest published one) and paste its Markdown,
       which thanks the Discord users whose bug reports and ideas were closed since the previous release.
       The website changelog is built from the release notes, so the credits reach it too.
-- [ ] Discord announcement: when the release is published, the `announce` job of `discord-issues.yml` posts the
-      notes to #announcements (`tools/discord-issues/announce.py`). Put a `---` line, with a blank line above it,
+- [ ] *(automatic)* Discord announcement: when the release is published, the `announce` job of `discord-issues.yml`
+      (started by the automation with `announce_tag`) posts the notes to #announcements (`tools/discord-issues/announce.py`). Put a `---` line, with a blank line above it,
       between the notes and the checksums/licence text; everything after it stays out of the announcement.
       Keep "### Fixed in", "### New in" and the community credits above it. Check the post; a missed one can be
       sent with the workflow's `announce_tag` input (`dry_run` previews it).
@@ -48,6 +61,10 @@ Run on the exact tree being published:
 
 ## 5. Publish
 
-- [ ] Tag the release commit and push the tag; the release workflow builds and signs the artifacts.
+- [ ] *(automatic)* Tag the release commit and push the tag; the release workflow (started with input `tag`) builds
+      and signs the artifacts and uploads the iOS build.
+- [ ] *(automatic)* iOS submitted for review with manual release; released at the publish time once approved.
+- [ ] *(automatic)* Go/no-go at Thursday 18:00 (Israel); publish at 20:00: GitHub release as latest, iOS, website
+      (release branch merged into the website's main), IndexNow, Discord.
 - [ ] Download each artifact from the release page and smoke-test it: install, start, create a character, import a file.
 - [ ] Confirm an older installed version shows the update notice for the new release.

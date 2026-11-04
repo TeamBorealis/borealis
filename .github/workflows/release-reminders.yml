@@ -1,8 +1,9 @@
 name: Release reminders
 
 # Release milestone reminders -> Discord #mod-chat (tools/release-schedule/remind.py). The planned releases are in
-# tools/release-schedule/schedule.json (add one with `plan.py <version> --schedule`). Hourly; a reminder stays due
-# for three hours and is never posted twice, so a delayed or dropped run is harmless.
+# tools/release-schedule/schedule.json (add one with `plan.py <version> --schedule`). Hourly: an external timer
+# dispatches it (GitHub's cron below fires hours late and is only a backup). A reminder stays due for three hours and
+# is never posted twice, so a delayed or dropped run is harmless.
 on:
   schedule:
     - cron: "17 * * * *"

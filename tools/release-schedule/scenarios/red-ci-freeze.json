@@ -1,0 +1,15 @@
+{
+  "_about": "Sun 23:59, CI on main red: the freeze waits and says so",
+  "now": "2026-11-08T23:59+02:00",
+  "tag": null,
+  "main": {
+    "sha": "badc0de000000000000000000000000000000000",
+    "version": "1.2.2"
+  },
+  "ci:ci.yml": "failure",
+  "posted": [],
+  "notes": {
+    "text": "<!-- scenario notes -->\n**Borealis** 1.3.0 adds dice rolls on the Play tab and several companions.\n\n### New in 1.3.0\n- **Dice rolls** on the Play tab (#1).\n- **Several companions** (#13).\n\n### Fixed in 1.3.0\n- **Spell filters** apply to the right class (#21).\n\n---\n\nLicensed under MIT OR Apache-2.0.\n",
+    "source": "scenario notes"
+  }
+}
