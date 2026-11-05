@@ -9,7 +9,7 @@ import { mdiAlertCircleOutline, mdiBookSearch, mdiContentSave, mdiFlask, mdiFold
 import { CheckBox, triState } from "../../components/controls";
 import { PaneShell } from "../builder/DescriptionPane";
 import "../builder/builder.css";
-import { loadDefaultSources, saveDefaultSources, useApplySourceRestrictions } from "./applySources";
+import { defaultRestriction, loadDefaultSources, saveDefaultSources, useApplySourceRestrictions } from "./applySources";
 import { SourceMenu, type MenuItem } from "./SourceMenu";
 import { BookEdition } from "./BookEdition";
 import "./content.css";
@@ -31,8 +31,14 @@ export function SourcesPage() {
   const q = query.trim().toLowerCase();
   const rows = all.filter((s) => !q || [s.name, s.group, s.description].some((t) => t.toLowerCase().includes(q)));
   const saved = snapshot?.sourceRestrictions ?? null;
-  const [draft, setDraft] = useState<string[] | null>(saved);
-  useEffect(() => setDraft(saved), [saved]);
+  const [stored, setStored] = useState(loadDefaultSources);
+  const ids = useMemo(() => all.map((s) => s.id), [all]);
+  // No character loaded (as at start): show the saved default sources, as Aurora's blank start character does (GitHub #22).
+  const hasCharacter = snapshot != null;
+  const startDefault = useMemo(() => (hasCharacter ? null : defaultRestriction(stored, ids)), [hasCharacter, stored, ids]);
+  const base = hasCharacter ? saved : startDefault;
+  const [draft, setDraft] = useState<string[] | null>(base);
+  useEffect(() => setDraft(base), [base]);
   const [described, setDescribed] = useState<string | null>(null);
   const allowed = useMemo(() => new Set(draft ?? all.map((s) => s.id)), [draft, all]);
   const normalise = (cur: Set<string>) => (cur.size === all.length ? null : [...cur]);
@@ -92,7 +98,6 @@ export function SourcesPage() {
     for (const s of rows) m.set(s.group, [...(m.get(s.group) ?? []), s]);
     return [...m.entries()];
   }, [rows]);
-  const stored = loadDefaultSources();
   const [menu, setMenu] = useState<{ x: number; y: number; src: ContentSource } | null>(null);
   const menuItems = (src: ContentSource): MenuItem[] => {
     const author = meta.get(src.packId)?.attribution ?? "";
@@ -110,8 +115,8 @@ export function SourcesPage() {
       <div className="v4-grid-tools">
         <SearchInput value={query} onChange={setQuery} label="Search sources" placeholder="Search sources" />
         <span className="v4-grid-cmds" role="toolbar" aria-label="Source commands">
-          <button type="button" className="v4-grid-cmd" aria-label="Save as default" title="Save the allowed sources as the default" onClick={() => saveDefaultSources([...allowed])}><Svg d={mdiContentSave} /></button>
-          <button type="button" className="v4-grid-cmd" aria-label="Load default" title="Load the saved default sources" disabled={!stored} onClick={() => stored && setDraft(normalise(new Set(stored.filter((id) => all.some((a) => a.id === id)))))}><Svg d={mdiFolderOpen} /></button>
+          <button type="button" className="v4-grid-cmd" aria-label="Save as default" title="Save the allowed sources as the default" onClick={() => { saveDefaultSources([...allowed]); setStored([...allowed]); }}><Svg d={mdiContentSave} /></button>
+          <button type="button" className="v4-grid-cmd" aria-label="Load default" title="Load the saved default sources" disabled={!stored} onClick={() => setDraft(defaultRestriction(stored, ids))}><Svg d={mdiFolderOpen} /></button>
           <button type="button" className="v4-apply" disabled={!snapshot || !dirty} title={snapshot ? "Restrict the loaded character to the allowed sources" : "Load a character first"} onClick={() => void applyRestrictions(draft)}>Apply to character</button>
           <button type="button" className="v4-grid-cmd" aria-label="Restrict all playtest material" title="Restrict all playtest material" onClick={() => setMany(all.filter((a) => a.playtest).map((a) => a.id), false)}><Svg d={mdiFlask} /></button>
           <button type="button" className="v4-grid-cmd" aria-label="View selected source in compendium" title="View selected source in compendium" disabled={!sel} onClick={() => sel && openCompendium({ source: sel.id })}><Svg d={mdiBookSearch} /></button>

@@ -1,4 +1,5 @@
 import { createElement } from "react";
+import type { Api, CharacterSnapshot } from "../../api/contract";
 import { useConfirm } from "../../components";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
@@ -40,4 +41,24 @@ export function loadDefaultSources(): string[] | null {
 
 export function saveDefaultSources(ids: string[]): void {
   try { localStorage.setItem(DEFAULT_KEY, JSON.stringify(ids)); } catch { /* storage unavailable: nothing to save */ }
+}
+
+/**
+ * The saved default as a restriction over the sources installed now (GitHub #22): unknown ids are dropped, and it is
+ * null (every source) when nothing is saved, when none of the saved sources is installed any more, or when it allows them all.
+ */
+export function defaultRestriction(saved: readonly string[] | null, installed: readonly string[]): string[] | null {
+  if (!saved) return null;
+  const known = new Set(installed);
+  const kept = [...new Set(saved)].filter((id) => known.has(id));
+  if (saved.length > 0 && kept.length === 0) return null;
+  return kept.length === known.size ? null : kept;
+}
+
+/** A new character starts on the saved default sources (Aurora's "apply default restrictions on new character"). */
+export async function applyDefaultSources(api: Api, snap: CharacterSnapshot): Promise<CharacterSnapshot> {
+  const saved = loadDefaultSources();
+  if (!saved) return snap;
+  const enabled = defaultRestriction(saved, (await api.listSources()).map((s) => s.id));
+  return enabled ? api.setSourceRestrictions({ characterId: snap.id, enabledSources: enabled }) : snap;
 }

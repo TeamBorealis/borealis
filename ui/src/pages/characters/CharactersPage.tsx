@@ -12,6 +12,7 @@ import { useSettings } from "../../state/SettingsContext";
 import { errorMessage, useAsync } from "../../state/useAsync";
 import { type CharacterImportEntry, CharacterImportReportDialog } from "./CharacterImportReportDialog";
 import { onBundleApplied } from "../transfer/openBundle";
+import { applyDefaultSources } from "../content/applySources";
 import { CharacterTile } from "./CharacterTile";
 import "./characters.css";
 import { type NewCharacterForm, NewCharacterDialog, applyStandardArray, customOptions } from "./NewCharacterDialog";
@@ -99,7 +100,7 @@ export function CharactersPage() {
         name: f.name, ruleset: f.ruleset, startingLevel: f.startingLevel, gender: f.gender, abilityMethod: f.abilityMethod,
         options: { multiclassing: f.multiclassing, feats: f.feats, averageHp: f.averageHp, custom: customOptions(contentOptions, f) },
       } });
-      ch.adopt(await applyStandardArray(api, snap, f));
+      ch.adopt(await applyStandardArray(api, await applyDefaultSources(api, snap), f));
       void update({ abilityMethod: f.abilityMethod });
       setCreating(false);
       nav("/builder/race");
