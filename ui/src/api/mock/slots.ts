@@ -15,6 +15,8 @@ export interface SlotDef extends Omit<SelectionSlot, "chosen" | "gainedOnLevel" 
 }
 
 const ASI_LEVELS = [4, 8, 12, 16, 19];
+/** Host `snapshot_map::MASTERY_HINT`. */
+const MASTERY_HINT = "Choose a kind of weapon whose mastery property you can use";
 const RESTRICTED_TYPES: ElementType[] = ["race", "subrace", "archetype", "background", "feat", "spell", "weapon", "armor", "item", "magic-item"];
 
 export const classIdOf = (c: MockCharacter, slotId: string): string | null => {
@@ -81,9 +83,10 @@ function classSlots(c: MockCharacter, index: number): SlotDef[] {
       candidates: ELEMENTS.filter((e) => e.type === "skill" && cls.skills.includes(e.id.slice(6))) }, cls.skillCount));
     if (cls.fightingStyle) out.push(make({ ...base, id: `${cs.slotId}:style:0`, tab: "class", title: "Fighting style", elementType: "fighting-style", candidates: FIGHTING_STYLES }));
     if (c.ruleset === "dnd2024" && cls.masteries > 0) {
-      out.push(...many({ ...base, id: `${cs.slotId}:mastery`, tab: "class", title: "Weapon Mastery", elementType: "weapon", dup: `mastery:${cs.slotId}`,
-        hint: "Choose weapons whose mastery property you can use.",
-        candidates: ELEMENTS.filter((e) => masteryKind(c, cls.id, e)) }, cls.masteries));
+      const mastery = many({ ...base, id: `${cs.slotId}:mastery`, tab: "class", title: "Weapon Mastery", elementType: "weapon", dup: `mastery:${cs.slotId}`,
+        candidates: ELEMENTS.filter((e) => masteryKind(c, cls.id, e)) }, cls.masteries);
+      // A7: the host's hint, numbered among the feature's mastery slots
+      out.push(...mastery.map((m) => ({ ...m, hint: m.of > 1 ? `${MASTERY_HINT} (${m.ordinal} of ${m.of})` : MASTERY_HINT })));
     }
   }
   const subLevel = cls.subclassLevel[c.ruleset];

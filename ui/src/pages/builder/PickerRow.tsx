@@ -20,12 +20,21 @@ export function ElementSource({ id }: { id: string }) {
 
 const levelText = (v: VersionLike) => (v.level === undefined ? "" : v.level === 0 ? "Cantrip" : `Level ${v.level}`);
 
-/** Sec. 1.4: "<name>, <source>[, 2014 rules], <n> versions" (plus the spell level on spell rows). */
-export function rowLabel(row: ShownRow): string {
+/** Sec. 1.4: "<name>, <source>[, 2014 rules], <n> versions" (plus the spell level on spell rows, the mastery on mastery rows). */
+export function rowLabel(row: ShownRow, mastery: string | null = null): string {
   const v = row.shown;
   const marks = editionMarks(v);
   const n = row.versions.length;
-  return [row.name, levelText(v), v.sourceName ?? "", marks.badge ? `${marks.badge} rules` : "", n > 1 ? `${n} versions` : ""].filter(Boolean).join(", ");
+  return [row.name, levelText(v), mastery ? `${mastery} mastery` : "", v.sourceName ?? "", marks.badge ? `${marks.badge} rules` : "", n > 1 ? `${n} versions` : ""]
+    .filter(Boolean).join(", ");
+}
+
+/** A7 / TV2 (A12): what a phone mastery picker's second line shows, instead of or beside the row's source. */
+export interface MasteryLine {
+  /** The row's weapon mastery property ("Topple"). */
+  name: string;
+  /** Every row of the list shares one source, so the line drops it. */
+  hideSource: boolean;
 }
 
 interface Props {
@@ -45,10 +54,12 @@ interface Props {
   onChoose: () => void;
   onOpenMenu: (anchor: HTMLElement) => void;
   onKeyNav: (e: KeyboardEvent<HTMLButtonElement>) => void;
+  /** Phone mastery pickers: the weapon's mastery on the source line. */
+  mastery?: MasteryLine | null;
 }
 
 /** One picker row (B-55): one name, its shown version's source and edition mark, and the version column. */
-export function PickerRow({ row, listSlot, showDescription, versionColumn, highlighted, menuOpen, notesOpen, notesId, onToggleNotes, onDescribe, onChoose, onOpenMenu, onKeyNav }: Props) {
+export function PickerRow({ row, listSlot, showDescription, versionColumn, highlighted, menuOpen, notesOpen, notesId, onToggleNotes, onDescribe, onChoose, onOpenMenu, onKeyNav, mastery = null }: Props) {
   const verRef = useRef<HTMLButtonElement | null>(null);
   const v = row.shown;
   const sel = row.chosen !== null;
@@ -60,7 +71,7 @@ export function PickerRow({ row, listSlot, showDescription, versionColumn, highl
   return (
     <li className={`pick-row ${sel ? "selected" : ""} ${highlighted ? "hl" : ""} ${marks.converted ? "is-converted" : ""}`} data-row={row.name}>
       <button type="button" className="pick-main" aria-pressed={sel} aria-disabled={disabled || undefined} title={v.disabledReason}
-        aria-label={rowLabel(row)}
+        aria-label={rowLabel(row, mastery?.name ?? null)}
         onClick={(e) => { if (onSource(e)) { onOpenMenu(verRef.current ?? e.currentTarget); return; } onDescribe(); }}
         onKeyDown={(e) => {
           if (e.key === "Enter") { e.preventDefault(); if (!disabled && !sel) onChoose(); return; }
@@ -73,11 +84,14 @@ export function PickerRow({ row, listSlot, showDescription, versionColumn, highl
         </span>
         {showDescription && <span className="pick-desc" aria-hidden="true">{v.shortDescription}</span>}
         <span className="pick-src" aria-hidden="true">
-          <span className={`pick-src-name ${multi ? "has-versions" : ""}`} title={multi ? `${row.versions.length} versions: choose a source` : undefined}>
-            {v.sourceName !== undefined
-              ? <>{v.sourceName}<EditionSuffix marks={marks} sourceName={v.sourceName} /></>
-              : (listSlot ? null : <ElementSource id={v.id} />)}
-          </span>
+          {mastery && <span className="pick-mastery">{mastery.name}{mastery.hideSource ? "" : " · "}</span>}
+          {!mastery?.hideSource && (
+            <span className={`pick-src-name ${multi ? "has-versions" : ""}`} title={multi ? `${row.versions.length} versions: choose a source` : undefined}>
+              {v.sourceName !== undefined
+                ? <>{v.sourceName}<EditionSuffix marks={marks} sourceName={v.sourceName} /></>
+                : (listSlot ? null : <ElementSource id={v.id} />)}
+            </span>
+          )}
         </span>
       </button>
       {versionColumn && (

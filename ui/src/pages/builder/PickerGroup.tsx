@@ -6,7 +6,7 @@ import { useSettings } from "../../state/SettingsContext";
 import { usePhone } from "../../lib/phone";
 import { NO_FILTER, type ShownRow, type VersionLike } from "../../lib/versions";
 import { PickerFilterBar } from "./PickerFilterBar";
-import { ElementSource, PickerRow } from "./PickerRow";
+import { ElementSource, type MasteryLine, PickerRow } from "./PickerRow";
 import { usePickerRows, useSwitchVersion } from "./usePickerRows";
 import { VersionMenu } from "./VersionMenu";
 import { EmptyListNote } from "./EmptyListNote";
@@ -34,6 +34,9 @@ export function groupSlots(slots: SelectionSlot[]): SlotGroup[] {
  * they have no element to describe or look up (getElement would answer "That element does not exist.").
  */
 export const isListSlot = (slot: Pick<SelectionSlot, "elementType">): boolean => slot.elementType === "list";
+/** A Weapon Mastery slot: a weapon slot named after the feature (host `play_api::is_mastery_slot`). */
+export const isMasterySlot = (slot: Pick<SelectionSlot, "elementType" | "title">): boolean =>
+  slot.elementType === "weapon" && slot.title.toLowerCase().includes("mastery");
 
 /** A row that can still be chosen: phones show "Choose <name>" for it under the list (B-48 O2). */
 export interface PickChoice { slotId: string; name: string; choose: () => void }
@@ -89,6 +92,13 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
   const [notesFor, setNotesFor] = useState<string | null>(null);
   const [menu, setMenu] = useState<{ key: string; anchor: HTMLElement } | null>(null);
   const menuRow = menu ? visible.find((r) => r.key === menu.key) ?? null : null;
+  // A7 / TV2 (A12): on phones a Weapon Mastery row names its mastery on the source line (the source only when rows differ).
+  const masteryRows = phone && isMasterySlot(slot);
+  const oneSource = new Set(visible.map((r) => r.shown.sourceName)).size <= 1;
+  const masteryOf = (row: ShownRow): MasteryLine | null => {
+    const name = masteryRows ? row.shown.weapon?.mastery : null;
+    return name ? { name, hideSource: oneSource } : null;
+  };
 
   const choiceOf = (row: ShownRow, v: VersionLike): PickChoice | undefined =>
     row.chosen || v.disabledReason ? undefined : { slotId: slot.id, name: row.name, choose: () => onChoose(slot.id, v.id) };
@@ -131,7 +141,7 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
                 notesOpen={notesFor === row.key} notesId={`pick-notes-${slot.id}-${row.shown.id}`}
                 onToggleNotes={() => setNotesFor(notesFor === row.key ? null : row.key)}
                 onDescribe={() => describe(row)} onChoose={() => onChoose(slot.id, row.shown.id)}
-                onOpenMenu={(anchor) => setMenu(menu?.key === row.key ? null : { key: row.key, anchor })} onKeyNav={onKeyNav} />
+                onOpenMenu={(anchor) => setMenu(menu?.key === row.key ? null : { key: row.key, anchor })} onKeyNav={onKeyNav} mastery={masteryOf(row)} />
             ))}
           </ul>
         </Expander>

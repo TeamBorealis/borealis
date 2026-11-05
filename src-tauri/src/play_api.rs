@@ -12,7 +12,7 @@ use borealis_engine::commands;
 use borealis_engine::{Choice, SlotKey};
 
 /// Weapon Mastery slots are `Weapon` selects named after the feature.
-fn is_mastery_slot(ty: &str, name: &str) -> bool {
+pub(crate) fn is_mastery_slot(ty: &str, name: &str) -> bool {
     ty == "Weapon" && name.to_lowercase().contains("mastery")
 }
 

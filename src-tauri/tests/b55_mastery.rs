@@ -268,3 +268,66 @@ fn barbarian_mastery_slots_are_required() {
         "the second pick counts"
     );
 }
+
+#[test]
+fn weapon_description_names_its_mastery_property() {
+    // A7 (tester video 2026-11-02): the weapon's card says which mastery it gives and what it does.
+    let (_d, app) = app();
+    let axe = app.get_element(BATTLEAXE).expect("Battleaxe");
+    let mastery: Vec<&str> = axe
+        .facts
+        .iter()
+        .filter(|f| f.label == "Mastery")
+        .map(|f| f.value.as_str())
+        .collect();
+    assert_eq!(mastery, ["Topple"], "{:?}", axe.facts);
+    let topple = app.get_element("ID_2024_MASTERY_TOPPLE").expect("Topple");
+    let rule = topple
+        .description_html
+        .trim()
+        .trim_start_matches("<p>")
+        .trim_end_matches("</p>")
+        .to_string();
+    assert!(!rule.is_empty());
+    assert!(
+        axe.description_html.contains("Mastery: Topple") && axe.description_html.contains(&rule),
+        "the card carries the Topple rule: {}",
+        axe.description_html
+    );
+    let magic = app
+        .get_element("ID_2024_MAGIC_ITEM_BERSERKER_AXE")
+        .expect("magic axe");
+    assert!(
+        !magic.description_html.contains("Mastery:"),
+        "an item with no mastery property names none"
+    );
+}
+
+#[test]
+fn mastery_slots_carry_a_numbered_hint() {
+    // A7: the two Weapon Mastery pickers say what the pick is and which of the two each one is.
+    let (_d, app) = app();
+    let snap = hero(&app, "ID_2024_CLASS_BARBARIAN");
+    let ids = mastery_slots(&snap);
+    let hints: Vec<String> = snap
+        .slots
+        .iter()
+        .filter(|s| ids.contains(&s.id))
+        .map(|s| s.hint.clone().unwrap_or_default())
+        .collect();
+    assert_eq!(hints.len(), 2);
+    for (hint, end) in hints.iter().zip(["(1 of 2)", "(2 of 2)"]) {
+        assert!(
+            hint.starts_with("Choose a kind of weapon whose mastery property you can use"),
+            "{hint}"
+        );
+        assert!(hint.ends_with(end), "{hint} ends with {end}");
+    }
+    let others = snap
+        .slots
+        .iter()
+        .filter(|s| !ids.contains(&s.id))
+        .filter(|s| s.hint.as_deref().is_some_and(|h| h.contains("mastery")))
+        .count();
+    assert_eq!(others, 0, "only mastery slots carry the mastery hint");
+}

@@ -55,6 +55,8 @@ html.phone .pick-name { grid-area: name; min-width: 0; overflow: hidden; text-ov
 html.phone .pick-name.disabled { color: var(--ph-text-3); }
 html.phone .pick-src { grid-area: src; justify-content: flex-start; max-width: none; min-width: 0; font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); }
 html.phone .pick-src:empty { display: none; }
+/* A7 / TV2 (A12): a Weapon Mastery row names its mastery here; the separator before a differing source keeps its spaces. */
+html.phone .pick-mastery { white-space: pre; }
 html.phone .pick-list.with-desc .pick-desc { display: none; }
 /* Chosen state as an icon, not colour alone: an empty ring on every row, a filled check in a ring on the chosen one. */
 html.phone .pick-main::after {

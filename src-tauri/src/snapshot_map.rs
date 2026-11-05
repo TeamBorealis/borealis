@@ -440,6 +440,35 @@ fn feat_label(snap: &Engine, s: &SlotSnapshot) -> String {
         .unwrap_or_else(|| s.owner.name.clone())
 }
 
+/// A7: what a Weapon Mastery pick is, numbered when the feature gives several ("(1 of 2)").
+const MASTERY_HINT: &str = "Choose a kind of weapon whose mastery property you can use";
+
+/// The line shown under a picker's title: for a Weapon Mastery slot, what the pick is and which of
+/// its feature's mastery slots (the shown slots of the same owner) it is; none for other slots.
+fn slot_hint(snap: &Engine, s: &SlotSnapshot) -> Option<String> {
+    let is_mastery = |o: &SlotSnapshot| crate::play_api::is_mastery_slot(&o.ty, &o.name);
+    if !is_mastery(s) {
+        return None;
+    }
+    let siblings: Vec<&SlotSnapshot> = snap
+        .slots
+        .iter()
+        .filter(|o| is_shown(o) && is_mastery(o) && o.owner.id == s.owner.id)
+        .collect();
+    let at = siblings.iter().position(|o| o.key == s.key);
+    Some(match at {
+        Some(i) if siblings.len() > 1 => {
+            format!("{MASTERY_HINT} ({} of {})", i + 1, siblings.len())
+        }
+        _ => MASTERY_HINT.to_string(),
+    })
+}
+
+/// A slot the builder lists: not rejected, and not an empty optional one (SO-5).
+fn is_shown(s: &SlotSnapshot) -> bool {
+    s.rejected.is_none() && !is_hidden_empty_optional(s)
+}
+
 /// engine-optional-sole-option SO-5: an optional slot with no options and no choice is disabled
 /// and not shown (a required one stays, empty, and still requires a selection). The app always
 /// derives with options included, so an empty list here means nothing is on offer.
@@ -457,11 +486,7 @@ fn slots(snap: &Engine) -> (Vec<SelectionSlot>, SelectionProgress) {
     // (group, type priority, slot order): the first is Next selection (A10)
     let mut ranked: Vec<(usize, u8, usize)> = Vec::new();
     let mut by_tab: BTreeMap<String, usize> = TABS.iter().map(|t| ((*t).to_string(), 0)).collect();
-    for s in snap
-        .slots
-        .iter()
-        .filter(|s| s.rejected.is_none() && !is_hidden_empty_optional(s))
-    {
+    for s in snap.slots.iter().filter(|s| is_shown(s)) {
         let tab = slot_tab(s);
         let required = !s.optional;
         let chosen = chosen_ref(s);
@@ -500,7 +525,7 @@ fn slots(snap: &Engine) -> (Vec<SelectionSlot>, SelectionProgress) {
             chosen,
             required_level: (s.level > 1).then_some(s.level),
             allow_replace: s.replaceable,
-            hint: None,
+            hint: slot_hint(snap, s),
             gained_on_level: s.gained_level,
             replaced: s
                 .replaced

@@ -184,9 +184,11 @@ impl AppState {
         let el = hub
             .element(element_id)
             .ok_or_else(|| ApiError::not_found("That element does not exist."))?;
+        let mut html = description_html(el);
+        html.push_str(&mastery_html(&hub.store, el));
         Ok(ElementDetail {
             summary: summary(&hub.store, el),
-            description_html: description_html(el),
+            description_html: html,
             facts: facts(el),
             grants: grants(&hub.store, el),
         })
@@ -235,6 +237,40 @@ fn description_html(el: &Element) -> String {
         html.push_str(&sanitize_html(&block));
     }
     html
+}
+
+/// Type of the eight 2024 weapon mastery property elements (`ID_2024_MASTERY_<NAME>`).
+const MASTERY_PROPERTY_TYPE: &str = "Mastery Property";
+
+/// A weapon's mastery property name (`Topple`), from its `mastery` setter.
+fn mastery_name(el: &Element) -> Option<String> {
+    el.setter_value("mastery")
+        .map(|m| title_case(m.trim()))
+        .filter(|m| !m.is_empty())
+}
+
+/// A7: the rule text of a weapon's mastery property, under a "Mastery: <name>" heading, so the
+/// card says what the Weapon Mastery pick gives. The property element is the one the weapon
+/// supports, else the one of that name; empty for an element with no mastery property.
+fn mastery_html(store: &ContentStore, el: &Element) -> String {
+    let Some(name) = mastery_name(el) else {
+        return String::new();
+    };
+    let is_property = |m: &&Element| m.ty == MASTERY_PROPERTY_TYPE;
+    let property = el
+        .supports
+        .iter()
+        .filter_map(|id| store.element(id))
+        .find(is_property)
+        .or_else(|| {
+            store
+                .iter()
+                .map(|s| &s.element)
+                .filter(is_property)
+                .find(|m| m.name.eq_ignore_ascii_case(&name))
+        });
+    let rule = property.map_or("", |m| m.description.as_str());
+    sanitize_html(&format!("<h4>Mastery: {name}</h4>{rule}"))
 }
 
 fn fact(label: &str, value: impl Into<String>) -> Option<ElementFact> {
@@ -316,6 +352,7 @@ pub(crate) fn facts(el: &Element) -> Vec<ElementFact> {
         }
         out.extend(fact("Damage", damage_text(el)));
         out.extend(fact("Properties", weapon_properties(el).join(", ")));
+        out.extend(mastery_name(el).and_then(|m| fact("Mastery", m)));
         if let Some(w) = el.setter("weight").map(|w| w.value.clone()) {
             out.extend(fact("Weight", w));
         }

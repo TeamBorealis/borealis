@@ -304,7 +304,8 @@ function mk(): MockElement[] {
     out.push(el(i.id, type, i.name ?? title(i.id).replace("Healers", "Healer's").replace("Explorers", "Explorer's").replace("Dungeoneers", "Dungeoneer's").replace("Thieves", "Thieves'"), i.description, {
       ...(i.source ? { source: i.source } : {}), ...(i.rulesets ? { rulesets: i.rulesets } : {}),
       tags: [i.category], armor: armorFacts(i), weapon: weaponFacts(i),
-      facts: [{ label: "Cost", value: `${i.costCp / 100} gp` }, { label: "Weight", value: `${i.weight} lb` }, ...(i.weapon ? [{ label: "Damage", value: i.weapon.damage }] : [])],
+      facts: [{ label: "Cost", value: `${i.costCp / 100} gp` }, { label: "Weight", value: `${i.weight} lb` }, ...(i.weapon ? [{ label: "Damage", value: i.weapon.damage }] : []),
+        ...(i.weapon?.mastery ? [{ label: "Mastery", value: i.weapon.mastery }] : [])],
     }));
   }
   for (const k of SKILLS) out.push(el(`skill-${k.key}`, "skill", k.name, `${ABILITY_NAMES[k.ability]} skill.`));
