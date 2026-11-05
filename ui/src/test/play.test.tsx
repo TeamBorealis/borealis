@@ -32,6 +32,31 @@ describe("Play panel", () => {
     expect(within(res).queryByText(/while rage/)).toBeNull();
   });
 
+  // B-140 (TV1): entering Rage is the use being counted; ending it gives nothing back; at 0 the switch refuses and stays off.
+  it("the Rage switch spends a use, ending it restores nothing, and at 0 it refuses", async () => {
+    const user = userEvent.setup();
+    const api = fast();
+    renderApp("/play", { api, openCharacterId: await seededId(api, "Seraphine") });
+    const count = await screen.findByRole("status", { name: /Rage: \d+ of \d+ uses left/ });
+    const max = Number(/of (\d+)/.exec(count.getAttribute("aria-label")!)![1]);
+    const rage = () => screen.getByRole("status", { name: /Rage:/ }).textContent;
+    const toggle = () => screen.getByRole("switch", { name: "Rage" }) as HTMLInputElement;
+    await user.click(toggle());
+    await waitFor(() => expect(toggle().checked).toBe(true));
+    expect(rage()).toBe(`${max - 1}/${max}`);
+    await user.click(toggle());
+    await waitFor(() => expect(toggle().checked).toBe(false));
+    expect(rage()).toBe(`${max - 1}/${max}`);
+    for (let left = max - 1; left > 0; left--) {
+      await user.click(screen.getByRole("button", { name: "Spend Rage" }));
+      await waitFor(() => expect(rage()).toBe(`${left - 1}/${max}`));
+    }
+    await user.click(toggle());
+    expect(await screen.findByText(`Rage has 0 of ${max} uses left`)).toBeTruthy();
+    expect(toggle().checked).toBe(false);
+    expect(rage()).toBe(`0/${max}`);
+  });
+
   it("steps exhaustion and summarises the effects", async () => {
     const user = userEvent.setup();
     const api = fast();

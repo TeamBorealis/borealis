@@ -65,19 +65,37 @@ pub fn restore_resource(engine: &Engine, state: &CharacterState, id: &str, n: u3
 
 /// Switch a toggle (Rage) on or off.
 ///
+/// A toggle with a same-id resource counts its uses (decision TV1; SRD 5.2.1 Rage: "You can
+/// enter your Rage the number of times shown"): switching it on spends one use and is refused
+/// when none is left. Switching it off gives nothing back, and switching on a toggle that is
+/// already on spends nothing.
+///
 /// # Errors
-/// Unknown toggle.
+/// Unknown toggle, or no use left of its same-id resource.
 pub fn set_toggle(engine: &Engine, state: &CharacterState, id: &str, on: bool) -> CmdResult {
     let snap = engine.derive_with(state, false);
     if !snap.toggles.iter().any(|t| t.id == id) {
         return Err(CommandError::UnknownElement(id.to_string()));
     }
     let mut rt = Runtime::from_state(state);
-    if on {
-        rt.toggles.insert(id.to_string());
-    } else {
+    if !on {
         rt.toggles.remove(id);
+        return done(&rt, state);
     }
+    if rt.toggles.contains(id) {
+        return done(&rt, state);
+    }
+    if let Some(pool) = snap.resources.iter().find(|r| r.id == id) {
+        if pool.current < 1 {
+            return Err(CommandError::Level(format!(
+                "{} has {} of {} uses left",
+                pool.name, pool.current, pool.max
+            )));
+        }
+        let used = rt.used_of(id) + 1;
+        rt.used.insert(id.to_string(), used);
+    }
+    rt.toggles.insert(id.to_string());
     done(&rt, state)
 }
 

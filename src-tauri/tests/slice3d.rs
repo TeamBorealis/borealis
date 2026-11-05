@@ -254,10 +254,19 @@ fn toggling_rage_changes_the_resistances_in_the_snapshot() {
         .unwrap()
         .iter()
         .any(|t| t["id"] == "rage" && t["active"] == true));
+    // TV1 (B-140): entering Rage spends a use, and the spent use is kept with the character
+    assert_eq!(resource(&on, "rage"), (2, 3));
+    assert_eq!(resource(&app.get_snapshot(&id).unwrap(), "rage"), (2, 3));
     let ended = app.short_rest(&id).unwrap();
     assert!(active_resistances(&ended)
         .iter()
         .all(|r| r != "bludgeoning"));
+    app.spend_resource(&id, "rage", 3).unwrap();
+    assert_eq!(
+        app.set_toggle(&id, "rage", true).unwrap_err().code,
+        ErrorCode::RequirementFailed,
+        "no Rage left"
+    );
     assert_eq!(
         app.set_toggle(&id, "no-such-toggle", true)
             .unwrap_err()

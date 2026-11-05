@@ -18,9 +18,10 @@ describe("MockApi 2024 play state and conversion", () => {
     expect(off.play.defenses.resistances.every((r) => !r.active)).toBe(true);
     const on = await api.setToggle({ characterId, toggleId: "rage", on: true });
     expect(on.play.defenses.resistances.some((r) => r.name === "bludgeoning" && r.active)).toBe(true);
-    const spent = await api.spendResource({ characterId, resourceId: "rage", uses: 2 });
-    const rage = spent.play.resources.find((r) => r.id === "rage")!;
-    expect(rage.current).toBe(rage.max - 2);
+    const rage = on.play.resources.find((r) => r.id === "rage")!;
+    expect(rage.current, "entering Rage spends a use (TV1)").toBe(rage.max - 1);
+    const spent = await api.spendResource({ characterId, resourceId: "rage", uses: 1 });
+    expect(spent.play.resources.find((r) => r.id === "rage")!.current).toBe(rage.max - 2);
     await api.setExhaustion({ characterId, level: 3 });
     const rested = await api.longRest({ characterId });
     expect(rested.play.resources.find((r) => r.id === "rage")!.current).toBe(rage.max);

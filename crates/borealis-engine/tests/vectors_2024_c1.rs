@@ -143,7 +143,7 @@ fn c1_level5_barbarian_rages_rage_damage_and_toggle() {
         .expect("toggle")
         .state;
     let snap = h.snap();
-    assert_eq!(res(&snap, "rage").current, 2);
+    assert_eq!(res(&snap, "rage").current, 1, "the spend and entering Rage");
     let on = snap
         .attacks
         .iter()
@@ -167,6 +167,63 @@ fn c1_level5_barbarian_rages_rage_damage_and_toggle() {
     assert!(!snap.toggles[0].on);
     // spending more than is left is refused
     assert!(commands::spend_resource(engine(), &rested, "rage", 4).is_err());
+}
+
+/// TV1 (B-140): entering Rage is the use being counted (SRD 5.2.1: "You can enter your Rage the
+/// number of times shown"). Switching the state on spends one use of its same-id pool, it is
+/// refused at 0 and switching it off gives nothing back. Short Rest regains 1, Long Rest all.
+#[test]
+fn rage_toggle_spends_a_use() {
+    let mut h = Hero::new("ID_2024_CLASS_BARBARIAN", "Barbarian");
+    let max = res(&h.snap(), "rage").max;
+    assert_eq!(max, 2, "Rages at level 1");
+    h.s = commands::set_toggle(engine(), &h.s, "rage", true)
+        .expect("toggle on")
+        .state;
+    let snap = h.snap();
+    assert_eq!(res(&snap, "rage").current, max - 1);
+    assert!(snap.toggles.iter().any(|t| t.id == "rage" && t.on));
+    // switching it on again while on is not a second Rage
+    h.s = commands::set_toggle(engine(), &h.s, "rage", true)
+        .expect("still on")
+        .state;
+    assert_eq!(res(&h.snap(), "rage").current, max - 1);
+    // ending the Rage restores nothing
+    h.s = commands::set_toggle(engine(), &h.s, "rage", false)
+        .expect("toggle off")
+        .state;
+    let snap = h.snap();
+    assert_eq!(res(&snap, "rage").current, max - 1);
+    assert!(snap.toggles.iter().all(|t| t.id != "rage" || !t.on));
+    // spend the rest: at 0 the switch refuses and stays off
+    h.s = commands::spend_resource(engine(), &h.s, "rage", 1)
+        .expect("spend")
+        .state;
+    let err = commands::set_toggle(engine(), &h.s, "rage", true).expect_err("no uses left");
+    assert!(
+        err.to_string().contains("Rage has 0 of 2 uses left"),
+        "{err}"
+    );
+    let rested = commands::short_rest(engine(), &h.s)
+        .expect("short rest")
+        .state;
+    assert_eq!(res(&engine().derive(&rested), "rage").current, 1);
+    let rested = commands::long_rest(engine(), &rested)
+        .expect("long rest")
+        .state;
+    assert_eq!(res(&engine().derive(&rested), "rage").current, max);
+}
+
+/// The rule is general: any state with a same-id pool spends it (Innate Sorcery, 2 uses).
+#[test]
+fn innate_sorcery_toggle_spends_its_pool() {
+    let h = Hero::new("ID_2024_CLASS_SORCERER", "Sorcerer");
+    let id = "innate sorcery";
+    assert_eq!(res(&h.snap(), id).current, 2);
+    let on = commands::set_toggle(engine(), &h.s, id, true)
+        .expect("on")
+        .state;
+    assert_eq!(res(&engine().derive(&on), id).current, 1);
 }
 
 /// Monk 5 (SRD table: Martial Arts 1d8, Focus Points 5, proficiency +3). Dwarf Monk DEX 15 (+2).

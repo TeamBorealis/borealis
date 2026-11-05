@@ -124,9 +124,13 @@ export const longRest = (c: MockCharacter): MockCharacter =>
 export const withTracking = (c: MockCharacter, fn: (t: MockTracking | undefined) => MockTracking): MockCharacter =>
   withPlay(c, (p) => ({ ...p, tracking: fn(p.tracking) }));
 
+/** As the host (TV1): switching on a state with a same-id pool spends one use and is refused at 0; switching off restores nothing. */
 export function setToggle(c: MockCharacter, id: string, on: boolean): MockCharacter {
   if (!togglesOf(c).some((t) => t.id === id)) throw apiError("not_found", "Unknown toggle.");
-  return withPlay(c, (p) => ({ ...p, toggles: on ? [...new Set([...p.toggles, id])] : p.toggles.filter((t) => t !== id) }));
+  if (!on) return withPlay(c, (p) => ({ ...p, toggles: p.toggles.filter((t) => t !== id) }));
+  if (playOf(c).toggles.includes(id)) return c;
+  const pooled = resourcesFor(c).some((r) => r.id === id) ? spend(c, id, 1) : c;
+  return withPlay(pooled, (p) => ({ ...p, toggles: [...p.toggles, id] }));
 }
 
 export function setExhaustion(c: MockCharacter, level: number): MockCharacter {
