@@ -7,6 +7,15 @@ from lib import *
 # language, as the Acolyte's "two of your choice" (not only the standard ones).
 ANY_LANGUAGE = 'Standard||Exotic'
 
+# Sub races and race variants from imported content attach to these races (B-170): the selects and
+# the requirement gates match Aurora's race elements with the same ids, so a sub race or variant
+# that replaces racial traits grants a marker that switches them off. Only internal or generic
+# marker ids are used here (defined in the bundled packs: a requirement on an id no pack
+# defines is a dangling reference).
+TIEFLING_SUBRACE = 'ID_INTERNAL_GRANTS_TIEFLING_SUBRACE'
+NOT_TIEFLING_SUBRACE = '!' + TIEFLING_SUBRACE
+NOT_DRAGONMARK = '!ID_INTERNAL_GRANTS_DRAGONMARK'
+
 ev = events()
 SPELL_DAMAGE = {'Acid': 'ACID', 'Cold': 'COLD', 'Fire': 'FIRE', 'Lightning': 'LIGHTNING', 'Poison': 'POISON'}
 
@@ -153,11 +162,11 @@ def build():
     # ------------------------------------------------------------ Human
     a, b = race_range('Human'); D = traits_in(a, b)
     els.append(race('ID_RACE_HUMAN', 'Human', '_race', D, [
-        stat('strength', 1), stat('dexterity', 1), stat('constitution', 1), stat('intelligence', 1),
-        stat('wisdom', 1), stat('charisma', 1),
+        *[stat(a, 1, requirements=NOT_DRAGONMARK) for a in ASI_ABIL],
         stat('innate speed', 30, bonus='base'), grant('ID_SIZE_MEDIUM', 'Size'),
         grant('ID_LANGUAGE_COMMON', 'Language'),
         select('Language', 'Language (Human)', supports=ANY_LANGUAGE),
+        select('Race Variant', 'Human Variant', supports='Human', optional=True),
     ]))
 
     # ------------------------------------------------------------ Dragonborn
@@ -239,11 +248,14 @@ def build():
     # ------------------------------------------------------------ Half-Orc
     a, b = race_range('Half-Orc'); D = traits_in(a, b)
     els.append(race('ID_RACE_HALFORC', 'Half-Orc', '_race', D, [
-        stat('strength', 2), stat('constitution', 1), stat('innate speed', 30, bonus='base'),
-        grant('ID_SIZE_MEDIUM', 'Size'), grant('ID_VISION_DARKVISION', 'Vision'),
+        stat('strength', 2, requirements=NOT_DRAGONMARK), stat('constitution', 1, requirements=NOT_DRAGONMARK),
+        stat('innate speed', 30, bonus='base'),
+        grant('ID_SIZE_MEDIUM', 'Size'), grant('ID_VISION_DARKVISION', 'Vision', requirements=NOT_DRAGONMARK),
         grant('ID_LANGUAGE_COMMON', 'Language'), grant('ID_LANGUAGE_ORC', 'Language'),
-        grant('ID_RACIAL_TRAIT_MENACING', 'Racial Trait'), grant('ID_RACIAL_TRAIT_RELENTLESS_ENDURANCE', 'Racial Trait'),
-        grant('ID_RACIAL_TRAIT_SAVAGE_ATTACKS', 'Racial Trait'),
+        grant('ID_RACIAL_TRAIT_MENACING', 'Racial Trait', requirements=NOT_DRAGONMARK),
+        grant('ID_RACIAL_TRAIT_RELENTLESS_ENDURANCE', 'Racial Trait', requirements=NOT_DRAGONMARK),
+        grant('ID_RACIAL_TRAIT_SAVAGE_ATTACKS', 'Racial Trait', requirements=NOT_DRAGONMARK),
+        select('Race Variant', 'Half-Orc Variant', supports='Half-Orc Variant', optional=True),
     ]))
     els.append(T(D, '_race', 'Menacing', 'ID_RACIAL_TRAIT_MENACING', rules=[grant('ID_PROFICIENCY_SKILL_INTIMIDATION', 'Proficiency')]))
     els.append(T(D, '_race', 'Relentless Endurance', 'ID_RACIAL_TRAIT_RELENTLESS_ENDURANCE'))
@@ -252,10 +264,13 @@ def build():
     # ------------------------------------------------------------ Tiefling
     a, b = race_range('Tiefling'); D = traits_in(a, b)
     els.append(race('ID_RACE_TIEFLING', 'Tiefling', '_race', D, [
-        stat('intelligence', 1), stat('charisma', 2), stat('innate speed', 30, bonus='base'),
+        stat('intelligence', 1, requirements=NOT_TIEFLING_SUBRACE), stat('charisma', 2, requirements=NOT_TIEFLING_SUBRACE),
+        stat('innate speed', 30, bonus='base'),
         grant('ID_SIZE_MEDIUM', 'Size'), grant('ID_VISION_DARKVISION', 'Vision'),
         grant('ID_LANGUAGE_COMMON', 'Language'), grant('ID_LANGUAGE_INFERNAL', 'Language'),
-        grant('ID_RACIAL_TRAIT_HELLISH_RESISTANCE', 'Racial Trait'), grant('ID_RACIAL_TRAIT_INFERNAL_LEGACY', 'Racial Trait'),
+        grant('ID_RACIAL_TRAIT_HELLISH_RESISTANCE', 'Racial Trait'),
+        grant('ID_RACIAL_TRAIT_INFERNAL_LEGACY', 'Racial Trait', requirements=NOT_TIEFLING_SUBRACE),
+        select('Sub Race', 'Tiefling Subrace', supports='Tiefling', optional=True),
     ]))
     els.append(T(D, '_race', 'Hellish Resistance', 'ID_RACIAL_TRAIT_HELLISH_RESISTANCE', rules=[res('Fire')]))
     els.append(T(D, '_race', 'Infernal Legacy', 'ID_RACIAL_TRAIT_INFERNAL_LEGACY', rules=[
@@ -263,6 +278,8 @@ def build():
         grant('ID_PHB_SPELL_HELLISH_REBUKE', 'Spell', level=3, spellcasting='Tiefling'),
         grant('ID_PHB_SPELL_DARKNESS', 'Spell', level=5, spellcasting='Tiefling')],
         spellcasting={'name': 'Tiefling', 'ability': 'Charisma'}))
+    els.append(element(TIEFLING_SUBRACE, 'Tiefling Subrace', 'Grants',
+                       '<p>Marks a Tiefling sub race that replaces the Tiefling’s ability score increases and Infernal Legacy.</p>'))
     return els
 
 if __name__ == '__main__':

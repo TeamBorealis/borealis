@@ -652,32 +652,38 @@
         {
           "kind": "stat",
           "name": "strength",
-          "value": "1"
+          "value": "1",
+          "requirements": "!ID_INTERNAL_GRANTS_DRAGONMARK"
         },
         {
           "kind": "stat",
           "name": "dexterity",
-          "value": "1"
+          "value": "1",
+          "requirements": "!ID_INTERNAL_GRANTS_DRAGONMARK"
         },
         {
           "kind": "stat",
           "name": "constitution",
-          "value": "1"
+          "value": "1",
+          "requirements": "!ID_INTERNAL_GRANTS_DRAGONMARK"
         },
         {
           "kind": "stat",
           "name": "intelligence",
-          "value": "1"
+          "value": "1",
+          "requirements": "!ID_INTERNAL_GRANTS_DRAGONMARK"
         },
         {
           "kind": "stat",
           "name": "wisdom",
-          "value": "1"
+          "value": "1",
+          "requirements": "!ID_INTERNAL_GRANTS_DRAGONMARK"
         },
         {
           "kind": "stat",
           "name": "charisma",
-          "value": "1"
+          "value": "1",
+          "requirements": "!ID_INTERNAL_GRANTS_DRAGONMARK"
         },
         {
           "kind": "stat",
@@ -700,6 +706,13 @@
           "type": "Language",
           "name": "Language (Human)",
           "supports": "Standard||Exotic"
+        },
+        {
+          "kind": "select",
+          "type": "Race Variant",
+          "name": "Human Variant",
+          "supports": "Human",
+          "optional": true
         }
       ]
     },
@@ -1583,12 +1596,14 @@
         {
           "kind": "stat",
           "name": "strength",
-          "value": "2"
+          "value": "2",
+          "requirements": "!ID_INTERNAL_GRANTS_DRAGONMARK"
         },
         {
           "kind": "stat",
           "name": "constitution",
-          "value": "1"
+          "value": "1",
+          "requirements": "!ID_INTERNAL_GRANTS_DRAGONMARK"
         },
         {
           "kind": "stat",
@@ -1604,7 +1619,8 @@
         {
           "kind": "grant",
           "id": "ID_VISION_DARKVISION",
-          "type": "Vision"
+          "type": "Vision",
+          "requirements": "!ID_INTERNAL_GRANTS_DRAGONMARK"
         },
         {
           "kind": "grant",
@@ -1619,17 +1635,27 @@
         {
           "kind": "grant",
           "id": "ID_RACIAL_TRAIT_MENACING",
-          "type": "Racial Trait"
+          "type": "Racial Trait",
+          "requirements": "!ID_INTERNAL_GRANTS_DRAGONMARK"
         },
         {
           "kind": "grant",
           "id": "ID_RACIAL_TRAIT_RELENTLESS_ENDURANCE",
-          "type": "Racial Trait"
+          "type": "Racial Trait",
+          "requirements": "!ID_INTERNAL_GRANTS_DRAGONMARK"
         },
         {
           "kind": "grant",
           "id": "ID_RACIAL_TRAIT_SAVAGE_ATTACKS",
-          "type": "Racial Trait"
+          "type": "Racial Trait",
+          "requirements": "!ID_INTERNAL_GRANTS_DRAGONMARK"
+        },
+        {
+          "kind": "select",
+          "type": "Race Variant",
+          "name": "Half-Orc Variant",
+          "supports": "Half-Orc Variant",
+          "optional": true
         }
       ]
     },
@@ -1696,12 +1722,14 @@
         {
           "kind": "stat",
           "name": "intelligence",
-          "value": "1"
+          "value": "1",
+          "requirements": "!ID_INTERNAL_GRANTS_TIEFLING_SUBRACE"
         },
         {
           "kind": "stat",
           "name": "charisma",
-          "value": "2"
+          "value": "2",
+          "requirements": "!ID_INTERNAL_GRANTS_TIEFLING_SUBRACE"
         },
         {
           "kind": "stat",
@@ -1737,7 +1765,15 @@
         {
           "kind": "grant",
           "id": "ID_RACIAL_TRAIT_INFERNAL_LEGACY",
-          "type": "Racial Trait"
+          "type": "Racial Trait",
+          "requirements": "!ID_INTERNAL_GRANTS_TIEFLING_SUBRACE"
+        },
+        {
+          "kind": "select",
+          "type": "Sub Race",
+          "name": "Tiefling Subrace",
+          "supports": "Tiefling",
+          "optional": true
         }
       ]
     },
@@ -1810,6 +1846,13 @@
         "name": "Tiefling",
         "ability": "Charisma"
       }
+    },
+    {
+      "id": "ID_INTERNAL_GRANTS_TIEFLING_SUBRACE",
+      "name": "Tiefling Subrace",
+      "type": "Grants",
+      "source": "SRD 5.1",
+      "description": "<p>Marks a Tiefling sub race that replaces the Tiefling’s ability score increases and Infernal Legacy.</p>"
     }
   ]
 }
