@@ -32,11 +32,14 @@ interface ListProps {
   onPick: (v: VersionLike) => void;
 }
 
+/** A13 / TV2: the phone sheet adds each version's short description under its source, so the versions can be compared. */
+interface VersionListProps extends ListProps { withSummary: boolean }
+
 const optionLabel = (v: VersionLike, chosen: boolean): string =>
   [v.sourceName ?? v.name, chosen ? "chosen" : "", v.disabledReason ?? ""].filter(Boolean).join(", ");
 
 /** The menu body: a listbox with one group per edition (sec. 1.4). Up/Down move, Enter or Space picks. */
-function VersionList({ rowName, versions, charEd, shownId, chosenId, onPick }: ListProps) {
+function VersionList({ rowName, versions, charEd, shownId, chosenId, onPick, withSummary }: VersionListProps) {
   const sections = menuSections(versions, charEd);
   const flat = sections.flatMap((s) => s.versions);
   const [active, setActive] = useState(() => Math.max(0, flat.findIndex((v) => v.id === shownId)));
@@ -60,14 +63,16 @@ function VersionList({ rowName, versions, charEd, shownId, chosenId, onPick }: L
           {s.versions.map((v) => {
             const idx = flat.indexOf(v);
             const chosen = v.id === chosenId;
+            const summary = withSummary ? v.shortDescription?.trim() : "";
             return (
               <div key={v.id} id={optId(idx)} role="option" aria-selected={v.id === shownId} aria-disabled={v.disabledReason ? true : undefined}
-                aria-label={optionLabel(v, chosen)} className={`vm-opt ${idx === active ? "active" : ""} ${v.disabledReason ? "disabled" : ""}`}
+                aria-label={optionLabel(v, chosen)} aria-describedby={summary ? `${optId(idx)}-d` : undefined} className={`vm-opt ${idx === active ? "active" : ""} ${v.disabledReason ? "disabled" : ""}`}
                 onMouseEnter={() => setActive(idx)} onClick={() => pick(v)}>
                 <span className="vm-tick" aria-hidden="true">{v.id === shownId && <Icon name="check" />}</span>
                 <span className="vm-src" aria-hidden="true">{v.sourceName ?? v.name}</span>
                 {chosen && <span className="vm-sub" aria-hidden="true">chosen</span>}
                 {v.disabledReason && <span className="vm-reason" aria-hidden="true">{v.disabledReason}</span>}
+                {summary && <span id={`${optId(idx)}-d`} className="vm-desc">{summary}</span>}
               </div>
             );
           })}
@@ -83,13 +88,13 @@ export function VersionMenu({ anchor, onClose, ...list }: ListProps & { anchor: 
   if (phone) {
     return (
       <Flyout title={list.rowName} sheet="auto" onClose={() => onClose(true)}>
-        <VersionList {...list} />
+        <VersionList {...list} withSummary />
       </Flyout>
     );
   }
   return (
     <Popover anchor={anchor} align="end" onClose={onClose} className="vm">
-      <VersionList {...list} />
+      <VersionList {...list} withSummary={false} />
     </Popover>
   );
 }

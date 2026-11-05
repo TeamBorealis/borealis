@@ -112,6 +112,10 @@ html.phone .vm-opt.active { background: var(--ph-accent-soft); }
 html.phone .vm-tick { width: 22px; color: var(--ph-accent); }
 html.phone .vm-tick .icon { width: 20px; height: 20px; }
 html.phone .vm-sub, html.phone .vm-reason { color: var(--ph-text-2); font-size: var(--ph-t-foot); }
+/* A13 / TV2: a row with its short description wraps it onto a second line under the source (past the tick), at most three lines. */
+html.phone .vm-opt:has(.vm-desc) { flex-wrap: wrap; row-gap: 2px; padding-top: 8px; padding-bottom: 8px; }
+html.phone .vm-desc { flex: 1 0 100%; padding-left: 34px; box-sizing: border-box; color: var(--ph-text-2); font: 400 var(--ph-t-foot)/1.35 var(--ph-font-ui);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
 html.phone .pick-pop { border-radius: var(--ph-r-md); background: var(--ph-raised); border-color: var(--ph-line); }
 html.phone .pick-fopt { min-height: var(--ph-hit); }
 /* Loading: three static rows in the list's shape (they pulse unless reduced motion is on). */

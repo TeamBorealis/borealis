@@ -256,6 +256,27 @@ describe("phones (sec. 2)", () => {
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Dragonborn" })).toBeNull());
   });
 
+  it("phone version sheet shows each version's summary (A13, TV2)", async () => {
+    setPhoneForTests(true);
+    renderPicker(ROWS);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "3 versions of Dragonborn" }));
+    const sheet = await screen.findByRole("dialog", { name: "Dragonborn" });
+    const options = within(sheet).getAllByRole("option");
+    expect(options.map((o) => o.querySelector(".vm-desc")?.textContent)).toEqual([DB_EXP, DB_24, DB_14].map((v) => v.shortDescription));
+    // The listbox and the options' accessible names are unchanged.
+    expect(within(sheet).getByRole("listbox", { name: "Versions of Dragonborn" })).toBeTruthy();
+    expect(within(sheet).getByRole("option", { name: "Sample Reference 5.1" })).toBeTruthy();
+  });
+
+  it("the desktop version menu keeps one line per version", async () => {
+    renderPicker(ROWS);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "3 versions of Dragonborn" }));
+    const list = await screen.findByRole("listbox", { name: "Versions of Dragonborn" });
+    expect(list.querySelector(".vm-desc")).toBeNull();
+  });
+
   it("the Choose button chooses the shown version", async () => {
     const api = new MockApi({ aiChunkDelayMs: 1 });
     const snap = await api.createCharacter({ request: { name: "Ph", ruleset: "dnd2024", startingLevel: 1, gender: "", abilityMethod: "point_buy", options: {} } });

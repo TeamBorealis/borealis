@@ -463,3 +463,24 @@ fn two_same_name_subraces_of_one_race_are_one_row_with_two_versions() {
     let errs = Contract::load().response("get_slot_options", &p);
     assert!(errs.is_empty(), "{errs:?}");
 }
+
+/// A13 (tester video 2026-11-02, TV2): the phone version sheet shows each version's short
+/// description, so every version entry carries its own `shortDescription` (the two Acolytes
+/// differ: the 2024 one lists its grants, the 2014 one starts with its story).
+#[test]
+fn version_entries_carry_their_own_short_description() {
+    let (_d, app) = app(None);
+    let snap = character(&app, Ruleset::Dnd2024);
+    let p = page(&app, &snap.id, &slot_of(&snap, "Background"), None);
+    let row = one_row(&p, "Acolyte");
+    let versions = row["versions"].as_array().expect("two Acolyte versions");
+    assert_eq!(versions.len(), 2, "{row:#}");
+    let texts: Vec<&str> = versions
+        .iter()
+        .map(|v| v["shortDescription"].as_str().expect("shortDescription"))
+        .collect();
+    assert!(texts.iter().all(|t| !t.trim().is_empty()), "{texts:?}");
+    assert_ne!(texts[0], texts[1], "each version describes itself");
+    let errs = Contract::load().response("get_slot_options", &p);
+    assert!(errs.is_empty(), "{errs:?}");
+}
