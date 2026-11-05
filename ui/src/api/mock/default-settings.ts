@@ -7,7 +7,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   sheet: {
     formFillable: false, theme: "colour", edition: "auto", styleFormatting: true, swapAbilityPositions: false, includeNonPreparedSpells: false,
     cards: { spell: false, item: false, attack: false, feature: false }, autoGenerate: true, openAfterSave: true,
-    cardsNewPage: { item: true, attack: false, feature: true }, legacySpellcastingPage: false,
+    cardsNewPage: { item: true, attack: false, feature: true }, legacySpellcastingPage: false, paper: null,
   },
   ai: { enabled: false, provider: "claude", pairedHost: null, overridePath: null },
   documentsDir: null, secondaryContentDir: null, autoContentUpdate: true, checkAppUpdates: true, rowHeight: "medium",

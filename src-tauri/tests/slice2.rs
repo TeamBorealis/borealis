@@ -694,6 +694,7 @@ fn sheet_preview_and_pdf_export_produce_real_documents() {
             &id,
             &SheetOptionsDto {
                 format: Some("html".into()),
+                ..SheetOptionsDto::default()
             },
         )
         .expect("html");
@@ -702,7 +703,8 @@ fn sheet_preview_and_pdf_export_produce_real_documents() {
         code(app.sheet_file(
             &id,
             &SheetOptionsDto {
-                format: Some("docx".into())
+                format: Some("docx".into()),
+                ..SheetOptionsDto::default()
             }
         )),
         ErrorCode::InvalidArgument

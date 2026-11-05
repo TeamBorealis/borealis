@@ -28,6 +28,19 @@ pub struct SheetSettings {
     pub cards_new_page: CardsNewPage,
     /// Reference app "Legacy Spellcasting Page": the single-page basic spellcasting layout.
     pub legacy_spellcasting_page: bool,
+    /// Paper size (TV1, B-147). `None` until the user picks one: the sheet then uses the device
+    /// region's paper, which the UI sends with each request (`SheetOptionsDto::default_paper`).
+    pub paper: Option<SheetPaperSetting>,
+}
+
+/// Paper size of the sheet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SheetPaperSetting {
+    /// US Letter (8.5 x 11 in).
+    Letter,
+    /// ISO A4 (210 x 297 mm).
+    A4,
 }
 
 /// Sheet colour treatment.
@@ -213,6 +226,7 @@ impl Default for SheetSettings {
             open_after_save: true,
             cards_new_page: CardsNewPage::default(),
             legacy_spellcasting_page: false,
+            paper: None,
         }
     }
 }

@@ -4,7 +4,7 @@ import type {
   LinkDevice,
   LinkSelection,
   AppSettings, Attack, CharacterSnapshot, CharacterSummary, ExportResult, ImportReport, ItemSummary, MissingContentItem, Page, RecheckReport, RestrictionPreview, CompatibilityReport,
-  AiSetupProviderId, ImportFileInput, OpenedFile, PickPurpose, RulesetProfile, SheetPreview, StatTrace, Unsubscribe,
+  AiSetupProviderId, ImportFileInput, OpenedFile, PickPurpose, RulesetProfile, SheetOptions, SheetPaper, SheetPreview, StatTrace, Unsubscribe,
 } from "../types";
 import { MockAi } from "./ai";
 import { MockAiSetup, type MockSetupInit } from "./ai-setup";
@@ -567,14 +567,19 @@ export class MockApi implements Api {
 
   /* ---------- sheet ---------- */
 
-  async renderSheet({ characterId }: { characterId: string }): Promise<SheetPreview> {
-    await this.tick();
-    return { html: renderSheetHtml(this.snap(this.get(characterId))), pageCount: 2, generatedAt: new Date().toISOString() };
+  /** The saved Paper setting, else the device region's paper the UI sent (B-147). */
+  private sheetPaper(options?: SheetOptions): SheetPaper {
+    return this.settings.sheet.paper ?? options?.defaultPaper ?? "letter";
   }
 
-  async exportSheet({ characterId }: Parameters<Api["exportSheet"]>[0]): Promise<ExportResult> {
+  async renderSheet({ characterId, options }: Parameters<Api["renderSheet"]>[0]): Promise<SheetPreview> {
     await this.tick();
-    const html = renderSheetHtml(this.snap(this.get(characterId)));
+    return { html: renderSheetHtml(this.snap(this.get(characterId)), this.sheetPaper(options)), pageCount: 2, generatedAt: new Date().toISOString() };
+  }
+
+  async exportSheet({ characterId, options }: Parameters<Api["exportSheet"]>[0]): Promise<ExportResult> {
+    await this.tick();
+    const html = renderSheetHtml(this.snap(this.get(characterId)), this.sheetPaper(options));
     return { fileName: `${this.get(characterId).name}.html`, mime: "text/html", path: null, dataBase64: b64(html) };
   }
 

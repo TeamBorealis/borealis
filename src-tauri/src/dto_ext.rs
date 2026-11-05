@@ -95,6 +95,8 @@ pub struct ItemSummary {
 pub struct SheetOptionsDto {
     /// `pdf` (default) or `html`.
     pub format: Option<String>,
+    /// The device region's paper (B-147), used while the Paper setting is unset.
+    pub default_paper: Option<crate::settings::SheetPaperSetting>,
 }
 
 /// HTML preview of the sheet.

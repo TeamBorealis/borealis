@@ -1,11 +1,13 @@
 import { useId } from "react";
 import type { SheetSettings } from "../../api/contract";
-import type { SheetEditionOption, SheetTheme } from "../../api/types/settings";
+import type { SheetEditionOption, SheetPaper, SheetTheme } from "../../api/types/settings";
 import { ComboBox } from "../../components";
 import { DescCheck, FieldLabel, Help, SectionDesc, SectionTitle } from "./rows";
 import { PhoneCase } from "../../lib/phoneCase";
+import { sheetPaper } from "../../lib/paper";
 
 const THEMES: { value: SheetTheme; label: string }[] = [{ value: "colour", label: "Colour" }, { value: "ink", label: "Ink" }];
+const PAPERS: { value: SheetPaper; label: string }[] = [{ value: "letter", label: "Letter" }, { value: "a4", label: "A4" }];
 const EDITIONS: { value: SheetEditionOption; label: string }[] = [
   { value: "auto", label: "Automatic (from character)" }, { value: "2014", label: "2014" }, { value: "2024", label: "2024" },
 ];
@@ -34,6 +36,7 @@ export function SheetTab({ sheet, onChange }: { sheet: SheetSettings; onChange: 
   const set = (patch: Partial<SheetSettings>) => onChange({ ...sheet, ...patch });
   const themeId = useId();
   const editionId = useId();
+  const paperId = useId();
   return (
     <>
       <h3 className="aur-set-title13 first flush"><PhoneCase>CHARACTER SHEET</PhoneCase></h3>
@@ -45,6 +48,9 @@ export function SheetTab({ sheet, onChange }: { sheet: SheetSettings; onChange: 
       <FieldLabel htmlFor={editionId}>RULES EDITION</FieldLabel>
       <ComboBox id={editionId} value={sheet.edition} options={EDITIONS} onChange={(e) => set({ edition: e.target.value as SheetEditionOption })} />
       <Help>Automatic uses the ruleset of the character.</Help>
+      <FieldLabel htmlFor={paperId}>PAPER</FieldLabel>
+      <ComboBox id={paperId} value={sheetPaper(sheet.paper)} options={PAPERS} onChange={(e) => set({ paper: e.target.value as SheetPaper })} />
+      <Help>Letter is the US paper size; most other countries print on A4. Until you choose, it follows your device's region.</Help>
       <DescCheck title="Style Formatting (Recommended)" description="Apply some styling for certain fields such as Features & Traits to improve readability. This option can be used in combination with form-fillable." checked={sheet.styleFormatting} onChange={(v) => set({ styleFormatting: v })} />
       <DescCheck title="Invert Ability Score" description="This will switch the location of the ability score and modifier. This includes the companion page if you have it." checked={sheet.swapAbilityPositions} onChange={(v) => set({ swapAbilityPositions: v })} />
       <SectionTitle>SPELLCASTING PAGE</SectionTitle>

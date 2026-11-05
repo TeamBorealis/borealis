@@ -27,7 +27,7 @@ const OWNED: (keyof AppSettings)[] = [
   "theme", "accentColor", "portraitSize", "autoContentUpdate", "showImportNotice", "abilityCapEnabled", "confirmEquipWeaponNotInAttacks",
 ];
 const SHEET_OWNED: (keyof AppSettings["sheet"])[] = [
-  "formFillable", "theme", "edition", "styleFormatting", "swapAbilityPositions", "includeNonPreparedSpells", "cards", "cardsNewPage", "legacySpellcastingPage",
+  "formFillable", "theme", "edition", "styleFormatting", "swapAbilityPositions", "includeNonPreparedSpells", "cards", "cardsNewPage", "legacySpellcastingPage", "paper",
 ];
 const WIDE_TABS = new Set(["general", "build", "data"]);
 

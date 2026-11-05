@@ -208,6 +208,7 @@ fn a_druid_play_session_matches_the_ts_contract() {
             &id,
             &SheetOptionsDto {
                 format: Some("pdf".into()),
+                ..SheetOptionsDto::default()
             },
         )
         .unwrap();

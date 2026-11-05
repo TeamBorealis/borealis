@@ -318,6 +318,7 @@ fn character_exports_carry_no_search_data() {
             &g.character,
             &SheetOptionsDto {
                 format: Some("html".into()),
+                ..SheetOptionsDto::default()
             },
         )
         .unwrap();

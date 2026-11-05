@@ -6,14 +6,14 @@ use crate::dto_ext::{SheetOptionsDto, SheetPreview};
 use crate::elements::plain_text;
 use crate::error::{ApiError, ApiResult};
 use crate::ids::{file_stem, rfc3339};
-use crate::settings::{SheetEditionSetting, SheetSettings, SheetThemeSetting};
+use crate::settings::{SheetEditionSetting, SheetPaperSetting, SheetSettings, SheetThemeSetting};
 use crate::state::AppState;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
 use borealis_engine::CharacterSnapshot;
 use borealis_sheet::{
-    render_html_with, render_pdf_with, CardBreaks, CardKinds, CardText, SheetContent, SheetEdition,
-    SheetError, SheetOptions, SheetTheme,
+    render_html_with, render_pdf_with, CardBreaks, CardKinds, CardText, Paper, SheetContent,
+    SheetEdition, SheetError, SheetOptions, SheetTheme,
 };
 use std::collections::HashSet;
 use std::time::SystemTime;
@@ -47,7 +47,20 @@ pub fn sheet_options(s: &SheetSettings) -> SheetOptions {
             feature: s.cards_new_page.feature,
         },
         legacy_spellcasting: s.legacy_spellcasting_page,
+        paper: match s.paper {
+            Some(SheetPaperSetting::A4) => Paper::A4,
+            Some(SheetPaperSetting::Letter) | None => Paper::Letter,
+        },
         ..SheetOptions::default()
+    }
+}
+
+/// The saved settings with the device region's paper filled in while the user has chosen none.
+#[must_use]
+pub fn with_default_paper(s: &SheetSettings, options: &SheetOptionsDto) -> SheetSettings {
+    SheetSettings {
+        paper: s.paper.or(options.default_paper),
+        ..s.clone()
     }
 }
 
@@ -191,8 +204,8 @@ impl AppState {
     ///
     /// # Errors
     /// `not_found` if the character is not open, `invalid_argument` when nothing can be rendered.
-    pub fn render_sheet(&self, id: &str, _options: &SheetOptionsDto) -> ApiResult<SheetPreview> {
-        let settings = self.settings()?.sheet;
+    pub fn render_sheet(&self, id: &str, options: &SheetOptionsDto) -> ApiResult<SheetPreview> {
+        let settings = with_default_paper(&self.settings()?.sheet, options);
         self.read(id, |ctx, s| {
             let snap = ctx.hub.engine.derive(&s.character.build);
             let (companion, portrait) = printed_companion(ctx, id, s, &snap);
@@ -213,7 +226,7 @@ impl AppState {
     /// `not_found` if the character is not open, `invalid_argument` for a bad format.
     pub fn sheet_file(&self, id: &str, options: &SheetOptionsDto) -> ApiResult<SheetFile> {
         let html = is_html(options)?;
-        let settings = self.settings()?.sheet;
+        let settings = with_default_paper(&self.settings()?.sheet, options);
         self.read(id, |ctx, s| {
             let snap = ctx.hub.engine.derive(&s.character.build);
             let (companion, portrait) = printed_companion(ctx, id, s, &snap);
@@ -260,5 +273,35 @@ mod tests {
             (SheetTheme::Colour, SheetEdition::Auto)
         );
         assert!(!o.form_fillable, "flattened by default");
+    }
+
+    /// B-147 (TV1): the Paper setting reaches the renderer; unset, the device region's paper
+    /// (sent by the UI) decides, and Letter when nobody says.
+    #[test]
+    fn sheet_options_maps_paper() {
+        let a4: SheetSettings = serde_json::from_str(r#"{"paper":"a4"}"#).unwrap();
+        assert_eq!(a4.paper, Some(SheetPaperSetting::A4));
+        assert_eq!(sheet_options(&a4).paper, Paper::A4);
+        let letter: SheetSettings = serde_json::from_str(r#"{"paper":"letter"}"#).unwrap();
+        assert_eq!(sheet_options(&letter).paper, Paper::Letter);
+        let unset: SheetSettings = serde_json::from_str("{}").unwrap();
+        assert_eq!(unset.paper, None, "an old settings file has no paper yet");
+        assert_eq!(sheet_options(&unset).paper, Paper::Letter);
+        let region = SheetOptionsDto {
+            default_paper: Some(SheetPaperSetting::A4),
+            ..SheetOptionsDto::default()
+        };
+        assert_eq!(
+            sheet_options(&with_default_paper(&unset, &region)).paper,
+            Paper::A4,
+            "the device region's paper while the setting is unset"
+        );
+        assert_eq!(
+            sheet_options(&with_default_paper(&letter, &region)).paper,
+            Paper::Letter,
+            "a chosen paper wins over the region"
+        );
+        let wire = serde_json::to_value(&a4).unwrap();
+        assert_eq!(wire["paper"], "a4");
     }
 }

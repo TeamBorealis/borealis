@@ -72,7 +72,7 @@ describe("Character sheet", () => {
     await user.click(await screen.findByRole("button", { name: "Generate Preview" }));
     const frame = (await screen.findByTitle("Character sheet preview")) as HTMLIFrameElement;
     expect(frame.getAttribute("sandbox")).toBe("");
-    expect(frame.srcdoc).toContain('<section class="page"');
+    expect(frame.srcdoc).toContain('<section class="page letter"');
     expect(frame.srcdoc).toContain(PREVIEW_CSS);
   });
 

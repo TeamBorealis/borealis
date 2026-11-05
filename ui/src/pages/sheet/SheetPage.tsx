@@ -14,6 +14,7 @@ import { DetailField } from "../manage/DetailField";
 import { mdiFileFind } from "@mdi/js";
 import { MgIcon } from "../manage/mgIcons";
 import { framePreviewHtml } from "./previewFrame";
+import { regionPaper, deviceLanguages } from "../../lib/paper";
 import { displayPath } from "../../lib/displayPath";
 import { attunementWarnings } from "../equipment/attunement";
 
@@ -33,7 +34,7 @@ function Body() {
     if (!id) return;
     setLoading(true);
     try {
-      setPreview(await api.renderSheet({ characterId: id }));
+      setPreview(await api.renderSheet({ characterId: id, options: { defaultPaper: regionPaper(deviceLanguages()) } }));
       setError(null);
     } catch (e) {
       setError(`Unable to generate a preview of your character sheet. (${errorMessage(e)})`);
@@ -45,7 +46,7 @@ function Body() {
   const exportSheet = async () => {
     if (!id) return;
     try {
-      const r = await api.exportSheet({ characterId: id, options: { format: "pdf" } });
+      const r = await api.exportSheet({ characterId: id, options: { format: "pdf", defaultPaper: regionPaper(deviceLanguages()) } });
       if (r.dataBase64) downloadBase64(r.fileName, r.mime, r.dataBase64);
       toast.push(r.path ? `Saved to ${displayPath(r.path)}` : `Exported ${r.fileName}`);
     } catch (e) { toast.push(errorMessage(e), "error"); }

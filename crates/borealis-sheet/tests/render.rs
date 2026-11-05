@@ -239,6 +239,16 @@ fn pdf_respects_paper_pages_and_compact() {
     )
     .unwrap();
     assert!(String::from_utf8_lossy(&a4).contains("MediaBox [0 0 595 842]"));
+    // B-147 (TV1): A4 output says so in the page footer; Letter keeps the plain footer.
+    let footer = |pdf: &[u8]| {
+        pdf_lines(pdf)
+            .into_iter()
+            .find(|l| l.starts_with("Borealis character sheet"))
+            .expect("footer")
+    };
+    assert!(footer(&a4).ends_with(" rules \u{b7} A4"), "{}", footer(&a4));
+    let letter = render_pdf(&c, &snap, &flat()).unwrap();
+    assert!(footer(&letter).ends_with(" rules"), "{}", footer(&letter));
     let core = SheetOptions {
         pages: PageSelection {
             core: true,

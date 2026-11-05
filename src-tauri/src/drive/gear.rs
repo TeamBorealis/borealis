@@ -192,6 +192,7 @@ pub fn export(d: &Drive, a: &ExportArgs) -> DriveResult<Value> {
         &a.id,
         &SheetOptionsDto {
             format: Some(format.to_string()),
+            ..SheetOptionsDto::default()
         },
     )?;
     if let Some(parent) = path.parent() {

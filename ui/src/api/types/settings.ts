@@ -6,6 +6,8 @@ export type Density = "compact" | "comfortable";
 
 export type SheetTheme = "colour" | "ink";
 export type SheetEditionOption = "auto" | "2014" | "2024";
+/** Paper size of the sheet (TV1, B-147). */
+export type SheetPaper = "letter" | "a4";
 
 export interface SheetSettings {
   /** Fillable PDF form fields (default false: the PDF is flattened); on keeps the fields editable. */
@@ -24,6 +26,8 @@ export interface SheetSettings {
   cardsNewPage: { item: boolean; attack: boolean; feature: boolean };
   /** Classic builder "Legacy Spellcasting Page" (default off). */
   legacySpellcastingPage: boolean;
+  /** Paper size; null until the user picks one, when the device region's paper applies (`sheetPaper`). */
+  paper: SheetPaper | null;
 }
 
 /** Classic builder selection-picker ROW HEIGHT (default "medium"). */
@@ -173,6 +177,8 @@ export interface ContentUpdateStatus {
 
 export interface SheetOptions {
   format?: "pdf" | "html";
+  /** The device region's paper, used while `SheetSettings.paper` is null. */
+  defaultPaper?: SheetPaper;
   settings?: Partial<SheetSettings>;
 }
 

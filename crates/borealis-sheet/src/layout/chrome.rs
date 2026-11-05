@@ -387,6 +387,12 @@ pub(crate) fn footers(pages: &mut [PdfPage], g: &Grid, d: &SheetData, ink: bool)
     } else {
         "2024"
     };
+    // TV1 (B-147): A4 output says so, as the HTML preview's footer does.
+    let a4 = if (g.w, g.h) == Paper::A4.points() {
+        " \u{b7} A4"
+    } else {
+        ""
+    };
     for (n, page) in pages.iter_mut().enumerate() {
         let mut c = Canvas::new(super::grid::Palette::new(ink), false, g.w);
         let col = c.pal.ink2;
@@ -397,7 +403,7 @@ pub(crate) fn footers(pages: &mut [PdfPage], g: &Grid, d: &SheetData, ink: bool)
                 MARGIN_X + 20.0,
                 base,
                 &t,
-                &format!("Borealis character sheet \u{b7} {edition} rules"),
+                &format!("Borealis character sheet \u{b7} {edition} rules{a4}"),
             );
             c.put(
                 g.w - MARGIN_X - 20.0,
