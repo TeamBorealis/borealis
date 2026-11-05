@@ -35,13 +35,22 @@ export const toSlot = (d: SlotDef, c: MockCharacter): SelectionSlot => {
   };
 };
 
+/** Selection Flow group order (host `snapshot_map::FLOW_TABS`, Aurora's Race -> Class -> Background -> ... -> Spell). */
+const FLOW_TABS: BuilderTab[] = ["race", "class", "background", "abilities", "languages", "proficiencies", "feats", "companion", "spells"];
+/** Host `ids::flow_priority` by UI element type; unlisted types rank last. */
+const FLOW_PRIORITY: Record<string, number> = {
+  race: 0, subrace: 1, class: 2, archetype: 3, multiclass: 4, background: 5, asi: 6, language: 7, proficiency: 8, skill: 8, feat: 9, companion: 10, spell: 11,
+};
+const UNRANKED_FLOW_PRIORITY = 12;
+const flowPriority = (s: SelectionSlot): number => FLOW_PRIORITY[s.elementType] ?? UNRANKED_FLOW_PRIORITY;
+
 function progress(slots: SelectionSlot[]): SelectionProgress {
   const byTab = Object.fromEntries(TABS.map((t) => [t, 0])) as Record<BuilderTab, number>;
   const required = slots.filter((s) => s.required);
   const pending = required.filter((s) => !s.chosen);
   for (const s of pending) byTab[s.tab] += 1;
-  const order: BuilderTab[] = ["race", "class", "background", "abilities", "languages", "proficiencies", "feats", "companion", "spells"];
-  const next = [...pending].sort((a, b) => order.indexOf(a.tab) - order.indexOf(b.tab))[0];
+  // A10: the host's keys: Aurora's group (tab) order, then the selected type's flow priority, then slot order (a stable sort).
+  const next = [...pending].sort((a, b) => FLOW_TABS.indexOf(a.tab) - FLOW_TABS.indexOf(b.tab) || flowPriority(a) - flowPriority(b))[0];
   return { total: required.length, remaining: pending.length, nextSlotId: next?.id ?? null, byTab };
 }
 

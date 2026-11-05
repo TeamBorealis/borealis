@@ -396,6 +396,30 @@ fn slot_tab(s: &SlotSnapshot) -> &'static str {
     }
 }
 
+/// Selection Flow group order (A10, `specs/ui-inventory.md` 3.6): Aurora asks the Race group, then
+/// Class, Background, Ability Score Improvement, Language, Proficiency, Feat, Companion and Spell.
+/// A slot belongs to the group of its tab, so a species' own sub-choice (Draconic Ancestry) or a
+/// background's lists (Alignment, its ability scores) are asked with their owner.
+const FLOW_TABS: [&str; 9] = [
+    "race",
+    "class",
+    "background",
+    "abilities",
+    "languages",
+    "proficiencies",
+    "feats",
+    "companion",
+    "spells",
+];
+
+/// Rank of a tab in [`FLOW_TABS`] (an unknown tab after them all).
+fn flow_tab_rank(tab: &str) -> usize {
+    FLOW_TABS
+        .iter()
+        .position(|t| *t == tab)
+        .unwrap_or(FLOW_TABS.len())
+}
+
 /// Selection Flow priority of an open slot: that of the type it selects. A feat's own choice of an
 /// unranked type ranks as a feat, so it is asked before the spells that depend on it (B2: the
 /// Magic Initiate block needs its Spellcasting Ability).
@@ -430,7 +454,8 @@ fn is_hidden_empty_optional(s: &SlotSnapshot) -> bool {
 
 fn slots(snap: &Engine) -> (Vec<SelectionSlot>, SelectionProgress) {
     let mut out = Vec::new();
-    let mut ranked: Vec<(u8, usize)> = Vec::new();
+    // (group, type priority, slot order): the first is Next selection (A10)
+    let mut ranked: Vec<(usize, u8, usize)> = Vec::new();
     let mut by_tab: BTreeMap<String, usize> = TABS.iter().map(|t| ((*t).to_string(), 0)).collect();
     for s in snap
         .slots
@@ -446,7 +471,7 @@ fn slots(snap: &Engine) -> (Vec<SelectionSlot>, SelectionProgress) {
                 *n += 1;
             }
             if !s.locked {
-                ranked.push((slot_priority(s), out.len()));
+                ranked.push((flow_tab_rank(tab), slot_priority(s), out.len()));
             }
         }
         let class_slot_id = extras::slot_caster_id(snap, s);
@@ -503,7 +528,7 @@ fn slots(snap: &Engine) -> (Vec<SelectionSlot>, SelectionProgress) {
         });
     }
     ranked.sort();
-    let next_slot_id = ranked.first().map(|(_, i)| out[*i].id.clone());
+    let next_slot_id = ranked.first().map(|(_, _, i)| out[*i].id.clone());
     let progress = SelectionProgress {
         total: out.len(),
         remaining: by_tab.values().sum(),

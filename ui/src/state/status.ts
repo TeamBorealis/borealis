@@ -52,5 +52,7 @@ export function describeChange(prev: CharacterSnapshot, next: CharacterSnapshot)
   if (next.level.total !== prev.level.total) return `Your character is now level ${next.level.total}.`;
   const pickedSlot = next.slots.find((s) => s.chosen && !s.locked && prev.slots.find((p) => p.id === s.id)?.chosen?.id !== s.chosen.id);
   if (pickedSlot) return nextSelectionPrompt(next);
+  // A10: the prompt names the slot Next selection goes to, so it follows that slot when it changes without a pick (a clear).
+  if (next.progress.nextSlotId !== prev.progress.nextSlotId) return nextSelectionPrompt(next);
   return null;
 }

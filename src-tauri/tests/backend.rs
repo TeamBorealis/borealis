@@ -702,3 +702,115 @@ fn a_default_is_chosen_when_its_slot_appears_and_locks_while_it_is_the_sole_opti
     let feat = s.slots.iter().find(|x| x.id == feat_id).expect("feat");
     assert!(feat.chosen.is_none(), "a cleared default is not re-applied");
 }
+
+fn new_2024(app: &AppState) -> CharacterSnapshot {
+    app.create_character(
+        Ruleset::Dnd2024,
+        &request("Torrin", Ruleset::Dnd2024, AbilityMethodDto::PointBuy),
+    )
+    .expect("2024")
+}
+
+fn next_of(snap: &CharacterSnapshot) -> &borealis_lib::dto::SelectionSlot {
+    let next = snap.progress.next_slot_id.as_deref().expect("a next slot");
+    snap.slots
+        .iter()
+        .find(|s| s.id == next)
+        .expect("next slot listed")
+}
+
+/// A10 (tester video 2026-11-02): Next selection follows Aurora's groups (Race, Class,
+/// Background, ...), so a species' own sub-choice comes before the Class pick, not after it.
+#[test]
+fn next_selection_prefers_the_open_species_sub_choice() {
+    let (_dir, app) = app();
+    let snap = new_2024(&app);
+    let snap = app
+        .apply_selection(
+            &snap.id,
+            &slot_id(&snap, "Race"),
+            "ID_2024_SPECIES_DRAGONBORN",
+        )
+        .expect("dragonborn");
+    let class = snap
+        .slots
+        .iter()
+        .find(|s| s.title == "Class")
+        .expect("class");
+    assert!(class.chosen.is_none(), "Class is still open");
+    let next = next_of(&snap);
+    assert_eq!(
+        (next.tab.as_str(), next.title.as_str()),
+        ("race", "Draconic Ancestry")
+    );
+}
+
+/// A10 / B6 (tester video 2026-11-02): with Acolyte chosen, its Alignment and ability-score
+/// choices (background-owned lists) come before languages and proficiencies.
+#[test]
+fn next_selection_finishes_the_background_before_languages() {
+    let (_dir, app) = app();
+    let snap = new_2024(&app);
+    let id = snap.id.clone();
+    let snap = app
+        .apply_selection(&id, &slot_id(&snap, "Race"), "ID_2024_SPECIES_HUMAN")
+        .expect("human");
+    let snap = app
+        .apply_selection(&id, &slot_id(&snap, "Class"), "ID_2024_CLASS_FIGHTER")
+        .expect("fighter");
+    let mut snap = app
+        .apply_selection(
+            &id,
+            &slot_id(&snap, "Background"),
+            "ID_2024_BACKGROUND_ACOLYTE",
+        )
+        .expect("acolyte");
+    // Fill whatever Race and Class still ask (species and class sub-choices come first).
+    for _ in 0..40 {
+        let next = next_of(&snap).clone();
+        if next.tab != "race" && next.tab != "class" {
+            break;
+        }
+        let options = app
+            .get_slot_options(&id, &next.id, None, Some(500), None)
+            .expect("options");
+        let held: Vec<String> = snap
+            .slots
+            .iter()
+            .filter_map(|s| s.chosen.as_ref().map(|c| c.id.clone()))
+            .collect();
+        let pick = options
+            .items
+            .iter()
+            .filter(|o| o.base.disabled_reason.is_none())
+            .map(|o| o.base.summary.id.clone())
+            .find(|o| !held.contains(o))
+            .expect("an option");
+        snap = app.apply_selection(&id, &next.id, &pick).expect("pick");
+    }
+    let open_background: Vec<&str> = snap
+        .slots
+        .iter()
+        .filter(|s| s.tab == "background" && s.required && s.chosen.is_none() && !s.locked)
+        .map(|s| s.title.as_str())
+        .collect();
+    assert!(
+        open_background
+            .iter()
+            .any(|t| t.starts_with("Ability Scores")),
+        "the Acolyte's ability choice is open: {open_background:?}"
+    );
+    assert!(
+        snap.slots
+            .iter()
+            .any(|s| s.tab == "languages" && s.required && s.chosen.is_none()),
+        "a language is open too"
+    );
+    let next = next_of(&snap);
+    assert_eq!(
+        next.tab,
+        "background",
+        "next is {:?} while {open_background:?} are open",
+        (&next.tab, &next.title)
+    );
+}
