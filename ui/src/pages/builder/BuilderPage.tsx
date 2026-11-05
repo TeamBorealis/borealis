@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Navigate, useNavigate, useParams } from "react-router";
 import type { BuilderTab, RulesetProfile } from "../../api/contract";
 import { Alert, Button, TabPanel, Tabs, type TabDef } from "../../components";
@@ -13,6 +13,7 @@ import { AbilitiesPane, AbilitiesTab } from "./AbilitiesTab";
 import { DescriptionPane, PaneShell } from "./DescriptionPane";
 import type { DescribeFn, PickChoice } from "./PickerGroup";
 import { usePhone } from "../../lib/phone";
+import { scrollToStart } from "../../lib/scrollReveal";
 import { SlotList } from "./SlotList";
 import { NoticesBanner } from "./NoticesBanner";
 import { PickerStateProvider } from "./pickerState";
@@ -53,6 +54,7 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
   const nav = useNavigate();
   const [described, setDescribed] = useState<{ tab: string; id: string; isElement: boolean; choice?: PickChoice } | null>(null);
   const phone = usePhone();
+  const leftRef = useRef<HTMLDivElement>(null);
   const next = snapshot?.progress.nextSlotId ?? null;
   const flowTab = snapshot?.slots.find((s) => s.id === next)?.tab;
   // Selection flow (setting): jump to the first pending pick after every change.
@@ -91,16 +93,21 @@ function BuilderBody({ profile }: { profile: RulesetProfile | null }) {
   const speciesWord = profile?.terminology.species ?? "Race";
   const species = phone ? speciesWord : speciesWord.toUpperCase();
   const fallback: ReactNode = <PaneShell title={active === "race" ? species : intro.title} imageIcon={false} intro={intro.text} readText={intro.text} />;
+  // A11: a plain sub-tab tap starts the new tab at its top (the page scroller keeps the old offset otherwise).
+  const openTab = (id: string) => {
+    if (id !== active) scrollToStart(leftRef.current);
+    nav(`/builder/${id}`);
+  };
   const pane = active === "abilities" ? <AbilitiesPane /> : <DescriptionPane elementId={paneId} fallback={fallback} />;
   return (
     <div className="bp">
       <h1 className="sr-only">Build</h1>
-      <div className="bp-left">
+      <div className="bp-left" ref={leftRef}>
         {snapshot.level.levelUpAvailable && (
           <Alert tone="success"><strong>Level up available.</strong> <button type="button" className="bp-linkbtn" onClick={() => setLevelUpOpen(true)}>Open Level Up</button> to advance.</Alert>
         )}
         <NoticesBanner notices={snapshot.notices} />
-        <Tabs inBand tabs={tabs} active={active} onChange={(id) => nav(`/builder/${id}`)} label="Build sections" idPrefix="build" />
+        <Tabs inBand tabs={tabs} active={active} onChange={openTab} label="Build sections" idPrefix="build" />
         <TabPanel active={active} idPrefix="build">
           {active === "abilities" ? <AbilitiesTab describedId={shownId} onDescribe={onDescribe} />
             : <SlotList slots={slots} describedId={shownId} onDescribe={onDescribe} />}

@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useSearchParams } from "react-router";
 import type { SelectionSlot } from "../../api/contract";
 import { haptic } from "../../lib/haptics";
+import { revealAtTop } from "../../lib/scrollReveal";
 import { useCharacter } from "../../state/CharacterContext";
 import { DescriptionPane } from "./DescriptionPane";
 import { type DescribeFn, groupSlots, isListSlot, PickerGroup, type SlotGroup } from "./PickerGroup";
@@ -33,6 +34,18 @@ export function SlotList({ slots, emptyText = EMPTY_TEXT, describedId, onDescrib
     const g = groups.find((x) => x.slots.some((s) => s.id === wanted));
     if (g) setOpenKeys((o) => ({ ...o, [g.key]: true }));
   }, [wanted, groups]);
+  // A11: each Next selection (a navigation naming a slot) scrolls its picker to the top of the page once it is drawn.
+  const { key: navKey } = useLocation();
+  const stackRef = useRef<HTMLDivElement>(null);
+  const revealed = useRef<string | null>(null);
+  useEffect(() => {
+    if (!wanted || revealed.current === navKey) return;
+    const g = groups.find((x) => x.slots.some((s) => s.id === wanted));
+    const head = g && [...(stackRef.current?.querySelectorAll<HTMLElement>(".pick[data-slot-id]") ?? [])].find((el) => el.getAttribute("data-slot-id") === g.slots[0]!.id);
+    if (!head) return;
+    const frame = requestAnimationFrame(() => { revealed.current = navKey; revealAtTop(head); });
+    return () => cancelAnimationFrame(frame);
+  }, [wanted, navKey, groups]);
   // After a choice lands, the chosen picker follows its default (collapsed) and the next pending one opens.
   useEffect(() => {
     if (!advance) return;
@@ -64,7 +77,7 @@ export function SlotList({ slots, emptyText = EMPTY_TEXT, describedId, onDescrib
   };
   if (groups.length === 0) return <p className="build-empty">{emptyText}</p>;
   const list = (
-    <div className="pick-stack">
+    <div className="pick-stack" ref={stackRef}>
       {groups.map((g, i) => (
         <section key={g.key} aria-label={g.label ?? g.title}>
           {g.label && (i === 0 || groups[i - 1]!.label !== g.label) && <h3 className="pick-group-label">{g.label}</h3>}
