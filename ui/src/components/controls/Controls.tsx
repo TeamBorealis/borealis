@@ -86,10 +86,10 @@ export function ToolTip({ text, children }: { text: string; children: ReactNode 
 }
 
 /** 4px-track MetroProgressBar. Omit `value` for indeterminate. */
-export function MetroProgressBar({ value, max = 1, label, width }: { value?: number; max?: number; label: string; width?: number | string }) {
+export function MetroProgressBar({ value, max = 1, label, width, className = "" }: { value?: number; max?: number; label: string; width?: number | string; className?: string }) {
   const pct = value === undefined ? undefined : Math.max(0, Math.min(1, value / max)) * 100;
   return (
-    <div className={`aur-progress ${pct === undefined ? "indeterminate" : ""}`} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct === undefined ? undefined : Math.round(pct)} style={width ? { width } : undefined}>
+    <div className={`aur-progress ${pct === undefined ? "indeterminate" : ""} ${className}`.trim()} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct === undefined ? undefined : Math.round(pct)} style={width ? { width } : undefined}>
       <span style={pct === undefined ? undefined : { width: `${pct}%` }} />
     </div>
   );

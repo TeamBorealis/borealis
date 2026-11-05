@@ -99,6 +99,42 @@ describe("status line (O7)", () => {
     expect(status.getAttribute("data-collapsed")).toBe("false");
   });
 
+  // B-139 (tester video C4): a running command put a 150 px bar inline, so the pending prompt wrapped one word per line.
+  it("on a phone a running command shows a thin line on the footer's edge, not a bar in the message row", async () => {
+    setPhoneForTests(true);
+    const api = fast();
+    let finish: () => void = () => undefined;
+    const real = api.spendResource.bind(api);
+    vi.spyOn(api, "spendResource").mockImplementation((a) => new Promise((res) => { finish = () => res(real(a)); }));
+    const user = userEvent.setup();
+    renderApp("/play", { api, openCharacterId: await seededId(api, "Seraphine") });
+    const status = await screen.findByRole("contentinfo", { name: "Status" });
+    await user.click(await screen.findByRole("button", { name: "Spend Rage" }));
+    expect(within(status).queryByRole("progressbar"), "a quick command shows nothing").toBeNull();
+    const bar = await within(status).findByRole("progressbar", { name: "Working" }, { timeout: 2000 });
+    expect(bar.classList.contains("aur-status-busyline")).toBe(true);
+    expect(bar.style.width, "no fixed width that squeezes the message").toBe("");
+    const flow = [...status.children].filter((c) => !c.classList.contains("aur-status-busyline")).map((c) => c.className);
+    expect(flow.every((c) => !c.includes("aur-progress"))).toBe(true);
+    await act(async () => { finish(); });
+    await waitFor(() => expect(within(status).queryByRole("progressbar")).toBeNull());
+  });
+
+  it("a narrow desktop window keeps the inline status-bar progress bar (U7)", async () => {
+    const api = fast();
+    let finish: () => void = () => undefined;
+    const real = api.spendResource.bind(api);
+    vi.spyOn(api, "spendResource").mockImplementation((a) => new Promise((res) => { finish = () => res(real(a)); }));
+    const user = userEvent.setup();
+    renderApp("/play", { api, openCharacterId: await seededId(api, "Seraphine") });
+    const status = await screen.findByRole("contentinfo", { name: "Status" });
+    await user.click(await screen.findByRole("button", { name: "Spend Rage" }));
+    const bar = within(status).getByRole("progressbar", { name: "Working" });
+    expect(bar.classList.contains("aur-status-busyline")).toBe(false);
+    expect(bar.style.width).toBe("150px");
+    await act(async () => { finish(); });
+  });
+
   it("desktop keeps the status line always visible", async () => {
     renderApp("/characters");
     const status = await screen.findByRole("contentinfo", { name: "Status" });

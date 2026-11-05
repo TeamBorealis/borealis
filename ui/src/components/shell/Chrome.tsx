@@ -183,18 +183,36 @@ function useStatusFold(text: string, keepOpen: boolean, enabled: boolean): boole
   return enabled && !keepOpen && folded;
 }
 
+/** How long a command runs on a phone before the status bar shows it is working (B-139): quick taps show nothing. */
+export const BUSY_SHOW_DELAY_MS = 300;
+
+/** `busy`, but only once it has lasted `delayMs`; it clears at once. */
+function useDelayedBusy(busy: boolean, delayMs: number, enabled: boolean): boolean {
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    if (!enabled || !busy) { setShown(false); return; }
+    const t = setTimeout(() => setShown(true), delayMs);
+    return () => clearTimeout(t);
+  }, [busy, delayMs, enabled]);
+  return enabled ? busy && shown : busy;
+}
+
 /** Bottom status bar (26px). `compact` (phones) drops the file label and version. */
 export function StatusBar({ compact, busy }: { compact?: boolean; busy?: boolean }) {
   const { snapshot, flow, setFlow, hasNext, goNext } = useShellActions();
   const { savedByUser } = useCharacter();
   const message = useStatusMessage();
   const phone = usePhone();
+  // B-139: on a phone the bar is a thin line on the footer's top edge (out of the flex row, so the wrapping message keeps its
+  // width) and waits BUSY_SHOW_DELAY_MS. Desktop, at any width, keeps Aurora's inline 150 px bar at once (U7).
+  const phoneLine = phone && !!compact;
+  const working = useDelayedBusy(!!busy, BUSY_SHOW_DELAY_MS, phoneLine);
   const text = message || (snapshot ? `Loaded '${snapshot.name}'` : `Last checked for content updates at ${STARTED_AT}`);
-  const folded = useStatusFold(text, hasNext || !!busy, phone);
+  const folded = useStatusFold(text, hasNext || working, phone);
   return (
     <footer className="aur-status" aria-label="Status" data-collapsed={phone ? String(folded) : undefined} data-pending={phone ? String(hasNext) : undefined}>
       <span className="status-msg" role="status">{text}</span>
-      {busy && <MetroProgressBar label="Working" width={150} />}
+      {working && (phoneLine ? <MetroProgressBar label="Working" className="aur-status-busyline" /> : <MetroProgressBar label="Working" width={150} />)}
       <span className="spacer" />
       {!compact && (
         <>

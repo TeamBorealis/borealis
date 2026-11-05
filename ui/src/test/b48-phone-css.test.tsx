@@ -99,6 +99,17 @@ describe("phone CSS layer (B-48)", () => {
     expect(sheet?.body).toMatch(/padding-bottom: max\(var\(--safe-b\), var\(--kb\)\)/);
   });
 
+  // B-139: the busy line is out of the footer's flex row, so a running command cannot squeeze the status message.
+  it("the status bar's busy line sits on the footer's top edge, out of the message row", () => {
+    const footer = phoneRules().filter((r) => r.selectors.includes("html.phone .aur-window.narrow .aur-status"));
+    expect(footer.some((r) => /position: relative/.test(r.body))).toBe(true);
+    const line = phoneRules().find((r) => r.selectors.includes("html.phone .aur-window.narrow .aur-status .aur-status-busyline"));
+    expect(line?.body).toMatch(/position: absolute/);
+    expect(line?.body).toMatch(/top: 0/);
+    expect(line?.body).toMatch(/left: 0/);
+    expect(line?.body).toMatch(/right: 0/);
+  });
+
   it("sheets keep their footer above the home indicator and the on-screen keyboard", () => {
     for (const sel of ["html.phone .dialog", "html.phone .flyout", "html.phone .aur-set-win"]) {
       const rule = phoneRules().find((r) => r.selectors.includes(sel) && /padding-bottom/.test(r.body));
