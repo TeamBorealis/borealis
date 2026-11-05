@@ -5,7 +5,6 @@ use crate::dto_ext::{
     CompendiumFacets, CompendiumQuery, ElementDetail, EquipRequest, ItemCategory, ItemFilter,
     ItemPatch, ItemSummary, SheetOptionsDto, SheetPreview, StatTraceDto,
 };
-#[cfg(desktop)]
 use crate::error::ApiError;
 use crate::error::ApiResult;
 use crate::search_api::{SearchHit, SearchPassage, SearchQuery};
