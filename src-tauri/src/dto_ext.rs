@@ -99,6 +99,16 @@ pub struct SheetOptionsDto {
     pub default_paper: Option<crate::settings::SheetPaperSetting>,
 }
 
+/// `share_sheet` result (TV2, B-144).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SheetShare {
+    /// File name of the shared PDF.
+    pub file_name: String,
+    /// True when the backend opened the system share sheet (Android).
+    pub shared: bool,
+}
+
 /// HTML preview of the sheet.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]

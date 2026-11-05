@@ -66,6 +66,7 @@ const COMMANDS: &[&str] = &[
     "set_storage_names",
     "render_sheet",
     "export_sheet",
+    "share_sheet",
     "search_compendium",
     "get_element",
     "compendium_facets",

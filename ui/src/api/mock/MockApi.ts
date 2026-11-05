@@ -4,7 +4,7 @@ import type {
   LinkDevice,
   LinkSelection,
   AppSettings, Attack, CharacterSnapshot, CharacterSummary, ExportResult, ImportReport, ItemSummary, MissingContentItem, Page, RecheckReport, RestrictionPreview, CompatibilityReport,
-  AiSetupProviderId, ImportFileInput, OpenedFile, PickPurpose, RulesetProfile, SheetOptions, SheetPaper, SheetPreview, StatTrace, Unsubscribe,
+  AiSetupProviderId, ImportFileInput, OpenedFile, PickPurpose, RulesetProfile, SheetOptions, SheetPaper, SheetPreview, SheetShare, StatTrace, Unsubscribe,
 } from "../types";
 import { MockAi } from "./ai";
 import { MockAiSetup, type MockSetupInit } from "./ai-setup";
@@ -581,6 +581,12 @@ export class MockApi implements Api {
     await this.tick();
     const html = renderSheetHtml(this.snap(this.get(characterId)), this.sheetPaper(options));
     return { fileName: `${this.get(characterId).name}.html`, mime: "text/html", path: null, dataBase64: b64(html) };
+  }
+
+  /** The web mock has no native share sheet: the UI shares the exported bytes itself. */
+  async shareSheet({ characterId }: Parameters<Api["shareSheet"]>[0]): Promise<SheetShare> {
+    await this.tick();
+    return { fileName: `${this.get(characterId).name}.pdf`, shared: false };
   }
 
   /* ---------- compendium & content ---------- */

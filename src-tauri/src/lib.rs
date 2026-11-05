@@ -387,6 +387,7 @@ pub fn run() {
             commands_gear::set_storage_names,
             commands_gear::render_sheet,
             commands_gear::export_sheet,
+            commands_gear::share_sheet,
             commands_gear::search_compendium,
             commands_gear::get_element,
             commands_gear::compendium_facets,

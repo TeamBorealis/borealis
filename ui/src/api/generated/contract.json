@@ -1743,6 +1743,17 @@
     "k": "nil"
    }
   },
+  "share_sheet": {
+   "args": {
+    "characterId": false,
+    "options": true
+   },
+   "method": "shareSheet",
+   "response": {
+    "k": "ref",
+    "name": "SheetShare"
+   }
+  },
   "short_rest": {
    "args": {
     "characterId": false
@@ -9787,6 +9798,23 @@
      }
     },
     "theme": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "SheetShare": {
+   "k": "object",
+   "props": {
+    "fileName": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "shared": {
      "opt": false,
      "t": {
       "k": "prim"

@@ -99,6 +99,7 @@ import type {
   RulesetProfile,
   SheetOptions,
   SheetPreview,
+  SheetShare,
   StatTrace,
   Ruleset,
   BookRuleset,
@@ -308,6 +309,9 @@ export interface ApiMethods {
   /* Sheet */
   renderSheet(args: Cid & { options?: SheetOptions }): Promise<SheetPreview>;
   exportSheet(args: Cid & { options?: SheetOptions }): Promise<ExportResult>;
+  /** Phones (TV2, B-144): open the system share sheet with the sheet PDF. Android opens it from the backend (`shared` true);
+   * elsewhere `shared` is false and the web view shares the bytes `exportSheet` gave it. */
+  shareSheet(args: Cid & { options?: SheetOptions }): Promise<SheetShare>;
 
   /* Compendium */
   searchCompendium(args: { query: CompendiumQuery }): Promise<Page<ElementSummary>>;
@@ -593,6 +597,7 @@ export const COMMANDS = {
   removeCompanion: "remove_companion",
   renderSheet: "render_sheet",
   exportSheet: "export_sheet",
+  shareSheet: "share_sheet",
   searchCompendium: "search_compendium",
   getElement: "get_element",
   compendiumFacets: "compendium_facets",

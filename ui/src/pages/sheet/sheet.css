@@ -31,3 +31,11 @@
   .v4-sheet-pane { padding: 0 8px; min-height: 70dvh; border-left: 0; }
   .v4-sheet-pane iframe { min-height: 65dvh; }
 }
+/* B-144: Generate Preview holds both labels in one cell, so its width (and Save's place) never changes while generating. */
+.sh-lbl { display: inline-grid; }
+.sh-lbl > span { grid-area: 1 / 1; }
+.sh-lbl > [aria-hidden="true"] { visibility: hidden; }
+/* TV2 C11/C16: the phone's full-screen preview; the frame is the only scroller. */
+.v4-sheet-full .dialog-body { display: flex; flex-direction: column; padding: 0; min-height: 0; flex: 1; overflow: hidden; background: #131313; }
+.v4-sheet-full iframe { flex: 1; width: 100%; min-height: 0; border: 0; background: #131313; color-scheme: dark; }
+.v4-sheet-full .v4-sheet-empty { margin: auto; }

@@ -255,6 +255,70 @@ pub fn export_sheet(
     save_sheet(&app, file)
 }
 
+/// Phones (TV2, B-144): open the system share sheet with the sheet PDF (print, mail, files).
+/// Android opens it from the backend; elsewhere `shared` is false and the web view shares the
+/// bytes `export_sheet` gave it.
+#[tauri::command(async)]
+pub fn share_sheet(
+    app: tauri::AppHandle,
+    state: S<'_>,
+    character_id: String,
+    options: Option<SheetOptionsDto>,
+) -> ApiResult<crate::dto_ext::SheetShare> {
+    let options = SheetOptionsDto {
+        format: Some("pdf".into()),
+        ..options.unwrap_or_default()
+    };
+    let file = state.sheet_file(&character_id, &options)?;
+    let shared = if cfg!(target_os = "android") {
+        let dir = state.paths.data.join("sheet-share");
+        let tmp = share_file_in(&dir, &file.bytes)?;
+        crate::native_share::share_file(
+            &app,
+            &crate::native_share::ShareFileArgs {
+                path: &tmp.path().to_string_lossy(),
+                file_name: &file.file_name,
+                mime: file.mime,
+                title: "Character sheet",
+            },
+        )?
+    } else {
+        false
+    };
+    Ok(crate::dto_ext::SheetShare {
+        file_name: file.file_name,
+        shared,
+    })
+}
+
+/// The sheet bytes in a temp file under `dir` (deleted when dropped, after the share sheet has
+/// copied it).
+fn share_file_in(dir: &std::path::Path, bytes: &[u8]) -> ApiResult<tempfile::NamedTempFile> {
+    use std::io::Write as _;
+    let io = |e| ApiError::io("prepare the sheet to share", e);
+    std::fs::create_dir_all(dir).map_err(io)?;
+    let mut tmp = tempfile::Builder::new()
+        .suffix(".pdf")
+        .tempfile_in(dir)
+        .map_err(io)?;
+    tmp.write_all(bytes).map_err(io)?;
+    Ok(tmp)
+}
+
+#[cfg(test)]
+mod share_tests {
+    #[test]
+    fn the_share_file_holds_the_sheet_and_goes_away_after() {
+        let dir = tempfile::tempdir().unwrap();
+        let tmp = super::share_file_in(&dir.path().join("sheet-share"), b"%PDF-1.4").unwrap();
+        let path = tmp.path().to_path_buf();
+        assert_eq!(std::fs::read(&path).unwrap(), b"%PDF-1.4");
+        assert_eq!(path.extension().and_then(|e| e.to_str()), Some("pdf"));
+        drop(tmp);
+        assert!(!path.exists());
+    }
+}
+
 #[cfg(desktop)]
 fn save_sheet(app: &tauri::AppHandle, file: SheetFile) -> ApiResult<ExportResult> {
     use tauri_plugin_dialog::DialogExt;

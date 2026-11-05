@@ -189,6 +189,14 @@ export interface SheetPreview {
   generatedAt: string;
 }
 
+/** `shareSheet` result. */
+export interface SheetShare {
+  /** File name of the shared PDF. */
+  fileName: string;
+  /** True when the backend opened the system share sheet (Android). */
+  shared: boolean;
+}
+
 export interface ExportResult {
   fileName: string;
   mime: string;
