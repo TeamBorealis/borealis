@@ -9,7 +9,7 @@
 use crate::art::{self, ArtId, ArtPiece, ArtSet, Op};
 use crate::fonts::{text_width, Style};
 use crate::model_fixtures::{
-    cleric_2014, cleric_wizard_2014, fighter_wizard_2014, wizard_2014, wizard_2024,
+    cleric_2014, cleric_wizard_2014, fighter_wizard_2014, long_vitals, wizard_2014, wizard_2024,
 };
 use crate::model_types::{FeatureData, SheetData, SpellFactsMap};
 use crate::pdf::{PageOp, BASELINE};
@@ -391,6 +391,30 @@ fn stress_characters_fit_their_boxes_and_never_overlap() {
         ("stress_2024", wizard_2024()),
     ] {
         found.extend(check(label, &pair, true));
+    }
+    assert_clean(found);
+}
+
+#[test]
+fn long_vitals_fit_their_boxes_and_never_overlap() {
+    let mut found = Vec::new();
+    for (label, pair) in [
+        ("vitals_2014", wizard_2014()),
+        ("vitals_2024", wizard_2024()),
+    ] {
+        for (variant, &(paper, ink, fillable)) in CONFIGS.iter().enumerate() {
+            let o = options(paper, ink, fillable, variant);
+            let d = long_vitals(crate::sheet_data_for(
+                &pair.0,
+                &pair.1,
+                &SpellFactsMap::new(),
+                SheetEdition::Auto,
+            ));
+            let (pages, _) =
+                build_pages(&d, &pair.0, &pair.1, &o, &SheetContent::default()).expect("pages");
+            let name = format!("{label} {paper:?} ink={ink} fillable={fillable}");
+            found.extend(problems(&name, &pages[..1], paper.points()));
+        }
     }
     assert_clean(found);
 }

@@ -270,7 +270,9 @@ pub(crate) fn strip(c: &mut Canvas, (x, y, w): (f32, f32, f32), d: &SheetData) -
         // A smaller value (SIZE's word) sits on a raised baseline so its capitals share the
         // optical middle of the 14 pt numerals beside it.
         let lift = (c.s(14.0) - big) * CAP_HEIGHT / 2.0;
-        let base = y + if sub.is_some() { 21.0 } else { 23.5 } - lift;
+        // With a sub line (other speeds, initiative advantage) the value sits higher so its
+        // descent clears the sub line's capitals (B-145: "+14" over "advantage").
+        let base = y + if sub.is_some() { 20.4 } else { 23.5 } - lift;
         c.text_field(
             fid,
             tip,

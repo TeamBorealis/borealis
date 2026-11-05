@@ -13,21 +13,53 @@ fn is24(d: &SheetData) -> bool {
     matches!(d.edition_fields, EditionFields::Y2024(_))
 }
 
-fn speed_text(d: &SheetData) -> String {
-    let parts: Vec<String> = d
+/// Walking speed (the strip's value) and the other modes (its small second line), as the PDF
+/// prints them: "30 ft" over "fly 60 · swim 30" (B-145: the joined list wrapped in its cell).
+fn speed_text(d: &SheetData) -> (String, String) {
+    let walk = d.combat.speeds.first().map_or(0, |s| s.1);
+    let others: Vec<String> = d
         .combat
         .speeds
         .iter()
-        .enumerate()
-        .map(|(i, (k, v))| {
-            if i == 0 {
-                format!("{v} ft")
-            } else {
-                format!("{k} {v} ft")
-            }
-        })
+        .skip(1)
+        .map(|(k, v)| format!("{} {v}", k.to_lowercase()))
         .collect();
-    parts.join(", ")
+    (format!("{walk} ft"), others.join(" \u{b7} "))
+}
+
+/// Type size of the strip values (`.mid`).
+const MID_PT: f32 = 11.5;
+
+/// Inner width of one strip cell, in points (the sheet CSS): the page less its 42 pt margins,
+/// the ability column (178 pt, 150 pt on 2014 A4) and its 10 pt gap, split into `n` cells 5 pt
+/// apart, each with 2 pt padding and a 0.7 pt border a side.
+fn strip_cell_pt(paper: crate::Paper, is24: bool, n: usize) -> f32 {
+    let col = if !is24 && paper == crate::Paper::A4 {
+        150.0
+    } else {
+        178.0
+    };
+    let main = paper.points().0 - 84.0 - col - 10.0;
+    let n = n.max(1) as f32;
+    (main - 5.0 * (n - 1.0)) / n - 5.4
+}
+
+/// The Size cell's word, shrunk to fit its cell as the PDF does ("Gargantuan" broke in two).
+fn size_word(word: &str, room: f32) -> String {
+    let w = crate::fonts::text_width(crate::fonts::Style::SerifBold, word, MID_PT);
+    let style = if w > room {
+        format!(
+            " style=\"font-size:{:.1}pt\"",
+            (MID_PT * room / w * 10.0).floor() / 10.0
+        )
+    } else {
+        String::new()
+    };
+    format!(
+        "<span class=\"mid\" data-field=\"{}\" dir=\"auto\"{style}>{}</span>",
+        id::CHAR_SIZE,
+        esc(word)
+    )
 }
 
 fn defenses_text(d: &SheetData) -> String {
@@ -174,7 +206,7 @@ fn vitals(d: &SheetData) -> String {
     out
 }
 
-fn strip(d: &SheetData) -> String {
+fn strip(d: &SheetData, paper: crate::Paper) -> String {
     let boxed = |label: &str, inner: String| {
         format!("<div class=\"box\"><div class=\"lbl\">{label}</div>{inner}</div>")
     };
@@ -195,10 +227,19 @@ fn strip(d: &SheetData) -> String {
         "Initiative",
         mid(id::INITIATIVE, &signed(d.combat.initiative)),
     ));
-    boxes.push(boxed("Speed", mid(id::SPEED, &speed_text(d))));
+    let (walk, others) = speed_text(d);
+    let others = if others.is_empty() {
+        String::new()
+    } else {
+        format!("<span class=\"note spd\">{}</span>", esc(&others))
+    };
+    boxes.push(boxed("Speed", format!("{}{others}", mid(id::SPEED, &walk))));
     boxes.push(boxed(
         "Size",
-        mid(id::CHAR_SIZE, d.identity.size.as_deref().unwrap_or("")),
+        size_word(
+            d.identity.size.as_deref().unwrap_or(""),
+            strip_cell_pt(paper, is24(d), if is24(d) { 6 } else { 3 }),
+        ),
     ));
     if is24(d) {
         if let Some(p) = d.passives.iter().find(|p| p.key == "perception") {
@@ -513,7 +554,7 @@ fn body_2024(d: &SheetData, o: &HtmlOptions) -> String {
         out,
         "<div class=\"main\">{}{}{}{}{}{}{}<div class=\"sec grow\">{}<div class=\"lined\"></div></div></div></div>",
         vitals(d),
-        strip(d),
+        strip(d, o.paper),
         attacks(d),
         senses(d),
         proficiencies(d),
@@ -545,7 +586,7 @@ fn body_2014(d: &SheetData, o: &HtmlOptions) -> String {
         out,
         "<div class=\"main\">{}{}<div class=\"sub\">{}<div class=\"col\">{}{}{}{}</div></div>{}{}<div class=\"two\"><div class=\"col\">{}</div><div class=\"col\">{}</div></div></div></div>",
         vitals(d),
-        strip(d),
+        strip(d, o.paper),
         skill_list_2014(d),
         attacks(d),
         senses(d),

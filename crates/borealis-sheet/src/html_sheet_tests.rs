@@ -292,7 +292,8 @@ fn html_sheet_sample() {
     let cases = [("2014", cleric_2014()), ("2024", wizard_2024())];
     for (name, pair) in cases {
         let mut d = crate::model_fixtures::with_sample_extras(data(&pair));
-        d.story.backstory = "Raised by the keeper of a lighthouse on the Sword Coast.".into();
+        d.story.backstory =
+            "Raised by the keeper of a lighthouse on a stormy northern coast.".into();
         d.story.traits = "I always have a plan for what to do when things go wrong.".into();
         for ink in [false, true] {
             let html = render_sheet(
@@ -304,6 +305,17 @@ fn html_sheet_sample() {
             );
             let file = format!("{dir}/{name}-{}.html", if ink { "ink" } else { "colour" });
             std::fs::write(file, html).unwrap();
+        }
+        // B-145: both papers, with the page 1 vitals at their widest.
+        for (paper, tag) in [(Paper::Letter, "letter"), (Paper::A4, "a4")] {
+            let html = render_sheet(
+                &crate::model_fixtures::long_vitals(d.clone()),
+                &HtmlOptions {
+                    paper,
+                    ..HtmlOptions::default()
+                },
+            );
+            std::fs::write(format!("{dir}/{name}-{tag}-long.html"), html).unwrap();
         }
     }
 }
@@ -371,4 +383,52 @@ fn page_1_of_2014_has_personality_and_equipment_with_coins() {
     let h24 = render_sheet(&with_story(data(&wizard_2024())), &HtmlOptions::default());
     let at = h24.find("data-page=\"story\"").expect("story page");
     assert!(h24[at..].contains("data-field=\"story.flaws\""));
+}
+
+/// B-145: the strip's Speed cell holds the walking speed; the other modes go on its small second
+/// line (as in the PDF), so a long list no longer wraps the big value.
+#[test]
+fn speed_cell_prints_walk_big_and_other_modes_below() {
+    let d = crate::model_fixtures::long_vitals(data(&wizard_2024()));
+    let html = render_sheet(&d, &HtmlOptions::default());
+    assert!(
+        html.contains("data-field=\"speed\" dir=\"auto\">130 ft</span>"),
+        "walk only"
+    );
+    assert!(html.contains(
+        "<span class=\"note spd\">fly 120 \u{b7} swim 160 \u{b7} climb 130 \u{b7} burrow 115</span>"
+    ));
+    let plain = render_sheet(&data(&wizard_2024()), &HtmlOptions::default());
+    assert!(!plain.contains("note spd"), "no empty second line");
+}
+
+/// B-145: a long size word is set smaller so it fits its strip cell whole (A4, 2024: the
+/// narrowest cell); "Medium" keeps the strip's type size in the wider 2014 cells.
+#[test]
+fn size_word_shrinks_to_fit_its_cell() {
+    let d = crate::model_fixtures::long_vitals(data(&wizard_2024()));
+    let html = render_sheet(
+        &d,
+        &HtmlOptions {
+            paper: Paper::A4,
+            ..HtmlOptions::default()
+        },
+    );
+    let at = html.find("data-field=\"char.size\"").expect("size cell");
+    let tag = &html[at..at + html[at..].find('>').unwrap()];
+    let pt: f32 = tag
+        .split("font-size:")
+        .nth(1)
+        .and_then(|s| s.split("pt").next())
+        .and_then(|s| s.parse().ok())
+        .expect("a smaller size for Gargantuan");
+    let w = crate::fonts::text_width(crate::fonts::Style::SerifBold, "Gargantuan", pt);
+    assert!(pt < 11.5 && w <= 44.3, "{pt} pt, {w} pt wide");
+    let mut m = data(&cleric_2014());
+    m.identity.size = Some("Medium".into());
+    let html = render_sheet(&m, &HtmlOptions::default());
+    assert!(
+        html.contains("dir=\"auto\">Medium</span>"),
+        "Medium keeps 11.5 pt in a 2014 cell"
+    );
 }

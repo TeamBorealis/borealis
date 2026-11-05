@@ -78,7 +78,7 @@ h2 .aside{font:400 6pt "Noto Sans",sans-serif;color:var(--ink-3);letter-spacing:
 .dot{width:7pt;height:7pt;border:.7pt solid var(--ink-2);border-radius:50%;display:inline-block}
 .dot.g{border-color:var(--gold)}.dot.x{border-radius:1pt}
 .strip{display:grid;grid-template-columns:repeat(var(--n,6),1fr);gap:5pt}
-.strip .box{text-align:center;padding:3pt 2pt}
+.strip .box{text-align:center;padding:3pt 2pt;min-width:0}.strip .spd{display:block;font-size:5.2pt;line-height:1.2}
 .mid{font-weight:700;font-size:11.5pt;line-height:1.15;display:block}
 .insp{width:11pt;height:11pt;margin:2pt auto 0;border:.9pt solid var(--gold);transform:rotate(45deg);display:block}
 table{width:100%;border-collapse:collapse}

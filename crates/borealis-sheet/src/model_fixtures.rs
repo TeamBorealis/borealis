@@ -287,3 +287,34 @@ pub(crate) fn with_sample_extras(mut d: SheetData) -> SheetData {
     d.features.insert(0, table_feature(5, 3, "Value"));
     d
 }
+
+/// The page 1 vitals and stat strip at their widest (B-145): a three-digit HP, four hit die sizes
+/// of a 20th-level multiclass, every speed mode, the longest size word and two-digit modifiers.
+pub(crate) fn long_vitals(mut d: SheetData) -> SheetData {
+    use crate::model_types::HitDice;
+    d.combat.armor_class = 28;
+    d.combat.ac_note = "+2 while wielding a shield and wearing no heavy armor".into();
+    d.combat.initiative = 14;
+    d.combat.initiative_advantage = true;
+    d.combat.hp_max = 288;
+    d.combat.hit_dice = [12, 10, 8, 6]
+        .into_iter()
+        .zip([9, 6, 3, 2])
+        .map(|(die, count)| HitDice { die, count })
+        .collect();
+    d.combat.speeds = [
+        ("Walk", 130),
+        ("Fly", 120),
+        ("Swim", 160),
+        ("Climb", 130),
+        ("Burrow", 115),
+    ]
+    .into_iter()
+    .map(|(k, v)| (k.to_string(), v))
+    .collect();
+    d.identity.size = Some("Gargantuan".into());
+    d.proficiency_bonus = 6;
+    d.play.current_hp = Some(288);
+    d.play.temp_hp = Some(120);
+    d
+}
