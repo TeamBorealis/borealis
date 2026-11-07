@@ -86,7 +86,8 @@ fn origin(snap: &CharacterSnapshot, key: &str) -> String {
 }
 
 /// Character-file key of the app's UI extras, where Manage keeps alignment and deity text that
-/// names no element (the app's `UiExtras.alignment` / `.deity`).
+/// names no element (the app's `UiExtras.alignment` / `.deity`) and older Manage versions kept
+/// treasure and quest items (`.treasure` / `.questItems`).
 const UI_EXTRAS: &str = "ui";
 
 /// The chosen element of type `ty` (what Aurora prints), else the custom Manage text in the UI
@@ -101,13 +102,29 @@ fn origin_or_custom(
     if !chosen.is_empty() {
         return chosen;
     }
+    ui_text(character, custom_key)
+}
+
+/// The trimmed text under `key` in the app's UI extras, else "".
+fn ui_text(character: &Character, key: &str) -> String {
     character
         .extra
         .get(UI_EXTRAS)
-        .and_then(|ui| ui.get(custom_key))
+        .and_then(|ui| ui.get(key))
         .and_then(|v| v.as_str())
         .map(|s| s.trim().to_string())
         .unwrap_or_default()
+}
+
+/// A native detail field (trimmed), else the text an older Manage kept in the UI extras under
+/// `legacy_key` (B-218: treasure and quest items).
+fn native_or_ui(character: &Character, native: &str, legacy_key: &str) -> String {
+    let native = native.trim();
+    if native.is_empty() {
+        ui_text(character, legacy_key)
+    } else {
+        native.to_string()
+    }
 }
 
 /// Creature size: the chosen size, the carry table, or the one size the species text names.
@@ -673,8 +690,8 @@ fn story(character: &Character) -> StoryData {
         backstory: t(&d.backstory),
         organization: t(&d.organization.name),
         allies: t(&d.organization.allies),
-        treasure: t(&d.treasure),
-        quest: t(&d.quest),
+        treasure: native_or_ui(character, &d.treasure, "treasure"),
+        quest: native_or_ui(character, &d.quest, "questItems"),
         equipment_notes: t(&d.equipment_notes),
         additional_features: t(&d.additional_features),
         notes,

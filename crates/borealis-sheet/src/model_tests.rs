@@ -783,3 +783,29 @@ fn alignment_and_deity_print_the_chosen_element_else_the_custom_text() {
     assert_eq!(d.identity.alignment, "Lawful Good", "the element wins");
     assert_eq!(d.identity.deity, "The Lantern Keeper");
 }
+
+/// B-218: treasure and quest items are the native `details.treasure` / `.quest` (what Manage and
+/// the Aurora importer write), else the text an older Manage kept in the app's UI extras.
+#[test]
+fn treasure_and_quest_items_print_the_native_fields_else_older_ui_extras_text() {
+    let (mut c, snap) = wizard_2014();
+    let d = data(&(c.clone(), snap.clone()));
+    assert_eq!(
+        (d.story.treasure.as_str(), d.story.quest.as_str()),
+        ("", "")
+    );
+
+    let mut ui = serde_json::Map::new();
+    ui.insert("treasure".into(), " A sapphire ".into());
+    ui.insert("questItems".into(), "The sealed letter".into());
+    c.extra.insert("ui".into(), ui.into());
+    let d = data(&(c.clone(), snap.clone()));
+    assert_eq!(d.story.treasure, "A sapphire", "older files still print");
+    assert_eq!(d.story.quest, "The sealed letter");
+
+    c.details.treasure = "Two rubies\n".into();
+    c.details.quest = "A brass key".into();
+    let d = data(&(c, snap));
+    assert_eq!(d.story.treasure, "Two rubies", "the native field wins");
+    assert_eq!(d.story.quest, "A brass key");
+}

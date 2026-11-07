@@ -63,8 +63,16 @@ fn apply_text(c: &mut Character, extras: &mut UiExtras, key: &str, text: String)
     match key {
         "gender" => c.meta.gender = text,
         "playerName" => c.meta.player = text,
-        "treasure" => extras.treasure = text,
-        "questItems" => extras.quest_items = text,
+        // The native fields the Aurora importer fills and the sheet prints (B-218); the text an
+        // older Manage kept in the UI extras goes, so emptying the box empties the sheet.
+        "treasure" => {
+            d.treasure = text;
+            extras.treasure.clear();
+        }
+        "questItems" => {
+            d.quest = text;
+            extras.quest_items.clear();
+        }
         "age" => d.appearance.age = text,
         "height" => d.appearance.height = text,
         "weight" => d.appearance.weight = text,

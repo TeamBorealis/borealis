@@ -498,7 +498,7 @@ All additive; read from content setters (`armorClass`, `strength`, `stealth`, `a
   - `SpellFacts`: `castingTime`, `range`, `duration`, `verbal`, `somatic`, `material`, `materialText`, `concentration`, `ritual`.
 - `SpellEntry.casting: SpellFacts | null` (spellcasting rows).
 - `InventoryItem.weapon` gains `mastery | null`, `range | null`; new `InventoryItem.armor: ArmorFacts | null`.
-- `CharacterDetails` gains free-text `treasure` and `questItems`, written with `updateDetails({ treasure, questItems })` and stored in the character's UI extras (additive, defaults to "").
+- `CharacterDetails` gains free-text `treasure` and `questItems`, written with `updateDetails({ treasure, questItems })` (additive, defaults to ""). Since B-218 they are stored in the character's own `details.treasure` / `details.quest` (what an Aurora import fills and the sheet prints); text an older version kept in the UI extras is still shown until the field is next edited.
 
 ## 5. Selecting the implementation
 

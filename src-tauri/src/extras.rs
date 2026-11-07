@@ -43,9 +43,11 @@ pub struct UiExtras {
     pub deity: String,
     /// Companion portrait as an image data URL.
     pub companion_portrait: Option<String>,
-    /// Free-text additional treasure.
+    /// Additional treasure typed in an older Manage. Read only when `details.treasure` is empty,
+    /// cleared on the next edit (B-218).
     pub treasure: String,
-    /// Free-text quest items.
+    /// Quest items typed in an older Manage. Read only when `details.quest` is empty, cleared
+    /// on the next edit (B-218).
     pub quest_items: String,
 }
 
@@ -515,7 +517,8 @@ fn cp_from_gp(gp: f64) -> u64 {
 }
 
 /// The free-text details of a character. Alignment and deity are the chosen Alignment and Deity
-/// elements, else the custom text (B-191).
+/// elements, else the custom text (B-191). Treasure and quest items are the native
+/// `details.treasure` / `.quest`, else older files' UI extras text (B-218).
 #[must_use]
 pub fn details(c: &Character, snap: &Engine) -> CharacterDetails {
     use crate::origin_details::{shown, ALIGNMENT, DEITY};
@@ -545,8 +548,17 @@ pub fn details(c: &Character, snap: &Engine) -> CharacterDetails {
         allies: d.organization.allies.clone(),
         combat_notes: d.attacks_text.clone(),
         sheet_ac_note: d.conditional_ac.clone(),
-        treasure: ui.treasure,
-        quest_items: ui.quest_items,
+        treasure: native_or_legacy(&d.treasure, ui.treasure),
+        quest_items: native_or_legacy(&d.quest, ui.quest_items),
+    }
+}
+
+/// A native detail field, else the text an older Manage kept in the UI extras (B-218).
+fn native_or_legacy(native: &str, legacy: String) -> String {
+    if native.is_empty() {
+        legacy
+    } else {
+        native.to_string()
     }
 }
 
