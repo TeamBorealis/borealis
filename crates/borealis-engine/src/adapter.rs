@@ -231,7 +231,7 @@ fn ignore_racial_asi(el: &Element) -> Option<(Element, Vec<String>)> {
         .iter()
         .filter(|r| is_asi(r))
         .filter_map(|r| match r {
-            Rule::Stat(s) => Some(format!("{} {}", s.name, s.value)),
+            Rule::Stat(s) => Some(increase_text(&s.name, &s.value)),
             _ => None,
         })
         .collect();
@@ -240,14 +240,28 @@ fn ignore_racial_asi(el: &Element) -> Option<(Element, Vec<String>)> {
     }
     let mut out = el.clone();
     out.rules.retain(|r| !is_asi(r));
+    // Plain words for the user (B-51): the converted-species note never shows the rule's key.
     let notes = vec![
         format!(
-            "Racial ability score increases ignored (legacy_species_asi = ignore): {}",
+            "Racial ability score increases ({}) not applied",
             dropped.join(", ")
         ),
         "2024 characters take ability score increases from their background".to_string(),
     ];
     Some((out, notes))
+}
+
+/// "Strength +2" for the stat `strength` with value `2`; a non-numeric value is kept as written.
+fn increase_text(ability: &str, value: &str) -> String {
+    let mut chars = ability.chars();
+    let name: String = chars
+        .next()
+        .map(|c| c.to_uppercase().chain(chars).collect())
+        .unwrap_or_default();
+    match value.trim().parse::<i32>() {
+        Ok(n) => format!("{name} {n:+}"),
+        Err(_) => format!("{name} {}", value.trim()),
+    }
 }
 
 #[cfg(test)]
@@ -311,6 +325,35 @@ mod tests {
             panic!("custom rule")
         };
         assert!(!c.fields.contains_key("requirements"));
+    }
+
+    #[test]
+    fn a_2014_race_in_a_2024_character_drops_its_increases_with_a_plain_note() {
+        let mut el = species(json!([
+            {"kind": "stat", "name": "strength", "value": "2"},
+            {"kind": "stat", "name": "constitution", "value": "1"},
+            {"kind": "stat", "name": "innate speed", "value": "30"}
+        ]));
+        el.ty = "Race".into();
+        let Adaptation::Converted { element, notes } =
+            StandardAdapter.adapt(&el, Ruleset::Dnd2014, profile_for(Ruleset::Dnd2024))
+        else {
+            panic!("converted")
+        };
+        assert_eq!(element.rules.len(), 1, "only the speed is left");
+        assert_eq!(
+            notes,
+            [
+                "Racial ability score increases (Strength +2, Constitution +1) not applied",
+                "2024 characters take ability score increases from their background",
+            ]
+        );
+        assert!(
+            notes.iter().all(|n| !n.contains('_') && !n.contains('=')),
+            "no rules keys shown to users"
+        );
+        assert_eq!(increase_text("wisdom", " -1 "), "Wisdom -1");
+        assert_eq!(increase_text("dexterity", "half"), "Dexterity half");
     }
 
     #[test]
