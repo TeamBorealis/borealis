@@ -45,7 +45,14 @@ function useItemCategories(snapshot: CharacterSnapshot | null) {
   return useAsync(() => (id ? api.listItemCategories({ characterId: id }) : Promise.resolve([] as ItemCategory[])), [api, id, categoryKey(snapshot)]);
 }
 
-export function EquipmentTab() {
+/**
+ * What the Equipment sub-tab shows: "all" is the classic builder screen (catalogue, tools row, inventory); phones split it
+ * into the "catalogue" and "inventory" sub-tabs (GitHub #33). One component serves both, so the catalogue keeps its
+ * category, filters and picked item while the user flips to the inventory and back.
+ */
+export type GearView = "all" | "catalogue" | "inventory";
+
+export function EquipmentTab({ view = "all" }: { view?: GearView }) {
   const api = useApi();
   const confirm = useConfirm();
   const { snapshot, mutate } = useCharacter();
@@ -123,8 +130,8 @@ export function EquipmentTab() {
       <QtyCommand label="Buy" value={buyQty} onChange={setBuyQty} disabled={!canAdd} onRun={() => pickedItem && canAdd && void add(pickedItem, buyQty, true)} />
     </span>
   );
-  const left = (
-    <div className="eq-layout">
+  const catalogue = view !== "inventory" && (
+    <>
       <nav className="eq-cats" aria-label="Item categories">
         <Band title="Categories" />
         <div className="eq-cats-sub">Category</div>
@@ -163,7 +170,12 @@ export function EquipmentTab() {
         <span className="eq-source"><SourceFilterButton filter={filter} onChange={setFilter} sources={listSources} /></span>
         <Button className="eq-coins" onClick={() => setCoins(true)}>Manage coins: {inv.totalGp} gp</Button>
       </div>
-      <InventoryPanel onSelectElement={setDescId} />
+    </>
+  );
+  const left = (
+    <div className="eq-layout">
+      {catalogue}
+      {view !== "catalogue" && <InventoryPanel onSelectElement={setDescId} />}
       {coins && <CoinsDialog onClose={() => setCoins(false)} />}
     </div>
   );

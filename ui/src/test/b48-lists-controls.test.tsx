@@ -276,6 +276,8 @@ describe("coin purse buttons (WP5)", () => {
     const api = new MockApi({ aiChunkDelayMs: 2 });
     const id = await seededId(api, "Seraphine");
     renderApp("/equipment", { api, openCharacterId: id });
+    // GitHub #33: a phone opens Gear on the Inventory sub-tab when the character has items; Manage coins is on Equipment.
+    await user.click(await screen.findByRole("tab", { name: "Equipment" }));
     await user.click(await screen.findByRole("button", { name: /Manage coins/ }));
     const dialog = await screen.findByRole("dialog", { name: "Coin purse" });
     for (const [name, text] of [["Remove 10 Gold", "10"], ["Remove 1 Gold", "1"], ["Add 1 Gold", "1"], ["Add 10 Gold", "10"]] as const) {

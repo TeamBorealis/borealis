@@ -34,6 +34,20 @@ async function openEquipment() {
   return { api, id, add, layout, toolbar };
 }
 
+/** GitHub #33: on a phone the catalogue and the inventory are separate sub-tabs of Gear. */
+async function openPhoneTab(tab: "Equipment" | "Inventory") {
+  const api = new MockApi({ rng: () => 0.5 });
+  const id = await seededId(api, "Brannoc");
+  renderApp("/equipment", { api, openCharacterId: id });
+  await userEvent.setup().click(await screen.findByRole("tab", { name: tab }));
+  const layout = await waitFor(() => {
+    const el = document.querySelector<HTMLElement>(".eq-layout");
+    expect(el).not.toBeNull();
+    return el!;
+  });
+  return { api, id, layout };
+}
+
 /** The direct children of the equipment layout, by their first class (the category nav is hidden on phones). */
 const layoutParts = (layout: HTMLElement) => [...layout.children].map((c) => c.classList[0]);
 
@@ -43,13 +57,14 @@ describe("Phone equipment action bars stay pinned (B-159, PH2)", () => {
     asPhone();
 
     // Act
-    const { add, layout } = await openEquipment();
+    const { layout } = await openPhoneTab("Equipment");
 
     // Assert
+    const add = await screen.findByRole("button", { name: "Add" });
     const cmds = add.closest(".eq-cmds") as HTMLElement;
     expect(cmds.className).toBe("eq-cmds eq-pin");
     expect(cmds.parentElement).toBe(layout);
-    expect(layoutParts(layout)).toEqual(["eq-cats", "eq-items", "eq-cmds", "eq-tools", "eq-inv"]);
+    expect(layoutParts(layout)).toEqual(["eq-cats", "eq-items", "eq-cmds", "eq-tools"]);
     expect(within(cmds).getByRole("button", { name: "Buy" })).toBeTruthy();
     expect(within(cmds).getByRole("textbox", { name: "Add quantity" })).toBeTruthy();
     expect(within(cmds).getByRole("textbox", { name: "Buy quantity" })).toBeTruthy();
@@ -61,17 +76,21 @@ describe("Phone equipment action bars stay pinned (B-159, PH2)", () => {
     expect(within(tools).getByRole("button", { name: /^Manage coins/ })).toBeTruthy();
   });
 
-  it("on a phone, the inventory toolbar is the inventory's pinned bar, and only the two bars are pinned", async () => {
+  it("on a phone, the inventory toolbar is the inventory's pinned bar, and each sub-tab pins only its own bar", async () => {
     // Arrange
     asPhone();
 
     // Act
-    const { layout, toolbar } = await openEquipment();
+    const { layout } = await openPhoneTab("Inventory");
 
     // Assert
+    const toolbar = await screen.findByRole("toolbar", { name: "Inventory actions" });
     expect(toolbar.className).toBe("eq-inv-actions eq-pin");
     expect(toolbar.parentElement?.classList.contains("eq-inv")).toBe(true);
-    expect([...layout.querySelectorAll(".eq-pin")].map((e) => e.classList[0])).toEqual(["eq-cmds", "eq-inv-actions"]);
+    expect([...layout.querySelectorAll(".eq-pin")].map((e) => e.classList[0])).toEqual(["eq-inv-actions"]);
+    await userEvent.setup().click(screen.getByRole("tab", { name: "Equipment" }));
+    await screen.findByRole("button", { name: "Add" });
+    expect([...document.querySelectorAll(".eq-layout .eq-pin")].map((e) => e.classList[0])).toEqual(["eq-cmds"]);
     expect(within(toolbar).getAllByRole("button").map((b) => b.textContent)).toEqual(["Details", "Up", "Down", "Delete", "Delete all"]);
   });
 
@@ -79,7 +98,8 @@ describe("Phone equipment action bars stay pinned (B-159, PH2)", () => {
     // Arrange
     asPhone();
     const user = userEvent.setup();
-    const { api, id, add } = await openEquipment();
+    const { api, id } = await openPhoneTab("Equipment");
+    const add = await screen.findByRole("button", { name: "Add" });
     const before = (await api.getSnapshot({ characterId: id })).inventory.items.length;
     await user.click(screen.getByRole("button", { name: /Rope/ }));
 

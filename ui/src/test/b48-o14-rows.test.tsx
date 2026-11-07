@@ -76,6 +76,9 @@ describe("Magic section tabs", () => {
 describe("equipment catalogue rows (O14)", () => {
   it("on a phone each item row carries price, weight and source", async () => {
     await open("/equipment", true);
+    // GitHub #33: on a phone the catalogue is the Equipment sub-tab (Gear opens on Inventory once the character has items).
+    const catalogueTab = await screen.findByRole("tab", { name: "Equipment" });
+    act(() => catalogueTab.click());
     const table = await screen.findByRole("table", { name: "Item catalog" });
     const rows = await waitFor(() => { const r = [...table.querySelectorAll<HTMLElement>("tbody tr")].filter((r) => !r.classList.contains("ap-empty-row")); expect(r.length).toBeGreaterThan(0); return r; });
     for (const row of rows) {
