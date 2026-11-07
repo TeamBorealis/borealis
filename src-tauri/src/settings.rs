@@ -144,6 +144,10 @@ pub struct AppSettings {
     /// Reference app DATA FILES: extra folder whose content files load as user packs; `None` = unlinked.
     /// Changed only through `set_secondary_content_dir` / `unlink_secondary_content_dir`.
     pub secondary_content_dir: Option<String>,
+    /// Settings > CONTENT: a folder of the user's own images shown in the portraits gallery (GitHub #32; the
+    /// reference app's `<documents>/portraits`). `None` = no library (the gallery shows only images added on this
+    /// device). Changed only through `set_portrait_library_dir` (a backend-picked folder token).
+    pub portrait_library_dir: Option<String>,
     /// Reference app "Automatic Updates": check the user's indexes at startup (desktop only).
     pub auto_content_update: bool,
     /// Reference app selection-picker ROW HEIGHT: `small`, `medium` or `large`.
@@ -271,6 +275,7 @@ impl Default for AppSettings {
             ai_available: crate::distribution::HAS_AI_CLI,
             documents_dir: None,
             secondary_content_dir: None,
+            portrait_library_dir: None,
             auto_content_update: true,
             row_height: "medium".into(),
             skills_panel_expanded: true,
@@ -392,12 +397,14 @@ impl AppSettings {
         ))
     }
 
-    /// `documentsDir` / `secondaryContentDir` may only be resent unchanged: new folders come from
-    /// backend-picked tokens (`set_documents_dir`, `set_secondary_content_dir`), never a raw path.
+    /// `documentsDir` / `secondaryContentDir` / `portraitLibraryDir` may only be resent unchanged: new folders come
+    /// from backend-picked tokens (`set_documents_dir`, `set_secondary_content_dir`, `set_portrait_library_dir`),
+    /// never a raw path.
     fn check_dir_patch(&self, patch: &Value) -> ApiResult<()> {
         let fields = [
             ("documentsDir", self.documents_dir.as_deref()),
             ("secondaryContentDir", self.secondary_content_dir.as_deref()),
+            ("portraitLibraryDir", self.portrait_library_dir.as_deref()),
         ];
         for (key, current) in fields {
             let Some(v) = patch.get(key) else { continue };

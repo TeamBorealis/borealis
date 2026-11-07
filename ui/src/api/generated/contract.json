@@ -1032,6 +1032,14 @@
     }
    }
   },
+  "list_portrait_library": {
+   "args": {},
+   "method": "listPortraitLibrary",
+   "response": {
+    "k": "ref",
+    "name": "PortraitLibrary"
+   }
+  },
   "list_sources": {
    "args": {},
    "method": "listSources",
@@ -1124,6 +1132,15 @@
      "k": "ref",
      "name": "PickedPath"
     }
+   }
+  },
+  "portrait_library_image": {
+   "args": {
+    "id": false
+   },
+   "method": "portraitLibraryImage",
+   "response": {
+    "k": "prim"
    }
   },
   "preview_convert_to_2024": {
@@ -1646,6 +1663,16 @@
    "response": {
     "k": "ref",
     "name": "CharacterSnapshot"
+   }
+  },
+  "set_portrait_library_dir": {
+   "args": {
+    "token": true
+   },
+   "method": "setPortraitLibraryDir",
+   "response": {
+    "k": "ref",
+    "name": "DataDirs"
    }
   },
   "set_rolled_max": {
@@ -2938,6 +2965,12 @@
      }
     },
     "pointBuyBudget": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "portraitLibraryDir": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -5168,6 +5201,18 @@
      }
     },
     "isDefault": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "portraitLibraryDir": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "portraitLibraryUnavailable": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -8736,6 +8781,68 @@
      }
     },
     "unrestricted": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PortraitLibrary": {
+   "k": "object",
+   "props": {
+    "dir": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "images": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "PortraitLibraryImage"
+      }
+     }
+    },
+    "refused": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "truncated": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "unavailable": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "PortraitLibraryImage": {
+   "k": "object",
+   "props": {
+    "folder": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "id": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
      "opt": false,
      "t": {
       "k": "prim"

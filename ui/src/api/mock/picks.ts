@@ -9,6 +9,7 @@ const MOCK_PICKS: Record<PickPurpose, string> = {
   "ai-override": "/usr/local/bin/claude",
   "documents-dir": "/home/me/Documents/Borealis",
   "secondary-content-dir": "/home/me/Documents/Custom Content",
+  "portrait-library-dir": "/home/me/Pictures/Portraits",
   "character-file": "/home/me/Documents/Mira.dnd5e",
   "dropped-file": "",
   "bundle-file": "/home/me/Documents/Mira.borealis",

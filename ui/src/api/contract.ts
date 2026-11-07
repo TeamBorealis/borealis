@@ -41,6 +41,7 @@ import type {
   ClearCachesResult,
   ContentUpdateStatus,
   DataDirs,
+  PortraitLibrary,
   SecondaryContentResult,
   FileDrop,
   ImportFileInput,
@@ -396,6 +397,12 @@ export interface ApiMethods {
   getDataDirs(): Promise<DataDirs>;
   /** Use a `documents-dir` pick; omit `token` to go back to the default folder. Existing characters are not moved. */
   setDocumentsDir(args: { token?: string }): Promise<DataDirs>;
+  /** Use a `portrait-library-dir` pick as the portrait library (GitHub #32); omit `token` for no library. */
+  setPortraitLibraryDir(args: { token?: string }): Promise<DataDirs>;
+  /** The portraits gallery's library images (names only). The webview never reads the folder itself. */
+  listPortraitLibrary(): Promise<PortraitLibrary>;
+  /** One library image as a `data:` URL (pass it to `setPortrait` to use it); `id` from `listPortraitLibrary`. */
+  portraitLibraryImage(args: { id: string }): Promise<string>;
   /** Link a `secondary-content-dir` pick and load its .xml/.json files as `sec-*` user packs (hot-reload). */
   setSecondaryContentDir(args: { token: string }): Promise<SecondaryContentResult>;
   /** Classic builder "UNLINK SECONDARY DIRECTORY": forget the folder and remove its packs (hot-reload). */
@@ -649,6 +656,9 @@ export const COMMANDS = {
   setAiOverride: "set_ai_override",
   getDataDirs: "get_data_dirs",
   setDocumentsDir: "set_documents_dir",
+  setPortraitLibraryDir: "set_portrait_library_dir",
+  listPortraitLibrary: "list_portrait_library",
+  portraitLibraryImage: "portrait_library_image",
   setSecondaryContentDir: "set_secondary_content_dir",
   unlinkSecondaryContentDir: "unlink_secondary_content_dir",
   restoreDefaultSettings: "restore_default_settings",

@@ -9,6 +9,7 @@ import { errorMessage, useAsync } from "../../state/useAsync";
 import { PhoneCase } from "../../lib/phoneCase";
 import { UnverifiedBadge } from "../content/IndexesTab";
 import { AiHostPanel } from "./AiHostPanel";
+import { PortraitLibraryRow } from "./PortraitLibraryRow";
 import { DescCheck, FieldLabel, Help, NumberField, SectionDesc, SectionTitle } from "./rows";
 
 /**
@@ -80,19 +81,23 @@ export function DisplayTab({ form, set }: FormProps) {
   );
 }
 
-/** CONTENT: registered content indexes. The place for Borealis's own folders (GitHub #32 adds the portrait library here). */
-export function ContentTab({ manage }: { manage: () => void }) {
+/**
+ * CONTENT: registered content indexes and Borealis's own folders: the portrait library (GitHub #32; desktop only, since
+ * phones have no folder picker).
+ */
+export function ContentTab({ manage, portraits }: { manage: () => void; portraits: Parameters<typeof PortraitLibraryRow>[0] | null }) {
   const api = useApi();
   const indexes = useAsync(() => api.listIndexes(), [api]);
   return (
     <>
-      <TabTitle title="CONTENT" desc="Content packs and the indexes they are updated from." />
+      <TabTitle title="CONTENT" desc={portraits ? "Content packs, the indexes they are updated from, and your portrait library." : "Content packs and the indexes they are updated from."} />
       <FieldLabel>CONTENT INDEXES</FieldLabel>
       <Help>{indexes.data && indexes.data.length === 0 ? "None registered." : "Indexes you added under Additional Content."}</Help>
       {(indexes.data ?? []).map((i) => (
         <div key={i.url} className="aur-set-index"><strong>{i.name}{!i.verified && <UnverifiedBadge />}</strong><Help>{i.url}</Help></div>
       ))}
       <div className="aur-set-buttons"><Button aria-label="Manage…" onClick={manage}>Manage...</Button></div>
+      {portraits && <PortraitLibraryRow {...portraits} />}
     </>
   );
 }

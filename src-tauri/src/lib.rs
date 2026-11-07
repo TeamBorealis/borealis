@@ -127,6 +127,7 @@ pub mod picked_paths;
 pub mod play_api;
 pub mod play_dto;
 pub mod play_rolls;
+pub mod portrait_library;
 pub mod renamed_ids;
 pub mod sanitize;
 pub mod search_api;
@@ -557,6 +558,9 @@ pub fn run() {
             commands_pick::set_ai_override,
             commands_settings::get_data_dirs,
             commands_settings::set_documents_dir,
+            commands_settings::set_portrait_library_dir,
+            commands_settings::list_portrait_library,
+            commands_settings::portrait_library_image,
             commands_settings::set_secondary_content_dir,
             commands_settings::unlink_secondary_content_dir,
             commands_settings::restore_default_settings,

@@ -148,9 +148,9 @@ pub fn portrait_from_data_url(url: &str) -> Result<Portrait, String> {
 }
 
 /// Largest accepted decoded portrait.
-const MAX_PORTRAIT_BYTES: usize = 2 * 1024 * 1024;
+pub(crate) const MAX_PORTRAIT_BYTES: usize = 2 * 1024 * 1024;
 
-fn magic_matches(ext: &str, b: &[u8]) -> bool {
+pub(crate) fn magic_matches(ext: &str, b: &[u8]) -> bool {
     match ext {
         "png" => b.starts_with(&[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A]),
         "jpg" => b.starts_with(&[0xFF, 0xD8, 0xFF]),

@@ -2,6 +2,7 @@ import type { AppSettings, ClearCachesResult, ContentUpdateStatus, DataDirs, Sec
 import { DEFAULT_SETTINGS } from "./default-settings";
 import { apiError } from "./errors";
 import type { MockPicks } from "./picks";
+import type { MockPortraitLibrary } from "./portrait-library";
 
 const DEFAULT_DOCS = "/home/me/.local/share/borealis";
 const SYSTEM = /^\/(bin|sbin|usr|etc|dev|proc|sys|boot|lib|opt|System|Library|Applications)(\/|$)/;
@@ -14,7 +15,7 @@ export class MockDataFiles {
     state: "done", message: "Your content files are up to date.", updated: 0, failed: [], checkedAt: "2026-10-11T09:00:00Z",
   };
 
-  constructor(private readonly picks: MockPicks) {}
+  constructor(private readonly picks: MockPicks, private readonly portraits: MockPortraitLibrary) {}
 
   dirs(s: AppSettings): DataDirs {
     const documentsDir = s.documentsDir ?? DEFAULT_DOCS;
@@ -22,6 +23,7 @@ export class MockDataFiles {
       documentsDir, defaultDocumentsDir: DEFAULT_DOCS, isDefault: s.documentsDir === null,
       charactersDir: `${documentsDir}/characters`, documentsDirUnavailable: null,
       secondaryContentDir: s.secondaryContentDir, secondaryContentUnavailable: false,
+      portraitLibraryDir: s.portraitLibraryDir, portraitLibraryUnavailable: this.portraits.isUnavailable(s),
     };
   }
 

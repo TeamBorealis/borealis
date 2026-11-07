@@ -11,7 +11,7 @@ import { errorMessage, useAsync } from "../../state/useAsync";
 import { openEditionFlyout } from "../manage/EditionFlyout";
 import { AppearanceTab } from "./AppearanceTab";
 import { AiTab, ContentTab, DisplayTab, PhonesTab, RulesTab, SavingTab, UpdatesTab } from "./BorealisTabs";
-import { DataFilesTab, type HeldPicks } from "./DataFilesTab";
+import { DataFilesTab, heldPath, type HeldFolder, type HeldPicks } from "./DataFilesTab";
 import { DevicesTab } from "./DevicesTab";
 import { BuildTab, EquipmentTab, GeneralTab } from "./GeneralBuildTabs";
 import { ModelLicence } from "./ModelLicence";
@@ -22,6 +22,12 @@ import { resolveSettingsTab, visibleSettingsTabs } from "./settingsTabs";
 import { SettingsWindow } from "./SettingsWindow";
 import { SheetTab } from "./SheetTab";
 import { PhoneCase } from "../../lib/phoneCase";
+import type { PickPurpose } from "../../api/contract";
+
+/** The backend picker purpose behind each folder's Browse button. */
+const PICK_PURPOSE: Record<HeldFolder, PickPurpose> = {
+  documents: "documents-dir", secondary: "secondary-content-dir", portraits: "portrait-library-dir",
+};
 
 /**
  * Application Settings: the one settings window (GitHub #31). The classic builder's tabs first, then the Borealis-only tabs
@@ -33,7 +39,7 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
   const nav = useNavigate();
   const { snapshot } = useCharacter();
   const { settings: persisted, replace } = useSettings();
-  const { aiAvailable, aiEnabled, storeBuild } = usePlatform();
+  const { aiAvailable, aiEnabled, storeBuild, mobile } = usePlatform();
   const tabs = visibleSettingsTabs({ aiAvailable, aiEnabled, storeBuild });
   const [picked, setTab] = useState(initialTab);
   const tab = resolveSettingsTab(picked, tabs);
@@ -59,11 +65,11 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
   const set = useCallback((patch: Partial<AppSettings>) => setForm((f) => (f ? { ...f, ...patch } : f)), []);
   const setSheet = useCallback((sheet: AppSettings["sheet"]) => setForm((f) => (f ? { ...f, sheet } : f)), []);
 
-  const browse = async (which: "documents" | "secondary") => {
+  const browse = async (which: HeldFolder) => {
     setError(null);
     try {
-      const current = which === "documents" ? held.documents?.path ?? dirs?.documentsDir : held.secondary && held.secondary !== "unlink" ? held.secondary.path : dirs?.secondaryContentDir ?? undefined;
-      const [pick] = await api.pickPath({ purpose: which === "documents" ? "documents-dir" : "secondary-content-dir", startDir: current });
+      const stored = { documents: dirs?.documentsDir, secondary: dirs?.secondaryContentDir, portraits: dirs?.portraitLibraryDir }[which];
+      const [pick] = await api.pickPath({ purpose: PICK_PURPOSE[which], startDir: heldPath(held[which]) ?? stored ?? undefined });
       if (pick) setHeld((h) => ({ ...h, [which]: { token: pick.token, path: pick.path } }));
     } catch (e) { setError(errorMessage(e)); }
   };
@@ -78,6 +84,7 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
       if (held.documents) await api.setDocumentsDir({ token: held.documents.token });
       if (held.secondary === "unlink") await api.unlinkSecondaryContentDir();
       else if (held.secondary) skipped = (await api.setSecondaryContentDir({ token: held.secondary.token })).report.skipped.length;
+      if (held.portraits) await api.setPortraitLibraryDir(held.portraits === "clear" ? {} : { token: held.portraits.token });
       const stored = await api.getSettings();
       const saved = await api.saveSettings({ patch: mergeForm(stored, form) });
       replace(saved);
@@ -92,7 +99,7 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
 
   /** Leave the window for another screen: unsaved edits are saved first (nothing to save = just close). */
   const leave = (after: () => void) => {
-    if (form && formChanged(persisted, form, !!held.documents || !!held.secondary)) { void save(after); return; }
+    if (form && formChanged(persisted, form, !!held.documents || !!held.secondary || !!held.portraits)) { void save(after); return; }
     onClose();
     after();
   };
@@ -124,7 +131,10 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
       case "rules": return <RulesTab form={form} set={set} hasCharacter={!!snapshot} openHouseRules={() => leave(openEditionFlyout)} />;
       case "saving": return <SavingTab form={form} set={set} />;
       case "display": return <DisplayTab form={form} set={set} />;
-      case "content": return <ContentTab manage={() => leave(() => nav("/content"))} />;
+      case "content": return (
+        <ContentTab manage={() => leave(() => nav("/content"))}
+          portraits={mobile ? null : { dirs, held: held.portraits, browse: () => void browse("portraits"), clear: () => setHeld((h) => ({ ...h, portraits: "clear" })) }} />
+      );
       case "search": return <SearchTab />;
       case "ai": return <AiTab form={form} set={set} setup={() => leave(() => nav("/setup/ai"))} />;
       case "phones": return <PhonesTab />;

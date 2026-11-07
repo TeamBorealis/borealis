@@ -100,7 +100,8 @@ fn native_pick(
         PickPurpose::FivetoolsFolder
         | PickPurpose::ContentFolder
         | PickPurpose::DocumentsDir
-        | PickPurpose::SecondaryContentDir => dialog.blocking_pick_folder().into_iter().collect(),
+        | PickPurpose::SecondaryContentDir
+        | PickPurpose::PortraitLibraryDir => dialog.blocking_pick_folder().into_iter().collect(),
         PickPurpose::CharacterFile => dialog
             .add_filter("Character files", crate::picked_files::CHARACTER_EXTENSIONS)
             .blocking_pick_files()

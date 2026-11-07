@@ -22,6 +22,38 @@ pub struct DataDirs {
     pub secondary_content_dir: Option<String>,
     /// The linked secondary directory cannot be read right now; the packs from it stay installed.
     pub secondary_content_unavailable: bool,
+    /// The chosen portrait library folder (Settings > CONTENT), if any.
+    pub portrait_library_dir: Option<String>,
+    /// The chosen portrait library folder cannot be read right now; the setting is kept.
+    pub portrait_library_unavailable: bool,
+}
+
+/// One image of the portrait library (names only: the image itself comes from `portrait_library_image`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PortraitLibraryImage {
+    /// `name`, or `folder/name` for an image in a sub-folder; pass it to `portrait_library_image`.
+    pub id: String,
+    /// File name.
+    pub name: String,
+    /// The sub-folder (one level down) the image is in; `None` for the folder itself.
+    pub folder: Option<String>,
+}
+
+/// `list_portrait_library` result: the portraits gallery's library images.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PortraitLibrary {
+    /// The chosen folder; `None` = no library.
+    pub dir: Option<String>,
+    /// The chosen folder cannot be read right now (no images listed; the setting is kept).
+    pub unavailable: bool,
+    /// Images in name order: the folder's own first, then each sub-folder's.
+    pub images: Vec<PortraitLibraryImage>,
+    /// Image files that cannot be used: larger than 2 MiB, not really an image, or a link out of the folder.
+    pub refused: usize,
+    /// The folder holds more images than are listed.
+    pub truncated: bool,
 }
 
 /// A secondary-directory file that was not loaded, and why.

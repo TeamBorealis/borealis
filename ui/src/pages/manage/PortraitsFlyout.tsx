@@ -1,8 +1,12 @@
 import { CheckBox } from "../../components/controls";
 import { useRef, useState } from "react";
-import { Button, Flyout } from "../../components";
+import { Alert, Button, Flyout } from "../../components";
 import { mdiFolderImage } from "@mdi/js";
 import { fileToDataUrl } from "../../lib/files";
+import { useApi } from "../../state/ApiContext";
+import { useAsync } from "../../state/useAsync";
+import { PORTRAIT_LIBRARY_UNAVAILABLE } from "../../components/shell/useFolderNotice";
+import { PortraitLibraryTiles, libraryNote, type TileActions } from "./PortraitLibraryTiles";
 
 const KEY = "borealis.portraits";
 const MAX = 12;
@@ -18,8 +22,13 @@ const load = (): string[] => {
 };
 const store = (list: string[]) => { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch { /* storage full or unavailable: gallery is per-session then */ } };
 
-/** Portraits gallery: only images the user has provided on this device (no bundled art). */
+/**
+ * Portraits gallery: images the user has provided on this device (no bundled art), then the images of the portrait library
+ * folder chosen in Settings > Content (GitHub #32), in the same grid, as the classic builder lists its portraits folder.
+ */
 export function PortraitsFlyout({ current, onSelect, onClose }: { current: string | null; onSelect: (dataUrl: string) => void; onClose: () => void }) {
+  const api = useApi();
+  const library = useAsync(() => api.listPortraitLibrary(), [api]);
   const [gallery, setGallery] = useState<string[]>(() => (current && !load().includes(current) ? [current, ...load()] : load()).slice(0, MAX));
   const [picked, setPicked] = useState<string | null>(current);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +37,8 @@ export function PortraitsFlyout({ current, onSelect, onClose }: { current: strin
   const [male, setMale] = useState(true);
   const [female, setFemale] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const select = (url: string) => { onSelect(url); onClose(); };
+  const actions: TileActions = { picked, pick: setPicked, select };
   const onFile = async (f: File | undefined) => {
     if (!f) return;
     try {
@@ -41,6 +52,9 @@ export function PortraitsFlyout({ current, onSelect, onClose }: { current: strin
       setError("That image could not be read.");
     }
   };
+  const lib = library.data ?? null;
+  const empty = gallery.length === 0 && !lib?.images.length;
+  const note = libraryNote(lib);
   return (
     <Flyout title="Portraits gallery" width="portraits" onClose={onClose} footer={
       <div className="pg-foot">
@@ -52,7 +66,7 @@ export function PortraitsFlyout({ current, onSelect, onClose }: { current: strin
           </span>
         </div>
         <div className="pg-buttons">
-          <Button variant="flat" disabled={!picked} onClick={() => { if (picked) { onSelect(picked); onClose(); } }}>Select portrait</Button>
+          <Button variant="flat" disabled={!picked} onClick={() => { if (picked) select(picked); }}>Select portrait</Button>
           <Button variant="flat" onClick={() => fileRef.current?.click()}><svg className="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={mdiFolderImage} /></svg>Browse</Button>
           <Button variant="flat" data-autofocus onClick={onClose}>Cancel</Button>
         </div>
@@ -61,13 +75,16 @@ export function PortraitsFlyout({ current, onSelect, onClose }: { current: strin
       <input ref={fileRef} type="file" accept="image/png,image/jpeg" hidden aria-label="Add a portrait image" onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = ""; }} />
       <div className="pg-grid" role="group" aria-label="Portraits">
         {gallery.map((g, i) => (
-          <button key={g.slice(-24) + i} type="button" className="pg-tile" aria-pressed={g === picked} aria-label={`Portrait ${i + 1}`} onClick={() => setPicked(g)} onDoubleClick={() => { onSelect(g); onClose(); }}>
+          <button key={g.slice(-24) + i} type="button" className="pg-tile" aria-pressed={g === picked} aria-label={`Portrait ${i + 1}`} onClick={() => setPicked(g)} onDoubleClick={() => select(g)}>
             <img src={g} alt="" />
           </button>
         ))}
-        {gallery.length === 0 && Array.from({ length: 3 }, (_, i) => <div key={i} className="pg-tile empty" aria-hidden="true">Empty</div>)}
+        <PortraitLibraryTiles library={lib} actions={actions} />
+        {empty && Array.from({ length: 3 }, (_, i) => <div key={i} className="pg-tile empty" aria-hidden="true">Empty</div>)}
       </div>
       <p className="pg-note">{gallery.length === 0 ? "Use Browse to add your own portraits. They stay on this device." : "Images you add stay on this device."}</p>
+      {note && <p className="pg-note">{note}</p>}
+      {lib?.unavailable && <Alert tone="warning" role="status">{PORTRAIT_LIBRARY_UNAVAILABLE}</Alert>}
       {error && <p className="error-text" role="alert">{error}</p>}
     </Flyout>
   );

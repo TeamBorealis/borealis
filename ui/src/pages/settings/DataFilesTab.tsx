@@ -9,12 +9,20 @@ import { SECONDARY_UNAVAILABLE, documentsUnavailableText } from "../../component
 export interface HeldPicks {
   documents?: { token: string; path: string };
   secondary?: { token: string; path: string } | "unlink";
+  /** Settings > CONTENT portrait library (GitHub #32): a new folder, or "clear" for none. */
+  portraits?: { token: string; path: string } | "clear";
 }
+
+/** Which folder a Browse button picks. */
+export type HeldFolder = keyof HeldPicks;
+
+/** The path of a held pick, if it is a folder (not an unlink / clear). */
+export const heldPath = (pick: HeldPicks[HeldFolder]): string | undefined => (typeof pick === "object" ? pick.path : undefined);
 
 /** DATA FILES: documents directory, automatic updates, secondary content directory and the cache button. */
 export function DataFilesTab({ form, set, dirs, held, browse, unlink, clearCache, cacheCleared, error }: {
   form: AppSettings; set: (patch: Partial<AppSettings>) => void; dirs: DataDirs | null; held: HeldPicks;
-  browse: (which: "documents" | "secondary") => void; unlink: () => void; clearCache: () => void; cacheCleared: boolean; error: string | null;
+  browse: (which: HeldFolder) => void; unlink: () => void; clearCache: () => void; cacheCleared: boolean; error: string | null;
 }) {
   const offlineDocs = held.documents ? null : dirs?.documentsDirUnavailable ?? null;
   const documents = held.documents ? held.documents.path : offlineDocs ?? (dirs && !dirs.isDefault ? dirs.documentsDir : "");

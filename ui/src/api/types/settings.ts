@@ -89,6 +89,9 @@ export interface AppSettings {
   documentsDir: string | null;
   /** DATA FILES secondary content directory; null = unlinked. Set only via `setSecondaryContentDir` / `unlinkSecondaryContentDir`. */
   secondaryContentDir: string | null;
+  /** CONTENT portrait library (GitHub #32): a folder of the user's own images shown in the portraits gallery; null = none. Set only via
+   * `setPortraitLibraryDir` (resend unchanged in `saveSettings`). */
+  portraitLibraryDir: string | null;
   /** Classic builder "Automatic Updates": check the user's indexes at startup (default on, desktop only). */
   autoContentUpdate: boolean;
   /** "Check for new versions of Borealis" (default on): at startup ask GitHub for the latest version number, nothing else. */
@@ -118,6 +121,32 @@ export interface DataDirs {
   secondaryContentDir: string | null;
   /** The linked secondary directory cannot be read right now; the packs from it stay installed. */
   secondaryContentUnavailable: boolean;
+  /** The chosen portrait library folder (Settings > CONTENT), if any. */
+  portraitLibraryDir: string | null;
+  /** The chosen portrait library folder cannot be read right now; the setting is kept. */
+  portraitLibraryUnavailable: boolean;
+}
+
+/** One portrait library image (names only; read the image with `portraitLibraryImage`). */
+export interface PortraitLibraryImage {
+  /** `name`, or `folder/name` for an image one sub-folder down. */
+  id: string;
+  name: string;
+  folder: string | null;
+}
+
+/** `listPortraitLibrary` result: the portraits gallery's library images. */
+export interface PortraitLibrary {
+  /** The chosen folder; null = no library. */
+  dir: string | null;
+  /** The chosen folder cannot be read right now (no images listed; the setting is kept). */
+  unavailable: boolean;
+  /** Name order: the folder's own images first, then each sub-folder's. */
+  images: PortraitLibraryImage[];
+  /** Image files that cannot be used: larger than 2 MiB, not really an image, or a link out of the folder. */
+  refused: number;
+  /** The folder holds more images than are listed. */
+  truncated: boolean;
 }
 
 export interface SkippedContentFile {

@@ -4,6 +4,8 @@
  * expires after 10 minutes; commands that read files accept only that token.
  */
 export type PickPurpose = "import-file" | "5etools-folder" | "content-folder" | "ai-override" | "documents-dir" | "secondary-content-dir"
+  /** Settings > CONTENT portrait library folder (GitHub #32). */
+  | "portrait-library-dir"
   | "character-file"
   /** A `.borealis` bundle for `bundleOpen` (opened by path in the backend, never read into the webview). */
   | "bundle-file"

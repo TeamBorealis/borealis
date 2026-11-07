@@ -8,7 +8,7 @@ use crate::error::ApiResult;
 use crate::folder_access::{self, RememberedFolder};
 use crate::settings::AppSettings;
 use crate::settings_dto::{
-    ClearCachesResult, ContentUpdateStatus, DataDirs, SecondaryContentResult,
+    ClearCachesResult, ContentUpdateStatus, DataDirs, PortraitLibrary, SecondaryContentResult,
 };
 use crate::state::AppState;
 use std::path::Path;
@@ -32,6 +32,7 @@ fn sync_folder_bookmarks(state: &AppState, picked: Option<RememberedFolder>) {
         let value = match which {
             RememberedFolder::Documents => settings.documents_dir.as_deref(),
             RememberedFolder::SecondaryContent => settings.secondary_content_dir.as_deref(),
+            RememberedFolder::PortraitLibrary => settings.portrait_library_dir.as_deref(),
         };
         match value {
             None => folder_access::after_pick(&state.paths.data, which, None),
@@ -49,6 +50,26 @@ pub fn set_documents_dir(state: S<'_>, token: Option<String>) -> ApiResult<DataD
     let dirs = state.set_documents_dir(token.as_deref())?;
     sync_folder_bookmarks(&state, Some(RememberedFolder::Documents));
     Ok(dirs)
+}
+
+/// `token` from `pick_path("portrait-library-dir")`; `None` = no portrait library (GitHub #32).
+#[tauri::command(async)]
+pub fn set_portrait_library_dir(state: S<'_>, token: Option<String>) -> ApiResult<DataDirs> {
+    let dirs = state.set_portrait_library_dir(token.as_deref())?;
+    sync_folder_bookmarks(&state, Some(RememberedFolder::PortraitLibrary));
+    Ok(dirs)
+}
+
+/// The portraits gallery's library images (names only; each image is read with `portrait_library_image`).
+#[tauri::command(async)]
+pub fn list_portrait_library(state: S<'_>) -> ApiResult<PortraitLibrary> {
+    state.portrait_library()
+}
+
+/// One portrait library image as a `data:` URL; `id` comes from `list_portrait_library`.
+#[tauri::command(async)]
+pub fn portrait_library_image(state: S<'_>, id: String) -> ApiResult<String> {
+    state.portrait_library_image(&id)
 }
 
 /// `token` from `pick_path("secondary-content-dir")`.

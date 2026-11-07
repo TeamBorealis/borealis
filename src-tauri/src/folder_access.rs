@@ -1,8 +1,8 @@
 //! Remembered folders under the App Sandbox (MAS1, B-190; specs/mac-app-store.md section B).
 //!
-//! The Mac App Store build may read a folder the user picked in a panel only for that run. Two settings
-//! remember a folder across launches: the custom documents folder (`documents_dir`) and the secondary content
-//! folder (`secondary_content_dir`). For each, a security-scoped bookmark is stored when the user picks it, and at
+//! The Mac App Store build may read a folder the user picked in a panel only for that run. Three settings
+//! remember a folder across launches: the custom documents folder (`documents_dir`), the secondary content
+//! folder (`secondary_content_dir`) and the portrait library (`portrait_library_dir`, GitHub #32). For each, a security-scoped bookmark is stored when the user picks it, and at
 //! launch, before anything reads the folder, the bookmark is resolved and access is started; a stale bookmark is
 //! replaced by a fresh one. A bookmark that no longer resolves is kept and reported (the folder must be chosen
 //! again); this module never changes the settings or deletes anything.
@@ -26,11 +26,17 @@ pub enum RememberedFolder {
     Documents,
     /// Settings > Data Files: the secondary content folder.
     SecondaryContent,
+    /// Settings > Content: the portrait library folder (GitHub #32).
+    PortraitLibrary,
 }
 
 impl RememberedFolder {
     /// Every remembered folder.
-    pub const ALL: [Self; 2] = [Self::Documents, Self::SecondaryContent];
+    pub const ALL: [Self; 3] = [
+        Self::Documents,
+        Self::SecondaryContent,
+        Self::PortraitLibrary,
+    ];
 
     /// The key in the bookmark file.
     #[must_use]
@@ -38,6 +44,7 @@ impl RememberedFolder {
         match self {
             Self::Documents => "documents-dir",
             Self::SecondaryContent => "secondary-content-dir",
+            Self::PortraitLibrary => "portrait-library-dir",
         }
     }
 }
@@ -535,5 +542,45 @@ mod tests {
             restore_at_launch(data.path());
             assert!(!data.path().join(BOOKMARKS_FILE).exists());
         }
+    }
+
+    #[test]
+    fn the_portrait_library_is_remembered_and_reopened_with_the_other_folders() {
+        let data = tempfile::tempdir().unwrap();
+        let fake = Fake::default();
+        remember(
+            data.path(),
+            &fake,
+            RememberedFolder::Documents,
+            Path::new("/d"),
+        )
+        .unwrap();
+        remember(
+            data.path(),
+            &fake,
+            RememberedFolder::PortraitLibrary,
+            Path::new("/Volumes/Art/portraits"),
+        )
+        .unwrap();
+        assert_eq!(
+            stored(data.path())["portrait-library-dir"].path,
+            "/Volumes/Art/portraits"
+        );
+        let outcomes = restore(data.path(), &fake);
+        assert_eq!(
+            outcomes,
+            vec![
+                (RememberedFolder::Documents, Restored::Ready("/d".into())),
+                (
+                    RememberedFolder::PortraitLibrary,
+                    Restored::Ready("/Volumes/Art/portraits".into())
+                ),
+            ]
+        );
+        forget(data.path(), RememberedFolder::PortraitLibrary).unwrap();
+        assert_eq!(
+            stored(data.path()).keys().collect::<Vec<_>>(),
+            vec!["documents-dir"]
+        );
     }
 }

@@ -168,14 +168,17 @@ impl AppState {
     /// `internal` if the settings lock is poisoned.
     pub fn data_dirs(&self) -> ApiResult<DataDirs> {
         let documents = self.documents_dir();
+        let settings = self.settings()?;
         Ok(DataDirs {
             documents_dir: display(&documents),
             default_documents_dir: display(&self.paths.data),
             is_default: documents == self.paths.data,
             characters_dir: display(&self.characters_dir()),
             documents_dir_unavailable: self.documents_dir_unavailable(),
-            secondary_content_dir: self.settings()?.secondary_content_dir,
+            secondary_content_dir: settings.secondary_content_dir,
             secondary_content_unavailable: self.secondary_content_unavailable()?,
+            portrait_library_dir: settings.portrait_library_dir,
+            portrait_library_unavailable: self.portrait_library_unavailable()?,
         })
     }
 

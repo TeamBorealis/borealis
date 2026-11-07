@@ -17,6 +17,7 @@ import * as rolled from "./rolled-charges";
 import { MockAppUpdate, recordOpenedLink } from "./app-update";
 import { classCounts, setClasslessEdition, startedOver } from "./edition-classes";
 import { MockDataFiles } from "./data-files";
+import { MockPortraitLibrary } from "./portrait-library";
 import { MockBundles } from "./bundles";
 import { MockDeviceLink } from "./link";
 import { MockSemantic, type MockSemanticOptions } from "./semantic";
@@ -105,7 +106,9 @@ export class MockApi implements Api {
   readonly fivetoolsUrls = new MockFiveToolsUrls();
   /** Opt-in import bug reports; tests read `reports.sent` or set `reports.failSend`. */
   readonly reports = new MockImportReports();
-  private dataFiles = new MockDataFiles(this.picks);
+  /** Portrait library folder (GitHub #32); tests may set `portraitLibrary.ids` or `portraitLibrary.unavailable`. */
+  readonly portraitLibrary = new MockPortraitLibrary(this.picks);
+  private dataFiles = new MockDataFiles(this.picks, this.portraitLibrary);
   readonly appUpdate = new MockAppUpdate();
   private rng: () => number;
   private latency: number;
@@ -702,6 +705,13 @@ export class MockApi implements Api {
     this.settings = this.dataFiles.setDocuments(this.settings, token);
     return this.dataFiles.dirs(this.settings);
   }
+  async setPortraitLibraryDir({ token }: { token?: string }) {
+    await this.tick();
+    this.settings = this.portraitLibrary.set(this.settings, token);
+    return this.dataFiles.dirs(this.settings);
+  }
+  async listPortraitLibrary() { await this.tick(); return this.portraitLibrary.list(this.settings); }
+  async portraitLibraryImage({ id }: { id: string }) { await this.tick(); return this.portraitLibrary.image(this.settings, id); }
   async setSecondaryContentDir({ token }: { token: string }) {
     await this.tick();
     const { settings, result } = this.dataFiles.setSecondary(this.settings, token);

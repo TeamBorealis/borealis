@@ -37,6 +37,8 @@ pub enum PickPurpose {
     DocumentsDir,
     /// The secondary content directory, Settings > DATA FILES.
     SecondaryContentDir,
+    /// The portrait library folder, Settings > CONTENT (GitHub #32).
+    PortraitLibraryDir,
     /// Character files for File > Load Character (read once with `take_picked_files`).
     CharacterFile,
     /// A file dropped on the window from the OS. Minted only by the native drag-drop handler
@@ -224,6 +226,7 @@ mod tests {
             PickPurpose::CharacterFile,
             PickPurpose::DroppedFile,
             PickPurpose::BundleFile,
+            PickPurpose::PortraitLibraryDir,
         ]
         .iter()
         .map(|p| {
@@ -243,7 +246,8 @@ mod tests {
                 "ai-override",
                 "character-file",
                 "dropped-file",
-                "bundle-file"
+                "bundle-file",
+                "portrait-library-dir"
             ]
         );
     }
