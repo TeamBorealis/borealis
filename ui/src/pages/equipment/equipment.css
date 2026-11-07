@@ -136,6 +136,12 @@
 .eq-grid.eq-armor th.k-source { min-width: 176px; }
 .ap-page:has(.eq-layout) { grid-template-columns: minmax(0, 1fr) minmax(250px, 30.68%); }
 @media (max-width: 899px) { .ap-page:has(.eq-layout) { grid-template-columns: minmax(0, 1fr); } }
+/* B-61: the description pane takes the height the catalogue and inventory give the row and scrolls inside it, as in the
+   builder; a long description no longer grows the row and pushes the tools bar and inventory off screen. Two columns only. */
+@media (min-width: 900px) {
+  html:not(.phone) .ap-page:has(.eq-layout) > .ap-right { position: relative; }
+  html:not(.phone) .ap-page:has(.eq-layout) > .ap-right > .desc-pane { position: absolute; inset: 0; }
+}
 .eq-grid tbody tr:first-child td { height: 20px; }
 .eq-invgrid td { line-height: 20px; vertical-align: middle; } .eq-invgrid .eq-eqbtn { vertical-align: top; }
 .eq-invgrid td .ap-name { line-height: 18px; display: inline-block; vertical-align: top; }
