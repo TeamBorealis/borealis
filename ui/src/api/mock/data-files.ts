@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS } from "./default-settings";
 import { apiError } from "./errors";
 import type { MockPicks } from "./picks";
 import type { MockPortraitLibrary } from "./portrait-library";
+import type { MockVault } from "./vault";
 
 const DEFAULT_DOCS = "/home/me/.local/share/borealis";
 const SYSTEM = /^\/(bin|sbin|usr|etc|dev|proc|sys|boot|lib|opt|System|Library|Applications)(\/|$)/;
@@ -15,7 +16,7 @@ export class MockDataFiles {
     state: "done", message: "Your content files are up to date.", updated: 0, failed: [], checkedAt: "2026-10-11T09:00:00Z",
   };
 
-  constructor(private readonly picks: MockPicks, private readonly portraits: MockPortraitLibrary) {}
+  constructor(private readonly picks: MockPicks, private readonly portraits: MockPortraitLibrary, private readonly vault: MockVault) {}
 
   dirs(s: AppSettings): DataDirs {
     const documentsDir = s.documentsDir ?? DEFAULT_DOCS;
@@ -24,6 +25,7 @@ export class MockDataFiles {
       charactersDir: `${documentsDir}/characters`, documentsDirUnavailable: null,
       secondaryContentDir: s.secondaryContentDir, secondaryContentUnavailable: false,
       portraitLibraryDir: s.portraitLibraryDir, portraitLibraryUnavailable: this.portraits.isUnavailable(s),
+      vaultDir: s.vaultDir, vaultUnavailable: this.vault.isUnavailable(s),
     };
   }
 
@@ -52,13 +54,13 @@ export class MockDataFiles {
   }
 
   /**
-   * Classic builder Restore Defaults: Borealis-only fields (AI, default ruleset, autosave) are kept, and so is every folder
-   * (documents, secondary content, portrait library): folders are user data (B-226), so the secondary packs stay too.
+   * Classic builder Restore Defaults: Borealis-only fields (AI, default ruleset, autosave, the vault) are kept, and so is
+   * every folder (documents, secondary content, portrait library): folders are user data (B-226), so the secondary packs stay too.
    */
   restore(s: AppSettings): AppSettings {
     return {
       ...DEFAULT_SETTINGS, ai: s.ai, mobile: s.mobile, storeBuild: s.storeBuild, aiAvailable: s.aiAvailable, defaultRuleset: s.defaultRuleset, autosave: s.autosave,
-      documentsDir: s.documentsDir, secondaryContentDir: s.secondaryContentDir, portraitLibraryDir: s.portraitLibraryDir,
+      documentsDir: s.documentsDir, secondaryContentDir: s.secondaryContentDir, portraitLibraryDir: s.portraitLibraryDir, vaultDir: s.vaultDir,
     };
   }
 

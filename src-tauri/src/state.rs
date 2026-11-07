@@ -311,6 +311,8 @@ pub struct AppState {
     pub semantic: crate::semantic_service::SemanticService,
     /// Semantic index and query side: one embedder, incremental vectors per corpus (S3.3).
     pub vectors: crate::vector_service::VectorService,
+    /// The Obsidian vault's link and tag cache and folder watcher (GitHub #15).
+    pub vault: crate::vault::VaultService,
 }
 
 impl AppState {
@@ -387,6 +389,7 @@ impl AppState {
             drafts: crate::import_drafts::DraftStore::default(),
             picked: crate::picked_paths::PickedPaths::default(),
             content_update: Mutex::new(crate::settings_dto::ContentUpdateStatus::default()),
+            vault: crate::vault::VaultService::default(),
         }
     }
 

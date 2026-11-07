@@ -10,6 +10,8 @@ const MOCK_PICKS: Record<PickPurpose, string> = {
   "documents-dir": "/home/me/Documents/Borealis",
   "secondary-content-dir": "/home/me/Documents/Custom Content",
   "portrait-library-dir": "/home/me/Pictures/Portraits",
+  "vault-dir": "/home/me/Documents/Campaign vault",
+  "vault-attachment": "/home/me/Pictures/sketch.png",
   "character-file": "/home/me/Documents/Mira.dnd5e",
   "dropped-file": "",
   "bundle-file": "/home/me/Documents/Mira.borealis",

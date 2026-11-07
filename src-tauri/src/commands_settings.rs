@@ -33,6 +33,7 @@ fn sync_folder_bookmarks(state: &AppState, picked: Option<RememberedFolder>) {
             RememberedFolder::Documents => settings.documents_dir.as_deref(),
             RememberedFolder::SecondaryContent => settings.secondary_content_dir.as_deref(),
             RememberedFolder::PortraitLibrary => settings.portrait_library_dir.as_deref(),
+            RememberedFolder::Vault => settings.vault_dir.as_deref(),
         };
         match value {
             None => folder_access::after_pick(&state.paths.data, which, None),
@@ -57,6 +58,14 @@ pub fn set_documents_dir(state: S<'_>, token: Option<String>) -> ApiResult<DataD
 pub fn set_portrait_library_dir(state: S<'_>, token: Option<String>) -> ApiResult<DataDirs> {
     let dirs = state.set_portrait_library_dir(token.as_deref())?;
     sync_folder_bookmarks(&state, Some(RememberedFolder::PortraitLibrary));
+    Ok(dirs)
+}
+
+/// `token` from `pick_path("vault-dir")`; `None` = no Obsidian vault (GitHub #15).
+#[tauri::command(async)]
+pub fn set_vault_dir(state: S<'_>, token: Option<String>) -> ApiResult<DataDirs> {
+    let dirs = state.set_vault_dir(token.as_deref())?;
+    sync_folder_bookmarks(&state, Some(RememberedFolder::Vault));
     Ok(dirs)
 }
 

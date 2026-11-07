@@ -181,9 +181,10 @@ fn allowed_link(url: &str) -> ApiResult<&'static str> {
         .ok_or_else(|| crate::error::ApiError::invalid("Borealis only opens its own web pages."))
 }
 
-/// Desktop: hand a fixed address to the OS opener (`open`, `explorer`, `xdg-open`).
+/// Desktop: hand a checked address to the OS opener (`open`, `explorer`, `xdg-open`): one of the app's own pages, or a
+/// web link in a note (`commands_vault::vault_open_url`).
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
-fn open_external(url: &'static str) -> ApiResult<()> {
+pub(crate) fn open_external(url: &str) -> ApiResult<()> {
     let opener = if cfg!(target_os = "macos") {
         "open"
     } else if cfg!(target_os = "windows") {
@@ -202,7 +203,7 @@ fn open_external(url: &'static str) -> ApiResult<()> {
 /// Android `ACTION_VIEW` intent, `UIApplication.open` on iOS). The web view gets no opener
 /// permission, so it cannot open any other address, and the page never loads inside the app.
 #[cfg(any(target_os = "android", target_os = "ios"))]
-fn open_external(app: &tauri::AppHandle, url: &'static str) -> ApiResult<()> {
+pub(crate) fn open_external(app: &tauri::AppHandle, url: &str) -> ApiResult<()> {
     use tauri_plugin_opener::OpenerExt;
     app.opener()
         .open_url(url, None::<&str>)

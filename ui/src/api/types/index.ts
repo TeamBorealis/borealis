@@ -10,3 +10,4 @@ export * from "./picks";
 export * from "./importPreview";
 export * from "./sync";
 export * from "./semantic";
+export * from "./vault";

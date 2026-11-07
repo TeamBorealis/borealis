@@ -148,6 +148,9 @@ pub struct AppSettings {
     /// reference app's `<documents>/portraits`). `None` = no library (the gallery shows only images added on this
     /// device). Changed only through `set_portrait_library_dir` (a backend-picked folder token).
     pub portrait_library_dir: Option<String>,
+    /// Settings > CONTENT: the Obsidian vault folder the notes view opens in place (GitHub #15). `None` = no vault.
+    /// Changed only through `set_vault_dir` (a backend-picked folder token).
+    pub vault_dir: Option<String>,
     /// Reference app "Automatic Updates": check the user's indexes at startup (desktop only).
     pub auto_content_update: bool,
     /// Reference app selection-picker ROW HEIGHT: `small`, `medium` or `large`.
@@ -276,6 +279,7 @@ impl Default for AppSettings {
             documents_dir: None,
             secondary_content_dir: None,
             portrait_library_dir: None,
+            vault_dir: None,
             auto_content_update: true,
             row_height: "medium".into(),
             skills_panel_expanded: true,
@@ -397,14 +401,16 @@ impl AppSettings {
         ))
     }
 
-    /// `documentsDir` / `secondaryContentDir` / `portraitLibraryDir` may only be resent unchanged: new folders come
-    /// from backend-picked tokens (`set_documents_dir`, `set_secondary_content_dir`, `set_portrait_library_dir`),
+    /// `documentsDir` / `secondaryContentDir` / `portraitLibraryDir` / `vaultDir` may only be resent unchanged: new
+    /// folders come from backend-picked tokens (`set_documents_dir`, `set_secondary_content_dir`,
+    /// `set_portrait_library_dir`, `set_vault_dir`),
     /// never a raw path.
     fn check_dir_patch(&self, patch: &Value) -> ApiResult<()> {
         let fields = [
             ("documentsDir", self.documents_dir.as_deref()),
             ("secondaryContentDir", self.secondary_content_dir.as_deref()),
             ("portraitLibraryDir", self.portrait_library_dir.as_deref()),
+            ("vaultDir", self.vault_dir.as_deref()),
         ];
         for (key, current) in fields {
             let Some(v) = patch.get(key) else { continue };
@@ -418,8 +424,8 @@ impl AppSettings {
     }
 
     /// Factory values for everything the reference app's settings dialog owns (Restore Defaults); the
-    /// Borealis-only group (AI, default ruleset, autosave) is kept, and so is every folder (documents,
-    /// secondary content, portrait library): folders are user data (B-226, decision FU1).
+    /// Borealis-only group (AI, default ruleset, autosave, the Obsidian vault) is kept, and so is every folder
+    /// (documents, secondary content, portrait library): folders are user data (B-226, decision FU1).
     #[must_use]
     pub fn restored_defaults(&self) -> Self {
         Self {
@@ -429,6 +435,7 @@ impl AppSettings {
             documents_dir: self.documents_dir.clone(),
             secondary_content_dir: self.secondary_content_dir.clone(),
             portrait_library_dir: self.portrait_library_dir.clone(),
+            vault_dir: self.vault_dir.clone(),
             ..Self::default()
         }
     }

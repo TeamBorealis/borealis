@@ -75,6 +75,12 @@ borealis-link.workspace = true
 borealis-bundle.workspace = true
 borealis-transfer = { workspace = true, optional = true }
 tempfile = "3"
+# Obsidian vault (GitHub #15, B-102): pulldown-cmark finds the code spans and blocks that links, tags and rename edits
+# must skip; yaml-rust2 reads front matter tags; regex scans the wikilink, Markdown link and tag syntax outside them.
+pulldown-cmark = { version = "0.13", default-features = false }
+yaml-rust2 = "0.10"
+regex = "1"
+percent-encoding = "2"
 
 [dev-dependencies]
 tempfile = "3"
@@ -94,6 +100,9 @@ borealis-link = { workspace = true, features = ["mdns"] }
 # the macOS app, a Linux AppImage; never deb/rpm) and only once a real public key is configured (`self_update.rs`).
 # The web view gets no updater permission: the backend's commands drive it.
 tauri-plugin-updater = { version = "2.14.1", default-features = false, features = ["rustls-tls", "zip"] }
+# Obsidian vault (GitHub #15): watch the open vault for changes made by other apps, and delete notes to the OS trash.
+notify = { version = "8.2", default-features = false, features = ["macos_fsevent"] }
+trash = "5.2"
 
 # Mac App Store build (feature `mas`): NSURL security-scoped bookmarks for the remembered folders (folder_access_mac.rs).
 [target.'cfg(target_os = "macos")'.dependencies]

@@ -1832,6 +1832,16 @@
     "name": "CharacterSnapshot"
    }
   },
+  "set_vault_dir": {
+   "args": {
+    "token": true
+   },
+   "method": "setVaultDir",
+   "response": {
+    "k": "ref",
+    "name": "DataDirs"
+   }
+  },
   "set_wild_shape_forms": {
    "args": {
     "characterId": false,
@@ -2142,6 +2152,181 @@
    "response": {
     "k": "ref",
     "name": "CharacterSnapshot"
+   }
+  },
+  "vault_attach": {
+   "args": {
+    "from": false,
+    "token": false
+   },
+   "method": "vaultAttach",
+   "response": {
+    "k": "ref",
+    "name": "VaultAttachment"
+   }
+  },
+  "vault_backlinks": {
+   "args": {
+    "path": false
+   },
+   "method": "vaultBacklinks",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "VaultBacklink"
+    }
+   }
+  },
+  "vault_create_note": {
+   "args": {
+    "folder": true,
+    "from": true,
+    "name": true
+   },
+   "method": "vaultCreateNote",
+   "response": {
+    "k": "ref",
+    "name": "VaultNote"
+   }
+  },
+  "vault_delete": {
+   "args": {
+    "path": false,
+    "permanent": false
+   },
+   "method": "vaultDelete",
+   "response": {
+    "k": "prim"
+   }
+  },
+  "vault_image": {
+   "args": {
+    "path": false
+   },
+   "method": "vaultImage",
+   "response": {
+    "k": "prim"
+   }
+  },
+  "vault_link_text": {
+   "args": {
+    "embed": false,
+    "from": false,
+    "to": false
+   },
+   "method": "vaultLinkText",
+   "response": {
+    "k": "prim"
+   }
+  },
+  "vault_open_url": {
+   "args": {
+    "url": false
+   },
+   "method": "vaultOpenUrl",
+   "response": {
+    "k": "nil"
+   }
+  },
+  "vault_read": {
+   "args": {
+    "path": false
+   },
+   "method": "vaultRead",
+   "response": {
+    "k": "ref",
+    "name": "VaultNote"
+   }
+  },
+  "vault_rename": {
+   "args": {
+    "newName": false,
+    "path": false,
+    "updateLinks": false
+   },
+   "method": "vaultRename",
+   "response": {
+    "k": "ref",
+    "name": "VaultRenameDone"
+   }
+  },
+  "vault_rename_preview": {
+   "args": {
+    "newName": false,
+    "path": false
+   },
+   "method": "vaultRenamePreview",
+   "response": {
+    "k": "ref",
+    "name": "VaultRenamePlan"
+   }
+  },
+  "vault_resolve": {
+   "args": {
+    "from": false,
+    "targets": false
+   },
+   "method": "vaultResolve",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "prim"
+    }
+   }
+  },
+  "vault_save": {
+   "args": {
+    "baseHash": true,
+    "path": false,
+    "text": false
+   },
+   "method": "vaultSave",
+   "response": {
+    "k": "ref",
+    "name": "VaultSave"
+   }
+  },
+  "vault_search": {
+   "args": {
+    "query": false,
+    "tag": true
+   },
+   "method": "vaultSearch",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "VaultSearchHit"
+    }
+   }
+  },
+  "vault_tags": {
+   "args": {},
+   "method": "vaultTags",
+   "response": {
+    "k": "array",
+    "t": {
+     "k": "ref",
+     "name": "VaultTag"
+    }
+   }
+  },
+  "vault_tree": {
+   "args": {},
+   "method": "vaultTree",
+   "response": {
+    "k": "ref",
+    "name": "VaultTree"
+   }
+  },
+  "vault_watch": {
+   "args": {
+    "enabled": false
+   },
+   "method": "vaultWatch",
+   "response": {
+    "k": "nil"
    }
   }
  },
@@ -3241,6 +3426,12 @@
      }
     },
     "tileSize": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "vaultDir": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -5438,6 +5629,18 @@
      }
     },
     "secondaryContentUnavailable": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "vaultDir": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "vaultUnavailable": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -11378,6 +11581,432 @@
     }
    }
   },
+  "VaultAttachment": {
+   "k": "object",
+   "props": {
+    "link": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "path": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "VaultBacklink": {
+   "k": "object",
+   "props": {
+    "count": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "lines": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "VaultLine"
+      }
+     }
+    },
+    "path": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "VaultChange": {
+   "k": "object",
+   "props": {
+    "all": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "config": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "paths": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    }
+   }
+  },
+  "VaultConfig": {
+   "k": "object",
+   "props": {
+    "attachmentFolderPath": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "newFileFolderPath": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "newFileLocation": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "newLinkFormat": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "useMarkdownLinks": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "VaultEntry": {
+   "k": "object",
+   "props": {
+    "kind": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "mtimeMs": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "path": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "size": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "VaultLine": {
+   "k": "object",
+   "props": {
+    "line": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "text": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "VaultLineChange": {
+   "k": "object",
+   "props": {
+    "after": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "before": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "line": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "VaultNote": {
+   "k": "object",
+   "props": {
+    "bom": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "hash": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "lineEnding": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "mtimeMs": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "path": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "readOnly": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "text": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "VaultRenameDone": {
+   "k": "object",
+   "props": {
+    "skipped": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "to": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "updated": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    }
+   }
+  },
+  "VaultRenamePlan": {
+   "k": "object",
+   "props": {
+    "files": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "object",
+       "props": {
+        "changes": {
+         "opt": false,
+         "t": {
+          "k": "array",
+          "t": {
+           "k": "ref",
+           "name": "VaultLineChange"
+          }
+         }
+        },
+        "path": {
+         "opt": false,
+         "t": {
+          "k": "prim"
+         }
+        }
+       }
+      }
+     }
+    },
+    "from": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "to": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "VaultSave": {
+   "k": "object",
+   "props": {
+    "disk": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "VaultNote"
+     }
+    },
+    "hash": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "mtimeMs": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "status": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "VaultSearchHit": {
+   "k": "object",
+   "props": {
+    "lines": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "VaultLine"
+      }
+     }
+    },
+    "nameMatch": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "path": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "VaultTag": {
+   "k": "object",
+   "props": {
+    "count": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "tag": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "VaultTree": {
+   "k": "object",
+   "props": {
+    "config": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "VaultConfig"
+     }
+    },
+    "dir": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "entries": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "VaultEntry"
+      }
+     }
+    },
+    "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "obsidian": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "truncated": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "unavailable": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "WeaponFacts": {
    "k": "object",
    "props": {
@@ -11778,6 +12407,10 @@
   "semantic:index": {
    "k": "ref",
    "name": "SemanticIndexing"
+  },
+  "vault:changed": {
+   "k": "ref",
+   "name": "VaultChange"
   }
  }
 }

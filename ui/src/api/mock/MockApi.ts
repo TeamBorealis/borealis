@@ -20,6 +20,7 @@ import { MockAppUpdate, recordOpenedLink } from "./app-update";
 import { classCounts, setClasslessEdition, startedOver } from "./edition-classes";
 import { MockDataFiles } from "./data-files";
 import { MockPortraitLibrary } from "./portrait-library";
+import { MockVault } from "./vault";
 import { MockBundles } from "./bundles";
 import { MockDeviceLink } from "./link";
 import { MockSemantic, type MockSemanticOptions } from "./semantic";
@@ -113,7 +114,9 @@ export class MockApi implements Api {
   readonly reports = new MockImportReports();
   /** Portrait library folder (GitHub #32); tests may set `portraitLibrary.ids` or `portraitLibrary.unavailable`. */
   readonly portraitLibrary = new MockPortraitLibrary(this.picks);
-  private dataFiles = new MockDataFiles(this.picks, this.portraitLibrary);
+  /** Obsidian vault (GitHub #15); tests may `vault.load(files)`, set `vault.unavailable`, or call `vault.externalWrite`. */
+  readonly vault = new MockVault(this.picks, (c) => this.emit("vault:changed", c));
+  private dataFiles = new MockDataFiles(this.picks, this.portraitLibrary, this.vault);
   readonly appUpdate = new MockAppUpdate();
   private rng: () => number;
   private latency: number;
@@ -729,6 +732,33 @@ export class MockApi implements Api {
     await this.tick();
     this.settings = this.portraitLibrary.set(this.settings, token);
     return this.dataFiles.dirs(this.settings);
+  }
+  async setVaultDir({ token }: { token?: string }) {
+    await this.tick();
+    this.settings = this.vault.set(this.settings, token);
+    return this.dataFiles.dirs(this.settings);
+  }
+  async vaultTree() { await this.tick(); return this.vault.tree(this.settings); }
+  async vaultRead({ path }: { path: string }) { await this.tick(); return this.vault.read(this.settings, path); }
+  async vaultSave({ path, text, baseHash }: { path: string; text: string; baseHash?: string }) { await this.tick(); return this.vault.save(this.settings, path, text, baseHash); }
+  async vaultCreateNote({ name, from, folder }: { name?: string; from?: string; folder?: string }) { await this.tick(); return this.vault.create(this.settings, name, from, folder); }
+  async vaultDelete({ path, permanent }: { path: string; permanent: boolean }) { await this.tick(); return this.vault.delete(this.settings, path, permanent); }
+  async vaultRenamePreview({ path, newName }: { path: string; newName: string }) { await this.tick(); return this.vault.renamePreview(this.settings, path, newName); }
+  async vaultRename({ path, newName, updateLinks }: { path: string; newName: string; updateLinks: boolean }) { await this.tick(); return this.vault.rename(this.settings, path, newName, updateLinks); }
+  async vaultResolve({ from, targets }: { from: string; targets: string[] }) { await this.tick(); return this.vault.resolve(this.settings, from, targets); }
+  async vaultBacklinks({ path }: { path: string }) { await this.tick(); return this.vault.backlinks(this.settings, path); }
+  async vaultTags() { await this.tick(); return this.vault.tags(this.settings); }
+  async vaultSearch({ query, tag }: { query: string; tag?: string }) { await this.tick(); return this.vault.search(this.settings, query, tag); }
+  async vaultImage({ path }: { path: string }) { await this.tick(); return this.vault.image(this.settings, path); }
+  async vaultLinkText({ from, to, embed }: { from: string; to: string; embed: boolean }) { await this.tick(); return this.vault.linkText(from, to, embed); }
+  async vaultAttach({ token, from }: { token: string; from: string }) { await this.tick(); return this.vault.attach(this.settings, token, from); }
+  async vaultWatch({ enabled }: { enabled: boolean }) { await this.tick(); this.vault.watching = enabled; }
+  /** Web links from notes the mock "opened" in the system browser. */
+  readonly openedUrls: string[] = [];
+  async vaultOpenUrl({ url }: { url: string }) {
+    await this.tick();
+    if (!/^(https?:\/\/[^/\s]+|mailto:)/i.test(url)) throw apiError("invalid_argument", "Borealis opens only web and e-mail links.");
+    this.openedUrls.push(url);
   }
   async listPortraitLibrary() { await this.tick(); return this.portraitLibrary.list(this.settings); }
   async portraitLibraryImage({ id }: { id: string }) { await this.tick(); return this.portraitLibrary.image(this.settings, id); }

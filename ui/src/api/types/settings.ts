@@ -92,6 +92,9 @@ export interface AppSettings {
   /** CONTENT portrait library (GitHub #32): a folder of the user's own images shown in the portraits gallery; null = none. Set only via
    * `setPortraitLibraryDir` (resend unchanged in `saveSettings`). */
   portraitLibraryDir: string | null;
+  /** CONTENT Obsidian vault (GitHub #15): the folder the notes view opens in place; null = none. Set only via `setVaultDir`
+   * (resend unchanged in `saveSettings`). */
+  vaultDir: string | null;
   /** Classic builder "Automatic Updates": check the user's indexes at startup (default on, desktop only). */
   autoContentUpdate: boolean;
   /** "Check for new versions of Borealis" (default on): at startup ask GitHub for the latest version number, nothing else. */
@@ -125,6 +128,10 @@ export interface DataDirs {
   portraitLibraryDir: string | null;
   /** The chosen portrait library folder cannot be read right now; the setting is kept. */
   portraitLibraryUnavailable: boolean;
+  /** The chosen Obsidian vault folder (Settings > CONTENT, GitHub #15), if any. */
+  vaultDir: string | null;
+  /** The chosen vault folder cannot be read right now; the setting is kept. */
+  vaultUnavailable: boolean;
 }
 
 /** One portrait library image (names only; read the image with `portraitLibraryImage`). */

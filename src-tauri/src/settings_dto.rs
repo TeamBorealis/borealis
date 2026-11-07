@@ -26,6 +26,10 @@ pub struct DataDirs {
     pub portrait_library_dir: Option<String>,
     /// The chosen portrait library folder cannot be read right now; the setting is kept.
     pub portrait_library_unavailable: bool,
+    /// The chosen Obsidian vault folder (Settings > CONTENT, GitHub #15), if any.
+    pub vault_dir: Option<String>,
+    /// The chosen vault folder cannot be read right now; the setting is kept.
+    pub vault_unavailable: bool,
 }
 
 /// One image of the portrait library (names only: the image itself comes from `portrait_library_image`).

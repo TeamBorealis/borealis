@@ -53,6 +53,7 @@ pub mod commands_settings;
 pub mod commands_sync;
 pub mod commands_system;
 pub mod commands_tracker;
+pub mod commands_vault;
 pub mod companion;
 pub mod companion_api;
 pub mod companion_block;
@@ -157,6 +158,7 @@ pub mod startup_boot;
 pub mod state;
 pub mod sync_dto;
 pub mod tracker_api;
+pub mod vault;
 pub mod vector_service;
 pub mod vector_status;
 pub mod version_rows;
@@ -574,6 +576,23 @@ pub fn run() {
             commands_settings::set_portrait_library_dir,
             commands_settings::list_portrait_library,
             commands_settings::portrait_library_image,
+            commands_settings::set_vault_dir,
+            commands_vault::vault_tree,
+            commands_vault::vault_read,
+            commands_vault::vault_save,
+            commands_vault::vault_create_note,
+            commands_vault::vault_delete,
+            commands_vault::vault_rename_preview,
+            commands_vault::vault_rename,
+            commands_vault::vault_resolve,
+            commands_vault::vault_backlinks,
+            commands_vault::vault_tags,
+            commands_vault::vault_search,
+            commands_vault::vault_image,
+            commands_vault::vault_link_text,
+            commands_vault::vault_attach,
+            commands_vault::vault_watch,
+            commands_vault::vault_open_url,
             commands_settings::set_secondary_content_dir,
             commands_settings::unlink_secondary_content_dir,
             commands_settings::restore_default_settings,

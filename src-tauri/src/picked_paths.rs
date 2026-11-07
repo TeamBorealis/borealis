@@ -39,6 +39,10 @@ pub enum PickPurpose {
     SecondaryContentDir,
     /// The portrait library folder, Settings > CONTENT (GitHub #32).
     PortraitLibraryDir,
+    /// The Obsidian vault folder, Settings > CONTENT (GitHub #15).
+    VaultDir,
+    /// A file to copy into the vault as an attachment (the notes view's Attach file).
+    VaultAttachment,
     /// Character files for File > Load Character (read once with `take_picked_files`).
     CharacterFile,
     /// A file dropped on the window from the OS. Minted only by the native drag-drop handler
@@ -227,6 +231,8 @@ mod tests {
             PickPurpose::DroppedFile,
             PickPurpose::BundleFile,
             PickPurpose::PortraitLibraryDir,
+            PickPurpose::VaultDir,
+            PickPurpose::VaultAttachment,
         ]
         .iter()
         .map(|p| {
@@ -247,7 +253,9 @@ mod tests {
                 "character-file",
                 "dropped-file",
                 "bundle-file",
-                "portrait-library-dir"
+                "portrait-library-dir",
+                "vault-dir",
+                "vault-attachment"
             ]
         );
     }

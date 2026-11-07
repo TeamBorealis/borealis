@@ -2,7 +2,8 @@
 //!
 //! The Mac App Store build may read a folder the user picked in a panel only for that run. Three settings
 //! remember a folder across launches: the custom documents folder (`documents_dir`), the secondary content
-//! folder (`secondary_content_dir`) and the portrait library (`portrait_library_dir`, GitHub #32). For each, a security-scoped bookmark is stored when the user picks it, and at
+//! folder (`secondary_content_dir`), the portrait library (`portrait_library_dir`, GitHub #32) and the Obsidian vault
+//! (`vault_dir`, GitHub #15; read-write, like the user-selected entitlement). For each, a security-scoped bookmark is stored when the user picks it, and at
 //! launch, before anything reads the folder, the bookmark is resolved and access is started; a stale bookmark is
 //! replaced by a fresh one. A bookmark that no longer resolves is kept and reported (the folder must be chosen
 //! again); this module never changes the settings or deletes anything.
@@ -28,14 +29,17 @@ pub enum RememberedFolder {
     SecondaryContent,
     /// Settings > Content: the portrait library folder (GitHub #32).
     PortraitLibrary,
+    /// Settings > Content: the Obsidian vault (GitHub #15), read and written in place.
+    Vault,
 }
 
 impl RememberedFolder {
     /// Every remembered folder.
-    pub const ALL: [Self; 3] = [
+    pub const ALL: [Self; 4] = [
         Self::Documents,
         Self::SecondaryContent,
         Self::PortraitLibrary,
+        Self::Vault,
     ];
 
     /// The key in the bookmark file.
@@ -45,6 +49,7 @@ impl RememberedFolder {
             Self::Documents => "documents-dir",
             Self::SecondaryContent => "secondary-content-dir",
             Self::PortraitLibrary => "portrait-library-dir",
+            Self::Vault => "vault-dir",
         }
     }
 }
@@ -581,6 +586,49 @@ mod tests {
         assert_eq!(
             stored(data.path()).keys().collect::<Vec<_>>(),
             vec!["documents-dir"]
+        );
+    }
+
+    #[test]
+    fn the_vault_is_remembered_and_reopened_and_a_lost_one_is_kept() {
+        let data = tempfile::tempdir().unwrap();
+        let fake = Fake {
+            gone: vec![PathBuf::from("/Volumes/Notes/Gone vault")],
+            ..Fake::default()
+        };
+        remember(
+            data.path(),
+            &fake,
+            RememberedFolder::Vault,
+            Path::new("/Users/me/Campaign vault"),
+        )
+        .unwrap();
+        assert_eq!(
+            stored(data.path())["vault-dir"].path,
+            "/Users/me/Campaign vault"
+        );
+        assert_eq!(
+            restore(data.path(), &fake),
+            vec![(
+                RememberedFolder::Vault,
+                Restored::Ready("/Users/me/Campaign vault".into())
+            )]
+        );
+        remember(
+            data.path(),
+            &fake,
+            RememberedFolder::Vault,
+            Path::new("/Volumes/Notes/Gone vault"),
+        )
+        .unwrap();
+        let outcomes = restore(data.path(), &fake);
+        assert!(matches!(
+            outcomes.as_slice(),
+            [(RememberedFolder::Vault, Restored::NeedsChoosing { .. })]
+        ));
+        assert!(
+            stored(data.path()).contains_key("vault-dir"),
+            "a vault that does not resolve is kept"
         );
     }
 }

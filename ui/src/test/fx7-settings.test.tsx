@@ -128,7 +128,7 @@ describe("Application Settings window", () => {
     renderApp("/characters", { api });
     await waitFor(() => expect(getStatus()).toBe(describeFolders({
       documentsDir: "", defaultDocumentsDir: "", isDefault: true, charactersDir: "",
-      documentsDirUnavailable: "/Volumes/Drive/Chars", secondaryContentDir: null, secondaryContentUnavailable: true, portraitLibraryDir: null, portraitLibraryUnavailable: false,
+      documentsDirUnavailable: "/Volumes/Drive/Chars", secondaryContentDir: null, secondaryContentUnavailable: true, portraitLibraryDir: null, portraitLibraryUnavailable: false, vaultDir: null, vaultUnavailable: false,
     })));
     expect(getStatus()).toContain("/Volumes/Drive/Chars");
     expect(getStatus()).toContain(SECONDARY_UNAVAILABLE);
@@ -145,7 +145,7 @@ describe("Application Settings window", () => {
   it("describeFolders says nothing when every folder is reachable", () => {
     expect(describeFolders({
       documentsDir: "/d", defaultDocumentsDir: "/d", isDefault: true, charactersDir: "/d/characters",
-      documentsDirUnavailable: null, secondaryContentDir: "/s", secondaryContentUnavailable: false, portraitLibraryDir: "/p", portraitLibraryUnavailable: false,
+      documentsDirUnavailable: null, secondaryContentDir: "/s", secondaryContentUnavailable: false, portraitLibraryDir: "/p", portraitLibraryUnavailable: false, vaultDir: null, vaultUnavailable: false,
     })).toBeNull();
   });
 

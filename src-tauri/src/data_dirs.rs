@@ -179,6 +179,8 @@ impl AppState {
             secondary_content_unavailable: self.secondary_content_unavailable()?,
             portrait_library_dir: settings.portrait_library_dir,
             portrait_library_unavailable: self.portrait_library_unavailable()?,
+            vault_unavailable: self.vault_unavailable()?,
+            vault_dir: settings.vault_dir,
         })
     }
 

@@ -44,6 +44,17 @@ import type {
   ContentUpdateStatus,
   DataDirs,
   PortraitLibrary,
+  VaultAttachment,
+  VaultBacklink,
+  VaultChange,
+  VaultDeleteStatus,
+  VaultNote,
+  VaultRenameDone,
+  VaultRenamePlan,
+  VaultSave,
+  VaultSearchHit,
+  VaultTag,
+  VaultTree,
   SecondaryContentResult,
   FileDrop,
   ImportFileInput,
@@ -426,6 +437,41 @@ export interface ApiMethods {
   listPortraitLibrary(): Promise<PortraitLibrary>;
   /** One library image as a `data:` URL (pass it to `setPortrait` to use it); `id` from `listPortraitLibrary`. */
   portraitLibraryImage(args: { id: string }): Promise<string>;
+  /** Use a `vault-dir` pick as the Obsidian vault (GitHub #15); omit `token` for no vault. Any folder works. */
+  setVaultDir(args: { token?: string }): Promise<DataDirs>;
+
+  /* The notes view (GitHub #15): one Obsidian vault opened in place. Paths are vault-relative; the backend checks each one. */
+  /** The vault, its `.obsidian/app.json` options and its folder tree (empty without a vault or while it is unavailable). */
+  vaultTree(): Promise<VaultTree>;
+  /** A note or text file as it is on disk (line endings as in the file). */
+  vaultRead(args: { path: string }): Promise<VaultNote>;
+  /** Save the user's edit (LF text is fine: the note keeps its line ending and BOM). Writes only while the file still hashes to
+   * `baseHash`; omit it to create the note. A conflict or a missing file writes nothing. */
+  vaultSave(args: { path: string; text: string; baseHash?: string }): Promise<VaultSave>;
+  /** Create a note: `name` may be a path (from an unresolved link); without `folder` it goes where `.obsidian/app.json` says. */
+  vaultCreateNote(args: { name?: string; from?: string; folder?: string }): Promise<VaultNote>;
+  /** Delete a file to the OS trash; `permanent` only after the user agreed because there is no trash. */
+  vaultDelete(args: { path: string; permanent: boolean }): Promise<VaultDeleteStatus>;
+  /** What renaming `path` to `newName` (no extension) would change in the links to it. */
+  vaultRenamePreview(args: { path: string; newName: string }): Promise<VaultRenamePlan>;
+  /** Rename in the same folder; `updateLinks` (only when the user confirmed) rewrites the links to it. */
+  vaultRename(args: { path: string; newName: string; updateLinks: boolean }): Promise<VaultRenameDone>;
+  /** The file each link target written in `from` opens; null = unresolved. */
+  vaultResolve(args: { from: string; targets: string[] }): Promise<(string | null)[]>;
+  vaultBacklinks(args: { path: string }): Promise<VaultBacklink[]>;
+  vaultTags(): Promise<VaultTag[]>;
+  /** Search note names and text, or (with `tag`) list the notes that have it. */
+  vaultSearch(args: { query: string; tag?: string }): Promise<VaultSearchHit[]>;
+  /** A vault image as a `data:` URL. */
+  vaultImage(args: { path: string }): Promise<string>;
+  /** The link to insert in `from` for the vault file `to`, written as `.obsidian/app.json` says. */
+  vaultLinkText(args: { from: string; to: string; embed: boolean }): Promise<string>;
+  /** Copy a `vault-attachment` pick into the attachment folder for `from`; returns the link to insert. */
+  vaultAttach(args: { token: string; from: string }): Promise<VaultAttachment>;
+  /** Desktop: watch the vault for changes other apps make (`vault:changed`), or stop. */
+  vaultWatch(args: { enabled: boolean }): Promise<void>;
+  /** Open a web link from a note (http, https, mailto only) in the system browser. */
+  vaultOpenUrl(args: { url: string }): Promise<void>;
   /** Link a `secondary-content-dir` pick and load its .xml/.json files as `sec-*` user packs (hot-reload). */
   setSecondaryContentDir(args: { token: string }): Promise<SecondaryContentResult>;
   /** Classic builder "UNLINK SECONDARY DIRECTORY": forget the folder and remove its packs (hot-reload). */
@@ -690,6 +736,23 @@ export const COMMANDS = {
   setPortraitLibraryDir: "set_portrait_library_dir",
   listPortraitLibrary: "list_portrait_library",
   portraitLibraryImage: "portrait_library_image",
+  setVaultDir: "set_vault_dir",
+  vaultTree: "vault_tree",
+  vaultRead: "vault_read",
+  vaultSave: "vault_save",
+  vaultCreateNote: "vault_create_note",
+  vaultDelete: "vault_delete",
+  vaultRenamePreview: "vault_rename_preview",
+  vaultRename: "vault_rename",
+  vaultResolve: "vault_resolve",
+  vaultBacklinks: "vault_backlinks",
+  vaultTags: "vault_tags",
+  vaultSearch: "vault_search",
+  vaultImage: "vault_image",
+  vaultLinkText: "vault_link_text",
+  vaultAttach: "vault_attach",
+  vaultWatch: "vault_watch",
+  vaultOpenUrl: "vault_open_url",
   setSecondaryContentDir: "set_secondary_content_dir",
   unlinkSecondaryContentDir: "unlink_secondary_content_dir",
   restoreDefaultSettings: "restore_default_settings",
@@ -777,6 +840,8 @@ export interface ApiEvents {
   "semantic:index": SemanticIndexing;
   /** A device transfer session changed (phase, preview, progress, result). */
   "link:status": LinkStatus;
+  /** Another app changed files in the open vault (debounced batches). */
+  "vault:changed": VaultChange;
 }
 export type EventName = keyof ApiEvents;
 
@@ -796,6 +861,7 @@ export const EVENTS = {
   "semantic:download": "borealis://semantic-download",
   "semantic:index": "borealis://semantic-index",
   "link:status": "borealis://link-status",
+  "vault:changed": "borealis://vault-changed",
 } as const satisfies Record<EventName, string>;
 
 export interface Api extends ApiMethods {
