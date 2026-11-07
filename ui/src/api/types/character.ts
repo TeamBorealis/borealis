@@ -434,6 +434,15 @@ export interface Attack {
   ammunition?: string | null;
   /** What an attack roll adds, D20 Test modifiers (2024 Exhaustion) included; null for a save row or a bonus that is not a number. */
   toHit?: number | null;
+  /** Automatic rows whose ability the user may pick (weapons, the Unarmed Strike): the bonus and damage with each ability, for the editor's live preview. */
+  abilityLines?: AttackAbilityLine[] | null;
+}
+
+/** An automatic attack row worked out with one ability. */
+export interface AttackAbilityLine {
+  ability: AbilityKey;
+  attackBonus: string;
+  damage: string;
 }
 
 export interface CompanionState {

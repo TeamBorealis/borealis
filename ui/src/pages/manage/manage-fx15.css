@@ -60,3 +60,4 @@
 /* FX-60: Companions Gallery uses the Manage command-button skin (26 tall, glyph 5 px in) */
 .mg-tool-gallery { height: 26px; min-height: 26px; box-sizing: border-box; padding: 0 8px 0 5px; gap: 6px; font-size: 11px; justify-content: flex-start; }
 .mg-tool-gallery .icon { width: 16px; height: 16px; }
+.atk-calc { color: var(--success); font-size: 11px; margin: -6px 0 0; }

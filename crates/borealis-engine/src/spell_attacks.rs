@@ -149,6 +149,7 @@ pub fn cantrip_attacks(
                 offhand_damage: None,
                 ammunition: None,
                 save,
+                ability_lines: Vec::new(),
             });
         }
     }

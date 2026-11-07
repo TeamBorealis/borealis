@@ -174,7 +174,50 @@ pub fn remove_item(engine: &Engine, state: &CharacterState, uid: &str) -> CmdRes
     let mut next = state.clone();
     next.inventory.items.remove(i);
     next.inventory.listed_attacks.retain(|u| u != uid);
+    next.inventory.attack_abilities.remove(uid);
     Ok(CommandOutcome::new(prune(engine, &next)))
+}
+
+/// Is inventory line `i` a weapon (what Aurora's "Add to Attacks & Spellcasting" asks)?
+fn is_weapon(engine: &Engine, state: &CharacterState, i: usize) -> bool {
+    let uni = engine.universe(state.ruleset);
+    crate::item_base::resolve(uni, &state.inventory.items[i])
+        .is_some_and(|(e, _)| item_facts(e).weapon)
+}
+
+/// Pick the ability attack line `uid` (a weapon's inventory uid, or `unarmed`) uses, or go
+/// back to the rules' choice (`None`).
+///
+/// # Errors
+/// [`CommandError::Inventory`] for an unknown line or ability.
+pub fn set_attack_ability(
+    engine: &Engine,
+    state: &CharacterState,
+    uid: &str,
+    ability: Option<&str>,
+) -> CmdResult {
+    if uid != crate::gear::UNARMED_UID {
+        let i = index_of(state, uid)?;
+        if !is_weapon(engine, state, i) {
+            return Err(CommandError::Inventory(format!("{uid} is not a weapon")));
+        }
+    }
+    let mut next = state.clone();
+    match ability {
+        None => {
+            next.inventory.attack_abilities.remove(uid);
+        }
+        Some(a) => {
+            let id = crate::ids::ABILITIES
+                .iter()
+                .find(|x| x.eq_ignore_ascii_case(a.trim()))
+                .ok_or_else(|| CommandError::Inventory(format!("unknown ability {a}")))?;
+            next.inventory
+                .attack_abilities
+                .insert(uid.to_string(), (*id).to_string());
+        }
+    }
+    Ok(CommandOutcome::new(next))
 }
 
 /// Apply a magic item (adorner) on top of a base item.

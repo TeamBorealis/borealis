@@ -80,6 +80,7 @@ fn row(name: &str, dc: i32, ability: String, dice: &str, ty: &str) -> AttackSnap
         offhand_damage: None,
         ammunition: None,
         save: Some(AttackSave { dc, ability }),
+        ability_lines: Vec::new(),
     }
 }
 

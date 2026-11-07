@@ -7,7 +7,8 @@ use crate::ids;
 use crate::inventory::{self, item_facts, item_weight};
 use crate::money::Coin;
 use crate::snapshot::{
-    AttackSnapshot, ElementRef, InventorySnapshot, ItemSnapshot, MartialArtsSnapshot, MasteryPick,
+    AbilityLine, AttackSnapshot, ElementRef, InventorySnapshot, ItemSnapshot, MartialArtsSnapshot,
+    MasteryPick,
 };
 use crate::state::{CharacterState, EquipSlot};
 use crate::stats::StatSet;
@@ -233,10 +234,10 @@ pub fn attacks_with(
             .as_ref()
             .filter(|(uid, _)| *uid == it.uid)
             .map(|(_, a)| *a);
-        let ability = match pact {
+        let ability = picked_ability(state, &it.uid).unwrap_or(match pact {
             Some(a) if mods[a] > mods[own_ability] => a,
             _ => own_ability,
-        };
+        });
         let loaded = crate::ammo::loaded(uni, state, e);
         let enh = weapon_enhancement(&e.el, adorner.map(|a| &a.el))
             + loaded.as_ref().map_or(0, |l| l.enhancement);
@@ -256,9 +257,8 @@ pub fn attacks_with(
                 two_handed,
             },
         );
-        let atk = am.attack
+        let atk_base = am.attack
             + if proficient { proficiency } else { 0 }
-            + mods[ability]
             + stats.sum(&format!("{group}:attack"))
             + stats.sum(&format!("{lname}:attack"))
             + enh
@@ -283,15 +283,24 @@ pub fn attacks_with(
                 dice.clone_from(&m.die);
             }
         }
-        let bonus = mods[ability]
-            + stats.sum(&format!("{group}:damage"))
-            + stats.sum(&format!("{lname}:damage"))
-            + strength_melee_bonus(stats, ability, melee)
-            + enh;
+        let damage_base =
+            stats.sum(&format!("{group}:damage")) + stats.sum(&format!("{lname}:damage")) + enh;
+        let bonus_with = |a: usize| mods[a] + damage_base + strength_melee_bonus(stats, a, melee);
+        let damage_with = |a: usize| {
+            if dice.is_empty() {
+                String::new()
+            } else {
+                with_extra(
+                    dice_with_bonus(&dice, bonus_with(a), &ty),
+                    melee.then_some(&extra),
+                )
+            }
+        };
         let offhand_damage = (state.ruleset == borealis_content::Ruleset::Dnd2024
             && has("ID_INTERNAL_WEAPON_PROPERTY_LIGHT")
             && !dice.is_empty())
         .then(|| {
+            let bonus = bonus_with(ability);
             let keep = if am.offhand_modifier {
                 bonus
             } else {
@@ -306,23 +315,25 @@ pub fn attacks_with(
             uid: it.uid.clone(),
             name: crate::item_name::attack_name(uni, it).unwrap_or_else(|| e.el.name.clone()),
             range: e.el.setter_value("range").unwrap_or("").to_string(),
-            attack: atk,
-            damage: if dice.is_empty() {
-                String::new()
-            } else {
-                with_extra(dice_with_bonus(&dice, bonus, &ty), melee.then_some(&extra))
-            },
+            attack: atk_base + mods[ability],
+            damage: damage_with(ability),
             ability: ids::ABILITIES[ability].to_string(),
             proficient,
             mastery: crate::play_rules::attack_mastery(uni, &e.el, cx.masteries),
             ammunition: loaded.map(|l| l.name),
             save: None,
+            ability_lines: (0..ids::ABILITIES.len())
+                .map(|a| AbilityLine {
+                    attack: atk_base + mods[a],
+                    damage: damage_with(a),
+                })
+                .collect(),
         });
     }
     // 2024: every character has the row (SRD 5.2.1 Unarmed Strike); 2014: a character with
     // Martial Arts (SRD 5.1 Monk). Aurora lists no automatic row (its attacks are user-added).
     if state.ruleset == borealis_content::Ruleset::Dnd2024 || cx.martial_arts.is_some() {
-        out.push(unarmed_strike(cx, arts, proficiency, mods, d20));
+        out.push(unarmed_strike(cx, state, arts, proficiency, mods, d20));
     }
     out
 }
@@ -350,25 +361,29 @@ fn strength_melee_bonus(stats: &StatSet, ability: usize, melee: bool) -> i32 {
 
 fn unarmed_strike(
     cx: &AttackCtx<'_>,
+    state: &CharacterState,
     arts: Option<&MartialArtsSnapshot>,
     proficiency: i32,
     mods: &[i32; 6],
     d20: i32,
 ) -> AttackSnapshot {
-    let ability = if arts.is_some() && mods[1] > mods[0] {
+    let own = if arts.is_some() && mods[1] > mods[0] {
         1
     } else {
         0
     };
-    let bonus = mods[ability] + strength_melee_bonus(cx.stats, ability, true);
-    let damage = match arts {
-        Some(m) => dice_with_bonus(&m.die, bonus, "bludgeoning"),
-        None => format!("{} bludgeoning", 1 + bonus),
+    let ability = picked_ability(state, UNARMED_UID).unwrap_or(own);
+    let damage_with = |a: usize| {
+        let bonus = mods[a] + strength_melee_bonus(cx.stats, a, true);
+        let damage = match arts {
+            Some(m) => dice_with_bonus(&m.die, bonus, "bludgeoning"),
+            None => format!("{} bludgeoning", 1 + bonus),
+        };
+        with_extra(
+            damage,
+            Some(&crate::attack_rules::per_hit_extra_damage(cx.graph, true)),
+        )
     };
-    let damage = with_extra(
-        damage,
-        Some(&crate::attack_rules::per_hit_extra_damage(cx.graph, true)),
-    );
     let am = crate::attack_rules::attack_mods(
         cx.graph,
         &crate::attack_rules::AttackFacts {
@@ -379,21 +394,37 @@ fn unarmed_strike(
             two_handed: false,
         },
     );
+    let atk_base = am.attack + proficiency + cx.stats.sum("melee:attack") + d20;
     AttackSnapshot {
         crit_range: am.crit,
         die_floor: None,
         offhand_damage: None,
-        uid: "unarmed".to_string(),
+        uid: UNARMED_UID.to_string(),
         name: "Unarmed Strike".to_string(),
         range: "5 ft.".to_string(),
-        attack: am.attack + proficiency + mods[ability] + cx.stats.sum("melee:attack") + d20,
-        damage,
+        attack: atk_base + mods[ability],
+        damage: damage_with(ability),
         ability: ids::ABILITIES[ability].to_string(),
         proficient: true,
         mastery: None,
         ammunition: None,
         save: None,
+        ability_lines: (0..ids::ABILITIES.len())
+            .map(|a| AbilityLine {
+                attack: atk_base + mods[a],
+                damage: damage_with(a),
+            })
+            .collect(),
     }
+}
+
+/// The uid of the Unarmed Strike line.
+pub const UNARMED_UID: &str = "unarmed";
+
+/// The ability the user picked for attack line `uid`, when it names a known ability.
+fn picked_ability(state: &CharacterState, uid: &str) -> Option<usize> {
+    let id = state.inventory.attack_abilities.get(uid)?;
+    ids::ABILITIES.iter().position(|a| a == id)
 }
 
 #[cfg(test)]

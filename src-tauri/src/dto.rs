@@ -727,6 +727,20 @@ pub struct Attack {
     /// What an attack roll adds, D20 Test modifiers (2024 Exhaustion) included; `None` for a
     /// save row or a typed bonus that is not a number.
     pub to_hit: Option<i32>,
+    /// The worked-out bonus and damage with each ability, for a row whose ability the user may
+    /// pick (weapons, the Unarmed Strike): the attack editor's live preview (GitHub #27).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ability_lines: Option<Vec<AbilityLineDto>>,
+}
+
+/// An automatic attack row worked out with one ability.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AbilityLineDto {
+    /// `str` .. `cha`.
+    pub ability: String,
+    pub attack_bonus: String,
+    pub damage: String,
 }
 
 /// The complete character view, returned by every mutation.
@@ -887,6 +901,7 @@ mod gear_dto_tests {
             offhand_damage: None,
             ammunition: ammunition.map(str::to_string),
             to_hit: Some(6),
+            ability_lines: None,
         }
     }
 

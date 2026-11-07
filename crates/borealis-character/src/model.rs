@@ -135,6 +135,49 @@ pub struct ManualAttack {
     pub as_card: Option<bool>,
 }
 
+/// The user's changes to an automatic (weapon-derived) attack line, Aurora's fillable attack
+/// fields: a blank text keeps the worked-out value (GitHub #27).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct AttackEdit {
+    /// Name shown instead of the weapon's.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub name: String,
+    /// Range text.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub range: String,
+    /// Attack bonus text.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub attack: String,
+    /// Damage text.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub damage: String,
+    /// Short description.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub description: String,
+    /// Left out of the sheet's attack table (and its cards).
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub hidden: bool,
+}
+
+impl AttackEdit {
+    /// Nothing is changed: the line is shown as worked out.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        *self == Self::default()
+    }
+
+    /// `edited` when the user typed one, else the worked-out `auto` value.
+    #[must_use]
+    pub fn text(edited: &str, auto: &str) -> String {
+        if edited.trim().is_empty() {
+            auto.to_string()
+        } else {
+            edited.to_string()
+        }
+    }
+}
+
 /// Two free note columns.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Notes {
@@ -188,6 +231,9 @@ pub struct Details {
     /// "As card" overrides for the automatic (weapon-derived) attack rows, by inventory item uid.
     #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
     pub auto_attack_cards: std::collections::BTreeMap<String, bool>,
+    /// The user's changes to the automatic attack rows, by attack uid.
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub auto_attack_edits: std::collections::BTreeMap<String, AttackEdit>,
     /// Conditional armor class note.
     #[serde(default)]
     pub conditional_ac: String,

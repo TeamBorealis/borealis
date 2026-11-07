@@ -1,6 +1,7 @@
 //! Manage services: details, appearance and notes, manual attacks, source restrictions,
 //! cross-edition mode and the compatibility report.
 
+use crate::attack_rows::MANUAL_PREFIX;
 use crate::content_dto::{
     AffectedPick, AttackInput, CompatEntry, CompatibilityReport, MoveDirection, RestrictionPreview,
 };
@@ -8,15 +9,18 @@ use crate::dto::{CharacterSnapshot, ElementRef};
 use crate::error::{ApiError, ApiResult};
 use crate::extras::{set_ui_extras, ui_extras};
 use crate::ids::{ability_index, encode_slot, ui_type};
-use crate::session::Draft;
+use crate::session::{Ctx, Draft};
 use crate::state::AppState;
-use borealis_character::ManualAttack;
+use borealis_character::{AttackEdit, ManualAttack};
 use borealis_content::is_unrestrictable_source;
+use borealis_engine::commands;
+use borealis_engine::ids as engine_ids;
+use borealis_engine::snapshot::AttackSnapshot;
+use borealis_engine::state::CharacterState;
 use serde_json::{Map, Value};
 
 const MAX_TEXT_CHARS: usize = 20_000;
 const MAX_MANUAL_ATTACKS: usize = 100;
-const MANUAL_PREFIX: &str = "manual-";
 const ABILITY_NAMES: [&str; 6] = [
     "Strength",
     "Dexterity",
@@ -110,6 +114,73 @@ fn to_manual(input: &AttackInput) -> ApiResult<ManualAttack> {
     })
 }
 
+/// The engine's automatic row `uid` of `state`.
+fn auto_line(ctx: &Ctx<'_>, state: &CharacterState, uid: &str) -> ApiResult<AttackSnapshot> {
+    ctx.hub
+        .derive(state)
+        .attacks
+        .iter()
+        .find(|a| a.uid == uid)
+        .cloned()
+        .ok_or_else(|| ApiError::not_found("That attack is not in the list."))
+}
+
+/// `typed` when it differs from the worked-out value, else blank (keep it automatic). The value
+/// worked out before an ability change (`was`) counts too: the editor may send it back untouched.
+fn edited(typed: &str, now: &str, was: &str) -> String {
+    let t = typed.trim();
+    if t == now.trim() || t == was.trim() {
+        String::new()
+    } else {
+        t.to_string()
+    }
+}
+
+/// Save the attack editor's fields for an automatic row (Aurora's `AttackSectionItem`: a linked
+/// ability for the automatic calculation, and fillable texts over the worked-out ones). A pick
+/// that matches the rules' own choice is not kept, so the line still follows the rules later.
+fn edit_auto_row(ctx: &Ctx<'_>, d: &mut Draft, uid: &str, input: &AttackInput) -> ApiResult<()> {
+    let engine = &ctx.hub.engine;
+    let was = auto_line(ctx, &d.character.build, uid)?;
+    let line = &was;
+    let picked = input.ability.as_deref().filter(|a| !a.is_empty());
+    if let (false, Some(key)) = (line.ability_lines.is_empty(), picked) {
+        let ability = ability_index(key)
+            .map(|i| engine_ids::ABILITIES[i])
+            .ok_or_else(|| ApiError::invalid("Unknown ability."))?;
+        let rules = commands::set_attack_ability(engine, &d.character.build, uid, None)?.state;
+        let by_rules = auto_line(ctx, &rules, uid)?.ability == ability;
+        d.character.build = if by_rules {
+            rules
+        } else {
+            commands::set_attack_ability(engine, &rules, uid, Some(ability))?.state
+        };
+    }
+    let line = auto_line(ctx, &d.character.build, uid)?;
+    let edit = AttackEdit {
+        name: edited(&input.name, &line.name, &was.name),
+        range: edited(&input.range, &line.range, &was.range),
+        attack: edited(
+            &input.attack_bonus,
+            &format!("{:+}", line.attack),
+            &format!("{:+}", was.attack),
+        ),
+        damage: edited(&input.damage, &line.damage, &was.damage),
+        description: input.description.trim().to_string(),
+        hidden: !input.show_in_combat,
+    };
+    let details = &mut d.character.details;
+    if edit.is_empty() {
+        details.auto_attack_edits.remove(uid);
+    } else {
+        details.auto_attack_edits.insert(uid.to_string(), edit);
+    }
+    if let Some(card) = input.as_card {
+        details.auto_attack_cards.insert(uid.to_string(), card);
+    }
+    Ok(())
+}
+
 impl AppState {
     /// Merge a partial details patch (identity, appearance, personality, notes).
     ///
@@ -122,35 +193,34 @@ impl AppState {
         self.mutate(id, |_, d| apply_details(d, map))
     }
 
-    /// Add a manual attack (no `id`) or replace one.
+    /// Add a manual attack (no `id`) or replace one; for an automatic row, save the user's
+    /// changes to it (its ability, texts, sheet and card flags: GitHub #27).
     ///
     /// # Errors
-    /// `invalid_argument` for a nameless attack; `requirement_failed` for automatic attacks.
+    /// `invalid_argument` for a nameless manual attack or an unknown ability; `not_found` for an
+    /// unknown automatic row; `requirement_failed` for an unknown manual row.
     pub fn upsert_attack(&self, id: &str, attack: &AttackInput) -> ApiResult<CharacterSnapshot> {
-        let manual = to_manual(attack)?;
-        self.mutate(id, |_, d| {
-            let list = &mut d.character.details.attacks;
+        self.mutate(id, |ctx, d| {
             match attack.id.as_deref().filter(|i| !i.is_empty()) {
                 Some(attack_id) if !attack_id.starts_with(MANUAL_PREFIX) => {
-                    // an automatic row: only its card flag can change
-                    let card = attack.as_card.ok_or_else(|| {
-                        ApiError::requirement("Only attacks you added yourself can be edited.")
-                    })?;
-                    d.character
-                        .details
-                        .auto_attack_cards
-                        .insert(attack_id.to_string(), card);
+                    edit_auto_row(ctx, d, attack_id, attack)
                 }
                 Some(attack_id) => {
+                    let manual = to_manual(attack)?;
+                    let list = &mut d.character.details.attacks;
                     let at = manual_index(attack_id, list.len())?;
                     list[at] = manual;
+                    Ok(())
                 }
-                None if list.len() >= MAX_MANUAL_ATTACKS => {
-                    return Err(ApiError::requirement("There are too many attacks."));
+                None if d.character.details.attacks.len() >= MAX_MANUAL_ATTACKS => {
+                    Err(ApiError::requirement("There are too many attacks."))
                 }
-                None => list.push(manual),
+                None => {
+                    let manual = to_manual(attack)?;
+                    d.character.details.attacks.push(manual);
+                    Ok(())
+                }
             }
-            Ok(())
         })
     }
 
@@ -180,9 +250,12 @@ impl AppState {
         self.mutate(id, |_, d| {
             let list = &mut d.character.details.attacks;
             let at = manual_index(attack_id, list.len())?;
+            // the next row the user sees: an item-linked Aurora row is shown as its weapon's
+            // automatic row, not among these
+            let shown = |n: &usize| list[*n].item_uid.is_none();
             let to = match direction {
-                MoveDirection::Up => at.checked_sub(1),
-                MoveDirection::Down => Some(at + 1).filter(|n| *n < list.len()),
+                MoveDirection::Up => (0..at).rev().find(shown),
+                MoveDirection::Down => (at + 1..list.len()).find(shown),
             };
             if let Some(to) = to {
                 list.swap(at, to);

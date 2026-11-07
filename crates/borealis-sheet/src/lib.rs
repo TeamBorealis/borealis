@@ -5,6 +5,8 @@
 //! embeds subset Noto fonts. The layout is original to Borealis.
 
 mod art;
+#[cfg(test)]
+mod attack_edit_tests;
 mod base64;
 mod bidi;
 mod card_model;

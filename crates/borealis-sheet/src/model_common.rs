@@ -232,16 +232,25 @@ fn attacks(
     snap: &CharacterSnapshot,
     casters: &[CasterData],
 ) -> Vec<AttackRow> {
+    let none = borealis_character::AttackEdit::default();
+    let edit_of = |uid: &str| {
+        character
+            .details
+            .auto_attack_edits
+            .get(uid)
+            .unwrap_or(&none)
+    };
+    let typed = borealis_character::AttackEdit::text;
     let mut rows: Vec<AttackRow> = snap
         .attacks
         .iter()
-        .filter(|a| !is_spell_row(&a.uid))
+        .filter(|a| !is_spell_row(&a.uid) && !edit_of(&a.uid).hidden)
         .map(|a| AttackRow {
-            name: a.name.clone(),
+            name: typed(&edit_of(&a.uid).name, &a.name),
             kind: AttackKind::Weapon,
-            bonus: signed_text(a.attack),
-            damage: a.damage.clone(),
-            range: a.range.clone(),
+            bonus: typed(&edit_of(&a.uid).attack, &signed_text(a.attack)),
+            damage: typed(&edit_of(&a.uid).damage, &a.damage),
+            range: typed(&edit_of(&a.uid).range, &a.range),
             mastery: a
                 .mastery
                 .as_ref()

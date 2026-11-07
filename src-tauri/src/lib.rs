@@ -24,6 +24,7 @@ pub mod app_api;
 pub mod app_logs;
 pub mod app_update;
 pub mod app_update_debug;
+pub mod attack_rows;
 pub mod book_editions;
 pub mod builder;
 pub mod bundled_content;

@@ -3093,6 +3093,16 @@
       "k": "prim"
      }
     },
+    "abilityLines": {
+     "opt": true,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "ref",
+       "name": "AttackAbilityLine"
+      }
+     }
+    },
     "ammunition": {
      "opt": true,
      "t": {
@@ -3180,6 +3190,29 @@
     },
     "toHit": {
      "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
+  "AttackAbilityLine": {
+   "k": "object",
+   "props": {
+    "ability": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "attackBonus": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "damage": {
+     "opt": false,
      "t": {
       "k": "prim"
      }

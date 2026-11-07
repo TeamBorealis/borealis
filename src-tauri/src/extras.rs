@@ -2,8 +2,8 @@
 //! options, source restrictions and notices.
 
 use crate::dto::{
-    Attack, Attunement, CharacterDetails, CharacterOptions, ClassSpellcasting, Coins,
-    InventoryItem, InventoryState, OptionDef, PactSlotRow, RolledCharges, SpellEntry, SpellSlotRow,
+    Attunement, CharacterDetails, CharacterOptions, ClassSpellcasting, Coins, InventoryItem,
+    InventoryState, OptionDef, PactSlotRow, RolledCharges, SpellEntry, SpellSlotRow,
     SpellcastingState, WeaponInfo,
 };
 use crate::elements::plain_text;
@@ -546,70 +546,6 @@ pub fn details(c: &Character) -> CharacterDetails {
         treasure: ui.treasure,
         quest_items: ui.quest_items,
     }
-}
-
-/// Automatic and manual attacks.
-#[must_use]
-pub fn attacks(c: &Character, snap: &Engine) -> Vec<Attack> {
-    let auto = snap.attacks.iter().map(|a| Attack {
-        id: a.uid.clone(),
-        name: a.name.clone(),
-        range: a.range.clone(),
-        attack_bonus: format!("{:+}", a.attack),
-        damage: a.damage.clone(),
-        description: String::new(),
-        ability: Some(ability_key(&a.ability)).filter(|k| !k.is_empty()),
-        auto: true,
-        show_in_combat: true,
-        card: c
-            .details
-            .auto_attack_cards
-            .get(&a.uid)
-            .copied()
-            .unwrap_or_else(|| {
-                snap.inventory
-                    .items
-                    .iter()
-                    .find(|i| i.uid == a.uid)
-                    .is_none_or(|i| i.show_card)
-            }),
-        mastery: a.mastery.as_ref().map(|m| crate::play_dto::MasteryDto {
-            name: m.name.clone(),
-            text: m.text.clone(),
-            mastered: m.mastered,
-        }),
-        crit_range: a.crit_range,
-        die_floor: a.die_floor,
-        offhand_damage: a.offhand_damage.clone(),
-        ammunition: a.ammunition.clone(),
-        // the engine's attack already holds the D20 Test modifier; a save row has no roll
-        to_hit: a.save.is_none().then_some(a.attack),
-    });
-    let d20 = crate::play_rolls::d20_tests(snap);
-    let manual = c
-        .details
-        .attacks
-        .iter()
-        .enumerate()
-        .map(move |(i, a)| Attack {
-            id: format!("manual-{i}"),
-            name: a.name.clone(),
-            range: a.range.clone(),
-            attack_bonus: a.attack.clone(),
-            damage: a.damage.clone(),
-            description: a.description.clone(),
-            ability: Some(ability_key(&a.ability)).filter(|k| !k.is_empty()),
-            auto: false,
-            show_in_combat: a.displayed,
-            card: a.as_card.unwrap_or(false),
-            mastery: None,
-            crit_range: 20,
-            die_floor: None,
-            offhand_damage: None,
-            ammunition: None,
-            to_hit: crate::play_rolls::manual_to_hit(&a.attack, d20),
-        });
-    auto.chain(manual).collect()
 }
 
 /// Content option definitions the user may toggle (the three built-ins have dedicated switches).

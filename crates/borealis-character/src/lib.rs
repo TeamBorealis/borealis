@@ -18,6 +18,6 @@ pub use import::{
     MissingContent, RecheckOutcome, UnmappedSlot,
 };
 pub use model::{
-    Appearance, Character, Details, FeatureText, ImportInfo, ManualAttack, Meta, Notes,
+    Appearance, AttackEdit, Character, Details, FeatureText, ImportInfo, ManualAttack, Meta, Notes,
     Organization, Personality, Portrait, UnresolvedSelection, FORMAT, FORMAT_VERSION,
 };

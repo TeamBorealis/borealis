@@ -205,30 +205,37 @@ fn spell_cards(snap: &CharacterSnapshot, content: &SheetContent) -> Vec<Card> {
         .collect()
 }
 
-fn attack_cards(
+pub(crate) fn attack_cards(
     character: &borealis_character::Character,
     snap: &CharacterSnapshot,
     content: &SheetContent,
 ) -> Vec<Card> {
     let details = &character.details;
+    let none = borealis_character::AttackEdit::default();
+    let typed = borealis_character::AttackEdit::text;
     let derived = snap.attacks.iter().filter_map(|a| {
+        let edit = details.auto_attack_edits.get(&a.uid).unwrap_or(&none);
         let line = snap.inventory.items.iter().find(|i| i.uid == a.uid);
         let on = details
             .auto_attack_cards
             .get(&a.uid)
             .copied()
             .unwrap_or_else(|| line.is_some_and(|i| i.show_card));
-        on.then(|| Card {
-            title: a.name.clone(),
+        (on && !edit.hidden).then(|| Card {
+            title: typed(&edit.name, &a.name),
             subtitle: line
                 .and_then(|i| content.items.get(&i.item.id))
                 .map(|t| t.subtitle.clone())
                 .unwrap_or_default(),
             facts: vec![
-                ("Range".into(), a.range.clone()),
-                ("Attack".into(), format!("{:+}", a.attack)),
-                ("Damage".into(), a.damage.clone()),
+                ("Range".into(), typed(&edit.range, &a.range)),
+                (
+                    "Attack".into(),
+                    typed(&edit.attack, &format!("{:+}", a.attack)),
+                ),
+                ("Damage".into(), typed(&edit.damage, &a.damage)),
             ],
+            body: plain(&edit.description),
             ..Card::default()
         })
     });

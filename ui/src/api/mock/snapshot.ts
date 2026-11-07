@@ -1,4 +1,4 @@
-import type { Attack, CharacterSnapshot, OptionDef, SelectionProgress, SelectionSlot, BuilderTab } from "../types";
+import { ABILITY_KEYS, type Attack, type CharacterSnapshot, type OptionDef, type SelectionProgress, type SelectionSlot, type BuilderTab } from "../types";
 import { getElement, getItem, titleCase } from "./content";
 import { buildCompanions } from "./companions";
 import { deriveAbilities } from "./derive-abilities";
@@ -78,9 +78,12 @@ function resolveAttacks(c: MockCharacter, mods: Record<string, number>, prof: nu
   return c.attacks.map(({ ammunition: _stale, ...a }) => {
     if (!a.auto || !a.ability) return { ...a, toHit: toHitOf(c, a.attackBonus) };
     const ammo = ammunitionFor(c, a);
-    const m = (mods[a.ability] ?? 0) + (ammo?.bonus ?? 0);
+    const extra = ammo?.bonus ?? 0;
+    const m = (mods[a.ability] ?? 0) + extra;
     const attackBonus = signed(m + prof);
-    const resolved = { ...a, attackBonus, damage: withModifier(a.damage, m), toHit: toHitOf(c, attackBonus) };
+    // the host's per-ability preview of a weapon row (GitHub #27)
+    const abilityLines = ABILITY_KEYS.map((k) => ({ ability: k, attackBonus: signed((mods[k] ?? 0) + extra + prof), damage: withModifier(a.damage, (mods[k] ?? 0) + extra) }));
+    const resolved = { ...a, attackBonus, damage: withModifier(a.damage, m), toHit: toHitOf(c, attackBonus), abilityLines };
     return ammo ? { ...resolved, ammunition: ammo.name } : resolved;
   });
 }

@@ -276,6 +276,12 @@ pub struct Inventory {
     /// that list here (B-10).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub listed_attacks: Vec<String>,
+    /// The ability an attack line uses when the user picked one (Aurora's "Ability (automatic
+    /// calculation)" of an attack), by attack uid (an inventory uid, or `unarmed`), as an
+    /// ability id (`dexterity`). Absent = the rules' choice (Strength, Dexterity for ranged or
+    /// finesse weapons, and so on).
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub attack_abilities: BTreeMap<String, String>,
 }
 
 /// Mutable play-time state: resource uses, toggles, exhaustion, Heroic Inspiration, spell slot

@@ -557,6 +557,19 @@ pub struct AttackSnapshot {
     /// A cantrip that calls for a saving throw instead of an attack roll (`attack` is 0).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub save: Option<AttackSave>,
+    /// What the line gives with each ability, in [`crate::ids::ABILITIES`] order, for a line
+    /// whose ability the user may pick (weapons and the Unarmed Strike); empty otherwise.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub ability_lines: Vec<AbilityLine>,
+}
+
+/// An attack line worked out with one particular ability.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AbilityLine {
+    /// Attack bonus.
+    pub attack: i32,
+    /// Damage text such as `1d8+3 slashing`.
+    pub damage: String,
 }
 
 /// The saving throw of a save-based attack row.

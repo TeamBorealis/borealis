@@ -1,39 +1,13 @@
 import { useState } from "react";
-import { ABILITY_KEYS, type AbilityKey, type Attack } from "../../api/contract";
-import { Button, Check, Modal, SelectField, TextArea, TextField } from "../../components";
-import { ABILITY_LABEL } from "../../lib/format";
+import type { Attack } from "../../api/contract";
 import { useCharacter } from "../../state/CharacterContext";
+import { AttackDialog, BLANK_ATTACK, type AttackDraft } from "./AttackDialog";
 import { DetailField } from "./DetailField";
 import { MgSection } from "./Field";
 import "./manage-fx15.css";
 import { MgIcon, type MgIconName } from "./mgIcons";
 
 const SHEET_LIMIT = 4;
-type Draft = Omit<Attack, "id"> & { id?: string };
-const BLANK: Draft = { name: "", range: "Melee", attackBonus: "+0", damage: "1d6", description: "", ability: null, auto: false, showInCombat: true, card: false };
-
-function AttackDialog({ draft, onSave, onClose }: { draft: Draft; onSave: (a: Draft) => void; onClose: () => void }) {
-  const [a, setA] = useState(draft);
-  const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setA((c) => ({ ...c, [k]: v }));
-  return (
-    <Modal title={draft.id ? `Edit ${draft.name}` : "New attack"} onClose={onClose} footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!a.name.trim()} onClick={() => onSave(a)}>Save</Button></>}>
-      <div className="stack">
-        <TextField label="Name" value={a.name} data-autofocus onChange={(e) => set("name", e.target.value)} />
-        <TextField label="Range" value={a.range} onChange={(e) => set("range", e.target.value)} />
-        <Check label="Calculate automatically" checked={a.auto} onChange={(e) => setA((c) => ({ ...c, auto: e.target.checked, ability: e.target.checked ? c.ability ?? "str" : null }))} />
-        {a.auto ? (
-          <SelectField label="Linked ability" value={a.ability ?? "str"} onChange={(e) => set("ability", e.target.value as AbilityKey)}>
-            {ABILITY_KEYS.map((k) => <option key={k} value={k}>{ABILITY_LABEL[k]}</option>)}
-          </SelectField>
-        ) : <TextField label="Attack bonus" value={a.attackBonus} onChange={(e) => set("attackBonus", e.target.value)} />}
-        <TextField label="Damage" value={a.damage} onChange={(e) => set("damage", e.target.value)} />
-        <TextArea label="Short description" value={a.description} onChange={(e) => set("description", e.target.value)} />
-        <Check label="Display in combat section" checked={a.showInCombat} onChange={(e) => set("showInCombat", e.target.checked)} />
-        <Check label="Print as a card" checked={a.card} onChange={(e) => set("card", e.target.checked)} />
-      </div>
-    </Modal>
-  );
-}
 
 function IconAct({ icon, label, onClick, disabled, pressed }: { icon: MgIconName; label: string; onClick: () => void; disabled?: boolean; pressed?: boolean }) {
   return <button type="button" aria-label={label} title={label} disabled={disabled} aria-pressed={pressed} onClick={(e) => { e.stopPropagation(); onClick(); }}><MgIcon name={icon} /></button>;
@@ -57,7 +31,7 @@ export function AttackTags({ attack: a }: { attack: Attack }) {
 
 export function AttacksTab() {
   const { snapshot, mutate } = useCharacter();
-  const [draft, setDraft] = useState<Draft | null>(null);
+  const [draft, setDraft] = useState<AttackDraft | null>(null);
   const [sel, setSel] = useState<string | null>(null);
   if (!snapshot) return null;
   const list = snapshot.attacks;
@@ -70,7 +44,7 @@ export function AttacksTab() {
         <MgSection title="Attacks" sub={<>Up to {SHEET_LIMIT} full attacks fit on the character sheet ({onSheet}/{SHEET_LIMIT} shown). Add one from any weapon in your inventory through its context menu entry for attacks. That route is best, because the bonus and damage are worked out for you. You may also choose to print an attack card on a last page of the sheet. Anything you add here stays with this character and travels with the saved file, so it is there again whenever you reopen the hero, on this device or any other one that you copy the file to.</>}>
           <p className="mg-sub mg-sub-after">Or you can write the attack details yourself.</p>
           <div className="mg-toolbar" role="toolbar" aria-label="Attack actions">
-            <button type="button" className="mg-tool wide" onClick={() => setDraft(BLANK)}><MgIcon name="addAttack" />Add Attack</button>
+            <button type="button" className="mg-tool wide" onClick={() => setDraft(BLANK_ATTACK)}><MgIcon name="addAttack" />Add Attack</button>
             <button type="button" className="mg-tool" aria-label="Move selected attack up" title="Move selected attack up" disabled={selIdx <= 0} onClick={() => move(sel!, "up")}><MgIcon name="moveUp" /></button>
             <button type="button" className="mg-tool" aria-label="Move selected attack down" title="Move selected attack down" disabled={selIdx < 0 || selIdx >= list.length - 1} onClick={() => move(sel!, "down")}><MgIcon name="moveDown" /></button>
           </div>
