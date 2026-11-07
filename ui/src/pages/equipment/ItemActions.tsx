@@ -2,6 +2,7 @@ import { CheckBox } from "../../components/controls";
 import { useState } from "react";
 import type { InventoryItem } from "../../api/contract";
 import { Button, Chip, Modal, TextArea, TextField, useConfirm } from "../../components";
+import { useToast } from "../../components/Toast";
 import { haptic } from "../../lib/haptics";
 import { useCharacter } from "../../state/CharacterContext";
 import { useSettings } from "../../state/SettingsContext";
@@ -19,17 +20,26 @@ export function useEquipItem() {
     if (!next || !item.weapon || !settings.confirmEquipWeaponNotInAttacks || next.attacks.some((a) => a.name === item.displayName)) return;
     const r = await confirm({ title: "Add to attacks?", body: `${item.displayName} is not in your attacks list. Add it with automatic bonuses?`, confirmLabel: "Add attack" });
     if (r !== "confirm") return;
-    const w = item.weapon;
-    await mutate((api, id) => api.upsertAttack({ characterId: id, attack: {
-      name: item.displayName, range: w.properties.includes("Thrown") ? "20/60 ft" : "Melee", attackBonus: "", damage: w.damage,
-      description: w.damageType, ability: w.ability, auto: true, showInCombat: true, card: false,
-    } }));
+    await mutate((api, id) => api.addToAttacks({ characterId: id, inventoryId: item.id }));
   };
 }
 
-export function ItemActionsDialog({ item, index, count, onClose }: { item: InventoryItem; index: number; count: number; onClose: () => void }) {
+/** Aurora's "Add to Attacks & Spellcasting" (GitHub #28): the weapon's row stays in the attacks while it is not held. */
+export function useAddToAttacks() {
+  const { mutate } = useCharacter();
+  const toast = useToast();
+  return async (item: InventoryItem): Promise<void> => {
+    const next = await mutate((api, id) => api.addToAttacks({ characterId: id, inventoryId: item.id }));
+    if (next) toast.push(`${item.displayName} added to your attacks.`, "info");
+  };
+}
+
+export function ItemActionsDialog({ item, index, count, onClose, startEditing = false }: { item: InventoryItem; index: number; count: number; onClose: () => void; startEditing?: boolean }) {
   const { snapshot, mutate } = useCharacter();
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(startEditing);
+  const addToAttacks = useAddToAttacks();
+  // opened on the edit form (the inventory menu's Edit Item Details), leaving it closes the dialog
+  const leaveEditing = () => (startEditing ? onClose() : setEditing(false));
   const [name, setName] = useState(item.displayName);
   const [notes, setNotes] = useState(item.notes);
   const [listed, setListed] = useState(item.listInInventory);
@@ -44,8 +54,8 @@ export function ItemActionsDialog({ item, index, count, onClose }: { item: Inven
 
   if (editing) {
     return (
-      <Modal title={`Edit ${item.name}`} onClose={() => setEditing(false)}
-        footer={<><Button onClick={() => setEditing(false)}>Cancel</Button><Button variant="primary" onClick={() => run((api, id) => api.updateItemDetails({ characterId: id, inventoryId: item.id, patch: { displayName: name, notes, listInInventory: listed, showCard: card } }))}>Save</Button></>}>
+      <Modal title={`Edit ${item.name}`} onClose={leaveEditing}
+        footer={<><Button onClick={leaveEditing}>Cancel</Button><Button variant="primary" onClick={() => run((api, id) => api.updateItemDetails({ characterId: id, inventoryId: item.id, patch: { displayName: name, notes, listInInventory: listed, showCard: card } }))}>Save</Button></>}>
         <div className="stack">
           <TextField label="Display name" value={name} onChange={(e) => setName(e.target.value)} />
           <TextArea label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
@@ -83,6 +93,7 @@ export function ItemActionsDialog({ item, index, count, onClose }: { item: Inven
         </div>
         <div className="row">
           {item.isPack && <Button onClick={() => run((api, id) => api.extractPack({ characterId: id, inventoryId: item.id }))}>Extract contents</Button>}
+          {item.isWeapon && <Button onClick={() => void addToAttacks(item).then(onClose)}>Add to attacks</Button>}
           <Button onClick={() => setEditing(true)}>Edit details</Button>
           <Button disabled={index === 0} icon="up" onClick={() => void mutate((api, id) => api.moveItem({ characterId: id, inventoryId: item.id, direction: "up" }))}>Move up</Button>
           <Button disabled={index === count - 1} icon="down" onClick={() => void mutate((api, id) => api.moveItem({ characterId: id, inventoryId: item.id, direction: "down" }))}>Move down</Button>

@@ -58,6 +58,7 @@
     "allow-equip-item",
     "allow-unequip-item",
     "allow-set-item-requirements-override",
+    "allow-add-to-attacks",
     "allow-set-attuned",
     "allow-set-rolled-max",
     "allow-reroll-max",

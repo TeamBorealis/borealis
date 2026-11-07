@@ -183,6 +183,25 @@ fn edit_auto_row(ctx: &Ctx<'_>, d: &mut Draft, uid: &str, input: &AttackInput) -
     Ok(())
 }
 
+/// Take a listed weapon's row off the attacks list (a held weapon keeps its row).
+fn unlist_auto_row(ctx: &Ctx<'_>, d: &mut Draft, uid: &str) -> ApiResult<()> {
+    if !d
+        .character
+        .build
+        .inventory
+        .listed_attacks
+        .iter()
+        .any(|u| u == uid)
+    {
+        return Err(ApiError::requirement(
+            "This attack comes from what the character holds or knows. Hide it from the sheet instead.",
+        ));
+    }
+    d.character.build =
+        commands::list_attack(&ctx.hub.engine, &d.character.build, uid, false)?.state;
+    Ok(())
+}
+
 impl AppState {
     /// Merge a partial details patch (identity, appearance, personality, notes).
     ///
@@ -226,12 +245,17 @@ impl AppState {
         })
     }
 
-    /// Delete a manual attack.
+    /// Delete a manual attack, or take a weapon added to the attacks (Aurora's "Add to Attacks &
+    /// Spellcasting", GitHub #28) off the list again.
     ///
     /// # Errors
-    /// `requirement_failed` for automatic or unknown attacks.
+    /// `requirement_failed` for unknown attacks and automatic rows that are not on the list (a
+    /// held weapon, the Unarmed Strike, a cantrip): those are hidden from the sheet instead.
     pub fn remove_attack(&self, id: &str, attack_id: &str) -> ApiResult<CharacterSnapshot> {
-        self.mutate(id, |_, d| {
+        self.mutate(id, |ctx, d| {
+            if !attack_id.starts_with(MANUAL_PREFIX) {
+                return unlist_auto_row(ctx, d, attack_id);
+            }
             let list = &mut d.character.details.attacks;
             let at = manual_index(attack_id, list.len())?;
             list.remove(at);

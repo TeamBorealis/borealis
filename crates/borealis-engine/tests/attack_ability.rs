@@ -1,11 +1,13 @@
 //! The ability a weapon attack line uses can be picked by the user (Aurora's "Ability (automatic
-//! calculation)" of an attack, GitHub #27).
+//! calculation)" of an attack, GitHub #27), and listing a weapon keeps its line (Aurora's "Add to
+//! Attacks & Spellcasting", #28).
 
 mod common;
 use borealis_engine::commands;
 use common::*;
 
 const LONGSWORD: &str = "ID_WOTC_PHB_WEAPON_LONGSWORD";
+const DAGGER: &str = "ID_WOTC_PHB_WEAPON_DAGGER";
 
 #[test]
 fn a_picked_ability_recalculates_the_attack_and_damage() {
@@ -59,5 +61,33 @@ fn an_unknown_ability_or_line_is_refused_and_removing_the_item_forgets_the_pick(
             .state;
         h.s = commands::remove_item(e, &h.s, &sword).unwrap().state;
         assert!(h.s.inventory.attack_abilities.is_empty());
+    });
+}
+
+#[test]
+fn listing_a_weapon_keeps_its_line_while_it_is_not_held() {
+    each_variant("list_attack", |e, _| {
+        let mut h = Hero::new(e, true);
+        let dagger = h.give(DAGGER);
+        assert!(!h.snap().attacks.iter().any(|a| a.uid == dagger));
+        h.s = commands::list_attack(e, &h.s, &dagger, true).unwrap().state;
+        assert!(h.snap().attacks.iter().any(|a| a.uid == dagger));
+        // listing twice keeps one entry
+        h.s = commands::list_attack(e, &h.s, &dagger, true).unwrap().state;
+        assert_eq!(h.s.inventory.listed_attacks, vec![dagger.clone()]);
+        h.s = commands::list_attack(e, &h.s, &dagger, false)
+            .unwrap()
+            .state;
+        assert!(!h.snap().attacks.iter().any(|a| a.uid == dagger));
+    });
+}
+
+#[test]
+fn only_weapons_can_be_listed() {
+    each_variant("list_attack_weapon_only", |e, _| {
+        let mut h = Hero::new(e, true);
+        let shield = h.give("ID_WOTC_GEAR_SHIELD");
+        assert!(commands::list_attack(e, &h.s, &shield, true).is_err());
+        assert!(commands::list_attack(e, &h.s, "item-999", true).is_err());
     });
 }

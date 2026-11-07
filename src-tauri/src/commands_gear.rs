@@ -135,6 +135,15 @@ pub fn set_item_requirements_override(
 }
 
 #[tauri::command(async)]
+pub fn add_to_attacks(
+    state: S<'_>,
+    character_id: String,
+    inventory_id: String,
+) -> ApiResult<CharacterSnapshot> {
+    state.add_to_attacks(&character_id, &inventory_id)
+}
+
+#[tauri::command(async)]
 pub fn set_attuned(
     state: S<'_>,
     character_id: String,

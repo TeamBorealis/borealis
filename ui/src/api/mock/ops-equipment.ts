@@ -120,6 +120,23 @@ export function setRequirementsOverride(c: MockCharacter, id: string, on: boolea
   return { ...c, items: patch(c.items, id, { overrideRequirements: on }) };
 }
 
+/**
+ * The host's `add_to_attacks` (Aurora's "Add to Attacks & Spellcasting", GitHub #28): the weapon gets an automatic
+ * row, once. The mock keeps attack rows as data, so the row is added here (the host lists the weapon instead).
+ */
+export function addToAttacks(c: MockCharacter, id: string): MockCharacter {
+  const item = c.items.find((i) => i.id === id);
+  if (!item) throw apiError("not_found", "No such inventory item.");
+  const w = weaponInfo(item.itemId);
+  if (!w) throw apiError("requirement_failed", "Only a weapon can be added to the attacks.");
+  if (c.attacks.some((a) => a.name === item.displayName)) return c;
+  const row = {
+    id: `atk-${item.id}`, name: item.displayName, range: w.range ? `${w.range} ft.` : "5 ft.", attackBonus: "", damage: `${w.damage} ${w.damageType}`.trim(),
+    description: "", ability: w.ability, auto: true, showInCombat: true, card: false, critRange: 20,
+  };
+  return { ...c, attacks: [...c.attacks, row] };
+}
+
 export function setAttuned(c: MockCharacter, id: string, attuned: boolean): MockCharacter {
   const item = c.items.find((i) => i.id === id);
   if (!item) throw apiError("not_found", "No such inventory item.");

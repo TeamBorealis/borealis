@@ -1,7 +1,8 @@
-import { type KeyboardEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, type KeyboardEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { OverlayPortal } from "../../../components/controls/OverlayHost";
 
-export interface PressMenuItem { label: string; run: () => void; disabled?: boolean }
+/** A menu entry; `separator` draws Aurora's menu rule above it. */
+export interface PressMenuItem { label: string; run: () => void; disabled?: boolean; separator?: boolean }
 
 /** Space kept between the menu and the window edge. */
 const EDGE_PX = 8;
@@ -59,8 +60,11 @@ export function PressMenu({ anchor, label, items, onClose }: { anchor: HTMLEleme
       <div ref={ref} className="aur-menu-panel v4-ctx pr-menu" role="menu" aria-label={label} onKeyDown={onKeyDown}
         style={pos ? { left: pos.left, top: pos.top } : { left: 0, top: 0, visibility: "hidden" }}>
         {items.map((it) => (
-          <button key={it.label} type="button" role="menuitem" className="aur-menu-item" disabled={it.disabled}
-            onClick={() => { close(); it.run(); }}>{it.label}</button>
+          <Fragment key={it.label}>
+            {it.separator && <div role="separator" className="aur-menu-sep" />}
+            <button type="button" role="menuitem" className="aur-menu-item" disabled={it.disabled}
+              onClick={() => { close(); it.run(); }}>{it.label}</button>
+          </Fragment>
         ))}
       </div>
     </OverlayPortal>

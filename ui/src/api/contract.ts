@@ -274,6 +274,8 @@ export interface ApiMethods {
   /** U12: switch "Override requirements" on a line (per item, saved with the character). */
   setItemRequirementsOverride(args: Cid & { inventoryId: string; on: boolean }): Promise<CharacterSnapshot>;
   setAttuned(args: Cid & { inventoryId: string; attuned: boolean }): Promise<CharacterSnapshot>;
+  /** Aurora's "Add to Attacks & Spellcasting" (GitHub #28): the weapon's row stays in the attacks while it is not held; `removeAttack` takes it off again. */
+  addToAttacks(args: Cid & { inventoryId: string }): Promise<CharacterSnapshot>;
   /** Enter the maximum of a dice-valued charge resource (`InventoryItem.rolledCharges`); refused outside min..max. */
   setRolledMax(args: Cid & { inventoryId: string; resourceId: string; value: number }): Promise<CharacterSnapshot>;
   /** Roll that maximum again. */
@@ -578,6 +580,7 @@ export const COMMANDS = {
   unequipItem: "unequip_item",
   setItemRequirementsOverride: "set_item_requirements_override",
   setAttuned: "set_attuned",
+  addToAttacks: "add_to_attacks",
   setRolledMax: "set_rolled_max",
   rerollMax: "reroll_max",
   storeItem: "store_item",

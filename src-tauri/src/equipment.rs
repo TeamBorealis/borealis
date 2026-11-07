@@ -295,6 +295,20 @@ impl AppState {
         })
     }
 
+    /// Keep a weapon's line in the attacks table while it is not held (Aurora's "Add to Attacks &
+    /// Spellcasting", GitHub #28). A weapon already on the list stays there once.
+    ///
+    /// # Errors
+    /// `not_found` for an unknown line; `requirement_failed` for an item that is not a weapon.
+    pub fn add_to_attacks(&self, id: &str, uid: &str) -> ApiResult<CharacterSnapshot> {
+        self.mutate(id, |ctx, d| {
+            line_index(&d.character.build, uid)?;
+            let out = commands::list_attack(&ctx.hub.engine, &d.character.build, uid, true)?;
+            apply(d, out);
+            Ok(())
+        })
+    }
+
     /// Attune to or end attunement with an item (limit enforced).
     ///
     /// # Errors

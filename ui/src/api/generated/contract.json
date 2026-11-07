@@ -59,6 +59,17 @@
     "name": "CharacterSnapshot"
    }
   },
+  "add_to_attacks": {
+   "args": {
+    "characterId": false,
+    "inventoryId": false
+   },
+   "method": "addToAttacks",
+   "response": {
+    "k": "ref",
+    "name": "CharacterSnapshot"
+   }
+  },
   "add_tracker": {
    "args": {
     "characterId": false,

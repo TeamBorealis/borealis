@@ -506,6 +506,7 @@ export class MockApi implements Api {
   async setItemRequirementsOverride(a: { characterId: string; inventoryId: string; on: boolean }) { return this.mutate(a.characterId, (c) => eq.setRequirementsOverride(c, a.inventoryId, a.on)); }
   async setRolledMax(a: { characterId: string; inventoryId: string; resourceId: string; value: number }) { return this.mutate(a.characterId, (c) => rolled.setRolledMax(c, a.inventoryId, a.resourceId, a.value)); }
   async rerollMax(a: { characterId: string; inventoryId: string; resourceId: string }) { return this.mutate(a.characterId, (c) => rolled.rerollMax(c, a.inventoryId, a.resourceId, this.rng)); }
+  async addToAttacks(a: { characterId: string; inventoryId: string }) { return this.mutate(a.characterId, (c) => eq.addToAttacks(c, a.inventoryId)); }
   async setAttuned(a: { characterId: string; inventoryId: string; attuned: boolean }) { return this.mutate(a.characterId, (c) => eq.setAttuned(c, a.inventoryId, a.attuned)); }
   async storeItem(a: { characterId: string; inventoryId: string; storage: 0 | 1 | 2 }) { return this.mutate(a.characterId, (c) => eq.storeItem(c, a.inventoryId, a.storage)); }
   async moveItem(a: { characterId: string; inventoryId: string; direction: "up" | "down" }) { return this.mutate(a.characterId, (c) => eq.moveItem(c, a.inventoryId, a.direction)); }

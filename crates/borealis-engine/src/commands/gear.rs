@@ -185,6 +185,27 @@ fn is_weapon(engine: &Engine, state: &CharacterState, i: usize) -> bool {
         .is_some_and(|(e, _)| item_facts(e).weapon)
 }
 
+/// Keep (`listed`) or stop keeping a weapon's line in the attacks table while it is not held
+/// (Aurora's "Add to Attacks & Spellcasting"). A held weapon has its line either way.
+///
+/// # Errors
+/// [`CommandError::Inventory`] for unknown uids or a line that is not a weapon.
+pub fn list_attack(engine: &Engine, state: &CharacterState, uid: &str, listed: bool) -> CmdResult {
+    let i = index_of(state, uid)?;
+    if listed && !is_weapon(engine, state, i) {
+        return Err(CommandError::Inventory(
+            "only a weapon can be added to the attacks".into(),
+        ));
+    }
+    let mut next = state.clone();
+    let list = &mut next.inventory.listed_attacks;
+    list.retain(|u| u != uid);
+    if listed {
+        list.push(uid.to_string());
+    }
+    Ok(CommandOutcome::new(next))
+}
+
 /// Pick the ability attack line `uid` (a weapon's inventory uid, or `unarmed`) uses, or go
 /// back to the rules' choice (`None`).
 ///
