@@ -232,7 +232,7 @@ describe("B4 on phones (More > Send / Receive)", () => {
   });
 });
 
-describe("C1 Borealis Settings > Devices", () => {
+describe("C1 Application Settings > Devices", () => {
   it("lists paired devices with last synced and expiry; Remove asks, revokes and reports", async () => {
     const user = userEvent.setup();
     const day = Date.UTC(2026, 9, 24) / 1000;
@@ -243,7 +243,7 @@ describe("C1 Borealis Settings > Devices", () => {
     const forget = vi.spyOn(api, "linkForgetDevice");
     renderApp("/characters", { api });
     await user.click(await screen.findByRole("menuitem", { name: "View" }));
-    await user.click(await screen.findByRole("menuitem", { name: "Borealis Settings" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Application Settings" }));
     await user.click(await screen.findByRole("tab", { name: "Devices" }));
     const phoneRow = await screen.findByRole("group", { name: "Borealis on iPhone or iPad" });
     expect(phoneRow.textContent).toContain("iPhone or iPad · Last synced 24 Oct 2026 · Expires 22 Apr 2027");
@@ -262,7 +262,7 @@ describe("C1 Borealis Settings > Devices", () => {
     const user = userEvent.setup();
     renderApp("/characters");
     await user.click(await screen.findByRole("menuitem", { name: "View" }));
-    await user.click(await screen.findByRole("menuitem", { name: "Borealis Settings" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Application Settings" }));
     await user.click(await screen.findByRole("tab", { name: "Devices" }));
     expect(await screen.findByText(/No devices yet\. Use File > Send to device/)).toBeTruthy();
   });

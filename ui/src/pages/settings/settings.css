@@ -1,4 +1,4 @@
-/* Settings windows (Application Settings + Borealis Settings): 500x600 owned window, left tab strip, footer bar. */
+/* The settings window (Application Settings): 500x600 owned window, left tab strip, footer bar. */
 .overlay.aur-set-overlay { background: transparent; animation: none; }
 .aur-set-win { width: 500px; height: 600px; max-width: 100%; max-height: 100%; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); border: 1px solid var(--highlight); box-shadow: var(--shadow-2); animation: fade 120ms var(--ease); }
 .aur-set-head { display: flex; align-items: center; height: 30px; min-height: 30px; padding: 0 0 0 10px; background: var(--chrome); }

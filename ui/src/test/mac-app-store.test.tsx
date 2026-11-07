@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { MockApi } from "../api/mock";
 import { DEFAULT_SETTINGS } from "../api/mock/default-settings";
 import { resetAppUpdate } from "../state/appUpdate";
-import { openBorealisSettings, renderApp } from "./utils";
+import { openSettingsTab, renderApp } from "./utils";
 
 // MAS1 (B-190): the Mac App Store build is a desktop store build without the AI CLI integration. The backend says so
 // (`settings.storeBuild`, `settings.aiAvailable`); the desktop UI stays, with no AI entry and no update check anywhere.
@@ -47,15 +47,23 @@ describe("Mac App Store build", () => {
     expect(help).toEqual(expect.arrayContaining(["News", "Support Page"]));
   });
 
-  it("has no AI or Phones tab and no update setting in Borealis Settings", async () => {
+  it("has no AI, Phones or Updates tab in Application Settings and no AI or update text on any tab", async () => {
     const user = userEvent.setup();
-    renderApp("/characters", { api: mas() });
-    await openBorealisSettings(user, "General");
-    const dialog = screen.getByRole("dialog", { name: "Borealis Settings" });
-    expect(within(dialog).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Devices", "Content", "Search", "General"]);
-    expect(dialog.textContent).not.toMatch(AI_TEXT);
-    expect(screen.queryByRole("checkbox", { name: "Check for new versions of Borealis" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Check now" })).toBeNull();
+    renderApp("/characters", { api: mas({ aiEnabled: true }) });
+    await openSettingsTab(user, "General");
+    const dialog = screen.getByRole("dialog", { name: "Application Settings" });
+    const tabs = within(dialog).getAllByRole("tab");
+    expect(tabs.map((t) => t.textContent)).toEqual([
+      "General", "Appearance", "Character build", "Data files", "Equipment", "Character sheet",
+      "Rules", "Saving", "Display", "Content", "Search", "Devices", "License", "About",
+    ]);
+    for (const tab of tabs) {
+      await user.click(tab);
+      await within(dialog).findByRole("tabpanel");
+      expect(dialog.textContent).not.toMatch(AI_TEXT);
+      expect(within(dialog).queryByRole("checkbox", { name: "Check for new versions of Borealis" })).toBeNull();
+      expect(within(dialog).queryByRole("button", { name: "Check now" })).toBeNull();
+    }
   });
 
   it.each(["/ai", "/setup/ai", "/import"])("%s redirects to the characters", async (route) => {
@@ -68,7 +76,7 @@ describe("Mac App Store build", () => {
     const day = 1_793_000_000;
     const device = (id: string, name: string, needsPairing?: boolean) => ({ id, name, platform: "ios" as const, pairedAt: day, lastSyncedAt: day, expiresAt: day + 180 * 86_400, fingerprint: "9b12 89ce 4fd2 8eff", ...(needsPairing ? { needsPairing } : {}) });
     renderApp("/characters", { api: mas({ linkDevices: [device("a1b2c3d4e5f60718", "Phone", true), device("0f1e2d3c4b5a6978", "Tablet")] }) });
-    await openBorealisSettings(user, "Devices");
+    await openSettingsTab(user, "Devices");
     const phone = await screen.findByRole("group", { name: "Phone" });
     expect(within(phone).getByText(/This pairing did not move to this version of Borealis/)).toBeTruthy();
     expect(within(screen.getByRole("group", { name: "Tablet" })).queryByText(/did not move/)).toBeNull();

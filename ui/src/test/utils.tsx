@@ -35,9 +35,9 @@ export async function seededId(api: MockApi, namePrefix: string): Promise<string
   return found.id;
 }
 
-/** Opens View > Borealis Settings and selects one of its tabs. */
-export async function openBorealisSettings(user: UserEvent, tab: string): Promise<void> {
+/** Opens View > Application Settings (the one settings window, GitHub #31) and selects one of its tabs. */
+export async function openSettingsTab(user: UserEvent, tab: string): Promise<void> {
   await user.click(await screen.findByRole("menuitem", { name: "View" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Borealis Settings" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Application Settings" }));
   await user.click(await screen.findByRole("tab", { name: tab }));
 }

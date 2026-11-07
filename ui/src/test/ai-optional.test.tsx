@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { MockApi } from "../api/mock";
 import { DEFAULT_SETTINGS } from "../api/mock/default-settings";
-import { openBorealisSettings, renderApp } from "./utils";
+import { openSettingsTab, renderApp } from "./utils";
 
 const AI_TEXT = /\bAI\b|Assistant|Codex|Claude|\bpair/i;
 const mock = (extra: ConstructorParameters<typeof MockApi>[0] = {}) => new MockApi({ aiChunkDelayMs: 2, importStepMs: 1, rng: () => 0.5, ...extra });
@@ -32,8 +32,8 @@ describe("AI is optional on desktop", () => {
   it("the Settings switch reveals the provider controls and every AI entry", async () => {
     const user = userEvent.setup();
     const { api } = renderApp("/characters");
-    await openBorealisSettings(user, "AI assistant");
-    const toggle = screen.getByRole("checkbox", { name: "Enable AI assistant (optional)" }) as HTMLInputElement;
+    await openSettingsTab(user, "AI assistant");
+    const toggle = await screen.findByRole("checkbox", { name: "Enable AI assistant (optional)" }) as HTMLInputElement;
     expect(toggle.checked).toBe(false);
     expect(screen.getByText("Uses your own Claude or Codex command-line tool.")).toBeTruthy();
     expect(screen.queryByLabelText("AI PROVIDER")).toBeNull();
@@ -41,8 +41,10 @@ describe("AI is optional on desktop", () => {
     await user.click(toggle);
     expect(await screen.findByLabelText("AI PROVIDER")).toBeTruthy();
     expect(screen.getByRole("button", { name: "AI setup…" })).toBeTruthy();
-    expect((await api.getSettings()).ai.enabled).toBe(true);
-    await user.click(within(screen.getByRole("dialog", { name: "Borealis Settings" })).getAllByRole("button", { name: "Close" }).at(-1)!);
+    // The switch waits for Save like every other field of the window.
+    expect((await api.getSettings()).ai.enabled).toBe(false);
+    await user.click(within(screen.getByRole("dialog", { name: "Application Settings" })).getByRole("button", { name: "Save" }));
+    await waitFor(async () => expect((await api.getSettings()).ai.enabled).toBe(true));
     expect(await openMenu(user, "View")).toContain("AI Assistant");
     expect(await openMenu(user, "Help")).toContain("AI Setup");
     expect(screen.getByRole("link", { name: "Import content" }).getAttribute("href")).toBe("/import");
@@ -73,14 +75,17 @@ describe("No AI on mobile", () => {
     expect((await openMenu(user, "Help")).join("|")).not.toMatch(AI_TEXT);
   });
 
-  it("has no AI or Phones tab in Borealis Settings and cannot enable AI", async () => {
+  it("has no AI or Phones tab in Application Settings and cannot enable AI", async () => {
     const user = userEvent.setup();
     const api = mock({ mobile: true });
     renderApp("/characters", { api });
     await user.click(await screen.findByRole("menuitem", { name: "View" }));
-    await user.click(await screen.findByRole("menuitem", { name: "Borealis Settings" }));
-    const dialog = await screen.findByRole("dialog", { name: "Borealis Settings" });
-    expect(within(dialog).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Devices", "Content", "Search", "General"]);
+    await user.click(await screen.findByRole("menuitem", { name: "Application Settings" }));
+    const dialog = await screen.findByRole("dialog", { name: "Application Settings" });
+    const tabs = within(dialog).getAllByRole("tab").map((t) => t.textContent);
+    expect(tabs).toEqual(expect.arrayContaining(["Devices", "Content", "Search", "Saving"]));
+    expect(tabs).not.toContain("AI assistant");
+    expect(tabs).not.toContain("Phones");
     expect(dialog.textContent).not.toMatch(AI_TEXT);
     await api.saveSettings({ patch: { ai: { ...DEFAULT_SETTINGS.ai, enabled: true } } });
     expect((await api.getSettings()).ai.enabled).toBe(false);

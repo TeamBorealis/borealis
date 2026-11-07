@@ -1,53 +1,42 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 import type { AppSettings, DataDirs } from "../../api/contract";
 import { Alert, Button } from "../../components";
 import { applyTheme, useSettings } from "../../state/SettingsContext";
 import { useApi } from "../../state/ApiContext";
+import { useCharacter } from "../../state/CharacterContext";
+import { usePlatform } from "../../state/platform";
 import { setStatus } from "../../state/status";
 import { errorMessage, useAsync } from "../../state/useAsync";
+import { openEditionFlyout } from "../manage/EditionFlyout";
 import { AppearanceTab } from "./AppearanceTab";
+import { AiTab, ContentTab, DisplayTab, PhonesTab, RulesTab, SavingTab, UpdatesTab } from "./BorealisTabs";
 import { DataFilesTab, type HeldPicks } from "./DataFilesTab";
+import { DevicesTab } from "./DevicesTab";
 import { BuildTab, EquipmentTab, GeneralTab } from "./GeneralBuildTabs";
 import { ModelLicence } from "./ModelLicence";
 import { SectionDesc } from "./rows";
+import { SearchTab } from "./SearchTab";
+import { formChanged, mergeForm } from "./settingsForm";
+import { resolveSettingsTab, visibleSettingsTabs } from "./settingsTabs";
 import { SettingsWindow } from "./SettingsWindow";
 import { SheetTab } from "./SheetTab";
 import { PhoneCase } from "../../lib/phoneCase";
 
-/** The classic builder's tab order (DEVELOPER omitted). */
-export const SETTINGS_TABS = [
-  { id: "general", label: "General" }, { id: "appearance", label: "Appearance" }, { id: "build", label: "Character build" },
-  { id: "data", label: "Data files" }, { id: "equipment", label: "Equipment" }, { id: "sheet", label: "Character sheet" },
-  { id: "license", label: "License" }, { id: "about", label: "About" },
-] as const;
-
-/** The fields this window owns; everything else (Borealis Settings) is taken from the stored settings on Save. */
-const OWNED: (keyof AppSettings)[] = [
-  "playerName", "abilityMethod", "rowHeight", "selectionFlow", "skillsPanelExpanded", "savingThrowsExpanded", "confirmRemoveLevel",
-  "theme", "accentColor", "portraitSize", "autoContentUpdate", "showImportNotice", "abilityCapEnabled", "confirmEquipWeaponNotInAttacks",
-];
-const SHEET_OWNED: (keyof AppSettings["sheet"])[] = [
-  "formFillable", "theme", "edition", "styleFormatting", "swapAbilityPositions", "includeNonPreparedSpells", "cards", "cardsNewPage", "legacySpellcastingPage", "paper",
-];
-const WIDE_TABS = new Set(["general", "build", "data"]);
-
-/** Full form to send on Save: the form's own fields over the stored settings, with folders copied from the stored ones. */
-function mergeForm(stored: AppSettings, form: AppSettings): AppSettings {
-  const next: Record<string, unknown> = { ...stored };
-  for (const k of OWNED) if (k in form) next[k] = form[k];
-  const sheet: Record<string, unknown> = { ...stored.sheet };
-  for (const k of SHEET_OWNED) sheet[k] = form.sheet[k];
-  return { ...(next as unknown as AppSettings), sheet: sheet as unknown as AppSettings["sheet"] };
-}
-
 /**
- * Application Settings (classic builder). Every edit is held in `form`; accent and theme preview live and revert on Cancel.
- * Save writes folders (token flow) then the full settings; Restore Defaults saves at once and stays open.
+ * Application Settings: the one settings window (GitHub #31). The classic builder's tabs first, then the Borealis-only tabs
+ * (settingsTabs.ts). Every field edit is held in `form`; accent and theme preview live and revert on Cancel. Save writes
+ * folders (token flow) then the full settings; Restore Defaults saves at once and stays open.
  */
 export function ApplicationSettings({ initialTab, onClose }: { initialTab: string; onClose: () => void }) {
   const api = useApi();
+  const nav = useNavigate();
+  const { snapshot } = useCharacter();
   const { settings: persisted, replace } = useSettings();
-  const [tab, setTab] = useState(SETTINGS_TABS.some((t) => t.id === initialTab) ? initialTab : "general");
+  const { aiAvailable, aiEnabled, storeBuild } = usePlatform();
+  const tabs = visibleSettingsTabs({ aiAvailable, aiEnabled, storeBuild });
+  const [picked, setTab] = useState(initialTab);
+  const tab = resolveSettingsTab(picked, tabs);
   const [form, setForm] = useState<AppSettings | null>(null);
   const [dirs, setDirs] = useState<DataDirs | null>(null);
   const [held, setHeld] = useState<HeldPicks>({});
@@ -79,7 +68,8 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
     } catch (e) { setError(errorMessage(e)); }
   };
 
-  const save = async () => {
+  /** Save, close, then run `after` (a button that leaves the window: AI setup, Manage, the Edition flyout). */
+  const save = async (after?: () => void) => {
     if (!form || saving) return;
     setSaving(true);
     setError(null);
@@ -93,10 +83,18 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
       replace(saved);
       setStatus(skipped ? `Your preferences have been saved. ${skipped} secondary content file(s) could not be loaded.` : "Your preferences have been saved.");
       onClose();
+      after?.();
     } catch (e) {
       setError(errorMessage(e));
       setSaving(false);
     }
+  };
+
+  /** Leave the window for another screen: unsaved edits are saved first (nothing to save = just close). */
+  const leave = (after: () => void) => {
+    if (form && formChanged(persisted, form, !!held.documents || !!held.secondary)) { void save(after); return; }
+    onClose();
+    after();
   };
 
   const restore = async () => {
@@ -123,6 +121,15 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
       case "data": return <DataFilesTab form={form} set={set} dirs={dirs} held={held} browse={(w) => void browse(w)} unlink={() => setHeld((h) => ({ ...h, secondary: "unlink" }))} clearCache={() => void clearCache()} cacheCleared={cacheCleared} error={error} />;
       case "equipment": return <EquipmentTab form={form} set={set} />;
       case "sheet": return <SheetTab sheet={form.sheet} onChange={setSheet} />;
+      case "rules": return <RulesTab form={form} set={set} hasCharacter={!!snapshot} openHouseRules={() => leave(openEditionFlyout)} />;
+      case "saving": return <SavingTab form={form} set={set} />;
+      case "display": return <DisplayTab form={form} set={set} />;
+      case "content": return <ContentTab manage={() => leave(() => nav("/content"))} />;
+      case "search": return <SearchTab />;
+      case "ai": return <AiTab form={form} set={set} setup={() => leave(() => nav("/setup/ai"))} />;
+      case "phones": return <PhonesTab />;
+      case "devices": return <DevicesTab />;
+      case "updates": return <UpdatesTab form={form} set={set} />;
       case "license": return (
         <>
           <h3 className="aur-set-title13 first flush"><PhoneCase>LICENSE</PhoneCase></h3>
@@ -142,8 +149,8 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
   })();
 
   return (
-    <SettingsWindow title="Application Settings" tabs={SETTINGS_TABS} active={tab} onTab={setTab} tabsLabel="Settings sections" idPrefix="settings"
-      onClose={onClose} onSubmit={() => void save()} narrowPad={!WIDE_TABS.has(tab)}
+    <SettingsWindow title="Application Settings" tabs={tabs} active={tab} onTab={setTab} tabsLabel="Settings sections" idPrefix="settings"
+      onClose={onClose} onSubmit={() => void save()} narrowPad={!tabs.find((t) => t.id === tab)?.wide}
       footer={
         <>
           <Button icon="restore" className="aur-set-restore" disabled={!form} onClick={() => void restore()}>Restore defaults</Button>

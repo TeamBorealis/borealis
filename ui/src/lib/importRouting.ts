@@ -42,5 +42,5 @@ export function unsupportedImportMessage(names: readonly string[], aiAvailable: 
   const list = names.join(", ");
   return !aiAvailable
     ? `${list} cannot be imported here. Use an .xml, .index, .zip, .dnd5e or .json file.`
-    : `${list} cannot be imported directly. PDFs, photos and plain text need the optional AI assistant (turn it on in Borealis Settings). You can also use an .xml, .index, .zip, .dnd5e or .json file.`;
+    : `${list} cannot be imported directly. PDFs, photos and plain text need the optional AI assistant (turn it on in Application Settings > AI Assistant). You can also use an .xml, .index, .zip, .dnd5e or .json file.`;
 }

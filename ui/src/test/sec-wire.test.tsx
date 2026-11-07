@@ -2,7 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { MockApi } from "../api/mock";
-import { openBorealisSettings, renderApp } from "./utils";
+import { openSettingsTab, renderApp } from "./utils";
 
 const codexOnly = (extra: ConstructorParameters<typeof MockApi>[0] = {}) =>
   new MockApi({ aiEnabled: true, aiChunkDelayMs: 2, importStepMs: 1, rng: () => 0.5, codexOnly: true, ...extra });
@@ -54,7 +54,7 @@ describe("AI host pairing", () => {
   it("shows the pairing QR, digits and fingerprint in Settings", async () => {
     const user = userEvent.setup();
     renderApp("/characters", { api: new MockApi({ aiEnabled: true, aiChunkDelayMs: 2, rng: () => 0.5 }) });
-    await openBorealisSettings(user, "Phones");
+    await openSettingsTab(user, "Phones");
     await user.click(await screen.findByRole("checkbox", { name: "Share AI with phones and tablets" }));
     expect(await screen.findByRole("img", { name: "Pairing QR code" })).toBeTruthy();
     expect(screen.getByText("12345678")).toBeTruthy();
@@ -80,8 +80,8 @@ describe("AI program override", () => {
     api.pickPath = async (a) => { purposes.push(a.purpose); return pickPath(a); };
     api.picks.next = "/opt/tools/codex";
     renderApp("/characters", { api });
-    await openBorealisSettings(user, "AI assistant");
-    await user.click(screen.getByRole("button", { name: "Browse…" }));
+    await openSettingsTab(user, "AI assistant");
+    await user.click(await screen.findByRole("button", { name: "Browse…" }));
     expect(await screen.findByText("/opt/tools/codex")).toBeTruthy();
     expect(purposes).toEqual(["ai-override"]);
     expect((await api.getSettings()).ai.overridePath).toBe("/opt/tools/codex");
@@ -95,15 +95,15 @@ describe("AI program override", () => {
     const api = new MockApi({ aiEnabled: true, aiChunkDelayMs: 2, rng: () => 0.5 });
     api.picks.next = "/usr/bin/python3";
     renderApp("/characters", { api });
-    await openBorealisSettings(user, "AI assistant");
-    await user.click(screen.getByRole("button", { name: "Browse…" }));
+    await openSettingsTab(user, "AI assistant");
+    await user.click(await screen.findByRole("button", { name: "Browse…" }));
     expect(await screen.findByText(/only the claude or codex command line programs/)).toBeTruthy();
   });
 
   it("the old auto-update toggle is gone", async () => {
     const user = userEvent.setup();
     renderApp("/characters");
-    await openBorealisSettings(user, "AI assistant");
+    await openSettingsTab(user, "AI assistant");
     expect(screen.queryByText(/Update content automatically/)).toBeNull();
   });
 });

@@ -28,7 +28,7 @@ export function AiPage() {
   const [prompt, setPrompt] = useState(params.get("prompt") ?? "");
   const [useChar, setUseChar] = useState(true);
   const { snapshot } = useCharacter();
-  const { setBorealisSettingsOpen, openCompendium } = useShell();
+  const { openSettings, openCompendium } = useShell();
   const openSource: OpenSource = (s) => openCompendium({ query: s.name, elementId: s.id });
   const status = useAsync(() => api.aiStatus(), [api]);
   const run = useAiTask();
@@ -58,7 +58,7 @@ export function AiPage() {
       </Expander>
       <p className="v5-note" style={{ marginTop: 10 }}>Everything stays on this device.</p>
       <div style={{ marginTop: 6 }}><ImportLink /></div>
-      <div style={{ marginTop: 6 }}><Button icon="cog" onClick={() => setBorealisSettingsOpen(true)}>Borealis Settings</Button></div>
+      <div style={{ marginTop: 6 }}><Button icon="cog" onClick={() => openSettings("ai")}>AI settings</Button></div>
     </>
   );
   const desc = (
@@ -67,7 +67,7 @@ export function AiPage() {
       {status.data && !ready && (
         <Alert tone="warning">
           {status.data.availability === "needs_pairing"
-            ? "AI runs on a paired desktop. Open Borealis Settings to connect to a desktop instance."
+            ? "AI runs on a paired desktop. Open Application Settings to connect to a desktop instance."
             : `${status.data.detail} Install the claude or codex CLI to enable the assistant.`}
         </Alert>
       )}

@@ -5,7 +5,7 @@ import { MockApi } from "../api/mock";
 import { FILLABLE_TOOLTIP } from "../pages/settings/SheetTab";
 import { getStatus } from "../state/status";
 import { SECONDARY_UNAVAILABLE, describeFolders } from "../components/shell/useFolderNotice";
-import { openBorealisSettings, renderApp } from "./utils";
+import { renderApp } from "./utils";
 
 const fast = () => new MockApi({ aiEnabled: true, aiChunkDelayMs: 1, rng: () => 0.5 });
 
@@ -16,14 +16,17 @@ async function openAppSettings(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("Application Settings window", () => {
-  it("has eight tabs on a vertical strip and opens over the current screen", async () => {
+  it("has the classic tabs, then the Borealis tabs, on a vertical strip and opens over the current screen", async () => {
     const user = userEvent.setup();
     renderApp("/characters");
     const dialog = await openAppSettings(user);
     const list = within(dialog).getByRole("tablist", { name: "Settings sections" });
     expect(list.getAttribute("aria-orientation")).toBe("vertical");
-    expect(within(list).getAllByRole("tab").map((t) => t.textContent)).toEqual(
-      ["General", "Appearance", "Character build", "Data files", "Equipment", "Character sheet", "License", "About"]);
+    expect(within(list).getAllByRole("tab").map((t) => t.textContent)).toEqual([
+      "General", "Appearance", "Character build", "Data files", "Equipment", "Character sheet",
+      "Rules", "Saving", "Display", "Content", "Search", "AI assistant", "Devices", "Updates",
+      "License", "About",
+    ]);
     expect((within(list).getByRole("tab", { name: "General" })).getAttribute("aria-selected")).toBe("true");
     expect(document.querySelector(".aur-set-overlay")).toBeTruthy();
     expect(within(dialog).getByRole("button", { name: "Restore defaults" })).toBeTruthy();
@@ -170,44 +173,6 @@ describe("Application Settings window", () => {
     const clear = within(third).getByRole("button", { name: "Clear Cache" });
     await user.click(clear);
     await waitFor(() => expect((clear as HTMLButtonElement).disabled).toBe(true));
-  });
-});
-
-describe("Borealis Settings window", () => {
-  it("opens from View directly under Application Settings and holds the Borealis-only rows", async () => {
-    const user = userEvent.setup();
-    renderApp("/characters");
-    await user.click(await screen.findByRole("menuitem", { name: "View" }));
-    const items = within(await screen.findByRole("menu")).getAllByRole("menuitem").map((i) => i.textContent);
-    const at = items.findIndex((t) => t?.includes("Application Settings"));
-    expect(items[at + 1]).toContain("Borealis Settings");
-    await user.click(screen.getByRole("menuitem", { name: "Borealis Settings" }));
-    const dialog = await screen.findByRole("dialog", { name: "Borealis Settings" });
-    expect(within(dialog).getAllByRole("tab").map((t) => t.textContent)).toEqual(["AI assistant", "Devices", "Content", "Search", "General"]);
-    // AI is off on a fresh profile: only the switch shows; the provider controls appear once it is on.
-    expect(within(dialog).queryByLabelText("AI PROVIDER")).toBeNull();
-    await user.click(within(dialog).getByRole("checkbox", { name: "Enable AI assistant (optional)" }));
-    expect(await within(dialog).findByLabelText("AI PROVIDER")).toBeTruthy();
-    expect(within(dialog).getAllByRole("tab").map((t) => t.textContent)).toEqual(["AI assistant", "Phones", "Devices", "Content", "Search", "General"]);
-    await user.click(within(dialog).getByRole("tab", { name: "General" }));
-    expect(within(dialog).getByRole("checkbox", { name: "Autosave" })).toBeTruthy();
-    await user.click(within(dialog).getByRole("tab", { name: "Content" }));
-    expect(within(dialog).getByLabelText("DEFAULT RULESET FOR NEW CHARACTERS")).toBeTruthy();
-  });
-
-  it("opens from the AI Assistant page", async () => {
-    const user = userEvent.setup();
-    renderApp("/ai", { aiEnabled: true });
-    await user.click(await screen.findByRole("button", { name: "Borealis Settings" }));
-    expect(await screen.findByRole("dialog", { name: "Borealis Settings" })).toBeTruthy();
-  });
-
-  it("is reachable from AI setup and applies changes at once", async () => {
-    const user = userEvent.setup();
-    const { api } = renderApp("/characters");
-    await openBorealisSettings(user, "General");
-    await user.click(screen.getByRole("checkbox", { name: "Autosave" }));
-    await waitFor(async () => expect((await api.getSettings()).autosave).toBe(false));
   });
 });
 

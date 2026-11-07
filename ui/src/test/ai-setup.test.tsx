@@ -2,7 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { MockApi } from "../api/mock";
-import { openBorealisSettings, renderApp } from "./utils";
+import { openSettingsTab, renderApp } from "./utils";
 
 const fresh = (aiSetup: ConstructorParameters<typeof MockApi>[0] extends infer O ? (O extends { aiSetup?: infer S } ? S : never) : never) =>
   new MockApi({ aiChunkDelayMs: 2, aiEnabled: true, rng: () => 0.5, aiSetup });
@@ -63,8 +63,8 @@ describe("first-run AI setup", () => {
     const user = userEvent.setup();
     const api = fresh({ completed: true });
     renderApp("/characters", { api });
-    await openBorealisSettings(user, "AI assistant");
-    expect((screen.getByRole("checkbox", { name: "Enable AI assistant (optional)" }) as HTMLInputElement).checked).toBe(true);
+    await openSettingsTab(user, "AI assistant");
+    expect((await screen.findByRole("checkbox", { name: "Enable AI assistant (optional)" }) as HTMLInputElement).checked).toBe(true);
     await user.click(await screen.findByRole("button", { name: "AI setup…" }));
     expect(await screen.findByRole("heading", { name: "Set up AI assistance" })).toBeTruthy();
     await expect(api.aiSetupInstall({ provider: "codex", consentToken: "forged" })).rejects.toMatchObject({ code: "requirement_failed" });

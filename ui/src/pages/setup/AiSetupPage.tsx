@@ -87,7 +87,7 @@ function Steps({ p, status, onChanged }: { p: AiSetupProvider; status: AiSetupSt
 export function AiSetupPage() {
   const api = useApi();
   const nav = useNavigate();
-  const { setBorealisSettingsOpen } = useShell();
+  const { openSettings } = useShell();
   const status = useAsync(() => api.aiSetupStatus(), [api]);
   const [saving, setSaving] = useState(false);
   const finish = async (skipped: boolean) => {
@@ -106,7 +106,7 @@ export function AiSetupPage() {
         <div className="v5-sheet-body">
           <p className="v5-note" style={{ marginTop: 0 }}>Borealis can use the Claude or Codex command-line tool you already have to answer rules questions, advise on builds and help with homebrew. Everything else works without it.</p>
           {status.error && <Alert tone="danger" role="alert">{status.error}</Alert>}
-          {s?.mobile && <Alert tone="info">Phones and tablets cannot run these tools. Pair with a desktop Borealis from Borealis Settings instead.</Alert>}
+          {s?.mobile && <Alert tone="info">Phones and tablets cannot run these tools. Pair with a desktop Borealis from Application Settings instead.</Alert>}
           {s && !s.mobile && (
             <>
               {s.providers.map((p) => <Steps key={p.backend} p={p} status={s} onChanged={status.reload} />)}
@@ -116,7 +116,7 @@ export function AiSetupPage() {
           )}
         </div>
         <div className="v5-sheet-foot">
-          <Button icon="cog" onClick={() => setBorealisSettingsOpen(true)}>Borealis Settings</Button>
+          <Button icon="cog" onClick={() => openSettings("ai")}>AI settings</Button>
           <Button disabled={saving} onClick={() => void finish(true)}>Skip — use Borealis without AI</Button>
           {s && !s.mobile && <Button variant="primary" disabled={saving} onClick={() => void finish(false)}>{anyReady ? "Done" : "Continue without AI for now"}</Button>}
         </div>

@@ -33,8 +33,8 @@ async function blockExternal(ctx: Ctx): Promise<string[]> {
 
 async function openSearchSettings(ctx: Ctx): Promise<void> {
   await ctx.screen.getByRole('menuitem', 'View').tap();
-  await ctx.screen.getByRole('menuitem', 'Borealis Settings').tap();
-  await expect(ctx.screen.getByRole('dialog', 'Borealis Settings')).toBeVisible();
+  await ctx.screen.getByRole('menuitem', 'Application Settings').tap();
+  await expect(ctx.screen.getByRole('dialog', 'Application Settings')).toBeVisible();
   await ctx.screen.getByRole('tab', 'Search').tap();
   await expect(ctx.screen.getByRole('checkbox', SWITCH)).toBeVisible();
 }

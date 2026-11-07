@@ -80,7 +80,7 @@ describe('b4', { tags: ['b4'] }, () => {
     await waitForStatus(ctx, /^Sent to Borealis on Mac: /i);
 
     await ctx.screen.getByRole('menuitem', 'View').tap();
-    await ctx.screen.getByRole('menuitem', 'Borealis Settings').tap();
+    await ctx.screen.getByRole('menuitem', 'Application Settings').tap();
     await ctx.screen.getByRole('tab', 'Devices').tap();
     await expect(ctx.screen.getByRole('group', 'Borealis on Mac')).toBeVisible();
     await ctx.screen.getByRole('button', 'Remove').tap();

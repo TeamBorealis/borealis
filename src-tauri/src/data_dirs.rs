@@ -228,7 +228,7 @@ impl AppState {
 
     /// Reference app "Restore Defaults": reset every setting the reference app dialog owns, save at once and
     /// apply (documents directory back to the default, secondary directory unlinked). AI, default
-    /// ruleset and autosave (the Borealis settings window) are kept.
+    /// ruleset and autosave (Borealis-only settings) are kept.
     ///
     /// # Errors
     /// `io_error` if the settings cannot be written; content errors from unlinking.

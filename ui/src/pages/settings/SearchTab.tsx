@@ -75,7 +75,7 @@ function progressText(st: SemanticStatus): string {
   }
 }
 
-/** Borealis Settings > Search: semantic search switch (consent first), download progress, tier override, battery, delete. */
+/** Application Settings > Search: semantic search switch (consent first), download progress, tier override, battery, delete. */
 export function SearchTab() {
   const api = useApi();
   const { settings: s, update, replace } = useSettings();
@@ -154,7 +154,7 @@ export function SearchTab() {
               <div className="aur-set-buttons">
                 {d.state === "downloading" && <Button onClick={() => void act(() => api.semanticDownloadPause())}>Pause</Button>}
                 {resumable && st.available && st.backendAvailable && <Button onClick={() => void act(() => api.semanticDownloadStart())}>{d.state === "failed" ? "Try again" : "Resume"}</Button>}
-                <Button variant="clear" onClick={() => void act(() => api.semanticDownloadCancel())}>Cancel</Button>
+                <Button variant="clear" onClick={() => void act(() => api.semanticDownloadCancel())}>Cancel download</Button>
               </div>
               {st.mobile && <Help>The download pauses while Borealis is in the background; press Resume to continue.</Help>}
             </>

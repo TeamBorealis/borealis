@@ -19,10 +19,12 @@ async function menuHasAi(ctx: Ctx, menu: string): Promise<boolean> {
   return found;
 }
 
-async function openBorealisSettings(ctx: Ctx): Promise<void> {
+/** View > Application Settings (the one settings window, GitHub #31), AI ASSISTANT tab. */
+async function openAiSettings(ctx: Ctx): Promise<void> {
   await ctx.screen.getByRole('menuitem', 'View').tap();
-  await ctx.screen.getByRole('menuitem', 'Borealis Settings').tap();
-  await expect(ctx.screen.getByRole('dialog', 'Borealis Settings')).toBeVisible();
+  await ctx.screen.getByRole('menuitem', 'Application Settings').tap();
+  await expect(ctx.screen.getByRole('dialog', 'Application Settings')).toBeVisible();
+  await ctx.screen.getByRole('tab', 'AI assistant').tap();
 }
 
 describe('ai-optional', { tags: ['ai-optional'] }, () => {
@@ -42,12 +44,13 @@ describe('ai-optional', { tags: ['ai-optional'] }, () => {
 
   test('the Settings switch reveals the AI entries', async (ctx) => {
     await bootToHome(ctx);
-    await openBorealisSettings(ctx);
+    await openAiSettings(ctx);
     const toggle = ctx.screen.getByRole('checkbox', 'Enable AI assistant (optional)');
     await expect(toggle).toBeVisible();
     await toggle.tap();
     await expect(ctx.screen.getByLabel('AI PROVIDER')).toBeVisible();
-    await ctx.screen.getByRole('button', 'Close').last().tap();
+    // The switch waits for Save like every field of the window.
+    await ctx.screen.getByRole('button', 'Save').tap();
     await ctx.screen.getByRole('menuitem', 'View').tap();
     await expect(ctx.screen.getByRole('menuitem', 'AI Assistant')).toBeVisible();
     await pressKey(ctx, 'Escape');

@@ -6,7 +6,7 @@ import { consentBody } from "../api/mock/semantic";
 import { ON_KEYWORDS, READY_LINE } from "../pages/settings/SearchTab";
 import { footerText, showSemanticHint } from "../pages/compendium/searchModel";
 import { getStatus } from "../state/status";
-import { openBorealisSettings, renderApp } from "./utils";
+import { openSettingsTab, renderApp } from "./utils";
 
 /* The exact spec section 8 wording; src-tauri/tests/semantic_model.rs pins the Rust text to the same strings. */
 const CONSENT_DESKTOP = "Borealis will download the EmbeddingGemma 2 model (Apache 2.0, about 310 MB) once, from Hugging Face or the Borealis mirror. Search then also finds rules, lore and session notes by meaning, not only by the words you type. Everything runs on this device; your searches and notes never leave it. Indexing takes a few minutes. You can delete the model at any time in Settings.";
@@ -17,8 +17,8 @@ const SWITCH = "Semantic search (optional)";
 async function openSearchTab(api: MockApi) {
   const user = userEvent.setup();
   renderApp("/characters", { api });
-  await openBorealisSettings(user, "Search");
-  const dialog = await screen.findByRole("dialog", { name: "Borealis Settings" });
+  await openSettingsTab(user, "Search");
+  const dialog = await screen.findByRole("dialog", { name: "Application Settings" });
   await within(dialog).findByText("SEARCH");
   return { user, dialog };
 }
@@ -133,7 +133,7 @@ describe("Settings > Search: download controls", () => {
     await user.click(within(dialog).getByRole("button", { name: "Resume" }));
     await waitFor(() => expect(api.semantic.starts).toBe(2));
     // cancel
-    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await user.click(within(dialog).getByRole("button", { name: "Cancel download" }));
     await waitFor(() => expect(within(dialog).queryByRole("progressbar", { name: "Model download" })).toBeNull());
     expect((await api.getSettings()).search.semantic).toBe(false);
     expect((within(dialog).getByRole("checkbox", { name: SWITCH }) as HTMLInputElement).checked).toBe(false);
@@ -179,7 +179,7 @@ describe("Settings > Search on phones", () => {
 
     // Act
     await user.click(await screen.findByRole("button", { name: "Search settings" }));
-    const dialog = await screen.findByRole("dialog", { name: "Borealis Settings" });
+    const dialog = await screen.findByRole("dialog", { name: "Application Settings" });
     await user.click(await within(dialog).findByRole("checkbox", { name: SWITCH }));
 
     // Assert
@@ -196,7 +196,7 @@ describe("Settings > Search on phones", () => {
 
     // Act
     await user.click(await screen.findByRole("button", { name: "Search settings" }));
-    const dialog = await screen.findByRole("dialog", { name: "Borealis Settings" });
+    const dialog = await screen.findByRole("dialog", { name: "Application Settings" });
     await within(dialog).findByText("The model for this device is not available yet.");
     await user.click(within(dialog).getByRole("checkbox", { name: SWITCH }));
 
@@ -211,7 +211,7 @@ describe("Settings > Search on phones", () => {
     const user = userEvent.setup();
     renderApp("/more", { api });
     await user.click(await screen.findByRole("button", { name: "Search settings" }));
-    const dialog = await screen.findByRole("dialog", { name: "Borealis Settings" });
+    const dialog = await screen.findByRole("dialog", { name: "Application Settings" });
     expect(await within(dialog).findByText(/needs at least 3 GB of memory/)).toBeTruthy();
     expect(within(dialog).queryByRole("checkbox", { name: SWITCH })).toBeNull();
   });
@@ -238,7 +238,7 @@ describe("search flyout hint and footer", () => {
     await user.click(link);
 
     // Assert
-    const settings = await screen.findByRole("dialog", { name: "Borealis Settings" });
+    const settings = await screen.findByRole("dialog", { name: "Application Settings" });
     expect(within(settings).getByRole("tab", { name: "Search" }).getAttribute("aria-selected")).toBe("true");
     expect(api.semantic.starts).toBe(0);
   });

@@ -5,7 +5,7 @@ import { MockApi } from "../api/mock";
 import { setPhoneForTests } from "../lib/phone";
 import { MENUS, visibleMenus } from "../components/shell/sections";
 import { resetAppUpdate, WEB_CHECK_DELAY_MS } from "../state/appUpdate";
-import { openBorealisSettings, renderApp } from "./utils";
+import { openSettingsTab, renderApp } from "./utils";
 
 // Store builds (user, 2026-11-01): the iOS app and the Google Play build never point at downloads outside the store.
 // The backend says which build this is (`settings.storeBuild`); desktop, web and the sideloaded APK are unchanged.
@@ -111,12 +111,13 @@ describe("store builds: update notice", () => {
   });
 });
 
-describe("store builds: Borealis Settings", () => {
+describe("store builds: Application Settings", () => {
   it("has no update setting or Check now", async () => {
     const user = userEvent.setup();
     renderApp("/characters", { api: store(false) });
-    await openBorealisSettings(user, "General");
-    expect(screen.getByRole("checkbox", { name: "Autosave" })).toBeTruthy();
+    await openSettingsTab(user, "Saving");
+    expect(await screen.findByRole("checkbox", { name: "Autosave" })).toBeTruthy();
+    expect(screen.queryByRole("tab", { name: "Updates" })).toBeNull();
     expect(screen.queryByRole("checkbox", { name: "Check for new versions of Borealis" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Check now" })).toBeNull();
   });

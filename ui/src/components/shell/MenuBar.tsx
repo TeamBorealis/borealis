@@ -69,14 +69,13 @@ function useActivate() {
   const nav = useNavigate();
   const api = useApi();
   const { run } = useShellActions();
-  const { setLevelUpOpen, setPortraitsOpen, openSettings, setBorealisSettingsOpen } = useShell();
+  const { setLevelUpOpen, setPortraitsOpen, openSettings } = useShell();
   return (e: MenuEntry) => {
     if (e.to) nav(e.to);
     else if (e.link) void openLink(api, e.link);
     else if (e.action === "levelup") setLevelUpOpen(true);
     else if (e.action === "portraits") setPortraitsOpen(true);
     else if (e.action === "settings") openSettings();
-    else if (e.action === "borealis-settings") setBorealisSettingsOpen(true);
     else if (e.action === "edition") openEditionFlyout();
     else if (e.action === "send-to-device") openSendToDevice();
     else if (e.action === "receive-from-device") openReceiveFromDevice();

@@ -11,20 +11,16 @@ interface ShellCtx {
   optionsOpen: boolean; setOptionsOpen: (v: boolean) => void;
   /** Portraits gallery flyout (View > Portraits Gallery, Ctrl+P, portrait click). */
   portraitsOpen: boolean; setPortraitsOpen: (v: boolean) => void;
-  /** Application Settings window: the open tab id, or null while closed (View > Application Settings, the cog, `/settings?tab=`). */
+  /** The one settings window (Application Settings, GitHub #31): the open tab id, or null while closed. Opened by View >
+   * Application Settings, the cog, `/settings?tab=`, the sheet's settings link, the search hint and the AI pages. */
   settingsTab: string | null; openSettings: (tab?: string) => void; closeSettings: () => void;
-  /** Borealis Settings window (View > Borealis Settings, AI pages). */
-  borealisSettingsOpen: boolean; setBorealisSettingsOpen: (v: boolean) => void;
-  /** Open Borealis Settings at a tab (the search hint opens "search"); `borealisSettingsTab` is that tab. */
-  borealisSettingsTab: string | undefined; openBorealisSettings: (tab?: string) => void;
   /** Non-null while the Compendium flyout is open. */
   compendium: CompendiumRequest | null; openCompendium: (req?: CompendiumRequest) => void; closeCompendium: () => void;
 }
 const Ctx = createContext<ShellCtx>({
   host: null, setHost: () => undefined, levelUpOpen: false, setLevelUpOpen: () => undefined, optionsOpen: false, setOptionsOpen: () => undefined,
   portraitsOpen: false, setPortraitsOpen: () => undefined,
-  settingsTab: null, openSettings: () => undefined, closeSettings: () => undefined, borealisSettingsOpen: false, setBorealisSettingsOpen: () => undefined,
-  borealisSettingsTab: undefined, openBorealisSettings: () => undefined,
+  settingsTab: null, openSettings: () => undefined, closeSettings: () => undefined,
   compendium: null, openCompendium: () => undefined, closeCompendium: () => undefined,
 });
 
@@ -34,16 +30,12 @@ export function ShellProvider({ children }: { children: ReactNode }) {
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [portraitsOpen, setPortraitsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<string | null>(null);
-  const [borealisSettingsOpen, setBorealisOpen] = useState(false);
-  const [borealisSettingsTab, setBorealisTab] = useState<string | undefined>();
-  const setBorealisSettingsOpen = useCallback((v: boolean) => { setBorealisTab(undefined); setBorealisOpen(v); }, []);
-  const openBorealisSettings = useCallback((tab?: string) => { setBorealisTab(tab); setBorealisOpen(true); }, []);
   const openSettings = useCallback((tab = "general") => setSettingsTab(tab), []);
   const closeSettings = useCallback(() => setSettingsTab(null), []);
   const [compendium, setCompendium] = useState<CompendiumRequest | null>(null);
   const openCompendium = useCallback((req: CompendiumRequest = {}) => setCompendium(req), []);
   const closeCompendium = useCallback(() => setCompendium(null), []);
-  const value = useMemo(() => ({ host, setHost, levelUpOpen, setLevelUpOpen, optionsOpen, setOptionsOpen, portraitsOpen, setPortraitsOpen, settingsTab, openSettings, closeSettings, borealisSettingsOpen, setBorealisSettingsOpen, borealisSettingsTab, openBorealisSettings, compendium, openCompendium, closeCompendium }), [host, levelUpOpen, optionsOpen, portraitsOpen, settingsTab, openSettings, closeSettings, borealisSettingsOpen, setBorealisSettingsOpen, borealisSettingsTab, openBorealisSettings, compendium, openCompendium, closeCompendium]);
+  const value = useMemo(() => ({ host, setHost, levelUpOpen, setLevelUpOpen, optionsOpen, setOptionsOpen, portraitsOpen, setPortraitsOpen, settingsTab, openSettings, closeSettings, compendium, openCompendium, closeCompendium }), [host, levelUpOpen, optionsOpen, portraitsOpen, settingsTab, openSettings, closeSettings, compendium, openCompendium, closeCompendium]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

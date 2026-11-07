@@ -13,7 +13,7 @@ export function ModelLicence() {
   return (
     <>
       <SectionTitle>SEMANTIC SEARCH MODEL</SectionTitle>
-      <SectionDesc>{lic.data.model} is downloaded only if you turn on semantic search in Borealis Settings &gt; Search.</SectionDesc>
+      <SectionDesc>{lic.data.model} is downloaded only if you turn on semantic search in Application Settings &gt; Search.</SectionDesc>
       <pre className="aur-set-licence" aria-label={`${lic.data.model} notice`}>{lic.data.notice}</pre>
       <div className="aur-set-buttons">
         <Button aria-expanded={open} onClick={() => setOpen((o) => !o)}>{open ? "Hide licence" : "Show licence"}</Button>

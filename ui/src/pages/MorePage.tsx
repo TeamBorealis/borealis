@@ -9,7 +9,7 @@ import "./ai/panes.css";
 /** Phone overflow destination (the fifth bottom-bar slot): a classic builder list of destinations, then Send / Receive. */
 export function MorePage() {
   const { aiEnabled } = usePlatform();
-  const { openBorealisSettings } = useShell();
+  const { openSettings } = useShell();
   return (
     <div className="v5-page">
       <div className="v5-list-pane">
@@ -27,7 +27,7 @@ export function MorePage() {
           <li><button type="button" className="v5-row" onClick={() => openExportBundle()}><Icon name="upload" /><span className="grow">Share as a file</span><Icon name="chevron" /></button></li>
         </ul>
         <ul className="v5-list" aria-label="Settings" style={{ marginTop: 10 }}>
-          <li><button type="button" className="v5-row" onClick={() => openBorealisSettings("search")}><Icon name="cog" /><span className="grow">Search settings</span><Icon name="chevron" /></button></li>
+          <li><button type="button" className="v5-row" onClick={() => openSettings("search")}><Icon name="cog" /><span className="grow">Search settings</span><Icon name="chevron" /></button></li>
         </ul>
       </div>
     </div>

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MockApi } from "../api/mock";
 import { checkWithFetch, isNewer, MAX_NOTES_CHARS, openDownload, parseVersion, resetAppUpdate } from "../state/appUpdate";
-import { openBorealisSettings, renderApp } from "./utils";
+import { openSettingsTab, renderApp } from "./utils";
 
 const NEWER = { state: "done", current: "1.0.0", latest: "1.0.1", newer: true, url: "https://borealisbuilder.com/#download", releaseUrl: null, notes: null, checkedAt: "2026-10-15T09:00:00Z" } as const;
 const fast = () => new MockApi({ aiChunkDelayMs: 1, rng: () => 0.5 });
@@ -193,18 +193,20 @@ describe("opening the download page", () => {
   });
 });
 
-describe("Borealis Settings: updates", () => {
+describe("Application Settings: updates", () => {
   it("explains the setting, saves it, and Check now reports the latest version", async () => {
     const user = userEvent.setup();
     const { api } = renderApp("/characters");
-    await openBorealisSettings(user, "General");
-    const box = screen.getByRole("checkbox", { name: "Check for new versions of Borealis" });
+    await openSettingsTab(user, "Updates");
+    const box = await screen.findByRole("checkbox", { name: "Check for new versions of Borealis" });
     expect((box as HTMLInputElement).checked).toBe(true);
     expect(screen.getByText(/Only asks GitHub for the latest version number/)).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Check now" }));
     expect(await screen.findByText("You have the latest version (1.0.1).")).toBeTruthy();
     expect(api.appUpdate.requests).toBe(1);
     await user.click(box);
+    expect((await api.getSettings()).checkAppUpdates).toBe(true);
+    await user.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(async () => expect((await api.getSettings()).checkAppUpdates).toBe(false));
   });
 
@@ -212,9 +214,9 @@ describe("Borealis Settings: updates", () => {
     const user = userEvent.setup();
     const api = fast();
     renderApp("/characters", { api });
-    await openBorealisSettings(user, "General");
+    await openSettingsTab(user, "Updates");
     api.appUpdate.status = { ...NEWER };
-    await user.click(screen.getByRole("button", { name: "Check now" }));
+    await user.click(await screen.findByRole("button", { name: "Check now" }));
     expect(await screen.findByText("Borealis 1.0.1 is available (you have 1.0.0).")).toBeTruthy();
   });
 });

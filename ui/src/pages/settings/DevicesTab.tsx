@@ -9,7 +9,7 @@ import { formatDay, PLATFORM_LABEL } from "../transfer/messages";
 import { Help, SectionDesc } from "./rows";
 import { PhoneCase } from "../../lib/phoneCase";
 
-/** Borealis Settings > Devices (C1): paired devices with last sync and expiry; Remove revokes one. */
+/** Application Settings > Devices (C1): paired devices with last sync and expiry; Remove revokes one. */
 export function DevicesTab() {
   const api = useApi();
   const { mobile } = usePlatform();

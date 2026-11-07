@@ -22,7 +22,7 @@ desktopSuite('d11', 'consent, download, index, then Keyword + semantic in Settin
   await app.open();
   await expect(screen.getByText(/welcome to borealis/i).first()).toBeVisible(SLOW);
   await screen.getByRole('menuitem', 'View').tap();
-  await screen.getByRole('menuitem', 'Borealis Settings').tap();
+  await screen.getByRole('menuitem', 'Application Settings').tap();
   // The macOS tree reports the settings tabs without the tab role: match the exact name.
   await screen.getByLabel(/^Search$/).first().tap();
   await expect(screen.getByText(KEYWORD_ONLY).first()).toBeVisible(SLOW);

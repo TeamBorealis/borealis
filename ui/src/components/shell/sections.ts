@@ -37,7 +37,7 @@ export function activeTab(pathname: string): MainTabDef {
   return MAIN_TABS.find((t) => t.match.some((m) => pathname === m || pathname.startsWith(`${m}/`))) ?? MAIN_TABS[0]!;
 }
 
-export type ShellAction = "new" | "save" | "next" | "flow" | "exit" | "close" | "compendium" | "options" | "levelup" | "portraits" | "edition" | "settings" | "borealis-settings" | "send-to-device" | "receive-from-device" | "export-bundle" | "open-bundle";
+export type ShellAction = "new" | "save" | "next" | "flow" | "exit" | "close" | "compendium" | "options" | "levelup" | "portraits" | "edition" | "settings" | "send-to-device" | "receive-from-device" | "export-bundle" | "open-bundle";
 
 export interface MenuEntry {
   id: string;
@@ -83,7 +83,6 @@ export const MENUS: readonly MenuDef[] = [
     { id: "next", label: "Next Selection", action: "next", needsCharacter: true },
     { id: "flow", label: "Enable Selection Flow", action: "flow", checkable: true },
     { id: "settings", label: "Application Settings", action: "settings" },
-    { id: "borealis-settings", label: "Borealis Settings", action: "borealis-settings" },
     { id: "s1", label: "", separator: true },
     { id: "content", label: "Additional Content", to: "/content" },
     { id: "ai", label: "AI Assistant", to: "/ai", ai: true },
