@@ -52,6 +52,7 @@ impl Evaluation<'_> {
                 description: sanitize_html(&el.description),
                 sheet_summary: summary,
                 displayed,
+                prerequisites_unmet: self.graph.node_needs_prereq_override(id),
             };
             let again: Vec<FeatureDetail> = self
                 .feat_select_levels(id, level)

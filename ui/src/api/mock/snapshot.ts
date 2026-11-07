@@ -31,7 +31,7 @@ export const toSlot = (d: SlotDef, c: MockCharacter): SelectionSlot => {
   const replaced = history.map((h) => ({ id: h.id, name: getElement(h.id)?.name ?? h.id, level: h.level }));
   const gainedOnLevel = history.at(-1)?.level ?? d.requiredLevel ?? 1;
   return {
-    ...rest, id: toWireSlotId(d.id), locked, gainedOnLevel, replaced, allowReplace: d.allowReplace && !!el, emptyReason: emptyReasonOf(d, c), problem: null,
+    ...rest, id: toWireSlotId(d.id), locked, gainedOnLevel, replaced, allowReplace: d.allowReplace && !!el, emptyReason: emptyReasonOf(d, c), problem: null, prerequisitesUnmet: false,
     chosen: el ? { id: el.id, name: el.name, type: el.type, source: el.source } : null,
   };
 };

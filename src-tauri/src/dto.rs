@@ -138,6 +138,10 @@ pub struct SlotOptionBase {
     /// default version order puts imported content first.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub bundled: bool,
+    /// HR3 (GitHub #24): offered only because a prerequisite house rule is on (the picker's
+    /// "prerequisites not met" mark).
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub prerequisites_unmet: bool,
 }
 
 /// A picker row (B-55): one name of a slot. Its own fields are its shown version: the slot's
@@ -222,6 +226,10 @@ pub struct CharacterOptions {
     pub average_hp: bool,
     pub point_buy_unrestricted: bool,
     pub attunement_limit: u32,
+    /// HR3 house rule: feats can be picked whatever their prerequisites.
+    pub ignore_feat_prerequisites: bool,
+    /// HR3 house rule: multiclassing ignores the ability score prerequisites.
+    pub ignore_multiclass_prerequisites: bool,
     pub custom: BTreeMap<String, bool>,
 }
 
@@ -234,6 +242,8 @@ pub struct OptionsPatch {
     pub average_hp: Option<bool>,
     pub point_buy_unrestricted: Option<bool>,
     pub attunement_limit: Option<u32>,
+    pub ignore_feat_prerequisites: Option<bool>,
+    pub ignore_multiclass_prerequisites: Option<bool>,
     pub custom: Option<BTreeMap<String, bool>>,
 }
 
@@ -303,6 +313,9 @@ pub struct SelectionSlot {
     pub empty_reason: Option<SlotEmptyReason>,
     /// Content behind this choice that can't be read (GitHub #11, C1), shown on the choice.
     pub problem: Option<String>,
+    /// HR3 (GitHub #24): the chosen feat or multiclass does not meet its prerequisites (taken
+    /// under a prerequisite house rule).
+    pub prerequisites_unmet: bool,
 }
 
 /// Why an open slot offers nothing (U14, GitHub #10).
@@ -371,6 +384,9 @@ pub struct ClassLevelInfo {
     /// always the die maximum, is false).
     pub hp_average: Vec<bool>,
     pub multiclass_prerequisite: Option<String>,
+    /// HR3 (GitHub #24): a multiclass taken without meeting the prerequisites (under the
+    /// "Ignore multiclass prerequisites" house rule).
+    pub prerequisites_unmet: bool,
 }
 
 /// Level state.

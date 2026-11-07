@@ -1,7 +1,7 @@
 import { useState, type CSSProperties, type KeyboardEvent } from "react";
 import { useNavigate } from "react-router";
 import type { RowHeight, SelectionSlot } from "../../api/contract";
-import { Expander, FocusBar, Icon } from "../../components";
+import { Expander, FocusBar, Icon, PrereqUnmetMark } from "../../components";
 import { useSettings } from "../../state/SettingsContext";
 import { usePhone } from "../../lib/phone";
 import { NO_FILTER, type ShownRow, type VersionLike } from "../../lib/versions";
@@ -155,6 +155,7 @@ export function PickerGroup({ characterId, group, isNext, open, onToggle, descri
             <div className="pick-chosen" data-slot-id={slot.id}>
               <Icon name={slot.locked ? "lock" : "check-box"} />
               <span className="pick-chosen-name">{slot.chosen.name}</span>
+              {slot.prerequisitesUnmet && <PrereqUnmetMark />}
               <span className="pick-chosen-src">{list ? null : <ElementSource id={slot.chosen.id} />}</span>
               {!slot.locked && <button type="button" className="pick-x" aria-label={`Clear ${slot.chosen.name}`} onClick={() => onClear(slot.id)}><Icon name="x" /></button>}
             </div>

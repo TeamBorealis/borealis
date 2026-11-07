@@ -40,6 +40,10 @@ export interface CharacterOptions {
   pointBuyUnrestricted: boolean;
   /** Attunement limit (default 3). */
   attunementLimit: number;
+  /** HR3 house rule (GitHub #24): feats can be picked whatever their prerequisites; such picks are marked. */
+  ignoreFeatPrerequisites: boolean;
+  /** HR3 house rule: multiclassing ignores the ability score prerequisites (the own class is still never offered). */
+  ignoreMulticlassPrerequisites: boolean;
   /** Custom option ids from installed content -> enabled. */
   custom: Record<string, boolean>;
 }
@@ -98,6 +102,8 @@ export interface SelectionSlot {
   emptyReason: SlotEmptyReason | null;
   /** Content behind this choice that can't be read (GitHub #11, C1), shown on the choice instead of a notice. */
   problem: string | null;
+  /** HR3: the chosen feat or multiclass does not meet its prerequisites (taken under a prerequisite house rule). */
+  prerequisitesUnmet: boolean;
 }
 
 /** Why an open slot offers nothing (U14, GitHub #10). */
@@ -153,6 +159,8 @@ export interface ClassLevelInfo {
   /** Per level: true when the level has no roll and uses the average (false for the main class's level 1, always the max). */
   hpAverage: boolean[];
   multiclassPrerequisite: string | null;
+  /** HR3: a multiclass taken without meeting its prerequisites ("Ignore multiclass prerequisites"). */
+  prerequisitesUnmet: boolean;
 }
 
 export interface LevelState {

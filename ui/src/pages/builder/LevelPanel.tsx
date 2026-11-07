@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useShell } from "../../components/shell/ShellContext";
 import type { ElementSummary } from "../../api/contract";
-import { MetroProgressBar, ScoreInput, TextBox, useConfirm } from "../../components";
+import { MetroProgressBar, PrereqUnmetMark, ScoreInput, TextBox, useConfirm } from "../../components";
 import { haptic } from "../../lib/haptics";
 import { usePhone } from "../../lib/phone";
 import { useApi } from "../../state/ApiContext";
@@ -119,7 +119,7 @@ export function LevelPanel({ embedded = false }: { embedded?: boolean }) {
       {lv.classes.map((c) => (
         <section key={c.slotId} className="lvl-class" aria-label={c.name ? `${c.name} ${c.level}` : `Empty ${c.level}`}>
           <header>
-            <h3>{c.name ? `${c.name} (${c.level})` : `${phone ? "Empty" : "EMPTY"} (${c.level})`}</h3>
+            <h3>{c.name ? `${c.name} (${c.level})` : `${phone ? "Empty" : "EMPTY"} (${c.level})`}{c.prerequisitesUnmet && <> <PrereqUnmetMark /></>}</h3>
             <button type="button" className="lvl-link up" aria-label={`Level up ${c.name ?? "class"}`} disabled={!lv.canLevelUp || (!c.name && !c.isMain)}
               onClick={() => { haptic("levelUp"); void mutate((api, id) => api.levelUp({ characterId: id, classSlotId: c.slotId })); }}>Level up <BarArrow dir="up" /></button>
           </header>

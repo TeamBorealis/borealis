@@ -98,7 +98,10 @@ export function OptionCards({ defs, value, onToggle }: { defs: OptionDef[]; valu
   );
 }
 
-/** House rules (Borealis-only): unrestricted point buy and the attunement limit. */
+/**
+ * House rules (Borealis-only): unrestricted point buy, the attunement limit and (HR3, GitHub #24) ignoring feat or
+ * multiclass prerequisites; a pick a prerequisite rule allows is marked "prerequisites not met" wherever it is shown.
+ */
 export function HouseRules() {
   const { snapshot, mutate } = useCharacter();
   if (!snapshot) return null;
@@ -107,6 +110,8 @@ export function HouseRules() {
   return (
     <EdSection title="House rules" sub="Table-specific changes to the standard rules.">
       <EdCheck title="Unrestricted point buy" description="Allow spending beyond the budget (custom tables)." checked={o.pointBuyUnrestricted} onChange={(on) => set({ pointBuyUnrestricted: on })} />
+      <EdCheck title="Ignore feat prerequisites" description="Allow any feat, whatever its prerequisites. Such picks are marked." checked={o.ignoreFeatPrerequisites} onChange={(on) => set({ ignoreFeatPrerequisites: on })} />
+      <EdCheck title="Ignore multiclass prerequisites" description="Allow multiclassing whatever the ability scores. Such picks are marked." checked={o.ignoreMulticlassPrerequisites} onChange={(on) => set({ ignoreMulticlassPrerequisites: on })} />
       <EdField label="Attunement limit">
         {() => <XpField label="Attunement limit" noun="attunement limit" min={1} max={10} step={1} value={o.attunementLimit} onChange={(n) => set({ attunementLimit: n })} />}
       </EdField>

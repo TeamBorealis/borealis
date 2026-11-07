@@ -447,6 +447,21 @@ impl<'u> Evaluation<'u> {
                 };
                 let retrain =
                     self.retrain_info(state, casters, slot, rule, self.graph.mgr_level(n.mgr));
+                let prerequisites_unmet = self.pick_prerequisites_unmet(id, slot);
+                // the slot's own pick is checked as held (else the duplicate check refuses it)
+                let held = slot.chosen.map(|c| self.graph.nodes[c].e.el.id.as_str());
+                let option_refs = options
+                    .iter()
+                    .map(|o| OptionRef {
+                        prerequisites_unmet: self.graph.needs_prereq_override(
+                            id,
+                            slot.rule,
+                            o,
+                            held == Some(o.el.id.as_str()),
+                        ),
+                        ..option_ref(o)
+                    })
+                    .collect();
                 out.push(SlotSnapshot {
                     key: slot.key.clone(),
                     owner: element_ref(n.e),
@@ -478,16 +493,32 @@ impl<'u> Evaluation<'u> {
                         .as_deref()
                         .map(|c| crate::granted_casting::block_name(&self.graph, id, c)),
                     prepared: rule.prepared.unwrap_or(false),
-                    options: options.iter().map(|o| option_ref(o)).collect(),
+                    options: option_refs,
                     replaceable: retrain.replaceable,
                     gained_level: retrain.gained_level,
                     replaced: retrain.replaced,
                     empty_reason,
                     problem,
+                    prerequisites_unmet,
                 });
             }
         }
         out
+    }
+
+    /// HR3: the slot's pick does not meet its prerequisites (see
+    /// [`SlotSnapshot::prerequisites_unmet`]).
+    fn pick_prerequisites_unmet(&self, owner: NodeId, slot: &crate::graph::SlotNode) -> bool {
+        if let Some(c) = slot.chosen {
+            return self.graph.node_needs_prereq_override(c);
+        }
+        match &slot.rejected {
+            Some(crate::state::Choice::Element(id)) => self
+                .uni
+                .get(id)
+                .is_some_and(|e| self.graph.rejected_for_prerequisites(owner, slot.rule, e)),
+            _ => false,
+        }
     }
 
     fn element_tree(&self) -> Vec<RegisteredElement> {
@@ -853,6 +884,7 @@ pub(crate) fn option_ref(o: &UElem) -> OptionRef {
         source: o.el.source.clone(),
         level: (o.el.ty == "Spell").then(|| o.spell_level().unwrap_or(0)),
         edition: edition_badge(o),
+        prerequisites_unmet: false,
     }
 }
 

@@ -133,6 +133,8 @@ export interface SlotOptionBase extends ElementSummary {
   editionNotes?: string[];
   /** B-55: present (true) when the element comes from bundled content (the SRD packs); orders the default version. */
   bundled?: boolean;
+  /** HR3 (GitHub #24): present (true) when only a prerequisite house rule offers the option ("prerequisites not met"). */
+  prerequisitesUnmet?: boolean;
 }
 /** A picker row: one name (B-55, specs/version-rows-and-filters.md). Its own fields are its default version. */
 export interface SlotOption extends SlotOptionBase {

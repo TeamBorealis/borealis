@@ -120,6 +120,8 @@ export interface PlayFeature {
   description: string;
   sheetSummary?: string;
   displayed: boolean;
+  /** HR3: a feat taken under "Ignore feat prerequisites" whose prerequisites are not met. */
+  prerequisitesUnmet?: boolean;
 }
 
 export interface PlayCompatEntry { [k: string]: unknown }

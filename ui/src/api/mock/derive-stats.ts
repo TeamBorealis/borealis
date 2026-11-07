@@ -36,7 +36,7 @@ export function deriveClasses(c: MockCharacter): ClassLevelInfo[] {
       slotId: cs.slotId, classId: cls?.id ?? null, name: cls ? titleCase(cls.id) : null,
       level: levelOf(c, cs.slotId), hitDie: cls?.hitDie ?? 8, isMain: i === 0,
       subclass: subEl ? { id: subEl.id, name: subEl.name, type: subEl.type, source: subEl.source } : null,
-      hpRolls: resolvedHpRolls(c, i), hpAverage: hpAverageFlags(c, i), multiclassPrerequisite: i === 0 || !cls ? null : `${cls.multiclassAbility.join("/").toUpperCase()} 13`,
+      hpRolls: resolvedHpRolls(c, i), hpAverage: hpAverageFlags(c, i), multiclassPrerequisite: i === 0 || !cls ? null : `${cls.multiclassAbility.join("/").toUpperCase()} 13`, prerequisitesUnmet: false,
     };
   });
 }

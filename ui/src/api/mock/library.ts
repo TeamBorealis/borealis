@@ -5,7 +5,8 @@ import { makeItem } from "./ops-equipment";
 import { reprocess } from "./slots";
 
 export const DEFAULT_OPTIONS: CharacterOptions = {
-  multiclassing: true, feats: true, averageHp: true, pointBuyUnrestricted: false, attunementLimit: 3, custom: {},
+  multiclassing: true, feats: true, averageHp: true, pointBuyUnrestricted: false, attunementLimit: 3,
+  ignoreFeatPrerequisites: false, ignoreMulticlassPrerequisites: false, custom: {},
 };
 
 let seq = 0;

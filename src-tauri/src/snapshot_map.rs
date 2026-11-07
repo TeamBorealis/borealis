@@ -136,7 +136,11 @@ fn level_state(input: &MapInput<'_>, snap: &Engine) -> LevelState {
         can_level_down: snap.level > 1,
         can_multiclass,
         multiclass_blocked_reason: (!can_multiclass).then(|| multiclass_reason(input, snap)),
-        classes: snap.classes.iter().map(|c| class_info(input, c)).collect(),
+        classes: snap
+            .classes
+            .iter()
+            .map(|c| class_info(input, snap, c))
+            .collect(),
     }
 }
 
@@ -154,7 +158,7 @@ fn multiclass_reason(input: &MapInput<'_>, snap: &Engine) -> String {
             let need = snap
                 .classes
                 .first()
-                .map(|c| class_info(input, c))
+                .map(|c| class_info(input, snap, c))
                 .and_then(|c| c.multiclass_prerequisite);
             need.map_or_else(
                 || "The multiclassing requirements are not met.".into(),
@@ -164,7 +168,20 @@ fn multiclass_reason(input: &MapInput<'_>, snap: &Engine) -> String {
     }
 }
 
-fn class_info(input: &MapInput<'_>, c: &ClassSnapshot) -> ClassLevelInfo {
+/// HR3: a multiclass whose pick in its `Multiclass (Level n)` slot does not meet the
+/// prerequisites.
+fn multiclass_prerequisites_unmet(snap: &Engine, c: &ClassSnapshot) -> bool {
+    let (ClassSlot::Multi { .. }, Some(class)) = (&c.slot, &c.class) else {
+        return false;
+    };
+    snap.slots.iter().any(|s| {
+        s.ty == "Multiclass"
+            && s.prerequisites_unmet
+            && s.chosen.as_ref().is_some_and(|x| x.id == class.id)
+    })
+}
+
+fn class_info(input: &MapInput<'_>, snap: &Engine, c: &ClassSnapshot) -> ClassLevelInfo {
     let die = c.hit_die.unwrap_or(0);
     let stored = borealis_engine::levels::rolls_for(&input.character.build.hp_rolls, &c.slot);
     let is_max = |i: usize| i == 0 && c.slot == ClassSlot::Main;
@@ -203,6 +220,7 @@ fn class_info(input: &MapInput<'_>, c: &ClassSnapshot) -> ClassLevelInfo {
         hp_rolls,
         hp_average,
         multiclass_prerequisite: prerequisite,
+        prerequisites_unmet: multiclass_prerequisites_unmet(snap, c),
     }
 }
 
@@ -553,6 +571,7 @@ fn slots(snap: &Engine) -> (Vec<SelectionSlot>, SelectionProgress) {
                     restricted: r.restricted,
                 }),
             problem: s.problem.as_ref().map(|p| p.message.clone()),
+            prerequisites_unmet: s.prerequisites_unmet,
         });
     }
     ranked.sort();
@@ -628,6 +647,7 @@ mod tests {
                     source: "Test".into(),
                     level: None,
                     edition: None,
+                    prerequisites_unmet: false,
                 })
                 .collect(),
             replaceable: false,
@@ -635,6 +655,7 @@ mod tests {
             replaced: Vec::new(),
             empty_reason: None,
             problem: None,
+            prerequisites_unmet: false,
         }
     }
 

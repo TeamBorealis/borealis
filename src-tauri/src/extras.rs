@@ -631,6 +631,8 @@ pub fn options(input: &MapInput<'_>, snap: &Engine) -> CharacterOptions {
         average_hp: state.has_option(engine_ids::OPT_AVERAGE_HP),
         point_buy_unrestricted: ui_extras(input.character).point_buy_unrestricted,
         attunement_limit: snap.inventory.attunement_limit,
+        ignore_feat_prerequisites: state.house_rules.ignore_feat_prerequisites,
+        ignore_multiclass_prerequisites: state.house_rules.ignore_multiclass_prerequisites,
         custom: available_options(input)
             .into_iter()
             .map(|d| {
@@ -689,9 +691,36 @@ pub fn notices(input: &MapInput<'_>, snap: &Engine) -> Vec<String> {
             ));
         }
     }
+    out.extend(prerequisite_notices(input, snap));
     out.extend(input.hub.load_warnings.iter().cloned());
     out.dedup();
     out
+}
+
+/// HR3: a pick a prerequisite house rule allowed, kept but not applied now the rule is off.
+fn prerequisite_notices(input: &MapInput<'_>, snap: &Engine) -> Vec<String> {
+    snap.slots
+        .iter()
+        .filter(|s| s.prerequisites_unmet)
+        .filter_map(|s| match &s.rejected {
+            Some(borealis_engine::Choice::Element(id)) => Some((s, id)),
+            _ => None,
+        })
+        .map(|(s, id)| {
+            let name = input
+                .hub
+                .element(id)
+                .map_or_else(|| id.clone(), |e| e.name.clone());
+            let rule = if s.ty == "Multiclass" {
+                "Ignore multiclass prerequisites"
+            } else {
+                "Ignore feat prerequisites"
+            };
+            format!(
+                "{name} does not meet its prerequisites. It is kept but not applied while the \"{rule}\" house rule is off."
+            )
+        })
+        .collect()
 }
 
 /// The unreadable parts a `content.bad_expression` message names ("X has unparsable expressions

@@ -77,6 +77,8 @@ impl AppState {
                 average_hp: Some(o.average_hp),
                 point_buy_unrestricted: Some(o.point_buy_unrestricted),
                 attunement_limit: Some(o.attunement_limit),
+                ignore_feat_prerequisites: Some(o.ignore_feat_prerequisites),
+                ignore_multiclass_prerequisites: Some(o.ignore_multiclass_prerequisites),
                 custom: Some(
                     o.custom
                         .iter()

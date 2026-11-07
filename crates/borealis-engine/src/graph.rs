@@ -4,8 +4,8 @@
 
 use crate::diag::{code, DiagSink, Diagnostic, Severity};
 use crate::eval::{
-    requirement_holds, requirement_ids, supports_cond_match, DynamicSupports, EquipState, IdCounts,
-    ReqEnv,
+    requirement_holds, requirement_holds_without_abilities, requirement_ids, supports_cond_match,
+    DynamicSupports, EquipState, IdCounts, ReqEnv,
 };
 use crate::ids;
 use crate::state::{CharacterState, Choice, ClassSlot, SlotKey};
@@ -115,6 +115,8 @@ pub(crate) struct Relax {
     /// Ignore the candidate's own requirements and prerequisites (an unreadable requirement
     /// never holds; C1 asks which options it hides).
     pub requirements: bool,
+    /// How the HR3 prerequisite house rules apply to feats and multiclasses.
+    pub prerequisites: PrereqMode,
 }
 
 impl Relax {
@@ -123,7 +125,39 @@ impl Relax {
         edition: false,
         restriction: false,
         requirements: false,
+        prerequisites: PrereqMode::HouseRules,
     };
+}
+
+/// How a check treats the prerequisites that the HR3 house rules can ignore (GitHub #24).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum PrereqMode {
+    /// As the character's house rules say.
+    HouseRules,
+    /// As if both house rules were off: what the rules as written allow.
+    Strict,
+    /// As if both house rules were on.
+    Ignore,
+}
+
+/// What a prerequisite house rule (HR3) covers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum PrereqKind {
+    /// A picked feat: its requirements and structured prerequisites.
+    Feat,
+    /// Multiclassing: the ability score prerequisites of the main and the new class.
+    Multiclass,
+}
+
+impl PrereqKind {
+    /// The house rule that covers picking `cand`, if any.
+    fn of(cand: &UElem) -> Option<Self> {
+        match cand.el.ty.as_str() {
+            "Feat" => Some(Self::Feat),
+            "Multiclass" => Some(Self::Multiclass),
+            _ => None,
+        }
+    }
 }
 
 /// Static inputs of an expansion run.
@@ -183,6 +217,10 @@ pub struct Graph<'u> {
     /// Carried items without an equip slot: not nodes, only their resource rules are read
     /// (`play_rules::resource_snapshots`).
     pub(crate) carried: Vec<ItemRoot<'u>>,
+    /// HR3 house rule "Ignore feat prerequisites".
+    pub(crate) ignore_feat_prereqs: bool,
+    /// HR3 house rule "Ignore multiclass prerequisites".
+    pub(crate) ignore_multiclass_prereqs: bool,
 }
 
 const MAX_PASSES: usize = 60;
@@ -265,6 +303,8 @@ impl<'u> Graph<'u> {
                 .map(|i| (i.uid.clone(), i.rolled_max.clone()))
                 .collect(),
             carried: inputs.carried,
+            ignore_feat_prereqs: state.house_rules.ignore_feat_prerequisites,
+            ignore_multiclass_prereqs: state.house_rules.ignore_multiclass_prerequisites,
         };
         for opt in &state.options {
             match uni.get(opt) {
@@ -823,6 +863,13 @@ impl<'u> Graph<'u> {
     }
 
     fn grant_rule_holds(&self, id: NodeId, e: &UElem, ri: usize) -> bool {
+        self.grant_rule_holds_as(id, e, ri, PrereqMode::HouseRules)
+    }
+
+    /// [`Self::grant_rule_holds`] with the HR3 house rules applied as `mode` says: the
+    /// multiclassing gate (the main class's grant of [`ids::MULTICLASS_PREREQ`]) reads its
+    /// ability score tests as holding while "Ignore multiclass prerequisites" applies.
+    fn grant_rule_holds_as(&self, id: NodeId, e: &UElem, ri: usize, mode: PrereqMode) -> bool {
         let URule::Grant { req } = &e.rules[ri] else {
             return false;
         };
@@ -832,13 +879,112 @@ impl<'u> Graph<'u> {
         if matches!(req, Cond::None) {
             return true;
         }
+        let gate = self.ignores(PrereqKind::Multiclass, mode)
+            && matches!(&e.el.rules[ri], Rule::Grant(g) if g.id == ids::MULTICLASS_PREREQ);
+        let holds = |env: &ReqEnv<'_>| {
+            if gate {
+                requirement_holds_without_abilities(req, env)
+            } else {
+                requirement_holds(req, env)
+            }
+        };
         if ri < e.copied_rules {
-            return requirement_holds(req, &self.env());
+            return holds(&self.env());
         }
         let ex = self.granted_subtree_counts(id, &requirement_ids(req));
         let mut env = self.env();
         env.exclude = Some(&ex);
-        requirement_holds(req, &env)
+        holds(&env)
+    }
+
+    /// Does `mode` ignore the prerequisites of `kind` (HR3)?
+    fn ignores(&self, kind: PrereqKind, mode: PrereqMode) -> bool {
+        match mode {
+            PrereqMode::Strict => false,
+            PrereqMode::Ignore => true,
+            PrereqMode::HouseRules => match kind {
+                PrereqKind::Feat => self.ignore_feat_prereqs,
+                PrereqKind::Multiclass => self.ignore_multiclass_prereqs,
+            },
+        }
+    }
+
+    /// HR3: the character can multiclass only because "Ignore multiclass prerequisites" is on
+    /// (the main class's own multiclass prerequisite does not hold).
+    fn multiclass_gate_overridden(&self) -> bool {
+        self.ignore_multiclass_prereqs
+            && self.nodes.iter().any(|c| {
+                c.alive
+                    && c.e.el.id == ids::MULTICLASS_PREREQ
+                    && match (c.origin, c.parent) {
+                        (Origin::Granted(ri), Some(p)) => {
+                            !self.grant_rule_holds_as(p, self.nodes[p].e, ri, PrereqMode::Strict)
+                        }
+                        _ => false,
+                    }
+            })
+    }
+
+    /// HR3: is `cand` in the select `rule_index` of `owner` allowed only because a prerequisite
+    /// house rule is on? (`existing`: it is the slot's current pick.) Feats and multiclasses
+    /// only; a pick the house rule does not need is never marked.
+    pub(crate) fn needs_prereq_override(
+        &self,
+        owner: NodeId,
+        rule_index: usize,
+        cand: &UElem,
+        existing: bool,
+    ) -> bool {
+        let Some(kind) = PrereqKind::of(cand) else {
+            return false;
+        };
+        if !self.ignores(kind, PrereqMode::HouseRules) {
+            return false;
+        }
+        if kind == PrereqKind::Multiclass && self.multiclass_gate_overridden() {
+            return true;
+        }
+        let dyns = SpellDynamics::new(self, owner, rule_index);
+        let strict = Relax {
+            prerequisites: PrereqMode::Strict,
+            ..Relax::NONE
+        };
+        !self.choice_allowed_relaxed(owner, rule_index, cand, existing, &dyns, false, strict)
+    }
+
+    /// HR3: is the stored pick `cand`, rejected by the slot, refused only for prerequisites a
+    /// house rule that is off would ignore? (The pick was made with the rule on.)
+    pub(crate) fn rejected_for_prerequisites(
+        &self,
+        owner: NodeId,
+        rule_index: usize,
+        cand: &UElem,
+    ) -> bool {
+        let Some(kind) = PrereqKind::of(cand) else {
+            return false;
+        };
+        if self.ignores(kind, PrereqMode::HouseRules) {
+            return false;
+        }
+        let dyns = SpellDynamics::new(self, owner, rule_index);
+        let ignore = Relax {
+            prerequisites: PrereqMode::Ignore,
+            ..Relax::NONE
+        };
+        self.choice_allowed_relaxed(owner, rule_index, cand, true, &dyns, false, ignore)
+    }
+
+    /// HR3: is the node a pick (a selected feat or multiclass) that holds only because a
+    /// prerequisite house rule is on?
+    pub(crate) fn node_needs_prereq_override(&self, node: NodeId) -> bool {
+        let n = &self.nodes[node];
+        let (Origin::Selected(si), Some(parent)) = (n.origin, n.parent) else {
+            return false;
+        };
+        self.nodes[parent]
+            .slots
+            .get(si)
+            .is_some_and(|s| self.needs_prereq_override(parent, s.rule, n.e, true))
     }
 
     /// Does node `id` grant without checking its targets' own requirements? Only the root of an
@@ -1242,12 +1388,22 @@ impl<'u> Graph<'u> {
         if relax.requirements {
             return true;
         }
-        if !self.prereq_holds(cand) {
+        let ignored = PrereqKind::of(cand).filter(|k| self.ignores(*k, relax.prerequisites));
+        // HR3: an ignored feat's requirements and prerequisites are skipped (an unreadable
+        // requirement is a content problem, not a prerequisite: it still never holds, C1)
+        if ignored == Some(PrereqKind::Feat) {
+            return !matches!(cand.req, Cond::Invalid);
+        }
+        if ignored.is_none() && !self.prereq_holds(cand) {
             return false;
         }
         let mut env = self.env();
         env.rule_class_level =
             (n.mgr != Mgr::Main).then(|| i32::try_from(self.mgr_level(n.mgr)).unwrap_or(0));
+        // HR3: an ignored multiclass keeps every term but its ability scores (`!<own class>`)
+        if ignored == Some(PrereqKind::Multiclass) {
+            return requirement_holds_without_abilities(&cand.req, &env);
+        }
         requirement_holds(&cand.req, &env)
     }
 

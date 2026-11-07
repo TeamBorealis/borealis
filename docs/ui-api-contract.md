@@ -67,6 +67,11 @@ Clean-room note: sample data in the mock is original and SRD-generic.
   (race, class, archetype, multiclass, background, ASI, language, proficiency, feat, companion, spell).
 - `get_slot_options` returns the *currently valid* candidates (source restrictions, requirements, duplicates already
   applied; failing multiclass prerequisites are hidden). `disabledReason` may mark visible-but-unselectable rows.
+  HR3 (GitHub #24): with the house rule `ignoreFeatPrerequisites` / `ignoreMulticlassPrerequisites` on, feats /
+  multiclasses whose prerequisites fail are offered too, with `prerequisitesUnmet: true` (the character's own classes
+  stay excluded). The chosen pick carries `SelectionSlot.prerequisitesUnmet`, a multiclass `ClassLevelInfo.prerequisitesUnmet`
+  and a play feature `prerequisitesUnmet`; the UI marks each "prerequisites not met". Switching a rule off never prunes:
+  the pick is rejected (kept in the file, not applied) and a notice names it until the rule is on again or the pick changes.
   An open slot that offers nothing carries `emptyReason` (U14): `otherEdition` (`{ edition, rejected, notAllowed }`:
   options only a character of that edition can use, R4, and options the "other edition" switch would show) and
   `restricted` (options only the source restriction hides). `problem` (C1, GitHub #11) says what content behind the
@@ -88,6 +93,7 @@ Clean-room note: sample data in the mock is original and SRD-generic.
 | Rule | Behaviour |
 |---|---|
 | Point buy | `set_base_score` fails with `budget_exceeded` when `spent > budget`; range 8..15 unless `pointBuyUnrestricted` (house rule) or method `manual` (settings min/max). |
+| Prerequisite house rules (HR3) | `ignoreFeatPrerequisites`: feats skip their requirements and structured prerequisites. `ignoreMulticlassPrerequisites`: the multiclassing gate and the Multiclass picker read ability score tests as met (`!<own class>` still applies). Stored in the character file as `house_rules.ignore_feat_prerequisites` / `ignore_multiclass_prerequisites` (absent when off). |
 | Standard array | `assign_standard_array` assigns **or swaps**; a value can never be duplicated or lost; `value: null` unassigns. Base scores of unassigned abilities are reported as 8. |
 | rolls | `roll_abilities` (all, or one ability) is only valid for `roll_3d6`/`roll_4d6`; each roll is appended to `abilities.rolls` (dice + total). Backend owns the RNG. |
 | Level down | `level_down` removes the most recent level, drops an emptied multiclass slot, and sets XP to the new level's threshold. |

@@ -3550,6 +3550,18 @@
       "k": "prim"
      }
     },
+    "ignoreFeatPrerequisites": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "ignoreMulticlassPrerequisites": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "multiclassing": {
      "opt": false,
      "t": {
@@ -4083,6 +4095,12 @@
      }
     },
     "name": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "prerequisitesUnmet": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -7912,6 +7930,12 @@
       "k": "prim"
      }
     },
+    "prerequisitesUnmet": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "sheetSummary": {
      "opt": true,
      "t": {
@@ -9465,6 +9489,12 @@
       "k": "prim"
      }
     },
+    "prerequisitesUnmet": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "problem": {
      "opt": false,
      "t": {
@@ -10039,6 +10069,12 @@
       "k": "prim"
      }
     },
+    "prerequisitesUnmet": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "rulesets": {
      "opt": false,
      "t": {
@@ -10176,6 +10212,12 @@
     },
     "prerequisites": {
      "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "prerequisitesUnmet": {
+     "opt": true,
      "t": {
       "k": "prim"
      }

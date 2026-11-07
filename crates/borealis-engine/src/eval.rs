@@ -218,6 +218,28 @@ pub fn requirement_holds(cond: &Cond<RequirementsExpr>, env: &ReqEnv) -> bool {
     }
 }
 
+/// [`requirement_holds`] with every ability score test (`[str:13]`, `[dexterity:13]`) holding:
+/// the "Ignore multiclass prerequisites" house rule (HR3) reads the multiclass requirements this
+/// way, so their other terms (`!<own class>`) still apply. Unparsable text never holds.
+#[must_use]
+pub fn requirement_holds_without_abilities(cond: &Cond<RequirementsExpr>, env: &ReqEnv) -> bool {
+    match cond {
+        Cond::None => true,
+        Cond::Invalid => false,
+        Cond::Expr(e) => eval_bool(e.root(), &|leaf| match leaf {
+            RequirementLeaf::Id(id) => env.has_id(id),
+            RequirementLeaf::Test(t) if is_ability_test(&t.key, &t.value) => true,
+            RequirementLeaf::Test(t) => env.test(&t.key, &t.value),
+        }),
+    }
+}
+
+/// A numeric test of an ability score (`[str:13]`, `[Strength:13]`).
+fn is_ability_test(key: &str, value: &TestValue) -> bool {
+    matches!(value, TestValue::Number(_))
+        && ids::ability_index(&key.trim().to_lowercase()).is_some()
+}
+
 /// The ids a requirement condition names under an even number of `!` (holding one can help the
 /// condition hold): an id named only negated can only break it.
 #[must_use]
@@ -503,6 +525,40 @@ mod tests {
         assert!(t("[Wizard:3]"), "Keys fold case in both entry points");
         assert!(t("[foo:bar:4]") && !t("[foo:bar:5]") && !t("[nosuch:1]"));
         assert!(t(""));
+    }
+
+    #[test]
+    fn ability_tests_hold_when_abilities_are_ignored() {
+        let ids = ids_of(&["ID_WOTC_PHB_CLASS_FIGHTER"]);
+        let (cl, st) = (HashMap::new(), HashMap::new());
+        let env = ReqEnv {
+            ids: &ids,
+            exclude: None,
+            abilities: [8, 8, 8, 8, 8, 8],
+            total_level: 1,
+            class_levels: &cl,
+            stats: &st,
+            rule_class_level: None,
+            stat_used: None,
+            types: None,
+            names: None,
+            spell_blocks: false,
+        };
+        let t = |text: &str| {
+            let c = match RequirementsExpr::parse(text).unwrap() {
+                Some(e) => Cond::Expr(e),
+                None => Cond::None,
+            };
+            requirement_holds_without_abilities(&c, &env)
+        };
+        assert!(t("[str:13]") && t("([dex:13],[wis:13])") && t("[Strength:13]||[dex:13]"));
+        assert!(
+            !t("!ID_WOTC_PHB_CLASS_FIGHTER&&[int:13]"),
+            "ids still count"
+        );
+        assert!(t("!ID_WOTC_PHB_CLASS_WIZARD&&[int:13]"));
+        assert!(!t("[character:2]"), "other tests still count");
+        assert!(!req("[str:13]", &env), "the plain check is unchanged");
     }
 
     #[test]

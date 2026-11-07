@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { AbilityKey, CharacterSnapshot, ElementSummary } from "../../api/contract";
-import { Button, Expander } from "../../components";
+import { Button, Expander, PrereqUnmetMark } from "../../components";
 import { haptic } from "../../lib/haptics";
 import { useApi } from "../../state/ApiContext";
 import { useCharacter } from "../../state/CharacterContext";
@@ -60,6 +60,7 @@ export function MulticlassExpander({ snapshot, onAdded }: { snapshot: CharacterS
   const { mutate } = useCharacter();
   const rows = useMulticlassRows(snapshot);
   const lv = snapshot.level;
+  const ignorePrerequisites = snapshot.options.ignoreMulticlassPrerequisites;
   /** Classic builder: NEW MULTICLASS only adds the empty class slot; the class is picked from the Multiclass picker on Build > Class. */
   const add = async () => {
     haptic("levelUp");
@@ -75,13 +76,15 @@ export function MulticlassExpander({ snapshot, onAdded }: { snapshot: CharacterS
         {lv.multiclassBlockedReason && <p className="lvl-multi-text blocked" role="status">{lv.multiclassBlockedReason}</p>}
         {rows.map((r) => {
           const met = meetsPrerequisite(r.prerequisites, snapshot.abilities.final);
+          // HR3: the "Ignore multiclass prerequisites" house rule lets an unmet class through, marked
+          const overridden = !met && ignorePrerequisites;
           return (
             <div className="lvl-mc-row" key={r.id} aria-label={`${r.name} multiclass`}>
               <div>
-                <h4>{r.name}</h4>
+                <h4>{r.name}{overridden && <> <PrereqUnmetMark /></>}</h4>
                 {r.prerequisites && <p className="lvl-prereq">Prerequisites: {formatPrerequisite(r.prerequisites)}</p>}
               </div>
-              <Button disabled={!lv.canMulticlass || !met} aria-label={`New multiclass ${r.name}`} title={met ? undefined : "You do not meet the prerequisite."}
+              <Button disabled={!lv.canMulticlass || !(met || overridden)} aria-label={`New multiclass ${r.name}`} title={met || overridden ? undefined : "You do not meet the prerequisite."}
                 onClick={() => void add()}>New multiclass</Button>
             </div>
           );

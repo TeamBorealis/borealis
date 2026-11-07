@@ -120,6 +120,10 @@ pub struct OptionRef {
     /// Set for foreign-edition options: badge and adapter notes.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub edition: Option<crate::compat::EditionBadge>,
+    /// HR3 (GitHub #24): a feat or multiclass whose prerequisites are not met, offered only
+    /// because the character's prerequisite house rule is on.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub prerequisites_unmet: bool,
 }
 
 /// An open select slot.
@@ -191,6 +195,11 @@ pub struct SlotSnapshot {
     /// whose requirements can't be parsed. `None` without option lists.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub problem: Option<SlotProblem>,
+    /// HR3 (GitHub #24): the pick does not meet its feat or multiclass prerequisites. Either it
+    /// is `chosen` because a prerequisite house rule is on, or it is `rejected` only for
+    /// prerequisites that rule (now off) would ignore.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub prerequisites_unmet: bool,
 }
 
 /// A content problem met on a choice (C1): shown on the choice, not as a character notice.
@@ -274,6 +283,10 @@ pub struct FeatureDetail {
     pub sheet_summary: Option<String>,
     /// Shown in the sheet's feature list (`sheet display`, default true).
     pub displayed: bool,
+    /// HR3 (GitHub #24): a picked feat whose prerequisites are not met, taken under the
+    /// "Ignore feat prerequisites" house rule.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub prerequisites_unmet: bool,
 }
 
 /// A statistic group with its sources.

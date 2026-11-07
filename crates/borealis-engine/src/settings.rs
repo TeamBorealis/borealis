@@ -47,4 +47,12 @@ pub struct HouseRules {
     /// Override of the point buy budget.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub point_buy_budget: Option<i32>,
+    /// HR3 (GitHub #24): a feat may be picked whatever its prerequisites; such a pick is marked
+    /// `prerequisites_unmet`. Off by default (and then absent from the file).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub ignore_feat_prerequisites: bool,
+    /// HR3: multiclassing ignores the ability score prerequisites of the main class and of the
+    /// new class (the character's own classes are still never offered); such a pick is marked.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub ignore_multiclass_prerequisites: bool,
 }

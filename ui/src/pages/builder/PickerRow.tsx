@@ -1,5 +1,5 @@
 import { type KeyboardEvent, type MouseEvent, useRef } from "react";
-import { ConvertedTag, editionMarks, EditionNotes, EditionSuffix } from "../../components";
+import { ConvertedTag, editionMarks, EditionNotes, EditionSuffix, PREREQ_UNMET_TEXT, PrereqUnmetMark } from "../../components";
 import type { ShownRow, VersionLike } from "../../lib/versions";
 import { useApi } from "../../state/ApiContext";
 import { useAsync } from "../../state/useAsync";
@@ -25,7 +25,8 @@ export function rowLabel(row: ShownRow, mastery: string | null = null): string {
   const v = row.shown;
   const marks = editionMarks(v);
   const n = row.versions.length;
-  return [row.name, levelText(v), mastery ? `${mastery} mastery` : "", v.sourceName ?? "", marks.badge ? `${marks.badge} rules` : "", n > 1 ? `${n} versions` : ""]
+  return [row.name, levelText(v), mastery ? `${mastery} mastery` : "", v.sourceName ?? "", marks.badge ? `${marks.badge} rules` : "", n > 1 ? `${n} versions` : "",
+    v.prerequisitesUnmet ? PREREQ_UNMET_TEXT : ""]
     .filter(Boolean).join(", ");
 }
 
@@ -81,6 +82,7 @@ export function PickerRow({ row, listSlot, showDescription, versionColumn, highl
         <span className={`pick-name ${disabled ? "disabled" : ""}`} aria-hidden="true">
           {row.name}{level && <span className="pick-sub"> {level}</span>}
           {v.prerequisites && <span className="pick-sub"> - Requires {v.prerequisites}</span>}
+          {v.prerequisitesUnmet && <> <PrereqUnmetMark /></>}
         </span>
         {showDescription && <span className="pick-desc" aria-hidden="true">{v.shortDescription}</span>}
         <span className="pick-src" aria-hidden="true">

@@ -51,6 +51,15 @@ fn ability_of(key: &str) -> ApiResult<usize> {
 
 fn apply_options(ctx: &Ctx<'_>, d: &mut Draft, patch: &OptionsPatch) -> ApiResult<()> {
     let engine = &ctx.hub.engine;
+    // HR3 house rules first, so a prune of the same patch sees them; switching one never
+    // prunes: a pick it allowed is kept (rejected, with a notice) while it is off
+    let rules = &mut d.character.build.house_rules;
+    if let Some(on) = patch.ignore_feat_prerequisites {
+        rules.ignore_feat_prerequisites = on;
+    }
+    if let Some(on) = patch.ignore_multiclass_prerequisites {
+        rules.ignore_multiclass_prerequisites = on;
+    }
     let toggles = [
         (engine_ids::OPT_MULTICLASSING, patch.multiclassing),
         (engine_ids::OPT_FEATS, patch.feats),
@@ -626,6 +635,7 @@ fn list_option(item: i64, text: &str, source: &str) -> SlotOptionBase {
         converted: false,
         edition_notes: Vec::new(),
         bundled: false,
+        prerequisites_unmet: false,
     }
 }
 
@@ -677,6 +687,7 @@ fn row_option(store: &ContentStore, row: &[Candidate<'_, OptionRef>]) -> Option<
         .iter()
         .map(|c| SlotOptionBase {
             bundled: c.bundled,
+            prerequisites_unmet: c.option.prerequisites_unmet,
             ..element_option(summary(store, c.element), c.option.edition.as_ref())
         })
         .collect();
@@ -698,6 +709,7 @@ fn element_option(summary: ElementSummary, badge: Option<&EditionBadge>) -> Slot
         converted: badge.is_some_and(|b| b.converted),
         edition_notes: badge.map(|b| b.notes.clone()).unwrap_or_default(),
         bundled: false,
+        prerequisites_unmet: false,
     }
 }
 
