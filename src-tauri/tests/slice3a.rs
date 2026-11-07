@@ -220,6 +220,42 @@ fn manage_commands_round_trip_through_save_and_reopen() {
     assert_eq!(removed.attacks.iter().filter(|a| !a.auto).count(), 1);
 }
 
+/// Issue #30: every Manage detail combo takes typed text, which survives save and reopen.
+#[test]
+fn typed_values_of_the_detail_combos_survive_save_and_reopen() {
+    let (_dir, app) = app();
+    let id = new_hero(&app, Ruleset::Dnd2014).id;
+    let typed = json!({
+        "gender": "Genderfluid", "deity": "The Lantern Keeper", "eyes": "Heterochromia",
+        "skin": "Moss-speckled", "hair": "Braided copper", "trinket": "A button from my father's coat",
+        "alignment": "Lawful Good",
+    });
+    app.update_details(&id, &typed).expect("details");
+    app.save_character(&id).expect("save");
+    app.close_character(&id, false).expect("close");
+    let d = app.load_character(&id).expect("reopen").details;
+    assert_eq!(
+        [
+            &d.gender,
+            &d.deity,
+            &d.eyes,
+            &d.skin,
+            &d.hair,
+            &d.trinket,
+            &d.alignment
+        ],
+        [
+            "Genderfluid",
+            "The Lantern Keeper",
+            "Heterochromia",
+            "Moss-speckled",
+            "Braided copper",
+            "A button from my father's coat",
+            "Lawful Good"
+        ]
+    );
+}
+
 #[test]
 fn source_restrictions_preview_and_apply() {
     let (_dir, app) = app();

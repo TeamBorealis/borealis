@@ -35,12 +35,12 @@ html.phone .field > label, html.phone .field-label {
   margin-top: 16px; font: 500 var(--ph-t-foot)/1.35 var(--ph-font-ui); color: var(--ph-text-2); text-transform: none; letter-spacing: 0;
 }
 html.phone .input, html.phone .select, html.phone .textarea, html.phone .aur-textbox input, html.phone .aur-combo select, html.phone .aur-numeric input,
-html.phone .aur-textbox.light input, html.phone .aur-combo.light select {
+html.phone .aur-textbox.light input, html.phone .aur-combo.light select, html.phone .aur-combo-edit input {
   height: auto; min-height: var(--ph-hit); padding: 0 12px; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-md);
   background: var(--ph-fill); color: var(--ph-text); font: 400 var(--ph-t-body)/1.25 var(--ph-font-ui);
 }
 html.phone .textarea { min-height: 96px; padding: 10px 12px; }
-html.phone .input:focus, html.phone .select:focus, html.phone .textarea:focus, html.phone .aur-textbox input:focus, html.phone .aur-combo select:focus, html.phone .aur-numeric input:focus {
+html.phone .input:focus, html.phone .select:focus, html.phone .textarea:focus, html.phone .aur-textbox input:focus, html.phone .aur-combo select:focus, html.phone .aur-numeric input:focus, html.phone .aur-combo-edit input:focus {
   border-color: var(--ph-accent); outline: 2px solid var(--ph-accent); outline-offset: -1px;
 }
 html.phone .input::placeholder, html.phone .aur-textbox input::placeholder, html.phone .textarea::placeholder { color: var(--ph-text-3); }
@@ -53,6 +53,14 @@ html.phone .aur-textbox:has(.aur-textbox-clear) input { padding-right: var(--ph-
 /* The native select (O10): the system wheel or dialog opens; the field shows a chevron. */
 html.phone .aur-combo select, html.phone .aur-combo.light select { padding-right: 36px; }
 html.phone .aur-combo > .aur-combo-arrow, html.phone .aur-combo.light > .aur-combo-arrow { right: 14px; width: 12px; height: 7px; fill: var(--ph-text-2); }
+/* The editable combo (issue #30): a text field with a full-height chevron button and a list of 44/48 pt rows below it. */
+html.phone .aur-combo-edit input { padding-right: var(--ph-hit); }
+html.phone .aur-combo-toggle { top: 0; right: 0; bottom: 0; width: var(--ph-hit); }
+html.phone .aur-combo-toggle > .aur-combo-arrow { width: 12px; height: 7px; fill: var(--ph-text-2); }
+html.phone .aur-combo-list { top: calc(100% + 4px); max-height: 50vh; border: 1px solid var(--ph-field-line); border-radius: var(--ph-r-md); background: var(--ph-fill); }
+html.phone .aur-combo-list > li { display: flex; align-items: center; min-height: var(--ph-hit); padding: 0 12px; color: var(--ph-text); font: 400 var(--ph-t-body)/1.25 var(--ph-font-ui); }
+html.phone .aur-combo-list > li[aria-selected="true"] { color: var(--ph-accent); font-weight: 600; }
+html.phone .aur-combo-list > li.active { background: var(--ph-accent-soft); }
 html.phone select.select { appearance: none; -webkit-appearance: none; padding-right: 36px;
   background: var(--ph-fill) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 7'%3E%3Cpath d='M0 0h12L6 7z' fill='%23aab6bb'/%3E%3C/svg%3E") right 14px center / 12px 7px no-repeat; }
 /* Search fields: the glyph inside, a 44/48 pt field. */

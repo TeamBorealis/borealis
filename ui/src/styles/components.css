@@ -75,6 +75,20 @@
 .aur-combo select { appearance: none; -webkit-appearance: none; padding-right: 24px; cursor: pointer; }
 .aur-combo > .aur-combo-arrow { position: absolute; right: 9px; width: 7px; height: 4px; pointer-events: none; fill: #e6e6e6; }
 .aur-combo.light > .aur-combo-arrow { fill: #333; }
+/* Editable combo (WPF ComboBox IsEditable, issue #30): the text box, the arrow button inside it, and the suggestion list. */
+.aur-combo-edit input { width: 100%; height: 28px; min-height: 28px; padding: 0 24px 0 8px; background: var(--bg); font-size: var(--fs-sm); border: 1px solid var(--input-border); border-radius: 0; color: var(--text-body); }
+.aur-combo-edit.light input { background: #fff; color: #161616; }
+@media (hover: hover) and (pointer: fine) { .aur-combo-edit:hover input { border-color: var(--input-border-hover); } }
+.aur-combo-edit input:focus { border-color: var(--input-border-focus); outline: 1px solid var(--input-border-focus); outline-offset: 0; }
+.aur-combo-toggle { position: absolute; top: 1px; right: 1px; bottom: 1px; width: 22px; min-height: 0; padding: 0; display: grid; place-items: center; background: transparent; border: 0; border-radius: 0; cursor: pointer; }
+.aur-combo-toggle > .aur-combo-arrow { fill: #e6e6e6; }
+.aur-combo-edit.light .aur-combo-toggle > .aur-combo-arrow { fill: #333; }
+.aur-combo-list { position: absolute; top: 100%; left: 0; right: 0; z-index: 40; max-height: 240px; overflow-y: auto; margin: 0; padding: 0; list-style: none; background: var(--bg); border: 1px solid var(--input-border-focus); border-top: 0; }
+.aur-combo-list > li { padding: 4px 8px; font-size: var(--fs-sm); line-height: 1.3; color: var(--text-body); cursor: pointer; }
+.aur-combo-list > li[aria-selected="true"] { background: var(--light-3); }
+.aur-combo-list > li.active { background: var(--accent-base); color: var(--text); }
+.aur-combo-edit.light .aur-combo-list { background: #fff; }
+.aur-combo-edit.light .aur-combo-list > li { color: #161616; }
 .aur-numeric { width: auto; }
 .aur-numeric input { width: 40px; text-align: center; padding: 0 2px; color: var(--gold); font-weight: 600; }
 .aur-numeric:not(.compact) input { width: 64px; }

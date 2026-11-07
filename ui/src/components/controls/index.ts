@@ -6,3 +6,4 @@ export * from "./Flyout";
 export * from "./ListBox";
 export * from "./SelectionPicker";
 export * from "./TabControl";
+export * from "./EditableComboBox";

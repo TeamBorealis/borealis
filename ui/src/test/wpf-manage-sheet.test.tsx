@@ -25,9 +25,11 @@ describe("Manage", () => {
     await open("/manage");
     await screen.findByLabelText("Character name");
     expect(screen.queryByRole("heading", { name: "Portrait" })).toBeNull();
-    for (const label of ["Gender", "Alignment", "Deity (optional)", "Eyes", "Skin", "Hair"]) {
-      expect(screen.getByLabelText(label).tagName).toBe("SELECT");
+    // Issue #30: editable combos (typed text or a suggestion); alignment stays a closed list.
+    for (const label of ["Gender", "Deity (optional)", "Eyes", "Skin", "Hair"]) {
+      expect(screen.getByRole("combobox", { name: label }).tagName).toBe("INPUT");
     }
+    expect(screen.getByLabelText("Alignment").tagName).toBe("SELECT");
   });
 
   it("steps current experience with the flat + and - buttons", async () => {

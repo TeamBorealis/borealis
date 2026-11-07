@@ -8,11 +8,13 @@ import { MgIcon } from "./mgIcons";
 import { XpField } from "./XpField";
 import "./manage-fx15.css";
 
+/* Closed list: alignment is a rules value (the nine alignments that attunement and prerequisites test), as the classic builder's alignment picker is. */
 const ALIGNMENTS = ["Lawful Good", "Neutral Good", "Chaotic Good", "Lawful Neutral", "True Neutral", "Chaotic Neutral", "Lawful Evil", "Neutral Evil", "Chaotic Evil"];
-const GENDERS = ["Male", "Female", "Non-binary", "Construct"];
-const EYES = ["Amber", "Black", "Blue", "Brown", "Gray", "Green", "Hazel", "Violet"];
-const SKIN = ["Pale", "Fair", "Light", "Tan", "Olive", "Brown", "Dark", "Ebony", "Ashen", "Green", "Gray"];
-const HAIR = ["Black", "Blond", "Brown", "Auburn", "Red", "Gray", "White", "Silver", "Bald"];
+/* Editable combos (issue #30): suggestions, any typed text is kept. Gender, eyes, skin and hair are the classic builder's lists. */
+const GENDERS = ["Male", "Female", "Construct"];
+const EYES = ["Blue", "Brown", "Red", "Green", "Black", "White", "Purple", "Orange", "Pink", "None", "Eye Patch", "Glass Eye"];
+const SKIN = ["Pale", "Fair", "White", "Brown", "Black", "Albino", "Obsidian", "Red Scales", "Brass Scales", "Green Scales", "Black Scales", "Furry", "Barkskin"];
+const HAIR = ["Bald", "Short", "Long", "Brown", "Red", "White", "Gray", "Black", "Purple", "Green"];
 const DEITIES = ["Apollo", "Athena", "Brigid", "Demeter", "Freya", "Hades", "Hermes", "Isis", "Odin", "Osiris", "Ra", "Thor", "Tyr", "Zeus"];
 
 const CHARACTER_INTRO = "A hero is far more than a species and a class. Here you record who they are: their name and looks, where they came from, the languages they speak, the things they believe in, and the temperament and ideals that set them apart from every other adventurer you will ever meet along the road.";
@@ -35,13 +37,13 @@ export function CharacterTab() {
               </span>
             )}
           </MgField>
-          <DetailField k="gender" label="Gender" choices={GENDERS} />
+          <DetailField k="gender" label="Gender" list={GENDERS} />
           <DetailField k="alignment" label="Alignment" choices={ALIGNMENTS} ok />
           <DetailField k="playerName" label="Player name" />
           <MgField label="Current experience">
             {() => <XpField value={snapshot.level.xp} onChange={(xp) => void mutate((api, cid) => api.setXp({ characterId: cid, xp }))} />}
           </MgField>
-          <DetailField k="deity" label="Deity (optional)" choices={DEITIES} />
+          <DetailField k="deity" label="Deity (optional)" list={DEITIES} />
         </div>
       </MgSection>
       <MgSection title="Appearance" sub="Describe how your character looks in the fields below." className="mg-gap mg-char-appearance">
@@ -49,9 +51,9 @@ export function CharacterTab() {
           <DetailField k="age" label="Age" />
           <DetailField k="height" label="Height" />
           <DetailField k="weight" label="Weight" />
-          <DetailField k="eyes" label="Eyes" choices={EYES} />
-          <DetailField k="skin" label="Skin" choices={SKIN} />
-          <DetailField k="hair" label="Hair" choices={HAIR} />
+          <DetailField k="eyes" label="Eyes" list={EYES} />
+          <DetailField k="skin" label="Skin" list={SKIN} />
+          <DetailField k="hair" label="Hair" list={HAIR} />
         </div>
       </MgSection>
       <MgSection title="Additional features" sub="Note any extra traits your character has that do not come from their race, class, or background." className="mg-gap-s">

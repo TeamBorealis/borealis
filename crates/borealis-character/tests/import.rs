@@ -187,3 +187,49 @@ fn unmapped_slots_are_reported_and_kept() {
         "ID_WOTC_PHB_CLASS_FEATURE_FIGHTINGSTYLE_DEFENSE"
     );
 }
+
+/// Issue #30: the classic builder's editable combos (gender, eyes, skin, hair, trinket,
+/// organization) store whatever was typed; the import keeps those values as written and they
+/// survive the Borealis file format.
+#[test]
+fn imports_typed_values_of_the_editable_detail_combos() {
+    let Some(engine) = common::engine() else {
+        return;
+    };
+    let xml = EXAMPLE
+        .replace("<gender>Female</gender>", "<gender>Genderfluid</gender>")
+        .replace(
+            "<eyes>Green</eyes><skin>Tan</skin><hair>Black</hair>",
+            "<eyes>Heterochromia (blue &amp; gold)</eyes><skin>Moss-speckled</skin><hair>Braided copper</hair>",
+        )
+        .replace(
+            "<background-trinket>A lucky coin.</background-trinket>",
+            "<background-trinket>A button from my father's coat</background-trinket>",
+        )
+        .replace(
+            "<organization><name></name>",
+            "<organization><name>The Lantern Wardens</name>",
+        );
+    let c = import_dnd5e(engine, &xml).expect("import").character;
+    let typed = |c: &Character| {
+        (
+            c.meta.gender.clone(),
+            c.details.appearance.eyes.clone(),
+            c.details.appearance.skin.clone(),
+            c.details.appearance.hair.clone(),
+            c.details.personality.trinket.clone(),
+            c.details.organization.name.clone(),
+        )
+    };
+    let expected = (
+        "Genderfluid".to_string(),
+        "Heterochromia (blue & gold)".to_string(),
+        "Moss-speckled".to_string(),
+        "Braided copper".to_string(),
+        "A button from my father's coat".to_string(),
+        "The Lantern Wardens".to_string(),
+    );
+    assert_eq!(typed(&c), expected);
+    let back = Character::from_json_str(&c.to_json_string().unwrap()).unwrap();
+    assert_eq!(typed(&back), expected);
+}
