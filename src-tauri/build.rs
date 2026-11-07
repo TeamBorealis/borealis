@@ -243,7 +243,27 @@ fn main() {
     if has_self_update(&target_os, mas) {
         println!("cargo:rustc-cfg=self_update");
     }
+    if target_os == "windows" && std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("msvc") {
+        embed_test_manifest();
+    }
     let manifest = tauri_build::AppManifest::new().commands(COMMANDS);
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(manifest))
         .expect("failed to run the Tauri build script");
+}
+
+/// Windows test executables get the same Common Controls v6 manifest the app gets from tauri-build.
+///
+/// tauri-build links its manifest resource into the app binary only, so an integration test that starts the
+/// real Tauri runtime (`tests/app_updater.rs`) fails to load with STATUS_ENTRYPOINT_NOT_FOUND
+/// (`TaskDialogIndirect` lives only in Common Controls v6). The flags apply to test targets only, so the shipped
+/// app is unchanged.
+fn embed_test_manifest() {
+    let manifest =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("windows-test-manifest.xml");
+    println!("cargo:rerun-if-changed={}", manifest.display());
+    println!("cargo:rustc-link-arg-tests=/MANIFEST:EMBED");
+    println!(
+        "cargo:rustc-link-arg-tests=/MANIFESTINPUT:{}",
+        manifest.display()
+    );
 }
