@@ -81,6 +81,9 @@ impl AppState {
         sink: &dyn EventSink,
         delay: Duration,
     ) -> ContentUpdateStatus {
+        if self.documents_dir_unavailable().is_some() {
+            tracing::warn!("documents folder unavailable; using the default this session");
+        }
         if self
             .settings()
             .is_ok_and(|s| s.secondary_content_dir.is_some())

@@ -20,7 +20,8 @@ export class MockDataFiles {
     const documentsDir = s.documentsDir ?? DEFAULT_DOCS;
     return {
       documentsDir, defaultDocumentsDir: DEFAULT_DOCS, isDefault: s.documentsDir === null,
-      charactersDir: `${documentsDir}/characters`, secondaryContentDir: s.secondaryContentDir,
+      charactersDir: `${documentsDir}/characters`, documentsDirUnavailable: null,
+      secondaryContentDir: s.secondaryContentDir, secondaryContentUnavailable: false,
     };
   }
 
@@ -37,7 +38,7 @@ export class MockDataFiles {
     this.secondaryPacks = ["sec-homebrew-feats", "sec-my-subclasses"];
     return { settings, result: { dirs: this.dirs(settings), report: {
       installed: this.secondaryPacks, removed: removed.filter((p) => !this.secondaryPacks.includes(p)),
-      skipped: [{ file: "drafts/broken.xml", reason: "Cannot convert this file: unexpected end of file" }],
+      skipped: [{ file: "drafts/broken.xml", reason: "Cannot convert this file: unexpected end of file" }], unavailable: false,
     } } };
   }
 
@@ -45,7 +46,7 @@ export class MockDataFiles {
     const settings = { ...s, secondaryContentDir: null };
     const removed = this.secondaryPacks;
     this.secondaryPacks = [];
-    return { settings, result: { dirs: this.dirs(settings), report: { installed: [], removed, skipped: [] } } };
+    return { settings, result: { dirs: this.dirs(settings), report: { installed: [], removed, skipped: [], unavailable: false } } };
   }
 
   /** Classic builder Restore Defaults: Borealis-only fields (AI, default ruleset, autosave) are kept. */

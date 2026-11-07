@@ -2,6 +2,8 @@
 //! folder are converted and installed as user packs (`sec-<name>`) through the same pipeline as a
 //! manual import: size caps, conversion, reserved bundled ids (`install_packs`), atomic install.
 //! The folder is re-read when it is linked and at startup; unlinking removes those packs.
+//! A linked folder that cannot be read (unplugged drive, offline share, permissions) is
+//! "unavailable": its packs stay installed until it is back or the user unlinks it.
 
 use crate::content_dto::ImportPackRequest;
 use crate::content_import::{slug, write_pack_meta, Scratch, MAX_PACK_BYTES};
@@ -26,6 +28,16 @@ const MAX_SECONDARY_DEPTH: usize = 3;
 /// Most bytes read from the folder in one pass.
 const MAX_SECONDARY_TOTAL_BYTES: u64 = 512 * 1024 * 1024;
 const EXTENSIONS: [&str; 2] = ["xml", "json"];
+
+/// The linked secondary folder, as one sync pass sees it.
+enum Linked {
+    /// No folder is linked.
+    None,
+    /// A folder is linked but cannot be read right now.
+    Unavailable,
+    /// The folder, canonical and readable.
+    Ready(PathBuf),
+}
 
 struct Found {
     rel: String,
@@ -156,9 +168,29 @@ impl AppState {
         self.set_settings(next)
     }
 
+    fn linked_secondary(&self) -> ApiResult<Linked> {
+        let Some(dir) = self.settings()?.secondary_content_dir else {
+            return Ok(Linked::None);
+        };
+        Ok(
+            validate_user_dir(Path::new(&dir), &self.secondary_forbidden(), false)
+                .ok()
+                .filter(|d| std::fs::read_dir(d).is_ok())
+                .map_or(Linked::Unavailable, Linked::Ready),
+        )
+    }
+
+    /// A secondary folder is linked but cannot be read right now.
+    ///
+    /// # Errors
+    /// `internal` if the settings lock is poisoned.
+    pub fn secondary_content_unavailable(&self) -> ApiResult<bool> {
+        Ok(matches!(self.linked_secondary()?, Linked::Unavailable))
+    }
+
     /// Bring the `sec-*` packs in line with the linked folder: convert new or changed files,
     /// remove packs whose file is gone (all of them when unlinked), then hot-reload once.
-    /// A folder that no longer validates is treated as unlinked for this pass.
+    /// A linked folder that cannot be read changes nothing: the report says `unavailable`.
     ///
     /// # Errors
     /// `io_error` / `content_error` from installing or reloading.
@@ -168,11 +200,15 @@ impl AppState {
     ) -> ApiResult<SecondaryContentReport> {
         let _guard = self.content_lock()?;
         let mut report = SecondaryContentReport::default();
-        let root = self
-            .settings()?
-            .secondary_content_dir
-            .map(PathBuf::from)
-            .and_then(|d| validate_user_dir(&d, &self.secondary_forbidden(), false).ok());
+        let root = match self.linked_secondary()? {
+            Linked::None => None,
+            Linked::Ready(dir) => Some(dir),
+            Linked::Unavailable => {
+                tracing::warn!("secondary content folder unavailable; its packs are kept");
+                report.unavailable = true;
+                return Ok(report);
+            }
+        };
         let library = self.paths.library();
         let installed = installed_secondary(&library);
         let found = root

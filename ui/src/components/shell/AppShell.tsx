@@ -10,6 +10,7 @@ import { LevelPanel } from "../../pages/builder/LevelPanel";
 import { useNarrow } from "./useNarrow";
 import { phoneOs } from "../../lib/phone";
 import { useContentUpdateNotice } from "./useContentUpdateNotice";
+import { useFolderNotice } from "./useFolderNotice";
 import { useAppUpdateWatcher } from "../../state/appUpdate";
 import { UpdateFlyout } from "./UpdateFlyout";
 import { useShellActions } from "./useShellActions";
@@ -44,6 +45,7 @@ function useShortcuts() {
 /** Keyboard shortcuts live inside the provider so they can open shell flyouts. */
 function Shortcuts() {
   useShortcuts();
+  useFolderNotice();
   useContentUpdateNotice();
   useAppUpdateWatcher();
   return null;

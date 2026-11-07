@@ -110,7 +110,11 @@ export interface DataDirs {
   isDefault: boolean;
   /** Where character files are read and saved (`<documentsDir>/characters`). */
   charactersDir: string;
+  /** The chosen documents directory while it cannot be used (unplugged drive, offline share): this session falls back to the default and the setting is kept. */
+  documentsDirUnavailable: string | null;
   secondaryContentDir: string | null;
+  /** The linked secondary directory cannot be read right now; the packs from it stay installed. */
+  secondaryContentUnavailable: boolean;
 }
 
 export interface SkippedContentFile {
@@ -124,6 +128,8 @@ export interface SecondaryContentReport {
   installed: string[];
   removed: string[];
   skipped: SkippedContentFile[];
+  /** The linked folder could not be read: nothing was installed or removed. */
+  unavailable: boolean;
 }
 
 export interface SecondaryContentResult {

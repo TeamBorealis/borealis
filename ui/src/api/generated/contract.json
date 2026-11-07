@@ -5057,6 +5057,12 @@
       "k": "prim"
      }
     },
+    "documentsDirUnavailable": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
     "isDefault": {
      "opt": false,
      "t": {
@@ -5064,6 +5070,12 @@
      }
     },
     "secondaryContentDir": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "secondaryContentUnavailable": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -9194,6 +9206,12 @@
        "k": "ref",
        "name": "SkippedContentFile"
       }
+     }
+    },
+    "unavailable": {
+     "opt": false,
+     "t": {
+      "k": "prim"
      }
     }
    }

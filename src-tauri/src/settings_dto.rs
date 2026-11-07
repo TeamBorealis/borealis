@@ -15,8 +15,13 @@ pub struct DataDirs {
     pub is_default: bool,
     /// Folder the character files are read from and saved to (`<documentsDir>/characters`).
     pub characters_dir: String,
+    /// The chosen documents directory while it cannot be used (unplugged drive, offline share,
+    /// permissions): this session uses the default instead, and the setting is kept.
+    pub documents_dir_unavailable: Option<String>,
     /// The linked secondary content directory, if any.
     pub secondary_content_dir: Option<String>,
+    /// The linked secondary directory cannot be read right now; the packs from it stay installed.
+    pub secondary_content_unavailable: bool,
 }
 
 /// A secondary-directory file that was not loaded, and why.
@@ -38,6 +43,8 @@ pub struct SecondaryContentReport {
     pub removed: Vec<String>,
     /// Files that were refused.
     pub skipped: Vec<SkippedContentFile>,
+    /// The linked folder could not be read: nothing was installed or removed.
+    pub unavailable: bool,
 }
 
 /// `set_secondary_content_dir` / `unlink_secondary_content_dir` result.

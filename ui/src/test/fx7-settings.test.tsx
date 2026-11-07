@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { MockApi } from "../api/mock";
 import { FILLABLE_TOOLTIP } from "../pages/settings/SheetTab";
 import { getStatus } from "../state/status";
+import { SECONDARY_UNAVAILABLE, describeFolders } from "../components/shell/useFolderNotice";
 import { openBorealisSettings, renderApp } from "./utils";
 
 const fast = () => new MockApi({ aiEnabled: true, aiChunkDelayMs: 1, rng: () => 0.5 });
@@ -111,6 +112,38 @@ describe("Application Settings window", () => {
     await user.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(async () => expect((await api.getDataDirs()).documentsDir).toBe("/home/me/Documents/Chars"));
     expect((await api.getSettings()).documentsDir).toBe("/home/me/Documents/Chars");
+  });
+
+  it("DATA FILES: unavailable folders keep their paths and show a warning, also in the status bar at startup", async () => {
+    const user = userEvent.setup();
+    const api = fast();
+    const getDataDirs = api.getDataDirs.bind(api);
+    api.getDataDirs = async () => ({
+      ...(await getDataDirs()), documentsDirUnavailable: "/Volumes/Drive/Chars",
+      secondaryContentDir: "/Volumes/Drive/Homebrew", secondaryContentUnavailable: true,
+    });
+    renderApp("/characters", { api });
+    await waitFor(() => expect(getStatus()).toBe(describeFolders({
+      documentsDir: "", defaultDocumentsDir: "", isDefault: true, charactersDir: "",
+      documentsDirUnavailable: "/Volumes/Drive/Chars", secondaryContentDir: null, secondaryContentUnavailable: true,
+    })));
+    expect(getStatus()).toContain("/Volumes/Drive/Chars");
+    expect(getStatus()).toContain(SECONDARY_UNAVAILABLE);
+    const dialog = await openAppSettings(user);
+    await user.click(await within(dialog).findByRole("tab", { name: "Data files" }));
+    expect((within(dialog).getByLabelText("Documents directory") as HTMLInputElement).value).toBe("/Volumes/Drive/Chars");
+    expect((within(dialog).getByLabelText("Secondary content directory") as HTMLInputElement).value).toBe("/Volumes/Drive/Homebrew");
+    const notes = within(dialog).getAllByRole("status").map((n) => n.textContent ?? "");
+    expect(notes.some((t) => t.includes("documents directory /Volumes/Drive/Chars is not available"))).toBe(true);
+    expect(notes.some((t) => t.includes("secondary content directory is not available"))).toBe(true);
+    expect((within(dialog).getByRole("button", { name: /Unlink secondary directory/i }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("describeFolders says nothing when every folder is reachable", () => {
+    expect(describeFolders({
+      documentsDir: "/d", defaultDocumentsDir: "/d", isDefault: true, charactersDir: "/d/characters",
+      documentsDirUnavailable: null, secondaryContentDir: "/s", secondaryContentUnavailable: false,
+    })).toBeNull();
   });
 
   it("DATA FILES: secondary directory browse and unlink, automatic updates, Clear Cache disables itself", async () => {

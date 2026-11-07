@@ -192,6 +192,152 @@ fn secondary_dir_loads_files_as_user_packs_and_unlink_removes_them() {
     assert!(app.hub().unwrap().store.get("ID_SIDE_FEAT_GIFT").is_none());
 }
 
+/// The app as it starts again on the same data folder (settings, packs and content reloaded).
+fn restart(data: &Path) -> AppState {
+    AppState::new(AppPaths {
+        content_root: PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../content"),
+        data: data.to_path_buf(),
+    })
+    .expect("restart")
+}
+
+/// Link `dir` (holding `side.xml`) as the secondary folder; returns the app's data folder.
+fn linked_secondary(dir: &Path) -> (tempfile::TempDir, AppState) {
+    let (d, app) = app();
+    std::fs::write(dir.join("side.xml"), XML).unwrap();
+    let token = grant(&app, dir, PickPurpose::SecondaryContentDir);
+    let r = app.set_secondary_content_dir(&token, &NullSink).unwrap();
+    assert_eq!(r.report.installed, vec!["sec-side"]);
+    (d, app)
+}
+
+fn assert_side_pack_kept(app: &AppState) {
+    assert!(app.list_packs().unwrap().iter().any(|p| p.id == "sec-side"));
+    assert!(app.hub().unwrap().store.get("ID_SIDE_FEAT_GIFT").is_some());
+}
+
+#[test]
+fn secondary_packs_survive_a_missing_folder_and_resume_when_it_is_back() {
+    // B-188: an unplugged drive or offline share must not delete the packs imported from it.
+    let parent = user_dir();
+    let dir = parent.path().join("drive");
+    std::fs::create_dir(&dir).unwrap();
+    let (d, app) = linked_secondary(&dir);
+    drop(app);
+    let away = parent.path().join("unplugged");
+    std::fs::rename(&dir, &away).unwrap();
+
+    let app = restart(d.path());
+    let r = app.sync_secondary_content(&NullSink).unwrap();
+    assert!(r.unavailable, "{r:?}");
+    assert!(r.removed.is_empty(), "{:?}", r.removed);
+    assert_side_pack_kept(&app);
+    let dirs = app.data_dirs().unwrap();
+    assert!(dirs.secondary_content_unavailable);
+    assert!(dirs.secondary_content_dir.is_some());
+    assert!(app.get_settings().unwrap().secondary_content_dir.is_some());
+    // The startup task (no indexes, nothing fetched) keeps them as well.
+    let stub = Stub {
+        files: HashMap::new(),
+        calls: AtomicUsize::new(0),
+        delay: Duration::ZERO,
+    };
+    app.startup_content_tasks(&stub, &NullSink, Duration::ZERO);
+    assert_side_pack_kept(&app);
+
+    // The folder is back: the link resumes and picks up changes again.
+    std::fs::rename(&away, &dir).unwrap();
+    std::fs::write(dir.join("extra.xml"), XML.replace("SIDE", "EXTRA")).unwrap();
+    let r = app.sync_secondary_content(&NullSink).unwrap();
+    assert!(!r.unavailable);
+    assert_eq!(r.installed, vec!["sec-extra"]);
+    assert!(!app.data_dirs().unwrap().secondary_content_unavailable);
+    assert_side_pack_kept(&app);
+
+    // Only an explicit unlink removes them.
+    let r = app.unlink_secondary_content_dir(&NullSink).unwrap();
+    assert_eq!(r.report.removed, vec!["sec-extra", "sec-side"]);
+}
+
+#[test]
+fn an_unavailable_secondary_folder_can_still_be_unlinked() {
+    // An unavailable folder can still be unlinked on purpose, and that removes its packs.
+    let parent = user_dir();
+    let dir = parent.path().join("share");
+    std::fs::create_dir(&dir).unwrap();
+    let (_d, app) = linked_secondary(&dir);
+    std::fs::remove_dir_all(&dir).unwrap();
+    assert!(app.sync_secondary_content(&NullSink).unwrap().unavailable);
+    assert_side_pack_kept(&app);
+    let r = app.unlink_secondary_content_dir(&NullSink).unwrap();
+    assert_eq!(r.report.removed, vec!["sec-side"]);
+    assert!(!r.report.unavailable);
+    assert!(!r.dirs.secondary_content_unavailable);
+}
+
+#[cfg(unix)]
+#[test]
+fn secondary_packs_survive_a_folder_that_cannot_be_read() {
+    use std::os::unix::fs::PermissionsExt;
+    let parent = user_dir();
+    let dir = parent.path().join("locked");
+    std::fs::create_dir(&dir).unwrap();
+    let (_d, app) = linked_secondary(&dir);
+    std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o000)).unwrap();
+    let r = app.sync_secondary_content(&NullSink);
+    let unavailable = app.data_dirs().unwrap().secondary_content_unavailable;
+    std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let r = r.unwrap();
+    assert!(r.unavailable && r.removed.is_empty(), "{r:?}");
+    assert!(unavailable);
+    assert_side_pack_kept(&app);
+}
+
+#[test]
+fn an_unavailable_documents_dir_is_reported_and_kept() {
+    // B-188: characters must not silently "vanish" because the custom folder is offline.
+    let parent = user_dir();
+    let dir = parent.path().join("docs");
+    std::fs::create_dir(&dir).unwrap();
+    let (d, app) = app();
+    let token = grant(&app, &dir, PickPurpose::DocumentsDir);
+    let chosen = app.set_documents_dir(Some(&token)).unwrap();
+    assert!(chosen.documents_dir_unavailable.is_none());
+    drop(app);
+    let away = parent.path().join("offline");
+    std::fs::rename(&dir, &away).unwrap();
+
+    let app = restart(d.path());
+    let dirs = app.data_dirs().unwrap();
+    // This session falls back to the default folder ...
+    assert!(dirs.is_default);
+    assert_eq!(app.characters_dir(), app.paths.characters());
+    // ... but says so, and the setting is kept.
+    assert_eq!(
+        dirs.documents_dir_unavailable.as_deref(),
+        Some(chosen.documents_dir.as_str())
+    );
+    assert_eq!(
+        app.get_settings().unwrap().documents_dir.as_deref(),
+        Some(chosen.documents_dir.as_str())
+    );
+    // A full settings save does not drop it either.
+    let mut full = serde_json::to_value(app.get_settings().unwrap()).unwrap();
+    full["playerName"] = json!("Ada");
+    let saved = app.save_settings(&full).unwrap();
+    assert_eq!(
+        saved.documents_dir.as_deref(),
+        Some(chosen.documents_dir.as_str())
+    );
+
+    // Back again: the chosen folder is in effect with no warning.
+    std::fs::rename(&away, &dir).unwrap();
+    let dirs = app.data_dirs().unwrap();
+    assert!(!dirs.is_default);
+    assert!(dirs.documents_dir_unavailable.is_none());
+    assert_eq!(dirs.documents_dir, chosen.documents_dir);
+}
+
 #[test]
 fn secondary_scan_skips_the_app_data_folder_below_a_linked_parent() {
     let parent = user_dir();

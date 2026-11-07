@@ -120,20 +120,35 @@ pub fn validate_user_dir(dir: &Path, forbidden: &[PathBuf], writable: bool) -> A
     Ok(dir)
 }
 
+/// A chosen documents directory is used while its `characters` folder is there.
+fn documents_usable(dir: &Path) -> bool {
+    dir.join(CHARACTERS_SUBDIR).is_dir()
+}
+
 fn display(p: &Path) -> String {
     p.to_string_lossy().into_owned()
 }
 
 impl AppState {
-    /// The documents directory in effect: the chosen one while it still exists, else the default.
+    /// The documents directory in effect: the chosen one while it is usable, else the default
+    /// for now. The setting itself is kept (see [`DataDirs::documents_dir_unavailable`]).
     #[must_use]
     pub fn documents_dir(&self) -> PathBuf {
         self.settings()
             .ok()
             .and_then(|s| s.documents_dir)
             .map(PathBuf::from)
-            .filter(|d| d.join(CHARACTERS_SUBDIR).is_dir())
+            .filter(|d| documents_usable(d))
             .unwrap_or_else(|| self.paths.data.clone())
+    }
+
+    /// The chosen documents directory while it cannot be used (unplugged drive, offline share).
+    #[must_use]
+    pub fn documents_dir_unavailable(&self) -> Option<String> {
+        self.settings()
+            .ok()?
+            .documents_dir
+            .filter(|d| !documents_usable(Path::new(d)))
     }
 
     /// Folder character files are listed from and saved to.
@@ -158,7 +173,9 @@ impl AppState {
             default_documents_dir: display(&self.paths.data),
             is_default: documents == self.paths.data,
             characters_dir: display(&self.characters_dir()),
+            documents_dir_unavailable: self.documents_dir_unavailable(),
             secondary_content_dir: self.settings()?.secondary_content_dir,
+            secondary_content_unavailable: self.secondary_content_unavailable()?,
         })
     }
 
