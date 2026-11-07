@@ -89,8 +89,8 @@ function Body({ s }: { s: CharacterSnapshot }) {
       detail={<PlayDetail selected={sel} resources={play.resources} toggles={play.toggles} />}
       list={(<><RestBar /><ConcentrationBanner concentration={play.concentration} />{statRow}<HitPointsCard hp={play.hitPoints} />
         <HitDiceCard hitDice={play.hitDice} /><SpellSlotsCard play={play} />
-        <ResourcesCard resources={play.resources} selected={sel} onSelect={setSel} /><TrackersCard trackers={play.trackers} />
-        <TogglesCard toggles={play.toggles} selected={sel} onSelect={setSel} /><ExhaustionCard exhaustion={play.exhaustion} inspiration={play.inspiration} /></>)} />,
+        <ResourcesCard resources={play.resources} toggles={play.toggles} selected={sel} onSelect={setSel} /><TrackersCard trackers={play.trackers} />
+        <TogglesCard toggles={play.toggles} resources={play.resources} selected={sel} onSelect={setSel} /><ExhaustionCard exhaustion={play.exhaustion} inspiration={play.inspiration} /></>)} />,
     abilities: () => <PlaySplit label="Abilities" title={null} onClose={() => undefined}
       detail={<><h1 className="v5-desc-title">Abilities</h1><p className="v5-lead">Tap a value to roll it. Long-press, right-click or the arrow beside it rolls with advantage or disadvantage.</p></>}
       list={<div className="pr-cols"><RollBar s={s} /><AbilitiesPanel s={s} /></div>} />,

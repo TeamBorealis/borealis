@@ -32,7 +32,29 @@ function Pips({ r }: { r: PlayResource }) {
 export type PlaySelection = { kind: "resource" | "toggle"; id: string } | null;
 interface Pickable { selected: PlaySelection; onSelect: (s: PlaySelection) => void }
 
-function ResourceRow({ r, selected, onSelect }: { r: PlayResource } & Pickable) {
+/**
+ * B-178: a state with a use pool of the same id (Rage) is switched on that pool's row, so spending and switching are in one
+ * place (switching it on spends a use, B-140). Such a state is not listed again under States.
+ */
+export const stateOfPool = (toggles: PlayToggle[], r: PlayResource): PlayToggle | undefined => toggles.find((t) => t.id === r.id);
+const hasPool = (resources: PlayResource[], t: PlayToggle): boolean => resources.some((r) => r.id === t.id);
+
+/** A state's tags on its row: switched on but without effect (worn armor), or in effect. */
+function StateTags({ t }: { t: PlayToggle }) {
+  return (<>{t.on && t.blockedBy && <Tag tone="bad">No effect</Tag>}{t.active && <Tag tone="ok">Active</Tag>}</>);
+}
+
+function StateSwitch({ t }: { t: PlayToggle }) {
+  const { mutate } = useCharacter();
+  return <Switch label={t.name} checked={t.on} onChange={(e) => void mutate((api, id) => api.setToggle({ characterId: id, toggleId: t.id, on: e.target.checked }))} />;
+}
+
+function StateEffects({ t }: { t: PlayToggle }) {
+  return (<>{t.effects.length > 0 && <><h2>Effects</h2><ul>{t.effects.map((e) => <li key={e}>{e}</li>)}</ul></>}
+    {t.on && t.blockedBy && <p className="error-text">No effect: {t.blockedBy}</p>}</>);
+}
+
+function ResourceRow({ r, state, selected, onSelect }: { r: PlayResource; state?: PlayToggle } & Pickable) {
   const { snapshot, mutate } = useCharacter();
   const rolled = snapshot ? rolledChargeOf(snapshot, r.id) : null;
   const spend = () => void mutate((api, id) => api.spendResource({ characterId: id, resourceId: r.id }));
@@ -43,6 +65,7 @@ function ResourceRow({ r, selected, onSelect }: { r: PlayResource } & Pickable) 
       <button type="button" className="v5-row grow" aria-current={on} onClick={() => onSelect({ kind: "resource", id: r.id })}>
         <span className="grow">{r.name}</span>
         <span className="meta">{resourceMeta(r, rolled ? chargesLabel(rolled.charge) : null)}</span>
+        {state && <StateTags t={state} />}
       </button>
       <Pips r={r} />
       <span className="v5-count" role="status" aria-label={`${r.name}: ${r.current} of ${r.max} uses left`}>{r.current}/{r.max}</span>
@@ -50,16 +73,17 @@ function ResourceRow({ r, selected, onSelect }: { r: PlayResource } & Pickable) 
         <ResourceDieButton r={r} />
         <Button small disabled={r.current <= 0} aria-label={`Spend ${r.name}`} onClick={spend}>Spend</Button>
         <Button small disabled={r.current >= r.max} aria-label={`Restore ${r.name}`} onClick={restore}>Restore</Button>
+        {state && <StateSwitch t={state} />}
       </span>
     </li>
   );
 }
 
 /** Limited-use pools. The rests are in the Play page's rest bar (RestBar), above every card they affect. */
-export function ResourcesCard({ resources, selected, onSelect }: { resources: PlayResource[] } & Pickable) {
+export function ResourcesCard({ resources, toggles, selected, onSelect }: { resources: PlayResource[]; toggles: PlayToggle[] } & Pickable) {
   return (
     <Expander title="Resources">
-      {resources.length === 0 ? <EmptyState title="No limited-use resources" /> : <ul className="v5-list" aria-label="Resources">{resources.map((r) => <ResourceRow key={r.id} r={r} selected={selected} onSelect={onSelect} />)}</ul>}
+      {resources.length === 0 ? <EmptyState title="No limited-use resources" /> : <ul className="v5-list" aria-label="Resources">{resources.map((r) => <ResourceRow key={r.id} r={r} state={stateOfPool(toggles, r)} selected={selected} onSelect={onSelect} />)}</ul>}
     </Expander>
   );
 }
@@ -67,23 +91,23 @@ export function ResourcesCard({ resources, selected, onSelect }: { resources: Pl
 /** Speed effects of a state ("Walk speed x2", "Fly speed 2x walk speed"), shown on its row. */
 export const speedEffects = (t: PlayToggle): string[] => t.effects.filter((e) => /\bspeed\b/i.test(e));
 
-export function TogglesCard({ toggles, selected, onSelect }: { toggles: PlayToggle[] } & Pickable) {
-  const { mutate } = useCharacter();
-  if (toggles.length === 0) return null;
+/** The states without a same-id use pool (those are switched on the pool's row, B-178). */
+export function TogglesCard({ toggles, resources, selected, onSelect }: { toggles: PlayToggle[]; resources: PlayResource[] } & Pickable) {
+  const own = toggles.filter((t) => !hasPool(resources, t));
+  if (own.length === 0) return null;
   return (
     <Expander title="States">
       <ul className="v5-list" aria-label="States">
-        {toggles.map((t) => {
+        {own.map((t) => {
           const on = selected?.kind === "toggle" && selected.id === t.id;
           return (
             <li key={t.id} className={`v5-line ${on ? "is-selected" : ""}`}>
               <button type="button" className="v5-row grow" aria-current={on} onClick={() => onSelect({ kind: "toggle", id: t.id })}>
                 <span className="grow">{t.name}</span>
                 {speedEffects(t).length > 0 && <span className="meta">{speedEffects(t).join(", ")}</span>}
-                {t.on && t.blockedBy && <Tag tone="bad">No effect</Tag>}
-                {t.active && <Tag tone="ok">Active</Tag>}
+                <StateTags t={t} />
               </button>
-              <span className="v5-ctrls"><Switch label={t.name} checked={t.on} onChange={(e) => void mutate((api, id) => api.setToggle({ characterId: id, toggleId: t.id, on: e.target.checked }))} /></span>
+              <span className="v5-ctrls"><StateSwitch t={t} /></span>
             </li>
           );
         })}
@@ -98,12 +122,13 @@ export function PlayDetail({ selected, resources, toggles }: { selected: PlaySel
   const r = selected?.kind === "resource" ? resources.find((x) => x.id === selected.id) : undefined;
   const rolled = r && snapshot ? rolledChargeOf(snapshot, r.id) : null;
   const t = selected?.kind === "toggle" ? toggles.find((x) => x.id === selected.id) : undefined;
+  const state = r ? stateOfPool(toggles, r) : undefined;
   if (r) return (<><h1 className="v5-desc-title">{r.name}</h1><p className="v5-lead">{r.source}</p>
     <h2>Uses</h2><p>{r.current} of {r.max} left{r.recharge.length ? `. Resets on ${rechargeText(r)}.` : "."}</p>
-    {rolled && <><h2>Maximum</h2><RolledChargesEditor item={rolled.item} charge={rolled.charge} /></>}</>);
+    {rolled && <><h2>Maximum</h2><RolledChargesEditor item={rolled.item} charge={rolled.charge} /></>}
+    {state && <><h2>State</h2><p>{[state.activation, state.duration].filter(Boolean).join(" · ")}{state.activation || state.duration ? ". " : ""}Switching it on spends one use.</p><StateEffects t={state} /></>}</>);
   if (t) return (<><h1 className="v5-desc-title">{t.name}</h1><p className="v5-lead">{[t.activation, t.duration].filter(Boolean).join(" · ") || "State"}</p>
-    {t.effects.length > 0 && <><h2>Effects</h2><ul>{t.effects.map((e) => <li key={e}>{e}</li>)}</ul></>}
-    {t.on && t.blockedBy && <p className="error-text">No effect: {t.blockedBy}</p>}</>);
+    <StateEffects t={t} /></>);
   return (<><h1 className="v5-desc-title">Play</h1><p className="v5-lead">Select a resource or state to read its details.</p></>);
 }
 
