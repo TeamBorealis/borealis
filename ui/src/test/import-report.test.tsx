@@ -9,7 +9,7 @@ const fast = () => new MockApi({ aiChunkDelayMs: 2, importStepMs: 1, aiEnabled: 
 async function reviewRunebinder(user: ReturnType<typeof userEvent.setup>) {
   await user.type(await screen.findByLabelText("Paste text"), "Runebinder: a half-caster class that etches runes.");
   await user.click(screen.getByRole("button", { name: "Import" }));
-  await screen.findByText("Level 1–20 test passed", {}, { timeout: 3000 });
+  await screen.findByText("Level 1–20 test passed");
 }
 
 describe("import bug reports (opt-in)", () => {
@@ -100,7 +100,7 @@ describe("import bug reports (opt-in)", () => {
     await user.type(await screen.findByLabelText("Describe it"), "a feat that lets you jump");
     await user.click(screen.getByRole("button", { name: "Feat" }));
     await user.click(screen.getByRole("button", { name: "Import" }));
-    await screen.findByRole("region", { name: /Imported feat/ }, { timeout: 3000 });
+    await screen.findByRole("region", { name: /Imported feat/ });
     expect(screen.queryByText(/self-checks found problems/)).toBeNull();
     expect(screen.getByRole("button", { name: "Send a report" }).className).toContain("btn-ghost");
 

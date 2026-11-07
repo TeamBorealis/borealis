@@ -280,7 +280,7 @@ describe("semantic index (S3.3)", () => {
 
     // Assert
     await waitFor(() => expect(foot.textContent).toMatch(/^Keyword search - semantic indexing \d+%$/));
-    await waitFor(() => expect(foot.textContent).toBe("Keyword + semantic"), { timeout: 3000 });
+    await waitFor(() => expect(foot.textContent).toBe("Keyword + semantic"));
     expect((await api.semanticStatus()).active).toBe(true);
   });
 
@@ -295,7 +295,7 @@ describe("semantic index (S3.3)", () => {
     // Assert
     expect(await within(dialog).findByText(/^Building the semantic index: \d+ of 1200 passages\./)).toBeTruthy();
     expect(within(dialog).getByText("On: search uses keywords until the semantic index is built.")).toBeTruthy();
-    expect(await within(dialog).findByText(/^On: search also finds/, {}, { timeout: 3000 })).toBeTruthy();
+    expect(await within(dialog).findByText(/^On: search also finds/)).toBeTruthy();
     // The status line is read by its sentence, not a label that would hide it from screen readers.
     const status = within(dialog).getAllByRole("status").find((e) => e.textContent === READY_LINE);
     expect(status?.getAttribute("aria-label")).toBeNull();
@@ -329,7 +329,7 @@ describe("semantic index (S3.3)", () => {
     const { dialog } = await openSearchTab(api);
 
     // Assert
-    expect(await within(dialog).findByText(READY_LINE, {}, { timeout: 3000 })).toBeTruthy();
+    expect(await within(dialog).findByText(READY_LINE)).toBeTruthy();
     expect((await api.semanticStatus()).active).toBe(true);
   });
 

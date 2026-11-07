@@ -108,8 +108,8 @@ describe("StartupGate", () => {
     await f.finish();
     expect(screen.getByText("the app")).toBeTruthy();
     expect(screen.getByTestId("splash").className).not.toContain("splash--leaving"); // held for the minimum
-    await waitFor(() => expect(screen.getByTestId("splash").className).toContain("splash--leaving"), { timeout: 2000 });
-    await waitFor(() => expect(screen.queryByTestId("splash")).toBeNull(), { timeout: 1500 });
+    await waitFor(() => expect(screen.getByTestId("splash").className).toContain("splash--leaving"));
+    await waitFor(() => expect(screen.queryByTestId("splash")).toBeNull());
   });
 
   it("stays on the splash and never mounts the app when startup fails", async () => {

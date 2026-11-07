@@ -13,7 +13,7 @@ describe("import anything", () => {
     await user.type(await screen.findByLabelText("Paste text"), "Runebinder: a half-caster class that etches runes.");
     await user.click(screen.getByRole("button", { name: "Import" }));
     expect(await screen.findByRole("progressbar", { name: "Import progress" })).toBeTruthy();
-    expect(await screen.findByText("Level 1–20 test passed", {}, { timeout: 3000 })).toBeTruthy();
+    expect(await screen.findByText("Level 1–20 test passed")).toBeTruthy();
 
     const capstone = screen.getByRole("region", { name: "Master Runebinder" });
     expect(within(capstone).getByText("Check this")).toBeTruthy();
@@ -37,7 +37,7 @@ describe("import anything", () => {
     await user.type(await screen.findByLabelText("Describe it"), "a feat that lets you jump");
     await user.click(screen.getByRole("button", { name: "Feat" }));
     await user.click(screen.getByRole("button", { name: "Import" }));
-    const card = await screen.findByRole("region", { name: /Imported feat/ }, { timeout: 3000 });
+    const card = await screen.findByRole("region", { name: /Imported feat/ });
     await user.click(within(card).getByRole("button", { name: /raw JSON/ }));
     fireEvent.change(within(card).getByLabelText(/Raw JSON for/), { target: { value: "{ nope" } });
     await user.click(within(card).getByRole("button", { name: "Validate and save" }));
@@ -49,7 +49,7 @@ describe("import anything", () => {
     renderApp("/import", { api: fast() });
     await user.type(await screen.findByLabelText("Paste text"), "Path of the Stormcaller subclass: at 3rd level you gain a storm aura.");
     await user.click(screen.getByRole("button", { name: "Import" }));
-    expect(await screen.findByText("Which class is this subclass for?", {}, { timeout: 3000 })).toBeTruthy();
+    expect(await screen.findByText("Which class is this subclass for?")).toBeTruthy();
     expect((screen.getByRole("button", { name: "Add to Library" }) as HTMLButtonElement).disabled).toBe(true);
     await user.click(screen.getByRole("radio", { name: "Barbarian" }));
     await user.click(screen.getByRole("button", { name: "Use this class" }));

@@ -14,7 +14,7 @@ async function reviewClass(user: User, api = mock()) {
   const view = renderApp("/import", { api });
   await user.type(await screen.findByLabelText("Paste text"), "Runebinder: a half-caster class that etches runes.");
   await user.click(screen.getByRole("button", { name: "Import" }));
-  await screen.findByText("Level 1–20 test passed", {}, { timeout: 3000 });
+  await screen.findByText("Level 1–20 test passed");
   return view;
 }
 const regions = () => screen.getAllByRole("region").filter((r) => r.closest("ul[aria-label='Imported elements']")).map((r) => r.getAttribute("aria-label"));
@@ -45,7 +45,7 @@ describe("import review screen (HB2)", () => {
     await user.type(await screen.findByLabelText("Describe it"), "a feat that lets you jump");
     await user.click(screen.getByRole("button", { name: "Feat" }));
     await user.click(screen.getByRole("button", { name: "Import" }));
-    expect((await screen.findByText(/Nothing needs your attention: all 1 element imported cleanly/, {}, { timeout: 3000 })).textContent).toBeTruthy();
+    expect((await screen.findByText(/Nothing needs your attention: all 1 element imported cleanly/)).textContent).toBeTruthy();
   });
 
   it("shows the reason beside a badge and scrolls to and highlights the element's source passage", async () => {

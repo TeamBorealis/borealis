@@ -17,7 +17,7 @@ async function openWith(api: MockApi, files: ReturnType<typeof opened>[]) {
   await screen.findByRole("button", { name: /Import characters/ });
   api.openedFiles = files;
   act(() => { window.dispatchEvent(new CustomEvent("borealis-open-file")); });
-  return screen.findByRole("dialog", { name: /Import preview/ }, { timeout: 4000 });
+  return screen.findByRole("dialog", { name: /Import preview/ });
 }
 
 describe("Open with: a lone .index", () => {

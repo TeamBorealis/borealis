@@ -111,7 +111,7 @@ describe("status line (O7)", () => {
     const status = await screen.findByRole("contentinfo", { name: "Status" });
     await user.click(await screen.findByRole("button", { name: "Spend Rage" }));
     expect(within(status).queryByRole("progressbar"), "a quick command shows nothing").toBeNull();
-    const bar = await within(status).findByRole("progressbar", { name: "Working" }, { timeout: 2000 });
+    const bar = await within(status).findByRole("progressbar", { name: "Working" });
     expect(bar.classList.contains("aur-status-busyline")).toBe(true);
     expect(bar.style.width, "no fixed width that squeezes the message").toBe("");
     const flow = [...status.children].filter((c) => !c.classList.contains("aur-status-busyline")).map((c) => c.className);

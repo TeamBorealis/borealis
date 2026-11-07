@@ -117,7 +117,7 @@ describe("character tiles: Open next to Edit and Delete (O3)", () => {
     expect(names).toEqual(expect.arrayContaining(["Edit Seraphine Vale", "Delete Seraphine Vale", "Open Seraphine Vale"]));
     expect(names.indexOf("Open Seraphine Vale")).toBe(names.indexOf("Delete Seraphine Vale") + 1);
     await user.click(within(group).getByRole("button", { name: "Open Seraphine Vale" }));
-    expect(await screen.findByRole("heading", { name: "Build", level: 1 }, { timeout: 3000 })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Build", level: 1 })).toBeTruthy();
   });
 
   it("double-tap still opens a character on a phone", async () => {
@@ -125,7 +125,7 @@ describe("character tiles: Open next to Edit and Delete (O3)", () => {
     const user = userEvent.setup();
     renderApp("/characters");
     await user.dblClick(await screen.findByRole("button", { name: /Seraphine Vale,/ }));
-    expect(await screen.findByRole("heading", { name: "Build", level: 1 }, { timeout: 3000 })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Build", level: 1 })).toBeTruthy();
   });
 
   it("a desktop window keeps Edit and Delete only", async () => {

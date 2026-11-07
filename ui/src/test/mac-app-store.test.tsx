@@ -86,7 +86,7 @@ describe("Mac App Store build", () => {
     renderApp("/characters", { api: mas() });
     await screen.findByRole("heading", { name: "Characters" });
     fireEvent.drop(window, { dataTransfer: { types: ["Files"], files: [new File(["%PDF"], "sheet.pdf", { type: "application/pdf" })] } });
-    const msg = await screen.findByText(/sheet\.pdf cannot be imported here/, {}, { timeout: 5000 });
+    const msg = await screen.findByText(/sheet\.pdf cannot be imported here/);
     expect(msg.textContent).not.toMatch(AI_TEXT);
   });
 });

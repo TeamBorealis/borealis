@@ -20,5 +20,13 @@ export default defineConfig({
     host: host || false,
     hmr: host ? { protocol: "ws", host, port: 1421 } : undefined,
   },
-  test: { environment: "jsdom", globals: true },
+  // B-197: generous timeouts so a loaded machine does not fail tests that pass alone (src/test/setup.ts). A test's
+  // own budget must exceed several findBy waits in a row; a hung test still fails, after this long.
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/test/setup.ts"],
+    testTimeout: 60_000,
+    hookTimeout: 60_000,
+  },
 });
