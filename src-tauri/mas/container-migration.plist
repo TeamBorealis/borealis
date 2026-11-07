@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Mac App Store build (MAS1, B-190; specs/mac-app-store.md section F). Shipped as Contents/Resources/container-migration.plist
+  (tauri.mas.conf.json bundle.macOS.files). On the first launch of the sandboxed app, macOS moves these items from the
+  user's Library into the app's container (~/Library/Containers/app.borealis/Data/Library/...), once:
+  - the data folder of the DMG build (characters, content packs, settings, search index, logs, device list);
+  - the web view's storage (remembered UI choices).
+  The DMG build then starts empty if it is opened again. Keychain items (device-link identity and pair keys) do not move:
+  paired devices must be paired again (the app says so in Settings > Devices).
+-->
+<plist version="1.0">
+<dict>
+	<key>Move</key>
+	<array>
+		<string>${ApplicationSupport}/app.borealis</string>
+		<string>${Library}/WebKit/app.borealis</string>
+	</array>
+</dict>
+</plist>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Mac App Store build (MAS1, B-190; specs/mac-app-store.md section A). Used only by tauri.mas.conf.json; the DMG is
+  signed without an entitlements file.
+  - app-sandbox: required for every Mac App Store app.
+  - network.client: content index and 5etools downloads, the semantic model download, the device-link client.
+  - network.server: device link Send/Receive listens on the LAN, and mDNS advertises and browses (UDP 5353).
+  - files.user-selected.read-write: every file and folder comes from a native open/save panel or a drop.
+  - files.bookmarks.app-scope: security-scoped bookmarks for the remembered folders (src-tauri/src/folder_access.rs).
+  The signing step adds com.apple.application-identifier and com.apple.developer.team-identifier from the
+  Mac App Store provisioning profile (phase 2); they are not in this file, so an ad-hoc signed test build launches.
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<key>com.apple.security.network.server</key>
+	<true/>
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+	<key>com.apple.security.files.bookmarks.app-scope</key>
+	<true/>
+</dict>
+</plist>

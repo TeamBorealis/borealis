@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Mac App Store build (MAS1, B-190): merged into the bundle's Info.plist by tauri.mas.conf.json (bundle.macOS.infoPlist).
+  LSApplicationCategoryType comes from bundle.category ("RolePlayingGame") in the same overlay.
+  ITSAppUsesNonExemptEncryption: only standard TLS and authentication (SPAKE2 pairing, pinned certificates), as in the iOS app.
+  The local network strings match the iOS app (gen/apple/project.yml).
+-->
+<plist version="1.0">
+<dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Borealis connects to your other devices on this Wi-Fi to send and receive characters.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_borealis-link._tcp</string>
+	</array>
+</dict>
+</plist>

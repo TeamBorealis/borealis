@@ -1,0 +1,17 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "category": "RolePlayingGame",
+    "resources": {
+      "../crates/borealis-ai/profile-assets": null
+    },
+    "macOS": {
+      "minimumSystemVersion": "12.0",
+      "entitlements": "./mas/Entitlements.plist",
+      "infoPlist": "./mas/Info.plist",
+      "files": {
+        "Resources/container-migration.plist": "./mas/container-migration.plist"
+      }
+    }
+  }
+}
