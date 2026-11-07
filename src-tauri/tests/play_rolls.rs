@@ -262,6 +262,38 @@ fn bardic_inspiration_carries_its_die_in_both_editions() {
     assert_eq!(resource(&s, "Second Wind")["die"], Value::Null);
 }
 
+/// B-104: at Charisma 10 (modifier 0) a level-1 Bard still has one Bardic Inspiration, in both
+/// editions ("minimum of once").
+#[test]
+fn bardic_inspiration_has_one_use_at_charisma_10_in_both_editions() {
+    let app = App::new();
+    // (ruleset, species, class, base Charisma giving a score of 10: the 2014 Human adds 1)
+    for (ruleset, race, class, base) in [
+        (
+            Ruleset::Dnd2024,
+            "ID_2024_SPECIES_HUMAN",
+            "ID_2024_CLASS_BARD",
+            10,
+        ),
+        (
+            Ruleset::Dnd2014,
+            "ID_RACE_HUMAN",
+            "ID_WOTC_PHB_CLASS_BARD",
+            9,
+        ),
+    ] {
+        let s = app.create(ruleset, race, class, 1);
+        let s = app.state.set_base_score(&s.id, "cha", base).expect("cha");
+        let s = app.json("set_base_score", &s);
+        let r = resource(&s, "Bardic Inspiration");
+        assert_eq!(
+            (&r["max"], &r["current"]),
+            (&json!(1), &json!(1)),
+            "{ruleset:?}"
+        );
+    }
+}
+
 #[test]
 fn the_spell_attack_roll_and_the_spells_ready_to_cast() {
     let app = App::new();

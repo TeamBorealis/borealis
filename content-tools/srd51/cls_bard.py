@@ -51,7 +51,7 @@ def build():
         focus_id='ID_INTERNAL_PROFICIENCY_SPELLFOCUS_GROUP_MUSICAL_INSTRUMENT',
         sheet_text='Charisma is your spellcasting ability; you can use a musical instrument as a spellcasting focus.', id_=SPELL))
     els.append(class_feature(CLS, 'Bardic Inspiration', html=H('Bardic Inspiration'),
-        rules=step_stats('bardic inspiration:die', die, bonus='bardic inspiration') + [stat('bardic inspiration:count', 'charisma:modifier')],
+        rules=step_stats('bardic inspiration:die', die, bonus='bardic inspiration') + [stat('bardic inspiration:count', 1, bonus='base'), stat('bardic inspiration:count', 'charisma:modifier', bonus='base')],
         sheet_=sheet(action='Bonus Action', usage='{{bardic inspiration:count}}/Long Rest',
                      text='Give a creature within 60 feet a Bardic Inspiration die (d{{bardic inspiration:die}}) to add to one ability check, attack roll or saving throw.',
                      entries=[{'text': 'Give a creature within 60 feet a Bardic Inspiration die (d{{bardic inspiration:die}}) to add to one ability check, attack roll or saving throw.', 'usage': '{{bardic inspiration:count}}/Short or Long Rest', 'level': 5}])))

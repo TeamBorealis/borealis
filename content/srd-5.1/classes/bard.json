@@ -548,7 +548,14 @@
         {
           "kind": "stat",
           "name": "bardic inspiration:count",
-          "value": "charisma:modifier"
+          "value": "1",
+          "bonus": "base"
+        },
+        {
+          "kind": "stat",
+          "name": "bardic inspiration:count",
+          "value": "charisma:modifier",
+          "bonus": "base"
         }
       ]
     },
