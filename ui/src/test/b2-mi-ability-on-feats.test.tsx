@@ -51,7 +51,7 @@ describe("Magic Initiate's Spellcasting Ability (B2)", () => {
     const section = await screen.findByRole("region", { name: MI_LABEL });
     expect(within(section).getByRole("heading", { name: MI_LABEL })).toBeTruthy();
     const options = await within(section).findByRole("list", { name: `${ABILITY} options` });
-    const wisdom = within(options).getByRole("button", { name: /^Wisdom/ });
+    const wisdom = await within(options).findByRole("button", { name: /^Wisdom/ });
     if (phone) {
       await user.click(wisdom);
       await user.click(await screen.findByRole("button", { name: "Choose Wisdom" }));

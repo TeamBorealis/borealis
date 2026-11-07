@@ -41,7 +41,7 @@ describe("search flyout (S1.5)", () => {
     // Act
     await user.click(within(dlg).getByRole("tab", { name: "Rules" }));
     const list = await within(dlg).findByRole("list", { name: "Compendium results: Rules" });
-    await user.click(within(list).getByRole("button", { name: /Dash/ }));
+    await user.click(await within(list).findByRole("button", { name: /Dash/ }));
 
     // Assert
     const entry = await within(dlg).findByRole("article", { name: "Dash" });
