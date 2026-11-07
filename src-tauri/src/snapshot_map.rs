@@ -75,7 +75,8 @@ pub fn build_snapshot(input: &MapInput<'_>) -> CharacterSnapshot {
         progress,
         spellcasting: extras::spellcasting(input, &engine_snap),
         inventory: extras::inventory(input, &engine_snap),
-        details: extras::details(input.character),
+        details: extras::details(input.character, &engine_snap),
+        detail_choices: crate::origin_details::detail_choices(&engine_snap),
         attacks: with_save_dcs(
             crate::attack_rows::attacks(input.character, &engine_snap),
             &engine_snap,

@@ -697,3 +697,44 @@ fn the_2024_header_shows_the_lineage_chosen_in_the_species_trait() {
     };
     assert_eq!(f.lineage, None, "a human has no lineage");
 }
+
+/// B-191: the chosen Alignment / Deity element, else Manage's custom text in the app's UI extras.
+#[test]
+fn alignment_and_deity_print_the_chosen_element_else_the_custom_text() {
+    use borealis_engine::{commands, Choice, Engine};
+    let (mut c, snap) = wizard_2014();
+    let d = data(&(c.clone(), snap.clone()));
+    assert_eq!(
+        (d.identity.alignment.as_str(), d.identity.deity.as_str()),
+        ("", "")
+    );
+
+    let mut ui = serde_json::Map::new();
+    ui.insert("alignment".into(), " Chaotic Curious ".into());
+    ui.insert("deity".into(), "The Lantern Keeper".into());
+    c.extra.insert("ui".into(), ui.into());
+    let d = data(&(c.clone(), snap.clone()));
+    assert_eq!(d.identity.alignment, "Chaotic Curious");
+    assert_eq!(d.identity.deity, "The Lantern Keeper");
+
+    let st = crate::model_fixtures::store("srd-5.1");
+    let e = Engine::new(&st);
+    let slot = snap
+        .slots
+        .iter()
+        .find(|s| s.ty == "Alignment")
+        .expect("slot");
+    let picked = commands::select(
+        &e,
+        &c.build,
+        &slot.key,
+        Choice::Element("ID_ALIGNMENT_LAWFUL_GOOD".into()),
+    )
+    .expect("pick")
+    .state;
+    let snap = e.derive(&picked);
+    c.build = picked;
+    let d = data(&(c, snap));
+    assert_eq!(d.identity.alignment, "Lawful Good", "the element wins");
+    assert_eq!(d.identity.deity, "The Lantern Keeper");
+}

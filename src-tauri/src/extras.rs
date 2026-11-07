@@ -514,16 +514,18 @@ fn cp_from_gp(gp: f64) -> u64 {
     (gp * COPPER_PER_GOLD).round().max(0.0) as u64
 }
 
-/// The free-text details of a character.
+/// The free-text details of a character. Alignment and deity are the chosen Alignment and Deity
+/// elements, else the custom text (B-191).
 #[must_use]
-pub fn details(c: &Character) -> CharacterDetails {
+pub fn details(c: &Character, snap: &Engine) -> CharacterDetails {
+    use crate::origin_details::{shown, ALIGNMENT, DEITY};
     let d = &c.details;
     let ui = ui_extras(c);
     CharacterDetails {
         gender: c.meta.gender.clone(),
         player_name: c.meta.player.clone(),
-        alignment: ui.alignment,
-        deity: ui.deity,
+        alignment: shown(snap, ALIGNMENT, ui.alignment),
+        deity: shown(snap, DEITY, ui.deity),
         age: d.appearance.age.clone(),
         height: d.appearance.height.clone(),
         weight: d.appearance.weight.clone(),

@@ -8,8 +8,11 @@ import { MgIcon } from "./mgIcons";
 import { XpField } from "./XpField";
 import "./manage-fx15.css";
 
-/* Closed list: alignment is a rules value (the nine alignments that attunement and prerequisites test), as the classic builder's alignment picker is. */
-const ALIGNMENTS = ["Lawful Good", "Neutral Good", "Chaotic Good", "Lawful Neutral", "True Neutral", "Chaotic Neutral", "Lawful Evil", "Neutral Evil", "Chaotic Evil"];
+/* B-191: Alignment and Deity are the character's Alignment and Deity selections, as the classic builder's pickers are: they list the
+   elements those slots offer (snapshot.detailChoices), and a value naming one selects it. Alignment is a closed list (a rules value that
+   attunement and prerequisites test); a deity may also be typed (issue #30), kept as custom text. These lists stand in only when the
+   content offers no such elements. */
+const ALIGNMENTS = ["Lawful Good", "Neutral Good", "Chaotic Good", "Lawful Neutral", "Neutral", "Chaotic Neutral", "Lawful Evil", "Neutral Evil", "Chaotic Evil"];
 /* Editable combos (issue #30): suggestions, any typed text is kept. Gender, eyes, skin and hair are the classic builder's lists. */
 const GENDERS = ["Male", "Female", "Construct"];
 const EYES = ["Blue", "Brown", "Red", "Green", "Black", "White", "Purple", "Orange", "Pink", "None", "Eye Patch", "Glass Eye"];
@@ -23,6 +26,9 @@ export function CharacterTab() {
   const { snapshot, mutate } = useCharacter();
   const [name, setName] = useState<string | null>(null);
   if (!snapshot) return null;
+  const choices = snapshot.detailChoices;
+  const alignments = choices.alignment.length ? choices.alignment : ALIGNMENTS;
+  const deities = choices.deity.length ? choices.deity : DEITIES;
   const rename = (next: string) => void mutate((api, cid) => api.updateCharacterMeta({ characterId: cid, name: next }));
   return (
     <div className="mg-page">
@@ -38,12 +44,12 @@ export function CharacterTab() {
             )}
           </MgField>
           <DetailField k="gender" label="Gender" list={GENDERS} />
-          <DetailField k="alignment" label="Alignment" choices={ALIGNMENTS} ok />
+          <DetailField k="alignment" label="Alignment" choices={alignments} ok />
           <DetailField k="playerName" label="Player name" />
           <MgField label="Current experience">
             {() => <XpField value={snapshot.level.xp} onChange={(xp) => void mutate((api, cid) => api.setXp({ characterId: cid, xp }))} />}
           </MgField>
-          <DetailField k="deity" label="Deity (optional)" list={DEITIES} />
+          <DetailField k="deity" label="Deity (optional)" list={deities} />
         </div>
       </MgSection>
       <MgSection title="Appearance" sub="Describe how your character looks in the fields below." className="mg-gap mg-char-appearance">

@@ -435,7 +435,12 @@ without the host: the host commands answer `invalid_argument` / `supported: fals
 
 - `update_details` / `update_companion` take a partial object; unknown keys, non-text values or text over 20 000
   characters are `invalid_argument`. Details map onto the character file (identity, appearance, personality, notes);
-  `alignment`, `deity` and the companion portrait live in the file's `extra.ui` block. `companion` in the snapshot is
+  the companion portrait lives in the file's `extra.ui` block. `alignment` and `deity` are the character's level 1
+  Alignment and Deity selections (B-191, as Aurora's Manage pickers): a value naming an element that slot offers (case
+  and spaces ignored; "True Neutral" names Neutral) selects it, an empty value empties the slot, and any other text
+  empties the slot and is kept as custom text in `extra.ui`. The snapshot's `details.alignment` / `deity` are the chosen
+  element's name, else that custom text (the sheet prints the same), and `detailChoices.alignment` / `deity` list the
+  element names the two slots offer (empty without such a slot or elements). A locked slot is `invalid_argument`. `companion` in the snapshot is
   non-null when a Companion slot is chosen or a name/portrait was set (stats are 0/10 until companion stat blocks exist).
 - Several companions (GitHub #13, U16(c)): `update_companion` without `companionId` (or with `granted`) changes the
   granted companion as before; its name stays in `details.companion_name` and its picture in `extra.ui`. Notes, traits

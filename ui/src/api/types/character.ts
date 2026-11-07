@@ -417,6 +417,12 @@ export interface CharacterDetails {
   questItems: string;
 }
 
+/** B-191: element names the Manage Alignment and Deity pickers list (what the Alignment and Deity slots offer; empty when the content has none). */
+export interface DetailChoices {
+  alignment: string[];
+  deity: string[];
+}
+
 export interface Attack {
   id: string;
   name: string;
@@ -544,6 +550,8 @@ export interface CharacterSnapshot {
   spellcasting: SpellcastingState;
   inventory: InventoryState;
   details: CharacterDetails;
+  /** The Manage alignment and deity lists (B-191). Alignment and deity in `details` are the chosen elements, else custom text. */
+  detailChoices: DetailChoices;
   attacks: Attack[];
   /** The granted companion, else the first one added (what one-companion views read). */
   companion: CompanionState | null;

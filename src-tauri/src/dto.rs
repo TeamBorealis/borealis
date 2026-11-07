@@ -715,6 +715,15 @@ pub struct CharacterDetails {
     pub quest_items: String,
 }
 
+/// Element names the Manage ALIGNMENT and DEITY pickers list (B-191): what the character's
+/// Alignment and Deity slots offer, empty when the content has no such slot or element.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DetailChoices {
+    pub alignment: Vec<String>,
+    pub deity: Vec<String>,
+}
+
 /// Attack row.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -783,6 +792,9 @@ pub struct CharacterSnapshot {
     pub spellcasting: SpellcastingState,
     pub inventory: InventoryState,
     pub details: CharacterDetails,
+    /// The Manage alignment and deity lists: the elements the Alignment and Deity slots offer
+    /// (B-191).
+    pub detail_choices: DetailChoices,
     pub attacks: Vec<Attack>,
     /// The granted companion, else the first one added (what one-companion views read).
     pub companion: Option<crate::content_dto::CompanionState>,

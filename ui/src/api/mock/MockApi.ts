@@ -36,7 +36,7 @@ import * as track from "./spell-tracker";
 import { renderSheetHtml } from "./sheet";
 import { buildSlotDefs } from "./slots";
 import { DEFAULT_PAGE, groupRows, queryRows, switchVersionChoices, toVersion } from "./slot-options";
-import { OPTION_DEFS, buildName, buildSnapshot } from "./snapshot";
+import { OPTION_DEFS, buildName, buildSnapshot, setMockDeities } from "./snapshot";
 import { NO_COMPANIONS, addCompanion, removeCompanion, updateCompanionOf } from "./companions";
 import { type MockCharacter, type RuleSettings, levelOf } from "./state";
 import { findByWireId, toWireSlotId } from "./slot-ids";
@@ -77,6 +77,8 @@ export interface MockApiOptions {
   classlessEdition?: Ruleset | null;
   /** C1 scenario (GitHub #11): the seeded characters carry content notices, as with a large homebrew set installed. */
   contentNotices?: boolean;
+  /** B-191: Deity element names the content offers (Manage > Deity lists them; default none, as the SRD). */
+  deities?: readonly string[];
 }
 
 const PROFILES: Record<"dnd2014" | "dnd2024", RulesetProfile> = {
@@ -130,6 +132,7 @@ export class MockApi implements Api {
     this.settings = { ...this.settings, mobile: this.mobile, storeBuild: this.storeBuild, aiAvailable: this.aiCli, ai: { ...this.settings.ai, enabled: this.aiCli && (opts.aiEnabled ?? false) } };
     this.rng = opts.rng ?? Math.random;
     setClasslessEdition(opts.classlessEdition ?? null);
+    setMockDeities(opts.deities ?? []);
     this.content = new ContentService((p) => this.emit("content:progress", p), () => this.emit("content:reloaded", { reason: "content changed" }), (p) => this.emit("import5etools:progress", p));
     this.ai = new MockAi((e) => this.emit("ai:event", e), { chunkDelayMs: opts.aiChunkDelayMs ?? 25, available: opts.aiAvailable ?? true });
     this.setup = new MockAiSetup((e) => this.emit("aisetup:event", e), opts.aiSetup);

@@ -85,6 +85,31 @@ fn origin(snap: &CharacterSnapshot, key: &str) -> String {
         .unwrap_or_default()
 }
 
+/// Character-file key of the app's UI extras, where Manage keeps alignment and deity text that
+/// names no element (the app's `UiExtras.alignment` / `.deity`).
+const UI_EXTRAS: &str = "ui";
+
+/// The chosen element of type `ty` (what Aurora prints), else the custom Manage text in the UI
+/// extras under `custom_key` (B-191).
+fn origin_or_custom(
+    character: &Character,
+    snap: &CharacterSnapshot,
+    ty: &str,
+    custom_key: &str,
+) -> String {
+    let chosen = origin(snap, ty);
+    if !chosen.is_empty() {
+        return chosen;
+    }
+    character
+        .extra
+        .get(UI_EXTRAS)
+        .and_then(|ui| ui.get(custom_key))
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default()
+}
+
 /// Creature size: the chosen size, the carry table, or the one size the species text names.
 fn size_of(snap: &CharacterSnapshot) -> Option<String> {
     snap.origin
@@ -161,11 +186,11 @@ fn identity(character: &Character, snap: &CharacterSnapshot) -> Identity {
             .join(", "),
         classes,
         background: origin(snap, "Background"),
-        alignment: origin(snap, "Alignment"),
+        alignment: origin_or_custom(character, snap, "Alignment", "alignment"),
         experience: snap.experience,
         next_level_xp: snap.next_level_xp,
         size: size_of(snap),
-        deity: origin(snap, "Deity"),
+        deity: origin_or_custom(character, snap, "Deity", "deity"),
     }
 }
 

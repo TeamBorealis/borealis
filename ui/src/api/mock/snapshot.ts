@@ -1,5 +1,5 @@
 import { calculatedAttack, withModifier } from "../../lib/attackCalc";
-import { ABILITY_KEYS, type AbilityKey, type Attack, type CharacterSnapshot, type OptionDef, type SelectionProgress, type SelectionSlot, type BuilderTab } from "../types";
+import { ABILITY_KEYS, type AbilityKey, type Attack, type CharacterSnapshot, type DetailChoices, type OptionDef, type SelectionProgress, type SelectionSlot, type BuilderTab } from "../types";
 import { getElement, getItem, titleCase } from "./content";
 import { buildCompanions } from "./companions";
 import { deriveAbilities } from "./derive-abilities";
@@ -18,6 +18,16 @@ export const OPTION_DEFS: OptionDef[] = [
   { id: "ID_MOCK_OPTION_CUSTOMIZED_LANGUAGE", name: "Customized Language", description: "You may replace each language in your Languages trait with another standard language.", locked: false, defaultOn: false },
   { id: "ID_MOCK_OPTION_FIREARMS", name: "Firearms", description: "You can introduce gunpowder, futuristic, or modern firearms to your campaign.", locked: false, defaultOn: true },
 ];
+
+/** B-191: the Manage alignment list is the core Alignment elements; Deity elements only with `MockApiOptions.deities`. */
+export const MOCK_DETAIL_CHOICES: DetailChoices = {
+  alignment: ["Lawful Good", "Neutral Good", "Chaotic Good", "Lawful Neutral", "Neutral", "Chaotic Neutral", "Lawful Evil", "Neutral Evil", "Chaotic Evil"],
+  deity: [],
+};
+let mockDeities: readonly string[] = [];
+/** Deity element names the mock content offers (none by default, as the bundled SRD content). */
+export function setMockDeities(names: readonly string[]): void { mockDeities = names; }
+const detailChoices = (): DetailChoices => ({ alignment: [...MOCK_DETAIL_CHOICES.alignment], deity: [...mockDeities] });
 
 const TABS: BuilderTab[] = ["race", "class", "background", "abilities", "feats", "languages", "proficiencies", "companion", "spells"];
 
@@ -113,7 +123,7 @@ export function buildSnapshot(input: MockCharacter, rules: RuleSettings): { char
   const snapshot: CharacterSnapshot = {
     id: c.id, name: c.name, ruleset: c.ruleset, portrait: c.portrait, group: c.group, favorite: c.favorite, dirty: c.dirty, displayPath: c.path ?? "",
     level: deriveLevel(c), abilities, stats, slots, progress: progress(slots),
-    spellcasting, inventory: inv, details: c.details,
+    spellcasting, inventory: inv, details: c.details, detailChoices: detailChoices(),
     attacks: resolveAttacks(c, mods, profBonus(totalLevel(c))),
     companion: companions[0] ?? null, companions, options: c.options,
     availableOptions: OPTION_DEFS, sourceRestrictions: c.sourceRestrictions, notices: c.notices,

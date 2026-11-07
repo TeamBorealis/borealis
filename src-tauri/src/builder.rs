@@ -28,7 +28,7 @@ const MAX_XP: i64 = 10_000_000;
 const DEFAULT_GROUP: &str = "Characters";
 const MAX_NAME_CHARS: usize = 120;
 /// A locked slot (default, sole option, chosen) cannot be changed or cleared (SO-3, SO-4).
-const LOCKED_SLOT: &str = "This selection is locked.";
+pub(crate) const LOCKED_SLOT: &str = "This selection is locked.";
 
 /// Apply a command outcome to a draft.
 pub(crate) fn apply(d: &mut Draft, outcome: CommandOutcome) {
@@ -38,7 +38,7 @@ pub(crate) fn apply(d: &mut Draft, outcome: CommandOutcome) {
 
 /// Apply a command result and then choose the `default` of the slots it brought (a sole option
 /// without a default is left for the user, engine-optional-sole-option SO-1/SO-2).
-fn apply_filled(ctx: &Ctx<'_>, d: &mut Draft, outcome: CommandOutcome) {
+pub(crate) fn apply_filled(ctx: &Ctx<'_>, d: &mut Draft, outcome: CommandOutcome) {
     let existing = slot_keys(ctx.hub, &d.character.build);
     ctx.hub.keep_derived(&outcome);
     apply(d, outcome);

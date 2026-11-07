@@ -7,11 +7,12 @@ use crate::content_dto::{
 };
 use crate::dto::{CharacterSnapshot, ElementRef};
 use crate::error::{ApiError, ApiResult};
-use crate::extras::{set_ui_extras, ui_extras};
+use crate::extras::{set_ui_extras, ui_extras, UiExtras};
 use crate::ids::{ability_index, encode_slot, ui_type};
+use crate::origin_details::{self, ALIGNMENT, DEITY};
 use crate::session::{Ctx, Draft};
 use crate::state::AppState;
-use borealis_character::{AttackEdit, ManualAttack};
+use borealis_character::{AttackEdit, Character, ManualAttack};
 use borealis_content::is_unrestrictable_source;
 use borealis_engine::commands;
 use borealis_engine::ids as engine_ids;
@@ -40,46 +41,55 @@ fn text_of(key: &str, value: &Value) -> ApiResult<String> {
     Ok(s.to_string())
 }
 
-/// Apply one `Partial<CharacterDetails>` patch to a draft.
-fn apply_details(d: &mut Draft, patch: &Map<String, Value>) -> ApiResult<()> {
+/// Apply one `Partial<CharacterDetails>` patch to a draft. Alignment and deity select the
+/// element they name in their slot, else keep the text as custom text (B-191, [`origin_details`]).
+fn apply_details(ctx: &Ctx<'_>, d: &mut Draft, patch: &Map<String, Value>) -> ApiResult<()> {
     let mut extras = ui_extras(&d.character);
-    let c = &mut d.character;
     for (key, value) in patch {
         let text = text_of(key, value)?;
         match key.as_str() {
-            "gender" => c.meta.gender = text,
-            "playerName" => c.meta.player = text,
-            "alignment" => extras.alignment = text,
-            "deity" => extras.deity = text,
-            "treasure" => extras.treasure = text,
-            "questItems" => extras.quest_items = text,
-            "age" => c.details.appearance.age = text,
-            "height" => c.details.appearance.height = text,
-            "weight" => c.details.appearance.weight = text,
-            "eyes" => c.details.appearance.eyes = text,
-            "skin" => c.details.appearance.skin = text,
-            "hair" => c.details.appearance.hair = text,
-            "features" => c.details.additional_features = text,
-            "backstory" => c.details.backstory = text,
-            "personalityTraits" => c.details.personality.traits = text,
-            "ideal" => c.details.personality.ideals = text,
-            "bond" => c.details.personality.bonds = text,
-            "flaw" => c.details.personality.flaws = text,
-            "trinket" => c.details.personality.trinket = text,
-            "notesLeft" => c.details.notes.left = text,
-            "notesRight" => c.details.notes.right = text,
-            "organization" => c.details.organization.name = text,
-            "allies" => c.details.organization.allies = text,
-            "combatNotes" => c.details.attacks_text = text,
-            "sheetAcNote" => c.details.conditional_ac = text,
-            other => {
-                return Err(ApiError::invalid(format!(
-                    "Unknown detail field \"{other}\"."
-                )))
-            }
+            "alignment" => extras.alignment = origin_details::bind(ctx, d, ALIGNMENT, &text)?,
+            "deity" => extras.deity = origin_details::bind(ctx, d, DEITY, &text)?,
+            _ => apply_text(&mut d.character, &mut extras, key, text)?,
         }
     }
-    set_ui_extras(c, &extras);
+    set_ui_extras(&mut d.character, &extras);
+    Ok(())
+}
+
+/// Store one plain-text detail.
+fn apply_text(c: &mut Character, extras: &mut UiExtras, key: &str, text: String) -> ApiResult<()> {
+    let d = &mut c.details;
+    match key {
+        "gender" => c.meta.gender = text,
+        "playerName" => c.meta.player = text,
+        "treasure" => extras.treasure = text,
+        "questItems" => extras.quest_items = text,
+        "age" => d.appearance.age = text,
+        "height" => d.appearance.height = text,
+        "weight" => d.appearance.weight = text,
+        "eyes" => d.appearance.eyes = text,
+        "skin" => d.appearance.skin = text,
+        "hair" => d.appearance.hair = text,
+        "features" => d.additional_features = text,
+        "backstory" => d.backstory = text,
+        "personalityTraits" => d.personality.traits = text,
+        "ideal" => d.personality.ideals = text,
+        "bond" => d.personality.bonds = text,
+        "flaw" => d.personality.flaws = text,
+        "trinket" => d.personality.trinket = text,
+        "notesLeft" => d.notes.left = text,
+        "notesRight" => d.notes.right = text,
+        "organization" => d.organization.name = text,
+        "allies" => d.organization.allies = text,
+        "combatNotes" => d.attacks_text = text,
+        "sheetAcNote" => d.conditional_ac = text,
+        other => {
+            return Err(ApiError::invalid(format!(
+                "Unknown detail field \"{other}\"."
+            )))
+        }
+    }
     Ok(())
 }
 
@@ -211,7 +221,7 @@ impl AppState {
         let map = patch
             .as_object()
             .ok_or_else(|| ApiError::invalid("The details patch must be an object."))?;
-        self.mutate(id, |_, d| apply_details(d, map))
+        self.mutate(id, |ctx, d| apply_details(ctx, d, map))
     }
 
     /// Add a manual attack (no `id`) or replace one; for an automatic row, save the user's

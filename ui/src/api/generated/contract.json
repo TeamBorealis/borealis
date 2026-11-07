@@ -3743,6 +3743,13 @@
       }
      }
     },
+    "detailChoices": {
+     "opt": false,
+     "t": {
+      "k": "ref",
+      "name": "DetailChoices"
+     }
+    },
     "details": {
      "opt": false,
      "t": {
@@ -5285,6 +5292,29 @@
      "opt": false,
      "t": {
       "k": "prim"
+     }
+    }
+   }
+  },
+  "DetailChoices": {
+   "k": "object",
+   "props": {
+    "alignment": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
+     }
+    },
+    "deity": {
+     "opt": false,
+     "t": {
+      "k": "array",
+      "t": {
+       "k": "prim"
+      }
      }
     }
    }
