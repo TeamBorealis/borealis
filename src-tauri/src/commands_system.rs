@@ -41,7 +41,10 @@ impl AppState {
 const OPENER: &str = "open";
 #[cfg(target_os = "windows")]
 const OPENER: &str = "explorer";
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(all(
+    unix,
+    not(any(target_os = "macos", target_os = "android", target_os = "ios"))
+))]
 const OPENER: &str = "xdg-open";
 
 #[cfg(not(any(target_os = "android", target_os = "ios")))]

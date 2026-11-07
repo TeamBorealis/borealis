@@ -1,7 +1,8 @@
 name: CI
 
 # Cost-aware: push/PR run Linux + Windows only. macOS (10x minutes), iOS, Android and the x86_64 embedding matrix
-# (embed-platforms) run only when started by hand (Actions > CI > Run workflow).
+# (embed-platforms) run only when started by hand (Actions > CI > Run workflow). Exception: a cheap compile check
+# of Android and iOS (mobile-check, B-183) runs on every push and PR.
 on:
   push:
     branches: [main]
@@ -127,6 +128,57 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
         working-directory: ui
 
+  # B-183: phone-only code (cfg(not(desktop)), the phone dependency tables) is compiled only by phone builds, which
+  # push/PR CI does not make, so a mistake there first showed in the 1.3.0 release run. This is a check, not a build:
+  # the release build's crate, features, profile and NDK (build/ci/mobile-check.sh), with warnings denied.
+  mobile-check:
+    name: mobile compile check (${{ matrix.platform }})
+    if: ${{ !inputs.only_embed && !inputs.only_bundle }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: android
+            os: ubuntu-latest
+            target: aarch64-linux-android
+          # The iOS SDK exists only on macOS. The repo is public, so the macOS runner costs no minutes.
+          - platform: ios
+            os: macos-latest
+            target: aarch64-apple-ios
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        if: matrix.platform == 'android'
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+        if: matrix.platform == 'android'
+        with:
+          # The action's default list also asks for the legacy `tools` package, which current command-line
+          # tools no longer offer (sdkmanager exits 1: "Failed to find package 'tools'").
+          packages: platform-tools
+      - name: Install the release build's NDK
+        if: matrix.platform == 'android'
+        run: |
+          sdkmanager "ndk;27.2.12479018"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/27.2.12479018" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target"
+          shared-key: mobile-check-${{ matrix.platform }}
+      # The Tauri context embeds ui/dist at compile time; a check needs only the folder, not the real UI.
+      - name: Placeholder ui/dist
+        run: |
+          mkdir -p ui/dist
+          printf '<!doctype html>\n' > ui/dist/index.html
+      - run: bash build/ci/mobile-check.sh ${{ matrix.platform }}
+
   desktop-bundle:
     name: desktop bundle (${{ matrix.os }})
     needs: test
@@ -219,14 +271,18 @@ jobs:
       # the install folder (AVX2 or better on these runners).
       - name: Installed bundles load their CPU backend (Linux deb, rpm, AppImage)
         if: runner.os == 'Linux'
+        # SC2012 (ls | head): Tauri's bundle names have no odd characters; each glob has one match.
         run: |
+          # shellcheck disable=SC2012
           sudo apt-get install -y rpm2cpio cpio "./$(ls target/release/bundle/deb/*.deb | head -n 1)"
           find /usr/lib/Borealis/ggml -maxdepth 1 -type f | sort
           ldd /usr/bin/borealis | grep -E 'llama|ggml'
           fast='haswell|alderlake|skylakex|cannonlake|cascadelake|icelake|cooperlake|zen4|sapphirerapids'
           bash build/ci/semantic-backend-smoke.sh bundle-record deb 'from /usr/bin/\.\./lib/Borealis/ggml/libggml-cpu-' "$fast" /usr/bin/borealis
+          # shellcheck disable=SC2012
           mkdir -p rpm-root && (cd rpm-root && rpm2cpio "$(ls ../target/release/bundle/rpm/*.rpm | head -n 1)" | cpio -idm --quiet)
           bash build/ci/semantic-backend-smoke.sh bundle-record rpm 'rpm-root/usr/bin/\.\./lib/Borealis/ggml/libggml-cpu-' "$fast" rpm-root/usr/bin/borealis
+          # shellcheck disable=SC2012
           appimage=$(ls target/release/bundle/appimage/*.AppImage | head -n 1)
           chmod +x "$appimage"
           APPIMAGE_EXTRACT_AND_RUN=1 bash build/ci/semantic-backend-smoke.sh bundle-record appimage 'usr/bin/\.\./lib/Borealis/ggml/libggml-cpu-' "$fast" "$appimage"
@@ -563,6 +619,7 @@ jobs:
           echo "REFERENCE_TEST=$exe" >> "$GITHUB_ENV"
           cargo test -p borealis --release --test semantic_real_model --no-run
           # B-49: the test binaries find llama.cpp's shared libraries here.
+          # shellcheck disable=SC2012 # ls -t: the newest build folder (cargo's hashed names)
           out=$(dirname "$(ls -td target/release/build/llama-cpp-sys-2-*/out/backends | head -n 1)")
           if [ "$RUNNER_OS" = Linux ]; then echo "LD_LIBRARY_PATH=$out/lib" >> "$GITHUB_ENV"; fi
           # Windows: llama-cpp-sys-2 leaves the DLLs in out/bin (it does not copy them next to the binaries on MSVC).

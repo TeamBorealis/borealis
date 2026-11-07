@@ -23,7 +23,9 @@ pub const DOWNLOAD_PAGE: &str = "https://borealisbuilder.com/#download";
 const RELEASE_PAGE_PREFIX: &str = "https://github.com/TeamBorealis/borealis/";
 /// The release JSON is a few kilobytes to a few dozen; anything bigger is not what we asked for.
 const MAX_RESPONSE_BYTES: usize = 512 * 1024;
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 const MAX_REDIRECTS: usize = 3;
 /// Release notes longer than this (in characters) are cut, so a huge body never reaches the UI.
 pub const MAX_NOTES_CHARS: usize = 4000;

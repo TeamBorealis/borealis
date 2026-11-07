@@ -4,6 +4,7 @@
 use crate::app_update::{self, AppUpdateStatus};
 use crate::app_update_debug;
 use crate::error::ApiResult;
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 use crate::self_update::UpdateMethod;
 use crate::state::AppState;
 #[cfg(any(target_os = "android", target_os = "ios"))]
