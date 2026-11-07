@@ -5,6 +5,7 @@ A scenario is JSON with any of these keys (each replaces that part of the live s
   tag {"sha", "date"} | null, main {"sha", "version"}, "ci:ci.yml" / "ci:acceptance.yml" / "ci:release.yml" status,
   release {"id", "draft", "html_url", "body", "name", "assets": [{"name"}]} | null, ios_state, website,
   notes {"text", "source"}, posted [keys already in #mod-chat],
+  updater_signing bool (updater signing on for the release commit; else read from its src-tauri/tauri.conf.json),
   asc {"versions": [appStoreVersion objects], "builds": [build objects]}   -> FakeAsc
   website_repo {"branch_state": "ready" | problem, "merged": bool}           -> FakeSite
 """

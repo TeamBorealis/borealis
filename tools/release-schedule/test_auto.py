@@ -2,6 +2,7 @@
 python3 -I -m unittest discover -s tools/release-schedule"""
 from __future__ import annotations
 
+import base64
 import json
 import sys
 import unittest
@@ -120,6 +121,62 @@ class NormalWeek(unittest.TestCase):
     def test_published_release_is_left_alone(self):
         posted = json.loads((HERE / "scenarios" / "normal-4-publish.json").read_text())["posted"]
         self.assertEqual(run("normal-4-publish", posted=posted + ["release-auto 1.3.0/published"])[:2], (0, []))
+
+
+UPDATER_MISSING = "in-app updates: the draft lacks latest.json, Borealis_1.3.0_aarch64.app.tar.gz"
+
+
+class UpdaterFiles(unittest.TestCase):
+    def test_monday_counts_the_updater_files_when_signing_is_on(self):
+        status, keys, out = run("normal-1-signed")
+        self.assertEqual((status, keys), (0, ["signed"]))
+        self.assertIn("every installer (7); with the in-app update files, 12 files.", out)
+        self.assertNotIn("Warning", out)
+
+    def test_monday_warns_about_missing_updater_files_but_is_ready(self):
+        rel = json.loads((HERE / "scenarios" / "updater-missing-gonogo.json").read_text())["release"]
+        status, keys, out = run("normal-1-signed", release=rel)
+        self.assertEqual((status, keys), (0, ["signed"]))
+        self.assertIn(UPDATER_MISSING, out)
+        self.assertIn("::warning::1.3.0", out)
+
+    def test_go_no_go_is_go_with_the_warning_in_the_note(self):
+        status, keys, out = run("updater-missing-gonogo")
+        self.assertEqual((status, keys), (0, ["go/2026-11-12"]))
+        self.assertIn(f"**Warning:** {UPDATER_MISSING}", out)
+
+    def test_no_updater_files_are_expected_while_signing_is_off(self):
+        status, keys, out = run("updater-missing-gonogo", updater_signing=False)
+        self.assertEqual((status, keys), (0, ["go/2026-11-12"]))
+        self.assertNotIn("in-app updates", out)
+
+    def test_a_no_go_note_also_reports_the_warning(self):
+        status, keys, out = run("updater-missing-gonogo", ios_state="WAITING_FOR_REVIEW")
+        self.assertEqual(keys, ["nogo/2026-11-12"])
+        self.assertIn(f"**Warning (not blocking):** {UPDATER_MISSING}", out)
+
+    def test_signing_is_read_from_the_release_commit_without_a_scenario_fact(self):
+        facts = json.loads((HERE / "scenarios" / "updater-missing-gonogo.json").read_text())
+        del facts["updater_signing"]
+        t, _, _ = tick("updater-missing-gonogo")
+        t.facts = facts
+        self.assertFalse(t.updater_signing("1.3.0"))  # FakeGit's tauri.conf.json has no updater key
+        t, _, _ = tick("updater-missing-gonogo")
+        t.facts, t.git = facts, KeyedGit()  # type: ignore[assignment]
+        self.assertTrue(t.updater_signing("1.3.0"))
+        self.assertEqual(t.git.asked, ["5ca1ab1e00000000000000000000000000000000:src-tauri/tauri.conf.json"])
+
+
+class KeyedGit(FakeGit):
+    """A release commit whose tauri.conf.json has a real updater public key."""
+
+    def __init__(self):
+        self.asked: list[str] = []
+
+    def show(self, rev: str, path: str) -> Optional[str]:
+        self.asked.append(f"{rev}:{path}")
+        key = base64.b64encode(b"untrusted comment: minisign public key: 1\nRWQ\n").decode()
+        return json.dumps({"plugins": {"updater": {"pubkey": key}}})
 
 
 class NoGo(unittest.TestCase):

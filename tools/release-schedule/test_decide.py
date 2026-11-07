@@ -1,6 +1,8 @@
 """Tests for decide.py: python3 -I -m unittest discover -s tools/release-schedule"""
 from __future__ import annotations
 
+import base64
+import json
 import sys
 import unittest
 from datetime import date, datetime
@@ -141,6 +143,84 @@ class GoNoGo(unittest.TestCase):
         problems = decide.go_problems(decide.GoFacts(version="1.3.0"))
         self.assertIn("not frozen: no tag v1.3.0", problems)
         self.assertIn("no draft release", problems)
+
+
+def conf(pubkey: object) -> str:
+    return json.dumps({"version": "1.4.0", "plugins": {"updater": {"pubkey": pubkey, "endpoints": ["x"]}}})
+
+
+REAL_PUBKEY = base64.b64encode(b"untrusted comment: minisign public key: D0529EC964159C23\n"
+                               b"RWQjnBVkyZ5S0KNR4EGA7/f4UAIPD8tVjdhlELmBN+KLaywDUfnI5S2x\n").decode()
+PLACEHOLDER = "PLACEHOLDER-NOT-A-KEY: replace with the updater public key"
+APP_CONF = Path(__file__).resolve().parents[2] / decide.TAURI_CONF
+
+
+class UpdaterSigning(unittest.TestCase):
+    def test_a_minisign_public_key_turns_signing_on(self):
+        self.assertTrue(decide.updater_signing(conf(REAL_PUBKEY)))
+
+    def test_the_placeholder_or_no_key_is_off(self):
+        self.assertFalse(decide.updater_signing(conf(PLACEHOLDER)))
+        self.assertFalse(decide.updater_signing(conf("")))
+        self.assertFalse(decide.updater_signing(json.dumps({"version": "1.4.0"})))
+        self.assertFalse(decide.updater_signing(json.dumps({"plugins": {"updater": None}})))
+        self.assertFalse(decide.updater_signing(None))
+
+    def test_base64_that_is_not_a_minisign_key_or_bad_json_is_off(self):
+        self.assertFalse(decide.updater_signing(conf(base64.b64encode(b"untrusted comment: other\nRW").decode())))
+        self.assertFalse(decide.updater_signing(conf(base64.b64encode(b"\xff\xfe").decode())))
+        self.assertFalse(decide.updater_signing(conf(42)))
+        self.assertFalse(decide.updater_signing("{not json"))
+        self.assertFalse(decide.updater_signing("[]"))
+
+    @unittest.skipUnless(APP_CONF.is_file(), "the app's tauri.conf.json is not in this (sparse) checkout")
+    def test_the_committed_app_config_agrees_with_updater_sh(self):
+        text = APP_CONF.read_text(encoding="utf-8")
+        pubkey = json.loads(text)["plugins"]["updater"]["pubkey"]
+        self.assertEqual(decide.updater_signing(text), not pubkey.startswith("PLACEHOLDER"))
+
+
+class UpdaterAssets(unittest.TestCase):
+    def test_the_feed_signatures_and_mac_archive(self):
+        self.assertEqual(decide.updater_assets("1.4.0"), (
+            "latest.json", "Borealis_1.4.0_x64-setup.exe.sig", "Borealis_1.4.0_amd64.AppImage.sig",
+            "Borealis_1.4.0_aarch64.app.tar.gz", "Borealis_1.4.0_aarch64.app.tar.gz.sig"))
+
+    def test_none_expected_while_signing_is_off(self):
+        self.assertEqual(decide.missing_updater_assets("1.4.0", [], signing=False), [])
+        self.assertIsNone(decide.updater_warning([]))
+
+    def test_missing_files_are_listed_in_order(self):
+        have = [*decide.expected_assets("1.4.0"), "Borealis_1.4.0_x64-setup.exe.sig",
+                "Borealis_1.4.0_amd64.AppImage.sig"]
+        self.assertEqual(decide.missing_updater_assets("1.4.0", have, signing=True),
+                         ["latest.json", "Borealis_1.4.0_aarch64.app.tar.gz",
+                          "Borealis_1.4.0_aarch64.app.tar.gz.sig"])
+        everything = [*have, *decide.updater_assets("1.4.0")]
+        self.assertEqual(decide.missing_updater_assets("1.4.0", everything, signing=True), [])
+
+    def test_the_updater_files_are_not_installers(self):
+        self.assertFalse(set(decide.updater_assets("1.4.0")) & set(decide.expected_assets("1.4.0")))
+
+
+class GoWarnings(unittest.TestCase):
+    def test_missing_updater_files_warn_but_never_block(self):
+        facts = go(updater=True)
+        self.assertEqual(decide.go_problems(facts), [])
+        warnings = decide.go_warnings(facts)
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("latest.json", warnings[0])
+        self.assertIn("Not blocking", warnings[0])
+
+    def test_a_complete_updater_draft_or_signing_off_has_no_warning(self):
+        assets = (*decide.expected_assets("1.3.0"), *decide.updater_assets("1.3.0"))
+        self.assertEqual(decide.go_warnings(go(updater=True, assets=assets)), [])
+        self.assertEqual(decide.go_warnings(go(updater=False)), [])
+
+    def test_no_draft_is_a_problem_not_an_updater_warning(self):
+        facts = go(updater=True, release=None, assets=())
+        self.assertEqual(decide.go_warnings(facts), [])
+        self.assertIn("no draft release", decide.go_problems(facts))
 
 
 class Slip(unittest.TestCase):

@@ -6,6 +6,8 @@ Standard library only (Python 3.9+).
 """
 from __future__ import annotations
 
+import base64
+import json
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from typing import Optional, Sequence
@@ -137,6 +139,51 @@ def missing_assets(version: str, names: Sequence[str]) -> list[str]:
     return [n for n in expected_assets(version) if n not in have]
 
 
+# In-app updates (#25, UP2; build/ci/updater.sh). The release workflow makes these files only when updater signing is
+# on: the `release` environment has TAURI_SIGNING_PRIVATE_KEY and plugins.updater.pubkey is a real minisign key.
+TAURI_CONF = "src-tauri/tauri.conf.json"
+MINISIGN_PUBKEY_HEADER = "untrusted comment: minisign public key"
+
+
+def updater_signing(tauri_conf: Optional[str]) -> bool:
+    """Whether the release commit turns updater signing on, from its tauri.conf.json text: the same test as
+    `updater.sh enabled` (plugins.updater.pubkey base64-decodes to a minisign public key, not the placeholder).
+    The secret itself is not visible here; without it the workflow skips the files and the check below warns."""
+    if not tauri_conf:
+        return False
+    try:
+        pubkey = ((json.loads(tauri_conf).get("plugins") or {}).get("updater") or {}).get("pubkey") or ""
+        decoded = base64.b64decode(pubkey, validate=True).decode("utf-8")
+    except (ValueError, AttributeError, TypeError):  # bad JSON, not an object, not a base64 string, not UTF-8
+        return False
+    return any(line.startswith(MINISIGN_PUBKEY_HEADER) for line in decoded.splitlines())
+
+
+def updater_assets(version: str) -> tuple[str, ...]:
+    """The in-app update feed and the signed files it points to (Windows NSIS, the AppImage, the macOS archive)."""
+    v = version
+    return ("latest.json", f"Borealis_{v}_x64-setup.exe.sig", f"Borealis_{v}_amd64.AppImage.sig",
+            f"Borealis_{v}_aarch64.app.tar.gz", f"Borealis_{v}_aarch64.app.tar.gz.sig")
+
+
+def missing_updater_assets(version: str, names: Sequence[str], signing: bool) -> list[str]:
+    """Updater files the draft lacks; none are expected while updater signing is off."""
+    if not signing:
+        return []
+    have = set(names)
+    return [n for n in updater_assets(version) if n not in have]
+
+
+def updater_warning(missing: Sequence[str]) -> Optional[str]:
+    """A missing updater file never blocks the release (the installers still download by hand, and the macOS archive
+    joins the draft after the rest); it is reported instead."""
+    if not missing:
+        return None
+    return (f"in-app updates: the draft lacks {', '.join(missing)}. Not blocking: the installers still download by "
+            "hand, but copies cannot install this version from inside Borealis until the files are attached "
+            "(release.yml attach-macos / `updater.sh feed`).")
+
+
 @dataclass(frozen=True)
 class GoFacts:
     version: str
@@ -149,6 +196,15 @@ class GoFacts:
     ios_state: Optional[str] = None
     notes_findings: tuple[str, ...] = ()
     website: str = "unknown"  # "ready" or what is wrong
+    updater: bool = False  # updater signing is on for the release commit (updater_signing)
+
+
+def go_warnings(f: GoFacts) -> list[str]:
+    """What the go/no-go summary reports without blocking the release."""
+    if f.release is None:
+        return []
+    warning = updater_warning(missing_updater_assets(f.version, f.assets, f.updater))
+    return [warning] if warning else []
 
 
 def go_problems(f: GoFacts) -> list[str]:

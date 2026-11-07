@@ -5,6 +5,7 @@
     "sha": "5ca1ab1e00000000000000000000000000000000",
     "date": "2026-11-08T23:59:40+02:00"
   },
+  "updater_signing": true,
   "release": {
     "id": 1,
     "draft": true,
@@ -32,6 +33,21 @@
       },
       {
         "name": "SHA256SUMS.txt"
+      },
+      {
+        "name": "latest.json"
+      },
+      {
+        "name": "Borealis_1.3.0_x64-setup.exe.sig"
+      },
+      {
+        "name": "Borealis_1.3.0_amd64.AppImage.sig"
+      },
+      {
+        "name": "Borealis_1.3.0_aarch64.app.tar.gz"
+      },
+      {
+        "name": "Borealis_1.3.0_aarch64.app.tar.gz.sig"
       }
     ]
   },

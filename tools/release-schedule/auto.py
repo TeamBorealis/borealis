@@ -6,7 +6,7 @@ workflow; a GitHub cron is the backup) a tick reads the planned releases (schedu
 and the live state (tags, CI runs, the draft release, App Store Connect, the website repo), and does what is due:
 
   prep    Sun 23:59 freeze: bump, commit "chore: release X.Y.Z", tag, push, start CI + acceptance + release.yml
-          Mon 20:00 signed builds: check the draft is complete
+          Mon 20:00 signed builds: check the draft is complete (in-app update files: a warning, never blocking)
           Tue 12:00 store submission: iOS version + build + What's New, submit for review; notes to #mod-chat
   decide  Thu 18:00 go/no-go: approved + complete + not held, else no-go: a note and the release moves a week
   publish Thu 20:00 GitHub release, iOS release, website merge, IndexNow, Discord announcement and bridge replies
@@ -111,6 +111,24 @@ class Tick:
         found = self.fact("notes", get)
         return found["text"], found["source"]
 
+    def updater_signing(self, version: str) -> bool:
+        """Whether the release commit (the tag, else main's head) has updater signing on (decide.updater_signing)."""
+        def get():
+            tag = self.tag(version)
+            rev = tag.sha if tag else "origin/main"
+            conf = self.git.show(rev, decide.TAURI_CONF) if self.git else None
+            if conf is None:
+                log(f"{version}: cannot read {decide.TAURI_CONF} at {rev[:12]}; updater files not checked")
+            return decide.updater_signing(conf)
+        return bool(self.fact("updater_signing", get))
+
+    def updater_warnings(self, version: str, rel: Optional[dict]) -> list[str]:
+        names = [a["name"] for a in (rel or {}).get("assets", [])]
+        warning = decide.updater_warning(decide.missing_updater_assets(version, names, self.updater_signing(version)))
+        if warning:
+            log(f"::warning::{version}: {warning}")
+        return [warning] if warning else []
+
     # --- helpers ----------------------------------------------------------------------------------------------
 
     def note(self, version: str, name: str, title: str, lines: Sequence[str]) -> bool:
@@ -197,8 +215,12 @@ class Tick:
         missing = decide.missing_assets(version, [a["name"] for a in (rel or {}).get("assets", [])])
         if tag and rel and not missing:
             self.sync_draft(version, rel)
+            installers = len(decide.expected_assets(version))
+            updater = (f"; with the in-app update files, {installers + len(decide.updater_assets(version))} files"
+                       if self.updater_signing(version) else "")
             self.note(version, "signed", "signed builds ready", [
-                f"The v{version} draft has every file ({len(decide.expected_assets(version))}).",
+                f"The v{version} draft has every installer ({installers}){updater}.",
+                *[f"**Warning:** {w}" for w in self.updater_warnings(version, rel)],
                 f"Store submission {decide.stamp(decide.milestone(publish, 'submitted'))}."])
             return
         problem = ("not frozen yet" if not tag else "no draft release yet" if not rel
@@ -315,7 +337,7 @@ class Tick:
             tag_ci=self.ci("ci.yml", tag.sha) if tag else "none",
             tag_acceptance=self.ci("acceptance.yml", tag.sha) if tag else "none",
             ios_state=self.ios_state(version), notes_findings=tuple(notes_mod.cs1_findings(text)),
-            website=self.website(version))
+            website=self.website(version), updater=self.updater_signing(version))
 
     def go_no_go(self, version: str, publish: date, current: str, forced: bool = False) -> int:
         rel = self.release(version)
@@ -324,20 +346,23 @@ class Tick:
                 return int(not self.is_held(version, publish))
             return self.publish(version, publish)  # already partly published: finish, never slip
         facts = self.go_facts(version)
-        problems = decide.go_problems(facts)
+        problems, warnings = decide.go_problems(facts), decide.go_warnings(facts)
         log(f"{version}: go/no-go: {'GO' if not problems else 'NO-GO: ' + '; '.join(problems)}")
+        for warning in warnings:
+            log(f"::warning::{version}: {warning}")
         if problems:
             if forced:
                 return 1
-            return self.slip(version, publish, problems)
+            return self.slip(version, publish, problems, warnings)
         if current == "decide" and not forced:
             self.note(version, f"go/{publish.isoformat()}", "go", [
                 f"Approved on the App Store, draft complete, CI green. Publishing "
-                f"{decide.stamp(decide.milestone(publish, 'publish'))}.", decide.hold_help(version)])
+                f"{decide.stamp(decide.milestone(publish, 'publish'))}.",
+                *[f"**Warning:** {w}" for w in warnings], decide.hold_help(version)])
             return 0
-        return self.publish(version, publish) if current == "publish" else 0
+        return self.publish(version, publish, warnings) if current == "publish" else 0
 
-    def slip(self, version: str, publish: date, problems: Sequence[str]) -> int:
+    def slip(self, version: str, publish: date, problems: Sequence[str], warnings: Sequence[str] = ()) -> int:
         def change(wt: Path) -> list[str]:
             path = wt / SCHEDULE_PATH
             new, _ = decide.slip(plan.load_schedule(path), version, publish)
@@ -352,10 +377,11 @@ class Tick:
                    if folded else f"It moves to Thursday {target.isoformat()} "
                    f"({decide.stamp(plan.milestone_at(target, plan.MILESTONES[-2]))}).")
         self.note(version, f"nogo/{publish.isoformat()}", "no-go", [
-            *[f"- {p}" for p in problems], "", outcome, f"schedule.json: {sha[:7]}"])
+            *[f"- {p}" for p in problems], *[f"- **Warning (not blocking):** {w}" for w in warnings], "", outcome,
+            f"schedule.json: {sha[:7]}"])
         return 0
 
-    def publish(self, version: str, publish: date) -> int:
+    def publish(self, version: str, publish: date, warnings: Sequence[str] = ()) -> int:
         if self.posted(version, "published"):
             log(f"{version}: already published")
             return 0
@@ -373,7 +399,7 @@ class Tick:
             self.note(version, f"error/publish/{publish.isoformat()}", "publish incomplete", [
                 *[f"- {e}" for e in errors], "", *done, "The next tick retries what is left."])
             return 1
-        self.note(version, "published", "published", [*done,
+        self.note(version, "published", "published", [*done, *[f"**Warning:** {w}" for w in warnings],
                   "**Board:** move the items with Release " + version + " to Done (orchestrator)."])
         return 0
 
