@@ -31,6 +31,7 @@ import * as abil from "./ops-abilities";
 import * as eq from "./ops-equipment";
 import * as lv from "./ops-levels";
 import * as play from "./play";
+import * as hp from "./hit-points";
 import * as track from "./spell-tracker";
 import { renderSheetHtml } from "./sheet";
 import { buildSlotDefs } from "./slots";
@@ -480,6 +481,17 @@ export class MockApi implements Api {
   async removeTracker(a: Parameters<Api["removeTracker"]>[0]) { return this.tracked(a.characterId, (t) => track.removeTracker(t, a.trackerId)); }
   async spendTracker(a: Parameters<Api["spendTracker"]>[0]) { return this.tracked(a.characterId, (t) => track.spendTracker(t, a.trackerId, a.uses ?? 1)); }
   async restoreTracker(a: Parameters<Api["restoreTracker"]>[0]) { return this.tracked(a.characterId, (t) => track.restoreTracker(t, a.trackerId, a.uses ?? 1)); }
+  /** Hit points (B-194); `s` = the snapshot before the change (maximum, hit dice, Constitution). */
+  private hitPoints(id: string, fn: (h: hp.MockHitPoints | undefined, s: CharacterSnapshot, c: MockCharacter) => hp.MockHitPoints) {
+    return this.mutate(id, (c) => play.withHitPoints(c, (h) => fn(h, buildSnapshot(c, this.rules).snapshot, c)));
+  }
+  async takeDamage(a: Parameters<Api["takeDamage"]>[0]) { return this.hitPoints(a.characterId, (h, s) => hp.takeDamage(h, s.stats.hpMax, a.amount)); }
+  async regainHitPoints(a: Parameters<Api["regainHitPoints"]>[0]) { return this.hitPoints(a.characterId, (h, s) => hp.regain(h, s.stats.hpMax, a.amount)); }
+  async setTempHitPoints(a: Parameters<Api["setTempHitPoints"]>[0]) { return this.hitPoints(a.characterId, (h) => hp.setTemp(h, a.amount)); }
+  async spendHitDie(a: Parameters<Api["spendHitDie"]>[0]) {
+    return this.hitPoints(a.characterId, (h, s, c) => hp.spendHitDie(h, s.play.hitDice, { classId: a.classId, roll: a.roll, con: s.abilities.modifier.con, max: s.stats.hpMax, ruleset: c.ruleset }));
+  }
+  async restoreHitDie(a: Parameters<Api["restoreHitDie"]>[0]) { return this.hitPoints(a.characterId, (h, s) => hp.restoreHitDie(h, s.play.hitDice, a.classId, a.uses ?? 1)); }
   async chooseWeaponMasteries(a: { characterId: string; weaponIds: string[] }) { return this.mutate(a.characterId, (c) => play.chooseMasteries(c, a.weaponIds)); }
   async setWildShapeForms(a: { characterId: string; formIds: string[] }) { return this.mutate(a.characterId, (c) => play.setForms(c, a.formIds)); }
   async chooseEquipmentPackage(a: { characterId: string; packageId: string; option: string }) { return this.mutate(a.characterId, (c) => play.choosePackage(c, a.packageId, a.option)); }

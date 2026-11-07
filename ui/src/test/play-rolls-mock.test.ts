@@ -32,7 +32,7 @@ describe("mock roll values", () => {
     const ready = s.spellcasting.classes[0]!.spells.filter((x) => x.ready).map((x) => x.name);
     expect(ready).toEqual(expect.arrayContaining(["Fire Bolt", "Magic Missile", "Shield"]));
     expect(ready).not.toContain("Sleep");
-    expect(s.play.hitDice).toEqual([{ className: "Wizard", die: 6, total: 2, notation: `1d6+${s.abilities.modifier.con}` }]);
+    expect(s.play.hitDice).toEqual([{ classId: "wizard", className: "Wizard", die: 6, total: 2, used: 0, notation: `1d6+${s.abilities.modifier.con}` }]);
     expect(s.abilities.modifier.con).toBe(2);
     expect(s.play.resources.find((r) => r.name === "Inspiration Die")?.die).toBe("1d6");
     expect(s.play.resources.find((r) => r.name === "Rage")?.die).toBeNull();

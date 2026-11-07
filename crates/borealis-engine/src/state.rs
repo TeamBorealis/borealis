@@ -285,7 +285,7 @@ pub struct Inventory {
 }
 
 /// Mutable play-time state: resource uses, toggles, exhaustion, Heroic Inspiration, spell slot
-/// uses, concentration and custom trackers.
+/// uses, concentration, custom trackers, hit points lost, temporary hit points and spent hit dice.
 ///
 /// Loading is lenient ([`crate::play_load`]): a bad value drops or repairs that entry with a
 /// warning instead of failing the whole character, and keys this version does not know are kept
@@ -323,6 +323,18 @@ pub struct PlayState {
     /// The user's own trackers (Play tab), in the order they were added.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub trackers: Vec<CustomTracker>,
+    /// Hit points lost (B-194): current hit points are the maximum minus this, never below 0.
+    /// Stored as a loss, not a current value, so a file without it (written before it, or by
+    /// Aurora, which saves no current hit points) is at full hit points, and a level gained keeps
+    /// the damage taken.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub hp_lost: u32,
+    /// Temporary hit points.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub temp_hp: u32,
+    /// Spent hit dice per class element id (zero entries are not stored; none = all available).
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub hit_dice_used: BTreeMap<String, u32>,
     /// Keys written by a newer version, kept as they were.
     #[serde(flatten)]
     pub extra: BTreeMap<String, Value>,

@@ -161,13 +161,26 @@ export interface PlayTracker {
 
 /** The hit dice of one class: what one die heals when spent (the die plus the Constitution modifier). */
 export interface PlayHitDice {
+  /** Class element id (pass to `spendHitDie` / `restoreHitDie`). */
+  classId: string;
   className: string;
   /** Faces of the die (8 = d8). */
   die: number;
   /** Dice the class gives (its level). */
   total: number;
+  /** Spent dice, 0..total (B-194); back on a Long Rest by the edition's rule. */
+  used: number;
   /** What one die rolls, e.g. `1d8+2`. */
   notation: string;
+}
+
+/** Current, maximum and temporary hit points (B-194). */
+export interface PlayHitPoints {
+  max: number;
+  /** 0..max. */
+  current: number;
+  /** Temporary hit points: lost first, gone after a Long Rest. */
+  temp: number;
 }
 
 export interface PlayState {
@@ -203,8 +216,9 @@ export interface PlayState {
   /** Concentration spells the character knows or has prepared, by level and name. */
   concentrationSpells: PlayConcentrationSpell[];
   trackers: PlayTracker[];
-  /** Hit dice per class (GitHub #1). */
+  /** Hit dice per class (GitHub #1), with the spent counts (B-194). */
   hitDice: PlayHitDice[];
+  hitPoints: PlayHitPoints;
 }
 
 export interface AttackMastery { name: string; text: string; mastered: boolean }

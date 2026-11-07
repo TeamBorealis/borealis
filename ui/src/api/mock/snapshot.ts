@@ -117,7 +117,7 @@ export function buildSnapshot(input: MockCharacter, rules: RuleSettings): { char
     attacks: resolveAttacks(c, mods, profBonus(totalLevel(c))),
     companion: companions[0] ?? null, companions, options: c.options,
     availableOptions: OPTION_DEFS, sourceRestrictions: c.sourceRestrictions, notices: c.notices,
-    play: buildPlay(c, spellcasting, mods.con),
+    play: buildPlay(c, spellcasting, mods.con, stats.hpMax),
   };
   return { character: c, snapshot };
 }

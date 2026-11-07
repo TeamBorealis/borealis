@@ -19,6 +19,7 @@ pub mod eval;
 pub mod gear;
 pub mod granted_casting;
 pub mod graph;
+pub mod hit_points;
 pub mod ids;
 pub mod invariants;
 pub mod inventory;

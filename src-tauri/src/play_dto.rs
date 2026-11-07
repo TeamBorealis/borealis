@@ -4,6 +4,7 @@
 use borealis_character::{Category, ConversionItem, ConversionPreview, KeyStats, Outcome};
 use borealis_engine::snapshot::CharacterSnapshot as Engine;
 use borealis_engine::spell_tracker::TrackerView;
+use borealis_engine::state::PlayState;
 use serde::Serialize;
 use serde_json::{Map, Value};
 
@@ -86,13 +87,16 @@ pub struct PlayStateDto {
     pub concentration_spells: Value,
     /// The user's own trackers.
     pub trackers: Value,
-    /// Hit dice per class (GitHub #1).
+    /// Hit dice per class (GitHub #1), with the spent counts (B-194).
     pub hit_dice: Vec<crate::play_rolls::HitDiceDto>,
+    /// Current, maximum and temporary hit points (B-194).
+    pub hit_points: Value,
 }
 
-/// Map the engine's play blocks and the spell tracker view.
+/// Map the engine's play blocks, the spell tracker view and the hit points of `play` (the
+/// state `s` was derived from).
 #[must_use]
-pub fn play_state(s: &Engine, tracker: &TrackerView) -> PlayStateDto {
+pub fn play_state(s: &Engine, tracker: &TrackerView, play: &PlayState) -> PlayStateDto {
     PlayStateDto {
         speeds: SpeedsDto {
             walk: s.speed.walk,
@@ -126,7 +130,8 @@ pub fn play_state(s: &Engine, tracker: &TrackerView) -> PlayStateDto {
         concentration: dto(&tracker.concentration),
         concentration_spells: dto(&tracker.concentration_spells),
         trackers: dto(&tracker.trackers),
-        hit_dice: crate::play_rolls::hit_dice(s),
+        hit_dice: crate::play_rolls::hit_dice(s, play),
+        hit_points: dto(&borealis_engine::hit_points::hit_points(play, s)),
     }
 }
 

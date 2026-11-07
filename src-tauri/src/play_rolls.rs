@@ -5,6 +5,7 @@
 
 use crate::dto::AbilityRecord;
 use borealis_engine::snapshot::{CharacterSnapshot as Engine, SpellEntry};
+use borealis_engine::state::PlayState;
 use serde::Serialize;
 use serde_json::Value;
 
@@ -13,8 +14,6 @@ const DIE_SIZES: [i32; 6] = [4, 6, 8, 10, 12, 20];
 /// Stat suffixes that name the die of a pool (`bardic inspiration die`, `bardic inspiration:die`,
 /// and the Aurora forms such as `song-of-rest:dice:size`).
 const DIE_SUFFIXES: [&str; 5] = [" die", ":die", ":dice", ":size", ":dice:size"];
-/// Ability index of Constitution.
-const CON: usize = 2;
 
 fn stat(s: &Engine, name: &str) -> i32 {
     s.stats.get(name).map_or(0, |g| g.value)
@@ -90,34 +89,35 @@ pub fn resources_with_dice(s: &Engine, resources: Value) -> Value {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HitDiceDto {
+    /// Class element id (pass to `spend_hit_die` / `restore_hit_die`).
+    pub class_id: String,
     pub class_name: String,
     /// Faces of the die.
     pub die: u32,
     /// Dice the class gives (its level).
     pub total: u32,
+    /// Spent dice (B-194), at most `total`.
+    pub used: u32,
     /// What spending one die rolls: the die plus the Constitution modifier (`1d8+2`).
     pub notation: String,
 }
 
-/// Hit dice per class with a hit die.
+/// Hit dice per class with a hit die, with the spent counts of `play`.
 #[must_use]
-pub fn hit_dice(s: &Engine) -> Vec<HitDiceDto> {
-    let con = s.abilities.get(CON).map_or(0, |a| a.modifier);
-    let bonus = match con {
+pub fn hit_dice(s: &Engine, play: &PlayState) -> Vec<HitDiceDto> {
+    let bonus = match borealis_engine::hit_points::con_modifier(s) {
         0 => String::new(),
         n => format!("{n:+}"),
     };
-    s.classes
-        .iter()
-        .filter_map(|c| {
-            let die = c.hit_die.filter(|d| *d > 0)?;
-            let class = c.class.as_ref()?;
-            (c.level > 0).then(|| HitDiceDto {
-                class_name: class.name.clone(),
-                die,
-                total: c.level,
-                notation: format!("1d{die}{bonus}"),
-            })
+    borealis_engine::hit_points::hit_dice(play, s)
+        .into_iter()
+        .map(|h| HitDiceDto {
+            notation: format!("1d{}{bonus}", h.die),
+            class_id: h.class_id,
+            class_name: h.class_name,
+            die: h.die,
+            total: h.total,
+            used: h.used,
         })
         .collect()
 }

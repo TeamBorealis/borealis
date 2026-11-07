@@ -213,7 +213,7 @@ fn hit_dice_roll_the_class_die_plus_the_constitution_modifier() {
     );
     assert_eq!(
         s["play"]["hitDice"],
-        json!([{"className": "Wizard", "die": 6, "total": 3, "notation": "1d6+2"}])
+        json!([{"classId": "ID_2024_CLASS_WIZARD", "className": "Wizard", "die": 6, "total": 3, "used": 0, "notation": "1d6+2"}])
     );
     let s = app.json(
         "set_base_score",

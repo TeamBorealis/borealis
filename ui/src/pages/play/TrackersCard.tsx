@@ -4,6 +4,7 @@ import { Button, Check, EmptyState, IconButton, SelectField, TextField } from ".
 import { Dialog, Expander } from "../../components/controls";
 import { cleanTrackerName } from "../../lib/trackerName";
 import { useCharacter } from "../../state/CharacterContext";
+import { AmountControl } from "./AmountControl";
 import { PIP_LIMIT, PipButtons, UsesLeft } from "./PipButtons";
 import { usePlayMutate } from "./playQueue";
 import "./spell-tracker.css";
@@ -29,13 +30,31 @@ function trackerNames(t: PlayTracker): { spend: string; restore: string } {
   return { spend: `Use one ${t.name}, ${state}`, restore: `Restore one ${t.name}, ${state}` };
 }
 
+/** The typed amount of a tracker (B-194): spend (add) or restore (remove) any number, capped at what is left or used. */
+function TrackerAmount({ t }: { t: PlayTracker }) {
+  const run = usePlayMutate();
+  const left = t.max - t.used;
+  const spend = (n: number) => void run((api, id) => api.spendTracker({ characterId: id, trackerId: t.id, uses: Math.min(n, left) }));
+  const restore = (n: number) => void run((api, id) => api.restoreTracker({ characterId: id, trackerId: t.id, uses: Math.min(n, t.used) }));
+  const [spendLabel, restoreLabel] = t.countsUp ? ["Add", "Remove"] : ["Use", "Restore"];
+  return (
+    <li className="v5-line hp-amount-line">
+      <AmountControl label={`${t.name} amount`} max={MAX_TRACKER_MAX} actions={[
+        { label: spendLabel, name: `${spendLabel} an amount of ${t.name}`, run: spend, disabled: left <= 0 },
+        { label: restoreLabel, name: `${restoreLabel} an amount of ${t.name}`, run: restore, disabled: t.used <= 0 },
+      ]} />
+    </li>
+  );
+}
+
 function TrackerRow({ t, onEdit }: { t: PlayTracker; onEdit: () => void }) {
   const run = usePlayMutate();
+  const [amount, setAmount] = useState(false);
   const spend = () => void run((api, id) => api.spendTracker({ characterId: id, trackerId: t.id }));
   const restore = () => void run((api, id) => api.restoreTracker({ characterId: id, trackerId: t.id }));
   const names = trackerNames(t);
   const meta = RESET_LABEL[t.reset] ?? t.reset;
-  return (
+  return (<>
     <li className="v5-line st-line">
       <span className="v5-row static grow"><span className="grow">{t.name}</span><span className="meta">{t.countsUp ? `${meta} · counts up` : meta}</span></span>
       {t.max <= PIP_LIMIT
@@ -50,9 +69,13 @@ function TrackerRow({ t, onEdit }: { t: PlayTracker; onEdit: () => void }) {
             <IconButton icon="plus" variant="default" label={`Restore ${t.name}`} disabled={t.used <= 0} onClick={restore} />
           </span>}
       <UsesLeft name={t.name} max={t.max} used={t.used} countsUp={t.countsUp} />
-      <span className="v5-ctrls"><IconButton icon="pen" label={`Edit ${t.name}`} onClick={onEdit} /></span>
+      <span className="v5-ctrls">
+        <IconButton icon="more" label={`Change ${t.name} by an amount`} aria-expanded={amount} onClick={() => setAmount(!amount)} />
+        <IconButton icon="pen" label={`Edit ${t.name}`} onClick={onEdit} />
+      </span>
     </li>
-  );
+    {amount && <TrackerAmount t={t} />}
+  </>);
 }
 
 export interface TrackerProblem { field: "name" | "max"; message: string }
@@ -127,7 +150,7 @@ function TrackerDialog({ tracker, onClose }: { tracker: PlayTracker | null; onCl
   );
 }
 
-/** The user's own trackers (luck tokens, rune charges): pips or -/+, reset on a short rest, a long rest or never. */
+/** The user's own trackers (luck tokens, rune charges): pips or -/+ and any typed amount (B-194), reset on a short rest, a long rest or never. */
 export function TrackersCard({ trackers }: { trackers: PlayTracker[] }) {
   const [editing, setEditing] = useState<PlayTracker | "new" | null>(null);
   return (

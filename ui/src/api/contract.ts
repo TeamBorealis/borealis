@@ -254,6 +254,17 @@ export interface ApiMethods {
   spendTracker(args: Cid & { trackerId: string; uses?: number }): Promise<CharacterSnapshot>;
   /** Gives back `uses` (default 1) pips, never below none used. */
   restoreTracker(args: Cid & { trackerId: string; uses?: number }): Promise<CharacterSnapshot>;
+  /* Hit points and hit dice (B-194). Damage and healing are relative; amounts are 1-9999. */
+  /** Damage comes off temporary hit points first, then hit points, which stop at 0. */
+  takeDamage(args: Cid & { amount: number }): Promise<CharacterSnapshot>;
+  /** Healing never goes above the maximum and leaves temporary hit points alone. */
+  regainHitPoints(args: Cid & { amount: number }): Promise<CharacterSnapshot>;
+  /** Replaces the temporary hit points (they don't stack); 0 ends them. */
+  setTempHitPoints(args: Cid & { amount: number }): Promise<CharacterSnapshot>;
+  /** Spends one hit die of `classId` that rolled `roll` (1..die): heals the roll plus the Constitution modifier (2024: at least 1). */
+  spendHitDie(args: Cid & { classId: string; roll: number }): Promise<CharacterSnapshot>;
+  /** Gives back `uses` (default 1) spent hit dice; heals nothing. */
+  restoreHitDie(args: Cid & { classId: string; uses?: number }): Promise<CharacterSnapshot>;
   /** Replaces all Weapon Mastery picks (in slot order; fewer ids leave slots open). */
   chooseWeaponMasteries(args: Cid & { weaponIds: string[] }): Promise<CharacterSnapshot>;
   setWildShapeForms(args: Cid & { formIds: string[] }): Promise<CharacterSnapshot>;
@@ -582,6 +593,11 @@ export const COMMANDS = {
   removeTracker: "remove_tracker",
   spendTracker: "spend_tracker",
   restoreTracker: "restore_tracker",
+  takeDamage: "take_damage",
+  regainHitPoints: "regain_hit_points",
+  setTempHitPoints: "set_temp_hit_points",
+  spendHitDie: "spend_hit_die",
+  restoreHitDie: "restore_hit_die",
   chooseWeaponMasteries: "choose_weapon_masteries",
   setWildShapeForms: "set_wild_shape_forms",
   chooseEquipmentPackage: "choose_equipment_package",

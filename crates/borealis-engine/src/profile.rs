@@ -79,6 +79,17 @@ pub enum ExhaustionModel {
     Linear,
 }
 
+/// How hit dice heal and come back (B-194; SRD 5.1 "Resting", SRD 5.2.1 "Short Rest" / "Long Rest").
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct HitDiceRules {
+    /// A Long Rest gives back every spent hit die (2024); else up to half the character's total
+    /// hit dice, at least one (2014).
+    pub long_rest_regains_all: bool,
+    /// Fewest hit points one spent hit die heals (die + Constitution modifier): 0 in 2014, 1 in
+    /// 2024.
+    pub spend_minimum: i32,
+}
+
 /// Inspiration model.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -223,6 +234,8 @@ pub trait RulesetProfile: std::fmt::Debug + Send + Sync {
     fn weapon_mastery(&self) -> bool;
     /// Exhaustion model.
     fn exhaustion(&self) -> ExhaustionModel;
+    /// Hit dice spending and Long Rest recovery.
+    fn hit_dice(&self) -> HitDiceRules;
     /// Inspiration model.
     fn inspiration(&self) -> InspirationModel;
     /// True if feats are grouped in categories (origin, general, epic boon).
@@ -324,6 +337,14 @@ impl RulesetProfile for Dnd2014 {
     fn exhaustion(&self) -> ExhaustionModel {
         ExhaustionModel::SixLevels
     }
+    /// SRD 5.1: a long rest regains spent Hit Dice "up to a number of dice equal to half of the
+    /// character's total number of them (minimum of one die)"; a spent die heals "the total".
+    fn hit_dice(&self) -> HitDiceRules {
+        HitDiceRules {
+            long_rest_regains_all: false,
+            spend_minimum: 0,
+        }
+    }
     fn inspiration(&self) -> InspirationModel {
         InspirationModel::Advantage
     }
@@ -388,6 +409,14 @@ impl RulesetProfile for Dnd2024 {
     }
     fn exhaustion(&self) -> ExhaustionModel {
         ExhaustionModel::Linear
+    }
+    /// SRD 5.2.1: a Long Rest regains "all lost Hit Points and all spent Hit Point Dice"; a spent
+    /// die heals the total "(minimum of 1 Hit Point)".
+    fn hit_dice(&self) -> HitDiceRules {
+        HitDiceRules {
+            long_rest_regains_all: true,
+            spend_minimum: 1,
+        }
     }
     fn inspiration(&self) -> InspirationModel {
         InspirationModel::HeroicReroll

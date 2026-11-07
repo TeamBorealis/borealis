@@ -1,5 +1,5 @@
 import { type ReactNode, createContext, useCallback, useContext, useMemo, useState } from "react";
-import { type DiceExpr, type RollMode, critical, rollD20, rollExpr } from "../../../lib/dice";
+import { type DiceExpr, type DiceResult, type RollMode, critical, rollD20, rollExpr } from "../../../lib/dice";
 import { type RollEntry, addRoll, currentDie } from "./rollStore";
 import { RollResultCard } from "./RollResult";
 
@@ -22,7 +22,8 @@ export interface D20Request {
 
 export interface RollApi {
   d20: (r: D20Request) => void;
-  dice: (r: DiceRequest & { critical?: boolean }) => void;
+  /** Rolls, records and shows the dice; returns the result (a spent hit die sends its face to the host). */
+  dice: (r: DiceRequest & { critical?: boolean }) => DiceResult;
 }
 
 /** What the result card shows: the newest roll and, after an attack roll, its damage roll. */
@@ -30,17 +31,19 @@ export interface Shown { entry: RollEntry; action: { label: string; run: () => v
 
 const Ctx = createContext<RollApi | null>(null);
 
-function rollDice(characterId: string, r: DiceRequest & { critical?: boolean }): RollEntry {
+function rollDice(characterId: string, r: DiceRequest & { critical?: boolean }): { entry: RollEntry; result: DiceResult } {
   const expr = r.critical ? critical(r.expr) : r.expr;
   const result = rollExpr(expr, currentDie(), { floor: r.floor, label: r.critical ? "critical" : undefined });
-  return addRoll({ characterId, label: r.label, total: result.total, breakdown: result.breakdown });
+  return { entry: addRoll({ characterId, label: r.label, total: result.total, breakdown: result.breakdown }), result };
 }
 
 /** Rolls for one character's Play tab, with the result card where the user is looking. */
 export function RollProvider({ characterId, children }: { characterId: string; children: ReactNode }) {
   const [shown, setShown] = useState<Shown | null>(null);
   const dice = useCallback((r: DiceRequest & { critical?: boolean }) => {
-    setShown({ entry: rollDice(characterId, r), action: null });
+    const { entry, result } = rollDice(characterId, r);
+    setShown({ entry, action: null });
+    return result;
   }, [characterId]);
   const d20 = useCallback((r: D20Request) => {
     const result = rollD20(r.modifier, r.mode, currentDie(), { critRange: r.critRange });
@@ -49,7 +52,7 @@ export function RollProvider({ characterId, children }: { characterId: string; c
     const followUp = damage ? { label: crit ? `Roll critical damage` : "Roll damage", critical: crit } : null;
     const entry = addRoll({ characterId, label: r.label, total: result.total, breakdown: result.breakdown, followUp });
     const action = damage && followUp
-      ? { label: followUp.label, run: () => dice({ ...damage, label: crit ? `${damage.label}, critical` : damage.label, critical: crit }) }
+      ? { label: followUp.label, run: () => { dice({ ...damage, label: crit ? `${damage.label}, critical` : damage.label, critical: crit }); } }
       : null;
     setShown({ entry, action });
   }, [characterId, dice]);

@@ -93,6 +93,7 @@ pub fn build_snapshot(input: &MapInput<'_>) -> CharacterSnapshot {
                 &input.character.build,
                 &engine_snap,
             ),
+            &input.character.build.play,
         ),
     }
 }

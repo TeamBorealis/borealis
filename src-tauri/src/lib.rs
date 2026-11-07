@@ -38,6 +38,7 @@ pub mod commands_ai_setup;
 pub mod commands_app_update;
 pub mod commands_content;
 pub mod commands_gear;
+pub mod commands_hp;
 #[cfg(ai_cli)]
 pub mod commands_import;
 pub mod commands_pick;
@@ -98,6 +99,7 @@ mod folder_access_mac;
 pub mod gear_facts;
 pub mod gear_info;
 pub mod homebrew_api;
+pub mod hp_api;
 pub mod ids;
 #[cfg(ai_cli)]
 pub mod import_bug_report;
@@ -552,6 +554,11 @@ pub fn run() {
             commands_tracker::remove_tracker,
             commands_tracker::spend_tracker,
             commands_tracker::restore_tracker,
+            commands_hp::take_damage,
+            commands_hp::regain_hit_points,
+            commands_hp::set_temp_hit_points,
+            commands_hp::spend_hit_die,
+            commands_hp::restore_hit_die,
             commands_pick::pick_path,
             commands_pick::take_picked_files,
             #[cfg(ai_cli)]

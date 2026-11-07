@@ -6,6 +6,7 @@ import { useCharacter } from "../../state/CharacterContext";
 import { AbilitiesPanel } from "./AbilitiesPanel";
 import { AttackDetail, AttacksPanel } from "./AttacksPanel";
 import { HitDiceCard } from "./DiceCards";
+import { HitPointsCard } from "./HitPointsCard";
 import { ExhaustionCard, PlayDetail, type PlaySelection, ResourcesCard, TogglesCard } from "./PlayCards";
 import { PlaySplit } from "./PlaySplit";
 import { RestBar } from "./RestBar";
@@ -19,7 +20,7 @@ import "./play-sheet.css";
 
 /**
  * GitHub #14 / #1 (U16(b)): a table session needs only this tab. Sub-tabs, not more cards, keep each list short on a
- * phone and give each its own description pane: Play (rests, slots, resources, hit dice), Abilities (initiative, checks,
+ * phone and give each its own description pane: Play (rests, hit points, hit dice, slots, resources), Abilities (initiative, checks,
  * saves, skills), Attacks, Spells (casters only) and Traits.
  */
 function tabsFor(s: CharacterSnapshot) {
@@ -82,11 +83,13 @@ function Body({ s }: { s: CharacterSnapshot }) {
   const spell = s.spellcasting.classes.flatMap((c) => c.spells).find((x) => x.id === spellId);
   const feature = play.features.find((f) => f.id === featId);
   const panes: Record<string, () => JSX.Element> = {
-    // GitHub #2: the rests for the whole page first, then concentration pinned, then the stats and the cards the rests affect.
+    // GitHub #2: the rests for the whole page first, then concentration pinned, then the stats and the cards the rests affect:
+    // hit points and hit dice next to the rests (B-194), then slots, resources and trackers.
     play: () => <PlaySplit label="Play" title={selectionName(s, sel)} onClose={() => setSel(null)}
       detail={<PlayDetail selected={sel} resources={play.resources} toggles={play.toggles} />}
-      list={(<><RestBar /><ConcentrationBanner concentration={play.concentration} />{statRow}<SpellSlotsCard play={play} />
-        <ResourcesCard resources={play.resources} selected={sel} onSelect={setSel} /><HitDiceCard hitDice={play.hitDice} /><TrackersCard trackers={play.trackers} />
+      list={(<><RestBar /><ConcentrationBanner concentration={play.concentration} />{statRow}<HitPointsCard hp={play.hitPoints} />
+        <HitDiceCard hitDice={play.hitDice} /><SpellSlotsCard play={play} />
+        <ResourcesCard resources={play.resources} selected={sel} onSelect={setSel} /><TrackersCard trackers={play.trackers} />
         <TogglesCard toggles={play.toggles} selected={sel} onSelect={setSel} /><ExhaustionCard exhaustion={play.exhaustion} inspiration={play.inspiration} /></>)} />,
     abilities: () => <PlaySplit label="Abilities" title={null} onClose={() => undefined}
       detail={<><h1 className="v5-desc-title">Abilities</h1><p className="v5-lead">Tap a value to roll it. Long-press, right-click or the arrow beside it rolls with advantage or disadvantage.</p></>}

@@ -3,6 +3,7 @@ import { getClass, getElement, getItem, titleCase } from "./content";
 import { apiError } from "./errors";
 import { chargeResources } from "./rolled-charges";
 import { classIdOf } from "./slots";
+import { type MockHitPoints, afterLongRest, hitPointsOf } from "./hit-points";
 import { type MockTracking, afterRest, trackerPlay } from "./spell-tracker";
 import { type MockCharacter, levelOf, signed, totalLevel } from "./state";
 
@@ -17,6 +18,8 @@ export interface MockPlay {
   packages: Record<string, string>;
   /** Spell slots, concentration and custom trackers (GitHub #2); absent = nothing tracked. */
   tracking?: MockTracking;
+  /** Hit points lost, temporary hit points and spent hit dice (B-194); absent = full hit points. */
+  hp?: MockHitPoints;
 }
 
 export const emptyPlay = (): MockPlay => ({ used: {}, toggles: [], exhaustion: 0, inspiration: false, masteries: [], forms: [], packages: {} });
@@ -53,7 +56,7 @@ function itemToggles(c: MockCharacter): (Omit<PlayToggle, "on" | "active"> & { f
 const togglesOf = (c: MockCharacter) => [...TOGGLES.map((t) => ({ ...t, factor: 1 })), ...itemToggles(c)];
 
 /** The mock's `CharacterSnapshot.play` (`sc` = the snapshot's spellcasting, for the spell tracker). */
-export function buildPlay(c: MockCharacter, sc: SpellcastingState, conMod = 0): PlayState {
+export function buildPlay(c: MockCharacter, sc: SpellcastingState, conMod = 0, hpMax = 0): PlayState {
   const p = playOf(c);
   const resources = resourcesFor(c).map((r) => ({ ...r, current: Math.max(0, r.max - (p.used[r.id] ?? 0)) }));
   const toggles = togglesOf(c).map(({ factor: _factor, ...t }) => ({ ...t, on: p.toggles.includes(t.id), active: p.toggles.includes(t.id) }));
@@ -85,16 +88,19 @@ export function buildPlay(c: MockCharacter, sc: SpellcastingState, conMod = 0): 
     freeCasts: [], saveDcs: [],
     ...trackerPlay(p.tracking, sc),
     hitDice: hitDiceOf(c, conMod),
+    hitPoints: hitPointsOf(p.hp, hpMax),
   };
 }
 
-/** Hit dice per class, as the host: the class die plus the Constitution modifier. */
-function hitDiceOf(c: MockCharacter, conMod: number): PlayHitDice[] {
+/** Hit dice per class, as the host: the class die plus the Constitution modifier, and the spent count. */
+export function hitDiceOf(c: MockCharacter, conMod: number): PlayHitDice[] {
+  const used = playOf(c).hp?.diceUsed ?? {};
   return c.classes.flatMap((cs) => {
     const cls = getClass(classIdOf(c, cs.slotId));
     const total = levelOf(c, cs.slotId);
     if (!cls || total === 0) return [];
-    return [{ className: titleCase(cls.id), die: cls.hitDie, total, notation: `1d${cls.hitDie}${conMod === 0 ? "" : signed(conMod)}` }];
+    const notation = `1d${cls.hitDie}${conMod === 0 ? "" : signed(conMod)}`;
+    return [{ classId: cls.id, className: titleCase(cls.id), die: cls.hitDie, total, used: Math.min(total, used[cls.id] ?? 0), notation }];
   });
 }
 
@@ -118,7 +124,14 @@ export const shortRest = (c: MockCharacter): MockCharacter =>
   withPlay(c, (p) => ({ ...p, toggles: [], used: Object.fromEntries(Object.entries(p.used).map(([k, v]) => [k, Math.max(0, v - 1)])), tracking: afterRest(p.tracking, "short") }));
 
 export const longRest = (c: MockCharacter): MockCharacter =>
-  withPlay(c, (p) => ({ ...p, toggles: [], used: {}, exhaustion: c.ruleset === "dnd2024" ? Math.max(0, p.exhaustion - 1) : p.exhaustion, tracking: afterRest(p.tracking, "long") }));
+  withPlay(c, (p) => ({
+    ...p, toggles: [], used: {}, exhaustion: c.ruleset === "dnd2024" ? Math.max(0, p.exhaustion - 1) : p.exhaustion, tracking: afterRest(p.tracking, "long"),
+    hp: afterLongRest(p.hp, hitDiceOf(c, 0), c.ruleset),
+  }));
+
+/** Applies a hit point update to the mock's play state (B-194). */
+export const withHitPoints = (c: MockCharacter, fn: (h: MockHitPoints | undefined) => MockHitPoints): MockCharacter =>
+  withPlay(c, (p) => ({ ...p, hp: fn(p.hp) }));
 
 /** Applies a spell tracker update to the mock's play state. */
 export const withTracking = (c: MockCharacter, fn: (t: MockTracking | undefined) => MockTracking): MockCharacter =>

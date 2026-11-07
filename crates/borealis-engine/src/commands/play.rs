@@ -3,6 +3,8 @@
 
 use super::{CmdResult, CommandError, CommandOutcome};
 use crate::engine::Engine;
+use crate::hit_points::after_long_rest;
+use crate::profile::profile_for;
 use crate::runtime::Runtime;
 use crate::snapshot::{CharacterSnapshot, ResourceSnapshot};
 use crate::spell_tracker::{after_rest, Rest};
@@ -100,7 +102,8 @@ pub fn set_toggle(engine: &Engine, state: &CharacterState, id: &str, on: bool) -
 }
 
 /// Finish a Short Rest: resources regain what their rule says; toggles end; Pact Magic slots
-/// and short-rest custom trackers come back.
+/// and short-rest custom trackers come back. Hit points are unchanged: hit dice are spent one
+/// at a time with [`super::spend_hit_die`], which the Play tab offers after the rest.
 ///
 /// # Errors
 /// None today; the result type matches the other commands.
@@ -121,7 +124,9 @@ pub fn short_rest(engine: &Engine, state: &CharacterState) -> CmdResult {
 
 /// Finish a Long Rest: resources refill, toggles end, exhaustion drops by one level (linear
 /// model), Resourceful-style features grant Inspiration, every spell slot and every short- or
-/// long-rest custom tracker comes back and concentration ends.
+/// long-rest custom tracker comes back and concentration ends. Every hit point comes back,
+/// temporary hit points end and spent hit dice return by the edition's rule (B-194: all in 2024,
+/// up to half the total in 2014; [`crate::hit_points::after_long_rest`]).
 ///
 /// # Errors
 /// None today; the result type matches the other commands.
@@ -142,7 +147,13 @@ pub fn long_rest(engine: &Engine, state: &CharacterState) -> CmdResult {
     {
         rt.inspiration = true;
     }
-    rested(&rt, state, Rest::Long)
+    let mut out = rested(&rt, state, Rest::Long)?;
+    out.state.play = after_long_rest(
+        &out.state.play,
+        &snap,
+        profile_for(state.ruleset).hit_dice(),
+    );
+    Ok(out)
 }
 
 /// Set the exhaustion level.

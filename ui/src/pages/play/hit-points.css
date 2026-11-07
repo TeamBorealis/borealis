@@ -1,0 +1,16 @@
+/*
+ * B-194 (PL1): the Hit Points card, the amount field shared with the trackers, the hit dice spend row and the short rest
+ * offer. The same list language as the other Play cards (panes.css, spell-tracker.css, phone/play-magic.css).
+ */
+.hp-amount { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.hp-amount .input.hp-amount-input { width: 4.5rem; flex: none; text-align: right; font-variant-numeric: tabular-nums; }
+.hp-amount-line { padding: 4px 6px 6px 20px; }
+.hp-rest-hp { margin: 0 0 8px; }
+.hp-rest-roll { margin: 8px 0 0; }
+
+/* Phones: 44 px targets, the field and its commands on one line under the label. */
+html.phone .hp-amount { gap: 8px; }
+html.phone .hp-amount .btn { min-height: var(--ph-hit); padding: 0 14px; }
+html.phone .hp-amount .input.hp-amount-input { width: 5.5rem; min-height: var(--ph-hit); font: 400 var(--ph-t-body)/1 var(--ph-font-ui); }
+html.phone .hp-foot .btn-icon { min-width: var(--ph-hit); min-height: var(--ph-hit); }
+html.phone .hp-amount-line { padding: 4px var(--ph-gutter) 8px var(--ph-gutter); }

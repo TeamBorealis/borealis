@@ -3,6 +3,7 @@
 mod abilities;
 mod forms;
 mod gear;
+mod hit_points;
 mod improvement;
 mod play;
 mod progression;
@@ -15,6 +16,7 @@ mod withheld;
 pub use abilities::*;
 pub use forms::*;
 pub use gear::*;
+pub use hit_points::*;
 pub use improvement::*;
 pub use play::*;
 pub use progression::*;
@@ -61,6 +63,9 @@ pub enum CommandError {
     /// A custom tracker was refused (bad name or maximum, too many trackers; GitHub #2).
     #[error("{0}")]
     Tracker(String),
+    /// A hit point change was refused (amount out of range, a roll the die cannot show; B-194).
+    #[error("{0}")]
+    HitPoints(String),
 }
 
 /// A successful command: the new state and any non-fatal warnings for the UI.

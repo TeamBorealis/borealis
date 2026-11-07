@@ -110,6 +110,25 @@ fn slot_counts(v: Value) -> BTreeMap<u32, u32> {
     out
 }
 
+/// `hit_dice_used`: class id to a count above 0; a non-numeric count is dropped.
+fn hit_dice_counts(v: Value) -> BTreeMap<String, u32> {
+    let Value::Object(map) = v else {
+        tracing::warn!("character play state: dropped `hit_dice_used` (not a map)");
+        return BTreeMap::new();
+    };
+    let mut out = BTreeMap::new();
+    for (k, n) in map {
+        match n.as_u64().and_then(|n| u32::try_from(n).ok()) {
+            Some(0) => {}
+            Some(c) if !k.is_empty() => {
+                out.insert(k, c);
+            }
+            _ => tracing::warn!("character play state: dropped hit dice entry `{k}`"),
+        }
+    }
+    out
+}
+
 /// One saved tracker, repaired: a name without hidden characters (at most
 /// [`MAX_TRACKER_NAME`] characters), a maximum in 1..=[`MAX_TRACKER_MAX`] and a used count at
 /// most the maximum. `None` when it is not a tracker at all.
@@ -192,6 +211,9 @@ pub fn play_from_value(v: Value) -> PlayState {
             "pact_slots_used" => p.pact_slots_used = typed(&k, v),
             "concentration" => p.concentration = typed(&k, v),
             "trackers" => p.trackers = trackers(v),
+            "hp_lost" => p.hp_lost = typed(&k, v),
+            "temp_hp" => p.temp_hp = typed(&k, v),
+            "hit_dice_used" => p.hit_dice_used = hit_dice_counts(v),
             _ => {
                 p.extra.insert(k, v);
             }
