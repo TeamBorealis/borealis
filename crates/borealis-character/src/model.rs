@@ -133,6 +133,11 @@ pub struct ManualAttack {
     /// weapon line's "show card" flag, a hand-typed row is off.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub as_card: Option<bool>,
+    /// A hand-made row whose attack bonus and damage are worked out from `ability`: the
+    /// ability modifier plus the proficiency bonus, and `damage`'s dice plus the modifier
+    /// (GitHub #29, [`ManualAttack::worked_out`]). Off for typed rows and every Aurora row.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub calculated: bool,
 }
 
 /// The user's changes to an automatic (weapon-derived) attack line, Aurora's fillable attack

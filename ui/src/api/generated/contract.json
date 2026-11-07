@@ -3121,6 +3121,12 @@
       "k": "prim"
      }
     },
+    "calculated": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "card": {
      "opt": false,
      "t": {

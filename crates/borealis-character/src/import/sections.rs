@@ -136,6 +136,7 @@ pub(super) fn read_input(build: &XmlElement, c: &mut Character, ctx: &mut Ctx<'_
                 ability: a.attr("ability").unwrap_or("").to_string(),
                 description: raw_text_of(a, "description"),
                 as_card: a.attr("card").map(|v| parse_bool(Some(v))),
+                calculated: false,
             });
         }
     }

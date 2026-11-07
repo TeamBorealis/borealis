@@ -436,6 +436,8 @@ export interface Attack {
   toHit?: number | null;
   /** Automatic rows whose ability the user may pick (weapons, the Unarmed Strike): the bonus and damage with each ability, for the editor's live preview. */
   abilityLines?: AttackAbilityLine[] | null;
+  /** A hand-made row worked out from `ability` (GitHub #29): the modifier plus proficiency, and the typed dice plus the modifier. */
+  calculated?: boolean;
 }
 
 /** An automatic attack row worked out with one ability. */

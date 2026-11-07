@@ -731,6 +731,9 @@ pub struct Attack {
     /// pick (weapons, the Unarmed Strike): the attack editor's live preview (GitHub #27).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ability_lines: Option<Vec<AbilityLineDto>>,
+    /// A hand-made row worked out from its ability (GitHub #29).
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub calculated: bool,
 }
 
 /// An automatic attack row worked out with one ability.
@@ -902,6 +905,7 @@ mod gear_dto_tests {
             ammunition: ammunition.map(str::to_string),
             to_hit: Some(6),
             ability_lines: None,
+            calculated: false,
         }
     }
 

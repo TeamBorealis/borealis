@@ -17,7 +17,7 @@ function IconAct({ icon, label, onClick, disabled, pressed }: { icon: MgIconName
 export function AttackTags({ attack: a }: { attack: Attack }) {
   return (
     <span className="ap-tags">
-      {a.auto && <span className="ap-tag">Auto</span>}
+      {(a.auto || a.calculated) && <span className="ap-tag">Auto</span>}
       {a.mastery && <span className={`ap-tag ${a.mastery.mastered ? "" : "warn"}`} title={a.mastery.text}>{a.mastery.name}{a.mastery.mastered ? "" : " (not mastered)"}</span>}
       {a.critRange !== undefined && a.critRange < 20 && <span className="ap-tag" title="Critical hit range">Crit {a.critRange}-20</span>}
       {a.dieFloor ? <span className="ap-tag" title="Minimum on each damage die">Die min {a.dieFloor}</span> : null}
@@ -74,7 +74,7 @@ export function AttacksTab() {
           <DetailField k="combatNotes" label="Additional combat details" area />
         </MgSection>
       </div>
-      {draft && <AttackDialog draft={draft} onClose={() => setDraft(null)} onSave={(a) => { setDraft(null); void mutate((api, id) => api.upsertAttack({ characterId: id, attack: { ...a, asCard: a.card } })); }} />}
+      {draft && <AttackDialog draft={draft} basis={{ modifiers: snapshot.abilities.modifier, proficiency: snapshot.stats.proficiencyBonus }} onClose={() => setDraft(null)} onSave={(a) => { setDraft(null); void mutate((api, id) => api.upsertAttack({ characterId: id, attack: { ...a, asCard: a.card } })); }} />}
     </div>
   );
 }

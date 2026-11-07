@@ -83,6 +83,7 @@ impl App {
             ability: None,
             show_in_combat: true,
             as_card: None,
+            calculated: false,
         };
         self.state.upsert_attack(id, &input).expect("attack")
     }

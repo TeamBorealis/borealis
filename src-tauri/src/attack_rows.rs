@@ -14,6 +14,7 @@ pub const MANUAL_PREFIX: &str = "manual-";
 #[must_use]
 pub fn attacks(c: &Character, snap: &Engine) -> Vec<Attack> {
     let d20 = crate::play_rolls::d20_tests(snap);
+    let mods: Vec<i32> = snap.abilities.iter().map(|a| a.modifier).collect();
     let auto = snap.attacks.iter().map(|a| auto_row(c, snap, a, d20));
     let manual = c
         .details
@@ -23,7 +24,7 @@ pub fn attacks(c: &Character, snap: &Engine) -> Vec<Attack> {
         // an Aurora row linked to an inventory item is the automatic row of that item (the
         // sheet prints it once, from the engine)
         .filter(|(_, a)| a.item_uid.is_none())
-        .map(|(i, a)| manual_row(i, a, d20));
+        .map(move |(i, a)| manual_row(i, a, d20, (&mods, snap.proficiency_bonus)));
     auto.chain(manual).collect()
 }
 
@@ -87,16 +88,20 @@ fn auto_row(c: &Character, snap: &Engine, a: &AttackSnapshot, d20: i32) -> Attac
                 })
                 .collect()
         }),
+        calculated: false,
     }
 }
 
-fn manual_row(i: usize, a: &ManualAttack, d20: i32) -> Attack {
+/// A hand-made row; `(mods, proficiency)` work out a calculated one (GitHub #29).
+fn manual_row(i: usize, a: &ManualAttack, d20: i32, (mods, proficiency): (&[i32], i32)) -> Attack {
+    let (attack_bonus, damage) = a.worked_out(mods, proficiency);
     Attack {
         id: format!("{MANUAL_PREFIX}{i}"),
         name: a.name.clone(),
         range: a.range.clone(),
-        attack_bonus: a.attack.clone(),
-        damage: a.damage.clone(),
+        to_hit: crate::play_rolls::manual_to_hit(&attack_bonus, d20),
+        attack_bonus,
+        damage,
         description: a.description.clone(),
         ability: ability_of(&a.ability),
         auto: false,
@@ -107,7 +112,7 @@ fn manual_row(i: usize, a: &ManualAttack, d20: i32) -> Attack {
         die_floor: None,
         offhand_damage: None,
         ammunition: None,
-        to_hit: crate::play_rolls::manual_to_hit(&a.attack, d20),
         ability_lines: None,
+        calculated: a.calculated,
     }
 }

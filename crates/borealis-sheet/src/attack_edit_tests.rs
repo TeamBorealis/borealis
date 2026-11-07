@@ -1,5 +1,6 @@
 //! The user's edits to an automatic attack row (GitHub #27) reach the sheet: typed texts replace
-//! the worked-out ones, and a row left out of the combat section prints neither line nor card.
+//! the worked-out ones, and a row left out of the combat section prints neither line nor card. A
+//! hand-made row worked out from an ability (GitHub #29) prints the worked-out values.
 
 use crate::model_fixtures::wizard_2014;
 use crate::model_types::SpellFactsMap;
@@ -94,4 +95,39 @@ fn a_row_left_out_of_the_combat_section_prints_no_line_and_no_card() {
     assert!(sheet_row(&c, &snap).is_none());
     let cards = crate::card_model::attack_cards(&c, &snap, &crate::SheetContent::default());
     assert!(cards.iter().all(|k| k.title != "Longsword"));
+}
+
+#[test]
+fn a_calculated_hand_made_row_prints_its_worked_out_bonus_and_damage() {
+    // GitHub #29: the Strength modifier plus proficiency, and the dice plus the modifier
+    let (mut c, snap) = wizard_2014();
+    c.details.attacks.push(borealis_character::ManualAttack {
+        name: "Bite".into(),
+        attack: "+0".into(),
+        damage: "1d6 piercing".into(),
+        displayed: true,
+        ability: "Strength".into(),
+        calculated: true,
+        as_card: Some(true),
+        ..borealis_character::ManualAttack::default()
+    });
+    let row = crate::sheet_data(&c, &snap, &SpellFactsMap::new())
+        .combat
+        .attacks
+        .into_iter()
+        .find(|a| a.name == "Bite")
+        .expect("bite line");
+    let m = snap.abilities[0].modifier;
+    let bonus = format!("{:+}", m + snap.proficiency_bonus);
+    let damage = borealis_character::with_modifier("1d6 piercing", m);
+    assert_ne!(
+        damage, "1d6 piercing",
+        "the fixture has a Strength modifier"
+    );
+    assert_eq!(row.bonus, bonus);
+    assert_eq!(row.damage, damage);
+    let cards = crate::card_model::attack_cards(&c, &snap, &crate::SheetContent::default());
+    let card = cards.iter().find(|k| k.title == "Bite").expect("card");
+    assert!(card.facts.contains(&("Attack".into(), bonus)));
+    assert!(card.facts.contains(&("Damage".into(), damage)));
 }

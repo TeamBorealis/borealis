@@ -227,6 +227,11 @@ fn hit_dice(snap: &CharacterSnapshot) -> Vec<HitDice> {
     out
 }
 
+/// The ability modifiers in score order (what a calculated hand-made attack reads, GitHub #29).
+pub(crate) fn modifiers(snap: &CharacterSnapshot) -> Vec<i32> {
+    snap.abilities.iter().map(|a| a.modifier).collect()
+}
+
 fn attacks(
     character: &Character,
     snap: &CharacterSnapshot,
@@ -269,14 +274,17 @@ fn attacks(
             .attacks
             .iter()
             .filter(|a| a.displayed && a.item_uid.is_none())
-            .map(|a| AttackRow {
-                name: a.name.clone(),
-                kind: AttackKind::Manual,
-                bonus: a.attack.clone(),
-                damage: a.damage.clone(),
-                range: a.range.clone(),
-                mastery: None,
-                notes: String::new(),
+            .map(|a| {
+                let (bonus, damage) = a.worked_out(&modifiers(snap), snap.proficiency_bonus);
+                AttackRow {
+                    name: a.name.clone(),
+                    kind: AttackKind::Manual,
+                    bonus,
+                    damage,
+                    range: a.range.clone(),
+                    mastery: None,
+                    notes: String::new(),
+                }
             }),
     );
     rows.extend(

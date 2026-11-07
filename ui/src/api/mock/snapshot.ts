@@ -1,4 +1,5 @@
-import { ABILITY_KEYS, type Attack, type CharacterSnapshot, type OptionDef, type SelectionProgress, type SelectionSlot, type BuilderTab } from "../types";
+import { calculatedAttack, withModifier } from "../../lib/attackCalc";
+import { ABILITY_KEYS, type AbilityKey, type Attack, type CharacterSnapshot, type OptionDef, type SelectionProgress, type SelectionSlot, type BuilderTab } from "../types";
 import { getElement, getItem, titleCase } from "./content";
 import { buildCompanions } from "./companions";
 import { deriveAbilities } from "./derive-abilities";
@@ -62,13 +63,6 @@ function ammunitionFor(c: MockCharacter, a: Attack): { name: string; bonus: numb
   return ammo ? { name: ammo.displayName, bonus: getItem(ammo.itemId)?.ammoBonus ?? 0 } : null;
 }
 
-/** The modifier goes after the leading dice (`1d8 slashing` -> `1d8+3 slashing`), else at the end, as before. */
-const LEADING_DICE = /^(\d+d\d+)([+-]\d+)?/;
-function withModifier(damage: string, m: number): string {
-  const mod = m ? signed(m) : "";
-  return LEADING_DICE.test(damage) ? damage.replace(LEADING_DICE, (_all, dice: string) => `${dice}${mod}`) : damage.replace(/([+-]\d+)?$/, "") + mod;
-}
-
 /** The host's `toHit`: a numeric bonus with the D20 Test penalty, null for a save DC or free text. */
 function toHitOf(c: MockCharacter, bonus: string): number | null {
   return /^\s*[+-]?\d+\s*$/.test(bonus) ? Number(bonus.trim().replace(/^\+/, "")) + d20Tests(c) : null;
@@ -76,6 +70,11 @@ function toHitOf(c: MockCharacter, bonus: string): number | null {
 
 function resolveAttacks(c: MockCharacter, mods: Record<string, number>, prof: number): Attack[] {
   return c.attacks.map(({ ammunition: _stale, ...a }) => {
+    if (!a.auto && a.calculated && a.ability) {
+      // GitHub #29: a hand-made row worked out from its ability
+      const worked = calculatedAttack(a.damage, a.ability, mods as Record<AbilityKey, number>, prof);
+      return { ...a, ...worked, toHit: toHitOf(c, worked.attackBonus) };
+    }
     if (!a.auto || !a.ability) return { ...a, toHit: toHitOf(c, a.attackBonus) };
     const ammo = ammunitionFor(c, a);
     const extra = ammo?.bonus ?? 0;

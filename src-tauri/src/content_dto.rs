@@ -257,6 +257,9 @@ pub struct AttackInput {
     pub show_in_combat: bool,
     /// Print this attack as a card; absent keeps the default (follows the weapon line's "show card" flag, off for typed rows).
     pub as_card: Option<bool>,
+    /// A hand-made attack worked out from `ability` (GitHub #29): the modifier plus the
+    /// proficiency bonus, and the typed damage dice plus the modifier.
+    pub calculated: bool,
 }
 
 /// Direction for `move_attack`.

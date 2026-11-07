@@ -101,6 +101,7 @@ fn to_manual(input: &AttackInput) -> ApiResult<ManualAttack> {
             .map(|i| ABILITY_NAMES[i].to_string())
             .ok_or_else(|| ApiError::invalid("Unknown ability."))?,
     };
+    let calculated = input.calculated && !ability.is_empty();
     Ok(ManualAttack {
         item_uid: None,
         name: name.to_string(),
@@ -111,6 +112,7 @@ fn to_manual(input: &AttackInput) -> ApiResult<ManualAttack> {
         ability,
         description: input.description.clone(),
         as_card: input.as_card,
+        calculated,
     })
 }
 

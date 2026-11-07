@@ -100,6 +100,7 @@ fn input_of(a: &Attack) -> AttackInput {
         ability: a.ability.clone(),
         show_in_combat: a.show_in_combat,
         as_card: None,
+        calculated: false,
     }
 }
 

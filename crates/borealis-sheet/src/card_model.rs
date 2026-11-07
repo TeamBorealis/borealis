@@ -244,15 +244,19 @@ pub(crate) fn attack_cards(
         .attacks
         .iter()
         .filter(|a| a.displayed && a.item_uid.is_none() && a.as_card == Some(true))
-        .map(|a| Card {
-            title: a.name.clone(),
-            facts: vec![
-                ("Range".into(), a.range.clone()),
-                ("Attack".into(), a.attack.clone()),
-                ("Damage".into(), a.damage.clone()),
-            ],
-            body: plain(&a.description),
-            ..Card::default()
+        .map(|a| {
+            let mods = crate::model_common::modifiers(snap);
+            let (attack, damage) = a.worked_out(&mods, snap.proficiency_bonus);
+            Card {
+                title: a.name.clone(),
+                facts: vec![
+                    ("Range".into(), a.range.clone()),
+                    ("Attack".into(), attack),
+                    ("Damage".into(), damage),
+                ],
+                body: plain(&a.description),
+                ..Card::default()
+            }
         });
     derived.chain(manual).collect()
 }
