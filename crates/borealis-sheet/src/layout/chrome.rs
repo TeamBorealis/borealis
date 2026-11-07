@@ -403,7 +403,10 @@ pub(crate) fn footers(pages: &mut [PdfPage], g: &Grid, d: &SheetData, ink: bool)
                 MARGIN_X + 20.0,
                 base,
                 &t,
-                &format!("Borealis character sheet \u{b7} {edition} rules{a4}"),
+                &format!(
+                    "Borealis character sheet \u{b7} {edition} rules{a4}{}",
+                    d.footer_note()
+                ),
             );
             c.put(
                 g.w - MARGIN_X - 20.0,

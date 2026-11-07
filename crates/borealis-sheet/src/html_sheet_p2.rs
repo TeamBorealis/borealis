@@ -21,7 +21,7 @@ fn feature_html(o: &HtmlOptions, full: bool, n: usize, f: &FeatureData) -> Strin
     } else {
         format!("<span class=\"tag\" dir=\"auto\">{}</span>", esc(&tag))
     };
-    let name = fld(&id::feat(n, "name"), "t", &f.name);
+    let name = fld(&id::feat(n, "name"), "t", &f.shown_name());
     let summarised = !full && f.text.chars().count() > LONG_TEXT;
     let (shown, tables) = if summarised {
         (f.summary.clone(), String::new())

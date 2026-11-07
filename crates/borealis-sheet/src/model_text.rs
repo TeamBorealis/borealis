@@ -294,6 +294,7 @@ pub(crate) fn features(snap: &CharacterSnapshot) -> Vec<FeatureData> {
             if let Some(s) = source.filter(|s| !prev.data.sources.contains(s)) {
                 prev.data.sources.push(s);
             }
+            prev.data.prerequisites_unmet |= f.prerequisites_unmet;
             continue;
         }
         let ty_rank = u8::from(group == FeatureGroup::Subclass);
@@ -317,6 +318,7 @@ pub(crate) fn features(snap: &CharacterSnapshot) -> Vec<FeatureData> {
                 summary: short_summary(&text),
                 tables: feature_tables(f, &text),
                 text,
+                prerequisites_unmet: f.prerequisites_unmet,
             },
         });
     }

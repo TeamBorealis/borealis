@@ -4,7 +4,7 @@
 use super::grid::{wrap_lines, Align, Canvas, Grid, Txt};
 use crate::fonts::{text_width, Style};
 use crate::model_ids as id;
-use crate::model_types::{Edition, EditionFields, SheetData};
+use crate::model_types::{Edition, EditionFields, FeatureData, SheetData};
 use crate::pdf_form::{Mark, Shape};
 
 /// Attack rows printed on page 1.
@@ -459,7 +459,8 @@ pub(crate) fn features_summary(
         "Features & traits",
         Some("full text on the next pages"),
     );
-    let names: Vec<&str> = d.features.iter().map(|f| f.name.as_str()).collect();
+    let shown: Vec<String> = d.features.iter().map(FeatureData::shown_name).collect();
+    let names: Vec<&str> = shown.iter().map(String::as_str).collect();
     let t = Txt::new(c.s(7.2), Style::Sans, c.pal.ink);
     let mut lines: Vec<String> = Vec::new();
     let mut cur = String::new();

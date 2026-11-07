@@ -6,7 +6,7 @@ use crate::model_types::{
     AbilityData, AttackKind, AttackRow, CasterData, ClassLevel, CombatData, Edition,
     ExhaustionData, ExtrasData, GearData, GearItem, HitDice, Identity, LimitedUse, PactSlots,
     PassiveData, PlayData, PooledSlots, SheetData, SkillData, SpellFactsMap, SpellRow,
-    SpellcastingData, StoryData,
+    SpellcastingData, StoryData, PREREQ_MARK,
 };
 use crate::{model_2014, model_2024};
 use borealis_character::Character;
@@ -145,6 +145,16 @@ fn size_from_species_text(snap: &CharacterSnapshot) -> Option<String> {
     words.iter().all(|w| *w == first).then(|| first.to_string())
 }
 
+/// HR3: class `id` is the pick of a `Multiclass` slot that does not meet its prerequisites (the
+/// app's level panel marks the same class).
+fn multiclass_prerequisites_unmet(snap: &CharacterSnapshot, id: &str) -> bool {
+    snap.slots.iter().any(|s| {
+        s.ty == "Multiclass"
+            && s.prerequisites_unmet
+            && s.chosen.as_ref().is_some_and(|c| c.id == id)
+    })
+}
+
 fn identity(character: &Character, snap: &CharacterSnapshot) -> Identity {
     let classes: Vec<ClassLevel> = snap
         .classes
@@ -162,6 +172,7 @@ fn identity(character: &Character, snap: &CharacterSnapshot) -> Identity {
                 level: c.level,
                 subclass: (!sub.is_empty()).then_some(sub),
                 hit_die: c.hit_die,
+                prerequisites_unmet: multiclass_prerequisites_unmet(snap, &class.id),
             })
         })
         .collect();
@@ -176,7 +187,14 @@ fn identity(character: &Character, snap: &CharacterSnapshot) -> Identity {
         level: snap.level,
         class_label: classes
             .iter()
-            .map(|c| format!("{} {}", c.class, c.level))
+            .map(|c| {
+                let mark = if c.prerequisites_unmet {
+                    PREREQ_MARK
+                } else {
+                    ""
+                };
+                format!("{} {}{mark}", c.class, c.level)
+            })
             .collect::<Vec<_>>()
             .join(" / "),
         subclass_label: classes

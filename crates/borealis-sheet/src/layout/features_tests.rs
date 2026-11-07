@@ -94,6 +94,7 @@ fn overflow(mut d: SheetData, n_feats: usize, n_items: usize) -> SheetData {
             summary: format!("Feature {i} in short."),
             tables: Vec::new(),
             text,
+            prerequisites_unmet: false,
         });
     }
     for i in 0..n_items {

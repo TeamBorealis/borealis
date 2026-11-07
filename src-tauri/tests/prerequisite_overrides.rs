@@ -181,3 +181,40 @@ fn ignore_feat_prerequisites_is_a_character_option() {
     let back = app.load_character(&id).expect("reopen");
     assert!(back.options.ignore_feat_prerequisites);
 }
+
+/// B-192: the printed sheet marks a multiclass taken without its prerequisites ("Bard 1*") and
+/// its page footers explain the mark; a multiclass that meets them prints unmarked.
+#[test]
+fn the_sheet_marks_a_multiclass_taken_without_its_prerequisites() {
+    use borealis_lib::dto_ext::SheetOptionsDto;
+    const NOTE: &str = "* Prerequisites not met";
+    let sheet = |app: &AppState, id: &str| {
+        app.render_sheet(id, &SheetOptionsDto::default())
+            .expect("sheet")
+            .html
+    };
+    let (_dir, app) = app();
+    let id = wizard(&app).id;
+    assert!(!sheet(&app, &id).contains(NOTE), "nothing marked yet");
+    app.set_character_options(&id, &rule(None, Some(true)))
+        .expect("house rule");
+    let snap = app.add_multiclass(&id).expect("new multiclass");
+    let slot = slot_id(&snap, "Multiclass (Level 2)");
+
+    app.apply_selection(&id, &slot, FIGHTER).expect("Fighter");
+    let html = sheet(&app, &id);
+    assert!(html.contains("Wizard 1 / Fighter 1<"), "STR 13 meets it");
+    assert!(!html.contains(NOTE));
+
+    app.apply_selection(&id, &slot, BARD).expect("Bard");
+    let html = sheet(&app, &id);
+    assert!(
+        html.contains("Wizard 1 / Bard 1*<"),
+        "the class label marks Bard"
+    );
+    assert!(html.contains(NOTE), "the footer explains the mark");
+    let pdf = app
+        .sheet_file(&id, &SheetOptionsDto::default())
+        .expect("pdf");
+    assert!(pdf.bytes.starts_with(b"%PDF"));
+}

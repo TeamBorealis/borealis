@@ -303,7 +303,7 @@ pub(crate) fn feature_piece(d: &SheetData, i: usize, summary: bool) -> Feat {
     };
     Feat {
         n: i + 1,
-        name: f.name.clone(),
+        name: f.shown_name(),
         tag: tag_for(d, f),
         pips,
         text,

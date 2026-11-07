@@ -283,6 +283,8 @@ fn stress(mut d: SheetData) -> SheetData {
                           feature list, so that the flow has to split and continue."
                     .into(),
                 text: "Full text. ".repeat(60),
+                // B-192: marked names ("...*") and the footer footnote under the same guards
+                prerequisites_unmet: i % 3 == 0,
                 ..f.clone()
             });
         }

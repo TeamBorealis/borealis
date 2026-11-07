@@ -53,6 +53,26 @@ pub struct SheetData {
     pub extras: ExtrasData,
 }
 
+impl SheetData {
+    /// The page footers carry [`PREREQ_NOTE`]: a feat or class is marked (B-192).
+    #[must_use]
+    pub fn has_prerequisite_marks(&self) -> bool {
+        self.features.iter().any(|f| f.prerequisites_unmet)
+            || self.identity.classes.iter().any(|c| c.prerequisites_unmet)
+    }
+
+    /// What the page footer's left text ends with: " · * Prerequisites not met" when the sheet
+    /// has a marked pick, else nothing.
+    #[must_use]
+    pub fn footer_note(&self) -> String {
+        if self.has_prerequisite_marks() {
+            format!(" \u{b7} {PREREQ_NOTE}")
+        } else {
+            String::new()
+        }
+    }
+}
+
 /// Edition-only field set.
 #[derive(Debug, Clone, PartialEq)]
 pub enum EditionFields {
@@ -73,7 +93,16 @@ pub struct ClassLevel {
     pub subclass: Option<String>,
     /// Hit die size.
     pub hit_die: Option<u32>,
+    /// HR3 (GitHub #24): a multiclass taken under "Ignore multiclass prerequisites" without
+    /// meeting them; the class label marks it with [`PREREQ_MARK`].
+    pub prerequisites_unmet: bool,
 }
+
+/// B-192: the mark after a feat or class taken without meeting its prerequisites (HR3 house
+/// rules); [`PREREQ_NOTE`] in the page footer explains it.
+pub const PREREQ_MARK: &str = "*";
+/// The footer footnote of [`PREREQ_MARK`], printed only when the sheet has a marked pick.
+pub const PREREQ_NOTE: &str = "* Prerequisites not met";
 
 /// Name line and progression.
 #[derive(Debug, Clone, PartialEq)]
@@ -264,6 +293,20 @@ pub struct FeatureData {
     pub summary: String,
     /// Tables of the description, each also spelled out in `text` as row sentences.
     pub tables: Vec<TextTable>,
+    /// HR3 (GitHub #24): a feat taken under "Ignore feat prerequisites" without meeting them.
+    pub prerequisites_unmet: bool,
+}
+
+impl FeatureData {
+    /// The name as printed: with [`PREREQ_MARK`] when its prerequisites are not met (B-192).
+    #[must_use]
+    pub fn shown_name(&self) -> String {
+        if self.prerequisites_unmet {
+            format!("{}{PREREQ_MARK}", self.name)
+        } else {
+            self.name.clone()
+        }
+    }
 }
 
 /// A table of a feature description.

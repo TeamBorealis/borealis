@@ -231,9 +231,10 @@ fn page_html(d: &SheetData, o: &HtmlOptions, spec: &PageSpec, n: usize, total: u
         .iter()
         .map(|c| art_use("corner", &format!("corner c-{c}")))
         .collect();
+    let note = d.footer_note();
     format!(
         "<section class=\"page {paper}\" data-page=\"{}\" aria-label=\"Page {n}: {}\">{}{corners}<div class=\"content\">{}{}{srd}</div>\
-         <div class=\"foot\"><span>Borealis character sheet \u{b7} {edition} rules{a4}</span><span>{n} / {total}</span></div></section>",
+         <div class=\"foot\"><span>Borealis character sheet \u{b7} {edition} rules{a4}{note}</span><span>{n} / {total}</span></div></section>",
         spec.kind,
         spec.label,
         art_use("frame", "frame"),

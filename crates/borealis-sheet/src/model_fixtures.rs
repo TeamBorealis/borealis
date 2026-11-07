@@ -111,6 +111,38 @@ pub(crate) fn wizard_2024() -> (Character, CharacterSnapshot) {
     wrap("Mira Vale", s, &e)
 }
 
+/// HR3 (B-192): a level 4 2024 human fighter with Str 8 / Dex 8 who took `feat` in the
+/// Fighter 4 ASI slot, with "Ignore feat prerequisites" on (Grappler needs Str or Dex 13).
+pub(crate) fn feat_fighter_2024(feat: &str) -> (Character, CharacterSnapshot) {
+    let st = store("srd-5.2.1");
+    let e = Engine::new(&st);
+    let mut s = commands::new_character(&e, Ruleset::Dnd2024);
+    s.abilities.base = [8, 8, 14, 10, 12, 10];
+    s = level1(
+        &e,
+        s,
+        "ID_2024_SPECIES_HUMAN",
+        "ID_2024_CLASS_FIGHTER",
+        "ID_2024_BACKGROUND_SOLDIER",
+    );
+    for _ in 0..3 {
+        s = commands::level_up_main(&e, &s, None).unwrap().state;
+    }
+    s.house_rules.ignore_feat_prerequisites = true;
+    let snap = e.derive(&s);
+    let key = slot_key(
+        &snap,
+        "ID_2024_CLASS_FEATURE_FIGHTER_ABILITY_SCORE_IMPROVEMENT",
+        "Ability Score Improvement (Fighter 4)",
+        1,
+    )
+    .expect("ASI slot");
+    s = commands::select(&e, &s, &key, Choice::Element(feat.into()))
+        .expect("feat")
+        .state;
+    wrap("Tor Hallow", s, &e)
+}
+
 /// Level-3 2024 wizard of `species` with `lineage` chosen in its lineage trait (SRD 5.2.1).
 pub(crate) fn lineage_wizard_2024(species: &str, lineage: &str) -> (Character, CharacterSnapshot) {
     let st = store("srd-5.2.1");
@@ -258,6 +290,7 @@ pub(crate) fn table_feature_with(rows: usize, cols: usize, cell: &str, head: &st
         summary: "Choose one option.".into(),
         tables: crate::table_text::locate_tables(&html, &text),
         text,
+        prerequisites_unmet: false,
     }
 }
 

@@ -445,7 +445,7 @@ fn features_summary(d: &SheetData) -> String {
         let _ = write!(
             out,
             "<div class=\"feat\"><span class=\"t\" dir=\"auto\">{}</span> <span dir=\"auto\">{}</span></div>",
-            esc(&f.name),
+            esc(&f.shown_name()),
             esc(&f.summary)
         );
     }

@@ -698,6 +698,51 @@ fn the_2024_header_shows_the_lineage_chosen_in_the_species_trait() {
     assert_eq!(f.lineage, None, "a human has no lineage");
 }
 
+/// B-192: a feat taken under "Ignore feat prerequisites" without meeting them is marked with an
+/// asterisk on the sheet, and the page footers explain it; a met feat leaves the sheet unmarked.
+#[test]
+fn a_feat_taken_without_its_prerequisites_is_marked_with_a_footnote() {
+    use crate::model_fixtures::feat_fighter_2024;
+    use crate::model_types::PREREQ_NOTE;
+    let (c, snap) = feat_fighter_2024("ID_2024_FEAT_GRAPPLER");
+    let d = data(&(c.clone(), snap.clone()));
+    let grappler = d
+        .features
+        .iter()
+        .find(|f| f.id == "ID_2024_FEAT_GRAPPLER")
+        .expect("Grappler is listed");
+    assert!(grappler.prerequisites_unmet);
+    assert_eq!(grappler.name, "Grappler", "the name itself stays clean");
+    assert_eq!(grappler.shown_name(), "Grappler*");
+    assert_eq!(
+        d.features.iter().filter(|f| f.prerequisites_unmet).count(),
+        1,
+        "only the overridden pick"
+    );
+    assert!(d.has_prerequisite_marks());
+    assert!(!d.identity.class_label.contains('*'), "the class is met");
+    let html = crate::render_html(&c, &snap, &crate::SheetOptions::default()).expect("html");
+    assert!(html.contains(">Grappler*<"), "the feature name is marked");
+    let pages = html.matches("<section class=\"page ").count();
+    assert_eq!(
+        html.matches(PREREQ_NOTE).count(),
+        pages,
+        "every page footer explains the mark"
+    );
+    crate::render_pdf(&c, &snap, &crate::SheetOptions::default()).expect("pdf");
+
+    // a feat the character qualifies for: no mark, no footnote
+    let (c, snap) = feat_fighter_2024("ID_2024_FEAT_ABILITY_SCORE_IMPROVEMENT");
+    let d = data(&(c.clone(), snap.clone()));
+    assert!(!d.has_prerequisite_marks());
+    assert!(d.features.iter().all(|f| !f.shown_name().ends_with('*')));
+    let html = crate::render_html(&c, &snap, &crate::SheetOptions::default()).expect("html");
+    assert!(!html.contains(PREREQ_NOTE));
+    for pair in [wizard_2014(), wizard_2024(), fighter_wizard_2014()] {
+        assert!(!data(&pair).has_prerequisite_marks());
+    }
+}
+
 /// B-191: the chosen Alignment / Deity element, else Manage's custom text in the app's UI extras.
 #[test]
 fn alignment_and_deity_print_the_chosen_element_else_the_custom_text() {
