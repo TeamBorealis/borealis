@@ -15,6 +15,8 @@ describe("content tab on phones: 5etools .zip, no dead buttons", () => {
     const pickPath = vi.spyOn(api, "pickPath");
     renderApp("/content", { api });
     await screen.findByRole("button", { name: ZIP_BUTTON });
+    // The zip button shows on desktop too: wait for the platform to load (the mobile-only field label) before checking.
+    await screen.findByLabelText("Data folder .zip");
     expect(screen.queryByRole("button", { name: "Scan folder…" })).toBeNull();
     // No folder buttons that would fail on a phone.
     expect(screen.queryByRole("button", { name: "Open user" })).toBeNull();
