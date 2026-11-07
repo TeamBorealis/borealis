@@ -1,6 +1,8 @@
 //! Backend-owned path picking: commands that touch the filesystem accept
 //! only tokens minted by a backend dialog, for the right purpose, and the AI program override
 //! validates before it is stored.
+// The AI CLI integration is compiled out of phones and the Mac App Store build (build.rs `cfg(ai_cli)`).
+#![cfg(ai_cli)]
 
 use borealis_ai::DetectConfig;
 use borealis_lib::ai_service::AiService;

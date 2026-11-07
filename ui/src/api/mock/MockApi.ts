@@ -61,6 +61,8 @@ export interface MockApiOptions {
   mobile?: boolean;
   /** Simulates a store build (iOS, Google Play): `settings.storeBuild` is true. */
   storeBuild?: boolean;
+  /** Simulates the Mac App Store build (MAS1): a desktop store build without the AI CLI integration (`settings.aiAvailable` false). */
+  macAppStore?: boolean;
   /** Device transfer: a simulated other device connects to an open Send/Receive window after this many ms (default: never). */
   linkPeerAfterMs?: number | null;
   /** Device transfer: paired devices to start with (Settings > Devices). */
@@ -110,6 +112,8 @@ export class MockApi implements Api {
   private codexOnly: boolean;
   private mobile: boolean;
   private storeBuild: boolean;
+  /** The build has the AI CLI integration (not on phones or in the Mac App Store build). */
+  private aiCli: boolean;
   /** Imports the user agreed to run on Codex (asked once per import). */
   private consented = new Set<string>();
 
@@ -117,8 +121,9 @@ export class MockApi implements Api {
     this.latency = opts.latencyMs ?? 0;
     this.codexOnly = opts.codexOnly ?? false;
     this.mobile = opts.mobile ?? false;
-    this.storeBuild = opts.storeBuild ?? false;
-    this.settings = { ...this.settings, mobile: this.mobile, storeBuild: this.storeBuild, ai: { ...this.settings.ai, enabled: !this.mobile && (opts.aiEnabled ?? false) } };
+    this.storeBuild = (opts.storeBuild ?? false) || (opts.macAppStore ?? false);
+    this.aiCli = !this.mobile && !(opts.macAppStore ?? false);
+    this.settings = { ...this.settings, mobile: this.mobile, storeBuild: this.storeBuild, aiAvailable: this.aiCli, ai: { ...this.settings.ai, enabled: this.aiCli && (opts.aiEnabled ?? false) } };
     this.rng = opts.rng ?? Math.random;
     setClasslessEdition(opts.classlessEdition ?? null);
     this.content = new ContentService((p) => this.emit("content:progress", p), () => this.emit("content:reloaded", { reason: "content changed" }), (p) => this.emit("import5etools:progress", p));
@@ -673,8 +678,8 @@ export class MockApi implements Api {
         throw apiError("invalid_argument", "Choose folders with the folder button; they cannot be set directly.");
       }
     }
-    this.settings = { ...this.settings, ...patch, sheet: { ...this.settings.sheet, ...(patch.sheet ?? {}), cardsNewPage: { ...this.settings.sheet.cardsNewPage, ...(patch.sheet?.cardsNewPage ?? {}) } }, ai: { ...this.settings.ai, ...(patch.ai ?? {}) }, mobile: this.mobile, storeBuild: this.storeBuild };
-    if (this.mobile) this.settings = { ...this.settings, ai: { ...this.settings.ai, enabled: false } };
+    this.settings = { ...this.settings, ...patch, sheet: { ...this.settings.sheet, ...(patch.sheet ?? {}), cardsNewPage: { ...this.settings.sheet.cardsNewPage, ...(patch.sheet?.cardsNewPage ?? {}) } }, ai: { ...this.settings.ai, ...(patch.ai ?? {}) }, mobile: this.mobile, storeBuild: this.storeBuild, aiAvailable: this.aiCli };
+    if (!this.aiCli) this.settings = { ...this.settings, ai: { ...this.settings.ai, enabled: false } };
     return this.settings;
   }
 

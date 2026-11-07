@@ -93,6 +93,9 @@ export interface LinkDevice {
   expiresAt: number;
   /** Short certificate fingerprint (`9b12 89ce 4fd2 8eff`), the one that device shows for itself. */
   fingerprint: string;
+  /** Its pair key cannot be read here, so it must be paired again (the Mac App Store build after moving from the website
+   * version, whose keychain items stay behind). Sent only when true. */
+  needsPairing?: boolean;
 }
 
 /* ---------- Bundles as files (Export to bundle / Open bundle / Share as a file, A2) ---------- */

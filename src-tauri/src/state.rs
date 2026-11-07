@@ -299,7 +299,7 @@ pub struct AppState {
     content_op: Mutex<()>,
     rng: Mutex<u64>,
     /// "Import anything" drafts (memory cache over the files in the data folder).
-    #[cfg(desktop)]
+    #[cfg(ai_cli)]
     pub(crate) drafts: crate::import_drafts::DraftStore,
     /// Paths the user chose in backend-opened native dialogs, behind opaque tokens.
     pub picked: crate::picked_paths::PickedPaths,
@@ -383,7 +383,7 @@ impl AppState {
             sessions: Mutex::new(HashMap::new()),
             content_op: Mutex::new(()),
             rng: Mutex::new(seed | 1),
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             drafts: crate::import_drafts::DraftStore::default(),
             picked: crate::picked_paths::PickedPaths::default(),
             content_update: Mutex::new(crate::settings_dto::ContentUpdateStatus::default()),

@@ -244,6 +244,19 @@ pub fn phone_status(
     fixture().unwrap_or_else(unsupported)
 }
 
+/// Desktop: a store build (the Mac App Store flavour, MAS1) answers `Disabled` without running
+/// `status`, so it never asks GitHub and never shows the notice ([`crate::distribution`]); any other
+/// build answers what `status` returns (the stored status, or a fresh check).
+pub fn unless_store_build(
+    store_build: bool,
+    status: impl FnOnce() -> AppUpdateStatus,
+) -> AppUpdateStatus {
+    if store_build {
+        return AppUpdateStatus::bare(AppUpdateState::Disabled);
+    }
+    status()
+}
+
 /// Pure helper for the commands: the stored status, or `Unsupported` on mobile.
 ///
 /// # Errors
@@ -310,6 +323,23 @@ mod tests {
         let status = phone_status(true, || panic!("a store build must not read the fixture"));
         assert_eq!(status.state, AppUpdateState::Disabled);
         assert!(!status.newer && status.latest.is_none() && status.url.is_none());
+    }
+
+    #[test]
+    fn a_store_build_desktop_never_checks_or_reads_the_stored_status() {
+        let status = unless_store_build(true, || panic!("a store build must not check"));
+        assert_eq!(status.state, AppUpdateState::Disabled);
+        assert!(!status.newer && status.latest.is_none() && status.url.is_none());
+    }
+
+    #[test]
+    fn a_direct_desktop_build_answers_its_check() {
+        let done = AppUpdateStatus {
+            newer: true,
+            latest: Some("9.9.9".into()),
+            ..AppUpdateStatus::bare(AppUpdateState::Done)
+        };
+        assert_eq!(unless_store_build(false, || done.clone()), done);
     }
 
     #[test]

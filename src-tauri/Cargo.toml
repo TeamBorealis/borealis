@@ -28,6 +28,12 @@ device-link = ["borealis-link/tcp", "borealis-link/platform-store", "dep:boreali
 # Semantic search backend (B-12, spec sec. 7): llama.cpp (CPU) compiled in on every target, so the shipped app can
 # embed once the user downloaded the model. Builds need cmake and a C++17 compiler; no test needs a model file.
 llama = ["borealis-embed/llama"]
+# Mac App Store flavour (MAS1, B-190; specs/mac-app-store.md). Built with `--features mas` and the
+# `tauri.mas.conf.json` overlay; the DMG and every other target build without it. It makes the build a store
+# build on macOS (no "new version available" check, `distribution.rs`) and compiles the AI CLI integration out,
+# as on phones: build.rs sets `cfg(ai_cli)` only for desktop builds without this feature. Security-scoped
+# bookmarks keep the remembered folders readable under the App Sandbox (`folder_access.rs`).
+mas = ["dep:objc2", "dep:objc2-foundation"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -80,6 +86,11 @@ borealis-ai = { workspace = true, features = ["host"] }
 # mDNS nameplate discovery for typed codes: desktop only (iOS needs the multicast entitlement,
 # Android a MulticastLock; phones use the QR's host:port or a typed address instead).
 borealis-link = { workspace = true, features = ["mdns"] }
+
+# Mac App Store build (feature `mas`): NSURL security-scoped bookmarks for the remembered folders (folder_access_mac.rs).
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = { version = "0.6", optional = true }
+objc2-foundation = { version = "0.3", optional = true, default-features = false, features = ["std", "NSArray", "NSData", "NSError", "NSString", "NSURL"] }
 
 # Phones only: opens the download page in the system browser (desktop spawns the OS opener itself).
 # The .index downloader verifies TLS against the bundled Mozilla roots (webpki-roots), not the OS

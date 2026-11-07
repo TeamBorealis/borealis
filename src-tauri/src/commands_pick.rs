@@ -4,21 +4,21 @@
 //! token (plus a display name). Confirmations that guard risky actions are native dialogs shown by
 //! the backend, so script in the webview cannot click through them.
 
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 use crate::ai_service::AiService;
 use crate::content_preview::OpenedFile;
 use crate::error::{ApiError, ApiResult};
 use crate::picked_paths::{PickPurpose, PickedPathDto};
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 use crate::settings::AppSettings;
 use crate::state::AppState;
 use std::path::PathBuf;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 use std::sync::Arc;
 use tauri::{AppHandle, State};
 
 type S<'a> = State<'a, AppState>;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 type A<'a> = State<'a, Arc<AiService>>;
 
 /// Open the native picker for `purpose` (import files: multi-select). Empty when the user cancels.
@@ -54,7 +54,7 @@ pub fn take_picked_files(
 
 /// Use the program behind an `ai-override` pick as the AI CLI, after it validates and the user
 /// confirms the exact path in a native dialog. A declined confirmation changes nothing.
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 #[tauri::command(async)]
 pub fn set_ai_override(
     app: AppHandle,
@@ -134,8 +134,8 @@ fn native_pick(_: &AppHandle, _: PickPurpose, _: Option<PathBuf>) -> ApiResult<V
     ))
 }
 
-/// A native OK/Cancel dialog; `true` only when the user pressed the OK button.
-#[cfg(desktop)]
+/// A native OK/Cancel dialog; `true` only when the user pressed the OK button (the AI program override and AI setup).
+#[cfg(ai_cli)]
 pub(crate) fn native_confirm(app: &AppHandle, title: &str, message: &str, ok: &str) -> bool {
     use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
     app.dialog()

@@ -36,10 +36,11 @@ export async function classifyImport(file: File): Promise<ImportKind> {
   }
 }
 
-/** The neutral message for a file the rules-based importers cannot read. */
-export function unsupportedImportMessage(names: readonly string[], mobile: boolean): string {
+/** The neutral message for a file the rules-based importers cannot read. Only a build with the AI CLI integration
+ * (`aiAvailable`) mentions the AI assistant. */
+export function unsupportedImportMessage(names: readonly string[], aiAvailable: boolean): string {
   const list = names.join(", ");
-  return mobile
+  return !aiAvailable
     ? `${list} cannot be imported here. Use an .xml, .index, .zip, .dnd5e or .json file.`
     : `${list} cannot be imported directly. PDFs, photos and plain text need the optional AI assistant (turn it on in Borealis Settings). You can also use an .xml, .index, .zip, .dnd5e or .json file.`;
 }

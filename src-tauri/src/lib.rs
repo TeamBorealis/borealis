@@ -4,22 +4,21 @@
 //! `impl AppState`), `snapshot_map`/`extras`/`elements` (engine -> contract DTO mapping), `dto`/`dto_ext`
 //! (contract types), `magic`/`equipment`/`sheet_api`/`compendium` (play services), `error` (typed `{code, message}` errors) and `commands` (Tauri wrappers).
 
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod ai_dto;
-#[cfg(desktop)]
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod ai_host;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod ai_jobs;
 pub mod ai_override;
 // S5 acceptance digest: debug builds only (never in a release binary).
 #[cfg(debug_assertions)]
 pub mod acceptance_digest;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod ai_profile;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod ai_service;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod ai_setup;
 pub mod app_api;
 pub mod app_logs;
@@ -31,18 +30,18 @@ pub mod bundled_content;
 pub mod commands;
 #[cfg(debug_assertions)]
 pub mod commands_acceptance;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod commands_ai;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod commands_ai_setup;
 pub mod commands_app_update;
 pub mod commands_content;
 pub mod commands_gear;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod commands_import;
 pub mod commands_pick;
 pub mod commands_play;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod commands_report;
 pub mod commands_semantic;
 pub mod commands_settings;
@@ -82,7 +81,7 @@ pub mod derive_cache;
 #[cfg(feature = "device-link")]
 pub mod device_sync;
 pub mod distribution;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod drive;
 pub mod dto;
 pub mod dto_ext;
@@ -90,24 +89,29 @@ pub mod elements;
 pub mod equipment;
 pub mod error;
 pub mod extras;
+pub mod folder_access;
+// Mac App Store build only: NSURL security-scoped bookmarks (two Foundation calls objc2 marks unsafe).
+#[cfg(all(target_os = "macos", feature = "mas"))]
+#[allow(unsafe_code)]
+mod folder_access_mac;
 pub mod gear_facts;
 pub mod gear_info;
 pub mod homebrew_api;
 pub mod ids;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod import_bug_report;
 pub mod import_check;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod import_drafts;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod import_dto;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod import_notes;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod import_review;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod import_service;
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 pub mod import_sources;
 pub mod item_categories;
 pub mod library;
@@ -231,7 +235,7 @@ fn build_state(
 }
 
 /// Resolve the bundled AI profile assets (resources, or the crate's copy in dev builds).
-#[cfg(not(any(target_os = "android", target_os = "ios")))]
+#[cfg(ai_cli)]
 fn profile_assets(app: &AppHandle) -> PathBuf {
     let bundled = app
         .path()
@@ -248,7 +252,7 @@ fn profile_assets(app: &AppHandle) -> PathBuf {
 }
 
 /// Desktop startup: install/verify/repair the Borealis AI profile and enable it for all sessions.
-#[cfg(not(any(target_os = "android", target_os = "ios")))]
+#[cfg(ai_cli)]
 fn setup_ai_profile(app: &AppHandle, state: &AppState, ai: &ai_service::AiService) {
     let (Ok(dir), Ok(exe)) = (
         app.path().app_data_dir().map(|d| d.join("ai-profile")),
@@ -291,7 +295,7 @@ pub fn run() {
     }
     let builder = tauri::Builder::default();
     // Opt-in import bug reports: previews wait here until the user presses Send.
-    #[cfg(desktop)]
+    #[cfg(ai_cli)]
     let builder = builder.manage(std::sync::Arc::new(
         import_bug_report::ReportOutbox::default(),
     ));
@@ -325,8 +329,9 @@ pub fn run() {
             picked_files::on_window_event(window, event);
         })
         .setup(|app| Ok(startup_boot::install(app)?))
-        // AI commands carry `#[cfg(desktop)]` on their own line: mobile has no AI integration. The
-        // contract test reads this list as text and skips attribute lines, so it still sees every command.
+        // AI commands carry `#[cfg(ai_cli)]` on their own line: phones and the Mac App Store build have no AI
+        // integration (build.rs). The contract test reads this list as text and skips attribute lines, so it
+        // still sees every command.
         .invoke_handler(tauri::generate_handler![
             commands::app_version,
             commands::get_settings,
@@ -460,64 +465,61 @@ pub fn run() {
             commands_sync::bundle_discard,
             #[cfg(feature = "device-link")]
             commands_sync::take_opened_bundles,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_ai::ai_status,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_ai::ai_start_task,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_ai::ai_cancel_task,
-            #[cfg(desktop)]
-            #[cfg(desktop)]
-            #[cfg(desktop)]
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_ai::ai_host_enable,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_ai::ai_host_disable,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_ai::ai_host_status,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_ai::ai_host_begin_pairing,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_ai::ai_host_revoke,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_ai_setup::ai_setup_status,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_ai_setup::ai_setup_confirm_install,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_ai_setup::ai_setup_install,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_ai_setup::ai_setup_login,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_ai_setup::ai_setup_complete,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_import::import_start,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_import::import_get_draft,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_import::import_choose_parent,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_import::import_revise,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_import::import_update_element,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_import::import_relocate_element,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_import::import_regenerate_element,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_import::import_accept_element,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_import::import_set_text_only,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_import::import_finalize,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_import::import_discard,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_import::ai_validate_homebrew,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_import::ai_add_homebrew_to_pack,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_report::import_report_preview,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_report::import_report_send,
             commands_play::preview_convert_to_2024,
             commands_play::apply_convert_to_2024,
@@ -541,7 +543,7 @@ pub fn run() {
             commands_tracker::restore_tracker,
             commands_pick::pick_path,
             commands_pick::take_picked_files,
-            #[cfg(desktop)]
+            #[cfg(ai_cli)]
             commands_pick::set_ai_override,
             commands_settings::get_data_dirs,
             commands_settings::set_documents_dir,

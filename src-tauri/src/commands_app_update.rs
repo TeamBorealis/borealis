@@ -12,16 +12,18 @@ pub const EVENT_APP_UPDATE: &str = "borealis://app-update";
 
 /// The last outcome of the startup check (`idle` before it ran, `unsupported` on mobile, where the
 /// UI makes the request itself). A phone debug build with a release-feed fixture answers from it.
-/// A store build (iOS, Google Play) answers `disabled` and never checks ([`app_update::phone_status`]).
+/// A store build (iOS, Google Play, the Mac App Store) answers `disabled` and never checks
+/// ([`app_update::phone_status`], [`app_update::unless_store_build`]).
 #[tauri::command(async)]
 pub fn app_update_status(state: State<'_, AppState>) -> ApiResult<AppUpdateStatus> {
+    let store_build = crate::distribution::is_store_build();
     if cfg!(any(target_os = "android", target_os = "ios")) {
-        return Ok(app_update::phone_status(
-            crate::distribution::is_store_build(),
-            || fixture_check(&state.paths.data),
-        ));
+        return Ok(app_update::phone_status(store_build, || {
+            fixture_check(&state.paths.data)
+        }));
     }
-    app_update::current_status()
+    let stored = app_update::current_status()?;
+    Ok(app_update::unless_store_build(store_build, || stored))
 }
 
 /// The debug release-feed fixture's answer, stored like a real check (`None` without a fixture).
@@ -41,15 +43,19 @@ fn desktop_check(data: &std::path::Path) -> AppUpdateStatus {
     })
 }
 
-/// "Check now": ask GitHub right away (an explicit click, so it ignores the startup setting).
+/// "Check now": ask GitHub right away (an explicit click, so it ignores the startup setting). A
+/// store build (the Mac App Store) answers `disabled` and asks nothing.
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[tauri::command]
 pub async fn check_app_update(app: tauri::AppHandle) -> ApiResult<AppUpdateStatus> {
     use tauri::{Emitter, Manager};
     let data = app.state::<AppState>().paths.data.clone();
-    let status = tauri::async_runtime::spawn_blocking(move || desktop_check(&data))
-        .await
-        .map_err(|e| crate::error::ApiError::internal(e.to_string()))?;
+    let store_build = crate::distribution::is_store_build();
+    let status = tauri::async_runtime::spawn_blocking(move || {
+        app_update::unless_store_build(store_build, || desktop_check(&data))
+    })
+    .await
+    .map_err(|e| crate::error::ApiError::internal(e.to_string()))?;
     let _ = app.emit(EVENT_APP_UPDATE, &status);
     Ok(status)
 }
@@ -140,10 +146,18 @@ fn open_external(app: &tauri::AppHandle, url: &'static str) -> ApiResult<()> {
 }
 
 /// Desktop startup: after [`app_update::STARTUP_CHECK_DELAY`], on a background thread, ask GitHub
-/// for the latest version unless "Check for new versions of Borealis" is off.
+/// for the latest version unless "Check for new versions of Borealis" is off. A store build (the Mac
+/// App Store) starts no task and never asks.
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 pub(crate) fn spawn_startup_update_check(app: &tauri::AppHandle) {
     use tauri::{Emitter, Manager};
+    if crate::distribution::is_store_build() {
+        app_update::cell().set(app_update::unless_store_build(
+            true,
+            app_update::unsupported,
+        ));
+        return;
+    }
     let handle = app.clone();
     crate::content_auto::spawn_startup_task(move || {
         std::thread::sleep(app_update::STARTUP_CHECK_DELAY);

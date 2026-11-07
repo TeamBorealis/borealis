@@ -8,12 +8,28 @@
 //! shown on this device (a new pairing the user starts).
 
 use borealis_link::registry::DeviceRegistry;
-use borealis_link::store::forget_peer;
+use borealis_link::store::{forget_peer, peer_token, SecureStore};
 use borealis_link::DeviceId;
 
 use super::{now_ms, DeviceSync};
 use crate::error::{ApiError, ApiResult};
 use crate::sync_dto::LinkDevice;
+
+/// Mark devices whose pair key cannot be read (Mac App Store build only, MAS1): its keychain items are not the
+/// website version's, and the data folder (with the device list) moves into the sandbox container without them.
+/// Other builds never read the keychain to list devices.
+pub(crate) const CHECK_PAIR_KEYS: bool = cfg!(feature = "mas");
+
+/// The pair key of `device` can be read from `store` (`None`: no usable store).
+fn pair_key_readable(store: Option<&dyn SecureStore>, device: &DeviceId) -> bool {
+    store.is_some_and(|s| match peer_token(s, device) {
+        Ok(found) => found.is_some(),
+        Err(e) => {
+            tracing::warn!("device sync: the key of {device} cannot be read: {e}");
+            false
+        }
+    })
+}
 
 impl DeviceSync {
     fn now_secs() -> u64 {
@@ -52,16 +68,31 @@ impl DeviceSync {
         Ok(live)
     }
 
-    /// Paired devices, most recently synced first (expired pairings are removed first).
+    /// Paired devices, most recently synced first (expired pairings are removed first). In the Mac App Store
+    /// build a device whose pair key this app cannot read is marked `needs_pairing` ([`CHECK_PAIR_KEYS`]).
     ///
     /// # Errors
     /// `io_error` when the registry cannot be read or updated.
     pub fn devices(&self) -> ApiResult<Vec<LinkDevice>> {
-        let mut list: Vec<LinkDevice> = self
-            .live_registry()?
+        let registry = self.live_registry()?;
+        let store = if CHECK_PAIR_KEYS && !registry.devices.is_empty() {
+            self.store().ok()
+        } else {
+            None
+        };
+        let mut list: Vec<LinkDevice> = registry
             .devices
             .iter()
-            .map(LinkDevice::of)
+            .map(|d| {
+                let device = LinkDevice::of(d);
+                if !CHECK_PAIR_KEYS {
+                    return device;
+                }
+                LinkDevice {
+                    needs_pairing: !pair_key_readable(store.as_deref(), &d.device_id),
+                    ..device
+                }
+            })
             .collect();
         list.sort_by(|a, b| {
             b.last_synced_at
@@ -89,5 +120,30 @@ impl DeviceSync {
         // Delete the key even when the entry was already gone (an earlier failed delete).
         self.forget_keys(&[id]);
         self.devices()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use borealis_link::store::{save_peer_token, MemoryStore, Secret};
+
+    #[test]
+    fn a_device_is_paired_only_while_its_key_can_be_read() {
+        let store = MemoryStore::default();
+        let kept = DeviceId::parse("a1b2c3d4e5f60718").unwrap();
+        let lost = DeviceId::parse("0f1e2d3c4b5a6978").unwrap();
+        save_peer_token(&store, &kept, &Secret::new(vec![1, 2, 3])).unwrap();
+        assert!(pair_key_readable(Some(&store), &kept));
+        assert!(!pair_key_readable(Some(&store), &lost));
+        assert!(
+            !pair_key_readable(None, &kept),
+            "no keychain: nothing can be read"
+        );
+    }
+
+    #[test]
+    fn only_the_mac_app_store_build_checks_the_keys() {
+        assert_eq!(CHECK_PAIR_KEYS, cfg!(feature = "mas"));
     }
 }

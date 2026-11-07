@@ -25,7 +25,7 @@ export function GlobalImport() {
   const notice = useImportNotice();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { aiEnabled, mobile } = usePlatform();
+  const { aiEnabled, aiAvailable } = usePlatform();
   const pickRef = useRef<HTMLInputElement>(null);
   const onImport = pathname === "/import";
 
@@ -49,10 +49,10 @@ export function GlobalImport() {
       await startImportPreview(api, { files: await filesToInputs(packs) }, (m) => toast.push(m, "error"));
     }
     if (others.length && aiEnabled) { stashImportFiles(others); navigate("/import"); return; }
-    if (others.length) toast.push(unsupportedImportMessage(others.map((f) => f.name), mobile), "error");
+    if (others.length) toast.push(unsupportedImportMessage(others.map((f) => f.name), aiAvailable), "error");
     // A fresh state tells an already-open Characters page to list the new character (B-24: a cold-start open lands there).
     if (target) navigate(target, { state: { imported: Date.now() } });
-  }, [api, toast, navigate, aiEnabled, mobile, notice]);
+  }, [api, toast, navigate, aiEnabled, aiAvailable, notice]);
 
   // Files the OS opened with Borealis ("Open with" / share), drained on mount and when nudged: Tauri queues them
   // (macOS, iOS: `content:open-file`); Android's activity parks them for the backend and fires `borealis-open-file`.
@@ -73,7 +73,7 @@ export function GlobalImport() {
   // Files dropped from the OS on the desktop app: the backend handles the native drop and sends tokens and names only.
   useEffect(() => api.subscribe("files:dropped", (drop) => {
     void (async () => {
-      if (drop.rejected.length) toast.push(unsupportedImportMessage(drop.rejected, mobile), "error");
+      if (drop.rejected.length) toast.push(unsupportedImportMessage(drop.rejected, aiAvailable), "error");
       drop.bundles.forEach((b) => openBundleFile({ token: b.token, name: b.name }));
       const [folder] = drop.folders;
       if (folder && (await notice.ensure())) {
@@ -85,7 +85,7 @@ export function GlobalImport() {
         await route(opened.map((o) => base64ToFile(o.fileName, o.contentBase64)));
       } catch (e) { toast.push(errorMessage(e), "error"); }
     })();
-  }), [api, route, toast, mobile, notice]);
+  }), [api, route, toast, aiAvailable, notice]);
 
   useEffect(() => {
     const over = (e: DragEvent) => { if (hasFiles(e)) e.preventDefault(); };

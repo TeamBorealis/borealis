@@ -5,11 +5,13 @@ use crate::commands_content::blocking;
 #[cfg(desktop)]
 use crate::commands_content::TauriSink;
 use crate::error::ApiResult;
+use crate::folder_access::{self, RememberedFolder};
 use crate::settings::AppSettings;
 use crate::settings_dto::{
     ClearCachesResult, ContentUpdateStatus, DataDirs, SecondaryContentResult,
 };
 use crate::state::AppState;
+use std::path::Path;
 use tauri::{AppHandle, State};
 
 type S<'a> = State<'a, AppState>;
@@ -19,10 +21,34 @@ pub fn get_data_dirs(state: S<'_>) -> ApiResult<DataDirs> {
     state.data_dirs()
 }
 
+/// Keep the security-scoped bookmarks (Mac App Store build, [`crate::folder_access`]) in step with the folder
+/// settings after a change: `picked` was just chosen in a panel, so it is bookmarked; a folder whose setting is
+/// now empty loses its bookmark. A no-op in every other build.
+fn sync_folder_bookmarks(state: &AppState, picked: Option<RememberedFolder>) {
+    let Ok(settings) = state.settings() else {
+        return;
+    };
+    for which in RememberedFolder::ALL {
+        let value = match which {
+            RememberedFolder::Documents => settings.documents_dir.as_deref(),
+            RememberedFolder::SecondaryContent => settings.secondary_content_dir.as_deref(),
+        };
+        match value {
+            None => folder_access::after_pick(&state.paths.data, which, None),
+            Some(dir) if picked == Some(which) => {
+                folder_access::after_pick(&state.paths.data, which, Some(Path::new(dir)));
+            }
+            Some(_) => {}
+        }
+    }
+}
+
 /// `token` from `pick_path("documents-dir")`; `None` = back to the default folder.
 #[tauri::command(async)]
 pub fn set_documents_dir(state: S<'_>, token: Option<String>) -> ApiResult<DataDirs> {
-    state.set_documents_dir(token.as_deref())
+    let dirs = state.set_documents_dir(token.as_deref())?;
+    sync_folder_bookmarks(&state, Some(RememberedFolder::Documents));
+    Ok(dirs)
 }
 
 /// `token` from `pick_path("secondary-content-dir")`.
@@ -32,19 +58,31 @@ pub async fn set_secondary_content_dir(
     token: String,
 ) -> ApiResult<SecondaryContentResult> {
     blocking(app, move |state, sink| {
-        state.set_secondary_content_dir(&token, sink)
+        let result = state.set_secondary_content_dir(&token, sink)?;
+        sync_folder_bookmarks(state, Some(RememberedFolder::SecondaryContent));
+        Ok(result)
     })
     .await
 }
 
 #[tauri::command]
 pub async fn unlink_secondary_content_dir(app: AppHandle) -> ApiResult<SecondaryContentResult> {
-    blocking(app, |state, sink| state.unlink_secondary_content_dir(sink)).await
+    blocking(app, |state, sink| {
+        let result = state.unlink_secondary_content_dir(sink)?;
+        sync_folder_bookmarks(state, None);
+        Ok(result)
+    })
+    .await
 }
 
 #[tauri::command]
 pub async fn restore_default_settings(app: AppHandle) -> ApiResult<AppSettings> {
-    blocking(app, |state, sink| state.restore_default_settings(sink)).await
+    blocking(app, |state, sink| {
+        let settings = state.restore_default_settings(sink)?;
+        sync_folder_bookmarks(state, None);
+        Ok(settings)
+    })
+    .await
 }
 
 #[tauri::command(async)]

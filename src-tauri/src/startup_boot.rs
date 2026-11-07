@@ -115,6 +115,8 @@ fn load(handle: &AppHandle, startup: &Startup) -> Result<(), String> {
     // this with its backup rules in the manifest).
     #[cfg(target_os = "ios")]
     crate::no_backup::exclude_from_backup(&data);
+    // Mac App Store build: reopen the remembered folders (security-scoped bookmarks) before anything reads them.
+    crate::folder_access::restore_at_launch(&data);
     let (content_root, extract_error) = crate::content_root(handle);
     let paths = AppPaths {
         content_root,
@@ -126,8 +128,8 @@ fn load(handle: &AppHandle, startup: &Startup) -> Result<(), String> {
     // SY7a: put back the edit times an Android full-backup restore broke, before anything syncs.
     #[cfg(target_os = "android")]
     repair_restored_edit_times(&state);
-    // Mobile has no AI integration: no service, no profile, no stale-temp sweep.
-    #[cfg(desktop)]
+    // Phones and the Mac App Store build have no AI integration: no service, no profile, no stale-temp sweep.
+    #[cfg(ai_cli)]
     let ai = {
         let ai = Arc::new(crate::ai_service::AiService::default());
         ai.set_data_dir(data);
@@ -136,7 +138,7 @@ fn load(handle: &AppHandle, startup: &Startup) -> Result<(), String> {
         crate::setup_ai_profile(handle, &state, &ai);
         ai
     };
-    #[cfg(mobile)]
+    #[cfg(not(ai_cli))]
     let _ = data;
     handle.manage::<AppState>(state);
     // Device transfer (B3): the service only; nothing listens until a Send/Receive dialog opens.
@@ -166,7 +168,7 @@ fn load(handle: &AppHandle, startup: &Startup) -> Result<(), String> {
             crate::acceptance_digest::answer_request(&handle.state::<AppState>());
         });
     }
-    #[cfg(desktop)]
+    #[cfg(ai_cli)]
     handle.manage(ai);
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     crate::commands_settings::spawn_startup_content_tasks(handle);

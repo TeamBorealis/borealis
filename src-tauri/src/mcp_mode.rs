@@ -266,7 +266,7 @@ pub fn serve_with(
     }
 }
 
-#[cfg(desktop)]
+#[cfg(ai_cli)]
 fn serve_write(
     tools: &borealis_mcp::Tools,
     config: &McpConfig,
@@ -288,7 +288,7 @@ fn serve_write(
     borealis_mcp::serve_extended(tools, &extension, reader, writer)
 }
 
-#[cfg(not(desktop))]
+#[cfg(not(ai_cli))]
 fn serve_write(
     _tools: &borealis_mcp::Tools,
     _config: &McpConfig,

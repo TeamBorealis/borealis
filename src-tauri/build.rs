@@ -202,11 +202,23 @@ const COMMANDS: &[&str] = &[
 /// so the binary's run path names that folder. Last: `ggml` next to a release binary in the cargo target folder.
 const LINUX_RPATH: &str = "$ORIGIN/../lib/Borealis/ggml:$ORIGIN/../lib/borealis/ggml:$ORIGIN/ggml";
 
+/// `cfg(ai_cli)`: the AI CLI integration (AI commands, "Import anything", the AI profile, the `--mcp` mode, the
+/// drive CLI and the LAN AI host) is compiled in. Desktop builds have it; phones and the Mac App Store flavour
+/// (`--features mas`, MAS1) do not, because they cannot launch or install other programs.
+#[must_use]
+fn has_ai_cli(target_os: &str, mas: bool) -> bool {
+    !matches!(target_os, "android" | "ios") && !mas
+}
+
 fn main() {
     let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
     let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
     if target_os == "linux" && target_arch == "x86_64" {
         println!("cargo:rustc-link-arg-bins=-Wl,-rpath,{LINUX_RPATH}");
+    }
+    println!("cargo:rustc-check-cfg=cfg(ai_cli)");
+    if has_ai_cli(&target_os, std::env::var_os("CARGO_FEATURE_MAS").is_some()) {
+        println!("cargo:rustc-cfg=ai_cli");
     }
     let manifest = tauri_build::AppManifest::new().commands(COMMANDS);
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(manifest))

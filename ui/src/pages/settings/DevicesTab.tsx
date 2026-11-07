@@ -40,6 +40,7 @@ export function DevicesTab() {
             <strong>{d.name}</strong>
             <Help>{PLATFORM_LABEL[d.platform]} · Last synced {formatDay(d.lastSyncedAt)} · Expires {formatDay(d.expiresAt)}</Help>
             <Help>Fingerprint {d.fingerprint}</Help>
+            {d.needsPairing && <Alert tone="warning" role="status">This pairing did not move to this version of Borealis. Remove the device, then connect it again with a new code.</Alert>}
           </span>
           <Button onClick={() => setRemoving(d)}>Remove</Button>
         </div>

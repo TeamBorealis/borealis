@@ -134,6 +134,10 @@ pub struct AppSettings {
     /// Google Play build), so it never looks for new versions and hides the Releases link
     /// ([`crate::distribution`]). Pinned like `mobile`.
     pub store_build: bool,
+    /// Read-only platform flag for the UI: this build has the AI CLI integration
+    /// ([`crate::distribution::HAS_AI_CLI`]; not on phones or in the Mac App Store build). Without it the
+    /// UI hides every AI entry and `ai.enabled` stays off. Pinned like `mobile`.
+    pub ai_available: bool,
     /// Reference app DATA FILES: where characters are stored (`<dir>/characters`); `None` = app default.
     /// Changed only through `set_documents_dir` (a backend-picked folder token).
     pub documents_dir: Option<String>,
@@ -264,6 +268,7 @@ impl Default for AppSettings {
             ai: AiSettings::default(),
             mobile: IS_MOBILE,
             store_build: crate::distribution::is_store_build(),
+            ai_available: crate::distribution::HAS_AI_CLI,
             documents_dir: None,
             secondary_content_dir: None,
             auto_content_update: true,
@@ -295,12 +300,14 @@ const PORTRAIT_SIZES: std::ops::RangeInclusive<u32> = 125..=175;
 
 impl AppSettings {
     /// Pins the platform-owned fields: `mobile` comes from the build target, `store_build` from the
-    /// build's distribution, and the AI assistant is always off on mobile.
+    /// build's distribution, `ai_available` from the build, and the AI assistant is always off in a
+    /// build without the AI CLI integration (phones, the Mac App Store).
     #[must_use]
     fn normalized(mut self) -> Self {
         self.mobile = IS_MOBILE;
         self.store_build = crate::distribution::is_store_build();
-        if IS_MOBILE {
+        self.ai_available = crate::distribution::HAS_AI_CLI;
+        if !self.ai_available {
             self.ai.enabled = false;
         }
         self
@@ -490,8 +497,37 @@ mod default_tests {
         let on = AppSettings::default()
             .patched(&serde_json::json!({"ai": {"enabled": true}, "mobile": !IS_MOBILE}))
             .unwrap();
-        assert_eq!(on.ai.enabled, !IS_MOBILE);
+        assert_eq!(on.ai.enabled, crate::distribution::HAS_AI_CLI);
         assert_eq!(on.mobile, IS_MOBILE);
+    }
+
+    #[test]
+    fn ai_available_comes_from_the_build_and_cannot_be_patched_or_loaded() {
+        let available = crate::distribution::HAS_AI_CLI;
+        assert_eq!(AppSettings::default().ai_available, available);
+        let patched = AppSettings::default()
+            .patched(&serde_json::json!({"aiAvailable": !available, "ai": {"enabled": true}}))
+            .unwrap();
+        assert_eq!(patched.ai_available, available);
+        assert_eq!(
+            patched.ai.enabled, available,
+            "AI cannot be switched on without the CLI integration"
+        );
+        let dir = std::env::temp_dir().join(format!("borealis-ai-avail-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("settings.json");
+        std::fs::write(
+            &file,
+            format!(
+                r#"{{"aiAvailable":{},"ai":{{"enabled":true}}}}"#,
+                !available
+            ),
+        )
+        .unwrap();
+        let loaded = AppSettings::load(&file);
+        assert_eq!(loaded.ai_available, available);
+        assert_eq!(loaded.ai.enabled, available);
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]

@@ -2,6 +2,8 @@
 //! only on request, and Send posts exactly the previewed bytes (BR1-BR3). A fake poster stands
 //! in for the network; the fake `claude` CLI is a shell script, so this suite is unix-only.
 #![cfg(unix)]
+// The AI CLI integration is compiled out of phones and the Mac App Store build (build.rs `cfg(ai_cli)`).
+#![cfg(ai_cli)]
 
 mod contract_support;
 

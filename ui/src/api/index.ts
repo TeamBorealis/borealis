@@ -13,6 +13,8 @@ export function createApi(): Api {
   if (isTauri() && !forceMock) return createTauriApi();
   // `?mock=mobile` simulates a phone build (no AI at all); used by the web e2e suites.
   const mobile = new URLSearchParams(window.location.search).get("mock") === "mobile";
+  // `?mock=mas` simulates the Mac App Store build: a desktop store build without the AI CLI integration (MAS1).
+  const macAppStore = new URLSearchParams(window.location.search).get("mock") === "mas";
   // `?mockPeer=<ms>` makes a simulated other device answer Send/Receive windows (web e2e of the device transfer).
   const peer = Number(new URLSearchParams(window.location.search).get("mockPeer"));
   // `?mockBundle=<file name>` is the file File > Open bundle... "picks" (`tampered.borealis` and `notabundle.borealis` are refused).
@@ -32,5 +34,5 @@ export function createApi(): Api {
   const contentNotices = new URLSearchParams(window.location.search).get("mockNotices") === "1";
   // `?mockCompanions=1`: Brannoc has a granted companion and two added ones (GitHub #13 screenshots).
   const sampleCompanions = new URLSearchParams(window.location.search).get("mockCompanions") === "1";
-  return new MockApi({ aiChunkDelayMs: 30, mobile, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null, bundleFile: bundle, semantic, classlessEdition, contentNotices, sampleCompanions });
+  return new MockApi({ aiChunkDelayMs: 30, mobile, macAppStore, linkPeerAfterMs: Number.isFinite(peer) && peer > 0 ? peer : null, bundleFile: bundle, semantic, classlessEdition, contentNotices, sampleCompanions });
 }

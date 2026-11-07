@@ -402,8 +402,8 @@ fn mastery_chooser_accepts_catalog_ids_and_reports_the_same_weapon_value() {
     s.finish();
 }
 
-/// The fake provider is a `#!/bin/sh` script, so these tests are unix-only.
-#[cfg(unix)]
+/// The fake provider is a `#!/bin/sh` script, so these tests are unix-only (and need the AI CLI integration).
+#[cfg(all(unix, ai_cli))]
 mod fake_provider {
     use super::*;
     use borealis_ai::DetectConfig;

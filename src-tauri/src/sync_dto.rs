@@ -176,6 +176,11 @@ pub struct LinkDevice {
     pub expires_at: u64,
     /// Short certificate fingerprint (`9b12 89ce 4fd2 8eff`), the one that device shows for itself.
     pub fingerprint: String,
+    /// The pair key of this device cannot be read here, so it must be paired again. Checked only in the Mac App
+    /// Store build: its keychain items are separate from the website (DMG) version's, so pairings made there do
+    /// not move with the data folder (MAS1). Sent only when true.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub needs_pairing: bool,
 }
 
 impl LinkDevice {
@@ -190,6 +195,7 @@ impl LinkDevice {
             last_synced_at: d.last_seen,
             expires_at: d.expires_at,
             fingerprint: d.fingerprint.short_hex(),
+            needs_pairing: false,
         }
     }
 }

@@ -3,6 +3,8 @@
 
 // The fake `claude`/`codex` CLIs here are `#!/bin/sh` scripts, so this suite is unix-only.
 #![cfg(unix)]
+// The AI CLI integration is compiled out of phones and the Mac App Store build (build.rs `cfg(ai_cli)`).
+#![cfg(ai_cli)]
 
 use borealis_ai::DetectConfig;
 use borealis_lib::ai_service::AiService;

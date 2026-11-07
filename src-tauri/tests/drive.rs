@@ -2,7 +2,7 @@
 //! MCP write mode (`serve_with` over in-memory streams), with the bundled SRD content. Both run
 //! the same character flow; refusals (no write tools without `--allow-write`, paths outside the
 //! library, picks the engine rejects) are checked on both fronts.
-#![cfg(desktop)]
+#![cfg(ai_cli)]
 
 use borealis_lib::drive::cli;
 use borealis_lib::mcp_mode;

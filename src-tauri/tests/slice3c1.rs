@@ -1,4 +1,6 @@
 //! `--mcp` mode, AI profile startup and first-run setup.
+// The AI CLI integration is compiled out of phones and the Mac App Store build (build.rs `cfg(ai_cli)`).
+#![cfg(ai_cli)]
 
 use borealis_ai::provider::DetectConfig;
 use borealis_lib::ai_profile::{ensure_profile, mcp_command, mcp_command_scoped, ProfileOutcome};

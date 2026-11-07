@@ -21,9 +21,10 @@ export const BOREALIS_TABS = [
 
 type Tab = (typeof BOREALIS_TABS)[number]["id"];
 
-/** Mobile has no AI at all; on desktop the AI tab holds the switch and "Phones" appears only once AI is on. */
-function visibleTabs(mobile: boolean, aiEnabled: boolean) {
-  return BOREALIS_TABS.filter((t) => (t.id === "ai" ? !mobile : t.id === "phones" ? aiEnabled : true));
+/** Builds without the AI CLI integration (phones, the Mac App Store) have no AI at all; elsewhere the AI tab holds the switch
+ * and "Phones" appears only once AI is on. */
+function visibleTabs(aiAvailable: boolean, aiEnabled: boolean) {
+  return BOREALIS_TABS.filter((t) => (t.id === "ai" ? aiAvailable : t.id === "phones" ? aiEnabled : true));
 }
 
 /**
@@ -34,8 +35,8 @@ export function BorealisSettings({ onClose, initialTab }: { onClose: () => void;
   const api = useApi();
   const nav = useNavigate();
   const { settings: s, update, replace } = useSettings();
-  const { mobile, aiEnabled, storeBuild } = usePlatform();
-  const tabs = visibleTabs(mobile, aiEnabled);
+  const { aiAvailable, aiEnabled, storeBuild } = usePlatform();
+  const tabs = visibleTabs(aiAvailable, aiEnabled);
   const [picked, setTab] = useState<Tab | undefined>(initialTab as Tab | undefined);
   const tab: Tab = tabs.some((t) => t.id === picked) ? picked! : tabs[0]!.id;
   const [aiError, setAiError] = useState<string | null>(null);
