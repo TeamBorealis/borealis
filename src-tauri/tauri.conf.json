@@ -29,7 +29,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "PLACEHOLDER-NOT-A-KEY: replace with the updater public key (the one-line contents of the .key.pub file from `tauri signer generate`); until then the app offers Download only",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQwNTI5RUM5NjQxNTlDMjMKUldRam5CVmt5WjVTMEtOUjRFR0E3L2Y0VUFJUEQ4dFZqZGhsRUxtQk4rS0xheXdEVWZuSTVTMngK",
       "endpoints": [
         "https://github.com/TeamBorealis/borealis/releases/latest/download/latest.json"
       ],
