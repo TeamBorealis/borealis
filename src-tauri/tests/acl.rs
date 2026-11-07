@@ -200,3 +200,43 @@ fn the_haptics_plugin_is_phone_only_with_the_least_permissions() {
     let builder = builder.plugin("#
     ));
 }
+
+/// In-app updates (#25, UP2): the updater plugin is a desktop-only dependency, registered only by the backend
+/// (`self_update_plugin::register`, behind `cfg(self_update)`), and no capability grants the web view any of its
+/// permissions: only the `install_app_update` command drives it.
+#[test]
+fn the_updater_plugin_is_desktop_only_and_backend_only() {
+    let cargo = std::fs::read_to_string(manifest_dir().join("Cargo.toml")).expect("Cargo.toml");
+    let dep_at = cargo
+        .find("tauri-plugin-updater =")
+        .expect("updater dependency");
+    // The table header is the last line starting with `[` (its entries hold `features = [...]` arrays).
+    let table = cargo[..dep_at].rfind("\n[").expect("dependency table") + 1;
+    assert!(
+        cargo[table..dep_at].starts_with(
+            r#"[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]"#
+        ),
+        "tauri-plugin-updater must be a desktop-only dependency"
+    );
+    let lib = std::fs::read_to_string(manifest_dir().join("src/lib.rs")).expect("lib.rs");
+    assert!(
+        !lib.contains("tauri_plugin_updater"),
+        "the updater is registered in self_update_plugin.rs only"
+    );
+    let register = lib
+        .find("self_update_plugin::register(app.handle());")
+        .expect("updater registration");
+    assert!(lib[..register].trim_end().ends_with("#[cfg(self_update)]"));
+    for file in [
+        "capabilities/default.json",
+        "capabilities/mobile.json",
+        "capabilities/splash.json",
+    ] {
+        let text = std::fs::read_to_string(manifest_dir().join(file)).expect(file);
+        assert!(
+            !text.contains("updater:"),
+            "{file} grants an updater permission"
+        );
+    }
+    assert!(capability_permissions().contains(&"allow-install-app-update".to_string()));
+}

@@ -815,6 +815,13 @@
     "name": "ImportDraft"
    }
   },
+  "install_app_update": {
+   "args": {},
+   "method": "installAppUpdate",
+   "response": {
+    "k": "nil"
+   }
+  },
   "install_import_preview": {
    "args": {
     "editions": true,
@@ -2801,6 +2808,23 @@
     }
    }
   },
+  "AppInstallProgress": {
+   "k": "object",
+   "props": {
+    "downloaded": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "total": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "AppSettings": {
    "k": "object",
    "props": {
@@ -3035,6 +3059,12 @@
      }
     },
     "state": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "updateMethod": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -11294,6 +11324,10 @@
      }
     }
    ]
+  },
+  "appinstall:progress": {
+   "k": "ref",
+   "name": "AppInstallProgress"
   },
   "appupdate:status": {
    "k": "ref",

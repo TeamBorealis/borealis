@@ -27,6 +27,18 @@
       "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https://api.github.com; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
     }
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "PLACEHOLDER-NOT-A-KEY: replace with the updater public key (the one-line contents of the .key.pub file from `tauri signer generate`); until then the app offers Download only",
+      "endpoints": [
+        "https://github.com/TeamBorealis/borealis/releases/latest/download/latest.json"
+      ],
+      "requireSignedVersion": true,
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",

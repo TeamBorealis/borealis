@@ -1,5 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
+  "plugins": {
+    "updater": null
+  },
   "bundle": {
     "category": "RolePlayingGame",
     "resources": {

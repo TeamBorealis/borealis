@@ -2,7 +2,8 @@ import { useId, useState } from "react";
 import type { AiProviderId, AppSettings, Density } from "../../api/contract";
 import { Alert, Button, ComboBox } from "../../components";
 import { useApi } from "../../state/ApiContext";
-import { checkAppUpdateNow, openDownload, useAppUpdateView } from "../../state/appUpdate";
+import { type AppInstallView, canInstall, checkAppUpdateNow, installLabel, openDownload, useAppUpdateView } from "../../state/appUpdate";
+import { useInstallUpdate } from "../../components/shell/useInstallUpdate";
 import { useSettings } from "../../state/SettingsContext";
 import { errorMessage, useAsync } from "../../state/useAsync";
 import { PhoneCase } from "../../lib/phoneCase";
@@ -154,6 +155,8 @@ export function UpdatesTab({ form, set }: FormProps) {
   const api = useApi();
   const [checking, setChecking] = useState(false);
   const { status } = useAppUpdateView();
+  const install = useInstallUpdate();
+  const installing = install.view.phase === "installing" || install.view.phase === "restarting";
   const checkNow = async () => { setChecking(true); try { await checkAppUpdateNow(api); } finally { setChecking(false); } };
   return (
     <>
@@ -162,9 +165,10 @@ export function UpdatesTab({ form, set }: FormProps) {
         checked={form.checkAppUpdates} onChange={(v) => set({ checkAppUpdates: v })} />
       <div className="aur-set-buttons">
         <Button disabled={checking} onClick={() => void checkNow()}>Check now</Button>
+        {canInstall(status) && <Button disabled={installing} onClick={install.run}>{installLabel(install.view)}</Button>}
         {status?.state === "done" && status.newer && <Button onClick={() => void openDownload(api, status.url ?? undefined)}>Download</Button>}
       </div>
-      <p className="aur-set-help" role="status">{updateText(status)}</p>
+      <p className="aur-set-help" role="status">{installText(install.view, canInstall(status)) ?? updateText(status)}</p>
     </>
   );
 }
@@ -173,5 +177,15 @@ export function UpdatesTab({ form, set }: FormProps) {
 export function updateText(u: ReturnType<typeof useAppUpdateView>["status"]): string {
   if (!u || u.state === "idle" || u.state === "disabled") return "";
   if (u.state === "failed") return "Could not reach GitHub. Check your connection and try again.";
-  return u.newer ? `Borealis ${u.latest} is available (you have ${u.current}).` : `You have the latest version (${u.current}).`;
+  if (!u.newer) return `You have the latest version (${u.current}).`;
+  const available = `Borealis ${u.latest} is available (you have ${u.current}).`;
+  return u.updateMethod === "package-manager" ? `${available} Update it the way you installed it, or download the new package.` : available;
+}
+
+/** While Install and restart runs (or after it failed), its progress replaces the line under "Check now". */
+export function installText(v: AppInstallView, installable: boolean): string | null {
+  if (!installable || v.phase === "idle") return null;
+  if (v.phase === "failed") return v.error;
+  if (v.phase === "restarting") return "The update is installed. Borealis is restarting.";
+  return v.percent === null ? "Downloading the update..." : `Downloading the update: ${v.percent}%.`;
 }

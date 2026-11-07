@@ -96,6 +96,12 @@ if grep -a -q "osascript" "$exe"; then
 else
   ok "no AI CLI setup in the executable"
 fi
+# No in-app updater (#25, UP2): the overlay drops plugins.updater, so the update feed address is not in the binary.
+if grep -a -q "releases/latest/download/latest.json" "$exe"; then
+  fail "the executable carries the updater feed: was tauri.mas.conf.json applied?"
+else
+  ok "no in-app updater feed in the executable"
+fi
 
 if [ "$failures" -ne 0 ]; then
   echo "$failures check(s) failed" >&2

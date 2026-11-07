@@ -35,6 +35,7 @@ import type {
   AiTaskRequest,
   OptionDef,
   AppSettings,
+  AppInstallProgress,
   AppUpdateStatus,
   AppFolder,
   ClearCachesResult,
@@ -409,6 +410,10 @@ export interface ApiMethods {
   appUpdateStatus(): Promise<AppUpdateStatus>;
   /** "Check now": ask GitHub for the latest Borealis version right away (desktop; `unsupported` on phones). */
   checkAppUpdate(): Promise<AppUpdateStatus>;
+  /** Install and restart (#25, UP2): only when `AppUpdateStatus.updateMethod` is "install". The backend downloads the
+   * version the notice showed, checks its signature, installs it and restarts (the call then never answers).
+   * Progress arrives on `appinstall:progress`. Fails with `requirement_failed` or `io_error` and a message to show. */
+  installAppUpdate(): Promise<void>;
   /** Open the official download page in the default browser (desktop; phones fail and the UI opens it). */
   openDownloadPage(): Promise<void>;
   /** Open one of the app's fixed web pages (Help menu, globe, download page; `lib/links.ts`) in the system browser on
@@ -651,6 +656,7 @@ export const COMMANDS = {
   contentUpdateStatus: "content_update_status",
   appUpdateStatus: "app_update_status",
   checkAppUpdate: "check_app_update",
+  installAppUpdate: "install_app_update",
   openDownloadPage: "open_download_page",
   openLink: "open_link",
   openAppFolder: "open_app_folder",
@@ -712,6 +718,8 @@ export interface ApiEvents {
   "content:progress": ContentProgress;
   /** The "new version available" check finished. */
   "appupdate:status": AppUpdateStatus;
+  /** Install and restart is downloading the update. */
+  "appinstall:progress": AppInstallProgress;
   /** 5etools import progress (`import_5etools_progress`). */
   "import5etools:progress": ContentProgress;
   /** Content store hot-reloaded: UI should refetch packs, catalogues and open slot options. */
@@ -738,6 +746,7 @@ export const EVENTS = {
   "import:event": "borealis://import-event",
   "content:progress": "borealis://content-progress",
   "appupdate:status": "borealis://app-update",
+  "appinstall:progress": "borealis://app-install",
   "import5etools:progress": "borealis://import_5etools_progress",
   "content:reloaded": "borealis://content-reloaded",
   "content:open-file": "borealis://open-file",

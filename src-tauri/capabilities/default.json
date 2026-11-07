@@ -192,6 +192,7 @@
     "allow-semantic-model-license",
     "allow-app-update-status",
     "allow-check-app-update",
+    "allow-install-app-update",
     "allow-open-download-page",
     "allow-open-link",
     "allow-open-app-folder",

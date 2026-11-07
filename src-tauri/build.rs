@@ -188,6 +188,7 @@ const COMMANDS: &[&str] = &[
     "semantic_model_license",
     "app_update_status",
     "check_app_update",
+    "install_app_update",
     "open_download_page",
     "open_link",
     "open_app_folder",
@@ -211,6 +212,14 @@ fn has_ai_cli(target_os: &str, mas: bool) -> bool {
     !matches!(target_os, "android" | "ios") && !mas
 }
 
+/// `cfg(self_update)`: the in-app updater (#25, UP2; `self_update.rs`) is compiled in. Desktop builds have it; phones
+/// (no Tauri updater; the stores or the website update them) and the Mac App Store flavour (store rules) do not. At
+/// runtime it is registered only for an install that can replace itself (Windows NSIS, the macOS app, an AppImage).
+#[must_use]
+fn has_self_update(target_os: &str, mas: bool) -> bool {
+    !matches!(target_os, "android" | "ios") && !mas
+}
+
 fn main() {
     let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
     let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
@@ -218,8 +227,13 @@ fn main() {
         println!("cargo:rustc-link-arg-bins=-Wl,-rpath,{LINUX_RPATH}");
     }
     println!("cargo:rustc-check-cfg=cfg(ai_cli)");
-    if has_ai_cli(&target_os, std::env::var_os("CARGO_FEATURE_MAS").is_some()) {
+    let mas = std::env::var_os("CARGO_FEATURE_MAS").is_some();
+    if has_ai_cli(&target_os, mas) {
         println!("cargo:rustc-cfg=ai_cli");
+    }
+    println!("cargo:rustc-check-cfg=cfg(self_update)");
+    if has_self_update(&target_os, mas) {
+        println!("cargo:rustc-cfg=self_update");
     }
     let manifest = tauri_build::AppManifest::new().commands(COMMANDS);
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(manifest))

@@ -132,6 +132,9 @@ pub mod sanitize;
 pub mod search_api;
 pub mod search_service;
 pub mod secondary_content;
+pub mod self_update;
+#[cfg(self_update)]
+pub mod self_update_plugin;
 pub mod semantic_api;
 #[cfg(all(desktop, feature = "llama"))]
 pub mod semantic_backend;
@@ -329,7 +332,12 @@ pub fn run() {
             #[cfg(desktop)]
             picked_files::on_window_event(window, event);
         })
-        .setup(|app| Ok(startup_boot::install(app)?))
+        .setup(|app| {
+            // In-app updates (#25, UP2): the updater is registered only for a direct install that can replace itself.
+            #[cfg(self_update)]
+            self_update_plugin::register(app.handle());
+            Ok(startup_boot::install(app)?)
+        })
         // AI commands carry `#[cfg(ai_cli)]` on their own line: phones and the Mac App Store build have no AI
         // integration (build.rs). The contract test reads this list as text and skips attribute lines, so it
         // still sees every command.
@@ -562,6 +570,7 @@ pub fn run() {
             commands_semantic::semantic_model_license,
             commands_app_update::app_update_status,
             commands_app_update::check_app_update,
+            commands_app_update::install_app_update,
             commands_app_update::open_download_page,
             commands_app_update::open_link,
             commands_system::open_app_folder,

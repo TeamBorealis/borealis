@@ -9,8 +9,8 @@ import { openSettingsTab, renderApp } from "./utils";
 
 // Store builds (user, 2026-11-01): the iOS app and the Google Play build never point at downloads outside the store.
 // The backend says which build this is (`settings.storeBuild`); desktop, web and the sideloaded APK are unchanged.
-const NEWER = { state: "done", current: "1.0.0", latest: "1.0.1", newer: true, url: "https://borealisbuilder.com/#download", releaseUrl: null, notes: null, checkedAt: "2026-10-15T09:00:00Z" } as const;
-const UNSUPPORTED = { state: "unsupported", current: "1.0.0", latest: null, newer: false, url: null, releaseUrl: null, notes: null, checkedAt: null } as const;
+const NEWER = { state: "done", current: "1.0.0", latest: "1.0.1", newer: true, url: "https://borealisbuilder.com/#download", releaseUrl: null, notes: null, checkedAt: "2026-10-15T09:00:00Z", updateMethod: "download" } as const;
+const UNSUPPORTED = { state: "unsupported", current: "1.0.0", latest: null, newer: false, url: null, releaseUrl: null, notes: null, checkedAt: null, updateMethod: "download" } as const;
 const store = (mobile = true) => new MockApi({ aiChunkDelayMs: 1, rng: () => 0.5, mobile, storeBuild: true });
 const help = (menus: ReturnType<typeof visibleMenus>) => menus.find((m) => m.id === "help")!.entries.map((e) => e.label);
 

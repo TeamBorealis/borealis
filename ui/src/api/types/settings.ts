@@ -166,6 +166,20 @@ export interface AppUpdateStatus {
   notes: string | null;
   /** RFC 3339. */
   checkedAt: string | null;
+  /** How this copy gets the new version: "install" (Install and restart, plus Download; direct Windows, macOS and
+   * AppImage installs once the updater key exists), "package-manager" (a deb or rpm install), "download". */
+  updateMethod: UpdateMethod;
+}
+
+/** See `AppUpdateStatus.updateMethod`. */
+export type UpdateMethod = "install" | "package-manager" | "download";
+
+/** `appinstall:progress`: Install and restart is downloading the update. */
+export interface AppInstallProgress {
+  /** Bytes received so far. */
+  downloaded: number;
+  /** The size the server announced, when it did. */
+  total: number | null;
 }
 
 export type ContentUpdateState = "idle" | "disabled" | "pending" | "running" | "done" | "failed";

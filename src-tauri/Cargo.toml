@@ -79,6 +79,9 @@ tempfile = "3"
 [dev-dependencies]
 tempfile = "3"
 zip = { version = "9", default-features = false, features = ["deflate"] }
+# tests/app_updater.rs: a mock Tauri app with the updater plugin, against a local feed signed by a key the test makes.
+tauri = { version = "2", features = ["test"] }
+minisign = { version = "0.10", default-features = false }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 reqwest = { version = "0.13", default-features = false, features = ["blocking", "rustls"] }
@@ -86,6 +89,11 @@ borealis-ai = { workspace = true, features = ["host"] }
 # mDNS nameplate discovery for typed codes: desktop only (iOS needs the multicast entitlement,
 # Android a MulticastLock; phones use the QR's host:port or a typed address instead).
 borealis-link = { workspace = true, features = ["mdns"] }
+# In-app updates (#25, UP2): desktop only, and compiled in only where build.rs sets `cfg(self_update)` (not in the
+# Mac App Store flavour). Registered at runtime only for a direct install that can replace itself (Windows NSIS,
+# the macOS app, a Linux AppImage; never deb/rpm) and only once a real public key is configured (`self_update.rs`).
+# The web view gets no updater permission: the backend's commands drive it.
+tauri-plugin-updater = { version = "2.14.1", default-features = false, features = ["rustls-tls", "zip"] }
 
 # Mac App Store build (feature `mas`): NSURL security-scoped bookmarks for the remembered folders (folder_access_mac.rs).
 [target.'cfg(target_os = "macos")'.dependencies]

@@ -1,7 +1,8 @@
 //! "New version available" notice: asks GitHub for the latest Borealis release and reports whether
 //! it is newer than this build. Sends no user data (one GET, a `User-Agent` and nothing else), never
-//! blocks startup, and stays silent when offline or rate limited. There is no auto-updater: the
-//! notice only points at the download page. Turned off by `checkAppUpdates`.
+//! blocks startup, and stays silent when offline or rate limited. Turned off by `checkAppUpdates`.
+//! The notice points at the download page; a direct desktop install that can replace itself also
+//! offers Install and restart (`update_method`, decision UP2, `self_update.rs`).
 //!
 //! Desktop runs the request here. Mobile has no HTTPS client in the backend, so there the command
 //! answers `unsupported` and the UI makes the same request with `fetch()` (see `ui/src/state/appUpdate.ts`).
@@ -9,6 +10,7 @@
 use crate::content_index::Fetcher;
 use crate::error::ApiResult;
 use crate::ids::rfc3339;
+use crate::self_update::UpdateMethod;
 use serde::{Deserialize, Serialize};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, SystemTime};
@@ -65,9 +67,20 @@ pub struct AppUpdateStatus {
     pub notes: Option<String>,
     /// RFC 3339 time of the last answer.
     pub checked_at: Option<String>,
+    /// How this copy gets the new version: Install and restart, the package manager, or Download.
+    pub update_method: UpdateMethod,
 }
 
 impl AppUpdateStatus {
+    /// The same status for a copy that updates by `method`.
+    #[must_use]
+    pub fn with_method(self, method: UpdateMethod) -> Self {
+        Self {
+            update_method: method,
+            ..self
+        }
+    }
+
     fn bare(state: AppUpdateState) -> Self {
         Self {
             state,
@@ -78,6 +91,7 @@ impl AppUpdateStatus {
             release_url: None,
             notes: None,
             checked_at: None,
+            update_method: UpdateMethod::Download,
         }
     }
 }
@@ -166,6 +180,7 @@ pub fn evaluate(body: &[u8], current: &str, now: &str) -> Result<AppUpdateStatus
         release_url,
         notes: clean_notes(rel.body.as_deref()),
         checked_at: Some(now.to_string()),
+        update_method: UpdateMethod::Download,
     })
 }
 
@@ -486,6 +501,19 @@ mod tests {
         }
         let s = check_now(&Fake::new(Ok(b"<html>".to_vec())), SystemTime::UNIX_EPOCH);
         assert_eq!(s.state, AppUpdateState::Failed);
+    }
+
+    #[test]
+    fn a_check_says_download_until_the_install_support_is_added() {
+        let s = evaluate(&release("v9.0.0", false, false), "1.0.0", "t").unwrap();
+        assert_eq!(s.update_method, UpdateMethod::Download);
+        let s = s.with_method(UpdateMethod::Install);
+        assert_eq!(s.update_method, UpdateMethod::Install);
+        assert!(s.newer);
+        let json = serde_json::to_value(&s).unwrap();
+        assert_eq!(json["updateMethod"], "install");
+        let pm = serde_json::to_value(s.with_method(UpdateMethod::PackageManager)).unwrap();
+        assert_eq!(pm["updateMethod"], "package-manager");
     }
 
     #[test]

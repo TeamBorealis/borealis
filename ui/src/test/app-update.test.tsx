@@ -5,7 +5,7 @@ import { MockApi } from "../api/mock";
 import { checkWithFetch, isNewer, MAX_NOTES_CHARS, openDownload, parseVersion, resetAppUpdate } from "../state/appUpdate";
 import { openSettingsTab, renderApp } from "./utils";
 
-const NEWER = { state: "done", current: "1.0.0", latest: "1.0.1", newer: true, url: "https://borealisbuilder.com/#download", releaseUrl: null, notes: null, checkedAt: "2026-10-15T09:00:00Z" } as const;
+const NEWER = { state: "done", current: "1.0.0", latest: "1.0.1", newer: true, url: "https://borealisbuilder.com/#download", releaseUrl: null, notes: null, checkedAt: "2026-10-15T09:00:00Z", updateMethod: "download" } as const;
 const fast = () => new MockApi({ aiChunkDelayMs: 1, rng: () => 0.5 });
 
 beforeEach(() => { resetAppUpdate(); });

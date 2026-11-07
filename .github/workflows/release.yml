@@ -17,6 +17,12 @@ name: Release
 # waits up to APP_NOTARY_WAIT_MINUTES, then fails with the submission id; the signed app is kept as the
 # `macos-notarization` artifact. Once Apple accepts it, run this workflow with the same `tag` and
 # `macos_resume_run` = that run's id: it staples the app, builds and notarizes the DMG and adds it to the draft.
+#
+# In-app updates (#25, UP2; build/ci/updater.sh): when the `release` environment has TAURI_SIGNING_PRIVATE_KEY (and
+# _PASSWORD) and plugins.updater.pubkey in tauri.conf.json is the matching public key, the Windows installer and the
+# AppImage are built with bundle.createUpdaterArtifacts (signed .sig files), the macOS jobs tar and sign the STAPLED
+# app (Borealis_<v>_aarch64.app.tar.gz), and latest.json is assembled on the draft from every .sig there. Without the
+# key every updater step is skipped and the release is exactly what it was before.
 on:
   push:
     tags: ["v*"]
@@ -146,6 +152,10 @@ jobs:
     needs: verify-version
     if: ${{ !inputs.attach_to_existing && !inputs.macos_resume_run }}
     runs-on: ${{ matrix.os }}
+    # Only for the updater signing key (TAURI_SIGNING_PRIVATE_KEY), read by the bundle step when updater.sh says so.
+    environment: release
+    outputs:
+      updater: ${{ steps.updater.outputs.enabled }}
     strategy:
       fail-fast: true
       matrix:
@@ -199,7 +209,24 @@ jobs:
           npm --prefix ui run build
           cargo build --release -p borealis
           bash build/stage-ggml-libs.sh target/release target/ggml-bundle
+      # In-app updates (#25): only with the signing key and a real public key; otherwise nothing changes.
+      - name: Updater artifacts?
+        id: updater
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: echo "enabled=$(bash build/ci/updater.sh enabled)" >> "$GITHUB_OUTPUT"
+      - name: Turn on updater artifacts
+        if: steps.updater.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq '.bundle.createUpdaterArtifacts = true' target/ggml-bundle/tauri.conf.json > target/ggml-bundle/updater.json
+          mv target/ggml-bundle/updater.json target/ggml-bundle/tauri.conf.json
       - uses: tauri-apps/tauri-action@564aea5a8075c7a54c167bb0cf5b3255314a7f9d # action-v0.5.22
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ steps.updater.outputs.enabled == 'true' && secrets.TAURI_SIGNING_PRIVATE_KEY || '' }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ steps.updater.outputs.enabled == 'true' && secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD || '' }}
         with:
           projectPath: .
           # Through node: Windows cannot run the extension-less .bin/tauri shim by path.
@@ -235,6 +262,18 @@ jobs:
                target/release/bundle/appimage/*.AppImage dist-release/
           fi
           ls -l dist-release
+      # The updater artifacts are the installers themselves (NSIS setup.exe, AppImage); the bundler wrote their .sig.
+      - name: Collect updater signatures
+        if: steps.updater.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            cp target/release/bundle/nsis/*-setup.exe.sig dist-release/
+          else
+            cp target/release/bundle/appimage/*.AppImage.sig dist-release/
+          fi
+          ls -l dist-release/*.sig
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: installers-${{ matrix.os }}
@@ -324,6 +363,8 @@ jobs:
     environment: release
     # Under the 6 h hosted-runner limit: build (~1 h) + APP_NOTARY_WAIT_MINUTES + the DMG round.
     timeout-minutes: 330
+    outputs:
+      updater: ${{ steps.updater.outputs.enabled }}
     env:
       VERSION: ${{ needs.verify-version.outputs.version }}
       TAG: ${{ needs.verify-version.outputs.tag }}
@@ -420,6 +461,26 @@ jobs:
           name: macos-dmg
           path: dist-release/*.dmg
           if-no-files-found: error
+      # In-app updates (#25): Tauri's own .app.tar.gz predates notarization, so tar the stapled app and sign it here.
+      - name: Updater archive?
+        id: updater
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: echo "enabled=$(bash build/ci/updater.sh enabled)" >> "$GITHUB_OUTPUT"
+      - name: Tar and sign the stapled app
+        if: steps.updater.outputs.enabled == 'true'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          bash build/ci/updater.sh mac-archive target/release/bundle/macos/Borealis.app \
+            "dist-updater/Borealis_${VERSION}_aarch64.app.tar.gz" "$VERSION"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: steps.updater.outputs.enabled == 'true'
+        with:
+          name: macos-updater
+          path: dist-updater/*
+          if-no-files-found: error
       - name: Remove the signing keychain and key
         if: always()
         run: |
@@ -436,6 +497,8 @@ jobs:
     permissions:
       contents: read
       actions: read
+    outputs:
+      updater: ${{ steps.updater.outputs.enabled }}
     env:
       VERSION: ${{ needs.verify-version.outputs.version }}
       APP_NOTARY_WAIT_MINUTES: 240
@@ -494,6 +557,34 @@ jobs:
         with:
           name: macos-dmg
           path: dist-release/*.dmg
+          if-no-files-found: error
+      # In-app updates (#25): as in the macos job, from the app stapled above. Signing runs the Tauri CLI (node).
+      - name: Updater archive?
+        id: updater
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: echo "enabled=$(bash build/ci/updater.sh enabled)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        if: steps.updater.outputs.enabled == 'true'
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - name: Tar and sign the stapled app
+        if: steps.updater.outputs.enabled == 'true'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          npm ci --prefix ui
+          bash build/ci/updater.sh mac-archive "$RUNNER_TEMP/app/Borealis.app" \
+            "dist-updater/Borealis_${VERSION}_aarch64.app.tar.gz" "$VERSION"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: steps.updater.outputs.enabled == 'true'
+        with:
+          name: macos-updater
+          path: dist-updater/*
           if-no-files-found: error
       - name: Remove the signing keychain and key
         if: always()
@@ -675,6 +766,11 @@ jobs:
       TAG: ${{ needs.verify-version.outputs.tag }}
       SHA: ${{ needs.verify-version.outputs.sha }}
     steps:
+      # Only for build/ci/updater.sh (latest.json), and before the download: checkout empties the workspace.
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        if: needs.build.outputs.updater == 'true'
+        with:
+          ref: ${{ needs.verify-version.outputs.sha }}
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: assets
@@ -708,6 +804,9 @@ jobs:
               --target "$SHA"
           fi
           gh release upload "$TAG" assets/* --clobber
+      - name: Updater feed (latest.json)
+        if: needs.build.outputs.updater == 'true'
+        run: bash build/ci/updater.sh feed "$TAG" "$VERSION"
 
   # The signed DMG joins the draft once both exist, so a slow notarization does not hold back the other assets.
   attach-macos:
@@ -735,3 +834,15 @@ jobs:
           path: dmg
       - name: Upload the DMG and refresh SHA256SUMS.txt
         run: bash build/ci/release-attach.sh "$TAG" "dmg/Borealis_${VERSION}_aarch64.dmg"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        if: needs.macos.outputs.updater == 'true' || needs.macos-resume.outputs.updater == 'true'
+        with:
+          name: macos-updater
+          path: updater
+      - name: Upload the macOS updater archive and refresh latest.json
+        if: needs.macos.outputs.updater == 'true' || needs.macos-resume.outputs.updater == 'true'
+        run: |
+          set -euo pipefail
+          bash build/ci/release-attach.sh "$TAG" "updater/Borealis_${VERSION}_aarch64.app.tar.gz" \
+            "updater/Borealis_${VERSION}_aarch64.app.tar.gz.sig"
+          bash build/ci/updater.sh feed "$TAG" "$VERSION"

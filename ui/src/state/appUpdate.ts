@@ -1,6 +1,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import type { Api, AppUpdateStatus } from "../api/contract";
 import { useApi } from "./ApiContext";
+import { errorMessage } from "./useAsync";
 import { LINKS } from "../lib/links";
 
 /** Latest release of the project; the same address the desktop backend asks. */
@@ -37,7 +38,7 @@ export function isNewer(latest: string, current: string): boolean {
 }
 
 const bare = (state: AppUpdateStatus["state"], current: string): AppUpdateStatus =>
-  ({ state, current, latest: null, newer: false, url: null, releaseUrl: null, notes: null, checkedAt: null });
+  ({ state, current, latest: null, newer: false, url: null, releaseUrl: null, notes: null, checkedAt: null, updateMethod: "download" });
 
 /** Same cap as the backend (characters). */
 export const MAX_NOTES_CHARS = 4000;
@@ -64,7 +65,7 @@ export async function checkWithFetch(current: string, fetchFn: typeof fetch = fe
     if (!v) return { ...bare("failed", current), checkedAt: now };
     const html = typeof rel.html_url === "string" && rel.html_url.startsWith(RELEASE_PAGE_PREFIX) ? rel.html_url : null;
     const latest = v.join(".");
-    return { state: "done", current, latest, newer: isNewer(latest, current), url: DOWNLOAD_PAGE, releaseUrl: html, notes: cleanNotes(rel.body), checkedAt: now };
+    return { state: "done", current, latest, newer: isNewer(latest, current), url: DOWNLOAD_PAGE, releaseUrl: html, notes: cleanNotes(rel.body), checkedAt: now, updateMethod: "download" };
   } catch {
     return { ...bare("failed", current), checkedAt: now };
   }
@@ -82,8 +83,14 @@ function readDismissed(): string | null {
 
 export function setAppUpdate(next: AppUpdateStatus): void { status = next; emit(); }
 export const getAppUpdate = (): AppUpdateStatus | null => status;
-/** Test hook: forget the stored answer and the remembered dismissal. */
-export function resetAppUpdate(): void { status = null; try { localStorage.removeItem(DISMISSED_KEY); } catch { /* storage unavailable */ } dismissed = null; emit(); }
+/** Test hook: forget the stored answer, the remembered dismissal and any install attempt. */
+export function resetAppUpdate(): void {
+  status = null;
+  try { localStorage.removeItem(DISMISSED_KEY); } catch { /* storage unavailable */ }
+  dismissed = null;
+  install = IDLE_INSTALL;
+  emit();
+}
 
 /** Hide the update button for this version; remembered across launches. */
 export function dismissAppUpdate(version: string): void {
@@ -103,6 +110,61 @@ function snapshot(): AppUpdateView {
 
 export function useAppUpdateView(): AppUpdateView {
   return useSyncExternalStore((cb) => { listeners.add(cb); return () => { listeners.delete(cb); }; }, snapshot, snapshot);
+}
+
+/* ---- Install and restart (#25, UP2): direct Windows, macOS and AppImage installs; the backend does the work ---- */
+
+/** `idle`, `installing` (downloading and installing), `restarting` (installed; the app is about to restart), `failed`. */
+export type InstallPhase = "idle" | "installing" | "restarting" | "failed";
+export interface AppInstallView {
+  phase: InstallPhase;
+  /** Whole percent downloaded, when the size is known. */
+  percent: number | null;
+  /** Why the last attempt failed (`failed` only). */
+  error: string | null;
+}
+const IDLE_INSTALL: AppInstallView = { phase: "idle", percent: null, error: null };
+let install: AppInstallView = IDLE_INSTALL;
+function setInstall(next: AppInstallView): void { install = next; emit(); }
+
+export function useAppInstallView(): AppInstallView {
+  return useSyncExternalStore((cb) => { listeners.add(cb); return () => { listeners.delete(cb); }; }, () => install, () => install);
+}
+
+/** This copy can install the known newer version itself (otherwise the notice offers Download only). */
+export function canInstall(s: AppUpdateStatus | null): boolean {
+  return !!s && s.state === "done" && s.newer && !!s.latest && s.updateMethod === "install";
+}
+
+/**
+ * Install and restart: `beforeInstall` runs first (it saves the open character), then the backend downloads, verifies,
+ * installs and restarts. A second click while one runs does nothing. On failure the message stays on the notice and
+ * Download still works.
+ */
+export async function installAppUpdate(api: Api, beforeInstall?: () => Promise<void>): Promise<void> {
+  if (install.phase === "installing" || install.phase === "restarting") return;
+  setInstall({ phase: "installing", percent: null, error: null });
+  const off = api.subscribe("appinstall:progress", (p) => {
+    if (install.phase !== "installing") return;
+    const percent = p.total ? Math.min(100, Math.floor((p.downloaded * 100) / p.total)) : null;
+    setInstall({ ...install, percent });
+  });
+  try {
+    await beforeInstall?.();
+    await api.installAppUpdate();
+    setInstall({ phase: "restarting", percent: null, error: null });
+  } catch (e) {
+    setInstall({ phase: "failed", percent: null, error: errorMessage(e) });
+  } finally {
+    off();
+  }
+}
+
+/** The Install and restart button's label for the current attempt. */
+export function installLabel(v: AppInstallView): string {
+  if (v.phase === "restarting") return "Restarting...";
+  if (v.phase !== "installing") return "Install and restart";
+  return v.percent === null ? "Installing..." : `Installing... ${v.percent}%`;
 }
 
 /** "Check now" (and the startup check on phones): the backend answers on desktop, `fetch()` on phones. */

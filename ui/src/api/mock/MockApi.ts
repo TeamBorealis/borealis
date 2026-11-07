@@ -729,6 +729,15 @@ export class MockApi implements Api {
   async appUpdateStatus() { await this.tick(); return { ...this.appUpdate.status }; }
   async checkAppUpdate() { await this.tick(); this.appUpdate.requests += 1; this.emit("appupdate:status", { ...this.appUpdate.status }); return { ...this.appUpdate.status }; }
   async openDownloadPage() { await this.tick(); this.appUpdate.opened += 1; }
+  async installAppUpdate() {
+    await this.tick();
+    const u = this.appUpdate;
+    u.installs += 1;
+    if (u.status.updateMethod !== "install") throw apiError("requirement_failed", "This copy of Borealis cannot install updates itself. Download the new version instead.");
+    for (const p of u.installProgress) this.emit("appinstall:progress", p);
+    if (u.hold) await u.hold;
+    if (u.installError) throw u.installError;
+  }
   /** Web pages "opened" in the system browser (U15); exposed on `window.__mockOpenedLinks` for the web e2e. */
   readonly openedLinks: string[] = [];
   async openLink(args: { url: string }) { await this.tick(); recordOpenedLink(this.openedLinks, args.url); }
