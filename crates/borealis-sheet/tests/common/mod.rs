@@ -206,3 +206,21 @@ pub fn cleric_2014() -> (Character, CharacterSnapshot) {
     }
     wrap("Brunhild Stonehand", s, &e)
 }
+
+/// Level-1 2014 Dragonborn Fighter of the given Draconic Ancestry (issue #26).
+pub fn dragonborn_2014(ancestry: &str) -> (Character, CharacterSnapshot) {
+    let st = store("srd-5.1");
+    let e = Engine::new(&st);
+    let mut s = commands::new_character(&e, Ruleset::Dnd2014);
+    s.options.push("ID_INTERNAL_OPTION_ALLOW_AVERAGE_HP".into());
+    s.abilities.base = [15, 10, 14, 8, 12, 13];
+    s = level1(
+        &e,
+        s,
+        "ID_RACE_DRAGONBORN",
+        "ID_WOTC_PHB_CLASS_FIGHTER",
+        "ID_BACKGROUND_ACOLYTE",
+    );
+    s = pick(&e, &s, "Racial Trait", ancestry);
+    wrap("Vyth Embercrest", s, &e)
+}

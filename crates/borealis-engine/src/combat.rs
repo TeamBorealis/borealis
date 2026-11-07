@@ -5,7 +5,6 @@ use crate::graph::Graph;
 use crate::rule_view::{cap, live_rules, Live};
 use crate::snapshot::ToggleSnapshot;
 use crate::stats::StatSet;
-use borealis_content::Rule;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -130,17 +129,20 @@ fn toggle_active(toggles: &[ToggleSnapshot], id: &str) -> bool {
 }
 
 /// Resistances, immunities, vulnerabilities and condition immunities of the live elements.
+///
+/// Damage defences are the live damage-condition elements of the graph, named after the element
+/// that granted or selected them. The graph already applied each grant's level, requirements and
+/// the target's own requirements, so a grant gated on a choice (the 2014 Dragonborn's Damage
+/// Resistance, one grant per ancestry) counts only when the choice is made (issue #26).
 #[must_use]
 pub fn defenses(graph: &Graph<'_>, toggles: &[ToggleSnapshot]) -> Defenses {
     let mut d = Defenses::default();
     for id in graph.preorder() {
-        let el = &graph.nodes[id].e.el;
-        for r in &el.rules {
-            let Rule::Grant(g) = r else { continue };
-            if crate::rule_view::level_met(graph, id, g.level.map(u64::from)) {
-                damage_grant(&g.id, &el.name, true, None, &mut d);
-            }
-        }
+        let node = &graph.nodes[id];
+        let source = node
+            .parent
+            .map_or(&node.e.el.name, |p| &graph.nodes[p].e.el.name);
+        damage_grant(&node.e.el.id, source, true, None, &mut d);
     }
     for l in live_rules(graph, &["toggle"]) {
         let Some(tid) = l.str("id") else { continue };
