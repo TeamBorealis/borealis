@@ -1,0 +1,21 @@
+[package]
+name = "borealis-updater-check"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+description = "Release CI (B-203): verify a probe signed with the updater key against the committed public key."
+
+[lints]
+workspace = true
+
+# The verifier tauri-plugin-updater uses (same versions as in Cargo.lock): no new dependency to download.
+[dependencies]
+base64 = "0.22"
+minisign-verify = "0.3"
+thiserror.workspace = true
+
+[dev-dependencies]
+# Key pairs made by the tests, as src-tauri/tests/app_updater.rs does.
+minisign = { version = "0.10", default-features = false }

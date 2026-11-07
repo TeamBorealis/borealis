@@ -5,6 +5,10 @@
 #       Prints "true" when updater artifacts can be made: the secret TAURI_SIGNING_PRIVATE_KEY is set AND
 #       plugins.updater.pubkey in src-tauri/tauri.conf.json is a real minisign public key (not the placeholder).
 #       Otherwise prints "false" and says why: every updater step is then skipped and the release is built as before.
+#   updater.sh check-key <version>
+#       Fail fast (B-203) unless TAURI_SIGNING_PRIVATE_KEY matches plugins.updater.pubkey: sign a probe file for
+#       <version> with the Tauri CLI and verify it with crates/borealis-updater-check (the updater's own verifier).
+#       Env: TAURI_SIGNING_PRIVATE_KEY, TAURI_SIGNING_PRIVATE_KEY_PASSWORD. Needs cargo and `npm ci` in ui/.
 #   updater.sh mac-archive <stapled Borealis.app> <out .app.tar.gz> <version>
 #       Tar the stapled app (Tauri's own tarball is made before notarization, so it has no ticket) and sign the tarball
 #       for <version>; writes <out>.sig. Env: TAURI_SIGNING_PRIVATE_KEY, TAURI_SIGNING_PRIVATE_KEY_PASSWORD.
@@ -102,9 +106,30 @@ cmd_feed() {
   bash "$here/release-attach.sh" "$tag" "$work/latest.json"
 }
 
+cmd_check_key() {
+  local version=${1:?usage: check-key <version>}
+  local pubkey
+  pubkey=$(jq -r '.plugins.updater.pubkey // ""' "$root/src-tauri/tauri.conf.json")
+  # Not local: the EXIT trap runs after the function returns.
+  probe=$(mktemp -d)
+  trap 'rm -rf "$probe"' EXIT
+  printf 'Borealis %s updater key probe\n' "$version" > "$probe/probe"
+  if ! (sign "$probe/probe" "$version"); then
+    echo "::error::in-app updates: could not sign a probe with TAURI_SIGNING_PRIVATE_KEY (is TAURI_SIGNING_PRIVATE_KEY_PASSWORD right?)" >&2
+    exit 1
+  fi
+  # The verifier the app's updater uses (minisign-verify), built from the workspace: no new download.
+  if ! cargo run --quiet --locked --manifest-path "$root/Cargo.toml" -p borealis-updater-check -- \
+      "$pubkey" "$probe/probe" "$probe/probe.sig" "$version"; then
+    echo "::error::in-app updates: TAURI_SIGNING_PRIVATE_KEY in the release environment does not match plugins.updater.pubkey in src-tauri/tauri.conf.json. Every client would reject this release's update feed. Put the matching key in the release environment, or commit the key's public half (the .key.pub file, one line) as the pubkey." >&2
+    exit 1
+  fi
+}
+
 case "${1:-}" in
   enabled) cmd_enabled ;;
+  check-key) shift; cmd_check_key "$@" ;;
   mac-archive) shift; cmd_mac_archive "$@" ;;
   feed) shift; cmd_feed "$@" ;;
-  *) echo "usage: updater.sh enabled | mac-archive <app> <out> <version> | feed <tag> <version>" >&2; exit 64 ;;
+  *) echo "usage: updater.sh enabled | check-key <version> | mac-archive <app> <out> <version> | feed <tag> <version>" >&2; exit 64 ;;
 esac

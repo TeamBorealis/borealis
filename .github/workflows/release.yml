@@ -22,7 +22,8 @@ name: Release
 # _PASSWORD) and plugins.updater.pubkey in tauri.conf.json is the matching public key, the Windows installer and the
 # AppImage are built with bundle.createUpdaterArtifacts (signed .sig files), the macOS jobs tar and sign the STAPLED
 # app (Borealis_<v>_aarch64.app.tar.gz), and latest.json is assembled on the draft from every .sig there. Without the
-# key every updater step is skipped and the release is exactly what it was before.
+# key every updater step is skipped and the release is exactly what it was before. With the key, the bundle and macOS
+# jobs first sign a probe and verify it against that pubkey (`updater.sh check-key`, B-203) and fail on a mismatch.
 on:
   push:
     tags: ["v*"]
@@ -201,6 +202,22 @@ jobs:
           cache-dependency-path: ui/package-lock.json
       - run: npm ci
         working-directory: ui
+      # In-app updates (#25): only with the signing key and a real public key; otherwise nothing changes.
+      - name: Updater artifacts?
+        id: updater
+        shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: echo "enabled=$(bash build/ci/updater.sh enabled)" >> "$GITHUB_OUTPUT"
+      # B-203: before the long build, the key must be the one the app trusts, or every client rejects the feed.
+      - name: Updater key matches the committed public key
+        if: steps.updater.outputs.enabled == 'true'
+        shell: bash
+        env:
+          VERSION: ${{ needs.verify-version.outputs.version }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: bash build/ci/updater.sh check-key "$VERSION"
       # B-49: the installers carry llama.cpp's shared libraries and one CPU backend module per x86 level. Build once
       # (the Tauri build reuses it), stage them, and bundle them through the overlay the staging script writes.
       - name: Build and stage llama.cpp's libraries
@@ -209,13 +226,6 @@ jobs:
           npm --prefix ui run build
           cargo build --release -p borealis
           bash build/stage-ggml-libs.sh target/release target/ggml-bundle
-      # In-app updates (#25): only with the signing key and a real public key; otherwise nothing changes.
-      - name: Updater artifacts?
-        id: updater
-        shell: bash
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-        run: echo "enabled=$(bash build/ci/updater.sh enabled)" >> "$GITHUB_OUTPUT"
       - name: Turn on updater artifacts
         if: steps.updater.outputs.enabled == 'true'
         shell: bash
@@ -390,6 +400,19 @@ jobs:
           cache-dependency-path: ui/package-lock.json
       - run: npm ci
         working-directory: ui
+      # In-app updates (#25): the archive is made at the end, from the stapled app; the key is checked now (B-203),
+      # so a mismatch fails before the build and the notarization wait.
+      - name: Updater archive?
+        id: updater
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: echo "enabled=$(bash build/ci/updater.sh enabled)" >> "$GITHUB_OUTPUT"
+      - name: Updater key matches the committed public key
+        if: steps.updater.outputs.enabled == 'true'
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: bash build/ci/updater.sh check-key "$VERSION"
       - name: Signing keychain and notary key
         env:
           P12_BASE64: ${{ secrets.APPLE_DEVELOPER_ID_P12 }}
@@ -462,11 +485,6 @@ jobs:
           path: dist-release/*.dmg
           if-no-files-found: error
       # In-app updates (#25): Tauri's own .app.tar.gz predates notarization, so tar the stapled app and sign it here.
-      - name: Updater archive?
-        id: updater
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-        run: echo "enabled=$(bash build/ci/updater.sh enabled)" >> "$GITHUB_OUTPUT"
       - name: Tar and sign the stapled app
         if: steps.updater.outputs.enabled == 'true'
         env:

@@ -16,6 +16,7 @@ members = [
   "crates/borealis-search",
   "crates/borealis-embed",
   "crates/borealis-android-assets",
+  "crates/borealis-updater-check",
   "src-tauri",
 ]
 
