@@ -26,7 +26,7 @@ import type { PickPurpose } from "../../api/contract";
 
 /** The backend picker purpose behind each folder's Browse button. */
 const PICK_PURPOSE: Record<HeldFolder, PickPurpose> = {
-  documents: "documents-dir", secondary: "secondary-content-dir", portraits: "portrait-library-dir",
+  documents: "documents-dir", secondary: "secondary-content-dir", portraits: "portrait-library-dir", vault: "vault-dir",
 };
 
 /**
@@ -68,7 +68,7 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
   const browse = async (which: HeldFolder) => {
     setError(null);
     try {
-      const stored = { documents: dirs?.documentsDir, secondary: dirs?.secondaryContentDir, portraits: dirs?.portraitLibraryDir }[which];
+      const stored = { documents: dirs?.documentsDir, secondary: dirs?.secondaryContentDir, portraits: dirs?.portraitLibraryDir, vault: dirs?.vaultDir }[which];
       const [pick] = await api.pickPath({ purpose: PICK_PURPOSE[which], startDir: heldPath(held[which]) ?? stored ?? undefined });
       if (pick) setHeld((h) => ({ ...h, [which]: { token: pick.token, path: pick.path } }));
     } catch (e) { setError(errorMessage(e)); }
@@ -85,6 +85,7 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
       if (held.secondary === "unlink") await api.unlinkSecondaryContentDir();
       else if (held.secondary) skipped = (await api.setSecondaryContentDir({ token: held.secondary.token })).report.skipped.length;
       if (held.portraits) await api.setPortraitLibraryDir(held.portraits === "clear" ? {} : { token: held.portraits.token });
+      if (held.vault) await api.setVaultDir(held.vault === "clear" ? {} : { token: held.vault.token });
       const stored = await api.getSettings();
       const saved = await api.saveSettings({ patch: mergeForm(stored, form) });
       replace(saved);
@@ -99,7 +100,7 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
 
   /** Leave the window for another screen: unsaved edits are saved first (nothing to save = just close). */
   const leave = (after: () => void) => {
-    if (form && formChanged(persisted, form, !!held.documents || !!held.secondary || !!held.portraits)) { void save(after); return; }
+    if (form && formChanged(persisted, form, !!held.documents || !!held.secondary || !!held.portraits || !!held.vault)) { void save(after); return; }
     onClose();
     after();
   };
@@ -133,7 +134,8 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
       case "display": return <DisplayTab form={form} set={set} />;
       case "content": return (
         <ContentTab manage={() => leave(() => nav("/content"))}
-          portraits={mobile ? null : { dirs, held: held.portraits, browse: () => void browse("portraits"), clear: () => setHeld((h) => ({ ...h, portraits: "clear" })) }} />
+          portraits={mobile ? null : { dirs, held: held.portraits, browse: () => void browse("portraits"), clear: () => setHeld((h) => ({ ...h, portraits: "clear" })) }}
+          vault={mobile ? null : { dirs, held: held.vault, browse: () => void browse("vault"), clear: () => setHeld((h) => ({ ...h, vault: "clear" })) }} />
       );
       case "search": return <SearchTab />;
       case "ai": return <AiTab form={form} set={set} setup={() => leave(() => nav("/setup/ai"))} />;

@@ -17,7 +17,7 @@ export interface MainTabDef {
 
 /** Classic builder main tab order, plus PLAY (Borealis play mode). START also owns every non-character screen. */
 export const MAIN_TABS: readonly MainTabDef[] = [
-  { id: "start", label: "Start", short: "Start", to: "/characters", icon: "users", needsCharacter: false, match: ["/characters", "/compendium", "/search", "/content", "/import", "/ai", "/setup", "/settings", "/more"] },
+  { id: "start", label: "Start", short: "Start", to: "/characters", icon: "users", needsCharacter: false, match: ["/characters", "/compendium", "/search", "/content", "/notes", "/import", "/ai", "/setup", "/settings", "/more"] },
   { id: "build", label: "Build", short: "Build", to: "/builder", icon: "hammer", needsCharacter: true, match: ["/builder"] },
   { id: "magic", label: "Magic", short: "Magic", to: "/spells", icon: "sparkles", needsCharacter: true, match: ["/spells"] },
   { id: "equipment", label: "Equipment", short: "Gear", to: "/equipment", icon: "backpack", needsCharacter: true, match: ["/equipment"] },
@@ -26,12 +26,22 @@ export const MAIN_TABS: readonly MainTabDef[] = [
   { id: "play", label: "Play", short: "Play", to: "/play", icon: "shield", needsCharacter: true, match: ["/play"] },
 ];
 
-/** Route-based sub-tabs for the START section (classic builder: CHARACTER COLLECTION | SOURCES | ADDITIONAL CONTENT). */
-export const START_SUBNAV: readonly { to: string; label: string }[] = [
+/**
+ * Route-based sub-tabs for the START section: the classic builder's CHARACTER COLLECTION | SOURCES | ADDITIONAL CONTENT, then
+ * Borealis's NOTES (GitHub #15). START owns every screen that needs no character, and Borealis additions follow the classic
+ * builder's own items. `desktopOnly` sub-tabs are hidden on phones.
+ */
+export const START_SUBNAV: readonly { to: string; label: string; desktopOnly?: boolean }[] = [
   { to: "/characters", label: "Character Collection" },
   { to: "/content/sources", label: "Sources" },
   { to: "/content", label: "Additional Content" },
+  { to: "/notes", label: "Notes", desktopOnly: true },
 ];
+
+/** The START sub-tabs this build shows. */
+export function startSubnav(mobile: boolean): readonly { to: string; label: string }[] {
+  return START_SUBNAV.filter((s) => !(mobile && s.desktopOnly));
+}
 
 export function activeTab(pathname: string): MainTabDef {
   return MAIN_TABS.find((t) => t.match.some((m) => pathname === m || pathname.startsWith(`${m}/`))) ?? MAIN_TABS[0]!;
@@ -56,6 +66,8 @@ export interface MenuEntry {
   noAiTo?: string;
   /** Hidden in store builds (iOS, Google Play): store rules forbid pointing at downloads outside the store. */
   directOnly?: boolean;
+  /** Hidden on phones (the Notes view is desktop only for now). */
+  desktopOnly?: boolean;
 }
 export interface MenuDef { id: string; label: string; entries: MenuEntry[] }
 
@@ -85,6 +97,7 @@ export const MENUS: readonly MenuDef[] = [
     { id: "settings", label: "Application Settings", action: "settings" },
     { id: "s1", label: "", separator: true },
     { id: "content", label: "Additional Content", to: "/content" },
+    { id: "notes", label: "Notes", to: "/notes", desktopOnly: true },
     { id: "ai", label: "AI Assistant", to: "/ai", ai: true },
   ] },
   { id: "help", label: "Help", entries: [
@@ -102,13 +115,15 @@ export const MENUS: readonly MenuDef[] = [
 ];
 
 /** The menus for the current AI state and build: AI entries appear only when AI is on, the AI importer entry is hidden (Load
- * Character covers it), and a store build has no entry that points at downloads outside the store. */
-export function visibleMenus(aiEnabled: boolean, storeBuild = false): readonly MenuDef[] {
+ * Character covers it), a store build has no entry that points at downloads outside the store, and phones have no
+ * desktop-only entry. */
+export function visibleMenus(aiEnabled: boolean, storeBuild = false, mobile = false): readonly MenuDef[] {
   return MENUS.map((m) => ({
     ...m,
     entries: m.entries
       .filter((e) => aiEnabled || (!e.ai && !e.noAiTo))
-      .filter((e) => !(storeBuild && e.directOnly)),
+      .filter((e) => !(storeBuild && e.directOnly))
+      .filter((e) => !(mobile && e.desktopOnly)),
   }));
 }
 

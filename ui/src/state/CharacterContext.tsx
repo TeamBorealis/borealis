@@ -8,7 +8,8 @@ import { describeAdopt, describeChange, setStatus } from "./status";
 import { errorMessage } from "./useAsync";
 
 const STORAGE_KEY = "lk.currentCharacter";
-const AUTOSAVE_MS = 1500;
+/** Autosave waits this long after the last change (characters and notes alike). */
+export const AUTOSAVE_MS = 1500;
 
 interface CharacterCtx {
   snapshot: CharacterSnapshot | null;

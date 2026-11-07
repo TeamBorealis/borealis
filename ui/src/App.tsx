@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router";
 import { ControlsGallery } from "./components/controls/ControlsGallery";
 import { AppShell } from "./components/shell/AppShell";
@@ -19,6 +19,9 @@ import { SettingsRedirect } from "./pages/settings/SettingsHost";
 import { SheetPage } from "./pages/sheet/SheetPage";
 import { SpellsPage } from "./pages/spells/SpellsPage";
 import { PlayPage } from "./pages/play/PlayPage";
+
+/** START > NOTES (GitHub #15) loads on first use: it brings the Markdown renderer, the sanitiser and the YAML reader. */
+const NotesPage = lazy(() => import("./pages/notes/NotesPage").then((m) => ({ default: m.NotesPage })));
 
 /** Routes of the optional AI assistant: they redirect to the characters until it is on (and always on mobile). */
 function AiOnly({ children }: { children: ReactNode }) {
@@ -44,6 +47,7 @@ export function App() {
         <Route path="/search" element={<CompendiumRoute />} />
         <Route path="/content" element={<ContentPage />} />
         <Route path="/content/sources" element={<SourcesPage />} />
+        <Route path="/notes" element={<Suspense fallback={null}><NotesPage /></Suspense>} />
         <Route path="/import" element={<AiOnly><ImportPage /></AiOnly>} />
         <Route path="/ai" element={<AiOnly><AiPage /></AiOnly>} />
         <Route path="/setup/ai" element={<AiOnly><AiSetupPage /></AiOnly>} />

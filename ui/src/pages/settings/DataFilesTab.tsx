@@ -11,6 +11,8 @@ export interface HeldPicks {
   secondary?: { token: string; path: string } | "unlink";
   /** Settings > CONTENT portrait library (GitHub #32): a new folder, or "clear" for none. */
   portraits?: { token: string; path: string } | "clear";
+  /** Settings > CONTENT Obsidian vault (GitHub #15): a new folder, or "clear" for none. */
+  vault?: { token: string; path: string } | "clear";
 }
 
 /** Which folder a Browse button picks. */

@@ -25,4 +25,9 @@ MahApps.Metro
   MahApps.Metro is Copyright (c) .NET Foundation and Contributors, MIT License.
   https://github.com/MahApps/MahApps.Metro
 
-Borealis is not affiliated with Aurora Builder. The Borealis mark (src/components/shell/BrandMark.tsx) is original artwork.
+Notes view libraries (src/pages/notes/, loaded with the Notes section only)
+  markdown-it, Copyright (c) 2014 Vitaly Puzrin, Alex Kocharin, MIT License. https://github.com/markdown-it/markdown-it
+  DOMPurify, Copyright Cure53 and other contributors, Apache License 2.0 (or MPL 2.0). https://github.com/cure53/DOMPurify
+  js-yaml, Copyright (C) 2011-2015 by Vitaly Puzrin, MIT License. https://github.com/nodeca/js-yaml
+
+Borealis is not affiliated with Aurora Builder or with Obsidian. The Borealis mark (src/components/shell/BrandMark.tsx) is original artwork.

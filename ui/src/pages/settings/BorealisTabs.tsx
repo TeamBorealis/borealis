@@ -10,6 +10,7 @@ import { PhoneCase } from "../../lib/phoneCase";
 import { UnverifiedBadge } from "../content/IndexesTab";
 import { AiHostPanel } from "./AiHostPanel";
 import { PortraitLibraryRow } from "./PortraitLibraryRow";
+import { VaultRow } from "./VaultRow";
 import { DescCheck, FieldLabel, Help, NumberField, SectionDesc, SectionTitle } from "./rows";
 
 /**
@@ -82,15 +83,17 @@ export function DisplayTab({ form, set }: FormProps) {
 }
 
 /**
- * CONTENT: registered content indexes and Borealis's own folders: the portrait library (GitHub #32; desktop only, since
- * phones have no folder picker).
+ * CONTENT: registered content indexes and Borealis's own folders: the portrait library (GitHub #32) and the Obsidian vault
+ * (GitHub #15); both desktop only, since phones have no folder picker.
  */
-export function ContentTab({ manage, portraits }: { manage: () => void; portraits: Parameters<typeof PortraitLibraryRow>[0] | null }) {
+export function ContentTab({ manage, portraits, vault }: {
+  manage: () => void; portraits: Parameters<typeof PortraitLibraryRow>[0] | null; vault: Parameters<typeof VaultRow>[0] | null;
+}) {
   const api = useApi();
   const indexes = useAsync(() => api.listIndexes(), [api]);
   return (
     <>
-      <TabTitle title="CONTENT" desc={portraits ? "Content packs, the indexes they are updated from, and your portrait library." : "Content packs and the indexes they are updated from."} />
+      <TabTitle title="CONTENT" desc={portraits ? "Content packs, the indexes they are updated from, your portrait library and your notes vault." : "Content packs and the indexes they are updated from."} />
       <FieldLabel>CONTENT INDEXES</FieldLabel>
       <Help>{indexes.data && indexes.data.length === 0 ? "None registered." : "Indexes you added under Additional Content."}</Help>
       {(indexes.data ?? []).map((i) => (
@@ -98,6 +101,7 @@ export function ContentTab({ manage, portraits }: { manage: () => void; portrait
       ))}
       <div className="aur-set-buttons"><Button aria-label="Manage…" onClick={manage}>Manage...</Button></div>
       {portraits && <PortraitLibraryRow {...portraits} />}
+      {vault && <VaultRow {...vault} />}
     </>
   );
 }
