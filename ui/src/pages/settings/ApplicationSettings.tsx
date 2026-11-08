@@ -21,6 +21,7 @@ import { formChanged, mergeForm } from "./settingsForm";
 import { resolveSettingsTab, visibleSettingsTabs } from "./settingsTabs";
 import { SettingsWindow } from "./SettingsWindow";
 import { SheetTab } from "./SheetTab";
+import { notesOnThisDevice } from "../../lib/phone";
 import { PhoneCase } from "../../lib/phoneCase";
 import type { PickPurpose } from "../../api/contract";
 
@@ -68,7 +69,8 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
   const browse = async (which: HeldFolder) => {
     setError(null);
     try {
-      const stored = { documents: dirs?.documentsDir, secondary: dirs?.secondaryContentDir, portraits: dirs?.portraitLibraryDir, vault: dirs?.vaultDir }[which];
+      // Phones open the system picker where it last was; a stored Android document tree is not a folder path.
+      const stored = mobile ? undefined : { documents: dirs?.documentsDir, secondary: dirs?.secondaryContentDir, portraits: dirs?.portraitLibraryDir, vault: dirs?.vaultDir }[which];
       const [pick] = await api.pickPath({ purpose: PICK_PURPOSE[which], startDir: heldPath(held[which]) ?? stored ?? undefined });
       if (pick) setHeld((h) => ({ ...h, [which]: { token: pick.token, path: pick.path } }));
     } catch (e) { setError(errorMessage(e)); }
@@ -135,7 +137,7 @@ export function ApplicationSettings({ initialTab, onClose }: { initialTab: strin
       case "content": return (
         <ContentTab manage={() => leave(() => nav("/content"))}
           portraits={mobile ? null : { dirs, held: held.portraits, browse: () => void browse("portraits"), clear: () => setHeld((h) => ({ ...h, portraits: "clear" })) }}
-          vault={mobile ? null : { dirs, held: held.vault, browse: () => void browse("vault"), clear: () => setHeld((h) => ({ ...h, vault: "clear" })) }} />
+          vault={notesOnThisDevice() ? { dirs, held: held.vault, browse: () => void browse("vault"), clear: () => setHeld((h) => ({ ...h, vault: "clear" })) } : null} />
       );
       case "search": return <SearchTab />;
       case "ai": return <AiTab form={form} set={set} setup={() => leave(() => nav("/setup/ai"))} />;

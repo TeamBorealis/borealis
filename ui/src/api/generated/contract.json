@@ -3257,6 +3257,17 @@
     }
    }
   },
+  "AppLifecycle": {
+   "k": "object",
+   "props": {
+    "foreground": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    }
+   }
+  },
   "AppSettings": {
    "k": "object",
    "props": {
@@ -5659,6 +5670,12 @@
      }
     },
     "vaultDir": {
+     "opt": false,
+     "t": {
+      "k": "prim"
+     }
+    },
+    "vaultLabel": {
      "opt": false,
      "t": {
       "k": "prim"
@@ -11713,6 +11730,12 @@
   "VaultEntry": {
    "k": "object",
    "props": {
+    "cloud": {
+     "opt": true,
+     "t": {
+      "k": "prim"
+     }
+    },
     "kind": {
      "opt": false,
      "t": {
@@ -12374,6 +12397,10 @@
      }
     }
    ]
+  },
+  "app:lifecycle": {
+   "k": "ref",
+   "name": "AppLifecycle"
   },
   "appinstall:progress": {
    "k": "ref",

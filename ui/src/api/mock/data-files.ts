@@ -25,7 +25,7 @@ export class MockDataFiles {
       charactersDir: `${documentsDir}/characters`, documentsDirUnavailable: null,
       secondaryContentDir: s.secondaryContentDir, secondaryContentUnavailable: false,
       portraitLibraryDir: s.portraitLibraryDir, portraitLibraryUnavailable: this.portraits.isUnavailable(s),
-      vaultDir: s.vaultDir, vaultUnavailable: this.vault.isUnavailable(s),
+      vaultDir: s.vaultDir, vaultLabel: s.vaultDir, vaultUnavailable: this.vault.isUnavailable(s),
     };
   }
 

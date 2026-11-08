@@ -128,8 +128,10 @@ export interface DataDirs {
   portraitLibraryDir: string | null;
   /** The chosen portrait library folder cannot be read right now; the setting is kept. */
   portraitLibraryUnavailable: boolean;
-  /** The chosen Obsidian vault folder (Settings > CONTENT, GitHub #15), if any. */
+  /** The chosen Obsidian vault folder (Settings > CONTENT, GitHub #15), if any. On Android a document tree URI. */
   vaultDir: string | null;
+  /** Where the vault is, for people: the folder path, or on Android `Internal storage/Documents/My Vault`. */
+  vaultLabel: string | null;
   /** The chosen vault folder cannot be read right now; the setting is kept. */
   vaultUnavailable: boolean;
 }

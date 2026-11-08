@@ -83,9 +83,15 @@ export function DisplayTab({ form, set }: FormProps) {
 }
 
 /**
- * CONTENT: registered content indexes and Borealis's own folders: the portrait library (GitHub #32) and the Obsidian vault
- * (GitHub #15); both desktop only, since phones have no folder picker.
+ * CONTENT: registered content indexes and Borealis's own folders: the portrait library (GitHub #32, desktop only) and the
+ * Obsidian vault (GitHub #15; on iPhone and iPad too since B-221, through the system folder picker).
  */
+function contentDesc(portraits: boolean, vault: boolean): string {
+  if (portraits && vault) return "Content packs, the indexes they are updated from, your portrait library and your notes vault.";
+  if (vault) return "Content packs, the indexes they are updated from and your notes vault.";
+  return "Content packs and the indexes they are updated from.";
+}
+
 export function ContentTab({ manage, portraits, vault }: {
   manage: () => void; portraits: Parameters<typeof PortraitLibraryRow>[0] | null; vault: Parameters<typeof VaultRow>[0] | null;
 }) {
@@ -93,7 +99,7 @@ export function ContentTab({ manage, portraits, vault }: {
   const indexes = useAsync(() => api.listIndexes(), [api]);
   return (
     <>
-      <TabTitle title="CONTENT" desc={portraits ? "Content packs, the indexes they are updated from, your portrait library and your notes vault." : "Content packs and the indexes they are updated from."} />
+      <TabTitle title="CONTENT" desc={contentDesc(!!portraits, !!vault)} />
       <FieldLabel>CONTENT INDEXES</FieldLabel>
       <Help>{indexes.data && indexes.data.length === 0 ? "None registered." : "Indexes you added under Additional Content."}</Help>
       {(indexes.data ?? []).map((i) => (

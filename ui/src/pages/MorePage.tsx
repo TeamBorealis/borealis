@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { Icon } from "../components";
 import { ROUTES } from "../routes";
 import { useShell } from "../components/shell/ShellContext";
+import { notesOnThisDevice } from "../lib/phone";
 import { usePlatform } from "../state/platform";
 import { openExportBundle, openReceiveFromDevice, openSendToDevice } from "./transfer/openTransfer";
 import "./ai/panes.css";
@@ -15,7 +16,7 @@ export function MorePage() {
       <div className="v5-list-pane">
         <h1 className="sr-only">More</h1>
         <ul className="v5-list" aria-label="More destinations">
-          {ROUTES.filter((r) => r.secondary && (!r.ai || aiEnabled)).map((r) => (
+          {ROUTES.filter((r) => r.secondary && (!r.ai || aiEnabled) && (!r.notes || notesOnThisDevice())).map((r) => (
             <li key={r.path}>
               <Link className="v5-row" to={r.path} style={{ textDecoration: "none" }}><Icon name={r.icon} /><span className="grow">{r.label}</span><Icon name="chevron" /></Link>
             </li>

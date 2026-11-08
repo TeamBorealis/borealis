@@ -1,4 +1,4 @@
-import { mdiChevronDown, mdiChevronRight, mdiFileDocumentOutline, mdiFileOutline, mdiFolderOutline, mdiImageOutline, mdiVectorSquare } from "@mdi/js";
+import { mdiChevronDown, mdiChevronRight, mdiCloudDownloadOutline, mdiFileDocumentOutline, mdiFileOutline, mdiFolderOutline, mdiImageOutline, mdiVectorSquare } from "@mdi/js";
 import { useMemo } from "react";
 import type { VaultEntry } from "../../api/contract";
 import { Svg, displayName } from "./noteNames";
@@ -55,6 +55,7 @@ function Rows({ nodes, depth, expanded, selected, onToggle, onOpen }: RowsProps)
               <span className="nt-caret">{folder && <Svg d={open ? mdiChevronDown : mdiChevronRight} />}</span>
               <Svg d={ICONS[entry.kind]} />
               <span className="nt-name">{displayName(entry.name, entry.kind)}</span>
+              {entry.cloud && <span className="nt-cloud" title="Not downloaded from iCloud yet"><Svg d={mdiCloudDownloadOutline} /><span className="sr-only">, not downloaded yet</span></span>}
             </button>
             {open && children.length > 0 && (
               <ul role="group"><Rows nodes={children} depth={depth + 1} expanded={expanded} selected={selected} onToggle={onToggle} onOpen={onOpen} /></ul>

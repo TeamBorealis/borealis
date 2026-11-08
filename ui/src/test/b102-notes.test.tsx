@@ -57,7 +57,7 @@ async function editMode(user: User): Promise<HTMLTextAreaElement> {
 }
 
 describe("B-102 Notes: navigation and the vault setting", () => {
-  it("is a START sub-tab and a View menu entry after the classic builder's own items, on desktop only", async () => {
+  it("is a START sub-tab and a View menu entry after the classic builder's own items (phones too: b221-notes-mobile)", async () => {
     const user = userEvent.setup();
     renderApp("/characters", { api: await withVault() });
     const sub = await screen.findByRole("navigation", { name: "Start sections" });
@@ -65,12 +65,6 @@ describe("B-102 Notes: navigation and the vault setting", () => {
     await user.click(screen.getByRole("menuitem", { name: "View" }));
     const items = screen.getAllByRole("menuitem").map((m) => m.textContent);
     expect(items.indexOf("Notes")).toBe(items.indexOf("Additional Content") + 1);
-  });
-
-  it("is hidden on phones, and its route goes back to the characters", async () => {
-    renderApp("/notes", { api: await withVault({ mobile: true }) });
-    await waitFor(() => expect(screen.queryByRole("tree", { name: "Vault files" })).toBeNull());
-    expect(screen.queryByRole("link", { name: "Notes" })).toBeNull();
   });
 
   it("without a vault says where to choose one", async () => {
