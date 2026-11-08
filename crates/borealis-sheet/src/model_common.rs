@@ -424,6 +424,10 @@ fn engine_cantrip_row(
 
 /// Hit / DC cell of a damage cantrip: the spell attack bonus for attack rolls, "DC n ABL" for saves.
 fn cantrip_hit_dc(caster: &CasterData, spell: &SpellRow) -> String {
+    // a block without a casting ability has no attack bonus or DC (blank to fill in)
+    if caster.ability_name.is_empty() {
+        return String::new();
+    }
     let facts = spell.facts.as_ref();
     if facts.is_some_and(|f| f.attack_roll) {
         return signed_text(caster.attack);

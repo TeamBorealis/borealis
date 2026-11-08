@@ -25,12 +25,20 @@ fn pip_state(c: &CasterData, row: Option<&SpellRow>) -> &'static str {
 }
 
 fn strip(c: &CasterData) -> String {
+    // no casting ability (spells a feat picks in Aurora-format content): no DC or attack to print
+    let known = |v: String| {
+        if c.ability_name.is_empty() {
+            String::new()
+        } else {
+            v
+        }
+    };
     let mut out = String::from("<div class=\"cast\">");
     for (label, value) in [
         ("Class", c.class.clone()),
         ("Ability", c.ability_name.clone()),
-        ("Spell save DC", c.dc.to_string()),
-        ("Spell attack", signed(c.attack)),
+        ("Spell save DC", known(c.dc.to_string())),
+        ("Spell attack", known(signed(c.attack))),
     ] {
         let _ = write!(
             out,

@@ -103,7 +103,9 @@ pub fn cantrip_attacks(
     let bonus = Bonus { graph, stats, mods };
     let mut out: Vec<AttackSnapshot> = Vec::new();
     let mut seen: Vec<&str> = Vec::new();
-    for sc in casting {
+    // a block without a casting ability (spells a feat picks in Aurora-format content) has no
+    // attack bonus or save DC to roll with
+    for sc in casting.iter().filter(|sc| !sc.ability.is_empty()) {
         let rows: Vec<_> = sc
             .spells
             .iter()

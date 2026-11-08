@@ -98,10 +98,19 @@ fn caster_block(d: &SheetData, o: &HtmlOptions, n: usize, c: &CasterData) -> Str
         id::spell_head(n, "ability"),
         esc(&c.ability_name)
     );
+    // a block without a casting ability (spells a feat picks in Aurora-format content) has no
+    // modifier, DC or attack: the boxes stay blank to fill in, never a made-up 0
+    let known = |v: String| {
+        if c.ability_name.is_empty() {
+            String::new()
+        } else {
+            v
+        }
+    };
     for (label, part, v) in [
-        ("Modifier", "mod", signed(c.ability_modifier)),
-        ("Save DC", "dc", c.dc.to_string()),
-        ("Spell attack", "attack", signed(c.attack)),
+        ("Modifier", "mod", known(signed(c.ability_modifier))),
+        ("Save DC", "dc", known(c.dc.to_string())),
+        ("Spell attack", "attack", known(signed(c.attack))),
         ("Prepared", "prepared", prepared),
     ] {
         let _ = write!(

@@ -1,0 +1,169 @@
+//! #38: spells a feat picks outside any class reach the character's spellcasting blocks, so the
+//! sheet, the spell cards and Play list them. The bundled SRD 5.2.1 Magic Initiate tags its spell
+//! selects with a spellcasting name (`Magic Initiate`); Aurora-format XML feats pick their spells
+//! in selects that carry no spellcasting name at all (`Cantrip (<Feat>)`), which no block listed.
+
+use borealis_content::{ContentFile, ContentStoreBuilder, PackOrigin, Ruleset};
+use borealis_engine::commands;
+use borealis_engine::snapshot::CharacterSnapshot;
+use borealis_engine::state::CharacterState;
+use borealis_engine::{Choice, Engine};
+use borealis_migrate::{convert_xml, Document};
+use std::path::Path;
+
+/// An Aurora XML origin feat in the shape of Aurora's feats: the feat chooses a spell list option
+/// (a `Feat Feature`), whose selects pick the spells without a `spellcasting` attribute.
+fn aurora_xml() -> ContentFile {
+    let xml = r#"<?xml version="1.0" encoding="utf-8"?>
+<elements>
+  <element name="Spark Initiate" type="Feat" source="Test" id="ID_T_I38_FEAT_SPARK_INITIATE">
+    <supports>Origin Feat</supports>
+    <description><p>Synthetic.</p></description>
+    <setters><set name="category">Origin</set></setters>
+    <rules>
+      <select type="Feat Feature" name="Spark Initiate" supports="Spark Initiate List" />
+    </rules>
+  </element>
+  <element name="Wizard" type="Feat Feature" source="Test" id="ID_T_I38_SPARK_INITIATE_WIZARD">
+    <supports>Spark Initiate List</supports>
+    <description><p>Synthetic.</p></description>
+    <rules>
+      <select type="Spell" name="Cantrip (Spark Initiate)" supports="0,Wizard" number="2" />
+      <select type="Spell" name="Level 1 Spell (Spark Initiate)" supports="1,Wizard" />
+    </rules>
+  </element>
+</elements>"#;
+    let conv = convert_xml(xml, "spark.xml");
+    let Some(Document::Content(mut file)) = conv.document else {
+        panic!("converted: {:?}", conv.issues)
+    };
+    file.ruleset = Some(Ruleset::Dnd2024);
+    file
+}
+
+fn engine(with_xml: bool) -> Option<Engine> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+    let srd = root.join("srd-5.2.1");
+    if !srd.join("pack.json").is_file() {
+        eprintln!("SKIPPED: content/srd-5.2.1 not present");
+        return None;
+    }
+    let mut b = ContentStoreBuilder::new()
+        .add_pack_dir(&root.join("core"))
+        .and_then(|b| b.add_pack_dir(&srd))
+        .expect("packs load");
+    if with_xml {
+        b = b.add_file("spark.json", PackOrigin::Custom, aurora_xml());
+    }
+    Some(Engine::new(&b.build()))
+}
+
+/// Fill the first open slot named `slot` with the option (or list entry) named `pick`.
+fn choose(e: &Engine, s: &CharacterState, slot: &str, pick: &str) -> CharacterState {
+    let snap = e.derive(s);
+    let sl = snap
+        .slots
+        .iter()
+        .find(|k| {
+            k.name == slot
+                && k.chosen.is_none()
+                && k.list_choice.is_none()
+                && (k.options.iter().any(|o| o.name == pick)
+                    || k.list_items.iter().any(|(_, t)| t == pick))
+        })
+        .unwrap_or_else(|| {
+            let open: Vec<&str> = snap
+                .slots
+                .iter()
+                .filter(|k| k.chosen.is_none() && k.list_choice.is_none())
+                .map(|k| k.name.as_str())
+                .collect();
+            panic!("no open slot {slot} offering {pick}; open: {open:?}")
+        });
+    let choice = sl.options.iter().find(|o| o.name == pick).map_or_else(
+        || {
+            let id = sl.list_items.iter().find(|(_, t)| t == pick).unwrap().0;
+            Choice::ListItem(id)
+        },
+        |o| Choice::Element(o.id.clone()),
+    );
+    commands::select(e, s, &sl.key, choice)
+        .unwrap_or_else(|err| panic!("{slot}/{pick}: {err}"))
+        .state
+}
+
+fn human_bard(e: &Engine, picks: &[(&str, &str)]) -> CharacterState {
+    let mut s = commands::new_character(e, Ruleset::Dnd2024);
+    for (slot, pick) in [("Race", "Human"), ("Class", "Bard")].iter().chain(picks) {
+        s = choose(e, &s, slot, pick);
+    }
+    s
+}
+
+fn names(snap: &CharacterSnapshot, block: &str) -> Vec<String> {
+    snap.caster(block)
+        .unwrap_or_else(|| {
+            panic!(
+                "no {block} block: {:?}",
+                snap.spellcasting
+                    .iter()
+                    .map(|b| &b.name)
+                    .collect::<Vec<_>>()
+            )
+        })
+        .spells
+        .iter()
+        .map(|x| x.name.clone())
+        .collect()
+}
+
+#[test]
+fn srd_magic_initiate_spells_of_a_bard_form_their_own_block() {
+    let Some(e) = engine(false) else { return };
+    let s = human_bard(
+        &e,
+        &[
+            ("Versatile", "Magic Initiate"),
+            ("Spell List", "Wizard"),
+            ("Spellcasting Ability", "Intelligence"),
+            ("Magic Initiate Cantrips", "True Strike"),
+            ("Magic Initiate Cantrips", "Prestidigitation"),
+            ("Magic Initiate Level 1 Spell", "Find Familiar"),
+        ],
+    );
+    let snap = e.derive(&s);
+    assert_eq!(
+        names(&snap, "Magic Initiate (Wizard)"),
+        vec!["Prestidigitation", "True Strike", "Find Familiar"]
+    );
+    assert!(!names(&snap, "Bard").contains(&"Find Familiar".to_string()));
+}
+
+#[test]
+fn aurora_feat_spells_picked_without_a_spellcasting_name_form_a_block_named_after_the_feat() {
+    let Some(e) = engine(true) else { return };
+    let s = human_bard(
+        &e,
+        &[
+            ("Versatile", "Spark Initiate"),
+            ("Spark Initiate", "Wizard"),
+            ("Cantrip (Spark Initiate)", "True Strike"),
+            ("Cantrip (Spark Initiate)", "Prestidigitation"),
+            ("Level 1 Spell (Spark Initiate)", "Find Familiar"),
+        ],
+    );
+    let snap = e.derive(&s);
+    assert_eq!(
+        names(&snap, "Spark Initiate"),
+        vec!["Prestidigitation", "True Strike", "Find Familiar"]
+    );
+    let bard = names(&snap, "Bard");
+    assert!(
+        !bard
+            .iter()
+            .any(|n| n == "Find Familiar" || n == "True Strike"),
+        "{bard:?}"
+    );
+    let block = snap.caster("Spark Initiate").unwrap();
+    assert!(block.spells.iter().all(|x| x.known));
+}

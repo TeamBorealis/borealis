@@ -62,17 +62,20 @@ function slotNote(level: number, play: PlayState): string {
   return [row ? `${row.max - row.used}/${row.max} slots` : null, pact ? `Pact Magic ${pact.max - pact.used}/${pact.max}` : null].filter(Boolean).join(" · ");
 }
 
-function CasterCard({ c, play, selectedId, onSelect }: { c: ClassSpellcasting; play: PlayState; selectedId: string | null; onSelect: (id: string) => void }) {
+export function CasterCard({ c, play, selectedId, onSelect }: { c: ClassSpellcasting; play: PlayState; selectedId: string | null; onSelect: (id: string) => void }) {
   const ready = c.spells.filter((x) => x.ready);
   const levels = [...new Set(ready.map((x) => x.level))].sort((a, b) => a - b);
   return (
     <Expander title={`${c.className} spells`} headerExtra={<span>{ready.length}</span>}>
-      <ul className="v5-list" aria-label={`${c.className} spellcasting`}>
-        <li className="v5-line pr-line">
-          <span className="v5-row static grow"><span className="grow">Spell attack</span><span className="meta">Save DC {c.saveDc}</span></span>
-          <span className="v5-ctrls pr-rolls"><D20Button what={`${c.className} spell attack`} modifier={c.attackRoll} prefix="Hit" /></span>
-        </li>
-      </ul>
+      {/* #38: a block without a casting ability (a feat's spells in Aurora-format content) has no attack or DC to show */}
+      {c.ability && (
+        <ul className="v5-list" aria-label={`${c.className} spellcasting`}>
+          <li className="v5-line pr-line">
+            <span className="v5-row static grow"><span className="grow">Spell attack</span><span className="meta">Save DC {c.saveDc}</span></span>
+            <span className="v5-ctrls pr-rolls"><D20Button what={`${c.className} spell attack`} modifier={c.attackRoll} prefix="Hit" /></span>
+          </li>
+        </ul>
+      )}
       {ready.length === 0 && <EmptyState title="No spells ready">Prepare spells on Magic.</EmptyState>}
       {levels.map((lvl) => (
         <div key={lvl}>

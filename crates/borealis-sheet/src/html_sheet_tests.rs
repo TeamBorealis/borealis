@@ -432,3 +432,37 @@ fn size_word_shrinks_to_fit_its_cell() {
         "Medium keeps 11.5 pt in a 2014 cell"
     );
 }
+
+/// #38: the block of spells a feat picks with no casting ability (Aurora-format content) prints
+/// its spells, with blank modifier, DC and attack boxes to fill in, never a made-up 0.
+#[test]
+fn a_block_without_a_casting_ability_lists_its_spells_with_blank_dc_and_attack() {
+    let (character, mut snap) = wizard_2024();
+    let mut block = snap.spellcasting[0].clone();
+    block.name = "Spark Initiate".into();
+    block.ability = String::new();
+    block.dc = 0;
+    block.attack = 0;
+    block.slots = [0; 9];
+    block.prepare = false;
+    block.prepare_limit = None;
+    block.spellbook = None;
+    block.spells.retain(|s| s.level == 0);
+    block.spells.truncate(1);
+    let cantrip = block.spells[0].name.clone();
+    snap.spellcasting.push(block);
+    let d = data(&(character, snap));
+    let html = render_sheet(&d, &HtmlOptions::default());
+    assert!(html.contains("Spark Initiate"));
+    for part in ["mod", "dc", "attack"] {
+        assert!(
+            html.contains(&format!("data-field=\"spell.2.{part}\"></span>")),
+            "spell.2.{part} is blank"
+        );
+        assert!(!html.contains(&format!("data-field=\"spell.1.{part}\"></span>")));
+    }
+    assert!(
+        html.matches(cantrip.as_str()).count() >= 2,
+        "{cantrip} listed in both blocks"
+    );
+}

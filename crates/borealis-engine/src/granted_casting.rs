@@ -21,6 +21,10 @@
 //!   option takes the owner's last word (`Infernal` of Fiendish Legacy -> `Infernal Legacy`,
 //!   the SRD's "Infernal legacy"). A spell another trait grants with the same parameter
 //!   (Tiefling Otherworldly Presence: Thaumaturgy) joins that block.
+//! - spells picked or granted with no spellcasting name and no ability at all (Aurora-format
+//!   feats pick theirs in `Cantrip (Magic Initiate)` selects, #38): one block named in the
+//!   select's parentheses (`Magic Initiate`), else after the owner, so the sheet, the spell cards
+//!   and Play list them; its ability is the owner's when it has one, else none (no DC).
 
 use crate::custom_rules::{param_key, X_SPELL_ABILITY};
 use crate::graph::{Graph, Node, NodeId, Origin};
@@ -156,6 +160,42 @@ pub(crate) fn block_name(graph: &Graph<'_>, owner: NodeId, class: &str) -> Strin
         .map_or_else(|| class.to_string(), |l| format!("{class} ({l})"))
 }
 
+/// Block of a spell picked or granted with no spellcasting name and no ability field
+/// (Aurora-format feats: `<select type="Spell" name="Cantrip (Magic Initiate)">`): the name in
+/// the select's closing parentheses (`Magic Initiate`), else the owner's name; a name a block
+/// already carries falls back to the owner's name. The ability is the owner's (or its parent's)
+/// element ability when it has one (see [`element_ability`]), else none (a block without a DC).
+fn unlabelled_block(
+    graph: &Graph<'_>,
+    parent: NodeId,
+    spell: &Node<'_>,
+    taken: &[SpellcastingSnapshot],
+) -> Option<(String, Option<String>)> {
+    let owner = &graph.nodes[parent];
+    let owner_name = owner.e.el.name.trim().to_string();
+    let from_select = match spell.origin {
+        Origin::Selected(si) => owner.slots.get(si).and_then(|sl| {
+            let Rule::Select(r) = owner.e.el.rules.get(sl.rule)? else {
+                return None;
+            };
+            let inner = r.name.trim().strip_suffix(')')?;
+            let name = inner.rsplit_once('(')?.1.trim();
+            (!name.is_empty()).then(|| name.to_string())
+        }),
+        Origin::Granted(_) => None,
+        Origin::Root | Origin::Manual => return None,
+    };
+    let name = from_select
+        .filter(|n| !taken.iter().any(|b| &b.name == n))
+        .unwrap_or(owner_name);
+    if name.is_empty() || taken.iter().any(|b| b.name == name) {
+        return None;
+    }
+    let ability = element_ability(graph, parent)
+        .or_else(|| owner.parent.and_then(|p| element_ability(graph, p)));
+    Some((name, ability))
+}
+
 struct Pending {
     name: String,
     ability: Option<String>,
@@ -201,6 +241,9 @@ pub fn add_granted_blocks(graph: &Graph<'_>, stats: &StatSet, out: &mut Vec<Spel
             Some(_) => {}
             None => {
                 let Some(field) = grant_ability_field(graph, n) else {
+                    if let Some((name, ability)) = unlabelled_block(graph, parent, n, out) {
+                        add_to(&mut pending, name, ability, id);
+                    }
                     continue;
                 };
                 let Some((ability, Some(owner))) = ability_of(graph, parent, &field) else {
