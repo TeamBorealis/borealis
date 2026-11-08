@@ -100,6 +100,24 @@ describe("B-221 Notes on phones and tablets: entries and the vault setting", () 
     expect(within(dialog).getByLabelText("Obsidian vault")).toBeTruthy();
   });
 
+  it("on Android, where a vault has no trash, Delete asks once: Delete for good?", async () => {
+    setPhoneOsForTests("android");
+    const user = userEvent.setup();
+    const api = await withVault();
+    api.vault.trashAvailable = false;
+    renderApp("/notes", { api });
+    await open(user, "Session 1");
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    const sure = await screen.findByRole("dialog", { name: "Delete for good?" });
+    expect(within(sure).queryByText(/trash\?/)).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Delete?" })).toBeNull();
+    expect(api.vault.files.has("Session 1.md")).toBe(true);
+    await user.click(within(sure).getByRole("button", { name: "Delete for good" }));
+    await waitFor(() => expect(api.vault.files.has("Session 1.md")).toBe(false));
+    expect(api.vault.trashed).toEqual([]);
+    expect(await screen.findByText("Session 1 was deleted.")).toBeTruthy();
+  });
+
   it("shows where an Android document tree is, not its URI", async () => {
     const user = userEvent.setup();
     const api = await withVault();
