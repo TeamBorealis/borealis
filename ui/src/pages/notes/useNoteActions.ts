@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Api, VaultRenamePlan } from "../../api/contract";
 import type { ConfirmOptions } from "../../components";
+import { phoneOs } from "../../lib/phone";
 import { setStatus } from "../../state/status";
 import { errorMessage } from "../../state/useAsync";
 import type { NoteMode } from "./NotePane";
@@ -110,9 +111,17 @@ export function useNoteActions({ api, editor, confirm, selected, reload, openPat
   const deleteFile = async (path: string) => {
     const name = displayName(baseName(path));
     try {
-      const ok = await confirm({ title: "Delete?", body: `Move ${name} to the trash?`, confirmLabel: "Delete", danger: true });
-      if (ok !== "confirm") return;
-      let status = await api.vaultDelete({ path, permanent: false });
+      // Android (B-221): a vault in the phone's storage is a document tree, which has no trash, so the first question
+      // is already the last one rather than offering a trash that is not there.
+      const noTrash = phoneOs() === "android";
+      if (noTrash) {
+        const sure = await confirm({ title: "Delete for good?", body: `Android has no trash for notes. Delete ${name} for good? This cannot be undone.`, confirmLabel: "Delete for good", danger: true });
+        if (sure !== "confirm") return;
+      } else {
+        const ok = await confirm({ title: "Delete?", body: `Move ${name} to the trash?`, confirmLabel: "Delete", danger: true });
+        if (ok !== "confirm") return;
+      }
+      let status = await api.vaultDelete({ path, permanent: noTrash });
       if (status === "trash-unavailable") {
         const sure = await confirm({ title: "Delete for good?", body: `This system has no trash for ${name}. Delete it for good? This cannot be undone.`, confirmLabel: "Delete for good", danger: true });
         if (sure !== "confirm") return;
