@@ -36,7 +36,7 @@ describe("Manage character details: editable combos (issue #30)", () => {
     const user = userEvent.setup();
     await open();
     await screen.findByLabelText("Character name");
-    expect(await optionsOf(user, "Gender")).toEqual(["Male", "Female", "Construct"]);
+    expect(await optionsOf(user, "Gender")).toEqual(["Male", "Female", "Non-binary", "Construct"]);
     expect(await optionsOf(user, "Eyes")).toEqual(["Blue", "Brown", "Red", "Green", "Black", "White", "Purple", "Orange", "Pink", "None", "Eye Patch", "Glass Eye"]);
     expect(await optionsOf(user, "Skin")).toEqual(["Pale", "Fair", "White", "Brown", "Black", "Albino", "Obsidian", "Red Scales", "Brass Scales", "Green Scales", "Black Scales", "Furry", "Barkskin"]);
     expect(await optionsOf(user, "Hair")).toEqual(["Bald", "Short", "Long", "Brown", "Red", "White", "Gray", "Black", "Purple", "Green"]);
@@ -70,6 +70,16 @@ describe("Manage character details: editable combos (issue #30)", () => {
     renderApp("/manage", { api, openCharacterId: id });
     expect(((await screen.findByRole("combobox", { name: "Gender" })) as HTMLInputElement).value).toBe("Genderfluid");
     expect((screen.getByRole("combobox", { name: "Eyes" }) as HTMLInputElement).value).toBe("Heterochromia");
+  });
+
+  it("offers Non-binary for gender, as New Character does, and stores it when picked (decision FU1)", async () => {
+    const user = userEvent.setup();
+    const { api, id } = await open();
+    await screen.findByLabelText("Character name");
+    await user.click(screen.getByRole("button", { name: "Show Gender options" }));
+    await user.click(within(screen.getByRole("listbox", { name: "Gender" })).getByRole("option", { name: "Non-binary" }));
+    await waitFor(async () => expect((await api.getSnapshot({ characterId: id })).details.gender).toBe("Non-binary"));
+    expect((screen.getByRole("combobox", { name: "Gender" }) as HTMLInputElement).value).toBe("Non-binary");
   });
 
   it("makes the backstory trinket an editable combo over the trinket list", async () => {

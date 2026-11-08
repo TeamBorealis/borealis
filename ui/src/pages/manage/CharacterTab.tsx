@@ -13,8 +13,9 @@ import "./manage-fx15.css";
    attunement and prerequisites test); a deity may also be typed (issue #30), kept as custom text. These lists stand in only when the
    content offers no such elements. */
 const ALIGNMENTS = ["Lawful Good", "Neutral Good", "Chaotic Good", "Lawful Neutral", "Neutral", "Chaotic Neutral", "Lawful Evil", "Neutral Evil", "Chaotic Evil"];
-/* Editable combos (issue #30): suggestions, any typed text is kept. Gender, eyes, skin and hair are the classic builder's lists. */
-const GENDERS = ["Male", "Female", "Construct"];
+/* Editable combos (issue #30): suggestions, any typed text is kept. Gender, eyes, skin and hair are the classic builder's lists;
+   Gender also offers Non-binary before Construct, as the New Character dialog does (decision FU1). */
+const GENDERS = ["Male", "Female", "Non-binary", "Construct"];
 const EYES = ["Blue", "Brown", "Red", "Green", "Black", "White", "Purple", "Orange", "Pink", "None", "Eye Patch", "Glass Eye"];
 const SKIN = ["Pale", "Fair", "White", "Brown", "Black", "Albino", "Obsidian", "Red Scales", "Brass Scales", "Green Scales", "Black Scales", "Furry", "Barkskin"];
 const HAIR = ["Bald", "Short", "Long", "Brown", "Red", "White", "Gray", "Black", "Purple", "Green"];
