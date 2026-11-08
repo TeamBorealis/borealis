@@ -168,6 +168,8 @@ impl AppState {
     /// `internal` if the settings lock is poisoned.
     pub fn data_dirs(&self) -> ApiResult<DataDirs> {
         let documents = self.documents_dir();
+        // First: on iOS opening the vault may move its setting to where the folder is now.
+        let vault_unavailable = self.vault_unavailable()?;
         let settings = self.settings()?;
         Ok(DataDirs {
             documents_dir: display(&documents),
@@ -179,7 +181,8 @@ impl AppState {
             secondary_content_unavailable: self.secondary_content_unavailable()?,
             portrait_library_dir: settings.portrait_library_dir,
             portrait_library_unavailable: self.portrait_library_unavailable()?,
-            vault_unavailable: self.vault_unavailable()?,
+            vault_unavailable,
+            vault_label: settings.vault_dir.as_deref().map(crate::vault::label),
             vault_dir: settings.vault_dir,
         })
     }

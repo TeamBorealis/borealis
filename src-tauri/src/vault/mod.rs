@@ -2,8 +2,9 @@
 //! its Markdown files where they are: nothing is copied or imported, and Obsidian sees every change at once.
 //!
 //! - The folder is a backend-picked token (`vault-dir`), remembered in `vaultDir` (Settings > Content), with a
-//!   security-scoped bookmark in the Mac App Store build ([`crate::folder_access`]). A folder that cannot be read is
-//!   reported as unavailable and kept (as B-188).
+//!   security-scoped bookmark in the Mac App Store build and on iOS / iPadOS ([`crate::folder_access`]). A folder that
+//!   cannot be read is reported as unavailable and kept (as B-188).
+//! - All file access goes through a [`store::VaultStore`].
 //! - The webview names files only by vault-relative paths, and every one is checked here ([`paths`]): nothing outside
 //!   the vault, nothing hidden (so nothing under `.obsidian/` is ever written), no links out.
 //! - Notes are read and written as raw text ([`text`]); a write happens only on a user change and only while the file
@@ -18,6 +19,7 @@ pub mod paths;
 pub mod rename;
 mod renaming;
 pub mod resolve;
+pub mod store;
 pub mod syntax;
 pub mod text;
 pub mod tree;
@@ -36,9 +38,9 @@ use dto::{DeleteStatus, SaveStatus, VaultAttachment, VaultNote, VaultSave, Vault
 use index::{Backlink, SearchHit, TagCount};
 use paths::Vault;
 use resolve::FileSet;
-use std::io::Read as _;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard};
+use store::{FileBytes, LocalStore, VaultStore};
 use tree::{EntryKind, Listing};
 
 /// Largest image sent to the notes view (as a `data:` URL).
@@ -88,17 +90,16 @@ fn file_set(listing: &Listing) -> FileSet {
     )
 }
 
-fn mtime_of(path: &Path) -> u64 {
-    std::fs::metadata(path).map_or(0, |m| tree::mtime_ms(&m))
-}
-
-/// The note `rel` as read from `bytes`.
-fn note_of(rel: &str, real: &Path, bytes: &[u8]) -> VaultNote {
-    let decoded = text::decode(bytes);
+/// The note `rel` as read from `file`.
+fn note_of(rel: &str, file: &FileBytes) -> VaultNote {
+    let decoded = text::decode(&file.bytes);
     let read_only = if !decoded.utf8 {
         Some("This file is not UTF-8 text, so Borealis shows it but cannot save it.".to_string())
-    } else if tree::kind_of(real.file_name().and_then(|n| n.to_str()).unwrap_or(rel))
-        != EntryKind::Note
+    } else if tree::kind_of(if file.real_name.is_empty() {
+        rel
+    } else {
+        &file.real_name
+    }) != EntryKind::Note
     {
         Some("Borealis shows this file as plain text and does not change it.".to_string())
     } else {
@@ -106,22 +107,13 @@ fn note_of(rel: &str, real: &Path, bytes: &[u8]) -> VaultNote {
     };
     VaultNote {
         path: rel.to_string(),
-        hash: text::hash(bytes),
-        mtime_ms: mtime_of(real),
+        hash: text::hash(&file.bytes),
+        mtime_ms: file.mtime_ms,
         line_ending: decoded.line_ending,
         bom: decoded.bom,
         text: decoded.text,
         read_only,
     }
-}
-
-/// Read at most `max` bytes of `path`; `None` when it is larger.
-fn read_capped(path: &Path, max: u64) -> ApiResult<Option<Vec<u8>>> {
-    let mut bytes = Vec::new();
-    std::fs::File::open(path)
-        .and_then(|f| f.take(max + 1).read_to_end(&mut bytes))
-        .map_err(|e| ApiError::io("read the file", e))?;
-    Ok((bytes.len() as u64 <= max).then_some(bytes))
 }
 
 fn image_mime(name: &str) -> &'static str {
@@ -139,7 +131,7 @@ fn image_mime(name: &str) -> &'static str {
 /// A free path `folder/stem[ n].ext` (Obsidian numbers names the same way).
 fn free_path(
     files: &FileSet,
-    vault: &Vault,
+    store: &dyn VaultStore,
     folder: &str,
     stem: &str,
     ext: &str,
@@ -158,7 +150,7 @@ fn free_path(
             };
             paths::join(folder, &name)
         })
-        .find(|p| files.get(p).is_none() && vault.existing(p).is_err())
+        .find(|p| files.get(p).is_none() && !store.exists(p))
         .ok_or_else(|| ApiError::invalid("Too many files have that name."))
 }
 
@@ -200,38 +192,88 @@ pub fn os_trash(path: &Path) -> Result<(), String> {
     ctx.delete(path).map_err(|e| e.to_string())
 }
 
-/// Phones: no trash.
+/// iOS / iPadOS: the file provider's Recently Deleted, where it has one.
+///
+/// # Errors
+/// When the provider has no trash.
+#[cfg(target_os = "ios")]
+pub fn os_trash(path: &Path) -> Result<(), String> {
+    crate::folder_access_ios::trash(path)
+}
+
+/// Android: no trash for app files.
 ///
 /// # Errors
 /// Always.
-#[cfg(not(desktop))]
+#[cfg(target_os = "android")]
 pub fn os_trash(_: &Path) -> Result<(), String> {
     Err("this device has no trash".into())
 }
 
+/// A chosen vault: open, or the reason it cannot be opened right now (the setting is kept).
+enum Chosen {
+    Open(Box<dyn VaultStore>),
+    Unavailable,
+}
+
 impl AppState {
-    /// The chosen vault while it can be read, `Err(path)` while it cannot, `None` when none is chosen.
-    fn vault_root(&self) -> ApiResult<Option<Result<Vault, String>>> {
+    /// The vault in the folder `dir`, while it can be read.
+    fn open_store(&self, dir: &str) -> Option<Box<dyn VaultStore>> {
+        let scoped = crate::folder_access::access(
+            &self.paths.data,
+            crate::folder_access::RememberedFolder::Vault,
+            Path::new(dir),
+        );
+        let (path, access) = match scoped {
+            Some(s) => (s.path, Some(s.access)),
+            None => (PathBuf::from(dir), None),
+        };
+        if path != Path::new(dir) {
+            self.vault_moved(dir, &path);
+        }
+        let root = crate::data_dirs::validate_user_dir(&path, &self.secondary_forbidden(), false)
+            .ok()
+            .filter(|root| std::fs::read_dir(root).is_ok())?;
+        let vault = Vault::open(&root).ok()?;
+        Some(Box::new(LocalStore::new(vault, access)))
+    }
+
+    /// iOS: the bookmark found the vault folder somewhere else (the app that holds it was reinstalled or updated, so
+    /// its folder has a new path): the setting follows it.
+    fn vault_moved(&self, from: &str, to: &Path) {
+        let Ok(mut next) = self.settings() else {
+            return;
+        };
+        if next.vault_dir.as_deref() != Some(from) {
+            return;
+        }
+        next.vault_dir = Some(to.to_string_lossy().into_owned());
+        let saved = next
+            .save(&self.paths.settings_file())
+            .and_then(|()| self.set_settings(next));
+        match saved {
+            Ok(_) => tracing::info!("vault: the folder moved; the setting follows it"),
+            Err(e) => tracing::warn!("vault: the moved folder could not be saved: {e:?}"),
+        }
+    }
+
+    /// The chosen vault, `None` when none is chosen.
+    fn chosen_vault(&self) -> ApiResult<Option<Chosen>> {
         let Some(dir) = self.settings()?.vault_dir else {
             return Ok(None);
         };
-        let ready = crate::data_dirs::validate_user_dir(
-            Path::new(&dir),
-            &self.secondary_forbidden(),
-            false,
-        )
-        .ok()
-        .filter(|root| std::fs::read_dir(root).is_ok())
-        .and_then(|root| Vault::open(&root).ok());
-        Ok(Some(ready.ok_or(dir)))
+        Ok(Some(
+            self.open_store(&dir)
+                .map_or(Chosen::Unavailable, Chosen::Open),
+        ))
     }
 
     /// The open vault, or why there is none.
-    fn vault(&self) -> ApiResult<Vault> {
-        match self.vault_root()? {
+    fn vault(&self) -> ApiResult<Box<dyn VaultStore>> {
+        match self.chosen_vault()? {
             None => Err(no_vault()),
-            Some(Err(_)) => Err(unavailable()),
-            Some(Ok(v)) => Ok(v),
+            Some(Chosen::Unavailable) => Err(unavailable()),
+            Some(Chosen::Open(v)) => Ok(v),
         }
     }
 
@@ -240,7 +282,20 @@ impl AppState {
     /// # Errors
     /// `internal` if the settings lock is poisoned.
     pub fn vault_unavailable(&self) -> ApiResult<bool> {
-        Ok(matches!(self.vault_root()?, Some(Err(_))))
+        Ok(matches!(self.chosen_vault()?, Some(Chosen::Unavailable)))
+    }
+
+    /// The folder behind a `vault-dir` pick, checked.
+    fn picked_vault(&self, token: &str) -> ApiResult<String> {
+        let picked = self.picked.take(token, PickPurpose::VaultDir)?;
+        // iOS: the picker's security scope is held while the folder is checked.
+        let _access = crate::folder_access::access(
+            &self.paths.data,
+            crate::folder_access::RememberedFolder::Vault,
+            &picked,
+        );
+        let dir = crate::data_dirs::validate_user_dir(&picked, &self.secondary_forbidden(), false)?;
+        Ok(dir.to_string_lossy().into_owned())
     }
 
     /// Use the folder behind a `vault-dir` pick as the vault (`None` = no vault). Any folder works; a `.obsidian`
@@ -249,18 +304,7 @@ impl AppState {
     /// # Errors
     /// `invalid_argument` for a bad token or an unusable folder; `io_error` if the settings cannot be written.
     pub fn set_vault_dir(&self, token: Option<&str>) -> ApiResult<DataDirs> {
-        let chosen = match token {
-            Some(t) => {
-                let picked = self.picked.take(t, PickPurpose::VaultDir)?;
-                let dir = crate::data_dirs::validate_user_dir(
-                    &picked,
-                    &self.secondary_forbidden(),
-                    false,
-                )?;
-                Some(dir.to_string_lossy().into_owned())
-            }
-            None => None,
-        };
+        let chosen = token.map(|t| self.picked_vault(t)).transpose()?;
         let mut next = self.settings()?;
         next.vault_dir = chosen;
         next.save(&self.paths.settings_file())?;
@@ -276,21 +320,18 @@ impl AppState {
     /// `internal` if a lock is poisoned.
     pub fn vault_tree(&self) -> ApiResult<VaultTree> {
         let dir = self.settings()?.vault_dir;
-        let vault = match self.vault_root()? {
-            Some(Ok(v)) => Some(v),
-            Some(Err(_)) => {
+        let store = match self.chosen_vault()? {
+            Some(Chosen::Open(v)) => Some(v),
+            Some(Chosen::Unavailable) => {
                 tracing::warn!("vault: the chosen folder is unavailable; the setting is kept");
                 None
             }
             None => None,
         };
-        let Some(vault) = vault else {
+        let Some(store) = store else {
             return Ok(VaultTree {
                 unavailable: dir.is_some(),
-                name: dir
-                    .as_deref()
-                    .and_then(|d| Path::new(d).file_name())
-                    .map(|n| n.to_string_lossy().into_owned()),
+                name: dir.as_deref().and_then(display_name),
                 dir,
                 obsidian: false,
                 config: VaultConfig::default(),
@@ -298,17 +339,15 @@ impl AppState {
                 truncated: false,
             });
         };
-        let listing = tree::list(&vault);
-        lock(&self.vault.index)?.refresh(&vault, &listing.entries);
+        let listing = store.list();
+        lock(&self.vault.index)?.refresh(store.as_ref(), &listing.entries);
         Ok(VaultTree {
-            dir,
-            name: vault
-                .root()
-                .file_name()
-                .map(|n| n.to_string_lossy().into_owned()),
+            // The setting may have followed a moved folder (iOS) while the store opened.
+            dir: self.settings()?.vault_dir,
+            name: store.name(),
             unavailable: false,
-            obsidian: vault.root().join(".obsidian").is_dir(),
-            config: VaultConfig::load(vault.root()),
+            obsidian: store.has_obsidian(),
+            config: VaultConfig::of(store.as_ref()),
             entries: listing.entries,
             truncated: listing.truncated,
         })
@@ -319,19 +358,20 @@ impl AppState {
     /// # Errors
     /// `invalid_argument` for a path outside the vault, a folder or an oversized file; `not_found` when it is gone.
     pub fn vault_read(&self, path: &str) -> ApiResult<VaultNote> {
-        let vault = self.vault()?;
-        let found = vault.existing_file(path)?;
+        let store = self.vault()?;
+        let real_name = store.file(path)?;
         // Notes and canvases only (judged by the name asked for and by the real file behind a link).
         let text_kinds = [EntryKind::Note, EntryKind::Canvas];
-        let kinds = [paths::file_name(path), Vault::real_name(&found)].map(tree::kind_of);
+        let kinds = [paths::file_name(path), real_name.as_str()].map(tree::kind_of);
         if !kinds.iter().all(|k| text_kinds.contains(k)) {
             return Err(ApiError::invalid(
                 "Borealis opens only notes and canvases as text.",
             ));
         }
-        let bytes = read_capped(&found.real, index::MAX_NOTE_BYTES)?
+        let file = store
+            .read(path, index::MAX_NOTE_BYTES)?
             .ok_or_else(|| ApiError::invalid("That file is too large to open."))?;
-        Ok(note_of(path, &found.real, &bytes))
+        Ok(note_of(path, &file))
     }
 
     /// Save the user's edit of the note `path`. `base_hash` is the hash it was loaded with; `None` creates the note
@@ -345,26 +385,25 @@ impl AppState {
         text_in: &str,
         base_hash: Option<&str>,
     ) -> ApiResult<VaultSave> {
-        let vault = self.vault()?;
+        let store = self.vault()?;
         if tree::kind_of(paths::file_name(path)) != EntryKind::Note {
             return Err(not_a_note());
         }
         let Some(base) = base_hash else {
-            let target = vault.new_file(path)?;
             let bytes = text::encode(text_in, false, text::LineEnding::Lf);
-            write::create_new(&target, &bytes).map_err(|e| ApiError::io("create the note", e))?;
-            return Ok(saved(&target, &bytes));
+            store.create_new(path, &bytes)?;
+            return Ok(saved(store.mtime(path), &bytes));
         };
-        let found = match vault.existing_file(path) {
-            Ok(f) => f,
+        let current = match store.read(path, index::MAX_NOTE_BYTES) {
+            Ok(Some(f)) => f,
+            Ok(None) => return Err(ApiError::invalid("That file is too large to open.")),
             Err(e) if e.code == ErrorCode::NotFound => return Ok(missing()),
             Err(e) => return Err(e),
         };
-        if tree::kind_of(Vault::real_name(&found)) != EntryKind::Note {
+        if tree::kind_of(&current.real_name) != EntryKind::Note {
             return Err(not_a_note());
         }
-        let current = std::fs::read(&found.real).map_err(|e| ApiError::io("read the note", e))?;
-        let decoded = text::decode(&current);
+        let decoded = text::decode(&current.bytes);
         if !decoded.utf8 {
             return Err(ApiError::invalid(
                 "This file is not UTF-8 text, so Borealis cannot save it.",
@@ -372,21 +411,27 @@ impl AppState {
         }
         // Unchanged lines keep their own line ending (files with mixed endings stay as they are around an edit).
         let bytes = text::encode_keeping(text_in, &decoded);
-        let outcome = write::guarded_write(&found.real, base, &bytes)
-            .map_err(|e| ApiError::io("save the note", e))?;
+        let outcome = store.guarded_write(path, base, &bytes)?;
         lock(&self.vault.index)?.invalidate(path);
         Ok(match outcome {
             write::Outcome::Saved { hash } => VaultSave {
                 status: SaveStatus::Saved,
                 hash: Some(hash),
-                mtime_ms: Some(mtime_of(&found.real)),
+                mtime_ms: Some(store.mtime(path)),
                 disk: None,
             },
             write::Outcome::Changed { disk } => VaultSave {
                 status: SaveStatus::Conflict,
                 hash: None,
                 mtime_ms: None,
-                disk: Some(note_of(path, &found.real, &disk)),
+                disk: Some(note_of(
+                    path,
+                    &FileBytes {
+                        bytes: disk,
+                        mtime_ms: store.mtime(path),
+                        real_name: current.real_name,
+                    },
+                )),
             },
             write::Outcome::Missing => missing(),
         })
@@ -404,10 +449,10 @@ impl AppState {
         from: Option<&str>,
         folder: Option<&str>,
     ) -> ApiResult<VaultNote> {
-        let vault = self.vault()?;
-        let listing = tree::list(&vault);
+        let store = self.vault()?;
+        let listing = store.list();
         let files = file_set(&listing);
-        let cfg = VaultConfig::load(vault.root());
+        let cfg = VaultConfig::of(store.as_ref());
         let name = name.map(str::trim).filter(|n| !n.is_empty());
         let rel = match name {
             Some(n) => {
@@ -427,12 +472,18 @@ impl AppState {
             }
             None => {
                 let base = folder.map_or_else(|| cfg.new_note_folder(from), str::to_string);
-                free_path(&files, &vault, &base, UNTITLED, "md")?
+                free_path(&files, store.as_ref(), &base, UNTITLED, "md")?
             }
         };
-        let target = vault.new_file(&rel)?;
-        write::create_new(&target, b"").map_err(|e| ApiError::io("create the note", e))?;
-        Ok(note_of(&rel, &target, b""))
+        store.create_new(&rel, b"")?;
+        Ok(note_of(
+            &rel,
+            &FileBytes {
+                bytes: Vec::new(),
+                mtime_ms: store.mtime(&rel),
+                real_name: paths::file_name(&rel).to_string(),
+            },
+        ))
     }
 
     /// Delete a file: to the OS trash, or for good when `permanent` (after the user agreed because there is no trash).
@@ -453,20 +504,10 @@ impl AppState {
         permanent: bool,
         trash: impl Fn(&Path) -> Result<(), String>,
     ) -> ApiResult<DeleteStatus> {
-        let vault = self.vault()?;
-        let found = vault.existing_file(path)?;
+        let store = self.vault()?;
+        store.file(path)?;
         lock(&self.vault.index)?.invalidate(path);
-        if permanent {
-            std::fs::remove_file(&found.path).map_err(|e| ApiError::io("delete the file", e))?;
-            return Ok(DeleteStatus::Deleted);
-        }
-        match trash(&found.path) {
-            Ok(()) => Ok(DeleteStatus::Trashed),
-            Err(e) => {
-                tracing::warn!("vault: the trash refused a file: {e}");
-                Ok(DeleteStatus::TrashUnavailable)
-            }
-        }
+        store.delete(path, permanent, &trash)
     }
 
     /// Resolve link targets written in the note `from`: the file each one opens, or `None` (unresolved).
@@ -474,8 +515,8 @@ impl AppState {
     /// # Errors
     /// When no vault is open.
     pub fn vault_resolve(&self, from: &str, targets: &[String]) -> ApiResult<Vec<Option<String>>> {
-        let vault = self.vault()?;
-        let files = file_set(&tree::list(&vault));
+        let store = self.vault()?;
+        let files = file_set(&store.list());
         Ok(targets
             .iter()
             .map(|t| files.resolve(from, t).map(str::to_string))
@@ -483,11 +524,11 @@ impl AppState {
     }
 
     /// Fresh tree and index (for the queries below).
-    fn indexed(&self) -> ApiResult<(Vault, Listing)> {
-        let vault = self.vault()?;
-        let listing = tree::list(&vault);
-        lock(&self.vault.index)?.refresh(&vault, &listing.entries);
-        Ok((vault, listing))
+    fn indexed(&self) -> ApiResult<(Box<dyn VaultStore>, Listing)> {
+        let store = self.vault()?;
+        let listing = store.list();
+        lock(&self.vault.index)?.refresh(store.as_ref(), &listing.entries);
+        Ok((store, listing))
     }
 
     /// Notes that link to `path`.
@@ -514,7 +555,7 @@ impl AppState {
     /// # Errors
     /// When no vault is open.
     pub fn vault_search(&self, query: &str, tag: Option<&str>) -> ApiResult<Vec<SearchHit>> {
-        let (vault, listing) = self.indexed()?;
+        let (store, listing) = self.indexed()?;
         if let Some(tag) = tag.filter(|t| !t.trim().is_empty()) {
             let notes = lock(&self.vault.index)?.notes_with_tag(tag);
             return Ok(notes
@@ -527,7 +568,7 @@ impl AppState {
                 })
                 .collect());
         }
-        Ok(index::search(&vault, &listing.entries, query))
+        Ok(index::search(store.as_ref(), &listing.entries, query))
     }
 
     /// An image of the vault as a `data:` URL (for the image view and `![[embeds]]`).
@@ -535,17 +576,17 @@ impl AppState {
     /// # Errors
     /// `invalid_argument` for a path outside the vault, a file that is not an image, or one that is too large.
     pub fn vault_image(&self, path: &str) -> ApiResult<String> {
-        let vault = self.vault()?;
+        let store = self.vault()?;
         if tree::kind_of(paths::file_name(path)) != EntryKind::Image {
             return Err(ApiError::invalid("That file is not an image."));
         }
-        let found = vault.existing_file(path)?;
-        let bytes = read_capped(&found.real, MAX_IMAGE_BYTES)?
+        let file = store
+            .read(path, MAX_IMAGE_BYTES)?
             .ok_or_else(|| ApiError::invalid("That image is too large to show."))?;
         Ok(format!(
             "data:{};base64,{}",
             image_mime(path),
-            STANDARD.encode(bytes)
+            STANDARD.encode(file.bytes)
         ))
     }
 
@@ -554,12 +595,12 @@ impl AppState {
     /// # Errors
     /// When no vault is open or `to` is not one of its files.
     pub fn vault_link_text(&self, from: &str, to: &str, embed: bool) -> ApiResult<String> {
-        let vault = self.vault()?;
-        let files = file_set(&tree::list(&vault));
+        let store = self.vault()?;
+        let files = file_set(&store.list());
         let to = files
             .get(to)
             .ok_or_else(|| ApiError::invalid("That file is not in your vault."))?;
-        Ok(VaultConfig::load(vault.root()).link_text(&files, from, to, embed))
+        Ok(VaultConfig::of(store.as_ref()).link_text(&files, from, to, embed))
     }
 
     /// Copy the file behind a `vault-attachment` pick into the attachment folder `.obsidian/app.json` names for the
@@ -568,7 +609,7 @@ impl AppState {
     /// # Errors
     /// `invalid_argument` for a bad token or an oversized file; `io_error` when copying fails.
     pub fn vault_attach(&self, token: &str, from: &str) -> ApiResult<VaultAttachment> {
-        let vault = self.vault()?;
+        let store = self.vault()?;
         let picked: PathBuf = self.picked.take(token, PickPurpose::VaultAttachment)?;
         let meta = std::fs::metadata(&picked).map_err(|e| ApiError::io("read the file", e))?;
         if !meta.is_file() || meta.len() > MAX_ATTACHMENT_BYTES {
@@ -586,12 +627,17 @@ impl AppState {
                 .map_or((original.as_str(), ""), |(s, e)| (s, e)),
             None => (original.as_str(), ""),
         };
-        let cfg = VaultConfig::load(vault.root());
-        let listing = tree::list(&vault);
+        let cfg = VaultConfig::of(store.as_ref());
+        let listing = store.list();
         let files = file_set(&listing);
-        let rel = free_path(&files, &vault, &cfg.attachment_folder(from), stem, ext)?;
-        let target = vault.new_file(&rel)?;
-        write::copy_new(&picked, &target).map_err(|e| ApiError::io("copy the file", e))?;
+        let rel = free_path(
+            &files,
+            store.as_ref(),
+            &cfg.attachment_folder(from),
+            stem,
+            ext,
+        )?;
+        store.copy_new(&picked, &rel)?;
         let after = FileSet::new(files.paths().iter().cloned().chain([rel.clone()]));
         let embed = tree::kind_of(&rel) == EntryKind::Image;
         Ok(VaultAttachment {
@@ -600,7 +646,8 @@ impl AppState {
         })
     }
 
-    /// Start watching the vault (replacing any earlier watcher); `on_change` gets each batch of changes.
+    /// Start watching the vault (replacing any earlier watcher); `on_change` gets each batch of changes. A vault that
+    /// is not a local folder is not watched (the notes view re-reads it when it comes back to the foreground).
     ///
     /// # Errors
     /// When no vault is open or the OS refuses to watch it.
@@ -609,7 +656,10 @@ impl AppState {
         &self,
         on_change: impl Fn(watch::VaultChange) + Send + 'static,
     ) -> ApiResult<()> {
-        let vault = self.vault()?;
+        let store = self.vault()?;
+        let Some(vault) = store.local().cloned() else {
+            return Ok(());
+        };
         let watcher = watch::start(vault, on_change)
             .map_err(|e| ApiError::io("watch the vault", std::io::Error::other(e.to_string())))?;
         *lock(&self.vault.watcher)? = Some(watcher);
@@ -627,11 +677,24 @@ impl AppState {
     }
 }
 
-fn saved(path: &Path, bytes: &[u8]) -> VaultSave {
+/// Where the vault setting `dir` is, for people (the folder path).
+#[must_use]
+pub fn label(dir: &str) -> String {
+    dir.to_string()
+}
+
+/// The name to show for the vault setting `dir`: the folder's name.
+fn display_name(dir: &str) -> Option<String> {
+    Path::new(dir)
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+}
+
+fn saved(mtime_ms: u64, bytes: &[u8]) -> VaultSave {
     VaultSave {
         status: SaveStatus::Saved,
         hash: Some(text::hash(bytes)),
-        mtime_ms: Some(mtime_of(path)),
+        mtime_ms: Some(mtime_ms),
         disk: None,
     }
 }

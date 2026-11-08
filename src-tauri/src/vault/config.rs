@@ -5,6 +5,7 @@
 
 use super::paths;
 use super::resolve::{self, FileSet};
+use super::store::VaultStore;
 use percent_encoding::{utf8_percent_encode, AsciiSet, CONTROLS};
 use serde::Serialize;
 use serde_json::Value;
@@ -13,7 +14,7 @@ use std::path::Path;
 /// The settings file, relative to the vault folder.
 pub const APP_JSON: &str = ".obsidian/app.json";
 /// Largest settings file read.
-const MAX_APP_JSON: u64 = 1024 * 1024;
+pub(crate) const MAX_APP_JSON: u64 = 1024 * 1024;
 /// What a Markdown link destination percent-encodes (Obsidian encodes spaces; the rest keeps the link valid).
 const LINK_ENCODE: &AsciiSet = &CONTROLS.add(b' ').add(b'(').add(b')').add(b'<').add(b'>');
 
@@ -99,6 +100,15 @@ impl VaultConfig {
                 _ => LinkFormat::Shortest,
             },
         }
+    }
+
+    /// The settings of the vault in `store` (defaults when `app.json` is missing, too large or not JSON).
+    #[must_use]
+    pub fn of(store: &dyn VaultStore) -> Self {
+        store
+            .app_json()
+            .map(|t| Self::from_json(&t))
+            .unwrap_or_default()
     }
 
     /// Read `<root>/.obsidian/app.json` (defaults when it is missing, too large or not JSON).
