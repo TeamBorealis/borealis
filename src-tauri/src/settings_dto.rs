@@ -26,8 +26,10 @@ pub struct DataDirs {
     pub portrait_library_dir: Option<String>,
     /// The chosen portrait library folder cannot be read right now; the setting is kept.
     pub portrait_library_unavailable: bool,
-    /// The chosen Obsidian vault folder (Settings > CONTENT, GitHub #15), if any.
+    /// The chosen Obsidian vault folder (Settings > CONTENT, GitHub #15), if any. On Android a document tree URI.
     pub vault_dir: Option<String>,
+    /// Where the vault is, for people: the folder path, or on Android `Internal storage/Documents/My Vault`.
+    pub vault_label: Option<String>,
     /// The chosen vault folder cannot be read right now; the setting is kept.
     pub vault_unavailable: bool,
 }

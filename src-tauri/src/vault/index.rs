@@ -2,14 +2,13 @@
 //! size or modification time changes (the time is a hint; the content is what counts). Backlinks, the tag list and
 //! search are answered from it.
 
-use super::paths::Vault;
 use super::resolve::FileSet;
+use super::store::VaultStore;
 use super::syntax;
 use super::text;
 use super::tree::{EntryKind, VaultEntry};
 use serde::Serialize;
 use std::collections::{BTreeMap, HashMap};
-use std::path::{Path, PathBuf};
 
 /// Largest note read for the index and search (bigger ones are skipped).
 pub const MAX_NOTE_BYTES: u64 = 8 * 1024 * 1024;
@@ -88,13 +87,9 @@ fn short(line: &str) -> String {
 }
 
 /// Read a note's text for the index (`None` when it is too large or unreadable).
-fn read_text(real: &Path) -> Option<String> {
-    let meta = std::fs::metadata(real).ok()?;
-    if meta.len() > MAX_NOTE_BYTES {
-        return None;
-    }
-    let bytes = std::fs::read(real).ok()?;
-    Some(text::decode(&bytes).text)
+fn read_text(store: &dyn VaultStore, rel: &str) -> Option<String> {
+    let file = store.read(rel, MAX_NOTE_BYTES).ok()??;
+    Some(text::decode(&file.bytes).text)
 }
 
 fn facts_of(text: &str, len: u64, mtime_ms: u64) -> NoteFacts {
@@ -118,15 +113,16 @@ fn facts_of(text: &str, len: u64, mtime_ms: u64) -> NoteFacts {
 /// The per-vault cache.
 #[derive(Debug, Default)]
 pub struct Index {
-    root: Option<PathBuf>,
+    root: Option<String>,
     notes: HashMap<String, NoteFacts>,
 }
 
 impl Index {
-    /// Bring the cache up to date with the tree `entries` of `vault`.
-    pub fn refresh(&mut self, vault: &Vault, entries: &[VaultEntry]) {
-        if self.root.as_deref() != Some(vault.root()) {
-            self.root = Some(vault.root().to_path_buf());
+    /// Bring the cache up to date with the tree `entries` of the vault in `store`.
+    pub fn refresh(&mut self, store: &dyn VaultStore, entries: &[VaultEntry]) {
+        let identity = store.identity();
+        if self.root.as_deref() != Some(identity.as_str()) {
+            self.root = Some(identity);
             self.notes.clear();
         }
         let notes: Vec<&VaultEntry> = entries
@@ -143,19 +139,15 @@ impl Index {
             if fresh {
                 continue;
             }
-            let facts = vault
-                .existing_file(&e.path)
-                .ok()
-                .and_then(|l| read_text(&l.real))
-                .map_or_else(
-                    || NoteFacts {
-                        len: e.size,
-                        mtime_ms: e.mtime_ms,
-                        links: Vec::new(),
-                        tags: Vec::new(),
-                    },
-                    |t| facts_of(&t, e.size, e.mtime_ms),
-                );
+            let facts = read_text(store, &e.path).map_or_else(
+                || NoteFacts {
+                    len: e.size,
+                    mtime_ms: e.mtime_ms,
+                    links: Vec::new(),
+                    tags: Vec::new(),
+                },
+                |t| facts_of(&t, e.size, e.mtime_ms),
+            );
             self.notes.insert(e.path.clone(), facts);
         }
     }
@@ -251,7 +243,7 @@ impl Index {
 
 /// Search note names and contents for `query` (case-insensitive), name matches first.
 #[must_use]
-pub fn search(vault: &Vault, entries: &[VaultEntry], query: &str) -> Vec<SearchHit> {
+pub fn search(store: &dyn VaultStore, entries: &[VaultEntry], query: &str) -> Vec<SearchHit> {
     let q = query.trim().to_lowercase();
     if q.is_empty() {
         return Vec::new();
@@ -260,11 +252,7 @@ pub fn search(vault: &Vault, entries: &[VaultEntry], query: &str) -> Vec<SearchH
     let mut by_text = Vec::new();
     for e in entries.iter().filter(|e| e.kind == EntryKind::Note) {
         let name_match = super::paths::stem(&e.name).to_lowercase().contains(&q);
-        let text = vault
-            .existing_file(&e.path)
-            .ok()
-            .and_then(|l| read_text(&l.real))
-            .unwrap_or_default();
+        let text = read_text(store, &e.path).unwrap_or_default();
         let lines: Vec<NoteLine> = text
             .lines()
             .enumerate()

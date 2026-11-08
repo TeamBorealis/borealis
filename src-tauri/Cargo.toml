@@ -112,6 +112,14 @@ trash = "5.2"
 objc2 = { version = "0.6", optional = true }
 objc2-foundation = { version = "0.3", optional = true, default-features = false, features = ["std", "NSArray", "NSData", "NSError", "NSString", "NSURL"] }
 
+# iOS / iPadOS (B-221): the Obsidian vault folder comes from the document picker and is kept with a security-scoped
+# bookmark; reads are coordinated so iCloud Drive brings files down first (folder_access_ios.rs).
+[target.'cfg(target_os = "ios")'.dependencies]
+objc2 = "0.6"
+block2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "block2", "NSArray", "NSData", "NSError", "NSFileCoordinator", "NSFileManager", "NSObject", "NSString", "NSURL"] }
+objc2-ui-kit = { version = "0.3", default-features = false, features = ["std", "UIDocumentPickerViewController", "UIPresentationController", "UIResponder", "UIViewController"] }
+
 # Phones only: opens the download page in the system browser (desktop spawns the OS opener itself).
 # The .index downloader verifies TLS against the bundled Mozilla roots (webpki-roots), not the OS
 # verifier, which needs JNI glue on Android (spike S0.3).

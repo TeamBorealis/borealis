@@ -130,11 +130,38 @@ fn native_pick(
         .collect()
 }
 
+/// Phones: only the Obsidian vault folder is picked here (B-221). Every other pick has its own phone flow.
 #[cfg(not(desktop))]
-fn native_pick(_: &AppHandle, _: PickPurpose, _: Option<PathBuf>) -> ApiResult<Vec<PathBuf>> {
-    Err(ApiError::invalid(
-        "Choosing files is not available on this device.",
-    ))
+fn native_pick(
+    app: &AppHandle,
+    purpose: PickPurpose,
+    _: Option<PathBuf>,
+) -> ApiResult<Vec<PathBuf>> {
+    if purpose != PickPurpose::VaultDir {
+        return Err(not_on_this_device());
+    }
+    pick_vault_folder(app)
+}
+
+#[cfg(not(desktop))]
+fn not_on_this_device() -> ApiError {
+    ApiError::invalid("Choosing files is not available on this device.")
+}
+
+/// iOS / iPadOS: the system document picker for folders; empty when the user cancels.
+#[cfg(target_os = "ios")]
+fn pick_vault_folder(app: &AppHandle) -> ApiResult<Vec<PathBuf>> {
+    let picked = crate::folder_access_ios::pick_folder(app).map_err(|e| {
+        tracing::warn!("vault: the folder picker failed: {e}");
+        ApiError::invalid("The folder picker could not open.")
+    })?;
+    Ok(picked.into_iter().collect())
+}
+
+/// Android: not yet (the Storage Access Framework tree follows, B-221).
+#[cfg(target_os = "android")]
+fn pick_vault_folder(_: &AppHandle) -> ApiResult<Vec<PathBuf>> {
+    Err(not_on_this_device())
 }
 
 /// A native OK/Cancel dialog; `true` only when the user pressed the OK button (the AI program override and AI setup).

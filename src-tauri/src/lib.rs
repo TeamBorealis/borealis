@@ -97,6 +97,9 @@ pub mod error;
 pub mod extras;
 pub mod folder_access;
 // Mac App Store build only: NSURL security-scoped bookmarks (two Foundation calls objc2 marks unsafe).
+#[cfg(target_os = "ios")]
+#[allow(unsafe_code)]
+mod folder_access_ios;
 #[cfg(all(target_os = "macos", feature = "mas"))]
 #[allow(unsafe_code)]
 mod folder_access_mac;
@@ -340,6 +343,7 @@ pub fn run() {
         .on_window_event(|window, event| {
             startup_boot::on_window_event(window, event);
             semantic_device::on_window_event(window, event);
+            commands_vault::on_window_event(window, event);
             #[cfg(desktop)]
             picked_files::on_window_event(window, event);
         })

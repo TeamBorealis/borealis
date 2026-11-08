@@ -9,7 +9,12 @@
 //! again); this module never changes the settings or deletes anything.
 //!
 //! The bookmarks live in `<data>/folder-bookmarks.json`, next to the settings. Only the Mac App Store build has a
-//! [`SecurityScope`] ([`platform_scope`]); everywhere else every function here is a no-op.
+//! [`SecurityScope`] at launch ([`platform_scope`]); everywhere else the launch restore is a no-op.
+//!
+//! iOS and iPadOS (B-221) keep the Obsidian vault the same way: the folder comes from the document picker, and its
+//! bookmark is stored here under the same key. Unlike the Mac App Store build, access is not held for the whole run:
+//! each vault operation resolves the bookmark, starts access, and stops it when done ([`access`]). A bookmark that
+//! resolves to a new path (the app holding the folder was reinstalled) is followed.
 
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
@@ -230,8 +235,8 @@ pub fn restore(data: &Path, scope: &dyn SecurityScope) -> Vec<(RememberedFolder,
     outcomes
 }
 
-/// This build's security scope: the Mac App Store build only. Other builds can read remembered folders
-/// directly, so they store no bookmarks.
+/// This build's security scope at launch: the Mac App Store build only. Other builds can read remembered folders
+/// directly (or, on iOS, start access around each use, [`access`]), so nothing is restored at launch.
 #[must_use]
 pub fn platform_scope() -> Option<&'static dyn SecurityScope> {
     #[cfg(all(target_os = "macos", feature = "mas"))]
@@ -244,10 +249,22 @@ pub fn platform_scope() -> Option<&'static dyn SecurityScope> {
     }
 }
 
+/// The scope that makes bookmarks after a pick: the Mac App Store build's, and on iOS / iPadOS the document picker's.
+fn bookmark_scope() -> Option<&'static dyn SecurityScope> {
+    #[cfg(target_os = "ios")]
+    {
+        Some(&crate::folder_access_ios::IosScope)
+    }
+    #[cfg(not(target_os = "ios"))]
+    {
+        platform_scope()
+    }
+}
+
 /// After a pick: store (`Some`) or drop (`None`) the bookmark of `which` in a build with a security scope;
 /// logged, never fatal (the folder works for this run either way).
 pub fn after_pick(data: &Path, which: RememberedFolder, folder: Option<&Path>) {
-    let Some(scope) = platform_scope() else {
+    let Some(scope) = bookmark_scope() else {
         return;
     };
     let result = match folder {
@@ -283,6 +300,109 @@ pub fn restore_at_launch(data: &Path) {
             }
         }
     }
+}
+
+/// A started security scope (iOS / iPadOS), stopped when this is dropped. Never made on other platforms.
+pub struct Access {
+    #[cfg(target_os = "ios")]
+    _url: crate::folder_access_ios::ScopedUrl,
+    #[cfg(not(target_os = "ios"))]
+    _never: std::convert::Infallible,
+}
+
+/// A remembered folder whose security scope is started: where it is now, and the access to drop when done.
+pub struct Scoped {
+    pub path: PathBuf,
+    pub access: Access,
+}
+
+/// The stored bookmark of `which`, decoded.
+#[cfg(target_os = "ios")]
+fn stored_bookmark(data: &Path, which: RememberedFolder) -> Option<Vec<u8>> {
+    let entry = load(data).remove(which.key())?;
+    STANDARD.decode(entry.bookmark).ok()
+}
+
+/// iOS / iPadOS: start access to the remembered folder `which` (`picked` names a folder the document picker just
+/// returned, whose bookmark is not stored yet). `None` where no scope is needed or the bookmark no longer resolves
+/// (the folder then reads as unavailable). A stale bookmark is renewed.
+#[cfg(target_os = "ios")]
+pub fn access(data: &Path, which: RememberedFolder, picked: &Path) -> Option<Scoped> {
+    use crate::folder_access_ios as ios;
+    let bookmark = ios::pending(picked).or_else(|| stored_bookmark(data, which))?;
+    match ios::start(&bookmark) {
+        Ok((resolved, url)) => {
+            if resolved.stale {
+                if let Err(e) = remember(data, &ios::IosScope, which, &resolved.path) {
+                    tracing::warn!("folder bookmarks: a stale bookmark could not be renewed: {e}");
+                }
+            }
+            Some(Scoped {
+                path: resolved.path,
+                access: Access { _url: url },
+            })
+        }
+        Err(e) => {
+            tracing::warn!("folder bookmarks: {} does not open: {e}", which.key());
+            None
+        }
+    }
+}
+
+/// Elsewhere folders are reached directly.
+#[cfg(not(target_os = "ios"))]
+#[must_use]
+pub fn access(_data: &Path, _which: RememberedFolder, _picked: &Path) -> Option<Scoped> {
+    None
+}
+
+/// Read `path` with `read`. On iOS / iPadOS this is a coordinated read, which makes iCloud Drive and other file
+/// providers bring the file down first and keeps the read clear of their writes.
+///
+/// # Errors
+/// What `read` returns, or why the read could not be coordinated.
+pub fn coordinated_read<T>(
+    path: &Path,
+    read: impl FnOnce(&Path) -> std::io::Result<T>,
+) -> std::io::Result<T> {
+    #[cfg(target_os = "ios")]
+    {
+        crate::folder_access_ios::coordinated_read(path, read)
+    }
+    #[cfg(not(target_os = "ios"))]
+    {
+        read(path)
+    }
+}
+
+/// Write `path` with `write`. On iOS / iPadOS this is a coordinated write (for replacing), so file providers and other apps
+/// see one finished change.
+///
+/// # Errors
+/// What `write` returns, or why the write could not be coordinated.
+pub fn coordinated_write<T>(
+    path: &Path,
+    write: impl FnOnce(&Path) -> std::io::Result<T>,
+) -> std::io::Result<T> {
+    #[cfg(target_os = "ios")]
+    {
+        crate::folder_access_ios::coordinated_write(path, write)
+    }
+    #[cfg(not(target_os = "ios"))]
+    {
+        write(path)
+    }
+}
+
+/// Files in the vault may be iCloud Drive placeholders (iOS / iPadOS).
+pub const CLOUD_PLACEHOLDERS: bool = cfg!(target_os = "ios");
+
+/// iOS / iPadOS: ask iCloud Drive to download the file `path` (it is a placeholder now). Logged, never fatal.
+pub fn start_download(path: &Path) {
+    #[cfg(target_os = "ios")]
+    crate::folder_access_ios::start_download(path);
+    #[cfg(not(target_os = "ios"))]
+    let _ = path;
 }
 
 #[cfg(test)]
